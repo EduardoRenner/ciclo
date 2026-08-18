@@ -2185,7 +2185,37 @@ export type Database = {
         Args: { prof: string; t: string }
         Returns: boolean
       }
+      claim_jobs: {
+        Args: { p_limit?: number }
+        Returns: {
+          attempts: number
+          created_at: string
+          id: number
+          kind: string
+          last_error: string | null
+          locked_at: string | null
+          max_attempts: number
+          payload: Json
+          run_after: string
+          status: Database["public"]["Enums"]["job_status"]
+          tenant_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "job_queue"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       clear_tenant_context: { Args: never; Returns: undefined }
+      finish_job: {
+        Args: {
+          p_error?: string
+          p_id: number
+          p_status: Database["public"]["Enums"]["job_status"]
+        }
+        Returns: undefined
+      }
       has_tenant: { Args: { t: string }; Returns: boolean }
       my_professional_id: { Args: { t: string }; Returns: string }
       set_tenant_context: { Args: { t: string }; Returns: undefined }

@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "ciclo",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["dev", "--port", "3015"],
+      "port": 3015
+    }
+  ]
+}

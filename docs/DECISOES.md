@@ -669,3 +669,29 @@ e-mail simples, forçar a mesma forma criaria métodos vazios só para satisfaze
 2026-08-18 · Push (PWA) não está implementado — a ordem documentada é push→e-mail, mas o service
 worker (TICKET-055/056) ainda não existe · o fallback vai direto para e-mail, com o comentário no
 código marcando onde o push entraria quando existir. Não é lacuna silenciosa: está anotado.
+
+2026-08-18 · A "Edge Function consumidora" de `§7` (TICKET-029) virou rota do Next protegida por
+`CRON_SECRET` em vez de Supabase Edge Function · este projeto roda em Vercel, não hospeda
+funções no Supabase; `CRON_SECRET` já nasceu variável de app (não do Supabase) no `.env.example`
+do TICKET-002, o que já sinalizava esse caminho. `vercel.json` aponta `/api/cron/jobs` com
+schedule `*/5 * * * *` — o Vercel Cron chama por **GET**, não POST, e preenche o header
+`Authorization: Bearer $CRON_SECRET` sozinho quando essa env var existe no projeto; não é escolha
+deste código, é o contrato do Vercel.
+
+2026-08-18 · `SELECT ... FOR UPDATE SKIP LOCKED` (§7) não dá para fazer em duas idas do
+PostgREST (um SELECT, depois um UPDATE por id) — reabre a janela de corrida que o SKIP LOCKED
+existe para fechar. Virou função `claim_jobs()`: um UPDATE ... WHERE id IN (SELECT ... FOR UPDATE
+SKIP LOCKED) que roda inteiro numa transação do banco. Testado com 4 "workers" reivindicando em
+paralelo de verdade contra 1.000 jobs — zero duplicata, os 1.000 processam.
+
+2026-08-18 · Job sem handler registrado para o `kind` não morre na hora por padrão — vira uma
+falha normal, sujeita ao `max_attempts` de sempre (retry com backoff, `dead` só depois de
+esgotar) · um handler pode nascer num deploy seguinte (é exatamente o caso do TICKET-029: os
+handlers reais de `send_reminders`/`expire_holds` ainda não existem, chegam nos tickets que os
+pedem) — matar na primeira tentativa impediria o job de ser reprocessado quando o handler
+finalmente existir.
+
+2026-08-18 · `decidirDesfecho()` mora em `src/core/jobs/backoff.ts`, não em `job-queue.ts` · é
+regra de negócio pura (quando falhar vira `dead`), então cabe em `core/` — e como `finish_job()`
+no banco faz a MESMA conta de backoff independentemente, os dois lados (app e banco) precisam
+concordar; o teste de unidade prova a fórmula sem precisar do banco.
