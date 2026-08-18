@@ -152,3 +152,11 @@ de recuperar senha vira uma lista de quem é cliente do CICLO. Mesma regra no `s
 os três jobs têm nome estável (`Segredos`, `Qualidade`, `Banco e RLS`) e o README diz quais marcar
 como *required status checks* · o repositório ainda não tem remoto; a regra é aplicada por Eduardo
 quando ele criar.
+
+2026-08-18 · O `pnpm add` do TICKET-009 avisou que `next@15.5.4` tem CVE; o `pnpm audit` mostrou
+uma RCE crítica no protocolo flight do React e mais quatro falhas em `postcss` e `sharp` ·
+subi o Next para 15.5.23 (bump de patch, mesma linha 15.5) e travei `postcss >= 8.5.23` e
+`sharp >= 0.35.0` em `pnpm.overrides`, porque as duas são transitivas e não dá para bumpar pelo
+dependente · o `pnpm audit` entrou no job Segredos do CI: `high` e acima reprovam, `moderate`
+aparece no log sem quebrar o build — senão um aviso novo em dependência transitiva trava o merge
+de todo mundo num dia em que ninguém mexeu em dependência.

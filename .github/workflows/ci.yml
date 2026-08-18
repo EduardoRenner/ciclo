@@ -50,6 +50,23 @@ jobs:
             exit 1
           fi
 
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Dependência com vulnerabilidade conhecida
+        # `high` e acima reprovam; `moderate` aparece no log sem quebrar o build,
+        # senão um aviso novo em dependência transitiva trava o merge de todo
+        # mundo num dia em que ninguém mexeu em dependência.
+        run: |
+          pnpm audit --audit-level moderate || true
+          pnpm audit --audit-level high
+
   # ---------------------------------------------------------------------------
   # Typecheck, lint, unit e build. Não toca no banco, então roda em paralelo com
   # o job `banco` e devolve o erro barato primeiro.
