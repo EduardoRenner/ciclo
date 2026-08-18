@@ -36,9 +36,13 @@ function deBytea(literal: string): Buffer {
   return Buffer.from(literal.replace(/^\\x/, ''), 'hex')
 }
 
-/** Gera a DEK do tenant já cifrada pela KEK — pronta para `tenant_keys.dek_wrapped`. */
-export function gerarDekCifrada(): { wrapped: string; keyVersion: number } {
-  const dek = randomBytes(TAMANHO_DEK)
+/**
+ * Embrulha uma DEK (nova ou já existente) pela KEK atual — pronta para
+ * `tenant_keys.dek_wrapped`. `rewrapDek` é o que a rotação anual da KEK usa
+ * (§8): a DEK do tenant não muda, só a chave que a protege; reaproveitar essa
+ * função para os dois casos evita duas implementações do mesmo envelope.
+ */
+export function rewrapDek(dek: Buffer): { wrapped: string; keyVersion: number } {
   const iv = randomBytes(TAMANHO_IV)
 
   const cifra = createCipheriv('aes-256-gcm', kek(), iv)
@@ -48,6 +52,11 @@ export function gerarDekCifrada(): { wrapped: string; keyVersion: number } {
   // iv || tag || ciphertext num bytea só: mais simples que três colunas, e o
   // tamanho de cada pedaço é fixo, então separar de volta não precisa de delimitador.
   return { wrapped: paraBytea(Buffer.concat([iv, tag, ciphertext])), keyVersion: versaoKek() }
+}
+
+/** Gera a DEK do tenant já cifrada pela KEK — pronta para `tenant_keys.dek_wrapped`. */
+export function gerarDekCifrada(): { wrapped: string; keyVersion: number } {
+  return rewrapDek(randomBytes(TAMANHO_DEK))
 }
 
 /** Volta a DEK em claro. Uso restrito ao TICKET-049 — nasce aqui só para ter teste de ida e volta. */

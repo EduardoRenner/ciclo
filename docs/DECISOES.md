@@ -869,3 +869,27 @@ rebuildar. **Padrão pra família inteira:** nunca rode `pnpm build`/`pnpm verif
 resultantes não têm nenhuma relação óbvia com a causa real. Antes de investigar um erro de build
 "impossível" (módulo que existe mas não é encontrado, manifest ausente depois de sucesso
 aparente), cheque `netstat -ano | grep LISTEN` nas portas de dev conhecidas e `preview_list`.
+
+2026-08-18 · TICKET-042, comissão/fee de maquininha (F78) não entram nesta comanda ainda ·
+`fee_cents` fica em 0 até o TICKET-043 (pagamento) escolher o método — a taxa da maquininha só
+existe depois que sabemos COMO a cliente paga, e isso é escopo de outro ticket. `commission_base`
+(gross|net_of_material) vem de `tenants.settings.commission_base`, sem coluna dedicada — mesma
+convenção de `settings` freeform já usada por outros campos (fees, product_commission_bps).
+Percentual de comissão de produto usa `settings.product_commission_bps` (padrão 10%, F80), nunca
+o percentual de serviço. Estado da comanda fica só em `open`→`closed` neste ticket; `paid` e
+`canceled`/`refunded` (máquina de estados completa do §6) ficam para TICKET-043.
+
+2026-08-18 · `ticket_items` não tem coluna `created_at` (só `id`) — `.order('created_at')` em
+`buscarComanda` falhava com erro genérico `INTERNAL` sem pista da causa real. Corrigido pra
+`.order('id')`, mesma convenção usada em todo outro lugar do projeto que precisa de ordem estável
+sem uma coluna de data dedicada.
+
+2026-08-18 · TICKET-049, cofre criptográfico: `encryptVault`/`decryptVault` (`src/server/crypto/
+vault.ts`) sempre buscam a DEK atual de `tenant_keys` para decifrar — nunca fixam por
+`key_version` do registro. Isso só funciona porque a rotação de KEK (§8, "rotacionada anualmente")
+troca a chave que embrulha a DEK, não a DEK em si; a DEK do tenant nasce uma vez no onboarding e
+nunca muda. Adicionado `rewrapDek()` em `kek.ts` (extraído de `gerarDekCifrada`, que virou casca
+fina por cima) como o primitivo que a rotação de verdade vai usar. `key_version` gravado em cada
+registro cifrado é só trilha de auditoria de qual rotação estava vigente na escrita — decidir
+decifrar por versão específica seria over-engineering sem um caso de uso real ainda (a única forma
+de a DEK mudar de fato seria comprometimento, que é reemissão, não rotação).
