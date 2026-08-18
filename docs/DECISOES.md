@@ -957,3 +957,27 @@ e registrei aqui em vez de inventar section nova no documento fechado.
 `amount_cents` negativo, mas deixar a cliente "devendo" na carteira não tem
 uso de negócio claro nesta fase, e é mais fácil relaxar a regra depois do
 que apertar.
+
+2026-08-18 · TICKET-003 nunca teve commit próprio no histórico — mas está satisfeito: o critério
+de aceite ("migration aplica limpa em banco vazio · 34 tabelas · nenhuma sem RLS") é exatamente o
+que `supabase/migrations/0001_initial.sql` já faz e sustenta desde o TICKET-001. Registrado aqui
+pra não confundir "sem commit com esse número" com "não feito".
+
+2026-08-18 · TICKET-046, comissão simples: percentual congelado por linha (§5.7) já existia desde
+o TICKET-042 (`ticket_items.commission_bps`/`commission_cents`, escritos só no fechamento). O que
+faltava era o "extrato por período fecha" — `extratoDeComissao()` lista as linhas de um
+profissional num intervalo (`tickets.closed_at` entre `desde`/`ate`, só `closed`/`paid`) e prova
+que a soma bate com o total. Extrato de um período já fechado nunca muda: como cada linha já
+congelou o `bps` no fechamento, mudar o percentual do profissional depois não reescreve nada — é
+o mesmo dado, não um recálculo. `GET /api/v1/commissions/extract?professionalId=&desde=&ate=`.
+
+2026-08-18 · TICKET-051, consentimentos: `terms` (termos de uso, aceito no cadastro) fica fora
+dos "três consentimentos separados" — são `health_data`, `image_use`, `marketing`, por cliente,
+não por conta. `revogarConsentimento()` só marca `revoked_at` na linha ativa (`granted=true`,
+`revoked_at is null`); nunca reescreve `granted`/`text_hash` — consentimento é trilha, revogar é
+evento novo, não corrigir o passado. O critério "revogar imagem esconde a foto do portfólio
+imediatamente" depende de leitura de `media` que ainda não existe (TICKET-052) — quando nascer,
+precisa filtrar por `consents.revoked_at is null` do `consent_id` de cada foto; registrado aqui
+para não se perder. `signatureKey` é só referenciado, não fez upload nenhum: bucket privado e
+storage_key aleatório são infraestrutura do TICKET-052, construir os dois cedo duplicaria
+trabalho quando 052 nascer.
