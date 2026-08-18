@@ -160,3 +160,32 @@ subi o Next para 15.5.23 (bump de patch, mesma linha 15.5) e travei `postcss >= 
 dependente · o `pnpm audit` entrou no job Segredos do CI: `high` e acima reprovam, `moderate`
 aparece no log sem quebrar o build — senão um aviso novo em dependência transitiva trava o merge
 de todo mundo num dia em que ninguém mexeu em dependência.
+
+2026-08-18 · **Contradição entre a especificação e a FAQ:** `01-ESPEC-TECNICA §3.3` dá
+`client:*` ao papel `manager`, o que inclui exportar a base; a FAQ C35 diz que exportar é "só
+owner, com MFA na hora, no máximo 1×/mês" · a tabela `PERMISSIONS` continua literal como o §3.3
+manda, e uma lista `EXCLUSIVAS_DO_DONO` (hoje só `client:export`) é conferida antes do curinga ·
+entre as duas leituras vale a restritiva: exportar a base é a carteira inteira saindo pela porta,
+e negar demais se conserta com um clique do dono, enquanto vazar não se desfaz. Um teste percorre
+todos os papéis e reprova se algum além do dono alcançar `client:export`.
+
+2026-08-18 · O que `own` significa em `appointment:own` (§3.3)? · alcance, não verbo:
+`avaliarPermissao` devolve `'own'` para qualquer ação daquele recurso, e quem chamou precisa
+filtrar pelo próprio profissional · a alternativa seria ler `own` como uma ação chamada "own", e
+aí o profissional não poderia sequer ler a própria agenda. A RLS (`can_see_appointment`) é a
+segunda camada.
+
+2026-08-18 · `contextoAtual()` recusa header/cookie que não seja uuid com `TENANT_MISMATCH`, o
+mesmo erro de tenant alheio · resposta diferente para "id malformado", "tenant não existe" e
+"existe mas não é seu" transforma o header num verificador de quais estabelecimentos existem no
+CICLO · também evita ida ao banco com lixo.
+
+2026-08-18 · Sem header e sem cookie: um vínculo ativo → assume esse; nenhum → `FORBIDDEN`
+mandando terminar o cadastro; mais de um → `VALIDATION_ERROR` pedindo para escolher · a FAQ C26
+prevê o seletor na UI quando `memberships.length > 1`, e escolher um por conta própria colocaria
+a pessoa no estabelecimento errado sem ela perceber.
+
+2026-08-18 · `GET /api/v1/me` não usa `contextoAtual()` · usa só `exigirSessao()` e devolve
+`activeTenant: null` quando não há vínculo · é a única rota que precisa responder para quem acabou
+de se cadastrar e ainda vai passar pelo onboarding; se ela também exigisse tenant, o TICKET-015
+não teria como começar.
