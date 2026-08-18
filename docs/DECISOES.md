@@ -240,3 +240,22 @@ novo produziria a duplicata.
 2026-08-18 · Resposta de erro é guardada e reproduzida? · não: o erro apaga a reserva · a operação
 não aconteceu, e prender a chave impediria a pessoa de tentar de novo com a mesma
 `Idempotency-Key` — que é exatamente o que a fila offline do PWA (§4.2) faz quando drena.
+
+2026-08-18 · **Erro de contraste na especificação:** `03-DESIGN-SYSTEM §1` anota `--txt-3: #6e6e85`
+como "contraste 4,6:1 — nunca abaixo disso", mas a conta medida (WCAG 2.1, luminância relativa)
+dá 3,98:1 sobre `--bg` e 3,71:1 sobre `--surface` — os dois abaixo do próprio piso de 4,5:1 que
+`§7` exige para texto · troquei para `#7f7f98` (5,07:1 e 4,72:1), o tom mais próximo do original
+que cumpre a regra · há teste (`tests/unit/design/contraste.test.ts`) que recalcula o contraste a
+partir do `globals.css` de verdade, não de uma cópia — mudar uma cor sem olhar o contraste
+reprova o build, que é o que "contraste AA verificado" (critério do TICKET-013) precisa
+significar para não virar promessa.
+
+2026-08-18 · O `Sheet` usa `Dialog` do pacote `radix-ui` (não `@radix-ui/react-dialog` avulso) ·
+o projeto já depende de `radix-ui@1.6.7`, que reexporta todos os primitivos por namespace
+(`Dialog`, `Toast`, …) · instalar o pacote avulso duplicaria a dependência.
+
+2026-08-18 · `/dev/ui` devolve 404 em produção (`notFound()` se `NODE_ENV === 'production'`) ·
+é página de trabalho, não faz parte do produto, e deixar rota de `/dev` navegável em produção é
+superfície de graça para quem procura · verificado no browser: sem scroll horizontal em 390px,
+Sheet trava e libera o scroll do body, Toast dispara com aria-live (a região oculta de anúncio do
+Radix), viewport do toast já limpa a faixa da tab bar de 82px de §3.3.
