@@ -1001,3 +1001,14 @@ disso pra ler a orientação do EXIF e não deixar a foto de lado. `sharp` virou
 nada o instalava de verdade). `mediaParaPortfolio()` só devolve foto com `consent_id` setado E
 `consents.revoked_at is null` — testado ponta a ponta: revogar o consentimento tira a foto da
 lista na mesma consulta seguinte, sem cache no meio.
+
+2026-08-18 · TICKET-054, direitos do titular: `POST .../erase` faz eliminação em UM estágio só
+(cofre e mídia somem de verdade, na hora), não os "3 estágios" que o backlog descreve (pedido →
+30 dias de carência → purga final via job `lgpd_retention`, §7). O job de retenção diário ainda
+não existe nesta base — quando nascer, ele é quem cuida da carência e da purga final da linha de
+`clients` propriamente dita (hoje ela só é anonimizada + soft-deleted, nunca hard-deleted, porque
+`tickets`/`appointments` ainda referenciam o `id` dela pro registro fiscal de 5 anos). `data-export`
+devolve só JSON — o "+PDF" do `02-API.md` fica pra quando existir necessidade real de um formato
+legível fora do navegador; JSON já cumpre portabilidade (LGPD art. 18, VI) sozinho. Exportar decifra
+o cofre (é dado DA titular, diferente de `abrirFicha`) e grava `vault_access_log` com `action:
+'export'`, distinto de `'read'`.
