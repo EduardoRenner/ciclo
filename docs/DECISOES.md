@@ -478,3 +478,44 @@ não haja ninguém depois dele.
 `timeOff` · folga é o profissional fora do ar; nenhuma capacidade paralela muda isso. Já dois
 agendamentos simultâneos (ex.: duas clientes secando esmalte) são exatamente o caso que
 `parallel_capacity > 1` existe para permitir.
+
+2026-08-18 · `src/core/scheduling/state.ts` lê o diagrama de `§6` de um jeito específico: `arrived`
+só transiciona para `done`, nunca volta para `canceled` (a seta de cancelamento no topo do
+diagrama, ambígua em ASCII, foi lida como saindo de `pending`/`confirmed`, não de `arrived` — faz
+sentido de negócio: depois que a cliente chegou, o caminho é concluir ou marcar falta, não
+cancelar). `no_show` só existe a partir de `confirmed`, nunca de `pending` — marcar falta de quem
+nem chegou a confirmar não é "falta", é `expired`. Teste exaustivo cobre os 49 pares possíveis.
+
+2026-08-18 · A corrida de duas requisições pelo mesmo horário (E59) não usa lock nenhum na
+aplicação — é a constraint `appointments_no_overlap` (exclusion do Postgres) que resolve, como a
+FAQ manda explicitamente. `criarAgendamento()` só tenta o insert e traduz o erro `23P01`
+(exclusion_violation) em `409 SLOT_TAKEN`. Testado com `Promise.allSettled` de duas chamadas
+simultâneas de verdade contra o banco: uma cria, a outra recebe o 409.
+
+2026-08-18 · As 3 alternativas do 409 (E71) usam só o mesmo profissional, em até 7 dias · o
+fallback multi-profissional que a FAQ descreve ("se não houver 3 em 7 dias, complete com outros
+profissionais") não foi implementado — é a opção mais simples que atende ao critério de aceite
+("conflito devolve 409 com 3 alternativas", que não especifica a variante multi-profissional).
+Fica anotado para quando/se um cliente real pedir.
+
+2026-08-18 · Remarcar revalida disponibilidade tentando o UPDATE direto (mesma exclusion
+constraint), não um SELECT antes — mesma razão do E59: SELECT-então-UPDATE tem janela de corrida
+que o insert direto não tem.
+
+2026-08-18 · `concluirAgendamento()` cria a comanda (`tickets`) vazia, sem itens — popular a
+comanda é do módulo de comanda, que ainda não existe. A idempotência de "concluir duas vezes não
+duplica comanda" é por busca antes do insert (`appointment_id` não tem índice único ainda), não
+por constraint do banco — a segunda tentativa de "concluir" já esbarra antes disso na transição
+ilegal (`done → done`), então na prática a busca defensiva nunca chega a ser exercida por essa
+via; ela segura o caso de um retry de rede que perdeu a resposta da primeira chamada.
+
+2026-08-18 · `appointment:read`/`update` para o papel `professional` (escopo `own`) não ganhou
+filtro extra na consulta, ao contrário do `client:own` (TICKET-018) que também ficou sem — mas
+aqui não é uma lacuna: a política de RLS de `appointments` (não a genérica do tenant) já trava a
+visão por profissional via `can_see_appointment()`, então o banco faz o trabalho que faltava para
+`clients`.
+
+2026-08-18 · Tela em `/agenda/novo` (é para onde o FAB da tab bar já apontava desde o TICKET-014)
+· formulário simples com seleção de serviço/profissional/cliente e horário livre — não um
+seletor de slots disponíveis (isso pede o endpoint `GET /availability`, que ainda não existe). Em
+conflito, mostra as alternativas do 409 como chips tocáveis que reenviam com o novo horário.
