@@ -758,3 +758,11 @@ gaps, o blend 60/40 com o padrão junto com o próprio descarte de gaps > 3× o 
 matematicamente impossível estourar o teto de 2,5× por ali (o pior caso, gap = 3×padrão, ainda
 fica bem abaixo). O teto só é alcançável no braço de 3+ gaps (mediana pura, sem blend) — o teste
 foi refeito nesse braço.
+
+2026-08-18 · TICKET-036 gravava `client_cycles` sem `value_at_risk_cents` — a coluna ficava no
+default `0` para toda linha, mesmo `due`/`late`/`at_risk`/`lost` · o job só computava
+`personal_cycle_days`/`predicted_on`/`late_days`/`state`, mas a fórmula do §5.3 ("valorParado =
+preço atual do serviço × probabilidade de recuperação") nunca rodava. Sem isso a `v_recover_revenue`
+existe mas devolve tudo com valor zero, e o TICKET-037 ("Recuperar receita") não teria número
+nenhum para mostrar. Adicionado `valorEmRiscoCents()` nos dois caminhos (lote e tempo real), com
+teste de integração conferindo o valor exato (6000 × 0,65 = 3900 para `late`).

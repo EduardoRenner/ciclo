@@ -39,6 +39,26 @@ async function buscarTudoPaginado<T>(
 type Combinacao = { clientId: string; serviceId: string }
 
 /**
+ * §5.3, "Valor em risco": `preço atual do serviço × probabilidade de
+ * recuperação por estado`. `on_track` não entra na tela de recuperação
+ * (a view `v_recover_revenue` já filtra por estado), mas o job roda para
+ * todo estado — 0 aqui é o valor correto para quem não está em risco.
+ */
+const PROBABILIDADE_POR_ESTADO: Record<string, number> = {
+  on_track: 0,
+  due: 0.85,
+  late: 0.65,
+  at_risk: 0.35,
+  lost: 0.12,
+}
+
+function valorEmRiscoCents(priceCents: number, state: string): number {
+  const probabilidade = PROBABILIDADE_POR_ESTADO[state] ?? 0
+  // "sempre arredondado para baixo" — nunca prometer mais do que entrega.
+  return Math.floor(priceCents * probabilidade)
+}
+
+/**
  * TICKET-036. Recalcula `client_cycles` de um tenant inteiro numa passada só:
  * carrega tudo em poucas consultas (não uma por cliente) e resolve em
  * memória — é o que faz "10 mil clientes em <60s" ser possível.
@@ -66,10 +86,11 @@ export async function recomputarCiclosDoTenant(db: Cliente, tenantId: string, ti
         .in('status', ['pending', 'confirmed', 'arrived'])
         .order('id'),
     ),
-    buscarTudoPaginado(() => db.from('services').select('id, cycle_days').eq('tenant_id', tenantId).order('id')),
+    buscarTudoPaginado(() => db.from('services').select('id, cycle_days, price_cents').eq('tenant_id', tenantId).order('id')),
   ])
 
   const cycleDaysPorServico = new Map(servicos.map((s) => [s.id, s.cycle_days]))
+  const precoPorServico = new Map(servicos.map((s) => [s.id, s.price_cents]))
 
   const temFuturoPorCombinacao = new Set(futuros.filter((a) => a.client_id).map((a) => `${a.client_id}:${a.service_id}`))
 
@@ -111,6 +132,7 @@ export async function recomputarCiclosDoTenant(db: Cliente, tenantId: string, ti
       predicted_on: resultado.predictedDate.toString(),
       late_days: Math.trunc(resultado.lateDays),
       state: resultado.state,
+      value_at_risk_cents: valorEmRiscoCents(precoPorServico.get(serviceId) ?? 0, resultado.state),
       computed_at: new Date().toISOString(),
     })
   }
@@ -157,7 +179,7 @@ export async function recomputarCicloDeUmAtendimento(
       .eq('client_id', combinacao.clientId)
       .eq('service_id', combinacao.serviceId)
       .in('status', ['pending', 'confirmed', 'arrived']),
-    db.from('services').select('cycle_days').eq('id', combinacao.serviceId).maybeSingle(),
+    db.from('services').select('cycle_days, price_cents').eq('id', combinacao.serviceId).maybeSingle(),
   ])
   if (concluidos.error) throw new AppError('INTERNAL', { cause: concluidos.error })
   if (futuros.error) throw new AppError('INTERNAL', { cause: futuros.error })
@@ -187,6 +209,7 @@ export async function recomputarCicloDeUmAtendimento(
       predicted_on: resultado.predictedDate.toString(),
       late_days: Math.trunc(resultado.lateDays),
       state: resultado.state,
+      value_at_risk_cents: valorEmRiscoCents(servico.data.price_cents, resultado.state),
       computed_at: new Date().toISOString(),
     },
     { onConflict: 'tenant_id,client_id,service_id' },

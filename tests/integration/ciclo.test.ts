@@ -111,8 +111,15 @@ describe('recomputarCiclosDoTenant', () => {
 
       await recomputarCiclosDoTenant(svc, tenantId, TZ, new Date().toISOString().slice(0, 10))
 
-      const linha = await svc.from('client_cycles').select('state, late_days').eq('tenant_id', tenantId).eq('client_id', cliente).single()
+      const linha = await svc
+        .from('client_cycles')
+        .select('state, late_days, value_at_risk_cents')
+        .eq('tenant_id', tenantId)
+        .eq('client_id', cliente)
+        .single()
       expect(linha.data?.state).toBe('late')
+      // §5.3: preço do serviço (6000 centavos) × probabilidade de 'late' (0,65), arredondado para baixo.
+      expect(linha.data?.value_at_risk_cents).toBe(3900)
     },
     30_000,
   )
