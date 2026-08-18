@@ -7,6 +7,7 @@ import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import Chip from '@/components/ui/chip'
 import { useToast } from '@/components/ui/toast'
+import { apiFetch } from '@/lib/offline/api-client'
 
 type Servico = { id: string; name: string; duration_min: number; price_cents: number }
 type Profissional = { id: string; display_name: string }
@@ -45,17 +46,30 @@ export default function FormularioAgendamento({
     setErro(null)
     setAlternativas(null)
 
+    const corpo = {
+      clientDraft: { name: clienteNome, phone: clienteTelefone },
+      serviceId,
+      professionalId,
+      startsAt: startsAtIso,
+      origin: 'app',
+    }
+
     iniciarTransicao(async () => {
+      // §4.2: sem rede, não dá pra saber se o horário ainda está livre nem
+      // pra mostrar alternativas de `SLOT_TAKEN` — a única coisa correta é
+      // enfileirar e revalidar quando a mutação sair da fila de verdade. O
+      // servidor é quem decide se o horário oferecido offline ainda existe.
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        await apiFetch('/api/v1/appointments', { method: 'POST', body: corpo })
+        mostrarToast({ tom: 'ok', titulo: 'Sem conexão', descricao: 'Agendamento entrou na fila e será enviado quando a conexão voltar.' })
+        router.push('/agenda')
+        return
+      }
+
       const r = await fetch('/api/v1/appointments', {
         method: 'POST',
         headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
-        body: JSON.stringify({
-          clientDraft: { name: clienteNome, phone: clienteTelefone },
-          serviceId,
-          professionalId,
-          startsAt: startsAtIso,
-          origin: 'app',
-        }),
+        body: JSON.stringify(corpo),
       })
       const json = (await r.json()) as {
         data?: { appointment: { id: string } }

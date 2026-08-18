@@ -1012,3 +1012,33 @@ devolve só JSON — o "+PDF" do `02-API.md` fica pra quando existir necessidade
 legível fora do navegador; JSON já cumpre portabilidade (LGPD art. 18, VI) sozinho. Exportar decifra
 o cofre (é dado DA titular, diferente de `abrirFicha`) e grava `vault_access_log` com `action:
 'export'`, distinto de `'read'`.
+
+2026-08-18 · TICKET-058, observabilidade · `send_reminders` (TICKET-030) roda direto a cada
+tick, sem passar por `job_queue` — não havia como checar "sem execução em 30 min" (J129) sem uma
+fonte de verdade dedicada. Criada `cron_heartbeats` (migration 0014): tabela global (não por
+tenant, é sinal de operação da plataforma), sem política de RLS pra `authenticated`/`anon` — só
+`service_role` toca nela, direto ou via `/api/health`. `/api/health` não checa PSP (Asaas, ainda
+bloqueado por credencial) nem taxa de erro 5xx (é métrica de request HTTP — Sentry/Vercel
+Analytics já cobrem, sem endpoint próprio pra duplicar). Sem autenticação de propósito: é o
+endpoint que o monitor externo bate de fora, e só devolve contagens agregadas/booleanos, nada de
+tenant específico. Runbook de incidente em `docs/runbooks/incidente.md` (já referenciado por
+`04-SEGURANCA-LGPD.md §4`, checklist não editado — arquivo de especificação fechada). Teste de
+restauração de backup registrado como pendente (tabela no runbook) — é operação humana fora do
+código, não dá pra "fazer" via ticket de desenvolvimento, só documentar o procedimento e o lugar
+onde a data fica registrada quando alguém rodar de verdade.
+
+2026-08-18 · TICKET-055, PWA e offline: service worker escrito à mão (`public/sw.js`), sem
+Workbox/next-pwa — só intercepta GET, nunca `/api/*` (generaliza a regra do CLAUDE.md de nunca
+cachear `/vault`/mídia assinada pra toda chamada de API, não só essas duas). A fila de mutações
+tem a lógica de ordem/retry/conflito isolada em `src/core/offline/queue.ts` (puro, testado); o
+adaptador de IndexedDB (`src/lib/offline/db.ts`) e o `apiFetch()` (`src/lib/offline/api-client.ts`)
+não têm teste automatizado — `vitest.config.ts` roda em `environment: 'node'`, sem jsdom/
+IndexedDB, mesmo limite já registrado para as telas sob `(app)/` que exigem sessão de browser.
+Verificação real fica para DevTools → Network → Offline. Retrofit de "entra na fila" feito só em
+`agenda/novo` (criar agendamento) — é o caminho que o critério de aceite pede; os outros
+formulários continuam com `fetch()` cru até precisarem da mesma proteção. Card de conflito
+(`ResolucaoDeFila`) mostra que uma mutação falhou e oferece "tentar de novo"/"descartar", mas não
+as "duas versões" lado a lado que o `§4.2.5` descreve — mostrar a versão do servidor exigiria uma
+leitura genérica por URL que não existe ainda; registrado como simplificação, não como criado por
+engano. `manifest.json` referencia ícones em `/icons/` que ainda não existem (asset de design,
+fora do escopo de código).

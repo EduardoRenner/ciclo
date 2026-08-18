@@ -1,4 +1,5 @@
 import ToastProvider from '@/components/ui/toast'
+import ResolucaoDeFila from '@/components/shell/resolucao-de-fila'
 import TabBar from '@/components/shell/tab-bar'
 
 /**
@@ -18,6 +19,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         {/* §3.3: tab bar de 82px exige essa folga, senão o fim da lista fica escondido atrás dela. */}
         <main className="px-[18px] pb-24">{children}</main>
         <TabBar />
+        <ResolucaoDeFila />
       </div>
     </ToastProvider>
   )
