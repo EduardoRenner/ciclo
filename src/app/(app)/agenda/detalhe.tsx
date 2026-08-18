@@ -1,5 +1,7 @@
 'use client'
 
+import Link from 'next/link'
+
 import { useState, useTransition } from 'react'
 
 import Button from '@/components/ui/button'
@@ -147,6 +149,14 @@ export default function DetalheAgendamento({
             <Button variante="danger" largura="cheia" disabled={pendente} onClick={() => setMostrarCancelar(true)}>
               Cancelar
             </Button>
+          ) : null}
+          {estadoAtual === 'done' ? (
+            <Link
+              href={`/comanda/agendamento/${agendamento.id}`}
+              className="flex h-12 w-full items-center justify-center rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 text-corpo font-semibold text-txt"
+            >
+              Ver comanda
+            </Link>
           ) : null}
           {acoesDeEstado.length === 0 && !podeRemarcar && !podeCancelar ? (
             <p className="text-secundario text-txt-2">Esse agendamento não tem mais ação disponível.</p>
