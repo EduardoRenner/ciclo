@@ -587,6 +587,21 @@ export type Database = {
           },
         ]
       }
+      cron_heartbeats: {
+        Row: {
+          kind: string
+          last_run_at: string
+        }
+        Insert: {
+          kind: string
+          last_run_at?: string
+        }
+        Update: {
+          kind?: string
+          last_run_at?: string
+        }
+        Relationships: []
+      }
       health_records: {
         Row: {
           alert_label: string | null

@@ -2,6 +2,7 @@ import { withNovoTenant } from '@/server/db/with-tenant'
 import { exigirEnv } from '@/server/db/server-client'
 import { AppError } from '@/server/http/errors'
 import { rota } from '@/server/http/handler'
+import { registrarHeartbeat } from '@/server/services/health'
 import { enviarLembretesPendentes } from '@/server/services/lembretes'
 
 /**
@@ -17,5 +18,11 @@ export const GET = rota(async (req) => {
   const recebido = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
   if (!esperado || recebido !== esperado) throw new AppError('UNAUTHENTICATED')
 
-  return withNovoTenant((svc) => enviarLembretesPendentes(svc, new Date().toISOString(), exigirEnv('NEXT_PUBLIC_APP_URL')))
+  return withNovoTenant(async (svc) => {
+    const resultado = await enviarLembretesPendentes(svc, new Date().toISOString(), exigirEnv('NEXT_PUBLIC_APP_URL'))
+    // Depois de rodar (sucesso ou não): "sem execução" é ausência de tentativa, não ausência de
+    // lembrete pra mandar — um tick vazio (nenhum lembrete devido agora) ainda conta como rodou.
+    await registrarHeartbeat(svc, 'send_reminders')
+    return resultado
+  })
 })
