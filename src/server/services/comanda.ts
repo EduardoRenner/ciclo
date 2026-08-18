@@ -2,6 +2,7 @@ import { z } from 'zod'
 
 import { calcularComissaoItem, calcularTotalItem, calcularTotaisComanda, type BaseComissao } from '@/core/comanda/totals'
 import { AppError } from '@/server/http/errors'
+import { baixarEstoqueDaComanda, estornarBaixaDaComanda } from '@/server/services/estoque'
 
 import type { Database } from '@/server/db/types.gen'
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -216,5 +217,28 @@ export async function fecharComanda(db: Cliente, tenantId: string, ticketId: str
     .single()
   if (error) throw new AppError('INTERNAL', { cause: error })
 
+  // §5.6/TICKET-044: baixa DEPOIS de fechar, nunca ao abrir — uma comanda aberta pode ganhar e
+  // perder item várias vezes antes de fechar, e nada disso deveria mexer em estoque de verdade.
+  await baixarEstoqueDaComanda(db, tenantId, ticketId)
+
   return fechado
+}
+
+/**
+ * F81: estorno de comanda FECHADA (não paga — comanda `paid` precisa reverter pagamento também,
+ * escopo do TICKET-043, ainda bloqueado por credencial). Reverte o estoque com movimento `return`
+ * novo (nunca apaga o `out` original) e move a comanda pra `canceled`.
+ */
+export async function cancelarComandaFechada(db: Cliente, tenantId: string, ticketId: string) {
+  const { data: ticket, error: erroTicket } = await db.from('tickets').select('status').eq('tenant_id', tenantId).eq('id', ticketId).maybeSingle()
+  if (erroTicket) throw new AppError('INTERNAL', { cause: erroTicket })
+  if (!ticket) throw new AppError('NOT_FOUND')
+  if (ticket.status !== 'closed') throw new AppError('INVALID_TRANSITION', { message: 'Só dá para cancelar uma comanda fechada e ainda não paga.' })
+
+  await estornarBaixaDaComanda(db, tenantId, ticketId)
+
+  const { data: cancelado, error } = await db.from('tickets').update({ status: 'canceled' }).eq('tenant_id', tenantId).eq('id', ticketId).select('*').single()
+  if (error) throw new AppError('INTERNAL', { cause: error })
+
+  return cancelado
 }
