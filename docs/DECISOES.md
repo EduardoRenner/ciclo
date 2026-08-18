@@ -815,3 +815,12 @@ cron do Vercel atrase. Mesmo padrão do TICKET-036 (`recompute-cycles`): dispara
 cada tenant só processa quando bate a hora local certa. O job não reimplementa os limites (7 dias
 entre campanhas, janela de horário, opt-out) — só decide QUEM entra na lista a cada rodada,
 reaproveitando `enviarParaRecuperar` (TICKET-037) que já aplica tudo isso.
+
+2026-08-18 · TICKET-039 não define COMO ligar agendamento a campanha — não existe link de
+rastreio no booking público (fora de escopo do MVP) · atribuição por tempo: o primeiro
+agendamento que o cliente cria depois de receber uma campanha, dentro de 30 dias, é o que ela
+"trouxe" (`core/attribution/compute.ts`). Cada campanha reivindica no máximo um agendamento e
+vice-versa, para não contar a mesma receita duas vezes quando o cliente recebeu campanhas
+repetidas. Valor em centavos vem de `appointments.price_cents` (preço congelado na criação), não
+de `tickets.total_cents` — o TICKET-042 (comanda com itens de verdade) ainda não existe nesta
+base; revisar para usar o total real da comanda fechada quando ele existir.
