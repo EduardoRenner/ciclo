@@ -47,7 +47,7 @@ function redigir(valor: unknown, profundidade = 0): unknown {
 }
 
 /** Primeiro IP do `X-Forwarded-For` — o da pessoa; os seguintes são proxies. */
-function ipDe(req: Request): string | null {
+export function ipDe(req: Request): string | null {
   const encaminhado = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
   return encaminhado || req.headers.get('x-real-ip') || null
 }

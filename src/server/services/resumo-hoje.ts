@@ -8,7 +8,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 type Cliente = SupabaseClient<Database>
 
 const COLUNAS_HOJE =
-  'id, starts_at, ends_at, status, price_cents, client_note, professional_id, clients ( name ), services ( name ), professionals ( display_name )'
+  'id, starts_at, ends_at, status, price_cents, client_note, professional_id, clients ( name, health_records ( has_alert, alert_label ) ), services ( name ), professionals ( display_name )'
 
 /** Mesmo formato de `LinhaAgendaDia` (TICKET-022) — dá para abrir no mesmo `DetalheAgendamento` da tela de agenda, sem duplicar o sheet de ações. */
 export type LinhaHoje = {
@@ -19,7 +19,7 @@ export type LinhaHoje = {
   price_cents: number
   client_note: string | null
   professional_id: string
-  clients: { name: string } | null
+  clients: { name: string; health_records: { has_alert: boolean; alert_label: string | null }[] } | null
   services: { name: string } | null
   professionals: { display_name: string } | null
 }

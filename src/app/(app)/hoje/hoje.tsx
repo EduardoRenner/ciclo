@@ -43,6 +43,7 @@ export default function Hoje({ resumo }: { resumo: ResumoHoje }) {
               clienteNome={resumo.nextClient.clients?.name ?? 'Cliente'}
               servicoNome={resumo.nextClient.services?.name ?? 'Serviço'}
               status={resumo.nextClient.status as EstadoAgendamento}
+              alertaSaude={resumo.nextClient.clients?.health_records?.some((h) => h.has_alert) ?? false}
             />
           </button>
         </section>

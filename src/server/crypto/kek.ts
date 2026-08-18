@@ -1,5 +1,7 @@
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto'
 
+import { deBytea, paraBytea } from '@/server/crypto/bytea'
+
 /**
  * Só o envelope da chave (§8: "KEK → DEK por tenant, gerada no onboarding,
  * guardada CIFRADA em tenant_keys"). O `encryptVault`/`decryptVault` que cifra
@@ -25,15 +27,6 @@ function kek(): Buffer {
 function versaoKek(): number {
   const v = Number(process.env.VAULT_KEK_VERSION ?? '1')
   return Number.isInteger(v) && v > 0 ? v : 1
-}
-
-/** Literal hex de bytea que o PostgREST espera (`\x` + hex) — é como o schema já grava binário. */
-function paraBytea(buf: Buffer): string {
-  return `\\x${buf.toString('hex')}`
-}
-
-function deBytea(literal: string): Buffer {
-  return Buffer.from(literal.replace(/^\\x/, ''), 'hex')
 }
 
 /**

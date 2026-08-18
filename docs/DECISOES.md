@@ -893,3 +893,26 @@ fina por cima) como o primitivo que a rotação de verdade vai usar. `key_versio
 registro cifrado é só trilha de auditoria de qual rotação estava vigente na escrita — decidir
 decifrar por versão específica seria over-engineering sem um caso de uso real ainda (a única forma
 de a DEK mudar de fato seria comprometimento, que é reemissão, não rotação).
+
+2026-08-18 · TICKET-044, sem tela dedicada de estoque nesta rodada · o critério de aceite do
+ticket ("fechar comanda gera stock_moves · estorno gera compensação · nunca deleta movimento") é
+inteiramente sobre comportamento de servidor, testável por integração — não pede uma tela nova.
+Cadastro de produto e ficha de consumo (`service_products`) ficam acessíveis só via API por
+enquanto; a tela de catálogo de produtos/estoque fica para quando um ticket futuro (ou o
+TICKET-045, alertas de estoque, que precisa mostrar algo na tela Hoje) pedir explicitamente.
+`POST /api/v1/inventory/entries` cobre a única lacuna que o próprio `avg_cost_cents` (0 por
+default, nunca escrito por nenhum fluxo automático) deixaria sem sentido: sem uma forma manual de
+registrar compra/entrada, a média móvel do TICKET-044 nunca sairia do papel.
+
+2026-08-18 · TICKET-050, anamnese por vertical: `alert_label` nunca usa o `label` da pergunta
+(frase clínica completa, ex.: "Já teve reação a cola de cílios?") — o pack não define um rótulo
+curto por pergunta, e inventar um dicionário id→rótulo sem fonte na especificação seria
+over-engineering. Uso rótulo genérico fixo ("Atenção"): cumpre "só o booleano fica em claro" e
+"rótulo nunca contém diagnóstico" ao mesmo tempo, ao custo de não diferenciar qual pergunta
+disparou — quem quer saber qual, abre a ficha (AAL2 + log). `alertaDoCliente()` é leitura leve
+(sem decifrar, sem gravar em `vault_access_log`) para o card do "próximo atendimento" e futura
+ficha 360°; só `abrirFicha()` conta como abertura de verdade. Permissão da rota usa `vault:own`
+literal da tabela do §3.3 — `manager` não tem `vault:*` nem `vault:own` na tabela, então fica sem
+acesso ao cofre por design (só `owner` via `*` e `professional` via `own`); e o escopo `own` do
+`professional` não é filtrado por profissional nesta implementação (mesma lacuna que já existe em
+`appointment:own`/`client:own` em outras rotas — RLS não tem política extra pra isso ainda).

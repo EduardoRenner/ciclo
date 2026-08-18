@@ -31,6 +31,8 @@ type Props = React.ComponentPropsWithoutRef<'div'> & {
   profissionalNome?: string
   /** §5.4: `score ≥ 0,60` acende o alerta de risco de falta. */
   altoRisco?: boolean
+  /** §9/TICKET-050: `health_records.has_alert` — nunca o rótulo clínico, só o sinal. */
+  alertaSaude?: boolean
 }
 
 /** §4: barra lateral de 3px colorida por status, horário à esquerda em tabular. */
@@ -42,6 +44,7 @@ export default function AppointmentRow({
   status,
   profissionalNome,
   altoRisco,
+  alertaSaude,
   ...props
 }: Props) {
   return (
@@ -57,6 +60,11 @@ export default function AppointmentRow({
             {altoRisco ? (
               <span aria-label="Risco alto de falta" title="Risco alto de falta">
                 ⚡
+              </span>
+            ) : null}
+            {alertaSaude ? (
+              <span aria-label="Atenção na ficha de saúde" title="Atenção na ficha de saúde" className="text-bad">
+                ⚠
               </span>
             ) : null}
             <span className="truncate">{clienteNome}</span>
