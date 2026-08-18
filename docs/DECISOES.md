@@ -384,3 +384,29 @@ booking público (Sprint 2) expuser o fuso para clientes fora desse horário.
 2026-08-18 · Folga (`time_off`) é apagada de verdade, não soft delete · não está na lista de
 "nunca deletar" da regra 11 do CLAUDE.md (agendamento, movimento de estoque, auditoria) — é um
 bloqueio de agenda que a pessoa cria e desfaz por engano, não histórico protegido.
+
+2026-08-18 · **Sétimo defeito: `libphonenumber-js` sozinho não cumpre "rejeite DDD inexistente"
+(D49).** Medido: `parsePhoneNumberFromString('10987654321', 'BR')?.isValid()` devolve `true` —
+a biblioteca valida o *formato* do número brasileiro (2 dígitos de DDD + 9 do celular), não se o
+DDD foi de fato atribuído pela Anatel. DDD 10 nunca existiu · adicionada uma lista fixa dos 67
+DDDs reais em `telefone.ts`, conferida depois do `isValid()` da biblioteca.
+
+2026-08-18 · Busca por telefone e por nome não podem ir no mesmo `.or()` do PostgREST · o termo
+digitado como telefone ("(11) 98765-4321") tem parênteses e espaço, que colidem com a sintaxe do
+filtro composto do PostgREST (que usa `(`, `)` e `,` como separador) · quando o termo normaliza
+para um telefone válido, a busca vira só `eq(phone_hash, hash)`, exata; senão vira `ilike` no
+nome. Nunca os dois na mesma consulta.
+
+2026-08-18 · Telefone nunca é buscado por `ilike` no `phone_e164` · não há índice ali (só no hash
+e no trigram do nome) — um `ilike` variaria a tabela inteira a cada dígito digitado.
+
+2026-08-18 · `client:own` (papel `professional` na tabela de §3.3) não restringe a consulta a "só
+os clientes que esse profissional atendeu" · a política de RLS de `clients` é a genérica do
+tenant (`has_tenant`), sem a trava por profissional que `appointments` tem — restringir por
+profissional exigiria juntar com `appointments`/`tickets`, que ainda não existem. Fica para o
+ticket que constrói agenda/comanda; por ora `client:own` só libera a permissão, sem escopo extra
+na consulta, o mesmo tratamento que a permissão recebeu no TICKET-010.
+
+2026-08-18 · `DELETE /api/v1/clients/:id` marca `deleted_at`, não `active = false` · a tabela
+`clients` já tem a coluna certa para isso (D45), diferente de `services`/`professionals`, que
+usam `active`.
