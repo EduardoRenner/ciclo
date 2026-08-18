@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import Card from '@/components/ui/card'
 import EmptyState from '@/components/ui/empty-state'
 import Skeleton from '@/components/ui/skeleton'
+import { cn } from '@/lib/utils'
 
 type ClienteLinha = {
   id: string
@@ -15,6 +16,14 @@ type ClienteLinha = {
   phone_e164: string | null
   tags: string[]
 }
+
+type Segmento = 'aniversariante' | 'primeira_visita_sem_retorno' | 'ticket_alto'
+
+const SEGMENTOS: { valor: Segmento; rotulo: string }[] = [
+  { valor: 'aniversariante', rotulo: '🎂 Aniversariante' },
+  { valor: 'primeira_visita_sem_retorno', rotulo: 'Primeira visita sem volta' },
+  { valor: 'ticket_alto', rotulo: 'Ticket alto' },
+]
 
 /** `(11) 98765-4321`, o formato que a profissional reconhece de cabeça. */
 function formatarTelefone(e164: string | null): string | null {
@@ -24,6 +33,7 @@ function formatarTelefone(e164: string | null): string | null {
 
 export default function ListaClientes({ iniciais }: { iniciais: ClienteLinha[] }) {
   const [termo, setTermo] = useState('')
+  const [segmento, setSegmento] = useState<Segmento | null>(null)
   const [clientes, setClientes] = useState(iniciais)
   const [carregando, setCarregando] = useState(false)
   const debounce = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
@@ -36,7 +46,21 @@ export default function ListaClientes({ iniciais }: { iniciais: ClienteLinha[] }
       .finally(() => setCarregando(false))
   }, [])
 
+  const alternarSegmento = useCallback((valor: Segmento) => {
+    setTermo('')
+    setSegmento((atual) => (atual === valor ? null : valor))
+  }, [])
+
   useEffect(() => {
+    if (segmento) {
+      setCarregando(true)
+      fetch(`/api/v1/clients?segment=${segmento}`)
+        .then((r) => r.json() as Promise<{ data?: { clients: ClienteLinha[] } }>)
+        .then((json) => setClientes(json.data?.clients ?? []))
+        .finally(() => setCarregando(false))
+      return
+    }
+
     // Debounce: sem ele, cada letra digitada dispara uma busca — no 4G do
     // subsolo (§10) isso significa uma fila de respostas fora de ordem.
     clearTimeout(debounce.current)
@@ -47,7 +71,7 @@ export default function ListaClientes({ iniciais }: { iniciais: ClienteLinha[] }
     debounce.current = setTimeout(() => buscar(termo), 300)
     return () => clearTimeout(debounce.current)
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `iniciais` só serve de valor inicial; recolocá-la aqui reexecutaria a busca a cada render do servidor.
-  }, [termo, buscar])
+  }, [termo, segmento, buscar])
 
   return (
     <div>
@@ -60,9 +84,28 @@ export default function ListaClientes({ iniciais }: { iniciais: ClienteLinha[] }
         inputMode="search"
         placeholder="Nome ou telefone"
         value={termo}
-        onChange={(e) => setTermo(e.target.value)}
-        className="mb-4 h-12 w-full rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-4 text-corpo text-txt"
+        onChange={(e) => {
+          setSegmento(null)
+          setTermo(e.target.value)
+        }}
+        className="mb-3 h-12 w-full rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-4 text-corpo text-txt"
       />
+
+      <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
+        {SEGMENTOS.map((s) => (
+          <button
+            key={s.valor}
+            type="button"
+            onClick={() => alternarSegmento(s.valor)}
+            className={cn(
+              'shrink-0 rounded-[var(--radius-pill)] border px-3.5 py-2 text-secundario font-semibold transition',
+              segmento === s.valor ? 'border-acc-2 bg-acc-soft text-acc-2' : 'border-line-2 bg-surface-2 text-txt-2',
+            )}
+          >
+            {s.rotulo}
+          </button>
+        ))}
+      </div>
 
       {carregando ? (
         <div className="flex flex-col gap-2">
@@ -77,11 +120,13 @@ export default function ListaClientes({ iniciais }: { iniciais: ClienteLinha[] }
         <Card className="p-0">
           <EmptyState
             icone={<Users aria-hidden className="size-6" />}
-            titulo={termo ? 'Nenhuma cliente encontrada' : 'Nenhuma cliente ainda'}
+            titulo={segmento ? 'Ninguém nesse grupo agora' : termo ? 'Nenhuma cliente encontrada' : 'Nenhuma cliente ainda'}
             descricao={
-              termo
-                ? 'Confira a grafia do nome ou o telefone digitado.'
-                : 'Cadastre a primeira cliente para começar a marcar horários.'
+              segmento
+                ? 'Esse filtro atualiza todo dia — volte mais tarde.'
+                : termo
+                  ? 'Confira a grafia do nome ou o telefone digitado.'
+                  : 'Cadastre a primeira cliente para começar a marcar horários.'
             }
             acao={<Link href="/clientes/nova">Cadastrar cliente</Link>}
           />

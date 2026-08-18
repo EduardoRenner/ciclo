@@ -855,3 +855,17 @@ confirmação fica para quando existir necessidade real de refletir isso. `pagou
 do limiar de 0,45 ("exige sinal no booking público") também depende do TICKET-032/031 (Asaas,
 bloqueado por credencial do Eduardo) — só o cálculo e o alerta ⚡ (limiar 0,60) na agenda estão
 prontos nesta sessão.
+
+2026-08-18 · `pnpm build` falhando de forma inconsistente e sem relação com o código (module not
+found em `/api/v1/appointments`, depois em `/dev/ui`, depois `pages-manifest.json` ausente mesmo
+com "Generating static pages (40/40)" completo) · causa raiz: DOIS servidores dev leftover ainda
+rodando desta sessão — um `pnpm dev --port 3015` iniciado horas antes (memória menciona "sobe
+local e mostra agora") e um preview server gerenciado pela ferramenta Claude Browser na porta
+3014 — os dois escrevendo na MESMA pasta `.next` que o `pnpm build` também usa. Nenhum dos dois
+aparecia em `ps aux` de forma óbvia (o da porta 3014 nem sequer estava listado por `ps`, só via
+`netstat` + `mcp__Claude_Browser__preview_list`). Corrigido matando os dois processos antes de
+rebuildar. **Padrão pra família inteira:** nunca rode `pnpm build`/`pnpm verify` com `pnpm dev`
+(ou qualquer preview) ativo no mesmo repo — os dois competem pela mesma `.next` e os erros
+resultantes não têm nenhuma relação óbvia com a causa real. Antes de investigar um erro de build
+"impossível" (módulo que existe mas não é encontrado, manifest ausente depois de sucesso
+aparente), cheque `netstat -ano | grep LISTEN` nas portas de dev conhecidas e `preview_list`.
