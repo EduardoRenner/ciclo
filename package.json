@@ -12,7 +12,7 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "test:unit": "vitest run --dir tests/unit --passWithNoTests",
+    "test:unit": "vitest run --dir tests/unit",
     "test:rls": "vitest run --dir tests/rls",
     "test:e2e": "playwright test",
     "verify": "pnpm typecheck && pnpm lint && pnpm test:unit && pnpm test:rls && pnpm build",

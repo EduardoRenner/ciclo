@@ -71,8 +71,34 @@ problema · o job gera `--output json` e um `node -e` reprova o build se houver 
 
 2026-08-18 · `test:rls` ainda tinha `--passWithNoTests`, herdado do TICKET-001 · removido · com a
 flag, apagar `tests/rls/isolation.test.ts` deixaria o `pnpm verify` verde sem nenhum teste de
-isolamento — exatamente o cenário que o TICKET-005 existe para impedir. `test:unit` mantém a
-flag até o primeiro teste de `src/core/` (TICKET-020).
+isolamento — exatamente o cenário que o TICKET-005 existe para impedir. `test:unit` perdeu a flag
+no TICKET-008, quando ganhou o primeiro teste.
+
+2026-08-18 · Onde mora a camada de erro do TICKET-008? A estrutura de pastas da PARTE 1 §7 não
+prevê um lugar para HTTP · `src/server/http/` (`errors.ts`, `response.ts`, `handler.ts`) · é
+orquestração de servidor, não regra de negócio (não pode ir para `core/`, que é puro) e não é do
+cliente (não pode ir para `lib/`); `src/server/` já é a caixa de tudo que fala com o mundo.
+
+2026-08-18 · Formato do `requestId`; a documentação mostra `req_01H…`, que é ULID · `req_` + uuid
+v4 sem hífen · ULID exigiria implementar codificação base32 monotônica só para ter ordenação
+lexicográfica, que ninguém consome; o exemplo da PARTE 3 §1 ilustra, não fixa. O handler também
+reaproveita um `x-request-id` recebido quando ele casa com `^[A-Za-z0-9_-]{8,64}$` — valor fora
+do formato é descartado, não sanitizado, porque ele acaba em log e em header de resposta.
+
+2026-08-18 · `AppError('INTERNAL')` aceitaria mensagem customizada e viraria a porta de saída do
+texto de exceção do Postgres · o construtor ignora `message` quando o código é `INTERNAL` e força
+a mensagem canônica · é o único código que nasce de erro não previsto; deixar a mensagem aberta
+transforma um `catch (e) { throw new AppError('INTERNAL', { message: e.message }) }` distraído em
+vazamento. A causa original continua indo para o log do servidor.
+
+2026-08-18 · Rota que devolve binário (PDF do TICKET-052, CSV) não cabe no envelope JSON · o
+`rota()` deixa passar uma `Response` montada pela própria rota, só injetando o `x-request-id` ·
+o envelope vale para tudo que é JSON, que é o que a UI consome; forçar binário dentro dele
+exigiria base64 no corpo.
+
+2026-08-18 · Faltava `vitest.config.ts`, e o teste do TICKET-008 importa por `@/` · criado, só com
+o alias `@ → src` e `environment: 'node'` · sem ele o teste teria de usar caminho relativo, que
+diverge do resto do código.
 
 2026-08-18 · O critério "bloqueio de merge" do TICKET-007 é configuração do GitHub, não arquivo ·
 os três jobs têm nome estável (`Segredos`, `Qualidade`, `Banco e RLS`) e o README diz quais marcar
