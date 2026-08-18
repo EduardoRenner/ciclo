@@ -1,7 +1,21 @@
+import { limitador } from '@/server/services/rate-limit'
+
 import { AppError } from './errors'
+import { ipDe } from './ip'
 import { resolverRequestId, respostaErro, respostaOk } from './response'
 
 type Handler<Ctx> = (req: Request, ctx: Ctx, requestId: string) => Promise<unknown>
+
+/**
+ * TICKET-057, "rate limit global": um teto por IP em cima de toda `/api/v1`
+ * (e das rotas de cron/health, que também passam por `rota()` — o volume delas
+ * é ínfimo perto de 120/min, então não têm por que ficar de fora). É a rede
+ * embaixo dos limites finos que cada rota sensível já tem (login, booking
+ * público…): aquelas continuam existindo porque sabem o que estão limitando
+ * (tentativa de senha, agendamento); esta aqui só sabe que é IP demais batendo
+ * rápido demais em qualquer coisa.
+ */
+const LIMITE_GLOBAL = { limite: 120, janelaSegundos: 60 }
 
 /**
  * Envelope de log. JSON estruturado, com `request_id` e `tenant_id`, sem PII —
@@ -43,6 +57,9 @@ export function rota<Ctx = unknown>(handler: Handler<Ctx>) {
     const requestId = resolverRequestId(req.headers)
 
     try {
+      const { permitido } = await limitador(`global:ip:${ipDe(req)}`, LIMITE_GLOBAL)
+      if (!permitido) throw AppError.limiteDeTaxa(LIMITE_GLOBAL.janelaSegundos)
+
       const resultado = await handler(req, ctx, requestId)
 
       // Rota que precisa devolver binário (PDF, CSV) monta a própria Response;

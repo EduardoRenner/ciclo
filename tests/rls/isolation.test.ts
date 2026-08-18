@@ -292,6 +292,15 @@ async function semear(f: Fixture, sufixo: string): Promise<void> {
         expires_at: new Date(Date.now() + 7 * 86_400_000).toISOString(),
       },
     ],
+    // TICKET-056 (em andamento em outra sessão) já criou a tabela no banco — sem
+    // linha aqui, a descoberta por introspecção pega `push_subscriptions` e falha
+    // o teste genérico de "sobrou linha do outro tenant" por não ter o que sobrar.
+    // Não é a implementação do ticket, só o que a suíte de isolamento já exige de
+    // qualquer tabela nova com `tenant_id` (ver comentário da função `semear`).
+    [
+      'push_subscriptions',
+      { tenant_id: t, user_id: f.userId, endpoint: `https://push.exemplo.test/${sufixo}-${randomUUID()}`, p256dh: 'x', auth: 'x' },
+    ],
     ['audit_log', { tenant_id: t, action: 'seed.rls', entity: 'tenants', entity_id: t }],
     ['vault_access_log', { tenant_id: t, client_id: f.clientId, action: 'read' }],
     ['idempotency_keys', { key: randomUUID(), tenant_id: t, endpoint: '/v1/seed', request_hash: 'x' }],

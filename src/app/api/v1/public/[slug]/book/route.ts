@@ -7,13 +7,9 @@ import { normalizarTelefoneBR } from '@/server/services/telefone'
 import { lerCorpo } from '@/server/http/body'
 import { AppError } from '@/server/http/errors'
 import { rota } from '@/server/http/handler'
+import { ipDe } from '@/server/http/ip'
 
 type Ctx = { params: Promise<{ slug: string }> }
-
-/** Primeiro IP do `X-Forwarded-For`; os seguintes são proxy. Sem header, cai num balde único — mais restritivo, não mais permissivo. */
-function ipDe(req: Request): string {
-  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'sem-ip'
-}
 
 /** Honeypot: resposta com a mesma forma de sucesso, para não ensinar o script a se adaptar. */
 const RESPOSTA_HONEYPOT = { appointmentId: null }

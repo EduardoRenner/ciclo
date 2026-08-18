@@ -1042,3 +1042,58 @@ as "duas versões" lado a lado que o `§4.2.5` descreve — mostrar a versão do
 leitura genérica por URL que não existe ainda; registrado como simplificação, não como criado por
 engano. `manifest.json` referencia ícones em `/icons/` que ainda não existem (asset de design,
 fora do escopo de código).
+
+2026-08-18 · TICKET-057, endurecimento final · CSP com nonce por requisição no `middleware.ts`
+(Edge Runtime, `crypto.randomUUID()`), gerado a cada request e propagado via header **da
+requisição** (não só da resposta) — é assim que o Next encontra o nonce sozinho e carimba o
+próprio script de hidratação, sem o que `'strict-dynamic'` derrubaria o app inteiro (confirmado
+ao vivo: `link: preload` do CSS de layout já saiu com o `nonce=` certo). `style-src` **não** leva
+nonce, ao contrário do `script-src` — testado ao vivo e quebrou na hora: nonce em CSP só cobre
+`<style>`/`<link>`, nunca o atributo `style=""` que o React usa toda hora (barra de progresso,
+posição no calendário), e com nonce presente o `'unsafe-inline'` é ignorado pelo navegador,
+então toda `style={{...}}` do app apanhava com "Applying inline style violates CSP". Solução:
+`style-src 'self' 'unsafe-inline'` sem nonce nenhum — risco de XSS por CSS é ordens de grandeza
+menor que por script, e é o `script-src` (nonce + strict-dynamic, sem essa concessão) que carrega
+a defesa de verdade. `'unsafe-eval'` só entra em `script-src` quando `NODE_ENV=development` (o
+webpack do `next dev` usa `eval()` pra HMR — sem isso o próprio dev server quebrava com a mesma
+classe de erro; build de produção não usa `eval`, então nunca sai daqui em produção).
+
+Rate limit global: um teto de 120 req/min por IP dentro do próprio `rota()` (`src/server/http/
+handler.ts`), em cima de toda `/api/v1` e também cron/health (que passam pelo mesmo wrapper — o
+volume deles é ínfimo perto de 120/min). Fica por baixo dos limites finos que login/signup/
+booking público já tinham (aqueles sabem o que estão limitando; este só sabe que é IP demais
+rápido demais). `ipDe()` saiu duplicado do `book/route.ts` para `src/server/http/ip.ts`,
+compartilhado pelos dois.
+
+Sentry (`@sentry/nextjs`): um `src/instrumentation.ts` só (server+edge via `NEXT_RUNTIME`) em vez
+de `sentry.server.config.ts`/`sentry.edge.config.ts` separados — é o padrão atual do SDK pra App
+Router. `beforeSend`/`beforeSendTransaction` chamam `redigirEventoSentry` (`src/lib/observability/
+redact.ts`, função pura testada em `tests/unit/observability/redact.test.ts`) sempre, mesmo sem
+`SENTRY_DSN` configurado (mesmo padrão de credencial ausente do WhatsApp/Asaas: sem DSN o SDK só
+não manda nada, não é erro). A redação anda em duas camadas — chave sensível apaga o valor
+inteiro em qualquer profundidade (telefone, e-mail, cofre, token, cookie…), e o texto que sobra
+ainda é varrido por padrão de telefone/e-mail/CPF solto (mensagem de erro livre também vaza PII).
+`trace_id`/`event_id`/`release`/`timestamp` ficam isentos da varredura de texto — sem isso, um
+hex de 32 caracteres tem chance real de conter 10+ dígitos seguidos e a máscara corromperia o elo
+de rastreamento à toa. Adicionado `global-error.tsx` (o SDK pede pra capturar erro de renderização
+do React que nenhum `error.tsx` de rota alcança). Sem `SENTRY_AUTH_TOKEN`, o build pula upload de
+source map sozinho, com aviso — não falha.
+
+`pnpm audit`: zero vulnerabilidade conhecida nas dependências atuais.
+
+**Pendente de verificação ao vivo, fora do alcance deste ambiente de desenvolvimento** (mesmo
+padrão do teste de restauração de backup do TICKET-058): nota do securityheaders.com e varredura
+OWASP Top 10 via ZAP contra o deploy real. Os dois exigem uma URL pública e ferramenta que não
+existe aqui — o que dava pra verificar sem depender de infraestrutura externa (headers realmente
+enviados pelo servidor, ausência de violação de CSP com a aplicação renderizando de verdade,
+`pnpm audit`) foi verificado ao vivo com `curl`/o Browser pane. Registrado em
+`docs/runbooks/incidente.md`? Não — é checagem pontual pós-deploy, não runbook de incidente;
+fica para o Eduardo rodar uma vez a URL de produção existir de fato.
+
+`push_subscriptions` (tabela do TICKET-056, em andamento em paralelo por outra sessão nesta mesma
+janela: migration já aplicada no projeto remoto, sem arquivo local ainda) apareceu na descoberta
+por introspecção do teste de isolamento e quebrou a suíte inteira por falta de linha semeada —
+adicionei só a linha de seed em `tests/rls/isolation.test.ts` (mesmo padrão de toda tabela nova
+com `tenant_id`), não o resto da implementação, que não é deste ticket. `package.json`/
+`pnpm-lock.yaml` também carregam a dependência `web-push`/`@types/web-push` que aquela sessão já
+tinha adicionado antes deste commit — ficou junto porque é o mesmo arquivo, não foi eu quem pediu.
