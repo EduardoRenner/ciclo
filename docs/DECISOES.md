@@ -189,3 +189,31 @@ a pessoa no estabelecimento errado sem ela perceber.
 `activeTenant: null` quando não há vínculo · é a única rota que precisa responder para quem acabou
 de se cadastrar e ainda vai passar pelo onboarding; se ela também exigisse tenant, o TICKET-015
 não teria como começar.
+
+2026-08-18 · **Terceiro defeito da especificação:** o `withTenant()` de `01-ESPEC-TECNICA §2.3`
+chama `set_tenant_context()` antes e `clear_tenant_context()` depois, como se o `app.tenant_id`
+protegesse as consultas de dentro. Não protege, e foi medido no banco do projeto: (a)
+`set_tenant_context` usa `set_config(..., true)`, que é escopo de transação, e cada chamada pelo
+PostgREST é uma transação própria — na chamada seguinte o valor já volta vazio; (b) **nenhuma**
+das políticas de RLS deste schema lê `app.tenant_id` (zero linhas em `pg_policies`); elas decidem
+por `auth.uid()`, que a service role não tem · implementei o `withTenant()` sem as duas chamadas
+· seriam duas idas de rede por escrita para não fazer nada. O que isola de verdade continua
+valendo: a chave mora só em `with-tenant.ts` (com regra de lint), o `tenantId` é conferido antes
+de virar consulta, e quem usa o cliente filtra `tenant_id` explicitamente, como a FAQ C30 já
+manda. As duas funções e o GUC ficam anotados para remoção no TICKET-057.
+
+2026-08-18 · Por onde `writeAudit()` escreve, já que `audit_log` não tem política de insert? ·
+pela `service_role`, dentro do `withTenant()` · a ausência da política é proposital e tem teste de
+RLS: trilha que o próprio auditado consegue escrever não é trilha. As alternativas eram piores —
+uma função `SECURITY DEFINER` chamável por `authenticated` devolveria ao auditado a caneta, e o
+PostgREST a exporia em `/rest/v1/rpc/`.
+
+2026-08-18 · O que acontece se a gravação da trilha falhar? · registra `audit_falhou` no log e
+segue · a operação da pessoa já foi concluída quando a auditoria roda; estourar ali mostraria
+erro para algo que deu certo, e ela tentaria de novo, duplicando o agendamento. O buraco na
+trilha vira alarme, que é onde alguém consegue reagir.
+
+2026-08-18 · `before`/`after` da trilha passam por uma lista de redação (`ciphertext`, `iv`,
+`auth_tag`, `answers`, `dek_wrapped`, `password`, `token`…) em qualquer profundidade · a regra 9
+proíbe dado de saúde em log, e o `after` de uma ficha do cofre traria a anamnese inteira para uma
+tabela que dono, gerente e financeiro leem.
