@@ -314,3 +314,33 @@ e ele é o único que dá para cobrir sem Playwright · no CI roda contra o Supa
 2026-08-18 · O dono vira `professionals` no próprio onboarding, com `comp_model: 'owner'` · sem
 isso ele não apareceria na própria agenda depois do cadastro, e o MVP é majoritariamente solo ·
 `display_name` sai de `profiles.full_name`, com o nome do negócio como reserva.
+
+2026-08-18 · Reordenar serviços: a UI manda a lista inteira na ordem nova, não só o que mudou ·
+mandar o delta obrigaria o servidor a recalcular a posição dos vizinhos, e é exatamente aí que a
+ordem embaralha quando duas edições se cruzam · a lista tem dezenas de itens, então o custo de
+mandar tudo é irrelevante.
+
+2026-08-18 · `reordenarServicos` confere que todos os ids são do tenant **antes** de escrever
+qualquer posição · sem a checagem prévia, um id de outro estabelecimento no lote simplesmente não
+afetaria nenhuma linha (a RLS barra), e os ids válidos já teriam sido reposicionados — o intruso
+passaria como sucesso silencioso. Há teste que injeta um id alheio e confirma que a ordem não
+mudou.
+
+2026-08-18 · `listarServicos` ordena por `position` **e depois por `name`** · o pack de vertical
+nasce com todos os serviços em `position = 0`, então sem o desempate a lista muda de ordem entre
+dois carregamentos iguais — o Postgres não garante ordem estável em empate.
+
+2026-08-18 · Serviço novo nasce com `position` = maior + 1, não 0 · caso contrário todo serviço
+cadastrado entraria empatado com os 6 do pack e apareceria no meio deles.
+
+2026-08-18 · O índice `services_tenant_name_uniq` (criado na 0003 para o pack) faz nome repetido
+estourar `23505` no CRUD · traduzido para `VALIDATION_ERROR` no campo `name` · sem isso a pessoa
+veria "Algo deu errado do nosso lado" ao repetir um nome, que é erro dela e tem conserto óbvio.
+
+2026-08-18 · Reordenar na tela usa setas ↑ ↓, não arrastar · §3.6 exige alvo de 48px, e
+drag-and-drop com um dedo só dentro de lista rolável erra mais do que acerta — o gesto compete
+com o scroll · a reordenação é otimista e desfaz se o servidor recusar.
+
+2026-08-18 · `DELETE /api/v1/services/:id` arquiva (`active = false`), não apaga · D45 manda soft
+delete para serviço, e `ticket_items.service_id` é `on delete restrict`: apagar de verdade seria
+recusado pelo banco ou quebraria o histórico de comanda.
