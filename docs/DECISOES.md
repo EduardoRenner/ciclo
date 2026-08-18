@@ -217,3 +217,26 @@ trilha vira alarme, que é onde alguém consegue reagir.
 `auth_tag`, `answers`, `dek_wrapped`, `password`, `token`…) em qualquer profundidade · a regra 9
 proíbe dado de saúde em log, e o `after` de uma ficha do cofre traria a anamnese inteira para uma
 tabela que dono, gerente e financeiro leem.
+
+2026-08-18 · **Vazamento entre tenants no desenho da idempotência:** `idempotency_keys.key` é
+chave primária **global** e o valor vem do cliente. O tenant B podia mandar a mesma
+`Idempotency-Key` e o mesmo corpo que o A usou e receber de volta a `response_body` guardada do
+A — que é o corpo de um agendamento ou de uma comanda · a chave gravada é
+`{tenantId}:{chave-do-cliente}`, e o `select` ainda filtra por `tenant_id` · o prefixo elimina a
+colisão e o filtro é a segunda camada, para o caso de o prefixo sumir numa refatoração. Há teste
+que roda o ataque.
+
+2026-08-18 · Corrida entre duas tentativas com a mesma chave · a chave é **reservada antes** de a
+operação rodar (`insert ... on conflict do nothing`), e a resposta é gravada depois · um `select`
+antes do `insert` deixaria as duas tentativas passarem pela verificação e executarem, que é o
+agendamento duplicado que a idempotência existe para evitar.
+
+2026-08-18 · O que responder enquanto a primeira tentativa ainda está rodando (reserva existe,
+`response_status` é nulo)? · `RATE_LIMITED` com `Retry-After: 2` · a lista de códigos da PARTE 3
+§1 é fechada e não tem "em processamento"; entre os que existem, `429` é o único que significa
+"tente de novo em instantes". Devolver a resposta é impossível (ainda não existe) e executar de
+novo produziria a duplicata.
+
+2026-08-18 · Resposta de erro é guardada e reproduzida? · não: o erro apaga a reserva · a operação
+não aconteceu, e prender a chave impediria a pessoa de tentar de novo com a mesma
+`Idempotency-Key` — que é exatamente o que a fila offline do PWA (§4.2) faz quando drena.
