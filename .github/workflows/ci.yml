@@ -165,6 +165,14 @@ jobs:
             }
           '
 
+      - name: Teste de integração (onboarding contra banco de verdade)
+        env:
+          # KEK descartável, só para o cofre do stack efêmero. Não é segredo:
+          # o banco morre junto com o job, e a KEK de verdade nunca entra no CI.
+          VAULT_KEK: Q0lDTE8tQ0ktS0VLLWRlc2NhcnRhdmVsLTMyYnl0ZXM=
+          VAULT_KEK_VERSION: "1"
+        run: pnpm test:integration
+
       - name: Teste de isolamento multi-tenant
         run: pnpm test:rls
 

@@ -276,3 +276,41 @@ sem scroll horizontal.
 2026-08-18 · `abaAtiva()` não usa só `pathname.startsWith(href)` · compara igualdade OU prefixo
 com barra (`href + '/'`) · sem a barra, `/clientes-vip` acenderia a aba `/clientes`; e `/hoje`
 precisa do caso de igualdade exata porque prefixo vazio casaria com qualquer rota do app.
+
+2026-08-18 · `VAULT_KEK`, `PHONE_HASH_SALT` e `CRON_SECRET` no `.env.local` não tinham valor —
+guardavam o texto de instrução (`<<< openssl rand -base64 32`), que ninguém tinha rodado · gerei
+os três com `crypto.randomBytes` (32/24/32 bytes em base64) · sem a KEK o TICKET-015 não gera DEK
+nenhuma, então o onboarding inteiro estava bloqueado por um placeholder que passava despercebido
+porque o arquivo "parecia" preenchido. `SUPABASE_DB_URL` segue vazia de propósito: é só para
+`psql`/CLI direto, que não existe nesta máquina, e a aplicação não a lê.
+
+2026-08-18 · Onde mora o wrap da DEK, já que `encryptVault`/`decryptVault` são do TICKET-049? ·
+`src/server/crypto/kek.ts`, só com `gerarDekCifrada`/`abrirDekCifrada` · o TICKET-015 precisa
+gerar e guardar a DEK cifrada, mas não precisa cifrar registro nenhum ainda; separar deixa o
+módulo do cofre nascer no ticket que o pede, sem stub.
+
+2026-08-18 · Formato de `tenant_keys.dek_wrapped` (bytea) pelo PostgREST · literal hex `\x…`,
+com `iv || tag || ciphertext` num campo só · o supabase-js não serializa `Buffer` para bytea
+(dá erro de tipo), e o schema já usa esse literal no seed do teste de RLS. Os três pedaços têm
+tamanho fixo (12/16/32), então separar de volta não precisa de delimitador.
+
+2026-08-18 · Não há transação entre PostgREST e a RPC `apply_vertical_pack`, e o onboarding faz 5
+escritas · um `try/catch` em volta de tudo depois do tenant, que no erro apaga o tenant e deixa o
+`on delete cascade` das FKs levar membership, professional e tenant_keys junto · sem isso, uma
+falha no meio deixaria tenant órfão sem membership: invisível para todo mundo e sem dono para
+tentar de novo, e o slug ficaria ocupado para sempre. Há teste de integração que força a falha e
+confirma que nada sobra.
+
+2026-08-18 · A regra de negócio do onboarding ficou em `src/server/services/onboarding.ts`, e não
+dentro da rota · a rota depende de `next/headers` (sessão, cookies), o que impede chamar o fluxo
+de um teste · assim o `tests/integration/onboarding.test.ts` exercita a sequência real de escritas
+contra o projeto de verdade, incluindo a RPC do pack, sem subir HTTP.
+
+2026-08-18 · Criada a pasta `tests/integration/` e o script `test:integration`, ligado ao
+`pnpm verify` e ao job `banco` do CI · a FAQ A37 lista o onboarding como um dos 5 fluxos críticos,
+e ele é o único que dá para cobrir sem Playwright · no CI roda contra o Supabase efêmero, com uma
+`VAULT_KEK` descartável embutida no workflow (não é segredo: o banco morre junto com o job).
+
+2026-08-18 · O dono vira `professionals` no próprio onboarding, com `comp_model: 'owner'` · sem
+isso ele não apareceria na própria agenda depois do cadastro, e o MVP é majoritariamente solo ·
+`display_name` sai de `profiles.full_name`, com o nome do negócio como reserva.

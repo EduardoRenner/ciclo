@@ -47,3 +47,14 @@ export async function withTenant<T>(
   if (!UUID.test(tenantId)) throw new Error('withTenant: tenantId inválido')
   return fn(createServiceClient(), tenantId)
 }
+
+/**
+ * Variante para o único momento em que ainda não existe `tenantId`: o
+ * onboarding (TICKET-015) cria o tenant, a membership, o professional e a DEK
+ * antes de a pessoa ter qualquer vínculo — nada disso passa pela RLS do
+ * cliente porque o `has_tenant()` ainda não teria o que responder. Continua
+ * confinado a este arquivo pelo mesmo motivo do `withTenant`.
+ */
+export async function withNovoTenant<T>(fn: (db: SupabaseClient<Database>) => Promise<T>): Promise<T> {
+  return fn(createServiceClient())
+}

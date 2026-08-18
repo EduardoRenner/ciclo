@@ -33,3 +33,30 @@ export const EsquemaEsqueciSenha = z.object({
 export const EsquemaNovaSenha = z.object({
   password: z.string().min(1, 'Escolha uma senha.'),
 })
+
+/** As 8 verticais do enum `vertical_pack` (0001), literal — é o que `apply_vertical_pack()` aceita. */
+export const VERTICAIS = ['barber', 'nails', 'lashes', 'brows', 'waxing', 'aesthetics', 'tattoo', 'hair'] as const
+
+/**
+ * `^[a-z0-9][a-z0-9-]{2,38}[a-z0-9]$` (constraint `tenants_slug_format` da 0001),
+ * literal — validar aqui o que o banco também vai exigir devolve um erro de
+ * campo em pt-BR em vez de estourar como violação de constraint.
+ */
+const SlugFormatado = /^[a-z0-9][a-z0-9-]{2,38}[a-z0-9]$/
+
+export const EsquemaOnboarding = z.object({
+  businessName: z.string().trim().min(2, 'Digite o nome do negócio.').max(120, 'Nome muito longo.'),
+  vertical: z.enum(VERTICAIS, 'Escolha uma especialidade da lista.'),
+  slug: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .regex(SlugFormatado, 'Use só letras minúsculas, números e hífen, com 5 a 40 caracteres.'),
+  timezone: z.string().refine((tz) => {
+    try {
+      return Boolean(new Intl.DateTimeFormat('pt-BR', { timeZone: tz }))
+    } catch {
+      return false
+    }
+  }, 'Fuso horário inválido.'),
+})

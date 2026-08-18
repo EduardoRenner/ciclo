@@ -1,0 +1,174 @@
+import { randomUUID } from 'node:crypto'
+
+import { createClient } from '@supabase/supabase-js'
+import dotenv from 'dotenv'
+import { afterAll, describe, expect, it } from 'vitest'
+
+import { abrirDekCifrada } from '@/server/crypto/kek'
+import { executarOnboarding } from '@/server/services/onboarding'
+
+import type { Database } from '@/server/db/types.gen'
+
+dotenv.config({ path: '.env.local' })
+
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
+const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+/**
+ * Mesma régua do `tests/rls/isolation.test.ts`: falta de credencial não pode
+ * virar teste verde. Este arquivo é o único E2E dos 5 fluxos críticos da
+ * FAQ A37 que roda fora do Playwright — testa a sequência real de escritas
+ * contra o projeto de verdade, não uma cópia mockada do banco.
+ */
+if (!SUPABASE_URL || !SERVICE_KEY) {
+  throw new Error(
+    'O teste de onboarding precisa de NEXT_PUBLIC_SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY no .env.local.',
+  )
+}
+
+const svc = createClient<Database>(SUPABASE_URL, SERVICE_KEY, {
+  auth: { persistSession: false, autoRefreshToken: false },
+})
+
+const tenantsParaLimpar: string[] = []
+const usuariosParaLimpar: string[] = []
+
+async function criarUsuario(sufixo: string) {
+  const marca = randomUUID().slice(0, 8)
+  const { data, error } = await svc.auth.admin.createUser({
+    email: `onboarding-${sufixo}-${marca}@ciclo.test`,
+    password: randomUUID(),
+    email_confirm: true,
+    user_metadata: { full_name: `Bruna ${sufixo}` },
+  })
+  if (error || !data.user) throw new Error(`seed falhou ao criar usuário: ${error?.message}`)
+  usuariosParaLimpar.push(data.user.id)
+  return data.user.id
+}
+
+afterAll(async () => {
+  for (const id of tenantsParaLimpar) await svc.from('tenants').delete().eq('id', id)
+  for (const id of usuariosParaLimpar) await svc.auth.admin.deleteUser(id)
+}, 60_000)
+
+describe('executarOnboarding — contra o projeto real', () => {
+  it(
+    'cria tenant, membership de owner, professional, a DEK e aplica o pack — tudo pronto',
+    async () => {
+      const userId = await criarUsuario('feliz')
+      const slug = `bruna-cilios-${randomUUID().slice(0, 8)}`
+
+      const { tenant } = await executarOnboarding(svc, {
+        userId,
+        businessName: 'Bruna Cílios',
+        vertical: 'lashes',
+        slug,
+        timezone: 'America/Sao_Paulo',
+      })
+      tenantsParaLimpar.push(tenant.id)
+
+      expect(tenant).toMatchObject({ name: 'Bruna Cílios', slug, vertical: 'lashes' })
+
+      const membership = await svc
+        .from('memberships')
+        .select('role, active')
+        .eq('tenant_id', tenant.id)
+        .eq('user_id', userId)
+        .single()
+      expect(membership.data).toMatchObject({ role: 'owner', active: true })
+
+      // O dono também vira profissional (senão não aparece na própria agenda).
+      const profissional = await svc
+        .from('professionals')
+        .select('display_name, user_id, comp_model')
+        .eq('tenant_id', tenant.id)
+        .single()
+      expect(profissional.data).toMatchObject({
+        display_name: 'Bruna feliz',
+        user_id: userId,
+        comp_model: 'owner',
+      })
+
+      // A DEK existe, está cifrada (não é o literal '\x' vazio) e abre de
+      // volta para exatos 32 bytes — prova de ida e volta com a KEK real do
+      // ambiente, não com uma KEK de teste isolada.
+      const chave = await svc.from('tenant_keys').select('dek_wrapped, key_version').eq('tenant_id', tenant.id).single()
+      expect(chave.data?.dek_wrapped).toMatch(/^\\x[0-9a-f]{80,}$/)
+      expect(abrirDekCifrada(chave.data!.dek_wrapped)).toHaveLength(32)
+
+      // O pack de verdade rodou — não é um mock do apply_vertical_pack.
+      // Contagem verificada no TICKET-004 para 'lashes': 6 serviços, 7 produtos,
+      // 6 dias de expediente.
+      const [servicos, produtos, expediente] = await Promise.all([
+        svc.from('services').select('id', { count: 'exact', head: true }).eq('tenant_id', tenant.id),
+        svc.from('products').select('id', { count: 'exact', head: true }).eq('tenant_id', tenant.id),
+        svc.from('business_hours').select('id', { count: 'exact', head: true }).eq('tenant_id', tenant.id),
+      ])
+      expect(servicos.count).toBe(6)
+      expect(produtos.count).toBe(7)
+      expect(expediente.count).toBe(6)
+    },
+    60_000,
+  )
+
+  it(
+    'dois cadastros com o mesmo slug: o segundo recebe VALIDATION_ERROR, não um 500',
+    async () => {
+      const slug = `salao-disputado-${randomUUID().slice(0, 8)}`
+      const userA = await criarUsuario('a')
+      const userB = await criarUsuario('b')
+
+      const { tenant } = await executarOnboarding(svc, {
+        userId: userA,
+        businessName: 'Salão A',
+        vertical: 'nails',
+        slug,
+        timezone: 'America/Sao_Paulo',
+      })
+      tenantsParaLimpar.push(tenant.id)
+
+      const erro = await executarOnboarding(svc, {
+        userId: userB,
+        businessName: 'Salão B',
+        vertical: 'nails',
+        slug,
+        timezone: 'America/Sao_Paulo',
+      }).catch((e: unknown) => e)
+
+      expect(erro).toMatchObject({ code: 'VALIDATION_ERROR', status: 422 })
+
+      // B não ganhou tenant nenhum — nem o de A, nem um órfão.
+      const deB = await svc.from('memberships').select('id').eq('user_id', userB)
+      expect(deB.data).toEqual([])
+    },
+    60_000,
+  )
+
+  it(
+    'vertical inválida na RPC desfaz o tenant inteiro — nada de cadastro pela metade',
+    async () => {
+      const userId = await criarUsuario('rollback')
+      const slug = `vai-falhar-${randomUUID().slice(0, 8)}`
+
+      // O Zod barraria isso antes de chegar aqui; forçamos passando direto pela
+      // função para provar que o `catch` do próprio `executarOnboarding`
+      // também segura — defesa em profundidade, não só validação de borda.
+      const erro = await executarOnboarding(svc, {
+        userId,
+        businessName: 'Vai Falhar',
+        vertical: 'vertical-que-nao-existe' as never,
+        slug,
+        timezone: 'America/Sao_Paulo',
+      }).catch((e: unknown) => e)
+
+      expect(erro).toMatchObject({ code: 'INTERNAL' })
+
+      const sobrou = await svc.from('tenants').select('id').eq('slug', slug)
+      expect(sobrou.data).toEqual([])
+
+      const membershipOrfa = await svc.from('memberships').select('id').eq('user_id', userId)
+      expect(membershipOrfa.data).toEqual([])
+    },
+    60_000,
+  )
+})
