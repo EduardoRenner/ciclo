@@ -36,7 +36,9 @@ function registrar(nivel: 'warn' | 'error', req: Request, requestId: string, err
  *    `INTERNAL`, sem stack e sem mensagem de banco na resposta;
  * 3. todo request tem `requestId`, no corpo e no header.
  */
-export function rota<Ctx = undefined>(handler: Handler<Ctx>) {
+// `Ctx` fica `unknown` por padrão para o retorno continuar aceitável no lugar do
+// handler de rota do Next, que passa `{ params }` como segundo argumento.
+export function rota<Ctx = unknown>(handler: Handler<Ctx>) {
   return async (req: Request, ctx: Ctx): Promise<Response> => {
     const requestId = resolverRequestId(req.headers)
 

@@ -100,6 +100,54 @@ exigiria base64 no corpo.
 o alias `@ → src` e `environment: 'node'` · sem ele o teste teria de usar caminho relativo, que
 diverge do resto do código.
 
+2026-08-18 · A 0001 chama `profiles` de "espelho de auth.users", mas nada preenchia a tabela ·
+migration `0006_profile_on_signup.sql`, com trigger `on_auth_user_created` em `auth.users` ·
+criar a linha pela aplicação não funciona: com confirmação de e-mail ligada, logo depois do
+`signUp` ainda não existe sessão, então não há `auth.uid()` para a política `profiles_self`
+autorizar o insert; e deixar para o primeiro login obrigaria todo código adiante a tratar usuário
+sem profile. A função é `SECURITY DEFINER` e escreve, então levou o `revoke execute` da 0004.
+O seed do teste de RLS passou a fazer `update` no lugar de `insert` — assim ele confirma a
+trigger em vez de duplicá-la.
+
+2026-08-18 · O que fazer quando o HIBP não responde no cadastro? · deixa passar e registra
+`hibp_indisponivel` no log · a senha já passou no tamanho mínimo e na lista local; derrubar o
+cadastro do salão porque um serviço de terceiro caiu troca um risco pequeno por uma perda certa.
+
+2026-08-18 · A FAQ C38 pede "bloquear as 10 mil senhas mais comuns", e não há como baixar essa
+lista para dentro do repositório · a checagem local guarda ~60 **raízes** (não senhas inteiras) e
+descasca dígito, ano e pontuação antes de comparar, então pega "Flamengo2024!" e "senha123456"
+com uma entrada cada · o HIBP tem 800 milhões de senhas e é superconjunto estrito de qualquer
+top-10 mil; a lista local existe como piso para quando ele estiver fora do ar, e raiz cobre mais
+variação por byte que uma lista truncada. Um teste cobre exatamente esses casos.
+
+2026-08-18 · O login devolve `session` com token? · não: devolve só `expiresAt`, e a sessão anda
+nos cookies que o `@supabase/ssr` grava · access token no corpo da resposta acaba em
+`localStorage` por conveniência, e aí qualquer XSS leva a sessão embora.
+
+2026-08-18 · `getSession()` ou `getUser()` no guard? · `getUser()` · `getSession()` decodifica o
+JWT do cookie e acredita nele; `getUser()` manda o token para o servidor de auth conferir a
+assinatura. Cookie é coisa que o cliente escreve.
+
+2026-08-18 · O guard do middleware protege por lista explícita de prefixos (`/hoje`, `/agenda`,
+`/clientes`, `/recuperar`, `/comanda`, `/caixa`, `/config`), e não por "tudo protegido menos uma
+allow-list" · o booking público mora na raiz (`/{slug}`), então negar por padrão bloquearia a
+página que qualquer cliente precisa abrir · quando entrar rota nova em `(app)/`, o prefixo entra
+aqui junto.
+
+2026-08-18 · `jwt_expiry` estava em 3600 e a FAQ C40 fixa 15 min · `config.toml` agora tem 900 ·
+**isso vale só para o stack local**; falta o Eduardo mudar o mesmo valor no painel do projeto da
+nuvem (Authentication → Sessions), porque é lá que o desenvolvimento roda.
+
+2026-08-18 · Escopo do logout · `signOut({ scope: 'global' })` no logout e `scope: 'others'` na
+troca de senha · quem sai da conta porque perdeu o celular precisa derrubar o celular junto, e
+quem troca a senha por desconfiar de invasão precisa derrubar o invasor — sair só deste navegador
+não protege ninguém.
+
+2026-08-18 · A recuperação de senha não estava no contrato da PARTE 3 §2.1, mas o TICKET-009 pede ·
+`POST /api/v1/auth/password/forgot` e `POST /api/v1/auth/password/reset`, acrescentados a
+`docs/02-API.md` · o `forgot` responde igual para e-mail que existe e que não existe, senão a tela
+de recuperar senha vira uma lista de quem é cliente do CICLO. Mesma regra no `signup`.
+
 2026-08-18 · O critério "bloqueio de merge" do TICKET-007 é configuração do GitHub, não arquivo ·
 os três jobs têm nome estável (`Segredos`, `Qualidade`, `Banco e RLS`) e o README diz quais marcar
 como *required status checks* · o repositório ainda não tem remoto; a regra é aplicada por Eduardo

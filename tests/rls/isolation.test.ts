@@ -108,8 +108,11 @@ async function criarTenant(sufixo: string): Promise<Fixture> {
   if (userError || !userData.user) throw new Error(`seed falhou ao criar usuário: ${userError?.message}`)
   const userId = userData.user.id
 
+  // A trigger `on_auth_user_created` (migration 0006) já espelhou o profile. O
+  // update no lugar do insert confirma que ela rodou: sem a linha, o `.single()`
+  // não acha nada e o seed aborta aqui, antes do membership violar a FK.
   exigir(
-    await admin.from('profiles').insert({ id: userId, full_name: `Dono ${sufixo}`, email }).select('id').single(),
+    await admin.from('profiles').update({ full_name: `Dono ${sufixo}` }).eq('id', userId).select('id').single(),
     'profiles',
   )
   exigir(

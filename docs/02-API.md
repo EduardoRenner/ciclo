@@ -64,6 +64,8 @@ Cursor opaco (`?cursor=&limit=`), limite padrão 50, máximo 200. Nunca offset e
 POST   /api/v1/auth/signup            { email, password, fullName, phone }
 POST   /api/v1/auth/login             { email, password }        → { session, tenants[] }
 POST   /api/v1/auth/logout
+POST   /api/v1/auth/password/forgot   { email }                    → sempre 200, sem dizer se o e-mail existe
+POST   /api/v1/auth/password/reset    { password }                 (sessão do link de recuperação)
 POST   /api/v1/auth/mfa/enroll                                    → { qrCode, secret }
 POST   /api/v1/auth/mfa/verify        { code }
 GET    /api/v1/me                                                 → { profile, memberships[], activeTenant }
