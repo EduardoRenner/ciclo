@@ -916,3 +916,13 @@ literal da tabela do §3.3 — `manager` não tem `vault:*` nem `vault:own` na t
 acesso ao cofre por design (só `owner` via `*` e `professional` via `own`); e o escopo `own` do
 `professional` não é filtrado por profissional nesta implementação (mesma lacuna que já existe em
 `appointment:own`/`client:own` em outras rotas — RLS não tem política extra pra isso ainda).
+
+2026-08-18 · TICKET-047, sétimo defeito real na especificação: a view `v_daily_cash` (0001)
+agrupa por `date_trunc('day', closed_at)`, que trunca no fuso da SESSÃO do Postgres — UTC por
+padrão via PostgREST/supabase-js, não o fuso do tenant. Um fechamento às 23h30 em São Paulo
+(02h30 UTC do dia seguinte) cairia atribuído ao dia errado no fechamento diário. `fechamentoDiario`/
+`resumoMensal` (`src/server/services/caixa.ts`) não usam a view — buscam as linhas cruas de
+`tickets` num intervalo calculado com `Temporal` no fuso do tenant (mesmo padrão do TICKET-022/
+025) e somam em memória. A view continua existindo no schema (nada mais depende dela ainda), só
+não virou a fonte de dado deste ticket. Teste de integração cobre o caso de fechamento perto da
+meia-noite local justamente para não deixar essa classe de bug voltar em silêncio.
