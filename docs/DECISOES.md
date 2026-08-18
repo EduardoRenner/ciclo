@@ -785,3 +785,26 @@ caracteres, e o último caractere de um grupo parcial pode ter bit "não signifi
 trocando o caractere do MEIO do token em vez do último. Motivo de registrar: os quatro só se
 manifestam sob carga real ou execução paralela — útil lembrar de rodar `pnpm verify` completo
 (não só o arquivo isolado) e testar em volume antes de fechar qualquer ticket que grava em lote.
+
+2026-08-18 · TICKET-037, `tests/integration/recuperar-receita.test.ts` inseria todo cliente com o
+mesmo `phone_e164` fixo · a constraint `clients_unique_phone` (tenant_id, phone_e164) rejeitava o
+segundo insert em diante, e como o teste não checava `error` antes de `data!.id`, o erro real da
+constraint virava um `Cannot read properties of null` sem pista nenhuma da causa. Corrigido dando
+um telefone único por cliente (contador) e checando `error` explicitamente antes de acessar `data`.
+
+2026-08-18 · `tests/integration/agenda-dia.test.ts` ("carrega 60 agendamentos em menos de 200ms",
+TICKET-022) é flaky quando `pnpm verify` roda a suíte de integração inteira em paralelo contra o
+mesmo projeto Supabase real: falhou 3 vezes seguidas em ~299ms sob carga total, mas passa
+consistentemente em ~90ms quando rodado isolado ou junto de poucos outros arquivos. Não é
+regressão de nenhum ticket — é contenção de rede/conexão quando 15+ suítes de integração disputam
+o mesmo projeto ao mesmo tempo. Não ajustado o limite de 200ms (é critério de aceite real do
+ticket, sob carga normal de uso); registrado aqui para não confundir com bug de verdade numa
+próxima rodada de `pnpm verify` que rode tudo em paralelo.
+
+2026-08-18 · `tests/integration/job-queue.test.ts` falha quando `pnpm test:integration` roda o
+diretório inteiro (Vitest paraleliza arquivos de teste), mas passa 100% rodado sozinho · não é
+regressão deste ticket (não toquei em `job-queue.ts`) — é contenção real entre arquivos de teste
+concorrentes batendo no mesmo projeto Supabase na nuvem (sem Postgres local nesta máquina, ver
+topo deste arquivo). Registrado como known issue de infraestrutura de teste, não de produto;
+investigar isolamento (schema por arquivo de teste, ou reduzir paralelismo do Vitest) fica para
+quando afetar CI de verdade.

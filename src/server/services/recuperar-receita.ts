@@ -1,6 +1,8 @@
 import { Temporal } from '@js-temporal/polyfill'
 import { z } from 'zod'
 
+import type { MessagingProvider } from '@/server/providers/messaging/types'
+import { WhatsAppCloudProvider } from '@/server/providers/messaging/whatsapp'
 import { enviarComFallback } from '@/server/services/mensageria'
 import { AppError } from '@/server/http/errors'
 
@@ -105,8 +107,13 @@ export async function enviarParaRecuperar(
   tenantId: string,
   timezone: string,
   entrada: EntradaEnviarRecuperar,
+  provider: MessagingProvider = new WhatsAppCloudProvider(),
+  // Parâmetro, não `Temporal.Now` direto: um teste que roda às 21h40 (fora da
+  // janela 8h–21h) não pode depender da hora real em que ele acontece de
+  // rodar — mesmo bug de determinismo já registrado no TICKET-030.
+  agora: Temporal.Instant = Temporal.Now.instant(),
 ): Promise<ResultadoEnviarRecuperar> {
-  const agoraLocal = Temporal.Now.zonedDateTimeISO(timezone)
+  const agoraLocal = agora.toZonedDateTimeISO(timezone)
   const dentroDaJanela = agoraLocal.hour >= JANELA_PERMITIDA_INICIO && agoraLocal.hour < JANELA_PERMITIDA_FIM
 
   const skipped: ResultadoEnviarRecuperar['skipped'] = []
@@ -126,7 +133,7 @@ export async function enviarParaRecuperar(
     const emJanelaDeDedupe =
       !dentroDaJanela ||
       (linha.last_campaign_at !== null &&
-        Temporal.Now.instant().since(Temporal.Instant.from(linha.last_campaign_at)).total('days') < DIAS_ENTRE_CAMPANHAS)
+        agora.since(Temporal.Instant.from(linha.last_campaign_at)).total('days') < DIAS_ENTRE_CAMPANHAS)
     if (emJanelaDeDedupe) {
       skipped.push({ clientId: item.clientId, reason: 'rate_limited' })
       continue
@@ -156,7 +163,7 @@ export async function enviarParaRecuperar(
       fallbackBody: `Já faz um tempo desde seu último ${servico.name}. Vamos marcar um novo horário?`,
       whatsappTo: cliente.phone_e164,
       emailTo: cliente.email,
-    })
+    }, provider)
 
     if (resultado.status === 'sent') {
       const { error: erroUpdate } = await db
