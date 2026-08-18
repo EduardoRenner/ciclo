@@ -11,6 +11,7 @@ import Sheet from '@/components/ui/sheet'
 import Skeleton from '@/components/ui/skeleton'
 import StatTile from '@/components/ui/stat-tile'
 import ToastProvider, { useToast } from '@/components/ui/toast'
+import TabBar from '@/components/shell/tab-bar'
 
 function Secao({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
@@ -142,12 +143,20 @@ function Conteudo({ icones }: { icones: { agenda: React.ReactNode; clientes: Rea
         </div>
       </Secao>
 
+      <Secao titulo="Shell — tab bar (TICKET-014)">
+        <p className="mb-2 text-secundario text-txt-2">
+          Fixa no rodapé da viewport, como no app de verdade — não uma cópia visual.
+        </p>
+      </Secao>
+
       <Secao titulo="Ícone de ação">
         <Button variante="secondary">
           {icones.agenda}
           Novo agendamento
         </Button>
       </Secao>
+
+      <TabBar />
     </>
   )
 }

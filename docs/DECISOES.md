@@ -259,3 +259,20 @@ o projeto já depende de `radix-ui@1.6.7`, que reexporta todos os primitivos por
 superfície de graça para quem procura · verificado no browser: sem scroll horizontal em 390px,
 Sheet trava e libera o scroll do body, Toast dispara com aria-live (a região oculta de anúncio do
 Radix), viewport do toast já limpa a faixa da tab bar de 82px de §3.3.
+
+2026-08-18 · Quais são os "5 itens" da tab bar do TICKET-014? A especificação não fixa quais ·
+Hoje, Agenda, [FAB central: novo agendamento], Clientes, Recuperar · são os que sustentam o
+essencial do MVP se tudo mais for cortado (`00-BRIEFING §1`: agenda sem conflito, Motor de Ciclo
++ Recuperar receita) mais o cadastro de clientes de que os dois dependem. Caixa e configurações
+ficam a um toque de "Hoje", fora da barra — são consultados bem menos que os quatro escolhidos.
+
+2026-08-18 · TICKET-014 não pede telas — só o shell (`(app)/layout.tsx` + `TabBar`) · não criei
+`page.tsx` em `hoje/agenda/clientes/recuperar` · essas rotas nascem nos tickets que as pedem
+(TICKET-016 em diante); criar stub agora seria arquivo que o ticket não pediu (regra de estilo do
+CLAUDE.md). Verificação em browser feita renderizando o `TabBar` de verdade dentro de `/dev/ui`
+(que já é pública, sem exigir sessão) — 390px exatos, 5 alvos, todos ≥48px, barra com 82px,
+sem scroll horizontal.
+
+2026-08-18 · `abaAtiva()` não usa só `pathname.startsWith(href)` · compara igualdade OU prefixo
+com barra (`href + '/'`) · sem a barra, `/clientes-vip` acenderia a aba `/clientes`; e `/hoje`
+precisa do caso de igualdade exata porque prefixo vazio casaria com qualquer rota do app.
