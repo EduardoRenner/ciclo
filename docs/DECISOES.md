@@ -981,3 +981,23 @@ precisa filtrar por `consents.revoked_at is null` do `consent_id` de cada foto; 
 para não se perder. `signatureKey` é só referenciado, não fez upload nenhum: bucket privado e
 storage_key aleatório são infraestrutura do TICKET-052, construir os dois cedo duplicaria
 trabalho quando 052 nascer.
+
+2026-08-18 · TICKET-053, trilha de acesso ao cofre · `vault_access_log` já era escrito desde o
+TICKET-050 (`abrirFicha()`), só faltava a tela. Join em memória com `clients`/`profiles` em vez
+de PostgREST embed — `vault_access_log` não tem FK pra nenhuma das duas (mesmo motivo do
+TICKET-034 com `waitlist`/`client_cycles`: `actor_id` pode ser `null` quando o acesso vem de um
+job de sistema, sem usuário por trás, e uma FK NOT NULL não deixaria isso acontecer). Tela só pro
+dono: nenhum papel além do owner (curinga) tem `vault:audit` na tabela literal de §3.3, então
+`exigirPermissao` já restringe sozinha, sem checagem de papel avulsa na rota.
+
+2026-08-18 · TICKET-052, fotos antes/depois: bucket privado `media` criado direto no projeto
+(insert em `storage.buckets`, migration 0013) — `storage.objects` já vinha com RLS ligada e
+nenhuma política (verificado antes de criar o bucket), então já nasce privado por padrão sem
+precisar de política nenhuma; todo acesso passa por `service_role` no servidor (`withTenant`) +
+signed URL de 5 min pro cliente, nunca leitura direta do bucket. EXIF removido por reencode em
+`sharp` (nunca chama `.withMetadata()`, então nada sobrevive), com `.rotate()` sem argumento antes
+disso pra ler a orientação do EXIF e não deixar a foto de lado. `sharp` virou dependência direta
+(estava só em `pnpm.overrides` como pin de versão transitiva, TICKET-050/memória da família —
+nada o instalava de verdade). `mediaParaPortfolio()` só devolve foto com `consent_id` setado E
+`consents.revoked_at is null` — testado ponta a ponta: revogar o consentimento tira a foto da
+lista na mesma consulta seguinte, sem cache no meio.
