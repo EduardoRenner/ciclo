@@ -344,3 +344,43 @@ com o scroll · a reordenação é otimista e desfaz se o servidor recusar.
 2026-08-18 · `DELETE /api/v1/services/:id` arquiva (`active = false`), não apaga · D45 manda soft
 delete para serviço, e `ticket_items.service_id` é `on delete restrict`: apagar de verdade seria
 recusado pelo banco ou quebraria o histórico de comanda.
+
+2026-08-18 · **Sexto defeito: a FAQ C36 descreve convite por link, mas nenhuma tabela guarda o
+token.** Mesmo tipo de lacuna que a 0006 fechou para `profiles` · criada `invites` na migration
+0007, com `token_hash` (o cru nunca é gravado, mesmo cuidado de senha) e RLS restrita a `owner`,
+espelhando a trava de `memberships_write` — quem convida é sempre o dono, nunca o gerente, porque
+convite acaba virando `memberships`, que o schema já protege assim.
+
+2026-08-18 · Aceitar convite não passa pelo cliente do usuário · usa `withNovoTenant`, o mesmo
+padrão do onboarding · quem aceita ainda não tem `has_tenant()` naquele tenant até o `insert` em
+`memberships` acontecer, então a RLS bloquearia até a leitura do próprio convite pelo token.
+
+2026-08-18 · O e-mail do convite trava com o e-mail de quem está logado ao aceitar · sem isso, um
+link encaminhado (por WhatsApp, por exemplo) deixaria qualquer pessoa autenticada entrar no
+tenant alheio com o papel do convite.
+
+2026-08-18 · Convite de `reception`/`finance`/`manager` não cria linha em `professionals` — só
+`professional` cria · a FAQ C36 diz "cria profile + membership + professional" sem condicionar,
+mas as colunas de `professionals` (cor na agenda, comissão, aluguel) só fazem sentido para quem
+atende; dar a recepção uma linha ali seria dado morto. Interpretação mais restrita, registrada
+porque diverge do texto literal da FAQ.
+
+2026-08-18 · Sem `MessagingProvider` (Sprint 2 não chegou), o convite não é enviado sozinho · o
+link volta na resposta da API e a tela copia para a área de transferência, para o dono colar onde
+quiser mandar · é o "convite por link" que o critério do TICKET-017 pede, sem inventar envio
+automático que a infra ainda não tem.
+
+2026-08-18 · `definirExpediente` sempre apaga e reinsere o expediente inteiro daquele profissional
+(ou do padrão do tenant), nunca faz diff · "múltiplos intervalos" é uma lista, e pedir só o delta
+faria o servidor recalcular vizinhos — exatamente onde um intervalo passaria a se sobrepor sem
+ninguém perceber. `EsquemaExpediente` também recusa dois blocos do mesmo dia se sobrepondo
+(intervalos encostados, tipo 13:00–13:00, são aceitos).
+
+2026-08-18 · A conversão de fuso do editor de folgas fica pendente do `date-fns-tz`/Temporal da
+PARTE 2 §1, que nenhum ticket instalou ainda · por ora o horário do navegador é tratado como o do
+tenant · única vertical em uso é `America/Sao_Paulo`, mas isso precisa ser revisitado quando o
+booking público (Sprint 2) expuser o fuso para clientes fora desse horário.
+
+2026-08-18 · Folga (`time_off`) é apagada de verdade, não soft delete · não está na lista de
+"nunca deletar" da regra 11 do CLAUDE.md (agendamento, movimento de estoque, auditoria) — é um
+bloqueio de agenda que a pessoa cria e desfaz por engano, não histórico protegido.

@@ -281,6 +281,17 @@ async function semear(f: Fixture, sufixo: string): Promise<void> {
       { tenant_id: t, client_id: f.clientId, appointment_id: f.appointmentId, channel: 'whatsapp', kind: 'reminder' },
     ],
     ['campaigns', { tenant_id: t, name: 'Reativação', segment: {}, template: 'cycle_v1' }],
+    [
+      'invites',
+      {
+        tenant_id: t,
+        email: `convite-${sufixo}@ciclo.test`,
+        role: 'professional',
+        token_hash: randomUUID().replace(/-/g, ''),
+        invited_by: f.userId,
+        expires_at: new Date(Date.now() + 7 * 86_400_000).toISOString(),
+      },
+    ],
     ['audit_log', { tenant_id: t, action: 'seed.rls', entity: 'tenants', entity_id: t }],
     ['vault_access_log', { tenant_id: t, client_id: f.clientId, action: 'read' }],
     ['idempotency_keys', { key: randomUUID(), tenant_id: t, endpoint: '/v1/seed', request_hash: 'x' }],
@@ -380,6 +391,17 @@ describe('comportamento: o tenant B não alcança o tenant A', () => {
       ['professionals', { tenant_id: A.tenantId, display_name: 'Invasor' }],
       ['products', { tenant_id: A.tenantId, name: 'Invasor' }],
       ['campaigns', { tenant_id: A.tenantId, name: 'Invasora', segment: {}, template: 'x' }],
+      [
+        'invites',
+        {
+          tenant_id: A.tenantId,
+          email: 'invasor@ciclo.test',
+          role: 'professional',
+          token_hash: randomUUID().replace(/-/g, ''),
+          invited_by: B.userId,
+          expires_at: new Date(Date.now() + 86_400_000).toISOString(),
+        },
+      ],
       [
         'health_records',
         {
