@@ -15,6 +15,8 @@ import StatTile from '@/components/ui/stat-tile'
 
 import DetalheAgendamento from './detalhe'
 
+import { LIMIAR_ALERTA_AGENDA } from '@/core/risk/no-show-score'
+
 import type { EstadoAgendamento } from '@/core/scheduling/state'
 import type { LinhaAgendaDia, ResumoAgendaDia } from '@/server/services/agendamentos'
 
@@ -130,6 +132,7 @@ export default function Agenda({
                   servicoNome={a.services?.name ?? 'Serviço'}
                   profissionalNome={profissionais.length > 1 ? a.professionals?.display_name : undefined}
                   status={a.status as EstadoAgendamento}
+                  altoRisco={(a.no_show_score ?? 0) >= LIMIAR_ALERTA_AGENDA}
                 />
               </button>
             </li>

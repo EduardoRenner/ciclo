@@ -5,6 +5,7 @@ import { availableSlots, type IntervaloExpediente, type IntervaloOcupado } from 
 import { transicaoValida, type EstadoAgendamento } from '@/core/scheduling/state'
 import { recomputarCicloDeUmAtendimento } from '@/server/services/ciclo'
 import { lerConfiguracoesAgenda } from '@/server/services/configuracoes-agenda'
+import { calcularScoreDeRisco } from '@/server/services/risco'
 import { hashTelefone, normalizarTelefoneBR } from '@/server/services/telefone'
 import { AppError } from '@/server/http/errors'
 
@@ -14,7 +15,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 type Cliente = SupabaseClient<Database>
 
 const COLUNAS =
-  'id, tenant_id, client_id, professional_id, service_id, starts_at, ends_at, status, origin, price_cents, confirmed_at, arrived_at, completed_at, canceled_at, canceled_by, cancel_reason, client_note'
+  'id, tenant_id, client_id, professional_id, service_id, starts_at, ends_at, status, origin, price_cents, confirmed_at, arrived_at, completed_at, canceled_at, canceled_by, cancel_reason, client_note, no_show_score'
 
 export const EsquemaCriarAgendamento = z
   .object({
@@ -255,6 +256,15 @@ export async function criarAgendamento(
   const endsAt = startsAt.add({ minutes: servico.duration_min })
   const config = lerConfiguracoesAgenda(settingsDoTenant)
 
+  // §5.4: calculado na criação, não depois — é o que o booking público
+  // (TICKET-041) vai usar para decidir se exige sinal. Uma falha aqui não
+  // pode impedir o agendamento de nascer; sem score, a agenda só não mostra
+  // o alerta ⚡, o que é bem menos grave que travar a marcação inteira.
+  const risco = await calcularScoreDeRisco(db, tenantId, timezone, { clientId, startsAt: startsAt.toString() }).catch((erro: unknown) => {
+    console.error(JSON.stringify({ level: 'error', event: 'calculo_risco_falhou', tenantId, clientId }), erro)
+    return null
+  })
+
   const { data, error } = await db
     .from('appointments')
     .insert({
@@ -268,6 +278,8 @@ export async function criarAgendamento(
       price_cents: servico.price_cents,
       client_note: entrada.note ?? null,
       created_by: createdBy,
+      no_show_score: risco?.score ?? null,
+      risk_features: risco?.features ?? null,
     })
     .select(COLUNAS)
     .single()
@@ -293,7 +305,7 @@ export async function criarAgendamento(
 const ESTADOS_VALIDOS = new Set<EstadoAgendamento>(['pending', 'confirmed', 'arrived', 'done', 'no_show', 'canceled', 'expired'])
 
 const COLUNAS_AGENDA_DIA =
-  'id, starts_at, ends_at, status, price_cents, client_note, professional_id, clients ( name ), services ( name ), professionals ( display_name )'
+  'id, starts_at, ends_at, status, price_cents, client_note, professional_id, no_show_score, clients ( name ), services ( name ), professionals ( display_name )'
 
 export type LinhaAgendaDia = {
   id: string
@@ -303,6 +315,8 @@ export type LinhaAgendaDia = {
   price_cents: number
   client_note: string | null
   professional_id: string
+  /** §5.4. `null` até o cálculo rodar (agendamento antigo, ou o cálculo falhou na criação). */
+  no_show_score: number | null
   clients: { name: string } | null
   services: { name: string } | null
   professionals: { display_name: string } | null

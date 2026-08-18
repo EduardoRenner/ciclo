@@ -29,6 +29,8 @@ type Props = React.ComponentPropsWithoutRef<'div'> & {
   servicoNome: string
   status: EstadoAgendamento
   profissionalNome?: string
+  /** §5.4: `score ≥ 0,60` acende o alerta de risco de falta. */
+  altoRisco?: boolean
 }
 
 /** §4: barra lateral de 3px colorida por status, horário à esquerda em tabular. */
@@ -39,6 +41,7 @@ export default function AppointmentRow({
   servicoNome,
   status,
   profissionalNome,
+  altoRisco,
   ...props
 }: Props) {
   return (
@@ -50,7 +53,14 @@ export default function AppointmentRow({
       <div className="flex flex-1 items-center gap-3 px-3 py-3">
         <p className="tabular w-14 shrink-0 text-corpo font-semibold text-txt">{horario}</p>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-corpo font-semibold text-txt">{clienteNome}</p>
+          <p className="flex items-center gap-1 truncate text-corpo font-semibold text-txt">
+            {altoRisco ? (
+              <span aria-label="Risco alto de falta" title="Risco alto de falta">
+                ⚡
+              </span>
+            ) : null}
+            <span className="truncate">{clienteNome}</span>
+          </p>
           <p className="truncate text-secundario text-txt-2">
             {servicoNome}
             {profissionalNome ? ` · ${profissionalNome}` : ''}

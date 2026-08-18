@@ -824,3 +824,34 @@ vice-versa, para não contar a mesma receita duas vezes quando o cliente recebeu
 repetidas. Valor em centavos vem de `appointments.price_cents` (preço congelado na criação), não
 de `tickets.total_cents` — o TICKET-042 (comanda com itens de verdade) ainda não existe nesta
 base; revisar para usar o total real da comanda fechada quando ele existir.
+
+2026-08-18 · TICKET-040, `clients.visits_count`/`ltv_cents`/`last_visit_at` existiam na 0001 mas
+nunca eram escritos por código nenhum — ficavam sempre no default (0/null) · adicionado
+`recalcularSegmentosDoTenant()` (cron `/api/cron/segments`, 4h local) que reconta a partir de
+`appointments` concluídos, mesmo padrão de paginação do TICKET-036. As 3 listas inteligentes
+("aniversariante", "primeira visita sem retorno", "ticket alto") viram uma view derivada
+(`v_client_segments`, migration 0010) em cima desses campos — sem o recálculo, aniversariante
+ainda funcionaria (usa só `birth_date`), mas as outras duas ficariam sempre vazias. "Ticket alto"
+não tem definição no backlog: escolhido top 25% de LTV dentro do próprio tenant
+(`percent_rank() >= 0.75`, `partition by tenant_id`) — relativo ao salão, não um valor fixo em
+reais, porque um salão de bairro e um spa premium não têm o mesmo "alto".
+
+2026-08-18 · `clients.upsert({id, visits_count, ...}, {onConflict: 'id'})` falhava mesmo quando a
+linha já existia (só atualização, nunca insert de verdade) · Postgres valida NOT NULL na linha
+inteira de um `INSERT ... ON CONFLICT DO UPDATE` antes de decidir entre inserir e atualizar —
+sem `name` (NOT NULL, sem default) no payload, a linha é recusada mesmo em atualização pura.
+Corrigido incluindo `name` no upsert (buscado junto na mesma consulta paginada). **Padrão pra
+família:** upsert usado só para atualizar linha existente ainda precisa de todas as colunas
+NOT NULL sem default no payload, não só as que você quer mudar.
+
+2026-08-18 · TICKET-041, score de risco de falta calculado **na criação** do agendamento, não na
+confirmação — é o único ponto em que o booking público (futuro TICKET-032) vai poder decidir se
+exige sinal. Consequência: `confirmouAte12hAntes` sempre nasce `false` no cálculo gravado (nada
+foi confirmado ainda nesse instante), então esse fator do §5.4 sempre soma seus 0,10 no score
+gravado — não é bug, é o que "calculado na criação" significa; recalcular no momento da
+confirmação fica para quando existir necessidade real de refletir isso. `pagouSinal` e
+`assinanteDoClube` ficam sempre `false`: cobrança de sinal (TICKET-032) e clube de assinatura
+(fora do MVP) não existem ainda — quando TICKET-032 nascer, passa a alimentar aqui. A aplicação
+do limiar de 0,45 ("exige sinal no booking público") também depende do TICKET-032/031 (Asaas,
+bloqueado por credencial do Eduardo) — só o cálculo e o alerta ⚡ (limiar 0,60) na agenda estão
+prontos nesta sessão.
