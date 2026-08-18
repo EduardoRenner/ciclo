@@ -1097,3 +1097,40 @@ adicionei só a linha de seed em `tests/rls/isolation.test.ts` (mesmo padrão de
 com `tenant_id`), não o resto da implementação, que não é deste ticket. `package.json`/
 `pnpm-lock.yaml` também carregam a dependência `web-push`/`@types/web-push` que aquela sessão já
 tinha adicionado antes deste commit — ficou junto porque é o mesmo arquivo, não foi eu quem pediu.
+
+2026-08-18 · TICKET-056, push notification · A outra sessão paralela tinha deixado só a tabela
+criada no banco (migration `20260818230107_push_subscriptions`, sem arquivo local, sem código
+nenhum em cima) e parado. Assumi o ticket sozinho a pedido do Eduardo. Dois problemas reais na
+tabela que peguei pronta, corrigidos na 0016 antes de construir em cima: (1) `UNIQUE (endpoint)`
+era global — a mesma pessoa em dois estabelecimentos (memberships N:N) do mesmo aparelho reusa o
+mesmo endpoint de push (decisão do navegador, não da aplicação), então a segunda inscrição
+falharia sem motivo de negócio; virou `UNIQUE (tenant_id, endpoint)`. (2) a política só checava
+`has_tenant(tenant_id)` — qualquer membro do tenant lia/apagava a inscrição de push de QUALQUER
+outro membro (endpoint + chaves de outro dispositivo, que dá pra usar pra mandar notificação se
+vazar); virou `user_id = auth.uid() and has_tenant(tenant_id)`.
+
+Alcance real do canal push em `enviarComFallback`: só clientes com `clients.user_id` preenchido
+(coluna "se criou conta no app da cliente", existe desde a 0001). A área `(client)/minha-conta`
+do briefing não está no backlog de 58 tickets — não existe hoje. Na prática, o canal cobre o
+caso de uma cliente que também é membro da equipe (raro, mas real) e fica pronto e testado
+(`tests/integration/mensageria.test.ts`, canal push) para o dia em que o portal da cliente
+nascer, sem precisar mexer em `mensageria.ts` de novo — só alimentar `clients.user_id`.
+
+`web-push` não devolve id de mensagem (não existe esse conceito no protocolo Web Push) — o
+`providerId` gravado em `messages.provider_id` é sintético (`push.<statusCode>.<sufixo do
+endpoint>`), só para manter o mesmo formato que os outros providers preenchem. Inscrição morta
+(404/410 do serviço de push — navegador desinstalou ou revogou) é apagada automaticamente na
+hora que a tentativa de envio esbarra nela, dentro do próprio `enviarComFallback` — não existe
+job de limpeza separado, e não precisa: só se descobre que morreu na hora de tentar mandar.
+
+UI em `config/notificacoes`: detecta iOS Safari fora do modo standalone (`navigator.standalone`)
+e mostra instrução de instalar na tela de início antes de qualquer botão de ativar — no iOS,
+pedir permissão de notificação fora do PWA instalado nem aparece pro usuário (I118 do FAQ), então
+mostrar o botão ali seria um botão que não faz nada. Sem ícones em `/icons/` ainda (mesmo gap já
+registrado no TICKET-055 pro `manifest.json` — asset de design, fora do escopo de código); o
+`showNotification` referencia os paths mesmo assim, do jeito que o `manifest.json` já fazia.
+
+Sem `SENTRY_DSN`/consulta ao Sentry aqui — reforça só o padrão já registrado: sem
+`NEXT_PUBLIC_VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY`, o botão de ativar mostra erro amigável e
+`enviarPush` lança `falha_transitoria` (o chamador já sabe cair pro e-mail); nunca finge que
+funcionou, nunca derruba o fluxo de lembrete inteiro por falta de credencial.

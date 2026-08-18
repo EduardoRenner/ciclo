@@ -51,3 +51,37 @@ self.addEventListener('fetch', (event) => {
     }),
   )
 })
+
+// TICKET-056. Payload é o JSON que `src/server/providers/messaging/push.ts`
+// manda (`{ title, body, url }`) — se o push chegar sem corpo (o navegador
+// permite), cai num texto genérico em vez de quebrar.
+self.addEventListener('push', (event) => {
+  let dado = { title: 'CICLO', body: 'Você tem uma novidade.', url: '/hoje' }
+  try {
+    if (event.data) dado = { ...dado, ...event.data.json() }
+  } catch {
+    // payload não era JSON — fica no texto genérico acima.
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(dado.title, {
+      body: dado.body,
+      icon: '/icons/icon-192.png',
+      badge: '/icons/badge-72.png',
+      data: { url: dado.url },
+    }),
+  )
+})
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+  const destino = event.notification.data?.url ?? '/hoje'
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((janelas) => {
+      const aberta = janelas.find((j) => new URL(j.url).pathname === destino)
+      if (aberta) return aberta.focus()
+      return self.clients.openWindow(destino)
+    }),
+  )
+})

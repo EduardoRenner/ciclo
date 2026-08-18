@@ -243,3 +243,65 @@ describe('enviarComFallback', () => {
     30_000,
   )
 })
+
+describe('enviarComFallback — canal push (TICKET-056)', () => {
+  it(
+    'WhatsApp falha 3x e existe inscrição de push: cai pro push, não chega no e-mail',
+    async () => {
+      const cliente = await svc
+        .from('clients')
+        .insert({ tenant_id: tenantId, name: 'Cliente com push', phone_e164: '+5511988990077', user_id: usuarios[0]!, email: 'push@ciclo.test' })
+        .select('id')
+        .single()
+
+      const inscricao = await svc
+        .from('push_subscriptions')
+        .insert({ tenant_id: tenantId, user_id: usuarios[0]!, endpoint: `https://push.exemplo.test/${randomUUID()}`, p256dh: 'x', auth: 'y' })
+        .select('id')
+        .single()
+
+      const enviarPushFake = vi.fn(async () => ({ providerId: 'push.fake.1' }))
+      const { provider } = providerQueFalhaNVezes(5)
+
+      const resultado = await enviarComFallback(svc, entradaBase({ clientId: cliente.data!.id }), provider, enviarPushFake)
+
+      expect(resultado).toMatchObject({ channel: 'push', status: 'sent', providerId: 'push.fake.1' })
+      expect(enviarPushFake).toHaveBeenCalledTimes(1)
+
+      await svc.from('push_subscriptions').delete().eq('id', inscricao.data!.id)
+    },
+    30_000,
+  )
+
+  it(
+    'inscrição morta (404/410): apaga a linha e ainda cai pro e-mail',
+    async () => {
+      const cliente = await svc
+        .from('clients')
+        .insert({ tenant_id: tenantId, name: 'Cliente com push morto', phone_e164: '+5511988990078', user_id: usuarios[0]! })
+        .select('id')
+        .single()
+
+      const inscricao = await svc
+        .from('push_subscriptions')
+        .insert({ tenant_id: tenantId, user_id: usuarios[0]!, endpoint: `https://push.exemplo.test/${randomUUID()}`, p256dh: 'x', auth: 'y' })
+        .select('id')
+        .single()
+
+      const enviarPushFake = vi.fn(async () => {
+        throw new ErroDeEnvio('inscrição morta', 'template_rejeitado')
+      })
+      const { provider } = providerQueFalhaNVezes(5)
+
+      const resultado = await enviarComFallback(svc, entradaBase({ clientId: cliente.data!.id }), provider, enviarPushFake)
+
+      // Sem e-mail configurado neste ambiente de teste, o resultado final ainda é falha —
+      // o que importa aqui é que a inscrição morta some, não o canal final.
+      expect(resultado.status).toBe('failed')
+
+      const sobrou = await svc.from('push_subscriptions').select('id').eq('id', inscricao.data!.id).maybeSingle()
+      expect(sobrou.data).toBeNull()
+    },
+    30_000,
+  )
+})

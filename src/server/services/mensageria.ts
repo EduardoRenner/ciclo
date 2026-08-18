@@ -1,7 +1,9 @@
 import { enviarEmailDeFallback } from '@/server/providers/messaging/email'
+import { enviarPush, type PayloadPush } from '@/server/providers/messaging/push'
 import { ErroDeEnvio, type MessagingProvider } from '@/server/providers/messaging/types'
 import { WhatsAppCloudProvider } from '@/server/providers/messaging/whatsapp'
 import { AppError } from '@/server/http/errors'
+import { inscricoesPushDoCliente, removerInscricaoPorEndpoint } from '@/server/services/push'
 
 import type { Database } from '@/server/db/types.gen'
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -29,9 +31,7 @@ const TENTATIVAS_WHATSAPP = 3
 /**
  * §4: "se MessagingProvider falhar 3 vezes ou o template for rejeitado, cair
  * para push e, se não houver, e-mail. Nunca deixar o lembrete sumir em
- * silêncio." Push (PWA) não existe ainda — nasce no TICKET-056, com o service
- * worker — então o fallback real hoje é direto para e-mail; a ordem push→
- * e-mail já está escrita aqui para o dia em que o push existir só ligar.
+ * silêncio."
  *
  * Toda tentativa termina gravada em `messages`, sucesso ou falha — é o "nunca
  * sumir em silêncio" virando linha de banco, não só log.
@@ -40,6 +40,7 @@ export async function enviarComFallback(
   db: Cliente,
   entrada: EnviarMensagemEntrada,
   provider: MessagingProvider = new WhatsAppCloudProvider(),
+  enviarPushFn: (i: Parameters<typeof enviarPush>[0], p: PayloadPush) => ReturnType<typeof enviarPush> = enviarPush,
 ): Promise<{ channel: Canal; status: 'sent' | 'failed'; providerId: string | null }> {
   // H110: opt-out bloqueia só marketing. Lembrete/confirmação (transacional)
   // segue até a cliente pedir para parar tudo, não só campanha.
@@ -64,14 +65,37 @@ export async function enviarComFallback(
     }
   }
 
-  // Push ainda não existe (TICKET-056). Quando existir, entra aqui antes do
-  // e-mail, na mesma ordem que §4 descreve.
+  // TICKET-056: cai para push antes do e-mail, na ordem que §4 descreve.
+  let erroPush: unknown = null
+  try {
+    const inscricoes = await inscricoesPushDoCliente(db, entrada.tenantId, entrada.clientId)
+    if (inscricoes.length === 0) throw new Error('Cliente sem inscrição de push ativa.')
+
+    const payload: PayloadPush = { title: entrada.fallbackSubject, body: entrada.fallbackBody }
+    let providerIdPush: string | null = null
+    for (const inscricao of inscricoes) {
+      try {
+        providerIdPush = (await enviarPushFn(inscricao, payload)).providerId
+      } catch (erroDoDispositivo) {
+        // 404/410 = inscrição morta (navegador desinstalou/revogou). Não adianta
+        // insistir nela nas próximas mensagens — apaga.
+        if (erroDoDispositivo instanceof ErroDeEnvio && erroDoDispositivo.motivo === 'template_rejeitado') {
+          await removerInscricaoPorEndpoint(db, entrada.tenantId, inscricao.endpoint)
+        }
+      }
+    }
+    if (!providerIdPush) throw new Error('Nenhum dispositivo recebeu o push.')
+    return registrar(db, entrada, 'push', 'sent', providerIdPush, null)
+  } catch (erro) {
+    erroPush = erro
+  }
+
   try {
     if (!entrada.emailTo) throw new Error('Cliente sem e-mail cadastrado — nenhum canal de fallback disponível.')
     const { providerId } = await enviarEmailDeFallback({ to: entrada.emailTo, subject: entrada.fallbackSubject, body: entrada.fallbackBody })
     return registrar(db, entrada, 'email', 'sent', providerId, null)
   } catch (erroFallback) {
-    const mensagemErro = `WhatsApp: ${erroDeTexto(ultimoErro)} · E-mail: ${erroDeTexto(erroFallback)}`
+    const mensagemErro = `WhatsApp: ${erroDeTexto(ultimoErro)} · Push: ${erroDeTexto(erroPush)} · E-mail: ${erroDeTexto(erroFallback)}`
     return registrar(db, entrada, 'whatsapp', 'failed', null, mensagemErro)
   }
 }
