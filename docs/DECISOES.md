@@ -570,3 +570,26 @@ sheet aninhado) · Radix `Dialog` dentro de `Dialog` empilha overlay em cima de 
 390px de largura fecha o teclado virtual duas vezes ao digitar o motivo — é ruído, não confirmação
 de verdade. Mostrar/esconder conteúdo dentro do mesmo sheet cumpre a "confirmação" que o critério
 pede sem esse efeito colateral.
+
+2026-08-18 · "Carrega em 1 requisição" (TICKET-025) · `resumoDeHoje()` faz uma consulta só (os
+agendamentos de hoje, com join) e as quatro seções da tela (faturado, próxima cliente, alertas,
+resto do dia) são recortes em memória da mesma lista — não quatro consultas.
+
+2026-08-18 · "Faturamento do dia" é o que já foi **concluído** (`status = 'done'`), não o
+"previsto" que o TICKET-022 já mostra na Agenda (que inclui `pending`/`confirmed`/`arrived`) ·
+são números diferentes de propósito: a Agenda mostra o que a agenda promete, o Hoje mostra o que
+já virou dinheiro. Confundir os dois faria a dona pensar que faturou o que só está marcado.
+
+2026-08-18 · "Alertas" não tem definição em nenhum documento · interpretado como agendamentos
+`pending` (ainda não confirmados) que começam nas próximas 3 horas — o que precisa de ação agora,
+não a agenda inteira do dia · `confirmed` não gera alerta mesmo que seja em breve, porque já foi
+confirmado; não tem o que fazer além de esperar.
+
+2026-08-18 · `/` redireciona para `/hoje` quando há sessão (TICKET-025: "é a rota inicial") · sem
+sessão, fica no placeholder — não existe tela de `/entrar` ainda (só os endpoints do TICKET-009),
+então redirecionar para lá seria link morto.
+
+2026-08-18 · A tela `/hoje` reaproveita o `DetalheAgendamento` de `/agenda` (mesmo sheet de
+ações) em vez de duplicar a lógica de confirmar/chegar/concluir/cancelar/remarcar · o tipo
+`LinhaHoje` foi desenhado com as mesmas colunas de `LinhaAgendaDia` de propósito, para caber ali
+sem adaptação.

@@ -1,0 +1,81 @@
+import { Temporal } from '@js-temporal/polyfill'
+
+import { AppError } from '@/server/http/errors'
+
+import type { Database } from '@/server/db/types.gen'
+import type { SupabaseClient } from '@supabase/supabase-js'
+
+type Cliente = SupabaseClient<Database>
+
+const COLUNAS_HOJE =
+  'id, starts_at, ends_at, status, price_cents, client_note, professional_id, clients ( name ), services ( name ), professionals ( display_name )'
+
+/** Mesmo formato de `LinhaAgendaDia` (TICKET-022) — dá para abrir no mesmo `DetalheAgendamento` da tela de agenda, sem duplicar o sheet de ações. */
+export type LinhaHoje = {
+  id: string
+  starts_at: string
+  ends_at: string
+  status: string
+  price_cents: number
+  client_note: string | null
+  professional_id: string
+  clients: { name: string } | null
+  services: { name: string } | null
+  professionals: { display_name: string } | null
+}
+
+export type ResumoHoje = {
+  /** Faturado de verdade — soma do `price_cents` só do que já foi concluído hoje. Não é previsão. */
+  revenueTodayCents: number
+  nextClient: LinhaHoje | null
+  /** Confirmações pendentes que começam nas próximas 3 horas — o que precisa de atenção agora, não o dia inteiro. */
+  alerts: LinhaHoje[]
+  /** O que ainda vem hoje, dali para frente, na ordem em que acontece. */
+  restOfDay: LinhaHoje[]
+}
+
+const JANELA_ALERTA_HORAS = 3
+
+/**
+ * TICKET-025. "Carrega em 1 requisição": uma consulta só traz todos os
+ * agendamentos de hoje (com join, como o TICKET-022 já fazia) e as quatro
+ * seções da tela são recortes em memória dessa mesma lista — não quatro
+ * consultas separadas.
+ */
+export async function resumoDeHoje(db: Cliente, tenantId: string, timezone: string): Promise<ResumoHoje> {
+  const agora = Temporal.Now.instant()
+  const hoje = agora.toZonedDateTimeISO(timezone).toPlainDate()
+  const inicioDoDia = hoje.toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant()
+  const fimDoDia = hoje.add({ days: 1 }).toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant()
+
+  const { data, error } = await db
+    .from('appointments')
+    .select(COLUNAS_HOJE)
+    .eq('tenant_id', tenantId)
+    .gte('starts_at', inicioDoDia.toString())
+    .lt('starts_at', fimDoDia.toString())
+    .order('starts_at')
+  if (error) throw new AppError('INTERNAL', { cause: error })
+
+  const linhas = (data ?? []) as unknown as LinhaHoje[]
+
+  const revenueTodayCents = linhas.filter((a) => a.status === 'done').reduce((soma, a) => soma + a.price_cents, 0)
+
+  const aindaPorVir = linhas.filter(
+    (a) =>
+      ['pending', 'confirmed', 'arrived'].includes(a.status) &&
+      Temporal.Instant.compare(Temporal.Instant.from(a.starts_at), agora) >= 0,
+  )
+
+  const limiteAlerta = agora.add({ hours: JANELA_ALERTA_HORAS })
+  const alerts = aindaPorVir.filter(
+    (a) => a.status === 'pending' && Temporal.Instant.compare(Temporal.Instant.from(a.starts_at), limiteAlerta) <= 0,
+  )
+
+  return {
+    revenueTodayCents,
+    nextClient: aindaPorVir[0] ?? null,
+    alerts,
+    restOfDay: aindaPorVir,
+  }
+}
