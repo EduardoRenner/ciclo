@@ -3,6 +3,7 @@ import { z } from 'zod'
 
 import { availableSlots, type IntervaloExpediente, type IntervaloOcupado } from '@/core/scheduling/available-slots'
 import { transicaoValida, type EstadoAgendamento } from '@/core/scheduling/state'
+import { recomputarCicloDeUmAtendimento } from '@/server/services/ciclo'
 import { lerConfiguracoesAgenda } from '@/server/services/configuracoes-agenda'
 import { hashTelefone, normalizarTelefoneBR } from '@/server/services/telefone'
 import { AppError } from '@/server/http/errors'
@@ -541,6 +542,24 @@ export async function concluirAgendamento(db: Cliente, tenantId: string, id: str
     .eq('appointment_id', id)
     .maybeSingle()
   if (erroExistente) throw new AppError('INTERNAL', { cause: erroExistente })
+
+  // §5.3: "recalcula em tempo real quando um atendimento é concluído" — só a
+  // combinação cliente+serviço deste agendamento, não o tenant inteiro. Uma
+  // falha aqui não pode derrubar a conclusão, que já aconteceu; o job diário
+  // (TICKET-036) é a rede de segurança se isto não rodar.
+  if (agendamento.client_id) {
+    const { data: tenantRow } = await db.from('tenants').select('timezone').eq('id', tenantId).maybeSingle()
+    await recomputarCicloDeUmAtendimento(
+      db,
+      tenantId,
+      tenantRow?.timezone ?? 'America/Sao_Paulo',
+      { clientId: agendamento.client_id, serviceId: agendamento.service_id },
+      new Date().toISOString().slice(0, 10),
+    ).catch((erro: unknown) => {
+      console.error(JSON.stringify({ level: 'error', event: 'recompute_ciclo_falhou', appointmentId: id }), erro)
+    })
+  }
+
   if (existente) return { appointment: agendamento, ticket: existente }
 
   const { data: ticket, error: erroTicket } = await db
