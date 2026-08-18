@@ -766,3 +766,22 @@ preço atual do serviço × probabilidade de recuperação") nunca rodava. Sem i
 existe mas devolve tudo com valor zero, e o TICKET-037 ("Recuperar receita") não teria número
 nenhum para mostrar. Adicionado `valorEmRiscoCents()` nos dois caminhos (lote e tempo real), com
 teste de integração conferindo o valor exato (6000 × 0,65 = 3900 para `late`).
+
+2026-08-18 · TICKET-036, quatro bugs achados só quando o teste de performance rodou com 10 mil
+clientes de verdade (nenhum dos quatro aparece com dados pequenos) · (1) PostgREST devolve no
+máximo 1000 linhas por `.select()` mesmo sem `.limit()` — `recomputarCiclosDoTenant` perdia 90%
+dos atendimentos concluídos em silêncio; corrigido com `buscarTudoPaginado()` (loop de `.range()`
+até página parcial/vazia). (2) Paginar sem `.order()` explícito não garante ordem estável entre
+chamadas `.range()` separadas — depois do fix de paginação, `processados` ainda variava entre
+execuções (1000, depois 7902); corrigido com `.order('id')` nas três consultas paginadas. (3)
+Vitest roda arquivos de teste em `worker_threads`, que compartilham `process.env` por referência
+— `confirmacao-token.test.ts` mutava `process.env.CRON_SECRET` em `beforeEach`/`afterEach` e
+vazava para outros arquivos de teste concorrentes que também usam o segredo real (só aparecia no
+`pnpm verify` completo, nunca isolado); corrigido com injeção de dependência (`segredo?: string`
+opcional em `gerarTokenAssinado`/`verificarTokenAssinado` e nas funções de confirmação), nunca
+mais mutar `process.env` em teste. (4) Trocar o ÚLTIMO caractere de um token base64url para testar
+"token adulterado" às vezes não muda o valor decodificado — base64 empacota 3 bytes em 4
+caracteres, e o último caractere de um grupo parcial pode ter bit "não significativo"; corrigido
+trocando o caractere do MEIO do token em vez do último. Motivo de registrar: os quatro só se
+manifestam sob carga real ou execução paralela — útil lembrar de rodar `pnpm verify` completo
+(não só o arquivo isolado) e testar em volume antes de fechar qualquer ticket que grava em lote.
