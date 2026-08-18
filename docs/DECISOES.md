@@ -519,3 +519,29 @@ visão por profissional via `can_see_appointment()`, então o banco faz o trabal
 · formulário simples com seleção de serviço/profissional/cliente e horário livre — não um
 seletor de slots disponíveis (isso pede o endpoint `GET /availability`, que ainda não existe). Em
 conflito, mostra as alternativas do 409 como chips tocáveis que reenviam com o novo horário.
+
+2026-08-18 · `AppointmentRow` (nomeado em `03-DESIGN-SYSTEM §4`, ainda não construído até este
+ticket) nasce aqui: barra lateral de 3px por status, horário tabular à esquerda · as cores
+reaproveitam a mesma paleta do `Badge` (§5), mas `arrived`/`done`/`expired` não têm uma cor
+"oficial" no `§5` (que só define confirmado/aguardando/em risco/faltou/sinal/ciclo) — usei
+`info` para `arrived` (chegou, aguardando atendimento) e `txt-3` (neutro) para `done`/`expired`,
+por não terem urgência: já aconteceu ou já perdeu a validade.
+
+2026-08-18 · "Ocupação" e "previsto" (critério do TICKET-022, sem definição precisa em nenhum
+documento) · ocupação = minutos ocupados por agendamento que ainda vale (`pending`/`confirmed`/
+`arrived`/`done`) sobre minutos de expediente do dia; previsto = soma do `price_cents` dos mesmos
+· ambos excluem `canceled`/`no_show`/`expired` — são os estados que não geram receita nem ocupam
+a agenda de verdade. Testado que cancelar um agendamento tira ele das duas contas.
+
+2026-08-18 · `listarAgendaDoDia` faz **uma consulta com join** (`clients(name)`, `services(name)`,
+`professionals(display_name)`) para os agendamentos do dia, não N+1 · é o que permite 60
+agendamentos carregarem em bem menos de 200ms (medido: ~50-100ms no teste de integração) — o
+critério de aceite do ticket é exatamente sobre isso.
+
+2026-08-18 · **Limite de verificação, registrado com honestidade:** não consegui verificar a tela
+`/agenda` ao vivo no browser (390px, visual) porque ela exige sessão autenticada via
+`contextoAtual()`, e não existe ainda uma tela `/entrar` (login) — só os endpoints de auth do
+TICKET-009. A verificação ficou em três frentes que não substituem ver a tela renderizada: build
+passa, os componentes usados (`StatTile`, `Chip`, `EmptyState`, `AppointmentRow`) já foram
+verificados a 390px nos tickets anteriores, e os números exibidos (ocupação, previsto, join) têm
+teste de integração exato contra o banco real. Vale voltar a isso quando a tela de login existir.

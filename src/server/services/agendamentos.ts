@@ -288,6 +288,98 @@ export async function criarAgendamento(
 
 const ESTADOS_VALIDOS = new Set<EstadoAgendamento>(['pending', 'confirmed', 'arrived', 'done', 'no_show', 'canceled', 'expired'])
 
+const COLUNAS_AGENDA_DIA =
+  'id, starts_at, ends_at, status, price_cents, client_note, professional_id, clients ( name ), services ( name ), professionals ( display_name )'
+
+export type LinhaAgendaDia = {
+  id: string
+  starts_at: string
+  ends_at: string
+  status: string
+  price_cents: number
+  client_note: string | null
+  professional_id: string
+  clients: { name: string } | null
+  services: { name: string } | null
+  professionals: { display_name: string } | null
+}
+
+export type ResumoAgendaDia = {
+  appointments: LinhaAgendaDia[]
+  /** 0 a 1 — minutos ocupados / minutos de expediente do dia. Sem expediente cadastrado, é 0 (nada para ocupar). */
+  occupancyRate: number
+  /** Soma do `price_cents` dos agendamentos que ainda valem (não cancelados/vencidos/faltosos). */
+  forecastCents: number
+}
+
+const CONTAM_COMO_RECEITA: EstadoAgendamento[] = ['pending', 'confirmed', 'arrived', 'done']
+
+/**
+ * TICKET-022: os dados prontos para a timeline vertical de um dia — já com o
+ * nome de cliente/serviço/profissional via join (uma consulta só; 60
+ * agendamentos não viram 60 idas ao banco) e os dois números do cabeçalho
+ * (ocupação, previsto).
+ */
+export async function listarAgendaDoDia(
+  db: Cliente,
+  tenantId: string,
+  date: string,
+  timezone: string,
+  professionalId?: string,
+): Promise<ResumoAgendaDia> {
+  const dia = Temporal.PlainDate.from(date)
+  const inicio = dia.toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant()
+  const fim = dia.add({ days: 1 }).toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant()
+
+  let consulta = db
+    .from('appointments')
+    .select(COLUNAS_AGENDA_DIA)
+    .eq('tenant_id', tenantId)
+    .gte('starts_at', inicio.toString())
+    .lt('starts_at', fim.toString())
+  if (professionalId) consulta = consulta.eq('professional_id', professionalId)
+
+  const [{ data: appointments, error: erroAg }, horariosDoDia] = await Promise.all([
+    consulta.order('starts_at'),
+    professionalId
+      ? db
+          .from('business_hours')
+          .select('professional_id, opens_at, closes_at')
+          .eq('tenant_id', tenantId)
+          .eq('weekday', weekdayPg(dia))
+          .or(`professional_id.eq.${professionalId},professional_id.is.null`)
+      : db.from('business_hours').select('professional_id, opens_at, closes_at').eq('tenant_id', tenantId).eq('weekday', weekdayPg(dia)).is('professional_id', null),
+  ])
+  if (erroAg) throw new AppError('INTERNAL', { cause: erroAg })
+  if (horariosDoDia.error) throw new AppError('INTERNAL', { cause: horariosDoDia.error })
+
+  const linhas = (appointments ?? []) as unknown as LinhaAgendaDia[]
+
+  // Se o profissional tem expediente próprio para o dia, usa o dele; senão o padrão do tenant.
+  const doProfissional = professionalId ? horariosDoDia.data.filter((h) => h.professional_id === professionalId) : []
+  const janelas = doProfissional.length > 0 ? doProfissional : horariosDoDia.data.filter((h) => h.professional_id === null)
+
+  const minutosDeExpediente = janelas.reduce((soma, j) => {
+    const abre = Temporal.PlainTime.from(j.opens_at)
+    const fecha = Temporal.PlainTime.from(j.closes_at)
+    return soma + abre.until(fecha).total('minutes')
+  }, 0)
+
+  const minutosOcupados = linhas
+    .filter((a) => CONTAM_COMO_RECEITA.includes(a.status as EstadoAgendamento))
+    .reduce((soma, a) => soma + Temporal.Instant.from(a.starts_at).until(Temporal.Instant.from(a.ends_at)).total('minutes'), 0)
+
+  const forecastCents = linhas
+    .filter((a) => CONTAM_COMO_RECEITA.includes(a.status as EstadoAgendamento))
+    .reduce((soma, a) => soma + a.price_cents, 0)
+
+  return {
+    appointments: linhas,
+    occupancyRate: minutosDeExpediente > 0 ? Math.min(1, minutosOcupados / minutosDeExpediente) : 0,
+    forecastCents,
+  }
+}
+
 export async function listarAgendamentos(
   db: Cliente,
   tenantId: string,
