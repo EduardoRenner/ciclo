@@ -746,3 +746,15 @@ diante rodar, sem precisar tocar neste código de novo.
 :id`), por fora do envelope de resposta e com `.catch()` que só loga · o cancelamento já
 aconteceu quando o aviso roda — se avisar a lista falhar, isso não pode desfazer nem atrasar a
 resposta do cancelamento, que é a ação que a pessoa pediu de verdade.
+
+2026-08-18 · Sem histórico nenhum, `computeCycle()` devolve `on_track` com `predictedDate = today`
+· o algoritmo de gaps pressupõe pelo menos uma visita para ter de onde prever (`predictedDate =
+ultimoAtendimento + personalCycleDays`); cliente que nunca veio não está "atrasado para voltar",
+ele nunca foi — é um caso diferente de "1 visita" (que já produz 0 gaps normalmente, mas tem uma
+última visita real para servir de base).
+
+2026-08-18 · O teste original de "clamp no teto" tinha um erro de aritmética meu: no braço de 1-2
+gaps, o blend 60/40 com o padrão junto com o próprio descarte de gaps > 3× o padrão torna
+matematicamente impossível estourar o teto de 2,5× por ali (o pior caso, gap = 3×padrão, ainda
+fica bem abaixo). O teto só é alcançável no braço de 3+ gaps (mediana pura, sem blend) — o teste
+foi refeito nesse braço.
