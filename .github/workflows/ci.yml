@@ -1,0 +1,156 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Um PR que recebe dois pushes seguidos não precisa gastar dois runs.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Regra inviolável 10: segredo nunca no repositório. Esta checagem vem antes de
+  # tudo porque, se vazou chave, o resto do run é irrelevante.
+  # ---------------------------------------------------------------------------
+  segredos:
+    name: Segredos
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Nenhum arquivo de ambiente versionado
+        run: |
+          rastreados="$(git ls-files | grep -E '(^|/)\.env(\.|$)' | grep -v '\.env\.example$' || true)"
+          if [ -n "$rastreados" ]; then
+            echo "::error::Arquivo de ambiente versionado (só .env.example pode entrar):"
+            echo "$rastreados"
+            exit 1
+          fi
+
+      - name: Nenhuma chave service_role no código
+        run: |
+          # Um JWT do Supabase com "role":"service_role" tem o payload em base64url.
+          # Procuramos o formato do token, não a chave em si — assim a checagem não
+          # precisa conhecer nenhum segredo para reprovar.
+          achados="$(git grep -nIE 'eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{40,}\.[A-Za-z0-9_-]{20,}' \
+            -- ':!pnpm-lock.yaml' || true)"
+          if [ -n "$achados" ]; then
+            echo "::error::JWT literal encontrado em arquivo versionado:"
+            echo "$achados"
+            exit 1
+          fi
+
+  # ---------------------------------------------------------------------------
+  # Typecheck, lint, unit e build. Não toca no banco, então roda em paralelo com
+  # o job `banco` e devolve o erro barato primeiro.
+  # ---------------------------------------------------------------------------
+  qualidade:
+    name: Qualidade
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint (inclui as regras de segurança do TICKET-006)
+        run: pnpm lint
+
+      - name: Testes de unidade
+        run: pnpm test:unit
+
+      - name: Build
+        # Valores de fachada: o build não pode depender de projeto real, e apontar
+        # CI para credencial de produção é proibido pelo briefing (PARTE 1 §4).
+        env:
+          NEXT_PUBLIC_APP_URL: http://localhost:3000
+          NEXT_PUBLIC_APP_ENV: preview
+          NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder
+        run: pnpm build
+
+  # ---------------------------------------------------------------------------
+  # Sobe um Supabase efêmero no runner, aplica as migrations do zero e roda o
+  # teste de isolamento contra ele. É aqui que "PR com RLS faltando não passa".
+  # ---------------------------------------------------------------------------
+  banco:
+    name: Banco e RLS
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Subir o Supabase local (aplica as migrations em banco vazio)
+        run: supabase start
+
+      - name: Exportar as credenciais do stack efêmero
+        run: |
+          eval "$(supabase status -o env)"
+
+          # Trava do briefing PARTE 1 §4: CI nunca fala com projeto real.
+          case "$API_URL" in
+            http://127.0.0.1:*|http://localhost:*) ;;
+            *) echo "::error::CI apontando para $API_URL, que não é o stack local"; exit 1 ;;
+          esac
+
+          echo "::add-mask::$SERVICE_ROLE_KEY"
+          {
+            echo "NEXT_PUBLIC_SUPABASE_URL=$API_URL"
+            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY"
+            echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY"
+          } >> "$GITHUB_ENV"
+
+      - name: supabase db lint
+        run: |
+          supabase db lint --local --level warning --output json > db-lint.json
+          cat db-lint.json
+          # O `db lint` não devolve código de saída diferente de zero por achado,
+          # então quem reprova o build é esta leitura.
+          node -e '
+            const relatorio = JSON.parse(require("fs").readFileSync("db-lint.json", "utf8"));
+            const erros = relatorio.flatMap((r) =>
+              (r.issues ?? []).filter((i) => i.level === "error").map((i) => `${r.function ?? r.name}: ${i.message}`),
+            );
+            if (erros.length) {
+              console.error("::error::db lint encontrou erro:\n" + erros.join("\n"));
+              process.exit(1);
+            }
+          '
+
+      - name: Teste de isolamento multi-tenant
+        run: pnpm test:rls
+
+      - name: Derrubar o stack
+        if: always()
+        run: supabase stop --no-backup

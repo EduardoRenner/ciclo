@@ -13,7 +13,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test:unit": "vitest run --dir tests/unit --passWithNoTests",
-    "test:rls": "vitest run --dir tests/rls --passWithNoTests",
+    "test:rls": "vitest run --dir tests/rls",
     "test:e2e": "playwright test",
     "verify": "pnpm typecheck && pnpm lint && pnpm test:unit && pnpm test:rls && pnpm build",
     "db:types": "supabase gen types typescript --project-id $SUPABASE_PROJECT_REF > src/server/db/types.gen.ts",

@@ -56,3 +56,25 @@ inteira — e elas só respondem sobre o próprio `auth.uid()`.
 2026-08-17 · Extensões `btree_gist`, `pg_trgm` e `citext` ficam no schema `public` (aviso do
 advisor) · mantidas onde a 0001 as colocou · mover exige recriar o índice trigram de `clients` e
 a exclusion constraint de `appointments`; fica anotado para o TICKET-057 (endurecimento final).
+
+2026-08-18 · O TICKET-007 pede `supabase db lint` e teste de RLS no CI, mas aqui o
+desenvolvimento roda contra o projeto na nuvem por falta de Docker · o CI sobe um Supabase
+efêmero (`supabase start`) no runner do GitHub, que tem Docker, e roda tudo contra ele · assim o
+CI aplica as migrations **em banco vazio** a cada PR (o que revalida o critério do TICKET-003),
+não precisa de nenhum segredo do projeto real, e não corre o risco de um teste que cria e apaga
+tenants encostar em produção. Há uma trava explícita: se a URL do stack não for `127.0.0.1`, o
+job reprova — é o "CI bloqueia se detectar" da PARTE 1 §4.
+
+2026-08-18 · `supabase db lint` não devolve código de saída diferente de zero quando acha
+problema · o job gera `--output json` e um `node -e` reprova o build se houver achado de nível
+`error` · sem isso o passo passaria verde com o relatório cheio de erro.
+
+2026-08-18 · `test:rls` ainda tinha `--passWithNoTests`, herdado do TICKET-001 · removido · com a
+flag, apagar `tests/rls/isolation.test.ts` deixaria o `pnpm verify` verde sem nenhum teste de
+isolamento — exatamente o cenário que o TICKET-005 existe para impedir. `test:unit` mantém a
+flag até o primeiro teste de `src/core/` (TICKET-020).
+
+2026-08-18 · O critério "bloqueio de merge" do TICKET-007 é configuração do GitHub, não arquivo ·
+os três jobs têm nome estável (`Segredos`, `Qualidade`, `Banco e RLS`) e o README diz quais marcar
+como *required status checks* · o repositório ainda não tem remoto; a regra é aplicada por Eduardo
+quando ele criar.
