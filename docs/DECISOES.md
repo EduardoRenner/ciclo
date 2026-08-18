@@ -695,3 +695,32 @@ finalmente existir.
 regra de negócio pura (quando falhar vira `dead`), então cabe em `core/` — e como `finish_job()`
 no banco faz a MESMA conta de backoff independentemente, os dois lados (app e banco) precisam
 concordar; o teste de unidade prova a fórmula sem precisar do banco.
+
+2026-08-18 · `send_reminders` (TICKET-030) roda direto na rota do cron, sem passar por `job_queue`
+· ao contrário de `apply_vertical_pack`/outras operações de escrita única, mandar lembrete já é
+idempotente por construção — filtra pelo que já está em `messages` antes de mandar, e o unique
+index `messages_dedupe` é o backstop se dois runs se sobrepuserem. Enfileirar isso job por job só
+faria sentido se cada envio precisasse de retry individual; aqui um run que falha no meio
+simplesmente tenta de novo no próximo tick de 15min, sem duplicar o que já mandou de fato.
+
+2026-08-18 · Link de confirmação sem login (`/confirmar/[token]`) usa HMAC assinado com
+`CRON_SECRET`, não uma tabela nova · diferente do convite de profissional (TICKET-017, que abre
+`invites` porque precisa de revogação), confirmar um agendamento não precisa disso — o link perde
+a validade sozinho quando o agendamento sai de `pending` (checado no momento do uso contra o
+banco, não contra o token) e tem prazo de 72h embutido no próprio payload assinado.
+
+2026-08-18 · Clicar duas vezes no link de confirmação não estoura erro · se o agendamento já não
+está `pending` quando o token é usado, a rota devolve o status atual em vez de tentar
+`confirmarAgendamento()` de novo (que bateria em `INVALID_TRANSITION`, confirmed→confirmed) ·
+clicar de novo num link que a pessoa já usou tem que parecer que funcionou, não parecer quebrado.
+
+2026-08-18 · D-0 T-3h de um agendamento de manhã cedo (ex.: 9h, T-3h = 6h) é grudado nas 8h em vez
+de mandar de madrugada (H109: "nada entre 21h e 8h") · `lembretesDevidos()` clampa para o início
+da janela permitida, nunca pula o lembrete — a pessoa ainda recebe, só que na primeira hora
+possível, não às 6h da manhã.
+
+2026-08-18 · Bug de determinismo encontrado no próprio teste: usar `new Date().toISOString()`
+como "agora" para testar se D-1 18h "já passou" depende da hora real em que o teste roda — passa
+de manhã, falha à noite (ou vice-versa). Os testes de integração deste ticket usam datas fixas em
+2026 e passam `now` explícito para `identificarLembretesPendentes`/`enviarLembretesPendentes`
+(que já aceitam isso como parâmetro), em vez de depender do relógio de verdade.
