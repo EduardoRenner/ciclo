@@ -808,3 +808,10 @@ concorrentes batendo no mesmo projeto Supabase na nuvem (sem Postgres local nest
 topo deste arquivo). Registrado como known issue de infraestrutura de teste, não de produto;
 investigar isolamento (schema por arquivo de teste, ou reduzir paralelismo do Vitest) fica para
 quando afetar CI de verdade.
+
+2026-08-18 · TICKET-038 não define horário fixo para o job diário de campanhas · escolhido 10h no
+fuso de cada tenant — bem dentro da janela permitida de 8h-21h (H109), com folga de sobra caso o
+cron do Vercel atrase. Mesmo padrão do TICKET-036 (`recompute-cycles`): dispara a cada 15min,
+cada tenant só processa quando bate a hora local certa. O job não reimplementa os limites (7 dias
+entre campanhas, janela de horário, opt-out) — só decide QUEM entra na lista a cada rodada,
+reaproveitando `enviarParaRecuperar` (TICKET-037) que já aplica tudo isso.
