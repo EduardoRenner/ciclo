@@ -1,5 +1,6 @@
 import { Temporal } from '@js-temporal/polyfill'
 
+import { listarAlertasDeEstoque, type AlertaEstoque } from '@/server/services/alertas-estoque'
 import { AppError } from '@/server/http/errors'
 
 import type { Database } from '@/server/db/types.gen'
@@ -32,6 +33,8 @@ export type ResumoHoje = {
   alerts: LinhaHoje[]
   /** O que ainda vem hoje, dali para frente, na ordem em que acontece. */
   restOfDay: LinhaHoje[]
+  /** TICKET-045: produto pra recomprar ou perto de vencer. Vazio não aparece na tela. */
+  stockAlerts: AlertaEstoque[]
 }
 
 const JANELA_ALERTA_HORAS = 3
@@ -48,13 +51,10 @@ export async function resumoDeHoje(db: Cliente, tenantId: string, timezone: stri
   const inicioDoDia = hoje.toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant()
   const fimDoDia = hoje.add({ days: 1 }).toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant()
 
-  const { data, error } = await db
-    .from('appointments')
-    .select(COLUNAS_HOJE)
-    .eq('tenant_id', tenantId)
-    .gte('starts_at', inicioDoDia.toString())
-    .lt('starts_at', fimDoDia.toString())
-    .order('starts_at')
+  const [{ data, error }, stockAlerts] = await Promise.all([
+    db.from('appointments').select(COLUNAS_HOJE).eq('tenant_id', tenantId).gte('starts_at', inicioDoDia.toString()).lt('starts_at', fimDoDia.toString()).order('starts_at'),
+    listarAlertasDeEstoque(db, tenantId, hoje.toString()),
+  ])
   if (error) throw new AppError('INTERNAL', { cause: error })
 
   const linhas = (data ?? []) as unknown as LinhaHoje[]
@@ -77,5 +77,6 @@ export async function resumoDeHoje(db: Cliente, tenantId: string, timezone: stri
     nextClient: aindaPorVir[0] ?? null,
     alerts,
     restOfDay: aindaPorVir,
+    stockAlerts,
   }
 }

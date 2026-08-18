@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 
-import { AlertTriangle, CalendarCheck } from 'lucide-react'
+import { AlertTriangle, CalendarCheck, PackageX } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
@@ -75,6 +75,35 @@ export default function Hoje({ resumo }: { resumo: ResumoHoje }) {
                     status={a.status as EstadoAgendamento}
                   />
                 </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {resumo.stockAlerts.length > 0 ? (
+        <section className="mb-6">
+          <h2 className="mb-3 flex items-center gap-1.5 text-overline font-semibold uppercase tracking-[0.13em] text-warn">
+            <PackageX aria-hidden className="size-3.5" />
+            Estoque
+          </h2>
+          <ul className="flex flex-col gap-2">
+            {resumo.stockAlerts.map((a) => (
+              <li key={a.productId}>
+                <Card className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-corpo font-semibold">{a.name}</p>
+                    <p className="text-secundario text-txt-2">
+                      {a.validade === 'bloqueado'
+                        ? 'Vencido — uso bloqueado'
+                        : a.validade === 'alerta'
+                          ? 'Perto de vencer'
+                          : a.precisaRecomprar
+                            ? `${a.stockQty} em estoque — hora de recomprar`
+                            : ''}
+                    </p>
+                  </div>
+                </Card>
               </li>
             ))}
           </ul>

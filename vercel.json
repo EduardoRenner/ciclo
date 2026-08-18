@@ -19,6 +19,10 @@
     {
       "path": "/api/cron/segments",
       "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/stock-alerts",
+      "schedule": "*/15 * * * *"
     }
   ]
 }
