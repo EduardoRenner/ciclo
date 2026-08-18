@@ -926,3 +926,34 @@ padrão via PostgREST/supabase-js, não o fuso do tenant. Um fechamento às 23h3
 025) e somam em memória. A view continua existindo no schema (nada mais depende dela ainda), só
 não virou a fonte de dado deste ticket. Teste de integração cobre o caso de fechamento perto da
 meia-noite local justamente para não deixar essa classe de bug voltar em silêncio.
+
+2026-08-18 · TICKET-044 (retroativo) e TICKET-045: `01-ESPEC-TECNICA §5.6` diz "estorno gera
+movimento `in` compensatório", mas a FAQ F81 diz "gere stock_moves compensatórios do tipo
+**return**". `stock_move_type` tem os dois valores (`in` e `return`) como distintos — não é
+sinônimo. Fiquei com `return` (já implementado no TICKET-044): é semanticamente mais preciso
+(distingue "voltou por cancelamento" de "entrou por compra", útil pro relatório de estoque um dia
+separar os dois) e a FAQ costuma ser a camada mais específica/corrigida sobre a especificação
+geral neste projeto (padrão já visto nos defeitos 1-9). Registrado aqui porque é uma contradição
+literal entre dois documentos da especificação, não uma decisão livre.
+
+2026-08-18 · TICKET-045, alerta de estoque calculado AO VIVO em `resumoDeHoje`, não armazenado ·
+o job diário `/api/cron/stock-alerts` (07:00 local, §7) existe pra bater com a tabela de jobs da
+especificação, mas só loga a contagem — a tela Hoje nunca depende do resultado do job, sempre
+recalcula na hora. Evita o problema de "alerta desatualizado até o próximo cron rodar" que uma
+versão armazenada teria (ex.: comanda fechada às 8h05 zera o estoque, mas o alerta só apareceria
+às 7h do dia seguinte se dependesse só do job).
+
+2026-08-18 · TICKET-048, pacotes e carteira: `consumirSessao()` usa CAS
+(`update ... where used_sessions = <valor lido>`) em vez de incremento direto —
+sem isso, duas requisições concorrentes pelo mesmo pacote (ex.: reabrir a
+aba e clicar "usar sessão" duas vezes) liam `used_sessions=0` juntas e as
+duas escreviam `1`, perdendo uma baixa. Testado com `Promise.allSettled`
+disparando as duas ao mesmo tempo: só uma ganha, a outra recebe `SLOT_TAKEN`.
+Nenhuma rota de `/api/v1/packages`/`/wallet` está em `02-API.md` — a
+especificação não define contrato pra isso; desenhei o mínimo que atende o
+critério (`comanda:own`, mesmo papel de quem já mexe em dinheiro na comanda)
+e registrei aqui em vez de inventar section nova no documento fechado.
+`debitarCarteira()` recusa saldo insuficiente — a tabela permite qualquer
+`amount_cents` negativo, mas deixar a cliente "devendo" na carteira não tem
+uso de negócio claro nesta fase, e é mais fácil relaxar a regra depois do
+que apertar.
