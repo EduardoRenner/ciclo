@@ -450,3 +450,31 @@ não precisa reimportar".
 2026-08-18 · Duplicata é checada em duas rodadas — dentro do próprio arquivo primeiro, depois
 contra o banco — porque a mesma linha nunca pode cair nas duas ao mesmo tempo, e checar as duas
 juntas exigiria saber se um "match" veio do arquivo ou do banco antes de decidir a mensagem.
+
+2026-08-18 · `availableSlots()` usa `@js-temporal/polyfill`, não `date-fns-tz` (a outra opção que
+`§2.1` cita) · Temporal resolve `ZonedDateTime → Instant` com o offset histórico correto para
+qualquer data (testado contra as transições reais de 2018/2019), e depois disso toda a aritmética
+roda em `Instant` puro — que não tem noção de "horário local", então não tem onde um bug de fuso
+se esconder. `date-fns-tz` faria a mesma coisa, mas exigiria carregar o offset manualmente em
+cada soma; Temporal faz isso por construção. Não conflita com a regra de lint do `core/` (só
+proíbe Next/React/Supabase/módulo de sistema — Temporal é puro).
+
+2026-08-18 · O teste de "dia de mudança de horário de verão" usa datas reais de 2018/2019, não um
+fuso inventado · o Brasil aboliu o horário de verão em 2019, mas as transições de 2018-11-04
+(dia de 23h) e 2019-02-16 (dia de 25h) aconteceram de verdade em `America/Sao_Paulo` e continuam
+no banco de fusos (IANA tzdata) · um teste com fuso fictício provaria menos: o bug clássico é
+justamente hardcodar o offset de um fuso real (`UTC-3` fixo para o Brasil), e só uma data real
+onde o offset historicamente mudou expõe isso. O teste confirma primeiro que o offset realmente
+difere entre os dois dias antes de testar o resultado, para não passar por sorte.
+
+2026-08-18 · Regra 2 (`[início, início+duração] cabe inteiro na janela`) e a checagem de colisão
+usam janelas diferentes de propósito · caber no expediente olha só a duração do serviço, sem
+buffer; colidir com bloco ocupado olha `[início-bufferBefore, fim+bufferAfter]` · é a leitura
+literal de `§5.1`: o buffer é sobre não bater em outro compromisso, não sobre caber na janela —
+um serviço com buffer generoso perto do fechamento não devia ser recusado só por isso, desde que
+não haja ninguém depois dele.
+
+2026-08-18 · Paralelismo (`§5.5`) conta só `appointments` contra `parallelCapacity`, nunca
+`timeOff` · folga é o profissional fora do ar; nenhuma capacidade paralela muda isso. Já dois
+agendamentos simultâneos (ex.: duas clientes secando esmalte) são exatamente o caso que
+`parallel_capacity > 1` existe para permitir.
