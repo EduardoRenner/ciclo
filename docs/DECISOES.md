@@ -545,3 +545,28 @@ TICKET-009. A verificação ficou em três frentes que não substituem ver a tel
 passa, os componentes usados (`StatTile`, `Chip`, `EmptyState`, `AppointmentRow`) já foram
 verificados a 390px nos tickets anteriores, e os números exibidos (ocupação, previsto, join) têm
 teste de integração exato contra o banco real. Vale voltar a isso quando a tela de login existir.
+
+2026-08-18 · TICKET-023 e TICKET-024 viraram uma tela só (`detalhe.tsx`, aberta ao tocar uma
+`AppointmentRow` na agenda) · os dois pedem ação sobre o mesmo agendamento (confirmar/chegar/
+concluir/faltar de um lado, remarcar/cancelar do outro) — separar em duas telas obrigaria abrir
+o mesmo agendamento duas vezes para fazer duas coisas relacionadas.
+
+2026-08-18 · Os botões de estado (confirmar/chegou/concluir/faltou) nascem direto de
+`proximosEstados()`, o mesmo módulo puro que o servidor usa para validar (`src/core/scheduling/
+state.ts`) · uma transição que o servidor recusaria **nunca aparece como botão** — não é validação
+de UI reimplementada, é a mesma fonte de verdade dos dois lados. Se a máquina de estados mudar, a
+tela muda sozinha, sem precisar lembrar de atualizar os dois lugares.
+
+2026-08-18 · "Arrastar para remarcar" (texto do TICKET-023) virou um campo de data/hora dentro do
+sheet de detalhe, não um gesto de arrastar · mesma razão do TICKET-016 (reordenar serviços com
+setas em vez de drag): arrastar um cartão de agendamento numa lista rolável, com um dedo só, num
+app mobile, compete com o gesto de rolar a tela e erra mais do que acerta. O critério de aceite
+real (revalida disponibilidade, `canceled_by`, não deleta linha) é todo de backend e já estava
+resolvido desde o TICKET-021 — a interpretação mais simples que atende ao critério é a que foi
+implementada.
+
+2026-08-18 · O cancelamento pede o motivo **dentro do próprio sheet** (troca de conteúdo, não um
+sheet aninhado) · Radix `Dialog` dentro de `Dialog` empilha overlay em cima de overlay, que em
+390px de largura fecha o teclado virtual duas vezes ao digitar o motivo — é ruído, não confirmação
+de verdade. Mostrar/esconder conteúdo dentro do mesmo sheet cumpre a "confirmação" que o critério
+pede sem esse efeito colateral.

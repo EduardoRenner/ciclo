@@ -2,12 +2,16 @@
 
 import { CalendarX } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 
 import AppointmentRow from '@/components/ui/appointment-row'
 import Card from '@/components/ui/card'
 import Chip from '@/components/ui/chip'
 import EmptyState from '@/components/ui/empty-state'
+import Sheet from '@/components/ui/sheet'
 import StatTile from '@/components/ui/stat-tile'
+
+import DetalheAgendamento from './detalhe'
 
 import type { EstadoAgendamento } from '@/core/scheduling/state'
 import type { LinhaAgendaDia, ResumoAgendaDia } from '@/server/services/agendamentos'
@@ -52,6 +56,7 @@ export default function Agenda({
   profissionalSelecionado?: string
 }) {
   const router = useRouter()
+  const [selecionado, setSelecionado] = useState<LinhaAgendaDia | null>(null)
 
   function navegar(novoDia: string, novoProfissional?: string) {
     const params = new URLSearchParams({ date: novoDia })
@@ -116,17 +121,32 @@ export default function Agenda({
         <ul className="flex flex-col gap-2">
           {resumo.appointments.map((a: LinhaAgendaDia) => (
             <li key={a.id}>
-              <AppointmentRow
-                horario={horaLocal(a.starts_at)}
-                clienteNome={a.clients?.name ?? 'Cliente'}
-                servicoNome={a.services?.name ?? 'Serviço'}
-                profissionalNome={profissionais.length > 1 ? a.professionals?.display_name : undefined}
-                status={a.status as EstadoAgendamento}
-              />
+              <button type="button" onClick={() => setSelecionado(a)} className="block w-full text-left">
+                <AppointmentRow
+                  horario={horaLocal(a.starts_at)}
+                  clienteNome={a.clients?.name ?? 'Cliente'}
+                  servicoNome={a.services?.name ?? 'Serviço'}
+                  profissionalNome={profissionais.length > 1 ? a.professionals?.display_name : undefined}
+                  status={a.status as EstadoAgendamento}
+                />
+              </button>
             </li>
           ))}
         </ul>
       )}
+
+      <Sheet aberto={!!selecionado} aoFechar={(aberto) => !aberto && setSelecionado(null)} titulo="Agendamento">
+        {selecionado ? (
+          <DetalheAgendamento
+            agendamento={selecionado}
+            onFechar={() => setSelecionado(null)}
+            onAtualizado={() => {
+              setSelecionado(null)
+              router.refresh()
+            }}
+          />
+        ) : null}
+      </Sheet>
     </div>
   )
 }
