@@ -1,5 +1,7 @@
 'use client'
 
+import Link from 'next/link'
+
 import { AlertTriangle, CalendarCheck } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
@@ -50,7 +52,7 @@ export default function Hoje({ resumo }: { resumo: ResumoHoje }) {
             icone={<CalendarCheck aria-hidden className="size-6" />}
             titulo="Nada mais para hoje"
             descricao="A agenda de hoje está livre a partir de agora."
-            acao={<a href="/agenda/novo">Novo agendamento</a>}
+            acao={<Link href="/agenda/novo">Novo agendamento</Link>}
           />
         </Card>
       )}

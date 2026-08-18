@@ -1,5 +1,7 @@
 'use client'
 
+import Link from 'next/link'
+
 import { CalendarX } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
@@ -114,7 +116,7 @@ export default function Agenda({
             icone={<CalendarX aria-hidden className="size-6" />}
             titulo="Nada marcado nesse dia"
             descricao="Toque no botão + para criar o primeiro agendamento."
-            acao={<a href="/agenda/novo">Novo agendamento</a>}
+            acao={<Link href="/agenda/novo">Novo agendamento</Link>}
           />
         </Card>
       ) : (

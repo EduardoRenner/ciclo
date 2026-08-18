@@ -9,8 +9,8 @@ export const EsquemaFolga = z
   .object({
     // null = fecha o estabelecimento inteiro (comentário da 0001 em time_off).
     professionalId: z.uuid().nullable(),
-    startsAt: z.iso.datetime({ message: 'Data de início inválida.' }),
-    endsAt: z.iso.datetime({ message: 'Data de fim inválida.' }),
+    startsAt: z.iso.datetime({ message: 'Data de início inválida.', offset: true }),
+    endsAt: z.iso.datetime({ message: 'Data de fim inválida.', offset: true }),
     reason: z.string().trim().max(200, 'Motivo muito longo.').nullish(),
   })
   .refine((f) => new Date(f.endsAt) > new Date(f.startsAt), {

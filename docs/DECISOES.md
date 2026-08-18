@@ -593,3 +593,43 @@ então redirecionar para lá seria link morto.
 ações) em vez de duplicar a lógica de confirmar/chegar/concluir/cancelar/remarcar · o tipo
 `LinhaHoje` foi desenhado com as mesmas colunas de `LinhaAgendaDia` de propósito, para caber ali
 sem adaptação.
+
+2026-08-18 · **Bug real achado pelo próprio teste do TICKET-027:** `z.iso.datetime()` sem
+`{ offset: true }` só aceita sufixo `Z` (UTC) — rejeita `-03:00` e qualquer outro offset
+explícito, que é ISO 8601 tão válido quanto. Chamar a rota pública de booking diretamente no
+teste de integração (contornando o navegador, que sempre normaliza para `Z` via
+`toISOString()`) expôs isso: o mesmo formato `-03:00` que passa despercebido em
+`agendamentos.test.ts` (que chama o serviço direto, sem passar pelo Zod da rota) estourava
+`VALIDATION_ERROR` aqui. Corrigido nos três schemas que usam `z.iso.datetime()`
+(`EsquemaCriarAgendamento`, `EsquemaRemarcar`, `EsquemaFolga`, `EsquemaBookingPublico) — a API
+não pode depender silenciosamente de todo cliente mandar só `Z`.
+
+2026-08-18 · O honeypot (`website`) não pode ter `z.string().max(0)` no schema · vira
+`z.string().nullish()` sem limite, e quem decide o que fazer com um valor preenchido é a ROTA,
+não o Zod · com `max(0)`, preencher o campo já estoura `VALIDATION_ERROR` antes do meu código
+rodar — e um 422 específico ensina um bot mais esperto que o honeypot foi notado. A resposta
+tem que ser indistinguível de sucesso, e isso só a rota decide.
+
+2026-08-18 · TICKET-026/027: leitura pública (`perfilPublico`, `disponibilidadePublica`,
+`criarAgendamentoPublico`) passa inteira por `withNovoTenant` (service_role) · a RLS de
+`tenants`/`services`/`professionals` exige `has_tenant()`, que um visitante anônimo nunca tem —
+não existe outro caminho de leitura. A disciplina de não vazar dado fica em nunca selecionar
+coluna a mais nas queries (nunca `settings`/`document`/`address` no perfil público), não na RLS.
+
+2026-08-18 · Rate limit (G99: "Upstash é a única exceção ao sem Redis") sem `UPSTASH_REDIS_REST_
+URL/TOKEN` provisionados · `limitador()` cai para um contador em memória do próprio processo
+quando Upstash não está configurado (ou falha) · funciona para provar o comportamento — inclusive
+o teste "50 tentativas, só as primeiras passam" roda de verdade — mas **não protege um deploy
+serverless com várias instâncias**, que não compartilham memória entre si. Ligar o Upstash de
+verdade é passo de infraestrutura (Eduardo), não falta de código.
+
+2026-08-18 · hCaptcha (G100) sem `HCAPTCHA_SECRET` provisionado · `verificarCaptcha()` deixa
+passar e registra um aviso, mesmo padrão do HIBP indisponível (TICKET-009) · honeypot e rate
+limit continuam ativos de qualquer forma, sem depender de credencial nenhuma — são as duas
+camadas que já protegem o `book` mesmo sem hCaptcha ligado.
+
+2026-08-18 · A cliente do público que soma disponibilidade sem `professionalId` agrega **todo
+mundo** que aceita online — inclusive o dono, que o TICKET-015 (onboarding) cria como
+profissional automaticamente com `accepts_online = true` (o default da coluna). Não é bug: é o
+comportamento certo para "qualquer profissional" no formulário público. Documentado porque um
+teste inicial assumiu (errado) que só existia um profissional no tenant.

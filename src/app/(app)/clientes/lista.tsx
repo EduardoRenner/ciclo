@@ -1,5 +1,7 @@
 'use client'
 
+import Link from 'next/link'
+
 import { Users } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
@@ -81,7 +83,7 @@ export default function ListaClientes({ iniciais }: { iniciais: ClienteLinha[] }
                 ? 'Confira a grafia do nome ou o telefone digitado.'
                 : 'Cadastre a primeira cliente para começar a marcar horários.'
             }
-            acao={<a href="/clientes/nova">Cadastrar cliente</a>}
+            acao={<Link href="/clientes/nova">Cadastrar cliente</Link>}
           />
         </Card>
       ) : (

@@ -26,7 +26,7 @@ export const EsquemaCriarAgendamento = z
       .nullish(),
     serviceId: z.uuid('Escolha um serviço.'),
     professionalId: z.uuid('Escolha um profissional.'),
-    startsAt: z.iso.datetime({ message: 'Horário inválido.' }),
+    startsAt: z.iso.datetime({ message: 'Horário inválido.', offset: true }),
     origin: z.enum(['app', 'public_page', 'whatsapp', 'recurring', 'waitlist', 'import']).default('app'),
     note: z.string().trim().max(500, 'Nota muito longa.').nullish(),
   })
@@ -36,7 +36,7 @@ export const EsquemaCriarAgendamento = z
   })
 
 export const EsquemaRemarcar = z.object({
-  startsAt: z.iso.datetime({ message: 'Horário inválido.' }).nullish(),
+  startsAt: z.iso.datetime({ message: 'Horário inválido.', offset: true }).nullish(),
   professionalId: z.uuid().nullish(),
   note: z.string().trim().max(500).nullish(),
 })
@@ -240,7 +240,10 @@ export async function criarAgendamento(
   db: Cliente,
   tenantId: string,
   timezone: string,
-  createdBy: string,
+  // null no booking público (origin: 'public_page'): não existe profile
+  // autenticado por trás para satisfazer a FK de created_by, e a coluna é
+  // nullable exatamente para esse caso.
+  createdBy: string | null,
   entrada: EntradaCriar,
   settingsDoTenant: unknown,
 ) {
