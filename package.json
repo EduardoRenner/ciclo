@@ -22,6 +22,7 @@
     "db:types:local": "supabase gen types typescript --local > src/server/db/types.gen.ts"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.112.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.31.0",
@@ -38,6 +39,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "15.5.4",
     "shadcn": "^4.18.0",
