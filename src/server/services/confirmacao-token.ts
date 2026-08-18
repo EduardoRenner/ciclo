@@ -12,10 +12,10 @@ import { gerarTokenAssinado, verificarTokenAssinado } from '@/server/services/to
 const ESCOPO = 'confirmacao_agendamento'
 const VALIDADE_HORAS = 72 // cobre folga de sobra além do D-0 T-3h mais tardio
 
-export function gerarTokenConfirmacao(appointmentId: string): string {
-  return gerarTokenAssinado(ESCOPO, appointmentId, VALIDADE_HORAS)
+export function gerarTokenConfirmacao(appointmentId: string, segredo?: string): string {
+  return gerarTokenAssinado(ESCOPO, appointmentId, VALIDADE_HORAS, segredo)
 }
 
-export function verificarTokenConfirmacao(token: string): string | null {
-  return verificarTokenAssinado(ESCOPO, token)
+export function verificarTokenConfirmacao(token: string, segredo?: string): string | null {
+  return verificarTokenAssinado(ESCOPO, token, segredo)
 }
