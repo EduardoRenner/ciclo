@@ -410,3 +410,43 @@ na consulta, o mesmo tratamento que a permissão recebeu no TICKET-010.
 2026-08-18 · `DELETE /api/v1/clients/:id` marca `deleted_at`, não `active = false` · a tabela
 `clients` já tem a coluna certa para isso (D45), diferente de `services`/`professionals`, que
 usam `active`.
+
+2026-08-18 · **Oitavo defeito: 2 dos 8 verticais do enum `vertical_pack` não têm catálogo
+seedado.** `hair` e `tattoo` existem no tipo (0001) mas não têm linha em `vertical_packs`
+(0002) — `apply_vertical_pack()` corretamente dá `raise exception 'pack % não encontrado'` para
+os dois, e o onboarding desfaz o tenant como projetado (o `try/catch` do TICKET-015 funcionou
+exatamente como devia). Não é bug de código, é conteúdo que falta: alguém escolher "Cabelo" ou
+"Tatuagem" no onboarding hoje recebe erro, não uma conta com catálogo vazio — o que é o
+comportamento mais seguro dos dois ruins. Escrever o catálogo dessas duas verticais é trabalho de
+conteúdo de produto, não deste ticket; fica anotado para quem mexer no pack de vertical.
+
+2026-08-18 · **Bug real, achado pelo build:** o layout `(app)` nunca envolvia as telas em
+`<ToastProvider>`. Funcionava por acidente em toda tela que usa `cookies()`/`headers()`
+(`contextoAtual()` força renderização dinâmica, que pula a pré-renderização estática onde o erro
+aparece) — `/clientes/importar` foi a primeira tela 100% estática a usar `useToast()`, e o
+`next build` estourou `useToast precisa estar dentro de <ToastProvider>` na geração estática.
+Corrigido movendo o `ToastProvider` para dentro do `(app)/layout.tsx`, envolvendo `{children}` e
+a `TabBar`. Vale conferir se alguma tela das anteriores (config/servicos, config/profissionais)
+também dependia desse acidente — hoje passam porque são dinâmicas, mas ficariam quebradas se
+alguém as tornasse estáticas sem saber do motivo.
+
+2026-08-18 · **Nono defeito: `.in()` do PostgREST com centenas de hashes de 64 caracteres excede
+algum limite de URL.** Medido: a checagem de duplicata da importação de 500 linhas falhava por
+inteiro (não parcialmente) ao mandar todos os `phone_hash` num só `.in()` — a URL resultante passa
+de 30 KB. Corrigido dividindo a checagem em lotes de 200, o mesmo tamanho já usado para os
+inserts em lote. **Vale para a família inteira:** qualquer `.in()` que possa crescer com o
+tamanho do lote do usuário (não um enum fixo) precisa ser paginado.
+
+2026-08-18 · Importação usa `papaparse` para o parsing de CSV, não um parser próprio · a regra
+de negócio real (aspas, vírgula dentro de campo, quebra de linha dentro de campo) é bem
+documentada e `papaparse` é maduro; escrever isso à mão seria reinventar RFC 4180 pior.
+
+2026-08-18 · "Linha inválida" (nome em branco, telefone malformado) e "duplicata" (telefone já
+usado, no arquivo ou no banco) saem em arrays separados (`errors[]` e `skipped[]`), como o
+contrato de `docs/02-API.md` já desenhava · são categorias diferentes para a pessoa que revisa o
+relatório: uma é erro de digitação para corrigir na planilha, a outra é "essa cliente já existe,
+não precisa reimportar".
+
+2026-08-18 · Duplicata é checada em duas rodadas — dentro do próprio arquivo primeiro, depois
+contra o banco — porque a mesma linha nunca pode cair nas duas ao mesmo tempo, e checar as duas
+juntas exigiria saber se um "match" veio do arquivo ou do banco antes de decidir a mensagem.
