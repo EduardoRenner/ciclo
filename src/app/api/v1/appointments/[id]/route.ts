@@ -1,8 +1,10 @@
 import { writeAudit } from '@/server/audit/write'
 import { exigirPermissao } from '@/server/auth/rbac'
 import { contextoAtual } from '@/server/auth/tenant'
-import { criarClienteDoUsuario } from '@/server/db/server-client'
+import { criarClienteDoUsuario, exigirEnv } from '@/server/db/server-client'
+import { withNovoTenant } from '@/server/db/with-tenant'
 import { cancelarAgendamento, EsquemaCancelar, EsquemaRemarcar, remarcarAgendamento } from '@/server/services/agendamentos'
+import { notificarProximoDaLista } from '@/server/services/lista-espera'
 import { lerCorpo } from '@/server/http/body'
 import { AppError } from '@/server/http/errors'
 import { rota } from '@/server/http/handler'
@@ -73,6 +75,27 @@ export const DELETE = rota(async (req, params, requestId) => {
     },
     req,
   )
+
+  // TICKET-034: um horário liberado avisa a próxima pessoa da lista de
+  // espera daquele serviço. Roda por fora do envelope de resposta — mesmo
+  // que o aviso falhe, o cancelamento em si já aconteceu e não pode voltar
+  // atrás por causa disso.
+  const { data: tenantRow } = await db.from('tenants').select('timezone').eq('id', ctx.tenantId).single()
+  await withNovoTenant((svc) =>
+    notificarProximoDaLista(
+      svc,
+      ctx.tenantId,
+      {
+        serviceId: agendamento.service_id,
+        professionalId: agendamento.professional_id,
+        startsAt: agendamento.starts_at,
+        timezone: tenantRow?.timezone ?? 'America/Sao_Paulo',
+      },
+      exigirEnv('NEXT_PUBLIC_APP_URL'),
+    ),
+  ).catch((erro: unknown) => {
+    console.error(JSON.stringify({ level: 'error', event: 'aviso_lista_espera_falhou', requestId }), erro)
+  })
 
   return { appointment: agendamento }
 })

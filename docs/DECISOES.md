@@ -724,3 +724,25 @@ como "agora" para testar se D-1 18h "já passou" depende da hora real em que o t
 de manhã, falha à noite (ou vice-versa). Os testes de integração deste ticket usam datas fixas em
 2026 e passam `now` explícito para `identificarLembretesPendentes`/`enviarLembretesPendentes`
 (que já aceitam isso como parâmetro), em vez de depender do relógio de verdade.
+
+2026-08-18 · O token de encaixe da lista de espera carrega a oferta inteira (waitlist id +
+tenant + serviço + profissional + horário + fuso), não só um id · quem clica no link não tem
+como saber qual foi a oferta de outro jeito, e abrir uma tabela só para guardar "qual foi a
+última oferta" duplicaria o que o próprio token assinado já consegue carregar. Generalizei o
+mecanismo do TICKET-030 (`confirmacao-token.ts`) para `token-assinado.ts`, reaproveitado pelos
+dois — `confirmacao-token.ts` virou uma casca fina por cima dele.
+
+2026-08-18 · **Bug de PostgREST, não do meu código:** `waitlist` não tem FK declarada para
+`client_cycles` (é tabela derivada, sem relação por constraint), então `client_cycles!left(...)`
+embutido na consulta de `waitlist` estourava erro — o PostgREST só embeda o que consegue navegar
+por foreign key de verdade. Virou duas consultas separadas, unidas em memória por `client_id`.
+
+2026-08-18 · Ordenação de quem avisar (E69) usa `value_at_risk_cents` de `client_cycles`, que
+ainda não tem dado nenhum — o Motor de Ciclo (Sprint 3) é quem popula essa tabela · a consulta já
+busca a coluna certa com `COALESCE` para 0, então passa a valer sozinha assim que o TICKET-035 em
+diante rodar, sem precisar tocar neste código de novo.
+
+2026-08-18 · `notificarProximoDaLista()` é chamada pela rota de cancelamento (`DELETE /appointments/
+:id`), por fora do envelope de resposta e com `.catch()` que só loga · o cancelamento já
+aconteceu quando o aviso roda — se avisar a lista falhar, isso não pode desfazer nem atrasar a
+resposta do cancelamento, que é a ação que a pessoa pediu de verdade.
