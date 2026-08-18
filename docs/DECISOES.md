@@ -633,3 +633,39 @@ mundo** que aceita online — inclusive o dono, que o TICKET-015 (onboarding) cr
 profissional automaticamente com `accepts_online = true` (o default da coluna). Não é bug: é o
 comportamento certo para "qualquer profissional" no formulário público. Documentado porque um
 teste inicial assumiu (errado) que só existia um profissional no tenant.
+
+2026-08-18 · **Sexto defeito real na especificação**, achado testando o TICKET-028 com a vertical
+`hair`: o enum `vertical_pack` (0001) tem 8 valores, mas a tabela `vertical_packs` (0002) só
+semeia 6 — `tattoo` e `hair` não têm pack. `apply_vertical_pack()` estourava exceção para essas
+duas, e como o TICKET-015 chama essa função dentro do onboarding, a conta nunca chegava a existir
+— quem escolhesse "Tatuagem" ou "Cabelo" no cadastro batia num 500 puro. Migration
+`0008_tolerate_missing_vertical_pack.sql`: sem pack, a função pula a etapa de catálogo e segue
+para o expediente padrão (que não depende de pack) — a conta nasce com catálogo vazio, a pessoa
+cadastra os serviços à mão (TICKET-016), em vez de o cadastro travar inteiro. Não inventei um
+catálogo de tatuagem/cabelo porque isso é conhecimento de negócio que não está em nenhum
+documento — fica para quando alguém real definir o que entra nesses dois packs.
+
+2026-08-18 · `MessagingProvider` recebe o provider como parâmetro opcional em `enviarComFallback`
+(default `new WhatsAppCloudProvider()`) · é o que permite testar toda a lógica de retry/fallback/
+dedupe/opt-out com um provider falso, sem precisar de `WHATSAPP_ACCESS_TOKEN` — a orquestração
+(quantas vezes tenta, quando desiste, o que grava em `messages`) é testável mesmo sem a conta do
+WhatsApp Business existir.
+
+2026-08-18 · "Falha 3 vezes" (§4) não distingue motivo — mas template rejeitado pela Meta (H108)
+não melhora tentando de novo, então `enviarComFallback` sai do laço na primeira rejeição de
+template e só esgota as 3 tentativas para falha transitória (rede, 5xx). A distinção vem de
+`ErroDeEnvio.motivo`, que o provider decide.
+
+2026-08-18 · H110 (opt-out só bloqueia marketing) é checado só quando `kind === 'campaign'` ·
+lembrete/confirmação (`reminder`/`confirmation`, kind transacional) ignora `whatsapp_opt_out` de
+propósito — "lembrete transacional segue até ela pedir explicitamente para parar tudo" é a frase
+exata da FAQ.
+
+2026-08-18 · O e-mail de fallback não implementa `MessagingProvider` inteiro, só uma função solta
+(`enviarEmailDeFallback`) · a interface documentada em §4 (`sendTemplate`/`sendText`/
+`parseWebhook`) é pensada para WhatsApp — "template" e "webhook de status" não fazem sentido para
+e-mail simples, forçar a mesma forma criaria métodos vazios só para satisfazer um tipo.
+
+2026-08-18 · Push (PWA) não está implementado — a ordem documentada é push→e-mail, mas o service
+worker (TICKET-055/056) ainda não existe · o fallback vai direto para e-mail, com o comentário no
+código marcando onde o push entraria quando existir. Não é lacuna silenciosa: está anotado.
