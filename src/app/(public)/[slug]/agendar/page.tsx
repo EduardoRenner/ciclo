@@ -17,7 +17,7 @@ export default async function PaginaAgendar({ params }: { params: Promise<{ slug
   return (
     <main className="mx-auto min-h-dvh max-w-[560px] px-[18px] py-8">
       <header className="mb-6">
-        <h1 className="text-titulo font-extrabold">Agendar em {perfil.name}</h1>
+        <h1 className="text-titulo font-bold">Agendar em {perfil.name}</h1>
       </header>
 
       <Agendar slug={slug} services={perfil.services} professionals={perfil.professionals} />

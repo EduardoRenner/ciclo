@@ -44,7 +44,7 @@ export default function Sheet({ aberto, aoFechar, titulo, descricao, gatilho, cl
         >
           <div aria-hidden className="mx-auto mb-4 h-1 w-10 rounded-[var(--radius-pill)] bg-line-2" />
 
-          <Dialog.Title className="text-titulo font-extrabold text-txt">{titulo}</Dialog.Title>
+          <Dialog.Title className="text-titulo font-bold text-txt">{titulo}</Dialog.Title>
           {descricao ? (
             <Dialog.Description className="mt-1 text-secundario text-txt-2">{descricao}</Dialog.Description>
           ) : (

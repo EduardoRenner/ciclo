@@ -62,18 +62,16 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
     <>
       {/*
         O rosto do negócio abria com um título do tamanho de tela interna sobre
-        fundo preto liso — idêntico a qualquer tela do admin. Agora tem o brilho
-        do acento **do salão** (o `--acc` já vem do layout por tenant), nome em
-        tamanho de manchete e o sinal que toda cliente procura primeiro: está
-        aberto agora?
+        fundo preto liso — idêntico a qualquer tela do admin. Tinha um brilho
+        radial atrás do título; removido (era a mesma assinatura de landing
+        gerada da tela sem sessão e do admin — `docs/08-REDESIGN-E-IDENTIDADE.md`
+        Parte II §B3). Nome em tamanho de manchete e o sinal que toda cliente
+        procura primeiro — está aberto agora? — seguram a hierarquia sem cor.
+        A cor do salão (acento por vertical, Parte II §3.8/§E7) entra numa
+        rodada futura, de forma pontual — não como glow de fundo.
       */}
       <section className="relative -mx-[var(--gutter)] flex flex-col items-center gap-4 overflow-hidden px-[var(--gutter)] pb-8 pt-12 text-center">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 -z-10"
-          style={{ background: 'radial-gradient(80% 55% at 50% -10%, var(--acc-soft), transparent 72%)' }}
-        />
-        <h1 className="text-numero font-extrabold">{perfil.name}</h1>
+        <h1 className="text-numero font-bold">{perfil.name}</h1>
         {perfil.tagline ? <p className="max-w-sm text-corpo text-txt-2">{perfil.tagline}</p> : null}
 
         {temHorario ? (
@@ -87,7 +85,7 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
         <div className="flex flex-wrap justify-center gap-3">
           <Link
             href={`/${perfil.slug}/agendar`}
-            className="inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-sm)] bg-[image:var(--grad-acc)] px-5 text-corpo font-semibold text-on-acc shadow-elevado transition duration-[var(--dur-1)] hover:brightness-110 active:scale-[.97]"
+            className="inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-sm)] bg-acc px-5 text-corpo font-semibold text-on-acc shadow-elevado transition duration-[var(--dur-1)] hover:brightness-110 active:scale-[.97]"
           >
             <CalendarPlus aria-hidden className="size-4" />
             Agendar horário

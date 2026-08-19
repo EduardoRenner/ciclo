@@ -19,14 +19,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       {/*
         No monitor, o app é uma coluna de 560px sobre um fundo preto infinito —
         parecia inacabado justamente na tela em que o produto é demonstrado. A
-        borda lateral (só a partir de `sm`) fecha a coluna como um aparelho, e o
-        brilho de acento no topo dá profundidade sem imagem nem custo de rede.
+        borda lateral (só a partir de `sm`) fecha a coluna como um aparelho.
+        Havia também um brilho radial no topo (glow de template de landing
+        gerada — `docs/08-REDESIGN-E-IDENTIDADE.md` Parte II §B3); removido:
+        profundidade agora vem só de superfície e sombra (Parte II §6).
       */}
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 -z-10 hidden sm:block"
-        style={{ background: 'radial-gradient(70% 40% at 50% -10%, var(--acc-soft), transparent 70%)' }}
-      />
       <div className="mx-auto min-h-dvh max-w-[560px] sm:border-x sm:border-line">
         <Topbar />
         {/*

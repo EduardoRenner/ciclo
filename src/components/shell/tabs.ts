@@ -1,8 +1,16 @@
 export type Aba = {
   href: string
   rotulo: string
-  /** Nome do ícone do lucide-react, resolvido pelo `TabBar` — mantém este arquivo livre de JSX/React. */
-  icone: 'Home' | 'CalendarDays' | 'Users' | 'Sparkles'
+  /**
+   * Nome do ícone do lucide-react, resolvido pelo `TabBar` — mantém este
+   * arquivo livre de JSX/React. `'Anel'` é especial: não é lucide, é a própria
+   * marca do CICLO (`docs/08-REDESIGN-E-IDENTIDADE.md` Parte II §F1/§8) — o
+   * ícone que a aba do Motor de Ciclo tinha era `Sparkles` (✨), o emblema
+   * universal de "isto foi feito por IA", simbolizando exatamente o conceito
+   * que justifica o produto existir. O anel aberto já É a metáfora de "cliente
+   * que volta"; faz sentido a marca virar o próprio ícone aqui.
+   */
+  icone: 'Home' | 'CalendarDays' | 'Users' | 'Anel'
 }
 
 /**
@@ -17,7 +25,7 @@ export const ABAS: readonly Aba[] = [
   { href: '/admin/hoje', rotulo: 'Hoje', icone: 'Home' },
   { href: '/admin/agenda', rotulo: 'Agenda', icone: 'CalendarDays' },
   { href: '/admin/clientes', rotulo: 'Clientes', icone: 'Users' },
-  { href: '/admin/recuperar', rotulo: 'Recuperar', icone: 'Sparkles' },
+  { href: '/admin/recuperar', rotulo: 'Recuperar', icone: 'Anel' },
 ]
 
 /**

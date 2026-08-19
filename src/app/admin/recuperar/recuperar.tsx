@@ -1,6 +1,6 @@
 'use client'
 
-import { Send, Sparkles } from 'lucide-react'
+import { Send } from 'lucide-react'
 import { useState } from 'react'
 
 import ActionBar from '@/components/ui/action-bar'
@@ -9,6 +9,7 @@ import Card from '@/components/ui/card'
 import Chip from '@/components/ui/chip'
 import EmptyState from '@/components/ui/empty-state'
 import FilterRow from '@/components/ui/filter-row'
+import IconeAnel from '@/components/ui/icone-anel'
 import Skeleton from '@/components/ui/skeleton'
 import StatTile from '@/components/ui/stat-tile'
 import { dinheiro } from '@/lib/formato'
@@ -129,7 +130,7 @@ export default function RecuperarReceita({ inicial }: { inicial: ListaRecuperar 
       ) : lista.items.length === 0 ? (
         <Card className="p-0">
           <EmptyState
-            icone={<Sparkles aria-hidden className="size-6" />}
+            icone={<IconeAnel aria-hidden className="size-6" />}
             titulo="Ninguém para recuperar agora"
             descricao="Quando alguma cliente atrasar para voltar, ela aparece aqui."
             acao={<span className="text-secundario text-txt-3">Volte mais tarde</span>}

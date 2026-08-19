@@ -26,7 +26,7 @@ export default function StatTile({ className, rotulo, valor, progresso, heroi, a
     <Card className={className} {...props}>
       <p className="text-overline font-semibold uppercase text-txt-3">{rotulo}</p>
       {/* `tracking-tight` vem do token do tamanho — é o que separa "número grande" de "número desenhado" (Linear/Stripe fazem o mesmo nas telas de valor). */}
-      <p className={cn('tabular mt-1.5 font-extrabold text-txt', heroi ? 'text-numero' : 'text-stat')}>{valor}</p>
+      <p className={cn('tabular mt-1.5 font-bold text-txt', heroi ? 'text-numero' : 'text-stat')}>{valor}</p>
 
       {apoio ? <div className="mt-1 text-secundario text-txt-2">{apoio}</div> : null}
 

@@ -97,7 +97,7 @@ export default function Agenda({
                 'flex h-16 flex-1 flex-col items-center justify-center gap-0.5 rounded-[var(--radius-sm)]',
                 'text-label font-semibold transition duration-[var(--dur-1)] ease-[var(--ease-ios)] active:scale-[.95]',
                 selecionado
-                  ? 'bg-[image:var(--grad-acc)] text-on-acc shadow-elevado'
+                  ? 'bg-acc text-on-acc shadow-elevado'
                   : 'bg-surface-2 text-txt-2 hover:bg-surface-3 hover:text-txt',
               )}
             >

@@ -1,14 +1,15 @@
 'use client'
 
-import { CalendarDays, Home, Plus, Sparkles, Users } from 'lucide-react'
+import { CalendarDays, Home, Plus, Users } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
+import IconeAnel from '@/components/ui/icone-anel'
 import { cn } from '@/lib/utils'
 
 import { ABAS, abaAtiva, type Aba } from './tabs'
 
-const ICONES: Record<Aba['icone'], typeof Home> = { Home, CalendarDays, Users, Sparkles }
+const ICONES: Record<Aba['icone'], typeof Home | typeof IconeAnel> = { Home, CalendarDays, Users, Anel: IconeAnel }
 
 type Props = {
   /** Rota do FAB — sempre "novo agendamento" no MVP; parametrizado para o teste não depender de string solta. */
@@ -57,7 +58,7 @@ export default function TabBar({ hrefFab = '/admin/agenda/novo' }: Props) {
             aria-label="Novo agendamento"
             className={cn(
               'grid size-14 -translate-y-4 place-items-center rounded-[var(--radius-pill)]',
-              'border-4 border-surface bg-[image:var(--grad-acc)] text-on-acc shadow-fab',
+              'border-4 border-surface bg-acc text-on-acc shadow-fab',
               'transition duration-[var(--dur-1)] ease-[var(--ease-ios)] hover:brightness-110 active:scale-[.92]',
             )}
           >

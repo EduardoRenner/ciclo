@@ -33,8 +33,11 @@ export default async function LayoutSlug({
   })
   if (!perfil) notFound()
 
-  const acc = HEX.test(perfil.accentColor.acc) ? perfil.accentColor.acc : '#a855f7'
-  const acc2 = HEX.test(perfil.accentColor.acc2) ? perfil.accentColor.acc2 : '#c084fc'
+  // Fallback se o pack não tiver accent_color válido: osso — o mesmo acento
+  // neutro do app (`docs/08-REDESIGN-E-IDENTIDADE.md` Parte II §3.3), nunca o
+  // roxo antigo. Um salão sem cor configurada não deve herdar a marca de IA.
+  const acc = HEX.test(perfil.accentColor.acc) ? perfil.accentColor.acc : '#f0ebe3'
+  const acc2 = HEX.test(perfil.accentColor.acc2) ? perfil.accentColor.acc2 : '#fffcf7'
 
   return (
     <div

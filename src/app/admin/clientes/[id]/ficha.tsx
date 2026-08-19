@@ -7,7 +7,6 @@ import {
   MessageCircle,
   Pencil,
   Scissors,
-  Sparkles,
   TriangleAlert,
   UserPlus,
 } from 'lucide-react'
@@ -19,6 +18,7 @@ import Avatar from '@/components/ui/avatar'
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import IconButton from '@/components/ui/icon-button'
+import IconeAnel from '@/components/ui/icone-anel'
 import SectionHeader from '@/components/ui/section-header'
 import Sheet from '@/components/ui/sheet'
 import StatTile from '@/components/ui/stat-tile'
@@ -207,7 +207,7 @@ export default function Ficha({
       <header className="flex items-center gap-3 py-5">
         <Avatar nome={cliente.name} tamanho="lg" />
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-titulo font-extrabold">{cliente.name}</h1>
+          <h1 className="truncate text-titulo font-bold">{cliente.name}</h1>
           <p className="text-secundario text-txt-2">
             {formatarTelefone(cliente.phoneE164) ?? 'Sem telefone'}
             {cliente.source ? ` · ${ROTULO_ORIGEM[cliente.source] ?? cliente.source}` : ''}
@@ -266,7 +266,7 @@ export default function Ficha({
 
       {/* Preferências: o "caderninho" que faz a cliente se sentir conhecida. */}
       <section className="mt-7">
-        <SectionHeader icone={<Sparkles className="size-3.5" />}>Como atender</SectionHeader>
+        <SectionHeader icone={<IconeAnel className="size-3.5" />}>Como atender</SectionHeader>
         <Card>
           {preferenciasPreenchidas.length === 0 ? (
             <button

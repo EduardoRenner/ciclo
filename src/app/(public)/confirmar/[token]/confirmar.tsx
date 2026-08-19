@@ -43,7 +43,7 @@ export default function ConfirmarAgendamento({ token }: { token: string }) {
     return (
       <>
         <CheckCircle2 aria-hidden className="mb-4 size-14 text-ok" />
-        <p className="text-titulo font-extrabold">Prontinho!</p>
+        <p className="text-titulo font-bold">Prontinho!</p>
         <p className="mt-2 text-corpo text-txt-2">Seu horário está confirmado. Te esperamos lá.</p>
       </>
     )
@@ -52,7 +52,7 @@ export default function ConfirmarAgendamento({ token }: { token: string }) {
   return (
     <>
       <XCircle aria-hidden className="mb-4 size-14 text-bad" />
-      <p className="text-titulo font-extrabold">Não consegui confirmar</p>
+      <p className="text-titulo font-bold">Não consegui confirmar</p>
       <p className="mt-2 text-corpo text-txt-2">{mensagem}</p>
     </>
   )

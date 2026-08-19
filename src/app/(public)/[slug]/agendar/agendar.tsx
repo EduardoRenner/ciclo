@@ -147,7 +147,7 @@ export default function Agendar({
     return (
       <Card className="flex flex-col items-center py-10 text-center">
         <CheckCircle2 aria-hidden className="mb-4 size-14 text-ok" />
-        <p className="text-titulo font-extrabold">Agendamento enviado!</p>
+        <p className="text-titulo font-bold">Agendamento enviado!</p>
         <p className="mt-2 max-w-xs text-corpo text-txt-2">
           Você vai receber a confirmação por WhatsApp. Se não confirmarmos em algumas horas, é só chamar por telefone.
         </p>
@@ -230,7 +230,7 @@ export default function Agendar({
                 className={
                   'flex h-16 w-14 shrink-0 flex-col items-center justify-center gap-0.5 rounded-[var(--radius-sm)] text-label font-semibold transition duration-[var(--dur-1)] ease-[var(--ease-ios)] active:scale-[.95] ' +
                   (d === dia
-                    ? 'bg-[image:var(--grad-acc)] text-on-acc shadow-elevado'
+                    ? 'bg-acc text-on-acc shadow-elevado'
                     : 'bg-surface-2 text-txt-2 hover:bg-surface-3 hover:text-txt')
                 }
               >
@@ -282,7 +282,7 @@ export default function Agendar({
               {horaLocal(slotEscolhido.startsAt)} · {duracao(servicoEscolhido.durationMin)}
             </p>
             {servicoEscolhido.priceCents > 0 ? (
-              <p className="tabular mt-2 text-stat font-extrabold text-acc-2">
+              <p className="tabular mt-2 text-stat font-bold text-acc-2">
                 {dinheiro.format(servicoEscolhido.priceCents / 100)}
               </p>
             ) : null}

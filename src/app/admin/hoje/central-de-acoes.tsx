@@ -1,7 +1,8 @@
-import { ChevronRight, Sparkles } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 
 import Card from '@/components/ui/card'
+import IconeAnel from '@/components/ui/icone-anel'
 import SectionHeader from '@/components/ui/section-header'
 
 import type { AcaoSugerida } from '@/server/services/crm'
@@ -18,7 +19,7 @@ export default function CentralDeAcoes({ acoes }: { acoes: AcaoSugerida[] }) {
 
   return (
     <section className="mb-6">
-      <SectionHeader icone={<Sparkles className="size-3.5" />}>Vale a pena hoje</SectionHeader>
+      <SectionHeader icone={<IconeAnel className="size-3.5" />}>Vale a pena hoje</SectionHeader>
       <div className="grid gap-2">
         {acoes.map((acao) => (
           <Link key={acao.chave} href={acao.href} className="block">

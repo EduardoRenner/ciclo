@@ -46,7 +46,7 @@ export default function Avatar({ nome, tamanho = 'md', className }: Props) {
     <span
       aria-hidden
       className={cn(
-        'grid shrink-0 place-items-center rounded-[var(--radius-pill)] font-extrabold',
+        'grid shrink-0 place-items-center rounded-[var(--radius-pill)] font-bold',
         TAMANHO[tamanho],
         className,
       )}

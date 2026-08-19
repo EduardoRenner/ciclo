@@ -217,9 +217,9 @@ function Conteudo({ icones }: { icones: { agenda: React.ReactNode; clientes: Rea
 
       <Secao titulo="Escala tipográfica">
         <div className="w-full">
-          <p className="tabular text-numero font-extrabold">R$ 12.480</p>
-          <p className="text-titulo font-extrabold">Título de tela</p>
-          <p className="text-stat font-extrabold">Valor de stat</p>
+          <p className="tabular text-numero font-bold">R$ 12.480</p>
+          <p className="text-titulo font-bold">Título de tela</p>
+          <p className="text-stat font-bold">Valor de stat</p>
           <p className="text-corpo">Corpo — português direto, sem jargão.</p>
           <p className="text-secundario text-txt-2">Secundário</p>
           <p className="text-label font-semibold text-txt-3">Label / caption</p>

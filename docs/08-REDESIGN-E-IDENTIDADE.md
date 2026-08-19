@@ -569,23 +569,50 @@ Régua: **se a tela funciona em escala de cinza, o design está certo.**
 
 ## II.10 Plano de execução
 
-| Fase | O que | Arquivos | Risco |
-|---|---|---|---|
-| **E0 · Cor** | Tokens de II.3.3–3.6; `--ok/--atencao/--erro` substituem os cinco semânticos | `globals.css` | Baixo |
-| **E1 · Trava** | `contraste.test.ts` estendido: Δ luminância ≥ 0,15 entre semânticos | `tests/unit/design/contraste.test.ts` | Baixo |
-| **E2 · Tipografia** | Inter → Archivo; peso máx. 700; `tabular-nums`; varredura dos 30 `font-extrabold` | `layout.tsx`, `globals.css` | Baixo |
-| **E3 · Gradiente** | `--grad-acc` removido dos 12 pontos; os 3 brilhos radiais apagados | `button.tsx`, `selo.tsx`, `empty-state.tsx`, `stat-tile.tsx`, `fidelidade.tsx:158`, `secoes.tsx:74`, `admin/layout.tsx:28`, `tela-publica.tsx:15` | Médio |
-| **E4 · Marca** | `Selo` vira II.5.2; favicon; ícones 192/512 + maskable a 60%; manifest | `selo.tsx`, `app/icon.svg`, `public/icons/*`, `manifest.json` | Baixo |
-| **E5 · Limpeza** | Apagar os 5 SVGs do `create-next-app` | `public/` | Nenhum |
-| **E6 · Ícones** | `Sparkles`/`Zap` banidos; `TriangleAlert` unificado; traço 1.75; tamanhos 20/24 | varredura | Médio |
-| **E7 · Escopo da cor** | `--acc` do tenant só em `/[slug]`; app fica osso | injeção no `<html>`, layout público | **Alto** |
-| **E8 · Verticais** | Migration com os sete tons de 3.8 | `supabase/migrations/00XX_*.sql` | Médio |
-| **E9 · Estado sem cor** | Confirmado/pago passam a neutro; faixa de 3px | `badge.tsx`, `appointment-row.tsx`, `card.tsx` | Médio |
-| **E10 · Composição** | II.9, tela a tela | telas | Médio |
-| **E11 · Verificação** | `typecheck && lint && test:unit && build` + medição no DOM + leitura em escala de cinza | — | — |
+| Fase | O que | Arquivos | Risco | Status |
+|---|---|---|---|---|
+| **E0 · Cor** | Tokens de II.3.3–3.6 | `globals.css` | Baixo | ✅ |
+| **E1 · Trava** | `contraste.test.ts` estendido: Δ luminância ≥ 0,15 entre `ok`/`warn`/`risk`/`bad` | `tests/unit/design/contraste.test.ts` | Baixo | ✅ |
+| **E2 · Tipografia** | Inter → Archivo; peso máx. 700; varredura dos 30 `font-extrabold` | `layout.tsx`, `globals.css` | Baixo | ✅ |
+| **E3 · Gradiente** | `--grad-acc` removido dos 11 pontos; os 3 brilhos radiais apagados; barra de fidelidade sólida | `button.tsx`, `selo.tsx`, `empty-state.tsx`, `stat-tile.tsx`, `fidelidade.tsx`, `secoes.tsx`, `admin/layout.tsx`, `tela-publica.tsx` | Médio | ✅ |
+| **E4 · Marca** | `Selo`/`Topbar` viram o anel de II.5.2; favicon (`app/icon.svg`); ícones 192/512 + maskable a 60% regerados | `selo.tsx`, `topbar.tsx`, `app/icon.svg`, `public/icons/*`, `manifest.json` | Baixo | ✅ |
+| **E5 · Limpeza** | Apagados os 5 SVGs do `create-next-app` e o `favicon.ico` antigo | `public/` | Nenhum | ✅ |
+| **E6 · Ícones** | `Sparkles` banido (virou a marca — `icone-anel.tsx` — na tab bar, badge, `AlertBanner`, 2× `SectionHeader`); `Zap` → `UserX`; `AlertTriangle`/`TriangleAlert` unificados em `TriangleAlert` (4 arquivos) | varredura completa | Médio | ✅ nomes · ⬜ traço 1.75/tamanhos 20-24 não auditados |
+| **E7 · Escopo da cor** | `--acc` do tenant só em `/[slug]`; app fica osso | injeção no `<html>`, layout público | ~~Alto~~ | ✅ **já era assim** — achado ao executar: `/[slug]/layout.tsx` já injeta `--acc` só no wrapper inline, nunca em `:root`; o admin nunca herdava cor de tenant. Só os *fallbacks* apontavam para roxo (`layout.tsx`, `page.tsx`, `public-booking.ts`) — trocados para osso |
+| **E8 · Verticais** | Migration com os sete tons de 3.8 | `supabase/migrations/00XX_*.sql` | Médio | ⬜ não feito — os 6 swatches do Tailwind seguem em `0002_vertical_packs.sql` |
+| **E9 · Estado sem cor** | Confirmado/pago passam a neutro; faixa de 3px | `badge.tsx`, `appointment-row.tsx`, `card.tsx` | Médio | ⬜ não feito de propósito — ver nota abaixo |
+| **E10 · Composição** | II.9, tela a tela | telas | Médio | ⬜ não feito |
+| **E11 · Verificação** | `typecheck && lint && test:unit && build` + medição no DOM + leitura em escala de cinza | — | — | ✅ ver II.10.1 |
 
-**E0–E5 derrubam a maior parte da "cara de IA", não têm risco e são reversíveis.** E7–E9 mexem
-em arquitetura de tema e em dado — rodada própria.
+**Achado durante a execução, fora do escopo original (novo item para o backlog):**
+`src/app/admin/config/profissionais/formulario.tsx:24` — o seletor de cor do profissional
+(`CORES`) usa os **mesmos seis swatches crus do Tailwind** da A2. É feature diferente (cor do
+profissional na agenda, não marca/vertical) — por isso não entrou em E0–E6 — mas nasceu do
+mesmo copiar-e-colar e deveria trocar por uma paleta pensada, não os defaults.
+
+**Por que E9 ficou de fora desta rodada, apesar de E0 ter corrigido os *valores* dos 5
+semânticos:** ao medir o espaço de busca real (II.3.7), descobri que `info` (estado "chegou",
+usado em 3 lugares) é uma informação de produto genuína, não coberta pela tabela simplificada de
+4 linhas da II.3.5 — colapsar 5 estados em 3 sem decidir o que fazer com "chegou" seria mudar
+comportamento sem decisão, não só cor. `--ok`/`--warn`/`--risk`/`--bad` já saíram do E0 com Δ
+luminância ≥0,15 entre si (testado); "confirmado deixa de ter cor" continua correto e fica para
+quando alguém decidir o destino do estado "chegou".
+
+### II.10.1 Evidência da verificação (2026-08-19)
+
+`pnpm typecheck && pnpm lint` — limpos. `pnpm test:unit` — **369/369** (era 364; os 5 novos são
+o teste de Δ luminância). `pnpm build` — produção limpa, `Archivo` baixado e auto-hospedado,
+`/icon.svg` reconhecido como rota especial do App Router. Medido no **DOM real** do dev server
+(não só no código-fonte): `background-color` do `body` = `rgb(13,12,12)` (`#0D0C0C`), fonte
+computada = `Archivo, "Archivo Fallback", system-ui, sans-serif`, botão primário =
+`rgb(240,235,227)` de fundo com `rgb(13,12,12)` de texto (osso sólido, sem gradiente), as 5
+cores semânticas renderizadas batendo exatamente com os hex calculados, 3 instâncias do anel
+renderizadas na vitrine (tab bar, badge "Ciclo", `AlertBanner`), zero overflow horizontal a
+375px.
+
+**E0–E6 (nomes) derrubam a maior parte da "cara de IA", tinham risco baixo/médio e foram
+verificados com evidência real, não só leitura de código.** E8–E10 mexem em dado e em
+comportamento de estado — ficam para rodada própria, com decisão de produto tomada antes.
 
 ---
 
@@ -601,18 +628,24 @@ em arquitetura de tema e em dado — rodada própria.
 6. `error.tsx` na raiz e em `/admin`, em português, com saída.
 7. `pnpm typecheck && pnpm lint && pnpm test:unit && pnpm build` passam.
 
-**Parte II — a cumprir nas fases E0–E11 (linha de base medida em 2026-08-19):**
+**Parte II — resultado em 2026-08-19 (linha de base do dia entre parênteses):**
 
-8. `grep -rn "a855f7\|ec4899\|f59e0b\|8b5cf6\|10b981\|f97316" src/ supabase/` → **10** ocorrências hoje, meta zero.
-9. `grep -rn "grad-acc\|radial-gradient" src/` (fora da máscara do `.scroll-x`) → **15** hoje, meta zero.
-10. `grep -rn "Sparkles\|Zap" src/` → **14** hoje, meta zero.
-11. `grep -rn "font-extrabold" src/` → **30** hoje, meta zero.
-12. `ls public/*.svg` (resíduo `create-next-app`) → **5** hoje, meta zero.
-13. `contraste.test.ts` passa sem afrouxar piso, e reprova se Δ luminância entre semânticos cair abaixo de 0,15.
-14. `--txt-3` passa nas quatro superfícies.
-15. A marca é legível a 16px em monocromático; o `maskable` não corta.
-16. Cor de vertical não corresponde a estereótipo de gênero e é editável no onboarding.
-17. A tela "Hoje" é compreensível em escala de cinza.
+8. ⬜ `grep -rn "a855f7\|ec4899\|f59e0b\|8b5cf6\|10b981\|f97316" src/ supabase/` → **7**
+   (era 10) — restam só `0002_vertical_packs.sql` (E8, migration não feita) e o achado novo em
+   `formulario.tsx` (fora do escopo original). Os 3 *fallbacks* de código que apontavam para
+   roxo foram corrigidos.
+9. ✅ `grep -rn "grad-acc\|radial-gradient" src/` (fora da máscara do `.scroll-x`) → **0** (era 15).
+10. ✅ `grep -rn "Sparkles\|Zap" src/` → **0** (era 14).
+11. ✅ `grep -rn "font-extrabold" src/` → **0** (era 30).
+12. ✅ `ls public/*.svg` (resíduo `create-next-app`) → **0** (era 5).
+13. ✅ `contraste.test.ts` passa sem afrouxar piso; reprova se Δ luminância cair abaixo de 0,15
+    entre `ok`/`warn`/`risk`/`bad` (não cobre `info`, ver nota do E9 em II.10).
+14. ✅ `--txt-3` (`#99938c`) passa nas quatro superfícies — testado.
+15. ✅ A marca é legível a 16px em monocromático (verificado por rasterização, II.5.3); o
+    `maskable` não corta — regerado a 60% do canvas, contra os 78% de antes.
+16. ⬜ Cor de vertical não corresponde a estereótipo de gênero e é editável no onboarding — não
+    feito (depende de E8).
+17. ⬜ A tela "Hoje" é compreensível em escala de cinza — não verificado (depende de E10).
 18. Nenhuma regra de negócio, rota de API ou consulta ao banco alterada (vale para as duas partes).
 
 ---

@@ -128,7 +128,7 @@ export default function Fidelidade({ clientId, pontosIniciais, assinaturaInicial
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">Pontos</p>
-              <p className="tabular mt-1 text-titulo font-extrabold">{pontos.saldo}</p>
+              <p className="tabular mt-1 text-titulo font-bold">{pontos.saldo}</p>
             </div>
             <Button variante="secondary" onClick={() => setLancandoPontos(true)} motivoDesabilitado={undefined}>
               Lançar
@@ -155,7 +155,7 @@ export default function Fidelidade({ clientId, pontosIniciais, assinaturaInicial
                       aria-label="Progresso até o próximo prêmio"
                     >
                       <div
-                        className="h-full rounded-[var(--radius-pill)] bg-[linear-gradient(90deg,var(--acc),var(--acc-2))]"
+                        className="h-full rounded-[var(--radius-pill)] bg-acc"
                         style={{ width: `${pct}%` }}
                       />
                     </div>

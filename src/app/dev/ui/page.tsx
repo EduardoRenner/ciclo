@@ -17,7 +17,7 @@ export default function PaginaVitrine() {
         <p className="text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">
           Design system
         </p>
-        <h1 className="mt-1 text-titulo font-extrabold">Componentes do CICLO</h1>
+        <h1 className="mt-1 text-titulo font-bold">Componentes do CICLO</h1>
         <p className="mt-1 text-secundario text-txt-2">
           Tokens de <code>03-DESIGN-SYSTEM §1</code>. Largura travada em 430 px para conferir a
           regra dos 390 px.

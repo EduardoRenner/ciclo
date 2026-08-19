@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 
-import { AlertTriangle, CalendarCheck, PackageX } from 'lucide-react'
+import { TriangleAlert, CalendarCheck, PackageX } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
@@ -82,7 +82,7 @@ export default function Hoje({ resumo, children }: { resumo: ResumoHoje; childre
 
       {resumo.alerts.length > 0 ? (
         <section className="mb-6">
-          <SectionHeader tom="alerta" icone={<AlertTriangle aria-hidden className="size-4" />}>
+          <SectionHeader tom="alerta" icone={<TriangleAlert aria-hidden className="size-4" />}>
             Precisa confirmar
           </SectionHeader>
           <ul className="flex flex-col gap-2">

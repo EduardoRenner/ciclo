@@ -35,7 +35,7 @@ export default function EmptyState({ className, icone, titulo, descricao, acao, 
         className={cn(
           'mt-5',
           '[&_a]:inline-flex [&_a]:h-12 [&_a]:items-center [&_a]:justify-center [&_a]:gap-2',
-          '[&_a]:rounded-[var(--radius-sm)] [&_a]:bg-[image:var(--grad-acc)] [&_a]:px-5',
+          '[&_a]:rounded-[var(--radius-sm)] [&_a]:bg-acc [&_a]:px-5',
           '[&_a]:text-corpo [&_a]:font-semibold [&_a]:text-on-acc [&_a]:shadow-elevado',
           '[&_a]:transition [&_a]:duration-[var(--dur-1)] [&_a]:active:scale-[.97]',
         )}

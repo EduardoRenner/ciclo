@@ -228,7 +228,7 @@ export default function Comanda({
           <span>Subtotal</span>
           <span className="tabular">{dinheiro.format(ticket.subtotal_cents / 100)}</span>
         </div>
-        <div className="flex justify-between text-titulo font-extrabold">
+        <div className="flex justify-between text-titulo font-bold">
           <span>Total</span>
           <span className="tabular">{dinheiro.format(ticket.total_cents / 100)}</span>
         </div>

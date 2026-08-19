@@ -16,7 +16,8 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 type Cliente = SupabaseClient<Database>
 
-const ACENTO_PADRAO = { acc: '#a855f7', acc2: '#c084fc' }
+// Osso — o acento neutro do app, não o roxo antigo (ver layout.tsx do slug).
+const ACENTO_PADRAO = { acc: '#f0ebe3', acc2: '#fffcf7' }
 
 /**
  * Toda leitura pública passa por `withNovoTenant` (service_role): a RLS de

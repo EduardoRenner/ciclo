@@ -19,7 +19,7 @@ export default async function PaginaOnboarding() {
     <TelaPublica>
       <Selo />
       <div className="text-center">
-        <h1 className="text-titulo font-extrabold">Vamos criar seu negócio</h1>
+        <h1 className="text-titulo font-bold">Vamos criar seu negócio</h1>
         <p className="mt-1 text-secundario text-txt-2">Você poderá ajustar tudo isso depois.</p>
       </div>
       <FormularioOnboarding />

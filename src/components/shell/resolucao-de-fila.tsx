@@ -1,6 +1,6 @@
 'use client'
 
-import { AlertTriangle } from 'lucide-react'
+import { TriangleAlert } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 import Card from '@/components/ui/card'
@@ -37,7 +37,7 @@ export default function ResolucaoDeFila() {
       {conflitos.map((m) => (
         <Card key={m.id} flutuante className="border-warn/50">
           <div className="flex items-start gap-2">
-            <AlertTriangle aria-hidden className="mt-0.5 size-4 shrink-0 text-warn" />
+            <TriangleAlert aria-hidden className="mt-0.5 size-4 shrink-0 text-warn" />
             <div className="min-w-0 flex-1">
               <p className="text-secundario font-semibold text-txt">Uma alteração feita offline não pôde ser enviada</p>
               <p className="mt-0.5 text-label text-txt-2">O que mudou no servidor pode ter conflitado. Confira antes de tentar de novo.</p>

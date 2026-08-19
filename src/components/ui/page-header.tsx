@@ -23,7 +23,7 @@ export default function PageHeader({ titulo, overline, descricao, acao, classNam
         {overline ? (
           <p className="text-overline font-semibold uppercase text-txt-3">{overline}</p>
         ) : null}
-        <h1 className={cn('text-titulo font-extrabold text-txt', overline && 'mt-1')}>{titulo}</h1>
+        <h1 className={cn('text-titulo font-bold text-txt', overline && 'mt-1')}>{titulo}</h1>
         {descricao ? <p className="mt-1.5 text-secundario text-txt-2">{descricao}</p> : null}
       </div>
       {acao ? <div className="shrink-0">{acao}</div> : null}

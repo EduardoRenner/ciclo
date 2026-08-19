@@ -1,6 +1,7 @@
 import { cva, type VariantProps } from 'class-variance-authority'
-import { AlertTriangle, Check, Clock, Lock, Sparkles, X } from 'lucide-react'
+import { TriangleAlert, Check, Clock, Lock, X } from 'lucide-react'
 
+import IconeAnel from '@/components/ui/icone-anel'
 import { cn } from '@/lib/utils'
 
 const selo = cva(
@@ -24,10 +25,10 @@ const selo = cva(
 const MARCA = {
   ok: Check,
   warn: Clock,
-  risk: AlertTriangle,
+  risk: TriangleAlert,
   bad: X,
   info: Lock,
-  ciclo: Sparkles,
+  ciclo: IconeAnel,
 } as const
 
 type Props = React.ComponentPropsWithoutRef<'span'> &

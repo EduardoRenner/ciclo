@@ -16,7 +16,7 @@ const botao = cva(
       // que já existia, para quem está com mouse (o Eduardo testando no desktop)
       // não ver a interface inteira "morta" ao passar o cursor.
       variante: {
-        primary: 'bg-[image:var(--grad-acc)] text-on-acc shadow-elevado hover:brightness-110',
+        primary: 'bg-acc text-on-acc shadow-elevado hover:brightness-110',
         secondary: 'border border-line-2 bg-surface-2 text-txt hover:bg-surface-3',
         success: 'bg-ok text-on-acc hover:brightness-110',
         danger: 'bg-bad text-on-acc hover:brightness-110',

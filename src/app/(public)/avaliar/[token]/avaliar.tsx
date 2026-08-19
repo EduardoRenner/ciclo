@@ -70,7 +70,7 @@ export default function Avaliar({ token }: { token: string }) {
     return (
       <>
         <XCircle aria-hidden className="mb-4 size-14 text-bad" />
-        <p className="text-titulo font-extrabold">Não consegui abrir</p>
+        <p className="text-titulo font-bold">Não consegui abrir</p>
         <p className="mt-2 text-corpo text-txt-2">{mensagem}</p>
       </>
     )
@@ -80,7 +80,7 @@ export default function Avaliar({ token }: { token: string }) {
     return (
       <>
         <CheckCircle2 aria-hidden className="mb-4 size-14 text-ok" />
-        <p className="text-titulo font-extrabold">Obrigado pela avaliação!</p>
+        <p className="text-titulo font-bold">Obrigado pela avaliação!</p>
         <p className="mt-2 text-corpo text-txt-2">
           {dados?.negocioNome ? `A equipe da ${dados.negocioNome} agradece.` : 'Sua opinião ajuda o negócio a melhorar.'}
         </p>
@@ -90,7 +90,7 @@ export default function Avaliar({ token }: { token: string }) {
 
   return (
     <>
-      <p className="text-titulo font-extrabold">Como foi seu {dados?.servicoNome ?? 'atendimento'}?</p>
+      <p className="text-titulo font-bold">Como foi seu {dados?.servicoNome ?? 'atendimento'}?</p>
       <p className="mt-1 text-secundario text-txt-2">{dados?.negocioNome}</p>
 
       <div className="mt-6 flex gap-1" role="radiogroup" aria-label="Nota de 1 a 5 estrelas">
@@ -130,7 +130,7 @@ export default function Avaliar({ token }: { token: string }) {
         type="button"
         onClick={enviar}
         disabled={nota === 0 || estado === 'enviando'}
-        className="mt-4 h-12 w-full rounded-[var(--radius-sm)] bg-[image:var(--grad-acc)] text-corpo font-semibold text-on-acc transition active:scale-[.98] disabled:opacity-50"
+        className="mt-4 h-12 w-full rounded-[var(--radius-sm)] bg-acc text-corpo font-semibold text-on-acc transition active:scale-[.98] disabled:opacity-50"
       >
         {estado === 'enviando' ? 'Enviando…' : 'Enviar avaliação'}
       </button>

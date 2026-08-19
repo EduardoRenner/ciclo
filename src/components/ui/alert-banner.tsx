@@ -1,6 +1,7 @@
 import { cva, type VariantProps } from 'class-variance-authority'
-import { AlertTriangle, Sparkles, TriangleAlert } from 'lucide-react'
+import { TriangleAlert } from 'lucide-react'
 
+import IconeAnel from '@/components/ui/icone-anel'
 import { cn } from '@/lib/utils'
 
 const faixa = cva('flex items-center gap-3 rounded-[var(--radius)] border p-3.5 text-corpo', {
@@ -16,8 +17,8 @@ const faixa = cva('flex items-center gap-3 rounded-[var(--radius)] border p-3.5 
 })
 
 const ICONE = {
-  acento: Sparkles,
-  warn: AlertTriangle,
+  acento: IconeAnel,
+  warn: TriangleAlert,
   risk: TriangleAlert,
   danger: TriangleAlert,
 } as const

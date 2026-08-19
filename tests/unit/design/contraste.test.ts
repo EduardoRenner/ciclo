@@ -63,10 +63,40 @@ describe('contraste dos tokens (WCAG AA)', () => {
     },
   )
 
-  it('o texto do botão primário lê sobre as duas pontas do gradiente do acento', () => {
-    // O gradiente vai de --acc a --acc-2; o texto é #0a0a0f nos dois trechos.
-    expect(contraste('#0a0a0f', token('acc'))).toBeGreaterThanOrEqual(4.5)
-    expect(contraste('#0a0a0f', token('acc-2'))).toBeGreaterThanOrEqual(4.5)
+  it('o texto do botão primário (--on-acc) lê sobre --acc e --acc-2', () => {
+    // `docs/08-REDESIGN-E-IDENTIDADE.md` Parte II §B1/§6: o botão primário deixou
+    // de ser gradiente (`--grad-acc`, removido) e passou a ser --acc sólido. O
+    // teste lê --on-acc do próprio CSS em vez de hardcodear o hex, senão ele
+    // para de proteger a troca de cor no dia em que --on-acc mudar de novo.
+    const onAcc = token('on-acc')
+    expect(contraste(onAcc, token('acc'))).toBeGreaterThanOrEqual(4.5)
+    expect(contraste(onAcc, token('acc-2'))).toBeGreaterThanOrEqual(4.5)
+  })
+
+  describe('separação por luminância entre semânticos (daltonismo verde-vermelho)', () => {
+    // Parte II §3.7: em deuteranopia/protanopia (~8% dos homens — público direto
+    // de barbearia) só a LUMINÂNCIA separa cores na mesma família (verde↔laranja
+    // ↔vermelho). --ok e --bad chegaram a ter Δ0,054 — praticamente a mesma cor
+    // para quem não distingue matiz nessa faixa. --info fica de fora deste bloco
+    // de propósito: é azul, e azul↔amarelo é o eixo que a maioria dos daltônicos
+    // vermelho-verde continua enxergando — não precisa competir por luminância
+    // com a família verde/laranja/vermelho.
+    const PISO = 0.15
+
+    function luminanciaToken(nome: string): number {
+      return luminancia(token(nome))
+    }
+
+    it.each([
+      ['ok', 'warn'],
+      ['ok', 'risk'],
+      ['ok', 'bad'],
+      ['warn', 'bad'],
+      ['risk', 'bad'],
+    ])('--%s e --%s têm Δ luminância de pelo menos 0,15', (a, b) => {
+      const delta = Math.abs(luminanciaToken(a) - luminanciaToken(b))
+      expect(delta, `Δ(--${a}, --${b}) = ${delta.toFixed(3)}`).toBeGreaterThanOrEqual(PISO)
+    })
   })
 
   it('as superfícies não colapsam umas nas outras', () => {

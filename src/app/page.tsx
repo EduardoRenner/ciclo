@@ -17,7 +17,7 @@ export default async function Home() {
     <TelaPublica>
       <Selo />
       <div className="text-center">
-        <h1 className="text-numero font-extrabold">CICLO</h1>
+        <h1 className="text-numero font-bold">CICLO</h1>
         <p className="mt-2 max-w-[30ch] text-corpo text-txt-2">
           A agenda que sabe quando cada cliente volta — e traz de volta quem sumiu.
         </p>
@@ -25,7 +25,7 @@ export default async function Home() {
       <div className="flex gap-3">
         <Link
           href="/entrar"
-          className="inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-sm)] bg-[image:var(--grad-acc)] px-5 text-corpo font-semibold text-on-acc shadow-elevado transition duration-[var(--dur-1)] hover:brightness-110 active:scale-[.97]"
+          className="inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-sm)] bg-acc px-5 text-corpo font-semibold text-on-acc shadow-elevado transition duration-[var(--dur-1)] hover:brightness-110 active:scale-[.97]"
         >
           Entrar
         </Link>

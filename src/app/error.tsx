@@ -21,7 +21,7 @@ export default function Erro({ reset }: { error: Error & { digest?: string }; re
     <TelaPublica>
       <Selo />
       <div className="text-center">
-        <h1 className="text-titulo font-extrabold">Algo saiu do lugar</h1>
+        <h1 className="text-titulo font-bold">Algo saiu do lugar</h1>
         <p className="mt-2 max-w-[34ch] text-corpo text-txt-2">
           Não consegui carregar esta tela. Seus dados estão salvos — foi só a exibição que falhou.
         </p>

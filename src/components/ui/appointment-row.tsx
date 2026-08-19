@@ -1,4 +1,4 @@
-import { AlertTriangle, ChevronRight, Zap } from 'lucide-react'
+import { TriangleAlert, ChevronRight, UserX } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 
@@ -87,13 +87,13 @@ export default function AppointmentRow({
           >
             {altoRisco ? (
               <span title="Risco alto de falta">
-                <Zap aria-hidden className="size-4 shrink-0 text-warn" />
+                <UserX aria-hidden className="size-4 shrink-0 text-warn" />
                 <span className="sr-only">Risco alto de falta</span>
               </span>
             ) : null}
             {alertaSaude ? (
               <span title="Atenção na ficha de saúde">
-                <AlertTriangle aria-hidden className="size-4 shrink-0 text-bad" />
+                <TriangleAlert aria-hidden className="size-4 shrink-0 text-bad" />
                 <span className="sr-only">Atenção na ficha de saúde</span>
               </span>
             ) : null}

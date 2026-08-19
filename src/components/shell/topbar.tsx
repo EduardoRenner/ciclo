@@ -4,6 +4,8 @@ import { ChevronLeft, Settings } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
+import IconeAnel from '@/components/ui/icone-anel'
+
 import { paiDaRota } from './navegacao'
 
 /**
@@ -41,8 +43,9 @@ export default function Topbar() {
         </Link>
       ) : (
         <div className="flex h-12 items-center gap-2">
-          <div className="flex size-7 shrink-0 items-center justify-center rounded-[var(--radius-pill)] bg-[image:var(--grad-acc)] text-label font-extrabold text-on-acc">
-            C
+          {/* Marca da Parte II §5 — anel aberto, sem ponto (abaixo de 64px). */}
+          <div className="flex size-7 shrink-0 items-center justify-center rounded-[var(--radius-pill)] bg-acc text-on-acc">
+            <IconeAnel className="size-[15px]" />
           </div>
           <span className="text-label font-semibold uppercase tracking-[0.13em] text-txt-3">CICLO</span>
         </div>

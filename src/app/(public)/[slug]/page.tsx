@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export async function generateViewport({ params }: { params: Promise<{ slug: string }> }): Promise<Viewport> {
   const { slug } = await params
   const perfil = await perfilPublico(slug).catch(() => null)
-  return { themeColor: perfil?.accentColor.acc ?? '#0a0a0f' }
+  return { themeColor: perfil?.accentColor.acc ?? '#0d0c0c' }
 }
 
 export default async function PaginaPublica({ params }: { params: Promise<{ slug: string }> }) {

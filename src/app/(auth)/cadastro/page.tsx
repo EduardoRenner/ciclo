@@ -14,7 +14,7 @@ export default async function PaginaCadastro() {
     <TelaPublica>
       <Selo />
       <div className="text-center">
-        <h1 className="text-titulo font-extrabold">Criar conta no CICLO</h1>
+        <h1 className="text-titulo font-bold">Criar conta no CICLO</h1>
         <p className="mt-1 text-secundario text-txt-2">Leva menos de um minuto.</p>
       </div>
       <FormularioCadastro />

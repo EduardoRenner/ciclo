@@ -17,12 +17,12 @@ export default function NaoEncontrado() {
     <TelaPublica>
       <Selo />
       <div className="text-center">
-        <h1 className="text-titulo font-extrabold">Página não encontrada</h1>
+        <h1 className="text-titulo font-bold">Página não encontrada</h1>
         <p className="mt-1 text-secundario text-txt-2">O endereço não existe ou mudou de lugar.</p>
       </div>
       <Link
         href="/"
-        className="inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-sm)] bg-[image:var(--grad-acc)] px-5 text-corpo font-semibold text-on-acc shadow-elevado transition duration-[var(--dur-1)] hover:brightness-110 active:scale-[.97]"
+        className="inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-sm)] bg-acc px-5 text-corpo font-semibold text-on-acc shadow-elevado transition duration-[var(--dur-1)] hover:brightness-110 active:scale-[.97]"
       >
         Voltar ao início
       </Link>

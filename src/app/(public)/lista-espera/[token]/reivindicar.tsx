@@ -43,7 +43,7 @@ export default function ReivindicarEncaixe({ token }: { token: string }) {
     return (
       <>
         <CheckCircle2 aria-hidden className="mb-4 size-14 text-ok" />
-        <p className="text-titulo font-extrabold">Encaixe garantido!</p>
+        <p className="text-titulo font-bold">Encaixe garantido!</p>
         <p className="mt-2 text-corpo text-txt-2">Seu horário está reservado. Te esperamos lá.</p>
       </>
     )
@@ -52,7 +52,7 @@ export default function ReivindicarEncaixe({ token }: { token: string }) {
   return (
     <>
       <XCircle aria-hidden className="mb-4 size-14 text-bad" />
-      <p className="text-titulo font-extrabold">Não consegui reservar</p>
+      <p className="text-titulo font-bold">Não consegui reservar</p>
       <p className="mt-2 text-corpo text-txt-2">{mensagem}</p>
     </>
   )

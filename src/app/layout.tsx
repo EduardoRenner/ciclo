@@ -1,10 +1,20 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Archivo } from "next/font/google";
 import "./globals.css";
 
 import RegistrarServiceWorker from "@/components/shell/registrar-service-worker";
 
-const inter = Inter({
+/**
+ * Inter é a fonte de "nenhuma decisão foi tomada" — é o default de praticamente
+ * todo produto gerado (`docs/08-REDESIGN-E-IDENTIDADE.md` Parte II §D1). Archivo
+ * é neutra nos dois sentidos que este produto precisa (cabe numa barbearia sem
+ * ler masculino, é limpa o bastante para um estúdio de unhas), tem numerais bem
+ * desenhados — crítico em horário (`11:15`/`17:00`) — e o eixo de peso/largura
+ * dá uma segunda dimensão de hierarquia sem precisar de segunda família.
+ * `next/font/google` baixa e auto-hospeda no build: nenhuma requisição a
+ * fonts.googleapis.com em produção, a CSP não muda.
+ */
+const archivo = Archivo({
   variable: "--font-sans",
   subsets: ["latin"],
 });
@@ -23,7 +33,7 @@ export const metadata: Metadata = {
 
 // O app é mobile-first e o tema escuro é o padrão; a barra do navegador acompanha.
 export const viewport: Viewport = {
-  themeColor: "#0a0a0f",
+  themeColor: "#0d0c0c",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -36,7 +46,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" className="dark">
-      <body className={`${inter.variable} antialiased`}>
+      <body className={`${archivo.variable} antialiased`}>
         <RegistrarServiceWorker />
         {children}
       </body>

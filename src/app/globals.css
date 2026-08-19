@@ -10,11 +10,19 @@
  * <html>.
  */
 :root {
-  /* superfícies */
-  --bg: #0a0a0f;
-  --surface: #131320;
-  --surface-2: #1c1c2e;
-  --surface-3: #26263d;
+  /*
+   * `docs/08-REDESIGN-E-IDENTIDADE.md` Parte II §3 substitui esta paleta
+   * inteira. O acento deixou de ser um matiz (era o purple-500 cru do
+   * Tailwind — a cor default de todo app gerado) e virou luz: um branco
+   * quente. A interface do CICLO não tem cor de marca; a cor do salão vive só
+   * na página pública dele (`vertical_packs.accent_color`, Parte II §3.8).
+   */
+
+  /* superfícies — preto QUENTE, não azulado (o antigo lia como "preto de software") */
+  --bg: #0d0c0c;
+  --surface: #161514;
+  --surface-2: #201e1d;
+  --surface-3: #2b2926;
   --line: rgba(255, 255, 255, 0.08);
   --line-2: rgba(255, 255, 255, 0.14);
   /* retorno de toque: clareia a superfície que já está ali, sem inventar cor nova. */
@@ -23,41 +31,40 @@
   --overlay: rgba(5, 5, 10, 0.72);
 
   /* texto */
-  --txt: #f2f2f7;
-  --txt-2: #a5a5b8;
+  --txt: #f5f3f1;
+  --txt-2: #a8a29c;
   /*
-   * §1 traz #6e6e85 anotado como "contraste 4,6:1 — nunca abaixo disso". A conta
-   * não fecha: medido dá 3,98:1 sobre --bg e 3,71:1 sobre --surface, os dois
-   * abaixo do piso de 4,5:1 que o próprio §7 exige. #7f7f98 é o tom mais próximo
-   * que cumpre a regra (5,07:1 e 4,72:1). Há teste medindo.
+   * Terceira medição do mesmo token. #6e6e85 (spec) reprovava; #7f7f98 (Parte I)
+   * passava sobre --bg/--surface mas **reprovava sobre --surface-2** (4,49:1,
+   * abaixo do piso de 4,5). #99938c é o primeiro valor que passa nas QUATRO
+   * superfícies (6,42 / 6,00 / 5,46 / 4,77:1). Há teste medindo.
    */
-  --txt-3: #7f7f98;
+  --txt-3: #99938c;
 
   /*
-   * Acento: TROCA conforme o pack da vertical. Vem de
-   * `vertical_packs.accent_color` e é injetado no <html> pelo servidor. O valor
-   * aqui é só o de partida (cílios); nunca hardcode acento em componente.
+   * Acento do PRODUTO — osso. Não é mais função da vertical: o acento por
+   * vertical (Parte II §3.8) só é aplicado no escopo público (`/[slug]`), não
+   * aqui. 16,46:1 sobre --bg nos dois sentidos — nunca precisa compensar com
+   * peso de fonte, ao contrário do roxo (4,94:1).
    */
-  --acc: #a855f7;
-  --acc-2: #c084fc;
-  --acc-soft: rgba(168, 85, 247, 0.16);
-  /*
-   * Texto sobre o acento. Existia hardcoded como `text-[#0a0a0f]` em nove
-   * lugares — o que travava a cor do texto mesmo quando o acento da vertical
-   * mudava. O teste de contraste garante que todo acento da tabela de §1 lê
-   * com este tom.
-   */
-  --on-acc: #0a0a0f;
-  /* A assinatura da marca. Estava copiado em 9 arquivos; agora tem um dono. */
-  --grad-acc: linear-gradient(135deg, var(--acc), var(--acc-2));
+  --acc: #f0ebe3;
+  --acc-2: #fffcf7;
+  --acc-soft: rgba(240, 235, 227, 0.1);
+  --on-acc: #0d0c0c;
   --ring: var(--acc-2);
 
-  /* semânticos — não mudam por vertical */
-  --ok: #34d399;
-  --warn: #fbbf24;
-  --risk: #fb923c;
-  --bad: #f87171;
-  --info: #60a5fa;
+  /*
+   * semânticos — não mudam por vertical. Valores re-medidos para separar por
+   * LUMINÂNCIA, não só por matiz: em daltonismo verde-vermelho (~8% dos
+   * homens) só a luminância distingue. --ok × --bad tinha Δ0,054 (quase
+   * indistinguíveis); agora Δ0,321. Ver `tests/unit/design/contraste.test.ts`,
+   * que reprova o build se essa distância cair abaixo de 0,15.
+   */
+  --ok: #90dfba;
+  --warn: #e2af36;
+  --risk: #e79955;
+  --bad: #e05d52;
+  --info: #6da1d5;
 
   --radius: 16px;
   --radius-sm: 12px;
