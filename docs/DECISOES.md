@@ -1134,3 +1134,20 @@ Sem `SENTRY_DSN`/consulta ao Sentry aqui — reforça só o padrão já registra
 `NEXT_PUBLIC_VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY`, o botão de ativar mostra erro amigável e
 `enviarPush` lança `falha_transitoria` (o chamador já sabe cair pro e-mail); nunca finge que
 funcionou, nunca derruba o fluxo de lembrete inteiro por falta de credencial.
+
+2026-08-18 · Deploy inicial no Vercel · Projeto `ciclo` criado no time `starkinovacoes`
+(Hobby, não Pro) e as 17 variáveis de ambiente com valor local (Supabase, VAULT_KEK,
+CRON_SECRET, feature flags) subidas para `production` via `vercel env add`. Gerado o par de
+chaves VAPID nesta sessão (`web-push generateVAPIDKeys()`) para o TICKET-056 funcionar de
+verdade em produção — guardado em `.env.local` e no Vercel, nunca commitado.
+
+**`vercel.json` ficou com `crons: []`** — o plano Hobby só permite cron 1×/dia, e os 6 jobs do
+`01-ESPEC-TECNICA §7` rodam a cada 5-15 min (lembretes, expirar reserva de sinal, recalcular
+ciclo…). Sem eles, o site funciona (agenda, comanda, booking público, motor de ciclo sob
+demanda) mas nada dispara sozinho: reservas com sinal pendente não expiram automaticamente,
+lembrete D-1/D-0 não sai sozinho, campanha de reativação não roda. **Isso é um buraco real, não
+cosmético** — precisa de uma destas duas resoluções antes do produto valer para um salão de
+verdade: (1) upgrade do time para Vercel Pro (US$20/mês/membro, libera cron nativo de alta
+frequência) ou (2) cron externo gratuito (ex.: cron-job.org) batendo em `/api/cron/*` com
+`Authorization: Bearer $CRON_SECRET` a cada 5-15 min, sem custo. Decisão do Eduardo, registrada
+aqui para não se perder — nenhuma das duas foi feita ainda nesta sessão.

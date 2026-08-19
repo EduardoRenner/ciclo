@@ -1,28 +1,3 @@
 {
-  "crons": [
-    {
-      "path": "/api/cron/jobs",
-      "schedule": "*/5 * * * *"
-    },
-    {
-      "path": "/api/cron/reminders",
-      "schedule": "*/15 * * * *"
-    },
-    {
-      "path": "/api/cron/recompute-cycles",
-      "schedule": "*/15 * * * *"
-    },
-    {
-      "path": "/api/cron/campaigns",
-      "schedule": "*/15 * * * *"
-    },
-    {
-      "path": "/api/cron/segments",
-      "schedule": "*/15 * * * *"
-    },
-    {
-      "path": "/api/cron/stock-alerts",
-      "schedule": "*/15 * * * *"
-    }
-  ]
+  "crons": []
 }
