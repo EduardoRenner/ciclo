@@ -14,9 +14,16 @@ export const POST = rota(async (req) => {
   const { error } = await db.auth.signUp({
     email,
     password,
-    // A trigger `on_auth_user_created` (migration 0006) lê estes campos para
-    // montar a linha de `profiles`.
-    options: { data: { full_name: fullName, phone } },
+    options: {
+      // A trigger `on_auth_user_created` (migration 0006) lê estes campos para
+      // montar a linha de `profiles`.
+      data: { full_name: fullName, phone },
+      // Sem isso, o link do e-mail de confirmação usa o Site URL configurado
+      // no painel do Supabase — que aponta pra localhost até alguém trocar lá.
+      // `NEXT_PUBLIC_APP_URL` já é a variável certa (é o que o resto do app usa
+      // pra montar link absoluto, ver `EsquemaEsqueciSenha`/mensageria).
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
+    },
   })
 
   if (error) {

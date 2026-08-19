@@ -7,7 +7,7 @@ import { NextResponse, type NextRequest } from 'next/server'
  * (`/{slug}`), então "tudo protegido menos uma allow-list" bloquearia a página
  * que precisa ser aberta por qualquer cliente.
  */
-const PREFIXOS_PROTEGIDOS = ['/hoje', '/agenda', '/clientes', '/recuperar', '/comanda', '/caixa', '/config']
+const PREFIXOS_PROTEGIDOS = ['/hoje', '/agenda', '/clientes', '/recuperar', '/comanda', '/caixa', '/config', '/onboarding']
 
 function ehProtegida(pathname: string): boolean {
   return PREFIXOS_PROTEGIDOS.some((p) => pathname === p || pathname.startsWith(`${p}/`))
