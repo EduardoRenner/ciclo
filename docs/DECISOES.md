@@ -1151,3 +1151,28 @@ verdade: (1) upgrade do time para Vercel Pro (US$20/mês/membro, libera cron nat
 frequência) ou (2) cron externo gratuito (ex.: cron-job.org) batendo em `/api/cron/*` com
 `Authorization: Bearer $CRON_SECRET` a cada 5-15 min, sem custo. Decisão do Eduardo, registrada
 aqui para não se perder — nenhuma das duas foi feita ainda nesta sessão.
+
+2026-08-18 · Descoberto ao vivo, pós-deploy: não existia tela de login/cadastro nenhuma.
+O TICKET-009 do backlog só tinha critério de aceite de API ("rota autenticada sem sessão →
+401", "senha fraca rejeitada", "HIBP checado") — a pasta `(auth)/` do briefing (§1.7) nunca
+virou ticket explícito nos 58, e ninguém construiu essa UI em nenhum ticket subsequente. O site
+publicado ficava com uma tela estática sem link nenhum ("Entre para ver o resumo do seu dia.",
+sem forma de entrar). Não é falha de nenhum ticket específico — é um buraco real na
+especificação, só visível depois do primeiro deploy de verdade.
+
+Corrigido fora da numeração de ticket (não tem ticket próprio no backlog): `/entrar`,
+`/cadastro`, `/onboarding` e `/auth/callback` (troca do `code` de confirmação de e-mail por
+sessão via `exchangeCodeForSession` — nunca confiar em token que passou pela URL do navegador).
+De quebra, corrigido `emailRedirectTo` ausente em `/api/v1/auth/signup` — sem ele, o link do
+e-mail de confirmação usa o Site URL configurado no painel do Supabase, que aponta para
+localhost até alguém trocar lá; agora usa `NEXT_PUBLIC_APP_URL`, que já é a variável certa
+(mesma que `/api/v1/auth/password/forgot` já usava). `/nova-senha` (troca de senha após o link
+de "esqueci minha senha") continua sem tela — fica para quando alguém precisar de verdade,
+mesmo padrão de simplificação registrado no TICKET-055.
+
+Fluxo testado ao vivo contra o Supabase de produção via `pnpm dev`: cadastro devolve
+"confirmação enviada" e login com credencial errada devolve a mensagem certa sem vazar se o
+e-mail existe. Não testado: clicar no link de confirmação de verdade (exige e-mail real chegando
+na caixa de entrada, fora do alcance desta sessão) — o código do callback segue o padrão
+documentado do Supabase (PKCE, troca no servidor), mas a ponta a ponta com e-mail real ainda
+precisa de alguém confirmar manualmente.
