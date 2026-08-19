@@ -2304,6 +2304,25 @@ export type Database = {
       }
     }
     Views: {
+      v_carteira_resumo: {
+        Row: {
+          com_retorno: number | null
+          ltv_total: number | null
+          novos_mes: number | null
+          tenant_id: string | null
+          total: number | null
+          visitas_total: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clients_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_client_segments: {
         Row: {
           anonymized_at: string | null

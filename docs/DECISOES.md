@@ -1344,3 +1344,30 @@ Também reaprendida na marra a armadilha já registrada na memória do projeto: 
 com `pnpm dev` ativo no mesmo repositório corrompe o `.next`** (os dois escrevem na mesma pasta).
 O sintoma não tem relação óbvia com a causa — `Cannot find module './vendor-chunks/...'` e 500 em
 página que funcionava. Conserto: matar o dev, apagar `.next`, subir de novo.
+
+2026-08-19 · Rodada de revisão do CRM — três coisas que funcionavam na demonstração e quebrariam
+num salão de verdade, mais a dívida de teste:
+
+1. **`painelDaCarteira` baixava a carteira inteira** (`select ltv_cents, visits_count` de TODOS os
+   clientes) só para somar no Node e exibir quatro números. Além do desperdício, o teto de 1000
+   linhas por `.select()` do PostgREST (TICKET-036) faria ticket médio e taxa de retorno saírem
+   **errados em silêncio** a partir do milésimo cliente. Virou a view `v_carteira_resumo`
+   (migration 0018), que agrega no banco e devolve uma linha. `security_invoker = true`
+   obrigatório — sem ele a view roda com o dono e entrega o resumo de todos os tenants
+   (armadilha do CLAUDE.md; conferido depois no `pg_class` que as quatro views do schema têm a
+   opção).
+2. **`publicoDaCampanha` mandava todos os ids num `.in()` só.** Com algumas centenas de uuids a
+   URL estoura o limite do PostgREST — defeito nº 9 já pago nesta base. Passou a filtrar em
+   lotes de 200. A ordenação saiu do banco e foi para o Node de propósito: com o filtro
+   quebrado em lotes, cada consulta só ordenaria o próprio pedaço e a lista final sairia
+   embaralhada entre lotes.
+3. **Zero teste para todo o CRM**, contra a regra do próprio projeto ("teste novo para o caminho
+   feliz e um caminho de erro"). Criados `tests/unit/lib/mensagens.test.ts` (11 casos: primeiro
+   nome só, variável sem valor virando vazio em vez de `{{nome}}` cru na cara do cliente, link
+   `wa.me` com emoji/quebra de linha, número curto recusado) e `tests/integration/crm.test.ts`
+   (9 casos). O mais importante deles é o de opt-out: **`publicoDaCampanha` nunca inclui quem
+   pediu para não receber nem quem não deu opt-in de marketing** — é a única garantia entre um
+   clique distraído e uma mensagem para quem já mandou parar, e agora está travada por teste.
+
+Um dos testes nasceu inútil e foi refeito: `expect(Array.isArray([])).toBe(true)` não testa nada.
+Virou verificação de verdade do `EsquemaCampanha` recusando `clientIds: []`.

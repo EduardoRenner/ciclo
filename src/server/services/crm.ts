@@ -177,6 +177,13 @@ export type AlvoCampanha = { id: string; name: string; phoneE164: string | null;
  * marketing fica de fora, e sem telefone não há como mandar. Filtrar isso aqui — e não na tela —
  * é o que impede um clique distraído de virar mensagem para quem já pediu para parar.
  */
+/**
+ * Um `.in()` com centenas de uuids monta uma URL gigante e o PostgREST recusa por tamanho —
+ * defeito já pago nesta base (ver `docs/DECISOES.md`, lotes de ~200 na busca por hash). Por isso
+ * o filtro por id vai em lotes, nunca de uma vez.
+ */
+const TAMANHO_LOTE_IN = 200
+
 export async function publicoDaCampanha(
   db: Cliente,
   tenantId: string,
@@ -192,17 +199,26 @@ export async function publicoDaCampanha(
       .eq('marketing_opt_in', true)
       .not('phone_e164', 'is', null)
 
+  async function elegiveisEntre(ids: string[]): Promise<AlvoCampanha[]> {
+    const encontrados: AlvoCampanha[] = []
+    for (let i = 0; i < ids.length; i += TAMANHO_LOTE_IN) {
+      const { data, error } = await elegiveis().in('id', ids.slice(i, i + TAMANHO_LOTE_IN))
+      if (error) throw new AppError('INTERNAL', { cause: error })
+      encontrados.push(...(data ?? []).map(paraAlvo))
+    }
+    // Ordenar aqui, e não no banco: com o filtro quebrado em lotes, cada consulta só ordena o
+    // próprio pedaço — a lista final sairia embaralhada entre lotes.
+    return encontrados.sort((a, b) => b.ltvCents - a.ltvCents)
+  }
+
   if (segmento === 'sumidos') {
-    const { data: ciclos } = await db
+    const { data: ciclos, error } = await db
       .from('client_cycles')
       .select('client_id')
       .eq('tenant_id', tenantId)
       .in('state', ['late', 'at_risk', 'lost'])
-    const ids = [...new Set((ciclos ?? []).map((c) => c.client_id))]
-    if (ids.length === 0) return []
-    const { data, error } = await elegiveis().in('id', ids).order('ltv_cents', { ascending: false })
     if (error) throw new AppError('INTERNAL', { cause: error })
-    return (data ?? []).map(paraAlvo)
+    return elegiveisEntre([...new Set((ciclos ?? []).map((c) => c.client_id))])
   }
 
   if (segmento === 'aniversariantes' || segmento === 'ticket_alto' || segmento === 'primeira_visita') {
@@ -213,18 +229,15 @@ export async function publicoDaCampanha(
           ? 'is_ticket_alto'
           : 'is_primeira_visita_sem_retorno'
 
-    const { data: segmentados } = await db
+    const { data: segmentados, error } = await db
       .from('v_client_segments')
       .select('id')
       .eq('tenant_id', tenantId)
       .eq(coluna, true)
+    if (error) throw new AppError('INTERNAL', { cause: error })
     // Toda coluna de view chega nullable pelo tipo gerado, mesmo vindo de uma PK — o filtro
     // não é defensivo à toa, é o que faz o `.in()` receber `string[]` de verdade.
-    const ids = (segmentados ?? []).map((c) => c.id).filter((id): id is string => id !== null)
-    if (ids.length === 0) return []
-    const { data, error } = await elegiveis().in('id', ids).order('ltv_cents', { ascending: false })
-    if (error) throw new AppError('INTERNAL', { cause: error })
-    return (data ?? []).map(paraAlvo)
+    return elegiveisEntre((segmentados ?? []).map((c) => c.id).filter((id): id is string => id !== null))
   }
 
   const { data, error } = await elegiveis().order('ltv_cents', { ascending: false }).limit(500)
@@ -299,20 +312,19 @@ export type PainelCarteira = {
 }
 
 /**
- * Os números do topo da lista de clientes. Contagens vêm por `head: true` (só o total, sem
- * trazer linha nenhuma) — a carteira de um salão grande tem milhares de clientes e nenhuma
- * dessas perguntas precisa dos dados em si.
+ * Os números do topo da lista de clientes, em três consultas que não trazem linha de cliente
+ * nenhuma: `v_carteira_resumo` (0018) já devolve total/novos/retorno/somas agregados no banco, e
+ * as outras duas são contagens `head: true`. A versão anterior somava no Node depois de baixar
+ * a carteira inteira — além do desperdício, o teto de 1000 linhas por `.select()` do PostgREST
+ * (TICKET-036) faria a média sair errada em silêncio a partir do milésimo cliente.
  */
 export async function painelDaCarteira(db: Cliente, tenantId: string): Promise<PainelCarteira> {
-  const inicioDoMes = new Date()
-  inicioDoMes.setUTCDate(1)
-  inicioDoMes.setUTCHours(0, 0, 0, 0)
-
-  const base = () => db.from('clients').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId).is('deleted_at', null)
-
-  const [total, novos, aniversariantes, emRisco, agregados, comRetorno] = await Promise.all([
-    base(),
-    base().gte('created_at', inicioDoMes.toISOString()),
+  const [resumo, aniversariantes, emRisco] = await Promise.all([
+    db
+      .from('v_carteira_resumo')
+      .select('total, novos_mes, com_retorno, ltv_total, visitas_total')
+      .eq('tenant_id', tenantId)
+      .maybeSingle(),
     db
       .from('v_client_segments')
       .select('id', { count: 'exact', head: true })
@@ -323,22 +335,20 @@ export async function painelDaCarteira(db: Cliente, tenantId: string): Promise<P
       .select('client_id', { count: 'exact', head: true })
       .eq('tenant_id', tenantId)
       .in('state', ['late', 'at_risk', 'lost']),
-    db.from('clients').select('ltv_cents, visits_count').eq('tenant_id', tenantId).is('deleted_at', null),
-    base().gt('visits_count', 1),
   ])
 
-  const linhas = agregados.data ?? []
-  const visitasTotais = linhas.reduce((s, c) => s + c.visits_count, 0)
-  const ltvTotal = linhas.reduce((s, c) => s + c.ltv_cents, 0)
-  const totalClientes = total.count ?? 0
+  // Tenant sem cliente nenhum não aparece na view (o `group by` não gera linha) — zero em tudo.
+  const total = resumo.data?.total ?? 0
+  const visitasTotais = resumo.data?.visitas_total ?? 0
+  const ltvTotal = resumo.data?.ltv_total ?? 0
 
   return {
-    total: totalClientes,
-    novosNoMes: novos.count ?? 0,
+    total,
+    novosNoMes: resumo.data?.novos_mes ?? 0,
     aniversariantes: aniversariantes.count ?? 0,
     emRisco: emRisco.count ?? 0,
     ticketMedioCents: visitasTotais > 0 ? Math.round(ltvTotal / visitasTotais) : 0,
     // Basis points (regra 3 do CLAUDE.md): percentual nunca vira float solto.
-    taxaRetornoBps: totalClientes > 0 ? Math.round(((comRetorno.count ?? 0) / totalClientes) * 10_000) : 0,
+    taxaRetornoBps: total > 0 ? Math.round(((resumo.data?.com_retorno ?? 0) / total) * 10_000) : 0,
   }
 }
