@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import Card from '@/components/ui/card'
 import EmptyState from '@/components/ui/empty-state'
 import Skeleton from '@/components/ui/skeleton'
+import { dinheiro } from '@/lib/formato'
 import { cn } from '@/lib/utils'
 
 type ClienteLinha = {
@@ -15,6 +16,8 @@ type ClienteLinha = {
   name: string
   phone_e164: string | null
   tags: string[]
+  visits_count: number
+  ltv_cents: number
 }
 
 type Segmento = 'aniversariante' | 'primeira_visita_sem_retorno' | 'ticket_alto'
@@ -135,12 +138,40 @@ export default function ListaClientes({ iniciais }: { iniciais: ClienteLinha[] }
         <ul className="flex flex-col gap-2">
           {clientes.map((c) => (
             <li key={c.id}>
-              <Card>
-                <p className="text-corpo font-semibold">{c.name}</p>
-                {c.phone_e164 ? (
-                  <p className="tabular mt-0.5 text-secundario text-txt-2">{formatarTelefone(c.phone_e164)}</p>
-                ) : null}
-              </Card>
+              {/* A linha inteira abre a ficha: era o buraco central do CRM — todo o histórico existia
+                  no banco e não havia caminho nenhum na interface para chegar nele. */}
+              <Link href={`/admin/clientes/${c.id}`} className="block">
+                <Card className="transition-colors hover:border-acc/40 hover:bg-surface-2">
+                  <div className="flex items-center gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-corpo font-semibold">{c.name}</p>
+                      {c.phone_e164 ? (
+                        <p className="tabular mt-0.5 text-secundario text-txt-2">{formatarTelefone(c.phone_e164)}</p>
+                      ) : null}
+                    </div>
+                    {c.visits_count > 0 ? (
+                      <div className="shrink-0 text-right">
+                        <p className="tabular text-corpo font-semibold">{dinheiro.format(c.ltv_cents / 100)}</p>
+                        <p className="text-label text-txt-3">
+                          {c.visits_count} {c.visits_count === 1 ? 'visita' : 'visitas'}
+                        </p>
+                      </div>
+                    ) : null}
+                  </div>
+                  {c.tags.length > 0 ? (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {c.tags.slice(0, 3).map((t) => (
+                        <span
+                          key={t}
+                          className="rounded-[var(--radius-pill)] bg-surface-3 px-2 py-0.5 text-label font-semibold text-txt-3"
+                        >
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
+                </Card>
+              </Link>
             </li>
           ))}
         </ul>

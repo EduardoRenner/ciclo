@@ -1,4 +1,4 @@
-import { Bell, Clock, ScrollText, Scissors, Store, Users } from 'lucide-react'
+import { Bell, Clock, MessageSquareText, Megaphone, ScrollText, Scissors, Store, Users } from 'lucide-react'
 import Link from 'next/link'
 
 import Card from '@/components/ui/card'
@@ -11,6 +11,8 @@ const ITENS = [
   { href: '/admin/config/servicos', titulo: 'Serviços', descricao: 'Preço, duração e o que aparece no site', icone: Scissors },
   { href: '/admin/config/profissionais', titulo: 'Profissionais', descricao: 'Equipe e convites', icone: Users },
   { href: '/admin/config/horarios', titulo: 'Horário de funcionamento', descricao: 'Expediente padrão do negócio', icone: Clock },
+  { href: '/admin/config/mensagens', titulo: 'Mensagens prontas', descricao: 'Textos que você manda com um toque', icone: MessageSquareText },
+  { href: '/admin/campanhas', titulo: 'Campanhas', descricao: 'Mandar em lote e ver quanto voltou em receita', icone: Megaphone },
   { href: '/admin/config/notificacoes', titulo: 'Notificações', descricao: 'Ativar lembretes no aparelho', icone: Bell },
   { href: '/admin/config/cofre', titulo: 'Trilha do cofre', descricao: 'Quem acessou a ficha de saúde de cada cliente', icone: ScrollText },
 ] as const

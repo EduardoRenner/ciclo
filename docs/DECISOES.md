@@ -1265,3 +1265,58 @@ restaurar) e passa com ela. **Padrão pra família inteira**: qualquer wrapper q
 corpo de um `Request` mais de uma vez (idempotência, log de auditoria, replay) só é seguro se a
 PRIMEIRA leitura em qualquer lugar do código for sempre a partir de um clone, nunca do original —
 constructed-body de teste mascara esse tipo de bug, só um `fetch()` de navegador real revela.
+
+2026-08-19 · CRM, conversão e personalização (pedido do Eduardo, fora da numeração de tickets,
+para apresentar a ideia): o banco já era um CRM e a interface escondia quase tudo — `clients`
+tinha `tags`/`birth_date`/`source`/`referred_by`/`ltv_cents`/`visits_count`/`no_show_count`
+desde a 0001, `campaigns` tinha o funil inteiro (`sent_count`/`booked_count`/`revenue_cents`) e
+`v_client_segments` as três listas inteligentes, mas **não existia ficha do cliente** (nenhuma
+rota `/admin/clientes/[id]`), nem tela de campanha, nem mensagem pronta. O trabalho foi quase
+todo dar porta de entrada para dado que já estava lá.
+
+**A virada que destrava tudo hoje: link `wa.me`.** O envio oficial por WhatsApp depende de
+credencial da Meta que continua bloqueada (TICKET-043). Mas `wa.me/55...?text=` com o texto já
+personalizado abre o WhatsApp da própria pessoa com a mensagem escrita — funciona sem credencial
+nenhuma e é exatamente o que ela já faz na mão, só que sem digitar. É o que torna "mensagens
+prontas" e "campanha" utilizáveis hoje em vez de promessa.
+
+Migration 0017: `clients.preferences` (jsonb livre — cada vertical pergunta coisa diferente; numa
+barbearia é número da máquina e como faz a barba, não CEP) e `message_templates` (por tenant, não
+catálogo global: o texto é a voz do negócio, e a graça é o dono reescrever). `EsquemaCliente.
+preferences` ficou `.optional()` e **não** `.default({})` — com default o tipo de saída do Zod
+exigiria o campo em toda chamada de `criarCliente` já existente, quebrando 9 pontos do código
+por causa de um campo novo opcional.
+
+Telas: ficha do cliente (métricas, selo de ciclo, preferências, etiquetas, aniversário, quem
+indicou/indicados, histórico, mensagens), `config/mensagens` (biblioteca editável com prévia
+real e inserção de variável no cursor), `campanhas` (funil enviadas→agendaram→receita, com ROI
+por mensagem) e `campanhas/nova` (segmento → modelo → lista com um toque por pessoa). Painel da
+carteira no topo de `/admin/clientes` com atalho acionável para "Recuperar" — número que não
+leva a lugar nenhum não muda o dia de ninguém.
+
+**Modelo que usa `{{data}}`/`{{hora}}`/`{{servico}}` depende de horário marcado** — em disparo
+de campanha esse horário não existe e o texto sairia "no dia às ." na cara do cliente. Na
+campanha esses modelos são filtrados; na ficha eles aparecem bloqueados com o motivo, e quando
+há agendamento futuro as variáveis são preenchidas com ele (`precisaDeAgendamento` em
+`src/lib/mensagens.ts`, que fica em `lib/` e não em `server/` porque a prévia roda no navegador
+enquanto a pessoa escolhe — mesma função dos dois lados evita a prévia divergir do envio).
+
+`scripts/seed-demo-barbearia.mjs`: barbearia fictícia "Dom Rocha" com 45 clientes e 6 meses de
+história, porque sem cron (plano Hobby) `ltv_cents`/`visits_count` ficam zerados e toda tela de
+CRM nasce vazia. Três defeitos do próprio seed, todos achados conferindo o resultado no banco em
+vez de confiar no "rodou sem erro": (1) passo fixo de 30min entre atendimentos fazia um
+"corte + barba" de 60min invadir o horário seguinte e a `appointments_no_overlap` recusava o
+lote — passou a encadear pelo fim do atendimento anterior; (2) **cadência quase sempre é múltiplo
+de 7** (21 dias, 14 dias), então todas as visitas de um cliente caem no mesmo dia da semana, e
+descartar domingo/segunda apagava o histórico inteiro de quem calhou nesses dias — 10 dos 45
+ficavam com ficha zerada; agora empurra para o próximo dia aberto; (3) todo mundo nascia com
+`created_at` de hoje e o painel anunciava "45 clientes novos este mês", que denuncia o dado de
+mentira na hora. Senha do demo vem de `DEMO_SENHA` no ambiente (regra 10: segredo nenhum no
+repositório, nem em seed) e é sorteada e impressa se a variável não existir.
+
+`tests/rls/isolation.test.ts` ganhou linha de `message_templates`: o teste descobre tabela por
+introspecção, então **toda tabela nova com `tenant_id` precisa de seed lá** ou o teste genérico
+de "sobrou linha do outro tenant" falha por não ter o que sobrar (mesma pegadinha já registrada
+para `push_subscriptions`). A regra de lint `service-client-confinado` passou a valer também
+para `scripts/**` como já valia para `tests/**` — script de manutenção roda na mão, fora do app,
+sem sessão de usuário nenhuma.

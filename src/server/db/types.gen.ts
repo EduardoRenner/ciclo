@@ -371,6 +371,7 @@ export type Database = {
           notes: string | null
           phone_e164: string | null
           phone_hash: string | null
+          preferences: Json
           referred_by: string | null
           source: string | null
           tags: string[]
@@ -394,6 +395,7 @@ export type Database = {
           notes?: string | null
           phone_e164?: string | null
           phone_hash?: string | null
+          preferences?: Json
           referred_by?: string | null
           source?: string | null
           tags?: string[]
@@ -417,6 +419,7 @@ export type Database = {
           notes?: string | null
           phone_e164?: string | null
           phone_hash?: string | null
+          preferences?: Json
           referred_by?: string | null
           source?: string | null
           tags?: string[]
@@ -930,6 +933,50 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      message_templates: {
+        Row: {
+          active: boolean
+          body: string
+          created_at: string
+          id: string
+          position: number
+          slug: string
+          tenant_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          body: string
+          created_at?: string
+          id?: string
+          position?: number
+          slug: string
+          tenant_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          body?: string
+          created_at?: string
+          id?: string
+          position?: number
+          slug?: string
+          tenant_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_templates_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]

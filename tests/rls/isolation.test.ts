@@ -301,6 +301,13 @@ async function semear(f: Fixture, sufixo: string): Promise<void> {
       'push_subscriptions',
       { tenant_id: t, user_id: f.userId, endpoint: `https://push.exemplo.test/${sufixo}-${randomUUID()}`, p256dh: 'x', auth: 'x' },
     ],
+    // Mesma exigência da `push_subscriptions` acima: toda tabela nova com `tenant_id` precisa de
+    // uma linha aqui, ou a descoberta por introspecção acha a tabela e o teste genérico de
+    // "sobrou linha do outro tenant" falha por não ter o que sobrar.
+    [
+      'message_templates',
+      { tenant_id: t, slug: `seed_${sufixo}`, title: 'Modelo de teste', body: 'Oi {{nome}}' },
+    ],
     ['audit_log', { tenant_id: t, action: 'seed.rls', entity: 'tenants', entity_id: t }],
     ['vault_access_log', { tenant_id: t, client_id: f.clientId, action: 'read' }],
     ['idempotency_keys', { key: randomUUID(), tenant_id: t, endpoint: '/v1/seed', request_hash: 'x' }],

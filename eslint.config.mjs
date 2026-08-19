@@ -39,8 +39,9 @@ const eslintConfig = [
     },
   },
   {
-    // o teste de isolamento precisa da service_role para montar dois tenants
-    files: ["tests/**"],
+    // o teste de isolamento precisa da service_role para montar dois tenants, e os scripts de
+    // manutenção (semear demonstração) rodam fora do app, na mão, sem sessão de usuário nenhuma
+    files: ["tests/**", "scripts/**"],
     rules: {
       "ciclo/service-client-confinado": "off",
     },

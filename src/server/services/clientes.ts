@@ -7,7 +7,7 @@ import type { Database } from '@/server/db/types.gen'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 const COLUNAS =
-  'id, name, phone_e164, email, birth_date, notes, tags, source, marketing_opt_in, whatsapp_opt_out, visits_count, no_show_count, ltv_cents, last_visit_at'
+  'id, name, phone_e164, email, birth_date, notes, tags, source, referred_by, preferences, marketing_opt_in, whatsapp_opt_out, visits_count, no_show_count, ltv_cents, last_visit_at, created_at'
 
 export const EsquemaCliente = z.object({
   name: z.string().trim().min(2, 'Digite o nome da cliente.').max(120, 'Nome muito longo.'),
@@ -18,6 +18,15 @@ export const EsquemaCliente = z.object({
   notes: z.string().trim().max(2000, 'Notas muito longas.').nullish(),
   tags: z.array(z.string().trim().min(1).max(40)).max(20, 'No máximo 20 etiquetas.').default([]),
   source: z.string().trim().max(60).nullish(),
+  /**
+   * O que a pessoa que atende precisa lembrar na hora (número da máquina, como faz a barba,
+   * alergia). Livre de propósito: cada vertical pergunta coisa diferente, e o formulário é quem
+   * decide os campos — o valor de cada chave é sempre texto para não virar um mini-banco aqui.
+   */
+  // `.optional()` e não `.default({})`: com default, o tipo de saída exigiria o campo em toda
+  // chamada de `criarCliente` (inclusive nas que já existiam). Ausente = coluna fica no default
+  // do banco, que já é `{}`.
+  preferences: z.record(z.string().trim().min(1).max(40), z.string().trim().max(200)).optional(),
   marketingOptIn: z.boolean().default(false),
 })
 
@@ -42,6 +51,7 @@ function paraColunas(entrada: EntradaParcial): ColunasCliente {
   if (entrada.notes !== undefined) colunas.notes = entrada.notes ?? null
   if (entrada.tags !== undefined) colunas.tags = entrada.tags
   if (entrada.source !== undefined) colunas.source = entrada.source ?? null
+  if (entrada.preferences !== undefined) colunas.preferences = entrada.preferences
   if (entrada.marketingOptIn !== undefined) colunas.marketing_opt_in = entrada.marketingOptIn
 
   if (entrada.phone !== undefined) {
