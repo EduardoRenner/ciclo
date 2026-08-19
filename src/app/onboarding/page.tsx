@@ -1,5 +1,7 @@
 import { redirect } from 'next/navigation'
 
+import Selo from '@/components/shell/selo'
+import TelaPublica from '@/components/shell/tela-publica'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { sessaoAtual } from '@/server/auth/session'
 
@@ -14,12 +16,13 @@ export default async function PaginaOnboarding() {
   if (vinculos && vinculos.length > 0) redirect('/hoje')
 
   return (
-    <main className="flex min-h-dvh flex-col items-center justify-center gap-6 px-[18px] py-10">
+    <TelaPublica>
+      <Selo />
       <div className="text-center">
         <h1 className="text-titulo font-extrabold">Vamos criar seu negócio</h1>
         <p className="mt-1 text-secundario text-txt-2">Você poderá ajustar tudo isso depois.</p>
       </div>
       <FormularioOnboarding />
-    </main>
+    </TelaPublica>
   )
 }
