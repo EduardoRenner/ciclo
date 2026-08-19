@@ -19,7 +19,7 @@ export default function Topbar() {
       <Link
         href="/admin/config"
         aria-label="Configurações"
-        className="ml-auto flex size-9 items-center justify-center rounded-[var(--radius-pill)] text-txt-3 transition hover:bg-surface-2 hover:text-txt-2"
+        className="ml-auto flex size-12 items-center justify-center rounded-[var(--radius-pill)] text-txt-3 transition hover:bg-surface-2 hover:text-txt-2"
       >
         <Settings aria-hidden className="size-5" />
       </Link>

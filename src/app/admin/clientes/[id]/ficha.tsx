@@ -23,41 +23,12 @@ import Sheet from '@/components/ui/sheet'
 import StatTile from '@/components/ui/stat-tile'
 import { useToast } from '@/components/ui/toast'
 import { dinheiro } from '@/lib/formato'
+import { camposDePreferencia } from '@/lib/preferencias'
 import { aplicarVariaveis, linkWhatsApp, precisaDeAgendamento } from '@/lib/mensagens'
 
 import type { FichaCliente } from '@/server/services/crm'
 
 type Modelo = { id: string; title: string; body: string }
-
-/**
- * O que cada nicho precisa lembrar da cliente. É isto que transforma "sistema de agenda" em
- * "meu caderninho": numa barbearia ninguém quer saber o CEP, quer saber o número da máquina.
- */
-const PREFERENCIAS_POR_VERTICAL: Record<string, { chave: string; rotulo: string; dica: string }[]> = {
-  barber: [
-    { chave: 'maquina', rotulo: 'Máquina', dica: '0, 1, 2...' },
-    { chave: 'barba', rotulo: 'Barba', dica: 'navalha, máquina, não faz' },
-    { chave: 'bebida', rotulo: 'Bebida de sempre', dica: 'cerveja, café...' },
-    { chave: 'obs', rotulo: 'Detalhe importante', dica: 'redemoinho, alergia...' },
-  ],
-  nails: [
-    { chave: 'formato', rotulo: 'Formato', dica: 'quadrada, bailarina...' },
-    { chave: 'cor', rotulo: 'Cor favorita', dica: 'nude, vermelho...' },
-    { chave: 'alergia', rotulo: 'Alergia', dica: 'acetona, resina...' },
-    { chave: 'obs', rotulo: 'Detalhe importante', dica: 'unha fraca, cutícula sensível...' },
-  ],
-  hair: [
-    { chave: 'quimica', rotulo: 'Química', dica: 'progressiva, coloração...' },
-    { chave: 'cor', rotulo: 'Cor/tom', dica: '7.1, acaju...' },
-    { chave: 'alergia', rotulo: 'Alergia', dica: 'amônia, PPD...' },
-    { chave: 'obs', rotulo: 'Detalhe importante', dica: '' },
-  ],
-}
-const PREFERENCIAS_PADRAO = [
-  { chave: 'preferencia', rotulo: 'Preferência', dica: '' },
-  { chave: 'alergia', rotulo: 'Alergia / restrição', dica: '' },
-  { chave: 'obs', rotulo: 'Detalhe importante', dica: '' },
-]
 
 const ROTULO_CICLO: Record<string, { texto: string; estado: 'ok' | 'warn' | 'risk' | 'bad' }> = {
   on_track: { texto: 'Em dia', estado: 'ok' },
@@ -120,7 +91,7 @@ export default function Ficha({
 
   const { cliente, metricas, ciclo, historico, mensagens, indicadoPor, indicados } = ficha
 
-  const camposPreferencia = PREFERENCIAS_POR_VERTICAL[vertical] ?? PREFERENCIAS_PADRAO
+  const camposPreferencia = camposDePreferencia(vertical)
 
   const [nome, setNome] = useState(cliente.name)
   const [telefone, setTelefone] = useState(formatarTelefone(cliente.phoneE164) ?? '')
@@ -201,7 +172,7 @@ export default function Ficha({
         <Link
           href="/admin/clientes"
           aria-label="Voltar para a lista"
-          className="grid size-11 shrink-0 place-items-center rounded-[var(--radius-sm)] text-txt-2 transition-colors hover:bg-surface-2 hover:text-txt"
+          className="grid size-12 shrink-0 place-items-center rounded-[var(--radius-sm)] text-txt-2 transition-colors hover:bg-surface-2 hover:text-txt"
         >
           <ArrowLeft className="size-5" />
         </Link>
@@ -216,7 +187,7 @@ export default function Ficha({
           type="button"
           onClick={() => setEditando(true)}
           aria-label="Editar ficha"
-          className="grid size-11 shrink-0 place-items-center rounded-[var(--radius-sm)] text-txt-2 transition-colors hover:bg-surface-2 hover:text-txt"
+          className="grid size-12 shrink-0 place-items-center rounded-[var(--radius-sm)] text-txt-2 transition-colors hover:bg-surface-2 hover:text-txt"
         >
           <Pencil className="size-5" />
         </button>

@@ -1,4 +1,4 @@
-import { Cake, TriangleAlert } from 'lucide-react'
+import { Cake, TriangleAlert, UserPlus } from 'lucide-react'
 import Link from 'next/link'
 import { headers } from 'next/headers'
 
@@ -22,12 +22,23 @@ export default async function PaginaClientes() {
 
   return (
     <>
-      <header className="py-6">
-        <h1 className="text-titulo font-extrabold">Clientes</h1>
-        <p className="mt-1 text-secundario text-txt-2">
-          {painel.total} na carteira
-          {painel.novosNoMes > 0 ? ` · ${painel.novosNoMes} ${painel.novosNoMes === 1 ? "cadastro" : "cadastros"} esse mês` : ''}
-        </p>
+      <header className="flex items-center gap-3 py-6">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-titulo font-extrabold">Clientes</h1>
+          <p className="mt-1 text-secundario text-txt-2">
+            {painel.total} na carteira
+            {painel.novosNoMes > 0 ? ` · ${painel.novosNoMes} ${painel.novosNoMes === 1 ? 'cadastro' : 'cadastros'} esse mês` : ''}
+          </p>
+        </div>
+        {/* Antes só existia caminho para cadastrar quando a lista estava vazia — com um cliente
+            que fosse, o botão sumia e não havia mais como registrar ninguém pela tela. */}
+        <Link
+          href="/admin/clientes/nova"
+          aria-label="Cadastrar cliente"
+          className="grid size-12 shrink-0 place-items-center rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 text-txt transition-colors hover:bg-surface-3"
+        >
+          <UserPlus className="size-5" />
+        </Link>
       </header>
 
       <div className="mb-4 grid grid-cols-2 gap-3">

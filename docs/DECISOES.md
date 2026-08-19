@@ -1371,3 +1371,26 @@ num salão de verdade, mais a dívida de teste:
 
 Um dos testes nasceu inútil e foi refeito: `expect(Array.isArray([])).toBe(true)` não testa nada.
 Virou verificação de verdade do `EsquemaCampanha` recusando `clientIds: []`.
+
+2026-08-19 · Buraco achado varrendo a interface como usuário novo, não como autor: **a tela de
+cadastro de cliente nunca existiu**. O estado vazio da lista mandava para `/admin/clientes/nova`
+e essa rota não existe — ou seja, um salão recém-criado clicava no único botão da tela, no
+primeiro minuto de uso, e caía num 404. Pior: com um cliente que fosse na lista, o botão sumia
+junto com o estado vazio e não sobrava caminho nenhum para registrar alguém pela interface (só
+importando planilha, ou de raspão ao marcar horário). Criada `/admin/clientes/nova` e um botão
+permanente no cabeçalho da lista. `marketing_opt_in` nasce **desmarcado**: consentimento é
+opt-in de verdade (LGPD), quem marca é quem perguntou ao cliente, nunca o sistema por
+conveniência.
+
+As listas de preferência por vertical saíram de dentro da ficha para `src/lib/preferencias.ts` —
+a ficha e o cadastro precisam perguntar exatamente as mesmas coisas, e duplicar levaria a um
+formulário que grava campo que o outro não mostra. De quebra ganharam as verticais que faltavam
+(cílios, sobrancelha, depilação, estética).
+
+Varredura de toque a 390px (checklist do CLAUDE.md, "alvos ≥ 48px"): os botões só de ícone que
+eu vinha usando estavam em 44px (`size-11`), e a engrenagem da `Topbar` em 36px (`size-9`) —
+todos abaixo do mínimo. Subidos para `size-12` (48px), com o ícone continuando pequeno dentro: o
+alvo cresce, o desenho não. Ficaram de fora, de propósito, os chips de filtro de segmento (40px):
+o `03-DESIGN-SYSTEM` define chip com altura 32 por especificação, e mudar isso seria alterar a
+linguagem visual do projeto por conta própria, não corrigir um defeito. Nenhuma das telas novas
+tem rolagem horizontal a 390px.

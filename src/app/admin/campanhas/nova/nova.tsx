@@ -68,7 +68,7 @@ export default function NovaCampanha({
         <Link
           href="/admin/campanhas"
           aria-label="Voltar"
-          className="grid size-11 shrink-0 place-items-center rounded-[var(--radius-sm)] text-txt-2 transition-colors hover:bg-surface-2 hover:text-txt"
+          className="grid size-12 shrink-0 place-items-center rounded-[var(--radius-sm)] text-txt-2 transition-colors hover:bg-surface-2 hover:text-txt"
         >
           <ArrowLeft className="size-5" />
         </Link>
