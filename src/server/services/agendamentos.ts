@@ -5,6 +5,7 @@ import { availableSlots, type IntervaloExpediente, type IntervaloOcupado } from 
 import { transicaoValida, type EstadoAgendamento } from '@/core/scheduling/state'
 import { recomputarCicloDeUmAtendimento } from '@/server/services/ciclo'
 import { lerConfiguracoesAgenda } from '@/server/services/configuracoes-agenda'
+import { pontuarAtendimentoConcluido } from '@/server/services/fidelidade'
 import { calcularScoreDeRisco } from '@/server/services/risco'
 import { hashTelefone, normalizarTelefoneBR } from '@/server/services/telefone'
 import { AppError } from '@/server/http/errors'
@@ -571,6 +572,16 @@ export async function concluirAgendamento(db: Cliente, tenantId: string, id: str
       new Date().toISOString().slice(0, 10),
     ).catch((erro: unknown) => {
       console.error(JSON.stringify({ level: 'error', event: 'recompute_ciclo_falhou', appointmentId: id }), erro)
+    })
+
+    // Fidelidade automática (não é mais "a profissional lembrar de lançar"): mesma regra do
+    // recálculo de ciclo acima — bônus nunca pode derrubar a conclusão do atendimento.
+    await pontuarAtendimentoConcluido(db, tenantId, {
+      appointmentId: id,
+      clientId: agendamento.client_id,
+      priceCents: agendamento.price_cents,
+    }).catch((erro: unknown) => {
+      console.error(JSON.stringify({ level: 'error', event: 'pontuar_atendimento_falhou', appointmentId: id }), erro)
     })
   }
 

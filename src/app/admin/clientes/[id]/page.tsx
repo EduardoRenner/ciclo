@@ -5,7 +5,7 @@ import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { AppError } from '@/server/http/errors'
 import { fichaDoCliente } from '@/server/services/crm'
-import { listarPlanos } from '@/server/services/fidelidade'
+import { lerConfigFidelidade, listarPlanos } from '@/server/services/fidelidade'
 import { listarModelos } from '@/server/services/mensagens-prontas'
 import { listarProfissionais } from '@/server/services/profissionais'
 
@@ -24,7 +24,7 @@ export default async function PaginaFicha({ params }: { params: Promise<{ id: st
       throw erro
     }),
     listarModelos(db, ctx.tenantId),
-    db.from('tenants').select('name, vertical').eq('id', ctx.tenantId).single(),
+    db.from('tenants').select('name, vertical, settings').eq('id', ctx.tenantId).single(),
     listarPlanos(db, ctx.tenantId),
     listarProfissionais(db, ctx.tenantId),
   ])
@@ -39,6 +39,7 @@ export default async function PaginaFicha({ params }: { params: Promise<{ id: st
       vertical={negocio.data?.vertical ?? 'barber'}
       planos={planos.filter((p) => p.active)}
       profissionais={profissionais.map((p) => ({ id: p.id, name: p.display_name }))}
+      configFidelidade={lerConfigFidelidade(negocio.data?.settings)}
     />
   )
 }

@@ -1453,3 +1453,45 @@ o código) — processos `node.exe` de sessões anteriores (um com 1,7GB de mem�
 disputando recurso no Windows. `taskkill //F //IM node.exe` e build limpo resolveu. Vale
 verificar `tasklist` antes de investigar um crash de build "impossível" — mesmo padrão já
 registrado para o `.next` corrompido por dev+build simultâneos.
+
+2026-08-19 · CRM inovador sem depender de credencial bloqueada (pedido do Eduardo: "que outras
+funcionalidades daria pra ficar um CRM completo e inovador"). Pesquisa de mercado (SalonIQ,
+BonusQR, Zenia Partners, thecxlead) confirmou três padrões que ainda não existiam aqui: fidelidade
+**automática** (não manual), barra de progresso de gamificação, e "next best action" — um health
+score só vale a pena quando dispara uma ação concreta, não como número solto.
+
+**Fidelidade automática por atendimento.** `pontuarAtendimentoConcluido` (`fidelidade.ts`) é
+chamada de dentro de `concluirAgendamento`, no mesmo padrão non-blocking do recálculo de ciclo
+que já existia ali do lado — bônus nunca pode derrubar a conclusão do atendimento se falhar.
+Configurável por `tenants.settings.loyalty` (mesmo namespace-merge de `site.ts`): pontos por real
+gasto (0 desliga), bônus de indicação, e o "tamanho da volta" da barra de progresso.
+
+**Bônus de indicação automático nos dois lados.** Quando o indicado (`clients.referred_by`)
+conclui a PRIMEIRA visita, padrinho e afilhado ganham pontos ao mesmo tempo — nenhum concorrente
+pesquisado faz essa combinação automática. "Primeira visita" é detectado por
+`visits_count === 0` no momento da conclusão (o campo só reflete o job diário, então ainda mostra
+o número de ANTES desta visita) — testado explicitamente que a segunda visita do mesmo indicado
+não repete o bônus.
+
+**Avaliação pós-atendimento sem credencial nenhuma.** WhatsApp/e-mail seguem bloqueados
+(TICKET-043), mas o link `/avaliar/[token]` (migration 0020, tabela `client_reviews`) usa o
+MESMO mecanismo HMAC do link de confirmação (`token-assinado.ts`) — não abre coluna de token, o
+`verificarTokenAssinado` prova a validade sozinho. Ao concluir um atendimento, a tela de agenda
+ganha um botão "Pedir avaliação" que abre `api.whatsapp.com/send?text=` **sem número** — o
+seletor de contato do próprio WhatsApp, porque a tela de agenda não carrega o telefone da
+cliente e não vale a pena buscar só para isso. Responder duas vezes o mesmo link não quebra: a
+constraint única em `appointment_id` devolve sucesso com o valor da primeira resposta.
+
+**Central de Ações ("Vale a pena hoje")** na tela mais importante do app: em vez de números soltos,
+uma lista do que fazer agora (clientes sumindo → link pra Recuperar, aniversariantes → link pra
+Campanha nova, pontos perto do resgate → link pros Clientes), cada item some sozinho quando não
+há nada a sugerir. `centralDeAcoes` nunca lança — um resumo de CRM que falhar vira lista vazia,
+não pode derrubar a tela "Hoje".
+
+`tests/rls/isolation.test.ts`: `client_reviews` entrou no seed genérico (mesma exigência já
+registrada 3x nesta base para tabela nova com `tenant_id`). `tests/integration/crm-inovacoes.test.ts`
+novo (7 casos) prova especificamente: pontuação automática calcula certo, `pointsPerReal: 0`
+desliga de verdade, bônus de indicação credita os dois lados só uma vez, token forjado é
+recusado, e resposta duplicada não quebra. Testado ao vivo em `dom-rocha`: barra de progresso
+("Faltam 60 pontos"), Central de Ações com os cartões certos, e uma avaliação real de 5 estrelas
+registrada via link público sem sessão nenhuma.

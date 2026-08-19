@@ -3,6 +3,7 @@ import { exigirPermissao } from '@/server/auth/rbac'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { concluirAgendamento } from '@/server/services/agendamentos'
+import { gerarTokenAvaliacao } from '@/server/services/avaliacoes'
 import { AppError } from '@/server/http/errors'
 import { rota } from '@/server/http/handler'
 import { comIdempotencia } from '@/server/http/idempotency'
@@ -36,5 +37,9 @@ export const POST = rota(async (req, params, requestId) => {
     req,
   )
 
-  return resultado
+  // Link pra pedir avaliação, pronto pra mandar por WhatsApp na hora — sem credencial nenhuma,
+  // o `wa.me` de sempre. Cliente sem telefone continua tendo o link, só não tem pra quem mandar.
+  const linkAvaliacao = `${process.env.NEXT_PUBLIC_APP_URL}/avaliar/${gerarTokenAvaliacao(id)}`
+
+  return { ...resultado, reviewLink: linkAvaliacao }
 })

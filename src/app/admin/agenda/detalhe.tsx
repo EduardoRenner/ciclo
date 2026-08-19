@@ -61,6 +61,7 @@ export default function DetalheAgendamento({
   const [motivo, setMotivo] = useState('')
   const [novoHorario, setNovoHorario] = useState(() => paraInputLocal(agendamento.starts_at))
   const [erro, setErro] = useState<string | null>(null)
+  const [linkAvaliacao, setLinkAvaliacao] = useState<string | null>(null)
   const mostrarToast = useToast()
 
   const estadoAtual = agendamento.status as EstadoAgendamento
@@ -73,7 +74,11 @@ export default function DetalheAgendamento({
     setErro(null)
     iniciarTransicao(async () => {
       try {
-        await post(`/api/v1/appointments/${agendamento.id}/${ROTA_ACAO[novoEstado]}`)
+        const resultado = await post(`/api/v1/appointments/${agendamento.id}/${ROTA_ACAO[novoEstado]}`)
+        // Só `complete` devolve link de avaliação — os outros estados (confirmar, chegou,
+        // faltou) não têm o que avaliar ainda.
+        const link = (resultado as { reviewLink?: string } | undefined)?.reviewLink
+        if (novoEstado === 'done' && link) setLinkAvaliacao(link)
         mostrarToast({ tom: 'ok', titulo: 'Prontinho' })
         onAtualizado()
       } catch (e) {
@@ -157,6 +162,18 @@ export default function DetalheAgendamento({
             >
               Ver comanda
             </Link>
+          ) : null}
+          {linkAvaliacao ? (
+            // `api.whatsapp.com/send?text=` (sem número) abre o seletor de contato do
+            // WhatsApp — não precisa do telefone da cliente, que esta tela nem carrega.
+            <a
+              href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`Oi! Poderia avaliar seu atendimento? ${linkAvaliacao}`)}`}
+              target="_blank"
+              rel="noreferrer"
+              className="flex h-12 w-full items-center justify-center rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 text-corpo font-semibold text-acc-2"
+            >
+              Pedir avaliação
+            </a>
           ) : null}
           {acoesDeEstado.length === 0 && !podeRemarcar && !podeCancelar ? (
             <p className="text-secundario text-txt-2">Esse agendamento não tem mais ação disponível.</p>

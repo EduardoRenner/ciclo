@@ -388,6 +388,73 @@ export async function registrarCampanha(db: Cliente, tenantId: string, entrada: 
   return data
 }
 
+export type AcaoSugerida = {
+  chave: string
+  titulo: string
+  descricao: string
+  href: string
+  tom: 'warn' | 'info' | 'ok'
+}
+
+/**
+ * "Próximo passo sugerido", o padrão de next-best-action que a pesquisa de mercado validou
+ * (customer health score só vale a pena quando dispara uma ação — thecxlead/digitalapplied). Em
+ * vez de números soltos, a tela "Hoje" ganha uma lista do que vale a pena fazer agora, cada item
+ * com link direto pra resolver. Nunca lança: um item que falhar de calcular só some da lista, a
+ * tela "Hoje" não pode quebrar por causa de um resumo de CRM.
+ */
+export async function centralDeAcoes(db: Cliente, tenantId: string): Promise<AcaoSugerida[]> {
+  const [emRisco, aniversariantes, resgataveis] = await Promise.all([
+    db.from('client_cycles').select('client_id', { count: 'exact', head: true }).eq('tenant_id', tenantId).in('state', ['late', 'at_risk', 'lost']),
+    db.from('v_client_segments').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId).eq('is_aniversariante', true),
+    db.from('loyalty_entries').select('client_id, points').eq('tenant_id', tenantId),
+  ])
+
+  const acoes: AcaoSugerida[] = []
+
+  const totalEmRisco = emRisco.count ?? 0
+  if (totalEmRisco > 0) {
+    acoes.push({
+      chave: 'recuperar',
+      titulo: `${totalEmRisco} ${totalEmRisco === 1 ? 'cliente está sumindo' : 'clientes estão sumindo'}`,
+      descricao: 'Passaram do tempo de voltar. Uma campanha de "sentimos sua falta" tende a trazer parte de volta.',
+      href: '/admin/recuperar',
+      tom: 'warn',
+    })
+  }
+
+  const totalAniversariantes = aniversariantes.count ?? 0
+  if (totalAniversariantes > 0) {
+    acoes.push({
+      chave: 'aniversariantes',
+      titulo: `${totalAniversariantes} ${totalAniversariantes === 1 ? 'aniversariante' : 'aniversariantes'} este mês`,
+      descricao: 'Uma mensagem de parabéns com um mimo custa pouco e fortalece o vínculo.',
+      href: '/admin/campanhas/nova',
+      tom: 'info',
+    })
+  }
+
+  // Saldo por cliente somado em memória — `loyalty_entries` de um salão típico não passa de
+  // poucos milhares de linhas, não justifica uma view agregada só para este contador.
+  const saldoPorCliente = new Map<string, number>()
+  for (const l of resgataveis.data ?? []) {
+    if (!l.client_id) continue
+    saldoPorCliente.set(l.client_id, (saldoPorCliente.get(l.client_id) ?? 0) + l.points)
+  }
+  const comPontosAltos = [...saldoPorCliente.values()].filter((s) => s >= 80).length
+  if (comPontosAltos > 0) {
+    acoes.push({
+      chave: 'pontos',
+      titulo: `${comPontosAltos} ${comPontosAltos === 1 ? 'cliente perto do prêmio' : 'clientes perto do prêmio'}`,
+      descricao: 'Lembrar quem já juntou bastante ponto é um bom motivo pra chamar de volta.',
+      href: '/admin/clientes',
+      tom: 'ok',
+    })
+  }
+
+  return acoes
+}
+
 export type PainelCarteira = {
   total: number
   novosNoMes: number

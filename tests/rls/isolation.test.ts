@@ -324,6 +324,8 @@ async function semear(f: Fixture, sufixo: string): Promise<void> {
     ['client_notes', { tenant_id: t, client_id: f.clientId, body: 'Nota de teste', author_id: f.userId }],
     ['loyalty_entries', { tenant_id: t, client_id: f.clientId, points: 10, reason: 'seed de teste' }],
     ['client_subscriptions', { tenant_id: t, client_id: f.clientId, plan_id: f.subscriptionPlanId, billing_day: 5 }],
+    // Mesma exigência: `client_reviews` (CRM inovações, migration 0020) precisa de linha aqui.
+    ['client_reviews', { tenant_id: t, appointment_id: f.appointmentId, client_id: f.clientId, rating: 5 }],
     ['audit_log', { tenant_id: t, action: 'seed.rls', entity: 'tenants', entity_id: t }],
     ['vault_access_log', { tenant_id: t, client_id: f.clientId, action: 'read' }],
     ['idempotency_keys', { key: randomUUID(), tenant_id: t, endpoint: '/v1/seed', request_hash: 'x' }],

@@ -27,6 +27,7 @@ import { camposDePreferencia } from '@/lib/preferencias'
 import { aplicarVariaveis, linkWhatsApp, precisaDeAgendamento } from '@/lib/mensagens'
 
 import type { FichaCliente } from '@/server/services/crm'
+import type { ConfigFidelidade } from '@/server/services/fidelidade'
 
 import Fidelidade from './fidelidade'
 import Notas from './notas'
@@ -95,6 +96,7 @@ export default function Ficha({
   vertical,
   planos,
   profissionais,
+  configFidelidade,
 }: {
   ficha: FichaCliente
   modelos: Modelo[]
@@ -102,6 +104,7 @@ export default function Ficha({
   vertical: string
   planos: Plano[]
   profissionais: ProfissionalOpcao[]
+  configFidelidade: ConfigFidelidade
 }) {
   const router = useRouter()
   const mostrarToast = useToast()
@@ -357,7 +360,7 @@ export default function Ficha({
         </section>
       )}
 
-      <Fidelidade clientId={cliente.id} pontosIniciais={pontos} assinaturaInicial={assinatura} planos={planos} />
+      <Fidelidade clientId={cliente.id} pontosIniciais={pontos} assinaturaInicial={assinatura} planos={planos} config={configFidelidade} />
       <PacotesCarteira pacotes={pacotes} saldoCarteiraCents={saldoCarteiraCents} />
       <Saude clientId={cliente.id} saude={saude} fotos={fotos} consentimentos={consentimentos} />
       <Notas clientId={cliente.id} iniciais={notasRegistradas} />

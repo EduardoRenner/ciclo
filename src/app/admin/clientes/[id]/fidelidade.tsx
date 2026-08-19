@@ -10,7 +10,7 @@ import Sheet from '@/components/ui/sheet'
 import { useToast } from '@/components/ui/toast'
 import { dinheiro } from '@/lib/formato'
 
-import type { AssinaturaDoCliente, ExtratoPontos } from '@/server/services/fidelidade'
+import type { AssinaturaDoCliente, ConfigFidelidade, ExtratoPontos } from '@/server/services/fidelidade'
 
 type Plano = { id: string; name: string; price_cents: number; sessions_per_month: number | null }
 
@@ -19,6 +19,7 @@ type Props = {
   pontosIniciais: ExtratoPontos
   assinaturaInicial: AssinaturaDoCliente | null
   planos: Plano[]
+  config: ConfigFidelidade
 }
 
 /**
@@ -26,7 +27,7 @@ type Props = {
  * dedicada a isso). Os dois vivem juntos aqui porque resolvem a mesma pergunta do dono: "como eu
  * faço esse cliente voltar todo mês".
  */
-export default function Fidelidade({ clientId, pontosIniciais, assinaturaInicial, planos }: Props) {
+export default function Fidelidade({ clientId, pontosIniciais, assinaturaInicial, planos, config }: Props) {
   const mostrarToast = useToast()
   const [pendente, iniciarTransicao] = useTransition()
 
@@ -133,6 +134,40 @@ export default function Fidelidade({ clientId, pontosIniciais, assinaturaInicial
               Lançar
             </Button>
           </div>
+
+          {/* Gamificação: a pesquisa de mercado (BonusQR) valida a barra de progresso como o que
+              mais prende o cliente — ver o quanto falta funciona melhor que só mostrar o saldo. */}
+          {config.rewardThreshold > 0 ? (
+            <div className="mt-3">
+              {(() => {
+                const positivo = Math.max(pontos.saldo, 0)
+                const dentroDaVolta = positivo % config.rewardThreshold
+                const pct = Math.round((dentroDaVolta / config.rewardThreshold) * 100)
+                const faltam = config.rewardThreshold - dentroDaVolta
+                return (
+                  <>
+                    <div
+                      className="h-2 overflow-hidden rounded-[var(--radius-pill)] bg-surface-3"
+                      role="progressbar"
+                      aria-valuenow={pct}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-label="Progresso até o próximo prêmio"
+                    >
+                      <div
+                        className="h-full rounded-[var(--radius-pill)] bg-[linear-gradient(90deg,var(--acc),var(--acc-2))]"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    <p className="mt-1.5 text-secundario text-txt-3">
+                      Faltam {faltam} pontos {config.rewardLabel ? `para ${config.rewardLabel}` : 'para o próximo prêmio'}
+                    </p>
+                  </>
+                )
+              })()}
+            </div>
+          ) : null}
+
           {pontos.lancamentos.length > 0 ? (
             <ul className="mt-3 flex flex-col gap-1.5 border-t border-line pt-3">
               {pontos.lancamentos.slice(0, 4).map((l) => (

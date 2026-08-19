@@ -4,8 +4,10 @@ import Link from 'next/link'
 
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
+import { centralDeAcoes } from '@/server/services/crm'
 import { resumoDeHoje } from '@/server/services/resumo-hoje'
 
+import CentralDeAcoes from './central-de-acoes'
 import Hoje from './hoje'
 
 export default async function PaginaHoje() {
@@ -13,7 +15,12 @@ export default async function PaginaHoje() {
   const db = await criarClienteDoUsuario()
 
   const { data: tenantRow } = await db.from('tenants').select('name, slug, timezone').eq('id', ctx.tenantId).single()
-  const resumo = await resumoDeHoje(db, ctx.tenantId, tenantRow?.timezone ?? 'America/Sao_Paulo')
+  const [resumo, acoes] = await Promise.all([
+    resumoDeHoje(db, ctx.tenantId, tenantRow?.timezone ?? 'America/Sao_Paulo'),
+    // Nunca derruba "Hoje": um resumo de CRM que falhar vira lista vazia, não erro na tela mais
+    // importante do app.
+    centralDeAcoes(db, ctx.tenantId).catch(() => []),
+  ])
 
   return (
     <>
@@ -36,6 +43,7 @@ export default async function PaginaHoje() {
         ) : null}
       </header>
 
+      <CentralDeAcoes acoes={acoes} />
       <Hoje resumo={resumo} />
     </>
   )

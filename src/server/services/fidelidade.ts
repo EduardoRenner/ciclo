@@ -20,6 +20,103 @@ export type ExtratoPontos = {
   lancamentos: { id: string; points: number; reason: string; createdAt: string }[]
 }
 
+// ───────────────────────────────────────────── configuração e automação
+
+export const EsquemaConfigFidelidade = z.object({
+  /** 0 desliga a pontuação automática — nem todo negócio quer fidelidade ligada. */
+  pointsPerReal: z.number().int().min(0).max(100),
+  referralBonusPoints: z.number().int().min(0).max(10_000),
+  /** A cada quantos pontos completa uma "volta" da barra de progresso na ficha. */
+  rewardThreshold: z.number().int().min(1).max(100_000),
+  rewardLabel: z.string().trim().max(80).nullish(),
+})
+export type ConfigFidelidade = z.infer<typeof EsquemaConfigFidelidade>
+
+const CONFIG_PADRAO: ConfigFidelidade = {
+  pointsPerReal: 1,
+  referralBonusPoints: 20,
+  rewardThreshold: 100,
+  rewardLabel: null,
+}
+
+/** Nunca lança — tenant antigo pode não ter `settings.loyalty` nenhum; vira o padrão. */
+export function lerConfigFidelidade(settings: unknown): ConfigFidelidade {
+  const bruto = settings && typeof settings === 'object' ? (settings as Record<string, unknown>).loyalty : null
+  const resultado = EsquemaConfigFidelidade.safeParse(bruto ?? {})
+  return resultado.success ? resultado.data : CONFIG_PADRAO
+}
+
+/** Mesmo padrão de merge de `site.ts`: lê `settings` inteiro, troca só a chave `loyalty`. */
+export async function atualizarConfigFidelidade(db: Cliente, tenantId: string, entrada: ConfigFidelidade) {
+  const { data: atual, error: erroLeitura } = await db.from('tenants').select('settings').eq('id', tenantId).single()
+  if (erroLeitura) throw new AppError('INTERNAL', { cause: erroLeitura })
+
+  const settingsAtual = (atual.settings ?? {}) as Record<string, unknown>
+  const { error } = await db
+    .from('tenants')
+    .update({ settings: { ...settingsAtual, loyalty: entrada } })
+    .eq('id', tenantId)
+  if (error) throw new AppError('INTERNAL', { cause: error })
+  return entrada
+}
+
+/**
+ * O que transforma fidelidade de "botão que a profissional lembra de apertar" em automação de
+ * verdade — chamado por `concluirAgendamento` depois que o atendimento vira `done`. Nunca lança
+ * (mesmo padrão do recálculo de ciclo ali do lado): premiar pontos é bônus, não pode derrubar a
+ * conclusão do atendimento se falhar.
+ *
+ * Cobre dois casos, que podem coexistir na mesma conclusão:
+ * 1. Pontos pela própria visita (`pointsPerReal × valor`), se a configuração tiver isso ligado.
+ * 2. Bônus de indicação, só na PRIMEIRA visita concluída de quem foi indicado — pesquisa de
+ *    mercado (Trinks, BonusQR) mostra que o padrão do nicho é recompensar os dois lados
+ *    (`referred_by`), não só quem chegou.
+ */
+export async function pontuarAtendimentoConcluido(
+  db: Cliente,
+  tenantId: string,
+  entrada: { appointmentId: string; clientId: string; priceCents: number },
+): Promise<void> {
+  const { data: tenant } = await db.from('tenants').select('settings').eq('id', tenantId).maybeSingle()
+  const config = lerConfigFidelidade(tenant?.settings)
+
+  const lancamentos: Database['public']['Tables']['loyalty_entries']['Insert'][] = []
+
+  if (config.pointsPerReal > 0) {
+    const pontos = Math.floor((entrada.priceCents / 100) * config.pointsPerReal)
+    if (pontos > 0) {
+      lancamentos.push({
+        tenant_id: tenantId,
+        client_id: entrada.clientId,
+        appointment_id: entrada.appointmentId,
+        points: pontos,
+        reason: 'Pontos do atendimento',
+      })
+    }
+  }
+
+  if (config.referralBonusPoints > 0) {
+    const { data: cliente } = await db
+      .from('clients')
+      .select('referred_by, visits_count')
+      .eq('id', entrada.clientId)
+      .maybeSingle()
+
+    // `visits_count` só reflete o job diário — na conclusão de agora ele ainda mostra o número
+    // ANTES desta visita. `=== 0` é exatamente "esta é a primeira vez que ele conclui algo".
+    if (cliente?.referred_by && cliente.visits_count === 0) {
+      lancamentos.push(
+        { tenant_id: tenantId, client_id: cliente.referred_by, points: config.referralBonusPoints, reason: 'Indicou um novo cliente' },
+        { tenant_id: tenantId, client_id: entrada.clientId, points: config.referralBonusPoints, reason: 'Veio por indicação' },
+      )
+    }
+  }
+
+  if (lancamentos.length === 0) return
+  const { error } = await db.from('loyalty_entries').insert(lancamentos)
+  if (error) throw new AppError('INTERNAL', { cause: error })
+}
+
 /**
  * Livro-razão de pontos: só entra linha, nunca some (regra 11). Resgatar é lançar pontos
  * negativos com o motivo — assim o cliente que pergunta "por que eu tinha 80 e agora tenho 30?"
