@@ -67,7 +67,7 @@ export default function Agenda({
     const params = new URLSearchParams({ date: novoDia })
     const prof = novoProfissional ?? profissionalSelecionado
     if (prof) params.set('professionalId', prof)
-    router.push(`/agenda?${params.toString()}`)
+    router.push(`/admin/agenda?${params.toString()}`)
   }
 
   const semana = semanaDe(dia)
@@ -120,7 +120,7 @@ export default function Agenda({
             icone={<CalendarX aria-hidden className="size-6" />}
             titulo="Nada marcado nesse dia"
             descricao="Toque no botão + para criar o primeiro agendamento."
-            acao={<Link href="/agenda/novo">Novo agendamento</Link>}
+            acao={<Link href="/admin/agenda/novo">Novo agendamento</Link>}
           />
         </Card>
       ) : (

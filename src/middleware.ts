@@ -2,12 +2,12 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 /**
- * Prefixos do app do profissional — as pastas de `src/app/(app)/`. A lista é
- * explícita porque o contrário não funciona aqui: o booking público mora na raiz
+ * Prefixos do app do profissional — as pastas de `src/app/admin/`. A lista é
+ * explícita porque o contrário não funciona aqui: o site público mora na raiz
  * (`/{slug}`), então "tudo protegido menos uma allow-list" bloquearia a página
  * que precisa ser aberta por qualquer cliente.
  */
-const PREFIXOS_PROTEGIDOS = ['/hoje', '/agenda', '/clientes', '/recuperar', '/comanda', '/caixa', '/config', '/onboarding']
+const PREFIXOS_PROTEGIDOS = ['/admin', '/onboarding']
 
 function ehProtegida(pathname: string): boolean {
   return PREFIXOS_PROTEGIDOS.some((p) => pathname === p || pathname.startsWith(`${p}/`))

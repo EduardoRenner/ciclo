@@ -28,12 +28,21 @@ function paraInputLocal(iso: string): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
+/**
+ * `professionalId: null` é o expediente/folga padrão do negócio inteiro —
+ * `time_off.professional_id` já é nullable com esse sentido exato desde a
+ * 0001 ("null = fecha o estabelecimento"), e `business-hours/[id]` já aceita
+ * o literal `default` na URL pra isso. Compartilhado entre o editor por
+ * profissional (`config/profissionais/[id]/`) e o de horário do negócio
+ * (`config/horarios/`) — dois editores de semana seriam o mesmo código
+ * duas vezes.
+ */
 export default function EditorExpediente({
   professionalId,
   expedienteInicial,
   folgasIniciais,
 }: {
-  professionalId: string
+  professionalId: string | null
   expedienteInicial: Bloco[]
   folgasIniciais: Folga[]
 }) {
@@ -42,10 +51,12 @@ export default function EditorExpediente({
   const [pendente, iniciarTransicao] = useTransition()
   const mostrarToast = useToast()
 
+  const segmentoUrl = professionalId ?? 'default'
+
   function salvarExpediente(novos: Bloco[]) {
     setBlocos(novos)
     iniciarTransicao(async () => {
-      const r = await fetch(`/api/v1/professionals/${professionalId}/business-hours`, {
+      const r = await fetch(`/api/v1/professionals/${segmentoUrl}/business-hours`, {
         method: 'PUT',
         headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
         body: JSON.stringify({
@@ -160,7 +171,9 @@ export default function EditorExpediente({
       </section>
 
       <section>
-        <h2 className="mb-3 text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">Folgas</h2>
+        <h2 className="mb-3 text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">
+          {professionalId ? 'Folgas' : 'Fechamentos (feriados, férias coletivas)'}
+        </h2>
 
         {folgas.length > 0 ? (
           <ul className="mb-3 flex flex-col gap-2">
@@ -217,7 +230,7 @@ export default function EditorExpediente({
               />
             </label>
             <Button type="submit" largura="cheia" carregando={pendente}>
-              Adicionar folga
+              Adicionar
             </Button>
           </form>
         </Card>

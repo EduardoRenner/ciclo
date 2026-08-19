@@ -128,7 +128,7 @@ export default function ListaClientes({ iniciais }: { iniciais: ClienteLinha[] }
                   ? 'Confira a grafia do nome ou o telefone digitado.'
                   : 'Cadastre a primeira cliente para começar a marcar horários.'
             }
-            acao={<Link href="/clientes/nova">Cadastrar cliente</Link>}
+            acao={<Link href="/admin/clientes/nova">Cadastrar cliente</Link>}
           />
         </Card>
       ) : (

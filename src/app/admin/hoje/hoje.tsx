@@ -54,7 +54,7 @@ export default function Hoje({ resumo }: { resumo: ResumoHoje }) {
             icone={<CalendarCheck aria-hidden className="size-6" />}
             titulo="Nada mais para hoje"
             descricao="A agenda de hoje está livre a partir de agora."
-            acao={<Link href="/agenda/novo">Novo agendamento</Link>}
+            acao={<Link href="/admin/agenda/novo">Novo agendamento</Link>}
           />
         </Card>
       )}

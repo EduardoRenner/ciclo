@@ -21,7 +21,7 @@ type Props = {
  * cinco (dois destinos de cada lado) para nascer visualmente centralizado, não
  * porque a ordem das ABAS tenha esse buraco.
  */
-export default function TabBar({ hrefFab = '/agenda/novo' }: Props) {
+export default function TabBar({ hrefFab = '/admin/agenda/novo' }: Props) {
   const pathname = usePathname()
   const [esquerda, direita] = [ABAS.slice(0, 2), ABAS.slice(2)]
 

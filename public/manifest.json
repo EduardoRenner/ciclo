@@ -2,7 +2,7 @@
   "name": "CICLO",
   "short_name": "CICLO",
   "description": "Gestão para profissionais da beleza: agenda, Motor de Ciclo e recuperação de receita.",
-  "start_url": "/hoje",
+  "start_url": "/admin/hoje",
   "scope": "/",
   "display": "standalone",
   "background_color": "#0a0a0f",

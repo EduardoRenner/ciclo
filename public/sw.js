@@ -2,8 +2,11 @@
 // Workbox/next-pwa: a única regra que importa é pequena o bastante para não
 // precisar de framework, e dá para conferir o deny-list de um jeito só,
 // literal, sem confiar em configuração de um plugin de terceiro.
-const CACHE_VERSAO = 'ciclo-v1'
-const APP_SHELL = ['/hoje', '/agenda', '/clientes', '/recuperar', '/manifest.json']
+// App do profissional mudou de `/hoje` etc. pra `/admin/hoje` etc. — trocar só
+// o array não bastaria, um PWA já instalado serve a casca velha do cache local
+// pra sempre; o nome do cache muda junto pra forçar a troca em `activate`.
+const CACHE_VERSAO = 'ciclo-v2'
+const APP_SHELL = ['/admin/hoje', '/admin/agenda', '/admin/clientes', '/admin/recuperar', '/manifest.json']
 
 // Regra do CLAUDE.md ("armadilhas conhecidas"): nunca cachear resposta de
 // `/vault` ou mídia assinada no service worker. Generalizado para toda
@@ -56,7 +59,7 @@ self.addEventListener('fetch', (event) => {
 // manda (`{ title, body, url }`) — se o push chegar sem corpo (o navegador
 // permite), cai num texto genérico em vez de quebrar.
 self.addEventListener('push', (event) => {
-  let dado = { title: 'CICLO', body: 'Você tem uma novidade.', url: '/hoje' }
+  let dado = { title: 'CICLO', body: 'Você tem uma novidade.', url: '/admin/hoje' }
   try {
     if (event.data) dado = { ...dado, ...event.data.json() }
   } catch {
@@ -75,7 +78,7 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
-  const destino = event.notification.data?.url ?? '/hoje'
+  const destino = event.notification.data?.url ?? '/admin/hoje'
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((janelas) => {

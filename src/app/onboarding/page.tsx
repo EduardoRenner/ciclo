@@ -13,7 +13,7 @@ export default async function PaginaOnboarding() {
 
   const db = await criarClienteDoUsuario()
   const { data: vinculos } = await db.from('memberships').select('id').eq('user_id', sessao.userId).eq('active', true).limit(1)
-  if (vinculos && vinculos.length > 0) redirect('/hoje')
+  if (vinculos && vinculos.length > 0) redirect('/admin/hoje')
 
   return (
     <TelaPublica>

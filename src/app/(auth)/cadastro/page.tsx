@@ -8,7 +8,7 @@ import FormularioCadastro from './formulario'
 
 export default async function PaginaCadastro() {
   const sessao = await sessaoAtual()
-  if (sessao) redirect('/hoje')
+  if (sessao) redirect('/admin/hoje')
 
   return (
     <TelaPublica>

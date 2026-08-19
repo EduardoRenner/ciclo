@@ -44,6 +44,28 @@ export const VERTICAIS = ['barber', 'nails', 'lashes', 'brows', 'waxing', 'aesth
  */
 const SlugFormatado = /^[a-z0-9][a-z0-9-]{2,38}[a-z0-9]$/
 
+/**
+ * Toda pasta real de `src/app/` (e as que moram dentro de um grupo de rota
+ * sem virar segmento próprio: `(auth)/entrar`, `(public)/confirmar`...) ganha
+ * de `[slug]` na hora de rotear — um salão com um desses nomes ficaria
+ * inacessível pra sempre, sem erro nenhum avisando. `lista-espera` e
+ * `nova-senha` entram mesmo sem pasta ainda: são rotas planejadas.
+ */
+const SLUGS_RESERVADOS = new Set([
+  'admin',
+  'api',
+  'auth',
+  'dev',
+  'onboarding',
+  'entrar',
+  'cadastro',
+  'confirmar',
+  'minha-conta',
+  'lista-espera',
+  'nova-senha',
+  'convite',
+])
+
 export const EsquemaOnboarding = z.object({
   businessName: z.string().trim().min(2, 'Digite o nome do negócio.').max(120, 'Nome muito longo.'),
   vertical: z.enum(VERTICAIS, 'Escolha uma especialidade da lista.'),
@@ -51,7 +73,8 @@ export const EsquemaOnboarding = z.object({
     .string()
     .trim()
     .toLowerCase()
-    .regex(SlugFormatado, 'Use só letras minúsculas, números e hífen, com 5 a 40 caracteres.'),
+    .regex(SlugFormatado, 'Use só letras minúsculas, números e hífen, com 5 a 40 caracteres.')
+    .refine((s) => !SLUGS_RESERVADOS.has(s), 'Esse endereço é reservado. Escolha outro.'),
   timezone: z.string().refine((tz) => {
     try {
       return Boolean(new Intl.DateTimeFormat('pt-BR', { timeZone: tz }))

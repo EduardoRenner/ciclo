@@ -59,7 +59,7 @@ export default function FormularioOnboarding() {
         setErro(primeiroCampo ?? json.error?.message ?? 'Não consegui criar seu negócio.')
         return
       }
-      router.push('/hoje')
+      router.push('/admin/hoje')
       router.refresh()
     } catch {
       setErro('Não consegui falar com o servidor. Tente de novo.')

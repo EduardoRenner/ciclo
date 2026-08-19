@@ -7,7 +7,7 @@ import { listarExpediente } from '@/server/services/expediente'
 import { listarFolgas } from '@/server/services/folgas'
 import { listarProfissionais } from '@/server/services/profissionais'
 
-import EditorExpediente from './editor'
+import EditorExpediente from '@/components/config/editor-expediente'
 
 export default async function PaginaExpediente({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params

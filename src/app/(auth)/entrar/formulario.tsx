@@ -29,7 +29,7 @@ export default function FormularioEntrar() {
 
       const proximo = params.get('proximo')
       const semNegocio = (json.data?.tenants.length ?? 0) === 0
-      router.push(semNegocio ? '/onboarding' : (proximo ?? '/hoje'))
+      router.push(semNegocio ? '/onboarding' : (proximo ?? '/admin/hoje'))
       router.refresh()
     } catch {
       setErro('Não consegui falar com o servidor. Tente de novo.')

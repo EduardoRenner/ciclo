@@ -8,7 +8,7 @@ import { criarClienteDoUsuario } from '@/server/db/server-client'
  * depois de trocado no servidor (nunca confiar em token que passou pela URL
  * do navegador). Sem sessão nenhuma ainda para decidir "tem tenant ou não",
  * então o destino depois da troca é sempre `/onboarding`: quem já tem
- * negócio é redirecionado dali para `/hoje` sozinho.
+ * negócio é redirecionado dali para `/admin/hoje` sozinho.
  */
 export async function GET(req: Request) {
   const url = new URL(req.url)

@@ -1,6 +1,6 @@
 'use client'
 
-import { Link2, Users } from 'lucide-react'
+import { Link2, Plus, Users } from 'lucide-react'
 import { useState, useTransition } from 'react'
 
 import Badge from '@/components/ui/badge'
@@ -11,9 +11,9 @@ import EmptyState from '@/components/ui/empty-state'
 import Sheet from '@/components/ui/sheet'
 import { useToast } from '@/components/ui/toast'
 
-type Profissional = {
-  id: string
-  display_name: string
+import FormularioProfissional, { type ProfissionalEditavel } from './formulario'
+
+type Profissional = ProfissionalEditavel & {
   comp_model: string
   active: boolean
   user_id: string | null
@@ -57,10 +57,19 @@ export default function ListaProfissionais({
   const [convites, setConvites] = useState(convitesIniciais)
   const [mostrarInativos, setMostrarInativos] = useState(false)
   const [sheetConvite, setSheetConvite] = useState(false)
+  const [editando, setEditando] = useState<Profissional | 'novo' | null>(null)
   const [pendente, iniciarTransicao] = useTransition()
   const mostrarToast = useToast()
 
   const visiveis = profissionais.filter((p) => mostrarInativos || p.active)
+
+  function aoSalvarNovo(p: ProfissionalEditavel) {
+    setProfissionais((atual) => [...atual, { ...p, comp_model: 'owner', active: true, user_id: null }])
+  }
+
+  function aoSalvarEditado(p: ProfissionalEditavel) {
+    setProfissionais((atual) => atual.map((x) => (x.id === p.id ? { ...x, ...p } : x)))
+  }
 
   function desativar(id: string) {
     const anterior = profissionais
@@ -114,10 +123,16 @@ export default function ListaProfissionais({
             Todos
           </Chip>
         </div>
-        <Button variante="secondary" onClick={() => setSheetConvite(true)}>
-          <Link2 aria-hidden className="size-4" />
-          Convidar
-        </Button>
+        <div className="flex gap-2">
+          <Button variante="secondary" onClick={() => setEditando('novo')}>
+            <Plus aria-hidden className="size-4" />
+            Cadastrar
+          </Button>
+          <Button variante="secondary" onClick={() => setSheetConvite(true)}>
+            <Link2 aria-hidden className="size-4" />
+            Convidar
+          </Button>
+        </div>
       </div>
 
       {visiveis.length === 0 ? (
@@ -139,13 +154,16 @@ export default function ListaProfissionais({
           {visiveis.map((p) => (
             <li key={p.id}>
               <Card className="flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="truncate text-corpo font-semibold">{p.display_name}</p>
+                <button type="button" onClick={() => setEditando(p)} className="min-w-0 flex-1 text-left">
+                  <span className="flex items-center gap-2">
+                    <span aria-hidden className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: p.color ?? 'var(--txt-3)' }} />
+                    <span className="truncate text-corpo font-semibold">{p.display_name}</span>
+                  </span>
                   <div className="mt-1.5 flex flex-wrap gap-1.5">
                     {!p.active ? <Badge estado="bad">Inativo</Badge> : null}
                     {!p.user_id ? <Badge estado="info">Sem login</Badge> : null}
                   </div>
-                </div>
+                </button>
                 {p.active ? (
                   <Button variante="secondary" onClick={() => desativar(p.id)} disabled={pendente}>
                     Desativar
@@ -225,6 +243,12 @@ export default function ListaProfissionais({
           </Button>
         </form>
       </Sheet>
+
+      {editando === 'novo' ? (
+        <FormularioProfissional aberto aoFechar={() => setEditando(null)} aoSalvar={aoSalvarNovo} />
+      ) : editando ? (
+        <FormularioProfissional aberto profissional={editando} aoFechar={() => setEditando(null)} aoSalvar={aoSalvarEditado} />
+      ) : null}
     </div>
   )
 }

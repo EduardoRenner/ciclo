@@ -1,8 +1,13 @@
+import { Settings } from 'lucide-react'
+import Link from 'next/link'
+
 /**
  * Barra fina de marca/orientação — o shell autenticado não tinha nenhuma
  * (achado da auditoria de UI): cada tela começava "fria" só com um `<h2>` de
  * seção, sem nada constante no topo pra ancorar onde a pessoa está. Não busca
  * dado nenhum de propósito — não pode virar fetch novo em toda tela do app.
+ * A engrenagem é o único jeito de chegar em `/admin/config` hoje — nenhuma
+ * outra tela linka pra lá.
  */
 export default function Topbar() {
   return (
@@ -11,6 +16,13 @@ export default function Topbar() {
         C
       </div>
       <span className="text-label font-semibold uppercase tracking-[0.13em] text-txt-3">CICLO</span>
+      <Link
+        href="/admin/config"
+        aria-label="Configurações"
+        className="ml-auto flex size-9 items-center justify-center rounded-[var(--radius-pill)] text-txt-3 transition hover:bg-surface-2 hover:text-txt-2"
+      >
+        <Settings aria-hidden className="size-5" />
+      </Link>
     </header>
   )
 }

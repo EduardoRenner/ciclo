@@ -152,7 +152,7 @@ export default function DetalheAgendamento({
           ) : null}
           {estadoAtual === 'done' ? (
             <Link
-              href={`/comanda/agendamento/${agendamento.id}`}
+              href={`/admin/comanda/agendamento/${agendamento.id}`}
               className="flex h-12 w-full items-center justify-center rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 text-corpo font-semibold text-txt"
             >
               Ver comanda

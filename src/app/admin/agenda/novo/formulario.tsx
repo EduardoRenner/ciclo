@@ -62,7 +62,7 @@ export default function FormularioAgendamento({
       if (typeof navigator !== 'undefined' && !navigator.onLine) {
         await apiFetch('/api/v1/appointments', { method: 'POST', body: corpo })
         mostrarToast({ tom: 'ok', titulo: 'Sem conexão', descricao: 'Agendamento entrou na fila e será enviado quando a conexão voltar.' })
-        router.push('/agenda')
+        router.push('/admin/agenda')
         return
       }
 
@@ -78,7 +78,7 @@ export default function FormularioAgendamento({
 
       if (r.ok && json.data) {
         mostrarToast({ tom: 'ok', titulo: 'Prontinho', descricao: 'Agendamento criado.' })
-        router.push('/agenda')
+        router.push('/admin/agenda')
         return
       }
 

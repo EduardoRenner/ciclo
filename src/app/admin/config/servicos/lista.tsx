@@ -1,6 +1,6 @@
 'use client'
 
-import { ArrowDown, ArrowUp, Scissors } from 'lucide-react'
+import { ArrowDown, ArrowUp, Plus, Scissors } from 'lucide-react'
 import { useState, useTransition } from 'react'
 
 import Badge from '@/components/ui/badge'
@@ -8,26 +8,14 @@ import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import Chip from '@/components/ui/chip'
 import EmptyState from '@/components/ui/empty-state'
+import { dinheiro, duracao } from '@/lib/formato'
 
-type Servico = {
-  id: string
-  name: string
-  duration_min: number
-  price_cents: number
-  cycle_days: number
+import FormularioServico, { type ServicoEditavel } from './formulario'
+
+type Servico = ServicoEditavel & {
   deposit_bps: number
   active: boolean
   position: number
-}
-
-const dinheiro = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
-
-/** Minutos viram "1h30", não "90 min": é como a profissional fala do horário dela. */
-function duracao(min: number): string {
-  const h = Math.floor(min / 60)
-  const m = min % 60
-  if (h === 0) return `${m}min`
-  return m === 0 ? `${h}h` : `${h}h${String(m).padStart(2, '0')}`
 }
 
 export default function ListaServicos({ iniciais }: { iniciais: Servico[] }) {
@@ -35,6 +23,7 @@ export default function ListaServicos({ iniciais }: { iniciais: Servico[] }) {
   const [mostrarArquivados, setMostrarArquivados] = useState(false)
   const [salvando, iniciarSalvamento] = useTransition()
   const [erro, setErro] = useState<string | null>(null)
+  const [editando, setEditando] = useState<Servico | 'novo' | null>(null)
 
   const visiveis = servicos.filter((s) => mostrarArquivados || s.active)
 
@@ -65,28 +54,52 @@ export default function ListaServicos({ iniciais }: { iniciais: Servico[] }) {
     })
   }
 
+  function aoSalvarNovo(servico: ServicoEditavel) {
+    setServicos((atual) => [...atual, { ...servico, deposit_bps: 0, active: true, position: atual.length }])
+  }
+
+  function aoSalvarEditado(servico: ServicoEditavel) {
+    setServicos((atual) => atual.map((s) => (s.id === servico.id ? { ...s, ...servico } : s)))
+  }
+
+  const sheet =
+    editando === 'novo' ? (
+      <FormularioServico aberto aoFechar={() => setEditando(null)} aoSalvar={aoSalvarNovo} />
+    ) : editando ? (
+      <FormularioServico aberto servico={editando} aoFechar={() => setEditando(null)} aoSalvar={aoSalvarEditado} />
+    ) : null
+
   if (servicos.length === 0) {
     return (
-      <Card className="p-0">
-        <EmptyState
-          icone={<Scissors aria-hidden className="size-6" />}
-          titulo="Nenhum serviço ainda"
-          descricao="Cadastre o primeiro para poder marcar horário e cobrar por ele."
-          acao={<Button>Cadastrar serviço</Button>}
-        />
-      </Card>
+      <>
+        <Card className="p-0">
+          <EmptyState
+            icone={<Scissors aria-hidden className="size-6" />}
+            titulo="Nenhum serviço ainda"
+            descricao="Cadastre o primeiro para poder marcar horário e cobrar por ele."
+            acao={<Button onClick={() => setEditando('novo')}>Cadastrar serviço</Button>}
+          />
+        </Card>
+        {sheet}
+      </>
     )
   }
 
   return (
     <div aria-busy={salvando}>
-      <div className="mb-4 flex gap-2">
-        <Chip ligado={!mostrarArquivados} onClick={() => setMostrarArquivados(false)}>
-          Ativos
-        </Chip>
-        <Chip ligado={mostrarArquivados} onClick={() => setMostrarArquivados(true)}>
-          Todos
-        </Chip>
+      <div className="mb-4 flex items-center justify-between gap-2">
+        <div className="flex gap-2">
+          <Chip ligado={!mostrarArquivados} onClick={() => setMostrarArquivados(false)}>
+            Ativos
+          </Chip>
+          <Chip ligado={mostrarArquivados} onClick={() => setMostrarArquivados(true)}>
+            Todos
+          </Chip>
+        </div>
+        <Button variante="secondary" onClick={() => setEditando('novo')}>
+          <Plus aria-hidden className="size-4" />
+          Novo
+        </Button>
       </div>
 
       {erro ? (
@@ -99,16 +112,17 @@ export default function ListaServicos({ iniciais }: { iniciais: Servico[] }) {
         {visiveis.map((s, i) => (
           <li key={s.id}>
             <Card className="flex items-center gap-3">
-              <div className="min-w-0 flex-1">
+              <button type="button" onClick={() => setEditando(s)} className="min-w-0 flex-1 text-left">
                 <p className="truncate text-corpo font-semibold">{s.name}</p>
                 <p className="tabular mt-0.5 text-secundario text-txt-2">
                   {duracao(s.duration_min)} · {dinheiro.format(s.price_cents / 100)} · volta em {s.cycle_days}d
                 </p>
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {!s.active ? <Badge estado="bad">Arquivado</Badge> : null}
+                  {!s.bookable_online ? <Badge estado="warn">Fora do site</Badge> : null}
                   {s.deposit_bps > 0 ? <Badge estado="info">Sinal {s.deposit_bps / 100}%</Badge> : null}
                 </div>
-              </div>
+              </button>
 
               {/* Setas em vez de arrastar: §3.6 pede alvo de 48px, e drag-and-drop
                   num dedo só, em lista rolável, erra mais do que acerta. */}
@@ -136,6 +150,8 @@ export default function ListaServicos({ iniciais }: { iniciais: Servico[] }) {
           </li>
         ))}
       </ul>
+
+      {sheet}
     </div>
   )
 }

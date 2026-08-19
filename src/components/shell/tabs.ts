@@ -14,10 +14,10 @@ export type Aba = {
  * daqui. Decisão registrada em `docs/DECISOES.md`.
  */
 export const ABAS: readonly Aba[] = [
-  { href: '/hoje', rotulo: 'Hoje', icone: 'Home' },
-  { href: '/agenda', rotulo: 'Agenda', icone: 'CalendarDays' },
-  { href: '/clientes', rotulo: 'Clientes', icone: 'Users' },
-  { href: '/recuperar', rotulo: 'Recuperar', icone: 'Sparkles' },
+  { href: '/admin/hoje', rotulo: 'Hoje', icone: 'Home' },
+  { href: '/admin/agenda', rotulo: 'Agenda', icone: 'CalendarDays' },
+  { href: '/admin/clientes', rotulo: 'Clientes', icone: 'Users' },
+  { href: '/admin/recuperar', rotulo: 'Recuperar', icone: 'Sparkles' },
 ]
 
 /**

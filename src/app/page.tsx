@@ -11,7 +11,7 @@ import { sessaoAtual } from '@/server/auth/session'
  */
 export default async function Home() {
   const sessao = await sessaoAtual()
-  if (sessao) redirect('/hoje')
+  if (sessao) redirect('/admin/hoje')
 
   return (
     <TelaPublica>

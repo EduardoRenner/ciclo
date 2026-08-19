@@ -21,12 +21,19 @@ export const EsquemaFolga = z
 type Entrada = z.infer<typeof EsquemaFolga>
 type Cliente = SupabaseClient<Database>
 
-export async function listarFolgas(db: Cliente, tenantId: string, professionalId?: string) {
+/**
+ * `professionalId` distingue três casos: `undefined` = sem filtro (todo mundo,
+ * usado pela API de listagem geral); `null` = só os fechamentos do negócio
+ * inteiro (`config/horarios`); string = só daquele profissional. `.eq()` com
+ * `null` não funciona em SQL (precisa de `IS NULL`), por isso o `if` separado.
+ */
+export async function listarFolgas(db: Cliente, tenantId: string, professionalId?: string | null) {
   let consulta = db
     .from('time_off')
     .select('id, professional_id, starts_at, ends_at, reason')
     .eq('tenant_id', tenantId)
-  if (professionalId !== undefined) consulta = consulta.eq('professional_id', professionalId)
+  if (professionalId === null) consulta = consulta.is('professional_id', null)
+  else if (professionalId !== undefined) consulta = consulta.eq('professional_id', professionalId)
 
   const { data, error } = await consulta.order('starts_at')
   if (error) throw new AppError('INTERNAL', { cause: error })

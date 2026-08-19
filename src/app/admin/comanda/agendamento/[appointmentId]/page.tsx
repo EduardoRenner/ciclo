@@ -12,5 +12,5 @@ export default async function RedirecionarParaComanda({ params }: { params: Prom
 
   const ticketId = await buscarTicketIdPorAgendamento(db, ctx.tenantId, appointmentId)
   if (!ticketId) notFound()
-  redirect(`/comanda/${ticketId}`)
+  redirect(`/admin/comanda/${ticketId}`)
 }

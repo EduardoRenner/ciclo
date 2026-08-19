@@ -2,7 +2,17 @@ import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // O app do profissional morava na raiz (`/hoje`, `/agenda`...) e mudou pra
+  // `/admin/*` — favoritos e o PWA já instalado no celular apontam pro
+  // endereço velho. Redirect permanente, não um `notFound()`.
+  async redirects() {
+    const prefixosAntigos = ["hoje", "agenda", "clientes", "recuperar", "comanda", "caixa", "config"];
+    return prefixosAntigos.map((prefixo) => ({
+      source: `/${prefixo}/:path*`,
+      destination: `/admin/${prefixo}/:path*`,
+      permanent: true,
+    }));
+  },
 };
 
 // TICKET-057. Sem `SENTRY_AUTH_TOKEN`/`SENTRY_ORG`/`SENTRY_PROJECT` (nenhum
