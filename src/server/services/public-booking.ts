@@ -1,9 +1,12 @@
 import { Temporal } from '@js-temporal/polyfill'
+import { cache } from 'react'
 import { z } from 'zod'
 
 import { availableSlots, type IntervaloExpediente, type IntervaloOcupado } from '@/core/scheduling/available-slots'
 import { withNovoTenant } from '@/server/db/with-tenant'
+import { listarExpediente } from '@/server/services/expediente'
 import { lerConfiguracoesAgenda } from '@/server/services/configuracoes-agenda'
+import { lerSite } from '@/server/services/site'
 import { normalizarTelefoneBR } from '@/server/services/telefone'
 import { criarAgendamento } from '@/server/services/agendamentos'
 import { AppError } from '@/server/http/errors'
@@ -13,17 +16,21 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 type Cliente = SupabaseClient<Database>
 
+const ACENTO_PADRAO = { acc: '#a855f7', acc2: '#c084fc' }
+
 /**
  * Toda leitura pública passa por `withNovoTenant` (service_role): a RLS de
  * `tenants`/`services`/`professionals` exige `has_tenant()`, que um visitante
  * anônimo nunca tem — não existe outro caminho. A disciplina fica em nunca
  * selecionar coluna a mais (regra do TICKET-027: "nunca expor clientId,
- * telefone de outra pessoa ou lista de clientes").
+ * telefone de outra pessoa ou lista de clientes"). `settings` sai da consulta
+ * mas nunca do retorno público — carrega `min_lead_time_minutes` etc., que
+ * ninguém de fora precisa ver; só `lerSite()` (whitelist) chega no visitante.
  */
 async function tenantPeloSlug(svc: Cliente, slug: string) {
   const { data, error } = await svc
     .from('tenants')
-    .select('id, name, slug, vertical, timezone, phone, settings')
+    .select('id, name, slug, vertical, timezone, phone, address, settings')
     .eq('slug', slug)
     .is('deleted_at', null)
     .maybeSingle()
@@ -36,18 +43,30 @@ export type PerfilPublico = {
   name: string
   slug: string
   phone: string | null
-  services: { id: string; name: string; durationMin: number; priceCents: number }[]
+  address: string | null
+  tagline: string | null
+  about: string | null
+  whatsapp: string | null
+  instagram: string | null
+  accentColor: { acc: string; acc2: string }
+  hours: { weekday: number; opensAt: string; closesAt: string }[]
+  services: { id: string; name: string; description: string | null; durationMin: number; priceCents: number }[]
   professionals: { id: string; displayName: string }[]
 }
 
-export async function perfilPublico(slug: string): Promise<PerfilPublico> {
+/**
+ * `cache()` do React: `layout.tsx` (cor de acento), `page.tsx` (a landing) e
+ * `generateMetadata` chamam esta função na mesma requisição — sem isso seriam
+ * 3 idas ao banco por visita em vez de 1.
+ */
+export const perfilPublico = cache(async (slug: string): Promise<PerfilPublico> => {
   return withNovoTenant(async (svc) => {
     const tenant = await tenantPeloSlug(svc, slug)
 
-    const [servicos, profissionais] = await Promise.all([
+    const [servicos, profissionais, pack, horarioPadrao] = await Promise.all([
       svc
         .from('services')
-        .select('id, name, duration_min, price_cents')
+        .select('id, name, description, duration_min, price_cents')
         .eq('tenant_id', tenant.id)
         .eq('active', true)
         .eq('bookable_online', true)
@@ -61,18 +80,50 @@ export async function perfilPublico(slug: string): Promise<PerfilPublico> {
         .eq('accepts_online', true)
         .is('deleted_at', null)
         .order('display_name'),
+      svc.from('vertical_packs').select('accent_color').eq('vertical', tenant.vertical).maybeSingle(),
+      listarExpediente(svc, tenant.id, null),
     ])
     if (servicos.error) throw new AppError('INTERNAL', { cause: servicos.error })
     if (profissionais.error) throw new AppError('INTERNAL', { cause: profissionais.error })
+    if (pack.error) throw new AppError('INTERNAL', { cause: pack.error })
+
+    const site = lerSite(tenant.settings)
+    const acc = pack.data?.accent_color ?? ACENTO_PADRAO.acc
 
     return {
       name: tenant.name,
       slug: tenant.slug,
       phone: tenant.phone,
-      services: (servicos.data ?? []).map((s) => ({ id: s.id, name: s.name, durationMin: s.duration_min, priceCents: s.price_cents })),
+      address: typeof tenant.address === 'string' ? tenant.address : null,
+      tagline: site.tagline ?? null,
+      about: site.about ?? null,
+      whatsapp: site.whatsapp ?? null,
+      instagram: site.instagram ?? null,
+      accentColor: { acc, acc2: ACENTO_PADRAO.acc2 === acc ? acc : misturarComBranco(acc, 0.3) },
+      hours: horarioPadrao.map((h) => ({ weekday: h.weekday, opensAt: h.opens_at, closesAt: h.closes_at })),
+      services: (servicos.data ?? []).map((s) => ({
+        id: s.id,
+        name: s.name,
+        description: s.description,
+        durationMin: s.duration_min,
+        priceCents: s.price_cents,
+      })),
       professionals: (profissionais.data ?? []).map((p) => ({ id: p.id, displayName: p.display_name })),
     }
   })
+})
+
+/**
+ * `color-mix()` fica pro CSS no cliente (Fase 3 do plano) — aqui é só um
+ * clareamento simples em JS pra ter um `acc2` plausível quando o pack não
+ * define os dois tons (hoje `vertical_packs` só tem uma coluna de cor).
+ */
+function misturarComBranco(hex: string, fator: number): string {
+  const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex)
+  if (!m) return hex
+  const canal = (h: string) => Math.round(parseInt(h, 16) + (255 - parseInt(h, 16)) * fator)
+  const hex2 = (n: number) => n.toString(16).padStart(2, '0')
+  return `#${hex2(canal(m[1]!))}${hex2(canal(m[2]!))}${hex2(canal(m[3]!))}`
 }
 
 function weekdayPg(dia: Temporal.PlainDate): number {
@@ -98,7 +149,7 @@ export async function disponibilidadePublica(
 
     const { data: servico, error: erroServico } = await svc
       .from('services')
-      .select('duration_min, parallel_capacity')
+      .select('duration_min, parallel_capacity, buffer_before_min, buffer_after_min')
       .eq('id', serviceId)
       .eq('tenant_id', tenant.id)
       .eq('active', true)
@@ -176,8 +227,12 @@ export async function disponibilidadePublica(
         timeOff,
         appointments: ocupados,
         serviceDurationMin: servico.duration_min,
-        bufferBeforeMin: 0,
-        bufferAfterMin: 0,
+        // Achado na auditoria pré-`/admin`: vinha fixo em 0, ignorando o que o
+        // serviço cadastra — o buffer só funcionava no agendamento interno, nunca
+        // no site público. Agora que o formulário de serviço expõe os dois campos
+        // (Fase 2), o dono vai configurar e esperar que valha aqui também.
+        bufferBeforeMin: servico.buffer_before_min,
+        bufferAfterMin: servico.buffer_after_min,
         slotGranularityMin: config.slotGranularityMin,
         minLeadTimeMinutes: config.minLeadTimeMinutes,
         maxAdvanceDays: config.maxAdvanceDays,

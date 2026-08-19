@@ -1,8 +1,10 @@
 import { randomUUID } from 'node:crypto'
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { z } from 'zod'
 
 import { withTenant } from '@/server/db/with-tenant'
+import { lerCorpo } from '@/server/http/body'
 import { comIdempotencia } from '@/server/http/idempotency'
 
 vi.mock('@/server/db/with-tenant', () => ({ withTenant: vi.fn() }))
@@ -190,6 +192,31 @@ describe('comIdempotencia', () => {
     const depois = await comIdempotencia(post(chave, corpo), ROTA, async () => ({ id: 'ag-1' }))
     expect(depois).toEqual({ id: 'ag-1' })
   })
+
+  it(
+    'sobrevive à ordem real de toda rota — lerCorpo(req) e depois comIdempotencia(req) no mesmo Request',
+    async () => {
+      // Bug achado ao vivo testando o PATCH /api/v1/tenant pela UI (o primeiro
+      // teste de navegador real contra rota autenticada nesta base): toda
+      // rota chama `lerCorpo(req, schema)` — que consumia `req.json()` direto
+      // — e só depois `comIdempotencia(req, ...)`, que precisa de
+      // `req.clone()`. Contra um `Request` de verdade (não construído com
+      // `body` string solta, que alguns runtimes deixam clonar mesmo depois
+      // de lido), clonar um corpo já consumido estoura "TypeError: unusable".
+      // Nenhum teste aqui reproduzia essa ordem — todos chamavam
+      // `comIdempotencia` num `Request` cujo corpo nunca tinha sido lido
+      // antes. Afetava toda rota de mutação com idempotência do app.
+      bancoFalso()
+      const chave = randomUUID()
+      const req = post(chave, { serviceId: 's-1' })
+
+      const entrada = await lerCorpo(req, z.object({ serviceId: z.string() }))
+      expect(entrada).toEqual({ serviceId: 's-1' })
+
+      const resultado = await comIdempotencia(req, ROTA, async () => ({ id: 'ag-1' }))
+      expect(resultado).toEqual({ id: 'ag-1' })
+    },
+  )
 
   it('enquanto a primeira tentativa roda, a segunda é mandada esperar', async () => {
     const tabela = bancoFalso()

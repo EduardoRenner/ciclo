@@ -3,9 +3,28 @@ import { notFound } from 'next/navigation'
 import { AppError } from '@/server/http/errors'
 import { perfilPublico } from '@/server/services/public-booking'
 
-import Booking from './booking'
+import SecoesPublicas from './secoes'
 
-export default async function PaginaPublicaDeBooking({ params }: { params: Promise<{ slug: string }> }) {
+import type { Metadata, Viewport } from 'next'
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params
+  const perfil = await perfilPublico(slug).catch(() => null)
+  if (!perfil) return {}
+
+  return {
+    title: perfil.name,
+    description: perfil.tagline ?? perfil.about ?? `Agende seu horário na ${perfil.name}.`,
+  }
+}
+
+export async function generateViewport({ params }: { params: Promise<{ slug: string }> }): Promise<Viewport> {
+  const { slug } = await params
+  const perfil = await perfilPublico(slug).catch(() => null)
+  return { themeColor: perfil?.accentColor.acc ?? '#0a0a0f' }
+}
+
+export default async function PaginaPublica({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
 
   const perfil = await perfilPublico(slug).catch((erro: unknown) => {
@@ -15,13 +34,8 @@ export default async function PaginaPublicaDeBooking({ params }: { params: Promi
   if (!perfil) notFound()
 
   return (
-    <main className="mx-auto min-h-dvh max-w-[560px] px-[18px] py-8">
-      <header className="mb-6">
-        <h1 className="text-titulo font-extrabold">{perfil.name}</h1>
-        {perfil.phone ? <p className="mt-1 text-secundario text-txt-2">{perfil.phone}</p> : null}
-      </header>
-
-      <Booking slug={slug} services={perfil.services} professionals={perfil.professionals} />
+    <main className="mx-auto min-h-dvh max-w-[560px] px-[18px]">
+      <SecoesPublicas perfil={perfil} />
     </main>
   )
 }

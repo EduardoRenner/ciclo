@@ -1225,3 +1225,43 @@ produção mesmo estática). Testado com `pnpm build && pnpm start` local (não 
 **Padrão pra lembrar:** toda vez que criar uma página nova sob `(app)/` sem `await` nenhum no
 Server Component, ela vira candidata a pré-renderização estática — e quebra silenciosamente sob
 esse CSP. Checar a lista `○` do `pnpm build` antes de cada deploy até isso virar teste automático.
+
+2026-08-19 · Fase 3 do plano /admin + site público: `perfilPublico` (agora `React.cache()`, evita
+3 idas ao banco por view entre `layout.tsx`/`page.tsx`/`generateMetadata`) ganhou tagline, sobre,
+endereço, WhatsApp, Instagram, horário padrão do negócio e cor de acento (de `vertical_packs`).
+Corrigido bug real achado na auditoria: `disponibilidadePublica` mandava `bufferBeforeMin`/
+`bufferAfterMin` fixos em `0` pro cálculo de horário — o preparo/limpeza que o serviço cadastra
+(Fase 2) nunca valia no site público, só no agendamento interno. Cor de acento por tenant vira
+variável CSS **inline no wrapper** de `[slug]/layout.tsx` (`--acc`/`--acc-2`/`--acc-soft` via
+`color-mix`), nunca um `<style>` global nem sobrescrita de `:root` — o admin é árvore irmã, nunca
+é afetado, e todo componente que já usa `bg-acc`/`text-acc-2` recolore de graça. Agendamento
+migrou de `[slug]/booking.tsx` pra `[slug]/agendar/` com reskin (cartão de serviço, faixa de 14
+dias, horários agrupados Manhã/Tarde/Noite, carrega o primeiro dia sozinho) — a lógica de 3
+fetches/honeypot/tratamento de erro foi mantida palavra por palavra, só a casca mudou.
+`lista-espera/[token]/` criada (a API já existia, o link do WhatsApp estava morto).
+
+**`perfilPublico` agora devolve `address` de propósito** — o teste
+`tests/integration/booking-publico.test.ts` que garantia "nunca devolve address" foi atualizado
+pra refletir que isso é intencional desde que o site ganhou seção de contato (Fase 3); `settings`
+e `document`, esses sim, continuam nunca saindo pro público.
+
+**Bug crítico achado ao vivo, sistêmico, afetava toda rota de mutação com idempotency-key do app
+inteiro** (não só código desta rodada): `lerCorpo(req, schema)` lia `req.json()` direto no
+`Request` original, e toda rota chama isso ANTES de `comIdempotencia(req, ...)`, que precisa de
+`req.clone().text()` pra calcular o hash do pedido. Contra um `Request` de verdade vindo de um
+`fetch()` de navegador (não um construído em teste com `body` de string solta), clonar depois de
+consumido estoura `TypeError: unusable` — a rota inteira vira `500 INTERNAL` sempre. Reproduzido
+ao vivo tentando salvar `/admin/config/negocio` (a rota nova desta sessão) e confirmado que
+`POST /api/v1/services` (pré-existente, nunca alterada) tem o mesmíssimo stack trace — **não é
+bug desta rodada, é falha de projeto que atravessa toda a base desde que `comIdempotencia`
+existe**, só nunca foi pega porque nenhum teste de integração chama `lerCorpo` e
+`comIdempotencia` no mesmo `Request` (todos testam os dois separados) e nenhuma tela sob `(app)/`
+tinha sido testada num navegador de verdade antes desta sessão (limite já registrado desde o
+TICKET-022). Corrigido em `src/server/http/body.ts`: `lerCorpo` agora lê de `req.clone().json()`,
+deixando o `Request` original intocado para quem vier depois clonar. Teste de regressão em
+`tests/unit/server/idempotency.test.ts` reproduz a ordem real (`lerCorpo` → `comIdempotencia` no
+mesmo `Request`) — confirmado que falha sem a correção (revertida e testada de propósito antes de
+restaurar) e passa com ela. **Padrão pra família inteira**: qualquer wrapper que precise ler o
+corpo de um `Request` mais de uma vez (idempotência, log de auditoria, replay) só é seguro se a
+PRIMEIRA leitura em qualquer lugar do código for sempre a partir de um clone, nunca do original —
+constructed-body de teste mascara esse tipo de bug, só um `fetch()` de navegador real revela.

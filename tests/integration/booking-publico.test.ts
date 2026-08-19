@@ -153,11 +153,10 @@ describe('perfilPublico', () => {
     30_000,
   )
 
-  it('não devolve campo interno nenhum (settings, document, address)', async () => {
+  it('não devolve campo interno nenhum (settings, document) — endereço agora é público de propósito (site institucional, Fase 3 do /admin)', async () => {
     const perfil = await perfilPublico(slug)
     expect(perfil).not.toHaveProperty('settings')
     expect(perfil).not.toHaveProperty('document')
-    expect(perfil).not.toHaveProperty('address')
   })
 
   it('slug que não existe devolve NOT_FOUND, não vaza detalhe', async () => {
