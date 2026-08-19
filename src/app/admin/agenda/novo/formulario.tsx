@@ -1,7 +1,7 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
-import { useState, useTransition } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useEffect, useState, useTransition } from 'react'
 
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
@@ -41,6 +41,33 @@ export default function FormularioAgendamento({
   const [dataHora, setDataHora] = useState('')
   const [alternativas, setAlternativas] = useState<string[] | null>(null)
   const [erro, setErro] = useState<string | null>(null)
+
+  /**
+   * "Marcar horário" na ficha manda `?cliente=<id>` e o nome/telefone vêm daqui. Só o id viaja
+   * na URL, nunca nome nem telefone: dado pessoal não entra em query string (fica em histórico
+   * de navegador, log de servidor e Referer). Sem isto o botão da ficha abria o formulário em
+   * branco e a pessoa tinha que redigitar quem já estava na tela anterior.
+   */
+  const clienteId = useSearchParams().get('cliente')
+  useEffect(() => {
+    if (!clienteId) return
+    let cancelado = false
+    fetch(`/api/v1/clients/${clienteId}`)
+      .then((r) => (r.ok ? (r.json() as Promise<{ data?: { name: string; phone_e164: string | null } }>) : null))
+      .then((json) => {
+        if (cancelado || !json?.data) return
+        setClienteNome(json.data.name)
+        // `+5511991110001` é o formato do banco, não o que a pessoa lê — mostra como ela digitaria.
+        const m = /^\+55(\d{2})(\d{4,5})(\d{4})$/.exec(json.data.phone_e164 ?? '')
+        setClienteTelefone(m ? `(${m[1]}) ${m[2]}-${m[3]}` : (json.data.phone_e164 ?? ''))
+      })
+      .catch(() => {
+        // Falhar aqui só significa formulário em branco — o cadastro manual continua valendo.
+      })
+    return () => {
+      cancelado = true
+    }
+  }, [clienteId])
 
   function enviar(startsAtIso: string) {
     setErro(null)

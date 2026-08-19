@@ -49,7 +49,7 @@ export default function NovaCampanha({
           name: `${modelo.title} — ${segmento.rotulo}`,
           segment: segmento.valor,
           template: modelo.title,
-          sentCount: enviados.size,
+          clientIds: [...enviados],
         }),
       })
       if (!r.ok) {

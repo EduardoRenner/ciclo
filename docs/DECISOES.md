@@ -1320,3 +1320,27 @@ de "sobrou linha do outro tenant" falha por não ter o que sobrar (mesma pegadin
 para `push_subscriptions`). A regra de lint `service-client-confinado` passou a valer também
 para `scripts/**` como já valia para `tests/**` — script de manutenção roda na mão, fora do app,
 sem sessão de usuário nenhuma.
+
+2026-08-19 · Dois defeitos do próprio CRM, achados na revisão logo depois de subir — os dois eram
+promessa que a tela fazia e o código não cumpria:
+
+1. **O funil de campanha nasceria morto.** `registrarCampanha` gravava só a linha em `campaigns`,
+   mas a atribuição de receita (TICKET-039, `atribuicao.ts`) procura `messages` com
+   `kind = 'campaign'` e `status = 'sent'` para creditar o agendamento concluído em até 30 dias.
+   Sem essas linhas, `booked_count`/`revenue_cents` de toda campanha criada pela tela nova
+   ficariam zerados para sempre e o funil seria enfeite. Passou a receber `clientIds` (quem
+   recebeu, não só quantos) e a gravar uma `messages` por pessoa. `status: 'sent'` e não
+   `'queued'` porque a mensagem saiu de fato — quem apertou enviar foi a pessoa, no WhatsApp
+   dela; o que o sistema não sabe, e por isso não finge saber, é se foi entregue.
+2. **"Marcar horário" na ficha abria o formulário em branco.** O botão mandava `?cliente=<id>` e
+   `agenda/novo/formulario.tsx` simplesmente ignorava a query — a pessoa tinha que redigitar o
+   nome de quem estava na tela anterior. Agora o formulário lê o id e busca nome/telefone.
+   **Só o id viaja na URL, nunca nome nem telefone**: dado pessoal não entra em query string
+   (fica em histórico de navegador, log de servidor e cabeçalho Referer). O telefone é
+   reformatado para `(11) 99111-0001` na hora de preencher — `+5511991110001` é o formato do
+   banco, não o que a pessoa lê.
+
+Também reaprendida na marra a armadilha já registrada na memória do projeto: **rodar `pnpm build`
+com `pnpm dev` ativo no mesmo repositório corrompe o `.next`** (os dois escrevem na mesma pasta).
+O sintoma não tem relação óbvia com a causa — `Cannot find module './vendor-chunks/...'` e 500 em
+página que funcionava. Conserto: matar o dev, apagar `.next`, subir de novo.

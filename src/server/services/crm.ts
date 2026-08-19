@@ -240,14 +240,19 @@ export const EsquemaCampanha = z.object({
   name: z.string().trim().min(2, 'Dê um nome à campanha.').max(80),
   segment: z.string().trim().max(40),
   template: z.string().trim().max(80),
-  sentCount: z.number().int().min(0).max(10_000),
+  /** Quem realmente recebeu, não só quantos: sem os ids não há como atribuir receita depois. */
+  clientIds: z.array(z.uuid()).min(1, 'Nenhuma mensagem foi enviada ainda.').max(2000),
 })
 
 /**
- * Registra a campanha depois que as mensagens saíram. `booked_count`/`revenue_cents` nascem em
- * zero de propósito: quem preenche é a atribuição de receita (TICKET-039), que credita o
- * agendamento concluído dentro de 30 dias — número de conversão que o próprio usuário digita
- * não é medição, é opinião.
+ * Registra a campanha depois que as mensagens saíram, e grava uma linha em `messages` por
+ * pessoa. As linhas não são enfeite de histórico: a atribuição de receita (TICKET-039) procura
+ * exatamente `messages` com `kind = 'campaign'` e `status = 'sent'` para creditar o agendamento
+ * concluído dentro de 30 dias. Sem elas, `booked_count`/`revenue_cents` desta campanha ficariam
+ * zerados para sempre e o funil da tela seria decorativo.
+ *
+ * `booked_count`/`revenue_cents` continuam nascendo em zero de propósito — quem preenche é a
+ * atribuição, não o usuário: número de conversão digitado à mão não é medição, é opinião.
  */
 export async function registrarCampanha(db: Cliente, tenantId: string, entrada: z.infer<typeof EsquemaCampanha>) {
   const { data, error } = await db
@@ -258,12 +263,29 @@ export async function registrarCampanha(db: Cliente, tenantId: string, entrada: 
       segment: { tipo: entrada.segment },
       template: entrada.template,
       status: 'done',
-      sent_count: entrada.sentCount,
+      sent_count: entrada.clientIds.length,
     })
     .select('id, name, sent_count, booked_count, revenue_cents')
     .single()
 
   if (error) throw new AppError('INTERNAL', { cause: error })
+
+  const agora = new Date().toISOString()
+  const { error: erroMensagens } = await db.from('messages').insert(
+    entrada.clientIds.map((clientId) => ({
+      tenant_id: tenantId,
+      client_id: clientId,
+      channel: 'whatsapp' as const,
+      kind: 'campaign' as const,
+      // `sent` e não `queued`: a mensagem saiu de fato — quem apertou "enviar" foi a pessoa, no
+      // WhatsApp dela. O que o sistema não sabe (e por isso não finge saber) é se foi entregue.
+      status: 'sent' as const,
+      template: entrada.template,
+      sent_at: agora,
+    })),
+  )
+  if (erroMensagens) throw new AppError('INTERNAL', { cause: erroMensagens })
+
   return data
 }
 
