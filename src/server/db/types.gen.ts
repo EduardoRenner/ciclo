@@ -355,13 +355,148 @@ export type Database = {
           },
         ]
       }
+      client_notes: {
+        Row: {
+          appointment_id: string | null
+          author_id: string | null
+          body: string
+          client_id: string
+          created_at: string
+          id: string
+          tenant_id: string
+        }
+        Insert: {
+          appointment_id?: string | null
+          author_id?: string | null
+          body: string
+          client_id: string
+          created_at?: string
+          id?: string
+          tenant_id: string
+        }
+        Update: {
+          appointment_id?: string | null
+          author_id?: string | null
+          body?: string
+          client_id?: string
+          created_at?: string
+          id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_notes_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_notes_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_notes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_notes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "v_client_segments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_notes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_subscriptions: {
+        Row: {
+          billing_day: number
+          canceled_on: string | null
+          client_id: string
+          created_at: string
+          id: string
+          plan_id: string
+          started_on: string
+          status: string
+          tenant_id: string
+        }
+        Insert: {
+          billing_day: number
+          canceled_on?: string | null
+          client_id: string
+          created_at?: string
+          id?: string
+          plan_id: string
+          started_on?: string
+          status?: string
+          tenant_id: string
+        }
+        Update: {
+          billing_day?: number
+          canceled_on?: string | null
+          client_id?: string
+          created_at?: string
+          id?: string
+          plan_id?: string
+          started_on?: string
+          status?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_subscriptions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_subscriptions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "v_client_segments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_subscriptions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
+          address: string | null
           anonymized_at: string | null
           birth_date: string | null
           created_at: string
           deleted_at: string | null
+          document: string | null
           email: string | null
+          emergency_contact: string | null
+          gender: string | null
           id: string
           last_visit_at: string | null
           ltv_cents: number
@@ -369,9 +504,11 @@ export type Database = {
           name: string
           no_show_count: number
           notes: string | null
+          online_booking_blocked: boolean
           phone_e164: string | null
           phone_hash: string | null
           preferences: Json
+          preferred_professional_id: string | null
           referred_by: string | null
           source: string | null
           tags: string[]
@@ -381,11 +518,15 @@ export type Database = {
           whatsapp_opt_out: boolean
         }
         Insert: {
+          address?: string | null
           anonymized_at?: string | null
           birth_date?: string | null
           created_at?: string
           deleted_at?: string | null
+          document?: string | null
           email?: string | null
+          emergency_contact?: string | null
+          gender?: string | null
           id?: string
           last_visit_at?: string | null
           ltv_cents?: number
@@ -393,9 +534,11 @@ export type Database = {
           name: string
           no_show_count?: number
           notes?: string | null
+          online_booking_blocked?: boolean
           phone_e164?: string | null
           phone_hash?: string | null
           preferences?: Json
+          preferred_professional_id?: string | null
           referred_by?: string | null
           source?: string | null
           tags?: string[]
@@ -405,11 +548,15 @@ export type Database = {
           whatsapp_opt_out?: boolean
         }
         Update: {
+          address?: string | null
           anonymized_at?: string | null
           birth_date?: string | null
           created_at?: string
           deleted_at?: string | null
+          document?: string | null
           email?: string | null
+          emergency_contact?: string | null
+          gender?: string | null
           id?: string
           last_visit_at?: string | null
           ltv_cents?: number
@@ -417,9 +564,11 @@ export type Database = {
           name?: string
           no_show_count?: number
           notes?: string | null
+          online_booking_blocked?: boolean
           phone_e164?: string | null
           phone_hash?: string | null
           preferences?: Json
+          preferred_professional_id?: string | null
           referred_by?: string | null
           source?: string | null
           tags?: string[]
@@ -429,6 +578,13 @@ export type Database = {
           whatsapp_opt_out?: boolean
         }
         Relationships: [
+          {
+            foreignKeyName: "clients_preferred_professional_id_fkey"
+            columns: ["preferred_professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "clients_referred_by_fkey"
             columns: ["referred_by"]
@@ -800,6 +956,75 @@ export type Database = {
           tenant_id?: string | null
         }
         Relationships: []
+      }
+      loyalty_entries: {
+        Row: {
+          appointment_id: string | null
+          client_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          points: number
+          reason: string
+          tenant_id: string
+        }
+        Insert: {
+          appointment_id?: string | null
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          points: number
+          reason: string
+          tenant_id: string
+        }
+        Update: {
+          appointment_id?: string | null
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          points?: number
+          reason?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loyalty_entries_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loyalty_entries_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loyalty_entries_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "v_client_segments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loyalty_entries_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loyalty_entries_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       media: {
         Row: {
@@ -1748,6 +1973,47 @@ export type Database = {
           },
           {
             foreignKeyName: "stock_moves_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscription_plans: {
+        Row: {
+          active: boolean
+          benefits: string | null
+          created_at: string
+          id: string
+          name: string
+          price_cents: number
+          sessions_per_month: number | null
+          tenant_id: string
+        }
+        Insert: {
+          active?: boolean
+          benefits?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          price_cents: number
+          sessions_per_month?: number | null
+          tenant_id: string
+        }
+        Update: {
+          active?: boolean
+          benefits?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          price_cents?: number
+          sessions_per_month?: number | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_plans_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"

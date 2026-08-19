@@ -52,6 +52,7 @@ type Fixture = {
   ticketItemId: string
   packageId: string
   consentId: string
+  subscriptionPlanId: string
   categoryId: string
 }
 
@@ -230,6 +231,16 @@ async function semear(f: Fixture, sufixo: string): Promise<void> {
       .single(),
     'consents',
   ).id
+  // `client_subscriptions.plan_id` referencia `subscription_plans`, então o plano precisa nascer
+  // antes — não dá para entrar na lista simples de `restantes` como as outras tabelas.
+  f.subscriptionPlanId = exigir(
+    await admin
+      .from('subscription_plans')
+      .insert({ tenant_id: t, name: 'Plano de teste', price_cents: 9900, sessions_per_month: 4 })
+      .select('id')
+      .single(),
+    'subscription_plans',
+  ).id
 
   const restantes: Array<[string, Record<string, unknown>]> = [
     ['tenant_keys', { tenant_id: t, dek_wrapped: '\\xdeadbeef' }],
@@ -308,6 +319,11 @@ async function semear(f: Fixture, sufixo: string): Promise<void> {
       'message_templates',
       { tenant_id: t, slug: `seed_${sufixo}`, title: 'Modelo de teste', body: 'Oi {{nome}}' },
     ],
+    // Mesma exigência de novo: `client_notes`/`loyalty_entries`/`client_subscriptions`
+    // (CRM profundo, migration 0019) precisam de linha aqui para o teste ter o que sobrar.
+    ['client_notes', { tenant_id: t, client_id: f.clientId, body: 'Nota de teste', author_id: f.userId }],
+    ['loyalty_entries', { tenant_id: t, client_id: f.clientId, points: 10, reason: 'seed de teste' }],
+    ['client_subscriptions', { tenant_id: t, client_id: f.clientId, plan_id: f.subscriptionPlanId, billing_day: 5 }],
     ['audit_log', { tenant_id: t, action: 'seed.rls', entity: 'tenants', entity_id: t }],
     ['vault_access_log', { tenant_id: t, client_id: f.clientId, action: 'read' }],
     ['idempotency_keys', { key: randomUUID(), tenant_id: t, endpoint: '/v1/seed', request_hash: 'x' }],

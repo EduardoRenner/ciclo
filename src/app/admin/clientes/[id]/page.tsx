@@ -5,7 +5,9 @@ import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { AppError } from '@/server/http/errors'
 import { fichaDoCliente } from '@/server/services/crm'
+import { listarPlanos } from '@/server/services/fidelidade'
 import { listarModelos } from '@/server/services/mensagens-prontas'
+import { listarProfissionais } from '@/server/services/profissionais'
 
 import Ficha from './ficha'
 
@@ -16,13 +18,15 @@ export default async function PaginaFicha({ params }: { params: Promise<{ id: st
   const ctx = await contextoAtual(new Request('https://interno/clientes', { headers: await headers() }))
   const db = await criarClienteDoUsuario()
 
-  const [ficha, modelos, negocio] = await Promise.all([
+  const [ficha, modelos, negocio, planos, profissionais] = await Promise.all([
     fichaDoCliente(db, ctx.tenantId, id).catch((erro: unknown) => {
       if (erro instanceof AppError && erro.code === 'NOT_FOUND') return null
       throw erro
     }),
     listarModelos(db, ctx.tenantId),
     db.from('tenants').select('name, vertical').eq('id', ctx.tenantId).single(),
+    listarPlanos(db, ctx.tenantId),
+    listarProfissionais(db, ctx.tenantId),
   ])
 
   if (!ficha) notFound()
@@ -33,6 +37,8 @@ export default async function PaginaFicha({ params }: { params: Promise<{ id: st
       modelos={modelos.filter((m) => m.active)}
       nomeDoNegocio={negocio.data?.name ?? ''}
       vertical={negocio.data?.vertical ?? 'barber'}
+      planos={planos.filter((p) => p.active)}
+      profissionais={profissionais.map((p) => ({ id: p.id, name: p.display_name }))}
     />
   )
 }

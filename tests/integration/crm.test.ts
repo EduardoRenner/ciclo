@@ -6,7 +6,16 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { criarCliente } from '@/server/services/clientes'
 import { EsquemaCampanha, fichaDoCliente, painelDaCarteira, publicoDaCampanha, registrarCampanha } from '@/server/services/crm'
+import {
+  assinar,
+  assinaturaAtiva,
+  cancelarAssinatura,
+  criarPlano,
+  extratoDePontos,
+  lancarPontos,
+} from '@/server/services/fidelidade'
 import { listarModelos, MODELOS_PADRAO } from '@/server/services/mensagens-prontas'
+import { criarNota, listarNotas } from '@/server/services/notas'
 import { executarOnboarding } from '@/server/services/onboarding'
 import { criarProfissional } from '@/server/services/profissionais'
 import { criarServico } from '@/server/services/servicos'
@@ -145,6 +154,17 @@ describe('fichaDoCliente', () => {
       expect(ficha.metricas.ticketMedioCents).toBe(5_000)
       expect(ficha.historico).toHaveLength(2)
       expect(ficha.historico[0]!.serviceName).toBe('Corte de Teste')
+
+      // CRM profundo (migration 0019): a ficha agrega tudo isso mesmo sem nenhum dado
+      // preenchido — nasce em zero/null/vazio, nunca quebra por ausência.
+      expect(ficha.cliente.document).toBeNull()
+      expect(ficha.cliente.preferredProfessionalName).toBeNull()
+      expect(ficha.pontos).toEqual({ saldo: 0, lancamentos: [] })
+      expect(ficha.assinatura).toBeNull()
+      expect(ficha.pacotes).toEqual([])
+      expect(ficha.saldoCarteiraCents).toBe(0)
+      expect(ficha.notas).toEqual([])
+      expect(ficha.saude).toEqual({ temFicha: false, temAlerta: false, alerta: null })
     },
     30_000,
   )
@@ -249,6 +269,98 @@ describe('painelDaCarteira', () => {
       expect(painel.ticketMedioCents).toBe(5_000)
       // 1 de 3 clientes voltou mais de uma vez = 3333 bps.
       expect(painel.taxaRetornoBps).toBe(3_333)
+    },
+    30_000,
+  )
+})
+
+describe('notas do cliente', () => {
+  it(
+    'cada anotação é uma linha nova, com data — não sobrescreve a anterior',
+    async () => {
+      await criarNota(svc, tenantId, fielId, userId, { body: 'Primeira visita, gostou do corte curto.' })
+      await criarNota(svc, tenantId, fielId, userId, { body: 'Pediu para deixar mais comprido dessa vez.' })
+
+      const notas = await listarNotas(svc, tenantId, fielId)
+      expect(notas.length).toBeGreaterThanOrEqual(2)
+      expect(notas[0]!.body).toBe('Pediu para deixar mais comprido dessa vez.')
+      expect(notas[1]!.body).toBe('Primeira visita, gostou do corte curto.')
+    },
+    30_000,
+  )
+})
+
+describe('fidelidade — pontos', () => {
+  it(
+    'soma e resgate refletem no saldo, e o extrato guarda o motivo de cada lançamento',
+    async () => {
+      await lancarPontos(svc, tenantId, fielId, userId, { points: 50, reason: 'Corte de hoje' })
+      await lancarPontos(svc, tenantId, fielId, userId, { points: -20, reason: 'Resgate de brinde' })
+
+      const extrato = await extratoDePontos(svc, tenantId, fielId)
+      expect(extrato.saldo).toBeGreaterThanOrEqual(30)
+      expect(extrato.lancamentos.some((l) => l.reason === 'Resgate de brinde' && l.points === -20)).toBe(true)
+    },
+    30_000,
+  )
+
+  it(
+    'resgate maior que o saldo é recusado — cliente nunca fica devendo ponto',
+    async () => {
+      const erro = await lancarPontos(svc, tenantId, semOptInId, userId, {
+        points: -999_999,
+        reason: 'resgate impossível',
+      }).catch((e: unknown) => e)
+      expect(erro).toMatchObject({ code: 'VALIDATION_ERROR' })
+    },
+    30_000,
+  )
+})
+
+describe('clube de assinatura', () => {
+  it(
+    'assinar, consultar e cancelar — cancelar muda o estado, não apaga a linha',
+    async () => {
+      const plano = await criarPlano(svc, tenantId, {
+        name: 'Plano de teste',
+        priceCents: 9_900,
+        sessionsPerMonth: 4,
+        active: true,
+      })
+
+      await assinar(svc, tenantId, semOptInId, { planId: plano.id, billingDay: 10 })
+      const ativa = await assinaturaAtiva(svc, tenantId, semOptInId)
+      expect(ativa).toMatchObject({ planName: 'Plano de teste', priceCents: 9_900, billingDay: 10 })
+
+      await cancelarAssinatura(svc, tenantId, ativa!.id)
+      expect(await assinaturaAtiva(svc, tenantId, semOptInId)).toBeNull()
+
+      const { data: linha } = await svc
+        .from('client_subscriptions')
+        .select('status, canceled_on')
+        .eq('id', ativa!.id)
+        .single()
+      expect(linha).toMatchObject({ status: 'canceled' })
+      expect(linha!.canceled_on).not.toBeNull()
+    },
+    30_000,
+  )
+
+  it(
+    'segunda assinatura ativa para o mesmo cliente é recusada',
+    async () => {
+      const plano = await criarPlano(svc, tenantId, {
+        name: 'Segundo plano',
+        priceCents: 5_000,
+        sessionsPerMonth: null,
+        active: true,
+      })
+
+      await assinar(svc, tenantId, optOutId, { planId: plano.id, billingDay: 1 })
+      const erro = await assinar(svc, tenantId, optOutId, { planId: plano.id, billingDay: 15 }).catch((e: unknown) => e)
+      expect(erro).toMatchObject({ code: 'VALIDATION_ERROR' })
+
+      await cancelarAssinatura(svc, tenantId, (await assinaturaAtiva(svc, tenantId, optOutId))!.id)
     },
     30_000,
   )

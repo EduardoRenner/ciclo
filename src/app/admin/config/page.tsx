@@ -1,4 +1,4 @@
-import { Bell, Clock, MessageSquareText, Megaphone, ScrollText, Scissors, Store, Users } from 'lucide-react'
+import { Bell, Clock, MessageSquareText, Megaphone, Repeat, ScrollText, Scissors, Store, Users } from 'lucide-react'
 import Link from 'next/link'
 
 import Card from '@/components/ui/card'
@@ -13,6 +13,7 @@ const ITENS = [
   { href: '/admin/config/horarios', titulo: 'Horário de funcionamento', descricao: 'Expediente padrão do negócio', icone: Clock },
   { href: '/admin/config/mensagens', titulo: 'Mensagens prontas', descricao: 'Textos que você manda com um toque', icone: MessageSquareText },
   { href: '/admin/campanhas', titulo: 'Campanhas', descricao: 'Mandar em lote e ver quanto voltou em receita', icone: Megaphone },
+  { href: '/admin/config/planos', titulo: 'Clube de assinatura', descricao: 'Planos mensais que o cliente assina', icone: Repeat },
   { href: '/admin/config/notificacoes', titulo: 'Notificações', descricao: 'Ativar lembretes no aparelho', icone: Bell },
   { href: '/admin/config/cofre', titulo: 'Trilha do cofre', descricao: 'Quem acessou a ficha de saúde de cada cliente', icone: ScrollText },
 ] as const

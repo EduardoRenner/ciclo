@@ -28,7 +28,14 @@ import { aplicarVariaveis, linkWhatsApp, precisaDeAgendamento } from '@/lib/mens
 
 import type { FichaCliente } from '@/server/services/crm'
 
+import Fidelidade from './fidelidade'
+import Notas from './notas'
+import PacotesCarteira from './pacotes-carteira'
+import Saude from './saude'
+
 type Modelo = { id: string; title: string; body: string }
+type Plano = { id: string; name: string; price_cents: number; sessions_per_month: number | null }
+type ProfissionalOpcao = { id: string; name: string }
 
 const ROTULO_CICLO: Record<string, { texto: string; estado: 'ok' | 'warn' | 'risk' | 'bad' }> = {
   on_track: { texto: 'Em dia', estado: 'ok' },
@@ -86,11 +93,15 @@ export default function Ficha({
   modelos,
   nomeDoNegocio,
   vertical,
+  planos,
+  profissionais,
 }: {
   ficha: FichaCliente
   modelos: Modelo[]
   nomeDoNegocio: string
   vertical: string
+  planos: Plano[]
+  profissionais: ProfissionalOpcao[]
 }) {
   const router = useRouter()
   const mostrarToast = useToast()
@@ -99,7 +110,10 @@ export default function Ficha({
   const [editando, setEditando] = useState(false)
   const [escolhendoMensagem, setEscolhendoMensagem] = useState(false)
 
-  const { cliente, metricas, ciclo, historico, mensagens, indicadoPor, indicados } = ficha
+  // `notasRegistradas` (o histórico de anotações datadas) e `notas` (o estado local do campo de
+  // observação livre no formulário de edição, abaixo) são coisas diferentes — nomes parecidos de
+  // propósito porque a ideia é a mesma, só que uma substitui e a outra acumula.
+  const { cliente, metricas, ciclo, historico, mensagens, indicadoPor, indicados, notas: notasRegistradas, pontos, assinatura, pacotes, saldoCarteiraCents, fotos, consentimentos, saude } = ficha
 
   const camposPreferencia = camposDePreferencia(vertical)
 
@@ -109,6 +123,12 @@ export default function Ficha({
   const [notas, setNotas] = useState(cliente.notes ?? '')
   const [tags, setTags] = useState(cliente.tags.join(', '))
   const [preferencias, setPreferencias] = useState<Record<string, string>>(cliente.preferences)
+  const [documento, setDocumento] = useState(cliente.document ?? '')
+  const [genero, setGenero] = useState(cliente.gender ?? '')
+  const [endereco, setEndereco] = useState(cliente.address ?? '')
+  const [contatoEmergencia, setContatoEmergencia] = useState(cliente.emergencyContact ?? '')
+  const [profissionalPreferido, setProfissionalPreferido] = useState(cliente.preferredProfessionalId ?? '')
+  const [bloqueado, setBloqueado] = useState(cliente.onlineBookingBlocked)
   const [erro, setErro] = useState<string | null>(null)
 
   const ultimoServico = historico.find((h) => h.status === 'done')?.serviceName ?? null
@@ -159,6 +179,12 @@ export default function Ficha({
             .filter(Boolean),
           // Campo em branco sai do objeto: preferência vazia é ruído na tela de quem atende.
           preferences: Object.fromEntries(Object.entries(preferencias).filter(([, v]) => v.trim() !== '')),
+          document: documento.trim() || null,
+          gender: genero.trim() || null,
+          address: endereco.trim() || null,
+          emergencyContact: contatoEmergencia.trim() || null,
+          preferredProfessionalId: profissionalPreferido || null,
+          onlineBookingBlocked: bloqueado,
         }),
       })
       const json = (await r.json()) as { error?: { message: string; details?: { fields?: Record<string, string> } } }
@@ -284,7 +310,7 @@ export default function Ficha({
         ) : null}
       </section>
 
-      {(cliente.birthDate || indicadoPor || indicados.length > 0) && (
+      {(cliente.birthDate || cliente.preferredProfessionalName || indicadoPor || indicados.length > 0) && (
         <section className="mt-7">
           <SectionHeader>Relacionamento</SectionHeader>
           <Card className="grid gap-3">
@@ -292,6 +318,12 @@ export default function Ficha({
               <div className="flex items-center gap-2.5">
                 <Cake className="size-4 shrink-0 text-acc-2" />
                 <span className="text-corpo">Aniversário em {aniversario(cliente.birthDate)}</span>
+              </div>
+            ) : null}
+            {cliente.preferredProfessionalName ? (
+              <div className="flex items-center gap-2.5">
+                <Scissors className="size-4 shrink-0 text-acc-2" />
+                <span className="text-corpo">Sempre atende com {cliente.preferredProfessionalName}</span>
               </div>
             ) : null}
             {indicadoPor ? (
@@ -324,6 +356,11 @@ export default function Ficha({
           </Card>
         </section>
       )}
+
+      <Fidelidade clientId={cliente.id} pontosIniciais={pontos} assinaturaInicial={assinatura} planos={planos} />
+      <PacotesCarteira pacotes={pacotes} saldoCarteiraCents={saldoCarteiraCents} />
+      <Saude clientId={cliente.id} saude={saude} fotos={fotos} consentimentos={consentimentos} />
+      <Notas clientId={cliente.id} iniciais={notasRegistradas} />
 
       <section className="mt-7">
         <SectionHeader icone={<Scissors className="size-3.5" />}>Histórico ({historico.length})</SectionHeader>
@@ -463,6 +500,76 @@ export default function Ficha({
               />
             </label>
           ))}
+
+          <p className="mt-1 text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">Perfil</p>
+          <div className="grid grid-cols-2 gap-3">
+            <label className="flex flex-col gap-1">
+              <span className="text-label font-semibold text-txt-2">CPF (opcional)</span>
+              <input
+                value={documento}
+                onChange={(e) => setDocumento(e.target.value)}
+                placeholder="000.000.000-00"
+                className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo text-txt"
+              />
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-label font-semibold text-txt-2">Gênero (opcional)</span>
+              <input
+                value={genero}
+                onChange={(e) => setGenero(e.target.value)}
+                className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo text-txt"
+              />
+            </label>
+          </div>
+          <label className="flex flex-col gap-1">
+            <span className="text-label font-semibold text-txt-2">Endereço (opcional)</span>
+            <input
+              value={endereco}
+              onChange={(e) => setEndereco(e.target.value)}
+              className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo text-txt"
+            />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-label font-semibold text-txt-2">Contato de emergência (opcional)</span>
+            <input
+              value={contatoEmergencia}
+              onChange={(e) => setContatoEmergencia(e.target.value)}
+              placeholder="Nome e telefone"
+              className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo text-txt"
+            />
+          </label>
+          {profissionais.length > 0 ? (
+            <label className="flex flex-col gap-1">
+              <span className="text-label font-semibold text-txt-2">Sempre atende com</span>
+              <select
+                value={profissionalPreferido}
+                onChange={(e) => setProfissionalPreferido(e.target.value)}
+                className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo text-txt"
+              >
+                <option value="">Sem preferência</option>
+                {profissionais.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
+
+          <label className="flex items-start gap-2 py-1">
+            <input
+              type="checkbox"
+              checked={bloqueado}
+              onChange={(e) => setBloqueado(e.target.checked)}
+              className="mt-0.5 size-5 shrink-0 rounded border-line-2 bg-surface-2"
+            />
+            <span className="text-corpo text-txt">
+              Bloquear agendamento online
+              <span className="block text-secundario text-txt-3">
+                Continua sendo atendido normalmente — só não marca sozinho pelo site.
+              </span>
+            </span>
+          </label>
 
           <label className="flex flex-col gap-1">
             <span className="text-label font-semibold text-txt-2">Etiquetas (separadas por vírgula)</span>

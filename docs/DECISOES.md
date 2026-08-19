@@ -1410,3 +1410,46 @@ em vez de desestruturar-para-descartar (`{ __servico, ...c }`), que deixava trê
 usadas" acusadas pelo lint. E o cabeçalho do script agora documenta o passo que faltava: **depois
 de semear é preciso forçar o Motor de Ciclo**, senão `client_cycles` fica vazio (o cron só passa
 às 3h no fuso do tenant) e a tela "Recuperar" e o selo de ciclo da ficha nascem vazios.
+
+2026-08-19 · CRM profundo: cadastro/perfil do cliente muito mais rico (pedido do Eduardo,
+referências de mercado pesquisadas antes de planejar). Fresha (formulários flexíveis, fotos,
+consentimento digital) e Booksy validam o padrão internacional; Trinks — o líder do mercado
+brasileiro, com página dedicada a barbearia — validou dois pontos que não estavam no plano
+anterior: **fidelidade por pontos** e **clube de assinatura mensal**, ambos padrão do nicho aqui.
+
+**Ligado o que já estava pronto no banco sem tela nenhuma** (mesmo padrão da rodada anterior):
+anamnese/ficha de saúde cifrada (TICKET-049), fotos antes/depois (TICKET-052), consentimento
+assinado (TICKET-054), pacotes de sessão (TICKET-046) e carteira/fiado (TICKET-047) — todos com
+API e RLS testadas, zero UI. Viraram a seção "Saúde e LGPD" (alerta + fotos + termos) e "Pacotes
+e carteira" na ficha.
+
+**A ficha de saúde nunca pré-carrega.** Abrir o cofre é ação deliberada que passa por
+`GET /vault` com AAL2 (2FA) e fica registrada em `vault_access_log` — carregar o conteúdo junto
+com o resto da ficha geraria um acesso registrado a cada visualização da tela, mesmo sem ninguém
+pedir para ver. A ficha só recebe o *sinal* de que existe alerta (`alertaDoCliente`, que não abre
+nada); o conteúdo só chega ao navegador quando a pessoa toca para abrir.
+
+Migration 0019: seis colunas novas em `clients` (document, gender, address, emergency_contact,
+preferred_professional_id, online_booking_blocked — todas opcionais, um salão que só quer nome e
+telefone continua funcionando sem preencher nada disso) e quatro tabelas — `client_notes`
+(anotação datada, nunca sobrescreve: `clients.notes` era um campo só que se perdia a cada
+edição), `loyalty_entries` (livro-razão de pontos, resgate é lançamento negativo com motivo —
+nunca UPDATE, regra 11), `subscription_plans` e `client_subscriptions` (índice único parcial
+`WHERE status = 'active'` garante no máximo uma assinatura ativa por cliente; cancelar muda
+estado e data, nunca apaga, para o histórico de receita continuar explicável).
+
+Cadastro rápido (`/admin/clientes/nova`) deliberadamente **não** ganhou os campos ricos de
+perfil — CPF, endereço, contato de emergência ficam só na edição da ficha. Cadastro no balcão
+precisa ser rápido; quem preenche o resto faz com calma depois.
+
+`tests/rls/isolation.test.ts`: as 4 tabelas novas com `tenant_id` entraram no seed genérico
+(mesma exigência já documentada para `push_subscriptions`/`message_templates` — a suíte descobre
+tabela por introspecção e falha se não houver o que "sobrar" no teste de vazamento entre
+tenants). `subscription_plans` precisou nascer ANTES da lista simples de seed porque
+`client_subscriptions.plan_id` referencia o plano — não dá para entrar como as outras.
+
+**Build travou com o worker do Next crashando** (`exit code 3221226505`, sem relação óbvia com
+o código) — processos `node.exe` de sessões anteriores (um com 1,7GB de memória) ainda vivos
+disputando recurso no Windows. `taskkill //F //IM node.exe` e build limpo resolveu. Vale
+verificar `tasklist` antes de investigar um crash de build "impossível" — mesmo padrão já
+registrado para o `.next` corrompido por dev+build simultâneos.

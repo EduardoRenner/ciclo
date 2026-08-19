@@ -1,5 +1,12 @@
 import { z } from 'zod'
 
+import { alertaDoCliente } from '@/server/services/anamnese'
+import { statusConsentimentos } from '@/server/services/consentimentos'
+import { assinaturaAtiva, extratoDePontos, type AssinaturaDoCliente, type ExtratoPontos } from '@/server/services/fidelidade'
+import { listarMediaDoCliente } from '@/server/services/media'
+import { listarNotas, type NotaDoCliente } from '@/server/services/notas'
+import { listarPacotesDoCliente, saldoCarteira } from '@/server/services/pacotes'
+
 import { AppError } from '@/server/http/errors'
 
 import type { Database } from '@/server/db/types.gen'
@@ -20,6 +27,13 @@ export type FichaCliente = {
     tags: string[]
     source: string | null
     preferences: PreferenciasCliente
+    document: string | null
+    gender: string | null
+    address: string | null
+    emergencyContact: string | null
+    preferredProfessionalId: string | null
+    preferredProfessionalName: string | null
+    onlineBookingBlocked: boolean
     marketingOptIn: boolean
     whatsappOptOut: boolean
     createdAt: string
@@ -43,6 +57,19 @@ export type FichaCliente = {
   mensagens: { id: string; kind: string; channel: string; status: string; createdAt: string }[]
   indicadoPor: { id: string; name: string } | null
   indicados: { id: string; name: string }[]
+  notas: NotaDoCliente[]
+  pontos: ExtratoPontos
+  assinatura: AssinaturaDoCliente | null
+  pacotes: { id: string; serviceName: string; restantes: number; total: number; expiresOn: string | null }[]
+  saldoCarteiraCents: number
+  fotos: { id: string; phase: string | null; createdAt: string }[]
+  consentimentos: { kind: string; granted: boolean; grantedAt: string | null }[]
+  /**
+   * Só o SINAL de que existe alerta de saúde, nunca o conteúdo: abrir a ficha do cofre é ação
+   * deliberada, que passa por `/vault` e fica registrada na trilha de acesso (TICKET-053).
+   * Carregar o conteúdo aqui geraria um acesso registrado a cada abertura da tela.
+   */
+  saude: { temFicha: boolean; temAlerta: boolean; alerta: string | null }
 }
 
 /** `preferences` chega como `Json`; só interessa o objeto raso de texto que o formulário grava. */
@@ -65,7 +92,7 @@ export async function fichaDoCliente(db: Cliente, tenantId: string, clientId: st
   const { data: cliente, error } = await db
     .from('clients')
     .select(
-      'id, name, phone_e164, email, birth_date, notes, tags, source, referred_by, preferences, marketing_opt_in, whatsapp_opt_out, visits_count, no_show_count, ltv_cents, last_visit_at, created_at',
+      'id, name, phone_e164, email, birth_date, notes, tags, source, referred_by, preferences, document, gender, address, emergency_contact, preferred_professional_id, online_booking_blocked, marketing_opt_in, whatsapp_opt_out, visits_count, no_show_count, ltv_cents, last_visit_at, created_at, professionals!clients_preferred_professional_id_fkey(display_name)',
     )
     .eq('id', clientId)
     .eq('tenant_id', tenantId)
@@ -75,7 +102,22 @@ export async function fichaDoCliente(db: Cliente, tenantId: string, clientId: st
   if (error) throw new AppError('INTERNAL', { cause: error })
   if (!cliente) throw new AppError('NOT_FOUND', { message: 'Essa cliente não está mais na sua lista.' })
 
-  const [historicoBruto, ciclosBruto, mensagensBruto, indicadosBruto, padrinhoBruto] = await Promise.all([
+  const [
+    historicoBruto,
+    ciclosBruto,
+    mensagensBruto,
+    indicadosBruto,
+    padrinhoBruto,
+    notas,
+    pontos,
+    assinatura,
+    pacotesBruto,
+    saldoCarteiraCents,
+    fotos,
+    consentimentosBruto,
+    saudeBruto,
+    servicosBruto,
+  ] = await Promise.all([
     db
       .from('appointments')
       .select('id, starts_at, status, price_cents, services(name), professionals(display_name)')
@@ -101,6 +143,18 @@ export async function fichaDoCliente(db: Cliente, tenantId: string, clientId: st
     cliente.referred_by
       ? db.from('clients').select('id, name').eq('tenant_id', tenantId).eq('id', cliente.referred_by).maybeSingle()
       : Promise.resolve({ data: null }),
+    listarNotas(db, tenantId, clientId),
+    extratoDePontos(db, tenantId, clientId),
+    assinaturaAtiva(db, tenantId, clientId),
+    listarPacotesDoCliente(db, tenantId, clientId),
+    saldoCarteira(db, tenantId, clientId),
+    // Não recebe `db`: a mídia vive em bucket privado e o módulo resolve o acesso por conta.
+    listarMediaDoCliente(tenantId, clientId),
+    statusConsentimentos(db, tenantId, clientId),
+    alertaDoCliente(db, tenantId, clientId),
+    // `listarPacotesDoCliente` devolve `serviceId`, não o nome — o catálogo de um salão é
+    // pequeno, então uma leitura resolve todos os pacotes de uma vez.
+    db.from('services').select('id, name').eq('tenant_id', tenantId),
   ])
 
   const historico = (historicoBruto.data ?? []).map((a) => ({
@@ -114,6 +168,7 @@ export async function fichaDoCliente(db: Cliente, tenantId: string, clientId: st
 
   const cicloBruto = ciclosBruto.data?.[0]
   const visitas = cliente.visits_count
+  const nomePorServico = new Map((servicosBruto.data ?? []).map((s) => [s.id, s.name]))
 
   return {
     cliente: {
@@ -126,6 +181,13 @@ export async function fichaDoCliente(db: Cliente, tenantId: string, clientId: st
       tags: cliente.tags,
       source: cliente.source,
       preferences: lerPreferencias(cliente.preferences),
+      document: cliente.document,
+      gender: cliente.gender,
+      address: cliente.address,
+      emergencyContact: cliente.emergency_contact,
+      preferredProfessionalId: cliente.preferred_professional_id,
+      preferredProfessionalName: cliente.professionals?.display_name ?? null,
+      onlineBookingBlocked: cliente.online_booking_blocked,
       marketingOptIn: cliente.marketing_opt_in,
       whatsappOptOut: cliente.whatsapp_opt_out,
       createdAt: cliente.created_at,
@@ -156,6 +218,30 @@ export async function fichaDoCliente(db: Cliente, tenantId: string, clientId: st
     })),
     indicadoPor: padrinhoBruto.data ?? null,
     indicados: indicadosBruto.data ?? [],
+    notas,
+    pontos,
+    assinatura,
+    pacotes: pacotesBruto.map((p) => ({
+      id: p.id,
+      serviceName: nomePorServico.get(p.serviceId) ?? 'Serviço removido',
+      restantes: p.remainingSessions,
+      total: p.totalSessions,
+      expiresOn: p.expiresOn,
+    })),
+    saldoCarteiraCents,
+    fotos,
+    // `statusConsentimentos` devolve `null` para o tipo que nunca foi respondido — vira "não
+    // concedido" na tela, que é o estado correto: silêncio nunca é consentimento.
+    consentimentos: Object.entries(consentimentosBruto).map(([kind, s]) => ({
+      kind,
+      granted: s?.granted ?? false,
+      grantedAt: s?.grantedAt ?? null,
+    })),
+    saude: {
+      temFicha: saudeBruto.hasAlert || saudeBruto.alertLabel !== null,
+      temAlerta: saudeBruto.hasAlert,
+      alerta: saudeBruto.alertLabel,
+    },
   }
 }
 
