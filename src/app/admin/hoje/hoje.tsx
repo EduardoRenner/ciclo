@@ -12,6 +12,7 @@ import EmptyState from '@/components/ui/empty-state'
 import SectionHeader from '@/components/ui/section-header'
 import Sheet from '@/components/ui/sheet'
 import StatTile from '@/components/ui/stat-tile'
+import { dinheiro } from '@/lib/formato'
 
 import DetalheAgendamento from '../agenda/detalhe'
 
@@ -19,21 +20,41 @@ import type { EstadoAgendamento } from '@/core/scheduling/state'
 import type { LinhaAgendaDia } from '@/server/services/agendamentos'
 import type { LinhaHoje, ResumoHoje } from '@/server/services/resumo-hoje'
 
-const dinheiro = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
-
 function horaLocal(iso: string): string {
   return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
 }
 
-export default function Hoje({ resumo }: { resumo: ResumoHoje }) {
+/**
+ * `children` é a "Central de ações", renderizada no servidor e encaixada aqui
+ * entre o que está acontecendo agora e o resto do dia. Sem esse encaixe ela
+ * teria que ficar antes do dinheiro (empurrando o número principal para baixo
+ * da dobra) ou depois da lista inteira do dia, onde ninguém rola até.
+ */
+export default function Hoje({ resumo, children }: { resumo: ResumoHoje; children?: React.ReactNode }) {
   const router = useRouter()
   const [selecionado, setSelecionado] = useState<LinhaHoje | null>(null)
 
+  const faltam = resumo.restOfDay.length
+
   return (
     <div>
-      <div className="mb-6 grid grid-cols-1 gap-3">
-        <StatTile rotulo="Faturado hoje" valor={dinheiro.format(resumo.revenueTodayCents / 100)} />
-      </div>
+      {/*
+        A única métrica de dinheiro da tela principal ocupava um cartão do
+        mesmo tamanho de um contador qualquer. Vira herói: `--text-numero`, o
+        maior tamanho da escala, que estava definido desde o primeiro dia e não
+        era usado em lugar nenhum do app.
+      */}
+      <StatTile
+        className="mb-6"
+        heroi
+        rotulo="Faturado hoje"
+        valor={dinheiro.format(resumo.revenueTodayCents / 100)}
+        apoio={
+          faltam === 0
+            ? 'Nada mais marcado para hoje'
+            : `Faltam ${faltam} ${faltam === 1 ? 'atendimento' : 'atendimentos'} hoje`
+        }
+      />
 
       {resumo.nextClient ? (
         <section className="mb-6">
@@ -80,6 +101,8 @@ export default function Hoje({ resumo }: { resumo: ResumoHoje }) {
           </ul>
         </section>
       ) : null}
+
+      {children}
 
       {resumo.stockAlerts.length > 0 ? (
         <section className="mb-6">

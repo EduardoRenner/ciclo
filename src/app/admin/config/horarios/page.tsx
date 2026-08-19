@@ -1,6 +1,7 @@
 import { headers } from 'next/headers'
 
 import EditorExpediente from '@/components/config/editor-expediente'
+import PageHeader from '@/components/ui/page-header'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { listarExpediente } from '@/server/services/expediente'
@@ -23,12 +24,7 @@ export default async function PaginaHorarios() {
 
   return (
     <>
-      <header className="py-6">
-        <h1 className="text-titulo font-extrabold">Horário de funcionamento</h1>
-        <p className="mt-1 text-secundario text-txt-2">
-          O padrão do negócio — vale para quem não tem horário próprio cadastrado.
-        </p>
-      </header>
+      <PageHeader titulo="Horário de funcionamento" descricao="O padrão do negócio — vale para quem não tem horário próprio cadastrado." />
 
       <EditorExpediente professionalId={null} expedienteInicial={expediente} folgasIniciais={folgas} />
     </>

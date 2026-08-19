@@ -1,12 +1,13 @@
 'use client'
 
-import { ArrowLeft, Check, Send, Users } from 'lucide-react'
+import { Check, Send, Users } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
 
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
+import PageHeader from '@/components/ui/page-header'
 import SectionHeader from '@/components/ui/section-header'
 import { useToast } from '@/components/ui/toast'
 import { dinheiro } from '@/lib/formato'
@@ -70,16 +71,8 @@ export default function NovaCampanha({
 
   return (
     <div className="pb-8">
-      <header className="flex items-center gap-2 py-5">
-        <Link
-          href="/admin/campanhas"
-          aria-label="Voltar"
-          className="grid size-12 shrink-0 place-items-center rounded-[var(--radius-sm)] text-txt-2 transition-colors hover:bg-surface-2 hover:text-txt"
-        >
-          <ArrowLeft className="size-5" />
-        </Link>
-        <h1 className="text-titulo font-extrabold">Nova campanha</h1>
-      </header>
+      {/* O voltar mora na Topbar desde o redesenho — dois numa tela só confundem. */}
+      <PageHeader titulo="Nova campanha" />
 
       {/* 1 — quem */}
       <section>

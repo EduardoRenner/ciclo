@@ -5,6 +5,7 @@ import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { listarTrilhaDoCofre } from '@/server/services/trilha-cofre'
 
 import TrilhaCofre from './trilha'
+import PageHeader from '@/components/ui/page-header'
 
 export default async function PaginaCofre() {
   const ctx = await contextoAtual(new Request('https://interno/config/cofre', { headers: await headers() }))
@@ -13,10 +14,7 @@ export default async function PaginaCofre() {
 
   return (
     <>
-      <header className="py-6">
-        <h1 className="text-titulo font-extrabold">Trilha do cofre</h1>
-        <p className="mt-1 text-secundario text-txt-2">Toda vez que a ficha de saúde de uma cliente foi aberta.</p>
-      </header>
+      <PageHeader titulo="Trilha do cofre" descricao="Toda vez que a ficha de saúde de uma cliente foi aberta." />
 
       <TrilhaCofre entradasIniciais={entradas} />
     </>

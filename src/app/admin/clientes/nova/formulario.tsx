@@ -1,11 +1,14 @@
 'use client'
 
-import { ArrowLeft } from 'lucide-react'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
 
 import Button from '@/components/ui/button'
+import Input from '@/components/ui/input'
+import PageHeader from '@/components/ui/page-header'
+import PhoneInput from '@/components/ui/phone-input'
+import SectionHeader from '@/components/ui/section-header'
+import Textarea from '@/components/ui/textarea'
 import { useToast } from '@/components/ui/toast'
 import { camposDePreferencia } from '@/lib/preferencias'
 
@@ -68,82 +71,43 @@ export default function FormularioCliente({ vertical }: { vertical: string }) {
 
   return (
     <div className="pb-8">
-      <header className="flex items-center gap-2 py-5">
-        <Link
-          href="/admin/clientes"
-          aria-label="Voltar para a lista"
-          className="grid size-12 shrink-0 place-items-center rounded-[var(--radius-sm)] text-txt-2 transition-colors hover:bg-surface-2 hover:text-txt"
-        >
-          <ArrowLeft className="size-5" />
-        </Link>
-        <h1 className="text-titulo font-extrabold">Novo cliente</h1>
-      </header>
+      {/* O voltar mora na Topbar desde o redesenho — dois numa tela só confundem. */}
+      <PageHeader titulo="Novo cliente" />
 
       <div className="flex flex-col gap-3">
-        <label className="flex flex-col gap-1">
-          <span className="text-label font-semibold text-txt-2">Nome</span>
-          <input
-            value={nome}
-            onChange={(e) => setNome(e.target.value)}
-            autoFocus
-            className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo text-txt"
-          />
-        </label>
+        <Input rotulo="Nome" value={nome} onChange={(e) => setNome(e.target.value)} autoFocus autoComplete="name" />
 
         <div className="grid grid-cols-2 gap-3">
-          <label className="flex flex-col gap-1">
-            <span className="text-label font-semibold text-txt-2">Telefone</span>
-            <input
-              value={telefone}
-              onChange={(e) => setTelefone(e.target.value)}
-              inputMode="tel"
-              placeholder="(11) 98765-4321"
-              className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo text-txt"
-            />
-          </label>
-          <label className="flex flex-col gap-1">
-            <span className="text-label font-semibold text-txt-2">Aniversário</span>
-            <input
-              type="date"
-              value={nascimento}
-              onChange={(e) => setNascimento(e.target.value)}
-              className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo text-txt"
-            />
-          </label>
+          <PhoneInput valor={telefone} aoMudar={setTelefone} />
+          <Input
+            rotulo="Aniversário"
+            type="date"
+            value={nascimento}
+            onChange={(e) => setNascimento(e.target.value)}
+            classNameCampo="tabular"
+          />
         </div>
 
-        <p className="mt-1 text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">Como atender</p>
+        <SectionHeader className="mb-0 mt-2">Como atender</SectionHeader>
         {campos.map((campo) => (
-          <label key={campo.chave} className="flex flex-col gap-1">
-            <span className="text-label font-semibold text-txt-2">{campo.rotulo}</span>
-            <input
-              value={preferencias[campo.chave] ?? ''}
-              placeholder={campo.dica}
-              onChange={(e) => setPreferencias((p) => ({ ...p, [campo.chave]: e.target.value }))}
-              className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo text-txt"
-            />
-          </label>
+          <Input
+            key={campo.chave}
+            rotulo={campo.rotulo}
+            value={preferencias[campo.chave] ?? ''}
+            placeholder={campo.dica}
+            onChange={(e) => setPreferencias((p) => ({ ...p, [campo.chave]: e.target.value }))}
+          />
         ))}
 
-        <label className="flex flex-col gap-1">
-          <span className="text-label font-semibold text-txt-2">Etiquetas (separadas por vírgula)</span>
-          <input
-            value={tags}
-            onChange={(e) => setTags(e.target.value)}
-            placeholder="fiel, vip"
-            className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo text-txt"
-          />
-        </label>
+        <Input
+          rotulo="Etiquetas"
+          value={tags}
+          onChange={(e) => setTags(e.target.value)}
+          placeholder="fiel, vip"
+          ajuda="Separe por vírgula."
+        />
 
-        <label className="flex flex-col gap-1">
-          <span className="text-label font-semibold text-txt-2">Observações</span>
-          <textarea
-            value={notas}
-            onChange={(e) => setNotas(e.target.value)}
-            rows={3}
-            className="rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 py-2 text-corpo text-txt"
-          />
-        </label>
+        <Textarea rotulo="Observações" value={notas} onChange={(e) => setNotas(e.target.value)} rows={3} />
 
         {/* Desmarcado por padrão: consentimento de marketing é opt-in de verdade (LGPD), quem
             marca é a pessoa que perguntou ao cliente — nunca o sistema por conveniência. */}

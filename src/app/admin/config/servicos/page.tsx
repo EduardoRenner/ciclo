@@ -4,6 +4,7 @@ import { listarServicos } from '@/server/services/servicos'
 import { headers } from 'next/headers'
 
 import ListaServicos from './lista'
+import PageHeader from '@/components/ui/page-header'
 
 /**
  * Server Component: a lista chega pronta no primeiro paint (§10 pede LCP < 2s
@@ -16,12 +17,7 @@ export default async function PaginaServicos() {
 
   return (
     <>
-      <header className="py-6">
-        <h1 className="text-titulo font-extrabold">Serviços</h1>
-        <p className="mt-1 text-secundario text-txt-2">
-          O que você oferece, quanto dura e quanto custa. Arraste para mudar a ordem que a cliente vê.
-        </p>
-      </header>
+      <PageHeader titulo="Serviços" descricao="O que você oferece, quanto dura e quanto custa. Arraste para mudar a ordem que a cliente vê." />
 
       <ListaServicos iniciais={servicos} />
     </>

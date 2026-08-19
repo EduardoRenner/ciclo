@@ -7,6 +7,7 @@ import Card from '@/components/ui/card'
 import EmptyState from '@/components/ui/empty-state'
 import SectionHeader from '@/components/ui/section-header'
 import StatTile from '@/components/ui/stat-tile'
+import PageHeader from '@/components/ui/page-header'
 import { dinheiro } from '@/lib/formato'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
@@ -62,10 +63,7 @@ export default async function PaginaCampanhas() {
 
   return (
     <div className="pb-8">
-      <header className="py-6">
-        <h1 className="text-titulo font-extrabold">Campanhas</h1>
-        <p className="mt-1 text-secundario text-txt-2">Quanto cada mensagem enviada virou cliente na cadeira.</p>
-      </header>
+      <PageHeader titulo="Campanhas" descricao="Quanto cada mensagem enviada virou cliente na cadeira." />
 
       <div className="grid grid-cols-2 gap-3">
         <StatTile rotulo="Receita gerada" valor={dinheiro.format(receita / 100)} />

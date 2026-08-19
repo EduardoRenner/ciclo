@@ -16,10 +16,27 @@ import Topbar from '@/components/shell/topbar'
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <ToastProvider>
-      <div className="mx-auto min-h-dvh max-w-[560px]">
+      {/*
+        No monitor, o app é uma coluna de 560px sobre um fundo preto infinito —
+        parecia inacabado justamente na tela em que o produto é demonstrado. A
+        borda lateral (só a partir de `sm`) fecha a coluna como um aparelho, e o
+        brilho de acento no topo dá profundidade sem imagem nem custo de rede.
+      */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 -z-10 hidden sm:block"
+        style={{ background: 'radial-gradient(70% 40% at 50% -10%, var(--acc-soft), transparent 70%)' }}
+      />
+      <div className="mx-auto min-h-dvh max-w-[560px] sm:border-x sm:border-line">
         <Topbar />
-        {/* §3.3: tab bar de 82px exige essa folga, senão o fim da lista fica escondido atrás dela. */}
-        <main className="px-[18px] pb-24">{children}</main>
+        {/*
+          A folga inferior é a barra + o relevo do aparelho + respiro. Sai do
+          token: era `pb-24` fixo, que já não batia com a barra de 82px e passou
+          a errar de novo quando ela virou 64.
+        */}
+        <main className="px-[var(--gutter)] pb-[calc(var(--tabbar-h)+env(safe-area-inset-bottom)+28px)]">
+          {children}
+        </main>
         <TabBar />
         <ResolucaoDeFila />
       </div>

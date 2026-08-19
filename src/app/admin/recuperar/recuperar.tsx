@@ -3,15 +3,18 @@
 import { Send, Sparkles } from 'lucide-react'
 import { useState } from 'react'
 
+import ActionBar from '@/components/ui/action-bar'
+import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
+import Chip from '@/components/ui/chip'
 import EmptyState from '@/components/ui/empty-state'
+import FilterRow from '@/components/ui/filter-row'
 import Skeleton from '@/components/ui/skeleton'
 import StatTile from '@/components/ui/stat-tile'
+import { dinheiro } from '@/lib/formato'
 import { cn } from '@/lib/utils'
 
 import type { ItemRecuperar, ListaRecuperar } from '@/server/services/recuperar-receita'
-
-const dinheiro = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
 
 type Estado = 'due' | 'late' | 'at_risk' | 'lost'
 
@@ -103,35 +106,16 @@ export default function RecuperarReceita({ inicial }: { inicial: ListaRecuperar 
         <StatTile rotulo="Clientes" valor={String(lista.count)} />
       </div>
 
-      <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
+      <FilterRow rotulo="Filtrar por estado do ciclo" className="mb-4">
         {FILTROS.map((f) => (
-          <button
-            key={f.valor}
-            type="button"
-            onClick={() => trocarFiltro(f.valor)}
-            className={cn(
-              'shrink-0 rounded-[var(--radius-pill)] border px-3.5 py-2 text-secundario font-semibold transition',
-              filtro === f.valor ? 'border-acc-2 bg-acc-soft text-acc-2' : 'border-line-2 bg-surface-2 text-txt-2',
-            )}
-          >
+          <Chip key={f.valor} ligado={filtro === f.valor} onClick={() => trocarFiltro(f.valor)}>
             {f.rotulo}
-          </button>
+          </Chip>
         ))}
-      </div>
+      </FilterRow>
 
       {aviso ? <p className="mb-4 rounded-[var(--radius-sm)] bg-acc-soft p-3 text-secundario text-txt">{aviso}</p> : null}
 
-      {itensSelecionados.length > 0 ? (
-        <button
-          type="button"
-          disabled={enviando}
-          onClick={() => enviar(itensSelecionados)}
-          className="mb-4 flex h-12 w-full items-center justify-center gap-2 rounded-[var(--radius-sm)] bg-[linear-gradient(135deg,var(--acc),var(--acc-2))] text-corpo font-bold text-[#0a0a0f] disabled:opacity-60"
-        >
-          <Send aria-hidden className="size-4" />
-          {enviando ? 'Enviando…' : `Avisar ${itensSelecionados.length} selecionada(s)`}
-        </button>
-      ) : null}
 
       {carregando ? (
         <div className="flex flex-col gap-2">
@@ -159,13 +143,17 @@ export default function RecuperarReceita({ inicial }: { inicial: ListaRecuperar 
             return (
               <li key={k}>
                 <Card className={cn('flex items-center gap-3', marcada && 'border-acc-2')}>
-                  <input
-                    type="checkbox"
-                    aria-label={`Selecionar ${item.name}`}
-                    checked={marcada}
-                    onChange={() => alternar(item)}
-                    className="size-5 shrink-0 accent-[var(--acc-2)]"
-                  />
+                  {/* O quadradinho tem 20px; quem precisa de 48px é o dedo.
+                      O rótulo em volta é a área de toque, sem engordar o desenho. */}
+                  <label className="-my-2 -ml-1.5 grid size-12 shrink-0 cursor-pointer place-items-center">
+                    <span className="sr-only">{`Selecionar ${item.name}`}</span>
+                    <input
+                      type="checkbox"
+                      checked={marcada}
+                      onChange={() => alternar(item)}
+                      className="size-5 accent-[var(--acc-2)]"
+                    />
+                  </label>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-corpo font-semibold">{item.name}</p>
                     <p className="truncate text-secundario text-txt-2">
@@ -174,14 +162,16 @@ export default function RecuperarReceita({ inicial }: { inicial: ListaRecuperar 
                   </div>
                   <div className="shrink-0 text-right">
                     <p className="tabular text-corpo font-bold text-acc-2">{dinheiro.format(item.valueCents / 100)}</p>
-                    <button
-                      type="button"
+                    <Button
+                      variante="ghost"
+                      tamanho="sm"
+                      className="-mr-2 mt-0.5 px-2"
                       disabled={enviando}
                       onClick={() => enviar([item])}
-                      className="mt-1 text-label font-semibold text-txt-2 underline disabled:opacity-60"
+                      motivoDesabilitado="Aguarde o envio em andamento terminar."
                     >
                       Avisar
-                    </button>
+                    </Button>
                   </div>
                 </Card>
               </li>
@@ -189,6 +179,25 @@ export default function RecuperarReceita({ inicial }: { inicial: ListaRecuperar 
           })}
         </ul>
       )}
+
+      {/*
+        §3.2 manda a ação primária no terço inferior da tela. O botão de enviar
+        nascia acima da lista: a pessoa marcava sete clientes, rolava para
+        conferir, e perdia de vista o botão que age sobre a seleção.
+      */}
+      <ActionBar visivel={itensSelecionados.length > 0}>
+        <Button
+          largura="cheia"
+          carregando={enviando}
+          onClick={() => enviar(itensSelecionados)}
+          // `tabIndex` acompanha a visibilidade: barra escondida não pode ser
+          // alcançada pelo teclado nem lida pelo leitor de tela.
+          tabIndex={itensSelecionados.length > 0 ? undefined : -1}
+        >
+          <Send aria-hidden className="size-4" />
+          {`Avisar ${itensSelecionados.length} ${itensSelecionados.length === 1 ? 'selecionada' : 'selecionadas'}`}
+        </Button>
+      </ActionBar>
     </div>
   )
 }

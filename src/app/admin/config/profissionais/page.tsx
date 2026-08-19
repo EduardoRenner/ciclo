@@ -6,6 +6,7 @@ import { listarConvites } from '@/server/services/convites'
 import { listarProfissionais } from '@/server/services/profissionais'
 
 import ListaProfissionais from './lista'
+import PageHeader from '@/components/ui/page-header'
 
 export default async function PaginaProfissionais() {
   const ctx = await contextoAtual(new Request('https://interno/config/profissionais', { headers: await headers() }))
@@ -17,10 +18,7 @@ export default async function PaginaProfissionais() {
 
   return (
     <>
-      <header className="py-6">
-        <h1 className="text-titulo font-extrabold">Time</h1>
-        <p className="mt-1 text-secundario text-txt-2">Quem atende, expediente e quem você já convidou.</p>
-      </header>
+      <PageHeader titulo="Time" descricao="Quem atende, expediente e quem você já convidou." />
 
       <ListaProfissionais profissionaisIniciais={profissionais} convitesIniciais={convites} />
     </>

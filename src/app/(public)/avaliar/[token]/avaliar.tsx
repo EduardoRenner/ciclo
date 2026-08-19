@@ -130,7 +130,7 @@ export default function Avaliar({ token }: { token: string }) {
         type="button"
         onClick={enviar}
         disabled={nota === 0 || estado === 'enviando'}
-        className="mt-4 h-12 w-full rounded-[var(--radius-sm)] bg-[linear-gradient(135deg,var(--acc),var(--acc-2))] text-corpo font-semibold text-[#0a0a0f] transition active:scale-[.98] disabled:opacity-50"
+        className="mt-4 h-12 w-full rounded-[var(--radius-sm)] bg-[image:var(--grad-acc)] text-corpo font-semibold text-on-acc transition active:scale-[.98] disabled:opacity-50"
       >
         {estado === 'enviando' ? 'Enviando…' : 'Enviar avaliação'}
       </button>

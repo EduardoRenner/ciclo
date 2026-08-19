@@ -1,14 +1,15 @@
 import { headers } from 'next/headers'
 import { Temporal } from '@js-temporal/polyfill'
 
+import AlertBanner from '@/components/ui/alert-banner'
+import PageHeader from '@/components/ui/page-header'
+import { dinheiro } from '@/lib/formato'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { listarParaRecuperar } from '@/server/services/recuperar-receita'
 import { receitaAtribuidaAoCiclo } from '@/server/services/atribuicao'
 
 import RecuperarReceita from './recuperar'
-
-const dinheiro = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
 
 export default async function PaginaRecuperar() {
   const ctx = await contextoAtual(new Request('https://interno/recuperar', { headers: await headers() }))
@@ -27,16 +28,17 @@ export default async function PaginaRecuperar() {
 
   return (
     <>
-      <header className="py-6">
-        <h1 className="text-titulo font-extrabold">Recuperar receita</h1>
-        <p className="mt-1 text-secundario text-txt-2">Clientes que o Motor de Ciclo identificou como atrasadas para voltar.</p>
-      </header>
+      <PageHeader
+        titulo="Recuperar receita"
+        descricao="Clientes que o Motor de Ciclo identificou como atrasadas para voltar."
+      />
 
       {atribuicao.count > 0 ? (
-        <p className="mb-5 rounded-[var(--radius-sm)] border border-acc-2 bg-acc-soft p-3 text-secundario text-txt">
-          O Motor de Ciclo trouxe <strong className="font-bold text-acc-2">{dinheiro.format(atribuicao.totalCents / 100)}</strong> este mês
-          {' '}({atribuicao.count} {atribuicao.count === 1 ? 'agendamento' : 'agendamentos'}).
-        </p>
+        <AlertBanner className="mb-5">
+          O Motor de Ciclo trouxe{' '}
+          <strong className="font-bold text-acc-2">{dinheiro.format(atribuicao.totalCents / 100)}</strong> este mês (
+          {atribuicao.count} {atribuicao.count === 1 ? 'agendamento' : 'agendamentos'}).
+        </AlertBanner>
       ) : null}
 
       <RecuperarReceita inicial={lista} />

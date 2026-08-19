@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
 import Button from '@/components/ui/button'
+import Input from '@/components/ui/input'
+import Select from '@/components/ui/select'
 
 const VERTICAIS: { valor: string; rotulo: string }[] = [
   { valor: 'barber', rotulo: 'Barbearia' },
@@ -70,47 +72,38 @@ export default function FormularioOnboarding() {
 
   return (
     <form action={enviar} className="flex w-full max-w-sm flex-col gap-3">
-      <label className="flex flex-col gap-1">
-        <span className="text-label font-semibold text-txt-2">Nome do negócio</span>
-        <input
-          value={nome}
-          onChange={(e) => aoMudarNome(e.target.value)}
-          required
-          className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo text-txt"
-        />
-      </label>
-      <label className="flex flex-col gap-1">
-        <span className="text-label font-semibold text-txt-2">Especialidade</span>
-        <select
-          name="vertical"
-          required
-          defaultValue=""
-          className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo text-txt"
-        >
-          <option value="" disabled>
-            Escolha uma
+      <Input rotulo="Nome do negócio" value={nome} onChange={(e) => aoMudarNome(e.target.value)} required autoFocus />
+
+      <Select rotulo="Especialidade" name="vertical" required defaultValue="">
+        <option value="" disabled>
+          Escolha uma
+        </option>
+        {VERTICAIS.map((v) => (
+          <option key={v.valor} value={v.valor}>
+            {v.rotulo}
           </option>
-          {VERTICAIS.map((v) => (
-            <option key={v.valor} value={v.valor}>
-              {v.rotulo}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label className="flex flex-col gap-1">
-        <span className="text-label font-semibold text-txt-2">Endereço da sua página (ciclo.app/{slug || '...'})</span>
-        <input
-          value={slug}
-          onChange={(e) => {
-            setSlugTocado(true)
-            setSlug(slugificar(e.target.value))
-          }}
-          required
-          minLength={5}
-          className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo tabular text-txt"
-        />
-      </label>
-      {erro ? <p className="text-secundario text-bad">{erro}</p> : null}
+        ))}
+      </Select>
+
+      <Input
+        rotulo="Endereço da sua página"
+        prefixo="ciclo.app/"
+        value={slug}
+        onChange={(e) => {
+          setSlugTocado(true)
+          setSlug(slugificar(e.target.value))
+        }}
+        required
+        minLength={5}
+        classNameCampo="tabular pl-[92px]"
+        ajuda="É o link que você manda para a cliente agendar."
+      />
+
+      {erro ? (
+        <p role="alert" className="text-secundario text-bad">
+          {erro}
+        </p>
+      ) : null}
       <Button type="submit" largura="cheia" carregando={pendente}>
         Criar meu negócio
       </Button>

@@ -4,7 +4,7 @@ import Skeleton from '@/components/ui/skeleton'
 export default function CarregandoClientes() {
   return (
     <>
-      <header className="py-6">
+      <header className="pb-5 pt-6">
         <Skeleton className="h-7 w-28" />
         <Skeleton className="mt-2 h-4 w-44" />
       </header>

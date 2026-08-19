@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useState, useTransition } from 'react'
 
 import Button from '@/components/ui/button'
+import Input from '@/components/ui/input'
 import { useToast } from '@/components/ui/toast'
 
 import { proximosEstados, type EstadoAgendamento } from '@/core/scheduling/state'
@@ -158,7 +159,7 @@ export default function DetalheAgendamento({
           {estadoAtual === 'done' ? (
             <Link
               href={`/admin/comanda/agendamento/${agendamento.id}`}
-              className="flex h-12 w-full items-center justify-center rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 text-corpo font-semibold text-txt"
+              className="flex h-12 w-full items-center justify-center rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 text-corpo font-semibold text-txt transition duration-[var(--dur-1)] hover:bg-surface-3 active:scale-[.98]"
             >
               Ver comanda
             </Link>
@@ -170,7 +171,7 @@ export default function DetalheAgendamento({
               href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`Oi! Poderia avaliar seu atendimento? ${linkAvaliacao}`)}`}
               target="_blank"
               rel="noreferrer"
-              className="flex h-12 w-full items-center justify-center rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 text-corpo font-semibold text-acc-2"
+              className="flex h-12 w-full items-center justify-center rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 text-corpo font-semibold text-acc-2 transition duration-[var(--dur-1)] hover:bg-surface-3 active:scale-[.98]"
             >
               Pedir avaliação
             </a>
@@ -183,15 +184,13 @@ export default function DetalheAgendamento({
 
       {mostrarRemarcar ? (
         <div className="flex flex-col gap-3">
-          <label className="flex flex-col gap-1">
-            <span className="text-label font-semibold text-txt-2">Novo horário</span>
-            <input
-              type="datetime-local"
-              value={novoHorario}
-              onChange={(e) => setNovoHorario(e.target.value)}
-              className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo tabular text-txt"
-            />
-          </label>
+          <Input
+            rotulo="Novo horário"
+            type="datetime-local"
+            value={novoHorario}
+            onChange={(e) => setNovoHorario(e.target.value)}
+            classNameCampo="tabular"
+          />
           <Button largura="cheia" carregando={pendente} onClick={confirmarRemarcacao}>
             Confirmar novo horário
           </Button>
@@ -204,14 +203,12 @@ export default function DetalheAgendamento({
       {mostrarCancelar ? (
         <div className="flex flex-col gap-3">
           <p className="text-corpo font-semibold">Cancelar esse agendamento?</p>
-          <label className="flex flex-col gap-1">
-            <span className="text-label font-semibold text-txt-2">Motivo (opcional)</span>
-            <input
-              value={motivo}
-              onChange={(e) => setMotivo(e.target.value)}
-              className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo text-txt"
-            />
-          </label>
+          <Input
+            rotulo="Motivo (opcional)"
+            value={motivo}
+            onChange={(e) => setMotivo(e.target.value)}
+            ajuda="Fica no histórico da cliente."
+          />
           <Button variante="danger" largura="cheia" carregando={pendente} onClick={confirmarCancelamento}>
             Sim, cancelar
           </Button>

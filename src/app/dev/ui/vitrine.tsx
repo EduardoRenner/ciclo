@@ -2,15 +2,24 @@
 
 import { useState } from 'react'
 
+import ActionBar from '@/components/ui/action-bar'
+import AlertBanner from '@/components/ui/alert-banner'
 import AppointmentRow from '@/components/ui/appointment-row'
+import Avatar from '@/components/ui/avatar'
 import Badge from '@/components/ui/badge'
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import Chip from '@/components/ui/chip'
 import EmptyState from '@/components/ui/empty-state'
+import FilterRow from '@/components/ui/filter-row'
+import Input from '@/components/ui/input'
+import MoneyInput from '@/components/ui/money-input'
+import PhoneInput from '@/components/ui/phone-input'
+import Select from '@/components/ui/select'
 import Sheet from '@/components/ui/sheet'
 import Skeleton from '@/components/ui/skeleton'
 import StatTile from '@/components/ui/stat-tile'
+import Textarea from '@/components/ui/textarea'
 import ToastProvider, { useToast } from '@/components/ui/toast'
 import TabBar from '@/components/shell/tab-bar'
 
@@ -26,6 +35,8 @@ function Secao({ titulo, children }: { titulo: string; children: React.ReactNode
 function Conteudo({ icones }: { icones: { agenda: React.ReactNode; clientes: React.ReactNode } }) {
   const [sheetAberto, setSheetAberto] = useState(false)
   const [filtro, setFiltro] = useState('hoje')
+  const [telefone, setTelefone] = useState('')
+  const [preco, setPreco] = useState(22000)
   const mostrarToast = useToast()
 
   return (
@@ -59,7 +70,57 @@ function Conteudo({ icones }: { icones: { agenda: React.ReactNode; clientes: Rea
         <Badge estado="ciclo">Ciclo</Badge>
       </Secao>
 
+      <Secao titulo="Campos (Input, PhoneInput, MoneyInput, Select, Textarea)">
+        <div className="flex w-full flex-col gap-3">
+          <Input rotulo="Nome da cliente" placeholder="Maria Clara" autoComplete="name" />
+          <PhoneInput valor={telefone} aoMudar={setTelefone} ajuda="A máscara é aplicada enquanto você digita." />
+          <MoneyInput rotulo="Preço do serviço" centavos={preco} aoMudar={setPreco} />
+          <Select rotulo="Profissional" defaultValue="">
+            <option value="" disabled>
+              Escolha uma
+            </option>
+            <option value="ana">Ana</option>
+            <option value="bia">Bia</option>
+          </Select>
+          <Textarea rotulo="Observações" placeholder="Alergia a acetona" />
+          <Input rotulo="E-mail" defaultValue="nao-e-um-email" erro="Confira o endereço — falta o @." />
+        </div>
+      </Secao>
+
+      <Secao titulo="AlertBanner">
+        <div className="flex w-full flex-col gap-2">
+          <AlertBanner>O Motor de Ciclo trouxe R$ 1.240 este mês.</AlertBanner>
+          <AlertBanner tom="warn" acao={<span className="text-warn">Recuperar</span>}>
+            7 clientes estão sumindo
+          </AlertBanner>
+          <AlertBanner tom="danger">Alergia registrada na ficha desta cliente.</AlertBanner>
+        </div>
+      </Secao>
+
+      <Secao titulo="Avatar">
+        <Avatar nome="Maria Clara Souza" tamanho="lg" />
+        <Avatar nome="Bruna Almeida" />
+        <Avatar nome="Duda" tamanho="sm" />
+      </Secao>
+
+      <Secao titulo="FilterRow — rola, encaixa e esmaece na borda">
+        <FilterRow rotulo="Exemplo de filtros" className="w-full">
+          {['Todas', 'Na hora de voltar', 'Atrasadas', 'Em risco', 'Perdidas'].map((f) => (
+            <Chip key={f} ligado={filtro === f} onClick={() => setFiltro(f)}>
+              {f}
+            </Chip>
+          ))}
+        </FilterRow>
+      </Secao>
+
       <Secao titulo="StatTile">
+        <StatTile
+          className="w-full"
+          heroi
+          rotulo="Faturado hoje"
+          valor="R$ 1.240"
+          apoio="Faltam 3 atendimentos hoje"
+        />
         <StatTile className="flex-1" rotulo="Receita do mês" valor="R$ 12.480" progresso={0.72} />
         <StatTile className="flex-1" rotulo="Valor parado" valor="R$ 3.150" />
       </Secao>
@@ -148,6 +209,12 @@ function Conteudo({ icones }: { icones: { agenda: React.ReactNode; clientes: Rea
         </Button>
       </Secao>
 
+      <Secao titulo="ActionBar">
+        <p className="text-secundario text-txt-2">
+          Ancorada acima da tab bar, no terço inferior da tela (§3.2). Aparece ao selecionar algo.
+        </p>
+      </Secao>
+
       <Secao titulo="Escala tipográfica">
         <div className="w-full">
           <p className="tabular text-numero font-extrabold">R$ 12.480</p>
@@ -171,6 +238,10 @@ function Conteudo({ icones }: { icones: { agenda: React.ReactNode; clientes: Rea
           Novo agendamento
         </Button>
       </Secao>
+
+      <ActionBar visivel={filtro !== 'hoje'}>
+        <Button largura="cheia">Avisar 3 selecionadas</Button>
+      </ActionBar>
 
       <TabBar />
     </>

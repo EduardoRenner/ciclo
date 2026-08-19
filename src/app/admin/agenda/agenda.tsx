@@ -10,8 +10,10 @@ import AppointmentRow from '@/components/ui/appointment-row'
 import Card from '@/components/ui/card'
 import Chip from '@/components/ui/chip'
 import EmptyState from '@/components/ui/empty-state'
+import FilterRow from '@/components/ui/filter-row'
 import Sheet from '@/components/ui/sheet'
 import StatTile from '@/components/ui/stat-tile'
+import { dinheiro } from '@/lib/formato'
 import { cn } from '@/lib/utils'
 
 import DetalheAgendamento from './detalhe'
@@ -21,7 +23,6 @@ import { LIMIAR_ALERTA_AGENDA } from '@/core/risk/no-show-score'
 import type { EstadoAgendamento } from '@/core/scheduling/state'
 import type { LinhaAgendaDia, ResumoAgendaDia } from '@/server/services/agendamentos'
 
-const dinheiro = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
 const DIAS_SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 
 function paraData(iso: string): Date {
@@ -75,29 +76,47 @@ export default function Agenda({
 
   return (
     <div>
-      <div className="mb-4 flex justify-between gap-1">
+      {/*
+        A faixa da semana é o controle mais tocado da tela. Antes o dia
+        selecionado e "hoje" competiam com dois desenhos parecidos (fundo de
+        acento vs. borda de acento) e nada dizia que a coluna era tocável. Agora
+        o selecionado é sólido, hoje é um ponto sob o número, e o resto é
+        superfície — três estados que se leem de relance, no sol.
+      */}
+      <div role="group" aria-label="Dias da semana" className="mb-4 flex justify-between gap-1">
         {semana.map((d) => {
           const data = paraData(d)
+          const selecionado = d === dia
           return (
             <button
               key={d}
               type="button"
               onClick={() => navegar(d)}
-              aria-current={d === dia ? 'date' : undefined}
+              aria-current={selecionado ? 'date' : undefined}
               className={cn(
-                'flex h-14 flex-1 flex-col items-center justify-center rounded-[var(--radius-sm)] text-label font-semibold transition-colors',
-                d === dia ? 'bg-acc-soft text-acc-2' : d === hoje ? 'border border-acc text-txt hover:bg-surface-2' : 'text-txt-2 hover:bg-surface-2',
+                'flex h-16 flex-1 flex-col items-center justify-center gap-0.5 rounded-[var(--radius-sm)]',
+                'text-label font-semibold transition duration-[var(--dur-1)] ease-[var(--ease-ios)] active:scale-[.95]',
+                selecionado
+                  ? 'bg-[image:var(--grad-acc)] text-on-acc shadow-elevado'
+                  : 'bg-surface-2 text-txt-2 hover:bg-surface-3 hover:text-txt',
               )}
             >
-              <span>{DIAS_SEMANA[data.getUTCDay()]}</span>
-              <span className="tabular">{data.getUTCDate()}</span>
+              <span className="uppercase">{DIAS_SEMANA[data.getUTCDay()]}</span>
+              <span className={cn('tabular text-corpo font-bold', !selecionado && 'text-txt')}>{data.getUTCDate()}</span>
+              <span
+                aria-hidden
+                className={cn(
+                  'size-1 rounded-[var(--radius-pill)]',
+                  d === hoje ? (selecionado ? 'bg-on-acc' : 'bg-acc-2') : 'bg-transparent',
+                )}
+              />
             </button>
           )
         })}
       </div>
 
       {profissionais.length > 1 ? (
-        <div className="mb-4 flex flex-wrap gap-2">
+        <FilterRow rotulo="Filtrar por profissional" className="mb-4">
           <Chip ligado={!profissionalSelecionado} onClick={() => navegar(dia, '')}>
             Todos
           </Chip>
@@ -106,7 +125,7 @@ export default function Agenda({
               {p.display_name}
             </Chip>
           ))}
-        </div>
+        </FilterRow>
       ) : null}
 
       <div className="mb-4 grid grid-cols-2 gap-3">

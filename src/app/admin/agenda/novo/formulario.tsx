@@ -6,13 +6,15 @@ import { useEffect, useState, useTransition } from 'react'
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import Chip from '@/components/ui/chip'
+import Input from '@/components/ui/input'
+import PhoneInput from '@/components/ui/phone-input'
+import Select from '@/components/ui/select'
 import { useToast } from '@/components/ui/toast'
+import { dinheiro, formatarTelefone } from '@/lib/formato'
 import { apiFetch } from '@/lib/offline/api-client'
 
 type Servico = { id: string; name: string; duration_min: number; price_cents: number }
 type Profissional = { id: string; display_name: string }
-
-const dinheiro = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
 
 function paraIso(dataLocal: string): string {
   return new Date(dataLocal).toISOString()
@@ -58,8 +60,7 @@ export default function FormularioAgendamento({
         if (cancelado || !json?.data) return
         setClienteNome(json.data.name)
         // `+5511991110001` é o formato do banco, não o que a pessoa lê — mostra como ela digitaria.
-        const m = /^\+55(\d{2})(\d{4,5})(\d{4})$/.exec(json.data.phone_e164 ?? '')
-        setClienteTelefone(m ? `(${m[1]}) ${m[2]}-${m[3]}` : (json.data.phone_e164 ?? ''))
+        setClienteTelefone(formatarTelefone(json.data.phone_e164) ?? '')
       })
       .catch(() => {
         // Falhar aqui só significa formulário em branco — o cadastro manual continua valendo.
@@ -127,71 +128,46 @@ export default function FormularioAgendamento({
 
   return (
     <form onSubmit={aoEnviarFormulario} className="flex flex-col gap-4">
-      <label className="flex flex-col gap-1">
-        <span className="text-label font-semibold text-txt-2">Serviço</span>
-        <select
-          value={serviceId}
-          onChange={(e) => setServiceId(e.target.value)}
-          required
-          className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo text-txt"
-        >
-          {servicos.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name} · {dinheiro.format(s.price_cents / 100)}
-            </option>
-          ))}
-        </select>
-      </label>
+      <Select rotulo="Serviço" value={serviceId} onChange={(e) => setServiceId(e.target.value)} required>
+        {servicos.map((s) => (
+          <option key={s.id} value={s.id}>
+            {s.name} · {dinheiro.format(s.price_cents / 100)}
+          </option>
+        ))}
+      </Select>
 
-      <label className="flex flex-col gap-1">
-        <span className="text-label font-semibold text-txt-2">Profissional</span>
-        <select
-          value={professionalId}
-          onChange={(e) => setProfessionalId(e.target.value)}
-          required
-          className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo text-txt"
-        >
-          {profissionais.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.display_name}
-            </option>
-          ))}
-        </select>
-      </label>
+      <Select
+        rotulo="Profissional"
+        value={professionalId}
+        onChange={(e) => setProfessionalId(e.target.value)}
+        required
+      >
+        {profissionais.map((p) => (
+          <option key={p.id} value={p.id}>
+            {p.display_name}
+          </option>
+        ))}
+      </Select>
 
-      <label className="flex flex-col gap-1">
-        <span className="text-label font-semibold text-txt-2">Cliente</span>
-        <input
-          value={clienteNome}
-          onChange={(e) => setClienteNome(e.target.value)}
-          placeholder="Nome"
-          required
-          className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo text-txt"
-        />
-      </label>
+      <Input
+        rotulo="Cliente"
+        value={clienteNome}
+        onChange={(e) => setClienteNome(e.target.value)}
+        placeholder="Nome"
+        autoComplete="name"
+        required
+      />
 
-      <label className="flex flex-col gap-1">
-        <span className="text-label font-semibold text-txt-2">Telefone</span>
-        <input
-          value={clienteTelefone}
-          onChange={(e) => setClienteTelefone(e.target.value)}
-          placeholder="(11) 98765-4321"
-          inputMode="tel"
-          required
-          className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo text-txt"
-        />
-      </label>
+      <PhoneInput valor={clienteTelefone} aoMudar={setClienteTelefone} required />
 
-      <label className="flex flex-col gap-1">
-        <span className="text-label font-semibold text-txt-2">Data e horário</span>
-        <input
-          type="datetime-local"
-          value={dataHora}
-          onChange={(e) => setDataHora(e.target.value)}
-          required
-          className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo tabular text-txt"
-        />
-      </label>
+      <Input
+        rotulo="Data e horário"
+        type="datetime-local"
+        value={dataHora}
+        onChange={(e) => setDataHora(e.target.value)}
+        required
+        classNameCampo="tabular"
+      />
 
       {erro ? (
         <Card className="border-bad/40">

@@ -4,27 +4,38 @@ import { Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const botao = cva(
-  // h-12 = 48px, o alvo mínimo de §3.6. `active:scale` no lugar de hover: no
-  // celular não existe hover, e o toque precisa de retorno.
-  'inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-sm)] px-5 ' +
-    'text-corpo font-semibold transition active:scale-[.98] disabled:pointer-events-none disabled:opacity-50',
+  // `active:scale` no lugar de hover: no celular não existe hover, e o toque
+  // precisa de retorno. A curva é a de saída do iOS (`--ease-ios`): sai rápido,
+  // chega devagar — é o que faz o toque parecer resposta, não animação.
+  'inline-flex items-center justify-center gap-2 rounded-[var(--radius-sm)] font-semibold ' +
+    'transition duration-[var(--dur-1)] ease-[var(--ease-ios)] active:scale-[.97] ' +
+    'disabled:pointer-events-none disabled:opacity-50',
   {
     variants: {
       // `hover:` nunca dispara sozinho em touch — só complementa o `active:scale`
       // que já existia, para quem está com mouse (o Eduardo testando no desktop)
       // não ver a interface inteira "morta" ao passar o cursor.
       variante: {
-        primary: 'bg-[linear-gradient(135deg,var(--acc),var(--acc-2))] text-[#0a0a0f] hover:brightness-110',
+        primary: 'bg-[image:var(--grad-acc)] text-on-acc shadow-elevado hover:brightness-110',
         secondary: 'border border-line-2 bg-surface-2 text-txt hover:bg-surface-3',
-        success: 'bg-ok text-[#0a0a0f] hover:brightness-110',
-        danger: 'bg-bad text-[#0a0a0f] hover:brightness-110',
+        success: 'bg-ok text-on-acc hover:brightness-110',
+        danger: 'bg-bad text-on-acc hover:brightness-110',
+        /** Sem fundo — ação secundária dentro de card/sheet, onde mais uma caixa polui. */
+        ghost: 'text-txt-2 hover:bg-surface-2 hover:text-txt',
+      },
+      tamanho: {
+        // h-12 = 48px, o alvo mínimo de §3.6, e o padrão de toda ação de tela.
+        md: 'h-12 px-5 text-corpo',
+        // 40px de altura visual com área de toque de 48 (`toque-48`): ação
+        // dentro de linha de lista, onde um botão de 48 empurra a linha inteira.
+        sm: 'toque-48 h-10 px-4 text-secundario',
       },
       largura: {
         auto: '',
         cheia: 'w-full',
       },
     },
-    defaultVariants: { variante: 'primary', largura: 'auto' },
+    defaultVariants: { variante: 'primary', tamanho: 'md', largura: 'auto' },
   },
 )
 
@@ -41,6 +52,7 @@ type Props = React.ComponentPropsWithoutRef<'button'> &
 export default function Button({
   className,
   variante,
+  tamanho,
   largura,
   carregando = false,
   motivoDesabilitado,
@@ -52,7 +64,7 @@ export default function Button({
 
   return (
     <button
-      className={cn(botao({ variante, largura }), className)}
+      className={cn(botao({ variante, tamanho, largura }), className)}
       disabled={travado}
       aria-busy={carregando || undefined}
       title={disabled ? motivoDesabilitado : undefined}

@@ -5,6 +5,8 @@ import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { buscarComanda } from '@/server/services/comanda'
 import { listarServicos } from '@/server/services/servicos'
 
+import PageHeader from '@/components/ui/page-header'
+
 import Comanda from './comanda'
 
 export default async function PaginaComanda({ params }: { params: Promise<{ id: string }> }) {
@@ -16,10 +18,7 @@ export default async function PaginaComanda({ params }: { params: Promise<{ id: 
 
   return (
     <>
-      <header className="py-6">
-        <h1 className="text-titulo font-extrabold">Comanda</h1>
-        <p className="mt-1 text-secundario text-txt-2">{ticket.status === 'open' ? 'Aberta' : 'Fechada'}</p>
-      </header>
+      <PageHeader titulo="Comanda" descricao={ticket.status === 'open' ? 'Aberta' : 'Fechada'} />
 
       <Comanda ticketInicial={ticket} itensIniciais={items} servicos={servicos} />
     </>

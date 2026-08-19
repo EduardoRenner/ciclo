@@ -5,7 +5,7 @@ import Skeleton from '@/components/ui/skeleton'
 export default function CarregandoHoje() {
   return (
     <div aria-busy="true">
-      <header className="py-6">
+      <header className="pb-5 pt-6">
         <Skeleton className="h-3 w-32" />
         <Skeleton className="mt-2 h-7 w-48" />
       </header>

@@ -1,5 +1,6 @@
 'use client'
 
+import { CheckCircle2, TriangleAlert, XCircle } from 'lucide-react'
 import { Toast as RadixToast } from 'radix-ui'
 import { createContext, useCallback, useContext, useMemo, useState } from 'react'
 
@@ -24,6 +25,13 @@ const CORES: Record<Tom, string> = {
   aviso: 'border-warn/40 text-warn',
 }
 
+/** §4: estado nunca só por cor. Quem não distingue verde de vermelho lê o ícone. */
+const MARCA: Record<Tom, typeof CheckCircle2> = {
+  ok: CheckCircle2,
+  erro: XCircle,
+  aviso: TriangleAlert,
+}
+
 export default function ToastProvider({ children }: { children: React.ReactNode }) {
   const [avisos, setAvisos] = useState<Aviso[]>([])
 
@@ -38,7 +46,9 @@ export default function ToastProvider({ children }: { children: React.ReactNode 
       <RadixToast.Provider swipeDirection="right" duration={5000}>
         {children}
 
-        {avisos.map((aviso) => (
+        {avisos.map((aviso) => {
+          const Icone = MARCA[aviso.tom]
+          return (
           <RadixToast.Root
             key={aviso.id}
             onOpenChange={(aberto) => {
@@ -47,25 +57,32 @@ export default function ToastProvider({ children }: { children: React.ReactNode 
             // §7: erro fala na frente da leitura em curso; sucesso espera a vez.
             type={aviso.tom === 'erro' ? 'foreground' : 'background'}
             className={cn(
-              'rounded-[var(--radius-sm)] border bg-surface-2 px-4 py-3 shadow-lg',
+              'flex items-start gap-2.5 rounded-[var(--radius-sm)] border bg-surface-2 px-4 py-3 shadow-flutuante',
+              'duration-[var(--dur-2)] ease-[var(--ease-ios)]',
               'data-[state=open]:animate-in data-[state=open]:slide-in-from-bottom',
+              'data-[state=closed]:animate-out data-[state=closed]:fade-out',
               CORES[aviso.tom],
             )}
           >
-            <RadixToast.Title className="text-corpo font-semibold">{aviso.titulo}</RadixToast.Title>
-            {aviso.descricao ? (
-              <RadixToast.Description className="mt-0.5 text-secundario text-txt-2">
-                {aviso.descricao}
-              </RadixToast.Description>
-            ) : null}
+            <Icone aria-hidden className="mt-0.5 size-5 shrink-0" />
+            <div className="min-w-0 flex-1">
+              <RadixToast.Title className="text-corpo font-semibold">{aviso.titulo}</RadixToast.Title>
+              {aviso.descricao ? (
+                <RadixToast.Description className="mt-0.5 text-secundario text-txt-2">
+                  {aviso.descricao}
+                </RadixToast.Description>
+              ) : null}
+            </div>
           </RadixToast.Root>
-        ))}
+          )
+        })}
 
         <RadixToast.Viewport
           className={cn(
-            'fixed inset-x-0 bottom-0 z-[60] flex flex-col gap-2 p-[18px]',
-            // Acima da tab bar de 82px (§3.3), senão o aviso nasce escondido.
-            'pb-[calc(96px+env(safe-area-inset-bottom))]',
+            'fixed inset-x-0 bottom-0 z-[60] mx-auto flex w-full max-w-[560px] flex-col gap-2 p-[var(--gutter)]',
+            // Acima da tab bar, senão o aviso nasce escondido. A altura vem do
+            // token, não de um 96 solto que envelhece junto com a barra.
+            'pb-[calc(var(--tabbar-h)+env(safe-area-inset-bottom)+16px)]',
           )}
         />
       </RadixToast.Provider>

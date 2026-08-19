@@ -1,5 +1,6 @@
 import { headers } from 'next/headers'
 
+import PageHeader from '@/components/ui/page-header'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { listarAgendaDoDia } from '@/server/services/agendamentos'
@@ -32,9 +33,7 @@ export default async function PaginaAgenda({
 
   return (
     <>
-      <header className="py-6">
-        <h1 className="text-titulo font-extrabold">Agenda</h1>
-      </header>
+      <PageHeader titulo="Agenda" />
 
       <Agenda
         dia={diaAlvo}

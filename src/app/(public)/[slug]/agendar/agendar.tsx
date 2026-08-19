@@ -6,6 +6,9 @@ import { useEffect, useMemo, useState, useTransition } from 'react'
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import Chip from '@/components/ui/chip'
+import FilterRow from '@/components/ui/filter-row'
+import Input from '@/components/ui/input'
+import PhoneInput from '@/components/ui/phone-input'
 import { dinheiro, duracao } from '@/lib/formato'
 
 type Servico = { id: string; name: string; durationMin: number; priceCents: number }
@@ -36,6 +39,18 @@ function periodo(iso: string): 'Manhã' | 'Tarde' | 'Noite' {
   if (hora < 12) return 'Manhã'
   if (hora < 18) return 'Tarde'
   return 'Noite'
+}
+
+/** Numerar os passos foi o que faltava: eram quatro escolhas numa página rolante, sem nenhum sinal de progresso. */
+function Passo({ numero, titulo }: { numero: number; titulo: string }) {
+  return (
+    <h2 className="mb-3 flex items-center gap-2 text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">
+      <span className="grid size-5 place-items-center rounded-[var(--radius-pill)] bg-surface-3 text-label font-bold text-txt-2">
+        {numero}
+      </span>
+      {titulo}
+    </h2>
+  )
 }
 
 export default function Agendar({
@@ -148,7 +163,7 @@ export default function Agendar({
   return (
     <div className="flex flex-col gap-5">
       <section>
-        <h2 className="mb-3 text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">Serviço</h2>
+        <Passo numero={1} titulo="Serviço" />
         <div className="flex flex-col gap-2">
           {services.map((s) => (
             <button key={s.id} type="button" onClick={() => escolherServico(s.id)} className="block w-full text-left">
@@ -174,7 +189,7 @@ export default function Agendar({
 
       {professionals.length > 1 ? (
         <section>
-          <h2 className="mb-3 text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">Profissional</h2>
+          <Passo numero={2} titulo="Profissional" />
           <div className="flex flex-wrap gap-2">
             <Chip
               ligado={professionalId === null}
@@ -202,8 +217,8 @@ export default function Agendar({
       ) : null}
 
       <section>
-        <h2 className="mb-3 text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">Dia</h2>
-        <div className="-mx-[18px] flex gap-2 overflow-x-auto px-[18px] pb-1">
+        <Passo numero={professionals.length > 1 ? 3 : 2} titulo="Dia" />
+        <FilterRow rotulo="Escolher o dia">
           {dias.map((d) => {
             const data = paraData(d)
             return (
@@ -213,16 +228,18 @@ export default function Agendar({
                 onClick={() => buscarDisponibilidade(d)}
                 aria-current={d === dia ? 'date' : undefined}
                 className={
-                  'flex h-16 w-14 shrink-0 flex-col items-center justify-center rounded-[var(--radius-sm)] text-label font-semibold transition ' +
-                  (d === dia ? 'bg-acc-soft text-acc-2' : 'bg-surface-2 text-txt-2 hover:bg-surface-3')
+                  'flex h-16 w-14 shrink-0 flex-col items-center justify-center gap-0.5 rounded-[var(--radius-sm)] text-label font-semibold transition duration-[var(--dur-1)] ease-[var(--ease-ios)] active:scale-[.95] ' +
+                  (d === dia
+                    ? 'bg-[image:var(--grad-acc)] text-on-acc shadow-elevado'
+                    : 'bg-surface-2 text-txt-2 hover:bg-surface-3 hover:text-txt')
                 }
               >
-                <span>{data.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '')}</span>
-                <span className="tabular text-corpo">{data.getDate()}</span>
+                <span className="uppercase">{data.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '')}</span>
+                <span className={`tabular text-corpo font-bold ${d === dia ? '' : 'text-txt'}`}>{data.getDate()}</span>
               </button>
             )
           })}
-        </div>
+        </FilterRow>
       </section>
 
       {erro ? (
@@ -258,29 +275,37 @@ export default function Agendar({
 
       {slotEscolhido && servicoEscolhido ? (
         <Card className="flex flex-col gap-3">
-          <p className="text-secundario text-txt-2">
-            {servicoEscolhido.name} · {paraData(dia).toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })} às{' '}
-            {horaLocal(slotEscolhido.startsAt)}
-          </p>
-          <label className="flex flex-col gap-1">
-            <span className="text-label font-semibold text-txt-2">Seu nome</span>
-            <input
-              value={nome}
-              onChange={(e) => setNome(e.target.value)}
-              required
-              className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo text-txt"
-            />
-          </label>
-          <label className="flex flex-col gap-1">
-            <span className="text-label font-semibold text-txt-2">Seu telefone (WhatsApp)</span>
-            <input
-              value={telefone}
-              onChange={(e) => setTelefone(e.target.value)}
-              inputMode="tel"
-              required
-              className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo text-txt"
-            />
-          </label>
+          <div>
+            <p className="text-corpo font-semibold text-txt">{servicoEscolhido.name}</p>
+            <p className="mt-0.5 text-secundario text-txt-2">
+              {paraData(dia).toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })} às{' '}
+              {horaLocal(slotEscolhido.startsAt)} · {duracao(servicoEscolhido.durationMin)}
+            </p>
+            {servicoEscolhido.priceCents > 0 ? (
+              <p className="tabular mt-2 text-stat font-extrabold text-acc-2">
+                {dinheiro.format(servicoEscolhido.priceCents / 100)}
+              </p>
+            ) : null}
+          </div>
+          {/*
+            `autoComplete` faltava nos dois campos: sem ele o celular não
+            oferece o nome e o telefone já salvos — atrito puro no único
+            formulário do produto que fica entre a cliente e a reserva.
+          */}
+          <Input
+            rotulo="Seu nome"
+            value={nome}
+            onChange={(e) => setNome(e.target.value)}
+            autoComplete="name"
+            required
+          />
+          <PhoneInput
+            rotulo="Seu telefone (WhatsApp)"
+            valor={telefone}
+            aoMudar={setTelefone}
+            ajuda="É por aqui que a confirmação chega."
+            required
+          />
 
           {/* Honeypot — invisível para gente, visível para script. */}
           <label className="absolute -left-[9999px] h-0 w-0 overflow-hidden" aria-hidden tabIndex={-1}>

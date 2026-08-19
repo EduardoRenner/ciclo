@@ -5,6 +5,7 @@ import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { lerTenant } from '@/server/services/site'
 
 import FormularioNegocio from './formulario'
+import PageHeader from '@/components/ui/page-header'
 
 export default async function PaginaNegocio() {
   const ctx = await contextoAtual(new Request('https://interno/admin/config/negocio', { headers: await headers() }))
@@ -15,10 +16,7 @@ export default async function PaginaNegocio() {
 
   return (
     <>
-      <header className="py-6">
-        <h1 className="text-titulo font-extrabold">Negócio</h1>
-        <p className="mt-1 text-secundario text-txt-2">O que aparece no seu site e como as clientes te encontram.</p>
-      </header>
+      <PageHeader titulo="Negócio" descricao="O que aparece no seu site e como as clientes te encontram." />
 
       <FormularioNegocio tenant={tenant} urlSite={urlSite} />
     </>

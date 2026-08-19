@@ -2,14 +2,16 @@
 
 import Link from 'next/link'
 
-import { Users } from 'lucide-react'
+import { ChevronRight, Search, Users } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+import Avatar from '@/components/ui/avatar'
 import Card from '@/components/ui/card'
+import Chip from '@/components/ui/chip'
 import EmptyState from '@/components/ui/empty-state'
+import FilterRow from '@/components/ui/filter-row'
 import Skeleton from '@/components/ui/skeleton'
-import { dinheiro } from '@/lib/formato'
-import { cn } from '@/lib/utils'
+import { dinheiro, formatarTelefone } from '@/lib/formato'
 
 type ClienteLinha = {
   id: string
@@ -27,12 +29,6 @@ const SEGMENTOS: { valor: Segmento; rotulo: string }[] = [
   { valor: 'primeira_visita_sem_retorno', rotulo: 'Primeira visita sem volta' },
   { valor: 'ticket_alto', rotulo: 'Ticket alto' },
 ]
-
-/** `(11) 98765-4321`, o formato que a profissional reconhece de cabeça. */
-function formatarTelefone(e164: string | null): string | null {
-  const m = /^\+55(\d{2})(\d{4,5})(\d{4})$/.exec(e164 ?? '')
-  return m ? `(${m[1]}) ${m[2]}-${m[3]}` : e164
-}
 
 export default function ListaClientes({ iniciais }: { iniciais: ClienteLinha[] }) {
   const [termo, setTermo] = useState('')
@@ -81,34 +77,31 @@ export default function ListaClientes({ iniciais }: { iniciais: ClienteLinha[] }
       <label className="sr-only" htmlFor="busca-clientes">
         Buscar cliente por nome ou telefone
       </label>
-      <input
-        id="busca-clientes"
-        type="search"
-        inputMode="search"
-        placeholder="Nome ou telefone"
-        value={termo}
-        onChange={(e) => {
-          setSegmento(null)
-          setTermo(e.target.value)
-        }}
-        className="mb-3 h-12 w-full rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-4 text-corpo text-txt"
-      />
-
-      <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
-        {SEGMENTOS.map((s) => (
-          <button
-            key={s.valor}
-            type="button"
-            onClick={() => alternarSegmento(s.valor)}
-            className={cn(
-              'shrink-0 rounded-[var(--radius-pill)] border px-3.5 py-2 text-secundario font-semibold transition',
-              segmento === s.valor ? 'border-acc-2 bg-acc-soft text-acc-2' : 'border-line-2 bg-surface-2 text-txt-2',
-            )}
-          >
-            {s.rotulo}
-          </button>
-        ))}
+      <div className="relative mb-3">
+        <Search aria-hidden className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-txt-3" />
+        <input
+          id="busca-clientes"
+          type="search"
+          inputMode="search"
+          placeholder="Nome ou telefone"
+          value={termo}
+          onChange={(e) => {
+            setSegmento(null)
+            setTermo(e.target.value)
+          }}
+          className="h-12 w-full rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 pl-10 pr-4 text-corpo text-txt transition-colors placeholder:text-txt-3 focus:border-acc"
+        />
       </div>
+
+      {/* Eram pílulas próprias, com outro raio e outra altura que as da agenda —
+          o mesmo gesto parecendo dois controles diferentes. */}
+      <FilterRow rotulo="Filtrar por grupo" className="mb-4">
+        {SEGMENTOS.map((s) => (
+          <Chip key={s.valor} ligado={segmento === s.valor} onClick={() => alternarSegmento(s.valor)}>
+            {s.rotulo}
+          </Chip>
+        ))}
+      </FilterRow>
 
       {carregando ? (
         <div className="flex flex-col gap-2">
@@ -141,8 +134,10 @@ export default function ListaClientes({ iniciais }: { iniciais: ClienteLinha[] }
               {/* A linha inteira abre a ficha: era o buraco central do CRM — todo o histórico existia
                   no banco e não havia caminho nenhum na interface para chegar nele. */}
               <Link href={`/admin/clientes/${c.id}`} className="block">
-                <Card className="transition-colors hover:border-acc/40 hover:bg-surface-2">
+                <Card pressionavel>
                   <div className="flex items-center gap-3">
+                    {/* Âncora visual: 200 nomes em texto igual não dão onde o olho pousar. */}
+                    <Avatar nome={c.name} />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-corpo font-semibold">{c.name}</p>
                       {c.phone_e164 ? (
@@ -157,6 +152,7 @@ export default function ListaClientes({ iniciais }: { iniciais: ClienteLinha[] }
                         </p>
                       </div>
                     ) : null}
+                    <ChevronRight aria-hidden className="size-4 shrink-0 text-txt-3" />
                   </div>
                   {c.tags.length > 0 ? (
                     <div className="mt-2 flex flex-wrap gap-1">

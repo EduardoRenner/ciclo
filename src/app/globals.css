@@ -3,10 +3,11 @@
 @import "shadcn/tailwind.css";
 
 /*
- * Tokens de `docs/03-DESIGN-SYSTEM.md §1`. O tema escuro é o padrão — não é uma
- * variante, é como o produto se parece. Por isso os valores moram em `:root` e
- * não numa classe `.dark`: o salão abre a agenda no escuro sem depender de
- * classe no <html>.
+ * Tokens de `docs/03-DESIGN-SYSTEM.md §1`, com as emendas de
+ * `docs/08-REDESIGN-UI.md §7`. O tema escuro é o padrão — não é uma variante, é
+ * como o produto se parece. Por isso os valores moram em `:root` e não numa
+ * classe `.dark`: o salão abre a agenda no escuro sem depender de classe no
+ * <html>.
  */
 :root {
   /* superfícies */
@@ -16,6 +17,10 @@
   --surface-3: #26263d;
   --line: rgba(255, 255, 255, 0.08);
   --line-2: rgba(255, 255, 255, 0.14);
+  /* retorno de toque: clareia a superfície que já está ali, sem inventar cor nova. */
+  --surface-press: rgba(255, 255, 255, 0.05);
+  /* fundo de sheet/dialog — mais escuro que o `--bg` para o conteúdo de trás recuar de verdade. */
+  --overlay: rgba(5, 5, 10, 0.72);
 
   /* texto */
   --txt: #f2f2f7;
@@ -36,6 +41,16 @@
   --acc: #a855f7;
   --acc-2: #c084fc;
   --acc-soft: rgba(168, 85, 247, 0.16);
+  /*
+   * Texto sobre o acento. Existia hardcoded como `text-[#0a0a0f]` em nove
+   * lugares — o que travava a cor do texto mesmo quando o acento da vertical
+   * mudava. O teste de contraste garante que todo acento da tabela de §1 lê
+   * com este tom.
+   */
+  --on-acc: #0a0a0f;
+  /* A assinatura da marca. Estava copiado em 9 arquivos; agora tem um dono. */
+  --grad-acc: linear-gradient(135deg, var(--acc), var(--acc-2));
+  --ring: var(--acc-2);
 
   /* semânticos — não mudam por vertical */
   --ok: #34d399;
@@ -47,6 +62,30 @@
   --radius: 16px;
   --radius-sm: 12px;
   --radius-pill: 999px;
+  /* Sheet com raio de sheet, não de card: 16px lê como "card colado embaixo". */
+  --radius-sheet: 24px;
+
+  /* §3.1: a folga lateral do conteúdo. Era `px-[18px]` literal em 6 arquivos. */
+  --gutter: 18px;
+  /*
+   * Altura da tab bar (sem o relevo do aparelho). Era 82px em §3.3, o que com o
+   * relevo do iPhone comia 14% da tela em navegação permanente. 64px é a altura
+   * de uma barra de abas do iOS com rótulo. O número mora aqui porque três
+   * lugares dependiam dele por conta própria — folga do conteúdo, barra de
+   * ação flutuante e viewport do toast — e cada um tinha o seu.
+   */
+  --tabbar-h: 64px;
+
+  /*
+   * Movimento. O documento nunca definiu curva nem duração, então cada
+   * `transition` do app usava o padrão do Tailwind (150ms, ease genérico). A
+   * curva abaixo é a de saída usada pelas transições do iOS: sai rápido, chega
+   * devagar — é o que faz o toque parecer resposta e não animação.
+   */
+  --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);
+  --dur-1: 120ms;
+  --dur-2: 220ms;
+  --dur-3: 320ms;
 }
 
 @theme inline {
@@ -54,6 +93,8 @@
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
   --color-surface-3: var(--surface-3);
+  --color-surface-press: var(--surface-press);
+  --color-overlay: var(--overlay);
   --color-line: var(--line);
   --color-line-2: var(--line-2);
 
@@ -64,6 +105,7 @@
   --color-acc: var(--acc);
   --color-acc-2: var(--acc-2);
   --color-acc-soft: var(--acc-soft);
+  --color-on-acc: var(--on-acc);
 
   --color-ok: var(--ok);
   --color-warn: var(--warn);
@@ -82,7 +124,7 @@
   --color-popover: var(--surface-2);
   --color-popover-foreground: var(--txt);
   --color-primary: var(--acc);
-  --color-primary-foreground: #0a0a0f;
+  --color-primary-foreground: var(--on-acc);
   --color-secondary: var(--surface-2);
   --color-secondary-foreground: var(--txt);
   --color-muted: var(--surface-2);
@@ -96,18 +138,45 @@
 
   --font-sans: var(--font-sans);
 
-  /* Escala de §2. `rem` para respeitar o tamanho de fonte do sistema. */
+  /*
+   * Escala de §2, com as correções de `08-REDESIGN-UI §4.2`. `rem` para
+   * respeitar o tamanho de fonte do sistema. Entrelinha e tracking passam a ser
+   * parte do token: sem isso, cada tela decidia sozinha, e "número grande" com
+   * entrelinha de corpo é o que faz um valor de R$ parecer desenhado por
+   * ninguém. O corpo subiu de 15 para 16px — abaixo de 16 o Safari do iPhone dá
+   * zoom sozinho ao focar qualquer campo, o que quebrava todo formulário do app.
+   */
   --text-numero: 2.125rem; /* 34px — dinheiro em destaque */
-  --text-titulo: 1.5625rem; /* 25px — título de tela */
+  --text-numero--line-height: 1.05;
+  --text-numero--letter-spacing: -0.02em;
+
+  --text-titulo: 1.625rem; /* 26px — título de tela */
+  --text-titulo--line-height: 1.15;
+  --text-titulo--letter-spacing: -0.02em;
+
   --text-stat: 1.3125rem; /* 21px — valor de stat */
-  --text-corpo: 0.9375rem; /* 15px */
-  --text-secundario: 0.8125rem; /* 13px */
-  --text-label: 0.71875rem; /* 11,5px */
+  --text-stat--line-height: 1.2;
+  --text-stat--letter-spacing: -0.015em;
+
+  --text-corpo: 1rem; /* 16px */
+  --text-corpo--line-height: 1.45;
+
+  --text-secundario: 0.84375rem; /* 13,5px */
+  --text-secundario--line-height: 1.4;
+
+  --text-label: 0.75rem; /* 12px */
+  --text-label--line-height: 1.35;
+
   --text-overline: 0.6875rem; /* 11px */
+  --text-overline--line-height: 1.2;
+  --text-overline--letter-spacing: 0.13em;
 
   --radius-lg: var(--radius);
   --radius-md: var(--radius-sm);
   --radius-pill: var(--radius-pill);
+  --radius-sheet: var(--radius-sheet);
+
+  --ease-ios: var(--ease-ios);
 
   /*
    * §4 nunca definiu elevação — por isso toda superfície do app nascia no
@@ -120,6 +189,8 @@
    */
   --shadow-elevado: 0 1px 2px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.03);
   --shadow-flutuante: 0 8px 24px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  /* O FAB é a única peça que se ilumina: a sombra herda o acento da vertical. */
+  --shadow-fab: 0 6px 20px color-mix(in srgb, var(--acc) 35%, transparent);
 }
 
 @layer base {
@@ -131,6 +202,11 @@
     background: var(--bg);
     /* Sem isto, o iOS aumenta a fonte sozinho ao girar o aparelho. */
     -webkit-text-size-adjust: 100%;
+    /*
+     * O retângulo cinza que o Android desenha em cima de todo elemento tocado.
+     * O retorno de toque do app é o `active:scale`/`--surface-press`, não isto.
+     */
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
@@ -138,14 +214,60 @@
     color: var(--txt);
     font-family: var(--font-sans), system-ui, sans-serif;
     font-size: var(--text-corpo);
-    /* §3.3: a tab bar de 82px cobre o fim da lista sem esta folga. */
-    padding-bottom: env(safe-area-inset-bottom);
+    line-height: 1.45;
+    /*
+     * Instalado como PWA, o app não pode "esticar" como página web: o
+     * rubber-band no fim da lista denuncia na hora que aquilo é um site.
+     */
+    overscroll-behavior-y: contain;
+  }
+
+  /*
+   * A folga do relevo inferior é paga pela tab bar (que é quem encosta na
+   * borda). Pagar de novo aqui empurrava o conteúdo de toda tela sem sessão,
+   * que nem tem tab bar.
+   */
+
+  /*
+   * Regra do Safari iOS: campo com fonte menor que 16px dispara zoom
+   * automático no foco — a tela pula, a pessoa perde o lugar. Os 89 campos do
+   * projeto foram escritos à mão antes de existir `<Input>`; esta regra blinda
+   * todos de uma vez, inclusive os que ninguém migrar.
+   */
+  input,
+  select,
+  textarea {
+    font-size: max(16px, 1em);
+  }
+
+  /* Título não deve terminar em órfã; parágrafo não deve ter rio de espaço. */
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  ::selection {
+    background: var(--acc-soft);
+    color: var(--txt);
   }
 
   /* §7: foco visível em todo elemento interativo. */
   :focus-visible {
-    outline: 2px solid var(--acc-2);
+    outline: 2px solid var(--ring);
     outline-offset: 2px;
+  }
+
+  /* No desktop a barra padrão do Chrome é branca e rasga o tema escuro. */
+  @media (pointer: fine) {
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: var(--surface-3) transparent;
+    }
   }
 
   /* §7: `prefers-reduced-motion` respeitado. */
@@ -161,7 +283,54 @@
   }
 }
 
+/* Varredura do esqueleto de carregamento (`components/ui/skeleton.tsx`). */
+@keyframes brilho {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
 @utility tabular {
   /* §2: sem isto a coluna de valores dança a cada dígito. */
   font-variant-numeric: tabular-nums;
+}
+
+@utility scroll-x {
+  /*
+   * Fileira que rola no horizontal (filtros, dias, horários). Três coisas que
+   * faltavam em todas as fileiras do app: parada por item (o dedo solta e o
+   * cartão encaixa), barra escondida, e o esmaecimento na borda direita — sem
+   * ele não há sinal nenhum de que existe mais conteúdo fora da tela.
+   */
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  mask-image: linear-gradient(to right, transparent 0, #000 12px, #000 calc(100% - 20px), transparent 100%);
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  & > * {
+    scroll-snap-align: start;
+    flex-shrink: 0;
+  }
+}
+
+@utility toque-48 {
+  /*
+   * Alvo de 48px (§3.6) sem engordar o desenho: a pílula continua com 40px de
+   * altura visual e o pseudo-elemento estende a área tocável para cima e para
+   * baixo. É assim que o iOS resolve o mesmo problema nos controles pequenos.
+   */
+  position: relative;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: -4px 0;
+    min-height: 48px;
+  }
 }

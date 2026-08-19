@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useState } from 'react'
 
 import Button from '@/components/ui/button'
+import Input from '@/components/ui/input'
 
 export default function FormularioEntrar() {
   const router = useRouter()
@@ -40,32 +41,18 @@ export default function FormularioEntrar() {
 
   return (
     <form action={enviar} className="flex w-full max-w-sm flex-col gap-3">
-      <label className="flex flex-col gap-1">
-        <span className="text-label font-semibold text-txt-2">E-mail</span>
-        <input
-          name="email"
-          type="email"
-          autoComplete="email"
-          required
-          className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo text-txt"
-        />
-      </label>
-      <label className="flex flex-col gap-1">
-        <span className="text-label font-semibold text-txt-2">Senha</span>
-        <input
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          required
-          className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo text-txt"
-        />
-      </label>
-      {erro ? <p className="text-secundario text-bad">{erro}</p> : null}
+      <Input rotulo="E-mail" name="email" type="email" autoComplete="email" required />
+      <Input rotulo="Senha" name="password" type="password" autoComplete="current-password" required />
+      {erro ? (
+        <p role="alert" className="text-secundario text-bad">
+          {erro}
+        </p>
+      ) : null}
       <Button type="submit" largura="cheia" carregando={pendente}>
         Entrar
       </Button>
-      <Link href="/cadastro" className="text-center text-secundario text-txt-2">
-        Não tem conta? Cadastre-se
+      <Link href="/cadastro" className="grid h-12 place-items-center text-secundario text-txt-2 transition hover:text-txt">
+        Não tem conta? <span className="ml-1 font-semibold text-acc-2">Cadastre-se</span>
       </Link>
     </form>
   )

@@ -1,4 +1,4 @@
-import { AlertTriangle, Zap } from 'lucide-react'
+import { AlertTriangle, ChevronRight, Zap } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 
@@ -15,6 +15,17 @@ const COR_BARRA: Record<EstadoAgendamento, string> = {
   no_show: 'bg-bad',
   canceled: 'bg-bad',
   expired: 'bg-txt-3',
+}
+
+/** O rótulo do estado repete a cor da barra em texto — §4: nunca só cor. */
+const COR_ROTULO: Record<EstadoAgendamento, string> = {
+  pending: 'text-warn',
+  confirmed: 'text-ok',
+  arrived: 'text-info',
+  done: 'text-txt-3',
+  no_show: 'text-bad',
+  canceled: 'text-bad',
+  expired: 'text-txt-3',
 }
 
 const ROTULO_ESTADO: Record<EstadoAgendamento, string> = {
@@ -51,13 +62,29 @@ export default function AppointmentRow({
   alertaSaude,
   ...props
 }: Props) {
+  const concluido = status === 'done' || status === 'canceled' || status === 'expired'
+
   return (
-    <Card className={cn('flex overflow-hidden p-0 transition hover:border-line-2 hover:bg-surface-2', className)} {...props}>
+    <Card pressionavel className={cn('flex overflow-hidden p-0', className)} {...props}>
       <div aria-hidden className={cn('w-[3px] shrink-0', COR_BARRA[status])} />
-      <div className="flex flex-1 items-center gap-3 px-3 py-3">
-        <p className="tabular w-14 shrink-0 text-corpo font-semibold text-txt">{horario}</p>
+      <div className="flex flex-1 items-center gap-3 px-3.5 py-3">
+        {/*
+          O horário é a coluna que a pessoa varre com o olho para achar "que
+          horas é a próxima" — ganha peso próprio e a linha de estado embaixo,
+          em vez de o estado ficar solto na ponta direita competindo com o valor.
+        */}
+        <div className="w-[52px] shrink-0">
+          <p className={cn('tabular text-corpo font-bold', concluido ? 'text-txt-3' : 'text-txt')}>{horario}</p>
+          <p className={cn('text-label font-semibold', COR_ROTULO[status])}>{ROTULO_ESTADO[status]}</p>
+        </div>
+
         <div className="min-w-0 flex-1">
-          <p className="flex items-center gap-1 truncate text-corpo font-semibold text-txt">
+          <p
+            className={cn(
+              'flex items-center gap-1 truncate text-corpo font-semibold',
+              concluido ? 'text-txt-2' : 'text-txt',
+            )}
+          >
             {altoRisco ? (
               <span title="Risco alto de falta">
                 <Zap aria-hidden className="size-4 shrink-0 text-warn" />
@@ -77,7 +104,9 @@ export default function AppointmentRow({
             {profissionalNome ? ` · ${profissionalNome}` : ''}
           </p>
         </div>
-        <span className="shrink-0 text-label font-semibold text-txt-3">{ROTULO_ESTADO[status]}</span>
+
+        {/* A linha sempre abre o detalhe em sheet; a seta é o que diz isso sem texto. */}
+        <ChevronRight aria-hidden className="size-4 shrink-0 text-txt-3" />
       </div>
     </Card>
   )

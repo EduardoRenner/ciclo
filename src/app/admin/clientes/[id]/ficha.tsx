@@ -1,7 +1,6 @@
 'use client'
 
 import {
-  ArrowLeft,
   CalendarDays,
   Cake,
   Gift,
@@ -16,13 +15,15 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useMemo, useState, useTransition } from 'react'
 
+import Avatar from '@/components/ui/avatar'
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
+import IconButton from '@/components/ui/icon-button'
 import SectionHeader from '@/components/ui/section-header'
 import Sheet from '@/components/ui/sheet'
 import StatTile from '@/components/ui/stat-tile'
 import { useToast } from '@/components/ui/toast'
-import { dinheiro } from '@/lib/formato'
+import { dinheiro, formatarTelefone } from '@/lib/formato'
 import { camposDePreferencia } from '@/lib/preferencias'
 import { aplicarVariaveis, linkWhatsApp, precisaDeAgendamento } from '@/lib/mensagens'
 
@@ -70,11 +71,6 @@ const ROTULO_ORIGEM: Record<string, string> = {
   instagram: 'Instagram',
   google: 'Google',
   passou_na_frente: 'Passou na frente',
-}
-
-function formatarTelefone(e164: string | null): string | null {
-  const m = /^\+55(\d{2})(\d{4,5})(\d{4})$/.exec(e164 ?? '')
-  return m ? `(${m[1]}) ${m[2]}-${m[3]}` : e164
 }
 
 function dataCurta(iso: string | null): string {
@@ -207,14 +203,9 @@ export default function Ficha({
 
   return (
     <div className="pb-8">
-      <header className="flex items-center gap-2 py-5">
-        <Link
-          href="/admin/clientes"
-          aria-label="Voltar para a lista"
-          className="grid size-12 shrink-0 place-items-center rounded-[var(--radius-sm)] text-txt-2 transition-colors hover:bg-surface-2 hover:text-txt"
-        >
-          <ArrowLeft className="size-5" />
-        </Link>
+      {/* O voltar mora na Topbar desde o redesenho — dois numa tela só confundem. */}
+      <header className="flex items-center gap-3 py-5">
+        <Avatar nome={cliente.name} tamanho="lg" />
         <div className="min-w-0 flex-1">
           <h1 className="truncate text-titulo font-extrabold">{cliente.name}</h1>
           <p className="text-secundario text-txt-2">
@@ -222,14 +213,9 @@ export default function Ficha({
             {cliente.source ? ` · ${ROTULO_ORIGEM[cliente.source] ?? cliente.source}` : ''}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setEditando(true)}
-          aria-label="Editar ficha"
-          className="grid size-12 shrink-0 place-items-center rounded-[var(--radius-sm)] text-txt-2 transition-colors hover:bg-surface-2 hover:text-txt"
-        >
+        <IconButton onClick={() => setEditando(true)} aria-label="Editar ficha">
           <Pencil className="size-5" />
-        </button>
+        </IconButton>
       </header>
 
       {cliente.tags.length > 0 ? (

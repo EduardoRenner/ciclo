@@ -33,7 +33,7 @@ export default function ResolucaoDeFila() {
   if (conflitos.length === 0) return null
 
   return (
-    <div className="fixed inset-x-4 bottom-[calc(90px+env(safe-area-inset-bottom))] z-40 flex flex-col gap-2">
+    <div className="fixed inset-x-0 bottom-[calc(var(--tabbar-h)+env(safe-area-inset-bottom)+12px)] z-40 mx-auto flex w-full max-w-[560px] flex-col gap-2 px-[var(--gutter)]">
       {conflitos.map((m) => (
         <Card key={m.id} flutuante className="border-warn/50">
           <div className="flex items-start gap-2">
@@ -42,7 +42,7 @@ export default function ResolucaoDeFila() {
               <p className="text-secundario font-semibold text-txt">Uma alteração feita offline não pôde ser enviada</p>
               <p className="mt-0.5 text-label text-txt-2">O que mudou no servidor pode ter conflitado. Confira antes de tentar de novo.</p>
               <div className="mt-2 flex gap-3">
-                <button type="button" onClick={() => drenarFilaPendente()} className="text-label font-semibold text-acc-2 underline">
+                <button type="button" onClick={() => drenarFilaPendente()} className="toque-48 text-label font-semibold text-acc-2 underline">
                   Tentar de novo
                 </button>
                 <button
@@ -51,7 +51,7 @@ export default function ResolucaoDeFila() {
                     await removerMutacao(m.id)
                     setConflitos((atual) => atual.filter((x) => x.id !== m.id))
                   }}
-                  className="text-label font-semibold text-txt-3 underline"
+                  className="toque-48 text-label font-semibold text-txt-3 underline"
                 >
                   Descartar
                 </button>

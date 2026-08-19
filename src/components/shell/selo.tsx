@@ -3,7 +3,7 @@ export default function Selo() {
   return (
     <div
       aria-hidden
-      className="flex size-14 items-center justify-center rounded-[var(--radius-pill)] bg-[linear-gradient(135deg,var(--acc),var(--acc-2))] text-titulo font-extrabold text-[#0a0a0f]"
+      className="flex size-14 items-center justify-center rounded-[var(--radius-pill)] bg-[image:var(--grad-acc)] text-titulo font-extrabold text-on-acc shadow-fab"
     >
       C
     </div>

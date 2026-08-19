@@ -4,8 +4,11 @@ import Link from 'next/link'
 import { useState } from 'react'
 
 import Button from '@/components/ui/button'
+import Input from '@/components/ui/input'
+import PhoneInput from '@/components/ui/phone-input'
 
 export default function FormularioCadastro() {
+  const [telefone, setTelefone] = useState('')
   const [pendente, setPendente] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
   const [enviado, setEnviado] = useState(false)
@@ -48,53 +51,28 @@ export default function FormularioCadastro() {
 
   return (
     <form action={enviar} className="flex w-full max-w-sm flex-col gap-3">
-      <label className="flex flex-col gap-1">
-        <span className="text-label font-semibold text-txt-2">Nome completo</span>
-        <input
-          name="fullName"
-          autoComplete="name"
-          required
-          className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo text-txt"
-        />
-      </label>
-      <label className="flex flex-col gap-1">
-        <span className="text-label font-semibold text-txt-2">E-mail</span>
-        <input
-          name="email"
-          type="email"
-          autoComplete="email"
-          required
-          className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo text-txt"
-        />
-      </label>
-      <label className="flex flex-col gap-1">
-        <span className="text-label font-semibold text-txt-2">Telefone com DDD</span>
-        <input
-          name="phone"
-          type="tel"
-          placeholder="(11) 99999-9999"
-          autoComplete="tel"
-          required
-          className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo text-txt"
-        />
-      </label>
-      <label className="flex flex-col gap-1">
-        <span className="text-label font-semibold text-txt-2">Senha</span>
-        <input
-          name="password"
-          type="password"
-          autoComplete="new-password"
-          required
-          minLength={10}
-          className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo text-txt"
-        />
-      </label>
-      {erro ? <p className="text-secundario text-bad">{erro}</p> : null}
+      <Input rotulo="Nome completo" name="fullName" autoComplete="name" required />
+      <Input rotulo="E-mail" name="email" type="email" autoComplete="email" required />
+      <PhoneInput rotulo="Telefone com DDD" name="phone" valor={telefone} aoMudar={setTelefone} required />
+      <Input
+        rotulo="Senha"
+        name="password"
+        type="password"
+        autoComplete="new-password"
+        required
+        minLength={10}
+        ajuda="No mínimo 10 caracteres."
+      />
+      {erro ? (
+        <p role="alert" className="text-secundario text-bad">
+          {erro}
+        </p>
+      ) : null}
       <Button type="submit" largura="cheia" carregando={pendente}>
         Criar conta
       </Button>
-      <Link href="/entrar" className="text-center text-secundario text-txt-2">
-        Já tem conta? Entrar
+      <Link href="/entrar" className="grid h-12 place-items-center text-secundario text-txt-2 transition hover:text-txt">
+        Já tem conta? <span className="ml-1 font-semibold text-acc-2">Entrar</span>
       </Link>
     </form>
   )

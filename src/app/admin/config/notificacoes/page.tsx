@@ -1,4 +1,5 @@
 import AtivarPush from './ativar'
+import PageHeader from '@/components/ui/page-header'
 
 /**
  * Página sem nenhum fetch de servidor, então o Next tentava pré-renderizar
@@ -13,10 +14,7 @@ export const dynamic = 'force-dynamic'
 export default function PaginaNotificacoes() {
   return (
     <>
-      <header className="py-6">
-        <h1 className="text-titulo font-extrabold">Notificações</h1>
-        <p className="mt-1 text-secundario text-txt-2">Web Push — funciona com o app instalado, mesmo em segundo plano.</p>
-      </header>
+      <PageHeader titulo="Notificações" descricao="Web Push — funciona com o app instalado, mesmo em segundo plano." />
 
       <AtivarPush />
     </>

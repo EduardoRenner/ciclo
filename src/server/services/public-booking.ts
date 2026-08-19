@@ -42,6 +42,8 @@ async function tenantPeloSlug(svc: Cliente, slug: string) {
 export type PerfilPublico = {
   name: string
   slug: string
+  /** Fuso do salão — a página pública precisa dizer "hoje" no horário de quem atende, não no do servidor. */
+  timezone: string
   phone: string | null
   address: string | null
   tagline: string | null
@@ -93,6 +95,7 @@ export const perfilPublico = cache(async (slug: string): Promise<PerfilPublico> 
     return {
       name: tenant.name,
       slug: tenant.slug,
+      timezone: tenant.timezone,
       phone: tenant.phone,
       address: typeof tenant.address === 'string' ? tenant.address : null,
       tagline: site.tagline ?? null,

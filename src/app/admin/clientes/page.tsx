@@ -1,8 +1,10 @@
-import { Cake, TriangleAlert, UserPlus } from 'lucide-react'
+import { Cake, UserPlus } from 'lucide-react'
 import Link from 'next/link'
 import { headers } from 'next/headers'
 
+import AlertBanner from '@/components/ui/alert-banner'
 import Card from '@/components/ui/card'
+import PageHeader from '@/components/ui/page-header'
 import StatTile from '@/components/ui/stat-tile'
 import { dinheiro } from '@/lib/formato'
 import { contextoAtual } from '@/server/auth/tenant'
@@ -22,24 +24,25 @@ export default async function PaginaClientes() {
 
   return (
     <>
-      <header className="flex items-center gap-3 py-6">
-        <div className="min-w-0 flex-1">
-          <h1 className="text-titulo font-extrabold">Clientes</h1>
-          <p className="mt-1 text-secundario text-txt-2">
-            {painel.total} na carteira
-            {painel.novosNoMes > 0 ? ` · ${painel.novosNoMes} ${painel.novosNoMes === 1 ? 'cadastro' : 'cadastros'} esse mês` : ''}
-          </p>
-        </div>
-        {/* Antes só existia caminho para cadastrar quando a lista estava vazia — com um cliente
-            que fosse, o botão sumia e não havia mais como registrar ninguém pela tela. */}
-        <Link
-          href="/admin/clientes/nova"
-          aria-label="Cadastrar cliente"
-          className="grid size-12 shrink-0 place-items-center rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 text-txt transition-colors hover:bg-surface-3"
-        >
-          <UserPlus className="size-5" />
-        </Link>
-      </header>
+      <PageHeader
+        titulo="Clientes"
+        descricao={`${painel.total} na carteira${
+          painel.novosNoMes > 0
+            ? ` · ${painel.novosNoMes} ${painel.novosNoMes === 1 ? 'cadastro' : 'cadastros'} esse mês`
+            : ''
+        }`}
+        acao={
+          /* Antes só existia caminho para cadastrar quando a lista estava vazia — com um cliente
+             que fosse, o botão sumia e não havia mais como registrar ninguém pela tela. */
+          <Link
+            href="/admin/clientes/nova"
+            aria-label="Cadastrar cliente"
+            className="grid size-12 place-items-center rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 text-txt transition duration-[var(--dur-1)] hover:bg-surface-3 active:scale-[.94]"
+          >
+            <UserPlus className="size-5" />
+          </Link>
+        }
+      />
 
       <div className="mb-4 grid grid-cols-2 gap-3">
         <StatTile rotulo="Ticket médio" valor={dinheiro.format(painel.ticketMedioCents / 100)} />
@@ -54,15 +57,11 @@ export default async function PaginaClientes() {
       {(painel.emRisco > 0 || painel.aniversariantes > 0) && (
         <div className="mb-5 grid gap-2">
           {painel.emRisco > 0 ? (
-            <Link href="/admin/recuperar" className="block">
-              <Card className="flex items-center gap-3 border-warn/30 bg-warn/5 transition-colors hover:bg-warn/10">
-                <TriangleAlert className="size-5 shrink-0 text-warn" />
-                <p className="flex-1 text-corpo">
-                  <span className="font-semibold">{painel.emRisco}</span>{' '}
-                  {painel.emRisco === 1 ? 'cliente está sumindo' : 'clientes estão sumindo'}
-                </p>
-                <span className="shrink-0 text-secundario text-warn">Recuperar</span>
-              </Card>
+            <Link href="/admin/recuperar" className="block transition active:scale-[.99]">
+              <AlertBanner tom="warn" acao={<span className="text-warn">Recuperar</span>}>
+                <span className="font-semibold">{painel.emRisco}</span>{' '}
+                {painel.emRisco === 1 ? 'cliente está sumindo' : 'clientes estão sumindo'}
+              </AlertBanner>
             </Link>
           ) : null}
           {painel.aniversariantes > 0 ? (

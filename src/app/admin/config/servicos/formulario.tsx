@@ -3,9 +3,11 @@
 import { useState, useTransition } from 'react'
 
 import Button from '@/components/ui/button'
+import Input from '@/components/ui/input'
+import MoneyInput from '@/components/ui/money-input'
 import Sheet from '@/components/ui/sheet'
+import Textarea from '@/components/ui/textarea'
 import { useToast } from '@/components/ui/toast'
-import { centavosParaReais, paraReaisCentavos } from '@/lib/formato'
 
 export type ServicoEditavel = {
   id: string
@@ -40,7 +42,9 @@ export default function FormularioServico({ aberto, aoFechar, servico, aoSalvar 
   const [nome, setNome] = useState(servico?.name ?? '')
   const [descricao, setDescricao] = useState(servico?.description ?? '')
   const [duracao, setDuracao] = useState(String(servico?.duration_min ?? 30))
-  const [preco, setPreco] = useState(servico ? centavosParaReais(servico.price_cents) : '')
+  // Centavos direto no estado: com o `MoneyInput` não existe mais estado
+  // intermediário inválido ("35," pela metade) para validar depois.
+  const [precoCentavos, setPrecoCentavos] = useState(servico?.price_cents ?? 0)
   const [cicloDias, setCicloDias] = useState(String(servico?.cycle_days ?? 21))
   const [preparoAntes, setPreparoAntes] = useState(String(servico?.buffer_before_min ?? 0))
   const [preparoDepois, setPreparoDepois] = useState(String(servico?.buffer_after_min ?? 0))
@@ -51,11 +55,6 @@ export default function FormularioServico({ aberto, aoFechar, servico, aoSalvar 
 
   function enviar(formData: FormData) {
     setErro(null)
-    const precoCentavos = paraReaisCentavos(preco)
-    if (precoCentavos === null) {
-      setErro('Digite um preço válido, como 35,90.')
-      return
-    }
 
     const corpo = {
       name: String(formData.get('nome') ?? nome).trim(),
@@ -91,95 +90,71 @@ export default function FormularioServico({ aberto, aoFechar, servico, aoSalvar 
   return (
     <Sheet aberto={aberto} aoFechar={(a) => !a && aoFechar()} titulo={editando ? 'Editar serviço' : 'Novo serviço'}>
       <form action={enviar} className="flex flex-col gap-3">
-        <label className="flex flex-col gap-1">
-          <span className="text-label font-semibold text-txt-2">Nome</span>
-          <input
-            name="nome"
-            value={nome}
-            onChange={(e) => setNome(e.target.value)}
-            required
-            className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo text-txt"
-          />
-        </label>
-        <label className="flex flex-col gap-1">
-          <span className="text-label font-semibold text-txt-2">Descrição (opcional)</span>
-          <textarea
-            value={descricao}
-            onChange={(e) => setDescricao(e.target.value)}
-            rows={2}
-            className="rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 py-2 text-corpo text-txt"
-          />
-        </label>
+        <Input rotulo="Nome" name="nome" value={nome} onChange={(e) => setNome(e.target.value)} required />
+
+        <Textarea
+          rotulo="Descrição (opcional)"
+          value={descricao}
+          onChange={(e) => setDescricao(e.target.value)}
+          rows={2}
+        />
+
         <div className="grid grid-cols-2 gap-3">
-          <label className="flex flex-col gap-1">
-            <span className="text-label font-semibold text-txt-2">Duração (min)</span>
-            <input
-              type="number"
-              inputMode="numeric"
-              min={5}
-              max={720}
-              value={duracao}
-              onChange={(e) => setDuracao(e.target.value)}
-              required
-              className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo tabular text-txt"
-            />
-          </label>
-          <label className="flex flex-col gap-1">
-            <span className="text-label font-semibold text-txt-2">Preço (R$)</span>
-            <input
-              inputMode="decimal"
-              placeholder="0,00"
-              value={preco}
-              onChange={(e) => setPreco(e.target.value)}
-              required
-              className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo tabular text-txt"
-            />
-          </label>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <label className="flex flex-col gap-1">
-            <span className="text-label font-semibold text-txt-2">Preparo antes (min)</span>
-            <input
-              type="number"
-              inputMode="numeric"
-              min={0}
-              max={240}
-              value={preparoAntes}
-              onChange={(e) => setPreparoAntes(e.target.value)}
-              className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo tabular text-txt"
-            />
-          </label>
-          <label className="flex flex-col gap-1">
-            <span className="text-label font-semibold text-txt-2">Limpeza depois (min)</span>
-            <input
-              type="number"
-              inputMode="numeric"
-              min={0}
-              max={240}
-              value={preparoDepois}
-              onChange={(e) => setPreparoDepois(e.target.value)}
-              className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo tabular text-txt"
-            />
-          </label>
-        </div>
-        <label className="flex flex-col gap-1">
-          <span className="text-label font-semibold text-txt-2">Volta em quantos dias, em média</span>
-          <input
+          <Input
+            rotulo="Duração (min)"
             type="number"
             inputMode="numeric"
-            min={1}
-            max={365}
-            value={cicloDias}
-            onChange={(e) => setCicloDias(e.target.value)}
-            className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo tabular text-txt"
+            min={5}
+            max={720}
+            value={duracao}
+            onChange={(e) => setDuracao(e.target.value)}
+            required
+            classNameCampo="tabular"
           />
-        </label>
-        <label className="flex items-center gap-2 py-1">
+          <MoneyInput rotulo="Preço" centavos={precoCentavos} aoMudar={setPrecoCentavos} required />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Input
+            rotulo="Preparo antes (min)"
+            type="number"
+            inputMode="numeric"
+            min={0}
+            max={240}
+            value={preparoAntes}
+            onChange={(e) => setPreparoAntes(e.target.value)}
+            classNameCampo="tabular"
+          />
+          <Input
+            rotulo="Limpeza depois (min)"
+            type="number"
+            inputMode="numeric"
+            min={0}
+            max={240}
+            value={preparoDepois}
+            onChange={(e) => setPreparoDepois(e.target.value)}
+            classNameCampo="tabular"
+          />
+        </div>
+
+        <Input
+          rotulo="Volta em quantos dias, em média"
+          type="number"
+          inputMode="numeric"
+          min={1}
+          max={365}
+          value={cicloDias}
+          onChange={(e) => setCicloDias(e.target.value)}
+          classNameCampo="tabular"
+          ajuda="É o que o Motor de Ciclo usa até aprender o ritmo de cada cliente."
+        />
+
+        <label className="flex min-h-12 items-center gap-3 py-1">
           <input
             type="checkbox"
             checked={apareceNoSite}
             onChange={(e) => setApareceNoSite(e.target.checked)}
-            className="size-5 rounded border-line-2 bg-surface-2"
+            className="size-5 shrink-0 accent-[var(--acc-2)]"
           />
           <span className="text-corpo text-txt">Aparece no site para agendamento online</span>
         </label>

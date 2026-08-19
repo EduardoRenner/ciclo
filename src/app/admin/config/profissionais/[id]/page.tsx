@@ -8,6 +8,7 @@ import { listarFolgas } from '@/server/services/folgas'
 import { listarProfissionais } from '@/server/services/profissionais'
 
 import EditorExpediente from '@/components/config/editor-expediente'
+import PageHeader from '@/components/ui/page-header'
 
 export default async function PaginaExpediente({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -25,10 +26,7 @@ export default async function PaginaExpediente({ params }: { params: Promise<{ i
 
   return (
     <>
-      <header className="py-6">
-        <h1 className="text-titulo font-extrabold">{profissional.display_name}</h1>
-        <p className="mt-1 text-secundario text-txt-2">Expediente e folgas.</p>
-      </header>
+      <PageHeader titulo={profissional.display_name} descricao="Expediente e folgas." />
 
       <EditorExpediente professionalId={id} expedienteInicial={expediente} folgasIniciais={folgas} />
     </>

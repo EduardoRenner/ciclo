@@ -22,7 +22,7 @@ export default function NaoEncontrado() {
       </div>
       <Link
         href="/"
-        className="rounded-[var(--radius-sm)] bg-[linear-gradient(135deg,var(--acc),var(--acc-2))] px-5 py-3 text-corpo font-semibold text-[#0a0a0f] transition hover:brightness-110 active:scale-[.98]"
+        className="inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-sm)] bg-[image:var(--grad-acc)] px-5 text-corpo font-semibold text-on-acc shadow-elevado transition duration-[var(--dur-1)] hover:brightness-110 active:scale-[.97]"
       >
         Voltar ao início
       </Link>

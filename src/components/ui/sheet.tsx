@@ -26,14 +26,18 @@ export default function Sheet({ aberto, aoFechar, titulo, descricao, gatilho, cl
       {gatilho ? <Dialog.Trigger asChild>{gatilho}</Dialog.Trigger> : null}
 
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-black/60 data-[state=open]:animate-in data-[state=open]:fade-in" />
+        <Dialog.Overlay className="fixed inset-0 z-40 bg-overlay backdrop-blur-[2px] data-[state=open]:animate-in data-[state=open]:fade-in" />
 
         <Dialog.Content
           className={cn(
-            'fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto',
-            'rounded-t-[var(--radius)] border-t border-line-2 bg-surface shadow-flutuante',
+            // `mx-auto max-w-[560px]` acompanha a coluna do app: sem isto o
+            // sheet nascia com a largura do monitor enquanto o conteúdo atrás
+            // dele vivia numa coluna de 560px.
+            'fixed inset-x-0 bottom-0 z-50 mx-auto max-h-[85vh] w-full max-w-[560px] overflow-y-auto overscroll-contain',
+            'rounded-t-[var(--radius-sheet)] border-t border-line-2 bg-surface shadow-flutuante',
             // A folga extra embaixo é a área do gesto de voltar do iPhone.
-            'px-[18px] pb-[calc(24px+env(safe-area-inset-bottom))] pt-3',
+            'px-[var(--gutter)] pb-[calc(24px+env(safe-area-inset-bottom))] pt-3',
+            'duration-[var(--dur-3)] ease-[var(--ease-ios)]',
             'data-[state=open]:animate-in data-[state=open]:slide-in-from-bottom',
             className,
           )}

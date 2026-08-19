@@ -6,6 +6,7 @@ import { lerConfigFidelidade, listarPlanos } from '@/server/services/fidelidade'
 
 import EditorFidelidade from './fidelidade-config'
 import EditorPlanos from './editor'
+import PageHeader from '@/components/ui/page-header'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,10 +20,7 @@ export default async function PaginaPlanos() {
 
   return (
     <>
-      <header className="py-6">
-        <h1 className="text-titulo font-extrabold">Fidelidade e assinatura</h1>
-        <p className="mt-1 text-secundario text-txt-2">Como o cliente ganha pontos e os planos mensais que pode assinar.</p>
-      </header>
+      <PageHeader titulo="Fidelidade e assinatura" descricao="Como o cliente ganha pontos e os planos mensais que pode assinar." />
 
       <EditorFidelidade inicial={lerConfigFidelidade(negocio.data?.settings)} />
       <div className="mt-7">

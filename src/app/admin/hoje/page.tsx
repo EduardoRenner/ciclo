@@ -2,6 +2,7 @@ import { ExternalLink } from 'lucide-react'
 import { headers } from 'next/headers'
 import Link from 'next/link'
 
+import PageHeader from '@/components/ui/page-header'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { centralDeAcoes } from '@/server/services/crm'
@@ -10,41 +11,63 @@ import { resumoDeHoje } from '@/server/services/resumo-hoje'
 import CentralDeAcoes from './central-de-acoes'
 import Hoje from './hoje'
 
+/** Saudação pelo horário do salão, não pelo do servidor (que roda em UTC na Vercel). */
+function saudacao(timezone: string): string {
+  const hora = Number(new Intl.DateTimeFormat('pt-BR', { hour: 'numeric', hour12: false, timeZone: timezone }).format(new Date()))
+  if (hora < 12) return 'Bom dia'
+  if (hora < 18) return 'Boa tarde'
+  return 'Boa noite'
+}
+
 export default async function PaginaHoje() {
   const ctx = await contextoAtual(new Request('https://interno/hoje', { headers: await headers() }))
   const db = await criarClienteDoUsuario()
 
   const { data: tenantRow } = await db.from('tenants').select('name, slug, timezone').eq('id', ctx.tenantId).single()
+  const timezone = tenantRow?.timezone ?? 'America/Sao_Paulo'
   const [resumo, acoes] = await Promise.all([
-    resumoDeHoje(db, ctx.tenantId, tenantRow?.timezone ?? 'America/Sao_Paulo'),
+    resumoDeHoje(db, ctx.tenantId, timezone),
     // Nunca derruba "Hoje": um resumo de CRM que falhar vira lista vazia, não erro na tela mais
     // importante do app.
     centralDeAcoes(db, ctx.tenantId).catch(() => []),
   ])
 
+  const data = new Intl.DateTimeFormat('pt-BR', {
+    weekday: 'long',
+    day: '2-digit',
+    month: 'long',
+    timeZone: timezone,
+  }).format(new Date())
+
   return (
     <>
-      <header className="flex items-start justify-between gap-3 py-6">
-        <div>
-          <p className="text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">
-            {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
-          </p>
-          <h1 className="mt-1 text-titulo font-extrabold">{tenantRow?.name ?? 'Hoje'}</h1>
-        </div>
-        {tenantRow?.slug ? (
-          <Link
-            href={`/${tenantRow.slug}`}
-            target="_blank"
-            className="mt-1 flex shrink-0 items-center gap-1 text-label font-semibold text-acc-2"
-          >
-            Ver meu site
-            <ExternalLink aria-hidden className="size-3.5" />
-          </Link>
-        ) : null}
-      </header>
+      {/*
+        O nome do salão era o título da tela — informação de peso zero (a pessoa
+        sabe onde trabalha) ocupando o lugar mais nobre do app. O título passa a
+        ser a saudação, que datava a tela e ancora o "agora"; o nome vira apoio,
+        que ainda importa para quem gerencia mais de uma unidade.
+      */}
+      <PageHeader
+        overline={data}
+        titulo={saudacao(timezone)}
+        descricao={tenantRow?.name ?? undefined}
+        acao={
+          tenantRow?.slug ? (
+            <Link
+              href={`/${tenantRow.slug}`}
+              target="_blank"
+              className="flex h-12 items-center gap-1 text-label font-semibold text-acc-2 transition active:scale-[.97]"
+            >
+              Ver meu site
+              <ExternalLink aria-hidden className="size-3.5" />
+            </Link>
+          ) : null
+        }
+      />
 
-      <CentralDeAcoes acoes={acoes} />
-      <Hoje resumo={resumo} />
+      <Hoje resumo={resumo}>
+        <CentralDeAcoes acoes={acoes} />
+      </Hoje>
     </>
   )
 }

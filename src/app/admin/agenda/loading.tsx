@@ -4,7 +4,7 @@ import Skeleton from '@/components/ui/skeleton'
 export default function CarregandoAgenda() {
   return (
     <>
-      <header className="py-6">
+      <header className="pb-5 pt-6">
         <Skeleton className="h-7 w-32" />
       </header>
 

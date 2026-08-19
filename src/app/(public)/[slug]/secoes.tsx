@@ -1,12 +1,35 @@
-import { AtSign, MapPin, MessageCircle, Phone } from 'lucide-react'
+import { AtSign, CalendarPlus, Clock, MapPin, MessageCircle, Phone } from 'lucide-react'
 import Link from 'next/link'
 
+import Badge from '@/components/ui/badge'
 import Card from '@/components/ui/card'
 import { dinheiro, duracao } from '@/lib/formato'
 
 import type { PerfilPublico } from '@/server/services/public-booking'
 
 const DIAS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
+
+/** Dia da semana e hora atuais **no fuso do salão** — a Vercel roda em UTC. */
+function agoraNoSalao(timezone: string): { weekday: number; minutos: number } {
+  const partes = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    weekday: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(new Date())
+  const dias = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  const achar = (tipo: string) => partes.find((parte) => parte.type === tipo)?.value ?? ''
+  return {
+    weekday: Math.max(0, dias.indexOf(achar('weekday'))),
+    minutos: Number(achar('hour')) * 60 + Number(achar('minute')),
+  }
+}
+
+function paraMinutos(hhmm: string): number {
+  const [h, m] = hhmm.split(':')
+  return Number(h) * 60 + Number(m)
+}
 
 function linkWhatsapp(numero: string, mensagem: string): string {
   const digitos = numero.replace(/\D/g, '')
@@ -23,16 +46,50 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
   const temContato = perfil.phone || perfil.whatsapp || perfil.address || perfil.instagram
   const temHorario = perfil.hours.length > 0
 
+  const agora = agoraNoSalao(perfil.timezone)
+  const blocosDeHoje = perfil.hours.filter((h) => h.weekday === agora.weekday)
+  const blocoAberto = blocosDeHoje.find(
+    (h) => agora.minutos >= paraMinutos(h.opensAt) && agora.minutos < paraMinutos(h.closesAt),
+  )
+  const fechaHoje = blocoAberto?.closesAt.slice(0, 5)
+  // Só anuncia "abre hoje às" se ainda vai abrir; depois do expediente a frase seria mentira.
+  const abreHoje = blocosDeHoje
+    .filter((h) => paraMinutos(h.opensAt) > agora.minutos)
+    .sort((a, b) => paraMinutos(a.opensAt) - paraMinutos(b.opensAt))[0]
+    ?.opensAt.slice(0, 5)
+
   return (
     <>
-      <section className="flex flex-col items-center gap-4 py-10 text-center">
-        <h1 className="text-titulo font-extrabold">{perfil.name}</h1>
+      {/*
+        O rosto do negócio abria com um título do tamanho de tela interna sobre
+        fundo preto liso — idêntico a qualquer tela do admin. Agora tem o brilho
+        do acento **do salão** (o `--acc` já vem do layout por tenant), nome em
+        tamanho de manchete e o sinal que toda cliente procura primeiro: está
+        aberto agora?
+      */}
+      <section className="relative -mx-[var(--gutter)] flex flex-col items-center gap-4 overflow-hidden px-[var(--gutter)] pb-8 pt-12 text-center">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 -z-10"
+          style={{ background: 'radial-gradient(80% 55% at 50% -10%, var(--acc-soft), transparent 72%)' }}
+        />
+        <h1 className="text-numero font-extrabold">{perfil.name}</h1>
         {perfil.tagline ? <p className="max-w-sm text-corpo text-txt-2">{perfil.tagline}</p> : null}
+
+        {temHorario ? (
+          blocoAberto ? (
+            <Badge estado="ok">Aberto agora{fechaHoje ? ` · até ${fechaHoje}` : ''}</Badge>
+          ) : (
+            <Badge estado="warn">{abreHoje ? `Abre hoje às ${abreHoje}` : 'Fechado agora'}</Badge>
+          )
+        ) : null}
+
         <div className="flex flex-wrap justify-center gap-3">
           <Link
             href={`/${perfil.slug}/agendar`}
-            className="rounded-[var(--radius-sm)] bg-[linear-gradient(135deg,var(--acc),var(--acc-2))] px-5 py-3 text-corpo font-semibold text-[#0a0a0f] transition hover:brightness-110 active:scale-[.98]"
+            className="inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-sm)] bg-[image:var(--grad-acc)] px-5 text-corpo font-semibold text-on-acc shadow-elevado transition duration-[var(--dur-1)] hover:brightness-110 active:scale-[.97]"
           >
+            <CalendarPlus aria-hidden className="size-4" />
             Agendar horário
           </Link>
           {perfil.whatsapp ? (
@@ -40,7 +97,7 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
               href={linkWhatsapp(perfil.whatsapp, `Oi! Vim pelo site da ${perfil.name}.`)}
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-2 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-5 py-3 text-corpo font-semibold text-txt transition hover:bg-surface-3 active:scale-[.98]"
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-5 text-corpo font-semibold text-txt transition duration-[var(--dur-1)] hover:bg-surface-3 active:scale-[.97]"
             >
               <MessageCircle aria-hidden className="size-4" />
               Falar no WhatsApp
@@ -54,7 +111,7 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
           <h2 className="mb-3 text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">Serviços</h2>
           <div className="flex flex-col gap-2">
             {perfil.services.map((s) => (
-              <Card key={s.id}>
+              <Card key={s.id} pressionavel>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="text-corpo font-semibold">{s.name}</p>
@@ -80,14 +137,22 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
 
       {temHorario ? (
         <section className="py-6">
-          <h2 className="mb-3 text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">Horário</h2>
+          <h2 className="mb-3 flex items-center gap-1.5 text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">
+            <Clock aria-hidden className="size-3.5" />
+            Horário
+          </h2>
           <Card>
             <ul className="flex flex-col gap-1">
               {DIAS.map((nome, weekday) => {
                 const blocos = perfil.hours.filter((h) => h.weekday === weekday)
                 return (
-                  <li key={weekday} className="flex items-center justify-between text-secundario">
-                    <span className="text-txt-2">{nome}</span>
+                  <li
+                    key={weekday}
+                    className={`flex items-center justify-between text-secundario ${
+                      weekday === agora.weekday ? 'font-semibold' : ''
+                    }`}
+                  >
+                    <span className={weekday === agora.weekday ? 'text-acc-2' : 'text-txt-2'}>{nome}</span>
                     <span className="tabular text-txt">
                       {blocos.length === 0 ? 'Fechado' : blocos.map((b) => `${b.opensAt.slice(0, 5)}–${b.closesAt.slice(0, 5)}`).join(', ')}
                     </span>

@@ -22,7 +22,7 @@ export default function CentralDeAcoes({ acoes }: { acoes: AcaoSugerida[] }) {
       <div className="grid gap-2">
         {acoes.map((acao) => (
           <Link key={acao.chave} href={acao.href} className="block">
-            <Card className={`flex items-center gap-3 transition-colors hover:bg-surface-2 ${TOM[acao.tom]}`}>
+            <Card pressionavel className={`flex items-center gap-3 ${TOM[acao.tom]}`}>
               <div className="min-w-0 flex-1">
                 <p className="text-corpo font-semibold">{acao.titulo}</p>
                 <p className="mt-0.5 text-secundario text-txt-2">{acao.descricao}</p>

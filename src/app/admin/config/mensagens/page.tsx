@@ -5,6 +5,7 @@ import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { listarModelos } from '@/server/services/mensagens-prontas'
 
 import EditorModelos from './editor'
+import PageHeader from '@/components/ui/page-header'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,12 +20,7 @@ export default async function PaginaMensagens() {
 
   return (
     <>
-      <header className="py-6">
-        <h1 className="text-titulo font-extrabold">Mensagens prontas</h1>
-        <p className="mt-1 text-secundario text-txt-2">
-          Escreva uma vez, mande com um toque. Use as variáveis para o texto sair com o nome de cada cliente.
-        </p>
-      </header>
+      <PageHeader titulo="Mensagens prontas" descricao="Escreva uma vez, mande com um toque. Use as variáveis para o texto sair com o nome de cada cliente." />
 
       <EditorModelos iniciais={modelos} nomeDoNegocio={negocio.data?.name ?? ''} />
     </>
