@@ -47,6 +47,16 @@ const ROTULO_STATUS: Record<string, string> = {
   arrived: 'Chegou',
 }
 
+/** `kind` é enum do banco; sem tradução a tela mostrava "campaign"/"no_show" cru para o dono. */
+const ROTULO_MENSAGEM: Record<string, string> = {
+  reminder: 'Lembrete',
+  confirmation: 'Confirmação',
+  cycle: 'Hora de voltar',
+  campaign: 'Campanha',
+  transactional: 'Aviso',
+  review: 'Pedido de avaliação',
+}
+
 const ROTULO_ORIGEM: Record<string, string> = {
   indicacao: 'Indicação',
   instagram: 'Instagram',
@@ -351,7 +361,7 @@ export default function Ficha({
           <Card className="divide-y divide-line p-0">
             {mensagens.slice(0, 6).map((m) => (
               <div key={m.id} className="flex items-center justify-between gap-3 px-4 py-3">
-                <span className="truncate text-corpo">{m.kind}</span>
+                <span className="truncate text-corpo">{ROTULO_MENSAGEM[m.kind] ?? m.kind}</span>
                 <span className="shrink-0 text-secundario text-txt-3">{dataCurta(m.createdAt)}</span>
               </div>
             ))}

@@ -1394,3 +1394,19 @@ alvo cresce, o desenho não. Ficaram de fora, de propósito, os chips de filtro 
 o `03-DESIGN-SYSTEM` define chip com altura 32 por especificação, e mudar isso seria alterar a
 linguagem visual do projeto por conta própria, não corrigir um defeito. Nenhuma das telas novas
 tem rolagem horizontal a 390px.
+
+2026-08-19 · Polimento contra o próprio checklist, achado relendo as telas como quem usa e não
+como quem escreveu: (1) a ficha mostrava o `kind` cru da mensagem — o dono lia "campaign" e
+"transactional", valor de enum do banco vazando para a interface; ganhou tradução. (2) Os cartões
+de segmento da campanha ficavam desabilitados quando o grupo estava vazio, **sem dizer por quê**
+— o `03-DESIGN-SYSTEM §4` proíbe exatamente isso; agora a própria linha explica ("Ninguém se
+encaixa nesse grupo agora"), com `title` para mouse e leitor de tela, e o hover some junto com a
+ação. (3) Se todos os modelos do negócio falarem de data/hora, a seção "O que mandar" da campanha
+ficaria vazia e sem explicação, parecendo tela quebrada — ganhou estado vazio com o motivo e
+atalho para criar um modelo sem data.
+
+O `seed-demo-barbearia.mjs` passou a montar o payload de cliente por lista explícita de colunas
+em vez de desestruturar-para-descartar (`{ __servico, ...c }`), que deixava três variáveis "não
+usadas" acusadas pelo lint. E o cabeçalho do script agora documenta o passo que faltava: **depois
+de semear é preciso forçar o Motor de Ciclo**, senão `client_cycles` fica vazio (o cron só passa
+às 3h no fuso do tenant) e a tela "Recuperar" e o selo de ciclo da ficha nascem vazios.

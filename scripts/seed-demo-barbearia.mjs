@@ -3,9 +3,19 @@
  * (clientes fiéis, clientes que sumiram, aniversariantes, faltas, ticket alto) para as telas
  * de CRM nascerem cheias. Nenhum dado de cliente de verdade é tocado.
  *
- *   node scripts/seed-demo-barbearia.mjs
+ *   DEMO_SENHA='...' node scripts/seed-demo-barbearia.mjs
  *
  * Rodar de novo apaga e recria do zero (o tenant cai por slug, o resto vai junto no cascade).
+ *
+ * DEPOIS DE RODAR, falta o Motor de Ciclo: `client_cycles` é preenchido por um cron que só passa
+ * às 3h da manhã no fuso do tenant, então sem forçar o cálculo as telas "Recuperar" e o selo de
+ * ciclo da ficha nascem vazias. Como `recomputarCiclosDoTenant` é TypeScript com alias de path
+ * (que um `.mjs` solto não resolve), o jeito mais curto é um teste temporário:
+ *
+ *   1. crie `tests/integration/_ciclos.test.ts` chamando `recalcularSegmentosDoTenant` e
+ *      `recomputarCiclosDoTenant` para o tenant de slug `dom-rocha`;
+ *   2. `npx vitest run tests/integration/_ciclos.test.ts`;
+ *   3. apague o arquivo.
  */
 import { createCipheriv, randomBytes } from 'node:crypto'
 import { readFileSync } from 'node:fs'
@@ -240,9 +250,25 @@ const linhasClientes = CLIENTES.map(([nome, tel, servico, cadencia, ultimaHa, ta
   }
 })
 
+// `__servico`/`__cadencia`/`__ultimaHa` só existem para gerar o histórico depois; a tabela não
+// tem essas colunas. Montar o payload explicitamente é mais claro que desestruturar para
+// descartar — e não deixa variável "não usada" espalhada pelo arquivo.
+const COLUNAS_CLIENTE = [
+  'tenant_id',
+  'name',
+  'created_at',
+  'phone_e164',
+  'birth_date',
+  'tags',
+  'preferences',
+  'source',
+  'notes',
+  'marketing_opt_in',
+]
+
 const { data: clientesCriados, error: erroClientes } = await svc
   .from('clients')
-  .insert(linhasClientes.map(({ __servico, __cadencia, __ultimaHa, ...c }) => c))
+  .insert(linhasClientes.map((linha) => Object.fromEntries(COLUNAS_CLIENTE.map((c) => [c, linha[c]]))))
   .select('id, name')
 precisa(erroClientes, 'criar clientes')
 

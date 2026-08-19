@@ -39,6 +39,12 @@ export default function NovaCampanha({
 
   const publico = segmento ? (publicoPorSegmento[segmento.valor] ?? []) : []
 
+  /**
+   * Modelo que fala de data/hora/serviço depende de um horário marcado — em disparo para 14
+   * pessoas de uma vez esse horário não existe, e o texto sairia "no dia às ." na cara delas.
+   */
+  const modelosParaLote = modelos.filter((m) => !precisaDeAgendamento(m.body))
+
   function registrar() {
     if (!segmento || !modelo) return
     iniciarRegistro(async () => {
@@ -87,19 +93,24 @@ export default function NovaCampanha({
                 key={s.valor}
                 type="button"
                 disabled={quantos === 0}
+                // §4: nunca desabilitar sem explicar. O motivo aparece na própria linha (texto
+                // abaixo) e no `title`, para quem chega pelo leitor de tela ou pelo mouse.
+                title={quantos === 0 ? 'Ninguém se encaixa nesse grupo agora.' : undefined}
                 onClick={() => {
                   setSegmento(s)
                   setEnviados(new Set())
                 }}
-                className="text-left disabled:opacity-40"
+                className="text-left disabled:opacity-60"
               >
                 <Card
-                  className={`transition-colors ${escolhido ? 'border-acc bg-acc-soft' : 'hover:border-acc/40 hover:bg-surface-2'}`}
+                  className={`transition-colors ${escolhido ? 'border-acc bg-acc-soft' : quantos > 0 ? 'hover:border-acc/40 hover:bg-surface-2' : ''}`}
                 >
                   <div className="flex items-center gap-3">
                     <div className="min-w-0 flex-1">
                       <p className="text-corpo font-semibold">{s.rotulo}</p>
-                      <p className="text-secundario text-txt-2">{s.descricao}</p>
+                      <p className="text-secundario text-txt-2">
+                        {quantos === 0 ? 'Ninguém se encaixa nesse grupo agora.' : s.descricao}
+                      </p>
                     </div>
                     <span className="tabular shrink-0 text-corpo font-bold">{quantos}</span>
                   </div>
@@ -115,25 +126,34 @@ export default function NovaCampanha({
         <section className="mt-7">
           <SectionHeader>O que mandar</SectionHeader>
           <div className="grid gap-2">
-            {/* Modelo que fala de data/hora/serviço depende de um horário marcado — em disparo
-                para 14 pessoas de uma vez não existe esse horário, e o texto sairia furado. */}
-            {modelos
-              .filter((m) => !precisaDeAgendamento(m.body))
-              .map((m) => {
-                const escolhido = modelo?.id === m.id
-                return (
-                  <button key={m.id} type="button" onClick={() => setModelo(m)} className="text-left">
-                    <Card
-                      className={`transition-colors ${escolhido ? 'border-acc bg-acc-soft' : 'hover:border-acc/40 hover:bg-surface-2'}`}
-                    >
-                      <p className="text-corpo font-semibold">{m.title}</p>
-                      <p className="mt-1 line-clamp-2 text-secundario text-txt-2">
-                        {aplicarVariaveis(m.body, { nome: publico[0]?.name ?? 'Cliente', negocio: nomeDoNegocio })}
-                      </p>
-                    </Card>
-                  </button>
-                )
-              })}
+            {/* Seção vazia sem explicação parece tela quebrada: se todo modelo do negócio fala
+                de data/hora, não sobra nada para disparo em lote e é preciso dizer o porquê. */}
+            {modelosParaLote.length === 0 ? (
+              <Card>
+                <p className="text-corpo">Nenhum modelo serve para disparo em lote.</p>
+                <p className="mt-1 text-secundario text-txt-2">
+                  Todos os seus modelos falam de data, hora ou serviço — isso só existe quando há um horário marcado.
+                </p>
+                <Link href="/admin/config/mensagens" className="mt-2 inline-block text-secundario font-semibold text-acc-2">
+                  Criar um modelo sem data
+                </Link>
+              </Card>
+            ) : null}
+            {modelosParaLote.map((m) => {
+              const escolhido = modelo?.id === m.id
+              return (
+                <button key={m.id} type="button" onClick={() => setModelo(m)} className="text-left">
+                  <Card
+                    className={`transition-colors ${escolhido ? 'border-acc bg-acc-soft' : 'hover:border-acc/40 hover:bg-surface-2'}`}
+                  >
+                    <p className="text-corpo font-semibold">{m.title}</p>
+                    <p className="mt-1 line-clamp-2 text-secundario text-txt-2">
+                      {aplicarVariaveis(m.body, { nome: publico[0]?.name ?? 'Cliente', negocio: nomeDoNegocio })}
+                    </p>
+                  </Card>
+                </button>
+              )
+            })}
           </div>
         </section>
       ) : null}
