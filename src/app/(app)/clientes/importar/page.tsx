@@ -1,5 +1,8 @@
 import Importador from './importador'
 
+/** Mesma correção de `config/notificacoes/page.tsx` — sem fetch de servidor, o Next pré-renderizava estático e o nonce do CSP (por requisição) nunca batia com o carimbado no build. */
+export const dynamic = 'force-dynamic'
+
 export default function PaginaImportarClientes() {
   return (
     <>

@@ -1205,3 +1205,23 @@ arquivos é de sprint anterior). Rodei perto da meia-noite; o fixture do teste c
 agendamento cai no dia seguinte e quebra a asserção de "hoje". É fragilidade de teste dependente
 de horário de execução, pré-existente, não bug de produto. `test:rls` (103) e `build` passam
 limpos; segui o deploy sem bloquear nisso.
+
+2026-08-18 · Bug crítico achado ao vivo em produção logo após o deploy da otimização de UI:
+`/config/notificacoes` e `/clientes/importar` estavam **completamente quebradas** (nenhum
+script carregava, console cheio de `violates Content Security Policy`). Causa: as duas páginas
+não fazem fetch de servidor nenhum, então o Next as pré-renderizava como **estáticas** — o CSP
+com nonce (TICKET-057, `src/middleware.ts`) gera um nonce **novo a cada requisição**, mas o HTML
+estático carimba o nonce de uma única vez, no build. Os dois nunca batem: todo script (inclusive
+o de hidratação do próprio Next) é bloqueado. `/_not-found` (a página de 404 embutida do Next,
+sem arquivo próprio até agora) tinha o mesmo problema.
+
+Corrigido com `export const dynamic = 'force-dynamic'` nas duas páginas + um `src/app/not-found.tsx`
+próprio (também `force-dynamic`) — as três eram os únicos casos de página 100% estática no app
+inteiro (confirmado reconstruindo e conferindo a lista `○ (Static)` do build; só sobrou `/dev/ui`,
+que devolve 404 de propósito fora de desenvolvimento e por isso nunca serve conteúdo real em
+produção mesmo estática). Testado com `pnpm build && pnpm start` local (não dá pra reproduzir em
+`pnpm dev`, que não faz pré-renderização estática real) — confirmado sem violação de CSP.
+
+**Padrão pra lembrar:** toda vez que criar uma página nova sob `(app)/` sem `await` nenhum no
+Server Component, ela vira candidata a pré-renderização estática — e quebra silenciosamente sob
+esse CSP. Checar a lista `○` do `pnpm build` antes de cada deploy até isso virar teste automático.
