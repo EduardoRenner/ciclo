@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils'
+import Card from './card'
 
 type Props = React.ComponentPropsWithoutRef<'div'> & {
   rotulo: string
@@ -7,17 +7,15 @@ type Props = React.ComponentPropsWithoutRef<'div'> & {
   progresso?: number
 }
 
-/** Label overline + valor grande + barra opcional (§4). */
+/** Label overline + valor grande + barra opcional (§4). Compõe `Card` — ganha a sombra de repouso de graça, sem duplicar borda/fundo/raio. */
 export default function StatTile({ className, rotulo, valor, progresso, ...props }: Props) {
   const pct = progresso === undefined ? null : Math.round(Math.min(1, Math.max(0, progresso)) * 100)
 
   return (
-    <div
-      className={cn('rounded-[var(--radius)] border border-line bg-surface p-4', className)}
-      {...props}
-    >
+    <Card className={className} {...props}>
       <p className="text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">{rotulo}</p>
-      <p className="tabular mt-1.5 text-stat font-extrabold text-txt">{valor}</p>
+      {/* `tracking-tight` no valor grande — é o que separa "número grande" de "número desenhado" (Linear/Stripe fazem o mesmo nas telas de valor). */}
+      <p className="tabular mt-1.5 text-stat font-extrabold tracking-tight text-txt">{valor}</p>
 
       {pct !== null ? (
         <div
@@ -34,6 +32,6 @@ export default function StatTile({ className, rotulo, valor, progresso, ...props
           />
         </div>
       ) : null}
-    </div>
+    </Card>
   )
 }

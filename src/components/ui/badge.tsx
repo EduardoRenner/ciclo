@@ -1,4 +1,5 @@
 import { cva, type VariantProps } from 'class-variance-authority'
+import { AlertTriangle, Check, Clock, Lock, Sparkles, X } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 
@@ -19,14 +20,14 @@ const selo = cva(
   },
 )
 
-/** Marcador de cada estado, na ordem de §5. */
+/** Marcador de cada estado, na ordem de §5 — ícone `lucide-react`, não emoji: mesmo sistema usado no resto do app, sem depender de fonte de emoji do SO/navegador. */
 const MARCA = {
-  ok: '✓',
-  warn: '⏳',
-  risk: '⚠',
-  bad: '✕',
-  info: '🔒',
-  ciclo: '✦',
+  ok: Check,
+  warn: Clock,
+  risk: AlertTriangle,
+  bad: X,
+  info: Lock,
+  ciclo: Sparkles,
 } as const
 
 type Props = React.ComponentPropsWithoutRef<'span'> &
@@ -39,9 +40,10 @@ type Props = React.ComponentPropsWithoutRef<'span'> &
  * distingue verde de laranja precisa ler o mesmo que os outros.
  */
 export default function Badge({ className, estado, children, ...props }: Props) {
+  const Icone = MARCA[estado ?? 'ok']
   return (
     <span className={cn(selo({ estado }), className)} {...props}>
-      <span aria-hidden>{MARCA[estado ?? 'ok']}</span>
+      <Icone aria-hidden className="size-3.5 shrink-0" />
       {children}
     </span>
   )

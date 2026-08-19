@@ -9,6 +9,7 @@ import { useState } from 'react'
 import AppointmentRow from '@/components/ui/appointment-row'
 import Card from '@/components/ui/card'
 import EmptyState from '@/components/ui/empty-state'
+import SectionHeader from '@/components/ui/section-header'
 import Sheet from '@/components/ui/sheet'
 import StatTile from '@/components/ui/stat-tile'
 
@@ -36,7 +37,7 @@ export default function Hoje({ resumo }: { resumo: ResumoHoje }) {
 
       {resumo.nextClient ? (
         <section className="mb-6">
-          <h2 className="mb-3 text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">Próxima cliente</h2>
+          <SectionHeader>Próxima cliente</SectionHeader>
           <button type="button" onClick={() => setSelecionado(resumo.nextClient)} className="block w-full text-left">
             <AppointmentRow
               horario={horaLocal(resumo.nextClient.starts_at)}
@@ -60,10 +61,9 @@ export default function Hoje({ resumo }: { resumo: ResumoHoje }) {
 
       {resumo.alerts.length > 0 ? (
         <section className="mb-6">
-          <h2 className="mb-3 flex items-center gap-1.5 text-overline font-semibold uppercase tracking-[0.13em] text-warn">
-            <AlertTriangle aria-hidden className="size-3.5" />
+          <SectionHeader tom="alerta" icone={<AlertTriangle aria-hidden className="size-4" />}>
             Precisa confirmar
-          </h2>
+          </SectionHeader>
           <ul className="flex flex-col gap-2">
             {resumo.alerts.map((a) => (
               <li key={a.id}>
@@ -83,10 +83,9 @@ export default function Hoje({ resumo }: { resumo: ResumoHoje }) {
 
       {resumo.stockAlerts.length > 0 ? (
         <section className="mb-6">
-          <h2 className="mb-3 flex items-center gap-1.5 text-overline font-semibold uppercase tracking-[0.13em] text-warn">
-            <PackageX aria-hidden className="size-3.5" />
+          <SectionHeader tom="alerta" icone={<PackageX aria-hidden className="size-4" />}>
             Estoque
-          </h2>
+          </SectionHeader>
           <ul className="flex flex-col gap-2">
             {resumo.stockAlerts.map((a) => (
               <li key={a.productId}>
@@ -111,7 +110,7 @@ export default function Hoje({ resumo }: { resumo: ResumoHoje }) {
       ) : null}
 
       <section>
-        <h2 className="mb-3 text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">Resto do dia</h2>
+        <SectionHeader>Resto do dia</SectionHeader>
         {resumo.restOfDay.length === 0 ? (
           <p className="text-secundario text-txt-2">Sem mais nada agendado.</p>
         ) : (

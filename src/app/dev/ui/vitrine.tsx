@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 
+import AppointmentRow from '@/components/ui/appointment-row'
 import Badge from '@/components/ui/badge'
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
@@ -68,6 +69,21 @@ function Conteudo({ icones }: { icones: { agenda: React.ReactNode; clientes: Rea
           <p className="text-corpo font-semibold">Bruna Almeida</p>
           <p className="mt-0.5 text-secundario text-txt-2">Volume russo · 14:30 · 2h30</p>
         </Card>
+      </Secao>
+
+      <Secao titulo="AppointmentRow">
+        <div className="flex w-full flex-col gap-2">
+          <AppointmentRow horario="14:30" clienteNome="Bruna Almeida" servicoNome="Volume russo" status="confirmed" />
+          <AppointmentRow
+            horario="16:00"
+            clienteNome="Carla Souza"
+            servicoNome="Volume egípcio · Ana"
+            status="pending"
+            altoRisco
+            alertaSaude
+          />
+          <AppointmentRow horario="17:15" clienteNome="Duda Reis" servicoNome="Manutenção" status="no_show" />
+        </div>
       </Secao>
 
       <Secao titulo="Skeleton">

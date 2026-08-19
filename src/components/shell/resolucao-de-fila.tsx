@@ -35,7 +35,7 @@ export default function ResolucaoDeFila() {
   return (
     <div className="fixed inset-x-4 bottom-[calc(90px+env(safe-area-inset-bottom))] z-40 flex flex-col gap-2">
       {conflitos.map((m) => (
-        <Card key={m.id} className="border-warn/50">
+        <Card key={m.id} flutuante className="border-warn/50">
           <div className="flex items-start gap-2">
             <AlertTriangle aria-hidden className="mt-0.5 size-4 shrink-0 text-warn" />
             <div className="min-w-0 flex-1">

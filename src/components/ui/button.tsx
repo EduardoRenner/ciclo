@@ -10,11 +10,14 @@ const botao = cva(
     'text-corpo font-semibold transition active:scale-[.98] disabled:pointer-events-none disabled:opacity-50',
   {
     variants: {
+      // `hover:` nunca dispara sozinho em touch — só complementa o `active:scale`
+      // que já existia, para quem está com mouse (o Eduardo testando no desktop)
+      // não ver a interface inteira "morta" ao passar o cursor.
       variante: {
-        primary: 'bg-[linear-gradient(135deg,var(--acc),var(--acc-2))] text-[#0a0a0f]',
-        secondary: 'bg-surface-2 text-txt border border-line-2',
-        success: 'bg-ok text-[#0a0a0f]',
-        danger: 'bg-bad text-[#0a0a0f]',
+        primary: 'bg-[linear-gradient(135deg,var(--acc),var(--acc-2))] text-[#0a0a0f] hover:brightness-110',
+        secondary: 'border border-line-2 bg-surface-2 text-txt hover:bg-surface-3',
+        success: 'bg-ok text-[#0a0a0f] hover:brightness-110',
+        danger: 'bg-bad text-[#0a0a0f] hover:brightness-110',
       },
       largura: {
         auto: '',

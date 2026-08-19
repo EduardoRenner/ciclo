@@ -1,4 +1,8 @@
+import { AlertTriangle, Zap } from 'lucide-react'
+
 import { cn } from '@/lib/utils'
+
+import Card from './card'
 
 import type { EstadoAgendamento } from '@/core/scheduling/state'
 
@@ -48,23 +52,22 @@ export default function AppointmentRow({
   ...props
 }: Props) {
   return (
-    <div
-      className={cn('flex overflow-hidden rounded-[var(--radius)] border border-line bg-surface', className)}
-      {...props}
-    >
+    <Card className={cn('flex overflow-hidden p-0 transition hover:border-line-2 hover:bg-surface-2', className)} {...props}>
       <div aria-hidden className={cn('w-[3px] shrink-0', COR_BARRA[status])} />
       <div className="flex flex-1 items-center gap-3 px-3 py-3">
         <p className="tabular w-14 shrink-0 text-corpo font-semibold text-txt">{horario}</p>
         <div className="min-w-0 flex-1">
           <p className="flex items-center gap-1 truncate text-corpo font-semibold text-txt">
             {altoRisco ? (
-              <span aria-label="Risco alto de falta" title="Risco alto de falta">
-                ⚡
+              <span title="Risco alto de falta">
+                <Zap aria-hidden className="size-4 shrink-0 text-warn" />
+                <span className="sr-only">Risco alto de falta</span>
               </span>
             ) : null}
             {alertaSaude ? (
-              <span aria-label="Atenção na ficha de saúde" title="Atenção na ficha de saúde" className="text-bad">
-                ⚠
+              <span title="Atenção na ficha de saúde">
+                <AlertTriangle aria-hidden className="size-4 shrink-0 text-bad" />
+                <span className="sr-only">Atenção na ficha de saúde</span>
               </span>
             ) : null}
             <span className="truncate">{clienteNome}</span>
@@ -76,6 +79,6 @@ export default function AppointmentRow({
         </div>
         <span className="shrink-0 text-label font-semibold text-txt-3">{ROTULO_ESTADO[status]}</span>
       </div>
-    </div>
+    </Card>
   )
 }

@@ -45,7 +45,7 @@ export default function TabBar({ hrefFab = '/agenda/novo' }: Props) {
           className={cn(
             'flex size-14 items-center justify-center rounded-full',
             'bg-[linear-gradient(135deg,var(--acc),var(--acc-2))] text-[#0a0a0f]',
-            'shadow-lg transition active:scale-[.96]',
+            'shadow-lg transition hover:brightness-110 active:scale-[.96]',
           )}
         >
           <Plus aria-hidden className="size-7" />
@@ -69,8 +69,8 @@ function ItemAba({ aba, ativa }: { aba: Aba; ativa: boolean }) {
       className={cn(
         // min-w garante o alvo de 48px mesmo com a barra dividindo 5 espaços
         // largos: sem ele o toque encolhe em telas menores que o esperado.
-        'flex min-w-12 flex-1 flex-col items-center justify-center gap-1 pt-2',
-        ativa ? 'text-acc-2' : 'text-txt-3',
+        'flex min-w-12 flex-1 flex-col items-center justify-center gap-1 pt-2 transition-colors',
+        ativa ? 'text-acc-2' : 'text-txt-3 hover:text-txt-2',
       )}
     >
       <Icone aria-hidden className="size-6" />

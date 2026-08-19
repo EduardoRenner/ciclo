@@ -1176,3 +1176,32 @@ e-mail existe. Não testado: clicar no link de confirmação de verdade (exige e
 na caixa de entrada, fora do alcance desta sessão) — o código do callback segue o padrão
 documentado do Supabase (PKCE, troca no servidor), mas a ponta a ponta com e-mail real ainda
 precisa de alguém confirmar manualmente.
+
+2026-08-18 · Otimização de UI (padrão de sistemas grandes) — plano aprovado antes de mexer.
+Achado por auditoria de código (não só "gosto"): de ~15 superfícies do app, só 2 usavam sombra
+(`toast.tsx`, FAB da tab bar) — todo o resto (Card, StatTile, AppointmentRow, Sheet) era plano
+com só borda de 1px, e `grep hover:` no projeto inteiro não retornava nada (decisão consciente
+pro mobile, mas invisível pra quem testa no navegador de desktop). Corrigido: token de sombra
+`--shadow-elevado`/`--shadow-flutuante` em `globals.css` (sombra escura + realce sutil de 1px,
+não a `shadow-lg` genérica do Tailwind, pensada pra fundo claro); `Card` ganha a sombra por
+padrão; `StatTile`/`AppointmentRow` passaram a **compor** `Card` em vez de duplicar a mesma
+string de borda/fundo/raio; `hover:` adicionado em `Button`/`Chip`/`AppointmentRow`/`TabBar`/
+seletor de dia da agenda, sempre ao lado do `active:scale` que já existia (não troca, `hover:`
+nunca dispara sozinho em touch). Emoji (`⚡⚠✓⏳✕🔒✦`) trocado por ícone `lucide-react` em
+`AppointmentRow` e `Badge` — misturado com ícone de verdade no resto do app, renderiza diferente
+por SO/navegador. Novo `Topbar` (`src/components/shell/topbar.tsx`) no shell autenticado — não
+existia nenhuma barra de marca/orientação; sem fetch de dado nenhum, pra não adicionar latência
+em toda tela. `SectionHeader` consolida uma string de classe repetida 4x em `hoje.tsx`.
+
+Verificado ao vivo: `/dev/ui` (vitrine de componentes, não exige login — usei pra conferir sem
+sessão, adicionei `AppointmentRow` lá que não estava) e um tenant+usuário de teste criado via
+MCP só para ver `Hoje`/`Agenda` reais autenticados — apagado ao final (cascade delete do tenant
++ `admin.deleteUser`), mesmo padrão dos testes de integração.
+
+**`pnpm test:integration` tem 3 falhas em `resumo-hoje.test.ts`, sem relação com esta mudança**
+(não toquei em `resumo-hoje.ts` nem no teste — `git log` confirma o último commit nesses
+arquivos é de sprint anterior). Rodei perto da meia-noite; o fixture do teste cria agendamentos
+"X horas a partir de agora" sem travar horário de execução — passando da virada do dia, o
+agendamento cai no dia seguinte e quebra a asserção de "hoje". É fragilidade de teste dependente
+de horário de execução, pré-existente, não bug de produto. `test:rls` (103) e `build` passam
+limpos; segui o deploy sem bloquear nisso.

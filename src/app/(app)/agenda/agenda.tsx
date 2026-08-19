@@ -12,6 +12,7 @@ import Chip from '@/components/ui/chip'
 import EmptyState from '@/components/ui/empty-state'
 import Sheet from '@/components/ui/sheet'
 import StatTile from '@/components/ui/stat-tile'
+import { cn } from '@/lib/utils'
 
 import DetalheAgendamento from './detalhe'
 
@@ -83,9 +84,10 @@ export default function Agenda({
               type="button"
               onClick={() => navegar(d)}
               aria-current={d === dia ? 'date' : undefined}
-              className={`flex h-14 flex-1 flex-col items-center justify-center rounded-[var(--radius-sm)] text-label font-semibold ${
-                d === dia ? 'bg-acc-soft text-acc-2' : d === hoje ? 'border border-acc text-txt' : 'text-txt-2'
-              }`}
+              className={cn(
+                'flex h-14 flex-1 flex-col items-center justify-center rounded-[var(--radius-sm)] text-label font-semibold transition-colors',
+                d === dia ? 'bg-acc-soft text-acc-2' : d === hoje ? 'border border-acc text-txt hover:bg-surface-2' : 'text-txt-2 hover:bg-surface-2',
+              )}
             >
               <span>{DIAS_SEMANA[data.getUTCDay()]}</span>
               <span className="tabular">{data.getUTCDate()}</span>

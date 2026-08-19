@@ -16,7 +16,7 @@ export default function Chip({ className, ligado = false, ...props }: Props) {
       className={cn(
         'inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-pill)] border px-3.5',
         'text-label font-semibold transition active:scale-[.97]',
-        ligado ? 'border-acc bg-acc-soft text-acc-2' : 'border-line-2 bg-surface-2 text-txt-2',
+        ligado ? 'border-acc bg-acc-soft text-acc-2' : 'border-line-2 bg-surface-2 text-txt-2 hover:bg-surface-3',
         className,
       )}
       {...props}
