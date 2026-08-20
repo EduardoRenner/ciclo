@@ -116,7 +116,7 @@ export default function ListaClientes({ iniciais }: { iniciais: ClienteLinha[] }
         <Card className="p-0">
           <EmptyState
             icone={<Users aria-hidden className="size-6" />}
-            titulo={segmento ? 'Ninguém nesse grupo agora' : termo ? 'Nenhuma cliente encontrada' : 'Nenhuma cliente ainda'}
+            titulo={segmento ? 'Ninguém nesse grupo agora' : termo ? 'Nenhum resultado' : 'Sem clientes ainda'}
             descricao={
               segmento
                 ? 'Esse filtro atualiza todo dia — volte mais tarde.'

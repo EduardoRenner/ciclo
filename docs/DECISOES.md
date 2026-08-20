@@ -1514,3 +1514,12 @@ apagada disparava varredura sequencial de uma tabela com 300k+ linhas. Migration
 os três índices simples que faltavam · achado ao executar a limpeza, não planejado — e vale a
 pena ter ficado: qualquer exclusão em lote no futuro (LGPD, cancelamento de conta) teria o
 mesmo problema.
+
+2026-08-19 · P1 do plano de plataforma tem 5 itens (tokens+merge, regra de copy, G2, G10,
+teste-guarda) — dá para fazer tudo numa rodada? · Fiz G2 e G10, que são correções reais e
+independentes; deixei o mecanismo de merge de vocabulário e o teste-guarda para quando P2/P3
+existir · o guard "nenhuma profissão cravada em src/" só faz sentido depois que o app começa a
+renderizar por token em vez de string fixa — escrevê-lo agora reprovaria toda a interface atual,
+que ainda é 100% hardcoded de propósito (nada lê `profession_id` em runtime ainda). Forçar isso
+nesta rodada seria ou um teste que não protege nada, ou uma reescrita prematura da interface
+inteira sem P2 (comportamento por eixo) estar pronto para orientar o que cada tela deveria virar.

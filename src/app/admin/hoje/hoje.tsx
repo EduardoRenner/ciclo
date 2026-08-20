@@ -58,7 +58,7 @@ export default function Hoje({ resumo, children }: { resumo: ResumoHoje; childre
 
       {resumo.nextClient ? (
         <section className="mb-6">
-          <SectionHeader>Próxima cliente</SectionHeader>
+          <SectionHeader>A seguir</SectionHeader>
           <button type="button" onClick={() => setSelecionado(resumo.nextClient)} className="block w-full text-left">
             <AppointmentRow
               horario={horaLocal(resumo.nextClient.starts_at)}

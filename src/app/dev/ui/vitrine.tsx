@@ -159,7 +159,7 @@ function Conteudo({ icones }: { icones: { agenda: React.ReactNode; clientes: Rea
         <Card className="w-full p-0">
           <EmptyState
             icone={icones.clientes}
-            titulo="Nenhuma cliente ainda"
+            titulo="Sem clientes ainda"
             descricao="Quando você cadastrar a primeira, ela aparece aqui com o histórico dela."
             acao={<Button>Cadastrar cliente</Button>}
           />
@@ -240,7 +240,7 @@ function Conteudo({ icones }: { icones: { agenda: React.ReactNode; clientes: Rea
       </Secao>
 
       <ActionBar visivel={filtro !== 'hoje'}>
-        <Button largura="cheia">Avisar 3 selecionadas</Button>
+        <Button largura="cheia">Avisar 3</Button>
       </ActionBar>
 
       <TabBar />

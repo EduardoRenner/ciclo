@@ -132,7 +132,7 @@ export default function RecuperarReceita({ inicial }: { inicial: ListaRecuperar 
           <EmptyState
             icone={<IconeAnel aria-hidden className="size-6" />}
             titulo="Ninguém para recuperar agora"
-            descricao="Quando alguma cliente atrasar para voltar, ela aparece aqui."
+            descricao="Quando alguém atrasar para voltar, aparece aqui."
             acao={<span className="text-secundario text-txt-3">Volte mais tarde</span>}
           />
         </Card>
@@ -196,7 +196,7 @@ export default function RecuperarReceita({ inicial }: { inicial: ListaRecuperar 
           tabIndex={itensSelecionados.length > 0 ? undefined : -1}
         >
           <Send aria-hidden className="size-4" />
-          {`Avisar ${itensSelecionados.length} ${itensSelecionados.length === 1 ? 'selecionada' : 'selecionadas'}`}
+          {`Avisar ${itensSelecionados.length}`}
         </Button>
       </ActionBar>
     </div>

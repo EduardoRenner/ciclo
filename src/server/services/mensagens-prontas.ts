@@ -23,18 +23,28 @@ type EntradaParcial = z.infer<typeof EsquemaModeloParcial>
  * O ponto de partida de um negócio novo. Não é catálogo global: na primeira vez que a tela
  * abre, estes viram linhas do tenant e passam a ser editáveis — a graça é o dono reescrever
  * com a voz dele, não usar um texto genérico de sistema.
+ *
+ * `docs/09-PLATAFORMA.md` §2 G10: até 2026-08-19, 8 dos 10 modelos assumiam que o cliente vem
+ * até o negócio ("Te espero na {{negocio}}", "Passa aqui esse mês", "Obrigado pela visita",
+ * "cliente da casa") — errado para quem vai até o cliente (faxineira, eletricista) e pior ainda:
+ * eram semeados na PRIMEIRA LEITURA da tela e viravam linha do tenant, então corrigir aqui não
+ * consertava quem já tinha recebido. Reescritos para não afirmar ONDE o atendimento acontece —
+ * nem "na loja" nem "na sua casa". A variante por eixo 1 (`onde`, `docs/09-PLATAFORMA.md` §4) é
+ * P2/P3: quando a leitura de `professions.mensagens` estiver ligada ao onboarding, o pack de
+ * cada profissão pode sobrescrever estes com uma frase mais específica. Este array é o piso —
+ * nunca deve voltar a presumir localização.
  */
 export const MODELOS_PADRAO: { slug: string; title: string; body: string }[] = [
-  { slug: 'confirmacao', title: 'Confirmar horário', body: 'Oi {{nome}}! Confirmando seu horário na {{negocio}}: {{servico}} no dia {{data}} às {{hora}}. Posso confirmar?' },
-  { slug: 'lembrete', title: 'Lembrete de amanhã', body: 'Oi {{nome}}! Passando pra lembrar do seu horário amanhã, {{data}} às {{hora}}. Te espero na {{negocio}}!' },
-  { slug: 'sentimos_falta', title: 'Sumiu — chamar de volta', body: 'Oi {{nome}}, quanto tempo! Faz um tempinho que você não aparece na {{negocio}}. Bora marcar um horário? Me chama que eu encaixo.' },
-  { slug: 'aniversario', title: 'Feliz aniversário', body: 'Parabéns, {{nome}}! 🎉 A {{negocio}} te deseja tudo de bom. Passa aqui esse mês que tem um mimo te esperando.' },
-  { slug: 'pos_atendimento', title: 'Depois do atendimento', body: 'Obrigado pela visita, {{nome}}! Qualquer ajuste nos primeiros dias é por nossa conta. Qualquer coisa é só chamar.' },
+  { slug: 'confirmacao', title: 'Confirmar horário', body: 'Oi {{nome}}! Confirmando: {{servico}} no dia {{data}} às {{hora}}. Posso confirmar?' },
+  { slug: 'lembrete', title: 'Lembrete de amanhã', body: 'Oi {{nome}}! Passando pra lembrar do seu horário amanhã, {{data}} às {{hora}}. Até lá!' },
+  { slug: 'sentimos_falta', title: 'Sumiu — chamar de volta', body: 'Oi {{nome}}, quanto tempo! Faz um tempinho que a gente não se fala. Bora marcar um horário? Me chama que eu encaixo.' },
+  { slug: 'aniversario', title: 'Feliz aniversário', body: 'Parabéns, {{nome}}! 🎉 Te desejo tudo de bom. Esse mês tem um mimo te esperando — me chama pra combinar.' },
+  { slug: 'pos_atendimento', title: 'Depois do atendimento', body: 'Obrigado pela confiança, {{nome}}! Qualquer dúvida sobre o que foi feito, é só chamar.' },
   { slug: 'reagendar', title: 'Preciso remarcar', body: 'Oi {{nome}}, tudo bem? Preciso remarcar seu horário do dia {{data}}. Tenho outros horários livres — qual fica melhor pra você?' },
-  { slug: 'promocao', title: 'Promoção da semana', body: 'Oi {{nome}}! Essa semana o {{servico}} está saindo por {{valor}} aqui na {{negocio}}. Quer que eu separe um horário?' },
-  { slug: 'indicacao', title: 'Pedir indicação', body: '{{nome}}, obrigado por ser cliente da casa! 🙏 Indicando um amigo, vocês dois ganham desconto no próximo horário.' },
+  { slug: 'promocao', title: 'Promoção da semana', body: 'Oi {{nome}}! Essa semana o {{servico}} está saindo por {{valor}}. Quer que eu separe um horário?' },
+  { slug: 'indicacao', title: 'Pedir indicação', body: '{{nome}}, obrigado por confiar no meu trabalho! 🙏 Indicando um amigo, vocês dois ganham desconto no próximo horário.' },
   { slug: 'falta', title: 'Cliente faltou', body: 'Oi {{nome}}, senti sua falta no horário das {{hora}}. Aconteceu alguma coisa? Se quiser eu já remarco.' },
-  { slug: 'agradecimento', title: 'Agradecer cliente fiel', body: '{{nome}}, obrigado por confiar na {{negocio}} esse tempo todo! Cliente como você é o que segura essa casa.' },
+  { slug: 'agradecimento', title: 'Agradecer cliente fiel', body: '{{nome}}, obrigado por confiar em mim esse tempo todo! Cliente como você é o que faz diferença.' },
 ]
 
 /**

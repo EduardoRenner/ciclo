@@ -67,7 +67,7 @@ export default function Importador() {
         )
         const r = await enviarMultipart<Resultado>('/api/v1/clients/import', form)
         setResultado(r)
-        mostrarToast({ tom: 'ok', titulo: 'Importação concluída', descricao: `${r.imported} clientes importadas.` })
+        mostrarToast({ tom: 'ok', titulo: 'Importação concluída', descricao: `${r.imported} clientes importados.` })
       } catch (erro) {
         mostrarToast({ tom: 'erro', titulo: 'A importação falhou', descricao: (erro as Error).message })
       }
@@ -167,7 +167,7 @@ export default function Importador() {
 
           {resultado ? (
             <Card>
-              <p className="text-corpo font-semibold">{resultado.imported} clientes importadas</p>
+              <p className="text-corpo font-semibold">{resultado.imported} clientes importados</p>
               {resultado.skipped.length > 0 ? (
                 <p className="mt-1 text-secundario text-warn">{resultado.skipped.length} não importadas (duplicata)</p>
               ) : null}

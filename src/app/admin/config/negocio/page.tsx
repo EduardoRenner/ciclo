@@ -16,7 +16,7 @@ export default async function PaginaNegocio() {
 
   return (
     <>
-      <PageHeader titulo="Negócio" descricao="O que aparece no seu site e como as clientes te encontram." />
+      <PageHeader titulo="Negócio" descricao="O que aparece no seu site e como as pessoas te encontram." />
 
       <FormularioNegocio tenant={tenant} urlSite={urlSite} />
     </>
