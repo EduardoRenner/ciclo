@@ -1927,3 +1927,10 @@ sem `service_id` nenhum por trás — não existe mapeamento correto pra um serv
 catálogo. Inventar um (por nome parecido, por preço mais próximo) seria adivinhação disfarçada
 de automação, e a tela normal de "novo agendamento" já faz a checagem de disponibilidade de
 verdade — duplicar essa lógica só pra "escolher sozinho" não valeria o risco.
+
+2026-08-20 · Auditoria pós-construção: repetir V1-V5 inteiro de novo, ou focar só no que mudou
+desde a última auditoria dedicada? · Focar no que mudou — as 3 telas construídas depois de V5
+(orçamentos, séries, conversão). Repetir tudo teria retorno decrescente (já confirmado sem
+achados novos há duas rodadas); auditar especificamente o código novo contra os mesmos padrões
+de defeito já catalogados (toque, overflow, estados de tela) é onde realisticamente haveria algo
+para achar — e havia: loading.tsx ausente nas duas telas novas.

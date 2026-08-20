@@ -710,3 +710,52 @@ que a sessão possa resolver sozinha. **Próxima fase do loop:** decisão de dev
 rodada de auditoria mais profunda (ler os checklists inteiros de novo em busca do que passou
 despercebido em cinco fases acumuladas) é o candidato mais forte, já que construção genuína
 esgotou o que dava pra decidir sem o Eduardo.
+
+## Auditoria pós-construção — telas novas desta sessão (TICKET-083)
+
+Decisão de dev sênior: com o backlog de construção esgotado, reli VERIFICACAO-FINAL.md e
+DESIGN-E-INTERFACE.md focando no que **mudou** desde V5 — as 3 telas construídas depois da
+última auditoria dedicada (orçamentos, séries, conversão orçamento→agendamento), em vez de
+repetir o que V1-V5 já cobriu genericamente.
+
+### Achado real S2, corrigido (commit `e6d5c9f`)
+
+**`/admin/orcamentos` e `/admin/series` nunca tiveram `loading.tsx`.** 6 das rotas de topo do
+admin (clientes, agenda, config, hoje, recuperar) já seguiam o padrão — as duas construídas
+nesta sessão (TICKET-079/081) ficaram sem, quebrando a garantia do Gate 7.4 ("carregando/vazio/
+erro em toda lista"). Corrigido com o mesmo padrão de `clientes/loading.tsx` (`Skeleton` em
+`Card`, `aria-busy`).
+
+### Confirmado limpo (verificado ao vivo, tenant descartável com conteúdo real)
+
+- **Overflow horizontal (375px):** zero nas duas telas, inclusive com nome de cliente
+  deliberadamente longo ("Cliente com Nome Bem Comprido Pra Testar Overflow") — `truncate`
+  funciona nos dois lugares (linha de orçamento, linha de série).
+- **Alvos de toque:** confirmado que o botão "Marcar horário" (`Button tamanho="sm"`, 40px
+  visual) tem `::after` com `min-height: 48px` — o `toque-48` está **embutido no próprio
+  variant `sm` do componente**, não precisa ser aplicado manualmente em cada uso. Mesma
+  confirmação pro botão de copiar link (32px visual, 48px de área real) e "Cancelar série".
+- **Zoom simulado a 2x:** zero overflow nas duas telas (proxy razoável pro Gate 7.14, já que o
+  harness de automação não expõe zoom real de navegador).
+- **Robots/noindex:** `/admin/orcamentos` e `/admin/series` herdam automaticamente o disallow
+  de `/admin` (prefixo) e o `robots:{index:false}` do layout — nenhuma atualização precisou ser
+  feita, o mecanismo do TICKET-077 já cobria rotas futuras por desenho.
+- **Copy:** zero lorem ipsum, zero TODO real, zero `console.log` nas 5 áreas de código tocadas
+  nesta rodada de construção (`orcamentos.ts`, `recorrencia.ts`, `descrever.ts`, os dois
+  `lista.tsx`, a rota de convert).
+
+### Nota de escopo
+
+Achado pré-existente, **não corrigido** por estar fora do escopo desta sessão (telas que já
+existiam antes, não tocadas): `/admin/campanhas` e `/admin/comanda` também não têm
+`loading.tsx`. Registrado aqui por transparência, não é regressão desta rodada — candidato pra
+uma futura passada de polimento geral se algum dia fizer sentido revisitar telas antigas.
+
+`typecheck`/`lint` limpos. `test:unit` 441, `test:rls` 133, `test:integration` 248 (flakou 1x
+sob carga, limpo na segunda rodada isolada — padrão já documentado, não é regressão). `build`
+ok.
+
+**Estado da sessão:** ciclo de verificação estrutural completo (V1-V5), backlog de construção
+esgotado (só resta o que depende do Eduardo), e agora uma auditoria pós-construção sem achados
+S0/S1 — sexta rodada de verificação seguida sem nada crítico. Sinal forte de que a plataforma
+está numa base sólida pro que falta é decisão de negócio, não engenharia.
