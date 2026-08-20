@@ -135,6 +135,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "appointments_recurrence_id_fkey"
+            columns: ["recurrence_id"]
+            isOneToOne: false
+            referencedRelation: "appointment_series"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "appointments_service_id_fkey"
             columns: ["service_id"]
             isOneToOne: false
@@ -143,6 +150,121 @@ export type Database = {
           },
           {
             foreignKeyName: "appointments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      appointment_series: {
+        Row: {
+          address: string | null
+          canceled_at: string | null
+          client_id: string
+          created_at: string
+          created_by: string | null
+          ends_on: string | null
+          horario: string
+          id: string
+          intervalo_dias: number | null
+          intervalo_semanas: number | null
+          max_ocorrencias: number | null
+          note: string | null
+          ocorrencias_geradas: number
+          ordinal_no_mes: number | null
+          professional_id: string
+          service_id: string
+          starts_on: string
+          status: string
+          tenant_id: string
+          tipo: string
+          weekday: number | null
+        }
+        Insert: {
+          address?: string | null
+          canceled_at?: string | null
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          ends_on?: string | null
+          horario: string
+          id?: string
+          intervalo_dias?: number | null
+          intervalo_semanas?: number | null
+          max_ocorrencias?: number | null
+          note?: string | null
+          ocorrencias_geradas?: number
+          ordinal_no_mes?: number | null
+          professional_id: string
+          service_id: string
+          starts_on: string
+          status?: string
+          tenant_id: string
+          tipo: string
+          weekday?: number | null
+        }
+        Update: {
+          address?: string | null
+          canceled_at?: string | null
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          ends_on?: string | null
+          horario?: string
+          id?: string
+          intervalo_dias?: number | null
+          intervalo_semanas?: number | null
+          max_ocorrencias?: number | null
+          note?: string | null
+          ocorrencias_geradas?: number
+          ordinal_no_mes?: number | null
+          professional_id?: string
+          service_id?: string
+          starts_on?: string
+          status?: string
+          tenant_id?: string
+          tipo?: string
+          weekday?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointment_series_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_series_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "v_client_segments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_series_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_series_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_series_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_series_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"

@@ -44,6 +44,17 @@ export default function FormularioAgendamento({
   const [alternativas, setAlternativas] = useState<string[] | null>(null)
   const [erro, setErro] = useState<string | null>(null)
 
+  // docs/09-PLATAFORMA.md §12: série de recorrência é um agendamento a mais que se repete,
+  // não uma tela separada — por isso vive dentro do mesmo formulário, atrás de um toggle.
+  const [repetir, setRepetir] = useState(false)
+  const [tipoRecorrencia, setTipoRecorrencia] = useState<'semanal' | 'a_cada_dias' | 'mensal_dia_semana'>('semanal')
+  const [intervaloSemanas, setIntervaloSemanas] = useState('1')
+  const [intervaloDias, setIntervaloDias] = useState('30')
+  const [ordinalNoMes, setOrdinalNoMes] = useState('1')
+  const [fimTipo, setFimTipo] = useState<'sem_fim' | 'ate_data' | 'numero_de_vezes'>('numero_de_vezes')
+  const [fimData, setFimData] = useState('')
+  const [fimNumero, setFimNumero] = useState('8')
+
   /**
    * "Marcar horário" na ficha manda `?cliente=<id>` e o nome/telefone vêm daqui. Só o id viaja
    * na URL, nunca nome nem telefone: dado pessoal não entra em query string (fica em histórico
@@ -120,9 +131,65 @@ export default function FormularioAgendamento({
     })
   }
 
+  function enviarSerie() {
+    setErro(null)
+    setAlternativas(null)
+
+    const [startsOn, horario] = dataHora.split('T')
+    const weekday = new Date(dataHora).getDay() // 0 = domingo, mesma convenção do banco
+
+    const corpo = {
+      clientDraft: { name: clienteNome, phone: clienteTelefone },
+      serviceId,
+      professionalId,
+      tipo: tipoRecorrencia,
+      weekday: tipoRecorrencia === 'a_cada_dias' ? null : weekday,
+      intervaloSemanas: tipoRecorrencia === 'semanal' ? Number(intervaloSemanas) : null,
+      intervaloDias: tipoRecorrencia === 'a_cada_dias' ? Number(intervaloDias) : null,
+      ordinalNoMes: tipoRecorrencia === 'mensal_dia_semana' ? Number(ordinalNoMes) : null,
+      horario,
+      startsOn,
+      endsOn: fimTipo === 'ate_data' ? fimData : null,
+      maxOcorrencias: fimTipo === 'numero_de_vezes' ? Number(fimNumero) : null,
+    }
+
+    iniciarTransicao(async () => {
+      const r = await fetch('/api/v1/appointments/series', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+        body: JSON.stringify(corpo),
+      })
+      const json = (await r.json()) as {
+        data?: { occurrences: { status: string }[] }
+        error?: { code: string; message: string }
+      }
+
+      if (r.ok && json.data) {
+        const total = json.data.occurrences.length
+        const puladas = json.data.occurrences.filter((o) => o.status !== 'agendada').length
+        mostrarToast({
+          tom: 'ok',
+          titulo: 'Série criada',
+          descricao:
+            puladas > 0
+              ? `${total - puladas} de ${total} horários marcados — ${puladas} pulados por folga ou conflito.`
+              : `${total} horários marcados.`,
+        })
+        router.push('/admin/agenda')
+        return
+      }
+
+      setErro(json.error?.message ?? 'Não consegui criar a série.')
+    })
+  }
+
   function aoEnviarFormulario(e: React.FormEvent) {
     e.preventDefault()
     if (!dataHora) return
+    if (repetir) {
+      enviarSerie()
+      return
+    }
     enviar(paraIso(dataHora))
   }
 
@@ -177,6 +244,76 @@ export default function FormularioAgendamento({
         classNameCampo="tabular"
       />
 
+      <label className="flex min-h-12 items-center gap-3 py-1">
+        <input
+          type="checkbox"
+          checked={repetir}
+          onChange={(e) => setRepetir(e.target.checked)}
+          className="size-5 shrink-0 accent-[var(--acc-2)]"
+        />
+        <span className="text-corpo text-txt">Repetir este horário</span>
+      </label>
+
+      {repetir ? (
+        <Card className="flex flex-col gap-3">
+          <Select rotulo="Repete" value={tipoRecorrencia} onChange={(e) => setTipoRecorrencia(e.target.value as typeof tipoRecorrencia)}>
+            <option value="semanal">Toda semana (no dia escolhido acima)</option>
+            <option value="a_cada_dias">A cada X dias</option>
+            <option value="mensal_dia_semana">Todo mês, na mesma posição do dia (ex.: 1ª segunda)</option>
+          </Select>
+
+          {tipoRecorrencia === 'semanal' ? (
+            <Select rotulo="A cada quantas semanas" value={intervaloSemanas} onChange={(e) => setIntervaloSemanas(e.target.value)}>
+              <option value="1">Toda semana</option>
+              <option value="2">A cada 2 semanas</option>
+              <option value="4">A cada 4 semanas</option>
+            </Select>
+          ) : null}
+
+          {tipoRecorrencia === 'a_cada_dias' ? (
+            <Input
+              rotulo="Intervalo em dias"
+              type="number"
+              min={1}
+              value={intervaloDias}
+              onChange={(e) => setIntervaloDias(e.target.value)}
+              classNameCampo="tabular"
+            />
+          ) : null}
+
+          {tipoRecorrencia === 'mensal_dia_semana' ? (
+            <Select rotulo="Qual ocorrência do mês" value={ordinalNoMes} onChange={(e) => setOrdinalNoMes(e.target.value)}>
+              <option value="1">1ª do mês</option>
+              <option value="2">2ª do mês</option>
+              <option value="3">3ª do mês</option>
+              <option value="4">4ª do mês</option>
+              <option value="5">Última do mês</option>
+            </Select>
+          ) : null}
+
+          <Select rotulo="Termina" value={fimTipo} onChange={(e) => setFimTipo(e.target.value as typeof fimTipo)}>
+            <option value="numero_de_vezes">Depois de um número de vezes</option>
+            <option value="ate_data">Numa data</option>
+            <option value="sem_fim">Sem data para terminar</option>
+          </Select>
+
+          {fimTipo === 'numero_de_vezes' ? (
+            <Input
+              rotulo="Número de vezes"
+              type="number"
+              min={1}
+              value={fimNumero}
+              onChange={(e) => setFimNumero(e.target.value)}
+              classNameCampo="tabular"
+            />
+          ) : null}
+
+          {fimTipo === 'ate_data' ? (
+            <Input rotulo="Última data" type="date" value={fimData} onChange={(e) => setFimData(e.target.value)} classNameCampo="tabular" />
+          ) : null}
+        </Card>
+      ) : null}
+
       {erro ? (
         <Card className="border-bad/40">
           <p role="alert" className="text-corpo font-semibold text-bad">
@@ -195,7 +332,7 @@ export default function FormularioAgendamento({
       ) : null}
 
       <Button type="submit" largura="cheia" carregando={pendente} disabled={servicos.length === 0 || profissionais.length === 0}>
-        Confirmar agendamento
+        {repetir ? 'Criar série' : 'Confirmar agendamento'}
       </Button>
     </form>
   )

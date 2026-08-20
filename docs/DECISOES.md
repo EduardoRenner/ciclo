@@ -1609,3 +1609,34 @@ recentes (as que aparecem como card) ou todas? · Todas — a query de `average`
 separada da query de `recentes` (limit 5, só com comentário). Se a média usasse só a amostra
 exibida, ela mentiria pra melhor ou pra pior dependendo de qual fatia de avaliações caiu
 dentro do limite de 5, o que é pior que simplesmente não mostrar nota nenhuma.
+
+2026-08-20 · P7 (recorrência de verdade, §12) — feriado/folga do profissional deve
+"deslocar" a ocorrência (§12 permite as duas) ou "pular" com aviso? · Pular. Deslocar exige
+decidir pra onde (+1 dia? próximo dia útil? e se o novo dia também colidir?) e checar
+disponibilidade de novo em cada tentativa — cada regra nova é mais um jeito de a série
+surpreender quem não olhou a agenda. Pular é determinístico, sempre visível na resposta da
+API (`status: 'pulada_folga'`), e §12 permite explicitamente as duas opções — não é
+descumprir o requisito, é escolher o lado mais simples dele. Se um tenant de verdade pedir
+deslocamento, vira ticket específico com a regra que ele realmente quer.
+
+2026-08-20 · Uma ocorrência gerada pela série que colide com outro agendamento (corrida ou
+conflito real) deve derrubar a criação da série inteira, ou só aquela ocorrência? · Só
+aquela ocorrência (`status: 'pulada_conflito'`) — a série continua e planta o resto. Falhar a
+série inteira por causa de 1 ocorrência em 8 puniria o profissional por um conflito que não
+tem nada a ver com as outras 7 datas, que estão livres. O mesmo raciocínio de "não travar por
+causa de uma parte" já apareceu em P5 (migration inteira reverte, mas dentro da aplicação um
+erro isolado não devia propagar).
+
+2026-08-20 · Série de recorrência exige cliente já cadastrado (`clientId`) ou aceita
+`clientDraft` como o agendamento avulso? · Aceita os dois — `resolverCliente()` (antes
+privada em `agendamentos.ts`) foi exportada e reaproveitada em `recorrencia.ts` em vez de
+duplicar a lógica de normalização de telefone e busca por telefone existente. Sem isso, a UI
+teria que forçar "cadastre a cliente primeiro, depois crie a série", um passo a mais sem
+motivo técnico — o fluxo avulso já resolve isso numa etapa só.
+
+2026-08-20 · O horizonte de geração (90 dias, teto de 26 ocorrências por rodada) devia vir
+com um cron pra manter séries "sem fim" sempre geradas à frente? · Não nesta rodada — registrado
+em §19 como pendência real. Construir fila/cron novo só pra isso, sem nenhum tenant de
+verdade usando recorrência ainda, seria infraestrutura especulativa; a série + as primeiras
+ocorrências já resolvem o caso de uso principal (agendar HOJE algo que se repete), e estender
+o horizonte manualmente (rodar a mesma lógica de novo) é um comando, não um projeto.

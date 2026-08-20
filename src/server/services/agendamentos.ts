@@ -55,7 +55,11 @@ export const EsquemaCancelar = z.object({
 type EntradaCriar = z.infer<typeof EsquemaCriarAgendamento>
 
 /** Resolve `clientId` ou cria a partir de `clientDraft`, reaproveitando cliente existente pelo telefone. */
-async function resolverCliente(db: Cliente, tenantId: string, entrada: EntradaCriar): Promise<string> {
+export async function resolverCliente(
+  db: Cliente,
+  tenantId: string,
+  entrada: { clientId?: string | null; clientDraft?: { name: string; phone: string } | null },
+): Promise<string> {
   if (entrada.clientId) {
     const { data, error } = await db
       .from('clients')
