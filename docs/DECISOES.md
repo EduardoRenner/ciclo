@@ -1892,3 +1892,17 @@ saída num PWA standalone. Corrigir agora junto com a rota nova, ou registrar se
 Corrigir junto (mesmo commit) — é a mesma categoria de bug que o próprio arquivo existe pra
 prevenir, e a lista nova cairia na mesma armadilha sem a regra; separar em dois commits só
 fragmentaria o contexto de por que a regra mudou.
+
+2026-08-20 · Depois de fechar orçamentos (TICKET-079), qual a próxima iteração: outro item do
+backlog ou verificação de design (§2, nunca rodou dedicada)? · Verificação de design leve.
+Várias telas foram construídas rápido sob o loop (recorrência, orçamento, preço, onboarding)
+sem o mesmo escrutínio visual que o resto do produto já teve — risco de regressão silenciosa
+barato de checar contra o build real antes de acumular mais telas sem revisão.
+
+2026-08-20 · Achado ao medir ao vivo: os botões de profissão do onboarding tinham `h-11` na
+classe (44px) mas renderizavam 23px. Causa raiz: flex-shrink comprimindo item flex com altura
+explícita dentro de contêiner `flex-col + max-height + overflow-y-auto`. Corrigido com
+`shrink-0`. Registrado explicitamente: esta classe de bug é CSS de layout puro — jsdom não
+calcula layout, um teste unitário nunca teria pego isso. Só verificação ao vivo contra
+navegador de verdade encontra — reforça por que o protocolo desta sessão nunca aceitou "passou
+no lint" como prova de UI funcionando.

@@ -569,3 +569,62 @@ que veja o mesmo sintoma.
 (§3), ou nova rodada leve de verificação nas telas construídas nesta sessão (a maioria nunca
 recebeu o mesmo nível de escrutínio visual do `08-REDESIGN-E-IDENTIDADE.md` — ver §2 deste
 documento, "verificação de design" ainda não rodou dedicada).
+
+## Verificação de design — telas construídas sob o loop (TICKET-080)
+
+Decisão de dev sênior: entre outro item do backlog e uma rodada leve de verificação de design
+(§2, nunca tinha rodado dedicada), escolhi verificação. Motivo: várias telas foram construídas
+rápido durante fases anteriores desta sessão (série de recorrência, orçamento, seletor de
+modelo de preço, busca de profissão no onboarding, e agora a lista de orçamentos) sem o mesmo
+nível de escrutínio visual que `08-REDESIGN-E-IDENTIDADE.md` já tinha aplicado ao resto do
+produto — risco real de regressão silenciosa, barato de checar contra o build de produção.
+
+### Achado real S2, corrigido (commit `23980ea`)
+
+**Onboarding — busca de profissão: alvo de toque de 23px, não os 44px que a classe `h-11`
+prometia.** Medido ao vivo (`getBoundingClientRect()`), não só lido no código: os 17 botões de
+profissão renderizavam a **23px** de altura, abaixo do mínimo de 40px da casa — o defeito mais
+recorrente da família (§4.2 do `DESIGN-E-INTERFACE.md`), mas com causa raiz nova em relação às
+outras 8 ocorrências já catalogadas no Anexo A. Raiz: os botões são item flex dentro de
+`flex flex-col max-h-[220px] overflow-y-auto`; com `flex-shrink: 1` (padrão do CSS), o
+navegador prioriza caber os 748px de conteúdo (17 × 44px) dentro dos 220px comprimindo cada
+item, em vez de deixar o `overflow-y-auto` rolar — a altura explícita (`h-11`) vira só um
+`flex-basis` que o shrink ignora. `shrink-0` resolve: contêiner passou a rolar de verdade
+(`scrollHeight` 820px medido) com cada botão em 44px reais. **Esta classe de bug é CSS de
+layout puro — jsdom não calcula layout, então não é capturável por teste unitário; só
+verificação ao vivo contra o navegador de verdade encontra isso.** Achado que confirma por que
+o protocolo desta sessão insiste em medir, não só ler código.
+
+### Confirmado limpo (com evidência ao vivo)
+
+- **Busca de profissão por sinônimo:** testado digitando "diarista" — filtra corretamente para
+  "Faxina e diarista" (usa `professions.sinonimos`, como já documentado em P4). Estado vazio de
+  busca ("Nenhuma profissão encontrada.") renderiza limpo, sem quebrar layout.
+- **Toggle "Repetir este horário" (`agenda/novo`):** o `<label>` já usa `min-h-12` (48px) e
+  engloba checkbox + texto — clique em qualquer ponto do label ativa, sem o mesmo defeito do
+  onboarding (esse controle nunca esteve dentro de um contêiner flex com `max-height`). Painel
+  de recorrência expande/contrai corretamente, dropdowns em cascata funcionam, botão de
+  submissão muda o texto pra "Criar série" quando ativo (copy contextual, §6.3).
+  Zero overflow horizontal em 375px com o painel expandido.
+- **Seletor "Como cobra" (preço do serviço):** `<select>` nativo, 48px de altura medida.
+  Trocar para "Taxa de visita + hora" revela o campo condicional (`Valor da hora`) corretamente.
+  Zero overflow horizontal em 375px com o formulário aberto (sheet).
+- **Lista de orçamentos:** já verificada ao vivo na própria construção (TICKET-079), não
+  repetida aqui.
+
+### Nota de escopo
+
+Não foi feita uma varredura exaustiva de TODO elemento interativo de TODA tela — seria a rodada
+completa do Gate 8 do checklist estrutural, não uma verificação leve de design. O que foi
+verificado foram especificamente os pontos que `DESIGN-E-INTERFACE.md` marca como recorrentes
+(alvo de toque, overflow, estado vazio, copy contextual) nas telas que o próprio §2 deste
+documento apontava como sob risco (construídas rápido, sem revisão visual anterior).
+
+`typecheck`/`lint` limpos. `test:unit` 434 (sem novo — bug de layout não é testável em jsdom).
+`test:rls` 133. `test:integration` 242 — sem flake. `build` ok.
+
+**Próxima fase do loop:** decisão de dev sênior na próxima iteração — outro item do backlog
+real (§3), ou completar o Gate 8 formal se ainda houver tempo/valor. A esta altura da sessão, a
+plataforma já passou por dois ciclos de verificação (estrutural V1-V5 + design leve) sem
+achados S0/S1 novos há duas rodadas — sinal de que construção continua sendo a aposta de maior
+retorno.
