@@ -54,6 +54,7 @@ type Fixture = {
   consentId: string
   subscriptionPlanId: string
   categoryId: string
+  quoteId: string
 }
 
 const admin = createClient(SUPABASE_URL, SERVICE_KEY, {
@@ -215,6 +216,14 @@ async function semear(f: Fixture, sufixo: string): Promise<void> {
       .single(),
     'ticket_items',
   ).id
+  f.quoteId = exigir(
+    await admin
+      .from('quotes')
+      .insert({ tenant_id: t, client_id: f.clientId, professional_id: f.professionalId })
+      .select('id')
+      .single(),
+    'quotes',
+  ).id
   f.packageId = exigir(
     await admin
       .from('packages')
@@ -261,6 +270,7 @@ async function semear(f: Fixture, sufixo: string): Promise<void> {
         starts_on: '2026-09-01',
       },
     ],
+    ['quote_items', { tenant_id: t, quote_id: f.quoteId, description: 'Item de teste', unit_price_cents: 5000, total_cents: 5000 }],
     ['service_products', { tenant_id: t, service_id: f.serviceId, product_id: f.productId, qty: 0.5 }],
     ['stock_moves', { tenant_id: t, product_id: f.productId, kind: 'in', qty: 10 }],
     ['waitlist', { tenant_id: t, client_id: f.clientId, service_id: f.serviceId }],

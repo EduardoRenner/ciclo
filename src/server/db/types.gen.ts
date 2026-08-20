@@ -2045,6 +2045,148 @@ export type Database = {
           },
         ]
       }
+      quote_items: {
+        Row: {
+          description: string
+          id: string
+          qty: number
+          quote_id: string
+          tenant_id: string
+          total_cents: number
+          unit_price_cents: number
+        }
+        Insert: {
+          description: string
+          id?: string
+          qty?: number
+          quote_id: string
+          tenant_id: string
+          total_cents: number
+          unit_price_cents: number
+        }
+        Update: {
+          description?: string
+          id?: string
+          qty?: number
+          quote_id?: string
+          tenant_id?: string
+          total_cents?: number
+          unit_price_cents?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_items_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_items_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quotes: {
+        Row: {
+          approved_at: string | null
+          client_id: string
+          converted_appointment_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          message: string | null
+          professional_id: string
+          rejected_at: string | null
+          rejected_reason: string | null
+          sent_at: string | null
+          status: string
+          tenant_id: string
+          total_cents: number
+          valid_until: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          client_id: string
+          converted_appointment_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          message?: string | null
+          professional_id: string
+          rejected_at?: string | null
+          rejected_reason?: string | null
+          sent_at?: string | null
+          status?: string
+          tenant_id: string
+          total_cents?: number
+          valid_until?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          client_id?: string
+          converted_appointment_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          message?: string | null
+          professional_id?: string
+          rejected_at?: string | null
+          rejected_reason?: string | null
+          sent_at?: string | null
+          status?: string
+          tenant_id?: string
+          total_cents?: number
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "v_client_segments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_converted_appointment_id_fkey"
+            columns: ["converted_appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_categories: {
         Row: {
           id: string

@@ -3,6 +3,7 @@
 import {
   CalendarDays,
   Cake,
+  FileText,
   Gift,
   MessageCircle,
   Pencil,
@@ -261,6 +262,10 @@ export default function Ficha({
         <Button variante="secondary" largura="cheia" onClick={() => router.push(`/admin/agenda/novo?cliente=${cliente.id}`)}>
           <CalendarDays className="size-4" />
           Marcar horário
+        </Button>
+        <Button variante="secondary" largura="cheia" onClick={() => router.push(`/admin/orcamentos/novo?cliente=${cliente.id}`)}>
+          <FileText className="size-4" />
+          Criar orçamento
         </Button>
       </div>
 

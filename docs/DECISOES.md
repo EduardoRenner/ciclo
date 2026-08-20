@@ -1640,3 +1640,39 @@ em §19 como pendência real. Construir fila/cron novo só pra isso, sem nenhum 
 verdade usando recorrência ainda, seria infraestrutura especulativa; a série + as primeiras
 ocorrências já resolvem o caso de uso principal (agendar HOJE algo que se repete), e estender
 o horizonte manualmente (rodar a mesma lógica de novo) é um comando, não um projeto.
+
+2026-08-20 · P8 (orçamento com aprovação por link, §11) — enviar o link por WhatsApp Cloud
+API (automatizado, mesmo canal de lembrete/confirmação) ou link manual (`wa.me`, clique do
+profissional)? · Link manual. Cloud API exige template pré-aprovado pela Meta Business — não
+existe processo nesta sessão pra criar/aprovar um template novo (é aprovação externa, fora do
+controle do código), e usar um template genérico já aprovado pra outra finalidade seria burlar
+a política do WhatsApp. `wa.me` com texto pré-preenchido é exatamente o padrão já usado no
+botão "Falar no WhatsApp" da página pública (`secoes.tsx`) — reaproveitar em vez de inventar
+um segundo jeito de "abrir o WhatsApp" no mesmo produto.
+
+2026-08-20 · §11 pede `Referrer-Policy: no-referrer` na rota do orçamento pra o token não
+vazar no header ao clicar pelo WhatsApp — vale a pena um override por rota? · Não: o
+middleware global (`src/middleware.ts`) já aplica `strict-origin-when-cross-origin` a
+**toda** rota, inclusive `/orcamento/[token]`. Esse valor só envia a ORIGEM (esquema+host) em
+navegação cross-origin, nunca o path — o token, que vive no path, nunca sai da página nem que
+ela tenha um link de saída pra outro domínio. Verificado o comportamento antes de adicionar um
+header redundante; as rotas de confirmação/cancelamento (P5.5, TICKET-030/063) já contam com a
+mesma proteção sem override nenhum, então tratar orçamento diferente seria inconsistência sem
+motivo.
+
+2026-08-20 · A validade TÉCNICA do token HMAC (o prazo em que a assinatura em si continua
+válida) devia ser igual à validade de NEGÓCIO do orçamento (`valid_until`, "vale por 15 dias")?
+· Não — são independentes de propósito. O token tem 180 dias de validade técnica (generoso);
+`valid_until` é decidido pelo profissional por orçamento e checado à parte, em
+`orcamentoExpirado()` (core puro). Se as duas fossem a mesma coisa, um orçamento "sem data pra
+vencer" (`valid_until = null`, opção que o formulário oferece) precisaria de um token que nunca
+expira — HMAC com prazo infinito é ruim de revogar. Separar as duas validades resolve isso: o
+token sempre tem um teto técnico razoável, e quem decide "até quando vale de verdade" é sempre
+a regra de negócio, nunca a criptografia.
+
+2026-08-20 · Aprovar/recusar pelo link deviam usar `Idempotency-Key` (como as rotas
+autenticadas) ou o padrão de idempotência natural das outras rotas públicas? · Padrão natural,
+igual a `public/appointments/cancel` e `public/reviews`: clicar duas vezes no mesmo botão
+devolve o mesmo resultado (checagem `status === alvo` antes de tentar mudar), sem exigir que o
+cliente (sem sessão, só o link) saiba gerar um header de idempotência. `Idempotency-Key` seria
+redundante aqui e adicionaria uma dependência que o link em si não tem como cumprir sozinho.
