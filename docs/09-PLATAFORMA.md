@@ -769,7 +769,7 @@ Não pode quebrar quem já usa.
 | **P3 · Módulos** | `tenant_modules`, tela de configuração, modo solo | Médio | P2 |
 | **P4 · Onboarding** | fluxo de 3 min (§7), busca de profissão, link público no fim, **instrumentação do funil (§13.2)** | Médio | P0–P3 |
 | **P5 · Catálogo** | **3 profissões profundas + 9 rasas** (§5) | Médio — as 3 são pesquisa, não `INSERT` | P0 |
-| **P5.5 · Cliente se resolve sozinho** | fecha **G12**: cancelar e remarcar pelo mesmo link do WhatsApp, devolvendo a vaga à agenda | Baixo | — |
+| **P5.5 · Cliente se resolve sozinho** | fecha **G12**: cancelar e remarcar pelo mesmo link do WhatsApp, devolvendo a vaga à agenda | Baixo | ✅ 2026-08-19 (TICKET-063): novo `POST /api/v1/public/appointments/cancel/[token]`, mesmo token HMAC do TICKET-030 (nunca precisou de tabela nova — o token já autoriza qualquer ação sobre aquele agendamento, não só confirmar). "Remarcar" **não** ganhou fluxo próprio — vira cancelar + link "Marcar outro horário" pra página pública já existente, decisão de escopo pra não duplicar a UI de escolha de horário dentro de uma página sem sessão. A tela `/confirmar/[token]` parou de disparar a confirmação sozinha ao abrir (agora é escolha: "Vou sim" / "Preciso desmarcar") — com duas ações possíveis, disparar uma automaticamente deixou de fazer sentido |
 | **P6 · Marca e página** | personalização + página pública como mini-site (§8) + **assinatura discreta do plano grátis (§13.1)** | Médio | P3 |
 | **P7 · Recorrência** | fecha o G4 (§12) | **Alto** | P2 |
 | **P8 · Orçamento** | fluxo + aprovação por link (§11) | Médio | P2 |
@@ -830,8 +830,9 @@ Nenhuma das 3 profundas depende dele; pintor e reforma, que dependem, não estã
 16. **Agendar pela página pública como cliente de eletricista guarda o endereço do serviço, e o
     profissional o vê na agenda** (G3+G13). É o teste que separa "funciona" de "existe" para
     metade do catálogo.
-17. **O link do WhatsApp permite remarcar e cancelar**, e a vaga cancelada volta para a agenda
-    (G12) — verificável ponta a ponta, sem login.
+17. ✅ **O link do WhatsApp permite cancelar** (e a vaga cancelada volta para a agenda) **e
+    oferece remarcar** via link para a página pública — G12, verificado ponta a ponta, sem
+    login, 5 testes de integração (`confirmacao-cancelamento.test.ts`).
 18. **Nenhum tenant de teste no banco de produção** antes do primeiro cliente real (§1.1) —
     `select count(*) from tenants` bate com a quantidade de negócios reais.
 19. Nenhum serviço com `duration_min` acima do teto é aceito sem mensagem clara explicando o

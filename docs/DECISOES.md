@@ -1551,3 +1551,13 @@ nenhum tenant real hoje tem onde='vai_ate' (as 2 profissões ativas são barbear
 ramificar a interface por eixo agora seria código sem ninguém pra testar de verdade. Um salão
 fixo também atende em domicílio às vezes; o campo "some" da conversa sozinho se ninguém
 preencher. Gating por eixo fica pra quando existir tenant de verdade que precise dele.
+
+2026-08-19 · P5.5 (G12) pedia "cancelar e remarcar" pelo link — remarcar de verdade (escolher
+novo horário sem sair da página do token) ou reusar a página pública de agendamento? · Reusar:
+cancelar libera a vaga e devolve o slug do tenant; a tela mostra um botão "Marcar outro horário"
+que leva pra `/[slug]/agendar`, a mesma UI de escolha de horário que já existe e já é testada ·
+construir um segundo seletor de horário dentro de uma página sem sessão (autorizada só por
+token) duplicaria toda a lógica de disponibilidade/slot que `agendar.tsx` já resolve, por um
+ganho pequeno (economizar um clique). O mesmo token HMAC do TICKET-030 (confirmação) autoriza o
+cancelamento também — não abriu tabela nova, ele já prova "quem clicou recebeu o link" pra
+qualquer ação sobre aquele agendamento específico, não só confirmar.
