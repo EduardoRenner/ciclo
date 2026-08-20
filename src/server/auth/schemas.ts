@@ -34,8 +34,6 @@ export const EsquemaNovaSenha = z.object({
   password: z.string().min(1, 'Escolha uma senha.'),
 })
 
-/** As 8 verticais do enum `vertical_pack` (0001), literal — é o que `apply_vertical_pack()` aceita. */
-export const VERTICAIS = ['barber', 'nails', 'lashes', 'brows', 'waxing', 'aesthetics', 'tattoo', 'hair'] as const
 
 /**
  * `^[a-z0-9][a-z0-9-]{2,38}[a-z0-9]$` (constraint `tenants_slug_format` da 0001),
@@ -68,7 +66,10 @@ const SLUGS_RESERVADOS = new Set([
 
 export const EsquemaOnboarding = z.object({
   businessName: z.string().trim().min(2, 'Digite o nome do negócio.').max(120, 'Nome muito longo.'),
-  vertical: z.enum(VERTICAIS, 'Escolha uma especialidade da lista.'),
+  // docs/09-PLATAFORMA.md P4: profissão vem do catálogo (professions, 17 linhas), não mais do
+  // enum de 8 verticais de beleza — a rota resolve `vertical` a partir dela (schemas.ts não
+  // sabe de banco, então a tradução profession→vertical mora na rota, não aqui).
+  professionId: z.uuid('Escolha uma profissão da lista.'),
   slug: z
     .string()
     .trim()

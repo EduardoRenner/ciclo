@@ -172,3 +172,77 @@ describe('executarOnboarding — contra o projeto real', () => {
     60_000,
   )
 })
+
+/**
+ * P4 (docs/09-PLATAFORMA.md §7/§16 critério 4): achado crítico ao revisar o plano — o catálogo
+ * de 17 profissões nunca foi ligado ao cadastro de verdade. Sem `professionId`, não existia
+ * NENHUM jeito de uma eletricista se cadastrar. Estes testes provam a ponte nova.
+ */
+describe('executarOnboarding com professionId (P4)', () => {
+  it(
+    'profissão nova (fora das 8 legadas) usa apply_profession_pack — catálogo real, não vazio',
+    async () => {
+      const userId = await criarUsuario('eletricista')
+      const slug = `eletricista-${randomUUID().slice(0, 8)}`
+
+      const { data: profissao, error } = await svc.from('professions').select('id').eq('slug', 'eletricista').single()
+      if (error) throw error
+
+      const { tenant } = await executarOnboarding(svc, {
+        userId,
+        businessName: 'Eletricista do Bairro',
+        vertical: 'general',
+        professionId: profissao.id,
+        slug,
+        timezone: 'America/Sao_Paulo',
+      })
+      tenantsParaLimpar.push(tenant.id)
+
+      expect(tenant.vertical).toBe('general')
+
+      const tenantCompleto = await svc.from('tenants').select('profession_id, onde, cobranca, inicio, ritmo').eq('id', tenant.id).single()
+      expect(tenantCompleto.data).toMatchObject({ profession_id: profissao.id, onde: 'vai_ate', cobranca: 'visita_hora' })
+
+      // profession_services de eletricista tem 5 serviços reais (P5) — não pode nascer vazio.
+      const servicos = await svc.from('services').select('id', { count: 'exact', head: true }).eq('tenant_id', tenant.id)
+      expect(servicos.count).toBe(5)
+
+      const expediente = await svc.from('business_hours').select('id', { count: 'exact', head: true }).eq('tenant_id', tenant.id)
+      expect(expediente.count).toBe(6) // mesmo expediente padrão do apply_vertical_pack
+    },
+    60_000,
+  )
+
+  it(
+    'profissão legada (barber) escolhida via professionId continua usando apply_vertical_pack — não regride pra profession_services',
+    async () => {
+      const userId = await criarUsuario('barbeiro')
+      const slug = `barbeiro-catalogo-${randomUUID().slice(0, 8)}`
+
+      const { data: profissao, error } = await svc.from('professions').select('id').eq('slug', 'barber').single()
+      if (error) throw error
+
+      const { tenant } = await executarOnboarding(svc, {
+        userId,
+        businessName: 'Barbearia via Catálogo',
+        vertical: 'barber',
+        professionId: profissao.id,
+        slug,
+        timezone: 'America/Sao_Paulo',
+      })
+      tenantsParaLimpar.push(tenant.id)
+
+      // vertical_packs.barber tem um número de serviços diferente de
+      // profession_services (barber) — a contagem abaixo prova qual dos dois rodou.
+      const vertical_pack = await svc.from('vertical_packs').select('services').eq('vertical', 'barber').single()
+      const numeroEsperado = (vertical_pack.data?.services as unknown[]).length
+
+      const servicos = await svc.from('services').select('id', { count: 'exact', head: true }).eq('tenant_id', tenant.id)
+      expect(servicos.count).toBe(numeroEsperado)
+
+      const tenantCompleto = await svc.from('tenants').select('profession_id').eq('id', tenant.id).single()
+      expect(tenantCompleto.data?.profession_id).toBe(profissao.id) // eixos/profession_id são setados mesmo usando o pack antigo
+    },
+    60_000,
+  )
+})

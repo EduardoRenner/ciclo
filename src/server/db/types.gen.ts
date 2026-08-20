@@ -3209,6 +3209,13 @@ export type Database = {
       }
     }
     Functions: {
+      apply_profession_pack: {
+        Args: {
+          p_profession_id: string
+          p_tenant: string
+        }
+        Returns: undefined
+      }
       apply_vertical_pack: {
         Args: {
           p_tenant: string
@@ -3335,6 +3342,7 @@ export type Database = {
         | "aesthetics"
         | "tattoo"
         | "hair"
+        | "general"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3532,6 +3540,7 @@ export const Constants = {
         "aesthetics",
         "tattoo",
         "hair",
+        "general",
       ],
     },
   },

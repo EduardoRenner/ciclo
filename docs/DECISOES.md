@@ -1753,3 +1753,33 @@ tem NENHUM limite ou preço decidido — construir um catálogo rico de planos s
 cada tier realmente vai oferecer seria estrutura especulativa, o oposto do que essa sessão
 vem evitando desde a auditoria do banco (P−1). Renomear resolve o problema de vocabulário sem
 fingir resolver o de cobrança — o catálogo pode vir depois, quando o conteúdo existir.
+
+2026-08-20 · Revisão geral pós-P11 (todas as fases originais do plano resolvidas) — antes de
+escrever um plano novo, vale reler §16 (critérios de aceite) contra o estado real do produto?
+· Sim, e valeu a pena: achou que P4 (onboarding) nunca tinha sido executado — sumiu da lista
+mental de "fases feitas" porque as fases ao redor (P0, P5, P7, P9, P10) todas pareciam
+completas e criavam a sensação de "catálogo multi-profissão pronto". Mas nada testava o
+CADASTRO em si, e o cadastro continuava só com as 8 verticais de beleza — toda a ampliação de
+profissões era, na prática, inacessível pra qualquer pessoa nova. Lição: terminar cada fase
+individualmente não garante que a lista inteira foi coberta; vale conferir a lista contra o
+plano de execução (§15) inteiro antes de declarar o produto pronto, não só contra a memória do
+que já foi feito.
+
+2026-08-20 · `executarOnboarding()` devia trocar `vertical` por `professionId` (quebrando as 38
+chamadas existentes, 34 delas em teste) ou ganhar `professionId` como parâmetro opcional
+retrocompatível? · Opcional. Trocar o parâmetro obrigatório exigiria editar 34 arquivos de
+teste só pra manter o comportamento de sempre — risco desnecessário numa mudança que o produto
+real também precisa continuar aceitando (a rota resolve `vertical` a partir da profissão, mas
+a função de serviço em si não precisava saber disso). Parâmetro opcional com fallback pro
+comportamento anterior é o mesmo princípio que orientou o schema de `EsquemaCriarOrcamento`
+(P8) e `EsquemaCriarSerie` (P7) aceitando `clientId` OU `clientDraft`.
+
+2026-08-20 · Profissão legada (barber) escolhida via `professionId` (novo fluxo) devia usar
+`apply_profession_pack()` (novo, lendo `profession_services`) ou continuar em
+`apply_vertical_pack()` (antigo, lendo `vertical_packs`)? · Continuar no antigo. `barber` tem
+catálogo real nos dois lugares agora (P5 populou `profession_services.barber` também), mas
+`vertical_packs` é o caminho testado desde o TICKET-004 e as outras 5 verticais com pack real
+(nails/lashes/brows/waxing/aesthetics) só existem lá — trocar TODAS as 8 legadas pro RPC novo
+de uma vez arriscaria regressão sem necessidade (nail/lashes/etc virariam catálogo vazio, já
+que `profession_services` só tem dado rico pra barber entre as 8). A troca de RPC só se aplica
+a profissão que não tinha NENHUM caminho de catálogo antes.

@@ -5,12 +5,35 @@ import { AppError } from '@/server/http/errors'
 
 import type { Database } from '@/server/db/types.gen'
 
+/**
+ * As 8 verticais do enum original (0001) — `vertical_packs` tem catálogo rico e testado pra 6
+ * delas. Profissão fora desta lista usa `apply_profession_pack()` (profession_services, P0+P5)
+ * em vez de `apply_vertical_pack()` — ver comentário completo na migration 0031.
+ */
+const VERTICAIS_LEGADAS = new Set<Database['public']['Enums']['vertical_pack']>([
+  'barber',
+  'nails',
+  'lashes',
+  'brows',
+  'waxing',
+  'aesthetics',
+  'tattoo',
+  'hair',
+])
+
 export type ParametrosOnboarding = {
   userId: string
   businessName: string
   vertical: Database['public']['Enums']['vertical_pack']
   slug: string
   timezone: string
+  /**
+   * docs/09-PLATAFORMA.md §7/P4: opcional e retrocompatível — quem não manda continua exatamente
+   * como antes (só `vertical`, `apply_vertical_pack`). Quem manda ganha `profession_id` + os 4
+   * eixos no tenant, e — se a profissão não for uma das 8 legadas — o catálogo novo em vez do
+   * antigo.
+   */
+  professionId?: string
 }
 
 export type ResultadoOnboarding = {
@@ -46,9 +69,29 @@ export async function executarOnboarding(
 
   const { wrapped, keyVersion } = gerarDekCifrada()
 
+  let profissao: { id: string; slug: string; onde: string; cobranca: string; inicio: string; ritmo: string } | null = null
+  if (params.professionId) {
+    const { data, error } = await svc
+      .from('professions')
+      .select('id, slug, onde, cobranca, inicio, ritmo')
+      .eq('id', params.professionId)
+      .maybeSingle()
+    if (error) throw new AppError('INTERNAL', { cause: error })
+    if (!data) throw AppError.validacao({ professionId: 'Essa profissão não existe mais.' })
+    profissao = data
+  }
+
   const { data: tenant, error: erroTenant } = await svc
     .from('tenants')
-    .insert({ name: params.businessName, slug: params.slug, vertical: params.vertical, timezone: params.timezone })
+    .insert({
+      name: params.businessName,
+      slug: params.slug,
+      vertical: params.vertical,
+      timezone: params.timezone,
+      ...(profissao
+        ? { profession_id: profissao.id, onde: profissao.onde, cobranca: profissao.cobranca, inicio: profissao.inicio, ritmo: profissao.ritmo }
+        : {}),
+    })
     .select('id, name, slug, vertical, timezone')
     .single()
 
@@ -88,10 +131,14 @@ export async function executarOnboarding(
       .insert({ tenant_id: tenant.id, dek_wrapped: wrapped, key_version: keyVersion })
     if (erroChave) throw erroChave
 
-    const { error: erroPack } = await svc.rpc('apply_vertical_pack', {
-      p_tenant: tenant.id,
-      p_vertical: params.vertical,
-    })
+    // Profissão nova (fora das 8 legadas) usa o catálogo de profession_services — as 8
+    // legadas continuam no vertical_packs de sempre, mesmo quando escolhidas via professionId
+    // (ex.: barber também tem profession_services agora, de P5, mas trocar de catálogo aqui
+    // seria mudar comportamento de quem já funciona sem necessidade).
+    const usaPackNovo = profissao && !VERTICAIS_LEGADAS.has(params.vertical)
+    const { error: erroPack } = usaPackNovo
+      ? await svc.rpc('apply_profession_pack', { p_tenant: tenant.id, p_profession_id: profissao!.id })
+      : await svc.rpc('apply_vertical_pack', { p_tenant: tenant.id, p_vertical: params.vertical })
     if (erroPack) throw erroPack
   } catch (erro) {
     await svc.from('tenants').delete().eq('id', tenant.id)
