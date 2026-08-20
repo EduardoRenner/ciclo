@@ -19,17 +19,20 @@
    com todas as letras: *"O 'modelo único' só funciona porque a diferença entre as profissões é
    CONFIGURAÇÃO, não código."* A tese está certa e o motor está pronto — o que está limitado é
    o **catálogo**: 8 verticais, todas de beleza, num `enum` do Postgres.
-2. **Nove lacunas reais separam o produto de hoje do produto multiprofissão** (§2), todas
-   medidas no repositório. As duas mais sérias não são cosméticas: **não existe endereço do
-   atendimento** (quem vai até o cliente não tem onde guardar para onde vai) e **recorrência é
-   uma coluna órfã** (`appointments.recurrence_id` existe, a tabela por trás dela não).
+2. **Dez lacunas reais separam o produto de hoje do produto multiprofissão** (§2), todas
+   medidas no repositório. As três mais sérias não são cosméticas: **não existe endereço do
+   atendimento** (quem vai até o cliente não tem onde guardar para onde vai), **recorrência é
+   uma coluna órfã** (`appointments.recurrence_id` existe, a tabela por trás dela não) e
+   **8 dos 10 modelos de WhatsApp são de salão** — o produto fala com o cliente final, no canal
+   que mais importa, assumindo que ele vem até você.
 3. **A generalização melhora o produto, não dilui.** O Motor de Ciclo — hoje "cliente de beleza
    que sumiu" — é, na verdade, o motor de retorno de qualquer negócio de serviço: manutenção
    preventiva do eletricista, faxina semanal, retorno de 6 meses do dentista, vacina anual do
    pet. O nome CICLO fica **melhor** depois da virada, não pior.
 4. **A configuração de uma profissão cabe em 4 eixos** (§4). É isso que torna "todos os
-   profissionais" um problema tratável em vez de uma promessa vazia: não são 40 produtos, são
-   40 pontos num espaço de 4 dimensões.
+   profissionais" um problema tratável em vez de promessa vazia: não são dezenas de produtos,
+   são pontos num espaço de 4 dimensões. O lançamento leva **12 profissões escolhidas para
+   cobrir os 4 eixos** (§5) — se essas 12 rodam sem código específico, o modelo está provado.
 
 ---
 
@@ -59,7 +62,7 @@ posição boa — e rara.
 
 ---
 
-## 2. As nove lacunas
+## 2. As dez lacunas
 
 Cada uma verificada no repositório de hoje.
 
@@ -147,6 +150,35 @@ produto não é para ele.
 `plan_tier as enum ('start','pro','studio','network')` — "studio" e "network" são vocabulário de
 salão. Mesmo problema de enum do G1.
 
+### G10 · Os modelos de WhatsApp são de salão — e é o pior dos dez
+
+`src/server/services/mensagens-prontas.ts` traz 10 modelos prontos. **Oito deles assumem que o
+cliente vem até você:**
+
+```
+"seu horário na {{negocio}}"        "Te espero na {{negocio}}"
+"não aparece na {{negocio}}"        "Passa aqui esse mês"
+"Obrigado pela visita"              "aqui na {{negocio}}"
+"cliente da casa"                   "segura essa casa"
+```
+
+E um deles — *"Qualquer ajuste nos primeiros dias é por nossa conta"* — é literalmente o conceito
+de **retoque de unha/cílios**, que não existe em elétrica nem em faxina.
+
+Três agravantes que fazem esta lacuna ser mais séria que as outras nove:
+
+1. **É o canal que mais importa.** Não é uma tela interna: é o texto que sai do produto e chega
+   no cliente final por WhatsApp.
+2. **São semeados na primeira leitura da tela** (decisão consciente, documentada no arquivo:
+   faz negócio antigo ganhar a biblioteca sem migration) — ou seja, **um eletricista que se
+   cadastrar hoje recebe automaticamente 10 mensagens escritas para um salão**, já como linhas
+   dele, prontas para enviar.
+3. **Vira dado do tenant depois de semeado**, então corrigir o padrão depois **não conserta quem
+   já recebeu** — a correção precisa vir junto com a virada, não depois.
+
+**Vira:** modelos de mensagem passam a fazer parte do pack de profissão (§3.3), com variante por
+eixo 1 (*"Te espero"* para quem recebe, *"Chego às"* para quem vai até o cliente).
+
 ---
 
 ## 3. A decisão central: profissão é dado
@@ -195,6 +227,93 @@ uma disciplina de redação, não uma feature** — e é mais barata que qualque
 > Efeito colateral bom: as 13 strings do G2 já melhoram como texto. "A seguir" é melhor que
 > "Próxima cliente" mesmo num salão.
 
+### 3.3 O esquema (esboço)
+
+Sem isto, P0 não é executável — é intenção, não plano.
+
+```sql
+-- catálogo global, mesmo padrão de vertical_packs: leitura pública, escrita só pelo servidor
+create table professions (
+  id                uuid primary key default gen_random_uuid(),
+  slug              citext not null unique,
+  nome              text not null,
+  grupo             text not null,              -- beleza | casa | saude | fitness | educacao | pet | eventos | profissional
+  sinonimos         text[] not null default '{}',   -- "diarista" acha faxina (§7 passo 2)
+  -- os 4 eixos de §4
+  onde              text not null,              -- no_local | vai_ate | remoto | hibrido
+  cobranca          text not null,              -- fixo | hora | visita_hora | diaria | orcamento | pacote | recorrente
+  inicio            text not null,              -- direto | solicitacao | orcamento_antes
+  ritmo             text not null,              -- avulso | recorrente | sazonal | sob_demanda
+  -- configuração
+  vocab             jsonb not null,             -- §3.1
+  duracao_padrao_min int not null,
+  ciclo_padrao_dias int not null,
+  modulos_padrao    jsonb not null,             -- §6
+  campos_ficha      jsonb not null default '[]',
+  mensagens         jsonb not null default '[]',-- G10: modelos por profissão
+  ativa             boolean not null default true
+);
+
+create table profession_services (
+  profession_id     uuid not null references professions(id) on delete cascade,
+  nome              text not null,
+  duracao_min       int not null,
+  preco_sugerido_cents bigint not null,
+  ciclo_dias        int,
+  posicao           int not null default 0
+);
+
+-- tenants ganha:
+--   profession_id uuid references professions(id)
+--   vocab_override jsonb not null default '{}'   (o dono pode reescrever qualquer rótulo)
+--   onde/cobranca/inicio/ritmo  (copiados da profissão, editáveis depois)
+--   professions_extra uuid[]    (profissão não é porta de mão única, §5)
+
+create table tenant_modules (
+  tenant_id   uuid not null references tenants(id) on delete cascade,
+  modulo      text not null,
+  ligado      boolean not null,
+  origem      text not null,      -- 'plano' | 'dono' — o que bloqueou, para a tela explicar (§6)
+  primary key (tenant_id, modulo)
+);
+```
+
+Cuidados que valem para as duas tabelas de catálogo: RLS ligada com `select using (true)` e
+**nenhum grant de escrita** para `anon`/`authenticated` — é o mesmo desenho de `vertical_packs`,
+e a função que aplica o pack precisa manter o `revoke execute` da migration `0004` (§14).
+
+### 3.4 Como o vocabulário chega no código
+
+O ponto que decide se P1 funciona ou vira gambiarra espalhada:
+
+- O vocabulário efetivo é `professions.vocab` **mesclado campo a campo** com
+  `tenants.vocab_override` — mesmo padrão do `getEffectiveBrand()` do Stark Base: override nunca
+  sobrescreve com vazio, e falha de banco cai no padrão em vez de derrubar a tela.
+- Resolvido **uma vez por requisição**, no contexto do tenant que já existe, e entregue junto —
+  não pode virar uma consulta nova por componente.
+- **Precisa chegar aos dois lados**: interface *e* servidor. Os modelos de mensagem (G10), o
+  texto da página pública, os e-mails e os PDFs bebem da mesma fonte. Vocabulário que só existe
+  no cliente resolve metade do problema e cria a outra metade.
+- Um único ponto de leitura na interface. Se aparecerem dois jeitos de pegar o rótulo, em três
+  meses existem quatro.
+
+---
+
+### 3.5 Uma fronteira que precisa estar escrita: sem identidade de cliente entre tenants
+
+`clients.user_id` existe hoje ("se criou conta no app da cliente"). É tentador, num produto
+multiprofissão, deixar o cliente final ter **uma conta só** que enxerga a manicure, o
+eletricista e o veterinário dele.
+
+**Não.** No momento em que existe identidade de cliente atravessando tenants, o produto vira
+marketplace por acidente: aparece busca, aparece descoberta, aparece disputa por quem é dono do
+relacionamento — e o §17 (não virar marketplace) vira letra morta sem ninguém ter decidido nada.
+
+**Decisão:** cada tenant é dono da própria lista de clientes. O cliente final não precisa de
+conta para nada essencial (agendar, confirmar, aprovar orçamento e avaliar funcionam por link
+com token — padrão que o produto já usa). Se um dia isso mudar, que seja uma decisão explícita,
+com esta seção sendo revogada por escrito.
+
 ---
 
 ## 4. Os quatro eixos — o coração do modelo
@@ -218,6 +337,22 @@ Muda: tela de preço, comanda, o que aparece na página pública.
 > Este eixo é mais importante do que parece. **Psicólogo, advogado e médico não deixam
 > desconhecido marcar direto na agenda** — querem receber um pedido e aprovar. Hoje o produto só
 > sabe fazer agendamento direto. Sem este eixo, várias profissões de alto valor ficam de fora.
+
+**Modo solicitação, especificado** (é barato e destrava um grupo inteiro do catálogo):
+
+- A página pública mostra os horários e o cliente **pede** um deles; o texto diz "pedido de
+  horário", nunca "confirmado".
+- O horário entra como `pending` **segurando a vaga** por um prazo configurável — o mecanismo
+  já existe: `appointments.hold_expires_at`, hoje usado para reserva aguardando sinal.
+- O profissional recebe **push** (o módulo de push existe, TICKET-056) e aprova ou recusa em um
+  toque, com opção de sugerir outro horário.
+- Aprovou → vira `confirmed` e dispara a confirmação por WhatsApp. Recusou ou expirou → a vaga
+  volta para a agenda automaticamente.
+- Configurável por serviço, não só por tenant: a primeira consulta pede aprovação, o retorno de
+  quem já é cliente pode ser direto.
+
+Reaproveita `hold_expires_at`, o estado `pending`, push e a mensageria — **nenhuma peça nova de
+infraestrutura.** É a razão de este eixo ser prioridade alta com custo baixo.
 
 ### Eixo 4 · Com que ritmo
 `avulso` · `recorrente` · `sazonal` · `sob_demanda`
@@ -244,26 +379,39 @@ Muda: se o Motor de Ciclo **aprende** o intervalo (avulso) ou se ele é **contra
 
 ---
 
-## 5. Catálogo de profissões
+## 5. Catálogo de profissões — 12 no lançamento, não 40
 
-Proposta de lançamento: **~40 profissões em 8 grupos.** Cada uma nasce com serviços de exemplo,
-duração e faixa de preço realistas (é isso que mata a objeção "não sei configurar").
+⚠️ **Correção de rota em relação à primeira versão deste documento**, que propunha ~40 profissões
+de largada. Estava errado, e contradizia o próprio risco do §18: **40 profissões rasas é
+exatamente como se vira "produto de ninguém".**
 
-- **Beleza e estética** — barbearia, cabeleireiro, manicure, cílios, sobrancelhas, depilação,
-  estética, maquiagem, tatuagem, bronzeamento *(as 8 de hoje viram 10 daqui)*
-- **Casa e manutenção** — faxina/diarista, passadeira, eletricista, encanador, pintor,
-  marceneiro, montador, chaveiro, jardineiro, piscineiro, dedetizador, ar-condicionado
-- **Saúde e bem-estar** — psicólogo, nutricionista, fisioterapeuta, massagista, terapeuta,
-  dentista, podólogo, fonoaudiólogo
-- **Fitness** — personal trainer, pilates, yoga, crossfit, dança
-- **Educação** — professor particular, aulas de música, idiomas, reforço escolar, autoescola
-- **Pet** — banho e tosa, veterinário, adestrador, pet sitter
-- **Eventos e criação** — fotógrafo, videomaker, DJ, buffet, decorador, cerimonialista
-- **Serviços profissionais** — contador, advogado, consultor, despachante, corretor, designer,
-  social media, TI/suporte
+O que faz o pack funcionar não é existir — é o serviço vir com **nome, duração e preço que a
+pessoa da área reconhece como certos**. Isso é pesquisa, não `INSERT`. Um eletricista que abre o
+app e vê "Instalação de tomada · 40 min · R$ 90" entende na hora que o produto é dele. O mesmo
+eletricista vendo "Serviço 1 · 60 min · R$ 100" fecha o app.
 
-Mais **"Outro"** com texto livre — e o que as pessoas digitam aí vira a fila de priorização do
-catálogo. É pesquisa de mercado de graça.
+**Lançamento — 12 profissões, escolhidas para cobrir os 4 eixos, não por popularidade:**
+
+| Profissão | Cobre o quê |
+|---|---|
+| Barbearia, manicure, cabeleireiro | a base atual, que não pode regredir |
+| **Faxina/diarista** | vai até o cliente + diária + **recorrente** |
+| **Eletricista** | vai até + visita+hora + **orçamento antes** |
+| Encanador | idem, valida que o pack de "casa" generaliza |
+| **Personal trainer** | híbrido + pacote + recorrente |
+| **Psicólogo** | remoto/híbrido + **solicitação com aprovação** |
+| Professor particular | por hora + recorrente + híbrido |
+| **Fotógrafo** | orçamento + sazonal + vai até |
+| Banho e tosa | no local + avulso, fora da beleza humana |
+| Jardineiro | vai até + recorrente + sazonal |
+
+Se essas 12 funcionam sem código específico, **o modelo está provado** e o resto do catálogo
+vira trabalho de conteúdo em lote, sem risco de arquitetura.
+
+**Os outros 8 grupos** (saúde, fitness, educação, pet, eventos, serviços profissionais, casa
+completa, beleza completa) entram **por demanda medida**, não por palpite: o campo **"Outro"**
+do onboarding é texto livre, e o que as pessoas digitam ali **é a fila de priorização**. É
+pesquisa de mercado de graça, e evita escrever 28 packs que ninguém pediu.
 
 **Regra:** profissão **não é porta de mão única.** Quem entra como "faxineira" pode adicionar
 "passadeira" depois; quem é "cabeleireiro" pode virar "cabeleireiro + estética". O tenant tem
@@ -432,25 +580,63 @@ Fecha o G4. Requisitos que separam recorrência boa de ruim:
 
 ---
 
-## 13. Planos e cobrança — proposta
+## 13. Planos e cobrança
 
-⚠️ **Decisão de negócio, não técnica. Vai aqui como proposta, para o Eduardo decidir.**
+⚠️ **Decisão de negócio, não técnica — quem define é o Eduardo.** Este documento só registra as
+quatro regras de engenharia que valem independentemente do preço escolhido:
 
-| Plano | Para quem | Ideia |
+1. **Nunca prender dado.** Cair de plano limita funcionalidade — nunca esconde nem apaga cliente
+   e histórico. Além de correto, é o que evita processo e review ruim.
+2. **Bloqueio por plano sempre mostra o motivo e o caminho**, nunca some da tela (§6).
+3. Os nomes atuais (`start/pro/studio/network`) têm cheiro de salão **e são `enum`** — mesmo
+   problema do G1/G9, mesma solução.
+4. A cobrança depende do Asaas, **bloqueado por credencial** (tickets 031/032/033/043). O plano
+   não pode fingir que isso está resolvido — é a razão de P11 ser a última fase.
+
+A única decisão de plano que é *também* de produto está na §13.1, porque muda o que se constrói.
+
+### 13.1 O plano grátis é canal de distribuição, não só isca
+
+Aqui está a parte que a primeira versão deste documento não tinha, e que responde ao "**para
+vender**" do pedido original: um SaaS de autônomo não se vende por anúncio — o CAC não fecha.
+Ele se vende **pelo próprio uso**. Três mecanismos, e todos são *funcionalidade*, não marketing:
+
+- **Assinatura na página pública.** Todo agendamento no plano grátis acontece numa página com
+  "feito com CICLO". Quem agenda é outro profissional, é parente, é vizinho — e uma parcela
+  deles também tem agenda para organizar. É o laço de distribuição mais barato que existe, e é
+  literalmente o motivo de o plano grátis existir.
+- **O link é o produto.** A pessoa manda o link no status do WhatsApp, na bio do Instagram, no
+  grupo do bairro. Cada envio é impressão. Por isso o onboarding (§7) termina **no link com
+  botão de copiar**, e não numa tela de "parabéns".
+- **Indicação com contrapartida dos dois lados** — um mês para quem indica e para quem entra.
+  Barato de construir (o produto já tem `clients.referred_by` e bônus de indicação
+  implementados) e é o canal que funciona em categoria de autônomo, onde as pessoas se conhecem
+  por ofício e por bairro.
+
+**Consequência de produto:** a marca na página pública precisa ser **discreta e bonita**, não um
+banner. Feia, o profissional paga só para removê-la e o laço se fecha uma vez; boa, ela circula
+e traz gente. Isso conecta direto com `08-REDESIGN-E-IDENTIDADE.md` §10 — na página pública a
+cor é do negócio, e o CICLO é só um selo no rodapé.
+
+---
+
+### 13.2 Como saber se funcionou
+
+A primeira versão deste plano tinha só critério técnico. Falta o que importa para um SaaS —
+e nada disso é medido hoje:
+
+| Métrica | Por que essa | Alvo inicial |
 |---|---|---|
-| **Grátis** | testar | 1 profissional, agenda, página pública, limite de agendamentos/mês, marca CICLO na página |
-| **Solo** | autônomo | 1 profissional, ilimitado, Motor de Ciclo completo, WhatsApp, sem marca CICLO |
-| **Equipe** | 2 a N | vários profissionais, comissão, caixa, link por profissional |
-| **Avançado** | operação | estoque, contratos, domínio próprio, relatórios |
+| **Ativação** — % que sai do cadastro com serviço + horário + link | é o único número que diz se o onboarding funciona | > 60% |
+| **Tempo até o link pronto** | é a promessa do §7, e vira critério de aceite (§16.4) | < 3 min (mediana) |
+| **Tempo até o 1º agendamento real** | ativação de verdade é alguém marcando, não a config | < 7 dias |
+| **% que compartilha o link** | mede o laço da §13.1 | — |
+| Retenção em 30/90 dias | churn de autônomo é alto e precisa de linha de base | — |
+| Onde o onboarding é abandonado, passo a passo | diz o que consertar em vez de adivinhar | — |
+| O que digitam em "Outro" | é a fila do catálogo (§5) | — |
 
-Notas:
-- Os nomes atuais (`start/pro/studio/network`) têm cheiro de salão e é `enum` — mesmo problema
-  do G1/G9.
-- **Nunca prender dado.** Cair para o plano grátis limita funcionalidade, nunca esconde ou apaga
-  cliente e histórico. Além de correto, é o que evita processo e review ruim.
-- Bloqueio de módulo por plano sempre mostra **o motivo e o caminho**, nunca some da tela.
-- Cobrança depende do Asaas, que segue **bloqueado por credencial** (pendência já registrada nos
-  tickets 031/032/033/043). O plano não deve fingir que isso está resolvido.
+**Instrumentar o funil de onboarding entra em P4** — medir depois de construir é como a maioria
+dos produtos descobre tarde demais que a ativação é 12%.
 
 ---
 
@@ -476,12 +662,12 @@ Não pode quebrar quem já usa.
 | Fase | O que | Risco | Depende de |
 |---|---|---|---|
 | **P0 · Catálogo** | `professions` + `profession_services`; seed das 8 atuais; `tenants.profession_id`; migração não destrutiva (§14) | Médio | — |
-| **P1 · Vocabulário** | tokens em `professions`; regra de copy sem concordância (§3.2); varrer as 13 strings do G2; teste que reprova profissão cravada em `src/` | Médio | P0 |
-| **P2 · Eixos** | os 4 eixos como colunas; comportamento derivado deles | Médio | P0 |
+| **P1 · Vocabulário** | tokens em `professions` + merge com override (§3.4); regra de copy sem concordância (§3.2); varrer as 13 strings do G2; **os 10 modelos de WhatsApp do G10**; teste que reprova profissão cravada em `src/` | Médio | P0 |
+| **P2 · Eixos** | os 4 eixos como colunas; comportamento derivado deles; **modo solicitação (§4 eixo 3)**, que reusa `hold_expires_at` + push | Médio | P0 |
 | **P3 · Módulos** | `tenant_modules`, tela de configuração, modo solo | Médio | P2 |
-| **P4 · Onboarding** | fluxo de 3 min (§7), busca de profissão, link público no fim | Médio | P0–P3 |
-| **P5 · Catálogo cheio** | ~40 profissões com serviços e preços realistas | Baixo (trabalho de conteúdo) | P0 |
-| **P6 · Marca e página** | personalização + página pública como mini-site (§8) | Médio | P3 |
+| **P4 · Onboarding** | fluxo de 3 min (§7), busca de profissão, link público no fim, **instrumentação do funil (§13.2)** | Médio | P0–P3 |
+| **P5 · Catálogo** | **as 12 profissões do §5**, com serviço, duração e preço que a área reconheça | Médio — é pesquisa, não `INSERT` | P0 |
+| **P6 · Marca e página** | personalização + página pública como mini-site (§8) + **assinatura discreta do plano grátis (§13.1)** | Médio | P3 |
 | **P7 · Recorrência** | fecha o G4 (§12) | **Alto** | P2 |
 | **P8 · Orçamento** | fluxo + aprovação por link (§11) | Médio | P2 |
 | **P9 · Deslocamento** | endereço no agendamento, área, buffer automático (§10) | **Alto** | P2 |
@@ -494,6 +680,10 @@ vocabulário for texto cravado, tudo o mais é retrabalho.
 **Primeiro corte vendável (MVP da virada):** P0 a P6. Já vende para autônomo de qualquer
 profissão que atende no local ou vai até o cliente sem precisar de rota otimizada.
 P7/P8/P9 são o que abre faxina recorrente e serviço técnico de verdade.
+
+**Se for para fatiar ainda mais:** P0+P1+P5 sozinhas já entregam um produto que **fala a língua
+de 12 profissões** — mesmo antes dos módulos e do onboarding novo. É o menor corte que muda a
+percepção do produto, e é onde eu começaria.
 
 ---
 
@@ -512,6 +702,15 @@ P7/P8/P9 são o que abre faxina recorrente e serviço técnico de verdade.
 9. `apply_profession_pack()` continua idempotente e sem `execute` para `anon`/`authenticated`.
 10. Anamnese e dado de saúde **desligados** por padrão em profissão fora da saúde.
 11. Nenhuma regra de RLS enfraquecida — o teste de isolamento continua passando.
+12. **Nenhum dos modelos de mensagem semeados assume onde o atendimento acontece** (G10): conta
+    nova de eletricista não recebe "Te espero na", "Passa aqui" nem "pela visita". Verificável
+    por varredura nos modelos de cada pack.
+13. **Nenhuma consulta a cliente atravessa tenant** (§3.5) — o teste de isolamento já cobre;
+    o que entra é a decisão escrita, para ninguém "melhorar" isso sem revogá-la.
+14. As 12 profissões do §5 funcionam **sem uma linha de código específica** — é o teste do
+    modelo dos 4 eixos, e se falhar, falta um eixo (não falta um `if`).
+15. O funil de onboarding está instrumentado antes do lançamento (§13.2) — sem isso não há como
+    saber se a ativação é 60% ou 12%.
 
 ---
 
@@ -541,8 +740,11 @@ P7/P8/P9 são o que abre faxina recorrente e serviço técnico de verdade.
 | Perder o foco no diferencial | Motor de Ciclo é módulo **sempre ligado**; a virada existe para ampliar o alcance dele, não para diluí-lo |
 | Tenant de beleza quebrado na migração | §14, e critério de aceite 6 |
 | Custo de geocodificação | Começar sem mapa (§10) |
-| Catálogo raso vira objeção de venda | P5 é trabalho de conteúdo com preço realista, não um `INSERT` com nome bonito |
+| Catálogo raso vira objeção de venda | 12 profundas em vez de 40 rasas (§5); o resto entra por demanda medida |
 | Cobrança bloqueada no Asaas | Já é pendência conhecida; P11 é a última fase de propósito |
+| **Self-serve empurra o suporte para o produto** — quem configura errado conclui que "não funciona", e não abre chamado: some | Padrão bom em tudo (pack já preenchido, horário já preenchido), passo pulável, e o cartão "termine de configurar" no Hoje. E §13.2 mede onde abandonam, em vez de adivinhar |
+| **Canibalizar a base de beleza** — o produto fica genérico e para de parecer feito para salão | O vocabulário por profissão faz o oposto: hoje a manicure vê "cliente"; depois vê a língua dela. O critério 6 protege o comportamento; o §5 mantém as 3 profissões de beleza no primeiro lote |
+| Distribuição não resolvida — construir tudo e ninguém achar | §13.1 trata isso como funcionalidade (assinatura na página, link, indicação), não como marketing posterior. Se o laço não funcionar, é melhor descobrir com 12 profissões do que com 40 |
 
 ---
 
@@ -557,6 +759,32 @@ Honestidade sobre o que ainda é pergunta aberta, para não parecer mais resolvi
   óbvia (volume, recorrência nativa, dor de agenda real), mas isso é decisão de mercado e deve
   vir de conversa com gente da área, não deste documento.
 - **Geocodificação paga ou não** (§10).
-- **Se "Outro" no onboarding vira profissão genérica** ou fila de curadoria.
+- **Se "Outro" no onboarding vira profissão genérica** ou fila de curadoria — a §5 assume fila
+  de curadoria, mas isso é escolha, não conclusão.
 
 Nada disso bloqueia P0–P3, que é onde o trabalho começa.
+
+**Uma pergunta que eu deixei passar na primeira versão e que precisa de resposta antes de P6:**
+o produto continua se vendendo como **um** produto para todas as profissões, ou vira marca com
+recortes ("CICLO para casa", "CICLO para saúde") na comunicação, com o mesmo motor por baixo?
+Tecnicamente é indiferente — a arquitetura dos 4 eixos suporta os dois. Comercialmente muda
+tudo: página de vendas, anúncio, prova social. Não é decisão de engenharia, mas **é decisão de
+alguém**, e trava a §8 e a §13.1.
+
+---
+
+## 20. Registro de revisão
+
+**2ª versão, mesmo dia.** A 1ª foi revisada criticamente antes de qualquer execução. O que mudou:
+
+| Mudança | Por quê |
+|---|---|
+| **+ G10** (modelos de WhatsApp de salão) | Furo real: 8 dos 10 modelos assumem que o cliente vem até você, são semeados na primeira leitura e viram dado do tenant. A 1ª versão não olhou o canal mais importante do produto |
+| **+ §3.3** esquema concreto | P0 dizia "cria `professions`" sem dizer com quê. Era intenção, não plano executável |
+| **+ §3.4** mecanismo do vocabulário | Faltava dizer como o token chega no código — e que o **servidor** também precisa dele (mensagem, página pública, PDF) |
+| **+ §3.5** sem identidade entre tenants | Fronteira que faltava explicitar. Sem ela, alguém "resolve" isso um dia e o produto vira marketplace sem ninguém ter decidido |
+| **+ §4** spec do modo solicitação | A 1ª versão dizia que isso destrava psicólogo/advogado e deixava em uma linha. Incoerência própria |
+| **+ §13.1 e §13.2** distribuição e métricas | O pedido dizia "**para vender**" e a 1ª versão entregou arquitetura sem uma linha sobre como alguém acha o produto, nem sobre como saber se funcionou |
+| **− catálogo: 40 → 12** | A 1ª versão contradizia o próprio risco de "produto de ninguém". 12 profundas provam o modelo; 40 rasas provam o contrário |
+| **− §13 planos encolhida** | Estava especificando decisão que não é minha. Ficaram só as 4 regras de engenharia |
+| **+ 4 critérios e 3 riscos** | Cobrindo G10, a fronteira de tenant, o teste das 12 profissões, suporte e canibalização da base |
