@@ -1737,3 +1737,19 @@ lê-lo — o comportamento geral da interface). `services.pricing_model` é por 
 eletricista pode ter "visita técnica" grátis e "instalação" por hora, no mesmo tenant). Os
 dois continuam sem se cruzar por enquanto — `tenants.cobranca` segue órfão (nada lê essa
 coluna ainda, registrado desde a auditoria do G4), e isso não faz parte do escopo do P10.
+
+2026-08-20 · P11 (planos e cobrança, §13) — antes de bloquear a fase inteira por causa do
+Asaas, existe alguma fatia real que não dependa da credencial? · Sim: `plan_tier` (G9, "os
+planos têm nome de beleza" — `studio`/`network`) podia ser corrigido sem tocar em cobrança
+nenhuma. Grep confirmou que **nada no código lê `tenants.plan`** — a cobrança nunca foi
+construída de verdade, então renomear o enum (`start→gratis`, `studio→profissional`,
+`network→avancado`) não tinha nenhum call site pra atualizar. Risco zero, resolve G9 de
+verdade, e não finge que resolveu cobrança.
+
+2026-08-20 · `plan_tier` devia virar tabela-catálogo agora, seguindo a "mesma solução do G1"
+que o §13 item 3 sugere? · Não. G1 virou catálogo (`professions`) porque já havia conteúdo de
+verdade pra catalogar (17 profissões com eixos, serviços, vocabulário). `plan_tier` hoje não
+tem NENHUM limite ou preço decidido — construir um catálogo rico de planos sem saber o que
+cada tier realmente vai oferecer seria estrutura especulativa, o oposto do que essa sessão
+vem evitando desde a auditoria do banco (P−1). Renomear resolve o problema de vocabulário sem
+fingir resolver o de cobrança — o catálogo pode vir depois, quando o conteúdo existir.

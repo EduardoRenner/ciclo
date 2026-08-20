@@ -3322,7 +3322,7 @@ export type Database = {
         | "refunded"
         | "expired"
         | "canceled"
-      plan_tier: "start" | "pro" | "studio" | "network"
+      plan_tier: "gratis" | "pro" | "profissional" | "avancado"
       stock_move_type: "in" | "out" | "adjust" | "loss" | "return"
       ticket_status: "open" | "closed" | "paid" | "canceled" | "refunded"
       user_role: "owner" | "manager" | "professional" | "reception" | "finance"
@@ -3519,7 +3519,7 @@ export const Constants = {
         "expired",
         "canceled",
       ],
-      plan_tier: ["start", "pro", "studio", "network"],
+      plan_tier: ["gratis", "pro", "profissional", "avancado"],
       stock_move_type: ["in", "out", "adjust", "loss", "return"],
       ticket_status: ["open", "closed", "paid", "canceled", "refunded"],
       user_role: ["owner", "manager", "professional", "reception", "finance"],
