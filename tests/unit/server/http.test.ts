@@ -208,3 +208,60 @@ describe('handler global', () => {
     expect(r.headers.get('x-request-id')).toBe('req_abc12345')
   })
 })
+
+// V2 (verificação estrutural, Gate 5.1.5): Origin explícito nas rotas que escrevem, segunda
+// camada de defesa além do SameSite do cookie.
+describe('handler global · verificação de Origin (CSRF)', () => {
+  beforeEach(() => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+    // Unit test não carrega .env.local (só os de integração fazem isso) — a checagem de
+    // Origin depende de NEXT_PUBLIC_APP_URL, então cada teste fixa o valor que precisa.
+    vi.stubEnv('NEXT_PUBLIC_APP_URL', 'https://app.ciclo.test')
+  })
+  afterEach(() => {
+    vi.restoreAllMocks()
+    vi.unstubAllEnvs()
+  })
+
+  function requisicaoMutante(method: string, headers: Record<string, string> = {}): Request {
+    return new Request('https://app.ciclo.test/api/v1/clients', { method, headers })
+  }
+
+  it('POST sem header Origin passa — é o caso normal de servidor-a-servidor (cron, webhook)', async () => {
+    const handler = rota(async () => ({ ok: true }))
+    const r = await handler(requisicaoMutante('POST'), undefined)
+    expect(r.status).toBe(200)
+  })
+
+  it('POST com Origin igual ao app passa', async () => {
+    const handler = rota(async () => ({ ok: true }))
+    const r = await handler(requisicaoMutante('POST', { origin: 'https://app.ciclo.test' }), undefined)
+    expect(r.status).toBe(200)
+  })
+
+  it('sem NEXT_PUBLIC_APP_URL configurada, a checagem não trava a escrita (não dá pra comparar)', async () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_URL', '')
+    const handler = rota(async () => ({ ok: true }))
+    const r = await handler(requisicaoMutante('POST', { origin: 'https://qualquer-coisa.test' }), undefined)
+    expect(r.status).toBe(200)
+  })
+
+  it('POST com Origin de outro site é recusado — FORBIDDEN, não chega a rodar o handler', async () => {
+    let handlerRodou = false
+    const handler = rota(async () => {
+      handlerRodou = true
+      return { ok: true }
+    })
+    const r = await handler(requisicaoMutante('POST', { origin: 'https://site-malicioso.test' }), undefined)
+    expect(r.status).toBe(403)
+    expect(handlerRodou).toBe(false)
+    expect((await r.json()) as { error: { code: string } }).toMatchObject({ error: { code: 'FORBIDDEN' } })
+  })
+
+  it('GET com Origin de outro site passa — a checagem é só pra método que escreve', async () => {
+    const handler = rota(async () => ({ ok: true }))
+    const r = await handler(new Request('https://app.ciclo.test/api/v1/clients', { headers: { origin: 'https://site-malicioso.test' } }), undefined)
+    expect(r.status).toBe(200)
+  })
+})

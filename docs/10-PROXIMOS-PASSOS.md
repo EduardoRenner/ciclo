@@ -147,3 +147,86 @@ LGPD: deletar uma conta agora limpa o perfil junto, automaticamente).
   prioridade, backlog.
 
 **Próxima fase do loop:** V2 — Gate 5 (segurança de aplicação).
+
+---
+
+## Relatório V2 — Gate 5 (2026-08-20, TICKET-074)
+
+### Achado real S1 — corrigido apenas parcialmente (registrado, não construído por inteiro)
+
+**MFA obrigatória em 4 rotas sensíveis, mas não existe NENHUMA UI de cadastro de segundo
+fator.** `exigirAal2()` (`session.ts`) trava `clients/[id]/data-export`, `clients/[id]/erase`
+(exclusão LGPD) e `clients/[id]/vault` (cofre de saúde/anamnese, chamado de verdade pela tela
+real `admin/clientes/[id]/saude.tsx`) atrás de `aal2` — mas `grep` confirmou **zero** tela de
+enrollment (`mfa.enroll`, QR code, verificação de TOTP) em todo `src/app`. Isso significa: hoje,
+**nenhuma conta consegue nunca alcançar `aal2`**, então essas três rotas são permanentemente
+inacessíveis — não é uma trava de segurança funcionando, é um recurso real do produto (cofre de
+saúde, que a tela `saude.tsx` já expõe) **quebrado para todo mundo**, sempre, sem mensagem que
+explique o motivo pra quem tenta usar.
+
+**Decisão:** não construí a tela de MFA nesta rodada. Cadastro de segundo fator (QR code TOTP,
+tela de verificação, gestão de fatores, fluxo de desafio no login) é um recurso do tamanho de
+P7/P8 — orçamento ou recorrência —, não um ajuste de auditoria; apressar isso sob pressão de
+"fechar o gate" arriscaria entregar um fluxo de segurança mal pensado, o que é pior que a
+lacuna atual. Registrado como **o item de maior prioridade real do backlog** (acima de tudo em
+`09-PLATAFORMA.md` §19) — vale ser a próxima fase de verdade construída, não só mais uma
+auditoria.
+
+### Achado real S2 — corrigido nesta rodada
+
+**Sem verificação de `Origin` nas rotas que escrevem (5.1.5).** O cookie de sessão do Supabase
+é automático (o navegador manda sozinho pra qualquer requisição do domínio); `SameSite=Lax`
+(padrão da lib) já bloqueia a maioria dos casos de CSRF, mas o checklist pede a segunda camada
+explícita. Corrigido no `rota()` global (`handler.ts`) — `POST`/`PUT`/`PATCH`/`DELETE` com
+header `Origin` presente e diferente de `NEXT_PUBLIC_APP_URL` levam `403 FORBIDDEN` antes de
+tocar no handler; ausência de `Origin` passa (chamada servidor-a-servidor de verdade — cron com
+`CRON_SECRET`, nenhuma delas manda esse header). Verificado ao vivo contra o build de produção
+real (`pnpm build && pnpm start`, `curl` nos 3 casos): origem errada → 403 antes do handler
+rodar; sem origem → chega em `UNAUTHENTICATED` normal; origem certa → mesma coisa. 4 testes
+unitários novos.
+
+### Confirmado limpo (com evidência)
+
+- **5.1** (auth/autorização): `sessaoAtual()` usa `getUser()` (confere no servidor de auth), não
+  `getSession()` (confiaria no JWT do cookie) — comentário no próprio código já documentava o
+  motivo. IDOR: 3+ testes de integração reais provam `id de outro tenant → NOT_FOUND`, nunca o
+  dado alheio (`crm.test.ts`, `servicos.test.ts`), e as 133 linhas de `isolation.test.ts` cobrem
+  o mesmo na camada de RLS. Auditoria de **leitura** de dado sensível: `vault_access_log`
+  grava em toda abertura de ficha de saúde, não só escrita.
+- **5.2** (entrada/saída/injeção): zero `dangerouslySetInnerHTML` em todo `src/`. O único CSS
+  dinâmico controlado por dado (`accentColor` na página pública) usa `style={{...}}` do React
+  (não string crua em `<style>`) **e** um regex `HEX` allowlist antes de usar — mais defendido
+  que o bug real do stark-base (que não tinha nenhuma das duas camadas) —, e a cor nem é
+  editável por ninguém hoje (vem fixa de `vertical_packs`, catálogo só-leitura). Upload de mídia
+  (`media.ts`): tamanho limitado (10MB), tipo validado por **reprocessamento real** via `sharp`
+  (não por extensão/mimetype declarado), reencodado pra WebP (também derruba EXIF/GPS
+  embutido), nome de arquivo sempre UUID aleatório (nunca previsível, nunca path do usuário).
+  Redirects: só pra caminho interno fixo (`/entrar`, `/onboarding`), nunca de parâmetro do
+  usuário — sem open redirect. `fetch()` do servidor: sempre hostname fixo (Resend, Meta Graph,
+  hCaptcha, Upstash) — nunca busca URL fornecida por quem chama a rota, sem SSRF.
+- **5.3** (headers/CSP): `vercel.json` não define nenhum header de segurança (só `crons: []`) —
+  elimina de saída o bug real do stark-base (duas CSPs coexistindo, interseção quebra script
+  inline). CSP validada **contra o build de produção real** via `curl -I` (não em dev, que não
+  passa pelo middleware da mesma forma): nonce por requisição, HSTS, X-Content-Type-Options,
+  X-Frame-Options, Referrer-Policy, Permissions-Policy, COOP, CORP — todos presentes. Sem
+  `<video>`/`<audio>` no produto hoje, então a lacuna de `media-src` que pegou o stark-base não
+  se aplica (nada usa esse tipo de mídia ainda). CORS: nenhum header `Access-Control-Allow-*`
+  configurado em lugar nenhum — fecha por ausência, não por regra explícita, mas fecha.
+- **5.4** (abuso/custo): rate limit **global** (120/min por IP) cobre automaticamente **toda**
+  rota que passa por `rota()` — inclusive as públicas de agendar/cancelar/confirmar/orçamento —,
+  sem depender de cada rota lembrar de adicionar o próprio limite (rede embaixo dos limites
+  finos que login/booking já tinham). Cron: as 6 rotas em `api/cron/*` conferem `CRON_SECRET`.
+  Webhooks: pasta `api/webhooks` existe mas está **vazia** — nada pra validar ainda, condizente
+  com Asaas seguir bloqueado (P11); não é lacuna, é escopo ainda não aberto.
+
+### Pendência registrada (não bloqueia, infraestrutura não é código)
+
+- **Rate limit sem Upstash configurado cai pra memória por instância** — o próprio código já
+  documenta isso (`rate-limit.ts`): funciona pra provar o comportamento, mas não seguraria um
+  ataque de verdade contra um deploy serverless com várias instâncias (cada uma teria seu
+  próprio contador). Ligar `UPSTASH_REDIS_REST_URL`/`TOKEN` é passo de infraestrutura antes de
+  produção receber tráfego real — decisão do Eduardo, registrada aqui pra não se perder.
+
+**Próxima fase do loop:** V3 — Gate 6 (fluxos de negócio ponta a ponta). Antes de V3, considerar
+se o achado do MFA (acima) merece virar a próxima fase de CONSTRUÇÃO em vez de mais verificação
+— é o achado de maior impacto real desta sessão de auditoria até agora.

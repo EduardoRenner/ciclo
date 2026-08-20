@@ -17,6 +17,30 @@ type Handler<Ctx> = (req: Request, ctx: Ctx, requestId: string) => Promise<unkno
  */
 const LIMITE_GLOBAL = { limite: 120, janelaSegundos: 60 }
 
+const METODOS_MUTANTES = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
+
+/**
+ * V2 (verificação estrutural, Gate 5.1.5): a sessão é cookie automático — o navegador manda
+ * ele sozinho em qualquer requisição pro domínio, inclusive vinda de outro site. `SameSite=Lax`
+ * do cookie do Supabase já bloqueia a maioria dos casos, mas o checklist pede a segunda camada:
+ * conferir `Origin` explicitamente nas rotas que escrevem. Ausência de `Origin` **passa** —
+ * é o caso normal de chamada servidor-a-servidor (cron com `CRON_SECRET`, webhook com
+ * assinatura própria), nenhuma delas manda esse header; só um valor **presente e diferente**
+ * do app é sinal de navegador sendo usado a partir de outro site.
+ */
+function origemValida(req: Request): boolean {
+  if (!METODOS_MUTANTES.has(req.method)) return true
+  const origin = req.headers.get('origin')
+  if (!origin) return true
+  const esperado = process.env.NEXT_PUBLIC_APP_URL
+  if (!esperado) return true // sem a env var não dá pra comparar — não é o momento de travar toda escrita por isso
+  try {
+    return new URL(origin).origin === new URL(esperado).origin
+  } catch {
+    return false
+  }
+}
+
 /**
  * Envelope de log. JSON estruturado, com `request_id` e `tenant_id`, sem PII —
  * por isso a query string nunca entra: `?q=` carrega nome de cliente.
@@ -57,6 +81,8 @@ export function rota<Ctx = unknown>(handler: Handler<Ctx>) {
     const requestId = resolverRequestId(req.headers)
 
     try {
+      if (!origemValida(req)) throw new AppError('FORBIDDEN', { message: 'Origem da requisição não confere.' })
+
       const { permitido } = await limitador(`global:ip:${ipDe(req)}`, LIMITE_GLOBAL)
       if (!permitido) throw AppError.limiteDeTaxa(LIMITE_GLOBAL.janelaSegundos)
 

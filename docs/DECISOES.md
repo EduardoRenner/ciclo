@@ -1798,3 +1798,21 @@ o início? · Sim, tecnicamente — mas sem a FK, não havia como o `on delete c
 da FK é a causa, não a limpeza incompleta em si. Registrado aqui pra não repetir: qualquer
 tabela nova que referencia `auth.users` diretamente (não via `profiles`) merece a mesma
 pergunta — "tem FK com cascade, ou vai deixar resíduo na próxima limpeza?".
+
+2026-08-20 · V2 achou MFA obrigatória em 4 rotas sensíveis sem NENHUMA tela de cadastro de
+segundo fator — construir a tela agora, no meio da auditoria, ou registrar e seguir? ·
+Registrar e seguir. Construir cadastro de TOTP/QR code/gestão de fatores de verdade é recurso
+do tamanho de uma fase inteira (P7/P8), não ajuste de auditoria — apressar sob pressão de
+"fechar o Gate 5" arriscaria um fluxo de segurança malfeito, que é pior que a lacuna atual (o
+cofre de saúde estar inacessível é ruim, mas um MFA malfeito poderia trancar contas de verdade
+fora do próprio negócio). Registrado como prioridade máxima do backlog em
+docs/10-PROXIMOS-PASSOS.md e docs/09-PLATAFORMA.md §19 — não é esquecimento, é decisão de
+escopo explícita: essa lacuna merece ser a próxima fase de CONSTRUÇÃO, com o cuidado que
+segurança de verdade pede, não um remendo dentro de uma auditoria.
+
+2026-08-20 · A checagem de Origin (CSRF, Gate 5.1.5) deve travar TODA rota escrita, ou só as
+que passam por rota()? · Só as que passam por rota() — mas isso é, na prática, todo o
+`/api/v1/*` e `/api/cron/*`, então cobre tudo que precisa. Rotas de cron/webhook não mandam
+header Origin (chamada servidor-a-servidor), e a checagem já trata "Origin ausente" como
+"passa" de propósito — não seria certo exigir Origin presente, isso quebraria justamente as
+chamadas legítimas sem navegador. Só Origin PRESENTE E DIFERENTE do app é bloqueado.
