@@ -1,4 +1,4 @@
-import { Bell, Clock, MessageSquareText, Megaphone, Repeat, ScrollText, Scissors, ShieldCheck, Store, Users } from 'lucide-react'
+import { Bell, Clock, FileText, MessageSquareText, Megaphone, Repeat, ScrollText, Scissors, ShieldCheck, Store, Users } from 'lucide-react'
 import Link from 'next/link'
 
 import Card from '@/components/ui/card'
@@ -36,6 +36,7 @@ const GRUPOS = [
     titulo: 'Receita recorrente',
     itens: [
       { href: '/admin/config/planos', titulo: 'Fidelidade e assinatura', descricao: 'Pontos por atendimento e planos mensais', icone: Repeat },
+      { href: '/admin/orcamentos', titulo: 'Orçamentos', descricao: 'Acompanhar quem aprovou, recusou ou ainda não respondeu', icone: FileText },
     ],
   },
   {

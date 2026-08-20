@@ -22,6 +22,11 @@ const REGRAS: { prefixo: string; pai: Pai }[] = [
   { prefixo: '/admin/config', pai: { href: '/admin/hoje', rotulo: 'Hoje' } },
   { prefixo: '/admin/campanhas/', pai: { href: '/admin/campanhas', rotulo: 'Campanhas' } },
   { prefixo: '/admin/campanhas', pai: { href: '/admin/config', rotulo: 'Configurações' } },
+  // Mesmo padrão de Campanhas: `/orcamentos/novo` volta para a lista, a lista volta para
+  // Configurações (só chegou nela pelo atalho do engenhoso — não é sub-rota de nenhuma aba,
+  // então sem regra explícita virava beco sem saída num app instalado sem barra do navegador).
+  { prefixo: '/admin/orcamentos/', pai: { href: '/admin/orcamentos', rotulo: 'Orçamentos' } },
+  { prefixo: '/admin/orcamentos', pai: { href: '/admin/config', rotulo: 'Configurações' } },
   // A comanda abre a partir do atendimento do dia, nunca de um menu.
   { prefixo: '/admin/comanda', pai: { href: '/admin/agenda', rotulo: 'Agenda' } },
 ]

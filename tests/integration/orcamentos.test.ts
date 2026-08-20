@@ -5,7 +5,7 @@ import dotenv from 'dotenv'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { criarProfissional } from '@/server/services/profissionais'
-import { criarOrcamento } from '@/server/services/orcamentos'
+import { criarOrcamento, listarOrcamentos } from '@/server/services/orcamentos'
 import { executarOnboarding } from '@/server/services/onboarding'
 
 import { GET as buscarOrcamentoPorToken } from '@/app/api/v1/public/quotes/[token]/route'
@@ -222,5 +222,63 @@ describe('aprovar/recusar por link', () => {
     const rGet = await buscarOrcamentoPorToken(new Request(`https://interno/api/v1/public/quotes/${token}`), ctx(token))
     const json = (await rGet.json()) as { data: { status: string } }
     expect(json.data.status).toBe('expired')
+  })
+})
+
+describe('listarOrcamentos (TICKET-079 — tela de gestão)', () => {
+  it('lista o orçamento recém-criado com o nome da cliente e o total certo', async () => {
+    const { quote } = await criarOrcamento(svc, tenantId, userId, {
+      clientId,
+      professionalId,
+      items: [{ description: 'Serviço da lista', qty: 1, unitPriceCents: 25000 }],
+      validUntil: null,
+      message: null,
+    })
+
+    const lista = await listarOrcamentos(svc, tenantId)
+    const linha = lista.find((o) => o.id === quote.id)
+    expect(linha).toMatchObject({ status: 'sent', totalCents: 25000, clientName: 'Cliente do Orçamento' })
+    expect(linha?.token).toBeTruthy()
+  })
+
+  it('orçamento vencido aparece como expired na lista, sem precisar de ninguém abrir o link público', async () => {
+    const { quote } = await criarOrcamento(svc, tenantId, userId, {
+      clientId,
+      professionalId,
+      items: [{ description: 'Item vencido', qty: 1, unitPriceCents: 1000 }],
+      validUntil: '2020-01-01',
+      message: null,
+    })
+
+    const lista = await listarOrcamentos(svc, tenantId)
+    const linha = lista.find((o) => o.id === quote.id)
+    expect(linha?.status).toBe('expired')
+
+    // Materializado de verdade no banco — não só computado na hora de listar.
+    const emBanco = await svc.from('quotes').select('status').eq('id', quote.id).single()
+    expect(emBanco.data?.status).toBe('expired')
+  })
+
+  it('não vaza orçamento de outro tenant', async () => {
+    const marca = randomUUID().slice(0, 8)
+    const { data: outroUsuario, error: erroUsuario } = await svc.auth.admin.createUser({
+      email: `orcamento-outro-${marca}@ciclo.test`,
+      password: randomUUID(),
+      email_confirm: true,
+    })
+    if (erroUsuario || !outroUsuario.user) throw new Error('seed do outro tenant falhou')
+    usuarios.push(outroUsuario.user.id)
+
+    const { tenant: outroTenant } = await executarOnboarding(svc, {
+      userId: outroUsuario.user.id,
+      businessName: 'Outro Salão',
+      vertical: 'barber',
+      slug: `orcamento-outro-${marca}`,
+      timezone: TZ,
+    })
+    tenants.push(outroTenant.id)
+
+    const lista = await listarOrcamentos(svc, outroTenant.id)
+    expect(lista).toEqual([])
   })
 })

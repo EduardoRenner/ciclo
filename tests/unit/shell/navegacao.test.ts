@@ -36,6 +36,11 @@ describe('paiDaRota', () => {
     expect(paiDaRota('/admin/campanhas')).toEqual({ href: '/admin/config', rotulo: 'Configurações' })
   })
 
+  it('orçamento novo volta para a lista de orçamentos, e a lista volta para configurações', () => {
+    expect(paiDaRota('/admin/orcamentos/novo')).toEqual({ href: '/admin/orcamentos', rotulo: 'Orçamentos' })
+    expect(paiDaRota('/admin/orcamentos')).toEqual({ href: '/admin/config', rotulo: 'Configurações' })
+  })
+
   it('comanda volta para a agenda, que é de onde ela abre', () => {
     expect(paiDaRota('/admin/comanda/abc')).toEqual({ href: '/admin/agenda', rotulo: 'Agenda' })
     expect(paiDaRota('/admin/comanda/agendamento/abc')).toEqual({ href: '/admin/agenda', rotulo: 'Agenda' })
@@ -53,6 +58,8 @@ describe('paiDaRota', () => {
       '/admin/recuperar',
       '/admin/campanhas',
       '/admin/campanhas/nova',
+      '/admin/orcamentos',
+      '/admin/orcamentos/novo',
       '/admin/comanda/abc',
       '/admin/config',
       '/admin/config/servicos',

@@ -194,3 +194,58 @@ export function recusarOrcamentoPublico(db: Cliente, token: string, entrada: z.i
     { title: 'Orçamento recusado', body: 'Uma cliente recusou um orçamento pelo link.' },
   )
 }
+
+export type OrcamentoDaLista = {
+  id: string
+  token: string
+  status: string
+  totalCents: number
+  validUntil: string | null
+  createdAt: string
+  clientName: string
+}
+
+/**
+ * A tela pública (`orcamentoPublico`) materializa `expired` de forma preguiçosa — só quando
+ * alguém abre o link depois do prazo, porque "ninguém verifica orçamento vencido no fundo".
+ * Esta lista **é** a primeira plateia real disso: o dono passa a ver o estado certo mesmo sem
+ * ninguém ter clicado no link. Reusa `orcamentoExpirado` (mesma regra de negócio, um lugar só)
+ * em vez de duplicar a comparação de fuso em SQL; o `update` em lote só toca o que de fato
+ * mudou, então listar não vira escrita cara.
+ */
+export async function listarOrcamentos(db: Cliente, tenantId: string): Promise<OrcamentoDaLista[]> {
+  const { data: tenant, error: erroTenant } = await db.from('tenants').select('timezone').eq('id', tenantId).single()
+  if (erroTenant) throw new AppError('INTERNAL', { cause: erroTenant })
+
+  const { data: quotes, error } = await db
+    .from('quotes')
+    .select('id, status, total_cents, valid_until, created_at, clients ( name )')
+    .eq('tenant_id', tenantId)
+    .order('created_at', { ascending: false })
+    .limit(100)
+  if (error) throw new AppError('INTERNAL', { cause: error })
+
+  const idsVencidos: string[] = []
+  const lista = (quotes ?? []).map((q) => {
+    let status = q.status
+    if (status === 'sent' && orcamentoExpirado(q.valid_until, tenant.timezone)) {
+      status = 'expired'
+      idsVencidos.push(q.id)
+    }
+    return {
+      id: q.id,
+      token: gerarTokenOrcamento(q.id),
+      status,
+      totalCents: q.total_cents,
+      validUntil: q.valid_until,
+      createdAt: q.created_at,
+      clientName: (q.clients as unknown as { name: string } | null)?.name ?? 'Cliente removido',
+    }
+  })
+
+  if (idsVencidos.length > 0) {
+    await db.from('quotes').update({ status: 'expired' }).in('id', idsVencidos)
+  }
+
+  return lista
+}
