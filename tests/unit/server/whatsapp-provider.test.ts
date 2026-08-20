@@ -1,10 +1,46 @@
 import { createHmac } from 'node:crypto'
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { WhatsAppCloudProvider } from '@/server/providers/messaging/whatsapp'
 
 const ORIGINAL = { ...process.env }
+
+describe('WhatsAppCloudProvider — timeout de rede (Gate 11.2)', () => {
+  beforeEach(() => {
+    process.env.WHATSAPP_PHONE_NUMBER_ID = 'id-de-teste'
+    process.env.WHATSAPP_ACCESS_TOKEN = 'token-de-teste'
+    process.env.WHATSAPP_APP_SECRET = 'segredo-de-teste'
+  })
+  afterEach(() => {
+    process.env = { ...ORIGINAL }
+    vi.unstubAllGlobals()
+  })
+
+  it('sendTemplate manda um AbortSignal com prazo — conexão que trava não prende o lote de lembretes', async () => {
+    const fetchFalso = vi.fn(async (_url: string, init: RequestInit) => {
+      expect(init.signal).toBeInstanceOf(AbortSignal)
+      return new Response(JSON.stringify({ messages: [{ id: 'wamid.1' }] }), { status: 200 })
+    })
+    vi.stubGlobal('fetch', fetchFalso)
+
+    const provider = new WhatsAppCloudProvider()
+    await provider.sendTemplate({ to: '5511999999999', template: 'lembrete_v1', params: {} })
+    expect(fetchFalso).toHaveBeenCalledTimes(1)
+  })
+
+  it('sendText manda o mesmo AbortSignal com prazo', async () => {
+    const fetchFalso = vi.fn(async (_url: string, init: RequestInit) => {
+      expect(init.signal).toBeInstanceOf(AbortSignal)
+      return new Response(JSON.stringify({ messages: [{ id: 'wamid.2' }] }), { status: 200 })
+    })
+    vi.stubGlobal('fetch', fetchFalso)
+
+    const provider = new WhatsAppCloudProvider()
+    await provider.sendText({ to: '5511999999999', body: 'oi' })
+    expect(fetchFalso).toHaveBeenCalledTimes(1)
+  })
+})
 
 describe('WhatsAppCloudProvider sem credencial configurada', () => {
   beforeEach(() => {

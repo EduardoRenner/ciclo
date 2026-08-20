@@ -38,6 +38,9 @@ export async function enviarPush(inscricao: InscricaoPush, payload: PayloadPush)
     const resultado = await webpush.sendNotification(
       { endpoint: inscricao.endpoint, keys: { p256dh: inscricao.p256dh, auth: inscricao.auth } },
       JSON.stringify(payload),
+      // Mesmo raciocínio do WhatsApp/e-mail (ver whatsapp.ts): sem prazo, um endpoint que
+      // trava em vez de responder prende o lote inteiro de lembretes atrás dele.
+      { timeout: 10_000 },
     )
     // O `web-push` não devolve id de mensagem (não é um conceito do protocolo Web Push) —
     // o endpoint em si já identifica o destino, então serve de `providerId` para o registro

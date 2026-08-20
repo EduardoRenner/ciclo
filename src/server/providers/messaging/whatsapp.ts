@@ -3,6 +3,12 @@ import { createHmac, timingSafeEqual } from 'node:crypto'
 import { ErroDeEnvio, type EnvioTemplate, type EnvioTexto, type EventoWebhook, type MessagingProvider } from './types'
 
 const VERSAO_GRAPH = 'v20.0'
+// Sem isso, uma conexão que trava (não um erro — o servidor simplesmente não responde)
+// prende `enviarComFallback` (chamado direto, sem `void`, pelos crons de lembrete/lista
+// de espera/recuperação) até o timeout da própria função serverless, travando o resto do
+// lote atrás dela. `mensageria.ts` já trata qualquer erro lançado aqui como transitório
+// e cai para push/e-mail — só faltava o fetch desistir sozinho.
+const TIMEOUT_MS = 10_000
 
 type ConfigWhatsApp = {
   phoneNumberId: string
@@ -48,6 +54,7 @@ export class WhatsAppCloudProvider implements MessagingProvider {
         type: 'template',
         template: { name: template, language: { code: 'pt_BR' }, components },
       }),
+      signal: AbortSignal.timeout(TIMEOUT_MS),
     })
 
     const json = (await r.json()) as { messages?: { id: string }[]; error?: { message: string; code: number } }
@@ -70,6 +77,7 @@ export class WhatsAppCloudProvider implements MessagingProvider {
       method: 'POST',
       headers: { Authorization: `Bearer ${accessToken}`, 'content-type': 'application/json' },
       body: JSON.stringify({ messaging_product: 'whatsapp', to, type: 'text', text: { body } }),
+      signal: AbortSignal.timeout(TIMEOUT_MS),
     })
 
     const json = (await r.json()) as { messages?: { id: string }[]; error?: { message: string } }

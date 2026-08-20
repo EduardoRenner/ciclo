@@ -17,6 +17,9 @@ export async function enviarEmailDeFallback(i: { to: string; subject: string; bo
     method: 'POST',
     headers: { Authorization: `Bearer ${apiKey}`, 'content-type': 'application/json' },
     body: JSON.stringify({ from, to: i.to, subject: i.subject, text: i.body }),
+    // Este é o último elo da corrente de fallback — se travar sem prazo, "nunca deixar
+    // o lembrete sumir em silêncio" (§4) vira "trava em silêncio", pior que uma falha.
+    signal: AbortSignal.timeout(10_000),
   })
 
   const json = (await r.json()) as { id?: string; message?: string }
