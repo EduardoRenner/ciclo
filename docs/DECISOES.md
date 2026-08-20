@@ -1495,3 +1495,22 @@ desliga de verdade, bônus de indicação credita os dois lados só uma vez, tok
 recusado, e resposta duplicada não quebra. Testado ao vivo em `dom-rocha`: barra de progresso
 ("Faltam 60 pontos"), Central de Ações com os cartões certos, e uma avaliação real de 5 estrelas
 registrada via link público sem sessão nenhuma.
+
+2026-08-19 · O banco de produção tinha 78 tenants e 365 mil clientes — quem é real e quem é
+resíduo de teste? · Medido antes de mexer: nenhum tenant tinha mais de 7 dias, 35 tinham mais
+de 1.000 clientes (o maior, 10.004), e só 97 dos 351 mil agendamentos vinham da página pública
+— sinal de dado de teste de carga, não uso real. Confirmado por nome: 76 dos 78 chamavam-se
+"Salão do Ciclo"/"Salão da Importação"/"Salão da Agenda do Dia" (padrão de fixture gerado);
+os 2 restantes — `dom-rocha` (46 clientes, 278 agendamentos) e `ruivo-barber` (1 cliente, 2
+agendamentos) — bateram com testes manuais reais já registrados nesta base e foram preservados.
+Apaguei os 76 · é pré-requisito (`docs/09-PLATAFORMA.md` §1.1/P−1) para o primeiro cliente real
+não nascer num banco com dezenas de milhares de clientes fantasma.
+
+2026-08-19 · Apagar um tenant grande (10 mil clientes) travava em `statement timeout` · Causa:
+`client_cycles.client_id`, `appointments.client_id` e `clients.referred_by` referenciam outras
+tabelas mas só tinham índice composto começando por `tenant_id` (ou nenhum) — o mecanismo de
+`ON DELETE CASCADE`/`SET NULL` do Postgres consulta só pela coluna da FK, então cada linha
+apagada disparava varredura sequencial de uma tabela com 300k+ linhas. Migration `0021` criou
+os três índices simples que faltavam · achado ao executar a limpeza, não planejado — e vale a
+pena ter ficado: qualquer exclusão em lote no futuro (LGPD, cancelamento de conta) teria o
+mesmo problema.
