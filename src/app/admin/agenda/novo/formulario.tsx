@@ -136,18 +136,26 @@ export default function FormularioAgendamento({
         ))}
       </Select>
 
-      <Select
-        rotulo="Profissional"
-        value={professionalId}
-        onChange={(e) => setProfessionalId(e.target.value)}
-        required
-      >
-        {profissionais.map((p) => (
-          <option key={p.id} value={p.id}>
-            {p.display_name}
-          </option>
-        ))}
-      </Select>
+      {/*
+        docs/09-PLATAFORMA.md §6 "modo solo": autônomo com 1 profissional
+        (ele mesmo) não deveria escolher entre opções que não existem — o
+        Select sempre mostraria uma linha só, e o estado já nasce nela
+        (useState(profissionais[0]?.id)). Com 2+, a escolha continua.
+      */}
+      {profissionais.length > 1 ? (
+        <Select
+          rotulo="Profissional"
+          value={professionalId}
+          onChange={(e) => setProfessionalId(e.target.value)}
+          required
+        >
+          {profissionais.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.display_name}
+            </option>
+          ))}
+        </Select>
+      ) : null}
 
       <Input
         rotulo="Cliente"

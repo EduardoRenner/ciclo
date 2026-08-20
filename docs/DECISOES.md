@@ -1561,3 +1561,19 @@ token) duplicaria toda a lógica de disponibilidade/slot que `agendar.tsx` já r
 ganho pequeno (economizar um clique). O mesmo token HMAC do TICKET-030 (confirmação) autoriza o
 cancelamento também — não abriu tabela nova, ele já prova "quem clicou recebeu o link" pra
 qualquer ação sobre aquele agendamento específico, não só confirmar.
+
+2026-08-19 · Ao criar tenant_modules (P3), test:rls achou "expected 0 to be greater than 0"
+em "delete em tenant_modules não afeta linha do outro tenant" — é falha de segurança de verdade
+ou só fixture faltando? · Investigado antes de seguir (regra do loop: nunca pular RLS sem
+entender a causa). Não é segurança: o teste genérico de isolamento precisa de uma linha
+semeada por tabela pra ter "o que sobrar" depois da tentativa de delete do tenant B — toda
+tabela nova com tenant_id precisa dessa linha no array `restantes` de isolation.test.ts
+(já documentado ali, mesma exigência que push_subscriptions/message_templates/client_notes
+etc. já passaram). Adicionei a linha de seed; 124/124 voltou a passar.
+
+2026-08-19 · "Modo solo" (P3) — construir do zero ou verificar o que já existe? · Verifiquei
+antes de escrever código novo: `agenda.tsx` já escondia o filtro de profissional quando
+`profissionais.length === 1` (achado, não construído). Só o formulário de novo agendamento
+(`agenda/novo/formulario.tsx`) ainda mostrava o Select sempre — corrigido pra seguir o mesmo
+padrão. A tela de config de módulos (tenant_modules) e um sweep completo por outras telas de
+config/comissão ficaram de fora desta rodada — schema primeiro, como P0/P2.

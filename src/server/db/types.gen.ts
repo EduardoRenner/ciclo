@@ -2213,6 +2213,38 @@ export type Database = {
           },
         ]
       }
+      tenant_modules: {
+        Row: {
+          ligado: boolean
+          modulo: string
+          origem: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          ligado: boolean
+          modulo: string
+          origem: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          ligado?: boolean
+          modulo?: string
+          origem?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_modules_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenants: {
         Row: {
           address: Json | null

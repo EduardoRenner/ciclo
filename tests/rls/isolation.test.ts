@@ -330,6 +330,9 @@ async function semear(f: Fixture, sufixo: string): Promise<void> {
     ['vault_access_log', { tenant_id: t, client_id: f.clientId, action: 'read' }],
     ['idempotency_keys', { key: randomUUID(), tenant_id: t, endpoint: '/v1/seed', request_hash: 'x' }],
     ['job_queue', { tenant_id: t, kind: 'seed' }],
+    // Mesma exigência de sempre: `tenant_modules` (P3, migration 0025) precisa de
+    // linha aqui para o teste ter o que sobrar.
+    ['tenant_modules', { tenant_id: t, modulo: 'seed_de_teste', ligado: true, origem: 'dono' }],
   ]
 
   for (const [tabela, linha] of restantes) {
