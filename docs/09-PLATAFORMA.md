@@ -760,8 +760,8 @@ Não pode quebrar quem já usa.
 
 | Fase | O que | Risco | Depende de |
 |---|---|---|---|
-| **P−1 · Higiene** | limpar o resíduo de teste do banco (§1.1) e decidir se dev ganha projeto próprio | Baixo | — |
-| **P0 · Catálogo** | `professions` + `profession_services`; seed das 8 atuais; `tenants.profession_id`; migração não destrutiva (§14) | Médio | — |
+| **P−1 · Higiene** | limpar o resíduo de teste do banco (§1.1) e decidir se dev ganha projeto próprio | Baixo | ✅ 2026-08-19: 76 tenants de teste removidos (78→2, só `dom-rocha` e `ruivo-barber` reais ficaram). Achado ao executar: 3 FKs sem índice simples causavam timeout no cascade — migration `0021_indices_fk_orfas` corrigiu; decisão sobre projeto Supabase próprio para dev segue aberta |
+| **P0 · Catálogo** | `professions` + `profession_services`; seed das 8 atuais; `tenants.profession_id`; migração não destrutiva (§14) | Médio | ✅ 2026-08-19 (TICKET-059): migration `0022_professions_catalog` — as 8 verticais seedadas com vocabulário/eixos, `tenants.profession_id`/`vocab_override` criados, backfill 1:1 (2/2 tenants). `vertical` intacto — nada consome `profession_id` ainda, é P1/P2. `pnpm verify` completo (369 testes unitários + 121 de isolamento RLS, as duas tabelas novas descobertas automaticamente) |
 | **P1 · Vocabulário** | tokens em `professions` + merge com override (§3.4); regra de copy sem concordância (§3.2); varrer as 13 strings do G2; **os 10 modelos de WhatsApp do G10**; teste que reprova profissão cravada em `src/` | Médio | P0 |
 | **P2 · Eixos** | os 4 eixos como colunas; comportamento derivado deles; **modo solicitação (§4 eixo 3)**, que reusa `hold_expires_at` + push | Médio | P0 |
 | **P2.5 · Endereço mínimo** | fecha **G3 + G13**: endereço estruturado no agendamento, campo no formulário público, exibição para o profissional. **Sem** mapa, sem geocodificação, sem rota | Baixo | P0 |

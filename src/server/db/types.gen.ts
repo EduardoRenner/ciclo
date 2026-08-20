@@ -1629,6 +1629,44 @@ export type Database = {
           },
         ]
       }
+      profession_services: {
+        Row: {
+          ciclo_dias: number | null
+          duracao_min: number
+          id: string
+          nome: string
+          posicao: number
+          preco_sugerido_cents: number
+          profession_id: string
+        }
+        Insert: {
+          ciclo_dias?: number | null
+          duracao_min: number
+          id?: string
+          nome: string
+          posicao?: number
+          preco_sugerido_cents: number
+          profession_id: string
+        }
+        Update: {
+          ciclo_dias?: number | null
+          duracao_min?: number
+          id?: string
+          nome?: string
+          posicao?: number
+          preco_sugerido_cents?: number
+          profession_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profession_services_profession_id_fkey"
+            columns: ["profession_id"]
+            isOneToOne: false
+            referencedRelation: "professions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       professional_services: {
         Row: {
           commission_bps: number | null
@@ -1743,6 +1781,69 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      professions: {
+        Row: {
+          ativa: boolean
+          campos_ficha: Json
+          ciclo_padrao_dias: number
+          cobranca: string
+          created_at: string
+          duracao_padrao_min: number
+          grupo: string
+          id: string
+          inicio: string
+          mensagens: Json
+          modulos_padrao: Json
+          nome: string
+          onde: string
+          posicao: number
+          ritmo: string
+          sinonimos: string[]
+          slug: string
+          vocab: Json
+        }
+        Insert: {
+          ativa?: boolean
+          campos_ficha?: Json
+          ciclo_padrao_dias: number
+          cobranca: string
+          created_at?: string
+          duracao_padrao_min: number
+          grupo: string
+          id?: string
+          inicio: string
+          mensagens?: Json
+          modulos_padrao?: Json
+          nome: string
+          onde: string
+          posicao?: number
+          ritmo: string
+          sinonimos?: string[]
+          slug: string
+          vocab?: Json
+        }
+        Update: {
+          ativa?: boolean
+          campos_ficha?: Json
+          ciclo_padrao_dias?: number
+          cobranca?: string
+          created_at?: string
+          duracao_padrao_min?: number
+          grupo?: string
+          id?: string
+          inicio?: string
+          mensagens?: Json
+          modulos_padrao?: Json
+          nome?: string
+          onde?: string
+          posicao?: number
+          ritmo?: string
+          sinonimos?: string[]
+          slug?: string
+          vocab?: Json
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -2120,11 +2221,13 @@ export type Database = {
           name: string
           phone: string | null
           plan: Database["public"]["Enums"]["plan_tier"]
+          profession_id: string | null
           settings: Json
           slug: string
           timezone: string
           trial_ends_at: string | null
           vertical: Database["public"]["Enums"]["vertical_pack"]
+          vocab_override: Json
         }
         Insert: {
           address?: Json | null
@@ -2136,11 +2239,13 @@ export type Database = {
           name: string
           phone?: string | null
           plan?: Database["public"]["Enums"]["plan_tier"]
+          profession_id?: string | null
           settings?: Json
           slug: string
           timezone?: string
           trial_ends_at?: string | null
           vertical: Database["public"]["Enums"]["vertical_pack"]
+          vocab_override?: Json
         }
         Update: {
           address?: Json | null
@@ -2152,13 +2257,23 @@ export type Database = {
           name?: string
           phone?: string | null
           plan?: Database["public"]["Enums"]["plan_tier"]
+          profession_id?: string | null
           settings?: Json
           slug?: string
           timezone?: string
           trial_ends_at?: string | null
           vertical?: Database["public"]["Enums"]["vertical_pack"]
+          vocab_override?: Json
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "tenants_profession_id_fkey"
+            columns: ["profession_id"]
+            isOneToOne: false
+            referencedRelation: "professions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ticket_items: {
         Row: {
