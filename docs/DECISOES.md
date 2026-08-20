@@ -1879,3 +1879,16 @@ maioria dos achados de V4/V5 já era S2 (polimento), sinal de retorno decrescent
 restam (12-14) não são trabalho de engenharia, são decisão de negócio/deploy que só o Eduardo
 resolve. Mais uma rodada de auditoria tem menos valor esperado do que construir um item real
 do backlog (§3 de docs/10-PROXIMOS-PASSOS.md).
+
+2026-08-20 · Ciclo de verificação fechado (V1-V5) — pivotar pra construção. Qual item do
+backlog construir primeiro: tela de séries de recorrência (P7) ou tela de gestão de orçamentos
+(P8)? · Orçamentos. Orçamento é visibilidade de receita em risco — sem a tela, o dono não sabe
+se está vendendo, só descobre por acidente (link direto ou SQL). Recorrência é utilidade de
+bastidor, menos urgente. Maior valor real, não a mais fácil das duas.
+
+2026-08-20 · Ao construir a lista de orçamentos, achei que `/admin/orcamentos/novo` (existe
+desde P8/TICKET-068) nunca tinha entrado no mapa de navegação de `navegacao.ts` — beco sem
+saída num PWA standalone. Corrigir agora junto com a rota nova, ou registrar separado? ·
+Corrigir junto (mesmo commit) — é a mesma categoria de bug que o próprio arquivo existe pra
+prevenir, e a lista nova cairia na mesma armadilha sem a regra; separar em dois commits só
+fragmentaria o contexto de por que a regra mudou.

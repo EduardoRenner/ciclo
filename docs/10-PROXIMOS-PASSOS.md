@@ -54,7 +54,6 @@ entradas:
 |---|---|
 | Preço de faxina/eletricista confirmado com gente da área | P5 usou conhecimento geral, sem WebSearch na sessão |
 | Tela de gestão de séries de recorrência (P7) | UI que só faz sentido com tenant de verdade usando |
-| Tela de gestão de orçamentos (P8) | mesma razão |
 | Converter orçamento aprovado em agendamento (P8) | decisão de UX de como escolher data/hora |
 | Extensão automática do horizonte de séries (P7) | precisa de cron, não construído |
 | Fotos/galeria na página pública (P6) | precisa de desenho de consentimento LGPD primeiro |
@@ -531,3 +530,42 @@ bloqueados por decisão de negócio, não pulados por preguiça. A partir daqui,
 auditoria tem retorno decrescente — a maioria dos achados das últimas duas rodadas já era S2, e
 os que restam (Gates 12-14) não são trabalho de engenharia. Recomendação para a próxima
 iteração: pivotar para construção real do backlog (§3 deste documento).
+
+## Construção — Orçamentos, tela de gestão (TICKET-079)
+
+Decisão de dev sênior: com o ciclo de verificação estrutural fechado (V1-V5) e retorno
+decrescente confirmado, pivotei pra construção. Escolhi a tela de gestão de orçamentos (§3) em
+vez da de séries de recorrência: orçamento é visibilidade de receita em risco — saber quem
+aprovou/recusou/nem respondeu é o tipo de coisa que se o dono não vê, ele simplesmente não sabe
+se está vendendo; recorrência é mais utilidade de bastidor. Maior valor real, não a mais fácil.
+
+**Construído:** `listarOrcamentos()` (últimos 100 do tenant, nome da cliente, status) +
+`/admin/orcamentos` (lista com badge, valor, data, copiar link) + entrada em Configurações →
+Receita recorrente.
+
+**Achado à parte, corrigido no caminho:** `/admin/orcamentos/novo` já existia desde P8
+(TICKET-068) mas nunca tinha entrado no mapa de navegação de `navegacao.ts` — num PWA
+`standalone` sem barra do navegador, era um beco sem saída de verdade (confirmado pelo próprio
+teste-guarda que o arquivo já tinha, `'nenhuma rota de /admin fica sem saída'`, que eu só não
+tinha rodado com essa rota na lista até agora). Corrigido junto com a rota nova.
+
+**Testado:** 3 casos de integração (lista certo, materializa `expired` de verdade no banco na
+hora de listar — não só na tela pública, agora tem plateia real — e isola por tenant) + 2 de
+navegação. Verificado ao vivo com tenant descartável: criar orçamento pelo formulário → aparece
+na lista → link público abre e mostra o valor certo → aprovar pelo link → lista reflete
+"Aprovado" imediatamente. Tenant e script temporário apagados ao final, sem resíduo.
+
+**Nota da verificação:** o clique automatizado no formulário de login (`<form action={fn}>`,
+API nova do React 19) não disparou o submit nativo pelo harness do navegador — confirmado que
+NÃO é bug do produto (login funcionou perfeitamente via `fetch` direto com as mesmas
+credenciais, sessão setada certinha). O formulário de criar orçamento usa `onSubmit` clássico e
+funcionou normalmente com clique via JS. Registrado aqui só para não confundir uma sessão futura
+que veja o mesmo sintoma.
+
+`typecheck`/`lint` limpos. `test:unit` 434, `test:rls` 133, `test:integration` 242 — sem flake.
+`build` ok, `/admin/orcamentos` e `/admin/orcamentos/novo` confirmados no manifesto.
+
+**Próxima fase do loop:** decisão de dev sênior na próxima iteração — outro item do backlog
+(§3), ou nova rodada leve de verificação nas telas construídas nesta sessão (a maioria nunca
+recebeu o mesmo nível de escrutínio visual do `08-REDESIGN-E-IDENTIDADE.md` — ver §2 deste
+documento, "verificação de design" ainda não rodou dedicada).

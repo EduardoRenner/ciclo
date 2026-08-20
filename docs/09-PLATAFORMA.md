@@ -913,11 +913,11 @@ Honestidade sobre o que ainda é pergunta aberta, para não parecer mais resolvi
   um cron/job novo, que este ticket não construiu — registrado, não esquecido. Uma série "sem
   fim" simplesmente para de ter ocorrências novas depois dos 90 dias até alguém rodar a
   extensão manualmente ou o job existir.
-- **Tela de gestão de orçamentos** (§11): P8 (TICKET-068) construiu criar (formulário) e
-  aprovar/recusar (link público), mas não uma lista no painel dos orçamentos de um tenant com
-  status de cada um — hoje isso só é visível pelo link que o cliente recebeu ou por SQL. Mesmo
-  raciocínio do P7 pra séries de recorrência: o valor principal (orçamento existir, ter link,
-  aprovação funcionar) está entregue e testado; a tela de gestão é UI que pode vir depois.
+- ~~**Tela de gestão de orçamentos**~~ ✅ 2026-08-20 (TICKET-079): `/admin/orcamentos` lista os
+  últimos 100 do tenant com nome da cliente, status e valor; `listarOrcamentos()` materializa
+  `expired` de verdade no banco na hora de listar (mesma regra de `orcamentoExpirado()`, agora
+  com uma plateia real). Achado à parte no caminho: `/admin/orcamentos/novo` nunca tinha entrado
+  no mapa de navegação (`navegacao.ts`) — beco sem saída num PWA `standalone`, corrigido junto.
 - **Converter orçamento aprovado em agendamento** (§11): o fluxo hoje termina em
   `status = 'approved'` — não cria um `appointment` sozinho. `quotes.converted_appointment_id`
   já existe no schema pra quando isso for construído, mas a conversão em si (escolher
