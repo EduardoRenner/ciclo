@@ -387,3 +387,82 @@ Commit: `feat(auth): autenticação em duas etapas com TOTP (TICKET-076)`. §19 
 **Próxima fase do loop:** retomar a sequência de verificação estrutural em V4 (Gates 7-10 —
 interface/acessibilidade/responsividade/performance/SEO), agora sem a maior pendência de
 segurança/LGPD da sessão pendurada.
+
+## Relatório V4 (Gates 7-10, TICKET-077)
+
+Checklist lido inteiro antes de começar (Gates 7-10 de `VERIFICACAO-FINAL.md`), mais
+`DESIGN-E-INTERFACE.md` como leitura complementar. Verificação feita contra build de produção
+real (`pnpm build && pnpm start`), navegador de verdade (resize 320/375px, JS no console pra
+medir overflow/alt/tap-target), não só leitura de código.
+
+### Achados reais, corrigidos (commit `ec60f73`)
+
+**Gate 10 (SEO) — S1, o mais sério desta rodada.** Zero `robots.txt`, zero `sitemap.xml`, zero
+Open Graph/Twitter Card na página pública do tenant. O canal de distribuição real do produto é
+colar o link no WhatsApp (confirmado em V3, `linkWhatsapp()`/CTA "Falar no WhatsApp") — sem OG,
+esse link chegava pelado, só a URL, sem nome nem descrição do negócio. Corrigido:
+`src/app/robots.ts` (bloqueia `/admin`, `/api`, rotas de auth), `src/app/sitemap.ts` (lista os
+tenants ativos, mesma leitura anônima `withNovoTenant` que o booking público já usa), OG/Twitter/
+canonical/JSON-LD LocalBusiness na página do tenant. **Sem imagem** (nenhum tenant tem foto/logo
+cadastrada — produto não tem upload de imagem ainda), registrado como pendência, não fingido.
+
+**Gate 10 — `/admin` nunca declarava `noindex`.** Painel de trabalho indexável é o tipo de coisa
+que vaza em busca por acidente. `robots: {index:false}` na própria página + disallow no
+robots.txt (duas camadas, uma não substitui a outra).
+
+**Gate 8.4 — o defeito mais recorrente da família (já visto em 7 projetos anteriores) apareceu
+de novo.** Telefone e Instagram no rodapé da página pública: alvo de toque de 23px medido ao
+vivo (`getBoundingClientRect`), abaixo do mínimo de 40px da casa. Corrigido com a classe
+`toque-48` — que **já existia** no design system (usada no botão `sm`), só não tinha sido
+aplicada aqui. Confirmado via computed style do `::after` depois do rebuild: `min-height: 48px`.
+
+### Verificado e confirmado limpo (sem achado)
+
+- **7.13** `<html lang="pt-BR">` ✅. **7.2/7.3** 404 real, com CTA de volta, sem link morto
+  encontrado. **7.6** duplo envio: o componente `Button` desabilita sozinho via prop
+  `carregando` (`aria-busy` + `disabled`), padrão usado em todo formulário revisado nesta sessão
+  — não é checklist por tela, é garantia estrutural. **7.11** foco visível: `:focus-visible`
+  global em `globals.css`, token `--ring`. **7.15** `prefers-reduced-motion` respeitado
+  (`globals.css`). **7.12** todo `<img>` do projeto tem `alt` (só existe um, o QR code do MFA,
+  já teve alt significativo desde que foi construído).
+- **8.2** zero overflow horizontal medido ao vivo em 320px e 375px na página pública
+  (`scrollWidth === innerWidth` nos dois). **8.3** (armadilha de `fieldset`) não se aplica —
+  grep confirma que o projeto não usa `<fieldset>` em lugar nenhum. **8.5** nenhuma ação só no
+  hover encontrada (grep por `group-hover:opacity`/`hover:opacity-100`, zero resultado). **8.9**
+  safe-area do iPhone tratada nos dois eixos (`env(safe-area-inset-top)` no Topbar,
+  `env(safe-area-inset-bottom)` na TabBar). **8.10** não se aplica por desenho: o app não tem
+  menu hambúrguer, a `TabBar` é fixa e sempre visível (decisão documentada em `tab-bar.tsx`, §3.7
+  do redesign) — não existe "abrir/fechar menu" pra travar scroll.
+- **9.6/9.7/9.8** (will-change fora de `hover:hover`, background-attachment fixed, blur pesado no
+  mobile) não se aplicam — grep confirma zero uso de `will-change`/`blur(` no projeto inteiro;
+  CICLO é ferramenta de trabalho, não landing decorada, nunca herdou esses efeitos dos forks de
+  vitrine. **9.9** fonte declarada é a fonte carregada: `next/font/google` (Archivo), auto-
+  hospedada, sem mentira de `@font-face` fantasma.
+
+### Pendências registradas (não corrigidas nesta rodada)
+
+- **10.2 sem imagem própria no OG:** depende de o produto ganhar upload de foto/logo pro
+  perfil público (não existe hoje) — quando existir, adicionar `openGraph.images`/
+  `twitter.images` é trivial, o código já está pronto pra receber.
+- **Verificação de `/admin` com `noindex` real na resposta HTTP:** confirmado por leitura de
+  código + `typecheck`/`lint`/`build` limpos, **não** confirmado por fetch autenticado ao vivo
+  contra a página renderizada (exigiria outro tenant descartável só pra isso) — registrado por
+  honestidade, não é o mesmo nível de prova que os outros itens desta rodada.
+- **Gate 7.7 (todo componente exportado é realmente renderizado), 7.9 (gradiente em texto
+  cortando descendente), 7.14 (zoom 200%), 9.1-9.2 (LCP/CLS/INP medidos, peso de JS)** não
+  verificados nesta rodada por escopo/tempo — nenhum indício de problema encontrado
+  incidentalmente ao navegar, mas não foram medidos de propósito. Candidatos naturais de uma
+  V5 se houver.
+
+### Verificação completa
+
+`typecheck`/`lint` limpos. `test:unit` 429, `test:rls` 133, `test:integration` 239 — todos sem
+flake. `build` ok, `/robots.txt` e `/sitemap.xml` aparecem no manifesto como rotas estáticas.
+
+**Próxima fase do loop:** decisão de dev sênior — o ciclo de verificação estrutural
+(VERIFICACAO-FINAL.md) está com V1-V4 feitos; falta só Gate 11 (observabilidade/resiliência,
+não coberto por nenhuma rodada anterior) e os Gates 12-14 do arquivo (se existirem além do 11).
+Ler o restante do checklist antes de decidir se vale uma V5 curta ou se o retorno já caiu o
+suficiente pra valer mais construir do que auditar — a essa altura da sessão, a maioria dos
+achados de Gate 7-10 já eram polimento (S2), não bloqueio (S0/S1), o que é sinal de que a
+plataforma está numa base sólida.

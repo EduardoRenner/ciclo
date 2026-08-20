@@ -1850,3 +1850,17 @@ em `tests/unit/server/mfa.test.ts` (13 casos). Complementado com verificação a
 ponta contra o Supabase real (tenant descartável, código TOTP calculado de verdade via RFC
 6238 num one-liner Node — não tem `otplib`/`speakeasy` no projeto), porque mock nenhum prova
 que `challengeAndVerify` de fato eleva a sessão pra `aal2` no mundo real.
+
+2026-08-20 · V4 achou 2 problemas reais (SEO ausente, alvo de toque abaixo do mínimo) — corrigir
+na hora ou registrar e continuar? · Corrigir na hora (TICKET-077). Os dois eram baratos (nenhuma
+decisão de produto envolvida, só código faltando) e um deles — alvo de toque — é o defeito mais
+recorrente da própria família de projetos (7 ocorrências anteriores catalogadas em
+DESIGN-E-INTERFACE.md Anexo A), então deixar registrado sem corrigir teria sido inconsistente
+com o próprio padrão que a sessão vinha seguindo (S0/S1 corrige na hora, S2/S3 registra).
+
+2026-08-20 · Sitemap dinâmico precisa listar todos os tenants — isso exige service_role
+(RLS de `tenants` exige `has_tenant()`, que um gerador de sitemap sem sessão nunca tem). Criar
+um novo ponto de acesso service_role só pra isso, ou reusar algo existente? · Reusar
+`withNovoTenant()` (já em `with-tenant.ts`, já é o padrão usado por `public-booking.ts` pra
+exatamente o mesmo problema — leitura anônima cross-tenant). Não é uma exceção nova à regra 2
+do CLAUDE.md, é o mesmo uso sancionado que já existia, aplicado a mais um lugar.
