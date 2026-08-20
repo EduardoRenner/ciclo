@@ -1783,3 +1783,18 @@ catálogo real nos dois lugares agora (P5 populou `profession_services.barber` t
 de uma vez arriscaria regressão sem necessidade (nail/lashes/etc virariam catálogo vazio, já
 que `profession_services` só tem dado rico pra barber entre as 8). A troca de RPC só se aplica
 a profissão que não tinha NENHUM caminho de catálogo antes.
+
+2026-08-20 · V1 (verificação estrutural, Gates 0-4) achou `profiles` com 2340 linhas órfãs
+(sem `auth.users` correspondente) — apagar direto ou investigar antes? · Investigado antes:
+confirmado que nenhuma tabela do produto (memberships, appointments, tickets, quotes, etc.)
+referenciava qualquer um dos 2340 ids órfãos. Causa raiz identificada — `profiles` nunca teve
+FK pra `auth.users`, então a limpeza de tenants de teste em P−1 (que apagou as contas de auth)
+não teve como arrastar os profiles junto. Corrigido com migration `0032`: apaga os órfãos
+confirmados e adiciona a FK com `on delete cascade`, travando a causa raiz — não só o sintoma.
+
+2026-08-19 (retroativo, achado em V1) · A limpeza de P−1 devia ter incluído `profiles` desde
+o início? · Sim, tecnicamente — mas sem a FK, não havia como o `on delete cascade` do
+`auth.users` ter avisado ninguém que `profiles` também precisava de limpeza manual; a ausência
+da FK é a causa, não a limpeza incompleta em si. Registrado aqui pra não repetir: qualquer
+tabela nova que referencia `auth.users` diretamente (não via `profiles`) merece a mesma
+pergunta — "tem FK com cascade, ou vai deixar resíduo na próxima limpeza?".
