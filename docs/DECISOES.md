@@ -1703,3 +1703,37 @@ Isso é literalmente a diferença entre P2.5 (barato) e P9 (caro) do §10: qualq
 precise de lat/lng real (calcular distância, ordenar rota, desenhar raio) é P9 e continua
 bloqueada; um link que só delega pro app de mapa do celular decidir não precisa de coordenada
 nenhuma.
+
+2026-08-20 · P10 (modelos de preço, G5) — antes de desenhar schema novo, os 6 modelos que G5
+listava como faltando já estavam TODOS faltando de verdade, ou algum já tinha sido resolvido
+sem cruzar com o G5? · Verificado antes de codar: "por orçamento" fechou em P8 (quotes), "por
+pacote" e "mensalidade recorrente" já existiam desde a migration `0019` (`packages`/
+`client_subscriptions`, um recurso de CRM que ninguém tinha ligado de volta ao G5 no plano).
+Só "por hora", "visita + hora" e "diária" restavam de verdade — o schema novo (migration 0029)
+cobre só esses 3, em vez de reconstruir algo que já funcionava.
+
+2026-08-20 · O novo `services.pricing_model` deve mudar como o AGENDAMENTO e a COMANDA
+calculam o valor final, ou só como o CATÁLOGO anuncia o preço? · Só o catálogo. A cobrança de
+verdade (o que entra no caixa) já é flexível desde sempre via `ticket_items`/`quote_items`
+(qty × preço unitário livre, editável na hora de fechar) — reescrever o motor de agendamento
+pra "saber" cobrar por hora seria duplicar uma capacidade que já existe, só que num lugar
+errado. `pricing_model` resolve o problema real do G5 (o catálogo fingindo que R$50 é sempre
+"o preço fechado" quando na real é "R$50 a hora"), sem inventar um segundo motor de cobrança.
+
+2026-08-20 · `src/core/pricing/` já existia (só com `.gitkeep`) desde o TICKET-001 — é
+coincidência ou o plano original (antes da virada multi-profissão) já sabia que ia precisar
+disso? · O `.gitkeep` está lá desde a fundação do repositório (mesmo commit dos primeiros
+migrations), então é vaga reservada de propósito — a especificação original da PARTE 1 já
+antecipava um módulo de precificação, só nunca chegou a ser construído até agora. Mesmo padrão
+do G4 (`appointments.recurrence_id` sem tabela) e de `tenants.cobranca` (coluna sem leitor):
+esta base tem um histórico de deixar o andaime pronto e não completar a obra — vale continuar
+de olho nisso em fases futuras, não é a primeira vez.
+
+2026-08-20 · `tenants.cobranca` (o eixo de P2, migration `0023` — fixo/hora/visita_hora/
+diaria/orcamento_antes/pacote/recorrente) e o novo `services.pricing_model` são a mesma coisa
+duplicada? · Não, são níveis diferentes de propósito: `tenants.cobranca` é o eixo do TENANT
+(um valor por profissão/negócio, usado pra personalizar vocabulário e — quando algo passar a
+lê-lo — o comportamento geral da interface). `services.pricing_model` é por SERVIÇO (um
+eletricista pode ter "visita técnica" grátis e "instalação" por hora, no mesmo tenant). Os
+dois continuam sem se cruzar por enquanto — `tenants.cobranca` segue órfão (nada lê essa
+coluna ainda, registrado desde a auditoria do G4), e isso não faz parte do escopo do P10.

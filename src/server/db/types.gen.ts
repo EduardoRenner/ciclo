@@ -2274,11 +2274,14 @@ export type Database = {
           deposit_min_cents: number
           description: string | null
           duration_min: number
+          half_day_price_cents: number | null
+          hourly_rate_cents: number | null
           id: string
           name: string
           parallel_capacity: number
           position: number
           price_cents: number
+          pricing_model: string
           requires_anamnesis: boolean
           tenant_id: string
         }
@@ -2296,11 +2299,14 @@ export type Database = {
           deposit_min_cents?: number
           description?: string | null
           duration_min: number
+          half_day_price_cents?: number | null
+          hourly_rate_cents?: number | null
           id?: string
           name: string
           parallel_capacity?: number
           position?: number
           price_cents: number
+          pricing_model?: string
           requires_anamnesis?: boolean
           tenant_id: string
         }
@@ -2318,11 +2324,14 @@ export type Database = {
           deposit_min_cents?: number
           description?: string | null
           duration_min?: number
+          half_day_price_cents?: number | null
+          hourly_rate_cents?: number | null
           id?: string
           name?: string
           parallel_capacity?: number
           position?: number
           price_cents?: number
+          pricing_model?: string
           requires_anamnesis?: boolean
           tenant_id?: string
         }

@@ -54,7 +54,16 @@ export type PerfilPublico = {
   instagram: string | null
   accentColor: { acc: string; acc2: string }
   hours: { weekday: number; opensAt: string; closesAt: string }[]
-  services: { id: string; name: string; description: string | null; durationMin: number; priceCents: number }[]
+  services: {
+    id: string
+    name: string
+    description: string | null
+    durationMin: number
+    priceCents: number
+    pricingModel: 'fixed' | 'hourly' | 'visit_hourly' | 'daily'
+    hourlyRateCents: number | null
+    halfDayPriceCents: number | null
+  }[]
   professionals: { id: string; displayName: string }[]
   /**
    * docs/09-PLATAFORMA.md §8: a página pública promete "avaliações" desde a
@@ -80,7 +89,7 @@ export const perfilPublico = cache(async (slug: string): Promise<PerfilPublico> 
     const [servicos, profissionais, pack, horarioPadrao, todasAsNotas, comentariosRecentes] = await Promise.all([
       svc
         .from('services')
-        .select('id, name, description, duration_min, price_cents')
+        .select('id, name, description, duration_min, price_cents, pricing_model, hourly_rate_cents, half_day_price_cents')
         .eq('tenant_id', tenant.id)
         .eq('active', true)
         .eq('bookable_online', true)
@@ -133,6 +142,9 @@ export const perfilPublico = cache(async (slug: string): Promise<PerfilPublico> 
         description: s.description,
         durationMin: s.duration_min,
         priceCents: s.price_cents,
+        pricingModel: s.pricing_model as 'fixed' | 'hourly' | 'visit_hourly' | 'daily',
+        hourlyRateCents: s.hourly_rate_cents,
+        halfDayPriceCents: s.half_day_price_cents,
       })),
       professionals: (profissionais.data ?? []).map((p) => ({ id: p.id, displayName: p.display_name })),
       reviews: {

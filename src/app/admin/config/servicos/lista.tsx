@@ -8,7 +8,8 @@ import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import Chip from '@/components/ui/chip'
 import EmptyState from '@/components/ui/empty-state'
-import { dinheiro, duracao } from '@/lib/formato'
+import { formatarPreco } from '@/core/pricing/formatar'
+import { duracao } from '@/lib/formato'
 
 import FormularioServico, { type ServicoEditavel } from './formulario'
 
@@ -115,7 +116,14 @@ export default function ListaServicos({ iniciais }: { iniciais: Servico[] }) {
               <button type="button" onClick={() => setEditando(s)} className="min-w-0 flex-1 text-left">
                 <p className="truncate text-corpo font-semibold">{s.name}</p>
                 <p className="tabular mt-0.5 text-secundario text-txt-2">
-                  {duracao(s.duration_min)} · {dinheiro.format(s.price_cents / 100)} · volta em {s.cycle_days}d
+                  {duracao(s.duration_min)} ·{' '}
+                  {formatarPreco({
+                    pricingModel: s.pricing_model as 'fixed' | 'hourly' | 'visit_hourly' | 'daily',
+                    priceCents: s.price_cents,
+                    hourlyRateCents: s.hourly_rate_cents,
+                    halfDayPriceCents: s.half_day_price_cents,
+                  })}{' '}
+                  · volta em {s.cycle_days}d
                 </p>
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {!s.active ? <Badge estado="bad">Arquivado</Badge> : null}

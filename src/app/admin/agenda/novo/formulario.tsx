@@ -10,10 +10,19 @@ import Input from '@/components/ui/input'
 import PhoneInput from '@/components/ui/phone-input'
 import Select from '@/components/ui/select'
 import { useToast } from '@/components/ui/toast'
-import { dinheiro, formatarTelefone } from '@/lib/formato'
+import { formatarPreco } from '@/core/pricing/formatar'
+import { formatarTelefone } from '@/lib/formato'
 import { apiFetch } from '@/lib/offline/api-client'
 
-type Servico = { id: string; name: string; duration_min: number; price_cents: number }
+type Servico = {
+  id: string
+  name: string
+  duration_min: number
+  price_cents: number
+  pricing_model: string
+  hourly_rate_cents: number | null
+  half_day_price_cents: number | null
+}
 type Profissional = { id: string; display_name: string }
 
 function paraIso(dataLocal: string): string {
@@ -198,7 +207,13 @@ export default function FormularioAgendamento({
       <Select rotulo="Serviço" value={serviceId} onChange={(e) => setServiceId(e.target.value)} required>
         {servicos.map((s) => (
           <option key={s.id} value={s.id}>
-            {s.name} · {dinheiro.format(s.price_cents / 100)}
+            {s.name} ·{' '}
+            {formatarPreco({
+              pricingModel: s.pricing_model as 'fixed' | 'hourly' | 'visit_hourly' | 'daily',
+              priceCents: s.price_cents,
+              hourlyRateCents: s.hourly_rate_cents,
+              halfDayPriceCents: s.half_day_price_cents,
+            })}
           </option>
         ))}
       </Select>

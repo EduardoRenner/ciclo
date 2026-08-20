@@ -33,6 +33,7 @@ const BASE = {
   bufferBeforeMin: 0,
   bufferAfterMin: 0,
   priceCents: 22000,
+  pricingModel: 'fixed' as const,
   cycleDays: 21,
   depositBps: 0,
   depositMinCents: 0,
@@ -118,6 +119,7 @@ describe('CRUD de serviços', () => {
         ...BASE,
         name: `Parcial ${randomUUID().slice(0, 6)}`,
         priceCents: 15000,
+        pricingModel: 'fixed',
         cycleDays: 30,
       })
 
@@ -192,6 +194,84 @@ describe('CRUD de serviços', () => {
 
       const conferindo = await listarServicos(svc, outroTenantId)
       expect(conferindo.find((s) => s.id === alvo.id)?.price_cents).toBe(alvo.price_cents)
+    },
+    30_000,
+  )
+})
+
+describe('modelos de preço (docs/09-PLATAFORMA.md G5)', () => {
+  it(
+    'serviço "fixed" (o padrão de todo mundo hoje) continua funcionando sem mudar nada',
+    async () => {
+      const criado = await criarServico(svc, tenantId, { ...BASE, name: `Padrão ${randomUUID().slice(0, 6)}` })
+      expect(criado.pricing_model).toBe('fixed')
+      expect(criado.hourly_rate_cents).toBeNull()
+      expect(criado.half_day_price_cents).toBeNull()
+    },
+    30_000,
+  )
+
+  it(
+    'hourly guarda o preço como valor por hora, sem exigir taxa de visita',
+    async () => {
+      const criado = await criarServico(svc, tenantId, {
+        ...BASE,
+        name: `Consultoria ${randomUUID().slice(0, 6)}`,
+        pricingModel: 'hourly',
+        priceCents: 15000,
+      })
+      expect(criado.pricing_model).toBe('hourly')
+      expect(criado.price_cents).toBe(15000)
+      expect(criado.hourly_rate_cents).toBeNull()
+    },
+    30_000,
+  )
+
+  it(
+    'visit_hourly sem hourlyRateCents é recusado com VALIDATION_ERROR no campo certo',
+    async () => {
+      const erro = await criarServico(svc, tenantId, {
+        ...BASE,
+        name: `Sem taxa ${randomUUID().slice(0, 6)}`,
+        pricingModel: 'visit_hourly',
+      }).catch((e: unknown) => e)
+      expect(erro).toMatchObject({ code: 'VALIDATION_ERROR' })
+      expect((erro as { details: { fields: Record<string, string> } }).details.fields).toHaveProperty('hourlyRateCents')
+    },
+    30_000,
+  )
+
+  it(
+    'visit_hourly com taxa guarda visita e hora como colunas separadas',
+    async () => {
+      const criado = await criarServico(svc, tenantId, {
+        ...BASE,
+        name: `Eletricista ${randomUUID().slice(0, 6)}`,
+        pricingModel: 'visit_hourly',
+        priceCents: 8000,
+        hourlyRateCents: 5000,
+      })
+      expect(criado.price_cents).toBe(8000) // taxa de visita
+      expect(criado.hourly_rate_cents).toBe(5000)
+    },
+    30_000,
+  )
+
+  it(
+    'daily aceita meia diária opcional, e PATCH consegue voltar a ter só a diária inteira',
+    async () => {
+      const criado = await criarServico(svc, tenantId, {
+        ...BASE,
+        name: `Faxina ${randomUUID().slice(0, 6)}`,
+        pricingModel: 'daily',
+        priceCents: 20000,
+        halfDayPriceCents: 12000,
+      })
+      expect(criado.half_day_price_cents).toBe(12000)
+
+      const semMeia = await atualizarServico(svc, tenantId, criado.id, { halfDayPriceCents: null })
+      expect(semMeia.half_day_price_cents).toBeNull()
+      expect(semMeia.pricing_model).toBe('daily') // PATCH parcial não mexeu no resto
     },
     30_000,
   )

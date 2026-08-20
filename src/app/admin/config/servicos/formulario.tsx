@@ -5,6 +5,7 @@ import { useState, useTransition } from 'react'
 import Button from '@/components/ui/button'
 import Input from '@/components/ui/input'
 import MoneyInput from '@/components/ui/money-input'
+import Select from '@/components/ui/select'
 import Sheet from '@/components/ui/sheet'
 import Textarea from '@/components/ui/textarea'
 import { useToast } from '@/components/ui/toast'
@@ -15,11 +16,16 @@ export type ServicoEditavel = {
   description: string | null
   duration_min: number
   price_cents: number
+  pricing_model: string
+  hourly_rate_cents: number | null
+  half_day_price_cents: number | null
   cycle_days: number
   buffer_before_min: number
   buffer_after_min: number
   bookable_online: boolean
 }
+
+type ModeloDePreco = 'fixed' | 'hourly' | 'visit_hourly' | 'daily'
 
 type Props = {
   aberto: boolean
@@ -45,6 +51,10 @@ export default function FormularioServico({ aberto, aoFechar, servico, aoSalvar 
   // Centavos direto no estado: com o `MoneyInput` não existe mais estado
   // intermediário inválido ("35," pela metade) para validar depois.
   const [precoCentavos, setPrecoCentavos] = useState(servico?.price_cents ?? 0)
+  const [modeloDePreco, setModeloDePreco] = useState<ModeloDePreco>((servico?.pricing_model as ModeloDePreco) ?? 'fixed')
+  const [valorHoraCentavos, setValorHoraCentavos] = useState(servico?.hourly_rate_cents ?? 0)
+  const [meiaDiariaCentavos, setMeiaDiariaCentavos] = useState(servico?.half_day_price_cents ?? 0)
+  const [temMeiaDiaria, setTemMeiaDiaria] = useState(servico?.half_day_price_cents != null)
   const [cicloDias, setCicloDias] = useState(String(servico?.cycle_days ?? 21))
   const [preparoAntes, setPreparoAntes] = useState(String(servico?.buffer_before_min ?? 0))
   const [preparoDepois, setPreparoDepois] = useState(String(servico?.buffer_after_min ?? 0))
@@ -61,6 +71,9 @@ export default function FormularioServico({ aberto, aoFechar, servico, aoSalvar 
       description: descricao.trim() || null,
       durationMin: Number(duracao),
       priceCents: precoCentavos,
+      pricingModel: modeloDePreco,
+      hourlyRateCents: modeloDePreco === 'visit_hourly' ? valorHoraCentavos : null,
+      halfDayPriceCents: modeloDePreco === 'daily' && temMeiaDiaria ? meiaDiariaCentavos : null,
       cycleDays: Number(cicloDias),
       bufferBeforeMin: Number(preparoAntes),
       bufferAfterMin: Number(preparoDepois),
@@ -111,8 +124,44 @@ export default function FormularioServico({ aberto, aoFechar, servico, aoSalvar 
             required
             classNameCampo="tabular"
           />
-          <MoneyInput rotulo="Preço" centavos={precoCentavos} aoMudar={setPrecoCentavos} required />
+          <MoneyInput
+            rotulo={modeloDePreco === 'hourly' ? 'Preço por hora' : modeloDePreco === 'visit_hourly' ? 'Taxa de visita' : modeloDePreco === 'daily' ? 'Diária' : 'Preço'}
+            centavos={precoCentavos}
+            aoMudar={setPrecoCentavos}
+            required
+          />
         </div>
+
+        <Select
+          rotulo="Como cobra"
+          value={modeloDePreco}
+          onChange={(e) => setModeloDePreco(e.target.value as ModeloDePreco)}
+          ajuda="Muda só como o preço aparece pro cliente — o valor que entra no caixa continua ajustável na hora de fechar."
+        >
+          <option value="fixed">Preço fechado</option>
+          <option value="hourly">Por hora</option>
+          <option value="visit_hourly">Taxa de visita + hora</option>
+          <option value="daily">Diária</option>
+        </Select>
+
+        {modeloDePreco === 'visit_hourly' ? (
+          <MoneyInput rotulo="Valor da hora (depois da visita)" centavos={valorHoraCentavos} aoMudar={setValorHoraCentavos} required />
+        ) : null}
+
+        {modeloDePreco === 'daily' ? (
+          <>
+            <label className="flex min-h-12 items-center gap-3 py-1">
+              <input
+                type="checkbox"
+                checked={temMeiaDiaria}
+                onChange={(e) => setTemMeiaDiaria(e.target.checked)}
+                className="size-5 shrink-0 accent-[var(--acc-2)]"
+              />
+              <span className="text-corpo text-txt">Também cobra meia diária</span>
+            </label>
+            {temMeiaDiaria ? <MoneyInput rotulo="Meia diária" centavos={meiaDiariaCentavos} aoMudar={setMeiaDiariaCentavos} required /> : null}
+          </>
+        ) : null}
 
         <div className="grid grid-cols-2 gap-3">
           <Input

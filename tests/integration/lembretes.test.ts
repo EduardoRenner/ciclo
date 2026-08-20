@@ -87,6 +87,7 @@ beforeAll(async () => {
     bufferBeforeMin: 0,
     bufferAfterMin: 0,
     priceCents: 8000,
+    pricingModel: 'fixed',
     cycleDays: 21,
     depositBps: 0,
     depositMinCents: 0,

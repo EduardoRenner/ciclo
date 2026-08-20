@@ -3,7 +3,8 @@ import Link from 'next/link'
 
 import Badge from '@/components/ui/badge'
 import Card from '@/components/ui/card'
-import { dinheiro, duracao } from '@/lib/formato'
+import { formatarPreco } from '@/core/pricing/formatar'
+import { duracao } from '@/lib/formato'
 
 import type { PerfilPublico } from '@/server/services/public-booking'
 
@@ -117,7 +118,12 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
                     <p className="tabular mt-1 text-secundario text-txt-3">{duracao(s.durationMin)}</p>
                   </div>
                   <p className="tabular shrink-0 text-corpo font-semibold text-acc-2">
-                    {s.priceCents > 0 ? dinheiro.format(s.priceCents / 100) : 'Consultar'}
+                    {formatarPreco({
+                      pricingModel: s.pricingModel,
+                      priceCents: s.priceCents,
+                      hourlyRateCents: s.hourlyRateCents,
+                      halfDayPriceCents: s.halfDayPriceCents,
+                    })}
                   </p>
                 </div>
               </Card>
