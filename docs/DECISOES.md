@@ -1833,3 +1833,20 @@ real de qualquer preview/staging/deploy alternativo. Lição registrada: verific
 segurança precisa testar o caso onde o ambiente NÃO bate com a configuração esperada, não só o
 caminho feliz onde os dois coincidem — é fácil confirmar "funciona" testando só contra o
 cenário que já se sabe que vai dar certo.
+
+2026-08-20 · Construir o MFA agora ou terminar V4-V5 do ciclo de verificação primeiro? ·
+Construir agora (TICKET-076). O achado de V2 não era polimento — 3 rotas reais
+(`data-export`, `erase` LGPD, `vault` de saúde) ficavam permanentemente inacessíveis pra
+qualquer conta por falta de UI de cadastro de segundo fator, e mais uma rodada de verificação
+só produziria mais achados registrados, não fecharia os que já existiam. Decisão de dev sênior:
+parar de descobrir problemas e fechar o mais grave primeiro.
+
+2026-08-20 · Como testar rotas que dependem de `criarClienteDoUsuario()` (cookies via
+`next/headers`, só existe dentro de um request real do Next) sem poder chamar a rota direto
+num teste de integração comum? · Seguir o padrão já estabelecido em
+`tests/unit/server/session.test.ts`: `vi.mock('@/server/db/server-client', ...)` com um cliente
+falso expondo só os métodos que a rota usa. Aplicado às 4 rotas de MFA + o novo ramo do login
+em `tests/unit/server/mfa.test.ts` (13 casos). Complementado com verificação ao vivo ponta a
+ponta contra o Supabase real (tenant descartável, código TOTP calculado de verdade via RFC
+6238 num one-liner Node — não tem `otplib`/`speakeasy` no projeto), porque mock nenhum prova
+que `challengeAndVerify` de fato eleva a sessão pra `aal2` no mundo real.

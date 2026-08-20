@@ -881,13 +881,6 @@ Nenhuma das 3 profundas depende dele; pintor e reforma, que dependem, não estã
 
 Honestidade sobre o que ainda é pergunta aberta, para não parecer mais resolvido do que está:
 
-- 🔴 **Prioridade máxima do backlog (achado em V2, docs/10-PROXIMOS-PASSOS.md):** cadastro de
-  segundo fator (MFA/TOTP) não existe — zero UI de enrollment. `exigirAal2()` trava 3 rotas
-  reais (`data-export`, `erase` LGPD, `vault` de saúde — esta última já é chamada pela tela
-  real `admin/clientes/[id]/saude.tsx`), tornando-as **permanentemente inacessíveis** hoje, pra
-  qualquer conta. Não é lacuna técnica pequena — é recurso do tamanho de uma fase inteira (QR
-  code, verificação de TOTP, gestão de fatores, desafio no login), por isso não foi construído
-  dentro da auditoria que o achou. Deveria ser a próxima fase de CONSTRUÇÃO do produto.
 - **Preço dos planos** e o que exatamente cada um libera — §13 é proposta.
 - **Se o nome do produto muda.** Minha leitura é que **CICLO fica melhor** depois da virada (§9),
   mas é decisão do dono.

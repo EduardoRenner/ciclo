@@ -318,3 +318,72 @@ nível de API (RBAC + RLS), mas não houve login real com um papel restrito (`pr
 **Próxima fase do loop:** decisão a ser tomada na próxima iteração — continuar V4 (Gates 7-10,
 interface/responsividade/performance/SEO) ou pivotar pra construir o MFA, que segue sendo o
 achado de maior prioridade real do backlog.
+
+## Relatório TICKET-076 — MFA construído (pivô de V3 para construção)
+
+**Decisão autônoma:** entre continuar V4 (Gates 7-10) ou construir o MFA que V2 tinha
+encontrado e registrado como prioridade máxima do backlog, escolhi construir agora. Motivo: o
+achado do V2 não é "falta polimento" — é "3 rotas reais permanentemente inacessíveis pra
+qualquer conta" (`data-export`, `erase` LGPD, `vault` de saúde). Deixar isso registrado por mais
+uma rodada de verificação (que só produz MAIS achados, não fecha os que já existem) tinha custo
+maior que o risco de pausar a sequência V1→V5 no meio.
+
+**O que foi construído** (sem tabela nova — TOTP nativo do Supabase Auth):
+
+- `src/server/auth/schemas.ts`: `EsquemaCodigoMfa`/`EsquemaVerificarMfa` (6 dígitos), slug
+  `verificar` reservado.
+- `POST /api/v1/auth/mfa/enroll` — `db.auth.mfa.enroll({factorType:'totp'})`, devolve
+  `factorId`/`qrCode`/`secret`.
+- `POST /api/v1/auth/mfa/verify` — `challengeAndVerify`; serve tanto "confirmar cadastro" quanto
+  "desafio no login" (mesma chamada nos dois casos).
+- `GET /api/v1/auth/mfa/factors` — lista fatores TOTP.
+- `DELETE /api/v1/auth/mfa/factors/[id]` — **exige `aal2`, não só sessão** (mesmo raciocínio de
+  "trocar senha pede a senha atual, mesmo logado"; só quem provou o fator nesta sessão pode
+  removê-lo).
+- `/api/v1/auth/login`: depois de `signInWithPassword`, checa
+  `getAuthenticatorAssuranceLevel()` — se a conta tem fator TOTP `verified` e a sessão ainda é
+  `aal1`, devolve `{mfaRequired, factorId}` em vez da lista de tenants.
+- `/entrar`: redireciona pra `/verificar?factorId=...` quando `mfaRequired` vem na resposta.
+- `/verificar` (nova rota `(auth)`): tela de desafio no login — 6 dígitos, confirma, segue pro
+  destino original.
+- `/admin/config/seguranca` (nova, com link em Configurações → Privacidade): tela de
+  cadastro/gestão — QR code via `<img src={dataUri}>` (não `dangerouslySetInnerHTML`, pra não
+  regredir o achado "zero HTML injetado" do Gate 5), secret manual como alternativa, formulário
+  de confirmação; estado "ativo" com botão Desativar; erro `MFA_REQUIRED` na remoção vira
+  mensagem específica ("saia e entre de novo confirmando o código") em vez de erro genérico.
+
+**Testado, não só lido:**
+
+- 13 testes unitários novos (`tests/unit/server/mfa.test.ts`), seguindo o padrão já
+  estabelecido pela base (`vi.mock('@/server/db/server-client', ...)` com cliente falso — a
+  mesma técnica de `tests/unit/server/session.test.ts` — porque `criarClienteDoUsuario()`
+  depende de `next/headers`/`cookies()`, que só existe dentro de um request real do Next, não
+  dá pra chamar a rota direto num teste de integração comum como as outras rotas de serviço
+  fazem). Cobrem: enroll com/sem sessão e com erro do Supabase; verify com código certo/errado/
+  malformado (e que o erro do Supabase nunca vaza pra fora); listagem; remoção com/sem `aal2` e
+  com id inválido; os 3 ramos do `mfaRequired` no login (fator verificado → pede código; sem
+  fator → segue direto; fator cadastrado mas não verificado → segue direto, não trava
+  ninguém no meio de um cadastro inacabado).
+- **Verificação ao vivo, ponta a ponta, contra o Supabase real** — não só os mocks acima: tenant
+  descartável criado por script temporário (apagado ao final, junto com o script). Login →
+  `/admin/config/seguranca` → "Ativar" → QR/secret reais devolvidos pelo Supabase → **código
+  TOTP de 6 dígitos calculado de verdade a partir do secret** (RFC 6238, HMAC-SHA1, sem
+  biblioteca — não tem `otplib`/`speakeasy` no projeto, então o algoritmo foi escrito num
+  one-liner Node só para esta verificação) → confirmado, tela vira "ativada". Prova de que
+  `exigirAal2()` realmente destravou: `fetch('/api/v1/clients/[id]/vault')` foi de
+  `401 MFA_REQUIRED` (antes do cadastro) pra `404` de negócio ("cliente ainda não tem anamnese
+  preenchida") depois; `data-export` foi de `401` pra `200`. Logout + login de novo: a tela
+  `/verificar` apareceu (não pulou direto pro painel), código TOTP recalculado (janela de 30s já
+  tinha virado) confirmado, caiu em `/admin/hoje`. "Desativar" removido com sucesso (sessão já
+  era `aal2`), tela voltou pro estado "não cadastrado". Tenant e usuário descartáveis apagados ao
+  final — sem resíduo no banco.
+- `pnpm typecheck`/`lint`: limpos. `test:unit`: 429 (era 410 + os 13 novos, mais os do V2/V3 já
+  contados). `test:rls`: 133 (sem tabela nova, nenhuma mudança aqui — esperado). `test:integration`:
+  239, sem flake. `build`: sucesso, `/verificar` e as 4 rotas novas aparecem no manifesto.
+
+Commit: `feat(auth): autenticação em duas etapas com TOTP (TICKET-076)`. §19 do
+`09-PLATAFORMA.md` atualizado (a entrada 🔴 removida — não é mais lacuna, é recurso).
+
+**Próxima fase do loop:** retomar a sequência de verificação estrutural em V4 (Gates 7-10 —
+interface/acessibilidade/responsividade/performance/SEO), agora sem a maior pendência de
+segurança/LGPD da sessão pendurada.
