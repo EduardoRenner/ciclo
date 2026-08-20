@@ -7,7 +7,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { cancelarAgendamento } from '@/server/services/agendamentos'
 import { criarProfissional } from '@/server/services/profissionais'
-import { cancelarSerie, criarSerie } from '@/server/services/recorrencia'
+import { cancelarSerie, criarSerie, listarSeries } from '@/server/services/recorrencia'
 import { criarServico } from '@/server/services/servicos'
 import { executarOnboarding } from '@/server/services/onboarding'
 
@@ -368,5 +368,84 @@ describe('criarSerie · outros dois padrões do §12 (a cada N dias; enésimo di
     })
     expect(ocorrencias).toHaveLength(1)
     expect(ocorrencias[0]!.status).toBe('agendada')
+  })
+})
+
+describe('listarSeries (TICKET-081 — tela de gestão)', () => {
+  it('lista a série recém-criada com nome da cliente, serviço, profissional e descrição em português', async () => {
+    const inicio = proximoDiaDaSemana(2, 60) // terça, bem à frente pra não colidir com outras séries do arquivo
+    const { serie } = await criarSerie(svc, tenantId, TZ, userId, {
+      clientId,
+      serviceId: servicoId,
+      professionalId,
+      tipo: 'semanal',
+      weekday: 2,
+      intervaloSemanas: 1,
+      intervaloDias: null,
+      ordinalNoMes: null,
+      horario: '11:00',
+      startsOn: inicio,
+      endsOn: null,
+      maxOcorrencias: 4,
+      note: null,
+      address: null,
+    })
+
+    const lista = await listarSeries(svc, tenantId)
+    const linha = lista.find((s) => s.id === serie.id)
+    expect(linha).toMatchObject({ status: 'active', descricao: 'Terça-feira, toda semana', maxOcorrencias: 4 })
+    expect(linha?.clientName).toBeTruthy()
+    expect(linha?.serviceName).toBeTruthy()
+    expect(linha?.professionalName).toBeTruthy()
+    expect(linha!.ocorrenciasGeradas).toBeGreaterThan(0)
+  })
+
+  it('série cancelada aparece com status canceled, sem sumir da lista', async () => {
+    const inicio = proximoDiaDaSemana(3, 61) // quarta
+    const { serie } = await criarSerie(svc, tenantId, TZ, userId, {
+      clientId,
+      serviceId: servicoId,
+      professionalId,
+      tipo: 'a_cada_dias',
+      weekday: null,
+      intervaloSemanas: null,
+      intervaloDias: 10,
+      ordinalNoMes: null,
+      horario: '09:00',
+      startsOn: inicio,
+      endsOn: null,
+      maxOcorrencias: 2,
+      note: null,
+      address: null,
+    })
+    await cancelarSerie(svc, tenantId, serie.id)
+
+    const lista = await listarSeries(svc, tenantId)
+    const linha = lista.find((s) => s.id === serie.id)
+    expect(linha?.status).toBe('canceled')
+    expect(linha?.descricao).toBe('A cada 10 dias')
+  })
+
+  it('não vaza série de outro tenant', async () => {
+    const marca = randomUUID().slice(0, 8)
+    const { data: outroUsuario, error: erroUsuario } = await svc.auth.admin.createUser({
+      email: `recorrencia-outro-${marca}@ciclo.test`,
+      password: randomUUID(),
+      email_confirm: true,
+    })
+    if (erroUsuario || !outroUsuario.user) throw new Error('seed do outro tenant falhou')
+    usuarios.push(outroUsuario.user.id)
+
+    const { tenant: outroTenant } = await executarOnboarding(svc, {
+      userId: outroUsuario.user.id,
+      businessName: 'Outro Salão de Recorrência',
+      vertical: 'barber',
+      slug: `recorrencia-outro-${marca}`,
+      timezone: TZ,
+    })
+    tenants.push(outroTenant.id)
+
+    const lista = await listarSeries(svc, outroTenant.id)
+    expect(lista).toEqual([])
   })
 })

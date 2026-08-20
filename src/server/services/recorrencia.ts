@@ -1,6 +1,7 @@
 import { Temporal } from '@js-temporal/polyfill'
 import { z } from 'zod'
 
+import { descreverRegra } from '@/core/recurrence/descrever'
 import { ocorrenciaConflitaComFolga, proximasDatas, type LimiteSerie, type RegraRecorrencia } from '@/core/recurrence/gerar-ocorrencias'
 import { resolverCliente } from '@/server/services/agendamentos'
 import { AppError } from '@/server/http/errors'
@@ -316,4 +317,63 @@ export async function cancelarSerie(db: Cliente, tenantId: string, id: string) {
   }
 
   return { serieCancelada: id, ocorrenciasCanceladas: futuras?.length ?? 0 }
+}
+
+export type SerieDaLista = {
+  id: string
+  status: string
+  descricao: string
+  clientName: string
+  serviceName: string
+  professionalName: string
+  ocorrenciasGeradas: number
+  maxOcorrencias: number | null
+  createdAt: string
+}
+
+type LinhaSerie = {
+  // `text` com `check` no banco — o gerador de tipos não estreita pra união literal.
+  tipo: string
+  weekday: number | null
+  intervalo_semanas: number | null
+  intervalo_dias: number | null
+  ordinal_no_mes: number | null
+}
+
+/** Mesmo formato de `regraDaEntrada`, só que a partir da linha já gravada (colunas do banco). */
+function regraDaLinha(l: LinhaSerie): RegraRecorrencia {
+  if (l.tipo === 'semanal') return { tipo: 'semanal', weekday: l.weekday!, intervaloSemanas: l.intervalo_semanas! }
+  if (l.tipo === 'a_cada_dias') return { tipo: 'a_cada_dias', intervaloDias: l.intervalo_dias! }
+  if (l.tipo === 'mensal_dia_semana') return { tipo: 'mensal_dia_semana', weekday: l.weekday!, ordinal: l.ordinal_no_mes! }
+  throw new AppError('INTERNAL', { cause: new Error(`appointment_series.tipo desconhecido: ${l.tipo}`) })
+}
+
+/**
+ * P7 (TICKET-067) construiu criar série e cancelar (API), mas não uma lista — hoje só dava
+ * pra ver séries ativas via SQL direto. Ativas primeiro (é o que o dono precisa agir em cima),
+ * canceladas depois, as duas por `created_at` desc dentro do próprio grupo.
+ */
+export async function listarSeries(db: Cliente, tenantId: string): Promise<SerieDaLista[]> {
+  const { data, error } = await db
+    .from('appointment_series')
+    .select(
+      'id, status, tipo, weekday, intervalo_semanas, intervalo_dias, ordinal_no_mes, ocorrencias_geradas, max_ocorrencias, created_at, clients ( name ), services ( name ), professionals ( display_name )',
+    )
+    .eq('tenant_id', tenantId)
+    .order('status', { ascending: true })
+    .order('created_at', { ascending: false })
+    .limit(100)
+  if (error) throw new AppError('INTERNAL', { cause: error })
+
+  return (data ?? []).map((s) => ({
+    id: s.id,
+    status: s.status,
+    descricao: descreverRegra(regraDaLinha(s)),
+    clientName: (s.clients as unknown as { name: string } | null)?.name ?? 'Cliente removido',
+    serviceName: (s.services as unknown as { name: string } | null)?.name ?? 'Serviço removido',
+    professionalName: (s.professionals as unknown as { display_name: string } | null)?.display_name ?? 'Profissional removido',
+    ocorrenciasGeradas: s.ocorrencias_geradas,
+    maxOcorrencias: s.max_ocorrencias,
+    createdAt: s.created_at,
+  }))
 }
