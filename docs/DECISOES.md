@@ -1919,3 +1919,11 @@ por que dia da semana primeiro, nunca "Todo"/"Toda" antes? · Regra de copy sem 
 (já estabelecida em P1, docs/09-PLATAFORMA.md §3.2): "sábado"/"domingo" são masculinos, as
 demais são femininas via "-feira" — um artigo antes do dia quebraria a concordância pra metade
 dos casos. Dia primeiro + cláusula fixa depois evita o problema estruturalmente.
+
+2026-08-20 · Converter orçamento aprovado em agendamento: escolher serviço/data/hora
+automaticamente a partir do orçamento, ou só prefiler cliente e deixar o profissional escolher
+na tela normal? · Só prefiler cliente. `quote_items` é texto livre (mão de obra + material),
+sem `service_id` nenhum por trás — não existe mapeamento correto pra um serviço real do
+catálogo. Inventar um (por nome parecido, por preço mais próximo) seria adivinhação disfarçada
+de automação, e a tela normal de "novo agendamento" já faz a checagem de disponibilidade de
+verdade — duplicar essa lógica só pra "escolher sozinho" não valeria o risco.

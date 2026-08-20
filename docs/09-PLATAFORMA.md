@@ -916,12 +916,12 @@ Honestidade sobre o que ainda é pergunta aberta, para não parecer mais resolvi
   `expired` de verdade no banco na hora de listar (mesma regra de `orcamentoExpirado()`, agora
   com uma plateia real). Achado à parte no caminho: `/admin/orcamentos/novo` nunca tinha entrado
   no mapa de navegação (`navegacao.ts`) — beco sem saída num PWA `standalone`, corrigido junto.
-- **Converter orçamento aprovado em agendamento** (§11): o fluxo hoje termina em
-  `status = 'approved'` — não cria um `appointment` sozinho. `quotes.converted_appointment_id`
-  já existe no schema pra quando isso for construído, mas a conversão em si (escolher
-  data/hora de verdade, checar disponibilidade) é trabalho de UI que ficou de fora desta
-  rodada. Aprovar um orçamento hoje avisa a equipe (push); virar agendamento é passo manual do
-  profissional pela tela normal de "novo agendamento".
+- ~~**Converter orçamento aprovado em agendamento**~~ ✅ 2026-08-20 (TICKET-082): "Marcar
+  horário" nos aprovados (lista de orçamentos) leva pra `/admin/agenda/novo?cliente=&orcamento=`
+  — prefila cliente, mas **não** escolhe serviço/preço sozinho (itens do orçamento são texto
+  livre, sem `service_id`; quem decide isso continua sendo o profissional). Depois de criado o
+  agendamento, `converterOrcamentoEmAgendamento()` marca `status='converted'` +
+  `converted_appointment_id` (campo reservado desde P8, nunca lido até agora).
 - **Instrumentação do funil de onboarding** (§13.2): P4 (TICKET-072) resolveu o bloqueio crítico
   (cadastro só aceitava as 8 verticais de beleza), mas não construiu tracking de funil. "Tempo
   até o link pronto" e "tempo até o 1º agendamento real" já dá pra medir com os timestamps que

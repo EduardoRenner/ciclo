@@ -53,7 +53,6 @@ entradas:
 | Item | Por que ainda não foi feito |
 |---|---|
 | Preço de faxina/eletricista confirmado com gente da área | P5 usou conhecimento geral, sem WebSearch na sessão |
-| Converter orçamento aprovado em agendamento (P8) | decisão de UX de como escolher data/hora |
 | Extensão automática do horizonte de séries (P7) | precisa de cron, não construído |
 | Fotos/galeria na página pública (P6) | precisa de desenho de consentimento LGPD primeiro |
 | Instrumentação do funil de onboarding (P4/§13.2) | sem tráfego real ainda pra medir |
@@ -670,3 +669,44 @@ agendamento" (tem decisão de UX pendente, candidato natural se resolvida) e ite
 por decisão do Eduardo (§4). Considerar também: com duas telas de gestão seguidas construídas
 (orçamentos, séries), pode valer a pena avaliar se há um padrão comum extraível, ou se cada
 uma seguir seu próprio ritmo continua sendo a escolha certa — decisão pra próxima iteração.
+
+## Construção — Converter orçamento aprovado em agendamento (TICKET-082)
+
+Decisão de dev sênior: resolvi a decisão de UX pendente em vez de adiar de novo ou pivotar pra
+auditoria. A decisão em si: **não tentar escolher serviço/data/hora automaticamente a partir do
+orçamento.** `quote_items` é texto livre (ex.: "mão de obra" + "material"), sem `service_id`
+nenhum — não existe mapeamento correto pra um serviço real do catálogo, e inventar um (por
+nome mais parecido, por preço mais próximo) seria adivinhação disfarçada de automação. A
+decisão mais simples que atende ao critério real ("parar de redigitar tudo do zero"): prefill
+só o cliente (mesmo mecanismo de `?cliente=<id>` que "Marcar horário" na ficha já usava havia
+sessões), e deixar o profissional escolher serviço/data/hora na tela normal — que já faz a
+checagem de disponibilidade de verdade, sem duplicar essa lógica em lugar nenhum novo.
+
+**Construído:** `converterOrcamentoEmAgendamento()` + `POST /api/v1/quotes/[id]/convert` +
+botão "Marcar horário" nos orçamentos aprovados + hook best-effort no formulário de novo
+agendamento (se `?orcamento=<id>` estiver na URL, registra o vínculo depois que o agendamento
+já foi criado com sucesso — falha no vínculo nunca desfaz nem esconde o agendamento real).
+
+**Achado no caminho, mesma categoria do TICKET-081:** verificação ao vivo bateu de novo no
+`clients_unique_phone` por causa de um script de seed sem `phone_hash`. Desta vez corrigido no
+próprio script (hash calculado com o mesmo algoritmo de `hashTelefone()`) antes de prosseguir —
+registrado aqui como padrão a lembrar em qualquer seed futuro que insira `clients` direto.
+
+**Testado:** 3 casos de integração (converte de verdade e grava o vínculo; recusa orçamento que
+não está aprovado; recusa agendamento de outro tenant como defesa em profundidade). Verificado
+ao vivo com tenant descartável: orçamento aprovado → "Marcar horário" → nome/telefone da cliente
+já preenchidos → agendamento criado de verdade → lista de orçamentos reflete "Virou agendamento"
+→ conferido direto no banco que `quotes.converted_appointment_id` aponta pro agendamento real,
+do cliente certo. Tenant e script temporário apagados ao final.
+
+`typecheck`/`lint` limpos. `test:unit` 441, `test:rls` 133, `test:integration` 248 — sem flake.
+`build` ok.
+
+**Estado do backlog depois desta rodada:** restam só itens bloqueados por decisão do Eduardo
+(§4) — preço de faxina/eletricista, fotos/galeria (trava LGPD), instrumentação de funil (sem
+tráfego real pra medir), marca por nicho, projeto Supabase próprio, identidade jurídica pra
+LGPD, publicar de verdade, credenciais Asaas, nome do produto. Nenhum é trabalho de engenharia
+que a sessão possa resolver sozinha. **Próxima fase do loop:** decisão de dev sênior — nova
+rodada de auditoria mais profunda (ler os checklists inteiros de novo em busca do que passou
+despercebido em cinco fases acumuladas) é o candidato mais forte, já que construção genuína
+esgotou o que dava pra decidir sem o Eduardo.
