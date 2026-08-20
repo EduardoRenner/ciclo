@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 
+import { Temporal } from '@js-temporal/polyfill'
 import { createClient } from '@supabase/supabase-js'
 import dotenv from 'dotenv'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
@@ -85,8 +86,21 @@ afterAll(async () => {
   for (const u of usuarios) await svc.auth.admin.deleteUser(u)
 }, 60_000)
 
-async function inserirAgendamento(minutosDeAgora: number, status: string) {
-  const inicio = new Date(Date.now() + minutosDeAgora * 60_000)
+/**
+ * Achado ao rodar perto da meia-noite de São Paulo (madrugada real desta
+ * sessão): `Date.now() + minutosDeAgora` é aritmética em UTC puro, sem noção
+ * de fuso — "-120min de agora" pode cair em ONTEM no calendário de São Paulo
+ * mesmo que `resumoDeHoje()` calcule "hoje" corretamente via Temporal no
+ * fuso do tenant. É a mesma classe de armadilha que o CLAUDE.md do projeto
+ * já avisa para geração de slot. `ancora` deixa o teste escolher: os que
+ * comparam passado/futuro contra o `agora` real do sistema (próxima
+ * cliente, alertas) continuam usando `Date.now()`; o de faturado (que só
+ * confere status dentro de "hoje", não passado/futuro) ancora ao meio-dia
+ * de hoje em TZ — longe o bastante da meia-noite pros offsets usados
+ * (±240min) nunca cruzarem o limite do dia.
+ */
+async function inserirAgendamento(minutosDeAgora: number, status: string, ancora: Date = new Date()) {
+  const inicio = new Date(ancora.getTime() + minutosDeAgora * 60_000)
   const fim = new Date(inicio.getTime() + 30 * 60_000)
   const { data, error } = await svc
     .from('appointments')
@@ -110,8 +124,15 @@ describe('resumoDeHoje', () => {
   it(
     'faturado hoje soma só o que já foi concluído (done), não o previsto',
     async () => {
-      await inserirAgendamento(-120, 'done')
-      await inserirAgendamento(-60, 'confirmed') // não conta: ainda não foi concluído
+      // Meio-dia de hoje em TZ, não `Date.now()`: este teste só confere status
+      // dentro de "hoje" — não passado/futuro contra o agora real — então pode
+      // ancorar num ponto seguro, longe da meia-noite (ver comentário de
+      // `inserirAgendamento`).
+      const meioDiaDeHoje = new Date(
+        Temporal.Now.instant().toZonedDateTimeISO(TZ).toPlainDate().toZonedDateTime({ timeZone: TZ, plainTime: '12:00' }).epochMilliseconds,
+      )
+      await inserirAgendamento(-120, 'done', meioDiaDeHoje)
+      await inserirAgendamento(-60, 'confirmed', meioDiaDeHoje) // não conta: ainda não foi concluído
 
       const resumo = await resumoDeHoje(svc, tenantId, TZ)
       expect(resumo.revenueTodayCents).toBeGreaterThanOrEqual(4000)
