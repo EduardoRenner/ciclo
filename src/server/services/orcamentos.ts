@@ -202,6 +202,7 @@ export type OrcamentoDaLista = {
   totalCents: number
   validUntil: string | null
   createdAt: string
+  clientId: string | null
   clientName: string
 }
 
@@ -219,7 +220,7 @@ export async function listarOrcamentos(db: Cliente, tenantId: string): Promise<O
 
   const { data: quotes, error } = await db
     .from('quotes')
-    .select('id, status, total_cents, valid_until, created_at, clients ( name )')
+    .select('id, status, total_cents, valid_until, created_at, client_id, clients ( name )')
     .eq('tenant_id', tenantId)
     .order('created_at', { ascending: false })
     .limit(100)
@@ -239,6 +240,7 @@ export async function listarOrcamentos(db: Cliente, tenantId: string): Promise<O
       totalCents: q.total_cents,
       validUntil: q.valid_until,
       createdAt: q.created_at,
+      clientId: q.client_id,
       clientName: (q.clients as unknown as { name: string } | null)?.name ?? 'Cliente removido',
     }
   })
@@ -248,4 +250,41 @@ export async function listarOrcamentos(db: Cliente, tenantId: string): Promise<O
   }
 
   return lista
+}
+
+export const EsquemaConverterOrcamento = z.object({ appointmentId: z.uuid('Agendamento inválido.') })
+
+/**
+ * `quotes.converted_appointment_id` existe desde a migration `0028` (P8) — reservado pra este
+ * momento e nunca lido. **Não** tenta escolher data/hora/serviço sozinho: os itens do orçamento
+ * são texto livre (mão de obra + material, por exemplo), sem `service_id` nenhum por trás, então
+ * não há como mapear pra um serviço do catálogo automaticamente. Quem decide isso continua sendo
+ * o profissional na tela normal de "novo agendamento" — esta função só registra o vínculo depois
+ * que o agendamento real já foi criado (a UI passa `?orcamento=<id>` pra pular a redigitação do
+ * nome/telefone da cliente, ver `agenda/novo/formulario.tsx`).
+ */
+export async function converterOrcamentoEmAgendamento(db: Cliente, tenantId: string, quoteId: string, appointmentId: string) {
+  const { data: quote, error } = await db.from('quotes').select('id, status').eq('id', quoteId).eq('tenant_id', tenantId).maybeSingle()
+  if (error) throw new AppError('INTERNAL', { cause: error })
+  if (!quote) throw new AppError('NOT_FOUND', { message: 'Esse orçamento não existe mais.' })
+  if (quote.status !== 'approved') throw new AppError('INVALID_TRANSITION', { message: 'Só um orçamento aprovado pode virar agendamento.' })
+
+  const { data: agendamento, error: erroAgendamento } = await db
+    .from('appointments')
+    .select('id')
+    .eq('id', appointmentId)
+    .eq('tenant_id', tenantId)
+    .maybeSingle()
+  if (erroAgendamento) throw new AppError('INTERNAL', { cause: erroAgendamento })
+  if (!agendamento) throw new AppError('NOT_FOUND', { message: 'Esse agendamento não existe mais.' })
+
+  const { data: atualizado, error: erroUpdate } = await db
+    .from('quotes')
+    .update({ status: 'converted', converted_appointment_id: appointmentId })
+    .eq('id', quoteId)
+    .select('*')
+    .single()
+  if (erroUpdate) throw new AppError('INTERNAL', { cause: erroUpdate })
+
+  return atualizado
 }

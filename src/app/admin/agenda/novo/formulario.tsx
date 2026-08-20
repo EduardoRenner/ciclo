@@ -70,7 +70,14 @@ export default function FormularioAgendamento({
    * de navegador, log de servidor e Referer). Sem isto o botão da ficha abria o formulário em
    * branco e a pessoa tinha que redigitar quem já estava na tela anterior.
    */
-  const clienteId = useSearchParams().get('cliente')
+  const searchParams = useSearchParams()
+  const clienteId = searchParams.get('cliente')
+  // "Marcar horário" na lista de orçamentos aprovados manda `?orcamento=<id>` além do `cliente`
+  // — depois que o agendamento é criado, registra o vínculo em `quotes.converted_appointment_id`
+  // (reservado desde P8, nunca lido). Não escolhe serviço/preço a partir do orçamento: os itens
+  // são texto livre, sem `service_id` por trás, então quem decide isso continua sendo o
+  // profissional aqui na tela normal — ver `converterOrcamentoEmAgendamento` em orcamentos.ts.
+  const orcamentoId = searchParams.get('orcamento')
   useEffect(() => {
     if (!clienteId) return
     let cancelado = false
@@ -125,6 +132,16 @@ export default function FormularioAgendamento({
       }
 
       if (r.ok && json.data) {
+        if (orcamentoId) {
+          // Best-effort: o agendamento já existe e é o que importa — se o vínculo falhar, a
+          // cliente já tem hora marcada, só o orçamento não fica marcado como "virou agendamento"
+          // (segue "Aprovado" na lista, sem perder nada; dá pra tentar nessa tela de novo depois).
+          await fetch(`/api/v1/quotes/${orcamentoId}/convert`, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+            body: JSON.stringify({ appointmentId: json.data.appointment.id }),
+          }).catch(() => {})
+        }
         mostrarToast({ tom: 'ok', titulo: 'Prontinho', descricao: 'Agendamento criado.' })
         router.push('/admin/agenda')
         return

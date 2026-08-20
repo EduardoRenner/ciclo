@@ -5,7 +5,7 @@ import dotenv from 'dotenv'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { criarProfissional } from '@/server/services/profissionais'
-import { criarOrcamento, listarOrcamentos } from '@/server/services/orcamentos'
+import { converterOrcamentoEmAgendamento, criarOrcamento, listarOrcamentos } from '@/server/services/orcamentos'
 import { executarOnboarding } from '@/server/services/onboarding'
 
 import { GET as buscarOrcamentoPorToken } from '@/app/api/v1/public/quotes/[token]/route'
@@ -29,6 +29,7 @@ let tenantId: string
 let userId: string
 let professionalId: string
 let clientId: string
+let serviceId: string
 const tenants: string[] = []
 const usuarios: string[] = []
 
@@ -70,6 +71,12 @@ beforeAll(async () => {
     .single()
   if (erroCliente || !cliente) throw new Error(`seed de cliente falhou: ${erroCliente?.message}`)
   clientId = cliente.id
+
+  // O pack de barbearia (`apply_vertical_pack`) já semeia serviços no onboarding — usado só
+  // pra criar um `appointment` de verdade nos testes de `converterOrcamentoEmAgendamento`.
+  const { data: servico, error: erroServico } = await svc.from('services').select('id').eq('tenant_id', tenantId).limit(1).single()
+  if (erroServico || !servico) throw new Error(`seed não trouxe serviço nenhum: ${erroServico?.message}`)
+  serviceId = servico.id
 }, 60_000)
 
 afterAll(async () => {
@@ -280,5 +287,75 @@ describe('listarOrcamentos (TICKET-079 — tela de gestão)', () => {
 
     const lista = await listarOrcamentos(svc, outroTenant.id)
     expect(lista).toEqual([])
+  })
+})
+
+let proximoSlotDeTeste = 0
+
+/** Cada chamada pega um horário diferente — `appointments_no_overlap` recusa dois no mesmo profissional. */
+async function criarAgendamentoDeTeste(): Promise<string> {
+  proximoSlotDeTeste += 1
+  const inicio = Date.now() + 7 * 24 * 3600 * 1000 + proximoSlotDeTeste * 60 * 60 * 1000
+  const { data, error } = await svc
+    .from('appointments')
+    .insert({
+      tenant_id: tenantId,
+      client_id: clientId,
+      professional_id: professionalId,
+      service_id: serviceId,
+      starts_at: new Date(inicio).toISOString(),
+      ends_at: new Date(inicio + 40 * 60 * 1000).toISOString(),
+      status: 'pending',
+      origin: 'app',
+      price_cents: 4000,
+    })
+    .select('id')
+    .single()
+  if (error || !data) throw new Error(`seed de agendamento falhou: ${error?.message}`)
+  return data.id
+}
+
+describe('converterOrcamentoEmAgendamento (TICKET-082 — vínculo orçamento→agendamento)', () => {
+  it('orçamento aprovado vira converted e grava o appointment_id', async () => {
+    const { quote, token } = await criarOrcamento(svc, tenantId, userId, {
+      clientId,
+      professionalId,
+      items: [{ description: 'Item aprovado', qty: 1, unitPriceCents: 9000 }],
+      validUntil: null,
+      message: null,
+    })
+    await aprovarPorToken(req('approve', token), ctx(token))
+
+    const appointmentId = await criarAgendamentoDeTeste()
+    const atualizado = await converterOrcamentoEmAgendamento(svc, tenantId, quote.id, appointmentId)
+
+    expect(atualizado.status).toBe('converted')
+    expect(atualizado.converted_appointment_id).toBe(appointmentId)
+  })
+
+  it('orçamento ainda não aprovado (sent) não pode ser convertido', async () => {
+    const { quote } = await criarOrcamento(svc, tenantId, userId, {
+      clientId,
+      professionalId,
+      items: [{ description: 'Item pendente', qty: 1, unitPriceCents: 5000 }],
+      validUntil: null,
+      message: null,
+    })
+    const appointmentId = await criarAgendamentoDeTeste()
+
+    await expect(converterOrcamentoEmAgendamento(svc, tenantId, quote.id, appointmentId)).rejects.toThrow()
+  })
+
+  it('agendamento de outro tenant não pode ser vinculado (defesa em profundidade)', async () => {
+    const { quote, token } = await criarOrcamento(svc, tenantId, userId, {
+      clientId,
+      professionalId,
+      items: [{ description: 'Item', qty: 1, unitPriceCents: 3000 }],
+      validUntil: null,
+      message: null,
+    })
+    await aprovarPorToken(req('approve', token), ctx(token))
+
+    await expect(converterOrcamentoEmAgendamento(svc, tenantId, quote.id, randomUUID())).rejects.toThrow(/não existe/)
   })
 })

@@ -1,10 +1,12 @@
 'use client'
 
-import { Copy, FileText } from 'lucide-react'
+import { CalendarPlus, Copy, FileText } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
 import Badge from '@/components/ui/badge'
+import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import EmptyState from '@/components/ui/empty-state'
 import { dinheiro } from '@/lib/formato'
@@ -28,6 +30,7 @@ function linkPublico(token: string): string {
 }
 
 function LinhaOrcamento({ orcamento }: { orcamento: OrcamentoDaLista }) {
+  const router = useRouter()
   const [copiado, setCopiado] = useState(false)
   const selo = SELO[orcamento.status] ?? SELO_PADRAO
 
@@ -44,33 +47,48 @@ function LinhaOrcamento({ orcamento }: { orcamento: OrcamentoDaLista }) {
   // é HTML inválido (interativo dentro de interativo) e o clique fica instável entre
   // navegadores. O Card em volta não é clicável sozinho por isso.
   return (
-    <Card className="flex items-center gap-3">
-      <Link
-        href={`/orcamento/${orcamento.token}`}
-        target="_blank"
-        rel="noreferrer"
-        className="min-w-0 flex-1 rounded-[var(--radius-sm)] transition duration-[var(--dur-1)] active:scale-[.99] active:opacity-80"
-      >
-        <p className="truncate text-corpo font-semibold">{orcamento.clientName}</p>
-        <div className="mt-1 flex flex-wrap items-center gap-2">
-          <Badge estado={selo.estado}>{selo.texto}</Badge>
-          <span className="tabular text-secundario text-txt-3">
-            {new Date(orcamento.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
-          </span>
-        </div>
-      </Link>
-      <div className="flex shrink-0 items-center gap-2">
-        <p className="tabular text-corpo font-semibold text-acc-2">{dinheiro.format(orcamento.totalCents / 100)}</p>
-        <button
-          type="button"
-          onClick={copiarLink}
-          aria-label="Copiar link do orçamento"
-          title={copiado ? 'Copiado!' : 'Copiar link'}
-          className="toque-48 grid size-8 shrink-0 place-items-center rounded-[var(--radius-sm)] text-txt-3 transition hover:bg-surface-2 hover:text-txt-2 active:scale-[.94]"
+    <Card className="flex flex-col gap-3">
+      <div className="flex items-center gap-3">
+        <Link
+          href={`/orcamento/${orcamento.token}`}
+          target="_blank"
+          rel="noreferrer"
+          className="min-w-0 flex-1 rounded-[var(--radius-sm)] transition duration-[var(--dur-1)] active:scale-[.99] active:opacity-80"
         >
-          <Copy aria-hidden className="size-4" />
-        </button>
+          <p className="truncate text-corpo font-semibold">{orcamento.clientName}</p>
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <Badge estado={selo.estado}>{selo.texto}</Badge>
+            <span className="tabular text-secundario text-txt-3">
+              {new Date(orcamento.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+            </span>
+          </div>
+        </Link>
+        <div className="flex shrink-0 items-center gap-2">
+          <p className="tabular text-corpo font-semibold text-acc-2">{dinheiro.format(orcamento.totalCents / 100)}</p>
+          <button
+            type="button"
+            onClick={copiarLink}
+            aria-label="Copiar link do orçamento"
+            title={copiado ? 'Copiado!' : 'Copiar link'}
+            className="toque-48 grid size-8 shrink-0 place-items-center rounded-[var(--radius-sm)] text-txt-3 transition hover:bg-surface-2 hover:text-txt-2 active:scale-[.94]"
+          >
+            <Copy aria-hidden className="size-4" />
+          </button>
+        </div>
       </div>
+
+      {orcamento.status === 'approved' && orcamento.clientId ? (
+        <Button
+          variante="secondary"
+          tamanho="sm"
+          largura="auto"
+          className="self-start"
+          onClick={() => router.push(`/admin/agenda/novo?cliente=${orcamento.clientId}&orcamento=${orcamento.id}`)}
+        >
+          <CalendarPlus aria-hidden className="size-4" />
+          Marcar horário
+        </Button>
+      ) : null}
     </Card>
   )
 }
