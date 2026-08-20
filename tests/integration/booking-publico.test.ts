@@ -163,6 +163,55 @@ describe('perfilPublico', () => {
     const erro = await perfilPublico(`nao-existe-${randomUUID()}`).catch((e: unknown) => e)
     expect(erro).toMatchObject({ code: 'NOT_FOUND' })
   })
+
+  it(
+    // docs/09-PLATAFORMA.md §8: a página promete "avaliações" — este teste prova
+    // que a MÉDIA usa todas as notas (não só a amostra de 5 exibida, que
+    // mentiria pra melhor ou pra pior dependendo de qual fatia caísse no
+    // limite) e que só comentário COM texto aparece na lista de recentes.
+    'reviews soma todas as notas na média, mas só lista comentário com texto',
+    async () => {
+      const agendamento = await criarAgendamentoPublico(slug, {
+        serviceId: servicoOnlineId,
+        professionalId,
+        startsAt: `${DIA}T17:00:00-03:00`,
+        name: 'Cliente das Avaliações',
+        phone: '11988110090',
+      })
+
+      // 5 estrelas com texto, 3 estrelas sem texto (não deve aparecer na lista),
+      // 4 estrelas com texto — média real é (5+3+4)/3 = 4.0.
+      const outroAgendamento1 = await criarAgendamentoPublico(slug, {
+        serviceId: servicoOnlineId,
+        professionalId,
+        startsAt: `${DIA}T17:30:00-03:00`,
+        name: 'Cliente B',
+        phone: '11988110091',
+      })
+      const outroAgendamento2 = await criarAgendamentoPublico(slug, {
+        serviceId: servicoOnlineId,
+        professionalId,
+        startsAt: `${DIA}T18:00:00-03:00`,
+        name: 'Cliente C',
+        phone: '11988110092',
+      })
+
+      const { error: erroInsert } = await svc.from('client_reviews').insert([
+        { tenant_id: tenantId, appointment_id: agendamento.appointmentId, rating: 5, comment: 'Excelente atendimento!' },
+        { tenant_id: tenantId, appointment_id: outroAgendamento1.appointmentId, rating: 3, comment: null },
+        { tenant_id: tenantId, appointment_id: outroAgendamento2.appointmentId, rating: 4, comment: 'Muito bom.' },
+      ])
+      if (erroInsert) throw erroInsert
+
+      const perfil = await perfilPublico(slug)
+      expect(perfil.reviews.count).toBe(3)
+      expect(perfil.reviews.average).toBe(4)
+      expect(perfil.reviews.recentes).toHaveLength(2)
+      expect(perfil.reviews.recentes.every((r) => r.comment.length > 0)).toBe(true)
+      expect(perfil.reviews.recentes.map((r) => r.rating).sort()).toEqual([4, 5])
+    },
+    30_000,
+  )
 })
 
 describe('disponibilidadePublica', () => {

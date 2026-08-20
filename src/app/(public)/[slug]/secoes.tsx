@@ -1,4 +1,4 @@
-import { AtSign, CalendarPlus, Clock, MapPin, MessageCircle, Phone } from 'lucide-react'
+import { AtSign, CalendarPlus, Clock, MapPin, MessageCircle, Phone, Star } from 'lucide-react'
 import Link from 'next/link'
 
 import Badge from '@/components/ui/badge'
@@ -159,6 +159,45 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
               })}
             </ul>
           </Card>
+        </section>
+      ) : null}
+
+      {/*
+        docs/09-PLATAFORMA.md §8: a página pública prometia "avaliações" desde
+        que o plano foi escrito e nunca entregou — client_reviews só era lido
+        no painel. Nota sem texto não ajuda quem decide se agenda, por isso só
+        os comentários com texto aparecem; a média conta TODAS as notas, não
+        só a amostra exibida (senão a média mentiria pra melhor ou pra pior
+        dependendo de qual fatia caiu no limite de 5).
+      */}
+      {perfil.reviews.count > 0 ? (
+        <section className="py-6">
+          <h2 className="mb-3 text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">Avaliações</h2>
+          <div className="mb-3 flex items-center gap-2">
+            <Star aria-hidden className="size-5 shrink-0 fill-acc-2 text-acc-2" />
+            <span className="tabular text-titulo font-bold">{perfil.reviews.average.toFixed(1)}</span>
+            <span className="text-secundario text-txt-2">
+              · {perfil.reviews.count} {perfil.reviews.count === 1 ? 'avaliação' : 'avaliações'}
+            </span>
+          </div>
+          {perfil.reviews.recentes.length > 0 ? (
+            <div className="flex flex-col gap-2">
+              {perfil.reviews.recentes.map((r, i) => (
+                <Card key={i}>
+                  <div className="mb-1.5 flex gap-0.5">
+                    {Array.from({ length: 5 }).map((_, estrela) => (
+                      <Star
+                        key={estrela}
+                        aria-hidden
+                        className={`size-3.5 shrink-0 ${estrela < r.rating ? 'fill-acc-2 text-acc-2' : 'text-line-2'}`}
+                      />
+                    ))}
+                  </div>
+                  <p className="text-corpo text-txt">{r.comment}</p>
+                </Card>
+              ))}
+            </div>
+          ) : null}
         </section>
       ) : null}
 

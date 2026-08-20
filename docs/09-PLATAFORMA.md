@@ -770,7 +770,7 @@ Não pode quebrar quem já usa.
 | **P4 · Onboarding** | fluxo de 3 min (§7), busca de profissão, link público no fim, **instrumentação do funil (§13.2)** | Médio | P0–P3 |
 | **P5 · Catálogo** | **3 profissões profundas + 9 rasas** (§5) | Médio — as 3 são pesquisa, não `INSERT` | ✅ 2026-08-19 (TICKET-065): migration `0026` — **barber** (profunda de beleza) ganhou os 6 serviços do catálogo real do `dom-rocha` (não inventados); **faxina** e **eletricista** (profundas novas) com 4 e 5 serviços, preço/duração de mercado brasileiro plausível; mais 7 rasas (encanador, personal, psicólogo, professor, fotógrafo, banho e tosa, jardineiro), 1-2 serviços cada. 17 profissões no catálogo (8 de beleza pré-existentes + 9 novas). Teste de integridade novo (`catalogo-profissoes.test.ts`, 7 casos) trava preço/duração > 0, nome não-genérico, e os 4 eixos preenchidos em toda profissão — nada na aplicação lê a tabela ainda, então sem esse teste uma migration futura poderia corromper o catálogo sem ninguém notar |
 | **P5.5 · Cliente se resolve sozinho** | fecha **G12**: cancelar e remarcar pelo mesmo link do WhatsApp, devolvendo a vaga à agenda | Baixo | ✅ 2026-08-19 (TICKET-063): novo `POST /api/v1/public/appointments/cancel/[token]`, mesmo token HMAC do TICKET-030 (nunca precisou de tabela nova — o token já autoriza qualquer ação sobre aquele agendamento, não só confirmar). "Remarcar" **não** ganhou fluxo próprio — vira cancelar + link "Marcar outro horário" pra página pública já existente, decisão de escopo pra não duplicar a UI de escolha de horário dentro de uma página sem sessão. A tela `/confirmar/[token]` parou de disparar a confirmação sozinha ao abrir (agora é escolha: "Vou sim" / "Preciso desmarcar") — com duas ações possíveis, disparar uma automaticamente deixou de fazer sentido |
-| **P6 · Marca e página** | personalização + página pública como mini-site (§8) + **assinatura discreta do plano grátis (§13.1)** | Médio | P3 |
+| **P6 · Marca e página** | personalização + página pública como mini-site (§8) + **assinatura discreta do plano grátis (§13.1)** | Médio | ✅ 2026-08-19 (TICKET-066): **avaliações** — `client_reviews` existia desde a migration `0020` mas só era lida no painel; a página pública prometia isso desde que o plano foi escrito. `perfilPublico()` ganhou `reviews.{average,count,recentes}` (média conta **todas** as notas, não só a amostra exibida — senão mentiria); seção nova em `secoes.tsx` (estrelas + até 5 comentários com texto), some sozinha com 0 avaliações. Verificado ao vivo contra o banco real: `dom-rocha` (1 avaliação) mostra completo, `ruivo-barber` (0) esconde a seção sem quebrar layout. **"Feito com CICLO"** já existia sem condição nenhuma — decidi **não** amarrar isso a `tenant.plan` agora, porque cobrança (Asaas) está bloqueada e todo tenant hoje é "grátis" por definição; virar `if (tenant.plan === 'gratis')` seria código morto sem ninguém pra testar o caminho pago. **Fotos/galeria** ficaram de fora desta rodada: exigem um filtro de consentimento (LGPD, imagem de cliente) que o plano ainda não desenhou — registrado em §19, não é esquecimento. A pergunta de marca única vs. marca recortada (final desta seção) segue **sem resposta**, mas não bloqueou P6: nada do que foi construído (avaliações, watermark) depende dela |
 | **P7 · Recorrência** | fecha o G4 (§12) | **Alto** | P2 |
 | **P8 · Orçamento** | fluxo + aprovação por link (§11) | Médio | P2 |
 | **P9 · Deslocamento avançado** | área de atendimento, buffer automático, ordem de rota (§10) | **Alto** | P2.5 |
@@ -902,15 +902,22 @@ Honestidade sobre o que ainda é pergunta aberta, para não parecer mais resolvi
   duração plausíveis de mercado brasileiro (conhecimento geral, sem pesquisa ao vivo — sem
   WebSearch disponível na sessão), não o mesmo nível de confiança do catálogo real de barbearia.
   Antes de usar essas duas pra vender de verdade, vale confirmar os números com alguém da área.
+- **Fotos/galeria na página pública** (§8): adiado em P6 (TICKET-066). `client_reviews` já tem
+  comentário de texto e nota, mas foto de cliente na página pública de um profissional levanta
+  consentimento (LGPD, imagem de terceiro) que este plano não desenhou — quem autoriza, onde
+  fica o "retirar consentimento", o que acontece com foto já publicada se o cliente sair da
+  base. Não é trabalho de UI, é decisão de produto/jurídico primeiro.
 
 Nada disso bloqueia P0–P3, que é onde o trabalho começa.
 
-**Uma pergunta que eu deixei passar na primeira versão e que precisa de resposta antes de P6:**
+**Uma pergunta que eu deixei passar na primeira versão e que precisa de resposta antes da
+comunicação de vendas (não bloqueou a parte técnica de P6, que seguiu neutra de marca):**
 o produto continua se vendendo como **um** produto para todas as profissões, ou vira marca com
 recortes ("CICLO para casa", "CICLO para saúde") na comunicação, com o mesmo motor por baixo?
 Tecnicamente é indiferente — a arquitetura dos 4 eixos suporta os dois. Comercialmente muda
 tudo: página de vendas, anúncio, prova social. Não é decisão de engenharia, mas **é decisão de
-alguém**, e trava a §8 e a §13.1.
+alguém**, e trava a §13.1 (o texto da assinatura discreta do plano grátis, se algum dia vier a
+existir) e a versão final de vendas de §8 — não o que já foi construído.
 
 ---
 

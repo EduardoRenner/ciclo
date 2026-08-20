@@ -1587,3 +1587,25 @@ brasileiro urbano com base em conhecimento geral (sem WebSearch disponível nest
 honesto dizer que isso é MELHOR que INSERT solto ("Serviço 1 · 60min · R$100"), mas NÃO é o
 mesmo nível de confiança do dom-rocha. Registrado como pendência real: antes de usar faxina/
 eletricista pra vender de verdade, os preços merecem confirmação com alguém da área (ver §19).
+
+2026-08-19 · P6 pedia "página pública como mini-site" (§8) — por onde começar, já que §8 lista
+várias coisas (avaliações, fotos, "feito com CICLO" condicionado ao plano)? · Comecei pelo que
+já tinha dado pronto no banco e zero risco: `client_reviews` existe desde a migration 0020,
+tem nota e comentário, e nunca foi lido fora do painel — a página pública prometia "avaliações"
+desde que o plano foi escrito e nunca entregou. Implementei isso primeiro (TICKET-066) · dado
+parado que já existia é o menor risco possível pra fechar uma lacuna real; fotos e o gate de
+plano do watermark exigem decisão de produto/jurídico ou seriam código morto, então ficaram
+pra depois (registrado em §19).
+
+2026-08-19 · O rodapé "Feito com CICLO" — amarrar a `tenant.plan === 'gratis'` agora (P6/§13.1)
+ou deixar como está? · Deixei como está (sem condição). Cobrança via Asaas está bloqueada
+(P11) e todo tenant hoje é gratuito por definição — um `if (plano === 'gratis')` seria uma
+ramificação cujo outro lado (`plano === 'pago'`) nunca executa em produção até P11 sair do
+papel. Registrar a decisão em vez de escrever esse `if` agora evita código morto sem teste
+de verdade por trás.
+
+2026-08-19 · A média de avaliações exibida na página pública deve considerar só as 5 mais
+recentes (as que aparecem como card) ou todas? · Todas — a query de `average`/`count` é
+separada da query de `recentes` (limit 5, só com comentário). Se a média usasse só a amostra
+exibida, ela mentiria pra melhor ou pra pior dependendo de qual fatia de avaliações caiu
+dentro do limite de 5, o que é pior que simplesmente não mostrar nota nenhuma.

@@ -56,6 +56,16 @@ export type PerfilPublico = {
   hours: { weekday: number; opensAt: string; closesAt: string }[]
   services: { id: string; name: string; description: string | null; durationMin: number; priceCents: number }[]
   professionals: { id: string; displayName: string }[]
+  /**
+   * docs/09-PLATAFORMA.md §8: a página pública promete "avaliações" desde a
+   * escrita do plano e nunca entregou — `client_reviews` (TICKET das
+   * inovações de CRM) só era lido no painel. Nota média sobre TODAS as
+   * avaliações (não só as 5 exibidas — pedir amostra maior distorceria a
+   * média pra cima ou pra baixo dependendo de qual fatia caísse no `limit`);
+   * os comentários mais recentes que têm texto, porque nota sem texto não
+   * ajuda quem está decidindo se agenda.
+   */
+  reviews: { average: number; count: number; recentes: { rating: number; comment: string; createdAt: string }[] }
 }
 
 /**
@@ -67,7 +77,7 @@ export const perfilPublico = cache(async (slug: string): Promise<PerfilPublico> 
   return withNovoTenant(async (svc) => {
     const tenant = await tenantPeloSlug(svc, slug)
 
-    const [servicos, profissionais, pack, horarioPadrao] = await Promise.all([
+    const [servicos, profissionais, pack, horarioPadrao, todasAsNotas, comentariosRecentes] = await Promise.all([
       svc
         .from('services')
         .select('id, name, description, duration_min, price_cents')
@@ -86,10 +96,21 @@ export const perfilPublico = cache(async (slug: string): Promise<PerfilPublico> 
         .order('display_name'),
       svc.from('vertical_packs').select('accent_color').eq('vertical', tenant.vertical).maybeSingle(),
       listarExpediente(svc, tenant.id, null),
+      // Nota média sobre TODAS as avaliações — ver comentário de `reviews` em PerfilPublico.
+      svc.from('client_reviews').select('rating').eq('tenant_id', tenant.id),
+      svc
+        .from('client_reviews')
+        .select('rating, comment, created_at')
+        .eq('tenant_id', tenant.id)
+        .not('comment', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(5),
     ])
     if (servicos.error) throw new AppError('INTERNAL', { cause: servicos.error })
     if (profissionais.error) throw new AppError('INTERNAL', { cause: profissionais.error })
     if (pack.error) throw new AppError('INTERNAL', { cause: pack.error })
+    if (todasAsNotas.error) throw new AppError('INTERNAL', { cause: todasAsNotas.error })
+    if (comentariosRecentes.error) throw new AppError('INTERNAL', { cause: comentariosRecentes.error })
 
     const site = lerSite(tenant.settings)
     const acc = pack.data?.accent_color ?? ACENTO_PADRAO.acc
@@ -114,6 +135,18 @@ export const perfilPublico = cache(async (slug: string): Promise<PerfilPublico> 
         priceCents: s.price_cents,
       })),
       professionals: (profissionais.data ?? []).map((p) => ({ id: p.id, displayName: p.display_name })),
+      reviews: {
+        average:
+          todasAsNotas.data && todasAsNotas.data.length > 0
+            ? Math.round((todasAsNotas.data.reduce((soma, r) => soma + r.rating, 0) / todasAsNotas.data.length) * 10) / 10
+            : 0,
+        count: todasAsNotas.data?.length ?? 0,
+        recentes: (comentariosRecentes.data ?? []).map((r) => ({
+          rating: r.rating,
+          comment: r.comment!,
+          createdAt: r.created_at,
+        })),
+      },
     }
   })
 })
