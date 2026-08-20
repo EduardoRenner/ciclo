@@ -62,7 +62,17 @@ const SLUGS_RESERVADOS = new Set([
   'lista-espera',
   'nova-senha',
   'convite',
+  'verificar',
 ])
+
+/** TOTP: sempre 6 dígitos, o app autenticador não gera outra coisa. */
+export const EsquemaCodigoMfa = z.object({
+  code: z.string().trim().regex(/^\d{6}$/, 'Digite os 6 números do app autenticador.'),
+})
+
+export const EsquemaVerificarMfa = EsquemaCodigoMfa.extend({
+  factorId: z.uuid('Fator inválido.'),
+})
 
 export const EsquemaOnboarding = z.object({
   businessName: z.string().trim().min(2, 'Digite o nome do negócio.').max(120, 'Nome muito longo.'),

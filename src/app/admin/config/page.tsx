@@ -1,4 +1,4 @@
-import { Bell, Clock, MessageSquareText, Megaphone, Repeat, ScrollText, Scissors, Store, Users } from 'lucide-react'
+import { Bell, Clock, MessageSquareText, Megaphone, Repeat, ScrollText, Scissors, ShieldCheck, Store, Users } from 'lucide-react'
 import Link from 'next/link'
 
 import Card from '@/components/ui/card'
@@ -42,6 +42,7 @@ const GRUPOS = [
     titulo: 'Privacidade',
     itens: [
       { href: '/admin/config/cofre', titulo: 'Trilha do cofre', descricao: 'Quem acessou a ficha de saúde de cada cliente', icone: ScrollText },
+      { href: '/admin/config/seguranca', titulo: 'Segurança', descricao: 'Autenticação em duas etapas da sua conta', icone: ShieldCheck },
     ],
   },
 ] as const

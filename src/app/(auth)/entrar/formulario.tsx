@@ -22,13 +22,23 @@ export default function FormularioEntrar() {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ email: formData.get('email'), password: formData.get('password') }),
       })
-      const json = (await resposta.json()) as { data?: { tenants: unknown[] }; error?: { message: string } }
+      const json = (await resposta.json()) as {
+        data?: { tenants: unknown[]; mfaRequired?: boolean; factorId?: string }
+        error?: { message: string }
+      }
       if (!resposta.ok) {
         setErro(json.error?.message ?? 'Não consegui entrar. Confira e-mail e senha.')
         return
       }
 
       const proximo = params.get('proximo')
+
+      if (json.data?.mfaRequired && json.data.factorId) {
+        const destino = new URLSearchParams({ factorId: json.data.factorId, ...(proximo ? { proximo } : {}) })
+        router.push(`/verificar?${destino.toString()}`)
+        return
+      }
+
       const semNegocio = (json.data?.tenants.length ?? 0) === 0
       router.push(semNegocio ? '/onboarding' : (proximo ?? '/admin/hoje'))
       router.refresh()
