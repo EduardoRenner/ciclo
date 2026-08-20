@@ -121,7 +121,11 @@ export default function FormularioOnboarding({ profissoes }: { profissoes: Profi
                   key={p.id}
                   type="button"
                   onClick={() => setProfessionId(p.id)}
-                  className="flex h-11 items-center rounded-[var(--radius-sm)] px-3 text-left text-corpo text-txt transition-colors hover:bg-surface-2"
+                  // `shrink-0`: sem isso o flexbox comprimia os 17 itens pra caber nos 220px do
+                  // contêiner em vez de deixar o `overflow-y-auto` rolar — alvo de toque de
+                  // 44px virava 23px na prática (medido ao vivo, mesmo defeito recorrente da
+                  // família, §4.2 do DESIGN-E-INTERFACE.md, causa raiz diferente das outras).
+                  className="flex h-11 shrink-0 items-center rounded-[var(--radius-sm)] px-3 text-left text-corpo text-txt transition-colors hover:bg-surface-2"
                 >
                   {p.nome}
                 </button>
