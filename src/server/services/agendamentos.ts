@@ -97,12 +97,18 @@ export async function resolverCliente(
   return criado.id
 }
 
-type ServicoAgendavel = { duration_min: number; price_cents: number; parallel_capacity: number }
+type ServicoAgendavel = {
+  duration_min: number
+  price_cents: number
+  parallel_capacity: number
+  buffer_before_min: number
+  buffer_after_min: number
+}
 
 async function servicoDoTenant(db: Cliente, tenantId: string, serviceId: string): Promise<ServicoAgendavel> {
   const { data, error } = await db
     .from('services')
-    .select('duration_min, price_cents, parallel_capacity')
+    .select('duration_min, price_cents, parallel_capacity, buffer_before_min, buffer_after_min')
     .eq('id', serviceId)
     .eq('tenant_id', tenantId)
     .eq('active', true)
@@ -205,8 +211,12 @@ async function slotsDaJanela(
         timeOff,
         appointments: ocupados,
         serviceDurationMin: servico.duration_min,
-        bufferBeforeMin: 0,
-        bufferAfterMin: 0,
+        // Achado ao trabalhar em P9 (§10): a sugestão de alternativas do 409 (E71) nunca lia o
+        // buffer do serviço — só o booking público (public-booking.ts) fazia isso. Uma
+        // profissional que configura "15min de preparo antes" via painel via essa regra
+        // funcionar pra cliente que agenda sozinha, mas não pra ela mesma marcando manualmente.
+        bufferBeforeMin: servico.buffer_before_min,
+        bufferAfterMin: servico.buffer_after_min,
         slotGranularityMin: config.slotGranularityMin,
         minLeadTimeMinutes: config.minLeadTimeMinutes,
         maxAdvanceDays: config.maxAdvanceDays,

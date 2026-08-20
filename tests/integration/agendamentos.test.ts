@@ -185,6 +185,77 @@ describe('criarAgendamento', () => {
   )
 
   it(
+    // docs/09-PLATAFORMA.md §10 (P9): a sugestão de alternativas do 409 nunca lia o buffer do
+    // serviço — só o booking público fazia isso (achado ao investigar deslocamento avançado).
+    // Profissional dedicado, isolado dos outros testes deste arquivo: buffer não bloqueia o
+    // INSERT em si (não faz parte da constraint de sobreposição), só a sugestão de alternativas
+    // — então este teste precisa de uma colisão de horário de verdade pra chegar no 409, sem
+    // qualquer chance de um horário usado por outro teste interferir.
+    'alternativas do SLOT_TAKEN respeitam o buffer do serviço, não só a duração',
+    async () => {
+      const outroProfissional = await criarProfissional(svc, tenantId, {
+        displayName: 'Profissional do Buffer',
+        compModel: 'owner',
+        commissionBps: 0,
+        rentCents: 0,
+        acceptsOnline: true,
+      })
+      await definirExpediente(svc, tenantId, { professionalId: outroProfissional.id, blocos: [{ weekday: 2, opensAt: '09:00', closesAt: '22:00' }] })
+
+      // bufferBeforeMin (não bufferAfterMin): `available-slots.ts` aplica o buffer à janela do
+      // PRÓPRIO candidato ([candidato-bufferBefore, fim+bufferAfter]) — é o candidato que precisa
+      // de silêncio ao redor dele, não o agendamento anterior que "reserva" silêncio pra depois.
+      // Testado (available-slots.test.ts): bufferBeforeMin é o que bloqueia um candidato de
+      // nascer cedo demais depois de um agendamento vizinho.
+      const servicoComBuffer = await criarServico(svc, tenantId, {
+        name: 'Serviço com preparo',
+        description: null,
+        durationMin: 30,
+        bufferBeforeMin: 45,
+        bufferAfterMin: 0,
+        priceCents: 4000,
+        cycleDays: 21,
+        depositBps: 0,
+        depositMinCents: 0,
+        parallelCapacity: 1,
+        requiresAnamnesis: false,
+        bookableOnline: true,
+        categoryId: null,
+      })
+
+      await criarAgendamento(
+        svc,
+        tenantId,
+        TZ,
+        userId,
+        { clientDraft: { name: 'Cliente Buffer 1', phone: '11987650100' }, serviceId: servicoComBuffer.id, professionalId: outroProfissional.id, startsAt: horario('09:00'), origin: 'app' },
+        {},
+      )
+      // Um candidato do mesmo serviço precisa de 45min de silêncio antes dele — o primeiro
+      // horário livre depois do agendamento das 09:00–09:30 é só 10:15 (09:30 + 45min).
+
+      const erro = await criarAgendamento(
+        svc,
+        tenantId,
+        TZ,
+        userId,
+        { clientDraft: { name: 'Cliente Buffer 2', phone: '11987650101' }, serviceId: servicoComBuffer.id, professionalId: outroProfissional.id, startsAt: horario('09:00'), origin: 'app' },
+        {},
+      ).catch((e: unknown) => e)
+
+      expect(erro).toMatchObject({ code: 'SLOT_TAKEN' })
+      const alternativas = (erro as { details: { alternatives: string[] } }).details.alternatives
+      expect(alternativas.length).toBeGreaterThan(0)
+      for (const alt of alternativas) {
+        const minutosLocal = new Date(alt).toLocaleString('en-US', { timeZone: TZ, hour12: false, hour: '2-digit', minute: '2-digit' })
+        // Nenhuma alternativa cai dentro da janela de buffer (09:15–10:00) — só 10:15 em diante.
+        expect(['09:15', '09:30', '09:45', '10:00'].includes(minutosLocal)).toBe(false)
+      }
+    },
+    30_000,
+  )
+
+  it(
     'duas requisições simultâneas pelo mesmo horário: só uma vira agendamento',
     async () => {
       const entrada = (sufixo: string) => ({

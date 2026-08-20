@@ -1676,3 +1676,30 @@ igual a `public/appointments/cancel` e `public/reviews`: clicar duas vezes no me
 devolve o mesmo resultado (checagem `status === alvo` antes de tentar mudar), sem exigir que o
 cliente (sem sessão, só o link) saiba gerar um header de idempotência. `Idempotency-Key` seria
 redundante aqui e adicionaria uma dependência que o link em si não tem como cumprir sozinho.
+
+2026-08-20 · P9 (deslocamento avançado, §10) — construir uma versão "fake" de área de
+atendimento ou buffer automático só pra marcar a fase como ✅, já que a geocodificação de
+verdade está bloqueada por decisão de negócio? · Não. Uma área de atendimento sem coordenada
+real (ex.: comparar string de bairro) daria falso positivo/negativo o tempo todo, e um "buffer
+automático" sem distância real seria só um número inventado com nome de feature séria — pior
+que não ter nada, porque parece funcionar e não funciona. Registrado como bloqueio real em
+§15/§19, e a fase virou uma auditoria: o que dá pra entregar SEM a decisão de geocodificação?
+Achou duas coisas de verdade (buffer do painel administrativo desligado por engano, link de
+mapa nunca construído) — essas entraram no ticket, o resto ficou honestamente bloqueado.
+
+2026-08-20 · Ao auditar P9, achei que `agendamentos.ts` (fluxo manual do painel) nunca lia o
+buffer do serviço nas alternativas do 409 — é regressão desta sessão ou já existia? · Já
+existia antes desta sessão: `servicoDoTenant` nunca selecionava `buffer_before_min`/
+`buffer_after_min`, e `slotsDaJanela` passava `bufferBeforeMin: 0, bufferAfterMin: 0` fixo pro
+`availableSlots()`. `public-booking.ts` (o fluxo de cliente agendando sozinha) sempre leu o
+buffer corretamente — as duas rotas divergiam silenciosamente desde que o buffer por serviço
+foi implementado. Corrigido pra ler o buffer real do serviço nos dois caminhos.
+
+2026-08-20 · O link "abrir no mapa" do endereço do agendamento deve geocodificar o endereço
+(lat/lng) antes de linkar, ou mandar o texto puro pro Google Maps decidir? · Texto puro
+(`maps.google.com/search/?query=<endereço>`) — o próprio Google Maps já resolve endereço em
+texto livre do jeito que uma pessoa digitaria, sem custo de API nem chamada de geocodificação.
+Isso é literalmente a diferença entre P2.5 (barato) e P9 (caro) do §10: qualquer coisa que
+precise de lat/lng real (calcular distância, ordenar rota, desenhar raio) é P9 e continua
+bloqueada; um link que só delega pro app de mapa do celular decidir não precisa de coordenada
+nenhuma.

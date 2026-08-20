@@ -136,12 +136,19 @@ export default function DetalheAgendamento({
 
       {/* docs/09-PLATAFORMA.md G3+G13 (P2.5): endereço do atendimento, quando
           não é no endereço fixo do negócio — sem ele, faxineira/eletricista
-          não sabem pra onde ir. */}
+          não sabem pra onde ir. §10 (P9) prometia "link pra abrir no mapa" —
+          não geocodifica nada (não sabe lat/lng), só manda o texto pro app
+          de mapa do celular decidir; zero custo, zero precisão exigida. */}
       {agendamento.address ? (
-        <div className="flex items-start gap-2 text-secundario text-txt-2">
-          <MapPin aria-hidden className="mt-0.5 size-4 shrink-0 text-txt-3" />
-          <p>{agendamento.address}</p>
-        </div>
+        <a
+          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(agendamento.address)}`}
+          target="_blank"
+          rel="noreferrer"
+          className="flex items-start gap-2 text-secundario text-acc-2 underline-offset-2 hover:underline"
+        >
+          <MapPin aria-hidden className="mt-0.5 size-4 shrink-0" />
+          <span>{agendamento.address}</span>
+        </a>
       ) : null}
 
       {erro ? (
