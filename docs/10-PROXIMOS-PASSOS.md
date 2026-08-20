@@ -69,6 +69,8 @@ entradas:
 - Segunda profissão-alvo comercial depois da beleza.
 - Credenciais Asaas (P11).
 - Nome do produto continuar CICLO ou mudar.
+- Identidade jurídica para Política de Privacidade/Termos de Uso (razão social, CNPJ, contato
+  do encarregado de dados) — achado em V5/Gate 11, registrado em `DECISOES.md`.
 
 ---
 
@@ -466,3 +468,66 @@ Ler o restante do checklist antes de decidir se vale uma V5 curta ou se o retorn
 suficiente pra valer mais construir do que auditar — a essa altura da sessão, a maioria dos
 achados de Gate 7-10 já eram polimento (S2), não bloqueio (S0/S1), o que é sinal de que a
 plataforma está numa base sólida.
+
+## Relatório V5 — Gate 11 (TICKET-078)
+
+Decisão de dev sênior: li o restante do checklist (Gates 11-14). Gates 13 (deploy) e 14
+(entrega ao cliente) seguem ➖ justificados — CICLO não está publicado ainda (sem domínio, sem
+`git remote`, decisão do Eduardo, já registrada em §1 deste documento). Gate 12 (legal/LGPD) tem
+um achado real mas **genuinely bloqueado**: publicar Política de Privacidade/Termos de Uso com
+identidade jurídica inventada (razão social, CNPJ, contato do encarregado) seria pior do que não
+ter — fingir uma empresa que não existe ainda. Registrado como pendência real em vez de fingido
+(ver abaixo). Gate 11 (observabilidade/resiliência) era 100% verificável sem depender de deploy
+nem de decisão de negócio — fiz esse.
+
+### Achado real, corrigido (commit `30103bc`)
+
+**11.2 — nenhum dos três providers de mensageria (WhatsApp, e-mail, push) tinha timeout de
+rede.** `enviarComFallback()` já trata qualquer erro como transitório e cai pro próximo canal —
+mas sem timeout, uma conexão que **trava** (não erra, só não responde) prendia a chamada
+indefinidamente. E não é hipotético: `lembretes.ts`/`lista-espera.ts`/`recuperar-receita.ts`
+chamam `enviarComFallback` direto dentro de loop, processando lote de destinatários num cron —
+uma trava no meio do lote empacava o resto atrás dela até o timeout da própria função serverless
+matar a execução inteira, deixando destinatários seguintes sem tentativa nenhuma. Corrigido: 10s
+de timeout nos três (`AbortSignal.timeout` no fetch do WhatsApp/e-mail, `{timeout}` nativo do
+`web-push` no push). 4 testes novos provam que o `signal`/`timeout` chega mesmo na chamada de
+rede (mock de `fetch` verificando `init.signal instanceof AbortSignal`), não só que compila.
+
+### Confirmado limpo (com evidência já existente na sessão, sem achado novo)
+
+- **11.1** falha de banco não derruba a página inteira: `src/app/error.tsx` (raiz) e
+  `src/app/admin/error.tsx` são o *error boundary* do Next — qualquer exceção não tratada num
+  Server Component vira essa tela amigável, nunca um 500 cru do framework.
+- **11.3** log estruturado (JSON, `level`/`code`/`status`) confirmado em V1; nunca inclui dado de
+  saúde (regra 9 do CLAUDE.md, com teste dedicado — `tests/unit/observability/redact.test.ts`).
+- **11.4** telas de erro existem (item acima). **11.5** `/api/health` existe, com
+  `verificarSaude()`/`registrarHeartbeat()` reais em `src/server/services/health.ts`, não só uma
+  rota que devolve `200` sem checar nada.
+- **11.8** idempotência: regra 6 do CLAUDE.md (`Idempotency-Key` em toda escrita `/api/v1`) já é
+  estrutural, verificada em gates anteriores desta sessão.
+
+### Pendências registradas (genuinamente bloqueadas, não fingidas)
+
+- **12.1/12.2/12.9 — Política de Privacidade, Termos de Uso e contato do encarregado.** A
+  estrutura de conteúdo (que dado é coletado, de onde, por quê, quem acessa) é 100% conhecível
+  hoje a partir do schema real — mas publicar com razão social/CNPJ/e-mail de encarregado
+  inventados seria pior do que não publicar: fingiria uma pessoa jurídica que não existe ainda
+  (CICLO não tem cliente pagante, não tem entidade legal decidida). Fica bloqueado pela mesma
+  categoria de decisão que credencial do Asaas — não é lacuna técnica, é dado que só o Eduardo
+  tem. Adicionado a §4 deste documento ("o que só o Eduardo decide").
+- **11.6/11.7/13.x** — plano de rollback escrito e "quem é avisado quando quebra" dependem do
+  deploy real existir (Sentry já está com toda a instrumentação de código pronta —
+  `instrumentation.ts`/`instrumentation-client.ts`/`global-error.tsx` — falta só `SENTRY_DSN` em
+  produção e as regras de alerta, que se configuram no painel do Sentry, não em código).
+
+### Verificação completa
+
+`typecheck`/`lint` limpos. `test:unit` **433** (era 429, +4 desta rodada). `test:rls` 133.
+`test:integration` 239, sem flake. `build` ok.
+
+**Ciclo de verificação estrutural (VERIFICACAO-FINAL.md) fechado nesta sessão:** V1-V4 completos
+e reportados; V5/Gate 11 fechado com um achado real corrigido; Gates 12-14 registrados como
+bloqueados por decisão de negócio, não pulados por preguiça. A partir daqui, mais uma rodada de
+auditoria tem retorno decrescente — a maioria dos achados das últimas duas rodadas já era S2, e
+os que restam (Gates 12-14) não são trabalho de engenharia. Recomendação para a próxima
+iteração: pivotar para construção real do backlog (§3 deste documento).

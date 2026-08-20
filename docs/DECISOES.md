@@ -1864,3 +1864,18 @@ um novo ponto de acesso service_role só pra isso, ou reusar algo existente? · 
 `withNovoTenant()` (já em `with-tenant.ts`, já é o padrão usado por `public-booking.ts` pra
 exatamente o mesmo problema — leitura anônima cross-tenant). Não é uma exceção nova à regra 2
 do CLAUDE.md, é o mesmo uso sancionado que já existia, aplicado a mais um lugar.
+
+2026-08-20 · V5 achou que a Política de Privacidade/Termos de Uso (Gate 12) tem conteúdo
+100% conhecível hoje, mas falta identidade jurídica (razão social, CNPJ, contato do
+encarregado) — escrever mesmo assim com placeholder, ou bloquear? · Bloquear e registrar
+(não escrever com dado inventado). Publicar um documento legal citando uma empresa que não
+existe seria pior do que não publicar nada — mesma categoria de decisão que credencial do
+Asaas: não é lacuna técnica, é dado que só o Eduardo tem. Adicionado a §4 de
+docs/10-PROXIMOS-PASSOS.md.
+
+2026-08-20 · Ciclo de verificação estrutural (VERIFICACAO-FINAL.md V1-V5) fechado — próxima
+iteração continua auditando ou pivota pra construção? · Recomendação registrada: pivotar. A
+maioria dos achados de V4/V5 já era S2 (polimento), sinal de retorno decrescente; os gates que
+restam (12-14) não são trabalho de engenharia, são decisão de negócio/deploy que só o Eduardo
+resolve. Mais uma rodada de auditoria tem menos valor esperado do que construir um item real
+do backlog (§3 de docs/10-PROXIMOS-PASSOS.md).
