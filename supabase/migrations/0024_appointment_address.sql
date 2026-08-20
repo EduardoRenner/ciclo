@@ -1,0 +1,16 @@
+-- =====================================================================
+-- CICLO · TICKET-062 · Endereço mínimo do atendimento (P2.5)
+--
+-- docs/09-PLATAFORMA.md G3+G13: clients.address existe mas é do CLIENTE,
+-- texto livre — não do TRABALHO, e não é pedido no formulário público de
+-- agendamento. Para faxineira, eletricista, encanador (vai até o cliente),
+-- um agendamento sem endereço é inútil: o profissional não sabe pra onde ir.
+--
+-- Escopo deliberadamente pequeno (§10 do plano): SEM lat/lng, SEM
+-- geocodificação, SEM área de atendimento, SEM rota — isso é P9, caro e
+-- adiado de propósito. Aqui é só guardar e mostrar um texto. Opcional pra
+-- todo mundo (não só pra quem tem onde='vai_ate'): mesmo salão fixo às
+-- vezes atende em domicílio, e a coluna condicionada por eixo é trabalho de
+-- interface pra depois, não de banco agora.
+-- =====================================================================
+alter table appointments add column address text;

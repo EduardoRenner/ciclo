@@ -71,6 +71,9 @@ export default function Agendar({
   const [slotEscolhido, setSlotEscolhido] = useState<Slot | null>(null)
   const [nome, setNome] = useState('')
   const [telefone, setTelefone] = useState('')
+  // docs/09-PLATAFORMA.md G3+G13 (P2.5): opcional pra qualquer negócio, não só
+  // pra quem "vai até o cliente" — sem geocodificação, é só texto.
+  const [endereco, setEndereco] = useState('')
   // Honeypot: campo real no DOM, invisível só por CSS/posição — um preenchimento
   // automatizado de formulário não pula isso, um humano nunca o vê.
   const [website, setWebsite] = useState('')
@@ -126,6 +129,7 @@ export default function Agendar({
           startsAt: slotEscolhido.startsAt,
           name: nome,
           phone: telefone,
+          address: endereco.trim() || undefined,
           website: website || undefined,
         }),
       })
@@ -305,6 +309,16 @@ export default function Agendar({
             aoMudar={setTelefone}
             ajuda="É por aqui que a confirmação chega."
             required
+          />
+          {/* Opcional: pedir endereço sempre (não só de quem "vai até o cliente")
+              evita ramificar a tela por eixo de profissão só pra isto — o campo
+              some sozinho da conversa se ninguém preencher. */}
+          <Input
+            rotulo="Endereço do atendimento (opcional)"
+            value={endereco}
+            onChange={(e) => setEndereco(e.target.value)}
+            ajuda="Só preencha se não for no nosso endereço."
+            autoComplete="street-address"
           />
 
           {/* Honeypot — invisível para gente, visível para script. */}

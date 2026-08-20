@@ -272,6 +272,10 @@ export const EsquemaBookingPublico = z.object({
   startsAt: z.iso.datetime({ message: 'Horário inválido.', offset: true }),
   name: z.string().trim().min(2, 'Digite seu nome.'),
   phone: z.string().trim().min(1, 'Digite seu telefone.'),
+  // docs/09-PLATAFORMA.md G3+G13 (P2.5): opcional, sem geocodificação — só
+  // texto, pro profissional saber pra onde ir quando o atendimento não é no
+  // endereço fixo do negócio.
+  address: z.string().trim().max(300, 'Endereço muito longo.').nullish(),
   captchaToken: z.string().nullish(),
   // Honeypot (G100/TICKET-027): campo que só um robô preenche. Sem limite de
   // tamanho aqui de propósito — um `max(0)` faria o Zod recusar a requisição
@@ -317,6 +321,7 @@ export async function criarAgendamentoPublico(slug: string, entrada: z.infer<typ
         startsAt: entrada.startsAt,
         origin: 'public_page',
         note: null,
+        address: entrada.address ?? null,
       },
       tenant.settings,
     )

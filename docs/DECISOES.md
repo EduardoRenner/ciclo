@@ -1544,3 +1544,10 @@ CLIENTE com conta de staff, caso raro documentado). Criei `inscricoesPushDoTenan
 · Testado ponta a ponta com dispositivo de push morto/inválido: o agendamento nasce normalmente,
 o aviso falha em silêncio (mesmo padrão de "credencial de terceiro ausente" já usado 3x no
 projeto).
+
+2026-08-19 · P2.5 (endereço do atendimento) devia ser condicionado ao eixo "onde" do tenant
+(só mostrar pra quem "vai até o cliente")? · Não — campo sempre opcional pra qualquer tenant ·
+nenhum tenant real hoje tem onde='vai_ate' (as 2 profissões ativas são barbearia), então
+ramificar a interface por eixo agora seria código sem ninguém pra testar de verdade. Um salão
+fixo também atende em domicílio às vezes; o campo "some" da conversa sozinho se ninguém
+preencher. Gating por eixo fica pra quando existir tenant de verdade que precise dele.

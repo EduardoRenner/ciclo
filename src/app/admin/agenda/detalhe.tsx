@@ -1,5 +1,6 @@
 'use client'
 
+import { MapPin } from 'lucide-react'
 import Link from 'next/link'
 
 import { useState, useTransition } from 'react'
@@ -132,6 +133,16 @@ export default function DetalheAgendamento({
         <p className="text-corpo font-semibold">{new Date(agendamento.starts_at).toLocaleString('pt-BR')}</p>
         <p className="mt-0.5 text-secundario text-txt-2">{dinheiro.format(agendamento.price_cents / 100)}</p>
       </div>
+
+      {/* docs/09-PLATAFORMA.md G3+G13 (P2.5): endereço do atendimento, quando
+          não é no endereço fixo do negócio — sem ele, faxineira/eletricista
+          não sabem pra onde ir. */}
+      {agendamento.address ? (
+        <div className="flex items-start gap-2 text-secundario text-txt-2">
+          <MapPin aria-hidden className="mt-0.5 size-4 shrink-0 text-txt-3" />
+          <p>{agendamento.address}</p>
+        </div>
+      ) : null}
 
       {erro ? (
         <p role="alert" className="text-secundario text-bad">

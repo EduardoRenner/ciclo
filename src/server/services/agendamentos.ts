@@ -16,15 +16,15 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 type Cliente = SupabaseClient<Database>
 
 const COLUNAS =
-  'id, tenant_id, client_id, professional_id, service_id, starts_at, ends_at, status, origin, price_cents, confirmed_at, arrived_at, completed_at, canceled_at, canceled_by, cancel_reason, client_note, no_show_score'
+  'id, tenant_id, client_id, professional_id, service_id, starts_at, ends_at, status, origin, price_cents, confirmed_at, arrived_at, completed_at, canceled_at, canceled_by, cancel_reason, client_note, address, no_show_score'
 
 export const EsquemaCriarAgendamento = z
   .object({
     clientId: z.uuid().nullish(),
     clientDraft: z
       .object({
-        name: z.string().trim().min(2, 'Digite o nome da cliente.'),
-        phone: z.string().trim().min(1, 'Digite o telefone da cliente.'),
+        name: z.string().trim().min(2, 'Digite o nome do cliente.'),
+        phone: z.string().trim().min(1, 'Digite o telefone do cliente.'),
       })
       .nullish(),
     serviceId: z.uuid('Escolha um serviço.'),
@@ -32,9 +32,12 @@ export const EsquemaCriarAgendamento = z
     startsAt: z.iso.datetime({ message: 'Horário inválido.', offset: true }),
     origin: z.enum(['app', 'public_page', 'whatsapp', 'recurring', 'waitlist', 'import']).default('app'),
     note: z.string().trim().max(500, 'Nota muito longa.').nullish(),
+    // docs/09-PLATAFORMA.md G3+G13 (P2.5): opcional pra todo mundo — mesmo
+    // salão fixo às vezes atende em domicílio. Nunca geocodificado (§10).
+    address: z.string().trim().max(300, 'Endereço muito longo.').nullish(),
   })
   .refine((d) => d.clientId ?? d.clientDraft, {
-    message: 'Informe a cliente já cadastrada ou os dados dela.',
+    message: 'Informe o cliente já cadastrado ou os dados dele.',
     path: ['clientId'],
   })
 
@@ -278,6 +281,7 @@ export async function criarAgendamento(
       origin: entrada.origin,
       price_cents: servico.price_cents,
       client_note: entrada.note ?? null,
+      address: entrada.address ?? null,
       created_by: createdBy,
       no_show_score: risco?.score ?? null,
       risk_features: risco?.features ?? null,
@@ -306,7 +310,7 @@ export async function criarAgendamento(
 const ESTADOS_VALIDOS = new Set<EstadoAgendamento>(['pending', 'confirmed', 'arrived', 'done', 'no_show', 'canceled', 'expired'])
 
 const COLUNAS_AGENDA_DIA =
-  'id, starts_at, ends_at, status, price_cents, client_note, professional_id, no_show_score, clients ( name ), services ( name ), professionals ( display_name )'
+  'id, starts_at, ends_at, status, price_cents, client_note, address, professional_id, no_show_score, clients ( name ), services ( name ), professionals ( display_name )'
 
 export type LinhaAgendaDia = {
   id: string
@@ -315,6 +319,8 @@ export type LinhaAgendaDia = {
   status: string
   price_cents: number
   client_note: string | null
+  /** docs/09-PLATAFORMA.md G3+G13 (P2.5) — endereço do atendimento, não do cliente. */
+  address: string | null
   professional_id: string
   /** §5.4. `null` até o cálculo rodar (agendamento antigo, ou o cálculo falhou na criação). */
   no_show_score: number | null

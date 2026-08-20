@@ -208,6 +208,37 @@ describe('criarAgendamentoPublico', () => {
     },
     30_000,
   )
+
+  it(
+    // docs/09-PLATAFORMA.md G3+G13 (P2.5): sem endereço, um agendamento de
+    // quem vai até o cliente é inútil — este teste prova que o texto chega
+    // no banco tal como veio do formulário público, sem geocodificação nem
+    // normalização (escopo deliberadamente pequeno).
+    'guarda o endereço do atendimento quando informado, e null quando não',
+    async () => {
+      const comEndereco = await criarAgendamentoPublico(slug, {
+        serviceId: servicoOnlineId,
+        professionalId,
+        startsAt: `${DIA}T13:00:00-03:00`,
+        name: 'Ana Com Endereço',
+        phone: '11988110002',
+        address: 'Rua das Flores, 123 — apto 45',
+      })
+      const linha1 = await svc.from('appointments').select('address').eq('id', comEndereco.appointmentId).single()
+      expect(linha1.data?.address).toBe('Rua das Flores, 123 — apto 45')
+
+      const semEndereco = await criarAgendamentoPublico(slug, {
+        serviceId: servicoOnlineId,
+        professionalId,
+        startsAt: `${DIA}T13:30:00-03:00`,
+        name: 'Ana Sem Endereço',
+        phone: '11988110003',
+      })
+      const linha2 = await svc.from('appointments').select('address').eq('id', semEndereco.appointmentId).single()
+      expect(linha2.data?.address).toBeNull()
+    },
+    30_000,
+  )
 })
 
 describe('POST /api/v1/public/:slug/book — a rota inteira', () => {
