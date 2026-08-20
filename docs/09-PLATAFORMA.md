@@ -19,12 +19,13 @@
    com todas as letras: *"O 'modelo único' só funciona porque a diferença entre as profissões é
    CONFIGURAÇÃO, não código."* A tese está certa e o motor está pronto — o que está limitado é
    o **catálogo**: 8 verticais, todas de beleza, num `enum` do Postgres.
-2. **Dez lacunas reais separam o produto de hoje do produto multiprofissão** (§2), todas
+2. **Treze lacunas reais separam o produto de hoje do produto multiprofissão** (§2), todas
    medidas no repositório. As três mais sérias não são cosméticas: **não existe endereço do
-   atendimento** (quem vai até o cliente não tem onde guardar para onde vai), **recorrência é
-   uma coluna órfã** (`appointments.recurrence_id` existe, a tabela por trás dela não) e
-   **8 dos 10 modelos de WhatsApp são de salão** — o produto fala com o cliente final, no canal
-   que mais importa, assumindo que ele vem até você.
+   atendimento em lugar nenhum** — nem no banco (G3) nem no formulário público (G13), o que
+   torna um agendamento de faxineira ou eletricista literalmente inútil; **recorrência é uma
+   coluna órfã** (`appointments.recurrence_id` existe, a tabela por trás dela não); e **8 dos 10
+   modelos de WhatsApp são de salão** (G10) — o produto fala com o cliente final, no canal que
+   mais importa, assumindo que ele vem até você.
 3. **A generalização melhora o produto, não dilui.** O Motor de Ciclo — hoje "cliente de beleza
    que sumiu" — é, na verdade, o motor de retorno de qualquer negócio de serviço: manutenção
    preventiva do eletricista, faxina semanal, retorno de 6 meses do dentista, vacina anual do
@@ -60,9 +61,42 @@ Levantamento no código, não estimativa. **Isto tudo generaliza sem uma linha n
 **Conclusão honesta:** a virada é de **catálogo e configuração**, não de motor. Isso é uma
 posição boa — e rara.
 
+### 1.1 O estado real do produto — medido no banco de produção, não suposto
+
+Este plano foi escrito antes de alguém olhar quantas pessoas usam o CICLO hoje. Olhei. Números
+do projeto `sukloaoodpxjukngyojo` em 2026-08-19:
+
+| Medida | Valor | Leitura |
+|---|---|---|
+| Tenants ativos | 78 | — |
+| Tenants criados **há mais de 7 dias** | **0** | todos nasceram em 18 e 19/08 |
+| Clientes | 365.588 | ~4.700 por tenant |
+| Tenants com **mais de 1.000 clientes** | 35 | nenhum salão real tem isso |
+| Maior tenant | **10.004 clientes** | — |
+| Agendamentos | 351.211, sendo 350.403 `done` | 99,8% concluídos |
+| Vindos da **página pública** | **97** | 0,03% |
+
+Isso não é uso: **é o dado sintético dos testes de integração e de carga**, que nesta máquina
+rodam contra a nuvem porque não há Docker local (decisão já registrada). Ele fez o trabalho dele
+— os quatro bugs do TICKET-036 (cap de 1.000 linhas do PostgREST, paginação sem `order`
+estável) só apareceram por causa dele.
+
+**Duas consequências que este plano precisa absorver:**
+
+1. **O CICLO ainda não tem cliente pagante.** Não é motivo para não fazer a virada — é motivo
+   para mudar o *sequenciamento* (§15) e para tratar os alvos da §13.2 como hipóteses sem linha
+   de base, não como metas. Escrever 12 packs antes de alguém pagar é a mesma família de erro
+   que escrever 40.
+2. **O projeto de produção carrega resíduo de teste.** 78 tenants e 365 mil clientes falsos
+   precisam sair **antes do primeiro cliente real** — senão o primeiro salão de verdade nasce
+   num banco com 10 mil clientes fantasma, com o custo e a confusão que isso traz. É o item
+   4.15 do `VERIFICACAO-FINAL.md` ("dados de teste/seed fora da produção"), e não está feito.
+   Vale decidir também se o desenvolvimento continua rodando contra o projeto de produção ou
+   se ganha um projeto próprio — a segunda opção custa ~US$ 10/mês e resolve a causa.
+
 ---
 
-## 2. As dez lacunas
+## 2. As treze lacunas
 
 Cada uma verificada no repositório de hoje.
 
@@ -178,6 +212,50 @@ Três agravantes que fazem esta lacuna ser mais séria que as outras nove:
 
 **Vira:** modelos de mensagem passam a fazer parte do pack de profissão (§3.3), com variante por
 eixo 1 (*"Te espero"* para quem recebe, *"Chego às"* para quem vai até o cliente).
+
+### G11 · Um atendimento não pode passar de 12 horas
+
+```sql
+duration_min int not null check (duration_min between 5 and 720)
+```
+
+720 minutos. A diária de faxina (8h) cabe — foi por isso que a §1 a citou como vitória. Mas
+**trabalho de vários dias não cabe de jeito nenhum**: pintor com serviço de 3 dias, instalação
+elétrica de 2 dias, reforma, ensaio fotográfico com edição e entrega depois.
+
+Não é caso de aumentar o teto: um serviço de 3 dias **não é um bloco de 72h na agenda** — o
+profissional dorme, atende outra coisa no meio, e a agenda precisa mostrar isso. É um **trabalho
+com várias sessões**, que é conceito diferente de agendamento e diferente de série recorrente
+(§12): a série repete indefinidamente, o trabalho tem começo, fim e um valor só.
+
+Afeta diretamente duas das 12 profissões do lançamento (eletricista e fotógrafo) e o grupo
+inteiro de "casa e manutenção" que vem depois. **Decisão a tomar:** ou o primeiro corte assume
+"só serviço que cabe num dia" e diz isso na cara, ou entra o conceito de trabalho multi-sessão.
+Recomendo assumir o limite no primeiro corte e registrar — é honesto e não trava as 12.
+
+### G12 · O cliente não consegue cancelar nem remarcar sozinho
+
+`confirmacao-token.ts` expõe exatamente duas funções: `gerarTokenConfirmacao` e
+`verificarTokenConfirmacao`. O link que vai no WhatsApp **só confirma**. Quem precisa desmarcar
+tem que ligar, mandar mensagem, ou simplesmente não aparecer.
+
+Isso briga com a tese central do próprio produto: o CICLO existe para reduzir falta e trazer
+cliente de volta, e **a falta mais barata de evitar é a que o cliente avisa**. Um botão
+"preciso remarcar" no mesmo link devolve a vaga para a agenda em vez de queimá-la — e, para quem
+vai até o cliente, evita deslocamento perdido, que é prejuízo de verdade, não só buraco na
+agenda.
+
+O `no_show_score` já existe para *prever* a falta. Faltou o caminho mais simples de *evitá-la*.
+
+### G13 · O agendamento público não pergunta onde é o serviço
+
+`public-booking.ts` lê `tenant.address` — o endereço **do negócio**, para mostrar ao cliente. Em
+nenhum ponto do fluxo público se pergunta **o endereço do cliente**.
+
+É a outra metade do G3, e é a metade que aparece primeiro: para faxineira, eletricista,
+encanador e jardineiro, um agendamento sem endereço **é um agendamento inútil** — o profissional
+recebe "quinta, 14h" e não sabe para onde ir. Sem isso, a página pública (que é o principal valor
+do primeiro dia, §8) não serve a metade do catálogo.
 
 ---
 
@@ -408,6 +486,20 @@ eletricista vendo "Serviço 1 · 60 min · R$ 100" fecha o app.
 Se essas 12 funcionam sem código específico, **o modelo está provado** e o resto do catálogo
 vira trabalho de conteúdo em lote, sem risco de arquitetura.
 
+**Mas "existir" e "estar pronta para vender" são coisas diferentes** — e a §1.1 (nenhum cliente
+pagante ainda) obriga a separar as duas:
+
+| Profundidade | Quantas | O que significa |
+|---|---|---|
+| **Profunda** | 3 | preço e duração pesquisados com gente da área, modelos de WhatsApp escritos à mão, página pública revisada. É o que se leva para vender |
+| **Rasa** | 9 | serviços plausíveis, sem pesquisa de campo. Existem para **provar os 4 eixos**, não para conquistar cliente |
+
+As 3 profundas do primeiro teste de mercado: **faxina/diarista** (volume, recorrência nativa,
+dor de agenda real), **eletricista** (ticket alto, orçamento, ninguém organiza) e **uma das
+três de beleza** (é onde já há conhecimento acumulado e onde a base atual está). Se nenhuma das
+três converter, o problema não é o catálogo — e escrever as outras 9 em profundidade não teria
+consertado nada.
+
 **Os outros 8 grupos** (saúde, fitness, educação, pet, eventos, serviços profissionais, casa
 completa, beleza completa) entram **por demanda medida**, não por palpite: o campo **"Outro"**
 do onboarding é texto livre, e o que as pessoas digitam ali **é a fila de priorização**. É
@@ -537,18 +629,25 @@ quebrado.
 de deslocamento pode morar neles, calculado por agendamento — o motor de conflito
 (`appointments_no_overlap`) passa a proteger o deslocamento **de graça**, sem conceito novo.
 
-O que precisa entrar:
-- endereço estruturado + `lat`/`lng` no **agendamento** (não só no cliente)
-- área de atendimento (raio ou lista de bairros/cidades) → a página pública recusa endereço fora
-- estimativa de deslocamento entre agendamentos consecutivos → buffer automático
+O que precisa entrar, **em duas etapas de custo muito diferente**:
+
+**P2.5 — barato, e é pré-requisito de faxina e eletricista (G3+G13):**
+- endereço estruturado no **agendamento**, não só no cliente (a mesma cliente pode ter dois imóveis)
+- o campo no formulário público — sem ele o agendamento chega sem destino
+- o endereço visível na agenda e no card do dia, com link para abrir no mapa do celular
+- buffer fixo configurável por profissional ("reservo 30 min entre atendimentos")
+
+**P9 — caro, e adiado de propósito:**
+- `lat`/`lng` e geocodificação
+- área de atendimento (raio ou lista de bairros) → a página pública recusa endereço fora
+- estimativa de deslocamento entre agendamentos consecutivos → buffer **automático**
 - aviso ao marcar algo geograficamente impossível
 - "meu dia" em ordem de rota, não só em ordem de horário
 - taxa de deslocamento como item de cobrança
 
-**Decisão a tomar antes de executar:** geocodificação custa (Google/Mapbox) ou é imprecisa
-(gratuita). Proposta: começar **sem mapa** — endereço estruturado + buffer fixo configurável por
-profissional ("reservo 30 min entre atendimentos") resolve 80% do problema com 5% do custo.
-Mapa e rota otimizada entram depois, como recurso de plano superior.
+**Decisão a tomar antes de P9:** geocodificação custa (Google/Mapbox) ou é imprecisa (gratuita).
+O buffer fixo de P2.5 resolve boa parte do problema com uma fração do custo — e só a experiência
+com cliente real diz se o buffer automático vale o preço.
 
 ---
 
@@ -661,29 +760,45 @@ Não pode quebrar quem já usa.
 
 | Fase | O que | Risco | Depende de |
 |---|---|---|---|
+| **P−1 · Higiene** | limpar o resíduo de teste do banco (§1.1) e decidir se dev ganha projeto próprio | Baixo | — |
 | **P0 · Catálogo** | `professions` + `profession_services`; seed das 8 atuais; `tenants.profession_id`; migração não destrutiva (§14) | Médio | — |
 | **P1 · Vocabulário** | tokens em `professions` + merge com override (§3.4); regra de copy sem concordância (§3.2); varrer as 13 strings do G2; **os 10 modelos de WhatsApp do G10**; teste que reprova profissão cravada em `src/` | Médio | P0 |
 | **P2 · Eixos** | os 4 eixos como colunas; comportamento derivado deles; **modo solicitação (§4 eixo 3)**, que reusa `hold_expires_at` + push | Médio | P0 |
+| **P2.5 · Endereço mínimo** | fecha **G3 + G13**: endereço estruturado no agendamento, campo no formulário público, exibição para o profissional. **Sem** mapa, sem geocodificação, sem rota | Baixo | P0 |
 | **P3 · Módulos** | `tenant_modules`, tela de configuração, modo solo | Médio | P2 |
 | **P4 · Onboarding** | fluxo de 3 min (§7), busca de profissão, link público no fim, **instrumentação do funil (§13.2)** | Médio | P0–P3 |
-| **P5 · Catálogo** | **as 12 profissões do §5**, com serviço, duração e preço que a área reconheça | Médio — é pesquisa, não `INSERT` | P0 |
+| **P5 · Catálogo** | **3 profissões profundas + 9 rasas** (§5) | Médio — as 3 são pesquisa, não `INSERT` | P0 |
+| **P5.5 · Cliente se resolve sozinho** | fecha **G12**: cancelar e remarcar pelo mesmo link do WhatsApp, devolvendo a vaga à agenda | Baixo | — |
 | **P6 · Marca e página** | personalização + página pública como mini-site (§8) + **assinatura discreta do plano grátis (§13.1)** | Médio | P3 |
 | **P7 · Recorrência** | fecha o G4 (§12) | **Alto** | P2 |
 | **P8 · Orçamento** | fluxo + aprovação por link (§11) | Médio | P2 |
-| **P9 · Deslocamento** | endereço no agendamento, área, buffer automático (§10) | **Alto** | P2 |
+| **P9 · Deslocamento avançado** | área de atendimento, buffer automático, ordem de rota (§10) | **Alto** | P2.5 |
 | **P10 · Preço** | modelos do G5 | Médio | P2 |
 | **P11 · Planos** | limites, bloqueio por plano, cobrança | **Alto** | decisão + Asaas |
 
 **Ordem obrigatória: P0 → P1 → P2 antes de qualquer coisa.** Enquanto profissão for enum e
 vocabulário for texto cravado, tudo o mais é retrabalho.
 
-**Primeiro corte vendável (MVP da virada):** P0 a P6. Já vende para autônomo de qualquer
-profissão que atende no local ou vai até o cliente sem precisar de rota otimizada.
-P7/P8/P9 são o que abre faxina recorrente e serviço técnico de verdade.
+**Correção em relação à 2ª versão deste documento:** o endereço estava inteiro dentro de P9,
+marcada como risco Alto e adiada — **enquanto faxina e eletricista eram escolhidas como duas das
+três profissões profundas.** Isso se contradizia: sem endereço, um agendamento dessas duas é
+inútil (G13). O trabalho foi partido: **P2.5 é o mínimo que as destrava e tem risco baixo**
+(guardar e mostrar um endereço não tem nada de difícil); o que é caro — geocodificação, área,
+rota — fica em P9 e continua adiado.
 
-**Se for para fatiar ainda mais:** P0+P1+P5 sozinhas já entregam um produto que **fala a língua
-de 12 profissões** — mesmo antes dos módulos e do onboarding novo. É o menor corte que muda a
-percepção do produto, e é onde eu começaria.
+**Primeiro corte vendável (MVP da virada):** P0, P1, P2, **P2.5**, P3, P4, P5, **P5.5**, P6.
+Vende para autônomo que atende no local **ou** que vai até o cliente, desde que não precise de
+otimização de rota. P7/P8/P9 são o que abre faxina recorrente e serviço técnico completo.
+
+**Por onde eu começaria, considerando a §1.1 (nenhum cliente pagante):**
+`P0 + P1 + P2.5` — e então **as 3 profissões profundas de P5, e tentar vender**. Esse conjunto
+já entrega um produto que fala a língua de outra profissão e aceita um serviço com endereço,
+que é o mínimo para um eletricista usar de verdade. Módulos (P3), onboarding novo (P4) e página
+(P6) são investimentos que ficam **muito** mais fáceis de acertar depois que alguém pagou e
+disse o que faltou — e muito fáceis de errar antes disso.
+
+**Sobre o G11 (trabalho de vários dias):** ficar de fora do primeiro corte, assumido e escrito.
+Nenhuma das 3 profundas depende dele; pintor e reforma, que dependem, não estão nas 12.
 
 ---
 
@@ -711,6 +826,15 @@ percepção do produto, e é onde eu começaria.
     modelo dos 4 eixos, e se falhar, falta um eixo (não falta um `if`).
 15. O funil de onboarding está instrumentado antes do lançamento (§13.2) — sem isso não há como
     saber se a ativação é 60% ou 12%.
+16. **Agendar pela página pública como cliente de eletricista guarda o endereço do serviço, e o
+    profissional o vê na agenda** (G3+G13). É o teste que separa "funciona" de "existe" para
+    metade do catálogo.
+17. **O link do WhatsApp permite remarcar e cancelar**, e a vaga cancelada volta para a agenda
+    (G12) — verificável ponta a ponta, sem login.
+18. **Nenhum tenant de teste no banco de produção** antes do primeiro cliente real (§1.1) —
+    `select count(*) from tenants` bate com a quantidade de negócios reais.
+19. Nenhum serviço com `duration_min` acima do teto é aceito sem mensagem clara explicando o
+    limite (G11) — o produto diz o que não faz, em vez de falhar estranho.
 
 ---
 
@@ -745,6 +869,9 @@ percepção do produto, e é onde eu começaria.
 | **Self-serve empurra o suporte para o produto** — quem configura errado conclui que "não funciona", e não abre chamado: some | Padrão bom em tudo (pack já preenchido, horário já preenchido), passo pulável, e o cartão "termine de configurar" no Hoje. E §13.2 mede onde abandonam, em vez de adivinhar |
 | **Canibalizar a base de beleza** — o produto fica genérico e para de parecer feito para salão | O vocabulário por profissão faz o oposto: hoje a manicure vê "cliente"; depois vê a língua dela. O critério 6 protege o comportamento; o §5 mantém as 3 profissões de beleza no primeiro lote |
 | Distribuição não resolvida — construir tudo e ninguém achar | §13.1 trata isso como funcionalidade (assinatura na página, link, indicação), não como marketing posterior. Se o laço não funcionar, é melhor descobrir com 12 profissões do que com 40 |
+| **Ampliar antes de provar que alguém paga** (§1.1) — o risco mais sério da lista, e o único que nenhuma decisão técnica resolve | A sequência recomendada (§15) põe `P0+P1+P2.5` + 3 packs profundos **antes** de módulos, onboarding novo e página. É o menor investimento que permite tentar vender para uma profissão nova. Se ninguém pagar, o dinheiro não foi gasto em 12 packs e num onboarding redesenhado |
+| **Primeiro cliente real nasce num banco com 365 mil clientes falsos** | P−1 é pré-requisito de venda, não de desenvolvimento. E a causa (dev rodando contra produção por falta de Docker) merece decisão própria |
+| **Modelos de WhatsApp errados chegam ao cliente final antes de alguém notar** | G10 é semeado na primeira leitura e vira dado do tenant — corrigir depois não conserta quem já recebeu. Por isso está em P1, não em "polimento" |
 
 ---
 
@@ -761,6 +888,13 @@ Honestidade sobre o que ainda é pergunta aberta, para não parecer mais resolvi
 - **Geocodificação paga ou não** (§10).
 - **Se "Outro" no onboarding vira profissão genérica** ou fila de curadoria — a §5 assume fila
   de curadoria, mas isso é escolha, não conclusão.
+- **Se o desenvolvimento ganha um projeto Supabase próprio** (~US$ 10/mês) ou continua rodando
+  contra produção — a §1.1 mostra o custo de continuar como está, mas a conta é do dono.
+- **Se o produto entra em campo com o teto de 12h assumido** (G11) ou se trabalho multi-sessão
+  entra antes — depende de qual profissão vier primeiro, e isso ainda não está decidido.
+- **Qual é a terceira profissão profunda** (§5): a beleza é a aposta segura porque é onde há
+  conhecimento, mas se o objetivo for provar que o modelo generaliza, uma terceira de fora
+  (psicólogo, pelo modo solicitação) prova mais.
 
 Nada disso bloqueia P0–P3, que é onde o trabalho começa.
 
@@ -788,3 +922,17 @@ alguém**, e trava a §8 e a §13.1.
 | **− catálogo: 40 → 12** | A 1ª versão contradizia o próprio risco de "produto de ninguém". 12 profundas provam o modelo; 40 rasas provam o contrário |
 | **− §13 planos encolhida** | Estava especificando decisão que não é minha. Ficaram só as 4 regras de engenharia |
 | **+ 4 critérios e 3 riscos** | Cobrindo G10, a fronteira de tenant, o teste das 12 profissões, suporte e canibalização da base |
+
+**3ª versão** — verificação fio a fio, com consulta ao banco de produção. O que mudou:
+
+| Mudança | Por quê |
+|---|---|
+| **+ §1.1** o estado real, medido | As duas versões anteriores planejaram sem olhar se alguém usa o produto. Olhei: 78 tenants, **nenhum com mais de 7 dias**, 35 com mais de mil clientes, um com 10.004, e 97 agendamentos vindos da página pública em 351 mil. É dado de teste de carga — **não há cliente pagante**, e o banco de produção está com resíduo que precisa sair antes do primeiro real |
+| **+ G11** teto de 12h por atendimento | `duration_min ≤ 720`. Diária de faxina cabe (a §1 comemorou isso), trabalho de vários dias não cabe — e não é caso de aumentar o teto, é conceito diferente |
+| **+ G12** cliente não cancela nem remarca | O token do WhatsApp só confirma. Briga com a tese do próprio produto: a falta mais barata de evitar é a que o cliente avisa |
+| **+ G13** o formulário público não pede endereço | Outra metade do G3, e a que aparece primeiro: agendamento de faxineira sem endereço é inútil |
+| **~ P9 partida em P2.5 + P9** | **Contradição minha:** faxina e eletricista foram escolhidas como profissões profundas enquanto o endereço estava numa fase Alto risco e adiada. Guardar endereço é barato; geocodificação e rota é que não são |
+| **+ P−1 e P5.5** | Higiene do banco (§1.1) e o cancelamento pelo link (G12) — duas fases baratas que não existiam |
+| **~ §5: 12 profissões viram 3 profundas + 9 rasas** | "Existir no catálogo" e "estar pronta para vender" são coisas diferentes, e sem cliente pagante não se justifica pesquisar preço de 12 áreas |
+| **~ recomendação de início** | Era `P0+P1+P5`. Vira `P0+P1+P2.5` + as 3 profundas, **e tentar vender** — módulos, onboarding e página são fáceis de errar antes de alguém pagar |
+| **+ 4 critérios de aceite** | G3+G13 ponta a ponta, G12, banco limpo, e o limite do G11 dito na cara em vez de falhar estranho |
