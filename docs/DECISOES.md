@@ -1816,3 +1816,20 @@ que passam por rota()? · Só as que passam por rota() — mas isso é, na prát
 header Origin (chamada servidor-a-servidor), e a checagem já trata "Origin ausente" como
 "passa" de propósito — não seria certo exigir Origin presente, isso quebraria justamente as
 chamadas legítimas sem navegador. Só Origin PRESENTE E DIFERENTE do app é bloqueado.
+
+2026-08-20 · V3 (Gate 6, teste ao vivo) achou que a checagem de Origin do V2 quebrava o
+agendamento público de verdade em qualquer host diferente do configurado em
+NEXT_PUBLIC_APP_URL — comparar contra Host da própria requisição, ou contra uma lista de
+domínios permitidos? · Contra o Host da própria requisição (padrão OWASP de "same-origin
+check"). Uma lista de domínios permitidos precisaria ser mantida manualmente toda vez que um
+novo domínio de preview/staging/custom entrar em cena — o Host da requisição já É a resposta
+certa pra "qual domínio o Next está servindo agora", sem precisar de configuração nenhuma.
+
+2026-08-20 · Um fix de segurança (V2, Origin/CSRF) passou em 4 testes unitários E num curl
+manual contra produção — como ele ainda quebrou o produto de verdade? · O curl usou
+`localhost:3000`, que por coincidência batia com `NEXT_PUBLIC_APP_URL` configurado — nenhum
+teste (unitário ou manual) cobriu um HOST DIFERENTE do configurado, que é exatamente o cenário
+real de qualquer preview/staging/deploy alternativo. Lição registrada: verificação de
+segurança precisa testar o caso onde o ambiente NÃO bate com a configuração esperada, não só o
+caminho feliz onde os dois coincidem — é fácil confirmar "funciona" testando só contra o
+cenário que já se sabe que vai dar certo.

@@ -230,3 +230,91 @@ unitários novos.
 **Próxima fase do loop:** V3 — Gate 6 (fluxos de negócio ponta a ponta). Antes de V3, considerar
 se o achado do MFA (acima) merece virar a próxima fase de CONSTRUÇÃO em vez de mais verificação
 — é o achado de maior impacto real desta sessão de auditoria até agora.
+
+---
+
+## Relatório V3 — Gate 6 (2026-08-20, TICKET-075)
+
+**Decisão tomada no início desta fase:** terminar o ciclo de verificação antes de pivotar pra
+construir o MFA — V3 acabou provando o valor dessa ordem: achou (e corrigiu) um bug **em
+produção real** que só apareceria testando a aplicação rodando, exatamente o tipo de coisa que
+justifica não pular direto pra construção.
+
+### Achado real S1 — corrigido nesta rodada, causado pela própria correção do V2
+
+**A checagem de `Origin` do V2 quebrava o agendamento público de verdade.** Testando a jornada
+principal ao vivo (não só lendo código — é a regra do Gate 6), o booking público real deu
+`403 FORBIDDEN` — a correção de CSRF do V2 comparava `Origin` contra `NEXT_PUBLIC_APP_URL`
+**fixo**, mas o preview local roda numa porta diferente da configurada nessa env var. O mesmo
+bug quebraria **qualquer** deploy preview da Vercel (subdomínio dinâmico) ou troca de domínio
+custom — ou seja, não era só um problema do ambiente de teste, era a lógica errada em si.
+
+Corrigido: a comparação agora é contra o `Host` (ou `x-forwarded-host`) **da própria
+requisição**, não uma URL fixa — é o jeito correto de checar "mesma origem" (recomendado pela
+OWASP: comparar `Origin` com `Host`), e funciona automaticamente em qualquer domínio que o Next
+esteja servindo de verdade, sem precisar listar cada um. 6 testes unitários (era 4, adicionei 2
+pra cobrir exatamente esse cenário — domínio diferente do configurado, ausência de `Host`).
+
+**Lição registrada:** um fix de segurança sem teste ao vivo contra a aplicação rodando pode
+quebrar o produto mais do que protegê-lo. O V2 tinha 4 testes unitários passando E o `curl`
+contra produção confirmando os 3 casos — mas o `curl` usou `localhost:3000`, que por acaso
+batia com `NEXT_PUBLIC_APP_URL`. Nenhum teste (unitário ou manual) tinha testado um HOST
+DIFERENTE do configurado — e foi exatamente esse buraco que o Gate 6 expôs.
+
+### Jornada principal (6.1) — testada ao vivo, com evidência
+
+Tenant descartável criado via seed, fluxo completo como cliente real (sem sessão): página
+pública → `/agendar` (wizard serviço → profissional → dia → horário) → formulário (nome,
+telefone, endereço opcional, honeypot) → confirmação.
+
+- **6.1.1** ✅ primeira dobra mostra nome do negócio, "aberto agora", CTA, serviços com
+  preço/duração, horário — entendível em segundos (texto da página colado no relatório).
+- **6.1.2** ✅ navegação completa até a conversão, passo a passo (serviço → dia 20/08 → horário
+  10:30 → dados → confirmar).
+- **6.1.3** ✅ registro no banco **conferido por `select`**: `starts_at`/`ends_at` corretos
+  (10:30–11:10 local = 13:30–14:10 UTC), `status: pending`, `origin: public_page`,
+  `price_cents: 4500` (bate com "Corte" R$45), telefone normalizado em E.164.
+- **6.1.4** ✅ tela de confirmação aparece ("Agendamento enviado!"). Confirmação por WhatsApp ao
+  cliente **não** é imediata — só o aviso push pro profissional (`notificarEquipe`) dispara na
+  hora; o link de confirmação por WhatsApp sai depois, via o cron de lembretes. Não é bug: o
+  texto da própria tela já avisa isso ("Você vai receber a confirmação por WhatsApp"), e mandar
+  duas mensagens (confirmação instantânea + lembrete) seria redundante.
+- **6.1.5** ✅ o dono vê o agendamento no painel (`/admin/agenda`), no dia certo, estado
+  "Aguardando" (pending), com nome/serviço/horário/preço corretos — texto da página colado.
+- **6.1.6/6.1.7** ⬜ não testados nesta rodada (ciclo completo de status até concluído, e
+  cancelamento sem órfão) — já cobertos por teste de integração real
+  (`confirmacao-cancelamento.test.ts`, 5 casos, `agendamentos.test.ts`), não repeti ao vivo por
+  tempo; ⬜ aqui significa "não verificado NESTA rodada do Gate 6", não "nunca verificado".
+
+### 6.2 Pagamento — ➖ não se aplica
+
+Asaas bloqueado (P11, credencial). Toda a seção fica ➖ com esta justificativa, não some do
+relatório.
+
+### 6.3 Mensageria — parcialmente verificável
+
+Sem `WHATSAPP_ACCESS_TOKEN`/`RESEND_API_KEY` configurados em `.env.local` — confirmado por
+grep, então **6.3.1/6.3.2 (número real, link `wa.me`) ficam ⬜**, não dá pra testar entrega de
+verdade nesta sessão. **6.3.3 (falha de envio não derruba a operação principal)** ✅ confirmado
+indiretamente: o agendamento acima foi criado com sucesso mesmo sem nenhuma credencial de
+mensageria configurada — o design já documentado em `mensageria.ts`/`push.ts` (best-effort,
+nunca trava o fluxo principal) se provou na prática, não só no código.
+
+### 6.4 Painel administrativo — parcialmente verificado
+
+**6.4.2** (criar/editar persiste) ✅ já coberto extensivamente nesta sessão inteira (P7, P8,
+P10 tiveram verificação ao vivo de CRUD). **6.4.1** (cada papel vê só o que deveria, testado
+logando com cada papel) ⬜ não testado nesta rodada — os testes de integração cobrem isso a
+nível de API (RBAC + RLS), mas não houve login real com um papel restrito (`professional`,
+`reception`) nesta sessão. Registrado como pendência de V3.
+
+### Pendências registradas
+
+- **6.1.6/6.1.7, 6.4.1** ficaram ⬜ nesta rodada do Gate 6 — cobertos por teste automatizado,
+  não por clique ao vivo. Não é falha, é escopo que sobrou pra uma passada futura se o tempo
+  permitir.
+- **6.3.1/6.3.2** seguem ⬜ até haver credencial real de WhatsApp/e-mail pra testar entrega.
+
+**Próxima fase do loop:** decisão a ser tomada na próxima iteração — continuar V4 (Gates 7-10,
+interface/responsividade/performance/SEO) ou pivotar pra construir o MFA, que segue sendo o
+achado de maior prioridade real do backlog.

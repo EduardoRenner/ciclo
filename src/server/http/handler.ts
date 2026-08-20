@@ -26,16 +26,23 @@ const METODOS_MUTANTES = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
  * conferir `Origin` explicitamente nas rotas que escrevem. Ausência de `Origin` **passa** —
  * é o caso normal de chamada servidor-a-servidor (cron com `CRON_SECRET`, webhook com
  * assinatura própria), nenhuma delas manda esse header; só um valor **presente e diferente**
- * do app é sinal de navegador sendo usado a partir de outro site.
+ * do host desta própria requisição é sinal de navegador sendo usado a partir de outro site.
+ *
+ * V3 (achado ao vivo, testando a jornada de agendamento público de verdade): a primeira versão
+ * comparava contra `NEXT_PUBLIC_APP_URL` fixo — quebrou o booking público na hora, porque o
+ * preview local roda numa porta diferente da configurada na env var (e o mesmo aconteceria em
+ * qualquer deploy preview da Vercel, com subdomínio dinâmico, ou custom domain). O jeito certo
+ * de checar "mesma origem" é contra o `Host` **desta própria requisição**, não contra uma URL
+ * fixa — assim funciona em qualquer domínio que o Next esteja servindo de verdade.
  */
 function origemValida(req: Request): boolean {
   if (!METODOS_MUTANTES.has(req.method)) return true
   const origin = req.headers.get('origin')
   if (!origin) return true
-  const esperado = process.env.NEXT_PUBLIC_APP_URL
-  if (!esperado) return true // sem a env var não dá pra comparar — não é o momento de travar toda escrita por isso
+  const host = req.headers.get('x-forwarded-host') ?? req.headers.get('host')
+  if (!host) return true // sem Host não dá pra comparar — não é o momento de travar toda escrita por isso
   try {
-    return new URL(origin).origin === new URL(esperado).origin
+    return new URL(origin).host === host
   } catch {
     return false
   }

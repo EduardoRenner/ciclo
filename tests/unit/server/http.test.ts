@@ -210,22 +210,19 @@ describe('handler global', () => {
 })
 
 // V2 (verificação estrutural, Gate 5.1.5): Origin explícito nas rotas que escrevem, segunda
-// camada de defesa além do SameSite do cookie.
+// camada de defesa além do SameSite do cookie. V3 (achado ao vivo testando o booking público
+// de verdade): a comparação é contra o `Host` da PRÓPRIA requisição, não uma URL fixa — um
+// valor fixo (`NEXT_PUBLIC_APP_URL`) quebra em qualquer domínio que não seja exatamente esse
+// (preview local em outra porta, preview da Vercel com subdomínio dinâmico, custom domain).
 describe('handler global · verificação de Origin (CSRF)', () => {
   beforeEach(() => {
     vi.spyOn(console, 'error').mockImplementation(() => {})
     vi.spyOn(console, 'warn').mockImplementation(() => {})
-    // Unit test não carrega .env.local (só os de integração fazem isso) — a checagem de
-    // Origin depende de NEXT_PUBLIC_APP_URL, então cada teste fixa o valor que precisa.
-    vi.stubEnv('NEXT_PUBLIC_APP_URL', 'https://app.ciclo.test')
   })
-  afterEach(() => {
-    vi.restoreAllMocks()
-    vi.unstubAllEnvs()
-  })
+  afterEach(() => vi.restoreAllMocks())
 
   function requisicaoMutante(method: string, headers: Record<string, string> = {}): Request {
-    return new Request('https://app.ciclo.test/api/v1/clients', { method, headers })
+    return new Request('https://app.ciclo.test/api/v1/clients', { method, headers: { host: 'app.ciclo.test', ...headers } })
   }
 
   it('POST sem header Origin passa — é o caso normal de servidor-a-servidor (cron, webhook)', async () => {
@@ -234,16 +231,25 @@ describe('handler global · verificação de Origin (CSRF)', () => {
     expect(r.status).toBe(200)
   })
 
-  it('POST com Origin igual ao app passa', async () => {
+  it('POST com Origin de mesmo host (Host da própria requisição) passa', async () => {
     const handler = rota(async () => ({ ok: true }))
     const r = await handler(requisicaoMutante('POST', { origin: 'https://app.ciclo.test' }), undefined)
     expect(r.status).toBe(200)
   })
 
-  it('sem NEXT_PUBLIC_APP_URL configurada, a checagem não trava a escrita (não dá pra comparar)', async () => {
-    vi.stubEnv('NEXT_PUBLIC_APP_URL', '')
+  it('funciona em qualquer domínio que o Next esteja servindo de verdade, não só num fixo — preview em porta diferente, por exemplo', async () => {
     const handler = rota(async () => ({ ok: true }))
-    const r = await handler(requisicaoMutante('POST', { origin: 'https://qualquer-coisa.test' }), undefined)
+    const req = new Request('http://localhost:4321/api/v1/public/algum-slug/book', {
+      method: 'POST',
+      headers: { host: 'localhost:4321', origin: 'http://localhost:4321' },
+    })
+    const r = await handler(req, undefined)
+    expect(r.status).toBe(200)
+  })
+
+  it('sem header Host na requisição, a checagem não trava a escrita (não dá pra comparar)', async () => {
+    const handler = rota(async () => ({ ok: true }))
+    const r = await handler(new Request('https://app.ciclo.test/api/v1/clients', { method: 'POST', headers: { origin: 'https://qualquer-coisa.test' } }), undefined)
     expect(r.status).toBe(200)
   })
 
@@ -261,7 +267,7 @@ describe('handler global · verificação de Origin (CSRF)', () => {
 
   it('GET com Origin de outro site passa — a checagem é só pra método que escreve', async () => {
     const handler = rota(async () => ({ ok: true }))
-    const r = await handler(new Request('https://app.ciclo.test/api/v1/clients', { headers: { origin: 'https://site-malicioso.test' } }), undefined)
+    const r = await handler(new Request('https://app.ciclo.test/api/v1/clients', { headers: { host: 'app.ciclo.test', origin: 'https://site-malicioso.test' } }), undefined)
     expect(r.status).toBe(200)
   })
 })
