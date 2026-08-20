@@ -3,6 +3,13 @@ import ResolucaoDeFila from '@/components/shell/resolucao-de-fila'
 import TabBar from '@/components/shell/tab-bar'
 import Topbar from '@/components/shell/topbar'
 
+import type { Metadata } from 'next'
+
+/** Painel de trabalho, não vitrine — nunca deve aparecer numa busca (Gate 10). */
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+}
+
 /**
  * Shell do app do profissional (TICKET-014). O middleware já garante sessão
  * para tudo sob este grupo de rotas; aqui só entra layout, não guarda de novo.

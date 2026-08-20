@@ -218,7 +218,7 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
               </div>
             ) : null}
             {perfil.phone ? (
-              <a href={`tel:${perfil.phone}`} className="flex items-center gap-2 text-corpo text-txt">
+              <a href={`tel:${perfil.phone}`} className="toque-48 flex items-center gap-2 text-corpo text-txt">
                 <Phone aria-hidden className="size-4 shrink-0 text-txt-3" />
                 {perfil.phone}
               </a>
@@ -228,7 +228,7 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
                 href={`https://instagram.com/${perfil.instagram}`}
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center gap-2 text-corpo text-txt"
+                className="toque-48 flex items-center gap-2 text-corpo text-txt"
               >
                 <AtSign aria-hidden className="size-4 shrink-0 text-txt-3" />
                 {perfil.instagram}
