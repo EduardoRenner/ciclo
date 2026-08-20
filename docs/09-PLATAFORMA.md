@@ -768,7 +768,7 @@ Não pode quebrar quem já usa.
 | **P2b · Modo direto de verdade** | branch de auto-confirmação para `inicio='direto'` (hoje não existe — achado em P2). Precisa decidir limite de risco/sinal antes de bypassar revisão humana — não é migration de coluna, é decisão de produto com risco real | **Alto** | ⬜ não feito de propósito, ver nota de P2 |
 | **P3 · Módulos** | `tenant_modules`, tela de configuração, modo solo | Médio | ⚠️ 2026-08-19 (TICKET-064), **parcial**: migration `0025` (`tenant_modules`, RLS igual `subscription_plans`/`message_templates`) — schema pronto, **nenhuma tela lê ainda**, mesma disciplina de P0. Modo solo (mecanismo **diferente**, deriva de `professionals.length`, não de módulo) corrigido em 2 telas reais: seletor de profissional no novo agendamento (`agenda/novo/formulario.tsx`, não existia) e confirmado que a agenda (`agenda.tsx`) já fazia isso desde antes — achado que valida o padrão em vez de inventar um novo. **Tela de configuração de módulos e sweep completo de modo solo (config/comissão) ficam de fora**, registrados como pendência |
 | **P4 · Onboarding** | fluxo de 3 min (§7), busca de profissão, link público no fim, **instrumentação do funil (§13.2)** | Médio | P0–P3 |
-| **P5 · Catálogo** | **3 profissões profundas + 9 rasas** (§5) | Médio — as 3 são pesquisa, não `INSERT` | P0 |
+| **P5 · Catálogo** | **3 profissões profundas + 9 rasas** (§5) | Médio — as 3 são pesquisa, não `INSERT` | ✅ 2026-08-19 (TICKET-065): migration `0026` — **barber** (profunda de beleza) ganhou os 6 serviços do catálogo real do `dom-rocha` (não inventados); **faxina** e **eletricista** (profundas novas) com 4 e 5 serviços, preço/duração de mercado brasileiro plausível; mais 7 rasas (encanador, personal, psicólogo, professor, fotógrafo, banho e tosa, jardineiro), 1-2 serviços cada. 17 profissões no catálogo (8 de beleza pré-existentes + 9 novas). Teste de integridade novo (`catalogo-profissoes.test.ts`, 7 casos) trava preço/duração > 0, nome não-genérico, e os 4 eixos preenchidos em toda profissão — nada na aplicação lê a tabela ainda, então sem esse teste uma migration futura poderia corromper o catálogo sem ninguém notar |
 | **P5.5 · Cliente se resolve sozinho** | fecha **G12**: cancelar e remarcar pelo mesmo link do WhatsApp, devolvendo a vaga à agenda | Baixo | ✅ 2026-08-19 (TICKET-063): novo `POST /api/v1/public/appointments/cancel/[token]`, mesmo token HMAC do TICKET-030 (nunca precisou de tabela nova — o token já autoriza qualquer ação sobre aquele agendamento, não só confirmar). "Remarcar" **não** ganhou fluxo próprio — vira cancelar + link "Marcar outro horário" pra página pública já existente, decisão de escopo pra não duplicar a UI de escolha de horário dentro de uma página sem sessão. A tela `/confirmar/[token]` parou de disparar a confirmação sozinha ao abrir (agora é escolha: "Vou sim" / "Preciso desmarcar") — com duas ações possíveis, disparar uma automaticamente deixou de fazer sentido |
 | **P6 · Marca e página** | personalização + página pública como mini-site (§8) + **assinatura discreta do plano grátis (§13.1)** | Médio | P3 |
 | **P7 · Recorrência** | fecha o G4 (§12) | **Alto** | P2 |
@@ -894,9 +894,14 @@ Honestidade sobre o que ainda é pergunta aberta, para não parecer mais resolvi
   contra produção — a §1.1 mostra o custo de continuar como está, mas a conta é do dono.
 - **Se o produto entra em campo com o teto de 12h assumido** (G11) ou se trabalho multi-sessão
   entra antes — depende de qual profissão vier primeiro, e isso ainda não está decidido.
-- **Qual é a terceira profissão profunda** (§5): a beleza é a aposta segura porque é onde há
-  conhecimento, mas se o objetivo for provar que o modelo generaliza, uma terceira de fora
-  (psicólogo, pelo modo solicitação) prova mais.
+- ✅ **Qual é a terceira profissão profunda** (§5): decidido em 2026-08-19 (P5) — **barbearia**,
+  reaproveitando o catálogo real do tenant `dom-rocha`. Ficou a aposta segura (onde há
+  conhecimento acumulado), não a que mais provaria generalização (psicólogo/solicitação faria
+  isso melhor) — critério de negócio, não técnico.
+- **Preço de faxina/diarista e eletricista precisa de confirmação de campo.** P5 usou preço/
+  duração plausíveis de mercado brasileiro (conhecimento geral, sem pesquisa ao vivo — sem
+  WebSearch disponível na sessão), não o mesmo nível de confiança do catálogo real de barbearia.
+  Antes de usar essas duas pra vender de verdade, vale confirmar os números com alguém da área.
 
 Nada disso bloqueia P0–P3, que é onde o trabalho começa.
 

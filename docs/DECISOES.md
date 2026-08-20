@@ -1577,3 +1577,13 @@ antes de escrever código novo: `agenda.tsx` já escondia o filtro de profission
 (`agenda/novo/formulario.tsx`) ainda mostrava o Select sempre — corrigido pra seguir o mesmo
 padrão. A tela de config de módulos (tenant_modules) e um sweep completo por outras telas de
 config/comissão ficaram de fora desta rodada — schema primeiro, como P0/P2.
+
+2026-08-19 · P5 pedia preço/duração pesquisados "que a área reconhece como certo" — de onde
+vieram os números, já que não há acesso a pesquisa de campo nesta sessão? · Para barbearia,
+reaproveitei o catálogo REAL do tenant dom-rocha (Corte R$45/40min, Corte+barba R$70/1h, etc.),
+que é dado de negócio de verdade já cadastrado nesta família de projetos, não inventado · Para
+faxina/diarista e eletricista (profissões novas), usei preço/duração plausíveis de mercado
+brasileiro urbano com base em conhecimento geral (sem WebSearch disponível nesta sessão) — é
+honesto dizer que isso é MELHOR que INSERT solto ("Serviço 1 · 60min · R$100"), mas NÃO é o
+mesmo nível de confiança do dom-rocha. Registrado como pendência real: antes de usar faxina/
+eletricista pra vender de verdade, os preços merecem confirmação com alguém da área (ver §19).
