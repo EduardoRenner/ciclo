@@ -2213,15 +2213,19 @@ export type Database = {
       tenants: {
         Row: {
           address: Json | null
+          cobranca: string | null
           created_at: string
           currency: string
           deleted_at: string | null
           document: string | null
           id: string
+          inicio: string | null
           name: string
+          onde: string | null
           phone: string | null
           plan: Database["public"]["Enums"]["plan_tier"]
           profession_id: string | null
+          ritmo: string | null
           settings: Json
           slug: string
           timezone: string
@@ -2231,15 +2235,19 @@ export type Database = {
         }
         Insert: {
           address?: Json | null
+          cobranca?: string | null
           created_at?: string
           currency?: string
           deleted_at?: string | null
           document?: string | null
           id?: string
+          inicio?: string | null
           name: string
+          onde?: string | null
           phone?: string | null
           plan?: Database["public"]["Enums"]["plan_tier"]
           profession_id?: string | null
+          ritmo?: string | null
           settings?: Json
           slug: string
           timezone?: string
@@ -2249,15 +2257,19 @@ export type Database = {
         }
         Update: {
           address?: Json | null
+          cobranca?: string | null
           created_at?: string
           currency?: string
           deleted_at?: string | null
           document?: string | null
           id?: string
+          inicio?: string | null
           name?: string
+          onde?: string | null
           phone?: string | null
           plan?: Database["public"]["Enums"]["plan_tier"]
           profession_id?: string | null
+          ritmo?: string | null
           settings?: Json
           slug?: string
           timezone?: string

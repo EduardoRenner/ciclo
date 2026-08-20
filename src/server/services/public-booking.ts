@@ -9,6 +9,7 @@ import { lerConfiguracoesAgenda } from '@/server/services/configuracoes-agenda'
 import { lerSite } from '@/server/services/site'
 import { normalizarTelefoneBR } from '@/server/services/telefone'
 import { criarAgendamento } from '@/server/services/agendamentos'
+import { notificarEquipe } from '@/server/services/mensageria'
 import { AppError } from '@/server/http/errors'
 
 import type { Database } from '@/server/db/types.gen'
@@ -132,6 +133,14 @@ function misturarComBranco(hex: string, fator: number): string {
 
 function weekdayPg(dia: Temporal.PlainDate): number {
   return dia.dayOfWeek % 7
+}
+
+/** "quinta, 14:30" no fuso do TENANT — nunca fatiar o ISO em UTC direto (armadilha conhecida). */
+function quandoLocal(startsAtIso: string, timezone: string): string {
+  const zoned = Temporal.Instant.from(startsAtIso).toZonedDateTimeISO(timezone)
+  const dia = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'][zoned.dayOfWeek % 7]
+  const hora = `${String(zoned.hour).padStart(2, '0')}:${String(zoned.minute).padStart(2, '0')}`
+  return `${dia}, ${hora}`
 }
 
 export type SlotPublico = { startsAt: string; endsAt: string; professionalId: string }
@@ -311,6 +320,18 @@ export async function criarAgendamentoPublico(slug: string, entrada: z.infer<typ
       },
       tenant.settings,
     )
+
+    // §4 eixo 3 (docs/09-PLATAFORMA.md): o cliente já lê "você vai receber a
+    // confirmação por WhatsApp", mas até aqui nada avisava a equipe que
+    // existe um pedido esperando — o aviso valia pra qualquer tenant, não só
+    // pra quem tiver `inicio = solicitacao` no futuro. Melhor esforço: uma
+    // falha de push nunca pode derrubar o agendamento que acabou de nascer.
+    void notificarEquipe(svc, tenant.id, {
+      title: 'Novo pedido de agendamento',
+      body: `${entrada.name} pediu horário para ${quandoLocal(entrada.startsAt, tenant.timezone)}.`,
+    }).catch((erro: unknown) => {
+      console.error(JSON.stringify({ level: 'error', event: 'push_equipe_falhou', tenantId: tenant.id }), erro)
+    })
 
     return { appointmentId: agendamento.id }
   })

@@ -1523,3 +1523,24 @@ renderizar por token em vez de string fixa — escrevê-lo agora reprovaria toda
 que ainda é 100% hardcoded de propósito (nada lê `profession_id` em runtime ainda). Forçar isso
 nesta rodada seria ou um teste que não protege nada, ou uma reescrita prematura da interface
 inteira sem P2 (comportamento por eixo) estar pronto para orientar o que cada tela deveria virar.
+
+2026-08-19 · Ao escrever a migration dos 4 eixos em tenants, professions.inicio='direto' para
+as 8 verticais de beleza (seed do P0) parecia sugerir que o app já auto-confirma agendamento pra
+elas · Verifiquei o código de ponta a ponta antes de assumir: não existe NENHUM caminho de
+auto-confirmação hoje — todo agendamento (público ou do painel) nasce `pending`, e só sai daí
+quando a cliente confirma pelo próprio link (redução de falta, TICKET-030) ou a equipe confirma
+no painel · `professions.inicio='direto'` é vocabulário para quando esse modo existir de verdade,
+registrado assim de propósito — não é bug do seed, mas precisava estar escrito, senão alguém lê a
+coluna no futuro e assume um comportamento que não existe. Construir o modo direto de verdade
+(bypass de revisão humana) fica em P2b, fase própria — envolve decidir limite de risco/sinal antes
+de deixar algo pular a revisão humana, e isso é decisão de produto, não algo a improvisar dentro
+de uma migration de coluna.
+
+2026-08-19 · O modo "solicitação" do plano previa construir aviso à equipe do zero · Achado: o
+`pending` universal já existia (nada precisou ser construído para isso) — só faltava avisar
+alguém. `push_subscriptions` já existia mas só tinha `inscricoesPushDoCliente` (dispositivo de
+CLIENTE com conta de staff, caso raro documentado). Criei `inscricoesPushDoTenant` +
+`notificarEquipe()` em cima da infraestrutura de push já existente (TICKET-056), sem tabela nova
+· Testado ponta a ponta com dispositivo de push morto/inválido: o agendamento nasce normalmente,
+o aviso falha em silêncio (mesmo padrão de "credencial de terceiro ausente" já usado 3x no
+projeto).

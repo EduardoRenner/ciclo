@@ -286,4 +286,30 @@ describe('POST /api/v1/public/:slug/book — a rota inteira', () => {
     },
     30_000,
   )
+
+  it(
+    // docs/09-PLATAFORMA.md §4 eixo 3: o booking passou a avisar a equipe por
+    // push. A inscrição abaixo é sintética (não recebe push de verdade) — o
+    // que este teste prova é que a TENTATIVA de aviso nunca derruba o
+    // agendamento, nem quando o único dispositivo inscrito está morto.
+    'push da equipe falhando não impede o agendamento de nascer',
+    async () => {
+      await svc.from('push_subscriptions').insert({
+        tenant_id: tenantId,
+        user_id: usuarios[0]!,
+        endpoint: 'https://push.exemplo.invalido/inscricao-de-teste',
+        p256dh: 'BNcRdreALRFXTkOOUHK1EtK2wtaz5Ry4YfYCA_0QTpQtUbVlUls0VJXg7A8u-Ts1XbjhazAkj7I99e8QcYP7DkM',
+        auth: 'tBHItJI5svbpez7KI4CCXg',
+      })
+
+      const r = await reservar(req(corpoBooking('16:00', '11988110070'), '203.0.113.22'), ctx())
+      expect(r.status).toBe(200)
+
+      // O agendamento nasceu mesmo com o único dispositivo inscrito sendo falso —
+      // é a garantia de "melhor esforço" de notificarEquipe() sendo exercida de ponta a ponta.
+      const json = (await r.json()) as { data: { appointmentId: string } }
+      expect(json.data.appointmentId).toBeTruthy()
+    },
+    30_000,
+  )
 })

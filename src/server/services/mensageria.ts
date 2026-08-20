@@ -3,7 +3,7 @@ import { enviarPush, type PayloadPush } from '@/server/providers/messaging/push'
 import { ErroDeEnvio, type MessagingProvider } from '@/server/providers/messaging/types'
 import { WhatsAppCloudProvider } from '@/server/providers/messaging/whatsapp'
 import { AppError } from '@/server/http/errors'
-import { inscricoesPushDoCliente, removerInscricaoPorEndpoint } from '@/server/services/push'
+import { inscricoesPushDoCliente, inscricoesPushDoTenant, removerInscricaoPorEndpoint } from '@/server/services/push'
 
 import type { Database } from '@/server/db/types.gen'
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -102,6 +102,38 @@ export async function enviarComFallback(
 
 function erroDeTexto(erro: unknown): string {
   return erro instanceof Error ? erro.message : String(erro)
+}
+
+/**
+ * `docs/09-PLATAFORMA.md` §4 eixo 3 (modo solicitação). Aviso operacional pra
+ * equipe, não mensagem de cliente — por isso não passa por `registrar()`
+ * (que exige `client_id`, e este alerta não tem um cliente-destinatário; o
+ * destinatário é a própria equipe). Melhor esforço: sem VAPID configurado ou
+ * sem ninguém inscrito, retorna `0` em silêncio — igual ao resto do produto
+ * quando falta credencial de terceiro (`docs/DECISOES.md`, padrão repetido
+ * 3x), nunca trava o fluxo que disparou o aviso.
+ */
+export async function notificarEquipe(
+  db: Cliente,
+  tenantId: string,
+  payload: PayloadPush,
+  enviarPushFn: (i: Parameters<typeof enviarPush>[0], p: PayloadPush) => ReturnType<typeof enviarPush> = enviarPush,
+): Promise<{ enviados: number }> {
+  const inscricoes = await inscricoesPushDoTenant(db, tenantId)
+  let enviados = 0
+
+  for (const inscricao of inscricoes) {
+    try {
+      await enviarPushFn(inscricao, payload)
+      enviados++
+    } catch (erro) {
+      if (erro instanceof ErroDeEnvio && erro.motivo === 'template_rejeitado') {
+        await removerInscricaoPorEndpoint(db, tenantId, inscricao.endpoint)
+      }
+    }
+  }
+
+  return { enviados }
 }
 
 async function registrar(

@@ -68,3 +68,19 @@ export async function removerInscricaoPorEndpoint(db: Cliente, tenantId: string,
   const { error } = await db.from('push_subscriptions').delete().eq('tenant_id', tenantId).eq('endpoint', endpoint)
   if (error) throw new AppError('INTERNAL', { cause: error })
 }
+
+/**
+ * `docs/09-PLATAFORMA.md` §4 eixo 3: todo agendamento — hoje, de qualquer
+ * tenant — nasce `pending` e o cliente lê "você vai receber a confirmação
+ * por WhatsApp", mas nada avisava a equipe que existe um pedido esperando.
+ * Achado ao implementar o modo "solicitação" (que reusa exatamente esse
+ * `pending`/`hold_expires_at`): a notificação faltava para TODO tenant, não
+ * só para quem tem `inicio = solicitacao` — corrigido para todos.
+ * Devolve os dispositivos de toda a equipe (não de uma cliente específica,
+ * ao contrário de `inscricoesPushDoCliente`).
+ */
+export async function inscricoesPushDoTenant(db: Cliente, tenantId: string) {
+  const { data, error } = await db.from('push_subscriptions').select('endpoint, p256dh, auth').eq('tenant_id', tenantId)
+  if (error) throw new AppError('INTERNAL', { cause: error })
+  return data ?? []
+}
