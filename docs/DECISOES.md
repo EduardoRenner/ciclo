@@ -1906,3 +1906,16 @@ explícita dentro de contêiner `flex-col + max-height + overflow-y-auto`. Corri
 calcula layout, um teste unitário nunca teria pego isso. Só verificação ao vivo contra
 navegador de verdade encontra — reforça por que o protocolo desta sessão nunca aceitou "passou
 no lint" como prova de UI funcionando.
+
+2026-08-20 · Próximo item do backlog: tela de séries de recorrência ou converter orçamento
+aprovado em agendamento? · Séries de recorrência. A conversão de orçamento tem uma decisão de
+UX real e ainda em aberto (como escolher data/hora reaproveitando a checagem de disponibilidade
+da agenda sem duplicar lógica) — resolver isso a toque de caixa dentro de uma iteração arriscaria
+uma decisão de produto malfeita. Séries já tinha o endpoint de cancelar pronto e testado desde
+P7; era puramente trabalho de UI, mesmo formato já validado em orçamentos.
+
+2026-08-20 · Copy da descrição de recorrência ("Toda terça" vs. "Terça-feira, toda semana"):
+por que dia da semana primeiro, nunca "Todo"/"Toda" antes? · Regra de copy sem concordância
+(já estabelecida em P1, docs/09-PLATAFORMA.md §3.2): "sábado"/"domingo" são masculinos, as
+demais são femininas via "-feira" — um artigo antes do dia quebraria a concordância pra metade
+dos casos. Dia primeiro + cláusula fixa depois evita o problema estruturalmente.

@@ -53,7 +53,6 @@ entradas:
 | Item | Por que ainda não foi feito |
 |---|---|
 | Preço de faxina/eletricista confirmado com gente da área | P5 usou conhecimento geral, sem WebSearch na sessão |
-| Tela de gestão de séries de recorrência (P7) | UI que só faz sentido com tenant de verdade usando |
 | Converter orçamento aprovado em agendamento (P8) | decisão de UX de como escolher data/hora |
 | Extensão automática do horizonte de séries (P7) | precisa de cron, não construído |
 | Fotos/galeria na página pública (P6) | precisa de desenho de consentimento LGPD primeiro |
@@ -628,3 +627,46 @@ real (§3), ou completar o Gate 8 formal se ainda houver tempo/valor. A esta alt
 plataforma já passou por dois ciclos de verificação (estrutural V1-V5 + design leve) sem
 achados S0/S1 novos há duas rodadas — sinal de que construção continua sendo a aposta de maior
 retorno.
+
+## Construção — Séries de recorrência, tela de gestão (TICKET-081)
+
+Decisão de dev sênior: entre os candidatos restantes do backlog, escolhi a tela de séries em
+vez de "converter orçamento em agendamento" — essa última tem uma decisão de UX real ainda em
+aberto (como escolher data/hora reaproveitando a checagem de disponibilidade da agenda sem
+duplicar lógica), enquanto séries é o mesmo formato já validado em orçamentos (listar + ação),
+sem decisão de produto pendente: cancelar já tinha endpoint pronto e testado desde P7.
+
+**Construído:** `descreverRegra()` (`src/core/recurrence/descrever.ts`, função pura) traduz os
+3 tipos de recorrência pra português — decisão de copy registrada: dia da semana sempre primeiro,
+nunca "Todo"/"Toda" antes dele, pra não precisar de concordância de gênero (sábado/domingo são
+masculinos, os demais femininos via "-feira" — mesma regra do P1). `listarSeries()` +
+`/admin/series` (lista com badge, contagem de ocorrências, cancelar com confirmação inline).
+Reaberta por Configurações → Receita recorrente.
+
+**Achado no caminho, diagnosticado até a causa raiz (não é bug do produto):** durante a
+verificação ao vivo, criar uma série pra um cliente cujo telefone já existia no banco deu
+`500 INTERNAL` genérico. Investigado até o fim: `resolverCliente()` (compartilhado com
+orçamentos/agendamentos) já faz lookup por `phone_hash` antes de inserir — está correto. A
+causa foi que meu **script de verificação temporário** tinha semeado um cliente inserindo
+direto na tabela sem popular `phone_hash` (só `seed-demo-barbearia.mjs`, um script de demo
+antigo, tem a mesma lacuna — nenhum código real da aplicação erra isso, `criarCliente()` e o
+próprio `resolverCliente()` sempre setam o hash). Não fiz nenhuma alteração de produto por
+causa disso — o comportamento correto (lookup + `unique constraint` como rede de segurança) já
+está certo; só a ferramenta de teste estava incompleta. Registrado aqui por transparência, não
+por ser um achado que exigiu correção.
+
+**Testado:** 6 casos unitários de `descreverRegra` (incluindo sábado/domingo, pra provar que a
+regra de concordância não quebra) + 3 de integração (`listarSeries`) + 2 de navegação.
+Verificado ao vivo com tenant descartável: série real criada pelo formulário de agendamento
+("Repetir este horário") → aparece na lista com 8 ocorrências → cancelar → lista reflete
+"Cancelada" sem reload → conferido direto no banco que a série e as 8 ocorrências viraram
+`canceled`. Tenant e script temporário apagados ao final, sem resíduo.
+
+`typecheck`/`lint` limpos. `test:unit` 441, `test:rls` 133, `test:integration` 245 — sem flake.
+`build` ok, `/admin/series` confirmada no manifesto.
+
+**Próxima fase do loop:** restam no backlog real — "converter orçamento aprovado em
+agendamento" (tem decisão de UX pendente, candidato natural se resolvida) e itens bloqueados
+por decisão do Eduardo (§4). Considerar também: com duas telas de gestão seguidas construídas
+(orçamentos, séries), pode valer a pena avaliar se há um padrão comum extraível, ou se cada
+uma seguir seu próprio ritmo continua sendo a escolha certa — decisão pra próxima iteração.

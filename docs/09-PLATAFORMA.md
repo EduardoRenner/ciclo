@@ -902,12 +902,10 @@ Honestidade sobre o que ainda é pergunta aberta, para não parecer mais resolvi
   duração plausíveis de mercado brasileiro (conhecimento geral, sem pesquisa ao vivo — sem
   WebSearch disponível na sessão), não o mesmo nível de confiança do catálogo real de barbearia.
   Antes de usar essas duas pra vender de verdade, vale confirmar os números com alguém da área.
-- **Tela de gestão de séries de recorrência** (§12): P7 (TICKET-067) construiu criar série
-  (formulário) e cancelar série (API), mas não uma tela que liste as séries ativas de um
-  tenant com botão de cancelar/editar — hoje isso só é possível via chamada direta à API ou
-  SQL. Não é esquecimento: o valor principal do P7 (a série existir e gerar ocorrências de
-  verdade) já está entregue e testado; a tela de gestão é trabalho de UI que pode vir depois,
-  quando houver um tenant de verdade usando recorrência pra guiar o design da lista.
+- ~~**Tela de gestão de séries de recorrência**~~ ✅ 2026-08-20 (TICKET-081): `/admin/series`
+  lista as últimas 100 (ativas primeiro) com nome da cliente/serviço/profissional, descrição em
+  português do padrão (`descreverRegra()`, novo em `src/core/recurrence/descrever.ts`) e botão
+  "Cancelar série" com confirmação inline, reaproveitando o endpoint que já existia.
 - **Extensão automática do horizonte de geração** (§12): cada série planta até 90 dias à
   frente na criação; estender pra sempre (rolar o horizonte conforme o tempo passa) precisa de
   um cron/job novo, que este ticket não construiu — registrado, não esquecido. Uma série "sem
