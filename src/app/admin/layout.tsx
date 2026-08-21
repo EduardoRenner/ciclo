@@ -1,6 +1,7 @@
 import ToastProvider from '@/components/ui/toast'
 import ResolucaoDeFila from '@/components/shell/resolucao-de-fila'
 import TabBar from '@/components/shell/tab-bar'
+import TransicaoDeTela from '@/components/shell/transicao-de-tela'
 import Topbar from '@/components/shell/topbar'
 
 import type { Metadata } from 'next'
@@ -39,7 +40,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           a errar de novo quando ela virou 64.
         */}
         <main className="px-[var(--gutter)] pb-[calc(var(--tabbar-h)+env(safe-area-inset-bottom)+28px)]">
-          {children}
+          <TransicaoDeTela>{children}</TransicaoDeTela>
         </main>
         <TabBar />
         <ResolucaoDeFila />

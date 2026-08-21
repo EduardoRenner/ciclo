@@ -1971,3 +1971,35 @@ Dois falsos positivos registrados para não custarem tempo de novo: (1) a ficha 
 placeholder de streaming do React, não render duplo; (2) `Segmented` nasceu com um utilitário
 `trilho` próprio que era cópia do `scroll-x` que já existia em `globals.css` — removido antes de
 commitar, o `scroll-x` já fazia encaixe por item, barra escondida e esmaecimento de borda.
+
+2026-08-19 · Interface Parte III, fases E3 e E2.
+
+**E3 — carregamento nas 18 telas que faltavam.** Só 8 de 27 tinham `loading.tsx`; nas outras o
+Next não mostra nada entre o toque e o Server Component terminar, e a tela anterior fica
+congelada — no 4G do salão isso lê como travamento. Em vez de 18 esqueletos à mão (que dariam
+18 ritmos verticais diferentes, o mesmo problema que o `PageHeader` resolveu), criado
+`components/ui/esqueleto-tela.tsx` com quatro peças componíveis (cabeçalho, lista, formulário,
+números) e cada `loading.tsx` compõe a **forma real** da sua tela. Esqueleto de forma errada é
+pior que nenhum: o conteúdo "pula" quando chega, e o pulo lê como defeito. `admin/page.tsx`
+ficou de fora de propósito — é `redirect()` puro, não tem tela para esqueletizar.
+
+**E2 — continuidade de navegação.** `TransicaoDeTela` no layout do admin (não por página: por
+página a animação reiniciaria a cada re-render interno — trocar de aba na ficha, filtrar lista —
+e a tela piscaria a cada interação). `key={pathname}` é o mecanismo inteiro: o React descarta a
+árvore anterior e monta a nova, sem biblioteca nem a API experimental de View Transitions.
+O recuo do fundo com sheet aberto saiu de graça: o Radix põe `data-scroll-locked` no `body`
+enquanto o diálogo está aberto, o que dá o gancho de CSS sem estado global nem contexto.
+
+**Defeito real encontrado durante a verificação desta fase — regra nova para a família.**
+A animação de entrada nasceu com `from { opacity: 0 }` + `fill-mode: both`. Medindo, a tela
+apareceu com `opacity: 0` e `currentTime` travado em 0: **enquanto uma animação está "running",
+o quadro `from` se aplica, independente de `fill-mode`** — então qualquer situação em que ela
+não avança (aba em segundo plano, painel que não compõe quadros) deixa a TELA INTEIRA invisível.
+Tirar o `fill-mode` não resolveu, porque o problema é o estado `running`, não o preenchimento.
+Resolvido com **piso de opacidade visível** (`from { opacity: 0.45 }`): o pior caso vira
+"conteúdo um pouco apagado" em vez de "tela branca", e a diferença entre 0,45 e 0 não é
+perceptível numa entrada de 220ms. **Regra:** enfeite nunca pode ter poder de esconder conteúdo
+— nenhuma animação decorativa deve ter `opacity: 0` num quadro que possa congelar.
+
+Registrado também que `document.hidden` no painel do navegador congela animação CSS: se uma
+medição acusar elemento preso no estado inicial, checar `document.hidden` antes de caçar bug.

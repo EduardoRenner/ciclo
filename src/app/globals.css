@@ -297,6 +297,57 @@
   }
 }
 
+/*
+ * Entrada de tela. O app trocava de tela em corte seco: a anterior sumia, a próxima aparecia,
+ * sem nenhuma relação visual entre as duas. Instalado como PWA, ao lado de app nativo, é a
+ * diferença que mais denuncia "isto é um site".
+ *
+ * Deslocamento pequeno de propósito (6px): o suficiente para o olho ler "chegou algo novo", sem
+ * virar animação que se nota. Quem repara na transição está reparando na coisa errada.
+ */
+@keyframes entrada-de-tela {
+  from {
+    /*
+     * Piso de 0,45 em vez de 0. Enquanto uma animação está "running", o quadro `from` se
+     * aplica — independente de `fill-mode`. Se ela congelar no tempo 0 (aba em segundo plano,
+     * painel que não compõe quadros), `opacity: 0` deixaria a TELA INTEIRA invisível.
+     * Encontrado na verificação, com `currentTime` travado em 0 e a tela apagada.
+     *
+     * Com piso visível, o pior caso vira "conteúdo um pouco apagado" em vez de "tela branca".
+     * Enfeite não pode ter poder de esconder conteúdo — e a diferença entre 0,45 e 0 não é
+     * perceptível numa entrada de 220ms.
+     */
+    opacity: 0.45;
+    transform: translateY(6px);
+  }
+}
+
+/*
+ * Sheet aberto → o conteúdo atrás recua. `data-scroll-locked` é posto no `body` pelo Radix
+ * enquanto o diálogo está aberto: dá o gancho sem precisar de estado global nem de contexto,
+ * e some sozinho ao fechar. Sem isso o sheet parece substituir a tela em vez de ficar em cima
+ * dela — é a profundidade que faz o gesto de fechar parecer óbvio.
+ */
+body[data-scroll-locked] .recua-com-sheet {
+  transform: scale(0.985);
+  transform-origin: top center;
+}
+
+.recua-com-sheet {
+  transition: transform var(--dur-3) var(--ease-ios);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-scroll-locked] .recua-com-sheet {
+    transform: none;
+  }
+}
+
+@utility entrada-de-tela {
+  /* Sem `fill-mode`: fora da janela da animação, vale o estado natural do elemento (visível). */
+  animation: entrada-de-tela var(--dur-2) var(--ease-ios);
+}
+
 @utility tabular {
   /* §2: sem isto a coluna de valores dança a cada dígito. */
   font-variant-numeric: tabular-nums;
