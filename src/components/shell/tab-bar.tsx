@@ -39,14 +39,26 @@ export default function TabBar({ hrefFab = '/admin/agenda/novo' }: Props) {
       className={cn(
         'fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/90 backdrop-blur-xl backdrop-saturate-150',
         'h-[calc(var(--tabbar-h)+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)]',
+        /*
+         * No monitor a barra vira coluna à esquerda. Não é enfeite: no celular ela custa 64px
+         * de uma tela de 812 (aceitável, o polegar precisa alcançar), mas num monitor de 900px
+         * de altura os mesmos 64px são gastos sem nenhum ganho — e a navegação horizontal, com
+         * 882px vazios dos dois lados, denunciava um app de celular esticado no meio da tela.
+         */
+        'lg:inset-y-0 lg:right-auto lg:h-auto lg:w-[var(--sidebar-w)] lg:border-r lg:border-t-0 lg:pb-0',
       )}
     >
-      <div className="mx-auto flex h-[var(--tabbar-h)] w-full max-w-[560px] items-stretch justify-around">
+      <div
+        className={cn(
+          'mx-auto flex h-[var(--tabbar-h)] w-full max-w-[560px] items-stretch justify-around',
+          'lg:h-full lg:flex-col lg:items-stretch lg:justify-start lg:gap-1 lg:px-3 lg:pt-6',
+        )}
+      >
         {esquerda.map((aba) => (
           <ItemAba key={aba.href} aba={aba} ativa={abaAtiva(pathname, aba.href)} />
         ))}
 
-        <div className="flex flex-1 items-center justify-center">
+        <div className="flex flex-1 items-center justify-center lg:order-first lg:flex-none lg:pb-4">
           {/*
             O FAB sobe para fora da barra: com 64px de altura ele não cabe mais
             dentro sem espremer os rótulos, e a peça mais importante da tela
@@ -59,6 +71,8 @@ export default function TabBar({ hrefFab = '/admin/agenda/novo' }: Props) {
             className={cn(
               'grid size-14 -translate-y-4 place-items-center rounded-[var(--radius-pill)]',
               'border-4 border-surface bg-acc text-on-acc shadow-fab',
+              // Na coluna lateral não há barra para "subir de dentro": vira um botão largo no topo.
+              'lg:h-12 lg:w-full lg:translate-y-0 lg:justify-start lg:gap-2 lg:border-0 lg:px-3 lg:flex lg:items-center',
               'transition duration-[var(--dur-1)] ease-[var(--ease-ios)] hover:brightness-110 active:scale-[.92]',
             )}
           >
@@ -86,6 +100,8 @@ function ItemAba({ aba, ativa }: { aba: Aba; ativa: boolean }) {
         // largos: sem ele o toque encolhe em telas menores que o esperado.
         'flex min-w-12 flex-1 flex-col items-center justify-center gap-0.5 pt-1.5',
         'transition duration-[var(--dur-1)] active:scale-[.94]',
+        // Na coluna, ícone e rótulo ficam lado a lado e a linha inteira é o alvo.
+        'lg:h-12 lg:flex-none lg:flex-row lg:justify-start lg:gap-3 lg:rounded-[var(--radius-sm)] lg:px-3 lg:pt-0 lg:hover:bg-surface-2',
         ativa ? 'text-acc-2' : 'text-txt-3 hover:text-txt-2',
       )}
     >
@@ -97,6 +113,7 @@ function ItemAba({ aba, ativa }: { aba: Aba; ativa: boolean }) {
       <span
         className={cn(
           'grid h-7 w-12 place-items-center rounded-[var(--radius-pill)] transition-colors duration-[var(--dur-1)]',
+          'lg:h-8 lg:w-8',
           ativa && 'bg-acc-soft',
         )}
       >

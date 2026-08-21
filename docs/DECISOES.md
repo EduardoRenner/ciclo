@@ -2003,3 +2003,36 @@ perceptível numa entrada de 220ms. **Regra:** enfeite nunca pode ter poder de e
 
 Registrado também que `document.hidden` no painel do navegador congela animação CSS: se uma
 medição acusar elemento preso no estado inicial, checar `document.hidden` antes de caçar bug.
+
+2026-08-19 · Interface Parte III, fases E4 e E5 — fim do plano.
+
+**E4 já estava pronta.** A varredura encontrou um único `overflow-x-auto` solto no app, e é a
+tabela de prévia da importação de clientes — onde está **certo** assim: `scroll-x` usa
+`display: flex` e quebraria a tabela. Os filtros e a faixa de 14 dias do agendamento público já
+passavam por `FilterRow`/`scroll-x` desde a Parte I. Nada a fazer.
+
+**E5 — a coluna lateral no monitor.** Medido: conteúdo de 558px em 1440px, **882px (61%)
+desperdiçados**, e a barra inferior comendo 7% da altura sem ganho nenhum (num monitor não
+existe polegar para alcançar). A partir de `lg` a barra de abas vira coluna à esquerda de 232px,
+com ícone e rótulo lado a lado.
+
+O truque que faz isso caber em poucas linhas: **zerar `--tabbar-h` no `lg`**. Três lugares
+dependem desse token por conta própria — folga inferior do conteúdo, `ActionBar` e viewport do
+toast — e nenhum precisou conhecer o breakpoint. Foi exatamente para isso que o token nasceu na
+Parte I, quando a barra mudou de 82 para 64px e todo `pb-24` solto pelo app ficou errado de uma
+vez.
+
+**Erro cometido e corrigido na verificação:** a primeira versão usava
+`lg:ml-[var(--sidebar-w)]` na mesma camada do `mx-auto`. Margem explícita de um lado anula o
+`auto` do outro, então o conteúdo grudava na coluna com 649px vazios à direita. Resolvido com
+duas camadas — a de fora recua (`lg:pl-`), a de dentro centraliza (`mx-auto`).
+
+**Escopo reduzido de propósito.** O documento previa também lista+detalhe em duas colunas no
+desktop. Ficou de fora: toca todas as telas de lista, o ganho é especulativo, e o produto é
+usado em pé, com uma mão, no celular. A coluna lateral entrega a maior parte do valor da fase
+com risco quase zero — é `lg:` puro, e foi confirmado ao vivo que o mobile não mudou (barra
+inferior de 64px, zero alvo abaixo do mínimo, zero estouro).
+
+**Resultado da Parte III, medido:** ficha do cliente de 2429px (3,0 telas) para 995–1279px por
+camada; 8 → 26 telas com estado de carregamento; nenhum alvo abaixo de 44px; transição de
+entrada entre rotas; e o desktop deixou de ser uma tira de celular no meio de um fundo preto.

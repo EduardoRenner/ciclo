@@ -82,6 +82,8 @@
    * ação flutuante e viewport do toast — e cada um tinha o seu.
    */
   --tabbar-h: 64px;
+  /* Largura da coluna de navegação no monitor (a barra de abas vira lateral a partir de `lg`). */
+  --sidebar-w: 232px;
 
   /*
    * Movimento. O documento nunca definiu curva nem duração, então cada
@@ -93,6 +95,18 @@
   --dur-1: 120ms;
   --dur-2: 220ms;
   --dur-3: 320ms;
+}
+
+/*
+ * No monitor a navegação sai de baixo e vira coluna lateral, então a altura reservada para a
+ * barra inferior deixa de existir. Zerar o token aqui conserta de uma vez os três lugares que
+ * dependem dele — folga do conteúdo, `ActionBar` e viewport do toast — sem que nenhum deles
+ * precise conhecer o breakpoint.
+ */
+@media (min-width: 1024px) {
+  :root {
+    --tabbar-h: 0px;
+  }
 }
 
 @theme inline {

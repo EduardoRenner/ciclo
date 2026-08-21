@@ -32,6 +32,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         gerada — `docs/08-REDESIGN-E-IDENTIDADE.md` Parte II §B3); removido:
         profundidade agora vem só de superfície e sombra (Parte II §6).
       */}
+      {/*
+        No `lg` a navegação vira coluna à esquerda: o shell recua a largura dela e a coluna de
+        conteúdo continua centralizada no espaço que sobra — o app deixa de ser uma tira de
+        celular no meio do monitor sem que nada mude no celular.
+      */}
+      {/*
+        Duas camadas de propósito: a de fora recua a largura da coluna de navegação (`lg`), a de
+        dentro mantém o `mx-auto`. Feito com `ml` numa camada só, a margem explícita anulava o
+        `auto` do outro lado e o conteúdo grudava na coluna, com 649px vazios à direita.
+      */}
+      <div className="lg:pl-[var(--sidebar-w)]">
       <div className="mx-auto min-h-dvh max-w-[560px] sm:border-x sm:border-line">
         <Topbar />
         {/*
@@ -42,6 +53,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <main className="px-[var(--gutter)] pb-[calc(var(--tabbar-h)+env(safe-area-inset-bottom)+28px)]">
           <TransicaoDeTela>{children}</TransicaoDeTela>
         </main>
+      </div>
+        {/* `fixed`: fica fora da coluna de conteúdo para poder virar barra lateral no `lg`. */}
         <TabBar />
         <ResolucaoDeFila />
       </div>
