@@ -1,5 +1,18 @@
 # 11 · INTERFACE — ESTRUTURA E FLUXO
 
+> **Executado em 2026-08-19.** Resultado medido, contra os números do diagnóstico abaixo:
+>
+> | | Antes | Depois |
+> |---|---|---|
+> | Ficha do cliente | 2429px (3,0 telas) | 995–1279px por camada |
+> | Menor alvo de toque | 16px (ação destrutiva) | nenhum abaixo de 44px |
+> | Telas com carregamento | 8 de 27 | 26 de 27 (a que falta é `redirect`) |
+> | Transição entre rotas | nenhuma | entrada de 220ms com a curva do iOS |
+> | Desktop (1440px) | 61% vazio, barra comendo 7% da altura | coluna lateral, conteúdo centralizado |
+>
+> Detalhe de cada decisão em `DECISOES.md` (três entradas de 2026-08-19). E5 saiu com escopo
+> reduzido — a lista+detalhe em duas colunas foi cortada de propósito; o motivo está lá.
+
 > **Parte III** do trabalho de interface. As duas anteriores estão em
 > `08-REDESIGN-E-IDENTIDADE.md` e **já estão no ar** — este documento não as repete.
 >
@@ -7,7 +20,7 @@
 > |---|---|---|
 > | I | **Execução** — a mecânica chegava quebrada na tela | ✅ aplicada |
 > | II | **Identidade** — a interface não tinha opinião visual | ✅ aplicada |
-> | III | **Estrutura e fluxo** — como a informação se organiza e como se navega | ⬜ este documento |
+> | III | **Estrutura e fluxo** — como a informação se organiza e como se navega | ✅ aplicada |
 
 ---
 
