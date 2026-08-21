@@ -12,7 +12,7 @@ import {
   UserPlus,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useMemo, useState, useTransition } from 'react'
 
 import Avatar from '@/components/ui/avatar'
@@ -20,7 +20,9 @@ import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import IconButton from '@/components/ui/icon-button'
 import IconeAnel from '@/components/ui/icone-anel'
+import ActionBar from '@/components/ui/action-bar'
 import SectionHeader from '@/components/ui/section-header'
+import Segmented from '@/components/ui/segmented'
 import Sheet from '@/components/ui/sheet'
 import StatTile from '@/components/ui/stat-tile'
 import { useToast } from '@/components/ui/toast'
@@ -86,6 +88,13 @@ function aniversario(iso: string | null): string | null {
   return new Date(2000, Number(mes) - 1, Number(dia)).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })
 }
 
+const ABAS_FICHA = [
+  { valor: 'resumo', rotulo: 'Resumo' },
+  { valor: 'historico', rotulo: 'Histórico' },
+  { valor: 'fidelidade', rotulo: 'Fidelidade' },
+  { valor: 'ficha', rotulo: 'Ficha' },
+]
+
 export default function Ficha({
   ficha,
   modelos,
@@ -104,7 +113,30 @@ export default function Ficha({
   configFidelidade: ConfigFidelidade
 }) {
   const router = useRouter()
+  const parametros = useSearchParams()
   const mostrarToast = useToast()
+
+  /**
+   * A aba nasce da URL (link de ficha aberta em "Histórico" abre em "Histórico") mas vive em
+   * estado local. `router.replace` foi tentado primeiro e está errado aqui: a página é
+   * `force-dynamic`, então trocar de aba viraria ida ao servidor e um piscar de tela — sendo
+   * que o dado das quatro abas já veio junto na primeira carga. Trocar de aba é mudar de
+   * camada, não buscar de novo.
+   *
+   * `history.replaceState` mantém a URL compartilhável e restaurável sem re-renderizar a rota
+   * nem empilhar entrada no botão voltar.
+   */
+  const [aba, setAba] = useState(() => {
+    const daUrl = parametros.get('aba')
+    return ABAS_FICHA.some((a) => a.valor === daUrl) ? (daUrl as string) : 'resumo'
+  })
+
+  function trocarAba(nova: string) {
+    setAba(nova)
+    const p = new URLSearchParams(window.location.search)
+    p.set('aba', nova)
+    window.history.replaceState(null, '', `${window.location.pathname}?${p.toString()}`)
+  }
   const [salvando, iniciarSalvamento] = useTransition()
 
   const [editando, setEditando] = useState(false)
@@ -202,8 +234,11 @@ export default function Ficha({
   const selo = ciclo ? ROTULO_CICLO[ciclo.state] : null
   const preferenciasPreenchidas = Object.entries(cliente.preferences).filter(([, v]) => v.trim() !== '')
 
+  // Folga maior que o padrão: a `ActionBar` desta tela é permanente (não aparece só na seleção,
+  // como em "Recuperar"), então o fim da lista precisa passar por baixo dela. `pb-8` deixava a
+  // última linha do histórico escondida atrás da barra.
   return (
-    <div className="pb-8">
+    <div className="pb-20">
       {/* O voltar mora na Topbar desde o redesenho — dois numa tela só confundem. */}
       <header className="flex items-center gap-3 py-5">
         <Avatar nome={cliente.name} tamanho="lg" />
@@ -247,30 +282,12 @@ export default function Ficha({
         </Card>
       ) : null}
 
-      <div className="grid grid-cols-2 gap-3">
-        <StatTile rotulo="Já gastou" valor={dinheiro.format(metricas.ltvCents / 100)} />
-        <StatTile rotulo="Visitas" valor={String(metricas.visitas)} />
-        <StatTile rotulo="Ticket médio" valor={dinheiro.format(metricas.ticketMedioCents / 100)} />
-        <StatTile rotulo="Faltas" valor={String(metricas.faltas)} />
-      </div>
-
-      <div className="mt-4 grid gap-2">
-        <Button largura="cheia" onClick={() => setEscolhendoMensagem(true)}>
-          <MessageCircle className="size-4" />
-          Mandar mensagem pronta
-        </Button>
-        <Button variante="secondary" largura="cheia" onClick={() => router.push(`/admin/agenda/novo?cliente=${cliente.id}`)}>
-          <CalendarDays className="size-4" />
-          Marcar horário
-        </Button>
-        <Button variante="secondary" largura="cheia" onClick={() => router.push(`/admin/orcamentos/novo?cliente=${cliente.id}`)}>
-          <FileText className="size-4" />
-          Criar orçamento
-        </Button>
-      </div>
-
-      {/* Preferências: o "caderninho" que faz a cliente se sentir conhecida. */}
-      <section className="mt-7">
+      {/*
+        Camada 1 — o que a profissional precisa COM O CLIENTE NA CADEIRA. Estava no segundo
+        scroll, embaixo de LTV e pontos: a pergunta "como ele gosta do corte?" chegava depois
+        da pergunta "quanto ele vale?". Agora abre sem rolar.
+      */}
+      <section className="mt-1">
         <SectionHeader icone={<IconeAnel className="size-3.5" />}>Como atender</SectionHeader>
         <Card>
           {preferenciasPreenchidas.length === 0 ? (
@@ -304,6 +321,34 @@ export default function Ficha({
         ) : null}
       </section>
 
+      {/* Camada 2 — a ficha responde a três perguntas diferentes; cada aba é uma delas. */}
+      <Segmented
+        segmentos={ABAS_FICHA}
+        valor={aba}
+        aoTrocar={trocarAba}
+        rotulo="Seções da ficha"
+        className="mt-6"
+      />
+
+      {aba === 'resumo' ? (
+        <div className="mt-4">
+          <div className="grid grid-cols-2 gap-3">
+            <StatTile rotulo="Já gastou" valor={dinheiro.format(metricas.ltvCents / 100)} />
+            <StatTile rotulo="Visitas" valor={String(metricas.visitas)} />
+            <StatTile rotulo="Ticket médio" valor={dinheiro.format(metricas.ticketMedioCents / 100)} />
+            <StatTile rotulo="Faltas" valor={String(metricas.faltas)} />
+          </div>
+
+          <Button
+            variante="secondary"
+            largura="cheia"
+            className="mt-3"
+            onClick={() => router.push(`/admin/orcamentos/novo?cliente=${cliente.id}`)}
+          >
+            <FileText className="size-4" />
+            Criar orçamento
+          </Button>
+
       {(cliente.birthDate || cliente.preferredProfessionalName || indicadoPor || indicados.length > 0) && (
         <section className="mt-7">
           <SectionHeader>Relacionamento</SectionHeader>
@@ -320,12 +365,18 @@ export default function Ficha({
                 <span className="text-corpo">Sempre atende com {cliente.preferredProfessionalName}</span>
               </div>
             ) : null}
+            {/* "Indicada"/"Indicado" some: o mesmo app é de barbearia e de manicure, e o texto
+                não pode escolher um gênero (Parte II). "Veio por indicação de" resolve sem
+                rodeio. */}
             {indicadoPor ? (
               <div className="flex items-center gap-2.5">
                 <UserPlus className="size-4 shrink-0 text-acc-2" />
                 <span className="text-corpo">
-                  Indicada por{' '}
-                  <Link href={`/admin/clientes/${indicadoPor.id}`} className="font-semibold text-acc-2 underline-offset-2 hover:underline">
+                  Veio por indicação de{' '}
+                  <Link
+                    href={`/admin/clientes/${indicadoPor.id}`}
+                    className="toque-48 inline-flex font-semibold text-acc-2 underline-offset-2 hover:underline"
+                  >
                     {indicadoPor.name}
                   </Link>
                 </span>
@@ -334,30 +385,51 @@ export default function Ficha({
             {indicados.length > 0 ? (
               <div className="flex items-start gap-2.5">
                 <Gift className="size-4 shrink-0 translate-y-0.5 text-acc-2" />
-                <span className="text-corpo">
-                  Já trouxe {indicados.length} {indicados.length === 1 ? 'cliente' : 'clientes'}:{' '}
-                  {indicados.map((i, idx) => (
-                    <span key={i.id}>
-                      {idx > 0 ? ', ' : ''}
-                      <Link href={`/admin/clientes/${i.id}`} className="font-semibold text-acc-2 underline-offset-2 hover:underline">
+                <div className="min-w-0 flex-1">
+                  <p className="text-corpo">
+                    Já trouxe {indicados.length} {indicados.length === 1 ? 'cliente' : 'clientes'}
+                  </p>
+                  {/* Eram links separados por vírgula dentro do parágrafo, de 18px cada — alvo
+                      impossível no polegar. Viram pastilhas: cada nome ganha área própria. */}
+                  <div className="mt-1.5 flex flex-wrap gap-1.5">
+                    {indicados.map((i) => (
+                      <Link
+                        key={i.id}
+                        href={`/admin/clientes/${i.id}`}
+                        className="toque-48 inline-flex h-10 items-center rounded-[var(--radius-pill)] border border-line-2 bg-surface-2 px-3 text-label font-semibold text-txt-2 transition-colors hover:bg-surface-3 hover:text-txt"
+                      >
                         {i.name}
                       </Link>
-                    </span>
-                  ))}
-                </span>
+                    ))}
+                  </div>
+                </div>
               </div>
             ) : null}
           </Card>
         </section>
       )}
 
-      <Fidelidade clientId={cliente.id} pontosIniciais={pontos} assinaturaInicial={assinatura} planos={planos} config={configFidelidade} />
-      <PacotesCarteira pacotes={pacotes} saldoCarteiraCents={saldoCarteiraCents} />
-      <Saude clientId={cliente.id} saude={saude} fotos={fotos} consentimentos={consentimentos} />
-      <Notas clientId={cliente.id} iniciais={notasRegistradas} />
+        </div>
+      ) : null}
 
-      <section className="mt-7">
-        <SectionHeader icone={<Scissors className="size-3.5" />}>Histórico ({historico.length})</SectionHeader>
+      {aba === 'fidelidade' ? (
+        <div className="mt-4">
+          <Fidelidade clientId={cliente.id} pontosIniciais={pontos} assinaturaInicial={assinatura} planos={planos} config={configFidelidade} />
+          <PacotesCarteira pacotes={pacotes} saldoCarteiraCents={saldoCarteiraCents} />
+        </div>
+      ) : null}
+
+      {aba === 'ficha' ? (
+        <div className="mt-4">
+          <Notas clientId={cliente.id} iniciais={notasRegistradas} />
+          <Saude clientId={cliente.id} saude={saude} fotos={fotos} consentimentos={consentimentos} />
+        </div>
+      ) : null}
+
+      {aba === 'historico' ? (
+        <div className="mt-4">
+      <section className="mt-3">
+        <SectionHeader icone={<Scissors className="size-3.5" />}>Atendimentos ({historico.length})</SectionHeader>
         {historico.length === 0 ? (
           <Card>
             <p className="text-secundario text-txt-3">Ainda não veio nenhuma vez.</p>
@@ -399,6 +471,25 @@ export default function Ficha({
           </Card>
         </section>
       ) : null}
+        </div>
+      ) : null}
+
+      {/*
+        Camada 3 — as duas ações que a pessoa realmente faz nesta tela. Eram botões no meio da
+        página, que sumiam no primeiro rolar; agora acompanham qualquer aba.
+      */}
+      <ActionBar>
+        <div className="grid grid-cols-2 gap-2">
+          <Button variante="secondary" largura="cheia" onClick={() => router.push(`/admin/agenda/novo?cliente=${cliente.id}`)}>
+            <CalendarDays className="size-4" />
+            Horário
+          </Button>
+          <Button largura="cheia" onClick={() => setEscolhendoMensagem(true)}>
+            <MessageCircle className="size-4" />
+            Mensagem
+          </Button>
+        </div>
+      </ActionBar>
 
       {/* ─── escolher mensagem pronta ─── */}
       <Sheet aberto={escolhendoMensagem} aoFechar={(a) => !a && setEscolhendoMensagem(false)} titulo="Mensagem pronta">

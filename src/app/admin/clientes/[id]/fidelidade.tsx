@@ -195,11 +195,14 @@ export default function Fidelidade({ clientId, pontosIniciais, assinaturaInicial
                     {assinatura.sessionsPerMonth ? ` · ${assinatura.sessionsPerMonth}x` : ' · ilimitado'} · cobra dia{' '}
                     {assinatura.billingDay}
                   </p>
+                  {/* Ação destrutiva (encerra a mensalidade de um cliente pagante): `toque-48`
+                      leva a área tocável ao mínimo, e o tom sai de `txt-3` — cinza de texto
+                      apagado não é cor de coisa que cobra confirmação. */}
                   <button
                     type="button"
                     onClick={cancelar}
                     disabled={pendente}
-                    className="mt-2 text-label text-txt-3 underline-offset-2 hover:text-bad hover:underline"
+                    className="toque-48 mt-2 inline-flex text-label font-semibold text-txt-2 underline-offset-2 transition-colors hover:text-bad hover:underline disabled:opacity-50"
                   >
                     Cancelar assinatura
                   </button>

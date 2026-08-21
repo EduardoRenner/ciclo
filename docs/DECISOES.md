@@ -1934,3 +1934,40 @@ desde a última auditoria dedicada? · Focar no que mudou — as 3 telas constru
 achados novos há duas rodadas); auditar especificamente o código novo contra os mesmos padrões
 de defeito já catalogados (toque, overflow, estados de tela) é onde realisticamente haveria algo
 para achar — e havia: loading.tsx ausente nas duas telas novas.
+
+2026-08-19 · Interface Parte III (`docs/11-INTERFACE-ESTRUTURA-E-FLUXO.md`), fases E0 e E1.
+
+**E0 — sobra de alvo da Parte I.** `toque-48` usava `inset: -4px 0` + `min-height: 48px`: num
+elemento de 16px isso rendia 48px de área **deslocados para baixo**, com metade da área tocável
+fora do que a pessoa enxerga. Passou a centralizar (`top: 50%` + `translateY(-50%)`), o que vale
+igual para alvo de 16 ou de 40px. Corrigidos: "Cancelar assinatura" (16px, e **destrutivo** —
+encerra mensalidade de cliente pagante) e os links de indicados (18px, separados por vírgula
+dentro do parágrafo). Os indicados viraram pastilhas de 40px+`toque-48`: nome em link inline não
+tem como virar alvo decente. De quebra, "Indicada por" virou "Veio por indicação de" — o mesmo
+app é de barbearia e de manicure, e o texto não pode escolher um gênero (Parte II).
+
+**E1 — a ficha em camadas.** Era 2429px numa pilha só (3,0 telas de rolagem), sete blocos de
+peso visual idêntico, sem índice. O problema não era quantidade — todo bloco ali é útil — era
+**não haver camada**: a ficha responde a três perguntas diferentes ("quem é", "como atender",
+"quanto vale") fingindo ser uma. Agora:
+- **Camada 1, sem rolar:** nome, telefone, etiquetas, alerta de ciclo e **"Como atender"**. Este
+  último subiu do segundo scroll para o topo — é o que a profissional precisa com o cliente na
+  cadeira, e estava embaixo de LTV e pontos.
+- **Camada 2:** `Segmented` novo com Resumo · Histórico · Fidelidade · Ficha.
+- **Camada 3:** `ActionBar` permanente com as duas ações reais (Horário, Mensagem), que eram
+  botões no meio da página e sumiam no primeiro rolar.
+
+Medido depois: 995–1279px por aba (1,2–1,6 telas), contra 2429px antes.
+
+**A aba NÃO usa `router.replace`.** Foi a primeira tentativa e está errada aqui: a página é
+`force-dynamic`, então trocar de aba viraria ida ao servidor e piscar de tela — sendo que o dado
+das quatro abas já veio junto na primeira carga. Ficou `useState` + `history.replaceState`: URL
+continua compartilhável e restaurável, sem re-renderizar rota nem empilhar entrada no voltar.
+**Regra para a família:** aba dentro de uma tela é troca de camada, não navegação; só vira rota
+quando o conteúdo de cada aba for buscado separado.
+
+Dois falsos positivos registrados para não custarem tempo de novo: (1) a ficha aparece
+**duplicada no DOM** em dev — a segunda cópia está dentro de `div#S:2[hidden]`, que é o
+placeholder de streaming do React, não render duplo; (2) `Segmented` nasceu com um utilitário
+`trilho` próprio que era cópia do `scroll-x` que já existia em `globals.css` — removido antes de
+commitar, o `scroll-x` já fazia encaixe por item, barra escondida e esmaecimento de borda.
