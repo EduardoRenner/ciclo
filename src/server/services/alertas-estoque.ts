@@ -9,6 +9,8 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 type Cliente = SupabaseClient<Database>
 
 const JANELA_CONSUMO_DIAS = 30
+/** Teto de linhas que o PostgREST devolve numa consulta sem `range`. */
+const TAMANHO_PAGINA = 1000
 
 export type AlertaEstoque = {
   productId: string
@@ -59,24 +61,52 @@ export async function listarAlertasDeEstoque(db: Cliente, tenantId: string, hoje
     return recompra || validade !== 'ok'
   })
 
-  // Só quem sobrou do filtro acima é consultado — poucos produtos, uma consulta
-  // de existência cada, em paralelo. `head` não traz linha nenhuma de volta.
   const acompanhados = new Set<string>()
-  await Promise.all(
-    candidatos.map(async (produto) => {
-      if (produto.stock_qty > 0 || (consumoTotalPorProduto.get(produto.id) ?? 0) > 0) {
-        acompanhados.add(produto.id)
-        return
-      }
-      const { count } = await db
-        .from('stock_moves')
-        .select('product_id', { count: 'exact', head: true })
-        .eq('tenant_id', tenantId)
-        .eq('product_id', produto.id)
-        .limit(1)
-      if ((count ?? 0) > 0) acompanhados.add(produto.id)
-    }),
-  )
+  // Estoque na prateleira ou consumo recente já provam que o salão acompanha o
+  // produto, sem custar consulta nenhuma. Só o resto precisa olhar o histórico.
+  const semSinalDireto = candidatos.filter((produto) => {
+    if (produto.stock_qty > 0 || (consumoTotalPorProduto.get(produto.id) ?? 0) > 0) {
+      acompanhados.add(produto.id)
+      return false
+    }
+    return true
+  })
+
+  if (semSinalDireto.length > 0) {
+    const ids = semSinalDireto.map((p) => p.id)
+    const { data: movimentos, error: erroMovimentos } = await db
+      .from('stock_moves')
+      .select('product_id')
+      .eq('tenant_id', tenantId)
+      .in('product_id', ids)
+      .limit(TAMANHO_PAGINA)
+    if (erroMovimentos) throw new AppError('INTERNAL', { cause: erroMovimentos })
+
+    for (const m of movimentos ?? []) acompanhados.add(m.product_id)
+
+    /*
+     * Uma consulta só resolve o caso normal — mas o PostgREST corta em
+     * `TAMANHO_PAGINA` linhas, e um único produto muito movimentado pode
+     * consumir a página inteira e esconder os outros. Ausência só é conclusiva
+     * quando o resultado veio abaixo do corte; quando bateu no teto, os que
+     * faltaram são conferidos um a um. Esta tela roda a cada carregamento de
+     * "Hoje": N consultas por padrão seria caro à toa.
+     */
+    if ((movimentos?.length ?? 0) >= TAMANHO_PAGINA) {
+      const duvidosos = ids.filter((id) => !acompanhados.has(id))
+      await Promise.all(
+        duvidosos.map(async (id) => {
+          const { count } = await db
+            .from('stock_moves')
+            .select('product_id', { count: 'exact', head: true })
+            .eq('tenant_id', tenantId)
+            .eq('product_id', id)
+            .limit(1)
+          if ((count ?? 0) > 0) acompanhados.add(id)
+        }),
+      )
+    }
+  }
 
   const alertas: AlertaEstoque[] = []
   for (const produto of candidatos) {

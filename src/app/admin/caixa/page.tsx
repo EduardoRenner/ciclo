@@ -17,6 +17,24 @@ import Caixa from './caixa'
 const DATA = /^\d{4}-\d{2}-\d{2}$/
 
 /**
+ * O formato bater não garante que a data existe: `2026-02-31` e `2026-13-45`
+ * passam pela expressão e fazem o `Temporal` estourar `RangeError`, o que
+ * derrubaria a tela inteira por causa de um parâmetro de URL que qualquer um
+ * pode digitar. Data impossível é tratada como ausente — cai em hoje.
+ */
+function diaPedido(valor: string | undefined, hoje: Temporal.PlainDate): Temporal.PlainDate {
+  if (!valor || !DATA.test(valor)) return hoje
+  try {
+    const dia = Temporal.PlainDate.from(valor)
+    // Dia do futuro não é erro de digitação a ser rejeitado com mensagem: é
+    // "ainda não aconteceu". Volta para hoje, que é o que a pessoa queria ver.
+    return Temporal.PlainDate.compare(dia, hoje) <= 0 ? dia : hoje
+  } catch {
+    return hoje
+  }
+}
+
+/**
  * O fechamento de caixa existia inteiro no servidor desde o TICKET-047
  * (`services/caixa.ts`, `GET /cash/daily`, `GET /cash/summary`) e nunca teve
  * tela — a pasta `admin/caixa/` estava no repositório, vazia. É o ritual diário
@@ -50,10 +68,7 @@ export default async function PaginaCaixa({ searchParams }: { searchParams: Prom
   const timezone = tenantRow?.timezone ?? 'America/Sao_Paulo'
 
   const hoje = Temporal.Now.instant().toZonedDateTimeISO(timezone).toPlainDate()
-  const pedido = (await searchParams).dia
-  // Data do futuro não é erro de digitação a ser rejeitado com mensagem: é
-  // "ainda não aconteceu". Volta para hoje, que é o que a pessoa queria ver.
-  const dia = pedido && DATA.test(pedido) && Temporal.PlainDate.compare(pedido, hoje) <= 0 ? Temporal.PlainDate.from(pedido) : hoje
+  const dia = diaPedido((await searchParams).dia, hoje)
   const mes = `${dia.year}-${String(dia.month).padStart(2, '0')}`
 
   // O caixa conta comanda fechada; "Faturado hoje" conta atendimento concluído.

@@ -439,9 +439,16 @@ const PRIMEIROS_PASSOS: AcaoSugerida[] = [
 ]
 
 export async function centralDeAcoes(db: Cliente, tenantId: string): Promise<CentralDeAcoes> {
-  const [clientes, agendamentos] = await Promise.all([
+  // As cinco consultas saem juntas de propósito. Descobrir "é conta nova?" antes
+  // de pedir o resto custaria um round-trip a mais em TODO carregamento de
+  // "Hoje" — a tela mais aberta do produto — para economizar três consultas
+  // vazias só em contas que ainda não têm dado nenhum.
+  const [clientes, agendamentos, emRisco, aniversariantes, resgataveis] = await Promise.all([
     db.from('clients').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId).is('deleted_at', null),
     db.from('appointments').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId),
+    db.from('client_cycles').select('client_id', { count: 'exact', head: true }).eq('tenant_id', tenantId).in('state', ['late', 'at_risk', 'lost']),
+    db.from('v_client_segments').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId).eq('is_aniversariante', true),
+    db.from('loyalty_entries').select('client_id, points').eq('tenant_id', tenantId),
   ])
 
   // Sem cliente E sem agendamento é conta que ainda não começou — quem só usa
@@ -450,12 +457,6 @@ export async function centralDeAcoes(db: Cliente, tenantId: string): Promise<Cen
   if ((clientes.count ?? 0) === 0 && (agendamentos.count ?? 0) === 0) {
     return { titulo: 'Primeiros passos', acoes: PRIMEIROS_PASSOS }
   }
-
-  const [emRisco, aniversariantes, resgataveis] = await Promise.all([
-    db.from('client_cycles').select('client_id', { count: 'exact', head: true }).eq('tenant_id', tenantId).in('state', ['late', 'at_risk', 'lost']),
-    db.from('v_client_segments').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId).eq('is_aniversariante', true),
-    db.from('loyalty_entries').select('client_id, points').eq('tenant_id', tenantId),
-  ])
 
   const acoes: AcaoSugerida[] = []
 
