@@ -44,6 +44,7 @@ export default async function PaginaFicha({ params }: { params: Promise<{ id: st
       profissionais={profissionais.map((p) => ({ id: p.id, name: p.display_name }))}
       configFidelidade={lerConfigFidelidade(negocio.data?.settings)}
       podeApagarCliente={avaliarPermissao(ctx.papel, 'client:delete') !== null}
+      podeLancarPacote={avaliarPermissao(ctx.papel, 'comanda:own') !== null}
       servicos={servicos.map((s) => ({ id: s.id, name: s.name, priceCents: s.price_cents }))}
     />
   )

@@ -19,6 +19,8 @@ type Props = {
   pacotes: { id: string; serviceName: string; restantes: number; total: number; expiresOn: string | null }[]
   saldoCarteiraCents: number
   servicos: { id: string; name: string; priceCents: number }[]
+  /** `comanda:own` — recepção não vende pacote nem lança crédito (§3.3). */
+  podeLancar: boolean
 }
 
 function dataCurta(iso: string): string {
@@ -31,7 +33,7 @@ function dataCurta(iso: string): string {
  * mas *vender* o pacote e *creditar* a carteira (sinal virado crédito, cortesia, fiado pago) só
  * existiam como endpoint — na prática, funcionalidade inacessível. Ver `docs/12-AUDITORIA-DE-PRODUTO.md`.
  */
-export default function PacotesCarteira({ clientId, pacotes, saldoCarteiraCents, servicos }: Props) {
+export default function PacotesCarteira({ clientId, pacotes, saldoCarteiraCents, servicos, podeLancar }: Props) {
   const [abrindo, setAbrindo] = useState<'pacote' | 'credito' | null>(null)
 
   return (
@@ -65,19 +67,23 @@ export default function PacotesCarteira({ clientId, pacotes, saldoCarteiraCents,
 
         {pacotes.length === 0 && saldoCarteiraCents === 0 ? (
           <p className="text-secundario text-txt-3">
-            Nada contratado ainda. Um pacote de sessões pagas na frente é o jeito mais direto de garantir que ela volte.
+            Nada contratado ainda.
+            {podeLancar ? ' Um pacote de sessões pagas na frente é o jeito mais direto de garantir que ela volte.' : ''}
           </p>
         ) : null}
 
-        <div className="flex flex-wrap gap-2">
-          <Button tamanho="sm" variante="secondary" onClick={() => setAbrindo('pacote')}>
-            <Plus aria-hidden className="size-4" />
-            Vender pacote
-          </Button>
-          <Button tamanho="sm" variante="ghost" onClick={() => setAbrindo('credito')}>
-            Lançar crédito
-          </Button>
-        </div>
+        {/* Botão que sempre devolveria 403 é pior que botão ausente: some para quem não pode lançar. */}
+        {podeLancar ? (
+          <div className="flex flex-wrap gap-2">
+            <Button tamanho="sm" variante="secondary" onClick={() => setAbrindo('pacote')}>
+              <Plus aria-hidden className="size-4" />
+              Vender pacote
+            </Button>
+            <Button tamanho="sm" variante="ghost" onClick={() => setAbrindo('credito')}>
+              Lançar crédito
+            </Button>
+          </div>
+        ) : null}
       </div>
 
       {abrindo === 'pacote' ? (
