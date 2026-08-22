@@ -1,41 +1,243 @@
+import { ArrowRight, CalendarCheck, Link2, Wallet } from 'lucide-react'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
-import Selo from '@/components/shell/selo'
-import TelaPublica from '@/components/shell/tela-publica'
+import IconeAnel from '@/components/ui/icone-anel'
 import { sessaoAtual } from '@/server/auth/session'
 
+import type { Metadata } from 'next'
+
 /**
- * TICKET-025: "Hoje" é a rota inicial. Quem já tem sessão nem vê esta
- * página — só passa por aqui no instante do redirect.
+ * A porta de entrada do produto era um splash: marca, uma frase e dois botões.
+ * Quem chegasse sem saber o que é o CICLO não tinha como descobrir — nenhuma
+ * explicação, nenhum exemplo, nenhuma resposta às perguntas que todo mundo faz
+ * antes de criar conta. Esta página é a única do projeto cujo trabalho é
+ * convencer; o resto do produto só serve quem já entrou.
+ *
+ * Sem preço de propósito: os planos são decisão comercial do Eduardo
+ * (`docs/10-PROXIMOS-PASSOS.md` §4) e inventar número aqui seria mentira na
+ * primeira tela. Sem depoimento e sem logotipo de cliente pelo mesmo motivo.
  */
+export const metadata: Metadata = {
+  title: 'CICLO — a agenda que traz sua cliente de volta',
+  description:
+    'Agenda, site de agendamento e caixa para quem atende com hora marcada. O CICLO aprende de quanto em quanto tempo cada cliente volta, avisa quem atrasou e te dá a mensagem pronta para chamar.',
+  openGraph: {
+    title: 'CICLO — a agenda que traz sua cliente de volta',
+    description: 'Para barbearia, unhas, cílios, sobrancelha, depilação e estética. Feito para o celular, em português.',
+    type: 'website',
+    locale: 'pt_BR',
+  },
+}
+
+const RECURSOS = [
+  {
+    icone: IconeAnel,
+    titulo: 'Cliente sumida tem nome',
+    texto:
+      'O CICLO aprende o ritmo de cada pessoa — quem volta a cada 21 dias, quem volta a cada dois meses — e mostra quem passou do ponto. Com o valor que essa ausência representa e o texto pronto para chamar no WhatsApp.',
+  },
+  {
+    icone: Link2,
+    titulo: 'Sua página de agendamento',
+    texto:
+      'Um link para colar na bio do Instagram. A cliente escolhe serviço, profissional e horário sozinha, e o horário já entra na sua agenda sem risco de marcar dois no mesmo lugar.',
+  },
+  {
+    icone: Wallet,
+    titulo: 'O dia fechado sem calculadora',
+    texto:
+      'Quanto entrou, quanto foi de material, quanto ficou na maquininha, quanto é de comissão e quanto sobrou. Por dia e por mês, com o extrato de cada profissional.',
+  },
+]
+
+const PASSOS = [
+  {
+    titulo: 'Crie a conta e diga o que você faz',
+    texto: 'O catálogo da sua profissão já vem pronto: serviços, duração e preço sugerido. Você ajusta o que quiser.',
+  },
+  {
+    titulo: 'Compartilhe seu link',
+    texto: 'Sua página fica no ar na hora, com seus serviços, horário de funcionamento e contato.',
+  },
+  {
+    titulo: 'Atenda. O resto o CICLO acompanha',
+    texto: 'Cada atendimento concluído alimenta o ciclo daquela cliente — e é assim que o sistema sabe quem está para voltar.',
+  },
+]
+
+const PROFISSOES = [
+  'Barbearia',
+  'Unhas',
+  'Cílios',
+  'Sobrancelha',
+  'Depilação',
+  'Estética',
+  'Cabelo',
+  'Tatuagem',
+]
+
+const PERGUNTAS = [
+  {
+    pergunta: 'Preciso instalar alguma coisa?',
+    resposta:
+      'Não. Abre no navegador do celular e funciona. Se quiser, dá para adicionar à tela de início e ele passa a abrir como aplicativo, em tela cheia.',
+  },
+  {
+    pergunta: 'E se eu já tiver minha lista de clientes?',
+    resposta: 'Dá para importar de uma planilha. Nome e telefone bastam; o histórico vai sendo construído a partir dos atendimentos.',
+  },
+  {
+    pergunta: 'A cliente precisa baixar app ou criar conta?',
+    resposta: 'Não. Ela abre seu link, escolhe o horário e pronto. A confirmação vai pelo WhatsApp que você já usa.',
+  },
+  {
+    pergunta: 'Funciona para quem atende sozinha?',
+    resposta:
+      'Funciona, e é para quem está sozinha que ele mais serve: você não tem alguém olhando a agenda por você para lembrar de quem sumiu.',
+  },
+]
+
 export default async function Home() {
   const sessao = await sessaoAtual()
   if (sessao) redirect('/admin/hoje')
 
+  const botaoPrimario =
+    'inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-sm)] bg-acc px-5 text-corpo ' +
+    'font-semibold text-on-acc shadow-elevado transition duration-[var(--dur-1)] hover:brightness-110 active:scale-[.97]'
+  const botaoSecundario =
+    'inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 ' +
+    'px-5 text-corpo font-semibold text-txt transition duration-[var(--dur-1)] hover:bg-surface-3 active:scale-[.97]'
+
   return (
-    <TelaPublica>
-      <Selo />
-      <div className="text-center">
-        <h1 className="text-numero font-bold">CICLO</h1>
-        <p className="mt-2 max-w-[30ch] text-corpo text-txt-2">
-          A agenda que sabe quando cada cliente volta — e traz de volta quem sumiu.
-        </p>
-      </div>
-      <div className="flex gap-3">
-        <Link
-          href="/entrar"
-          className="inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-sm)] bg-acc px-5 text-corpo font-semibold text-on-acc shadow-elevado transition duration-[var(--dur-1)] hover:brightness-110 active:scale-[.97]"
-        >
+    <main className="mx-auto min-h-dvh max-w-[720px] px-[var(--gutter)] pb-16">
+      <header className="flex items-center justify-between gap-3 py-5">
+        <div className="flex items-center gap-2">
+          <div
+            aria-hidden
+            className="flex size-8 items-center justify-center rounded-[var(--radius-pill)] bg-acc text-on-acc"
+          >
+            <IconeAnel className="size-[17px]" />
+          </div>
+          <span className="text-label font-semibold uppercase tracking-[0.13em] text-txt-3">CICLO</span>
+        </div>
+        <Link href="/entrar" className="flex h-12 items-center px-1 text-corpo font-semibold text-acc-2 transition active:scale-[.97]">
           Entrar
         </Link>
-        <Link
-          href="/cadastro"
-          className="inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-5 text-corpo font-semibold text-txt transition duration-[var(--dur-1)] hover:bg-surface-3 active:scale-[.97]"
-        >
-          Criar conta
-        </Link>
-      </div>
-    </TelaPublica>
+      </header>
+
+      <section className="animate-in py-10 fade-in slide-in-from-bottom-4 duration-500 sm:py-16">
+        <h1 className="text-numero font-bold sm:text-[2.75rem] sm:leading-[1.05] sm:tracking-[-0.02em]">
+          A agenda que sabe quando cada cliente volta — e traz de volta quem sumiu.
+        </h1>
+        <p className="mt-4 max-w-[52ch] text-corpo text-txt-2">
+          Para quem atende com hora marcada: barbearia, unhas, cílios, sobrancelha, depilação, estética. Em português,
+          feito para o celular, sem treinamento.
+        </p>
+        <div className="mt-7 flex flex-wrap gap-3">
+          <Link href="/cadastro" className={botaoPrimario}>
+            Criar minha conta
+            <ArrowRight aria-hidden className="size-4" />
+          </Link>
+          {/*
+            O exemplo é a prova: em vez de descrever a página do salão, mostra
+            uma de verdade, com agenda funcionando. É o argumento mais forte que
+            o produto tem e ficava escondido atrás do cadastro.
+          */}
+          <Link href="/dom-rocha" className={botaoSecundario}>
+            Ver um salão de exemplo
+          </Link>
+        </div>
+      </section>
+
+      <section className="py-8">
+        <h2 className="mb-5 text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">O que muda no seu dia</h2>
+        <div className="flex flex-col gap-3">
+          {RECURSOS.map((r) => {
+            const Icone = r.icone
+            return (
+              <article key={r.titulo} className="rounded-[var(--radius)] border border-line bg-surface p-5 shadow-elevado">
+                <div className="mb-3 flex size-10 items-center justify-center rounded-[var(--radius-sm)] bg-acc-soft text-acc-2">
+                  <Icone aria-hidden className="size-5" />
+                </div>
+                <h3 className="text-corpo font-semibold text-txt">{r.titulo}</h3>
+                <p className="mt-1.5 text-secundario text-txt-2">{r.texto}</p>
+              </article>
+            )
+          })}
+        </div>
+      </section>
+
+      <section className="py-8">
+        <h2 className="mb-5 text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">Como começa</h2>
+        <ol className="flex flex-col gap-4">
+          {PASSOS.map((p, i) => (
+            <li key={p.titulo} className="flex gap-3">
+              <span
+                aria-hidden
+                className="tabular grid size-7 shrink-0 place-items-center rounded-[var(--radius-pill)] bg-surface-3 text-label font-bold text-txt-2"
+              >
+                {i + 1}
+              </span>
+              <div className="min-w-0">
+                <h3 className="text-corpo font-semibold text-txt">{p.titulo}</h3>
+                <p className="mt-0.5 text-secundario text-txt-2">{p.texto}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section className="py-8">
+        <h2 className="mb-4 text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">Feito para</h2>
+        <ul className="flex flex-wrap gap-2">
+          {PROFISSOES.map((p) => (
+            <li
+              key={p}
+              className="rounded-[var(--radius-pill)] border border-line-2 bg-surface-2 px-3 py-1.5 text-secundario text-txt-2"
+            >
+              {p}
+            </li>
+          ))}
+        </ul>
+        <p className="mt-3 text-secundario text-txt-3">E qualquer trabalho que dependa de hora marcada e de cliente que volta.</p>
+      </section>
+
+      <section className="py-8">
+        <h2 className="mb-5 text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">Perguntas</h2>
+        <div className="flex flex-col gap-2">
+          {PERGUNTAS.map((p) => (
+            <details key={p.pergunta} className="group rounded-[var(--radius)] border border-line bg-surface px-4">
+              <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 py-3 text-corpo font-semibold text-txt">
+                {p.pergunta}
+                <ArrowRight
+                  aria-hidden
+                  className="size-4 shrink-0 text-txt-3 transition-transform duration-[var(--dur-1)] group-open:rotate-90"
+                />
+              </summary>
+              <p className="pb-4 text-secundario text-txt-2">{p.resposta}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-[var(--radius)] border border-line bg-surface p-6 text-center shadow-elevado">
+        <CalendarCheck aria-hidden className="mx-auto mb-3 size-8 text-acc-2" />
+        <h2 className="text-titulo font-bold">Comece pela sua agenda de amanhã</h2>
+        <p className="mx-auto mt-2 max-w-[42ch] text-secundario text-txt-2">
+          Criar a conta leva menos de três minutos, e o catálogo da sua profissão já vem preenchido.
+        </p>
+        <div className="mt-5 flex flex-wrap justify-center gap-3">
+          <Link href="/cadastro" className={botaoPrimario}>
+            Criar minha conta
+          </Link>
+          <Link href="/entrar" className={botaoSecundario}>
+            Já tenho conta
+          </Link>
+        </div>
+      </section>
+
+      <footer className="pt-10 text-center text-label text-txt-3">CICLO · para quem atende com hora marcada</footer>
+    </main>
   )
 }
