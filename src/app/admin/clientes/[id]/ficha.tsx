@@ -34,6 +34,7 @@ import type { FichaCliente } from '@/server/services/crm'
 import type { ConfigFidelidade } from '@/server/services/fidelidade'
 
 import Fidelidade from './fidelidade'
+import DireitosDaCliente from './direitos'
 import Notas from './notas'
 import PacotesCarteira from './pacotes-carteira'
 import Saude from './saude'
@@ -103,6 +104,7 @@ export default function Ficha({
   planos,
   profissionais,
   configFidelidade,
+  podeApagarCliente,
 }: {
   ficha: FichaCliente
   modelos: Modelo[]
@@ -111,6 +113,8 @@ export default function Ficha({
   planos: Plano[]
   profissionais: ProfissionalOpcao[]
   configFidelidade: ConfigFidelidade
+  /** `client:delete` é de dono/gerente; recepção não apaga base de cliente. */
+  podeApagarCliente: boolean
 }) {
   const router = useRouter()
   const parametros = useSearchParams()
@@ -423,6 +427,7 @@ export default function Ficha({
         <div className="mt-4">
           <Notas clientId={cliente.id} iniciais={notasRegistradas} />
           <Saude clientId={cliente.id} saude={saude} fotos={fotos} consentimentos={consentimentos} />
+          <DireitosDaCliente clientId={cliente.id} nome={cliente.name} podeApagar={podeApagarCliente} />
         </div>
       ) : null}
 

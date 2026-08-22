@@ -1,6 +1,7 @@
 import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 
+import { avaliarPermissao } from '@/server/auth/rbac'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { AppError } from '@/server/http/errors'
@@ -40,6 +41,7 @@ export default async function PaginaFicha({ params }: { params: Promise<{ id: st
       planos={planos.filter((p) => p.active)}
       profissionais={profissionais.map((p) => ({ id: p.id, name: p.display_name }))}
       configFidelidade={lerConfigFidelidade(negocio.data?.settings)}
+      podeApagarCliente={avaliarPermissao(ctx.papel, 'client:delete') !== null}
     />
   )
 }
