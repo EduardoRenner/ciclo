@@ -30,6 +30,8 @@ const REGRAS: { prefixo: string; pai: Pai }[] = [
   { prefixo: '/admin/series', pai: { href: '/admin/config', rotulo: 'Configurações' } },
   // A comanda abre a partir do atendimento do dia, nunca de um menu.
   { prefixo: '/admin/comanda', pai: { href: '/admin/agenda', rotulo: 'Agenda' } },
+  // O caixa se chega pelo número de "Faturado hoje" — o voltar tem que devolver para lá.
+  { prefixo: '/admin/caixa', pai: { href: '/admin/hoje', rotulo: 'Hoje' } },
 ]
 
 /**

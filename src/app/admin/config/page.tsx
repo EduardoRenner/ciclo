@@ -1,4 +1,4 @@
-import { Bell, Clock, FileText, MessageSquareText, Megaphone, Repeat, Repeat2, ScrollText, Scissors, ShieldCheck, Store, Users } from 'lucide-react'
+import { Bell, Clock, FileText, MessageSquareText, Megaphone, Repeat, Repeat2, ScrollText, Scissors, ShieldCheck, Store, Users, Wallet } from 'lucide-react'
 import Link from 'next/link'
 
 import Card from '@/components/ui/card'
@@ -30,6 +30,12 @@ const GRUPOS = [
       { href: '/admin/config/mensagens', titulo: 'Mensagens prontas', descricao: 'Textos que você manda com um toque', icone: MessageSquareText },
       { href: '/admin/campanhas', titulo: 'Campanhas', descricao: 'Mandar em lote e ver quanto voltou em receita', icone: Megaphone },
       { href: '/admin/config/notificacoes', titulo: 'Notificações', descricao: 'Ativar lembretes no aparelho', icone: Bell },
+    ],
+  },
+  {
+    titulo: 'Dinheiro',
+    itens: [
+      { href: '/admin/caixa', titulo: 'Caixa', descricao: 'Fechamento do dia, do mês e a comissão de cada um', icone: Wallet },
     ],
   },
   {

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 
-import { TriangleAlert, CalendarCheck, PackageX } from 'lucide-react'
+import { TriangleAlert, CalendarCheck, ChevronRight, PackageX } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
@@ -44,17 +44,31 @@ export default function Hoje({ resumo, children }: { resumo: ResumoHoje; childre
         maior tamanho da escala, que estava definido desde o primeiro dia e não
         era usado em lugar nenhum do app.
       */}
-      <StatTile
-        className="mb-6"
-        heroi
-        rotulo="Faturado hoje"
-        valor={dinheiro.format(resumo.revenueTodayCents / 100)}
-        apoio={
-          faltam === 0
-            ? 'Nada mais marcado para hoje'
-            : `Faltam ${faltam} ${faltam === 1 ? 'atendimento' : 'atendimentos'} hoje`
-        }
-      />
+      {/*
+        O número de dinheiro da tela principal era um beco: mostrava o total do
+        dia e não levava a lugar nenhum. A pergunta seguinte ("de onde veio, e
+        quanto sobrou?") tem tela desde esta rodada — tocar no número é o gesto
+        natural para chegar nela.
+      */}
+      <Link href="/admin/caixa" className="mb-6 block">
+        <StatTile
+          pressionavel
+          heroi
+          rotulo="Faturado hoje"
+          valor={dinheiro.format(resumo.revenueTodayCents / 100)}
+          apoio={
+            <span className="flex items-center justify-between gap-2">
+              {faltam === 0
+                ? 'Nada mais marcado para hoje'
+                : `Faltam ${faltam} ${faltam === 1 ? 'atendimento' : 'atendimentos'} hoje`}
+              <span className="flex shrink-0 items-center gap-0.5 font-semibold text-acc-2">
+                Ver o caixa
+                <ChevronRight aria-hidden className="size-4" />
+              </span>
+            </span>
+          }
+        />
+      </Link>
 
       {resumo.nextClient ? (
         <section className="mb-6">
