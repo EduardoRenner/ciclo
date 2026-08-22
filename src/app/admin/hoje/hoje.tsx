@@ -124,22 +124,26 @@ export default function Hoje({ resumo, children }: { resumo: ResumoHoje; childre
             Estoque
           </SectionHeader>
           <ul className="flex flex-col gap-2">
+            {/* Cada aviso era um cartão sem saída: dizia "hora de recomprar" e não levava a lugar nenhum. */}
             {resumo.stockAlerts.map((a) => (
               <li key={a.productId}>
-                <Card className="flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-corpo font-semibold">{a.name}</p>
-                    <p className="text-secundario text-txt-2">
-                      {a.validade === 'bloqueado'
-                        ? 'Vencido — uso bloqueado'
-                        : a.validade === 'alerta'
-                          ? 'Perto de vencer'
-                          : a.precisaRecomprar
-                            ? `${a.stockQty} em estoque — hora de recomprar`
-                            : ''}
-                    </p>
-                  </div>
-                </Card>
+                <Link href="/admin/estoque" className="block">
+                  <Card pressionavel className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-corpo font-semibold">{a.name}</p>
+                      <p className="text-secundario text-txt-2">
+                        {a.validade === 'bloqueado'
+                          ? 'Vencido — uso bloqueado'
+                          : a.validade === 'alerta'
+                            ? 'Perto de vencer'
+                            : a.precisaRecomprar
+                              ? `${a.stockQty} em estoque — hora de recomprar`
+                              : ''}
+                      </p>
+                    </div>
+                    <ChevronRight aria-hidden className="size-5 shrink-0 text-txt-3" />
+                  </Card>
+                </Link>
               </li>
             ))}
           </ul>

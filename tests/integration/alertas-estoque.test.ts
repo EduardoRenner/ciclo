@@ -86,6 +86,35 @@ describe('listarAlertasDeEstoque', () => {
   )
 
   it(
+    'produto do catálogo que o salão nunca comprou não alerta, mesmo abaixo do ponto de pedido',
+    async () => {
+      // É exatamente o que `apply_vertical_pack` cria: estoque 0, ponto de pedido > 0,
+      // nenhum movimento. Antes da trava, toda conta nova abria "Hoje" com uma lista
+      // de recompra impossível de resolver.
+      const produtoId = await criarProduto({ name: 'Nunca Comprado', stockQty: 0, reorderPoint: 5 })
+      const alertas = await listarAlertasDeEstoque(svc, tenantId, HOJE)
+      expect(alertas.some((a) => a.productId === produtoId)).toBe(false)
+    },
+    30_000,
+  )
+
+  it(
+    'o mesmo produto passa a alertar depois do primeiro movimento de estoque',
+    async () => {
+      const produtoId = await criarProduto({ name: 'Comprado e Consumido', stockQty: 0, reorderPoint: 5 })
+      const { error } = await svc
+        .from('stock_moves')
+        .insert({ tenant_id: tenantId, product_id: produtoId, kind: 'in', qty: 10, unit_cost_cents: 500, source: 'purchase' })
+      expect(error).toBeNull()
+
+      const alertas = await listarAlertasDeEstoque(svc, tenantId, HOJE)
+      const alerta = alertas.find((a) => a.productId === produtoId)
+      expect(alerta?.precisaRecomprar).toBe(true)
+    },
+    30_000,
+  )
+
+  it(
     'produto vencido entra bloqueado, mesmo com estoque alto',
     async () => {
       const produtoId = await criarProduto({ name: 'Vencido', stockQty: 1_000, reorderPoint: 1, expiresAt: '2026-07-01' })

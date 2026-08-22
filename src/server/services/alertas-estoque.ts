@@ -41,14 +41,51 @@ export async function listarAlertasDeEstoque(db: Cliente, tenantId: string, hoje
     consumoTotalPorProduto.set(saida.product_id, (consumoTotalPorProduto.get(saida.product_id) ?? 0) + Math.abs(saida.qty))
   }
 
+  /*
+   * O catálogo do pacote da profissão (`apply_vertical_pack`) nasce com produto
+   * de estoque 0 e ponto de pedido > 0 — e `precisaRecomprar` é verdadeiro assim
+   * que `estoque <= ponto de pedido`. Resultado, antes desta trava: TODA conta
+   * nova abria "Hoje" com meia dúzia de alertas de recompra de produto que nunca
+   * comprou, sem nenhuma forma de calar — alarme que ninguém consegue resolver
+   * ensina a ignorar todos os outros. Só alerta produto que este salão de fato
+   * acompanha: tem estoque, consumiu nos últimos 30 dias, ou já registrou algum
+   * movimento algum dia. Quem nunca usou controle de estoque não recebe nada.
+   */
+  const candidatos = (produtos ?? []).filter((produto) => {
+    const consumo = consumoTotalPorProduto.get(produto.id) ?? 0
+    const diasDeCobertura = calcularDiasDeCobertura(produto.stock_qty, consumo / JANELA_CONSUMO_DIAS)
+    const recompra = precisaRecomprar({ estoqueAtualQty: produto.stock_qty, reorderPointQty: produto.reorder_point, diasDeCobertura })
+    const validade = estadoValidade(hojePlain, produto.expires_at ? Temporal.PlainDate.from(produto.expires_at) : null)
+    return recompra || validade !== 'ok'
+  })
+
+  // Só quem sobrou do filtro acima é consultado — poucos produtos, uma consulta
+  // de existência cada, em paralelo. `head` não traz linha nenhuma de volta.
+  const acompanhados = new Set<string>()
+  await Promise.all(
+    candidatos.map(async (produto) => {
+      if (produto.stock_qty > 0 || (consumoTotalPorProduto.get(produto.id) ?? 0) > 0) {
+        acompanhados.add(produto.id)
+        return
+      }
+      const { count } = await db
+        .from('stock_moves')
+        .select('product_id', { count: 'exact', head: true })
+        .eq('tenant_id', tenantId)
+        .eq('product_id', produto.id)
+        .limit(1)
+      if ((count ?? 0) > 0) acompanhados.add(produto.id)
+    }),
+  )
+
   const alertas: AlertaEstoque[] = []
-  for (const produto of produtos ?? []) {
+  for (const produto of candidatos) {
+    if (!acompanhados.has(produto.id)) continue
+
     const consumoMedioDiario = (consumoTotalPorProduto.get(produto.id) ?? 0) / JANELA_CONSUMO_DIAS
     const diasDeCobertura = calcularDiasDeCobertura(produto.stock_qty, consumoMedioDiario)
     const recompra = precisaRecomprar({ estoqueAtualQty: produto.stock_qty, reorderPointQty: produto.reorder_point, diasDeCobertura })
     const validade = estadoValidade(hojePlain, produto.expires_at ? Temporal.PlainDate.from(produto.expires_at) : null)
-
-    if (!recompra && validade === 'ok') continue
 
     alertas.push({
       productId: produto.id,

@@ -32,6 +32,8 @@ const REGRAS: { prefixo: string; pai: Pai }[] = [
   { prefixo: '/admin/comanda', pai: { href: '/admin/agenda', rotulo: 'Agenda' } },
   // O caixa se chega pelo número de "Faturado hoje" — o voltar tem que devolver para lá.
   { prefixo: '/admin/caixa', pai: { href: '/admin/hoje', rotulo: 'Hoje' } },
+  // O estoque se chega pelo alerta de recompra de "Hoje", pelo mesmo motivo.
+  { prefixo: '/admin/estoque', pai: { href: '/admin/hoje', rotulo: 'Hoje' } },
 ]
 
 /**
