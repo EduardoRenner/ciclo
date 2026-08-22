@@ -113,9 +113,15 @@ beforeAll(async () => {
   await svc.from('clients').update({ referred_by: padrinhoId }).eq('id', afilhadoId)
 }, 90_000)
 
+/** Tenants/usuários criados por um teste específico, além do par do `beforeAll`. */
+const tenants: string[] = []
+const usuarios: string[] = []
+
 afterAll(async () => {
   await svc.from('tenants').delete().eq('id', tenantId)
   await svc.auth.admin.deleteUser(userId)
+  for (const t of tenants) await svc.from('tenants').delete().eq('id', t)
+  for (const u of usuarios) await svc.auth.admin.deleteUser(u)
 }, 60_000)
 
 describe('fidelidade automática', () => {
@@ -236,11 +242,39 @@ describe('avaliação pós-atendimento', () => {
 
 describe('central de ações', () => {
   it(
-    'nunca lança — tenant sem nada notável devolve lista vazia, não erro',
+    'nunca lança — tenant sem nada notável devolve lista, não erro',
     async () => {
-      const acoes = await centralDeAcoes(svc, tenantId)
+      const { acoes } = await centralDeAcoes(svc, tenantId)
       expect(Array.isArray(acoes)).toBe(true)
     },
     30_000,
+  )
+
+  it(
+    'conta sem cliente e sem agendamento recebe os primeiros passos, não uma tela muda',
+    async () => {
+      const marca = randomUUID().slice(0, 8)
+      const { data: usuario, error } = await svc.auth.admin.createUser({
+        email: `primeiros-passos-${marca}@ciclo.test`,
+        password: randomUUID(),
+        email_confirm: true,
+      })
+      if (error || !usuario.user) throw new Error(`seed falhou: ${error?.message}`)
+      usuarios.push(usuario.user.id)
+
+      const { tenant } = await executarOnboarding(svc, {
+        userId: usuario.user.id,
+        businessName: 'Salão Recém-Nascido',
+        vertical: 'barber',
+        slug: `primeiros-passos-${marca}`,
+        timezone: 'America/Sao_Paulo',
+      })
+      tenants.push(tenant.id)
+
+      const central = await centralDeAcoes(svc, tenant.id)
+      expect(central.titulo).toBe('Primeiros passos')
+      expect(central.acoes.map((a) => a.chave)).toContain('inicio-agenda')
+    },
+    60_000,
   )
 })

@@ -403,7 +403,54 @@ export type AcaoSugerida = {
  * com link direto pra resolver. Nunca lança: um item que falhar de calcular só some da lista, a
  * tela "Hoje" não pode quebrar por causa de um resumo de CRM.
  */
-export async function centralDeAcoes(db: Cliente, tenantId: string): Promise<AcaoSugerida[]> {
+export type CentralDeAcoes = {
+  /** O título da seção muda de sentido numa conta que ainda não tem nada. */
+  titulo: string
+  acoes: AcaoSugerida[]
+}
+
+/**
+ * Conta recém-criada não tem cliente, não tem ciclo e não tem aniversariante — então a central
+ * nascia vazia e a tela principal do produto abria muda, sem dizer o que fazer primeiro. Estes
+ * três passos são a sequência mínima até o primeiro atendimento entrar na agenda.
+ */
+const PRIMEIROS_PASSOS: AcaoSugerida[] = [
+  {
+    chave: 'inicio-servicos',
+    titulo: 'Confira seus serviços e preços',
+    descricao: 'O catálogo da sua profissão já veio preenchido. Ajuste preço e duração para o que você cobra de verdade.',
+    href: '/admin/config/servicos',
+    tom: 'info',
+  },
+  {
+    chave: 'inicio-clientes',
+    titulo: 'Traga sua lista de clientes',
+    descricao: 'De uma planilha, com nome e telefone. É o que faz o Motor de Ciclo ter de quem cuidar.',
+    href: '/admin/clientes/importar',
+    tom: 'info',
+  },
+  {
+    chave: 'inicio-agenda',
+    titulo: 'Marque o primeiro horário',
+    descricao: 'Cada atendimento concluído ensina ao sistema de quanto em quanto tempo aquela pessoa volta.',
+    href: '/admin/agenda/novo',
+    tom: 'ok',
+  },
+]
+
+export async function centralDeAcoes(db: Cliente, tenantId: string): Promise<CentralDeAcoes> {
+  const [clientes, agendamentos] = await Promise.all([
+    db.from('clients').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId).is('deleted_at', null),
+    db.from('appointments').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId),
+  ])
+
+  // Sem cliente E sem agendamento é conta que ainda não começou — quem só usa
+  // agendamento online tem cliente criado pela própria reserva, então os dois
+  // zerados juntos é o teste honesto de "nada aconteceu aqui ainda".
+  if ((clientes.count ?? 0) === 0 && (agendamentos.count ?? 0) === 0) {
+    return { titulo: 'Primeiros passos', acoes: PRIMEIROS_PASSOS }
+  }
+
   const [emRisco, aniversariantes, resgataveis] = await Promise.all([
     db.from('client_cycles').select('client_id', { count: 'exact', head: true }).eq('tenant_id', tenantId).in('state', ['late', 'at_risk', 'lost']),
     db.from('v_client_segments').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId).eq('is_aniversariante', true),
@@ -452,7 +499,7 @@ export async function centralDeAcoes(db: Cliente, tenantId: string): Promise<Aca
     })
   }
 
-  return acoes
+  return { titulo: 'Vale a pena hoje', acoes }
 }
 
 export type PainelCarteira = {

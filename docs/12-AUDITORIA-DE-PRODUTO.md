@@ -27,7 +27,7 @@ noite com "Sem horários livres nesse dia".
 Nenhum dos dois eixos aparecia nas auditorias anteriores, porque nenhuma delas perguntou "o que
 o servidor já faz e ninguém consegue pedir?" nem "o que vê quem ainda não é cliente?".
 
-**Sete frentes foram implementadas nesta rodada** (§6). O que sobrou está em §7, com o motivo.
+**Nove frentes foram implementadas nesta rodada** (§6). O que sobrou está em §7, com o motivo.
 
 ---
 
@@ -116,16 +116,16 @@ Ordenada por impacto × frequência ÷ esforço. `▲` = medido ao vivo, não in
 | 11 | ▲ **"Valor parado" incompreensível.** R$ 5,40 numa cliente de corte de R$ 45 | `preço × chance de retorno`, sem explicação na tela | Rótulo honesto + a conta explicada | 20min ✅ |
 | 12 | ▲ **Sem como compartilhar o próprio link.** Dava para ver o site, nunca para mandá-lo | Nenhuma ação de compartilhar no app; PWA não tem barra de endereço | Folha nativa do celular + cópia no desktop | 30min ✅ |
 | 13 | ▲ **Endereço do salão era texto morto** e "Feito com CICLO" não levava a lugar nenhum | Página pública | Link de rota + link do produto | 15min ✅ |
-| 14 | **Venda de pacote e crédito na carteira sem tela.** A ficha mostra saldo e pacotes, mas só leitura | `/api/v1/packages`, `/wallet` sem referência na interface | Sheet de venda na ficha | ~3h ⬜ |
+| 14 | ▲ **Venda de pacote e crédito na carteira sem tela.** A ficha mostra saldo e pacotes, mas só leitura | `/api/v1/packages`, `/wallet` sem referência na interface | Sheets de venda e crédito na ficha | 2h ✅ |
 | 15 | **Campanhas e orçamentos moram em "Configurações"** | Hub de config agrupa ferramenta operacional com ajuste | Repensar a casa dessas duas | ~2h ⬜ |
 
 ### P3 — refinamento
 
 | # | Problema | Solução |
 |---|---|---|
-| 16 | `/admin/campanhas` e `/admin/comanda/*` sem `loading.tsx` (achado registrado no TICKET-083) | Mesmo padrão das outras ⬜ |
+| 16 | ~~`/admin/campanhas` e `/admin/comanda/*` sem `loading.tsx`~~ — **item falso**, herdado da nota do TICKET-083: a Parte III já cobriu as duas. Varredura confirma que só `admin/` (um `redirect`) não tem, e não precisa | nada a fazer ✅ |
 | 17 | Sem "adicionar à agenda" (`.ics`) na confirmação do agendamento | Avaliar contra a CSP antes ⬜ |
-| 18 | Nenhum "primeiros passos" para conta nova (o painel nasce vazio e mudo) | Central de ações reconhecer conta sem cliente ⬜ |
+| 18 | ▲ Nenhum "primeiros passos" para conta nova (o painel nascia vazio e mudo) | Central de ações reconhece conta sem cliente nem agendamento ✅ |
 
 ---
 
@@ -142,6 +142,8 @@ Sete commits, cada um com o porquê na mensagem:
 | `TICKET-088` | Landing de verdade em `/`, com metadado e exemplo real |
 | `TICKET-089` | Compartilhar o link de agendamento; "Dá para recuperar" explicado |
 | `TICKET-090` | Direitos LGPD da cliente na ficha, com o caminho do MFA quando falta o segundo fator |
+| `TICKET-091` | Vender pacote e lançar crédito na ficha — o último "servidor pronto, tela ausente" |
+| `TICKET-092` | Primeiros passos na tela "Hoje" para conta que ainda não começou |
 
 Verificado ao vivo, não só compilado: `POST /inventory/entries` (estoque foi de 0 para 12 e o
 custo médio de R$ 18,00 para R$ 19,50), `GET /clients/:id/data-export` com TOTP real cadastrado e
@@ -158,8 +160,6 @@ depois do fechamento de sexta.
   falsa é o defeito mais caro que uma landing pode ter.
 - **Identidade jurídica no rodapé** (razão social, CNPJ, encarregado de dados) — pendência já
   registrada em V5; nada disso pode ser inventado.
-- **Venda de pacote / crédito de carteira pela interface** (P2 #14) — é a próxima maior lacuna
-  entre servidor e tela, mas exige desenho de fluxo de cobrança, não só uma tela.
 - **`.ics` na confirmação** — a CSP do TICKET-057 é estrita e o efeito de `blob:`/`data:` em
   download precisa de teste em aparelho de verdade antes de virar promessa.
 - **O caminho feliz de "Apagar os dados"** não foi executado: apagar cliente de verdade no
@@ -172,19 +172,17 @@ depois do fechamento de sexta.
 
 **Agora (destrava dinheiro ou lei):**
 1. Definir preço e ligar a seção na landing.
-2. Venda de pacote e crédito de carteira na ficha (P2 #14).
-3. Identidade jurídica → Política de Privacidade e Termos.
+2. Identidade jurídica → Política de Privacidade e Termos.
 
 **Próxima etapa:**
-4. Primeiros passos para conta nova (P3 #18) — hoje o painel novo nasce mudo.
-5. Repensar a casa de campanhas e orçamentos (P2 #15).
-6. `loading.tsx` nas duas telas que faltam (P3 #16).
+3. Repensar a casa de campanhas e orçamentos (P2 #15) — ferramenta de trabalho atrás de uma
+   engrenagem de "Configurações".
 
 **Depois:**
-7. Cron de verdade (lembrete e expiração de sinal ainda não rodam sozinhos — decisão de custo já
+4. Cron de verdade (lembrete e expiração de sinal ainda não rodam sozinhos — decisão de custo já
    registrada).
-8. Foto/galeria na página pública, com o consentimento desenhado antes.
+5. Foto/galeria na página pública, com o consentimento desenhado antes.
 
 **Futuro:**
-9. Instrumentar o funil (`/` → cadastro → onboarding → primeiro agendamento) quando houver
+6. Instrumentar o funil (`/` → cadastro → onboarding → primeiro agendamento) quando houver
    tráfego real para medir.

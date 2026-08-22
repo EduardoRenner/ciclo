@@ -30,7 +30,7 @@ export default async function PaginaHoje() {
     resumoDeHoje(db, ctx.tenantId, timezone),
     // Nunca derruba "Hoje": um resumo de CRM que falhar vira lista vazia, não erro na tela mais
     // importante do app.
-    centralDeAcoes(db, ctx.tenantId).catch(() => []),
+    centralDeAcoes(db, ctx.tenantId).catch(() => ({ titulo: '', acoes: [] })),
   ])
 
   const data = new Intl.DateTimeFormat('pt-BR', {
@@ -70,7 +70,7 @@ export default async function PaginaHoje() {
       />
 
       <Hoje resumo={resumo}>
-        <CentralDeAcoes acoes={acoes} />
+        <CentralDeAcoes dados={acoes} />
       </Hoje>
     </>
   )

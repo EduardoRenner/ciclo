@@ -2099,3 +2099,16 @@ Ações na aba "Ficha" da cliente, com o erro `MFA_REQUIRED` virando caminho par
 Segurança · quem responde ao pedido de uma titular é o salão, não o programador. O arquivo é
 montado no navegador a partir da resposta porque o endereço do export é dado pessoal numa URL, e
 URL vai para histórico, log e Referer.
+
+2026-08-21 · A central de ações nascia vazia numa conta nova (sem cliente não há ciclo, nem
+aniversariante, nem pontos), então a tela principal do produto abria muda logo depois do
+onboarding · `centralDeAcoes` passa a devolver `{ titulo, acoes }` e, quando o tenant não tem
+nenhum cliente E nenhum agendamento, entrega três primeiros passos com o título "Primeiros
+passos" · o teste de "conta que ainda não começou" precisa dos dois zerados: quem só recebe
+agendamento online tem cliente criado pela própria reserva, então cliente=0 sozinho marcaria como
+"nova" uma conta que já está rodando.
+
+2026-08-21 · O item P3 #16 do relatório (`/admin/campanhas` e `/admin/comanda/*` sem
+`loading.tsx`) era herdado da nota do TICKET-083 · Varredura mostrou que a Parte III já cobriu as
+duas; o item foi marcado como falso no próprio relatório em vez de removido · relatório que
+esconde o próprio erro vale menos que relatório com o erro anotado.
