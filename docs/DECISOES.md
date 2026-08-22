@@ -2129,3 +2129,19 @@ teste · validar caminho é fácil de errar e `next` chega por link de e-mail, q
 quer usar o domínio do CICLO como trampolim. Como só existe um destino de verdade
 (`/nova-senha`), a lista custa nada. **Vale pra família inteira:** nenhum parâmetro de
 redirecionamento deve ser validado por prefixo — ou é lista fechada, ou não existe.
+
+2026-08-22 · Deploy de produção depois da auditoria (`vercel --prod`, alias `ciclo-umber.vercel.app`,
+build 1m) · Conferido ao vivo em produção antes de declarar pronto: as 11 rotas principais
+respondem (públicas 200, `/admin/*` 307 para `/entrar?proximo=`, `/dev/ui` 404), `?next=/\evil.com`
+e `//evil.com` caem em `/onboarding`, os cinco cabeçalhos de segurança vêm com nonce por
+requisição, o `<script ld+json>` sai sem nonce, o sitemap lista os dois salões, e o console da
+página de agendamento e da landing fica limpo — zero erro de hidratação, zero violação de CSP.
+O trilho de dias abriu no sábado (dia útil corrente) com 4 dias fechados marcados e horários
+carregados de verdade contra o banco de produção.
+
+2026-08-22 · Aviso do linter do Supabase que continua aberto e **não** foi mexido:
+`auth_leaked_password_protection` desligado (checagem de senha vazada contra o HaveIBeenPwned no
+próprio Auth) · é um botão no painel, e ligar mexe no fluxo de cadastro de quem já usa · fica
+para o Eduardo decidir. Os demais avisos são conhecidos e corretos: RLS sem política nas 4
+tabelas de infraestrutura (só `service_role` toca), extensões no schema público, e as quatro
+funções `SECURITY DEFINER` que **precisam** continuar executáveis porque a RLS as chama.
