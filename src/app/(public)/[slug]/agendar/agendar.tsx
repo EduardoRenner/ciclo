@@ -1,6 +1,6 @@
 'use client'
 
-import { CheckCircle2 } from 'lucide-react'
+import { CalendarPlus, CheckCircle2 } from 'lucide-react'
 import { useEffect, useMemo, useState, useTransition } from 'react'
 
 import Button from '@/components/ui/button'
@@ -9,6 +9,7 @@ import Chip from '@/components/ui/chip'
 import FilterRow from '@/components/ui/filter-row'
 import Input from '@/components/ui/input'
 import PhoneInput from '@/components/ui/phone-input'
+import { montarIcs, type EventoIcs } from '@/core/scheduling/ics'
 import { dinheiro, duracao } from '@/lib/formato'
 
 type Servico = { id: string; name: string; durationMin: number; priceCents: number }
@@ -69,6 +70,24 @@ function periodo(iso: string, timezone: string): 'Manhã' | 'Tarde' | 'Noite' {
   return 'Noite'
 }
 
+/**
+ * A montagem do arquivo é pura e mora em `src/core` (regra 5 do CLAUDE.md), com teste próprio;
+ * aqui fica só a parte que precisa do navegador. Verificado ao vivo que a CSP do TICKET-057 não
+ * bloqueia download por `blob:` — `default-src 'self'` governa busca de recurso, não o download
+ * que a própria página dispara.
+ */
+function baixarIcs(evento: Omit<EventoIcs, 'agora'>): void {
+  const blob = new Blob([montarIcs({ ...evento, agora: new Date().toISOString() })], {
+    type: 'text/calendar;charset=utf-8',
+  })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${evento.slug}.ics`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
 /** Numerar os passos foi o que faltava: eram quatro escolhas numa página rolante, sem nenhum sinal de progresso. */
 function Passo({ numero, titulo }: { numero: number; titulo: string }) {
   return (
@@ -84,6 +103,7 @@ function Passo({ numero, titulo }: { numero: number; titulo: string }) {
 export default function Agendar({
   slug,
   nomeDoSalao,
+  enderecoDoSalao,
   timezone,
   hours,
   services,
@@ -91,6 +111,8 @@ export default function Agendar({
 }: {
   slug: string
   nomeDoSalao: string
+  /** Vira o `LOCATION` do arquivo de calendário — sem ele o evento não diz onde é. */
+  enderecoDoSalao: string | null
   timezone: string
   hours: { weekday: number; opensAt: string; closesAt: string }[]
   services: Servico[]
@@ -234,12 +256,31 @@ export default function Agendar({
           Você vai receber a confirmação por WhatsApp. Se não confirmarmos em algumas horas, é só chamar por telefone.
         </p>
 
-        <a
-          href={`/${slug}`}
-          className="mt-5 inline-flex h-12 items-center justify-center rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-5 text-corpo font-semibold text-txt transition duration-[var(--dur-1)] hover:bg-surface-3 active:scale-[.97]"
-        >
-          Voltar para {nomeDoSalao}
-        </a>
+        <div className="mt-5 flex flex-wrap justify-center gap-3">
+          {slotEscolhido && servicoEscolhido ? (
+            <Button
+              variante="secondary"
+              onClick={() =>
+                baixarIcs({
+                  inicio: slotEscolhido.startsAt,
+                  fim: slotEscolhido.endsAt,
+                  titulo: `${servicoEscolhido.name} — ${nomeDoSalao}`,
+                  local: enderecoDoSalao,
+                  slug,
+                })
+              }
+            >
+              <CalendarPlus aria-hidden className="size-4" />
+              Adicionar à minha agenda
+            </Button>
+          ) : null}
+          <a
+            href={`/${slug}`}
+            className="inline-flex h-12 items-center justify-center rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-5 text-corpo font-semibold text-txt transition duration-[var(--dur-1)] hover:bg-surface-3 active:scale-[.97]"
+          >
+            Voltar para {nomeDoSalao}
+          </a>
+        </div>
       </Card>
     )
   }

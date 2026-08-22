@@ -27,7 +27,7 @@ noite com "Sem horários livres nesse dia".
 Nenhum dos dois eixos aparecia nas auditorias anteriores, porque nenhuma delas perguntou "o que
 o servidor já faz e ninguém consegue pedir?" nem "o que vê quem ainda não é cliente?".
 
-**Dez frentes foram implementadas nesta rodada** (§6). O que sobrou está em §7, com o motivo.
+**Doze frentes foram implementadas nesta rodada** (§6). O que sobrou está em §7, com o motivo.
 
 ---
 
@@ -124,7 +124,7 @@ Ordenada por impacto × frequência ÷ esforço. `▲` = medido ao vivo, não in
 | # | Problema | Solução |
 |---|---|---|
 | 16 | ~~`/admin/campanhas` e `/admin/comanda/*` sem `loading.tsx`~~ — **item falso**, herdado da nota do TICKET-083: a Parte III já cobriu as duas. Varredura confirma que só `admin/` (um `redirect`) não tem, e não precisa | nada a fazer ✅ |
-| 17 | Sem "adicionar à agenda" (`.ics`) na confirmação do agendamento | Avaliar contra a CSP antes ⬜ |
+| 17 | ▲ Sem "adicionar à agenda" (`.ics`) na confirmação do agendamento | Medido primeiro: a CSP não bloqueia download por `blob:` (o mecanismo já ia junto no export de LGPD). Montagem do arquivo pura em `src/core`, com teste ✅ |
 | 18 | ▲ Nenhum "primeiros passos" para conta nova (o painel nascia vazio e mudo) | Central de ações reconhece conta sem cliente nem agendamento ✅ |
 
 ---
@@ -145,6 +145,8 @@ Sete commits, cada um com o porquê na mensagem:
 | `TICKET-091` | Vender pacote e lançar crédito na ficha — o último "servidor pronto, tela ausente" |
 | `TICKET-092` | Primeiros passos na tela "Hoje" para conta que ainda não começou |
 | `TICKET-093` | Atalho de Campanhas em "Recuperar receita" (P2 #15, resolvido por atalho e não por reestruturação) |
+| `TICKET-094` | `/sitemap.xml` com `revalidate`; nonce removido do JSON-LD (quebrava a hidratação em toda página de salão) |
+| `TICKET-095` | "Adicionar à minha agenda" (`.ics`) na confirmação do agendamento |
 
 Verificado ao vivo, não só compilado: `POST /inventory/entries` (estoque foi de 0 para 12 e o
 custo médio de R$ 18,00 para R$ 19,50), `GET /clients/:id/data-export` com TOTP real cadastrado e
@@ -161,8 +163,9 @@ depois do fechamento de sexta.
   falsa é o defeito mais caro que uma landing pode ter.
 - **Identidade jurídica no rodapé** (razão social, CNPJ, encarregado de dados) — pendência já
   registrada em V5; nada disso pode ser inventado.
-- **`.ics` na confirmação** — a CSP do TICKET-057 é estrita e o efeito de `blob:`/`data:` em
-  download precisa de teste em aparelho de verdade antes de virar promessa.
+- **O clique real no `.ics`** — o conteúdo do arquivo tem teste unitário e o mecanismo de
+  download por `blob:` foi verificado ao vivo contra a CSP, mas ninguém completou um agendamento
+  de verdade num iPhone para ver o Calendário abrir. É o teste que só um aparelho faz.
 - **O caminho feliz de "Apagar os dados"** não foi executado: apagar cliente de verdade no
   tenant de demonstração destruiria o histórico que sustenta as telas de CRM. O caminho de erro
   (sem MFA) e o export completo foram, os dois ao vivo.

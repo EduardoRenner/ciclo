@@ -50,6 +50,7 @@ export default async function PaginaAgendar({ params }: { params: Promise<{ slug
       <Agendar
         slug={slug}
         nomeDoSalao={perfil.name}
+        enderecoDoSalao={perfil.address}
         timezone={perfil.timezone}
         hours={perfil.hours}
         services={perfil.services}
