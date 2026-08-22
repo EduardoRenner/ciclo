@@ -5,6 +5,33 @@ import { perfilPublico } from '@/server/services/public-booking'
 
 import Agendar from './agendar'
 
+import type { Metadata } from 'next'
+
+/**
+ * Esta é a página que o salão cola na bio do Instagram e manda no WhatsApp —
+ * e era a única do site público sem metadado próprio: o card do link saía com
+ * "CICLO" e a descrição do produto, não com o nome de quem atende. `/{slug}`
+ * já tinha isto desde o começo; aqui nunca foi feito.
+ */
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params
+  const perfil = await perfilPublico(slug).catch(() => null)
+  if (!perfil) return {}
+
+  const titulo = `Agendar em ${perfil.name}`
+  const descricao = `Escolha o serviço, o dia e o horário na ${perfil.name}. Sem ligar, sem esperar resposta.`
+  const base = process.env.NEXT_PUBLIC_APP_URL
+  const url = base ? `${base}/${perfil.slug}/agendar` : undefined
+
+  return {
+    title: titulo,
+    description: descricao,
+    alternates: url ? { canonical: url } : undefined,
+    openGraph: { title: titulo, description: descricao, url, type: 'website', locale: 'pt_BR' },
+    twitter: { card: 'summary', title: titulo, description: descricao },
+  }
+}
+
 export default async function PaginaAgendar({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
 
@@ -20,7 +47,14 @@ export default async function PaginaAgendar({ params }: { params: Promise<{ slug
         <h1 className="text-titulo font-bold">Agendar em {perfil.name}</h1>
       </header>
 
-      <Agendar slug={slug} services={perfil.services} professionals={perfil.professionals} />
+      <Agendar
+        slug={slug}
+        nomeDoSalao={perfil.name}
+        timezone={perfil.timezone}
+        hours={perfil.hours}
+        services={perfil.services}
+        professionals={perfil.professionals}
+      />
     </main>
   )
 }

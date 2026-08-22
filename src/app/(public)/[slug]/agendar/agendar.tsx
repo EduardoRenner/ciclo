@@ -15,27 +15,55 @@ type Servico = { id: string; name: string; durationMin: number; priceCents: numb
 type Profissional = { id: string; displayName: string }
 type Slot = { startsAt: string; endsAt: string; professionalId: string }
 
+/**
+ * "Hoje" é no fuso do salão, não no do aparelho de quem agenda. A versão
+ * anterior montava a lista com `toISOString()`, que é UTC: das 21h à meia-noite
+ * em Brasília a coluna de hoje sumia do trilho, e um salão que atende de
+ * madrugada perdia o próprio dia.
+ */
+function hojeNoSalao(timezone: string): string {
+  // `en-CA` formata como `AAAA-MM-DD`, que é exatamente o formato que a API espera.
+  return new Intl.DateTimeFormat('en-CA', { timeZone: timezone }).format(new Date())
+}
+
 /** 14 dias corridos a partir de hoje — cobre o horizonte real de quem agenda pelo site, sem paginação. */
-function proximosDias(qtd: number): string[] {
-  const hoje = new Date()
+function proximosDias(qtd: number, primeiro: string): string[] {
+  const [ano, mes, dia] = primeiro.split('-').map(Number)
   return Array.from({ length: qtd }, (_, i) => {
-    const d = new Date(hoje)
-    d.setDate(hoje.getDate() + i)
+    const d = new Date(Date.UTC(ano!, mes! - 1, dia!))
+    d.setUTCDate(d.getUTCDate() + i)
     return d.toISOString().slice(0, 10)
   })
 }
 
+/** `AAAA-MM-DD` vira data em UTC de propósito: só serve para dizer o dia da semana e o número. */
 function paraData(iso: string): Date {
   const [ano, mes, dia] = iso.split('-').map(Number)
-  return new Date(ano!, mes! - 1, dia)
+  return new Date(Date.UTC(ano!, mes! - 1, dia!))
 }
 
-function horaLocal(iso: string): string {
-  return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+function diaDaSemana(iso: string): number {
+  return paraData(iso).getUTCDay()
 }
 
-function periodo(iso: string): 'Manhã' | 'Tarde' | 'Noite' {
-  const hora = new Date(iso).getHours()
+/** Minutos desde a meia-noite, no relógio do salão. */
+function agoraEmMinutos(timezone: string): number {
+  const partes = new Intl.DateTimeFormat('pt-BR', { timeZone: timezone, hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(new Date())
+  const valor = (tipo: string) => Number(partes.find((p) => p.type === tipo)?.value ?? 0)
+  return valor('hour') * 60 + valor('minute')
+}
+
+function paraMinutos(hhmm: string): number {
+  const [h, m] = hhmm.split(':')
+  return Number(h) * 60 + Number(m)
+}
+
+function horaLocal(iso: string, timezone: string): string {
+  return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: timezone })
+}
+
+function periodo(iso: string, timezone: string): 'Manhã' | 'Tarde' | 'Noite' {
+  const hora = Number(new Intl.DateTimeFormat('pt-BR', { hour: 'numeric', hour12: false, timeZone: timezone }).format(new Date(iso)))
   if (hora < 12) return 'Manhã'
   if (hora < 18) return 'Tarde'
   return 'Noite'
@@ -55,18 +83,47 @@ function Passo({ numero, titulo }: { numero: number; titulo: string }) {
 
 export default function Agendar({
   slug,
+  nomeDoSalao,
+  timezone,
+  hours,
   services,
   professionals,
 }: {
   slug: string
+  nomeDoSalao: string
+  timezone: string
+  hours: { weekday: number; opensAt: string; closesAt: string }[]
   services: Servico[]
   professionals: Profissional[]
 }) {
-  const dias = useMemo(() => proximosDias(14), [])
+  const dias = useMemo(() => proximosDias(14, hojeNoSalao(timezone)), [timezone])
+
+  const diasFechados = useMemo(() => {
+    const abertos = new Set(hours.map((h) => h.weekday))
+    // Sem expediente cadastrado não dá para afirmar que algum dia está fechado —
+    // nesse caso nenhum dia recebe a marca, e o trilho fica como era.
+    return hours.length === 0 ? new Set<string>() : new Set(dias.filter((d) => !abertos.has(diaDaSemana(d))))
+  }, [dias, hours])
+
+  /*
+   * Abrir no primeiro dia em que o salão atende, não em "hoje" seco: numa
+   * barbearia fechada domingo e segunda, quem entrasse no sábado à noite via
+   * "Sem horários livres nesse dia" antes de qualquer outra coisa — que lê como
+   * "está lotado" e não como "hoje não abre". O dia fechado continua no trilho e
+   * continua clicável (a agenda de um profissional pode fugir do expediente
+   * padrão); só deixa de ser a primeira impressão.
+   */
+  const primeiroDiaUtil = useMemo(() => {
+    const hoje = dias[0]
+    const blocosDeHoje = hoje ? hours.filter((h) => h.weekday === diaDaSemana(hoje)) : []
+    const jaFechouHoje = blocosDeHoje.length > 0 && blocosDeHoje.every((h) => paraMinutos(h.closesAt) <= agoraEmMinutos(timezone))
+    const candidatos = jaFechouHoje ? dias.slice(1) : dias
+    return candidatos.find((d) => !diasFechados.has(d)) ?? dias[0] ?? ''
+  }, [dias, diasFechados, hours, timezone])
 
   const [serviceId, setServiceId] = useState(services[0]?.id ?? '')
   const [professionalId, setProfessionalId] = useState<string | null>(null)
-  const [dia, setDia] = useState(dias[0] ?? '')
+  const [dia, setDia] = useState(primeiroDiaUtil)
   const [slots, setSlots] = useState<Slot[] | null>(null)
   const [slotEscolhido, setSlotEscolhido] = useState<Slot | null>(null)
   const [nome, setNome] = useState('')
@@ -87,7 +144,7 @@ export default function Agendar({
   // um toque em "Ver horários" antes de mostrar qualquer coisa; o Ruivo (o
   // modelo pedido) já carrega automático. Só na montagem, de propósito.
   useEffect(() => {
-    if (dias[0] && serviceId) buscarDisponibilidade(dias[0])
+    if (primeiroDiaUtil && serviceId) buscarDisponibilidade(primeiroDiaUtil)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -148,20 +205,48 @@ export default function Agendar({
   }
 
   if (confirmado) {
+    /*
+      A tela de sucesso não repetia NADA do que a pessoa acabou de escolher —
+      nem dia, nem hora, nem com quem. É o único momento em que ela confere se
+      marcou o que queria, e era também o único lugar do funil sem saída: sem
+      recibo e sem caminho de volta para o site do salão.
+    */
+    const profissional = professionals.find((p) => p.id === slotEscolhido?.professionalId)?.displayName
+
     return (
       <Card className="flex flex-col items-center py-10 text-center">
         <CheckCircle2 aria-hidden className="mb-4 size-14 text-ok" />
         <p className="text-titulo font-bold">Agendamento enviado!</p>
-        <p className="mt-2 max-w-xs text-corpo text-txt-2">
+
+        {slotEscolhido && servicoEscolhido ? (
+          <div className="mt-4 w-full max-w-xs rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 p-4 text-left">
+            <p className="text-corpo font-semibold text-txt">{servicoEscolhido.name}</p>
+            <p className="mt-1 text-secundario text-txt-2">
+              {paraData(dia).toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', timeZone: 'UTC' })}
+              {' às '}
+              {horaLocal(slotEscolhido.startsAt, timezone)}
+            </p>
+            {profissional ? <p className="mt-0.5 text-secundario text-txt-2">com {profissional}</p> : null}
+          </div>
+        ) : null}
+
+        <p className="mt-4 max-w-xs text-corpo text-txt-2">
           Você vai receber a confirmação por WhatsApp. Se não confirmarmos em algumas horas, é só chamar por telefone.
         </p>
+
+        <a
+          href={`/${slug}`}
+          className="mt-5 inline-flex h-12 items-center justify-center rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-5 text-corpo font-semibold text-txt transition duration-[var(--dur-1)] hover:bg-surface-3 active:scale-[.97]"
+        >
+          Voltar para {nomeDoSalao}
+        </a>
       </Card>
     )
   }
 
   const slotsPorPeriodo =
     slots && slots.length > 0
-      ? (['Manhã', 'Tarde', 'Noite'] as const).map((p) => ({ periodo: p, itens: slots.filter((s) => periodo(s.startsAt) === p) }))
+      ? (['Manhã', 'Tarde', 'Noite'] as const).map((p) => ({ periodo: p, itens: slots.filter((s) => periodo(s.startsAt, timezone) === p) }))
       : []
 
   return (
@@ -225,21 +310,33 @@ export default function Agendar({
         <FilterRow rotulo="Escolher o dia">
           {dias.map((d) => {
             const data = paraData(d)
+            const fechado = diasFechados.has(d)
+            const nomeDoDia = data.toLocaleDateString('pt-BR', { weekday: 'long', timeZone: 'UTC' })
             return (
               <button
                 key={d}
                 type="button"
                 onClick={() => buscarDisponibilidade(d)}
                 aria-current={d === dia ? 'date' : undefined}
+                // Todo dia do trilho parecia igualmente disponível; nos fechados a
+                // pessoa tocava e batia numa mensagem vazia. O rótulo é o mesmo que
+                // o leitor de tela ouve.
+                aria-label={`${nomeDoDia}, dia ${data.getUTCDate()}${fechado ? ' — fechado' : ''}`}
                 className={
                   'flex h-16 w-14 shrink-0 flex-col items-center justify-center gap-0.5 rounded-[var(--radius-sm)] text-label font-semibold transition duration-[var(--dur-1)] ease-[var(--ease-ios)] active:scale-[.95] ' +
                   (d === dia
                     ? 'bg-acc text-on-acc shadow-elevado'
-                    : 'bg-surface-2 text-txt-2 hover:bg-surface-3 hover:text-txt')
+                    : fechado
+                      ? 'bg-surface-2/50 text-txt-3 hover:bg-surface-3'
+                      : 'bg-surface-2 text-txt-2 hover:bg-surface-3 hover:text-txt')
                 }
               >
-                <span className="uppercase">{data.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '')}</span>
-                <span className={`tabular text-corpo font-bold ${d === dia ? '' : 'text-txt'}`}>{data.getDate()}</span>
+                <span className="uppercase">
+                  {data.toLocaleDateString('pt-BR', { weekday: 'short', timeZone: 'UTC' }).replace('.', '')}
+                </span>
+                <span className={`tabular text-corpo font-bold ${d === dia ? '' : fechado ? 'text-txt-3' : 'text-txt'}`}>
+                  {data.getUTCDate()}
+                </span>
               </button>
             )
           })}
@@ -254,7 +351,11 @@ export default function Agendar({
 
       {slots ? (
         slots.length === 0 ? (
-          <p className="text-secundario text-txt-2">Sem horários livres nesse dia. Tente outra data.</p>
+          <p className="text-secundario text-txt-2">
+            {diasFechados.has(dia)
+              ? 'Nesse dia o atendimento não abre. Escolha outra data no trilho acima.'
+              : 'Sem horários livres nesse dia. Tente outra data.'}
+          </p>
         ) : (
           <section className="flex flex-col gap-4">
             {slotsPorPeriodo
@@ -265,7 +366,7 @@ export default function Agendar({
                   <div className="flex flex-wrap gap-2">
                     {grupo.itens.map((s) => (
                       <Chip key={`${s.startsAt}-${s.professionalId}`} ligado={slotEscolhido?.startsAt === s.startsAt} onClick={() => setSlotEscolhido(s)}>
-                        {horaLocal(s.startsAt)}
+                        {horaLocal(s.startsAt, timezone)}
                       </Chip>
                     ))}
                   </div>
@@ -282,8 +383,8 @@ export default function Agendar({
           <div>
             <p className="text-corpo font-semibold text-txt">{servicoEscolhido.name}</p>
             <p className="mt-0.5 text-secundario text-txt-2">
-              {paraData(dia).toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })} às{' '}
-              {horaLocal(slotEscolhido.startsAt)} · {duracao(servicoEscolhido.durationMin)}
+              {paraData(dia).toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', timeZone: 'UTC' })} às{' '}
+              {horaLocal(slotEscolhido.startsAt, timezone)} · {duracao(servicoEscolhido.durationMin)}
             </p>
             {servicoEscolhido.priceCents > 0 ? (
               <p className="tabular mt-2 text-stat font-bold text-acc-2">

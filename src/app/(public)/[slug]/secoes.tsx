@@ -211,11 +211,25 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
         <section className="py-6">
           <h2 className="mb-3 text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">Contato</h2>
           <Card className="flex flex-col gap-3">
+            {/*
+              O endereço era texto morto: quem lê "Rua Augusta, 1442" no celular
+              quer traçar a rota, e tinha que selecionar, copiar e abrir o mapa
+              na mão. O link universal do Google Maps abre o app instalado no
+              aparelho, sem depender de coordenada cadastrada.
+            */}
             {perfil.address ? (
-              <div className="flex items-start gap-2">
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(perfil.address)}`}
+                target="_blank"
+                rel="noreferrer"
+                className="toque-48 flex items-start gap-2 text-corpo text-txt"
+              >
                 <MapPin aria-hidden className="mt-0.5 size-4 shrink-0 text-txt-3" />
-                <span className="text-corpo text-txt">{perfil.address}</span>
-              </div>
+                <span>
+                  {perfil.address}
+                  <span className="mt-0.5 block text-secundario text-acc-2">Como chegar</span>
+                </span>
+              </a>
             ) : null}
             {perfil.phone ? (
               <a href={`tel:${perfil.phone}`} className="toque-48 flex items-center gap-2 text-corpo text-txt">
@@ -238,8 +252,16 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
         </section>
       ) : null}
 
+      {/*
+        A assinatura era texto solto. Cada página de salão é a vitrine do
+        produto para o próximo salão que a vê — é o único canal de aquisição
+        que o CICLO tem de graça, e ele não levava a lugar nenhum.
+      */}
       <footer className="py-10 text-center text-label text-txt-3">
-        Feito com <span className="text-acc-2">CICLO</span>
+        Feito com{' '}
+        <Link href="/" className="toque-48 font-semibold text-acc-2 transition hover:brightness-110">
+          CICLO
+        </Link>
       </footer>
     </>
   )
