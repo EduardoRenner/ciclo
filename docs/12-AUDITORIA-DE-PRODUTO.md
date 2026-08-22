@@ -190,3 +190,26 @@ depois do fechamento de sexta.
 **Futuro:**
 6. Instrumentar o funil (`/` → cadastro → onboarding → primeiro agendamento) quando houver
    tráfego real para medir.
+
+---
+
+## 9 · Revisão adversarial do que eu mesmo escrevi
+
+Passe final procurando **regressão introduzida nesta sessão**, não defeito antigo. Achou cinco
+coisas, três delas em código que eu tinha escrito horas antes:
+
+| Achado | Gravidade | Correção |
+|---|---|---|
+| ▲ `next` do `/auth/callback` aceitava `/\evil.com` — começa com `/`, não começa com `//`, e `new URL()` resolve a barra invertida como barra: redirecionamento aberto | **alto** (defeito meu, TICKET-084) | Lista fechada de destinos + teste dos contornos (`TICKET-097`) |
+| ▲ `/admin/caixa?dia=2026-02-31` derrubava a tela: a expressão regular checa formato, `Temporal` estoura em data que não existe | médio (defeito meu, TICKET-085) | Data impossível cai em hoje (`TICKET-096`) |
+| ▲ Botões de vender pacote apareciam para a recepção, que não tem `comanda:own` — 403 no toque | médio (defeito meu, TICKET-091) | Escondidos para quem não pode (`TICKET-098`) |
+| `centralDeAcoes` ganhou um round-trip a mais em todo carregamento de "Hoje" | baixo (defeito meu, TICKET-092) | As cinco consultas saem juntas (`TICKET-096`) |
+| Checagem de "produto acompanhado" fazia uma consulta por produto candidato | baixo (defeito meu, TICKET-086) | Uma consulta só; individual sobra só onde o teto do PostgREST pode esconder linha (`TICKET-096`) |
+
+**Limite de verificação desta sessão, registrado:** as telas novas sob `admin/` foram conferidas
+por HTML autenticado e por chamada direta à API, **não** por medição de layout no navegador — a
+sessão do app é cookie `httpOnly` e o painel do navegador desta ferramenta não estava disponível
+para completar um login. Elas são compostas dos mesmos componentes já medidos na Parte III
+(`Button tamanho="sm"` com `toque-48` embutido, `Card`, `PageHeader`, `StatTile`) e os únicos
+controles novos — as setas de dia do caixa e o campo de data — nascem com 48px. As telas
+públicas (`/`, `/{slug}`, `/{slug}/agendar`) foram medidas no navegador a 375px e 1440px.
