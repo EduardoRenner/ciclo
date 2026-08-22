@@ -2145,3 +2145,20 @@ próprio Auth) · é um botão no painel, e ligar mexe no fluxo de cadastro de q
 para o Eduardo decidir. Os demais avisos são conhecidos e corretos: RLS sem política nas 4
 tabelas de infraestrutura (só `service_role` toca), extensões no schema público, e as quatro
 funções `SECURITY DEFINER` que **precisam** continuar executáveis porque a RLS as chama.
+
+2026-08-22 · **Achado grave, conferido em produção: a configuração de Auth do projeto na nuvem
+ainda aponta inteira para `localhost`.** Sondado com `GET /auth/v1/verify?token=x&type=recovery&
+redirect_to=…` (read-only, não dispara e-mail nenhum: com token inválido o GoTrue redireciona
+para o destino **se ele for permitido**, e cai no Site URL se não for). Resultado:
+`http://localhost:3000/auth/callback` é preservado; **todo** destino
+`https://ciclo-umber.vercel.app/...` cai em `http://localhost:3000/`. Ou seja, o Site URL do
+projeto continua `http://localhost:3000` e a produção não está na lista de Redirect URLs ·
+Consequência: e-mail de confirmação de cadastro **e** o link de recuperação de senha (TICKET-084)
+chegam apontando para localhost — ninguém consegue confirmar conta nem trocar senha em produção.
+O código está certo (`emailRedirectTo`/`redirectTo` usam `NEXT_PUBLIC_APP_URL`, que na Vercel é a
+URL de produção); o que falta é config de painel, que não dá para mudar por MCP nem por CLI sem
+token de gestão · Registrado como pendência do Eduardo, com os valores exatos, em vez de ficar
+"a conferir": Site URL `https://ciclo-umber.vercel.app` e Redirect URLs incluindo
+`https://ciclo-umber.vercel.app/**` (mantendo `http://localhost:3000/**` para o desenvolvimento).
+**Explica a nota antiga** de que o clique no link de confirmação nunca tinha sido testado de
+verdade — não era falta de teste, era config quebrada desde o primeiro deploy.
