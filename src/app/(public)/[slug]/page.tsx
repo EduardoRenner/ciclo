@@ -1,5 +1,4 @@
 import { notFound } from 'next/navigation'
-import { headers } from 'next/headers'
 
 import { AppError } from '@/server/http/errors'
 import { perfilPublico } from '@/server/services/public-booking'
@@ -58,14 +57,22 @@ export default async function PaginaPublica({ params }: { params: Promise<{ slug
   })
   if (!perfil) notFound()
 
-  const nonce = (await headers()).get('x-nonce') ?? undefined
   // `JSON.stringify` não escapa `</script>` — nome/endereço do tenant são texto livre
   // no cadastro, então sem isso um valor malicioso fecharia a tag e injetaria HTML.
   const jsonLd = JSON.stringify(jsonLdNegocioLocal(perfil)).replace(/</g, '\\u003c')
 
   return (
     <main className="mx-auto min-h-dvh max-w-[560px] px-[18px]">
-      <script type="application/ld+json" nonce={nonce} dangerouslySetInnerHTML={{ __html: jsonLd }} />
+      {/*
+        Sem `nonce` de propósito. `application/ld+json` não é executável, então
+        `script-src` nunca o bloqueia — e passar o nonce quebrava a hidratação de
+        toda página de salão: o navegador esconde o valor do atributo `nonce` do
+        DOM (defesa contra exfiltração), o React compara com o que veio do
+        servidor e acusa `nonce="…"` contra `nonce=""`. Medido ao vivo antes e
+        depois: com o atributo, erro de hidratação em toda visita; sem ele, zero
+        erro e zero violação de CSP.
+      */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
       <SecoesPublicas perfil={perfil} />
     </main>
   )

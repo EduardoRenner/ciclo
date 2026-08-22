@@ -9,6 +9,15 @@ import type { MetadataRoute } from 'next'
  * porque a RLS de `tenants` exige `has_tenant()`, que o gerador de sitemap
  * (sem sessão nenhuma) nunca tem — ver `public-booking.ts`.
  */
+/**
+ * O build carimbava este arquivo de uma vez: um salão que criasse conta depois
+ * do deploy não entrava no sitemap até o próximo `vercel --prod` — e aqui os
+ * deploys são manuais e esparsos, então "próximo deploy" pode ser semanas. Uma
+ * hora de cache mantém a consulta longe de cada visita de crawler sem congelar
+ * a lista.
+ */
+export const revalidate = 3600
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = process.env.NEXT_PUBLIC_APP_URL ?? 'https://ciclo.app'
 

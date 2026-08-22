@@ -2112,3 +2112,11 @@ agendamento online tem cliente criado pela própria reserva, então cliente=0 so
 `loading.tsx`) era herdado da nota do TICKET-083 · Varredura mostrou que a Parte III já cobriu as
 duas; o item foi marcado como falso no próprio relatório em vez de removido · relatório que
 esconde o próprio erro vale menos que relatório com o erro anotado.
+
+2026-08-21 · `/sitemap.xml` saía estático no build, congelando a lista de salões no momento do
+deploy — e aqui o deploy é manual e esparso, então um salão novo podia ficar semanas fora do
+sitemap · `export const revalidate = 3600` · uma hora mantém a consulta longe de cada visita de
+crawler sem congelar a lista. Nota de método: minha primeira leitura da tabela de rotas disse
+"zero rotas estáticas" porque a janela do `sed` cortava antes das últimas linhas — a checagem
+correta não é a contagem total, é conferir que nenhuma página de `admin/`, `(auth)/` ou
+`(public)/` aparece como `○`.
