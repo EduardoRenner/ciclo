@@ -2036,3 +2036,66 @@ inferior de 64px, zero alvo abaixo do mínimo, zero estouro).
 **Resultado da Parte III, medido:** ficha do cliente de 2429px (3,0 telas) para 995–1279px por
 camada; 8 → 26 telas com estado de carregamento; nenhum alvo abaixo de 44px; transição de
 entrada entre rotas; e o desktop deixou de ser uma tira de celular no meio de um fundo preto.
+
+---
+
+2026-08-21 · Auditoria de produto pedida pelo Eduardo ("transforme o site num produto melhor"):
+por onde começar, com o app já auditado três vezes (Partes I-III de interface, V1-V5
+estruturais)? · Auditei o que essas rodadas **não** cobriam: o funil público, a porta de entrada
+do produto e o casamento entre back-end pronto e interface ausente · as rodadas anteriores
+olharam execução, identidade e estrutura da interface existente; nenhuma perguntou "o que o
+servidor já sabe fazer e a pessoa não tem como pedir?". Foi essa pergunta que rendeu quase todos
+os achados desta rodada.
+
+2026-08-21 · A recuperação de senha tinha rota (`/auth/password/forgot|reset`, TICKET-009) e
+nenhuma tela; `robots.ts` já bloqueava `/nova-senha`, rota inexistente · Criadas
+`/recuperar-senha` e `/nova-senha`, com o link do e-mail passando por `/auth/callback?next=` ·
+o `code` do PKCE só vira sessão num Route Handler (Server Component não grava cookie), então o
+callback que já existia é o único lugar onde a troca pode acontecer; `next` é restrito a caminho
+interno para a rota não virar redirecionamento aberto. Sem isso, esquecer a senha era perder a
+conta para sempre.
+
+2026-08-21 · `apply_vertical_pack` semeia produto com estoque 0 e ponto de pedido > 0, e
+`precisaRecomprar` alerta com `estoque <= ponto` — toda conta nova abria "Hoje" com meia dúzia de
+avisos de recompra impossíveis de resolver (não existia tela de estoque) · `listarAlertasDeEstoque`
+só alerta produto que o salão acompanha de fato (tem estoque, consumiu nos últimos 30 dias, ou já
+teve algum movimento), e `/admin/estoque` passa a existir · alarme que ninguém consegue apagar
+ensina a ignorar todos os outros, inclusive os que importam. A alternativa (calar o alerta e
+pronto) deixaria o estoque sendo só um número que desce; a alternativa oposta (só criar a tela)
+manteria o ruído para quem nunca vai usar controle de estoque.
+
+2026-08-21 · Caixa (`services/caixa.ts` + duas rotas, TICKET-047) e extrato de comissão
+(TICKET-046) existiam sem tela nenhuma, com `src/app/admin/caixa/` vazia no repositório ·
+Construída `/admin/caixa` com dia na URL, resumo do mês e comissão por profissional · é o ritual
+diário de quem tem salão e era a única pergunta do produto que só o banco respondia.
+
+2026-08-21 · "Faturado hoje" (soma de atendimentos concluídos) e o caixa (soma de comandas
+fechadas) dão números diferentes, e agora um leva ao outro · Mantidas as duas fontes, e o caixa
+zerado com atendimento no dia explica a diferença em vez de mostrar R$ 0,00 sem motivo · §5.7 é
+explícito: receita é o que passou pela comanda. Igualar as duas fontes quebraria material, taxa e
+comissão, que só a comanda conhece.
+
+2026-08-21 · O trilho de dias do agendamento público oferecia os 14 dias como se todos fossem
+iguais, e montava as datas em UTC · Dia fechado ganha marca visual e rótulo no leitor de tela
+(mas continua clicável), a tela abre no próximo dia em que o salão realmente atende, e as datas
+passam a ser calculadas no fuso do salão · quem entrava numa sexta às 21h via "Sem horários
+livres nesse dia" como primeira impressão, que lê como "está lotado". Continua clicável porque a
+agenda de um profissional pode fugir do expediente padrão do negócio — esconder o dia esconderia
+horário que existe.
+
+2026-08-21 · `/` era um splash com uma frase e dois botões; construir uma landing exige preço, e
+preço é decisão do Eduardo (`10-PROXIMOS-PASSOS` §4) · Landing completa, sem seção de preço,
+sem depoimento e sem logotipo de cliente · o que falta decidir é o preço, não a explicação do
+produto; inventar número, prova social ou identidade jurídica seria mentira logo na primeira
+tela. O botão "Ver um salão de exemplo" aponta para `/dom-rocha`, que é prova de verdade.
+
+2026-08-21 · "Valor parado" na tela de recuperar receita mostrava `preço × chance de retorno`
+(R$ 5,40 para uma cliente de corte de R$ 45) sem nenhuma explicação · Rótulo virou "Dá para
+recuperar" e a tela explica a conta · o número está certo por §5.3 e é ele que ordena a lista
+pela prioridade correta; o defeito era só ninguém ter como entendê-lo.
+
+2026-08-21 · Export e eliminação LGPD (TICKET-054) tinham rota e nenhuma porta na interface ·
+Ações na aba "Ficha" da cliente, com o erro `MFA_REQUIRED` virando caminho para Configurações ·
+Segurança · quem responde ao pedido de uma titular é o salão, não o programador. O arquivo é
+montado no navegador a partir da resposta porque o endereço do export é dado pessoal numa URL, e
+URL vai para histórico, log e Referer.
