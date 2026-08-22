@@ -9,7 +9,10 @@ export const POST = rota(async (req) => {
 
   const db = await criarClienteDoUsuario()
   const { error } = await db.auth.resetPasswordForEmail(email, {
-    redirectTo: `${exigirEnv('NEXT_PUBLIC_APP_URL')}/nova-senha`,
+    // Passa por `/auth/callback` de propósito: é lá que o `code` do PKCE vira
+    // sessão (Server Component não pode gravar cookie). `/nova-senha` só existe
+    // depois disso e exige a sessão que o callback acabou de criar.
+    redirectTo: `${exigirEnv('NEXT_PUBLIC_APP_URL')}/auth/callback?next=/nova-senha`,
   })
 
   if (error?.status === 429) throw AppError.limiteDeTaxa(60)

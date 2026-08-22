@@ -11,7 +11,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/admin', '/api', '/entrar', '/cadastro', '/onboarding', '/nova-senha', '/verificar'],
+      disallow: ['/admin', '/api', '/entrar', '/cadastro', '/onboarding', '/nova-senha', '/recuperar-senha', '/verificar'],
     },
     sitemap: `${base}/sitemap.xml`,
   }

@@ -61,6 +61,13 @@ export default function FormularioEntrar() {
       <Button type="submit" largura="cheia" carregando={pendente}>
         Entrar
       </Button>
+      {/* A rota de recuperação existia desde o TICKET-009 sem nenhuma porta de entrada na interface. */}
+      <Link
+        href="/recuperar-senha"
+        className="grid h-12 place-items-center text-secundario font-semibold text-acc-2 transition hover:brightness-110"
+      >
+        Esqueci minha senha
+      </Link>
       <Link href="/cadastro" className="grid h-12 place-items-center text-secundario text-txt-2 transition hover:text-txt">
         Não tem conta? <span className="ml-1 font-semibold text-acc-2">Cadastre-se</span>
       </Link>
