@@ -1,3 +1,5 @@
+import { ChevronRight } from 'lucide-react'
+import Link from 'next/link'
 import { headers } from 'next/headers'
 import { Temporal } from '@js-temporal/polyfill'
 
@@ -28,9 +30,24 @@ export default async function PaginaRecuperar() {
 
   return (
     <>
+      {/*
+        Campanha mora no hub de "Configurações" — que é onde se ajusta o negócio,
+        não onde se trabalha. Quem está nesta tela é exatamente quem quer chamar
+        gente de volta em lote e ver quanto voltou; o atalho vive aqui, sem
+        precisar mudar a arquitetura de navegação inteira por causa de dois itens.
+      */}
       <PageHeader
         titulo="Recuperar receita"
         descricao="Clientes que o Motor de Ciclo identificou como atrasadas para voltar."
+        acao={
+          <Link
+            href="/admin/campanhas"
+            className="flex h-12 items-center gap-1 text-label font-semibold text-acc-2 transition active:scale-[.97]"
+          >
+            Campanhas
+            <ChevronRight aria-hidden className="size-4" />
+          </Link>
+        }
       />
 
       {atribuicao.count > 0 ? (

@@ -27,7 +27,7 @@ noite com "Sem horários livres nesse dia".
 Nenhum dos dois eixos aparecia nas auditorias anteriores, porque nenhuma delas perguntou "o que
 o servidor já faz e ninguém consegue pedir?" nem "o que vê quem ainda não é cliente?".
 
-**Nove frentes foram implementadas nesta rodada** (§6). O que sobrou está em §7, com o motivo.
+**Dez frentes foram implementadas nesta rodada** (§6). O que sobrou está em §7, com o motivo.
 
 ---
 
@@ -117,7 +117,7 @@ Ordenada por impacto × frequência ÷ esforço. `▲` = medido ao vivo, não in
 | 12 | ▲ **Sem como compartilhar o próprio link.** Dava para ver o site, nunca para mandá-lo | Nenhuma ação de compartilhar no app; PWA não tem barra de endereço | Folha nativa do celular + cópia no desktop | 30min ✅ |
 | 13 | ▲ **Endereço do salão era texto morto** e "Feito com CICLO" não levava a lugar nenhum | Página pública | Link de rota + link do produto | 15min ✅ |
 | 14 | ▲ **Venda de pacote e crédito na carteira sem tela.** A ficha mostra saldo e pacotes, mas só leitura | `/api/v1/packages`, `/wallet` sem referência na interface | Sheets de venda e crédito na ficha | 2h ✅ |
-| 15 | **Campanhas e orçamentos moram em "Configurações"** | Hub de config agrupa ferramenta operacional com ajuste | Repensar a casa dessas duas | ~2h ⬜ |
+| 15 | **Campanhas e orçamentos moram em "Configurações"** | Hub de config agrupa ferramenta de trabalho com ajuste de negócio | Atalho para Campanhas em "Recuperar receita", que é de onde a pessoa quer chamar em lote. Mudar a arquitetura de navegação por causa de dois itens seria caro demais para o ganho | 15min ◐ |
 
 ### P3 — refinamento
 
@@ -144,6 +144,7 @@ Sete commits, cada um com o porquê na mensagem:
 | `TICKET-090` | Direitos LGPD da cliente na ficha, com o caminho do MFA quando falta o segundo fator |
 | `TICKET-091` | Vender pacote e lançar crédito na ficha — o último "servidor pronto, tela ausente" |
 | `TICKET-092` | Primeiros passos na tela "Hoje" para conta que ainda não começou |
+| `TICKET-093` | Atalho de Campanhas em "Recuperar receita" (P2 #15, resolvido por atalho e não por reestruturação) |
 
 Verificado ao vivo, não só compilado: `POST /inventory/entries` (estoque foi de 0 para 12 e o
 custo médio de R$ 18,00 para R$ 19,50), `GET /clients/:id/data-export` com TOTP real cadastrado e
@@ -175,8 +176,8 @@ depois do fechamento de sexta.
 2. Identidade jurídica → Política de Privacidade e Termos.
 
 **Próxima etapa:**
-3. Repensar a casa de campanhas e orçamentos (P2 #15) — ferramenta de trabalho atrás de uma
-   engrenagem de "Configurações".
+3. Medir se o atalho de Campanhas basta, ou se a barra de navegação precisa mesmo de um quinto
+   destino (P2 #15) — sem tráfego real, mudar a navegação agora seria palpite.
 
 **Depois:**
 4. Cron de verdade (lembrete e expiração de sinal ainda não rodam sozinhos — decisão de custo já
