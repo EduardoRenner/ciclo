@@ -1,16 +1,7 @@
 import { NextResponse } from 'next/server'
 
+import { destinoSeguro } from '@/server/auth/destino'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
-
-/**
- * `next` só pode ser caminho interno: vindo de um link de e-mail, aceitar
- * qualquer valor transformaria a rota em redirecionamento aberto (`//evil.com`
- * é URL absoluta para o navegador, por isso a segunda barra também é barrada).
- */
-function destinoSeguro(next: string | null): string {
-  if (!next || !next.startsWith('/') || next.startsWith('//')) return '/onboarding'
-  return next
-}
 
 /**
  * Link de confirmação de e-mail (cadastro) e de redefinição de senha caem

@@ -2120,3 +2120,12 @@ crawler sem congelar a lista. Nota de método: minha primeira leitura da tabela 
 "zero rotas estáticas" porque a janela do `sed` cortava antes das últimas linhas — a checagem
 correta não é a contagem total, é conferir que nenhuma página de `admin/`, `(auth)/` ou
 `(public)/` aparece como `○`.
+
+2026-08-22 · Revisão adversarial do próprio diff achou redirecionamento aberto no `next` que EU
+tinha adicionado em `/auth/callback`: `/\evil.com` começa com `/`, não começa com `//`, passa
+pela checagem ingênua — e `new URL()` resolve a barra invertida como barra, devolvendo
+`https://evil.com/` · Trocado por lista fechada de destinos (`src/server/auth/destino.ts`) com
+teste · validar caminho é fácil de errar e `next` chega por link de e-mail, que é o canal de quem
+quer usar o domínio do CICLO como trampolim. Como só existe um destino de verdade
+(`/nova-senha`), a lista custa nada. **Vale pra família inteira:** nenhum parâmetro de
+redirecionamento deve ser validado por prefixo — ou é lista fechada, ou não existe.
