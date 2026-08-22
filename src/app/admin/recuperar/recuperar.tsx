@@ -102,10 +102,23 @@ export default function RecuperarReceita({ inicial }: { inicial: ListaRecuperar 
 
   return (
     <div>
+      {/*
+        O número era "Valor parado" e ninguém tinha como entendê-lo: §5.3 define
+        valor em risco como `preço do serviço × chance de recuperação por
+        estado`, então numa barbearia de corte a R$ 45 a linha de uma cliente
+        aparecia como R$ 5,40 — nem o preço, nem o total, e sem explicação em
+        lugar nenhum da tela. O número continua o mesmo (é ele que ordena a
+        lista pela prioridade certa); o que muda é o rótulo dizer o que ele é.
+      */}
       <div className="mb-5 grid grid-cols-2 gap-3">
-        <StatTile rotulo="Valor parado" valor={dinheiro.format(lista.totalValueCents / 100)} />
+        <StatTile rotulo="Dá para recuperar" valor={dinheiro.format(lista.totalValueCents / 100)} />
         <StatTile rotulo="Clientes" valor={String(lista.count)} />
       </div>
+
+      <p className="mb-4 text-secundario text-txt-3">
+        Estimativa, não promessa: o preço do serviço de cada uma, multiplicado pela chance de ela voltar. Quanto mais
+        tempo sem aparecer, menor a chance — por isso quem sumiu há mais tempo vale menos aqui.
+      </p>
 
       <FilterRow rotulo="Filtrar por estado do ciclo" className="mb-4">
         {FILTROS.map((f) => (

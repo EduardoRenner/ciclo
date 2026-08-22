@@ -9,6 +9,7 @@ import { centralDeAcoes } from '@/server/services/crm'
 import { resumoDeHoje } from '@/server/services/resumo-hoje'
 
 import CentralDeAcoes from './central-de-acoes'
+import CompartilharSite from './compartilhar'
 import Hoje from './hoje'
 
 /** Saudação pelo horário do salão, não pelo do servidor (que roda em UTC na Vercel). */
@@ -53,14 +54,17 @@ export default async function PaginaHoje() {
         descricao={tenantRow?.name ?? undefined}
         acao={
           tenantRow?.slug ? (
-            <Link
-              href={`/${tenantRow.slug}`}
-              target="_blank"
-              className="flex h-12 items-center gap-1 text-label font-semibold text-acc-2 transition active:scale-[.97]"
-            >
-              Ver meu site
-              <ExternalLink aria-hidden className="size-3.5" />
-            </Link>
+            <div className="flex items-center gap-1">
+              <Link
+                href={`/${tenantRow.slug}`}
+                target="_blank"
+                className="flex h-12 items-center gap-1 text-label font-semibold text-acc-2 transition active:scale-[.97]"
+              >
+                Ver meu site
+                <ExternalLink aria-hidden className="size-3.5" />
+              </Link>
+              <CompartilharSite slug={tenantRow.slug} nome={tenantRow.name ?? 'nosso salão'} />
+            </div>
           ) : null
         }
       />
