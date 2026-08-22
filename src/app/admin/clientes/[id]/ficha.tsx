@@ -105,6 +105,7 @@ export default function Ficha({
   profissionais,
   configFidelidade,
   podeApagarCliente,
+  servicos,
 }: {
   ficha: FichaCliente
   modelos: Modelo[]
@@ -115,6 +116,8 @@ export default function Ficha({
   configFidelidade: ConfigFidelidade
   /** `client:delete` é de dono/gerente; recepção não apaga base de cliente. */
   podeApagarCliente: boolean
+  /** Para vender pacote sem sair da ficha. */
+  servicos: { id: string; name: string; priceCents: number }[]
 }) {
   const router = useRouter()
   const parametros = useSearchParams()
@@ -419,7 +422,7 @@ export default function Ficha({
       {aba === 'fidelidade' ? (
         <div className="mt-4">
           <Fidelidade clientId={cliente.id} pontosIniciais={pontos} assinaturaInicial={assinatura} planos={planos} config={configFidelidade} />
-          <PacotesCarteira pacotes={pacotes} saldoCarteiraCents={saldoCarteiraCents} />
+          <PacotesCarteira clientId={cliente.id} pacotes={pacotes} saldoCarteiraCents={saldoCarteiraCents} servicos={servicos} />
         </div>
       ) : null}
 
