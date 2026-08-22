@@ -2162,3 +2162,9 @@ token de gestão · Registrado como pendência do Eduardo, com os valores exatos
 `https://ciclo-umber.vercel.app/**` (mantendo `http://localhost:3000/**` para o desenvolvimento).
 **Explica a nota antiga** de que o clique no link de confirmação nunca tinha sido testado de
 verdade — não era falta de teste, era config quebrada desde o primeiro deploy.
+
+2026-08-22 · Eduardo corrigiu Site URL e Redirect URLs no painel do Supabase (Authentication →
+URL Configuration) · Reconferido com a mesma sonda: `https://ciclo-umber.vercel.app`,
+`.../auth/callback` e `.../auth/callback?next=/nova-senha` agora são preservados pelo GoTrue —
+os três deixaram de cair em localhost. Bloqueio de e-mail de confirmação e recuperação de senha
+em produção, **resolvido**.
