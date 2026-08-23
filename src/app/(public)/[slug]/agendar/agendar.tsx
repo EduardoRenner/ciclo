@@ -285,9 +285,29 @@ export default function Agendar({
     )
   }
 
+  /*
+   * Com "Qualquer um", a API devolve o mesmo horário uma vez por profissional que atende — e a
+   * tela pintava um chip para cada. Medido no tenant de demonstração: 126 chips para 42
+   * horários, com HTML byte a byte idêntico entre os três "09:00". Pior, o estado de selecionado
+   * comparava só `startsAt`, então clicar num deles marcava `aria-pressed="true"` nos três: o
+   * leitor de tela anunciava três botões pressionados quando um só foi escolhido.
+   *
+   * Quem escolheu "Qualquer um" escolheu não decidir quem atende — três botões iguais só podem
+   * confundir. Fica um por horário, o primeiro disponível, que é exatamente o profissional que o
+   * servidor escolheria sozinho se o corpo fosse sem `professionalId` (`public-booking.ts`:
+   * "se `professionalId` não vier, agrega a disponibilidade de todos"). Nenhuma regra nova: a
+   * mesma pessoa é atribuída, com um chip em vez de três.
+   *
+   * Com profissional escolhido a API já filtra, então não há duplicata e o `Map` não muda nada.
+   */
+  const slotsUnicos = slots ? [...new Map(slots.map((s) => [s.startsAt, s])).values()] : null
+
   const slotsPorPeriodo =
-    slots && slots.length > 0
-      ? (['Manhã', 'Tarde', 'Noite'] as const).map((p) => ({ periodo: p, itens: slots.filter((s) => periodo(s.startsAt, timezone) === p) }))
+    slotsUnicos && slotsUnicos.length > 0
+      ? (['Manhã', 'Tarde', 'Noite'] as const).map((p) => ({
+          periodo: p,
+          itens: slotsUnicos.filter((s) => periodo(s.startsAt, timezone) === p),
+        }))
       : []
 
   return (
@@ -469,7 +489,18 @@ export default function Agendar({
             <input value={website} onChange={(e) => setWebsite(e.target.value)} tabIndex={-1} autoComplete="off" />
           </label>
 
-          <Button largura="cheia" carregando={pendente} disabled={!nome || !telefone} onClick={confirmar}>
+          {/*
+            Mesmo defeito do TICKET-105 em `/avaliar`: travado sem dizer por quê. Quem enxerga
+            deduz pelos dois campos vazios logo acima; no leitor de tela saía "Confirmar
+            agendamento, indisponível" e ponto — na última tela do funil que traz cliente novo.
+          */}
+          <Button
+            largura="cheia"
+            carregando={pendente}
+            disabled={!nome || !telefone}
+            motivoDesabilitado="Preencha seu nome e seu telefone para confirmar."
+            onClick={confirmar}
+          >
             Confirmar agendamento
           </Button>
         </Card>
