@@ -9,8 +9,32 @@ import { NextResponse, type NextRequest } from 'next/server'
  */
 const PREFIXOS_PROTEGIDOS = ['/admin', '/onboarding']
 
-function ehProtegida(pathname: string): boolean {
+/**
+ * Exige sessão: sem usuário, redireciona para `/entrar`. **Só telas.**
+ *
+ * `/api/*` não entra aqui de propósito — uma chamada de API sem sessão precisa de `401` no
+ * envelope JSON de `docs/02-API.md §1`, não de um `302` para uma página de login que nenhum
+ * `fetch()` sabe interpretar.
+ */
+export function exigeSessao(pathname: string): boolean {
   return PREFIXOS_PROTEGIDOS.some((p) => pathname === p || pathname.startsWith(`${p}/`))
+}
+
+/**
+ * Nunca pode ser guardado por navegador, CDN ou proxy (auditoria de segurança, achado S10).
+ *
+ * Antes isto era a mesma pergunta que `exigeSessao`, e por isso **nenhuma resposta de `/api/v1`
+ * levava `Cache-Control`** — nem `GET /clients/{id}/vault`, que devolve ficha de saúde
+ * decifrada, nem `GET /media/{id}/url`, que devolve URL assinada, nem `GET /cash/daily`. O
+ * CLAUDE.md deste projeto proíbe cachear `/vault` no service worker, e o service worker obedece;
+ * a camada HTTP, que é a que sobrevive ao PWA, nunca tinha recebido a mesma regra.
+ *
+ * As duas perguntas são separadas porque as respostas são diferentes: `/api/*` não exige sessão
+ * (o público de agendamento vive lá), mas nada em `/api/*` deve ser cacheado — as rotas públicas
+ * são de volume baixo e a disponibilidade delas não depende de cache de navegador.
+ */
+export function naoCacheavel(pathname: string): boolean {
+  return exigeSessao(pathname) || pathname === '/api' || pathname.startsWith('/api/')
 }
 
 /**
@@ -65,7 +89,7 @@ function cabecalhosDeSeguranca(nonce: string): string {
   return csp.replace(/\s{2,}/g, ' ').trim()
 }
 
-function aplicarCabecalhosDeSeguranca(resposta: NextResponse, csp: string, protegida: boolean): void {
+function aplicarCabecalhosDeSeguranca(resposta: NextResponse, csp: string, semCache: boolean): void {
   resposta.headers.set('Content-Security-Policy', csp)
   // HSTS só faz efeito em HTTPS (Vercel), e não atrapalha `pnpm dev` em HTTP —
   // o navegador ignora o header fora de conexão segura.
@@ -91,20 +115,21 @@ function aplicarCabecalhosDeSeguranca(resposta: NextResponse, csp: string, prote
    * dinâmico, dado de tenant (faturamento, agenda, ficha de cliente) nunca
    * fica cacheável — nem pelo navegador, nem por infraestrutura no meio.
    */
-  if (protegida) resposta.headers.set('Cache-Control', 'private, no-store, max-age=0, must-revalidate')
+  if (semCache) resposta.headers.set('Cache-Control', 'private, no-store, max-age=0, must-revalidate')
 }
 
 export async function middleware(req: NextRequest) {
   const nonce = Buffer.from(crypto.randomUUID()).toString('base64')
   const csp = cabecalhosDeSeguranca(nonce)
-  const protegida = ehProtegida(req.nextUrl.pathname)
+  const protegida = exigeSessao(req.nextUrl.pathname)
+  const semCache = naoCacheavel(req.nextUrl.pathname)
 
   const requestHeaders = new Headers(req.headers)
   requestHeaders.set('x-nonce', nonce)
   requestHeaders.set('Content-Security-Policy', csp)
 
   let resposta = NextResponse.next({ request: { headers: requestHeaders } })
-  aplicarCabecalhosDeSeguranca(resposta, csp, protegida)
+  aplicarCabecalhosDeSeguranca(resposta, csp, semCache)
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -116,7 +141,7 @@ export async function middleware(req: NextRequest) {
       setAll: (novos) => {
         for (const { name, value } of novos) req.cookies.set(name, value)
         resposta = NextResponse.next({ request: { headers: requestHeaders } })
-        aplicarCabecalhosDeSeguranca(resposta, csp, protegida)
+        aplicarCabecalhosDeSeguranca(resposta, csp, semCache)
         for (const { name, value, options } of novos) resposta.cookies.set(name, value, options)
       },
     },
@@ -133,7 +158,7 @@ export async function middleware(req: NextRequest) {
     // Guarda para onde a pessoa queria ir, para voltar depois de entrar.
     entrar.searchParams.set('proximo', req.nextUrl.pathname)
     const redirecionamento = NextResponse.redirect(entrar)
-    aplicarCabecalhosDeSeguranca(redirecionamento, csp, protegida)
+    aplicarCabecalhosDeSeguranca(redirecionamento, csp, semCache)
     return redirecionamento
   }
 
