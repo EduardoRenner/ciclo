@@ -21,7 +21,7 @@ Referência visual viva: `ciclo-prototipo-mobile.html` (o protótipo clicável).
   --txt-2: #a5a5b8;   /* secundário       contraste 7:1  */
   --txt-3: #6e6e85;   /* terciário/label  contraste 4,6:1 — nunca abaixo disso */
 
-  /* acento: TROCA conforme o pack da vertical */
+  /* acento — ver nota logo abaixo: estes três valores estão SUPERADOS desde 2026-08-19 */
   --acc:      #a855f7;
   --acc-2:    #c084fc;
   --acc-soft: rgba(168,85,247,.16);
@@ -39,18 +39,34 @@ Referência visual viva: `ciclo-prototipo-mobile.html` (o protótipo clicável).
 }
 ```
 
-#### Acento por vertical
+#### ⚠️ SUPERADO — "acento por vertical" (histórico, não implementar)
 
-| Pack | `--acc` | `--acc-2` |
+> **Esta seção inteira foi substituída em 2026-08-19** por `08-REDESIGN-E-IDENTIDADE.md` Parte II
+> §3.3, e depois pela mudança de origem do dado descrita logo abaixo (2026-08-22). Mantida aqui
+> só como registro histórico — **nunca use os valores desta tabela em código novo**.
+
+| Pack | `--acc` (superado) | `--acc-2` (superado) |
 |---|---|---|
-| Cílios | `#a855f7` | `#c084fc` |
-| Unhas | `#ec4899` | `#f9a8d4` |
-| Barbearia | `#f59e0b` | `#fcd34d` |
-| Sobrancelhas | `#8b5cf6` | `#a78bfa` |
-| Estética | `#10b981` | `#6ee7b7` |
-| Depilação | `#f97316` | `#fdba74` |
+| Cílios | ~~`#a855f7`~~ | ~~`#c084fc`~~ |
+| Unhas | ~~`#ec4899`~~ | ~~`#f9a8d4`~~ |
+| Barbearia | ~~`#f59e0b`~~ | ~~`#fcd34d`~~ |
+| Sobrancelhas | ~~`#8b5cf6`~~ | ~~`#a78bfa`~~ |
+| Estética | ~~`#10b981`~~ | ~~`#6ee7b7`~~ |
+| Depilação | ~~`#f97316`~~ | ~~`#fdba74`~~ |
 
-O acento vem de `vertical_packs.accent_color` e é injetado como CSS custom property no `<html>` no servidor. **Nunca hardcode a cor de acento em componente.**
+#### Acento vigente (2026-08-22 em diante)
+
+O acento do **app do profissional** é fixo: `--acc: #f0ebe3` (osso), definido em
+`src/app/globals.css` — ver `08-REDESIGN-E-IDENTIDADE.md` Parte II §3.3, que é quem decide em caso
+de divergência.
+
+O acento do **site público de cada salão** (`/{slug}`) é **escolha do dono**, guardado em
+`tenants.settings.site.accent` e editável em `/admin/config/negocio`. Sem escolha, o site nasce
+osso — nunca herda cor de profissão/vertical. `vertical_packs.accent_color` **não é mais lido**
+para cor nenhuma (só semeia serviço/produto); a coluna existe só por compatibilidade com dados
+antigos. Ver `docs/13-CAUSA-RAIZ-LAYOUT-LEGADO.md` (T3) para o motivo: a tabela acima, com duas
+entradas roxas, era a fonte do "layout roxo" reaparecendo no site de salões de cílios e
+sobrancelha. **Nunca hardcode cor de acento em componente** — nem o valor antigo, nem o novo.
 
 ---
 

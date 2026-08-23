@@ -86,7 +86,7 @@ export const perfilPublico = cache(async (slug: string): Promise<PerfilPublico> 
   return withNovoTenant(async (svc) => {
     const tenant = await tenantPeloSlug(svc, slug)
 
-    const [servicos, profissionais, pack, horarioPadrao, todasAsNotas, comentariosRecentes] = await Promise.all([
+    const [servicos, profissionais, horarioPadrao, todasAsNotas, comentariosRecentes] = await Promise.all([
       svc
         .from('services')
         .select('id, name, description, duration_min, price_cents, pricing_model, hourly_rate_cents, half_day_price_cents')
@@ -103,7 +103,6 @@ export const perfilPublico = cache(async (slug: string): Promise<PerfilPublico> 
         .eq('accepts_online', true)
         .is('deleted_at', null)
         .order('display_name'),
-      svc.from('vertical_packs').select('accent_color').eq('vertical', tenant.vertical).maybeSingle(),
       listarExpediente(svc, tenant.id, null),
       // Nota média sobre TODAS as avaliações — ver comentário de `reviews` em PerfilPublico.
       svc.from('client_reviews').select('rating').eq('tenant_id', tenant.id),
@@ -117,12 +116,17 @@ export const perfilPublico = cache(async (slug: string): Promise<PerfilPublico> 
     ])
     if (servicos.error) throw new AppError('INTERNAL', { cause: servicos.error })
     if (profissionais.error) throw new AppError('INTERNAL', { cause: profissionais.error })
-    if (pack.error) throw new AppError('INTERNAL', { cause: pack.error })
     if (todasAsNotas.error) throw new AppError('INTERNAL', { cause: todasAsNotas.error })
     if (comentariosRecentes.error) throw new AppError('INTERNAL', { cause: comentariosRecentes.error })
 
     const site = lerSite(tenant.settings)
-    const acc = pack.data?.accent_color ?? ACENTO_PADRAO.acc
+    // docs/13-CAUSA-RAIZ-LAYOUT-LEGADO.md (T3): a cor é escolha do dono
+    // (`site.accent`, editável em /admin/config/negocio), nunca mais fixa por
+    // profissão — era assim que cílios/sobrancelha nasciam roxo. Sem escolha,
+    // osso; o schema já garante formato `#rrggbb` antes de chegar aqui, mas o
+    // `HEX.test` em `layout.tsx` é a segunda camada que nunca deixa nada além
+    // de hex válido virar `style` inline.
+    const acc = site.accent ?? ACENTO_PADRAO.acc
 
     return {
       name: tenant.name,

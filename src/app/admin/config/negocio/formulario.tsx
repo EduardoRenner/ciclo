@@ -12,8 +12,11 @@ type Tenant = {
   slug: string
   phone: string | null
   address: string | null
-  site: { tagline?: string | null; about?: string | null; whatsapp?: string | null; instagram?: string | null }
+  site: { tagline?: string | null; about?: string | null; whatsapp?: string | null; instagram?: string | null; accent?: string | null }
 }
+
+/** O mesmo osso do app (`--acc` em globals.css) — nunca o roxo antigo. */
+const ACENTO_PADRAO = '#f0ebe3'
 
 export default function FormularioNegocio({ tenant, urlSite }: { tenant: Tenant; urlSite: string }) {
   const mostrarToast = useToast()
@@ -27,6 +30,10 @@ export default function FormularioNegocio({ tenant, urlSite }: { tenant: Tenant;
   const [sobre, setSobre] = useState(tenant.site.about ?? '')
   const [whatsapp, setWhatsapp] = useState(tenant.site.whatsapp ?? '')
   const [instagram, setInstagram] = useState(tenant.site.instagram ?? '')
+  // `null` = site nasce na cor padrão do CICLO. Só vira um hex quando o dono
+  // escolhe de propósito — nunca herda cor de nicho/profissão (era assim que
+  // cílios/sobrancelha nasciam roxo, ver docs/13-CAUSA-RAIZ-LAYOUT-LEGADO.md).
+  const [acento, setAcento] = useState<string | null>(tenant.site.accent ?? null)
   const [erro, setErro] = useState<string | null>(null)
 
   function copiarLink() {
@@ -47,6 +54,7 @@ export default function FormularioNegocio({ tenant, urlSite }: { tenant: Tenant;
         about: sobre.trim() || null,
         whatsapp: whatsapp.trim() || null,
         instagram: instagram.trim() || null,
+        accent: acento,
       },
     }
 
@@ -176,6 +184,30 @@ export default function FormularioNegocio({ tenant, urlSite }: { tenant: Tenant;
             className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo text-txt"
           />
         </label>
+
+        <div className="flex flex-col gap-1">
+          <span className="text-label font-semibold text-txt-2">Cor do seu site</span>
+          <div className="flex items-center gap-3">
+            <input
+              type="color"
+              value={acento ?? ACENTO_PADRAO}
+              onChange={(e) => setAcento(e.target.value)}
+              aria-label="Escolher a cor do site"
+              className="size-12 shrink-0 cursor-pointer rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 p-1"
+            />
+            {acento !== null ? (
+              <button
+                type="button"
+                onClick={() => setAcento(null)}
+                className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-secundario text-txt-2 transition hover:bg-surface-3"
+              >
+                Usar a cor padrão
+              </button>
+            ) : (
+              <span className="text-secundario text-txt-3">Cor padrão do CICLO. Toque na amostra para escolher a sua.</span>
+            )}
+          </div>
+        </div>
 
         {erro ? (
           <p role="alert" className="text-secundario text-bad">

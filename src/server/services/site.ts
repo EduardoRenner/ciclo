@@ -16,6 +16,12 @@ type Cliente = SupabaseClient<Database>
  * inteiro, ou um save de "sobre o negócio" apagaria configuração de agenda
  * sem ninguém perceber.
  */
+/**
+ * docs/13-CAUSA-RAIZ-LAYOUT-LEGADO.md (T3, §5.1): a cor do site público
+ * deixou de vir de `vertical_packs.accent_color` (fixa por profissão, e duas
+ * delas eram roxo legado) e passa a ser escolha do dono, guardada aqui. Sem
+ * escolha, o site nasce osso — nunca herda cor de outro lugar.
+ */
 export const EsquemaSite = z.object({
   tagline: z.string().trim().max(140, 'Frase muito longa.').nullish(),
   about: z.string().trim().max(2000, 'Texto muito longo.').nullish(),
@@ -26,11 +32,16 @@ export const EsquemaSite = z.object({
     .max(60, 'Muito longo.')
     .transform((s) => s.replace(/^@/, ''))
     .nullish(),
+  accent: z
+    .string()
+    .trim()
+    .regex(/^#[0-9a-f]{6}$/i, 'Use uma cor no formato #rrggbb.')
+    .nullish(),
 })
 
 export type Site = z.infer<typeof EsquemaSite>
 
-const SITE_VAZIO: Site = { tagline: null, about: null, whatsapp: null, instagram: null }
+const SITE_VAZIO: Site = { tagline: null, about: null, whatsapp: null, instagram: null, accent: null }
 
 /** Nunca lança — `settings` de um tenant antigo pode não ter `site` nenhum, e isso não é erro. */
 export function lerSite(settings: unknown): Site {

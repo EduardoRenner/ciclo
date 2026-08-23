@@ -65,7 +65,7 @@ function cabecalhosDeSeguranca(nonce: string): string {
   return csp.replace(/\s{2,}/g, ' ').trim()
 }
 
-function aplicarCabecalhosDeSeguranca(resposta: NextResponse, csp: string): void {
+function aplicarCabecalhosDeSeguranca(resposta: NextResponse, csp: string, protegida: boolean): void {
   resposta.headers.set('Content-Security-Policy', csp)
   // HSTS só faz efeito em HTTPS (Vercel), e não atrapalha `pnpm dev` em HTTP —
   // o navegador ignora o header fora de conexão segura.
@@ -81,18 +81,30 @@ function aplicarCabecalhosDeSeguranca(resposta: NextResponse, csp: string): void
   )
   resposta.headers.set('Cross-Origin-Opener-Policy', 'same-origin')
   resposta.headers.set('Cross-Origin-Resource-Policy', 'same-origin')
+
+  /**
+   * docs/13-CAUSA-RAIZ-LAYOUT-LEGADO.md (T6). O Next já não pré-renderiza
+   * estas rotas (`force-dynamic`/uso de `cookies()`), então o header default
+   * já tende a ser `no-store` — mas isso é efeito colateral de como a rota é
+   * escrita, não uma garantia. Cravar aqui é defesa em profundidade: mesmo
+   * que um CDN entre na frente algum dia, ou uma tela nova esqueça de forçar
+   * dinâmico, dado de tenant (faturamento, agenda, ficha de cliente) nunca
+   * fica cacheável — nem pelo navegador, nem por infraestrutura no meio.
+   */
+  if (protegida) resposta.headers.set('Cache-Control', 'private, no-store, max-age=0, must-revalidate')
 }
 
 export async function middleware(req: NextRequest) {
   const nonce = Buffer.from(crypto.randomUUID()).toString('base64')
   const csp = cabecalhosDeSeguranca(nonce)
+  const protegida = ehProtegida(req.nextUrl.pathname)
 
   const requestHeaders = new Headers(req.headers)
   requestHeaders.set('x-nonce', nonce)
   requestHeaders.set('Content-Security-Policy', csp)
 
   let resposta = NextResponse.next({ request: { headers: requestHeaders } })
-  aplicarCabecalhosDeSeguranca(resposta, csp)
+  aplicarCabecalhosDeSeguranca(resposta, csp, protegida)
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -104,7 +116,7 @@ export async function middleware(req: NextRequest) {
       setAll: (novos) => {
         for (const { name, value } of novos) req.cookies.set(name, value)
         resposta = NextResponse.next({ request: { headers: requestHeaders } })
-        aplicarCabecalhosDeSeguranca(resposta, csp)
+        aplicarCabecalhosDeSeguranca(resposta, csp, protegida)
         for (const { name, value, options } of novos) resposta.cookies.set(name, value, options)
       },
     },
@@ -115,13 +127,13 @@ export async function middleware(req: NextRequest) {
   // teria como escrever o cookie novo.
   const { data } = await db.auth.getUser()
 
-  if (!data.user && ehProtegida(req.nextUrl.pathname)) {
+  if (!data.user && protegida) {
     const entrar = req.nextUrl.clone()
     entrar.pathname = '/entrar'
     // Guarda para onde a pessoa queria ir, para voltar depois de entrar.
     entrar.searchParams.set('proximo', req.nextUrl.pathname)
     const redirecionamento = NextResponse.redirect(entrar)
-    aplicarCabecalhosDeSeguranca(redirecionamento, csp)
+    aplicarCabecalhosDeSeguranca(redirecionamento, csp, protegida)
     return redirecionamento
   }
 

@@ -21,7 +21,12 @@ type Props = {
   aoSalvar: (profissional: ProfissionalEditavel) => void
 }
 
-const CORES = ['#a855f7', '#ec4899', '#f59e0b', '#10b981', '#60a5fa', '#f87171']
+// docs/13-CAUSA-RAIZ-LAYOUT-LEGADO.md (T4): `#a855f7` era o purple-500 cru que
+// a Parte II do redesign tirou do resto do produto — aqui continuava sendo o
+// PRIMEIRO valor da lista, ou seja, pré-selecionado (`CORES[0]`) em todo
+// cadastro novo. Paleta trocada e a pré-seleção removida: sem escolha, o
+// profissional nasce sem cor (`null`), nunca roxo por default.
+const CORES = ['#ec4899', '#f59e0b', '#10b981', '#60a5fa', '#f87171', '#eab308']
 
 /**
  * Cadastro de profissional sem convite/login — o "profissional que não usa o
@@ -36,7 +41,9 @@ export default function FormularioProfissional({ aberto, aoFechar, profissional,
 
   const [nome, setNome] = useState(profissional?.display_name ?? '')
   const [bio, setBio] = useState(profissional?.bio ?? '')
-  const [cor, setCor] = useState(profissional?.color ?? CORES[0]!)
+  // Sem pré-seleção: quem não escolhe fica sem cor, não herda a primeira da
+  // lista (era assim que o roxo virava default silencioso — ver CORES acima).
+  const [cor, setCor] = useState<string | null>(profissional?.color ?? null)
   const [aceitaOnline, setAceitaOnline] = useState(profissional?.accepts_online ?? true)
   const [erro, setErro] = useState<string | null>(null)
 
@@ -91,8 +98,8 @@ export default function FormularioProfissional({ aberto, aoFechar, profissional,
           />
         </label>
         <div className="flex flex-col gap-1">
-          <span className="text-label font-semibold text-txt-2">Cor na agenda</span>
-          <div className="flex gap-2">
+          <span className="text-label font-semibold text-txt-2">Cor (opcional)</span>
+          <div className="flex flex-wrap gap-2">
             {CORES.map((c) => (
               <button
                 key={c}
@@ -104,6 +111,15 @@ export default function FormularioProfissional({ aberto, aoFechar, profissional,
                 style={{ backgroundColor: c, outline: cor === c ? `2px solid var(--txt)` : undefined, outlineOffset: 2 }}
               />
             ))}
+            {cor !== null ? (
+              <button
+                type="button"
+                onClick={() => setCor(null)}
+                className="flex h-9 items-center rounded-[var(--radius-pill)] border border-line-2 bg-surface-2 px-3 text-label text-txt-2 transition hover:bg-surface-3"
+              >
+                Remover cor
+              </button>
+            ) : null}
           </div>
         </div>
         <label className="flex items-center gap-2 py-1">

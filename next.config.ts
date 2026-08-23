@@ -2,6 +2,14 @@ import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Identificador de build exposto ao cliente (docs/13-CAUSA-RAIZ-LAYOUT-LEGADO.md
+  // T1): é o que faz o service worker trocar de nome de cache a cada deploy,
+  // em vez de depender de alguém lembrar de incrementar uma string à mão —
+  // foi exatamente essa string digitada (`ciclo-v2`, parada desde 19/08) que
+  // deixou o app roxo preso no cache de quem visitou antes do redesign.
+  env: {
+    NEXT_PUBLIC_BUILD_ID: process.env.VERCEL_GIT_COMMIT_SHA ?? "dev",
+  },
   // O app do profissional morava na raiz (`/hoje`, `/agenda`...) e mudou pra
   // `/admin/*` — favoritos e o PWA já instalado no celular apontam pro
   // endereço velho. Redirect permanente, não um `notFound()`.

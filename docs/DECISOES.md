@@ -2168,3 +2168,29 @@ URL Configuration) · Reconferido com a mesma sonda: `https://ciclo-umber.vercel
 `.../auth/callback` e `.../auth/callback?next=/nova-senha` agora são preservados pelo GoTrue —
 os três deixaram de cair em localhost. Bloqueio de e-mail de confirmação e recuperação de senha
 em produção, **resolvido**.
+
+2026-08-22 · Execução do plano de docs/13-CAUSA-RAIZ-LAYOUT-LEGADO.md (T1-T7): o dono escolhe a
+cor do site (decisão do Eduardo, confirmada antes de começar) · T3 implementado assim: campo de
+cor em `/admin/config/negocio`, guardado em `tenants.settings.site.accent`, sem escolha cai em
+osso · `vertical_packs.accent_color` (T3/§7): coluna virou nullable e os 6 valores foram zerados
+via migration 0033, aplicada no banco de verdade (idempotente, reversível — rollback documentado
+no próprio arquivo). A coluna **não foi removida** de propósito: `vertical_packs` continua
+existindo para semear serviço/produto, e apagar coluna é passo mais caro que só vale a pena depois
+que o Eduardo confirmar em produção que o cache antigo (`ciclo-v2`) sumiu dos aparelhos reais —
+isso este ambiente não consegue verificar.
+
+2026-08-22 · R3 (`professionals.color` gravado, nunca lido) — usar na agenda (feature nova) ou
+remover (mudança maior, decisão de produto)? · Nenhum dos dois: corrigida só a causa do roxo
+(paleta sem purple, sem pré-seleção — CORES[0] deixou de ser aplicado por default), a
+funcionalidade em si (ligar a cor à agenda, ou apagar o campo) fica em aberto · a sessão tinha
+escopo de corrigir a regressão do layout, não de desenhar feature nova de agenda nem de decidir
+remoção de dado que pode voltar a ter uso. Registrado para não se perder: hoje o campo é
+puramente decorativo e nenhuma tela lê `professionals.color` além do próprio formulário que grava.
+
+2026-08-22 · T6 (Cache-Control explícito em `/admin/*`) medido ao vivo: em página já dinâmica
+(`force-dynamic`/`cookies()`), o próprio Next sobrescreve com o `no-store` dele — meu header some
+do resultado final, mas o efeito prático (nunca cachear) já estava garantido por outro caminho.
+Onde o header do middleware realmente aparece é no redirect de "sem sessão" (gerado só pelo
+middleware, sem passar pelo pipeline de página) e serve de rede de segurança para qualquer tela
+futura sob `/admin/*` que algum dia esqueça `force-dynamic` e vire candidata a página estática —
+exatamente o tipo de esquecimento que causou o bug do roxo.

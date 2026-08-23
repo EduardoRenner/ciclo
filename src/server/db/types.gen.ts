@@ -2868,7 +2868,7 @@ export type Database = {
       }
       vertical_packs: {
         Row: {
-          accent_color: string
+          accent_color: string | null
           anamnesis: Json
           consent_texts: Json
           consumption: Json
@@ -2878,7 +2878,7 @@ export type Database = {
           vertical: Database["public"]["Enums"]["vertical_pack"]
         }
         Insert: {
-          accent_color: string
+          accent_color?: string | null
           anamnesis: Json
           consent_texts: Json
           consumption: Json
@@ -2888,7 +2888,7 @@ export type Database = {
           vertical: Database["public"]["Enums"]["vertical_pack"]
         }
         Update: {
-          accent_color?: string
+          accent_color?: string | null
           anamnesis?: Json
           consent_texts?: Json
           consumption?: Json
