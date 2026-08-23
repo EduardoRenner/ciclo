@@ -1,3 +1,4 @@
+import { Temporal } from '@js-temporal/polyfill'
 import { z } from 'zod'
 
 import { AppError } from '@/server/http/errors'
@@ -288,9 +289,23 @@ export async function assinar(
  * pessoa foi assinante entre tais meses — é o que explica a receita daquele período.
  */
 export async function cancelarAssinatura(db: Cliente, tenantId: string, id: string) {
+  /*
+   * `new Date().toISOString()` datava em UTC: em Brasília, cancelar às 22h gravava o dia
+   * seguinte. Num dia 31 isso joga o cancelamento para o mês errado — e o comentário acima diz
+   * que a data existe justamente para explicar a receita daquele período.
+   *
+   * A consulta a mais é aceitável aqui porque cancelar assinatura é ação rara e deliberada; é o
+   * mesmo padrão que `agendamentos.ts` usa antes de recalcular o ciclo.
+   */
+  const { data: tenantRow } = await db.from('tenants').select('timezone').eq('id', tenantId).maybeSingle()
+  const hojeNoSalao = Temporal.Now.instant()
+    .toZonedDateTimeISO(tenantRow?.timezone ?? 'America/Sao_Paulo')
+    .toPlainDate()
+    .toString()
+
   const { data, error } = await db
     .from('client_subscriptions')
-    .update({ status: 'canceled', canceled_on: new Date().toISOString().slice(0, 10) })
+    .update({ status: 'canceled', canceled_on: hojeNoSalao })
     .eq('id', id)
     .eq('tenant_id', tenantId)
     .eq('status', 'active')
