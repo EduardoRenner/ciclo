@@ -4,7 +4,7 @@
 
 /*
  * Tokens de `docs/03-DESIGN-SYSTEM.md §1`, com as emendas de
- * `docs/08-REDESIGN-UI.md §7`. O tema escuro é o padrão — não é uma variante, é
+ * `docs/08-REDESIGN-E-IDENTIDADE.md`. O tema escuro é o padrão — não é uma variante, é
  * como o produto se parece. Por isso os valores moram em `:root` e não numa
  * classe `.dark`: o salão abre a agenda no escuro sem depender de classe no
  * <html>.
@@ -15,7 +15,8 @@
    * inteira. O acento deixou de ser um matiz (era o purple-500 cru do
    * Tailwind — a cor default de todo app gerado) e virou luz: um branco
    * quente. A interface do CICLO não tem cor de marca; a cor do salão vive só
-   * na página pública dele (`vertical_packs.accent_color`, Parte II §3.8).
+   * na página pública dele, e vem de `tenants.settings.site.accent` (ver o
+   * bloco de `--acc` abaixo).
    */
 
   /* superfícies — preto QUENTE, não azulado (o antigo lia como "preto de software") */
@@ -42,10 +43,15 @@
   --txt-3: #99938c;
 
   /*
-   * Acento do PRODUTO — osso. Não é mais função da vertical: o acento por
-   * vertical (Parte II §3.8) só é aplicado no escopo público (`/[slug]`), não
-   * aqui. 16,46:1 sobre --bg nos dois sentidos — nunca precisa compensar com
-   * peso de fonte, ao contrário do roxo (4,94:1).
+   * Acento do PRODUTO — osso, fixo. 16,46:1 sobre --bg nos dois sentidos —
+   * nunca precisa compensar com peso de fonte, ao contrário do roxo (4,94:1).
+   *
+   * O acento do site público de cada salão (`/[slug]`) é OUTRA coisa e vem de
+   * `tenants.settings.site.accent`, escolha do dono. NÃO vem mais de
+   * `vertical_packs.accent_color` — era essa a fonte do "layout roxo" que
+   * voltava em salão de cílios e sobrancelha (`docs/13-CAUSA-RAIZ-LAYOUT-
+   * LEGADO.md` T3, executado no 14). Cor de acento nunca é hardcoded em
+   * componente, nem o valor antigo nem o novo.
    */
   --acc: #f0ebe3;
   --acc-2: #fffcf7;
@@ -160,7 +166,7 @@
   --font-sans: var(--font-sans);
 
   /*
-   * Escala de §2, com as correções de `08-REDESIGN-UI §4.2`. `rem` para
+   * Escala de §2, com as correções de `08-REDESIGN-E-IDENTIDADE.md`. `rem` para
    * respeitar o tamanho de fonte do sistema. Entrelinha e tracking passam a ser
    * parte do token: sem isso, cada tela decidia sozinha, e "número grande" com
    * entrelinha de corpo é o que faz um valor de R$ parecer desenhado por
@@ -210,7 +216,7 @@
    */
   --shadow-elevado: 0 1px 2px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.03);
   --shadow-flutuante: 0 8px 24px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.04);
-  /* O FAB é a única peça que se ilumina: a sombra herda o acento da vertical. */
+  /* O FAB é a única peça que se ilumina: a sombra herda `--acc`, que é fixo. */
   --shadow-fab: 0 6px 20px color-mix(in srgb, var(--acc) 35%, transparent);
 }
 
