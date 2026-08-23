@@ -2194,3 +2194,10 @@ Onde o header do middleware realmente aparece é no redirect de "sem sessão" (g
 middleware, sem passar pelo pipeline de página) e serve de rede de segurança para qualquer tela
 futura sob `/admin/*` que algum dia esqueça `force-dynamic` e vire candidata a página estática —
 exatamente o tipo de esquecimento que causou o bug do roxo.
+
+2026-08-23 · Deploy de produção depois da auditoria de design/UX e do adendo do Motor de Ciclo
+(`vercel --prod`, alias `ciclo-umber.vercel.app`) · Conferido ao vivo: `/` responde, `/admin/hoje`
+redireciona para `/entrar` sem sessão, `/dom-rocha/agendar` mostra 42 horários sem duplicata
+(TICKET-109), títulos de aba corretos em `/entrar`, `/avaliar/[token]` e `/dom-rocha/agendar`
+(TICKET-101/111), zero erro no console em todas as páginas conferidas. 19 tickets no ar:
+TICKET-101 a TICKET-113.
