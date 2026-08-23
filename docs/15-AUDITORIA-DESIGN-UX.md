@@ -510,4 +510,95 @@ isoladamente testaria o `Map` do JavaScript, não o produto. O que valeria a pen
 'Qualquer um', a tela mostra um chip por horário" — é asserção sobre DOM renderizado, e este
 projeto não tem camada de teste de componente. Ficou verificado ao vivo, com número antes e
 depois (126 → 42, 150 → 67 botões, 3 chips acesos → 1).
+---
+
+# Rodada 4 (última) — 2026-08-23
+
+Fecha o que faltava: ordem de teclado, breakpoint de tablet e as telas públicas por token.
+
+## 21 · Teclado (FASE 13)
+
+Medido por geometria — ordem do DOM contra ordem visual, ignorando a navegação fixa.
+
+| Tela | Focáveis | Violações de ordem | `tabindex` positivo |
+|---|---|---|---|
+| `/admin/hoje` | 12 | 0 | 0 |
+| `/admin/clientes/nova` | 16 | 0 | 0 |
+| `/dom-rocha/agendar` | 66 | 0 | 0 |
+
+Foco visível confirmado com **Tab de verdade** (não `.focus()` por script, que não dispara
+`:focus-visible`): a regra casa e o contorno é desenhado.
+
+Ganho colateral do TICKET-109: quem navega por teclado no agendamento passa por **66 elementos
+em vez de ~150** até chegar ao formulário.
+
+---
+
+## 22 · Tablet (768px)
+
+`/admin/hoje` e `/dom-rocha/agendar`: estouro 0, nenhum alvo < 48px, nenhum campo sem nome. A
+navegação continua sendo a barra inferior (o `lg` é 1024, correto), o conteúdo fica em 558px
+centralizado, e o toast corrigido no TICKET-110 alinha aqui também (1px, a borda).
+
+---
+
+## 23 · Achado A16 · ▲ Quatro telas públicas ficaram fora da minha própria correção
+
+`/avaliar/[token]`, `/confirmar/[token]`, `/lista-espera/[token]` e `/orcamento/[token]` **não
+tinham `metadata`** e voltavam a exibir "CICLO". O TICKET-101 cobriu `/admin`, `(auth)` e
+`/onboarding` e esqueceu `(public)` — as telas de `[slug]` têm `generateMetadata` próprio e
+mascararam o buraco na conferência.
+
+São justamente as telas que a cliente abre pelo link do WhatsApp: para muita gente, as únicas
+telas do produto que ela vai ver.
+
+**Correção:** título próprio nas quatro, e o guarda `titulos-de-tela.test.ts` estendido para
+`src/app/(public)` — 43 casos agora, contra 37.
+
+---
+
+## 24 · Reportado, não corrigido — becos sem saída nas telas por token
+
+Três das quatro telas por token não têm **link nenhum** em estado terminal nenhum:
+
+| Tela | Links no arquivo | Estado terminal |
+|---|---|---|
+| `/avaliar/[token]` | 0 | "Não consegui abrir · Esse link de avaliação não é mais válido." e nada mais |
+| `/lista-espera/[token]` | 0 | idem |
+| `/orcamento/[token]` | 0 | idem |
+| `/confirmar/[token]` | 1 | **faz certo**: "Marcar outro horário" para `/{slug}/agendar` |
+
+Contraria a regra que o próprio projeto escreveu (§4: estado vazio nunca é só a mensagem; o
+`EmptyState` até torna a ação obrigatória por tipagem) — mas essas telas montam o estado à mão,
+sem o componente.
+
+**Por que não corrigi:** `confirmar` consegue oferecer a saída porque a API dela devolve o
+`slug` do salão. As outras três não recebem o slug — `DadosParaAvaliar` é
+`{ negocioNome, servicoNome, jaAvaliado }`, sem ele. A correção exige mexer em três serviços do
+servidor e nos tipos que eles expõem, e começar isso na última rodada de uma auditoria de design
+seria exatamente o "redesign cego" que o §19 pede para evitar.
+
+**Conserto especificado, para quem pegar:** adicionar `slug` ao retorno dos três serviços e
+espelhar o padrão que `confirmar.tsx` já usa (`slugParaReagendar` → `<Link href={`/${slug}`}>`).
+
+---
+
+## 25 · Falso positivo que quase virou commit — registro honesto
+
+Medi `getComputedStyle(el).outlineColor` no anel de foco e vi `#99938c` (a cor do texto) onde o
+`globals.css` manda `var(--ring)` (`#fffcf7`). Parecia defeito real: o anel herdando
+`currentColor`, mudando de cor por elemento, e o arquivo dizendo o contrário.
+
+**Cheguei a mover a regra para fora de `@layer base`** e medir de novo — não mudou. Aí testei o
+limite: injetei a cor literal em `<style>`, depois com `!important`, depois **inline no próprio
+elemento**. Nenhuma mudou o valor lido. Isso é impossível numa cascata real.
+
+Conclusão: `getComputedStyle().outlineColor` neste navegador de preview não reflete o contorno
+pintado. **O achado era artefato da minha ferramenta, não defeito do produto.** A alteração foi
+revertida — `git checkout` no `globals.css`, árvore limpa — antes de qualquer commit.
+
+Fica registrado porque é a terceira vez nesta auditoria que o instrumento erra antes do produto
+(as outras duas: o scanner que media o checkbox de 20px ignorando o `<label>` de 48px, e o
+`| tail` que devolvia o código de saída errado). Medição sem ceticismo sobre a própria medição
+produz achado falso com a mesma confiança que produz achado verdadeiro.
 
