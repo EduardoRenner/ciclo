@@ -76,7 +76,16 @@ export default function TabBar({ hrefFab = '/admin/agenda/novo' }: Props) {
               'transition duration-[var(--dur-1)] ease-[var(--ease-ios)] hover:brightness-110 active:scale-[.92]',
             )}
           >
-            <Plus aria-hidden className="size-7" />
+            <Plus aria-hidden className="size-7 lg:size-5" />
+            {/*
+              Na coluna lateral o botão tem 207px de largura e trazia só o "+"
+              encostado na esquerda — medido. Os quatro destinos logo abaixo
+              mostram ícone + rótulo, então a ação mais importante do produto
+              era a única peça anônima da navegação, e o `gap-2` ao lado existia
+              para um rótulo que nunca foi escrito. No celular o FAB continua
+              redondo e só com o ícone: lá o `aria-label` basta e texto não cabe.
+            */}
+            <span className="hidden text-corpo font-semibold lg:inline">Novo agendamento</span>
           </Link>
         </div>
 
