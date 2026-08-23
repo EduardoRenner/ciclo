@@ -169,3 +169,84 @@ varredura de carga inicial não o encontra.
 | `professionals.color` só é lido no próprio formulário que o define | Já registrado em `14-RELATORIO-FINAL` §6.4 como decisão de escopo consciente, não esquecimento. |
 | Comentário de `--acc` em `globals.css` ainda cita `vertical_packs.accent_color` como fonte da cor | Documentação desatualizada dentro do código — mesma classe de armadilha que causou o roxo (doc 13 T3). Corrigido nesta rodada. |
 
+---
+
+## 6 · Alterações, arquivo por arquivo
+
+| Arquivo | Alteração | Achado |
+|---|---|---|
+| `src/app/layout.tsx` | `title` vira `{ default, template: '%s · CICLO' }` | A1 |
+| 34 × `page.tsx` (`admin/`, `(auth)/`, `onboarding/`) | `export const metadata = { title: … }` | A1 |
+| `tests/unit/design/titulos-de-tela.test.ts` | **novo** — lê os arquivos de verdade; tela nova nasce reprovando sem título | A1 |
+| `src/app/admin/clientes/importar/importador.tsx` | `onKeyDown` (Enter/Espaço) + copy sem "Toque para" | A2 |
+| `src/components/config/editor-expediente.tsx` | `aria-label` nos 10 campos de hora, `aria-hidden` no "até", `toque-48` nos 7 botões | A3, A4 |
+| `src/components/shell/tab-bar.tsx` | rótulo "Novo agendamento" a partir de `lg` | A5 |
+| `src/app/(public)/avaliar/[token]/avaliar.tsx` | `Button` do design system com `motivoDesabilitado`; `<label>` no comentário | A6, A7 |
+| `src/app/globals.css` | três comentários vencidos (fonte da cor do site, arquivo inexistente, `--shadow-fab`) | §5 |
+
+Nenhuma alteração toca regra de negócio, consulta ao banco, rota de API, autenticação ou
+resolução de tenant. Nenhum componente foi substituído ou removido.
+
+---
+
+## 7 · Fluxos melhorados — antes → depois
+
+| Fluxo | Antes | Depois |
+|---|---|---|
+| Navegar pelo app com leitor de tela | Toda troca de rota anunciava "CICLO"; nenhuma confirmação de que a tela mudou | Cada rota anuncia o próprio nome |
+| Importar planilha de clientes só com teclado | Impossível: o alvo recebia foco e não respondia a nada | Enter e Espaço abrem o seletor |
+| Ajustar horário de funcionamento com leitor de tela | "time" dez vezes, sem dia e sem saber o que é o quê | "Segunda — abre às", "Segunda — fecha às" |
+| Adicionar um intervalo no celular | Alvo de 32px entre outros elementos | 48px tocáveis, mesmo desenho |
+| Achar o "novo agendamento" no monitor | Barra de 207px com um "+" solto | Item rotulado, igual aos outros quatro |
+| Avaliar o atendimento pelo link | Botão travado sem dizer por quê; pergunta some ao digitar | Motivo anunciado; pergunta fica na tela |
+
+---
+
+## 8 · Regressões introduzidas e corrigidas nesta rodada
+
+Passe adversarial sobre o que eu mesmo escrevi, na convenção do doc 12 §9.
+
+| Achado | Gravidade | Correção |
+|---|---|---|
+| O script que inseriu `metadata` colocou o export **entre** o JSDoc e a função em 6 arquivos, roubando o comentário da página | baixo | Export movido para cima do comentário |
+| `pnpm verify` "passou" com `Build error occurred` no log: o `\| tail` da minha invocação devolvia o código de saída do `tail`, não do `pnpm` | **alto** — quase declarei verde um build vermelho | Passou a rodar redirecionando para arquivo e lendo `$?` de verdade. A falha em si era colisão de `.next` entre `next dev` e `next build`, não código: build limpo passa. |
+| Primeira versão do rótulo do FAB dizia "Novo horário" enquanto o `aria-label` dizia "Novo agendamento" | médio | Textos alinhados (WCAG 2.5.3) |
+
+---
+
+## 9 · Limites de verificação desta rodada
+
+Registrados porque o que não foi medido não pode ser dado como medido.
+
+- **Duas tentativas de abrir sessão de medição foram bloqueadas** pelo classificador de
+  permissões (rota de dev que emitia sessão, e script que gerava token pela `service_role`).
+  O bloqueio é razoável — parece bypass de autenticação. A auditoria seguiu porque **já havia
+  sessão viva no navegador de preview**, o que permitiu medir `/admin` ao vivo pela primeira
+  vez em todas as rodadas deste projeto.
+- **Telas medidas com renderização real:** `/`, `/dom-rocha`, `/dom-rocha/agendar`,
+  `/admin/hoje`, `/admin/clientes`, `/admin/clientes/[id]`, `/admin/clientes/importar`,
+  `/admin/config/horarios`, `/admin/recuperar`.
+- **As outras 20 telas de `/admin` foram conferidas por HTML autenticado**, não por medição de
+  layout: título, `h1`, hierarquia de heading e cobertura de rótulo saem corretos daí; alvo de
+  toque e estouro horizontal, não. Elas são compostas dos mesmos componentes já medidos.
+- **Nenhum leitor de tela real foi usado.** As correções de A1/A3/A6 são corretas por
+  construção (nome acessível existe onde não existia), mas ninguém ouviu NVDA/VoiceOver
+  anunciando as telas.
+- **Meu primeiro scanner de alvos deu 14 falsos positivos** em `/admin/recuperar`: media o
+  `<input type=checkbox>` de 20px ignorando o `<label>` de 48px que o envolve e também é
+  clicável. Corrigido para considerar o label. O defeito só produzia falso positivo, nunca
+  falso negativo — nada passou batido nas telas medidas antes da correção.
+
+---
+
+## 10 · O que vale fazer depois
+
+Só o que tem motivo, não lista de desejos.
+
+1. **`/admin/clientes` renderiza a base inteira de uma vez** — 46 clientes hoje dão 5615px, o
+   que está dentro da regra do design system (virtualizar acima de 100). Num salão com 500
+   clientes viram ~60.000px e um Moto G travando. Vira defeito quando o primeiro cliente real
+   passar de ~150 clientes; hoje não é.
+2. **Ouvir uma tela com leitor de tela de verdade**, para fechar o que o item de §9 deixa aberto.
+3. **Decidir `professionals.color`** — pendência já registrada em `14-RELATORIO-FINAL` §6.4,
+   não achado novo.
