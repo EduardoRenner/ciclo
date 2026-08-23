@@ -138,8 +138,68 @@ falso com a mesma confiança que produz achado real:
 
 ---
 
-## 8 · Pendente
+---
 
-Fases C (auth/sessão/MFA), D (RBAC/IDOR), E (resto da superfície pública), F (injeção/SSRF),
-G (cofre/cifragem), H (webhooks/replay), I (service worker), J (CSP), K (dinheiro/idempotência),
-L (dependências), M (LGPD), N (infra).
+## 9 · Fases C e D — Autenticação, sessão, MFA e RBAC (concluídas)
+
+### 9.1 · Verificado e CORRETO
+
+| Item | Evidência |
+|---|---|
+| **`getUser()` em vez de `getSession()`** | A distinção que mais derruba app Supabase: `getSession()` lê o JWT do cookie e **acredita nele**; `getUser()` manda o token ao servidor de auth conferir a assinatura. Cookie é coisa que o cliente escreve. O projeto usa `getUser()`, com o porquê comentado. |
+| **MFA nas rotas certas** | `exigirAal2()` em exatamente quatro: exportar dado do cliente, eliminar cliente, abrir o **cofre de saúde**, e remover fator de MFA (esta última fecha o "desligo o MFA sem provar que sou eu"). |
+| **`aal` lido do Supabase, não de flag própria** | `getAuthenticatorAssuranceLevel().currentLevel` — `currentLevel` (o fator foi provado **nesta sessão**), não `nextLevel` (apenas está cadastrado). A confusão entre os dois é o erro clássico aqui. |
+| **RBAC resolve contradição da spec pela leitura restritiva** | `EXCLUSIVAS_DO_DONO` tira `client:export` do curinga do manager, com o motivo escrito: "exportar a base é a carteira inteira saindo pela porta, e o erro de negar demais se conserta com um clique do dono". |
+| **Acesso ao cofre é auditado** | `abrirFicha` grava em `vault_access_log` com ator, IP e user-agent. Ler ficha de saúde nunca é silencioso. |
+| **Duas camadas declaradas** | O comentário do `rbac.ts` diz: "A checagem de permissão é a primeira das duas camadas: a segunda é a política de RLS no banco. Se só uma existir, está errado." |
+
+---
+
+### 9.2 · S3 · `restrict_professional_view` protege só a agenda — BAIXO (latente)
+
+**Confirmado.**
+
+O papel `professional` recebe `appointment:own`, `client:own`, `vault:own`, `comanda:own`. O
+`own` é, pelo comentário do próprio `rbac.ts`, "o alcance" — e **"quem recebe `own` ainda precisa
+filtrar pelo próprio profissional na consulta"**.
+
+Medido:
+
+1. **Nenhuma das ~30 rotas captura o retorno de `exigirPermissao`.** Todas descartam o escopo, então
+   `own` nunca vira filtro. Verificado uma a uma.
+2. **`restrict_professional_view` é lida em UM lugar só** — `can_see_appointment()`, na 0001 —
+   e essa função guarda apenas a tabela `appointments`.
+3. **A RLS de `clients`, `health_records` e `tickets` é a política genérica** (`has_tenant(tenant_id)`):
+   qualquer membro do tenant passa, independente do papel.
+
+**Cenário (atacante A6, insider com papel limitado).** O dono liga "restringir visão do
+profissional" esperando que cada profissional veja só o que é seu. A **agenda** de fato restringe.
+Mas o mesmo profissional continua alcançando `GET /api/v1/clients` (base inteira, com anotações e
+preferências) e `GET /api/v1/clients/{id}/vault` (**ficha de saúde de qualquer cliente**). A
+configuração promete mais do que entrega.
+
+**Por que BAIXO, e não médio:**
+- A configuração **não é exposta em nenhuma tela** (varredura em `src/app` e `src/server`: zero
+  ocorrências). Hoje só dá para ligá-la mexendo no banco direto — ou seja, **ninguém está sendo
+  enganado agora**.
+- O padrão é `false` (`coalesce(..., false)`), então a expectativa corrente é mesmo "todo mundo vê
+  tudo", que é razoável num salão pequeno.
+- O acesso ao cofre exige MFA **e** fica registrado em `vault_access_log`.
+- É dentro do mesmo tenant — não vaza dado de outro salão.
+
+**O risco real é de amanhã:** no dia em que alguém construir o botão dessa configuração (é uma
+feature natural de pedir), vai entregar uma trava que só funciona pela metade — e sobre ficha de
+saúde.
+
+**Correção proposta (NÃO aplicada — depende de decisão de negócio).** Antes de expor a
+configuração, decidir o que significa "meu cliente": quem eu já atendi alguma vez? nos últimos N
+meses? Só depois disso dá para implementar, e o certo é nas duas camadas — filtro na consulta
+**e** política de RLS — como o próprio `rbac.ts` manda. Inventar essa regra numa auditoria seria
+exatamente o que o §19 do prompt de design proíbe.
+
+---
+
+## 10 · Pendente
+
+Fases E (resto da superfície pública), F (injeção/SSRF), G (cofre/cifragem), H (webhooks/replay),
+I (service worker), J (CSP), K (dinheiro/idempotência), L (dependências), M (LGPD), N (infra).
