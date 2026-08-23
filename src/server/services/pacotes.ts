@@ -156,18 +156,36 @@ export async function creditarCarteira(db: Cliente, tenantId: string, entrada: E
   return saldoCarteira(db, tenantId, entrada.clientId)
 }
 
-/** Debita da carteira — recusa se o saldo não cobre, para nunca deixar a cliente devendo pro salão sem querer. */
+/**
+ * Debita da carteira — recusa se o saldo não cobre, para nunca deixar a cliente devendo pro
+ * salão sem querer.
+ *
+ * A decisão inteira roda no banco (`debitar_carteira`, migration 0034), numa transação só.
+ * A versão anterior somava aqui, comparava aqui e inseria aqui, em três idas de rede: cinco
+ * débitos em paralelo liam o mesmo saldo e passavam todos (auditoria de segurança, achado S11).
+ * Nenhuma constraint segurava, porque a regra vivia no `if` do JavaScript, não no schema —
+ * `wallet_entries` é livro-razão, e ninguém pode barrar a SOMA de linhas com um `check` de linha.
+ *
+ * `consumirSessao`, logo acima, já resolvia o mesmo problema do jeito certo (update condicional que
+ * devolve zero linhas quando perde a corrida). Isto aqui era a exceção, não a regra da casa.
+ */
 export async function debitarCarteira(db: Cliente, tenantId: string, entrada: EntradaMovimentoCarteira) {
-  const saldo = await saldoCarteira(db, tenantId, entrada.clientId)
-  if (saldo < entrada.amountCents) throw AppError.validacao({ amountCents: 'Saldo insuficiente na carteira dessa cliente.' })
-
-  const { error } = await db.from('wallet_entries').insert({
-    tenant_id: tenantId,
-    client_id: entrada.clientId,
-    amount_cents: -entrada.amountCents,
-    reason: entrada.reason,
-    source_id: entrada.sourceId ?? null,
+  const { data, error } = await db.rpc('debitar_carteira', {
+    p_tenant: tenantId,
+    p_client: entrada.clientId,
+    p_valor: entrada.amountCents,
+    p_reason: entrada.reason,
+    p_source: entrada.sourceId ?? undefined,
   })
-  if (error) throw new AppError('INTERNAL', { cause: error })
-  return saldoCarteira(db, tenantId, entrada.clientId)
+
+  if (error) {
+    // Distinguido por `code`, nunca pelo texto: a mensagem em pt-BR é da interface e muda sem
+    // avisar; o errcode é contrato com o banco. `53000` é o que a função levanta quando o saldo
+    // não cobre — é recusa esperada, não falha do servidor.
+    if (error.code === '53000') throw AppError.validacao({ amountCents: 'Saldo insuficiente na carteira dessa cliente.' })
+    if (error.code === 'P0002') throw new AppError('NOT_FOUND', { message: 'Essa cliente não está mais na sua lista.' })
+    throw new AppError('INTERNAL', { cause: error })
+  }
+
+  return data ?? 0
 }

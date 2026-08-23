@@ -164,4 +164,69 @@ describe('carteira', () => {
     },
     30_000,
   )
+
+  it(
+    'cinco débitos simultâneos não estouram o saldo (achado S11)',
+    async () => {
+      const cliente = await svc.from('clients').insert({ tenant_id: tenantId, name: 'Cliente da Corrida' }).select('id').single()
+      if (cliente.error) throw cliente.error
+      const id = cliente.data!.id
+
+      await creditarCarteira(svc, tenantId, { clientId: id, amountCents: 10_000, reason: 'Crédito único' })
+
+      // Em PARALELO e com motivos diferentes: são cinco operações distintas, não um reenvio.
+      // A `Idempotency-Key` da rota não protege daqui — ela deduplica chamadas iguais, e o
+      // ataque do S11 é justamente mandar chamadas diferentes ao mesmo tempo. Antes da
+      // migration 0034, as cinco liam saldo 10_000, as cinco passavam pelo `if` do JavaScript
+      // e as cinco inseriam −10_000: saldo final −40_000.
+      const resultados = await Promise.allSettled(
+        Array.from({ length: 5 }, (_, i) =>
+          debitarCarteira(svc, tenantId, { clientId: id, amountCents: 10_000, reason: `Débito concorrente ${i + 1}` }),
+        ),
+      )
+
+      const aceitos = resultados.filter((r) => r.status === 'fulfilled')
+      expect(aceitos).toHaveLength(1)
+
+      const saldo = await saldoCarteira(svc, tenantId, id)
+      expect(saldo).toBe(0)
+      expect(saldo).toBeGreaterThanOrEqual(0) // o que o achado S11 quebrava
+    },
+    60_000,
+  )
+
+  it(
+    'débito de valor não positivo é recusado pelo banco, não só pelo Zod',
+    async () => {
+      const cliente = await svc.from('clients').insert({ tenant_id: tenantId, name: 'Cliente Valor Zero' }).select('id').single()
+      if (cliente.error) throw cliente.error
+      const id = cliente.data!.id
+
+      await creditarCarteira(svc, tenantId, { clientId: id, amountCents: 5_000, reason: 'Crédito' })
+
+      // O schema já barra na borda; esta é a segunda camada. Sem ela, um débito negativo viraria
+      // crédito disfarçado para quem alcançasse a função por fora da rota.
+      await expect(debitarCarteira(svc, tenantId, { clientId: id, amountCents: -1_000, reason: 'Negativo' })).rejects.toThrow()
+      expect(await saldoCarteira(svc, tenantId, id)).toBe(5_000)
+    },
+    30_000,
+  )
+
+  it(
+    'debitar cliente de outro tenant não encontra nada para debitar',
+    async () => {
+      const cliente = await svc.from('clients').insert({ tenant_id: tenantId, name: 'Cliente do Tenant Certo' }).select('id').single()
+      if (cliente.error) throw cliente.error
+      const id = cliente.data!.id
+      await creditarCarteira(svc, tenantId, { clientId: id, amountCents: 5_000, reason: 'Crédito' })
+
+      // `debitar_carteira` roda como `security invoker` e filtra por `tenant_id` — um tenant
+      // inventado não acha a linha de `clients` para travar, e nada é inserido.
+      await expect(
+        debitarCarteira(svc, randomUUID(), { clientId: id, amountCents: 1_000, reason: 'Tenant errado' }),
+      ).rejects.toThrow()
+      expect(await saldoCarteira(svc, tenantId, id)).toBe(5_000)
+    },
+    30_000,
+  )
 })

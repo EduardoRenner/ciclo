@@ -3250,6 +3250,16 @@ export type Database = {
         }
       }
       clear_tenant_context: { Args: never; Returns: undefined }
+      debitar_carteira: {
+        Args: {
+          p_client: string
+          p_reason: string
+          p_source?: string
+          p_tenant: string
+          p_valor: number
+        }
+        Returns: number
+      }
       finish_job: {
         Args: {
           p_error?: string
