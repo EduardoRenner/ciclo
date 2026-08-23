@@ -53,12 +53,32 @@ async function checarBanco(db: Cliente): Promise<ChecagemSaude> {
   return error ? { ok: false, detail: error.message } : { ok: true }
 }
 
+/**
+ * Duas perguntas diferentes, e até a auditoria de 2026-08-23 (achado S12) só a primeira era feita:
+ *
+ * 1. **Fila crescendo** — job `queued`/`failed` cuja hora já passou. Sintoma de worker que não
+ *    está rodando (hoje o caso normal: `vercel.json` está com `crons: []` no plano Hobby).
+ * 2. **Job preso em `running`** — worker que morreu no meio. `claim_jobs` passou a reivindicar
+ *    esses de volta (migration 0037), mas com teto de `max_attempts`: um job que derruba o
+ *    worker toda vez para de ser reivindicado em vez de derrubar um worker por rodada. Quando
+ *    isso acontece, ele fica parado — e antes ficava parado E invisível, porque esta checagem
+ *    contava só `queued`/`failed`. Trabalho sumindo em silêncio é exatamente o que o §7 proíbe.
+ */
 async function checarFila(db: Cliente, agora: Date): Promise<ChecagemSaude> {
   const limite = new Date(agora.getTime() - LIMIAR_FILA_PARADA_MIN * 60_000).toISOString()
-  const { count, error } = await db.from('job_queue').select('id', { head: true, count: 'exact' }).in('status', ['queued', 'failed']).lt('run_after', limite)
-  if (error) return { ok: false, detail: error.message }
-  const parados = count ?? 0
-  return parados === 0 ? { ok: true } : { ok: false, detail: `${parados} job(s) parado(s) há mais de ${LIMIAR_FILA_PARADA_MIN} min` }
+
+  const [aguardando, travados] = await Promise.all([
+    db.from('job_queue').select('id', { head: true, count: 'exact' }).in('status', ['queued', 'failed']).lt('run_after', limite),
+    db.from('job_queue').select('id', { head: true, count: 'exact' }).eq('status', 'running').lt('locked_at', limite),
+  ])
+  if (aguardando.error) return { ok: false, detail: aguardando.error.message }
+  if (travados.error) return { ok: false, detail: travados.error.message }
+
+  const problemas: string[] = []
+  if ((aguardando.count ?? 0) > 0) problemas.push(`${aguardando.count} job(s) parado(s) há mais de ${LIMIAR_FILA_PARADA_MIN} min`)
+  if ((travados.count ?? 0) > 0) problemas.push(`${travados.count} job(s) preso(s) em running há mais de ${LIMIAR_FILA_PARADA_MIN} min`)
+
+  return problemas.length === 0 ? { ok: true } : { ok: false, detail: problemas.join('; ') }
 }
 
 async function checarMensagens(db: Cliente, agora: Date): Promise<ChecagemSaude> {

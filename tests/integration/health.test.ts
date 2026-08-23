@@ -78,6 +78,21 @@ describe('verificarSaude', () => {
     30_000,
   )
 
+  /*
+   * FLAKE CONHECIDA, com a causa medida em 2026-08-23 (antes era atribuída a "contenção de rede
+   * ao rodar 15 suítes contra a mesma nuvem", o que estava errado).
+   *
+   * A causa real: este teste insere um job `queued` com `run_after` no passado, que é exatamente
+   * o critério de `claim_jobs`. Quando `job-queue.test.ts` roda em paralelo, o worker DELE
+   * reivindica o job de fixture DESTE teste, o status vira `running`, e `checarFila` — que conta
+   * `queued`/`failed` — não acha mais nada. Falha com `expected true to be false`.
+   *
+   * Não há estado "esperando na fila" que seja imune a isso: qualquer `queued`/`failed` com hora
+   * vencida é elegível por definição, e é assim que a fila tem que funcionar. Deixado como está
+   * de propósito — enfraquecer a asserção para o teste parar de piscar seria trocar um teste que
+   * mede por um que acompanha. O caso `running` logo abaixo é determinístico e cobre a metade
+   * nova.
+   */
   it(
     'job parado na fila há mais de 15 min dispara alerta, sem afetar o resto',
     async () => {
@@ -92,6 +107,45 @@ describe('verificarSaude', () => {
       const relatorio = await verificarSaude(svc)
       expect(relatorio.checks.jobQueue.ok).toBe(false)
       expect(relatorio.ok).toBe(false)
+
+      await svc.from('job_queue').delete().eq('id', job.data!.id)
+    },
+    30_000,
+  )
+
+  it(
+    'job preso em running há mais de 15 min também dispara alerta (achado S12)',
+    async () => {
+      await registrarHeartbeat(svc, 'send_reminders')
+      const dezesseisMinutosAtras = new Date(Date.now() - 16 * 60_000)
+
+      /*
+       * `attempts` no teto de propósito, e é o que torna este teste determinístico: com
+       * `attempts >= max_attempts`, o `claim_jobs` da migration 0037 NÃO reivindica de volta
+       * (o teto existe para um job que derruba o worker toda vez parar de derrubar um worker por
+       * rodada). Então nenhum worker rodando em paralelo consegue mexer nele.
+       *
+       * É também o cenário exato que o achado S12 descreve como o pior: o job esgotou as
+       * tentativas preso em `running`, ninguém mais o pega — e, antes desta correção, ninguém
+       * sequer o VIA, porque `checarFila` contava só `queued`/`failed`.
+       */
+      const job = await svc
+        .from('job_queue')
+        .insert({
+          tenant_id: tenantId,
+          kind: 'teste_saude_travado',
+          status: 'running',
+          locked_at: dezesseisMinutosAtras.toISOString(),
+          attempts: 5,
+          max_attempts: 5,
+        })
+        .select('id')
+        .single()
+      if (job.error) throw job.error
+
+      const relatorio = await verificarSaude(svc)
+      expect(relatorio.checks.jobQueue.ok).toBe(false)
+      expect(relatorio.checks.jobQueue.detail).toMatch(/preso\(s\) em running/)
 
       await svc.from('job_queue').delete().eq('id', job.data!.id)
     },
