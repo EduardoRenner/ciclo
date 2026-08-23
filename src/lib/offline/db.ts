@@ -51,3 +51,23 @@ export async function listarMutacoes(): Promise<Mutacao[]> {
 export async function removerMutacao(id: string): Promise<void> {
   await transacao('readwrite', (store) => store.delete(id))
 }
+
+/**
+ * Apaga o banco inteiro. Chamado só no logout (auditoria de segurança, achado S9).
+ *
+ * A fila guarda o CORPO de cada mutação pendente — nome de cliente, telefone, dados de
+ * agendamento. Num tablet de balcão, que é o caso de uso central deste produto, sair da conta
+ * sem limpar isso deixaria o rascunho de uma pessoa no aparelho para a próxima. Descartar
+ * mutação de outra pessoa é melhor que enviá-la na sessão seguinte, em nome de quem entrar
+ * depois — por isso quem chama drena a fila ANTES, e só descarta o que sobrar.
+ */
+export function apagarBancoOffline(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const pedido = indexedDB.deleteDatabase(DB_NOME)
+    pedido.onsuccess = () => resolve()
+    pedido.onerror = () => reject(pedido.error)
+    // Outra aba com o banco aberto segura o delete indefinidamente. Sair da conta não pode
+    // travar por causa disso: o `onblocked` resolve, e a limpeza acontece quando a aba fechar.
+    pedido.onblocked = () => resolve()
+  })
+}

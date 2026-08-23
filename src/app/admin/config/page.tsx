@@ -5,6 +5,8 @@ import Card from '@/components/ui/card'
 import PageHeader from '@/components/ui/page-header'
 import SectionHeader from '@/components/ui/section-header'
 
+import SairDaConta from './sair'
+
 /** Sem `await`, viraria página estática — quebra o nonce do CSP por requisição (ver `docs/DECISOES.md`). */
 export const dynamic = 'force-dynamic'
 
@@ -87,6 +89,12 @@ export default function PaginaConfig() {
             </div>
           </section>
         ))}
+
+        {/* Auditoria de segurança, achado S9: até 2026-08-23 não havia como sair da conta. */}
+        <section>
+          <SectionHeader>Sua conta</SectionHeader>
+          <SairDaConta />
+        </section>
       </div>
     </>
   )
