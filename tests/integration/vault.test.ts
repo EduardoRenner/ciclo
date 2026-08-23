@@ -107,13 +107,26 @@ describe('encryptVault / decryptVault', () => {
   )
 
   it(
-    'rotação de KEK: re-embrulhar a DEK não quebra registros já cifrados (§8, DEK não muda, só a KEK que a protege)',
+    're-embrulhar a DEK não quebra registros já cifrados (§8: a DEK não muda, só a KEK que a protege)',
     async () => {
       limparCacheDek()
       const registro = await encryptVault(svc, tenantA, { antes_da_rotacao: true })
 
-      // Simula a rotação: pega a DEK atual em claro e reembrulha — o mesmo que
-      // a KEK anual faria, mudando só `dek_wrapped`/`key_version`.
+      /*
+       * O que este teste prova é METADE da rotação: que trocar `dek_wrapped` mantém legível tudo
+       * o que já estava cifrado — porque a DEK em si não muda. É a parte que dispensa recifrar
+       * `health_records` inteiro.
+       *
+       * O que ele NÃO prova, e antes fingia provar: até a auditoria de 2026-08-23 (achado S8) o
+       * título dizia "rotação de KEK" e o comentário dizia "o mesmo que a KEK anual faria" — mas
+       * o re-embrulho usa a MESMA `VAULT_KEK` do ambiente, então nenhuma chave é trocada aqui.
+       * O teste passava verde enquanto a rotação de verdade era impossível: `abrirDekCifrada` só
+       * conhecia a chave atual, e trocá-la deixava todo cofre ilegível para sempre.
+       *
+       * A outra metade — abrir material embrulhado por uma KEK ANTERIOR — está em
+       * `tests/unit/server/kek-rotacao.test.ts`, que injeta as chaves em vez de mutar
+       * `process.env` (arquivos do Vitest compartilham o env por referência).
+       */
       const { data: linha } = await svc.from('tenant_keys').select('dek_wrapped').eq('tenant_id', tenantA).single()
       const dekEmClaro = abrirDekCifrada(linha!.dek_wrapped)
       const { wrapped, keyVersion } = rewrapDek(dekEmClaro)

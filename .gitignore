@@ -32,6 +32,12 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# ...menos o exemplo. Achado ao commitar a auditoria de segurança de 2026-08-23: `.env.example`
+# estava sendo ignorado pelas regras `.env*` e NUNCA foi versionado — apesar de o CLAUDE.md mandar
+# copiá-lo e de o CI ter um passo que explicitamente o permite ("só .env.example pode entrar").
+# Quem clonasse o repositório não receberia a lista de variáveis necessárias. A negação precisa
+# vir depois de TODAS as regras `.env*` para valer — por isso está repetida no fim do arquivo.
+!.env.example
 
 # vercel
 .vercel
@@ -58,3 +64,6 @@ supabase/.env
 
 .vercel
 .env*
+
+# A última palavra sobre o exemplo (ver comentário lá em cima).
+!.env.example
