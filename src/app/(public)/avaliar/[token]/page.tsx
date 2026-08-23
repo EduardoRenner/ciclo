@@ -8,6 +8,8 @@ import Avaliar from './avaliar'
  */
 export const dynamic = 'force-dynamic'
 
+export const metadata = { title: "Avaliar atendimento" }
+
 export default async function PaginaAvaliar({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params
 

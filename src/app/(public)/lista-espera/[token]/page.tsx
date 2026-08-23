@@ -9,6 +9,8 @@ import ReivindicarEncaixe from './reivindicar'
  */
 export const dynamic = 'force-dynamic'
 
+export const metadata = { title: "Vaga na agenda" }
+
 export default async function PaginaListaEspera({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params
 

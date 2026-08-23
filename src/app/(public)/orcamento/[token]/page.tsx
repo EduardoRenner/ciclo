@@ -1,5 +1,7 @@
 import Orcamento from './orcamento'
 
+export const metadata = { title: "Orçamento" }
+
 export default async function PaginaOrcamento({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params
 

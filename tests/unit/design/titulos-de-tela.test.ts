@@ -14,7 +14,12 @@ import { describe, expect, it } from 'vitest'
  * O teste lê os arquivos de verdade em vez de uma lista copiada: tela nova nasce
  * reprovando até ganhar título, que é a única forma de o defeito não voltar.
  */
-const RAIZES = ['src/app/admin', 'src/app/(auth)', 'src/app/onboarding']
+/*
+ * `(public)` entrou na rodada 4: as quatro telas por token (avaliar, confirmar, lista-espera,
+ * orçamento) tinham ficado de fora da primeira correção e voltaram a herdar "CICLO". São as
+ * telas que a cliente abre pelo link do WhatsApp — as únicas que muita gente vai ver do produto.
+ */
+const RAIZES = ['src/app/admin', 'src/app/(auth)', 'src/app/onboarding', 'src/app/(public)']
 
 function paginas(dir: string): string[] {
   const achadas: string[] = []
@@ -31,7 +36,7 @@ const TODAS = RAIZES.flatMap(paginas)
 describe('título próprio por tela', () => {
   it('encontra as páginas do app do profissional', () => {
     // Guarda contra o teste passar por não ter achado arquivo nenhum.
-    expect(TODAS.length).toBeGreaterThanOrEqual(30)
+    expect(TODAS.length).toBeGreaterThanOrEqual(36)
   })
 
   it.each(TODAS)('%s declara um título', (arquivo) => {
