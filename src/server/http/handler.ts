@@ -14,8 +14,14 @@ type Handler<Ctx> = (req: Request, ctx: Ctx, requestId: string) => Promise<unkno
  * público…): aquelas continuam existindo porque sabem o que estão limitando
  * (tentativa de senha, agendamento); esta aqui só sabe que é IP demais batendo
  * rápido demais em qualquer coisa.
+ *
+ * `somenteMemoria` é escolha consciente (auditoria de segurança, achado S4). Os limites finos
+ * passaram a contar no Postgres, compartilhado entre as instâncias; este não, porque roda em
+ * **toda** requisição da API — uma ida de rede a mais no caminho feliz de tudo é caro demais para
+ * uma rede grossa cujo trabalho é conter laço maluco batendo numa instância só. Quem segura o
+ * ataque de volume do S4 é o limite fino do agendamento público, e esse conta certo.
  */
-const LIMITE_GLOBAL = { limite: 120, janelaSegundos: 60 }
+const LIMITE_GLOBAL = { limite: 120, janelaSegundos: 60, somenteMemoria: true }
 
 const METODOS_MUTANTES = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
 

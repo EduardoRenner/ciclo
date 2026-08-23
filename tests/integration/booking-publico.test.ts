@@ -113,9 +113,31 @@ beforeAll(async () => {
     professionalId,
     blocos: [{ weekday: 2, opensAt: '09:00', closesAt: '18:00' }],
   })
+
+  await limparBaldesDoBooking()
 }, 60_000)
 
+/**
+ * Zera os contadores do agendamento público antes e depois desta suíte.
+ *
+ * Passou a ser necessário com a correção do achado S4 (migration 0035): o limitador deixou de ser
+ * um `Map` do processo e virou tabela no Postgres — que é o ponto, já que em serverless cada
+ * instância tinha o próprio balde. O efeito colateral é que ele **sobrevive ao fim do processo**,
+ * e os limites diários do booking (20/dia por IP, 3/dia por telefone) passaram a acumular de uma
+ * rodada de teste para a seguinte. Sem esta limpeza, a suíte passa de manhã e começa a devolver
+ * 429 à tarde, sem ninguém ter mexido em nada.
+ *
+ * Este é o único arquivo que exercita as rotas de booking, então apagar por prefixo não pisa em
+ * teste concorrente.
+ */
+async function limparBaldesDoBooking(): Promise<void> {
+  await svc.from('rate_limits').delete().like('key', 'book:%')
+  await svc.from('rate_limits').delete().like('key', 'avail:%')
+  await svc.from('rate_limits').delete().like('key', 'global:%')
+}
+
 afterAll(async () => {
+  await limparBaldesDoBooking()
   for (const t of tenants) await svc.from('tenants').delete().eq('id', t)
   for (const u of usuarios) await svc.auth.admin.deleteUser(u)
 }, 60_000)

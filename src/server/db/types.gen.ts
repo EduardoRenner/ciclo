@@ -2187,6 +2187,24 @@ export type Database = {
           },
         ]
       }
+      rate_limits: {
+        Row: {
+          count: number
+          expires_at: string
+          key: string
+        }
+        Insert: {
+          count: number
+          expires_at: string
+          key: string
+        }
+        Update: {
+          count?: number
+          expires_at?: string
+          key?: string
+        }
+        Relationships: []
+      }
       service_categories: {
         Row: {
           id: string
@@ -3250,6 +3268,13 @@ export type Database = {
         }
       }
       clear_tenant_context: { Args: never; Returns: undefined }
+      consumir_rate_limit: {
+        Args: { p_janela_segundos: number; p_key: string; p_limite: number }
+        Returns: {
+          permitido: boolean
+          restante: number
+        }[]
+      }
       debitar_carteira: {
         Args: {
           p_client: string
