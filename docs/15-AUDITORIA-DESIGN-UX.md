@@ -395,4 +395,119 @@ acordada, sobrou a única falha da §15.
 Registrado porque número de teste sem contexto de ambiente vira conclusão errada — e porque o erro
 de método da rodada 1 (ler o código de saída do `tail` em vez do `pnpm`) foi exatamente dessa
 família.
+---
+
+# Rodada 3 — 2026-08-23
+
+Fecha a varredura mobile das **29 telas de `/admin`** (as 10 que faltavam saíram limpas), mede o
+desktop em 1024 e 1440, e percorre o funil público ponta a ponta — a FASE 2, que nenhuma rodada
+anterior tinha feito.
+
+## 17 · Medições — as 10 telas restantes (375px)
+
+`/admin/caixa`, `/admin/campanhas`, `/admin/config`, `/admin/config/mensagens`,
+`/admin/config/notificacoes`, `/admin/config/planos`, `/admin/config/seguranca`,
+`/admin/config/cofre`, `/admin/estoque`, `/admin/orcamentos`, `/admin/series`.
+
+**Todas:** estouro 0 · alvos < 48px: 0 · campo sem nome acessível: 0 · salto de heading: 0 ·
+`--acc` osso.
+
+Com isto, as 29 telas do app do profissional passaram a ter medição de layout real, não só
+conferência de HTML — o limite registrado na §9 está fechado.
+
+---
+
+## 18 · Achados da rodada 3
+
+### A12 · ▲ O agendamento público pintava 126 horários onde 42 bastavam — UX / ACESSIBILIDADE
+
+**Medido em `/dom-rocha/agendar`, com "Qualquer um" (o padrão):**
+
+```
+horários renderizados : 126
+horários distintos    :  42
+botões na página      : 150
+os três "09:00"       : HTML byte a byte idêntico (327 chars), sem aria-label
+```
+
+A API devolve o mesmo horário **uma vez por profissional que atende** — três, no tenant de
+demonstração. A tela pintava um chip para cada. Quem escolheu "Qualquer um" escolheu **não**
+decidir quem atende; três botões idênticos só podem confundir, e no leitor de tela viravam 126
+anúncios no lugar de 42.
+
+### A13 · ▲ E o estado de selecionado mentia
+
+`ligado={slotEscolhido?.startsAt === s.startsAt}` comparava **só o horário**. Provado clicando:
+um clique num "09:00" marcava `aria-pressed="true"` nos **três**. O leitor de tela anunciava três
+botões pressionados quando um só foi escolhido.
+
+**Correção (uma só, para os dois):** um chip por horário, o primeiro disponível. **Não inventa
+regra de negócio** — é exatamente o profissional que o servidor escolheria sozinho se o corpo
+fosse sem `professionalId`: `public-booking.ts` já trata `professionalId` como `nullish` e, sem
+ele, procura o primeiro disponível para aquele `startsAt`. A mesma pessoa é atribuída, com um
+chip em vez de três. Com profissional escolhido a API já filtra, então o `Map` não muda nada.
+
+**Medido depois:** 42 horários, 0 duplicados, 67 botões (de 150), 1 chip aceso por clique, e a
+página caiu de **2570px para 1565px** (−39%).
+
+---
+
+### A14 · ▲ O toast nascia 117px fora da coluna de conteúdo no monitor — UI
+
+**Medido a 1440px:**
+
+```
+conteúdo : x=557 … 1115
+toast    : x=440 … 1000   ← 117px à esquerda, invadindo a faixa da barra lateral
+```
+
+O `Viewport` do toast é irmão do shell, então não herdava o `lg:pl-[var(--sidebar-w)]` que
+`admin/layout.tsx` aplica ao conteúdo — o mesmo recuo cujo comentário no layout já avisa que
+existe em duas camadas de propósito. É a mesma classe de defeito que a `TabBar` já tinha
+corrigido para si (o comentário dela registra o `inset-x-0` puro espalhando ícones por 1920px).
+
+**Correção:** `lg:left-[var(--sidebar-w)] lg:right-0`, para o `mx-auto` centralizar no mesmo
+espaço que o conteúdo. **Medido depois:** desalinhamento de 1px (a borda `sm:border-x`), a 1440
+e a 1024. Celular inalterado (x=0, largura cheia).
+
+---
+
+### A15 · "Confirmar agendamento" desabilitado sem dizer por quê — ACESSIBILIDADE
+
+Mesmo defeito do A6, na **última tela do funil que traz cliente novo**: travado até nome e
+telefone, sem explicação. `motivoDesabilitado` — que agora aparece no `title` e para o leitor.
+
+Com isto, os dois `disabled` das telas públicas explicam o motivo.
+
+---
+
+## 19 · Fluxo percorrido (FASE 2) — agendamento público
+
+Percorrido a 375px **até o último passo, sem enviar**: um agendamento de teste ficaria permanente
+no tenant de demonstração, porque a regra 11 do `CLAUDE.md` proíbe deletar agendamento.
+
+| O que se mediu | Resultado |
+|---|---|
+| Cliques até o formulário | **2** (serviço + horário; profissional e dia já vêm com padrão) |
+| Resumo antes de enviar | "Corte + barba · terça-feira, 25 de agosto às 09:00 · 1h · R$ 70,00" |
+| `autocomplete` dos campos | `name`, `tel` (+ `inputmode="tel"`), `street-address` |
+| Botão final travado | agora com motivo no `title` e no leitor de tela |
+
+**Duas coisas que pareciam defeito e não eram:**
+
+| Suspeita | O que a leitura mostrou |
+|---|---|
+| Honeypot "Não preencha este campo" prenderia leitor de tela | `aria-hidden` + `tabIndex={-1}` no rótulo **e** no campo, fora da tela. Implementação correta — só aparece em `innerText` porque posicionamento fora da tela ainda conta como renderizado |
+| O resumo não diz **com quem** | Está certo omitir: com "Qualquer um" o servidor reescolhe o profissional no momento do envio. Mostrar um nome antes seria prometer o que o sistema não garante. O nome aparece na tela de sucesso, que o doc 12 já resolveu |
+
+---
+
+## 20 · Por que A12/A13 não ganharam teste automatizado
+
+O `CLAUDE.md` pede teste novo por ticket, e aqui eu não escrevi um — de propósito, não por
+esquecimento. A desduplicação é uma linha de apresentação (`new Map(...)` por `startsAt`); testá-la
+isoladamente testaria o `Map` do JavaScript, não o produto. O que valeria a pena afirmar — "com
+'Qualquer um', a tela mostra um chip por horário" — é asserção sobre DOM renderizado, e este
+projeto não tem camada de teste de componente. Ficou verificado ao vivo, com número antes e
+depois (126 → 42, 150 → 67 botões, 3 chips acesos → 1).
 
