@@ -25,7 +25,10 @@ export default function RegistrarServiceWorker() {
     if (!('serviceWorker' in navigator)) return
 
     const registrar = () => {
-      const versao = process.env.NEXT_PUBLIC_BUILD_ID ?? 'dev'
+      // `||`, não `??`: um deploy sem git conectado pode bakear a variável
+      // como string vazia em vez de ausente (achado ao verificar o primeiro
+      // deploy desta correção), e `??` não cobre esse caso.
+      const versao = process.env.NEXT_PUBLIC_BUILD_ID || 'dev'
       navigator.serviceWorker.register(`/sw.js?v=${versao}`).catch((erro: unknown) => {
         console.error('Falha ao registrar o service worker', erro)
       })

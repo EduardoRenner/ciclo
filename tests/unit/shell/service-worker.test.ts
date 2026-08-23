@@ -159,6 +159,19 @@ describe('service worker — versionamento do cache', () => {
     await disparar(listeners, 'install', {})
     expect([...storage.caches.keys()]).toEqual(['ciclo-dev'])
   })
+
+  it('`?v=` presente mas vazio também cai em "dev" — é o que aconteceu no primeiro deploy desta correção', async () => {
+    // `VERCEL_GIT_COMMIT_SHA` veio como string vazia (não ausente) num deploy
+    // sem git conectado, e `??` em `next.config.ts` não pegava isso — o
+    // navegador registrava `/sw.js?v=` (parâmetro presente, valor vazio).
+    // `searchParams.get('v')` devolve `''` nesse caso, não `null`, então só o
+    // `|| 'dev'` do próprio sw.js (não um `??`) protege daqui pra frente.
+    const storage = new FakeCacheStorage()
+    const listeners = carregarServiceWorker('', storage, async () => fakeResponse())
+
+    await disparar(listeners, 'install', {})
+    expect([...storage.caches.keys()]).toEqual(['ciclo-dev'])
+  })
 })
 
 describe('service worker — tela autenticada nunca entra no cache', () => {
