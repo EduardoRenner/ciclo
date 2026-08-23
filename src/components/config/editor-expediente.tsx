@@ -127,7 +127,14 @@ export default function EditorExpediente({
                     type="button"
                     aria-label={`Adicionar intervalo em ${nome}`}
                     onClick={() => adicionarBloco(weekday)}
-                    className="flex size-8 items-center justify-center rounded-[var(--radius-pill)] bg-acc-soft text-acc-2"
+                    /*
+                       Medido em 32×32px nos sete dias — abaixo do piso de 48px
+                       do CLAUDE.md. Mesma sobra que a Parte III achou em
+                       `fidelidade.tsx`: componente escrito depois da varredura
+                       de alvos. `toque-48` estende a área tocável sem engordar
+                       o desenho, que a 32px é o certo ao lado do nome do dia.
+                    */
+                    className="toque-48 flex size-8 items-center justify-center rounded-[var(--radius-pill)] bg-acc-soft text-acc-2"
                   >
                     <Plus aria-hidden className="size-4" />
                   </button>
@@ -139,15 +146,27 @@ export default function EditorExpediente({
                   <div className="mt-2 flex flex-col gap-2">
                     {doDia.map((b) => (
                       <div key={b.indiceOriginal} className="flex items-center gap-2">
+                        {/*
+                          O "até" entre os dois campos resolve para quem
+                          enxerga, mas o leitor de tela anunciava "time" dez
+                          vezes seguidas, sem dia e sem saber qual é abertura
+                          e qual é fechamento. O formulário de folga logo
+                          abaixo, no mesmo arquivo, já usa `<label>` de
+                          verdade — estes dois eram a inconsistência.
+                        */}
                         <input
                           type="time"
+                          aria-label={`${nome} — abre às`}
                           value={b.opens_at.slice(0, 5)}
                           onChange={(e) => atualizarBloco(b.indiceOriginal, 'opens_at', e.target.value)}
                           className="h-12 flex-1 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo tabular text-txt"
                         />
-                        <span className="text-txt-3">até</span>
+                        <span aria-hidden className="text-txt-3">
+                          até
+                        </span>
                         <input
                           type="time"
+                          aria-label={`${nome} — fecha às`}
                           value={b.closes_at.slice(0, 5)}
                           onChange={(e) => atualizarBloco(b.indiceOriginal, 'closes_at', e.target.value)}
                           className="h-12 flex-1 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo tabular text-txt"
