@@ -3,6 +3,8 @@
 import { CheckCircle2, Star, XCircle } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
+import Button from '@/components/ui/button'
+
 type Estado = 'carregando' | 'pronto' | 'enviando' | 'enviado' | 'erro'
 type Dados = { negocioNome: string; servicoNome: string; jaAvaliado: boolean }
 
@@ -117,23 +119,41 @@ export default function Avaliar({ token }: { token: string }) {
       </div>
 
       {nota > 0 ? (
-        <textarea
-          value={comentario}
-          onChange={(e) => setComentario(e.target.value)}
-          rows={3}
-          placeholder="Quer contar mais alguma coisa? (opcional)"
-          className="mt-4 w-full rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 py-2 text-corpo text-txt"
-        />
+        /*
+          O placeholder era o único rótulo do campo — §7 do design system pede
+          `<label>` de verdade, e placeholder some no primeiro caractere: quem
+          usa leitor de tela ouvia só "caixa de texto", e quem digitou perde a
+          pergunta de vista.
+        */
+        <label className="mt-4 flex w-full flex-col gap-1 text-left">
+          <span className="text-label font-semibold text-txt-2">Quer contar mais alguma coisa?</span>
+          <textarea
+            value={comentario}
+            onChange={(e) => setComentario(e.target.value)}
+            rows={3}
+            placeholder="Opcional"
+            className="w-full rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 py-2 text-corpo text-txt"
+          />
+        </label>
       ) : null}
 
-      <button
-        type="button"
+      {/*
+        Era um `<button>` cru, fora do design system, desabilitado enquanto a
+        nota fosse 0 e sem dizer por quê: no leitor de tela dava "Enviar
+        avaliação, indisponível" e ponto. `Button` já resolve as duas coisas —
+        `motivoDesabilitado` vira `title` e texto de leitor, e `carregando` põe
+        o spinner dentro do próprio botão.
+      */}
+      <Button
+        largura="cheia"
+        className="mt-4"
         onClick={enviar}
-        disabled={nota === 0 || estado === 'enviando'}
-        className="mt-4 h-12 w-full rounded-[var(--radius-sm)] bg-acc text-corpo font-semibold text-on-acc transition active:scale-[.98] disabled:opacity-50"
+        carregando={estado === 'enviando'}
+        disabled={nota === 0}
+        motivoDesabilitado="Escolha de 1 a 5 estrelas para poder enviar."
       >
-        {estado === 'enviando' ? 'Enviando…' : 'Enviar avaliação'}
-      </button>
+        Enviar avaliação
+      </Button>
     </>
   )
 }
