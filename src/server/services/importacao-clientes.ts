@@ -11,6 +11,23 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 const MAX_LINHAS = 5000
 const TAMANHO_DO_LOTE = 200
 
+/**
+ * Espelham `EsquemaCliente` (`clientes.ts`), e não é coincidência: o achado S7 da auditoria de
+ * 2026-08-23 é que a importação de CSV escreve em `clients` **sem passar por aquele schema** —
+ * duas portas de entrada para a mesma tabela aceitando coisas diferentes. Um arquivo de 5 MB numa
+ * linha só entrava como um nome de 5 MB.
+ *
+ * O achado original é sobre injeção de fórmula (`=CMD(...)` num nome que depois abre no Excel).
+ * Isso continua **não sendo explorável hoje** — não existe nenhuma exportação em CSV neste
+ * projeto, então a fórmula não tem por onde sair. Quando a primeira nascer (`data-export` é o
+ * lugar óbvio para alguém pedir "e em Excel?"), o escape tem que ser na ESCRITA da exportação,
+ * não aqui: sanitizar na entrada estragaria o dado de quem legitimamente se chama "O=Ó".
+ */
+const LIMITE_NOME = 120
+const LIMITE_EMAIL = 254 // RFC 5321
+const LIMITE_TAG = 40
+const MAX_TAGS = 20
+
 export const EsquemaMapeamento = z.object({
   name: z.string().min(1, 'Escolha a coluna do nome.'),
   phone: z.string().nullish(),
@@ -71,6 +88,15 @@ function validarLinhas(linhas: Record<string, string>[], mapa: Mapeamento): { va
       return
     }
 
+    // Achado S7 da auditoria de 2026-08-23: este caminho não passava pelo `EsquemaCliente`, que
+    // é quem impõe os limites no caminho de API. Um arquivo de 5 MB numa linha só entrava como
+    // um nome de 5 MB, e nada barrava. Os números são os mesmos do schema, de propósito — duas
+    // portas de entrada para a mesma tabela não podem aceitar coisas diferentes.
+    if (name.length > LIMITE_NOME) {
+      errors.push({ linha: numero, motivo: `Nome muito longo (máximo ${LIMITE_NOME} caracteres).` })
+      return
+    }
+
     let phoneE164: string | null = null
     const phoneBruto = mapa.phone ? linha[mapa.phone]?.trim() : undefined
     if (phoneBruto) {
@@ -83,8 +109,21 @@ function validarLinhas(linhas: Record<string, string>[], mapa: Mapeamento): { va
     }
 
     const emailBruto = mapa.email ? linha[mapa.email]?.trim() : undefined
+    if (emailBruto && emailBruto.length > LIMITE_EMAIL) {
+      errors.push({ linha: numero, motivo: 'E-mail muito longo.' })
+      return
+    }
+
     const tagsBruto = mapa.tags ? linha[mapa.tags]?.trim() : undefined
-    const tags = tagsBruto ? tagsBruto.split(/[,;]/).map((t) => t.trim()).filter(Boolean) : []
+    const tags = tagsBruto
+      ? tagsBruto
+          .split(/[,;]/)
+          .map((t) => t.trim())
+          .filter(Boolean)
+          // Mesmos tetos do `EsquemaCliente`: etiqueta de até 40, no máximo 20 por cliente.
+          .filter((t) => t.length <= LIMITE_TAG)
+          .slice(0, MAX_TAGS)
+      : []
 
     validas.push({ linha: numero, name, phoneE164, email: emailBruto || null, tags })
   })
