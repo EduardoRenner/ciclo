@@ -83,6 +83,14 @@ export default function ToastProvider({ children }: { children: React.ReactNode 
             // Acima da tab bar, senão o aviso nasce escondido. A altura vem do
             // token, não de um 96 solto que envelhece junto com a barra.
             'pb-[calc(var(--tabbar-h)+env(safe-area-inset-bottom)+16px)]',
+            /*
+             * No monitor o toast é irmão do shell, então não herdava o recuo da coluna de
+             * navegação que `admin/layout.tsx` aplica ao conteúdo: medido a 1440px, o aviso
+             * nascia em x=440 enquanto o conteúdo começa em 557 — 117px à esquerda, invadindo
+             * a faixa da barra lateral. Recuar o `left` faz o `mx-auto` centralizar no mesmo
+             * espaço que o conteúdo, que é onde a pessoa está olhando.
+             */
+            'lg:left-[var(--sidebar-w)] lg:right-0',
           )}
         />
       </RadixToast.Provider>
