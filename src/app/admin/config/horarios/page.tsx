@@ -7,6 +7,8 @@ import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { listarExpediente } from '@/server/services/expediente'
 import { listarFolgas } from '@/server/services/folgas'
 
+export const metadata = { title: "Horário de funcionamento" }
+
 /**
  * Antes só existia expediente por profissional — o padrão do negócio
  * (`professional_id null`) só era alcançável direto pela API. É o que o

@@ -9,6 +9,8 @@ import PageHeader from '@/components/ui/page-header'
 
 export const dynamic = 'force-dynamic'
 
+export const metadata = { title: "Mensagens prontas" }
+
 export default async function PaginaMensagens() {
   const ctx = await contextoAtual(new Request('https://interno/config/mensagens', { headers: await headers() }))
   const db = await criarClienteDoUsuario()

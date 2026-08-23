@@ -16,6 +16,8 @@ import ListaClientes from './lista'
 
 export const dynamic = 'force-dynamic'
 
+export const metadata = { title: "Clientes" }
+
 export default async function PaginaClientes() {
   const ctx = await contextoAtual(new Request('https://interno/clientes', { headers: await headers() }))
   const db = await criarClienteDoUsuario()

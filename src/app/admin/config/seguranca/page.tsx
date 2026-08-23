@@ -7,6 +7,8 @@ import PageHeader from '@/components/ui/page-header'
 /** Sem `await`, viraria página estática — quebra o nonce do CSP por requisição. */
 export const dynamic = 'force-dynamic'
 
+export const metadata = { title: "Segurança" }
+
 export default async function PaginaSeguranca() {
   await exigirSessao()
   const db = await criarClienteDoUsuario()

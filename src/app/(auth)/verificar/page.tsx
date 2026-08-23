@@ -6,6 +6,8 @@ import { sessaoAtual } from '@/server/auth/session'
 
 import FormularioVerificar from './formulario'
 
+export const metadata = { title: "Confirme seu e-mail" }
+
 export default async function PaginaVerificar({
   searchParams,
 }: {

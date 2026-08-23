@@ -7,6 +7,8 @@ import { criarClienteDoUsuario } from '@/server/db/server-client'
 import FormularioOrcamento from './formulario'
 import PageHeader from '@/components/ui/page-header'
 
+export const metadata = { title: "Novo orçamento" }
+
 export default async function PaginaNovoOrcamento() {
   const ctx = await contextoAtual(new Request('https://interno/orcamentos/novo', { headers: await headers() }))
   const db = await criarClienteDoUsuario()

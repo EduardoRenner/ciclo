@@ -6,6 +6,8 @@ import { sessaoAtual } from '@/server/auth/session'
 
 import FormularioNovaSenha from './formulario'
 
+export const metadata = { title: "Nova senha" }
+
 /**
  * Destino do link do e-mail de recuperação. Quem chega aqui já passou por
  * `/auth/callback`, que trocou o `code` do Supabase por sessão — é essa sessão

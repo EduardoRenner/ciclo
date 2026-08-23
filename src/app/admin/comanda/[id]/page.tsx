@@ -9,6 +9,8 @@ import PageHeader from '@/components/ui/page-header'
 
 import Comanda from './comanda'
 
+export const metadata = { title: "Comanda" }
+
 export default async function PaginaComanda({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const ctx = await contextoAtual(new Request('https://interno/comanda', { headers: await headers() }))

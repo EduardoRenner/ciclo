@@ -7,6 +7,8 @@ import { sessaoAtual } from '@/server/auth/session'
 
 import FormularioOnboarding from './formulario'
 
+export const metadata = { title: "Primeiros passos" }
+
 export default async function PaginaOnboarding() {
   const sessao = await sessaoAtual()
   if (!sessao) redirect('/entrar')

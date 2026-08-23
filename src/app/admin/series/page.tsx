@@ -7,6 +7,8 @@ import { listarSeries } from '@/server/services/recorrencia'
 import ListaSeries from './lista'
 import PageHeader from '@/components/ui/page-header'
 
+export const metadata = { title: "Séries de recorrência" }
+
 export default async function PaginaSeries() {
   const ctx = await contextoAtual(new Request('https://interno/series', { headers: await headers() }))
   const db = await criarClienteDoUsuario()

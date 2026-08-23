@@ -8,6 +8,8 @@ import { listarProfissionais } from '@/server/services/profissionais'
 import ListaProfissionais from './lista'
 import PageHeader from '@/components/ui/page-header'
 
+export const metadata = { title: "Time" }
+
 export default async function PaginaProfissionais() {
   const ctx = await contextoAtual(new Request('https://interno/config/profissionais', { headers: await headers() }))
   const db = await criarClienteDoUsuario()

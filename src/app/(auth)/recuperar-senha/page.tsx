@@ -6,6 +6,8 @@ import { sessaoAtual } from '@/server/auth/session'
 
 import FormularioRecuperar from './formulario'
 
+export const metadata = { title: "Recuperar senha" }
+
 /**
  * A rota `/api/v1/auth/password/forgot` existia desde o TICKET-009 e nunca teve
  * tela: quem esquecia a senha não tinha caminho nenhum de volta para dentro do

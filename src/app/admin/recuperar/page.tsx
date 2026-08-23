@@ -13,6 +13,8 @@ import { receitaAtribuidaAoCiclo } from '@/server/services/atribuicao'
 
 import RecuperarReceita from './recuperar'
 
+export const metadata = { title: "Recuperar receita" }
+
 export default async function PaginaRecuperar() {
   const ctx = await contextoAtual(new Request('https://interno/recuperar', { headers: await headers() }))
   const db = await criarClienteDoUsuario()

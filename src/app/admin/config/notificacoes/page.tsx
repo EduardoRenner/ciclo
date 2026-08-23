@@ -11,6 +11,8 @@ import PageHeader from '@/components/ui/page-header'
  */
 export const dynamic = 'force-dynamic'
 
+export const metadata = { title: "Notificações" }
+
 export default function PaginaNotificacoes() {
   return (
     <>

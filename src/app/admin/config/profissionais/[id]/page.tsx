@@ -10,6 +10,8 @@ import { listarProfissionais } from '@/server/services/profissionais'
 import EditorExpediente from '@/components/config/editor-expediente'
 import PageHeader from '@/components/ui/page-header'
 
+export const metadata = { title: "Profissional" }
+
 export default async function PaginaExpediente({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const ctx = await contextoAtual(new Request(`https://interno/config/profissionais/${id}`, { headers: await headers() }))

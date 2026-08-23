@@ -20,6 +20,8 @@ function saudacao(timezone: string): string {
   return 'Boa noite'
 }
 
+export const metadata = { title: "Hoje" }
+
 export default async function PaginaHoje() {
   const ctx = await contextoAtual(new Request('https://interno/hoje', { headers: await headers() }))
   const db = await criarClienteDoUsuario()

@@ -12,6 +12,8 @@ function hojeISO(): string {
   return new Date().toISOString().slice(0, 10)
 }
 
+export const metadata = { title: "Agenda" }
+
 export default async function PaginaAgenda({
   searchParams,
 }: {

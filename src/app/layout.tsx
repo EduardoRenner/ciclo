@@ -20,7 +20,16 @@ const archivo = Archivo({
 });
 
 export const metadata: Metadata = {
-  title: "CICLO",
+  /*
+   * `template` em vez de um título só: as 29 telas de `/admin` herdavam
+   * "CICLO" e nenhuma dizia onde a pessoa estava. Isso não é detalhe de SEO —
+   * `/admin` nem é indexável. É que no App Router a navegação é no cliente, e
+   * o `<title>` é o que o leitor de tela anuncia quando a rota troca: com o
+   * mesmo texto em todas, quem não enxerga não recebe confirmação nenhuma de
+   * que saiu do lugar (WCAG 2.4.2). Instalado como PWA, é também o nome da
+   * janela e do item no alternador de apps.
+   */
+  title: { default: "CICLO", template: "%s · CICLO" },
   description:
     "Gestão para profissionais da beleza: agenda, Motor de Ciclo e recuperação de receita.",
   manifest: "/manifest.json",

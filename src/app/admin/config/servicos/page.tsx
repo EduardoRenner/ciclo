@@ -6,6 +6,8 @@ import { headers } from 'next/headers'
 import ListaServicos from './lista'
 import PageHeader from '@/components/ui/page-header'
 
+export const metadata = { title: "Serviços" }
+
 /**
  * Server Component: a lista chega pronta no primeiro paint (§10 pede LCP < 2s
  * no 4G). A interação — arquivar, reordenar — é do componente cliente.

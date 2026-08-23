@@ -6,6 +6,8 @@ import { sessaoAtual } from '@/server/auth/session'
 
 import FormularioEntrar from './formulario'
 
+export const metadata = { title: "Entrar" }
+
 export default async function PaginaEntrar() {
   const sessao = await sessaoAtual()
   if (sessao) redirect('/admin/hoje')

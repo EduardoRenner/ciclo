@@ -8,6 +8,8 @@ import { listarServicos } from '@/server/services/servicos'
 import FormularioAgendamento from './formulario'
 import PageHeader from '@/components/ui/page-header'
 
+export const metadata = { title: "Novo agendamento" }
+
 export default async function PaginaNovoAgendamento() {
   const ctx = await contextoAtual(new Request('https://interno/agenda/novo', { headers: await headers() }))
   const db = await criarClienteDoUsuario()

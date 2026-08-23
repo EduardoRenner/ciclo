@@ -46,6 +46,8 @@ function Etapa({
   )
 }
 
+export const metadata = { title: "Campanhas" }
+
 export default async function PaginaCampanhas() {
   const ctx = await contextoAtual(new Request('https://interno/campanhas', { headers: await headers() }))
   const db = await criarClienteDoUsuario()

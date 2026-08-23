@@ -15,6 +15,8 @@ import Ficha from './ficha'
 
 export const dynamic = 'force-dynamic'
 
+export const metadata = { title: "Cliente" }
+
 export default async function PaginaFicha({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const ctx = await contextoAtual(new Request('https://interno/clientes', { headers: await headers() }))

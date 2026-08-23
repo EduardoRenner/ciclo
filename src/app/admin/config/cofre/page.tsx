@@ -7,6 +7,8 @@ import { listarTrilhaDoCofre } from '@/server/services/trilha-cofre'
 import TrilhaCofre from './trilha'
 import PageHeader from '@/components/ui/page-header'
 
+export const metadata = { title: "Trilha do cofre" }
+
 export default async function PaginaCofre() {
   const ctx = await contextoAtual(new Request('https://interno/config/cofre', { headers: await headers() }))
   const db = await criarClienteDoUsuario()

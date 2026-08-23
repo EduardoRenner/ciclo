@@ -6,6 +6,8 @@ import { sessaoAtual } from '@/server/auth/session'
 
 import FormularioCadastro from './formulario'
 
+export const metadata = { title: "Criar conta" }
+
 export default async function PaginaCadastro() {
   const sessao = await sessaoAtual()
   if (sessao) redirect('/admin/hoje')

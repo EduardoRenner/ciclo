@@ -10,6 +10,8 @@ import PageHeader from '@/components/ui/page-header'
 
 export const dynamic = 'force-dynamic'
 
+export const metadata = { title: "Fidelidade e assinatura" }
+
 export default async function PaginaPlanos() {
   const ctx = await contextoAtual(new Request('https://interno/config/planos', { headers: await headers() }))
   const db = await criarClienteDoUsuario()

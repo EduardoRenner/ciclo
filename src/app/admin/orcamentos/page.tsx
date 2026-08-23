@@ -7,6 +7,8 @@ import { listarOrcamentos } from '@/server/services/orcamentos'
 import ListaOrcamentos from './lista'
 import PageHeader from '@/components/ui/page-header'
 
+export const metadata = { title: "Orçamentos" }
+
 export default async function PaginaOrcamentos() {
   const ctx = await contextoAtual(new Request('https://interno/orcamentos', { headers: await headers() }))
   const db = await criarClienteDoUsuario()

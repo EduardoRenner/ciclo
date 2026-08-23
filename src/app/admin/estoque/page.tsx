@@ -13,6 +13,8 @@ import { listarAlertasDeEstoque } from '@/server/services/alertas-estoque'
 
 import ListaEstoque from './lista'
 
+export const metadata = { title: "Estoque" }
+
 /**
  * O estoque era meio produto: a comanda dava baixa (TICKET-044), "Hoje" avisava
  * para recomprar (TICKET-045) e `POST /inventory/entries` sabia registrar

@@ -34,6 +34,8 @@ function diaPedido(valor: string | undefined, hoje: Temporal.PlainDate): Tempora
   }
 }
 
+export const metadata = { title: "Caixa" }
+
 /**
  * O fechamento de caixa existia inteiro no servidor desde o TICKET-047
  * (`services/caixa.ts`, `GET /cash/daily`, `GET /cash/summary`) e nunca teve

@@ -9,6 +9,8 @@ import NovaCampanha from './nova'
 
 export const dynamic = 'force-dynamic'
 
+export const metadata = { title: "Nova campanha" }
+
 export default async function PaginaNovaCampanha() {
   const ctx = await contextoAtual(new Request('https://interno/campanhas/nova', { headers: await headers() }))
   const db = await criarClienteDoUsuario()

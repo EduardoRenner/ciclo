@@ -56,6 +56,8 @@ const GRUPOS = [
   },
 ] as const
 
+export const metadata = { title: "Configurações" }
+
 export default function PaginaConfig() {
   return (
     <>

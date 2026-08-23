@@ -7,6 +7,8 @@ import { lerTenant } from '@/server/services/site'
 import FormularioNegocio from './formulario'
 import PageHeader from '@/components/ui/page-header'
 
+export const metadata = { title: "Negócio" }
+
 export default async function PaginaNegocio() {
   const ctx = await contextoAtual(new Request('https://interno/admin/config/negocio', { headers: await headers() }))
   const db = await criarClienteDoUsuario()

@@ -7,6 +7,8 @@ import FormularioCliente from './formulario'
 
 export const dynamic = 'force-dynamic'
 
+export const metadata = { title: "Novo cliente" }
+
 export default async function PaginaNovoCliente() {
   const ctx = await contextoAtual(new Request('https://interno/clientes/nova', { headers: await headers() }))
   const db = await criarClienteDoUsuario()
