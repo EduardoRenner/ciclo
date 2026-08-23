@@ -601,4 +601,70 @@ Fica registrado porque é a terceira vez nesta auditoria que o instrumento erra 
 (as outras duas: o scanner que media o checkbox de 20px ignorando o `<label>` de 48px, e o
 `| tail` que devolvia o código de saída errado). Medição sem ceticismo sobre a própria medição
 produz achado falso com a mesma confiança que produz achado verdadeiro.
+---
+
+# Adendo — o Motor de Ciclo (2026-08-23)
+
+Feito depois de encerrar o loop, retomando o item 1 das recomendações. Sai do escopo de design de
+propósito: era o achado mais caro que a auditoria tinha deixado reportado.
+
+## 26 · A17 · ▲ Dois escritores da mesma tabela discordavam sobre que dia era hoje
+
+`recomputarCicloDeUmAtendimento` recebe `timezone` **e** `today` como parâmetros separados. Dentro
+dela, o histórico é convertido certo:
+
+```ts
+.map((a) => Temporal.Instant.from(a.starts_at).toZonedDateTimeISO(timezone).toPlainDate())
+```
+
+…mas o `today` chegava do chamador (`agendamentos.ts`, na conclusão do atendimento) como
+`new Date().toISOString().slice(0, 10)` — **UTC**. O `computeCycle` comparava histórico em fuso do
+salão contra "hoje" em UTC.
+
+**O que sela o diagnóstico:** o outro caminho que escreve em `client_cycles` — o cron
+`api/cron/recompute-cycles` — já fazia certo, com
+`new Intl.DateTimeFormat('en-CA', { timeZone: tenant.timezone })`, e ainda roda às 3h locais, fora
+de qualquer ambiguidade. Não havia regra a decidir: havia um caminho certo e um errado gravando na
+mesma tabela.
+
+**Consequência medida, não argumentada** (`tests/unit/design/dia-no-fuso-do-salao.test.ts`):
+
+| | `today` | atraso | estado |
+|---|---|---|---|
+| Dia do salão | 2026-08-21 | 0 | `due` — "está na hora" |
+| Deriva de UTC | 2026-08-22 | 1 | `late` — "atrasado" |
+
+Cliente que voltou **exatamente** no dia previsto era marcado como atrasado — e `late` é o que
+coloca a pessoa na lista de "Recuperar receita". Das 21h à meia-noite, que é justamente quando o
+salão mais conclui atendimento. O dado se acertava sozinho às 3h da manhã, quando o cron
+reescrevia: por isso ninguém tinha reparado.
+
+**Correção:** o dia passa a sair de `Temporal.Now.instant().toZonedDateTimeISO(fusoDoSalao)`, com
+o fuso que já era buscado na linha de cima. Nenhuma consulta a mais.
+
+---
+
+## 27 · A18 · Data de cancelamento de assinatura em UTC
+
+`cancelarAssinatura` gravava `canceled_on` com `new Date().toISOString()`. Cancelar às 22h de um
+dia 31 registra o mês seguinte — e o comentário da própria função diz que a data existe "para
+explicar a receita daquele período".
+
+**Correção:** dia no fuso do salão. A consulta a mais é aceitável: cancelar assinatura é ação rara
+e deliberada, e é o mesmo padrão que `agendamentos.ts` usa.
+
+---
+
+## 28 · Os dois que ficam, agora com o motivo escrito
+
+Reavaliei os dois que a rodada 2 tinha listado como dívida. Um deles eu estava **errado** em
+chamar de defeito:
+
+| Caso | Veredito |
+|---|---|
+| `fidelidade.tsx` monta `startedOn` em UTC | **Está certo assim.** Quem grava a coluna é o banco: `started_on date not null default current_date` (migration 0019), e o `current_date` do Postgres roda no fuso da sessão — UTC no Supabase. Corrigir só o cliente faria a tela **discordar** do dado guardado. A raiz é o default da coluna, e mexer nela é migration. |
+| `orcamentos/novo/formulario.tsx` gera validade em UTC | Fica. Das 21h à meia-noite dá um dia a mais — **a favor de quem recebe o orçamento** — e o servidor já interpreta o vencimento no fuso do salão (`orcamentoExpirado(valid_until, timezone)`). Não paga o risco de mexer. |
+
+O guarda passou a varrer `src/server` também — era lá que estava o caso mais caro, e sem a pasta
+ele não impediria o próximo. Conferido que reprova de fato ao reintroduzir o padrão.
 
