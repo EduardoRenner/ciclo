@@ -584,12 +584,26 @@ export async function concluirAgendamento(db: Cliente, tenantId: string, id: str
   // (TICKET-036) é a rede de segurança se isto não rodar.
   if (agendamento.client_id) {
     const { data: tenantRow } = await db.from('tenants').select('timezone').eq('id', tenantId).maybeSingle()
+    const fusoDoSalao = tenantRow?.timezone ?? 'America/Sao_Paulo'
+    /*
+     * O "hoje" saía de `new Date().toISOString()` — UTC — enquanto o histórico, dentro de
+     * `recomputarCicloDeUmAtendimento`, é convertido para o fuso do salão. O `computeCycle`
+     * comparava as duas coisas em fusos diferentes: em Brasília (UTC-3), das 21h à meia-noite,
+     * "hoje" chegava um dia adiantado e o cliente saía com `late_days` inflado em 1 — podendo
+     * virar de "em dia" para "atrasado" e aparecer cedo demais em "Recuperar receita".
+     *
+     * O caminho do cron (`api/cron/recompute-cycles`) já fazia certo, com o dia no fuso do
+     * tenant. Dois escritores da mesma tabela `client_cycles` discordavam sobre que dia era
+     * hoje, e o dado só se acertava às 3h da manhã, quando o job diário reescrevia — justamente
+     * depois do horário em que o salão mais conclui atendimento. Isto aqui não decide regra
+     * nova: faz o caminho errado seguir o que o certo já define.
+     */
     await recomputarCicloDeUmAtendimento(
       db,
       tenantId,
-      tenantRow?.timezone ?? 'America/Sao_Paulo',
+      fusoDoSalao,
       { clientId: agendamento.client_id, serviceId: agendamento.service_id },
-      new Date().toISOString().slice(0, 10),
+      Temporal.Now.instant().toZonedDateTimeISO(fusoDoSalao).toPlainDate().toString(),
     ).catch((erro: unknown) => {
       console.error(JSON.stringify({ level: 'error', event: 'recompute_ciclo_falhou', appointmentId: id }), erro)
     })

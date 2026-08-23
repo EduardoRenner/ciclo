@@ -4,6 +4,8 @@ import { join } from 'node:path'
 import { Temporal } from '@js-temporal/polyfill'
 import { describe, expect, it } from 'vitest'
 
+import { computeCycle } from '@/core/cycle/compute'
+
 /**
  * `new Date().toISOString().slice(0, 10)` é "hoje em UTC", não hoje no salão.
  * Em Brasília (UTC-3) devolve o dia SEGUINTE das 21h à meia-noite — o dono
@@ -22,15 +24,19 @@ import { describe, expect, it } from 'vitest'
  */
 
 /**
- * Dívida conhecida, fora do escopo da auditoria de design: as duas abaixo
- * escrevem dado (início de assinatura, validade de orçamento), não são default
- * de apresentação. Ficam registradas aqui em vez de num TODO solto para que a
- * auditoria técnica as encontre — e para que a lista só possa encolher:
- * arquivo novo com o mesmo defeito reprova o build.
+ * Dívida conhecida — os dois casos que sobraram, cada um por um motivo que está escrito, não por
+ * esquecimento. A lista só pode encolher: arquivo novo com o mesmo defeito reprova o build.
  *
- * Fora de `src/app` há mais um caso, mais caro, que este teste não alcança:
- * `src/server/services/agendamentos.ts` passa o dia em UTC para o recálculo do
- * Motor de Ciclo tendo o `timezone` do tenant na linha de cima.
+ * 1. `fidelidade.tsx` monta o `startedOn` do estado otimista em UTC — e está **certo assim**.
+ *    Quem grava a coluna é o banco, com `started_on date not null default current_date`
+ *    (migration 0019), e o `current_date` do Postgres roda no fuso da sessão, que no Supabase é
+ *    UTC. Corrigir só o cliente faria a tela discordar do dado guardado. A raiz é o default da
+ *    coluna, e mexer nela é migration — assunto da auditoria técnica.
+ *
+ * 2. `orcamentos/novo/formulario.tsx` gera a validade como "agora + N dias" em UTC. Das 21h à
+ *    meia-noite isso dá um dia a mais — mas a favor de quem recebe o orçamento, e o servidor já
+ *    interpreta o vencimento no fuso do salão (`orcamentoExpirado(valid_until, timezone)`).
+ *    Impacto real: orçamento aberto um dia a mais, três horas por noite. Não paga o risco.
  */
 const DIVIDA_CONHECIDA = [
   join('src', 'app', 'admin', 'clientes', '[id]', 'fidelidade.tsx'),
@@ -94,12 +100,37 @@ describe('o dia padrão vem do fuso do salão, não de UTC', () => {
     expect(emUtc).toBe('2026-08-22')
   })
 
-  it('nenhuma tela deriva o dia de agora em UTC', () => {
-    const infratores = arquivos('src/app')
+  it('nenhuma tela nem serviço deriva o dia de agora em UTC', () => {
+    // `src/server` entrou depois de o Motor de Ciclo ser corrigido: era lá que estava o caso
+    // mais caro, e sem varrer a pasta o guarda não impediria o próximo.
+    const infratores = [...arquivos('src/app'), ...arquivos('src/server')]
       .filter(infrator)
       .filter((a) => !DIVIDA_CONHECIDA.includes(a))
 
     expect(infratores, `derivam o dia de agora em UTC: ${infratores.join(', ')}`).toEqual([])
+  })
+
+  /**
+   * Não basta afirmar que o padrão sumiu; este teste fixa **por que ele importava**. O Motor de
+   * Ciclo recebia o dia em UTC enquanto o histórico já vinha no fuso do salão — `computeCycle`
+   * comparava as duas coisas em fusos diferentes (`docs/15` A17).
+   */
+  it('um dia de deriva vira o estado do cliente de "está na hora" para "atrasado"', () => {
+    const d = (iso: string) => Temporal.PlainDate.from(iso)
+    // Ciclo pessoal de 30 dias, última visita em 22/07 → previsto para 21/08.
+    const history = [d('2026-05-23'), d('2026-06-22'), d('2026-07-22')].map((date) => ({ date }))
+
+    const noSalao = computeCycle({ history, defaultCycleDays: 30, today: d('2026-08-21') })
+    const comDeriva = computeCycle({ history, defaultCycleDays: 30, today: d('2026-08-22') })
+
+    // Quem chega exatamente no dia previsto está em dia.
+    expect(noSalao.lateDays).toBe(0)
+    expect(noSalao.state).toBe('due')
+
+    // Um dia a mais e a mesma pessoa é marcada como atrasada — e `late` é o que a coloca na
+    // lista de "Recuperar receita".
+    expect(comDeriva.lateDays).toBe(1)
+    expect(comDeriva.state).toBe('late')
   })
 
   it('a dívida conhecida não cresceu nem sumiu sem aviso', () => {
