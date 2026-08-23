@@ -85,7 +85,7 @@ export default function FormularioNegocio({ tenant, urlSite }: { tenant: Tenant;
           type="button"
           onClick={copiarLink}
           aria-label="Copiar link do site"
-          className="flex size-11 shrink-0 items-center justify-center rounded-[var(--radius-sm)] bg-surface-2 text-txt-2 transition hover:bg-surface-3"
+          className="flex size-12 shrink-0 items-center justify-center rounded-[var(--radius-sm)] bg-surface-2 text-txt-2 transition hover:bg-surface-3"
         >
           {copiado ? <Check aria-hidden className="size-5 text-ok" /> : <Copy aria-hidden className="size-5" />}
         </button>
@@ -94,7 +94,7 @@ export default function FormularioNegocio({ tenant, urlSite }: { tenant: Tenant;
           target="_blank"
           rel="noreferrer"
           aria-label="Abrir o site em nova aba"
-          className="flex size-11 shrink-0 items-center justify-center rounded-[var(--radius-sm)] bg-surface-2 text-txt-2 transition hover:bg-surface-3"
+          className="flex size-12 shrink-0 items-center justify-center rounded-[var(--radius-sm)] bg-surface-2 text-txt-2 transition hover:bg-surface-3"
         >
           <ExternalLink aria-hidden className="size-5" />
         </a>
