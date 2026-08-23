@@ -39,7 +39,7 @@ Registrado com o mesmo peso dos achados: auditoria que só lista problema não i
 
 ## 3 · Achados da Fase A
 
-### S1 · `CRON_SECRET` serve a dois domínios de confiança diferentes — MÉDIO
+### S1 · `CRON_SECRET` serve a dois domínios de confiança diferentes — **ALTO** (elevado na Fase B)
 
 **Onde:** `src/server/services/token-assinado.ts` (assinatura) × `src/app/api/cron/*/route.ts` (autenticação).
 
@@ -67,9 +67,79 @@ Comparação de string com `!==` sai no primeiro byte diferente. O tempo de resp
 
 ---
 
-## 4 · Suspeitas em aberto (Fase B em diante)
+---
 
-- `withTenant`/`withNovoTenant` entregam cliente que **ignora a RLS por completo**; a única proteção é cada chamador filtrar `tenant_id` na mão. São 9 rotas públicas sem sessão nesse padrão. **Falta conferir uma a uma.**
-- Rate limiting nas rotas públicas: ainda não verificado se existe.
-- `can_see_appointment` — a trava de visão por profissional; ainda não lida.
+## 5 · Fase B — Isolamento e superfície pública (concluída)
 
+### 5.1 · Verificado e CORRETO
+
+| Item | Evidência |
+|---|---|
+| **Rotas públicas filtram tenant** | `public-booking.ts` faz `.eq('tenant_id', tenant.id)` em **toda** consulta, com o tenant vindo do `slug` da URL. `serviceId`/`professionalId` mandados pelo cliente são sempre restringidos ao tenant — cross-tenant devolve vazio. Sem IDOR. |
+| **Interpolação em filtro PostgREST não é injetável** | 6 ocorrências de `.or(\`professional_id.eq.${x}\`)`. Três recebem valor vindo do banco; as outras três recebem parâmetro que passou por `z.uuid()` na borda **e** por `profissionalDoTenant()`. Sem vulnerabilidade hoje — mas é padrão frágil: basta alguém interpolar um campo não validado ali para virar injeção de filtro. |
+| **Transição de estado por token é idempotente** | `transicaoPublica` devolve cedo se já está no alvo (clique duplo não duplica) e só aceita sair de `sent`. Não filtra `tenant_id`, e está certo: o id vem de token assinado e o tenant é derivado dele. |
+| **Rate limiting existe e é bem desenhado** | Global de **120/min por IP** em toda rota que usa o `rota()` (`handler.ts`), mais limites finos no agendamento público: 5/min e 20/dia por IP, **3/dia por telefone** — com o telefone **hasheado na chave**, nunca em claro. |
+| **Proteção CSRF** | `origemValida()` confere `Origin` nas rotas que escrevem, comparando com o host da própria requisição (não com env fixa — o comentário registra que a primeira versão quebrou o booking em preview). Ausência de `Origin` passa, que é o caso servidor-a-servidor. |
+| **`withNovoTenant` em rota autenticada** | O único caso (`appointments/[id]`) passa `ctx.tenantId` do contexto de sessão validado. Uso legítimo. |
+
+### 5.2 · Evidência que ELEVOU o S1 de médio para alto
+
+O mecanismo de token assinado com `CRON_SECRET` cobre **quatro** famílias de link público, não uma:
+
+| Escopo | Validade do token | O que um token forjado faz |
+|---|---|---|
+| `confirmacao_agendamento` | 72h | Confirma ou **cancela** agendamento alheio |
+| `avaliacao` | — | Publica avaliação em nome de outra pessoa |
+| `lista_espera` | — | **Reivindica a vaga** de outra pessoa |
+| `orcamento` | **180 dias** | **Aprova orçamento**, que vira comanda cobrável |
+
+Ou seja: a segurança de toda a superfície pública sem login se reduz a um único segredo que também é a senha de cron — e o de orçamento vale meio ano.
+
+---
+
+## 6 · Correções aplicadas
+
+### S1 — chave própria para link público
+
+`PUBLIC_LINK_SIGNING_KEY` passa a assinar os links. A transição foi desenhada para **não quebrar
+link já enviado por WhatsApp**:
+
+- **Assinatura:** usa a chave nova; sem ela, cai no `CRON_SECRET` — então o deploy não quebra
+  antes de a variável existir no ambiente.
+- **Verificação:** aceita as duas. Token assinado ontem continua valendo até expirar sozinho.
+- Depois que o link mais longo em circulação expirar (orçamento, 180 dias), `CRON_SECRET` sai da
+  lista de verificação.
+
+Detalhe que não é óbvio: a verificação confere **todas** as chaves mesmo depois de uma bater. Sair
+no primeiro acerto faria o tempo de resposta revelar *qual* chave assinou — durante a transição,
+isso diria a quem está sondando se o ambiente já rotacionou.
+
+### S2 — comparação de segredo sem vazar tempo
+
+`compararSegredo()` com `timingSafeEqual` nas 6 rotas de cron. Repetindo a honestidade do achado:
+explorar timing por HTTPS contra comparação de string em JS não é cenário realista — corrigido
+porque custa uma linha e o padrão certo já existia no arquivo ao lado.
+
+**Testes:** 7 casos novos, incluindo a prova de que, depois da rotação, quem tiver só o
+`CRON_SECRET` vazado **não consegue mais forjar link novo**.
+
+---
+
+## 7 · Falsos positivos da minha própria ferramenta (3 até aqui)
+
+Registrados porque auditoria de segurança que não duvida do próprio instrumento produz alarme
+falso com a mesma confiança que produz achado real:
+
+| O que meu scanner disse | O que era |
+|---|---|
+| "25 tabelas sem RLS" | Um laço dinâmico na 0001 aplica RLS nas 25 — meu regex não via `execute format(...)` |
+| "`handle_new_user` exposta" | Está revogada; procurei `revoke all` e o arquivo usa `revoke execute` |
+| "Rate limiting não é usado em lugar nenhum" | É usado em toda rota; procurei `rateLimit`/`ratelimit` e a função se chama `limitador` |
+
+---
+
+## 8 · Pendente
+
+Fases C (auth/sessão/MFA), D (RBAC/IDOR), E (resto da superfície pública), F (injeção/SSRF),
+G (cofre/cifragem), H (webhooks/replay), I (service worker), J (CSP), K (dinheiro/idempotência),
+L (dependências), M (LGPD), N (infra).

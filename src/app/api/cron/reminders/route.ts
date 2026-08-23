@@ -1,6 +1,7 @@
 import { withNovoTenant } from '@/server/db/with-tenant'
 import { exigirEnv } from '@/server/db/server-client'
 import { AppError } from '@/server/http/errors'
+import { compararSegredo } from '@/server/http/segredo'
 import { rota } from '@/server/http/handler'
 import { registrarHeartbeat } from '@/server/services/health'
 import { enviarLembretesPendentes } from '@/server/services/lembretes'
@@ -16,7 +17,7 @@ import { enviarLembretesPendentes } from '@/server/services/lembretes'
 export const GET = rota(async (req) => {
   const esperado = process.env.CRON_SECRET
   const recebido = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
-  if (!esperado || recebido !== esperado) throw new AppError('UNAUTHENTICATED')
+  if (!compararSegredo(recebido, esperado)) throw new AppError('UNAUTHENTICATED')
 
   return withNovoTenant(async (svc) => {
     const resultado = await enviarLembretesPendentes(svc, new Date().toISOString(), exigirEnv('NEXT_PUBLIC_APP_URL'))

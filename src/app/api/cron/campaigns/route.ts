@@ -1,5 +1,6 @@
 import { withNovoTenant } from '@/server/db/with-tenant'
 import { AppError } from '@/server/http/errors'
+import { compararSegredo } from '@/server/http/segredo'
 import { rota } from '@/server/http/handler'
 import { executarCampanhaDiaria } from '@/server/services/campanhas'
 
@@ -12,7 +13,7 @@ import { executarCampanhaDiaria } from '@/server/services/campanhas'
 export const GET = rota(async (req) => {
   const esperado = process.env.CRON_SECRET
   const recebido = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
-  if (!esperado || recebido !== esperado) throw new AppError('UNAUTHENTICATED')
+  if (!compararSegredo(recebido, esperado)) throw new AppError('UNAUTHENTICATED')
 
   return withNovoTenant(async (svc) => {
     const { data: tenants, error } = await svc.from('tenants').select('id, timezone').is('deleted_at', null)
