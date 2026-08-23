@@ -80,11 +80,25 @@ export default function Importador() {
         <Card
           className="flex flex-col items-center gap-3 border-dashed py-10 text-center"
           onClick={() => inputRef.current?.click()}
+          /*
+           * `role="button"` + `tabIndex` davam o foco, mas nada respondia a
+           * Enter/Espaço — medido: só o mouse abria o seletor. Elemento que
+           * recebe foco e não faz nada é pior que elemento não focável, e
+           * importar planilha era a única porta de entrada em massa de
+           * cliente no produto. Botão nativo faz isso sozinho; como aqui é um
+           * `Card`, o teclado precisa ser escrito à mão.
+           */
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              inputRef.current?.click()
+            }
+          }}
           role="button"
           tabIndex={0}
         >
           <Upload aria-hidden className="size-8 text-txt-3" />
-          <p className="text-corpo font-semibold">Toque para escolher o arquivo CSV</p>
+          <p className="text-corpo font-semibold">Escolher o arquivo CSV</p>
           <p className="text-secundario text-txt-2">Até 5 MB, 5.000 linhas.</p>
           <input
             ref={inputRef}
