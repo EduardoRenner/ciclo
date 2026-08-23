@@ -250,3 +250,149 @@ Só o que tem motivo, não lista de desejos.
 2. **Ouvir uma tela com leitor de tela de verdade**, para fechar o que o item de §9 deixa aberto.
 3. **Decidir `professionals.color`** — pendência já registrada em `14-RELATORIO-FINAL` §6.4,
    não achado novo.
+---
+
+# Rodada 2 — 2026-08-23
+
+Mais nove telas medidas com renderização real, incluindo conteúdo dentro de sheet (que varredura
+de carga inicial nunca alcança).
+
+## 11 · Medições — rodada 2 (375px)
+
+| Tela | Estouro | Alvos < 48px | Campo sem nome | Salto de heading |
+|---|---|---|---|---|
+| `/admin/agenda` | 0 | 0 | 0 | 0 |
+| `/admin/config/servicos` | 0 | 0 | 0 | 0 |
+| `/admin/campanhas/nova` | 0 | 0 | 0 | 0 |
+| `/admin/clientes/nova` | 0 | 0 | 0 | 0 |
+| `/admin/orcamentos/novo` | 0 | 0 | 0 | 0 |
+| `/admin/config/negocio` | 0 | **2** → 0 | 0 | 0 |
+| `/admin/config/profissionais` (sheet aberto) | 0 | **7** → 0 | 0 | 0 |
+
+`--acc` medido em `#f0ebe3` (osso) em todas. Nenhum roxo.
+
+---
+
+## 12 · Achados da rodada 2
+
+### A8 · ▲ A agenda abria no dia errado por três horas toda noite — DADOS / UX
+
+**Onde:** `src/app/admin/agenda/page.tsx`, o dia padrão da tela.
+
+Saía de `new Date().toISOString().slice(0, 10)` — "hoje em **UTC**", não hoje no salão. Provado
+com `Temporal`, não por raciocínio:
+
+```
+hora local no salão    : 2026-08-21T21:30 (sexta)
+o que a tela usava     : 2026-08-22   ← sábado
+correto (fuso do salão): 2026-08-21
+às 20h00 divergem?     : não
+```
+
+Em Brasília (UTC-3) a janela é **21h–24h**: o dono fechava a barbearia às 21h30, abria a agenda e
+via o dia seguinte. Todas as noites.
+
+**Por que era só aqui:** `/admin/caixa` — a tela irmã, da mesma rodada — já resolvia certo, com
+`Temporal.Now.instant().toZonedDateTimeISO(timezone).toPlainDate()` **depois** de buscar o fuso.
+A agenda calculava o dia *antes* de saber o fuso que ela mesma já buscava três linhas abaixo.
+
+**Não confundir com os usos legítimos.** `agenda.tsx`, `caixa.tsx` e `agendar.tsx` também têm
+`toISOString().slice(0, 10)`, mas sobre `new Date(Date.UTC(...))` a partir de um ISO **já
+resolvido pelo servidor** — é só aritmética de calendário, é proposital e está documentado no
+próprio código. O que é defeito é derivar o dia de **agora**.
+
+**Correção:** o cálculo desceu para depois do `timezone`, sem nenhuma consulta a mais. É a regra 4
+do `CLAUDE.md` (converter para o fuso do tenant só na apresentação) — restaura a arquitetura, não
+a muda. Guarda de regressão em `tests/unit/design/dia-no-fuso-do-salao.test.ts`, que ignora
+comentários (senão o comentário que explica a correção reprovaria o próprio teste) e reprova
+qualquer arquivo novo de `src/app` que derive o dia de agora.
+
+---
+
+### A9 · ▲ Seis seletores de cor de 36px anunciados como código hexadecimal — ACESSIBILIDADE
+
+**Medido, dentro do sheet "Novo profissional":** as seis bolas de cor a **36×36px**, abaixo do
+mínimo de 44 da WCAG. E o `aria-label` era `` `Cor ${c}` `` — ou seja, o leitor de tela anunciava
+**"Cor #ec4899"**. Código hexadecimal falado em voz alta não é cor nenhuma para ninguém.
+
+**Correção:** `toque-48` (o desenho de 36px está certo — seis bolas de 48px viram um quarteirão
+dentro do sheet) e nome de gente: Rosa, Âmbar, Verde, Azul, Coral, Amarelo. O "Remover cor", de
+36px, foi junto.
+
+---
+
+### A10 · ▲ Alvo de 31px no "Aceita agendamento pelo site" — ACESSIBILIDADE
+
+`<label className="flex items-center gap-2 py-1">` dava **416×31px**: largo, mas baixo demais.
+`min-h-12` resolve sem mexer no desenho.
+
+---
+
+### A11 · ▲ Dois ícones de 44px em `/admin/config/negocio` — DESIGN SYSTEM
+
+"Copiar link do site" e "Abrir o site em nova aba" a `size-11` (44px). Passam na WCAG, mas ficam
+abaixo dos 48 do `CLAUDE.md` — e o `IconButton` do projeto tem exatamente 48 pelo motivo escrito
+no próprio componente: "ícone sozinho não tem texto para aumentar a área de erro do dedo".
+Passaram para `size-12`.
+
+---
+
+## 13 · Reportado, não corrigido — para a auditoria técnica
+
+O relatório pede para **parar e coordenar** quando a mudança tocar dados ou tenant. Estes tocam:
+
+| Onde | O quê | Por que não mexi |
+|---|---|---|
+| `src/server/services/agendamentos.ts` (~l. 592) | Passa `new Date().toISOString().slice(0,10)` como "hoje" para o recálculo do **Motor de Ciclo**, tendo `tenantRow.timezone` na linha de cima. Mesmo defeito do A8, no coração do produto | Escreve dado e mexe na previsão de retorno — não é default de apresentação |
+| `src/app/admin/clientes/[id]/fidelidade.tsx` | `startedOn` da assinatura derivado de agora em UTC, no navegador | Escreve dado |
+| `src/app/admin/orcamentos/novo/formulario.tsx` | Validade do orçamento derivada de `Date.now()` em UTC | Escreve dado |
+
+Os três estão registrados em forma executável na lista `DIVIDA_CONHECIDA` do teste novo: a lista
+só pode encolher, e arquivo novo com o mesmo defeito reprova o build.
+
+---
+
+## 14 · Observado e deixado, com motivo
+
+| Observação | Por que fica |
+|---|---|
+| `IconButton` existe, diz no próprio comentário que substitui "6 telas" de código copiado à mão — e **só `ficha.tsx` o usa**. Há ~9 botões de ícone feitos à mão | Oito deles já estão nos 48px corretos: converter seria churn sem ganho para quem usa. Os dois que estavam errados (A11) foram corrigidos. A adoção do componente é refatoração, não defeito — e o §18 pede a solução simples. |
+| As setas de reordenar serviço desabilitam sem `motivoDesabilitado` | "Subir Corte, indisponível" no primeiro item é auto-explicativo |
+---
+
+## 15 · Teste instável diagnosticado (não corrigido, e por quê)
+
+`tests/integration/health.test.ts > job parado na fila há mais de 15 min dispara alerta` reprovou
+na suíte cheia e **passou sozinho** (3/3). Não é regressão desta rodada: nenhuma alteração minha
+toca fila de job, health check ou qualquer coisa em `src/server`.
+
+**Diagnóstico.** `vitest.config.ts` não configura paralelismo, então os arquivos de teste rodam em
+paralelo. O teste insere um job `kind: 'teste_saude'` com `run_after` de 16 minutos atrás e espera
+o alerta disparar. Só que `job-queue.test.ts` roda "1.000 jobs com vários workers concorrentes" e
+drena a fila — e `teste_saude` não tem handler registrado, então "morre na hora" (é o
+comportamento testado no próprio `job-queue.test.ts`) e sai de `queued`. O health check então não
+acha job parado nenhum, e `jobQueue.ok` volta `true`.
+
+**Por que não mexi.** No CI isto roda contra um Supabase **local e efêmero** (`supabase start`,
+banco vazio a cada execução — `.github/workflows/ci.yml`, job "Banco e RLS"). O que torna a falha
+provável aqui é esta máquina não ter Docker: o desenvolvimento roda contra o projeto compartilhado
+na nuvem, onde o estado sobrevive entre execuções. Mudar `fileParallelism` é decisão de infra de
+teste e de tempo de CI, não de auditoria de design.
+
+**Para quem for consertar:** `fileParallelism: false` (ou `sequence.concurrent: false`) só no
+projeto de integração resolve; alternativa mais cara e mais correta é o teste isolar o próprio job
+por `tenant_id` e o health check filtrar por tenant.
+
+---
+
+## 16 · Nota de ambiente desta sessão
+
+A primeira execução do `verify` da rodada 2 acusou 12 falhas de integração com `TypeError: fetch
+failed` e durações de 42.000 segundos. Não era código: a máquina ficou ~11h suspensa no meio da
+execução (início 02:34, término lido às 14:16) e a rede para o Supabase caiu junto. Reexecutada
+acordada, sobrou a única falha da §15.
+
+Registrado porque número de teste sem contexto de ambiente vira conclusão errada — e porque o erro
+de método da rodada 1 (ler o código de saída do `tail` em vez do `pnpm`) foi exatamente dessa
+família.
+
