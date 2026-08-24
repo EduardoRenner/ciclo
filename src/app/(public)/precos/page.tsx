@@ -99,7 +99,7 @@ const CARTOES: Plano[] = [
   {
     tier: 'avancado',
     chamada: 'Por mês, sem limite de profissionais.',
-    paraQuem: 'Você passou de cinco, controla estoque ou atende com ficha de saúde.',
+    paraQuem: `Você passou de ${PLANOS.equipe.maxProfissionais}, controla estoque ou atende com ficha de saúde.`,
     inclui: [
       'Tudo do Equipe, com profissionais ilimitados',
       'Controle de estoque',

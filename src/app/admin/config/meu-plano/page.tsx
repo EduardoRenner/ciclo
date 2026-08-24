@@ -5,6 +5,7 @@ import { headers } from 'next/headers'
 import {
   NOME_DO_PLANO,
   ORDEM_DOS_PLANOS,
+  PLANOS,
   precoDoPlanoPorMes,
   verificarLimite,
   type PlanoTier,
@@ -52,7 +53,11 @@ const O_QUE_MUDA: Record<PlanoTier, string[]> = {
     'Comanda, caixa e orçamento',
     'Sua página fica sem o selo do CICLO',
   ],
-  equipe: ['Até 5 profissionais, cada um com sua agenda', 'Comissão e extrato de cada um', 'Fidelidade e pontos'],
+  equipe: [
+    `Até ${PLANOS.equipe.maxProfissionais} profissionais, cada um com sua agenda`,
+    'Comissão e extrato de cada um',
+    'Fidelidade e pontos',
+  ],
   avancado: ['Profissionais sem limite', 'Controle de estoque', 'Ficha de saúde em cofre cifrado'],
 }
 

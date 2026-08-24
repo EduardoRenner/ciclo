@@ -2393,3 +2393,17 @@ não dava para confiar em guarda que nunca falhou. Cada um foi quebrado de prop�
 reprovando: preço escrito à mão numa tela, tabela de nomes redeclarada, e o catálogo de módulos do
 core divergindo da migration 0041. Os três reprovaram, e a mensagem nomeia o arquivo culpado.
 Guarda que nunca falhou é guarda não testado.
+
+2026-08-24 · ⚠️ AUTOCORREÇÃO: o plano afirmava que `exigirModulo` "existe e está testado". Não
+estava · Varredura por exports mortos achou `exigirModulo` com ZERO usos — nem rota, nem teste.
+A frase no §L.2.1 era minha e estava errada. Corrigida no documento, e a cobertura foi escrita
+(4 casos: liberado, bloqueado pelo plano com 402, fora do eixo com 403 e sem oferta de upgrade,
+desligado pelo dono). A função continua sem ser chamada por rota nenhuma de propósito — ligar hoje
+tiraria comanda e caixa do `dom-rocha` —, mas agora o passo de ligar é mexer numa linha por rota,
+não descobrir o comportamento na hora.
+
+2026-08-24 · Números de limite na cópia passam a vir de `PLANOS` do core · "Até 5 profissionais" e
+"Você passou de cinco" estavam escritos à mão em "Meu plano" e na página de preço. Mesma razão do
+preço: número de plano escrito à mão é número que um dia diverge do que o código aplica. Ficou de
+fora só o "um profissional" da prosa — "1 profissional" lê pior e o valor 1 é o mais estável da
+tabela; se um dia mudar, o guarda de preço não pega, então está registrado aqui.

@@ -964,7 +964,10 @@ ao pé da letra — o plano é teto, o dono só desliga, e ligar além do teto �
 ⚠️ **A lacuna, nomeada em vez de escondida:** a tela agora **afirma** coisas que as rotas ainda
 não impõem. Ela diz *"Campanhas faz parte do Essencial"* — e `POST /api/v1/campaigns` continua
 respondendo normalmente para um tenant no Grátis. O mesmo vale para estoque, orçamento, cofre e
-comissão: `exigirModulo` existe e está testado, mas **só está ligado no envio em lote**.
+comissão: `exigirModulo` **existe, mas não é chamado por rota nenhuma** — quem está ligado, e só
+no envio em lote, é `exigirCapacidade`. (Correção: uma versão anterior desta linha dizia que
+`exigirModulo` estava testado. Não estava — tinha zero usos, inclusive em teste. Cobertura
+adicionada em 2026-08-24, justamente para o passo 3 abaixo ser rápido e seguro quando destravar.)
 
 **Por que não liguei em todas de uma vez**, e é o tipo de decisão que precisa estar escrita:
 os 3 tenants reais estão **todos em `gratis`** **[M]**, e as migrations 0040/0041 **não foram

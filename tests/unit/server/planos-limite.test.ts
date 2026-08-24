@@ -1,7 +1,13 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { AppError } from '@/server/http/errors'
-import { contextoDePlano, exigirCapacidade, exigirLimite, normalizarPlano } from '@/server/services/planos'
+import {
+  contextoDePlano,
+  exigirCapacidade,
+  exigirLimite,
+  exigirModulo,
+  normalizarPlano,
+} from '@/server/services/planos'
 
 /**
  * Cliente falso com a superfície exata que `planos.ts` usa. Deliberadamente NÃO é teste de
@@ -133,6 +139,43 @@ describe('exigirLimite — o limite vale no servidor (§L.1)', () => {
     await expect(
       exigirLimite(bancoFalso({ plano: 'profissional', profissionais: 4 }), T, 'profissionais'),
     ).resolves.toBeUndefined()
+  })
+})
+
+describe('exigirModulo', () => {
+  /*
+   * Ainda não é chamado por rota nenhuma — ligar hoje tiraria comanda e caixa do `dom-rocha`, que
+   * está no Grátis (ver §L.2.1 do plano). A cobertura existe para que o passo de ligar, quando as
+   * migrations forem aplicadas e os tenants ganharem plano, seja mexer numa linha por rota e não
+   * descobrir o comportamento na hora.
+   */
+  it('liberado passa', async () => {
+    await expect(exigirModulo(bancoFalso({ plano: 'gratis' }), T, 'agenda')).resolves.toBeUndefined()
+  })
+
+  it('bloqueado pelo plano devolve 402 com o degrau que resolve', async () => {
+    const erro = (await exigirModulo(bancoFalso({ plano: 'gratis' }), T, 'stock').catch((e: unknown) => e)) as AppError
+    expect(erro.code).toBe('PLAN_LIMIT')
+    expect(erro.status).toBe(402)
+    expect(erro.details).toMatchObject({ modulo: 'stock', precisaDo: 'avancado' })
+  })
+
+  it('fora do eixo devolve 403, e NÃO oferece upgrade', async () => {
+    // Pagar mais não faz uma barbearia que atende no local precisar de rota. Oferecer upgrade
+    // aqui seria a regra 5.2 ao contrário: motivo errado e caminho que não leva a lugar nenhum.
+    const erro = (await exigirModulo(bancoFalso({ plano: 'avancado', onde: 'no_local' }), T, 'routing').catch(
+      (e: unknown) => e,
+    )) as AppError
+    expect(erro.code).toBe('FORBIDDEN')
+    expect(erro.details).toMatchObject({ estado: 'fora_do_eixo' })
+  })
+
+  it('desligado pelo dono devolve 403 dizendo que está nas configurações', async () => {
+    const erro = (await exigirModulo(bancoFalso({ plano: 'gratis', desligados: ['public_page'] }), T, 'public_page').catch(
+      (e: unknown) => e,
+    )) as AppError
+    expect(erro.code).toBe('FORBIDDEN')
+    expect(erro.publicMessage).toContain('configurações')
   })
 })
 
