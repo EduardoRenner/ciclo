@@ -2358,3 +2358,22 @@ promete, com essas palavras, que "desligar esconde da interface" — sem o filtr
 seria falsa na primeira vez que alguém desligasse algo. Some o que está `desligado_pelo_dono` ou
 fora do eixo; **bloqueado pelo plano continua aparecendo**, porque a regra 5.2 manda mostrar motivo
 e caminho, e sumir com o item esconderia o que dá para comprar.
+
+2026-08-24 · Nome e preço dos planos consolidados em `src/core/billing/planos.ts`, com teste que
+varre o fonte · Estavam duplicados em cinco arquivos — serviço de planos, tela de bloqueio, "Meu
+plano", tela de módulos e a página pública de preço — porque cada tela foi escrita numa rodada
+diferente e cada uma redeclarou o que precisava. Fui eu que criei a duplicação, andando rápido; é
+a mesma armadilha da §L.6 que eu tinha acabado de documentar. Preço em cinco lugares é preço que
+um dia diverge em um deles, e o lugar onde ninguém olha é sempre o errado. Guardado por
+`tests/unit/design/preco-em-um-lugar-so.test.ts`, no mesmo padrão de varredura de fonte que o
+projeto já usa em `actions-fixadas` e `titulos-de-tela`. Preço em CENTAVOS (regra 3), mesmo sendo
+dinheiro que ainda não é cobrado — a hora de acertar a unidade é antes da primeira cobrança.
+
+2026-08-24 · ⚠️ ARMADILHA: `Intl.NumberFormat('pt-BR')` separa "R$" do número com espaço
+NÃO-QUEBRÁVEL (U+00A0), não com espaço comum · Descoberto quando o teste acima falhou com o
+indecifrável `expected 'R$ 49' to be 'R$ 49'`. Consequência prática, e é séria: **a primeira versão
+do guarda passava vazia** — ela procurava no código-fonte a string devolvida pelo formatador
+(com NBSP), e nenhum humano digita NBSP à mão, então nunca haveria acerto. Guarda que não pode
+falhar não é guarda. A versão final normaliza NBSP para espaço comum antes de comparar. Vale para
+qualquer teste futuro que compare texto formatado com texto escrito à mão — o `dinheiro` de
+`src/lib/formato.ts` tem o mesmo comportamento.
