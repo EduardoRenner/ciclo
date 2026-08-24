@@ -46,6 +46,7 @@ create or replace function public.consumir_rate_limit(
 returns table (permitido boolean, restante int)
 language plpgsql
 volatile
+set search_path = public
 as $$
 declare
   v_count int;

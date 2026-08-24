@@ -40,6 +40,7 @@ create or replace function public.debitar_carteira(
 returns bigint
 language plpgsql
 volatile
+set search_path = public
 as $$
 declare
   v_saldo bigint;
