@@ -921,9 +921,14 @@ grátis, o grátis provavelmente está apertado demais** para sustentar o laço 
 limite de profissionais do grátis mereça ser **2, não 1**. — **Recomendado revisar**
 
 **Higiene achada nesta análise:** há **5 tenants de teste** órfãos no banco de produção
-(`health-*`, `alertas-estoque-*`, `recuperar-*`, `clientes-*`, `risco-*` **[M]**), resíduo de
-suítes de integração que falharam antes do `afterAll` limpar. Não afeta cobrança, mas **suja
-qualquer métrica de "quantos tenants existem"** — limpar antes de instrumentar (Fase O).
+(`health-*`, `alertas-estoque-*`, `recuperar-*`, `clientes-*`, `risco-*` **[M]**). Não afeta
+cobrança, mas **suja qualquer métrica de "quantos tenants existem"**.
+
+⚠️ **Diagnóstico corrigido na execução:** a primeira versão desta linha dizia "resíduo de suítes
+que falharam antes do `afterAll` limpar". **Errado, e otimista.** O `.env.local` aponta para o
+Supabase de produção **[M]**, então a suíte de integração **cria esses tenants na base real toda
+vez que roda** — não é falha de limpeza, é o alvo estar errado. Ver **P.1.1**, que reescreve o
+item P-B por causa disso.
 
 ---
 
@@ -1173,13 +1178,41 @@ defensável (E.2.1).
 | # | O quê | Por quê | Custo |
 |---|---|---|---|
 | P-A | **Renomear o enum** (`pro→essencial`, `profissional→equipe`) | Custo zero agora **[M]**, migração de pagante depois | Trivial |
-| P-B | **Limpar os 5 tenants de teste** | Métrica suja desde o dia 1 | Trivial |
+| P-B | ⚠️ **CORRIGIDO — ver P.1.1.** Limpar os 5 tenants de teste **não resolve nada sozinho** | Métrica suja desde o dia 1 | Trivial, e inútil isolado |
 | P-C | **Página de preço pública**, sem cobrança | Vender exige poder mostrar preço | Baixo |
 | P-D | **Cobrar à mão**: link de pagamento MP no WhatsApp + `update tenants.plan` | Nenhuma linha de billing para 1–10 clientes | ~Zero |
 | P-E | **Um lugar só** que responde "pode X?" + 2 limites (profissionais, envio em lote) | O mínimo que faz o plano significar algo | Médio |
 | P-F | **Tela de bloqueio** com o dado dele (M.1) | É a peça de conversão | Médio |
 | P-G | **Van Westendorp** nas primeiras 20 conversas | Sai do **[S]** para **[M]** no preço | Zero (é conversa) |
 | ⭐ **P-0** | **Ligar o cron externo** nas 6 rotas que já existem (L.5) | **Vem antes de tudo.** `reminders` e `recompute-cycles` estão desligados — o diferencial que sustenta o preço não está no ar | Baixo, **R$ 0/mês** |
+
+#### P.1.1 · ⚠️ Correção do P-B, achada ao executar
+
+O P-B foi escrito com o diagnóstico errado. A Fase K deste documento atribuiu os 5 tenants órfãos
+a "resíduo de suítes de integração que falharam antes do `afterAll` limpar". **A causa é mais
+estrutural: o `.env.local` do projeto aponta para o Supabase de produção** **[M]** — logo
+`pnpm test:integration` e `pnpm test:rls` criam tenant e usuário de `auth` na base real, **toda
+vez que rodam**.
+
+Consequência prática: **apagar os 5 tenants é trabalho que se desfaz na próxima execução da
+suíte.** O P-B, como escrito, é enxugar gelo.
+
+**O que P-B tem que ser:**
+
+| # | O quê | Por quê |
+|---|---|---|
+| P-B.1 | **Apontar o ambiente de teste para um Supabase separado** (projeto local via `supabase start`, ou um projeto de staging) | É a única coisa que faz a limpeza durar |
+| P-B.2 | **Depois** disso, limpar os tenants órfãos de produção | Aí a métrica fica limpa e continua limpa |
+
+**Isto muda o custo do item** — deixa de ser "trivial" e passa a ser mudança de infraestrutura de
+teste, com um risco próprio: a organização Supabase gratuita tem teto de projetos, e outros
+projetos da casa já disputam esse teto. — **Do Eduardo**, porque envolve conta e possivelmente
+dinheiro.
+
+**E muda a leitura da Fase O:** qualquer previsão que conte tenants (`previsão 2`, conversão
+grátis→pago sobre "tenants ativos") está medindo uma base contaminada por fixture de teste
+enquanto isso não for resolvido. Não invalida a previsão; invalida contá-la por `select count(*)
+from tenants` sem filtro.
 
 ⭐ **P-0 é o primeiro item, não o oitavo.** A ordem da primeira versão colocava cron na fase
 média, atrás de "≥10 pagantes". Isso está errado por um motivo simples: **não dá para vender o
@@ -1320,8 +1353,9 @@ confiança que o rótulo permite**. Ao ler decisões, o peso deve ser sempre o d
 | **Teste de 14 dias** (K, 1ª versão) | Número sem origem, e **abaixo de todo o mercado pesquisado**. Corrigido para 30 em E.2.2 |
 | **Tabela D.3** | Escrita com módulos de beleza e apresentada como se valesse para as 17 profissões. Só vale para o ICP — ver D.5 |
 | **"3 tenants reais"** | Verdadeiro, mas ameno demais: os 3 têm **os mesmos 3 eixos**, e o último agendamento de dois deles é de agosto. Não é base pequena, é **base parada** |
+| **"resíduo de suítes que falharam antes do `afterAll`"** (K) | Diagnóstico errado, e errado para o lado tranquilizador: sugere acidente pontual quando é **a suíte apontando para produção por configuração**. Levou o P-B a ser dimensionado como "trivial". Corrigido em P.1.1 |
 
-**O padrão por trás dos seis:** a primeira versão errou sempre na mesma direção — **para o lado
+**O padrão por trás dos sete:** a primeira versão errou sempre na mesma direção — **para o lado
 otimista**, e sempre por *ausência* de um dado, nunca por invenção. Nenhum número foi inflado; o
 que faltou foi ir buscar o que estava faltando. É o modo de falha do §0.1 do prompt aparecendo na
 prática: **consultoria plausível, internamente coerente, e incompleta nos insumos que decidem.**
