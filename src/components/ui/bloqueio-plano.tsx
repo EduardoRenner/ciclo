@@ -26,8 +26,15 @@ import { NOME_DO_PLANO, precoDoPlanoPorMes, type PlanoTier } from '@/core/billin
  */
 
 type Props = {
-  /** O degrau que libera o que ela tentou fazer. */
-  precisaDo: PlanoTier
+  /**
+   * O degrau que libera o que ela tentou fazer.
+   *
+   * `gratis` fica fora do tipo de propósito: "Ver o Grátis — R$ 0" é uma frase sem sentido numa
+   * tela cujo trabalho é oferecer o caminho pago. Na prática o veredito nunca devolveria `gratis`
+   * (todo degrau contém os módulos do grátis, então um módulo gratuito nunca fica bloqueado), mas
+   * é mais barato tornar o estado impossível do que confiar nesse raciocínio continuar verdadeiro.
+   */
+  precisaDo: Exclude<PlanoTier, 'gratis'>
   /**
    * O que ela tentou fazer, na voz dela e por inteiro: "avisar todas de uma vez". A frase entra
    * em dois moldes diferentes ("Para {acao}, é preciso o X" e "No X você pode {acao}"), então

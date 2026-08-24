@@ -91,6 +91,17 @@ export async function definirModulo(db: Cliente, tenantId: string, entrada: Entr
     })
   }
 
+  // Desligar o que o plano já não libera não grava nada. A tela mostra cadeado, não interruptor,
+  // então só a API direta chega aqui — e registrar "o dono desligou" para algo que ele nunca viu
+  // é guardar uma decisão que ninguém tomou. Ela voltaria a morder no dia em que ele subisse de
+  // degrau, com o módulo desligado e nenhuma explicação de quando isso teria acontecido.
+  //
+  // Não confundir com a linha legítima: quem desliga estando NO degrau que libera grava normal, e
+  // essa preferência sobrevive a um rebaixamento e ao retorno — que é o comportamento certo.
+  if (!entrada.ligado && veredito.estado === 'bloqueado_pelo_plano') {
+    return listarModulos(db, tenantId)
+  }
+
   if (entrada.ligado) {
     // Ligar de volta = apagar a escolha de desligar. Deixar uma linha `ligado = true, origem =
     // 'dono'` faria o dono "ligar" algo que o plano já liberava, e no dia em que ele caísse de

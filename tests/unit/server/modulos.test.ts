@@ -118,9 +118,23 @@ describe('definirModulo — o plano é teto, o dono só desliga (§L.2)', () => 
     expect(erro.details).toMatchObject({ precisaDo: 'essencial' })
   })
 
-  it('mas DESligar o que o plano não libera não quebra — já está desligado, e não é erro', async () => {
-    const { db } = bancoFalso({ plano: 'gratis' })
+  it('DESligar o que o plano não libera não quebra E não grava nada', async () => {
+    // A tela mostra cadeado, não interruptor: só a API direta chega aqui. Gravar "o dono
+    // desligou" para algo que ele nunca viu é guardar uma decisão que ninguém tomou — e ela
+    // morderia no dia do upgrade, com o módulo desligado e sem explicação de quando foi.
+    const { db, operacoes } = bancoFalso({ plano: 'gratis' })
     await expect(definirModulo(db, T, { modulo: 'campaigns', ligado: false })).resolves.toBeDefined()
+    expect(operacoes).toEqual([])
+  })
+
+  it('mas quem desliga ESTANDO no degrau que libera grava normal', async () => {
+    // Essa preferência é real, e tem que sobreviver a um rebaixamento e ao retorno.
+    const { db, operacoes } = bancoFalso({ plano: 'essencial' })
+    await definirModulo(db, T, { modulo: 'campaigns', ligado: false })
+    expect(operacoes).toContainEqual({
+      tipo: 'upsert',
+      linha: { tenant_id: T, modulo: 'campaigns', ligado: false, origem: 'dono' },
+    })
   })
 
   it('a agenda e o Motor de Ciclo não desligam', async () => {

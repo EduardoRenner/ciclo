@@ -2438,3 +2438,17 @@ Não é economia de linha: **o que a pessoa leu antes de pagar e o que ela vê d
 precisam ser a mesma frase.** Duas listas com as mesmas promessas escritas de jeitos diferentes é
 como se descobre, tarde, que uma das duas mentia. De quebra, "Meu plano" herdou o teste que impede
 a página de preço de prometer o que o código não libera.
+
+2026-08-24 · `BloqueioPlano.precisaDo` deixa de aceitar `gratis` no tipo · "Ver o Grátis — R$ 0" é
+frase sem sentido numa tela cujo trabalho é oferecer o caminho pago. Na prática o veredito nunca
+devolveria `gratis` (todo degrau contém os módulos do grátis, então módulo gratuito nunca fica
+bloqueado), mas é mais barato tornar o estado impossível do que confiar nesse raciocínio continuar
+verdadeiro depois de alguém mexer no empacotamento. Custo zero: os chamadores passam literais.
+
+2026-08-24 · Desligar módulo já bloqueado pelo plano não grava linha nenhuma · A tela mostra
+cadeado, não interruptor, então só a API direta chega nesse caso — e registrar "o dono desligou"
+para algo que ele nunca viu é guardar uma decisão que ninguém tomou. Ela morderia no dia do
+upgrade: módulo desligado, e nenhuma explicação de quando isso teria acontecido. Não confundir com
+a linha legítima: quem desliga ESTANDO no degrau que libera grava normal, e essa preferência
+sobrevive a um rebaixamento e ao retorno — que é o comportamento certo. Os dois casos têm teste, e
+o no-op foi verificado por mutação.
