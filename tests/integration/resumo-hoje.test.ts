@@ -171,6 +171,18 @@ describe('resumoDeHoje', () => {
     30_000,
   )
 
+  /**
+   * FLAKE CONHECIDA, medida ao ligar o CI pela primeira vez (S13, 2026-08-24): `resumoDeHoje`
+   * filtra `restOfDay` pelo dia de calendário em TZ **antes** de comparar com o agora real
+   * (`resumo-hoje.ts`: `gte inicioDoDia / lt fimDoDia`, depois "ainda por vir") — correto, e por
+   * isso o `id2` a +90min NÃO pode ancorar num ponto fixo como `meioDiaDeHoje` (esse teste
+   * também depende do agora real, igual "próxima cliente"/"alerta" — ver comentário de
+   * `inserirAgendamento`). Se a suíte rodar nos ~90 minutos antes da meia-noite em São Paulo, o
+   * `id2` nasce amanhã de verdade, e `restOfDay` corretamente devolve só `[id1]`. Não é bug do
+   * serviço nem do teste — é o mesmo tipo de janela de tempo real que já existe documentada em
+   * `health.test.ts`. Fica registrado aqui em vez de "consertado" com uma âncora que quebraria a
+   * asserção de propósito (futuro/passado) que o teste existe para provar.
+   */
   it(
     'resto do dia inclui tudo que ainda vem, na ordem, e não repete o passado',
     async () => {

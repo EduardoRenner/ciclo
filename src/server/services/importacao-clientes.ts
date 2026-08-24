@@ -188,7 +188,26 @@ export async function importarClientes(
       .eq('tenant_id', tenantId)
       .is('deleted_at', null)
       .in('phone_hash', grupo.map((h) => h.hash))
-    if (error) throw new AppError('INTERNAL', { cause: error })
+    if (error) {
+      // Diagnóstico temporário (S13, 2026-08-24): esta consulta falhou 3x seguidas só no CI
+      // (nunca ao rodar isolada nem em lote contra produção) e a causa nunca apareceu em log
+      // nenhum — `AppError` não serializa `cause`, e como `importarClientes` é chamada direto
+      // pelo teste, sem passar pelo `rota()` que loga, não sobrava rastro nenhum a seguir. Isto
+      // aqui só existe para a PRÓXIMA execução revelar o `code`/`message`/`details`/`hint` reais
+      // do Postgres/PostgREST — remover assim que a causa for confirmada e corrigida de verdade.
+      console.error(
+        JSON.stringify({
+          level: 'error',
+          event: 'importacao_clientes_lote_falhou_diagnostico',
+          loteTamanho: grupo.length,
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+        }),
+      )
+      throw new AppError('INTERNAL', { cause: error })
+    }
     for (const row of data ?? []) if (row.phone_hash) hashesExistentes.add(row.phone_hash)
   }
 
