@@ -2321,3 +2321,13 @@ os CRIA na base real toda vez que roda — apagá-los é enxugar gelo. P-B passa
 infraestrutura, com o risco do teto de projetos da organização Supabase gratuita. Também
 adicionado à auto-auditoria do §R.6, porque é o sétimo caso do mesmo padrão — a primeira versão
 do plano errou para o lado otimista, por ausência de dado.
+
+2026-08-24 · As 4 `FEATURE_*` foram aposentadas do `.env.example` (§L.3 do plano de monetização) ·
+`FEATURE_AI_RECEPTIONIST`, `FEATURE_CLUB`, `FEATURE_COMMISSION_ADVANCED` e `FEATURE_MULTI_UNIT`
+nunca foram lidas por nenhuma linha do projeto — e, sendo variável de ambiente, são GLOBAIS: não
+conseguem por natureza ligar funcionalidade por tenant, que é o que um SaaS multi-tenant precisa.
+Manter variável que promete controle e não entrega é dívida que engana quem chega depois. Quem
+responde "este tenant pode X?" agora é `src/core/billing/planos.ts`. No lugar das quatro linhas
+ficou o comentário explicando o motivo, para ninguém recriá-las achando que resolvem algo.
+PENDÊNCIA que não é de código: as quatro continuam definidas no Vercel de produção — apagar é ação
+no painel. Sem uso não fazem nada, mas sujam a configuração.

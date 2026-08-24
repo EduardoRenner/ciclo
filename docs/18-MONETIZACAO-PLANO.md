@@ -962,6 +962,11 @@ natureza ligar coisa por tenant** **[M]**. **Recomendação: aposentar as 4** e 
 `tenant_modules` ser a única resposta. Manter variável de ambiente que promete controle de
 funcionalidade e não entrega é dívida que engana quem chega depois.
 
+✅ **Feito em 2026-08-24:** removidas do `.env.example`, com o motivo escrito no lugar delas.
+**Pendência que não é de código:** as quatro continuam definidas no **Vercel de produção** —
+apagá-las é ação no painel, e sem uso elas não fazem nada além de sujar a configuração.
+— **Do Eduardo**
+
 ### L.4 · Namespace (regra 5.6)
 
 O que é "CICLO cobra do tenant" usa prefixo **`billing_`** — `billing_subscriptions`,
