@@ -2201,3 +2201,47 @@ redireciona para `/entrar` sem sessão, `/dom-rocha/agendar` mostra 42 horários
 (TICKET-109), títulos de aba corretos em `/entrar`, `/avaliar/[token]` e `/dom-rocha/agendar`
 (TICKET-101/111), zero erro no console em todas as páginas conferidas. 19 tickets no ar:
 TICKET-101 a TICKET-113.
+
+2026-08-24 · Renomear `plan_tier`: `pro`→`essencial`, `profissional`→`equipe` (migration 0040) ·
+A 0030 deixou 'pro' de pé por já ser neutro e criou um efeito colateral que só apareceu ao
+desenhar a tabela de preço: dois rótulos sinônimos ('Pro' e 'Profissional') disputando o mesmo
+significado, impossíveis de explicar num site. Conferido antes: nenhuma linha lê `tenants.plan`
+(só o types.gen.ts, gerado) e os 8 tenants de produção estão todos em 'gratis' — troca de rótulo
+pura. Depois de existir pagante isso vira migração de dado de assinatura.
+
+2026-08-24 · Catálogo `modules` com FK a partir de `tenant_modules.modulo` (migration 0041) ·
+A coluna nasceu `text` sem check nem referência na 0025. Vira a resposta de "o que este plano
+libera", e sem restrição um erro de digitação cria módulo fantasma que nenhuma query acusa.
+A coluna `modules.eixo` existe para separar as duas razões de um módulo estar desligado:
+EIXO (não faz sentido, some) antes de PLANO (não liberado, bloqueia com motivo). Nenhum
+mapeamento plano→módulo foi gravado em migration: os limites ainda são suposição.
+
+2026-08-24 · Limites do plano grátis implementados como 1 profissional / 50 clientes em
+`src/core/billing/planos.ts`, seguindo a tabela D.3 do plano de monetização · PENDÊNCIA ABERTA:
+a própria auditoria do plano (Fase K) achou que `dom-rocha` tem 3 profissionais e 46 clientes,
+ou seja, o tenant de demonstração do produto não caberia no grátis que o documento propõe, e
+está a 4 clientes do teto. A recomendação de revisar para 2 profissionais está registrada no
+plano e NÃO foi aplicada aqui — implementei a tabela publicada, não a sugestão de revisão, para
+o código e o documento não divergirem. Decidir junto com o preço.
+
+2026-08-24 · Cron por GitHub Actions (`.github/workflows/cron.yml`), não por Vercel Cron ·
+Existiam 6 rotas de cron construídas e `vercel.json` com `crons: []` — nenhuma jamais rodou,
+incluindo `recompute-cycles`, que é o Motor de Ciclo. Vercel Hobby trava em 1 execução por dia
+(o limite de 100 jobs/projeto de jan/2026 é de quantidade, não de frequência); Vercel Pro custa
+US$ 20/mês, que no unit economics da Fase F são 2,4 assinantes só para pagar o agendador.
+Agendados apenas `recompute-cycles` e `segments`, que só calculam e gravam no próprio banco.
+`reminders` e `campaigns` ficaram FORA do agendamento de propósito: mandam mensagem para cliente
+final de verdade e `dom-rocha` tem 46 clientes em produção. Ligar isso não é decisão de YAML.
+
+2026-08-24 · `tests/unit/design/titulos-de-tela.test.ts`: regex do título passou a ser preguiçosa
+(`[^}]*?` no lugar de `[^}]*`) · Com quantificador guloso a busca ia até o ÚLTIMO `title:` antes
+da primeira `}`, o que numa página com `openGraph` capturava o título social em vez do título do
+documento — e reprovava por "repete a marca" um título de tela que estava correto. Achado ao
+criar `/precos`, a primeira página do projeto com openGraph e título próprio. Corrigido o guarda
+em vez de contornar na página: a intenção do teste continua valendo e o defeito atingiria
+qualquer página futura com Open Graph.
+
+2026-08-24 · Página `/precos` não tem botão de assinar · A cobrança automática não existe
+(regra 5.4: não fingir que integração de pagamento está pronta). Todos os CTA levam a `/cadastro`
+e a pergunta "Como eu pago hoje?" responde em texto que a cobrança é combinada direto. Preferido
+a um botão que não funciona ou a um "assine agora" que abre formulário morto.
