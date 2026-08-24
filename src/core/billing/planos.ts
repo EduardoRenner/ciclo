@@ -35,6 +35,36 @@ export type ModuloKey =
 /** Capacidades que não são módulo — são o que o degrau permite fazer com o módulo que já tem. */
 export type Capacidade = 'envio_em_lote' | 'remover_selo'
 
+/**
+ * Catálogo dos 16 módulos do `09-PLATAFORMA.md` §6, com o rótulo em pt-BR que a interface usa.
+ *
+ * Vive aqui, e não numa consulta à tabela `modules`, porque a tela de módulos precisa dos rótulos
+ * para desenhar e não deveria pagar uma ida ao banco por isso. A tabela `modules` (migration 0041)
+ * continua existindo com outro papel: ser o alvo da chave estrangeira de `tenant_modules.modulo`,
+ * que é o que impede módulo fantasma por erro de digitação.
+ *
+ * As duas listas precisam bater. `tests/unit/core/modulos-catalogo.test.ts` lê a migration e
+ * compara — duplicação vigiada é segura; duplicação silenciosa é a armadilha da L.6 de novo.
+ */
+export const CATALOGO: readonly { key: ModuloKey; label: string; sempreLigado: boolean }[] = [
+  { key: 'agenda', label: 'Agenda', sempreLigado: true },
+  { key: 'cycle_engine', label: 'Motor de Ciclo', sempreLigado: true },
+  { key: 'public_page', label: 'Página pública', sempreLigado: false },
+  { key: 'clients', label: 'Clientes e CRM', sempreLigado: false },
+  { key: 'reminders', label: 'Lembrete e confirmação', sempreLigado: false },
+  { key: 'recurrence', label: 'Recorrência', sempreLigado: false },
+  { key: 'quotes', label: 'Orçamento', sempreLigado: false },
+  { key: 'routing', label: 'Deslocamento e rota', sempreLigado: false },
+  { key: 'register', label: 'Comanda e caixa', sempreLigado: false },
+  { key: 'stock', label: 'Estoque', sempreLigado: false },
+  { key: 'loyalty', label: 'Fidelidade e pontos', sempreLigado: false },
+  { key: 'club', label: 'Assinatura e clube', sempreLigado: false },
+  { key: 'campaigns', label: 'Campanhas', sempreLigado: false },
+  { key: 'team', label: 'Equipe e comissão', sempreLigado: false },
+  { key: 'health_records', label: 'Anamnese e dado de saúde', sempreLigado: false },
+  { key: 'documents', label: 'Documentos e contratos', sempreLigado: false },
+]
+
 type Definicao = {
   /** null = sem teto. */
   maxProfissionais: number | null
