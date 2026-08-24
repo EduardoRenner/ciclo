@@ -2407,3 +2407,11 @@ não descobrir o comportamento na hora.
 preço: número de plano escrito à mão é número que um dia diverge do que o código aplica. Ficou de
 fora só o "um profissional" da prosa — "1 profissional" lê pior e o valor 1 é o mais estável da
 tabela; se um dia mudar, o guarda de preço não pega, então está registrado aqui.
+
+2026-08-24 · `podeUsarModulo` passa a ignorar a escolha do dono em módulo "sempre ligado" · Achado
+na varredura: a função respeitava `desligadosPeloDono` sem consultar `sempreLigado`. `definirModulo`
+recusa desligar agenda e Motor de Ciclo, mas `tenant_modules.modulo` não tem restrição que impeça
+uma linha chegar por outro caminho (seed, correção manual, migration futura) — e nesse caso a
+agenda sumiria inteira da interface. O produto desaparecendo por causa de um registro de
+configuração. Defesa no core, com teste, e o teste foi verificado por mutação: sem a guarda, ele
+reprova.

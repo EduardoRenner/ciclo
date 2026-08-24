@@ -53,6 +53,16 @@ describe('precedência: eixo vem antes de plano (§D.5)', () => {
     expect(v.estado).toBe('liberado')
   })
 
+  it('linha perdida no banco NÃO consegue desligar a agenda nem o Motor de Ciclo', () => {
+    // `definirModulo` recusa desligá-los, mas `tenant_modules.modulo` não tem restrição que
+    // impeça a linha chegar por seed ou correção manual. Sem esta defesa, um registro de
+    // configuração faria o produto sumir da interface.
+    for (const modulo of ['agenda', 'cycle_engine'] as const) {
+      const v = podeUsarModulo({ ...BARBEARIA_GRATIS, desligadosPeloDono: [modulo] }, modulo)
+      expect(v.estado, `${modulo} não pode ser desligado por linha perdida`).toBe('liberado')
+    }
+  })
+
   it('dono desligou vem depois de plano liberar, e é reversível', () => {
     const v = podeUsarModulo({ ...BARBEARIA_GRATIS, desligadosPeloDono: ['public_page'] }, 'public_page')
     expect(v.estado).toBe('desligado_pelo_dono')

@@ -248,7 +248,13 @@ export function podeUsarModulo(ctx: ContextoDoTenant, modulo: ModuloKey): Veredi
     return { estado: 'bloqueado_pelo_plano', precisaDo }
   }
 
-  if (ctx.desligadosPeloDono?.includes(modulo)) return { estado: 'desligado_pelo_dono' }
+  // Módulo "sempre ligado" ignora a escolha do dono, e isso é defesa, não teimosia: `definirModulo`
+  // recusa desligá-lo, mas `tenant_modules.modulo` não tem restrição que impeça uma linha chegar
+  // por outro caminho (seed, correção manual, migration futura). Sem esta guarda, uma linha
+  // perdida para `agenda` faria a agenda inteira sumir da interface — o produto desaparecendo por
+  // causa de um registro de configuração.
+  const sempreLigado = CATALOGO.find((m) => m.key === modulo)?.sempreLigado === true
+  if (!sempreLigado && ctx.desligadosPeloDono?.includes(modulo)) return { estado: 'desligado_pelo_dono' }
 
   return { estado: 'liberado' }
 }
