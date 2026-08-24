@@ -2331,3 +2331,30 @@ responde "este tenant pode X?" agora é `src/core/billing/planos.ts`. No lugar d
 ficou o comentário explicando o motivo, para ninguém recriá-las achando que resolvem algo.
 PENDÊNCIA que não é de código: as quatro continuam definidas no Vercel de produção — apagar é ação
 no painel. Sem uso não fazem nada, mas sujam a configuração.
+
+2026-08-24 · `tenant_modules` finalmente tem escritor: tela `/admin/config/modulos` + rota
+`PATCH /api/v1/tenant/modules` · A tabela existia desde a migration 0025 e ganhou catálogo e FK na
+0041, mas nenhuma linha jamais escreveu nela — era metade de um desenho de duas fontes de verdade
+com só a metade do plano funcionando. Regra da §L.2 implementada literalmente: **o plano é teto, o
+dono só desliga**. Ligar módulo que o plano não libera é recusado no servidor (402), senão
+`tenant_modules` viraria uma segunda fonte brigando com `tenants.plan`.
+
+2026-08-24 · Ligar módulo de volta APAGA a linha, em vez de gravar `ligado = true` · Uma linha
+`(ligado = true, origem = 'dono')` afirmaria que o dono escolheu ter aquilo. No dia em que ele
+caísse de degrau, essa afirmação entraria em conflito com o teto do plano — e o desempate seria
+arbitrário. Ausência de linha significa "vale o padrão do plano", que é a única leitura sem
+ambiguidade.
+
+2026-08-24 · Catálogo de módulos duplicado de propósito, com teste de vigia · Os 16 módulos
+existem em `src/core/billing/planos.ts` (rótulo para a interface, sem ida ao banco) e na migration
+0041 (alvo da FK de `tenant_modules.modulo`). São papéis diferentes, mas as listas precisam bater.
+`tests/unit/core/modulos-catalogo.test.ts` lê o SQL da migration e compara chaves, ordem e quais
+são "sempre ligados" — duplicação vigiada é segura, duplicação silenciosa é a armadilha da §L.6 de
+novo. O teste também recusa módulo órfão: se algum não for liberado nem no plano mais alto, é
+defeito de empacotamento, não decisão.
+
+2026-08-24 · O hub de configurações passa a esconder item de módulo desligado · A tela de módulos
+promete, com essas palavras, que "desligar esconde da interface" — sem o filtro no hub a promessa
+seria falsa na primeira vez que alguém desligasse algo. Some o que está `desligado_pelo_dono` ou
+fora do eixo; **bloqueado pelo plano continua aparecendo**, porque a regra 5.2 manda mostrar motivo
+e caminho, e sumir com o item esconderia o que dá para comprar.
