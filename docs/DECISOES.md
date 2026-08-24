@@ -2277,3 +2277,23 @@ evidência) porque a diferença entre elas é o argumento do §M.1. A vitrine pa
 mesma sessão: expôs dois defeitos reais do componente — a frase duplicada "de uma vez de uma vez"
 (o molde completava o que a prop já dizia) e `aria-labelledby` com id fixo, que duplicava id com
 duas instâncias na mesma página.
+
+2026-08-24 · Selo "Feito com CICLO" passa a ser condicional: sai no primeiro degrau pago ·
+§D.3/G.1 do plano de monetização. Era incondicional por decisão consciente (P6), tomada quando
+cobrança estava bloqueada. Agora é o benefício mais concreto do Essencial — e é receita trocada
+por distribuição, com a troca sendo consciente: cada página com selo é impressão para o próximo
+profissional, e é o único canal de aquisição gratuito do produto. Todo cliente que converte apaga
+uma peça de distribuição; o laço se autolimita conforme o negócio dá certo. Decidido no SERVIDOR e
+entregue como booleano `mostrarSelo` — mandar `plan` para a página pública exporia o degrau
+comercial de cada salão para qualquer visitante anônimo. O rodapé inteiro desaparece quando o selo
+sai, em vez de virar rodapé vazio ocupando altura no celular.
+
+2026-08-24 · ⚠️ TENSÃO REGISTRADA, NÃO RESOLVIDA: o teto de 50 clientes do grátis não bloqueia
+nada · §L.1 classifica cliente como limite SUAVE (avisa e deixa passar), porque travar cadastro no
+meio de um atendimento é o jeito mais rápido de o salão largar o sistema. A consequência honesta é
+que **o teto de 50 clientes hoje é um aviso, não um limite** — quem passar de 50 continua
+cadastrando. A tela de clientes diz isso com essas palavras ("Nada foi bloqueado") em vez de
+insinuar uma parede que não existe. Se isso deve algum dia virar limite duro é decisão comercial
+(Do Eduardo); o que NÃO pode acontecer é o marketing prometer um teto que o código não aplica.
+O aviso só aparece a partir de 80% do teto: contador permanente de "42/50" no alto da tela
+transforma trabalho normal em ansiedade.
