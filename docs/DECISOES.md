@@ -2245,3 +2245,35 @@ qualquer página futura com Open Graph.
 (regra 5.4: não fingir que integração de pagamento está pronta). Todos os CTA levam a `/cadastro`
 e a pergunta "Como eu pago hoje?" responde em texto que a cobrança é combinada direto. Preferido
 a um botão que não funciona ou a um "assine agora" que abre formulário morto.
+
+2026-08-24 · ⚠️ ACHADO: `.env.local` aponta para o Supabase de PRODUÇÃO
+(`sukloaoodpxjukngyojo`), então `pnpm test:integration` e `pnpm test:rls` criam tenant e usuário
+de auth na base real · É a origem dos 5 tenants órfãos (`health-*`, `alertas-estoque-*`,
+`recuperar-*`, `clientes-*`, `risco-*`) que a auditoria do plano de monetização encontrou e
+atribuiu a "suíte que falhou antes do afterAll limpar" — a causa é mais estrutural que isso.
+Por causa disso, a cobertura do limite de plano foi feita em `tests/unit/server/` com cliente
+falso, e não em `tests/integration/`: um teste de limite precisaria escrever em `tenants.plan`
+de produção. NÃO corrigido nesta rodada (mexer no ambiente de teste é mudança de infraestrutura,
+não de monetização), mas registrado porque decide onde teste novo pode morar.
+
+2026-08-24 · `exigirLimite` vem ANTES de `comIdempotencia` na rota de profissionais · Repetir uma
+requisição que já era proibida tem que continuar proibida. Se a idempotência viesse primeiro, uma
+chave reaproveitada devolveria o resultado guardado de uma tentativa anterior e passaria por cima
+do teto do plano.
+
+2026-08-24 · `normalizarPlano` traduz `pro`/`profissional` e cai para `gratis` no desconhecido ·
+Código e migration não sobem no mesmo instante; entre o deploy e o `db push` o banco ainda
+responde os nomes anteriores à 0040, e `PLANOS['pro']` seria `undefined` — crash em vez de
+bloqueio. Valor desconhecido cai para o degrau MAIS restrito porque errar para menos bloqueia uma
+ação (a pessoa reclama e se corrige) e errar para mais libera o que não foi pago (silencioso).
+
+2026-08-24 · Envio em lote do Motor de Ciclo trava em `items.length > 1`, não em "enviar" ·
+§D.2: o grátis mostra quem sumiu e quanto vale; o que ele não dá é a alavanca de chamar todo mundo
+de uma vez. Mandar uma de cada vez continua livre para sempre, e é o caminho que a própria tela de
+bloqueio oferece. Trava no servidor porque sumir com o botão não impede montar a requisição na mão.
+
+2026-08-24 · `BloqueioPlano` adicionado à vitrine `/dev/ui` · Duas variantes (com e sem
+evidência) porque a diferença entre elas é o argumento do §M.1. A vitrine pagou o custo dela na
+mesma sessão: expôs dois defeitos reais do componente — a frase duplicada "de uma vez de uma vez"
+(o molde completava o que a prop já dizia) e `aria-labelledby` com id fixo, que duplicava id com
+duas instâncias na mesma página.
