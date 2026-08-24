@@ -1,4 +1,4 @@
-import { Bell, Clock, FileText, MessageSquareText, Megaphone, Repeat, Repeat2, ScrollText, Scissors, ShieldCheck, Package, Store, Users, Wallet } from 'lucide-react'
+import { BadgeDollarSign, Bell, Clock, FileText, MessageSquareText, Megaphone, Repeat, Repeat2, ScrollText, Scissors, ShieldCheck, Package, Store, Users, Wallet } from 'lucide-react'
 import Link from 'next/link'
 
 import Card from '@/components/ui/card'
@@ -47,6 +47,18 @@ const GRUPOS = [
       { href: '/admin/config/planos', titulo: 'Fidelidade e assinatura', descricao: 'Pontos por atendimento e planos mensais', icone: Repeat },
       { href: '/admin/orcamentos', titulo: 'Orçamentos', descricao: 'Acompanhar quem aprovou, recusou ou ainda não respondeu', icone: FileText },
       { href: '/admin/series', titulo: 'Séries de recorrência', descricao: 'Ver quem repete e cancelar quando precisar', icone: Repeat2 },
+    ],
+  },
+  {
+    /*
+      Grupo proprio: "Meu plano" e sobre a conta do PROFISSIONAL no CICLO, e nao cabe em nenhum
+      dos outros. Colocar junto de "Fidelidade e assinatura" — que e o salao vendendo plano para a
+      CLIENTE dele — seria juntar exatamente as duas coisas que a regra 5.6 do plano de
+      monetizacao manda manter separadas.
+    */
+    titulo: 'Sua conta no CICLO',
+    itens: [
+      { href: '/admin/config/meu-plano', titulo: 'Meu plano', descricao: 'O que voce usa, o que cada plano libera', icone: BadgeDollarSign },
     ],
   },
   {
