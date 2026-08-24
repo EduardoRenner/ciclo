@@ -1181,6 +1181,13 @@ Ativação · tempo até o link pronto · tempo até o 1º agendamento · reten�
 churn (I.3) — tudo derivável de `tenants.created_at`, `appointments.created_at` e timestamps que
 já existem.
 
+✅ **Implementado em 2026-08-24:** `scripts/metricas-ativacao.mjs` — só leitura, sem instrumentação
+nova, derivando tudo de `tenants.created_at`, `services`, `professionals` e `appointments`.
+Descarta o resíduo de suíte de teste (§P.1.1) antes de contar, e **avisa em letra garrafal quando
+os números são de base semeada** — que é exatamente o caso hoje: mediana de configuração de
+0,01 min, porque tenant, serviço e profissional nascem na mesma transação do seed. Ler isso como
+"o onboarding funciona" seria Suposto apresentado como Medido, o defeito mais grave do §2.4.
+
 ### O.2 · O que exige instrumentação nova
 
 Onde abandona no onboarding passo a passo · % que compartilha o link · origem do cadastro

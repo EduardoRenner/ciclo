@@ -2497,3 +2497,14 @@ bloco:
 2026-08-24 · O alarme do cofre carrega `tenant_id` e `client_id`, mas NÃO ip nem user-agent · São
 identificadores, permitem reconstruir o que ficou sem registro, e não são dado de saúde (regra 9
 do CLAUDE.md). IP e user-agent do acessante ficariam num log de erro sem necessidade. Há teste.
+
+2026-08-24 · `scripts/metricas-ativacao.mjs` — as métricas da §O.1 que não precisam de
+instrumentação · Ativação, tempo até configurar, tempo até o 1º agendamento, momento "aha"
+(agendamento com `origin = 'public_page'`), retenção 30/90d e sinal de churn, tudo derivado de
+timestamps que já existem. SÓ LEITURA, e isso não é escrúpulo: o `.env.local` aponta para
+produção, então script daqui escreve na base real — um medidor que altera o que mede não é medidor.
+O bloco mais importante da saída é o AVISO: quando a mediana de configuração fica abaixo de 1
+minuto, é assinatura de base semeada (tenant, serviço e profissional nascem na mesma transação) e
+o script diz em letra garrafal que os números NÃO descrevem uso real. Hoje a mediana é 0,01 min —
+ler os 100% de ativação como "o onboarding funciona" seria Suposto apresentado como Medido, o
+defeito mais grave do §2.4 do prompt.
