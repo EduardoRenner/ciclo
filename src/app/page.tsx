@@ -2,6 +2,7 @@ import { ArrowRight, CalendarCheck, Link2, Wallet } from 'lucide-react'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
+import { precoDoPlano } from '@/core/billing/planos'
 import IconeAnel from '@/components/ui/icone-anel'
 import { sessaoAtual } from '@/server/auth/session'
 
@@ -121,9 +122,20 @@ export default async function Home() {
           </div>
           <span className="text-label font-semibold uppercase tracking-[0.13em] text-txt-3">CICLO</span>
         </div>
-        <Link href="/entrar" className="flex h-12 items-center px-1 text-corpo font-semibold text-acc-2 transition active:scale-[.97]">
-          Entrar
-        </Link>
+        <nav className="flex items-center gap-1">
+          <Link
+            href="/precos"
+            className="flex h-12 items-center px-2 text-corpo font-semibold text-txt-2 transition active:scale-[.97]"
+          >
+            Preços
+          </Link>
+          <Link
+            href="/entrar"
+            className="flex h-12 items-center px-1 text-corpo font-semibold text-acc-2 transition active:scale-[.97]"
+          >
+            Entrar
+          </Link>
+        </nav>
       </header>
 
       <section className="animate-in py-10 fade-in slide-in-from-bottom-4 duration-500 sm:py-16">
@@ -146,6 +158,15 @@ export default async function Home() {
           */}
           <Link href="/dom-rocha" className={botaoSecundario}>
             Ver um salão de exemplo
+          </Link>
+        </div>
+        {/*
+          O preço aparece já na primeira dobra, em texto, sem precisar de clique. É o oposto do
+          que quatro dos treze concorrentes pesquisados fazem, e é de graça fazer diferente.
+        */}
+        <div className="mt-4">
+          <Link href="/precos" className="toque-48 inline-block text-secundario font-semibold text-acc-2 underline underline-offset-4">
+            Grátis para começar, {precoDoPlano('essencial')} por mês para ir além — ver os planos
           </Link>
         </div>
       </section>
@@ -237,7 +258,15 @@ export default async function Home() {
         </div>
       </section>
 
-      <footer className="pt-10 text-center text-label text-txt-3">CICLO · para quem atende com hora marcada</footer>
+      <footer className="pt-10 text-center text-label text-txt-3">
+        <Link href="/precos" className="toque-48 font-semibold text-txt-2 underline underline-offset-2">
+          Preços
+        </Link>
+        <span className="mx-2" aria-hidden>
+          ·
+        </span>
+        CICLO · para quem atende com hora marcada
+      </footer>
     </main>
   )
 }

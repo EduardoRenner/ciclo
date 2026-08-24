@@ -4,6 +4,7 @@ import { avaliarAlertas, type FormularioAnamnese, type PerguntaAnamnese } from '
 import { deBytea, paraBytea } from '@/server/crypto/bytea'
 import { decryptVault, encryptVault } from '@/server/crypto/vault'
 import { AppError } from '@/server/http/errors'
+import { registrarAcessoAoCofre } from '@/server/services/cofre-trilha'
 
 import type { Database } from '@/server/db/types.gen'
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -107,14 +108,7 @@ export async function abrirFicha(
     .maybeSingle()
   if (error) throw new AppError('INTERNAL', { cause: error })
 
-  await db.from('vault_access_log').insert({
-    tenant_id: tenantId,
-    client_id: clientId,
-    actor_id: quem.actorId,
-    action: 'read',
-    ip: quem.ip,
-    user_agent: quem.userAgent,
-  })
+  await registrarAcessoAoCofre(db, tenantId, clientId, 'read', quem)
 
   if (!data) return null
 

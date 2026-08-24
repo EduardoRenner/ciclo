@@ -2,10 +2,12 @@ import { Temporal } from '@js-temporal/polyfill'
 import { cache } from 'react'
 import { z } from 'zod'
 
+import { podeUsarCapacidade } from '@/core/billing/planos'
 import { availableSlots, type IntervaloExpediente, type IntervaloOcupado } from '@/core/scheduling/available-slots'
 import { withNovoTenant } from '@/server/db/with-tenant'
 import { listarExpediente } from '@/server/services/expediente'
 import { lerConfiguracoesAgenda } from '@/server/services/configuracoes-agenda'
+import { normalizarPlano } from '@/server/services/planos'
 import { lerSite } from '@/server/services/site'
 import { normalizarTelefoneBR } from '@/server/services/telefone'
 import { criarAgendamento } from '@/server/services/agendamentos'
@@ -32,7 +34,7 @@ const ACENTO_PADRAO = { acc: '#f0ebe3', acc2: '#fffcf7' }
 async function tenantPeloSlug(svc: Cliente, slug: string) {
   const { data, error } = await svc
     .from('tenants')
-    .select('id, name, slug, vertical, timezone, phone, address, settings')
+    .select('id, name, slug, vertical, timezone, phone, address, settings, plan')
     .eq('slug', slug)
     .is('deleted_at', null)
     .maybeSingle()
@@ -53,6 +55,20 @@ export type PerfilPublico = {
   whatsapp: string | null
   instagram: string | null
   accentColor: { acc: string; acc2: string }
+  /**
+   * docs/18-MONETIZACAO-PLANO.md §D.3 e §G.1: o selo "Feito com CICLO" era incondicional, e
+   * remove-lo passa a ser o benefício mais concreto do primeiro degrau pago.
+   *
+   * Isso é receita trocada por distribuição, e a troca é consciente: cada página com selo é uma
+   * impressão para o próximo profissional que a vê, e é o único canal de aquisição gratuito que o
+   * produto tem (§13.1 do 09-PLATAFORMA). Todo cliente que converte apaga uma peça de
+   * distribuição — um laço que se autolimita conforme o negócio dá certo.
+   *
+   * Decidido no SERVIDOR e entregue como booleano: a página pública é HTML de visitante anônimo,
+   * e mandar `plan` para o cliente seria expor o degrau comercial de cada salão para qualquer um
+   * que abrisse o DevTools. Ninguém de fora precisa saber quanto o vizinho paga.
+   */
+  mostrarSelo: boolean
   hours: { weekday: number; opensAt: string; closesAt: string }[]
   services: {
     id: string
@@ -139,6 +155,12 @@ export const perfilPublico = cache(async (slug: string): Promise<PerfilPublico> 
       whatsapp: site.whatsapp ?? null,
       instagram: site.instagram ?? null,
       accentColor: { acc, acc2: ACENTO_PADRAO.acc2 === acc ? acc : misturarComBranco(acc, 0.3) },
+      // `remover_selo` é capacidade do primeiro degrau pago (§D.3). `normalizarPlano` cobre a
+      // janela em que o banco ainda responde os nomes anteriores à migration 0040.
+      mostrarSelo: podeUsarCapacidade(
+        { plano: normalizarPlano(tenant.plan), eixos: {} },
+        'remover_selo',
+      ).estado !== 'liberado',
       hours: horarioPadrao.map((h) => ({ weekday: h.weekday, opensAt: h.opens_at, closesAt: h.closes_at })),
       services: (servicos.data ?? []).map((s) => ({
         id: s.id,

@@ -3,11 +3,13 @@ import Link from 'next/link'
 import { headers } from 'next/headers'
 import { Temporal } from '@js-temporal/polyfill'
 
+import { podeUsarCapacidade } from '@/core/billing/planos'
 import AlertBanner from '@/components/ui/alert-banner'
 import PageHeader from '@/components/ui/page-header'
 import { dinheiro } from '@/lib/formato'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
+import { contextoDePlano } from '@/server/services/planos'
 import { listarParaRecuperar } from '@/server/services/recuperar-receita'
 import { receitaAtribuidaAoCiclo } from '@/server/services/atribuicao'
 
@@ -25,10 +27,15 @@ export default async function PaginaRecuperar() {
   const desde = mesAtual.toPlainDate({ day: 1 }).toString()
   const ate = mesAtual.toPlainDate({ day: mesAtual.daysInMonth }).toString()
 
-  const [lista, atribuicao] = await Promise.all([
+  const [lista, atribuicao, plano] = await Promise.all([
     listarParaRecuperar(db, ctx.tenantId),
     receitaAtribuidaAoCiclo(db, ctx.tenantId, desde, ate),
+    contextoDePlano(db, ctx.tenantId),
   ])
+
+  // A tela precisa saber para desenhar o caminho certo; quem RECUSA é a rota (§L.1). Aqui é
+  // desenho, não segurança.
+  const podeEnviarEmLote = podeUsarCapacidade(plano, 'envio_em_lote').estado === 'liberado'
 
   return (
     <>
@@ -60,7 +67,7 @@ export default async function PaginaRecuperar() {
         </AlertBanner>
       ) : null}
 
-      <RecuperarReceita inicial={lista} />
+      <RecuperarReceita inicial={lista} podeEnviarEmLote={podeEnviarEmLote} />
     </>
   )
 }

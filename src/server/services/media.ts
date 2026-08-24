@@ -5,6 +5,7 @@ import { z } from 'zod'
 
 import { withTenant } from '@/server/db/with-tenant'
 import { AppError } from '@/server/http/errors'
+import { registrarAcessoAoCofre } from '@/server/services/cofre-trilha'
 
 const BUCKET = 'media'
 const TAMANHO_MAX_BYTES = 10 * 1024 * 1024
@@ -91,14 +92,7 @@ export async function urlAssinadaMedia(tenantId: string, mediaId: string, quem: 
     })
     if (erroUrl || !assinada) throw new AppError('INTERNAL', { cause: erroUrl })
 
-    await db.from('vault_access_log').insert({
-      tenant_id: tenantId,
-      client_id: registro.client_id,
-      actor_id: quem.actorId,
-      action: 'read',
-      ip: quem.ip,
-      user_agent: quem.userAgent,
-    })
+    await registrarAcessoAoCofre(db, tenantId, registro.client_id, 'read', quem)
 
     return { url: assinada.signedUrl, expiresInSeconds: URL_ASSINADA_SEGUNDOS }
   })

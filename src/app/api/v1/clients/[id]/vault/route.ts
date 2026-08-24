@@ -3,6 +3,7 @@ import { exigirPermissao } from '@/server/auth/rbac'
 import { exigirAal2 } from '@/server/auth/session'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
+import { exigirModulo } from '@/server/services/planos'
 import { abrirFicha, EsquemaSalvarVault, salvarRespostas } from '@/server/services/anamnese'
 import { lerCorpo } from '@/server/http/body'
 import { AppError } from '@/server/http/errors'
@@ -43,6 +44,12 @@ export const PUT = rota(async (req, params) => {
   const id = await idValidado(params)
   const entrada = await lerCorpo(req, EsquemaSalvarVault)
   const db = await criarClienteDoUsuario()
+
+  // §L.2.1: anamnese é módulo do Avançado. Trava só a ESCRITA — o GET acima segue liberado, e
+  // isso não é descuido: a regra 5.1 é inviolável, e ficha de saúde já preenchida é o tipo de
+  // dado que NUNCA pode sumir por causa de plano. Quem desce de degrau continua abrindo o que
+  // registrou (com AAL2 e trilha, como sempre); o que trava é gravar resposta nova.
+  await exigirModulo(db, ctx.tenantId, 'health_records')
 
   return comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/clients/${id}/vault` }, () =>
     salvarRespostas(db, ctx.tenantId, id, entrada),

@@ -97,6 +97,27 @@ describe('writeAudit', () => {
     expect(String(erro.mock.calls[0]?.[0])).toContain('audit_falhou')
   })
 
+  it('recusa do banco NÃO passa em silêncio — vira o mesmo alarme no log', async () => {
+    /*
+     * `.insert()` do supabase-js devolve `{ error }` em vez de lançar. Antes desta guarda, uma
+     * recusa do Postgres (tipo errado numa coluna, RLS, constraint) sumia sem nem o log: a
+     * trilha simplesmente não era escrita e ninguém ficava sabendo.
+     *
+     * Descoberto ao auditar a rota de módulos, que mandava a chave do módulo ('campaigns') para
+     * `audit_log.entity_id`, que é `uuid`. Os tipos gerados dizem `string` e deixam passar.
+     */
+    const alarme = vi.spyOn(console, 'error').mockImplementation(() => {})
+    vi.mocked(withTenant).mockImplementation(async (tenantId, fn) => {
+      const db = { from: () => ({ insert: async () => ({ error: { message: 'invalid input syntax for type uuid' } }) }) }
+      return fn(db as never, tenantId)
+    })
+
+    // A operação da pessoa continua concluída — o que muda é que agora alguém consegue reagir.
+    await expect(writeAudit(BASE, req())).resolves.toBeUndefined()
+    expect(String(alarme.mock.calls[0]?.[0])).toContain('audit_falhou')
+    alarme.mockRestore()
+  })
+
   it('corta user-agent gigante antes de gravar', async () => {
     const linhas = capturar()
     await writeAudit(BASE, req({ 'user-agent': 'x'.repeat(5000) }))

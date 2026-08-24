@@ -2201,3 +2201,343 @@ redireciona para `/entrar` sem sessão, `/dom-rocha/agendar` mostra 42 horários
 (TICKET-109), títulos de aba corretos em `/entrar`, `/avaliar/[token]` e `/dom-rocha/agendar`
 (TICKET-101/111), zero erro no console em todas as páginas conferidas. 19 tickets no ar:
 TICKET-101 a TICKET-113.
+
+2026-08-24 · Renomear `plan_tier`: `pro`→`essencial`, `profissional`→`equipe` (migration 0040) ·
+A 0030 deixou 'pro' de pé por já ser neutro e criou um efeito colateral que só apareceu ao
+desenhar a tabela de preço: dois rótulos sinônimos ('Pro' e 'Profissional') disputando o mesmo
+significado, impossíveis de explicar num site. Conferido antes: nenhuma linha lê `tenants.plan`
+(só o types.gen.ts, gerado) e os 8 tenants de produção estão todos em 'gratis' — troca de rótulo
+pura. Depois de existir pagante isso vira migração de dado de assinatura.
+
+2026-08-24 · Catálogo `modules` com FK a partir de `tenant_modules.modulo` (migration 0041) ·
+A coluna nasceu `text` sem check nem referência na 0025. Vira a resposta de "o que este plano
+libera", e sem restrição um erro de digitação cria módulo fantasma que nenhuma query acusa.
+A coluna `modules.eixo` existe para separar as duas razões de um módulo estar desligado:
+EIXO (não faz sentido, some) antes de PLANO (não liberado, bloqueia com motivo). Nenhum
+mapeamento plano→módulo foi gravado em migration: os limites ainda são suposição.
+
+2026-08-24 · Limites do plano grátis implementados como 1 profissional / 50 clientes em
+`src/core/billing/planos.ts`, seguindo a tabela D.3 do plano de monetização · PENDÊNCIA ABERTA:
+a própria auditoria do plano (Fase K) achou que `dom-rocha` tem 3 profissionais e 46 clientes,
+ou seja, o tenant de demonstração do produto não caberia no grátis que o documento propõe, e
+está a 4 clientes do teto. A recomendação de revisar para 2 profissionais está registrada no
+plano e NÃO foi aplicada aqui — implementei a tabela publicada, não a sugestão de revisão, para
+o código e o documento não divergirem. Decidir junto com o preço.
+
+2026-08-24 · Cron por GitHub Actions (`.github/workflows/cron.yml`), não por Vercel Cron ·
+Existiam 6 rotas de cron construídas e `vercel.json` com `crons: []` — nenhuma jamais rodou,
+incluindo `recompute-cycles`, que é o Motor de Ciclo. Vercel Hobby trava em 1 execução por dia
+(o limite de 100 jobs/projeto de jan/2026 é de quantidade, não de frequência); Vercel Pro custa
+US$ 20/mês, que no unit economics da Fase F são 2,4 assinantes só para pagar o agendador.
+Agendados apenas `recompute-cycles` e `segments`, que só calculam e gravam no próprio banco.
+`reminders` e `campaigns` ficaram FORA do agendamento de propósito: mandam mensagem para cliente
+final de verdade e `dom-rocha` tem 46 clientes em produção. Ligar isso não é decisão de YAML.
+
+2026-08-24 · `tests/unit/design/titulos-de-tela.test.ts`: regex do título passou a ser preguiçosa
+(`[^}]*?` no lugar de `[^}]*`) · Com quantificador guloso a busca ia até o ÚLTIMO `title:` antes
+da primeira `}`, o que numa página com `openGraph` capturava o título social em vez do título do
+documento — e reprovava por "repete a marca" um título de tela que estava correto. Achado ao
+criar `/precos`, a primeira página do projeto com openGraph e título próprio. Corrigido o guarda
+em vez de contornar na página: a intenção do teste continua valendo e o defeito atingiria
+qualquer página futura com Open Graph.
+
+2026-08-24 · Página `/precos` não tem botão de assinar · A cobrança automática não existe
+(regra 5.4: não fingir que integração de pagamento está pronta). Todos os CTA levam a `/cadastro`
+e a pergunta "Como eu pago hoje?" responde em texto que a cobrança é combinada direto. Preferido
+a um botão que não funciona ou a um "assine agora" que abre formulário morto.
+
+2026-08-24 · ⚠️ ACHADO: `.env.local` aponta para o Supabase de PRODUÇÃO
+(`sukloaoodpxjukngyojo`), então `pnpm test:integration` e `pnpm test:rls` criam tenant e usuário
+de auth na base real · É a origem dos 5 tenants órfãos (`health-*`, `alertas-estoque-*`,
+`recuperar-*`, `clientes-*`, `risco-*`) que a auditoria do plano de monetização encontrou e
+atribuiu a "suíte que falhou antes do afterAll limpar" — a causa é mais estrutural que isso.
+Por causa disso, a cobertura do limite de plano foi feita em `tests/unit/server/` com cliente
+falso, e não em `tests/integration/`: um teste de limite precisaria escrever em `tenants.plan`
+de produção. NÃO corrigido nesta rodada (mexer no ambiente de teste é mudança de infraestrutura,
+não de monetização), mas registrado porque decide onde teste novo pode morar.
+
+2026-08-24 · `exigirLimite` vem ANTES de `comIdempotencia` na rota de profissionais · Repetir uma
+requisição que já era proibida tem que continuar proibida. Se a idempotência viesse primeiro, uma
+chave reaproveitada devolveria o resultado guardado de uma tentativa anterior e passaria por cima
+do teto do plano.
+
+2026-08-24 · `normalizarPlano` traduz `pro`/`profissional` e cai para `gratis` no desconhecido ·
+Código e migration não sobem no mesmo instante; entre o deploy e o `db push` o banco ainda
+responde os nomes anteriores à 0040, e `PLANOS['pro']` seria `undefined` — crash em vez de
+bloqueio. Valor desconhecido cai para o degrau MAIS restrito porque errar para menos bloqueia uma
+ação (a pessoa reclama e se corrige) e errar para mais libera o que não foi pago (silencioso).
+
+2026-08-24 · Envio em lote do Motor de Ciclo trava em `items.length > 1`, não em "enviar" ·
+§D.2: o grátis mostra quem sumiu e quanto vale; o que ele não dá é a alavanca de chamar todo mundo
+de uma vez. Mandar uma de cada vez continua livre para sempre, e é o caminho que a própria tela de
+bloqueio oferece. Trava no servidor porque sumir com o botão não impede montar a requisição na mão.
+
+2026-08-24 · `BloqueioPlano` adicionado à vitrine `/dev/ui` · Duas variantes (com e sem
+evidência) porque a diferença entre elas é o argumento do §M.1. A vitrine pagou o custo dela na
+mesma sessão: expôs dois defeitos reais do componente — a frase duplicada "de uma vez de uma vez"
+(o molde completava o que a prop já dizia) e `aria-labelledby` com id fixo, que duplicava id com
+duas instâncias na mesma página.
+
+2026-08-24 · Selo "Feito com CICLO" passa a ser condicional: sai no primeiro degrau pago ·
+§D.3/G.1 do plano de monetização. Era incondicional por decisão consciente (P6), tomada quando
+cobrança estava bloqueada. Agora é o benefício mais concreto do Essencial — e é receita trocada
+por distribuição, com a troca sendo consciente: cada página com selo é impressão para o próximo
+profissional, e é o único canal de aquisição gratuito do produto. Todo cliente que converte apaga
+uma peça de distribuição; o laço se autolimita conforme o negócio dá certo. Decidido no SERVIDOR e
+entregue como booleano `mostrarSelo` — mandar `plan` para a página pública exporia o degrau
+comercial de cada salão para qualquer visitante anônimo. O rodapé inteiro desaparece quando o selo
+sai, em vez de virar rodapé vazio ocupando altura no celular.
+
+2026-08-24 · ⚠️ TENSÃO REGISTRADA, NÃO RESOLVIDA: o teto de 50 clientes do grátis não bloqueia
+nada · §L.1 classifica cliente como limite SUAVE (avisa e deixa passar), porque travar cadastro no
+meio de um atendimento é o jeito mais rápido de o salão largar o sistema. A consequência honesta é
+que **o teto de 50 clientes hoje é um aviso, não um limite** — quem passar de 50 continua
+cadastrando. A tela de clientes diz isso com essas palavras ("Nada foi bloqueado") em vez de
+insinuar uma parede que não existe. Se isso deve algum dia virar limite duro é decisão comercial
+(Do Eduardo); o que NÃO pode acontecer é o marketing prometer um teto que o código não aplica.
+O aviso só aparece a partir de 80% do teto: contador permanente de "42/50" no alto da tela
+transforma trabalho normal em ansiedade.
+
+2026-08-24 · Tela "Meu plano" mora em `/admin/config/meu-plano`, NÃO em `/admin/config/planos` ·
+`/admin/config/planos` já existe e significa "Fidelidade e assinatura" — o salão vendendo plano
+mensal para a CLIENTE dele. É a mesma colisão que a regra 5.6 do prompt de monetização manda
+evitar em nome de tabela (`subscription_plans`/`client_subscriptions`), e ela vale igual para o
+espaço de URL: duas telas chamadas "planos" com significados opostos é armadilha para quem chegar
+depois. No hub de configurações ela ganhou grupo próprio ("Sua conta no CICLO") pelo mesmo motivo
+— pendurar em "Receita recorrente", junto de "Fidelidade e assinatura", juntaria exatamente as
+duas coisas que a regra manda separar.
+
+2026-08-24 · A tela "Meu plano" não tem botão de assinar nem de cancelar · Regra 5.4: não fingir
+que integração de pagamento está pronta. Um botão "cancelar assinatura" que abre formulário morto
+é pior que a ausência dele. A Fase K exige que cancelar custe os mesmos toques que assinar — hoje
+os dois custam a mesma coisa (uma conversa), o que satisfaz a regra pelo caminho honesto
+disponível. Quando a cobrança existir, é nessa tela que ela entra.
+
+2026-08-24 · Item P-B do plano de monetização reescrito (nova seção P.1.1) · O diagnóstico
+original estava errado: a Fase K atribuía os 5 tenants órfãos a "suíte que falhou antes do
+afterAll limpar". A causa real é `.env.local` apontar para o Supabase de produção, então a suíte
+os CRIA na base real toda vez que roda — apagá-los é enxugar gelo. P-B passa a ter dois passos
+(apontar teste para banco separado, DEPOIS limpar) e deixa de ser "trivial": vira mudança de
+infraestrutura, com o risco do teto de projetos da organização Supabase gratuita. Também
+adicionado à auto-auditoria do §R.6, porque é o sétimo caso do mesmo padrão — a primeira versão
+do plano errou para o lado otimista, por ausência de dado.
+
+2026-08-24 · As 4 `FEATURE_*` foram aposentadas do `.env.example` (§L.3 do plano de monetização) ·
+`FEATURE_AI_RECEPTIONIST`, `FEATURE_CLUB`, `FEATURE_COMMISSION_ADVANCED` e `FEATURE_MULTI_UNIT`
+nunca foram lidas por nenhuma linha do projeto — e, sendo variável de ambiente, são GLOBAIS: não
+conseguem por natureza ligar funcionalidade por tenant, que é o que um SaaS multi-tenant precisa.
+Manter variável que promete controle e não entrega é dívida que engana quem chega depois. Quem
+responde "este tenant pode X?" agora é `src/core/billing/planos.ts`. No lugar das quatro linhas
+ficou o comentário explicando o motivo, para ninguém recriá-las achando que resolvem algo.
+PENDÊNCIA que não é de código: as quatro continuam definidas no Vercel de produção — apagar é ação
+no painel. Sem uso não fazem nada, mas sujam a configuração.
+
+2026-08-24 · `tenant_modules` finalmente tem escritor: tela `/admin/config/modulos` + rota
+`PATCH /api/v1/tenant/modules` · A tabela existia desde a migration 0025 e ganhou catálogo e FK na
+0041, mas nenhuma linha jamais escreveu nela — era metade de um desenho de duas fontes de verdade
+com só a metade do plano funcionando. Regra da §L.2 implementada literalmente: **o plano é teto, o
+dono só desliga**. Ligar módulo que o plano não libera é recusado no servidor (402), senão
+`tenant_modules` viraria uma segunda fonte brigando com `tenants.plan`.
+
+2026-08-24 · Ligar módulo de volta APAGA a linha, em vez de gravar `ligado = true` · Uma linha
+`(ligado = true, origem = 'dono')` afirmaria que o dono escolheu ter aquilo. No dia em que ele
+caísse de degrau, essa afirmação entraria em conflito com o teto do plano — e o desempate seria
+arbitrário. Ausência de linha significa "vale o padrão do plano", que é a única leitura sem
+ambiguidade.
+
+2026-08-24 · Catálogo de módulos duplicado de propósito, com teste de vigia · Os 16 módulos
+existem em `src/core/billing/planos.ts` (rótulo para a interface, sem ida ao banco) e na migration
+0041 (alvo da FK de `tenant_modules.modulo`). São papéis diferentes, mas as listas precisam bater.
+`tests/unit/core/modulos-catalogo.test.ts` lê o SQL da migration e compara chaves, ordem e quais
+são "sempre ligados" — duplicação vigiada é segura, duplicação silenciosa é a armadilha da §L.6 de
+novo. O teste também recusa módulo órfão: se algum não for liberado nem no plano mais alto, é
+defeito de empacotamento, não decisão.
+
+2026-08-24 · O hub de configurações passa a esconder item de módulo desligado · A tela de módulos
+promete, com essas palavras, que "desligar esconde da interface" — sem o filtro no hub a promessa
+seria falsa na primeira vez que alguém desligasse algo. Some o que está `desligado_pelo_dono` ou
+fora do eixo; **bloqueado pelo plano continua aparecendo**, porque a regra 5.2 manda mostrar motivo
+e caminho, e sumir com o item esconderia o que dá para comprar.
+
+2026-08-24 · Nome e preço dos planos consolidados em `src/core/billing/planos.ts`, com teste que
+varre o fonte · Estavam duplicados em cinco arquivos — serviço de planos, tela de bloqueio, "Meu
+plano", tela de módulos e a página pública de preço — porque cada tela foi escrita numa rodada
+diferente e cada uma redeclarou o que precisava. Fui eu que criei a duplicação, andando rápido; é
+a mesma armadilha da §L.6 que eu tinha acabado de documentar. Preço em cinco lugares é preço que
+um dia diverge em um deles, e o lugar onde ninguém olha é sempre o errado. Guardado por
+`tests/unit/design/preco-em-um-lugar-so.test.ts`, no mesmo padrão de varredura de fonte que o
+projeto já usa em `actions-fixadas` e `titulos-de-tela`. Preço em CENTAVOS (regra 3), mesmo sendo
+dinheiro que ainda não é cobrado — a hora de acertar a unidade é antes da primeira cobrança.
+
+2026-08-24 · ⚠️ ARMADILHA: `Intl.NumberFormat('pt-BR')` separa "R$" do número com espaço
+NÃO-QUEBRÁVEL (U+00A0), não com espaço comum · Descoberto quando o teste acima falhou com o
+indecifrável `expected 'R$ 49' to be 'R$ 49'`. Consequência prática, e é séria: **a primeira versão
+do guarda passava vazia** — ela procurava no código-fonte a string devolvida pelo formatador
+(com NBSP), e nenhum humano digita NBSP à mão, então nunca haveria acerto. Guarda que não pode
+falhar não é guarda. A versão final normaliza NBSP para espaço comum antes de comparar. Vale para
+qualquer teste futuro que compare texto formatado com texto escrito à mão — o `dinheiro` de
+`src/lib/formato.ts` tem o mesmo comportamento.
+
+2026-08-24 · A página de preço para de anunciar "Até 50 clientes" como se fosse parede · O teto de
+clientes é SUAVE no código (§L.1: avisa e deixa passar). Uma tabela de preço que diz "até 50" sem
+mais nada promete um limite que o produto não tem — e é o tipo de letra miúda ao contrário que
+ninguém perdoa depois. Os números passaram a vir de `PLANOS` do core (nunca escritos à mão), e
+entrou uma pergunta no FAQ: "E se eu passar de 50 clientes?" → "Você continua cadastrando. O CICLO
+avisa quando você chega perto, mas não trava no meio de um atendimento — e nenhuma ficha some. O
+limite que vale de verdade no Grátis é o de um profissional." De quebra, o array local de cartões
+que se chamava `PLANOS` virou `CARTOES`: colidia com o `PLANOS` do core e era o pior nome dos dois.
+
+2026-08-24 · Os três guardas de duplicação foram verificados por MUTAÇÃO, não por confiança ·
+Depois de descobrir que a primeira versão do guarda de preço passava vazia (armadilha do NBSP),
+não dava para confiar em guarda que nunca falhou. Cada um foi quebrado de propósito e observado
+reprovando: preço escrito à mão numa tela, tabela de nomes redeclarada, e o catálogo de módulos do
+core divergindo da migration 0041. Os três reprovaram, e a mensagem nomeia o arquivo culpado.
+Guarda que nunca falhou é guarda não testado.
+
+2026-08-24 · ⚠️ AUTOCORREÇÃO: o plano afirmava que `exigirModulo` "existe e está testado". Não
+estava · Varredura por exports mortos achou `exigirModulo` com ZERO usos — nem rota, nem teste.
+A frase no §L.2.1 era minha e estava errada. Corrigida no documento, e a cobertura foi escrita
+(4 casos: liberado, bloqueado pelo plano com 402, fora do eixo com 403 e sem oferta de upgrade,
+desligado pelo dono). A função continua sem ser chamada por rota nenhuma de propósito — ligar hoje
+tiraria comanda e caixa do `dom-rocha` —, mas agora o passo de ligar é mexer numa linha por rota,
+não descobrir o comportamento na hora.
+
+2026-08-24 · Números de limite na cópia passam a vir de `PLANOS` do core · "Até 5 profissionais" e
+"Você passou de cinco" estavam escritos à mão em "Meu plano" e na página de preço. Mesma razão do
+preço: número de plano escrito à mão é número que um dia diverge do que o código aplica. Ficou de
+fora só o "um profissional" da prosa — "1 profissional" lê pior e o valor 1 é o mais estável da
+tabela; se um dia mudar, o guarda de preço não pega, então está registrado aqui.
+
+2026-08-24 · `podeUsarModulo` passa a ignorar a escolha do dono em módulo "sempre ligado" · Achado
+na varredura: a função respeitava `desligadosPeloDono` sem consultar `sempreLigado`. `definirModulo`
+recusa desligar agenda e Motor de Ciclo, mas `tenant_modules.modulo` não tem restrição que impeça
+uma linha chegar por outro caminho (seed, correção manual, migration futura) — e nesse caso a
+agenda sumiria inteira da interface. O produto desaparecendo por causa de um registro de
+configuração. Defesa no core, com teste, e o teste foi verificado por mutação: sem a guarda, ele
+reprova.
+
+2026-08-24 · A página de preço deixa de ser prosa solta: cada item de cartão carrega a chave do
+módulo/capacidade que o justifica, e um teste confere · `tests/unit/design/precos-nao-promete-demais.test.ts`
+verifica três coisas: (1) todo módulo anunciado num degrau é mesmo liberado por ele; (2) nenhum
+degrau pago vende como novidade algo que o degrau abaixo já dava; (3) todo degrau pago anuncia ao
+menos uma coisa que só ele libera — que é a pergunta da Fase D ("qual dor específica faz alguém
+subir daqui?") virando asserção. O cenário impedido é concreto: alguém acrescenta "controle de
+estoque" ao Essencial porque soa bem, o cliente paga, descobre que é do Avançado, cancela e conta
+para o bairro. Num público que se conhece por ofício, é a forma mais cara de perder cliente de
+ticket baixo. Verificado por mutação nas duas direções.
+
+2026-08-24 · Os cartões saíram de `precos/page.tsx` para `precos/cartoes.ts` · O teste precisa
+importar os dados, e exportar coisa arbitrária de um arquivo de página do App Router não é padrão
+documentado do Next — funciona hoje e uma versão futura pode recusar. Módulo irmão remove o risco
+e é a separação idiomática: dado de um lado, renderização do outro.
+
+2026-08-24 · "Meu plano" passa a usar a MESMA lista da página pública de preço · A tela tinha um
+`O_QUE_MUDA` próprio, em prosa, descrevendo os mesmos degraus com outras palavras — segunda cópia
+das mesmas promessas, e sem nenhuma verificação. Agora as duas leem `src/lib/planos-cartoes.ts`.
+Não é economia de linha: **o que a pessoa leu antes de pagar e o que ela vê depois, dentro do app,
+precisam ser a mesma frase.** Duas listas com as mesmas promessas escritas de jeitos diferentes é
+como se descobre, tarde, que uma das duas mentia. De quebra, "Meu plano" herdou o teste que impede
+a página de preço de prometer o que o código não libera.
+
+2026-08-24 · `BloqueioPlano.precisaDo` deixa de aceitar `gratis` no tipo · "Ver o Grátis — R$ 0" é
+frase sem sentido numa tela cujo trabalho é oferecer o caminho pago. Na prática o veredito nunca
+devolveria `gratis` (todo degrau contém os módulos do grátis, então módulo gratuito nunca fica
+bloqueado), mas é mais barato tornar o estado impossível do que confiar nesse raciocínio continuar
+verdadeiro depois de alguém mexer no empacotamento. Custo zero: os chamadores passam literais.
+
+2026-08-24 · Desligar módulo já bloqueado pelo plano não grava linha nenhuma · A tela mostra
+cadeado, não interruptor, então só a API direta chega nesse caso — e registrar "o dono desligou"
+para algo que ele nunca viu é guardar uma decisão que ninguém tomou. Ela morderia no dia do
+upgrade: módulo desligado, e nenhuma explicação de quando isso teria acontecido. Não confundir com
+a linha legítima: quem desliga ESTANDO no degrau que libera grava normal, e essa preferência
+sobrevive a um rebaixamento e ao retorno — que é o comportamento certo. Os dois casos têm teste, e
+o no-op foi verificado por mutação.
+
+2026-08-24 · ⚠️ BUG REAL ACHADO NA PENEIRA: `writeAudit` engolia recusa do banco sem nem logar ·
+`.insert()` do supabase-js NÃO lança em erro de banco — devolve `{ error }`. O `writeAudit` não
+olhava esse retorno, então o `catch` só pegava exceção de rede: qualquer recusa do Postgres (tipo
+errado, RLS, constraint) sumia sem deixar nem o alarme que o comentário da própria função promete.
+**Trilha de acesso que falha em silêncio é pior que trilha ausente: ninguém sabe que não tem** — e
+isso é LGPD, não estética. Corrigido com `if (error) throw error`, teste novo, e verificação por
+mutação. Defeito PRÉ-EXISTENTE, não introduzido nesta rodada; achado só porque o defeito abaixo o
+acionou.
+
+2026-08-24 · A rota de módulos mandava chave de texto para `audit_log.entity_id`, que é `uuid` ·
+`entityId: entrada.modulo` com valor `'campaigns'`. Os tipos gerados dizem `string | null` e não
+pegam — o Postgres pegaria, a cada toque no interruptor, e (por causa do defeito acima) em
+silêncio absoluto. Removido: qual módulo mudou já está em `after`. Conferidos TODOS os outros 45
+chamadores de `writeAudit`: passam `.id` ou `ctx.tenantId`, todos uuid. Este era o único infrator,
+então tornar o erro visível não gera ruído novo.
+
+2026-08-24 · `cron.yml`: opção de string vazia no `choice` trocada por sentinela nomeado ·
+`options: ['', ...]` renderiza linha em branco no menu e eu não consigo validar aqui como o parser
+do GitHub a trata. `os-dois-seguros` custa o mesmo e não deixa dúvida. As condições passaram a usar
+`github.event_name` em vez de comparar a entrada com vazio: no evento `schedule` não existe
+`inputs`, e depender de como a expressão trata ausente é o tipo de detalhe que só falha em
+produção, às 3h da manhã, em silêncio.
+
+2026-08-24 · Varredura completa por escrita supabase-js com `error` ignorado: 8 casos, todos
+corrigidos · O defeito do `writeAudit` não estava sozinho. Encontrados varrendo `await db|svc` em
+statement solto seguido de insert/update/upsert/delete/rpc. Tratamento por consequência, não em
+bloco:
+  · **`vault_access_log` ×3** (anamnese, exportação LGPD, mídia) — trilha de acesso a dado de
+    saúde. Viraram `registrarAcessoAoCofre()`, que checa o erro e alarma sem derrubar a leitura
+    que a pessoa já fez (mesmo contrato do `writeAudit`).
+  · **`idempotency.ts` soltar reserva** — falhando calado, a chave ficava presa PARA SEMPRE e a
+    pessoa nunca mais repetia a operação com o mesmo `Idempotency-Key` — que é o que a fila
+    offline faz ao voltar a ter rede. Trava permanente, sem mensagem. Alarma (não pode estourar:
+    o erro original é a causa real e tem que subir).
+  · **`idempotency.ts` gravar resposta** — falhando calado, uma repetição não acha o resultado e a
+    operação **corre de novo**, que é exatamente o que a idempotência existe para impedir. Esse
+    estoura: falhar alto é melhor que cobrar duas vezes.
+  · **`onboarding.ts` rollback** — o delete que desfaz o tenant recém-criado. Calado, deixa tenant
+    órfão no banco para sempre. Alarma, e o erro original continua sendo o que sobe.
+  · **`orcamentos.ts` ×2** — marcar orçamento como vencido. Estoura.
+
+2026-08-24 · O alarme do cofre carrega `tenant_id` e `client_id`, mas NÃO ip nem user-agent · São
+identificadores, permitem reconstruir o que ficou sem registro, e não são dado de saúde (regra 9
+do CLAUDE.md). IP e user-agent do acessante ficariam num log de erro sem necessidade. Há teste.
+
+2026-08-24 · `scripts/metricas-ativacao.mjs` — as métricas da §O.1 que não precisam de
+instrumentação · Ativação, tempo até configurar, tempo até o 1º agendamento, momento "aha"
+(agendamento com `origin = 'public_page'`), retenção 30/90d e sinal de churn, tudo derivado de
+timestamps que já existem. SÓ LEITURA, e isso não é escrúpulo: o `.env.local` aponta para
+produção, então script daqui escreve na base real — um medidor que altera o que mede não é medidor.
+O bloco mais importante da saída é o AVISO: quando a mediana de configuração fica abaixo de 1
+minuto, é assinatura de base semeada (tenant, serviço e profissional nascem na mesma transação) e
+o script diz em letra garrafal que os números NÃO descrevem uso real. Hoje a mediana é 0,01 min —
+ler os 100% de ativação como "o onboarding funciona" seria Suposto apresentado como Medido, o
+defeito mais grave do §2.4 do prompt.
+
+2026-08-24 · APLICADO EM PRODUÇÃO, com autorização explícita do Eduardo: migrations 0040 e 0041,
+e `dom-rocha` → Avançado de cortesia · Ordem do §L.2.1 respeitada: schema, depois dado, depois
+enforcement. Estado final conferido: enum = `gratis, essencial, equipe, avancado`; `modules` com
+16 linhas (2 sempre ligados, 4 condicionados por eixo); `dom-rocha` em `avancado` com 3
+profissionais e 46 clientes; `ruivo-barber` e `lang-barber` em `gratis` com 1 profissional cada,
+dentro do teto. Advisors de segurança: `modules` saiu limpa (RLS + política); os avisos restantes
+são todos pré-existentes.
+
+2026-08-24 · ⚠️ A migration 0041 quebrou a suíte de RLS, e a culpa era do seed · O seed inseria
+`tenant_modules` com `modulo: 'seed_de_teste'` — valor que só passava porque a coluna não tinha
+restrição nenhuma. A chave estrangeira nova o rejeitou, e isso é **literalmente o defeito que ela
+existe para pegar** (§L.6: módulo fantasma que nunca liga nada e que nenhuma query acusa). O
+primeiro a esbarrar na trava foi o próprio teste. Corrigido no seed, com chave real e uma linha
+que poderia existir de verdade (`campaigns`, desligado pelo dono). Achado só porque o `pnpm
+test:rls` roda inteiro antes de commitar — sozinho, o `test:unit` não teria visto.
+
+2026-08-24 · `exigirModulo` ligado em 4 rotas, e SÓ na escrita · `campaigns` POST, `quotes` POST,
+`inventory/entries` POST e `clients/[id]/vault` PUT. Os GET continuam liberados de propósito: a
+regra 5.1 é inviolável, e cair de plano limita o que dá para FAZER, nunca esconde o que já existe.
+No cofre isso é mais importante ainda — ficha de saúde já preenchida é o tipo de dado que NUNCA
+pode sumir por causa de plano. Quem desce de degrau continua abrindo o que registrou (com AAL2 e
+trilha, como sempre); o que trava é gravar resposta nova. Leituras de caixa, comissão e trilha do
+cofre também ficaram livres pelo mesmo motivo.
+
+2026-08-24 · `types.gen.ts` corrigido À MÃO nos valores de `plan_tier`, e só neles · Depois de
+aplicar a 0040 em produção, o arquivo gerado continuava afirmando que existem `pro` e
+`profissional` — valores que o banco não tem mais. `pnpm db:types` exige `supabase login` ou
+`SUPABASE_ACCESS_TOKEN`, que não dá para fazer daqui. Editei só a renomeação do enum: é exata,
+trivial e de risco zero. **NÃO escrevi à mão a tabela `modules`** — nenhuma linha de código a
+consulta (a FK é do banco, e o catálogo da interface vive no core), e inventar a forma de um tipo
+gerado é como um arquivo gerado começa a mentir. PENDÊNCIA: rodar `pnpm db:types` no próximo
+`supabase login` para o arquivo voltar a ser realmente gerado.

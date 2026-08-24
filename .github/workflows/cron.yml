@@ -1,0 +1,123 @@
+# docs/18-MONETIZACAO-PLANO.md §L.5 — a decisão de cron, e o item P-0 do sequenciamento.
+#
+# O estado que motivou este arquivo: existiam SEIS rotas de cron construídas, protegidas por
+# CRON_SECRET, e o vercel.json com `{"crons": []}`. Nenhuma jamais rodou em produção — incluindo
+# `recompute-cycles`, que É o Motor de Ciclo, o diferencial que sustenta o preço do produto.
+#
+# Por que GitHub Actions e não Vercel Cron:
+#   - Vercel Hobby trava em UMA execução por dia (o limite de 100 jobs/projeto de jan/2026 é de
+#     quantidade, não de frequência). Não serve para nada que precise rodar de hora em hora.
+#   - Vercel Pro resolve por US$ 20/mês ≈ R$ 110 — que, no unit economics da Fase F, são 2,4
+#     assinantes Essencial trabalhando só para pagar o agendador.
+#   - Aqui o custo é R$ 0, as rotas já existem e o CI já roda neste repositório.
+#
+# O que se perde, e está aceito: `schedule` do GitHub Actions não é pontual — atrasa em horário
+# de pico e pode pular execução. Para recomputar ciclo e segmento, atraso de minutos é irrelevante.
+# No dia em que existir um job que não pode atrasar, aí o Vercel Pro se justifica — e a essa
+# altura ele já estará pago por dezenas de assinantes.
+
+name: cron
+
+on:
+  schedule:
+    # Motor de Ciclo e segmentos: 06:10 UTC = 03:10 em São Paulo. Depois da virada do dia no fuso
+    # do tenant e antes de qualquer um abrir o app.
+    - cron: '10 6 * * *'
+  workflow_dispatch:
+    inputs:
+      job:
+        description: 'O que rodar agora'
+        required: true
+        default: os-dois-seguros
+        type: choice
+        # Sem opção de string vazia: `choice` com item vazio renderiza uma linha em branco no menu
+        # e eu não consigo validar aqui como o parser do GitHub a trata. Um sentinela nomeado custa
+        # o mesmo, não deixa dúvida, e ainda diz no próprio menu o que a opção padrão faz.
+        options:
+          - os-dois-seguros
+          - recompute-cycles
+          - segments
+          - stock-alerts
+          - jobs
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cron
+  cancel-in-progress: false
+
+jobs:
+  seguros:
+    # Só os jobs que APENAS calculam e gravam no próprio banco. Nenhum deles fala com o mundo
+    # externo, então ligá-los não pode alcançar cliente final de nenhum tenant.
+    name: jobs de cálculo
+    runs-on: ubuntu-latest
+    # `event_name` em vez de comparar a entrada com vazio: no evento `schedule` não existe
+    # `inputs`, e depender de como a expressão trata ausente é o tipo de detalhe que só falha em
+    # produção, às 3h da manhã, em silêncio.
+    if: github.event_name == 'schedule' || github.event.inputs.job == 'os-dois-seguros'
+    strategy:
+      fail-fast: false
+      matrix:
+        rota: [recompute-cycles, segments]
+    steps:
+      - name: bater na rota ${{ matrix.rota }}
+        env:
+          BASE: ${{ secrets.CRON_BASE_URL }}
+          SEGREDO: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          if [ -z "${BASE:-}" ] || [ -z "${SEGREDO:-}" ]; then
+            echo "::error::faltam os secrets CRON_BASE_URL e/ou CRON_SECRET no repositório"
+            exit 1
+          fi
+          codigo=$(curl -sS -o /tmp/resposta.json -w '%{http_code}' \
+            --max-time 300 --retry 2 --retry-delay 15 --retry-connrefused \
+            -H "Authorization: Bearer ${SEGREDO}" \
+            "${BASE}/api/cron/${{ matrix.rota }}")
+          echo "HTTP ${codigo}"
+          cat /tmp/resposta.json
+          echo
+          # 2xx passa; qualquer outra coisa falha o job para aparecer no e-mail do Actions.
+          case "$codigo" in 2*) exit 0 ;; *) echo "::error::${{ matrix.rota }} devolveu ${codigo}"; exit 1 ;; esac
+
+  sob_demanda:
+    # Disparo manual, um de cada vez. Serve para `stock-alerts` e `jobs`, que ainda não foram
+    # auditados quanto a efeito externo (`jobs` processa a fila, e a fila pode conter envio).
+    name: job sob demanda
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.job != 'os-dois-seguros'
+    steps:
+      - name: bater na rota ${{ github.event.inputs.job }}
+        env:
+          BASE: ${{ secrets.CRON_BASE_URL }}
+          SEGREDO: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          codigo=$(curl -sS -o /tmp/resposta.json -w '%{http_code}' \
+            --max-time 300 \
+            -H "Authorization: Bearer ${SEGREDO}" \
+            "${BASE}/api/cron/${{ github.event.inputs.job }}")
+          echo "HTTP ${codigo}"
+          cat /tmp/resposta.json
+          echo
+          case "$codigo" in 2*) exit 0 ;; *) exit 1 ;; esac
+
+# ---------------------------------------------------------------------------------------------
+# DELIBERADAMENTE FORA DESTE AGENDAMENTO: `reminders` e `campaigns`.
+#
+# As duas MANDAM MENSAGEM PARA CLIENTE FINAL de verdade — `reminders` dispara confirmação e
+# lembrete de agendamento, `campaigns` dispara campanha. O tenant `dom-rocha` tem 46 clientes
+# cadastrados em produção. Ligar essas rotas num `schedule` é começar a falar com essas pessoas,
+# e essa não é uma decisão que se toma dentro de um arquivo de YAML.
+#
+# Para ligar, quando for a hora:
+#   1. confirmar que WHATSAPP_PHONE_NUMBER_ID / ACCESS_TOKEN / APP_SECRET existem (TICKET-043) —
+#      sem eles o provider levanta erro e cai no fallback de e-mail, que TAMBÉM é envio real;
+#   2. conferir a base de `dom-rocha`: telefone e e-mail são de gente real ou de semente?
+#   3. rodar uma vez por `workflow_dispatch`, olhar `messages`, e só então agendar.
+#
+#     - cron: '*/15 * * * *'   # reminders — §7 pede a cada 15 minutos
+#     - cron: '0 12 * * *'     # campaigns — uma vez por dia
+# ---------------------------------------------------------------------------------------------
