@@ -356,7 +356,13 @@ async function semear(f: Fixture, sufixo: string): Promise<void> {
     ['job_queue', { tenant_id: t, kind: 'seed' }],
     // Mesma exigência de sempre: `tenant_modules` (P3, migration 0025) precisa de
     // linha aqui para o teste ter o que sobrar.
-    ['tenant_modules', { tenant_id: t, modulo: 'seed_de_teste', ligado: true, origem: 'dono' }],
+    //
+    // O valor era 'seed_de_teste' e passava porque a coluna não tinha restrição nenhuma. A
+    // migration 0041 pôs chave estrangeira para `modules`, e o seed virou o primeiro a esbarrar
+    // nela — que é literalmente o defeito que a FK existe para pegar (§L.6: módulo fantasma que
+    // nunca liga nada e que nenhuma query acusa). Agora usa uma chave de verdade, e uma linha
+    // que poderia existir de fato: desligado pelo dono.
+    ['tenant_modules', { tenant_id: t, modulo: 'campaigns', ligado: false, origem: 'dono' }],
   ]
 
   for (const [tabela, linha] of restantes) {

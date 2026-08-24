@@ -2508,3 +2508,27 @@ minuto, é assinatura de base semeada (tenant, serviço e profissional nascem na
 o script diz em letra garrafal que os números NÃO descrevem uso real. Hoje a mediana é 0,01 min —
 ler os 100% de ativação como "o onboarding funciona" seria Suposto apresentado como Medido, o
 defeito mais grave do §2.4 do prompt.
+
+2026-08-24 · APLICADO EM PRODUÇÃO, com autorização explícita do Eduardo: migrations 0040 e 0041,
+e `dom-rocha` → Avançado de cortesia · Ordem do §L.2.1 respeitada: schema, depois dado, depois
+enforcement. Estado final conferido: enum = `gratis, essencial, equipe, avancado`; `modules` com
+16 linhas (2 sempre ligados, 4 condicionados por eixo); `dom-rocha` em `avancado` com 3
+profissionais e 46 clientes; `ruivo-barber` e `lang-barber` em `gratis` com 1 profissional cada,
+dentro do teto. Advisors de segurança: `modules` saiu limpa (RLS + política); os avisos restantes
+são todos pré-existentes.
+
+2026-08-24 · ⚠️ A migration 0041 quebrou a suíte de RLS, e a culpa era do seed · O seed inseria
+`tenant_modules` com `modulo: 'seed_de_teste'` — valor que só passava porque a coluna não tinha
+restrição nenhuma. A chave estrangeira nova o rejeitou, e isso é **literalmente o defeito que ela
+existe para pegar** (§L.6: módulo fantasma que nunca liga nada e que nenhuma query acusa). O
+primeiro a esbarrar na trava foi o próprio teste. Corrigido no seed, com chave real e uma linha
+que poderia existir de verdade (`campaigns`, desligado pelo dono). Achado só porque o `pnpm
+test:rls` roda inteiro antes de commitar — sozinho, o `test:unit` não teria visto.
+
+2026-08-24 · `exigirModulo` ligado em 4 rotas, e SÓ na escrita · `campaigns` POST, `quotes` POST,
+`inventory/entries` POST e `clients/[id]/vault` PUT. Os GET continuam liberados de propósito: a
+regra 5.1 é inviolável, e cair de plano limita o que dá para FAZER, nunca esconde o que já existe.
+No cofre isso é mais importante ainda — ficha de saúde já preenchida é o tipo de dado que NUNCA
+pode sumir por causa de plano. Quem desce de degrau continua abrindo o que registrou (com AAL2 e
+trilha, como sempre); o que trava é gravar resposta nova. Leituras de caixa, comissão e trilha do
+cofre também ficaram livres pelo mesmo motivo.
