@@ -256,13 +256,21 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
         A assinatura era texto solto. Cada página de salão é a vitrine do
         produto para o próximo salão que a vê — é o único canal de aquisição
         que o CICLO tem de graça, e ele não levava a lugar nenhum.
+
+        Desde o plano de monetização (§D.3) o selo é condicional: sai no primeiro degrau pago, e
+        `perfil.mostrarSelo` já vem decidido do servidor. Ele continua discreto de propósito
+        (§13.1 do 09-PLATAFORMA): selo feio faz o profissional pagar só para removê-lo e o laço
+        fecha uma vez; selo bonito circula e traz gente. O rodapé inteiro desaparece quando o
+        plano remove o selo — não fica um rodapé vazio ocupando altura no celular.
       */}
-      <footer className="py-10 text-center text-label text-txt-3">
-        Feito com{' '}
-        <Link href="/" className="toque-48 font-semibold text-acc-2 transition hover:brightness-110">
-          CICLO
-        </Link>
-      </footer>
+      {perfil.mostrarSelo ? (
+        <footer className="py-10 text-center text-label text-txt-3">
+          Feito com{' '}
+          <Link href="/" className="toque-48 font-semibold text-acc-2 transition hover:brightness-110">
+            CICLO
+          </Link>
+        </footer>
+      ) : null}
     </>
   )
 }

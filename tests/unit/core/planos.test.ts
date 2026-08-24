@@ -71,6 +71,16 @@ describe('bloqueio aponta o degrau mais barato que resolve', () => {
     expect(menorPlanoCom('health_records')).toBe('avancado')
   })
 
+  it('o selo aparece no grátis e sai no primeiro degrau pago (§D.3/G.1)', () => {
+    // A página pública decide por `podeUsarCapacidade(..., 'remover_selo') !== 'liberado'`.
+    const mostraSelo = (plano: ContextoDoTenant['plano']) =>
+      podeUsarCapacidade({ plano, eixos: {} }, 'remover_selo').estado !== 'liberado'
+    expect(mostraSelo('gratis')).toBe(true)
+    expect(mostraSelo('essencial')).toBe(false)
+    expect(mostraSelo('equipe')).toBe(false)
+    expect(mostraSelo('avancado')).toBe(false)
+  })
+
   it('remover o selo é a capacidade do primeiro degrau pago', () => {
     expect(podeUsarCapacidade(BARBEARIA_GRATIS, 'remover_selo')).toEqual({
       estado: 'bloqueado_pelo_plano',
@@ -106,6 +116,26 @@ describe('limite duro × limite suave (§L.1)', () => {
     const r = verificarLimite(BARBEARIA_GRATIS, 'clientes', 46, 10)
     expect(r.dentro).toBe(false)
     expect(r.restante).toBe(4)
+  })
+
+  it('aAdicionar 0 responde "como estou hoje", não "posso criar mais um"', () => {
+    // É a pergunta que a tela de clientes faz para desenhar o aviso de teto.
+    const exatamenteNoTeto = verificarLimite(BARBEARIA_GRATIS, 'clientes', 50, 0)
+    expect(exatamenteNoTeto.dentro).toBe(true) // 50 de 50 ainda é dentro
+    expect(exatamenteNoTeto.restante).toBe(0)
+    expect(exatamenteNoTeto.perto).toBe(true)
+
+    // Com aAdicionar 1 a mesma situação já responde "não cabe mais".
+    expect(verificarLimite(BARBEARIA_GRATIS, 'clientes', 50, 1).dentro).toBe(false)
+  })
+
+  it('acima do teto continua reportando o teto, para a tela poder dizer quanto é', () => {
+    const estourado = verificarLimite(BARBEARIA_GRATIS, 'clientes', 58, 0)
+    expect(estourado.dentro).toBe(false)
+    expect(estourado.limite).toBe(50)
+    expect(estourado.restante).toBe(0)
+    // E mesmo estourado o limite suave não impede nada.
+    expect(podeCriar(BARBEARIA_GRATIS, 'clientes', 58)).toBe(true)
   })
 
   it('degrau sem teto responde limite nulo, não zero', () => {
