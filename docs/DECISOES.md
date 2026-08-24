@@ -2532,3 +2532,12 @@ No cofre isso é mais importante ainda — ficha de saúde já preenchida é o t
 pode sumir por causa de plano. Quem desce de degrau continua abrindo o que registrou (com AAL2 e
 trilha, como sempre); o que trava é gravar resposta nova. Leituras de caixa, comissão e trilha do
 cofre também ficaram livres pelo mesmo motivo.
+
+2026-08-24 · `types.gen.ts` corrigido À MÃO nos valores de `plan_tier`, e só neles · Depois de
+aplicar a 0040 em produção, o arquivo gerado continuava afirmando que existem `pro` e
+`profissional` — valores que o banco não tem mais. `pnpm db:types` exige `supabase login` ou
+`SUPABASE_ACCESS_TOKEN`, que não dá para fazer daqui. Editei só a renomeação do enum: é exata,
+trivial e de risco zero. **NÃO escrevi à mão a tabela `modules`** — nenhuma linha de código a
+consulta (a FK é do banco, e o catálogo da interface vive no core), e inventar a forma de um tipo
+gerado é como um arquivo gerado começa a mentir. PENDÊNCIA: rodar `pnpm db:types` no próximo
+`supabase login` para o arquivo voltar a ser realmente gerado.
