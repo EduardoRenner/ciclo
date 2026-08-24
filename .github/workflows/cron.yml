@@ -26,10 +26,19 @@ on:
   workflow_dispatch:
     inputs:
       job:
-        description: 'Rodar um job específico (deixe vazio para os dois seguros)'
-        required: false
+        description: 'O que rodar agora'
+        required: true
+        default: os-dois-seguros
         type: choice
-        options: ['', 'recompute-cycles', 'segments', 'stock-alerts', 'jobs']
+        # Sem opção de string vazia: `choice` com item vazio renderiza uma linha em branco no menu
+        # e eu não consigo validar aqui como o parser do GitHub a trata. Um sentinela nomeado custa
+        # o mesmo, não deixa dúvida, e ainda diz no próprio menu o que a opção padrão faz.
+        options:
+          - os-dois-seguros
+          - recompute-cycles
+          - segments
+          - stock-alerts
+          - jobs
 
 permissions:
   contents: read
@@ -44,7 +53,10 @@ jobs:
     # externo, então ligá-los não pode alcançar cliente final de nenhum tenant.
     name: jobs de cálculo
     runs-on: ubuntu-latest
-    if: github.event.inputs.job == '' || github.event.inputs.job == null
+    # `event_name` em vez de comparar a entrada com vazio: no evento `schedule` não existe
+    # `inputs`, e depender de como a expressão trata ausente é o tipo de detalhe que só falha em
+    # produção, às 3h da manhã, em silêncio.
+    if: github.event_name == 'schedule' || github.event.inputs.job == 'os-dois-seguros'
     strategy:
       fail-fast: false
       matrix:
@@ -75,7 +87,7 @@ jobs:
     # auditados quanto a efeito externo (`jobs` processa a fila, e a fila pode conter envio).
     name: job sob demanda
     runs-on: ubuntu-latest
-    if: github.event.inputs.job != '' && github.event.inputs.job != null
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.job != 'os-dois-seguros'
     steps:
       - name: bater na rota ${{ github.event.inputs.job }}
         env:

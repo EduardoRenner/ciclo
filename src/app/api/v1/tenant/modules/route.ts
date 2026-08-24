@@ -39,7 +39,9 @@ export const PATCH = rota(async (req, _ctx, requestId) => {
       actorRole: ctx.papel,
       action: 'tenant.module.update',
       entity: 'tenant_modules',
-      entityId: entrada.modulo,
+      // Sem `entityId`: `audit_log.entity_id` é `uuid` no banco, e a chave do módulo é texto
+      // ('campaigns'). Os tipos gerados dizem `string` e não pegam isso — o Postgres pegaria, em
+      // produção, a cada toque no interruptor. Qual módulo mudou já está em `after`.
       after: entrada,
       requestId,
     },

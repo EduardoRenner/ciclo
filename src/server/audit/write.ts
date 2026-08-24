@@ -62,7 +62,14 @@ export function ipDe(req: Request): string | null {
  */
 export async function writeAudit(entrada: EntradaAuditoria, req: Request): Promise<void> {
   try {
-    await withTenant(entrada.tenantId, async (db, tenantId) =>
+    /*
+     * `.insert()` do supabase-js NÃO lança em erro de banco — devolve `{ error }`. Sem olhar esse
+     * retorno, o `catch` abaixo só pegava exceção de rede, e qualquer recusa do Postgres (tipo
+     * errado numa coluna, violação de RLS, constraint) sumia sem deixar nem o alarme no log que o
+     * comentário acima promete. Trilha de acesso que falha em silêncio é pior que trilha ausente:
+     * ninguém sabe que não tem.
+     */
+    const { error } = await withTenant(entrada.tenantId, async (db, tenantId) =>
       db.from('audit_log').insert({
         tenant_id: tenantId,
         actor_id: entrada.actorId,
@@ -77,6 +84,7 @@ export async function writeAudit(entrada: EntradaAuditoria, req: Request): Promi
         request_id: entrada.requestId,
       }),
     )
+    if (error) throw error
   } catch (erro) {
     // Falhar a auditoria não pode desfazer a operação que a pessoa já concluiu:
     // ela veria um erro depois de o agendamento existir. O buraco na trilha vira

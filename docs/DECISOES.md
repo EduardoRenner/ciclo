@@ -2452,3 +2452,26 @@ upgrade: módulo desligado, e nenhuma explicação de quando isso teria aconteci
 a linha legítima: quem desliga ESTANDO no degrau que libera grava normal, e essa preferência
 sobrevive a um rebaixamento e ao retorno — que é o comportamento certo. Os dois casos têm teste, e
 o no-op foi verificado por mutação.
+
+2026-08-24 · ⚠️ BUG REAL ACHADO NA PENEIRA: `writeAudit` engolia recusa do banco sem nem logar ·
+`.insert()` do supabase-js NÃO lança em erro de banco — devolve `{ error }`. O `writeAudit` não
+olhava esse retorno, então o `catch` só pegava exceção de rede: qualquer recusa do Postgres (tipo
+errado, RLS, constraint) sumia sem deixar nem o alarme que o comentário da própria função promete.
+**Trilha de acesso que falha em silêncio é pior que trilha ausente: ninguém sabe que não tem** — e
+isso é LGPD, não estética. Corrigido com `if (error) throw error`, teste novo, e verificação por
+mutação. Defeito PRÉ-EXISTENTE, não introduzido nesta rodada; achado só porque o defeito abaixo o
+acionou.
+
+2026-08-24 · A rota de módulos mandava chave de texto para `audit_log.entity_id`, que é `uuid` ·
+`entityId: entrada.modulo` com valor `'campaigns'`. Os tipos gerados dizem `string | null` e não
+pegam — o Postgres pegaria, a cada toque no interruptor, e (por causa do defeito acima) em
+silêncio absoluto. Removido: qual módulo mudou já está em `after`. Conferidos TODOS os outros 45
+chamadores de `writeAudit`: passam `.id` ou `ctx.tenantId`, todos uuid. Este era o único infrator,
+então tornar o erro visível não gera ruído novo.
+
+2026-08-24 · `cron.yml`: opção de string vazia no `choice` trocada por sentinela nomeado ·
+`options: ['', ...]` renderiza linha em branco no menu e eu não consigo validar aqui como o parser
+do GitHub a trata. `os-dois-seguros` custa o mesmo e não deixa dúvida. As condições passaram a usar
+`github.event_name` em vez de comparar a entrada com vazio: no evento `schedule` não existe
+`inputs`, e depender de como a expressão trata ausente é o tipo de detalhe que só falha em
+produção, às 3h da manhã, em silêncio.
