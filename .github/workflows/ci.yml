@@ -203,6 +203,11 @@ jobs:
           # o banco morre junto com o job, e a KEK de verdade nunca entra no CI.
           VAULT_KEK: Q0lDTE8tQ0ktS0VLLWRlc2NhcnRhdmVsLTMyYnl0ZXM=
           VAULT_KEK_VERSION: "1"
+          # Achado na 4ª execução real do CI (2026-08-24): faltava desde sempre — nenhuma suíte
+          # de integração toca telefone de cliente sem passar por `hashTelefone()`, que lança sem
+          # isto (`telefone.ts`, de propósito: nunca hashear sem sal). Mesmo espírito do VAULT_KEK
+          # acima — sal descartável, só para o banco efêmero; o sal de produção nunca entra aqui.
+          PHONE_HASH_SALT: ci-descartavel-nao-e-segredo
         run: pnpm test:integration
 
       - name: Teste de isolamento multi-tenant
