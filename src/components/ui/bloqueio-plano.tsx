@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { dinheiro } from '@/lib/formato'
 import { cn } from '@/lib/utils'
 
-import type { PlanoTier } from '@/core/billing/planos'
+import { NOME_DO_PLANO, precoDoPlanoPorMes, type PlanoTier } from '@/core/billing/planos'
 
 /**
  * docs/18-MONETIZACAO-PLANO.md §M.1 — a peça de conversão mais importante do produto, mais que a
@@ -24,20 +24,6 @@ import type { PlanoTier } from '@/core/billing/planos'
  * Nada nesta tela usa escassez, contador ou confirmshaming (§5.10). O texto do caminho gratuito
  * nunca é do tipo "não, prefiro perder dinheiro" — é a descrição neutra do que a pessoa vai fazer.
  */
-
-const NOME_DO_PLANO: Record<PlanoTier, string> = {
-  gratis: 'Grátis',
-  essencial: 'Essencial',
-  equipe: 'Equipe',
-  avancado: 'Avançado',
-}
-
-const PRECO_DO_PLANO: Record<PlanoTier, string> = {
-  gratis: 'R$ 0',
-  essencial: 'R$ 49/mês',
-  equipe: 'R$ 99/mês',
-  avancado: 'R$ 179/mês',
-}
 
 type Props = {
   /** O degrau que libera o que ela tentou fazer. */
@@ -116,7 +102,7 @@ export default function BloqueioPlano({ precisaDo, acao, evidencia, alternativa,
             'hover:brightness-110 active:scale-[.97]'
           }
         >
-          Ver o {nome} — {PRECO_DO_PLANO[precisaDo]}
+          Ver o {nome} — {precoDoPlanoPorMes(precisaDo)}
         </Link>
 
         {/*

@@ -137,7 +137,51 @@ export const PLANOS: Record<PlanoTier, Definicao> = {
   avancado: resolver('avancado'),
 }
 
-const ORDEM: readonly PlanoTier[] = ['gratis', 'essencial', 'equipe', 'avancado']
+export const ORDEM_DOS_PLANOS: readonly PlanoTier[] = ['gratis', 'essencial', 'equipe', 'avancado']
+
+const ORDEM = ORDEM_DOS_PLANOS
+
+/**
+ * Nome e preço de cada degrau — a ÚNICA definição no projeto.
+ *
+ * Estavam duplicados em quatro arquivos (serviço de planos, tela de bloqueio, "Meu plano", tela de
+ * módulos) e a tabela de preço em três, mais duas menções em prosa. Consolidado aqui pelo mesmo
+ * motivo do catálogo de módulos: preço que existe em cinco lugares é preço que um dia vai divergir
+ * em um deles, e o lugar onde ninguém olha é sempre o que fica errado.
+ *
+ * Em centavos porque é dinheiro (regra 3 do CLAUDE.md), mesmo sendo dinheiro que ainda não é
+ * cobrado — a hora de acertar a unidade é antes de existir a primeira cobrança, não depois.
+ */
+export const NOME_DO_PLANO: Record<PlanoTier, string> = {
+  gratis: 'Grátis',
+  essencial: 'Essencial',
+  equipe: 'Equipe',
+  avancado: 'Avançado',
+}
+
+export const PRECO_MENSAL_CENTS: Record<PlanoTier, number> = {
+  gratis: 0,
+  essencial: 4_900,
+  equipe: 9_900,
+  avancado: 17_900,
+}
+
+const REAIS = new Intl.NumberFormat('pt-BR', {
+  style: 'currency',
+  currency: 'BRL',
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 0,
+})
+
+/** "R$ 49". Sem centavos: todo preço da tabela é redondo, e "R$ 49,00" pesa à toa numa tela de 390px. */
+export function precoDoPlano(tier: PlanoTier): string {
+  return REAIS.format(PRECO_MENSAL_CENTS[tier] / 100)
+}
+
+/** "R$ 49/mês" — e "R$ 0" no grátis, porque "R$ 0/mês" sugere uma cobrança de zero. */
+export function precoDoPlanoPorMes(tier: PlanoTier): string {
+  return tier === 'gratis' ? precoDoPlano(tier) : `${precoDoPlano(tier)}/mês`
+}
 
 /** O degrau mais barato que libera este módulo, para a tela de bloqueio poder dizer o caminho. */
 export function menorPlanoCom(modulo: ModuloKey): PlanoTier | null {

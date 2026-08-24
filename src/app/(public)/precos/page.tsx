@@ -1,6 +1,7 @@
 import { ArrowRight, Check, Minus } from 'lucide-react'
 import Link from 'next/link'
 
+import { NOME_DO_PLANO, precoDoPlano, type PlanoTier } from '@/core/billing/planos'
 import IconeAnel from '@/components/ui/icone-anel'
 
 import type { Metadata } from 'next'
@@ -32,18 +33,18 @@ export const metadata = {
   // o template — há teste de design que guarda exatamente isso.
   title: 'Preços',
   description:
-    'Comece de graça, para sempre. Planos a partir de R$ 49 por mês para quem quer mandar mensagem para toda a base de uma vez, controlar caixa e trabalhar com equipe.',
+    `Comece de graça, para sempre. Planos a partir de ${precoDoPlano('essencial')} por mês para quem quer mandar mensagem para toda a base de uma vez, controlar caixa e trabalhar com equipe.`,
   openGraph: {
     title: 'Preços — CICLO',
-    description: 'Comece de graça. Planos a partir de R$ 49 por mês, com preço na tela e sem letra miúda.',
+    description: `Comece de graça. Planos a partir de ${precoDoPlano('essencial')} por mês, com preço na tela e sem letra miúda.`,
     type: 'website',
     locale: 'pt_BR',
   },
 } satisfies Metadata
 
 type Plano = {
-  nome: string
-  preco: string
+  /** O degrau; nome e preço vêm do core, para a tabela de preço não virar a quinta cópia deles. */
+  tier: PlanoTier
   porDia?: string
   chamada: string
   /** A dor específica que faz alguém subir para cá. Degrau sem isto não deveria existir. */
@@ -55,8 +56,7 @@ type Plano = {
 
 const PLANOS: Plano[] = [
   {
-    nome: 'Grátis',
-    preco: 'R$ 0',
+    tier: 'gratis',
     chamada: 'Para sempre, sem cartão.',
     paraQuem: 'Você atende sozinho e quer sair do caderno.',
     inclui: [
@@ -69,8 +69,7 @@ const PLANOS: Plano[] = [
     naoInclui: ['Mandar mensagem para vários de uma vez — no grátis você manda um a um'],
   },
   {
-    nome: 'Essencial',
-    preco: 'R$ 49',
+    tier: 'essencial',
     porDia: 'menos de R$ 1,70 por dia — o preço de um corte, uma vez por mês',
     chamada: 'Por mês, um profissional.',
     paraQuem: 'Você já viu quem sumiu e cansou de mandar mensagem um por um.',
@@ -84,8 +83,7 @@ const PLANOS: Plano[] = [
     ],
   },
   {
-    nome: 'Equipe',
-    preco: 'R$ 99',
+    tier: 'equipe',
     chamada: 'Por mês, até cinco profissionais.',
     paraQuem: 'Você contratou alguém e precisa de agenda e acerto separados.',
     inclui: [
@@ -98,8 +96,7 @@ const PLANOS: Plano[] = [
     destaque: true,
   },
   {
-    nome: 'Avançado',
-    preco: 'R$ 179',
+    tier: 'avancado',
     chamada: 'Por mês, sem limite de profissionais.',
     paraQuem: 'Você passou de cinco, controla estoque ou atende com ficha de saúde.',
     inclui: [
@@ -185,15 +182,15 @@ export default function Precos() {
       <section className="flex flex-col gap-4">
         {PLANOS.map((p) => (
           <article
-            key={p.nome}
+            key={p.tier}
             className={
               'rounded-[var(--radius)] border bg-surface p-5 shadow-elevado ' +
               (p.destaque ? 'border-acc-2 ring-1 ring-acc-2' : 'border-line')
             }
           >
             <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-              <h2 className="text-corpo font-semibold text-txt">{p.nome}</h2>
-              <p className="tabular text-numero font-bold text-txt">{p.preco}</p>
+              <h2 className="text-corpo font-semibold text-txt">{NOME_DO_PLANO[p.tier]}</h2>
+              <p className="tabular text-numero font-bold text-txt">{precoDoPlano(p.tier)}</p>
             </div>
             <p className="mt-0.5 text-secundario text-txt-3">{p.chamada}</p>
             {p.porDia ? <p className="mt-1 text-label text-txt-3">{p.porDia}</p> : null}
@@ -219,7 +216,9 @@ export default function Precos() {
             </ul>
 
             <Link href="/cadastro" className={`mt-5 ${p.destaque ? botaoPrimario : botaoSecundario}`}>
-              {p.preco === 'R$ 0' ? 'Criar minha conta grátis' : `Começar no grátis e subir para o ${p.nome}`}
+              {p.tier === 'gratis'
+                ? 'Criar minha conta grátis'
+                : `Começar no grátis e subir para o ${NOME_DO_PLANO[p.tier]}`}
               <ArrowRight aria-hidden className="size-4" />
             </Link>
           </article>

@@ -2,6 +2,7 @@ import { ArrowRight, CalendarCheck, Link2, Wallet } from 'lucide-react'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
+import { precoDoPlano } from '@/core/billing/planos'
 import IconeAnel from '@/components/ui/icone-anel'
 import { sessaoAtual } from '@/server/auth/session'
 
@@ -165,7 +166,7 @@ export default async function Home() {
         */}
         <div className="mt-4">
           <Link href="/precos" className="toque-48 inline-block text-secundario font-semibold text-acc-2 underline underline-offset-4">
-            Grátis para começar, R$ 49 por mês para ir além — ver os planos
+            Grátis para começar, {precoDoPlano('essencial')} por mês para ir além — ver os planos
           </Link>
         </div>
       </section>

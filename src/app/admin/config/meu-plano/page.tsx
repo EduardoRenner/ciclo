@@ -2,7 +2,13 @@ import { Check, Lock, Minus } from 'lucide-react'
 import Link from 'next/link'
 import { headers } from 'next/headers'
 
-import { verificarLimite, type PlanoTier } from '@/core/billing/planos'
+import {
+  NOME_DO_PLANO,
+  ORDEM_DOS_PLANOS,
+  precoDoPlanoPorMes,
+  verificarLimite,
+  type PlanoTier,
+} from '@/core/billing/planos'
 import Card from '@/components/ui/card'
 import PageHeader from '@/components/ui/page-header'
 import SectionHeader from '@/components/ui/section-header'
@@ -36,22 +42,6 @@ export const metadata = { title: 'Meu plano' }
  *
  * Quando a cobrança existir, é aqui que ela entra.
  */
-
-const NOME: Record<PlanoTier, string> = {
-  gratis: 'Grátis',
-  essencial: 'Essencial',
-  equipe: 'Equipe',
-  avancado: 'Avançado',
-}
-
-const PRECO: Record<PlanoTier, string> = {
-  gratis: 'R$ 0',
-  essencial: 'R$ 49/mês',
-  equipe: 'R$ 99/mês',
-  avancado: 'R$ 179/mês',
-}
-
-const ORDEM: readonly PlanoTier[] = ['gratis', 'essencial', 'equipe', 'avancado']
 
 /** O que muda ao subir para cada degrau, na voz de quem usa — não em nome de módulo. */
 const O_QUE_MUDA: Record<PlanoTier, string[]> = {
@@ -94,17 +84,17 @@ export default async function PaginaMeuPlano() {
   const limCli = verificarLimite(plano, 'clientes', usoCli, 0)
 
   const atual = plano.plano
-  const indiceAtual = ORDEM.indexOf(atual)
-  const acima = ORDEM.slice(indiceAtual + 1)
+  const indiceAtual = ORDEM_DOS_PLANOS.indexOf(atual)
+  const acima = ORDEM_DOS_PLANOS.slice(indiceAtual + 1)
 
   return (
     <>
-      <PageHeader titulo="Meu plano" descricao={`Você está no ${NOME[atual]}.`} />
+      <PageHeader titulo="Meu plano" descricao={`Você está no ${NOME_DO_PLANO[atual]}.`} />
 
       <Card className="mb-5">
         <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-          <p className="text-corpo font-semibold text-txt">{NOME[atual]}</p>
-          <p className="tabular text-stat font-bold text-txt">{PRECO[atual]}</p>
+          <p className="text-corpo font-semibold text-txt">{NOME_DO_PLANO[atual]}</p>
+          <p className="tabular text-stat font-bold text-txt">{precoDoPlanoPorMes(atual)}</p>
         </div>
         {/*
           A frase mais importante da tela, e a que responde a pergunta que a pessoa realmente tem
@@ -163,8 +153,8 @@ export default async function PaginaMeuPlano() {
             {acima.map((tier) => (
               <Card key={tier}>
                 <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-                  <p className="text-corpo font-semibold text-txt">{NOME[tier]}</p>
-                  <p className="tabular text-corpo font-bold text-txt">{PRECO[tier]}</p>
+                  <p className="text-corpo font-semibold text-txt">{NOME_DO_PLANO[tier]}</p>
+                  <p className="tabular text-corpo font-bold text-txt">{precoDoPlanoPorMes(tier)}</p>
                 </div>
                 <ul className="mt-3 flex flex-col gap-1.5">
                   {O_QUE_MUDA[tier].map((item) => (

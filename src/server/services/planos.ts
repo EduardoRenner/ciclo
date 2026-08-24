@@ -1,4 +1,5 @@
 import {
+  NOME_DO_PLANO,
   PLANOS,
   podeUsarCapacidade,
   podeUsarModulo,
@@ -26,13 +27,6 @@ type Cliente = SupabaseClient<Database>
  * fatos do banco e traduz o veredito em `AppError`. É a mesma divisão do resto do projeto
  * (regra 5 do CLAUDE.md): `core/` decide, `server/` busca e responde.
  */
-
-const NOME_DO_PLANO: Record<PlanoTier, string> = {
-  gratis: 'Grátis',
-  essencial: 'Essencial',
-  equipe: 'Equipe',
-  avancado: 'Avançado',
-}
 
 /**
  * Nomes que o enum `plan_tier` teve antes da migration 0040. Existem porque código e migration

@@ -6,15 +6,9 @@ import { useState } from 'react'
 
 import Card from '@/components/ui/card'
 
-import type { ModuloNaTela } from '@/server/services/modulos'
-import type { PlanoTier } from '@/core/billing/planos'
+import { NOME_DO_PLANO } from '@/core/billing/planos'
 
-const NOME_DO_PLANO: Record<PlanoTier, string> = {
-  gratis: 'Grátis',
-  essencial: 'Essencial',
-  equipe: 'Equipe',
-  avancado: 'Avançado',
-}
+import type { ModuloNaTela } from '@/server/services/modulos'
 
 export default function Modulos({ iniciais }: { iniciais: ModuloNaTela[] }) {
   const [modulos, setModulos] = useState(iniciais)
