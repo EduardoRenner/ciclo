@@ -2415,3 +2415,18 @@ uma linha chegar por outro caminho (seed, correção manual, migration futura) �
 agenda sumiria inteira da interface. O produto desaparecendo por causa de um registro de
 configuração. Defesa no core, com teste, e o teste foi verificado por mutação: sem a guarda, ele
 reprova.
+
+2026-08-24 · A página de preço deixa de ser prosa solta: cada item de cartão carrega a chave do
+módulo/capacidade que o justifica, e um teste confere · `tests/unit/design/precos-nao-promete-demais.test.ts`
+verifica três coisas: (1) todo módulo anunciado num degrau é mesmo liberado por ele; (2) nenhum
+degrau pago vende como novidade algo que o degrau abaixo já dava; (3) todo degrau pago anuncia ao
+menos uma coisa que só ele libera — que é a pergunta da Fase D ("qual dor específica faz alguém
+subir daqui?") virando asserção. O cenário impedido é concreto: alguém acrescenta "controle de
+estoque" ao Essencial porque soa bem, o cliente paga, descobre que é do Avançado, cancela e conta
+para o bairro. Num público que se conhece por ofício, é a forma mais cara de perder cliente de
+ticket baixo. Verificado por mutação nas duas direções.
+
+2026-08-24 · Os cartões saíram de `precos/page.tsx` para `precos/cartoes.ts` · O teste precisa
+importar os dados, e exportar coisa arbitrária de um arquivo de página do App Router não é padrão
+documentado do Next — funciona hoje e uma versão futura pode recusar. Módulo irmão remove o risco
+e é a separação idiomática: dado de um lado, renderização do outro.

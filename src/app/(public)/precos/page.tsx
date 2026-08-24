@@ -1,7 +1,9 @@
 import { ArrowRight, Check, Minus } from 'lucide-react'
 import Link from 'next/link'
 
-import { NOME_DO_PLANO, PLANOS, precoDoPlano, type PlanoTier } from '@/core/billing/planos'
+import { NOME_DO_PLANO, PLANOS, precoDoPlano } from '@/core/billing/planos'
+
+import { CARTOES } from './cartoes'
 import IconeAnel from '@/components/ui/icone-anel'
 
 import type { Metadata } from 'next'
@@ -41,73 +43,6 @@ export const metadata = {
     locale: 'pt_BR',
   },
 } satisfies Metadata
-
-type Plano = {
-  /** O degrau; nome e preço vêm do core, para a tabela de preço não virar a quinta cópia deles. */
-  tier: PlanoTier
-  porDia?: string
-  chamada: string
-  /** A dor específica que faz alguém subir para cá. Degrau sem isto não deveria existir. */
-  paraQuem: string
-  inclui: string[]
-  naoInclui?: string[]
-  destaque?: boolean
-}
-
-/** O conteúdo dos cartões. Os NÚMEROS vêm do core (`PLANOS`), nunca daqui. */
-const CARTOES: Plano[] = [
-  {
-    tier: 'gratis',
-    chamada: 'Para sempre, sem cartão.',
-    paraQuem: 'Você atende sozinho e quer sair do caderno.',
-    inclui: [
-      'Agenda sem risco de marcar dois no mesmo horário',
-      'Sua página de agendamento com link para a bio',
-      `${PLANOS.gratis.maxClientes} clientes com ficha e histórico`,
-      'Motor de Ciclo: veja quem sumiu e quanto isso vale',
-      'Lembrete e confirmação de agendamento',
-    ],
-    naoInclui: ['Mandar mensagem para vários de uma vez — no grátis você manda um a um'],
-  },
-  {
-    tier: 'essencial',
-    porDia: 'menos de R$ 1,70 por dia — o preço de um corte, uma vez por mês',
-    chamada: 'Por mês, um profissional.',
-    paraQuem: 'Você já viu quem sumiu e cansou de mandar mensagem um por um.',
-    inclui: [
-      'Tudo do Grátis, sem limite de clientes',
-      'Chamar de volta a base inteira de uma vez',
-      'Campanhas para datas e aniversários',
-      'Comanda, caixa e fechamento do dia',
-      'Orçamento com aprovação por link',
-      'Sua página fica sem o selo do CICLO',
-    ],
-  },
-  {
-    tier: 'equipe',
-    chamada: `Por mês, até ${PLANOS.equipe.maxProfissionais} profissionais.`,
-    paraQuem: 'Você contratou alguém e precisa de agenda e acerto separados.',
-    inclui: [
-      'Tudo do Essencial',
-      'Agenda por profissional',
-      'Comissão e extrato de cada um',
-      'Relatórios do negócio',
-      'Fidelidade e pontos',
-    ],
-    destaque: true,
-  },
-  {
-    tier: 'avancado',
-    chamada: 'Por mês, sem limite de profissionais.',
-    paraQuem: `Você passou de ${PLANOS.equipe.maxProfissionais}, controla estoque ou atende com ficha de saúde.`,
-    inclui: [
-      'Tudo do Equipe, com profissionais ilimitados',
-      'Controle de estoque',
-      'Anamnese e ficha de saúde em cofre cifrado',
-      'Recorrência e pacotes',
-    ],
-  },
-]
 
 const PERGUNTAS = [
   {
@@ -213,9 +148,9 @@ export default function Precos() {
 
             <ul className="mt-4 flex flex-col gap-2">
               {p.inclui.map((item) => (
-                <li key={item} className="flex gap-2 text-secundario text-txt-2">
+                <li key={item.texto} className="flex gap-2 text-secundario text-txt-2">
                   <Check aria-hidden className="mt-0.5 size-4 shrink-0 text-ok" />
-                  <span>{item}</span>
+                  <span>{item.texto}</span>
                 </li>
               ))}
               {p.naoInclui?.map((item) => (
