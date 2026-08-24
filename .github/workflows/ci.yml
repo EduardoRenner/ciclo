@@ -140,7 +140,11 @@ jobs:
 
       - uses: supabase/setup-cli@ab058987d8d6c725971f6cf9d0b5c98467e30bd1 # v1 (é BRANCH, não tag — ver comentário no topo)
         with:
-          version: latest
+          # Fixo, não `latest`: achado ao ligar o CI pela primeira vez (2026-08-24) — uma versão
+          # mais nova do CLI mudou o que `db lint --output json` escreve quando não há achado, e
+          # quebrou o parser abaixo. `latest` para o CLI é o mesmo problema do S14 em miniatura:
+          # o mesmo workflow se comporta diferente amanhã sem ninguém ter mudado uma linha aqui.
+          version: 2.115.0
 
       - name: Subir o Supabase local (aplica as migrations em banco vazio)
         run: supabase start
@@ -169,7 +173,21 @@ jobs:
           # O `db lint` não devolve código de saída diferente de zero por achado,
           # então quem reprova o build é esta leitura.
           node -e '
-            const relatorio = JSON.parse(require("fs").readFileSync("db-lint.json", "utf8"));
+            // string vazia quando não há achado nenhum é comportamento observado de verdade
+            // nesta versão do CLI (2026-08-24) — não presumido. Tratar como zero achados;
+            // qualquer outra coisa ilegível vira erro visível em vez de um SyntaxError sem
+            // contexto do node -e.
+            const bruto = require("fs").readFileSync("db-lint.json", "utf8").trim();
+            if (!bruto) process.exit(0);
+
+            let relatorio;
+            try {
+              relatorio = JSON.parse(bruto);
+            } catch {
+              console.error("::error::supabase db lint não devolveu JSON válido:\n" + bruto);
+              process.exit(1);
+            }
+
             const erros = relatorio.flatMap((r) =>
               (r.issues ?? []).filter((i) => i.level === "error").map((i) => `${r.function ?? r.name}: ${i.message}`),
             );
