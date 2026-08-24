@@ -955,6 +955,34 @@ Regra: **o plano é o teto; a escolha do dono só desliga, nunca liga além do t
 `tenant_modules.origem` (`'plano'` | `'dono'`) **[M]** já existe exatamente para a tela poder dizer
 *"bloqueado pelo plano"* × *"você desligou"* — que é a regra 5.2 virando dado.
 
+#### L.2.1 · ✅ Implementado em 2026-08-24 — e a lacuna que isso abriu
+
+`tenant_modules` existia desde a migration 0025 **sem nenhum escritor**. Agora tem: a tela
+`/admin/config/modulos` e a rota `PATCH /api/v1/tenant/modules`, com a regra desta seção aplicada
+ao pé da letra — o plano é teto, o dono só desliga, e ligar além do teto é recusado no servidor.
+
+⚠️ **A lacuna, nomeada em vez de escondida:** a tela agora **afirma** coisas que as rotas ainda
+não impõem. Ela diz *"Campanhas faz parte do Essencial"* — e `POST /api/v1/campaigns` continua
+respondendo normalmente para um tenant no Grátis. O mesmo vale para estoque, orçamento, cofre e
+comissão: `exigirModulo` existe e está testado, mas **só está ligado no envio em lote**.
+
+**Por que não liguei em todas de uma vez**, e é o tipo de decisão que precisa estar escrita:
+os 3 tenants reais estão **todos em `gratis`** **[M]**, e as migrations 0040/0041 **não foram
+aplicadas em produção**. Ligar `exigirModulo` nas rotas hoje tiraria comanda, caixa e orçamento
+do `dom-rocha` — que é a demonstração do produto — no primeiro deploy. Seria enforcement correto
+em cima de dado errado.
+
+**A ordem certa, e ela não é negociável:**
+
+| # | O quê | Por quê |
+|---|---|---|
+| 1 | Aplicar 0040 e 0041 em produção | O enum e a FK precisam existir antes de qualquer coisa depender deles |
+| 2 | **Atribuir plano aos 3 tenants reais** — `dom-rocha` → Avançado de cortesia (Fase K) | Sem isso, enforcement rebaixa a demonstração |
+| 3 | Só então ligar `exigirModulo` nas rotas de campanha, estoque, orçamento, cofre e comissão | Enforcement em cima de dado certo |
+
+Inverter 2 e 3 é o erro clássico desta área: enforcement correto que quebra usuário existente
+porque os dados ainda não refletem o modelo novo. — **Bloqueado** no passo 1, que é deploy.
+
 ### L.3 · As `FEATURE_*` globais
 
 As 4 flags no Vercel **não são lidas por nenhuma linha** e, sendo globais, **não conseguem por
