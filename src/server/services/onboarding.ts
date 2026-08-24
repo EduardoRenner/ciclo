@@ -141,7 +141,17 @@ export async function executarOnboarding(
       : await svc.rpc('apply_vertical_pack', { p_tenant: tenant.id, p_vertical: params.vertical })
     if (erroPack) throw erroPack
   } catch (erro) {
-    await svc.from('tenants').delete().eq('id', tenant.id)
+    // Desfaz o tenant recém-criado. Se ESTE delete falha em silêncio, sobra um tenant órfão no
+    // banco para sempre — a pessoa vê o erro e vai embora, e o registro fica. O erro original
+    // continua sendo o que sobe; o do rollback vira alarme, porque são causas diferentes e
+    // trocar uma pela outra esconderia por que o cadastro falhou.
+    const { error: erroRollback } = await svc.from('tenants').delete().eq('id', tenant.id)
+    if (erroRollback) {
+      console.error(
+        JSON.stringify({ level: 'error', event: 'onboarding_rollback_falhou', tenant_id: tenant.id }),
+        erroRollback,
+      )
+    }
     throw new AppError('INTERNAL', { cause: erro })
   }
 

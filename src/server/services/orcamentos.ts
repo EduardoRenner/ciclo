@@ -120,7 +120,8 @@ export async function orcamentoPublico(db: Cliente, token: string): Promise<Orca
   let status = quote.status
   if (status === 'sent' && orcamentoExpirado(quote.valid_until, tenant.timezone)) {
     status = 'expired'
-    await db.from('quotes').update({ status: 'expired' }).eq('id', quote.id)
+    const { error: erroExpirar } = await db.from('quotes').update({ status: 'expired' }).eq('id', quote.id)
+    if (erroExpirar) throw new AppError('INTERNAL', { cause: erroExpirar })
   }
 
   const { data: itens, error: erroItens } = await db.from('quote_items').select('description, qty, unit_price_cents, total_cents').eq('quote_id', quote.id)
@@ -246,7 +247,8 @@ export async function listarOrcamentos(db: Cliente, tenantId: string): Promise<O
   })
 
   if (idsVencidos.length > 0) {
-    await db.from('quotes').update({ status: 'expired' }).in('id', idsVencidos)
+    const { error: erroExpirarLote } = await db.from('quotes').update({ status: 'expired' }).in('id', idsVencidos)
+  if (erroExpirarLote) throw new AppError('INTERNAL', { cause: erroExpirarLote })
   }
 
   return lista

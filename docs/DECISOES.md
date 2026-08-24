@@ -2475,3 +2475,25 @@ do GitHub a trata. `os-dois-seguros` custa o mesmo e não deixa dúvida. As cond
 `github.event_name` em vez de comparar a entrada com vazio: no evento `schedule` não existe
 `inputs`, e depender de como a expressão trata ausente é o tipo de detalhe que só falha em
 produção, às 3h da manhã, em silêncio.
+
+2026-08-24 · Varredura completa por escrita supabase-js com `error` ignorado: 8 casos, todos
+corrigidos · O defeito do `writeAudit` não estava sozinho. Encontrados varrendo `await db|svc` em
+statement solto seguido de insert/update/upsert/delete/rpc. Tratamento por consequência, não em
+bloco:
+  · **`vault_access_log` ×3** (anamnese, exportação LGPD, mídia) — trilha de acesso a dado de
+    saúde. Viraram `registrarAcessoAoCofre()`, que checa o erro e alarma sem derrubar a leitura
+    que a pessoa já fez (mesmo contrato do `writeAudit`).
+  · **`idempotency.ts` soltar reserva** — falhando calado, a chave ficava presa PARA SEMPRE e a
+    pessoa nunca mais repetia a operação com o mesmo `Idempotency-Key` — que é o que a fila
+    offline faz ao voltar a ter rede. Trava permanente, sem mensagem. Alarma (não pode estourar:
+    o erro original é a causa real e tem que subir).
+  · **`idempotency.ts` gravar resposta** — falhando calado, uma repetição não acha o resultado e a
+    operação **corre de novo**, que é exatamente o que a idempotência existe para impedir. Esse
+    estoura: falhar alto é melhor que cobrar duas vezes.
+  · **`onboarding.ts` rollback** — o delete que desfaz o tenant recém-criado. Calado, deixa tenant
+    órfão no banco para sempre. Alarma, e o erro original continua sendo o que sobe.
+  · **`orcamentos.ts` ×2** — marcar orçamento como vencido. Estoura.
+
+2026-08-24 · O alarme do cofre carrega `tenant_id` e `client_id`, mas NÃO ip nem user-agent · São
+identificadores, permitem reconstruir o que ficou sem registro, e não são dado de saúde (regra 9
+do CLAUDE.md). IP e user-agent do acessante ficariam num log de erro sem necessidade. Há teste.
