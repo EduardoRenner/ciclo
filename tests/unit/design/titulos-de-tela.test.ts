@@ -45,7 +45,11 @@ describe('título próprio por tela', () => {
     // `/admin/page.tsx` é só um `redirect`, não chega a pintar tela nem título.
     if (/^\s*redirect\(/m.test(src) && !/export default async/.test(src)) return
 
-    const estatico = /export const metadata\s*=\s*\{[^}]*title:\s*['"]([^'"]+)['"]/.exec(src)
+    // `[^}]*?` preguiçoso, não guloso: com `[^}]*` a busca ia até o ÚLTIMO `title:` antes da
+    // primeira `}`, o que numa página com `openGraph` capturava o título social em vez do título
+    // do documento — e então reprovava por "repete a marca" um título de tela que estava certo.
+    // Achado ao criar `/precos`, a primeira página do projeto com openGraph e título próprio.
+    const estatico = /export const metadata\s*=\s*\{[^}]*?title:\s*['"]([^'"]+)['"]/.exec(src)
     const dinamico = /export async function generateMetadata/.test(src)
 
     expect(

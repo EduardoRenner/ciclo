@@ -43,6 +43,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   return [
     { url: base, changeFrequency: 'monthly', priority: 0.5 },
+    // Preço é a única outra rota estática que vale indexar: é a pergunta que o público faz antes
+    // de qualquer coisa, e a concorrência que esconde preço deixa esse espaço de busca vago.
+    { url: `${base}/precos`, changeFrequency: 'monthly', priority: 0.7 },
     ...tenants.map((t) => ({
       url: `${base}/${t.slug}`,
       lastModified: t.created_at ?? undefined,
