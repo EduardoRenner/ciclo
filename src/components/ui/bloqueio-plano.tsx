@@ -42,7 +42,11 @@ const PRECO_DO_PLANO: Record<PlanoTier, string> = {
 type Props = {
   /** O degrau que libera o que ela tentou fazer. */
   precisaDo: PlanoTier
-  /** O que ela tentou fazer, na voz dela: "chamar todo mundo de volta". */
+  /**
+   * O que ela tentou fazer, na voz dela e por inteiro: "avisar todas de uma vez". A frase entra
+   * em dois moldes diferentes ("Para {acao}, é preciso o X" e "No X você pode {acao}"), então
+   * quem chama controla a redação — o componente não completa a frase por conta própria.
+   */
   acao: string
   /**
    * O valor concreto do outro lado, com o dado DELA. Sem isto vira folheto — que é exatamente o
@@ -65,7 +69,10 @@ export default function BloqueioPlano({ precisaDo, acao, evidencia, alternativa,
   return (
     <section
       className={cn('rounded-[var(--radius)] border border-line bg-surface p-5 shadow-elevado', className)}
-      aria-labelledby="bloqueio-titulo"
+      // `aria-label` em vez de `aria-labelledby`: o id era fixo, e duas instancias na mesma
+      // pagina (acontece na vitrine, e vai acontecer numa tela com dois bloqueios) criavam id
+      // duplicado — que e erro de acessibilidade e faz o leitor de tela anunciar o rotulo errado.
+      aria-label={`Recurso do plano ${nome}`}
     >
       <div
         aria-hidden
@@ -79,7 +86,7 @@ export default function BloqueioPlano({ precisaDo, acao, evidencia, alternativa,
         como o meio de conseguir aquilo — e não como o assunto da tela.
       */}
       {evidencia ? (
-        <p id="bloqueio-titulo" className="text-corpo font-semibold text-txt">
+        <p className="text-corpo font-semibold text-txt">
           <span className="tabular">{evidencia.quantidade}</span> {evidencia.substantivo}
           {evidencia.valorCents != null && evidencia.valorCents > 0 ? (
             <>
@@ -89,14 +96,14 @@ export default function BloqueioPlano({ precisaDo, acao, evidencia, alternativa,
           .
         </p>
       ) : (
-        <p id="bloqueio-titulo" className="text-corpo font-semibold text-txt">
+        <p className="text-corpo font-semibold text-txt">
           Para {acao}, é preciso o {nome}.
         </p>
       )}
 
       {evidencia ? (
         <p className="mt-1.5 text-secundario text-txt-2">
-          No <span className="font-semibold text-txt">{nome}</span> você pode {acao} de uma vez.
+          No <span className="font-semibold text-txt">{nome}</span> você pode {acao}.
         </p>
       ) : null}
 

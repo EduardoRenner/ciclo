@@ -4,6 +4,7 @@ import { Send } from 'lucide-react'
 import { useState } from 'react'
 
 import ActionBar from '@/components/ui/action-bar'
+import BloqueioPlano from '@/components/ui/bloqueio-plano'
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import Chip from '@/components/ui/chip'
@@ -38,7 +39,13 @@ function chave(item: Pick<ItemRecuperar, 'clientId' | 'serviceId'>): string {
   return `${item.clientId}:${item.serviceId}`
 }
 
-export default function RecuperarReceita({ inicial }: { inicial: ListaRecuperar }) {
+export default function RecuperarReceita({
+  inicial,
+  podeEnviarEmLote,
+}: {
+  inicial: ListaRecuperar
+  podeEnviarEmLote: boolean
+}) {
   const [filtro, setFiltro] = useState<Estado | 'all'>('all')
   const [lista, setLista] = useState(inicial)
   const [carregando, setCarregando] = useState(false)
@@ -99,6 +106,10 @@ export default function RecuperarReceita({ inicial }: { inicial: ListaRecuperar 
   }
 
   const itensSelecionados = lista.items.filter((i) => selecionados.has(chave(i)))
+  // O bloqueio só aparece quando ela realmente pediu o lote. Com uma cliente marcada o caminho
+  // grátis atende, e mostrar oferta de plano ali seria vender no meio de uma tarefa que funciona.
+  const bloqueado = !podeEnviarEmLote && itensSelecionados.length > 1
+  const valorSelecionadoCents = itensSelecionados.reduce((soma, i) => soma + i.valueCents, 0)
 
   return (
     <div>
@@ -200,17 +211,43 @@ export default function RecuperarReceita({ inicial }: { inicial: ListaRecuperar 
         conferir, e perdia de vista o botão que age sobre a seleção.
       */}
       <ActionBar visivel={itensSelecionados.length > 0}>
-        <Button
-          largura="cheia"
-          carregando={enviando}
-          onClick={() => enviar(itensSelecionados)}
-          // `tabIndex` acompanha a visibilidade: barra escondida não pode ser
-          // alcançada pelo teclado nem lida pelo leitor de tela.
-          tabIndex={itensSelecionados.length > 0 ? undefined : -1}
-        >
-          <Send aria-hidden className="size-4" />
-          {`Avisar ${itensSelecionados.length}`}
-        </Button>
+        {bloqueado ? (
+          /*
+            §M.1: a peça de conversão mais importante do produto aparece AQUI, no momento em que
+            ela marcou oito clientes e tocou para avisar — não numa página de preço que ela teria
+            de ir procurar. Por isso leva o número e o valor DELA, e por isso o caminho grátis
+            (avisar uma de cada vez, pelo botão de cada linha) fica escrito e continua valendo.
+
+            Sem as bordas próprias: a ActionBar já é o cartão.
+          */
+          <BloqueioPlano
+            className="border-0 bg-transparent p-1 shadow-none"
+            precisaDo="essencial"
+            acao="avisar todas de uma vez"
+            evidencia={{
+              quantidade: itensSelecionados.length,
+              substantivo: 'clientes marcadas, esperando para voltar',
+              valorCents: valorSelecionadoCents,
+            }}
+            alternativa={
+              <button type="button" onClick={() => setSelecionados(new Set())}>
+                Avisar uma de cada vez, de graça
+              </button>
+            }
+          />
+        ) : (
+          <Button
+            largura="cheia"
+            carregando={enviando}
+            onClick={() => enviar(itensSelecionados)}
+            // `tabIndex` acompanha a visibilidade: barra escondida não pode ser
+            // alcançada pelo teclado nem lida pelo leitor de tela.
+            tabIndex={itensSelecionados.length > 0 ? undefined : -1}
+          >
+            <Send aria-hidden className="size-4" />
+            {`Avisar ${itensSelecionados.length}`}
+          </Button>
+        )}
       </ActionBar>
     </div>
   )

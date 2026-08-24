@@ -7,6 +7,7 @@ import AlertBanner from '@/components/ui/alert-banner'
 import AppointmentRow from '@/components/ui/appointment-row'
 import Avatar from '@/components/ui/avatar'
 import Badge from '@/components/ui/badge'
+import BloqueioPlano from '@/components/ui/bloqueio-plano'
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import Chip from '@/components/ui/chip'
@@ -111,6 +112,25 @@ function Conteudo({ icones }: { icones: { agenda: React.ReactNode; clientes: Rea
             </Chip>
           ))}
         </FilterRow>
+      </Secao>
+
+      <Secao titulo="BloqueioPlano — com evidência e sem">
+        {/*
+          As duas variantes lado a lado porque a diferenca entre elas E o argumento do
+          docs/18-MONETIZACAO-PLANO.md §M.1: com o dado da própria pessoa converte, sem ele vira
+          folheto. Quem for mexer aqui precisa ver as duas.
+        */}
+        <BloqueioPlano
+          precisaDo="essencial"
+          acao="avisar todas de uma vez"
+          evidencia={{ quantidade: 23, substantivo: 'clientes marcadas, esperando para voltar', valorCents: 184000 }}
+          alternativa={<button type="button">Avisar uma de cada vez, de graça</button>}
+        />
+        <BloqueioPlano
+          className="mt-3"
+          precisaDo="avancado"
+          acao="guardar ficha de saúde"
+        />
       </Secao>
 
       <Secao titulo="StatTile">
