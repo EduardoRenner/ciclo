@@ -2,20 +2,14 @@ import { Check, Lock, Minus } from 'lucide-react'
 import Link from 'next/link'
 import { headers } from 'next/headers'
 
-import {
-  NOME_DO_PLANO,
-  ORDEM_DOS_PLANOS,
-  PLANOS,
-  precoDoPlanoPorMes,
-  verificarLimite,
-  type PlanoTier,
-} from '@/core/billing/planos'
+import { NOME_DO_PLANO, ORDEM_DOS_PLANOS, precoDoPlanoPorMes, verificarLimite } from '@/core/billing/planos'
 import Card from '@/components/ui/card'
 import PageHeader from '@/components/ui/page-header'
 import SectionHeader from '@/components/ui/section-header'
 import StatTile from '@/components/ui/stat-tile'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
+import { CARTOES } from '@/lib/planos-cartoes'
 import { contextoDePlano } from '@/server/services/planos'
 
 /** Sem `await`, viraria página estática — quebra o nonce do CSP por requisição. */
@@ -43,23 +37,6 @@ export const metadata = { title: 'Meu plano' }
  *
  * Quando a cobrança existir, é aqui que ela entra.
  */
-
-/** O que muda ao subir para cada degrau, na voz de quem usa — não em nome de módulo. */
-const O_QUE_MUDA: Record<PlanoTier, string[]> = {
-  gratis: [],
-  essencial: [
-    'Chamar de volta a base inteira de uma vez',
-    'Clientes sem limite',
-    'Comanda, caixa e orçamento',
-    'Sua página fica sem o selo do CICLO',
-  ],
-  equipe: [
-    `Até ${PLANOS.equipe.maxProfissionais} profissionais, cada um com sua agenda`,
-    'Comissão e extrato de cada um',
-    'Fidelidade e pontos',
-  ],
-  avancado: ['Profissionais sem limite', 'Controle de estoque', 'Ficha de saúde em cofre cifrado'],
-}
 
 function textoDeTeto(limite: number | null, usado: number): string {
   if (limite === null) return `${usado} · sem limite`
@@ -161,11 +138,16 @@ export default async function PaginaMeuPlano() {
                   <p className="text-corpo font-semibold text-txt">{NOME_DO_PLANO[tier]}</p>
                   <p className="tabular text-corpo font-bold text-txt">{precoDoPlanoPorMes(tier)}</p>
                 </div>
+                {/*
+                  A MESMA lista da página pública de preço. O que ela leu antes de pagar e o que
+                  vê aqui dentro precisam ser a mesma frase — e, de quebra, esta tela herda o
+                  teste que impede a página de preço de prometer o que o código não libera.
+                */}
                 <ul className="mt-3 flex flex-col gap-1.5">
-                  {O_QUE_MUDA[tier].map((item) => (
-                    <li key={item} className="flex gap-2 text-secundario text-txt-2">
+                  {(CARTOES.find((c) => c.tier === tier)?.inclui ?? []).map((item) => (
+                    <li key={item.texto} className="flex gap-2 text-secundario text-txt-2">
                       <Check aria-hidden className="mt-0.5 size-4 shrink-0 text-ok" />
-                      <span>{item}</span>
+                      <span>{item.texto}</span>
                     </li>
                   ))}
                 </ul>

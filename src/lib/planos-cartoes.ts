@@ -1,3 +1,13 @@
+/**
+ * Mora em `lib/` e não dentro de `app/(public)/precos/` porque tem DOIS leitores: a página pública
+ * de preço, que vende para quem ainda não é cliente, e "Meu plano", que mostra a quem já é o que
+ * cada degrau acima libera.
+ *
+ * Ter uma lista só é decisão de produto, não economia de linha: o que a pessoa leu antes de pagar
+ * e o que ela vê depois, dentro do app, precisam ser a mesma frase. Duas listas com as mesmas
+ * promessas escritas de jeitos diferentes é como se descobre, tarde, que uma das duas mentia.
+ */
+
 import { PLANOS, type Capacidade, type ModuloKey, type PlanoTier } from '@/core/billing/planos'
 
 /**

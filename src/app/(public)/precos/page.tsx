@@ -3,7 +3,7 @@ import Link from 'next/link'
 
 import { NOME_DO_PLANO, PLANOS, precoDoPlano } from '@/core/billing/planos'
 
-import { CARTOES } from './cartoes'
+import { CARTOES } from '@/lib/planos-cartoes'
 import IconeAnel from '@/components/ui/icone-anel'
 
 import type { Metadata } from 'next'

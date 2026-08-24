@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { CARTOES } from '@/app/(public)/precos/cartoes'
+import { CARTOES } from '@/lib/planos-cartoes'
 import { ORDEM_DOS_PLANOS, PLANOS, type PlanoTier } from '@/core/billing/planos'
 
 /**

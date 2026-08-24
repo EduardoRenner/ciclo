@@ -2430,3 +2430,11 @@ ticket baixo. Verificado por mutação nas duas direções.
 importar os dados, e exportar coisa arbitrária de um arquivo de página do App Router não é padrão
 documentado do Next — funciona hoje e uma versão futura pode recusar. Módulo irmão remove o risco
 e é a separação idiomática: dado de um lado, renderização do outro.
+
+2026-08-24 · "Meu plano" passa a usar a MESMA lista da página pública de preço · A tela tinha um
+`O_QUE_MUDA` próprio, em prosa, descrevendo os mesmos degraus com outras palavras — segunda cópia
+das mesmas promessas, e sem nenhuma verificação. Agora as duas leem `src/lib/planos-cartoes.ts`.
+Não é economia de linha: **o que a pessoa leu antes de pagar e o que ela vê depois, dentro do app,
+precisam ser a mesma frase.** Duas listas com as mesmas promessas escritas de jeitos diferentes é
+como se descobre, tarde, que uma das duas mentia. De quebra, "Meu plano" herdou o teste que impede
+a página de preço de prometer o que o código não libera.
