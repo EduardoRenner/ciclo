@@ -2377,3 +2377,19 @@ do guarda passava vazia** — ela procurava no código-fonte a string devolvida 
 falhar não é guarda. A versão final normaliza NBSP para espaço comum antes de comparar. Vale para
 qualquer teste futuro que compare texto formatado com texto escrito à mão — o `dinheiro` de
 `src/lib/formato.ts` tem o mesmo comportamento.
+
+2026-08-24 · A página de preço para de anunciar "Até 50 clientes" como se fosse parede · O teto de
+clientes é SUAVE no código (§L.1: avisa e deixa passar). Uma tabela de preço que diz "até 50" sem
+mais nada promete um limite que o produto não tem — e é o tipo de letra miúda ao contrário que
+ninguém perdoa depois. Os números passaram a vir de `PLANOS` do core (nunca escritos à mão), e
+entrou uma pergunta no FAQ: "E se eu passar de 50 clientes?" → "Você continua cadastrando. O CICLO
+avisa quando você chega perto, mas não trava no meio de um atendimento — e nenhuma ficha some. O
+limite que vale de verdade no Grátis é o de um profissional." De quebra, o array local de cartões
+que se chamava `PLANOS` virou `CARTOES`: colidia com o `PLANOS` do core e era o pior nome dos dois.
+
+2026-08-24 · Os três guardas de duplicação foram verificados por MUTAÇÃO, não por confiança ·
+Depois de descobrir que a primeira versão do guarda de preço passava vazia (armadilha do NBSP),
+não dava para confiar em guarda que nunca falhou. Cada um foi quebrado de propósito e observado
+reprovando: preço escrito à mão numa tela, tabela de nomes redeclarada, e o catálogo de módulos do
+core divergindo da migration 0041. Os três reprovaram, e a mensagem nomeia o arquivo culpado.
+Guarda que nunca falhou é guarda não testado.

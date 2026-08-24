@@ -1,7 +1,7 @@
 import { ArrowRight, Check, Minus } from 'lucide-react'
 import Link from 'next/link'
 
-import { NOME_DO_PLANO, precoDoPlano, type PlanoTier } from '@/core/billing/planos'
+import { NOME_DO_PLANO, PLANOS, precoDoPlano, type PlanoTier } from '@/core/billing/planos'
 import IconeAnel from '@/components/ui/icone-anel'
 
 import type { Metadata } from 'next'
@@ -54,7 +54,8 @@ type Plano = {
   destaque?: boolean
 }
 
-const PLANOS: Plano[] = [
+/** O conteúdo dos cartões. Os NÚMEROS vêm do core (`PLANOS`), nunca daqui. */
+const CARTOES: Plano[] = [
   {
     tier: 'gratis',
     chamada: 'Para sempre, sem cartão.',
@@ -62,7 +63,7 @@ const PLANOS: Plano[] = [
     inclui: [
       'Agenda sem risco de marcar dois no mesmo horário',
       'Sua página de agendamento com link para a bio',
-      'Até 50 clientes com ficha e histórico',
+      `${PLANOS.gratis.maxClientes} clientes com ficha e histórico`,
       'Motor de Ciclo: veja quem sumiu e quanto isso vale',
       'Lembrete e confirmação de agendamento',
     ],
@@ -84,7 +85,7 @@ const PLANOS: Plano[] = [
   },
   {
     tier: 'equipe',
-    chamada: 'Por mês, até cinco profissionais.',
+    chamada: `Por mês, até ${PLANOS.equipe.maxProfissionais} profissionais.`,
     paraQuem: 'Você contratou alguém e precisa de agenda e acerto separados.',
     inclui: [
       'Tudo do Essencial',
@@ -116,8 +117,18 @@ const PERGUNTAS = [
   },
   {
     pergunta: 'O grátis expira?',
+    resposta: `Não. É grátis para sempre, com ${PLANOS.gratis.maxClientes} clientes e ${PLANOS.gratis.maxProfissionais} profissional. Não é um teste que vira cobrança sem avisar.`,
+  },
+  {
+    /*
+      Esta pergunta existe porque o teto de clientes é SUAVE no código (§L.1: avisa e deixa
+      passar), e uma tabela de preço que diz "até 50" sem mais nada promete uma parede que o
+      produto não tem. Prometer menos do que se entrega é honesto; prometer um limite que não
+      existe é o tipo de letra miúda ao contrário que ninguém perdoa depois.
+    */
+    pergunta: `E se eu passar de ${PLANOS.gratis.maxClientes} clientes?`,
     resposta:
-      'Não. É grátis para sempre, com 50 clientes e um profissional. Não é um teste que vira cobrança sem avisar.',
+      'Você continua cadastrando. O CICLO avisa quando você chega perto, mas não trava o cadastro no meio de um atendimento — e nenhuma ficha some. O limite que vale de verdade no Grátis é o de um profissional.',
   },
   {
     pergunta: 'Se eu parar de pagar, perco meus clientes?',
@@ -180,7 +191,7 @@ export default function Precos() {
       </section>
 
       <section className="flex flex-col gap-4">
-        {PLANOS.map((p) => (
+        {CARTOES.map((p) => (
           <article
             key={p.tier}
             className={
