@@ -1,9 +1,14 @@
-import { BadgeDollarSign, Bell, Clock, FileText, MessageSquareText, Megaphone, Repeat, Repeat2, ScrollText, Scissors, ShieldCheck, Package, Store, Users, Wallet } from 'lucide-react'
+import { BadgeDollarSign, Bell, Clock, FileText, MessageSquareText, Megaphone, Repeat, Repeat2, ScrollText, Scissors, ShieldCheck, Package, Store, ToggleRight, Users, Wallet } from 'lucide-react'
 import Link from 'next/link'
+
+import { headers } from 'next/headers'
 
 import Card from '@/components/ui/card'
 import PageHeader from '@/components/ui/page-header'
 import SectionHeader from '@/components/ui/section-header'
+import { contextoAtual } from '@/server/auth/tenant'
+import { criarClienteDoUsuario } from '@/server/db/server-client'
+import { listarModulos } from '@/server/services/modulos'
 
 import SairDaConta from './sair'
 
@@ -30,23 +35,23 @@ const GRUPOS = [
     titulo: 'Falar com a cliente',
     itens: [
       { href: '/admin/config/mensagens', titulo: 'Mensagens prontas', descricao: 'Textos que você manda com um toque', icone: MessageSquareText },
-      { href: '/admin/campanhas', titulo: 'Campanhas', descricao: 'Mandar em lote e ver quanto voltou em receita', icone: Megaphone },
+      { href: '/admin/campanhas', titulo: 'Campanhas', descricao: 'Mandar em lote e ver quanto voltou em receita', icone: Megaphone, modulo: 'campaigns' },
       { href: '/admin/config/notificacoes', titulo: 'Notificações', descricao: 'Ativar lembretes no aparelho', icone: Bell },
     ],
   },
   {
     titulo: 'Dinheiro',
     itens: [
-      { href: '/admin/caixa', titulo: 'Caixa', descricao: 'Fechamento do dia, do mês e a comissão de cada um', icone: Wallet },
-      { href: '/admin/estoque', titulo: 'Estoque', descricao: 'Quanto tem de cada produto e registrar compra', icone: Package },
+      { href: '/admin/caixa', titulo: 'Caixa', descricao: 'Fechamento do dia, do mês e a comissão de cada um', icone: Wallet, modulo: 'register' },
+      { href: '/admin/estoque', titulo: 'Estoque', descricao: 'Quanto tem de cada produto e registrar compra', icone: Package, modulo: 'stock' },
     ],
   },
   {
     titulo: 'Receita recorrente',
     itens: [
-      { href: '/admin/config/planos', titulo: 'Fidelidade e assinatura', descricao: 'Pontos por atendimento e planos mensais', icone: Repeat },
-      { href: '/admin/orcamentos', titulo: 'Orçamentos', descricao: 'Acompanhar quem aprovou, recusou ou ainda não respondeu', icone: FileText },
-      { href: '/admin/series', titulo: 'Séries de recorrência', descricao: 'Ver quem repete e cancelar quando precisar', icone: Repeat2 },
+      { href: '/admin/config/planos', titulo: 'Fidelidade e assinatura', descricao: 'Pontos por atendimento e planos mensais', icone: Repeat, modulo: 'loyalty' },
+      { href: '/admin/orcamentos', titulo: 'Orçamentos', descricao: 'Acompanhar quem aprovou, recusou ou ainda não respondeu', icone: FileText, modulo: 'quotes' },
+      { href: '/admin/series', titulo: 'Séries de recorrência', descricao: 'Ver quem repete e cancelar quando precisar', icone: Repeat2, modulo: 'recurrence' },
     ],
   },
   {
@@ -59,12 +64,13 @@ const GRUPOS = [
     titulo: 'Sua conta no CICLO',
     itens: [
       { href: '/admin/config/meu-plano', titulo: 'Meu plano', descricao: 'O que voce usa, o que cada plano libera', icone: BadgeDollarSign },
+      { href: '/admin/config/modulos', titulo: 'Modulos', descricao: 'Ligue so o que voce usa na interface', icone: ToggleRight },
     ],
   },
   {
     titulo: 'Privacidade',
     itens: [
-      { href: '/admin/config/cofre', titulo: 'Trilha do cofre', descricao: 'Quem acessou a ficha de saúde de cada cliente', icone: ScrollText },
+      { href: '/admin/config/cofre', titulo: 'Trilha do cofre', descricao: 'Quem acessou a ficha de saúde de cada cliente', icone: ScrollText, modulo: 'health_records' },
       { href: '/admin/config/seguranca', titulo: 'Segurança', descricao: 'Autenticação em duas etapas da sua conta', icone: ShieldCheck },
     ],
   },
@@ -72,13 +78,37 @@ const GRUPOS = [
 
 export const metadata = { title: "Configurações" }
 
-export default function PaginaConfig() {
+/**
+ * A tela de módulos promete, com estas palavras, que "desligar esconde da interface". Este filtro
+ * é o que torna a promessa verdadeira: item de hub cujo módulo está desligado (pelo dono) ou fora
+ * do eixo do negócio não aparece aqui.
+ *
+ * Bloqueado pelo PLANO continua aparecendo, e isso é de propósito — a regra 5.2 manda mostrar o
+ * motivo e o caminho, e sumir com o item seria esconder o que dá para comprar. Quem some é só o
+ * que não faz sentido (eixo) ou o que a pessoa escolheu não ver (dono).
+ */
+export default async function PaginaConfig() {
+  const ctx = await contextoAtual(new Request('https://interno/config', { headers: await headers() }))
+  const db = await criarClienteDoUsuario()
+  const modulos = await listarModulos(db, ctx.tenantId)
+
+  const visivel = (chave?: string) => {
+    if (!chave) return true
+    const m = modulos.find((x) => x.key === chave)
+    // Ausente da lista = fora do eixo (listarModulos já filtrou). Não faz sentido, então some.
+    if (!m) return false
+    return m.veredito.estado !== 'desligado_pelo_dono'
+  }
+
+  const grupos = GRUPOS.map((g) => ({ ...g, itens: g.itens.filter((i) => visivel('modulo' in i ? i.modulo : undefined)) }))
+    .filter((g) => g.itens.length > 0)
+
   return (
     <>
       <PageHeader titulo="Configurações" />
 
       <div className="flex flex-col gap-6">
-        {GRUPOS.map((grupo) => (
+        {grupos.map((grupo) => (
           <section key={grupo.titulo}>
             <SectionHeader>{grupo.titulo}</SectionHeader>
             <div className="flex flex-col gap-2">
