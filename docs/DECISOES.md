@@ -2297,3 +2297,27 @@ insinuar uma parede que não existe. Se isso deve algum dia virar limite duro é
 (Do Eduardo); o que NÃO pode acontecer é o marketing prometer um teto que o código não aplica.
 O aviso só aparece a partir de 80% do teto: contador permanente de "42/50" no alto da tela
 transforma trabalho normal em ansiedade.
+
+2026-08-24 · Tela "Meu plano" mora em `/admin/config/meu-plano`, NÃO em `/admin/config/planos` ·
+`/admin/config/planos` já existe e significa "Fidelidade e assinatura" — o salão vendendo plano
+mensal para a CLIENTE dele. É a mesma colisão que a regra 5.6 do prompt de monetização manda
+evitar em nome de tabela (`subscription_plans`/`client_subscriptions`), e ela vale igual para o
+espaço de URL: duas telas chamadas "planos" com significados opostos é armadilha para quem chegar
+depois. No hub de configurações ela ganhou grupo próprio ("Sua conta no CICLO") pelo mesmo motivo
+— pendurar em "Receita recorrente", junto de "Fidelidade e assinatura", juntaria exatamente as
+duas coisas que a regra manda separar.
+
+2026-08-24 · A tela "Meu plano" não tem botão de assinar nem de cancelar · Regra 5.4: não fingir
+que integração de pagamento está pronta. Um botão "cancelar assinatura" que abre formulário morto
+é pior que a ausência dele. A Fase K exige que cancelar custe os mesmos toques que assinar — hoje
+os dois custam a mesma coisa (uma conversa), o que satisfaz a regra pelo caminho honesto
+disponível. Quando a cobrança existir, é nessa tela que ela entra.
+
+2026-08-24 · Item P-B do plano de monetização reescrito (nova seção P.1.1) · O diagnóstico
+original estava errado: a Fase K atribuía os 5 tenants órfãos a "suíte que falhou antes do
+afterAll limpar". A causa real é `.env.local` apontar para o Supabase de produção, então a suíte
+os CRIA na base real toda vez que roda — apagá-los é enxugar gelo. P-B passa a ter dois passos
+(apontar teste para banco separado, DEPOIS limpar) e deixa de ser "trivial": vira mudança de
+infraestrutura, com o risco do teto de projetos da organização Supabase gratuita. Também
+adicionado à auto-auditoria do §R.6, porque é o sétimo caso do mesmo padrão — a primeira versão
+do plano errou para o lado otimista, por ausência de dado.
