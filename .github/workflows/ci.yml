@@ -208,6 +208,11 @@ jobs:
           # isto (`telefone.ts`, de propósito: nunca hashear sem sal). Mesmo espírito do VAULT_KEK
           # acima — sal descartável, só para o banco efêmero; o sal de produção nunca entra aqui.
           PHONE_HASH_SALT: ci-descartavel-nao-e-segredo
+          # Achado na 5ª execução (2026-08-24): idem, para os links assinados de confirmação,
+          # avaliação e lembrete (`token-assinado.ts`) — sem `PUBLIC_LINK_SIGNING_KEY` nem
+          # `CRON_SECRET`, `chaveDeAssinatura()` lança de propósito. Mesmo espírito: valor
+          # descartável, só para o banco efêmero.
+          PUBLIC_LINK_SIGNING_KEY: ci-descartavel-nao-e-segredo-2
         run: pnpm test:integration
 
       - name: Teste de isolamento multi-tenant
