@@ -9,7 +9,17 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 /** Linhas suficientes para provar o critério de aceite (500 em <10s) com folga; acima disso é abuso, não planilha de salão. */
 const MAX_LINHAS = 5000
-const TAMANHO_DO_LOTE = 200
+
+/**
+ * Era 200. Corrigido para 100 depois de confirmado no CI (S13, 2026-08-24, com diagnóstico
+ * temporário que já saiu): o `.in('phone_hash', ...)` da checagem de duplicata é `GET`, então
+ * cada hash vira ~65 caracteres na própria URL — 200 hashes de 64 caracteres batiam no teto de
+ * tamanho de URL do gateway local (`supabase start`), com a mensagem exata `URI too long`. Em
+ * produção nunca apareceu porque o gateway hospedado tem um teto mais folgado — o comentário
+ * antigo aqui só sabia que **500 sem lote nenhum** falhava; nunca foi medido contra um gateway
+ * mais restrito até o CI rodar pela primeira vez. 100 é seguro com folga nos dois ambientes.
+ */
+const TAMANHO_DO_LOTE = 100
 
 /**
  * Espelham `EsquemaCliente` (`clientes.ts`), e não é coincidência: o achado S7 da auditoria de
@@ -177,9 +187,10 @@ export async function importarClientes(
     .map((l) => ({ linha: l.linha, hash: hashTelefone(l.phoneE164!) }))
 
   const hashesExistentes = new Set<string>()
-  // Em lotes: um `.in()` com 500 hashes de 64 caracteres vira uma URL de
-  // dezenas de KB, e o PostgREST recusa (medido: a checagem inteira falhava
-  // com 500 linhas, mesmo que cada hash sozinho seja válido).
+  // Em lotes: um `.in()` com centenas de hashes de 64 caracteres vira uma URL longa, e o
+  // gateway pode recusar antes mesmo de a consulta chegar ao Postgres — medido de verdade no CI
+  // (S13, 2026-08-24): `URI too long` num gateway local mais restrito que o de produção, com
+  // `TAMANHO_DO_LOTE` em 200. Reduzido para 100, folgado nos dois ambientes.
   for (let i = 0; i < hashesDoLote.length; i += TAMANHO_DO_LOTE) {
     const grupo = hashesDoLote.slice(i, i + TAMANHO_DO_LOTE)
     const { data, error } = await db
@@ -188,26 +199,7 @@ export async function importarClientes(
       .eq('tenant_id', tenantId)
       .is('deleted_at', null)
       .in('phone_hash', grupo.map((h) => h.hash))
-    if (error) {
-      // Diagnóstico temporário (S13, 2026-08-24): esta consulta falhou 3x seguidas só no CI
-      // (nunca ao rodar isolada nem em lote contra produção) e a causa nunca apareceu em log
-      // nenhum — `AppError` não serializa `cause`, e como `importarClientes` é chamada direto
-      // pelo teste, sem passar pelo `rota()` que loga, não sobrava rastro nenhum a seguir. Isto
-      // aqui só existe para a PRÓXIMA execução revelar o `code`/`message`/`details`/`hint` reais
-      // do Postgres/PostgREST — remover assim que a causa for confirmada e corrigida de verdade.
-      console.error(
-        JSON.stringify({
-          level: 'error',
-          event: 'importacao_clientes_lote_falhou_diagnostico',
-          loteTamanho: grupo.length,
-          code: error.code,
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-        }),
-      )
-      throw new AppError('INTERNAL', { cause: error })
-    }
+    if (error) throw new AppError('INTERNAL', { cause: error })
     for (const row of data ?? []) if (row.phone_hash) hashesExistentes.add(row.phone_hash)
   }
 
