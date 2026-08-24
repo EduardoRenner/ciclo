@@ -1,0 +1,265 @@
+/**
+ * docs/18-MONETIZACAO-PLANO.md §L — o ÚNICO lugar que responde "este tenant pode X?".
+ *
+ * O plano é explícito sobre o motivo de isto existir concentrado: espalhar a regra por trinta
+ * rotas é como ela some. Toda pergunta de permissão comercial passa por aqui, e aqui não há I/O
+ * (regra 5 do CLAUDE.md) — quem lê banco é a camada de `server/`, que traz os fatos e pergunta.
+ *
+ * Os LIMITES numéricos abaixo são [S] no plano (§D.3): não há uso real para calibrá-los, só o
+ * `dom-rocha` semeado. Estão aqui porque um limite explícito e errado é mais honesto e mais fácil
+ * de corrigir que um limite implícito espalhado. Ver a pendência registrada em docs/DECISOES.md.
+ */
+
+export type PlanoTier = 'gratis' | 'essencial' | 'equipe' | 'avancado'
+
+export type Eixo = 'onde' | 'cobranca' | 'inicio' | 'ritmo'
+
+export type ModuloKey =
+  | 'agenda'
+  | 'cycle_engine'
+  | 'public_page'
+  | 'clients'
+  | 'reminders'
+  | 'recurrence'
+  | 'quotes'
+  | 'routing'
+  | 'register'
+  | 'stock'
+  | 'loyalty'
+  | 'club'
+  | 'campaigns'
+  | 'team'
+  | 'health_records'
+  | 'documents'
+
+/** Capacidades que não são módulo — são o que o degrau permite fazer com o módulo que já tem. */
+export type Capacidade = 'envio_em_lote' | 'remover_selo'
+
+type Definicao = {
+  /** null = sem teto. */
+  maxProfissionais: number | null
+  /** null = sem teto. */
+  maxClientes: number | null
+  modulos: readonly ModuloKey[]
+  capacidades: readonly Capacidade[]
+}
+
+const HERANCA: Record<PlanoTier, PlanoTier | null> = {
+  gratis: null,
+  essencial: 'gratis',
+  equipe: 'essencial',
+  avancado: 'equipe',
+}
+
+const PROPRIOS: Record<PlanoTier, Omit<Definicao, 'modulos'> & { modulos: readonly ModuloKey[] }> = {
+  gratis: {
+    maxProfissionais: 1,
+    maxClientes: 50,
+    // O Motor de Ciclo está aqui de propósito (§D.2): o grátis MOSTRA quem sumiu e quanto vale.
+    // O que ele não dá é a alavanca de mandar para todos de uma vez — e mandar um a um pelo
+    // wa.me continua funcionando para sempre, de graça.
+    modulos: ['agenda', 'cycle_engine', 'public_page', 'clients', 'reminders'],
+    capacidades: [],
+  },
+  essencial: {
+    maxProfissionais: 1,
+    maxClientes: null,
+    modulos: ['campaigns', 'register', 'quotes', 'routing'],
+    capacidades: ['envio_em_lote', 'remover_selo'],
+  },
+  equipe: {
+    maxProfissionais: 5,
+    maxClientes: null,
+    modulos: ['team', 'loyalty'],
+    capacidades: [],
+  },
+  avancado: {
+    maxProfissionais: null,
+    maxClientes: null,
+    // Anamnese no degrau mais alto não é gula: é dado de saúde, com custo de conformidade real
+    // (LGPD, cifragem, trilha de acesso). Quem precisa disso fatura para pagar.
+    modulos: ['stock', 'health_records', 'recurrence', 'club', 'documents'],
+    capacidades: [],
+  },
+}
+
+function resolver(tier: PlanoTier): Definicao {
+  const modulos = new Set<ModuloKey>()
+  const capacidades = new Set<Capacidade>()
+  let atual: PlanoTier | null = tier
+  while (atual) {
+    for (const m of PROPRIOS[atual].modulos) modulos.add(m)
+    for (const c of PROPRIOS[atual].capacidades) capacidades.add(c)
+    atual = HERANCA[atual]
+  }
+  return {
+    maxProfissionais: PROPRIOS[tier].maxProfissionais,
+    maxClientes: PROPRIOS[tier].maxClientes,
+    modulos: [...modulos],
+    capacidades: [...capacidades],
+  }
+}
+
+export const PLANOS: Record<PlanoTier, Definicao> = {
+  gratis: resolver('gratis'),
+  essencial: resolver('essencial'),
+  equipe: resolver('equipe'),
+  avancado: resolver('avancado'),
+}
+
+const ORDEM: readonly PlanoTier[] = ['gratis', 'essencial', 'equipe', 'avancado']
+
+/** O degrau mais barato que libera este módulo, para a tela de bloqueio poder dizer o caminho. */
+export function menorPlanoCom(modulo: ModuloKey): PlanoTier | null {
+  return ORDEM.find((t) => PLANOS[t].modulos.includes(modulo)) ?? null
+}
+
+export function menorPlanoComCapacidade(capacidade: Capacidade): PlanoTier | null {
+  return ORDEM.find((t) => PLANOS[t].capacidades.includes(capacidade)) ?? null
+}
+
+// ---------------------------------------------------------------------------------------------
+// Precedência de três camadas (§D.5). A ordem é a parte fácil de errar: EIXO antes de PLANO.
+// Se plano viesse primeiro, um eletricista veria "Fidelidade bloqueada, assine o Equipe" para um
+// módulo que ele nunca vai usar — regra 5.2 aplicada ao contrário, que vira ruído e queima a tela
+// de bloqueio, a peça de conversão mais importante do produto.
+// ---------------------------------------------------------------------------------------------
+
+export type Veredito =
+  /** Não faz sentido para este negócio. Some da interface, sem oferta nenhuma. */
+  | { estado: 'fora_do_eixo'; eixo: Eixo }
+  /** Faz sentido, mas o degrau não libera. Aparece bloqueado, com motivo e caminho. */
+  | { estado: 'bloqueado_pelo_plano'; precisaDo: PlanoTier }
+  /** Liberado, mas o dono desligou. Aparece desligado e reversível por ele. */
+  | { estado: 'desligado_pelo_dono' }
+  | { estado: 'liberado' }
+
+export type ContextoDoTenant = {
+  plano: PlanoTier
+  /** Os quatro eixos da migration 0023. `null` = o tenant ainda não respondeu o onboarding. */
+  eixos: Partial<Record<Eixo, string | null>>
+  /** `tenant_modules` com origem 'dono'. Ausente = o dono não mexeu, vale o padrão. */
+  desligadosPeloDono?: readonly ModuloKey[]
+}
+
+/**
+ * `exigeEixo` diz qual eixo condiciona o módulo (espelha `modules.eixo` da migration 0041), e
+ * `satisfaz` decide se o valor daquele eixo justifica o módulo existir.
+ *
+ * Mantido como dado, e não como `if` espalhado, porque o catálogo de profissões cresce e a
+ * pergunta "este módulo faz sentido aqui?" tem que ter uma resposta só.
+ */
+const CONDICAO_DE_EIXO: Partial<Record<ModuloKey, { eixo: Eixo; satisfaz: (valor: string) => boolean }>> = {
+  routing: { eixo: 'onde', satisfaz: (v) => v === 'vai_ate' || v === 'hibrido' },
+  recurrence: { eixo: 'ritmo', satisfaz: (v) => v === 'recorrente' || v === 'sazonal' },
+  quotes: { eixo: 'inicio', satisfaz: (v) => v === 'orcamento' },
+}
+
+export function podeUsarModulo(ctx: ContextoDoTenant, modulo: ModuloKey): Veredito {
+  const condicao = CONDICAO_DE_EIXO[modulo]
+  if (condicao) {
+    const valor = ctx.eixos[condicao.eixo]
+    // Eixo não respondido ainda não esconde nada: onboarding incompleto não é motivo para sumir
+    // com funcionalidade. Só um valor CONHECIDO e incompatível esconde.
+    if (valor != null && !condicao.satisfaz(valor)) {
+      return { estado: 'fora_do_eixo', eixo: condicao.eixo }
+    }
+  }
+
+  if (!PLANOS[ctx.plano].modulos.includes(modulo)) {
+    const precisaDo = menorPlanoCom(modulo)
+    // Módulo que nenhum degrau libera é erro de catálogo, não bloqueio comercial — não invente
+    // um upgrade que não existe.
+    if (!precisaDo) return { estado: 'fora_do_eixo', eixo: 'onde' }
+    return { estado: 'bloqueado_pelo_plano', precisaDo }
+  }
+
+  if (ctx.desligadosPeloDono?.includes(modulo)) return { estado: 'desligado_pelo_dono' }
+
+  return { estado: 'liberado' }
+}
+
+export function podeUsarCapacidade(ctx: ContextoDoTenant, capacidade: Capacidade): Veredito {
+  if (PLANOS[ctx.plano].capacidades.includes(capacidade)) return { estado: 'liberado' }
+  const precisaDo = menorPlanoComCapacidade(capacidade)
+  if (!precisaDo) return { estado: 'fora_do_eixo', eixo: 'onde' }
+  return { estado: 'bloqueado_pelo_plano', precisaDo }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Limites (§L.1). Duro RECUSA; suave AVISA e deixa passar.
+// A distinção não é estilística: travar cadastro de cliente no meio de um atendimento é a forma
+// mais rápida de o salão abandonar o sistema — mesma lógica da armadilha de estoque no CLAUDE.md.
+// ---------------------------------------------------------------------------------------------
+
+export type Recurso = 'profissionais' | 'clientes'
+
+export type Severidade = 'duro' | 'suave'
+
+const SEVERIDADE: Record<Recurso, Severidade> = {
+  profissionais: 'duro',
+  clientes: 'suave',
+}
+
+export type ResultadoDeLimite = {
+  dentro: boolean
+  /** null = sem teto neste degrau. */
+  limite: number | null
+  restante: number | null
+  severidade: Severidade
+  /** Verdadeiro a partir de 80% do teto — o gancho do aviso antes de doer. */
+  perto: boolean
+  /** O degrau que resolve, quando existe um acima que amplia o teto. */
+  precisaDo: PlanoTier | null
+}
+
+function tetoDe(tier: PlanoTier, recurso: Recurso): number | null {
+  return recurso === 'profissionais' ? PLANOS[tier].maxProfissionais : PLANOS[tier].maxClientes
+}
+
+function menorPlanoQueComporta(recurso: Recurso, quantidade: number): PlanoTier | null {
+  return ORDEM.find((t) => {
+    const teto = tetoDe(t, recurso)
+    return teto === null || teto >= quantidade
+  }) ?? null
+}
+
+/**
+ * @param usoAtual quantos já existem HOJE
+ * @param aAdicionar quantos a operação quer criar (1 no caso normal, N numa importação de CSV)
+ */
+export function verificarLimite(
+  ctx: ContextoDoTenant,
+  recurso: Recurso,
+  usoAtual: number,
+  aAdicionar = 1,
+): ResultadoDeLimite {
+  const limite = tetoDe(ctx.plano, recurso)
+  const severidade = SEVERIDADE[recurso]
+  const total = usoAtual + aAdicionar
+
+  if (limite === null) {
+    return { dentro: true, limite: null, restante: null, severidade, perto: false, precisaDo: null }
+  }
+
+  const dentro = total <= limite
+  const restante = Math.max(0, limite - usoAtual)
+  return {
+    dentro,
+    limite,
+    restante,
+    severidade,
+    perto: usoAtual >= Math.floor(limite * 0.8),
+    precisaDo: dentro ? null : menorPlanoQueComporta(recurso, total),
+  }
+}
+
+/**
+ * Regra 5.1, inviolável: cair de degrau NUNCA apaga nem esconde dado. Quem está acima do teto do
+ * degrau novo continua com tudo à vista — o que trava é CRIAR mais. Esta função existe para que
+ * essa distinção tenha um nome e um teste, em vez de virar um `if` esquecido numa rota.
+ */
+export function podeCriar(ctx: ContextoDoTenant, recurso: Recurso, usoAtual: number, aAdicionar = 1): boolean {
+  const r = verificarLimite(ctx, recurso, usoAtual, aAdicionar)
+  return r.severidade === 'suave' ? true : r.dentro
+}
