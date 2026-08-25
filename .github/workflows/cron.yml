@@ -20,9 +20,29 @@ name: cron
 
 on:
   schedule:
-    # Motor de Ciclo e segmentos: 06:10 UTC = 03:10 em São Paulo. Depois da virada do dia no fuso
-    # do tenant e antes de qualquer um abrir o app.
+    # CINCO horários, e a razão é uma costura que quase passou em silêncio.
+    #
+    # As rotas não processam "todos os tenants": cada uma só age no tenant cuja HORA LOCAL bate
+    # com a dela — `recompute-cycles` às 3h, `segments` às 4h. Esse desenho pressupunha o cron do
+    # Vercel disparando a cada 15 minutos, que era o plano antigo (o comentário no topo de
+    # `src/app/api/cron/recompute-cycles/route.ts` ainda descreve esse mundo).
+    #
+    # Com UM disparo diário às 06:10 UTC, o resultado medido era:
+    #   recompute-cycles  → só pegava UTC-3 (São Paulo);
+    #   segments          → só pegaria UTC-2, ou seja, Fernando de Noronha. Na prática, ninguém.
+    # E falhava em SILÊNCIO: a rota devolve 200 com `tenantsProcessados: 0` e o job fica verde.
+    # Quem se cadastrasse em Manaus, Cuiabá ou Rio Branco nunca teria o Motor de Ciclo recalculado
+    # — e o fuso vem do NAVEGADOR no onboarding, então isso não é hipótese remota.
+    #
+    # Rodar de hora em hora consertaria, e custaria ~43% da cota de Actions do repositório privado.
+    # Estas cinco horas cobrem hora local 3 E 4 nos quatro fusos do Brasil (UTC-2 a UTC-5) por ~9%.
+    # `tests/unit/server/cron-cobre-os-fusos.test.ts` confere essa aritmética a cada build — se
+    # alguém mudar a hora de uma rota ou mexer neste schedule, o teste reprova antes do silêncio.
+    - cron: '10 5 * * *'
     - cron: '10 6 * * *'
+    - cron: '10 7 * * *'
+    - cron: '10 8 * * *'
+    - cron: '10 9 * * *'
   workflow_dispatch:
     inputs:
       job:
