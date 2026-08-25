@@ -130,6 +130,55 @@ não pode ser lido como prova de que o cenário funciona.
 
 ---
 
+## 5.1 · ⭐ Achado nº 7, na frente de performance: 129 kB de Sentry inerte
+
+Aberta a auditoria de performance, o primeiro número já era o achado — e ele é da **mesma família
+dos outros seis**, agora na camada do que o navegador baixa.
+
+**Medido em 2026-08-25**, sobre o build e sobre o bundle de produção:
+
+| | |
+|---|---|
+| First Load JS compartilhado por **todas** as páginas | **188 kB** **[M]** |
+| Dentro dele, o maior chunk | **129 kB** gzip · 412 kB brutos **[M]** |
+| O que há nesse chunk | **Sentry** — 170 ocorrências de `sentry`, mais `captureException` e `sentry.io`; zero Supabase, zero lucide **[M]** |
+| O segundo chunk | React, 54 kB **[M]** |
+| DSN no bundle de **produção** | **nenhum**, nos 12 chunks varridos **[M]** |
+
+`NEXT_PUBLIC_SENTRY_DSN` é inlinado no build. Não estando no bundle, `Sentry.init` roda em
+produção com `dsn: undefined`: o SDK inicializa e **não envia nada**.
+
+**Dois terços do JS inicial de qualquer tela são observabilidade que não observa** — num produto
+mobile-first, para quem atende de celular barato em 4G.
+
+### A hipótese que eu testei e que estava errada
+
+Supus que o peso viesse do Replay viajando sem ser usado, e apliquei `bundleSizeOptimizations` no
+`withSentryConfig`. Medido antes e depois: **208 bytes brutos, 57 gzip. 0,0%.** O Sentry v10 já
+removia aquilo sozinho. **Revertido** — configuração que não faz nada é ruído que a próxima pessoa
+vai ler achando que faz.
+
+Fica registrado porque hipótese refutada com número vale mais que hipótese não testada.
+
+### As duas saídas, e por que a escolha não é minha
+
+| Saída | O que ganha | O que exige |
+|---|---|---|
+| **Ligar o Sentry** — definir `NEXT_PUBLIC_SENTRY_DSN` na Vercel | os 129 kB passam a pagar por si; erro de produção deixa de ser invisível | acesso à conta da Vercel, e aceitar que o dado comece a fluir (a redação do TICKET-057 já está pronta) |
+| **Não embarcar o que não se usa** — carregar o SDK por `import()` dinâmico, guardado pelo DSN | com DSN ausente, os 129 kB somem; com DSN presente, idêntico a hoje | mexer na fiação que o TICKET-057 montou, e o `onRouterTransitionStart` que o Next espera exportado |
+
+**Classificação: Do Eduardo.** — e eu não implementei a segunda, de propósito: **não tenho como
+testar o caminho com DSN presente**, porque não posso definir variável na Vercel. Entregar um ramo
+não verificado da fiação de observabilidade, numa auditoria cujo tema é "verificado × suposto",
+seria repetir o defeito com outro nome. Se a fiação quebrasse, ela quebraria em silêncio — que é
+literalmente o §0 deste documento.
+
+**Recomendação, se for para escolher uma:** ligar o DSN. O produto tem seis rotas de cron, uma fila
+offline e um cofre cifrado; descobrir falha de produção por relato de cliente é caro demais para
+economizar num campo de formulário na Vercel.
+
+---
+
 ## 6 · Onde procurar da próxima vez
 
 Em ordem do que rendeu:
@@ -144,6 +193,9 @@ Em ordem do que rendeu:
    agendada e uma credencial existente.
 5. **O que é publicado para fora.** `sitemap`, `robots`, metadados: eles falam com o mundo sem
    ninguém olhando.
+6. **Ferramenta instalada e não ligada.** O Sentry tinha SDK, redação, wrapper de build e ticket
+   fechado — e nenhum DSN em produção (§5.1). Instalar não é ligar, e o custo continua sendo pago
+   pelo usuário a cada tela.
 
 ---
 
