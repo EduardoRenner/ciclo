@@ -15,9 +15,22 @@ import type { Metadata } from 'next'
  * antes de criar conta. Esta página é a única do projeto cujo trabalho é
  * convencer; o resto do produto só serve quem já entrou.
  *
- * Sem preço de propósito: os planos são decisão comercial do Eduardo
- * (`docs/10-PROXIMOS-PASSOS.md` §4) e inventar número aqui seria mentira na
- * primeira tela. Sem depoimento e sem logotipo de cliente pelo mesmo motivo.
+ * O preço APARECE aqui, e isso inverteu a decisão antiga desta página ("sem
+ * preço de propósito, porque os planos ainda eram decisão comercial em aberto").
+ * A decisão saiu no `docs/18-MONETIZACAO-PLANO.md` (Fases D/E/M): preço visível
+ * sem cadastro, porque quatro dos treze concorrentes pesquisados escondem os
+ * degraus atrás de "fale com um consultor", e num público que lê isso como "vai
+ * ser caro" a transparência custa uma linha e compra confiança.
+ *
+ * O que NÃO mudou, e continua valendo pelo motivo original: sem depoimento, sem
+ * logotipo de cliente, sem contador de usuários. Prova social só quando for
+ * verdade (`docs/17-MONETIZACAO-PROMPT.md` §5.10), e hoje o número seria pequeno
+ * o bastante para a frase depor contra o produto.
+ *
+ * O que esta página pode e não pode prometer está medido em
+ * `docs/20-COPY-PLANO.md` §A.4, e guardado por
+ * `tests/unit/design/home-nao-promete-demais.test.ts` — que existe porque estas
+ * quatro promessas entraram aqui uma por rodada, cada uma soando bem, e ficaram.
  */
 export const metadata: Metadata = {
   title: 'CICLO — a agenda que avisa quem parou de voltar',
