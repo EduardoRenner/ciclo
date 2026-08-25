@@ -2695,3 +2695,18 @@ boundary, então uma piscada de rede derruba a tela toda. Pior que silêncio, e 
 quebrei o `fetch` de propósito em vez de deduzir pelo código. Sobra a pergunta maior, NÃO resolvida
 aqui: 22 arquivos têm `await fetch` dentro de transição e só 4 têm `try` — cada um deles troca uma
 falha de rede transitória por uma tela de erro inteira.
+
+2026-08-25 · O agendamento público trata falha de rede em vez de deixar a tela cair · No React 19,
+`await fetch` sem `try/catch` dentro de `useTransition` não falha em silêncio: a Action que rejeita
+é RE-LANÇADA para o error boundary, e a tela inteira some. Medido no navegador quebrando o `fetch`
+de propósito. Numa rede de subsolo — o cenário declarado do produto — isso acontece por uma piscada,
+e leva junto o serviço, o profissional e o dia que a pessoa já tinha escolhido; na confirmação, leva
+nome e telefone. Agora as duas chamadas tratam, e o texto distingue falha de REDE (confira a
+conexão) de resposta de erro do servidor (repassa o motivo). Na confirmação o texto ainda diz o que
+fazer para não marcar duas vezes: o pedido pode ter chegado antes de a resposta se perder. ⚠️ Achado
+DENTRO do conserto, e é o mais instrutivo: a primeira versão do catch fazia `setSlots([])`, e com a
+lista vazia a região viva passava a anunciar "Sem horários livres nesse dia" — mentira, quando o que
+houve foi a rede cair. Podem existir dez horários; ninguém sabe. Afirmar ao leitor de tela o que não
+se sabe é o defeito que esta auditoria persegue, cometido dentro da correção dele. Pego na
+VERIFICAÇÃO EM NAVEGADOR, não em revisão de código — revisão nenhuma teria olhado o texto da região
+viva depois de um catch. Agora, havendo erro, a região de status cala e quem fala é o `role="alert"`.
