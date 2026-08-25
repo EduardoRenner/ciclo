@@ -2549,11 +2549,26 @@ calendário no fuso do tenant — corretamente não o devolvia. O registro anter
 com um argumento certo: ancorar num ponto fixo (`meioDiaDeHoje`) destruiria a asserção de
 futuro/passado contra o agora real, que é o que aqueles casos existem para provar. **O que faltava
 era ver a terceira saída.** Os casos não afirmam "+90 minutos"; afirmam "dois futuros, nesta ordem,
-e o passado fora". `futurosDeHoje`/`passadoDeHoje` encolhem os marcos até caberem no que resta do
-dia em TZ, preservando ordem estrita — e pulam, dizendo por quê, quando nem o cenário encolhido
+e o passado fora". `marcosDeHoje` posiciona marcos pequenos e FIXOS (passado em -35, futuros em +5
+e +40) dentro do que resta do dia em TZ, preservando ordem estrita — e pulam, dizendo por quê, quando nem o cenário encolhido
 cabe. O caso do alerta é o único que NÃO encolhe: ele prova a fronteira literal de 3 horas, então
 encolher o marco de +240 o moveria para dentro da janela e o faria provar o contrário do que
 afirma; esse pula. Achado de brinde, e o pior dos cinco: o caso "cancelado não aparece em nenhuma
 seção" afirmava que tudo fica VAZIO, então quando o agendamento escorregava para amanhã ele passava
 — vazio pelo motivo errado, sem provar nada. Falso verde é pior que flake: flake incomoda, falso
 verde tranquiliza. Aritmética conferida em 11 horários ao longo do dia antes de commitar.
+
+
+2026-08-24 · CORREÇÃO da entrada acima, na mesma noite: encolher proporcionalmente estava errado ·
+A primeira versão do conserto reduzia os deslocamentos por um fator — às 23:07, `[30,90]` virava
+`[6,18]`. Preservava a ordem e cabia no dia, e a CI recusou com `conflicting key value violates
+exclusion constraint "appointments_no_overlap"`: cada agendamento do teste dura 30 minutos, então
+dois marcos a 12 minutos de distância se sobrepõem. Ordem certa, cenário impossível — e é a
+**primeira armadilha da tabela do CLAUDE.md**. O erro de método vale mais que o de código: eu tinha
+conferido a aritmética em 11 horários olhando ordem e "cabe no dia", **sem olhar a invariante do
+banco**. Validação que não inclui a invariante do banco não é validação. A versão que ficou usa
+marcos fixos e pequenos separados por um passo maior que a duração (`PASSO_MIN = 35 > DURACAO_MIN =
+30`), e pula quando nem o cenário mínimo cabe. Reconferido em 96 horários com as três invariantes
+juntas — dentro do dia, sem sobrepor, em ordem estrita: zero violações. Efeito colateral honesto:
+entre 22:50 e 00:40 os dois casos de ordenação PULAM em vez de rodar, e **verde com skip não é
+prova** de que o cenário funciona — provar exige um run em horário em que ele execute.
