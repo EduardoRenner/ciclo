@@ -45,10 +45,11 @@
    ela fala de *segmento* ("gráfico de inativos"), o CICLO calcula *ritmo por pessoa*. **Não é o
    ineditismo que defende o posicionamento, é o degrau e o mecanismo** (§B.2.2).
 
-4. **O melhor H1 disponível depende do P-0 do 18.** A forma mais forte carrega cadência — *"Toda
-   semana, a lista de…"* — e ela só é verdade com o cron ligado. Sem ele vale a forma sem cadência,
-   mais fraca. **A melhor copy deste produto é uma consequência de ligar o cron**, não uma
-   alternativa a isso. (A redação final da headline foi trocada pela auditoria de tiques do §R.5,
+4. ✅ **ATUALIZADO em 2026-08-25 — a headline com cadência está liberada.** Eu tinha condicionado
+   a forma *"Toda semana, a lista de…"* ao P-0, e ancorado a verificação no `vercel.json`. Arquivo
+   errado: o agendador é o `cron.yml`, e `recompute-cycles` **está** no `schedule` **[M]**. A
+   cadência da lista é verdade; o que continua proibido é dizer que o produto **manda mensagem**
+   sozinho, porque `reminders` está fora do agendamento de propósito. Ver §A.4.2. (A redação final da headline foi trocada pela auditoria de tiques do §R.5,
    que reprovou a minha própria versão — hoje a recomendada é *"A lista de quem já devia ter
    aparecido"*, e a §D.2.1 acrescenta uma quarta hipótese que a pesquisa revelou.)
 
@@ -170,6 +171,35 @@ contrário.
 
 Existe teste guardando `/precos` (`tests/unit/design/precos-nao-promete-demais.test.ts`) **[M]**.
 **Não existe nada guardando a home** — e é exatamente por isso que as três de cima passaram.
+(Passou a existir em 2026-08-24: `tests/unit/design/home-nao-promete-demais.test.ts`, §S.4.1.)
+
+#### A.4.2 · ⚠️ Correção de 2026-08-25: o cron NÃO estava todo desligado, e eu ancorei errado
+
+O §A.4 acima diz "as rotas existem; `vercel.json` está com `crons: []` — nunca executam". A
+primeira metade é verdade e a segunda estava **incompleta**, porque eu olhei o arquivo errado.
+
+**O agendador deste projeto não é o Vercel.** É o `.github/workflows/cron.yml`, escolhido no
+18 §L.5 justamente porque o Vercel Hobby trava em uma execução por dia. O `vercel.json` vai
+continuar com `crons: []` para sempre — não é sintoma, é a decisão. Ao ancorar a guarda da home
+nele, eu escrevi um teste que bloquearia copy honesta **para sempre**, inclusive depois de o cron
+funcionar. Corrigido: a guarda agora lê o `cron.yml`.
+
+E a correção **muda o que dá para prometer**, porque as duas promessas têm lastros diferentes:
+
+| Promessa | Rota que a sustenta | No `schedule`? | Veredito |
+|---|---|---|---|
+| "a lista de quem sumiu atualiza sozinha, toda semana" | `recompute-cycles` | **sim** **[M]** | ✅ **liberada** |
+| "avisamos / mandamos lembrete e confirmação" | `reminders` | **não, de propósito** **[M]** | ❌ continua proibida |
+
+`reminders` está fora do `schedule` com justificativa explícita no cabeçalho do `cron.yml`: ela
+dispara mensagem para **cliente final de verdade**, e o `dom-rocha` tem 46 clientes cadastrados em
+produção. Ligar isso num YAML seria começar a falar com essas pessoas sem decidir antes. Ou seja:
+**o corte que este plano fez em C-1 e C-2 continua certo** — só a razão ficou mais precisa.
+
+**Ressalva medida em 2026-08-25:** `recompute-cycles` está agendada, mas até o PR do
+`cron-cobre-os-fusos` ela só alcançava tenants em **UTC-3**, porque a rota filtra por hora local e
+o `schedule` tinha um horário só. A cadência é verdade em São Paulo e era mentira em Manaus. Com a
+cobertura corrigida, vale para os quatro fusos.
 
 #### A.4.1 · ⚠️ A quinta, achada depois: o produto publica um negócio inventado como se fosse real
 
@@ -379,7 +409,8 @@ texto sai melhor: "A seguir" é melhor que "Próxima cliente" mesmo num salão. 
 
 | Pode prometer | Não pode prometer hoje | Volta a poder quando |
 |---|---|---|
-| Ver quem passou do ponto de voltar, com nome e valor estimado — o Motor está no **Grátis** **[M]** | "avisamos automaticamente", "toda semana", "todo dia" | P-0 do 18: cron ligado, custo R$ 0 **[M]** |
+| Ver quem passou do ponto de voltar, com nome e valor estimado — o Motor está no **Grátis** **[M]** | ~~"toda semana", "todo dia"~~ → **liberado** em 2026-08-25 (A.4.2): `recompute-cycles` está no `schedule` **[M]** | — |
+| A lista se atualiza sozinha, com cadência | "avisamos", "mandamos", "lembrete automático" | `reminders` entrar no `schedule` — hoje fora **de propósito** (A.4.2) |
 | Mandar a mensagem pronta pelo WhatsApp **que ele abre** (link `wa.me`) | "mandamos WhatsApp por você", "confirmação automática pelo WhatsApp" | credencial do WhatsApp Business (TICKET-043) — **Bloqueado** |
 | Página pública de agendamento no ar, hoje | — | — |
 | Grátis para sempre, e a base nunca some | assinar por cartão em dois toques | cobrança automática (18 §P.2, ≥10 pagantes) — **Bloqueado** |

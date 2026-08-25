@@ -29,10 +29,25 @@ function copyDaHome(): string {
   return bruto.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^\s*\/\/.*$/gm, ' ')
 }
 
-/** `crons: []` significa que NENHUMA rota agendada roda em produção, por mais que ela exista. */
-function temCronLigado(): boolean {
-  const { crons } = JSON.parse(readFileSync('vercel.json', 'utf8')) as { crons?: unknown[] }
-  return Array.isArray(crons) && crons.length > 0
+/**
+ * Uma rota de cron só roda sozinha se estiver no `schedule` do `.github/workflows/cron.yml`.
+ *
+ * ⚠️ A primeira versão desta guarda lia o `vercel.json`, e estava ERRADA — erro meu, da mesma
+ * família que ela existe para pegar. O `vercel.json` continua com `crons: []` de propósito e vai
+ * continuar para sempre: o agendador deste projeto é o GitHub Actions, escolhido em
+ * `docs/18-MONETIZACAO-PLANO.md` §L.5 porque o Vercel Hobby trava em uma execução por dia e o Pro
+ * custa 2,4 assinantes só para pagar o agendador. Ancorada no arquivo errado, a guarda bloquearia
+ * a copy de cadência para sempre, inclusive depois do cron passar a funcionar.
+ */
+function rotaAgendada(rota: string): boolean {
+  const yml = readFileSync('.github/workflows/cron.yml', 'utf8')
+  const bloco = yml.split(/^jobs:/m)[0]!
+  // Sem horário no `on:`, nada roda sozinho, por mais que a matriz liste a rota.
+  if (!/^\s*-\s*cron:/m.test(bloco)) return false
+
+  const matriz = yml.match(/rota:\s*\[([^\]]+)\]/)
+  if (!matriz) return false
+  return matriz[1]!.split(',').map((r) => r.trim()).includes(rota)
 }
 
 function achar(texto: string, termos: RegExp[]): string[] {
@@ -40,30 +55,39 @@ function achar(texto: string, termos: RegExp[]): string[] {
 }
 
 describe('a home não promete o que o código não faz', () => {
-  it('não promete cadência nem envio automático enquanto o cron estiver desligado', () => {
+  it('não promete que o produto MANDA mensagem sozinho enquanto `reminders` não for agendada', () => {
     /*
      * A promessa mais cara que este produto pode fazer, porque a pessoa a confere na primeira
-     * semana. As rotas `reminders` e `recompute-cycles` existem desde sempre; o que não existe é
-     * alguém chamando elas. Quando o P-0 do `docs/18-MONETIZACAO-PLANO.md` ligar o cron, este
-     * teste passa a permitir a cadência sozinho — é assim que ele fica do lado certo do tempo em
-     * vez de virar um `skip` que ninguém revisita.
+     * semana. `reminders` está DELIBERADAMENTE fora do `schedule` — ela dispara mensagem para
+     * cliente final de verdade, e o cabeçalho do `cron.yml` lista os três passos que precisam
+     * acontecer antes de ligá-la. Enquanto isso, a home não pode dizer que avisa ninguém.
+     *
+     * Quando `reminders` entrar no schedule, este teste libera a frase sozinho — é assim que a
+     * guarda fica do lado certo do tempo, em vez de virar um `skip` que ninguém revisita.
      */
-    if (temCronLigado()) return
+    if (rotaAgendada('reminders')) return
 
-    const proibidos = [
-      /automaticamente/i,
-      /toda semana/i,
-      /todo dia/i,
-      /avisamos/i,
-      /enviamos/i,
-      /mandamos/i,
-      /lembrete autom/i,
-      /confirmação autom/i,
-    ]
+    const proibidos = [/avisamos/i, /enviamos/i, /mandamos/i, /lembrete autom/i, /confirmação autom/i, /automaticamente/i]
     const achados = achar(copyDaHome(), proibidos)
     expect(
       achados,
-      `a home promete envio/cadência automática, mas vercel.json está com crons: [] — nada disso roda. Termos: ${achados.join(', ')}`,
+      `a home diz que o produto manda mensagem sozinho, mas 'reminders' não está no schedule do cron.yml. Termos: ${achados.join(', ')}`,
+    ).toEqual([])
+  })
+
+  it('não promete cadência da lista enquanto `recompute-cycles` não for agendada', () => {
+    /*
+     * Separado do caso acima de propósito, porque são promessas diferentes com lastros
+     * diferentes: "a lista atualiza toda semana" depende do Motor de Ciclo recalcular
+     * (`recompute-cycles`), não de mandar mensagem. Juntar as duas num bloco só foi o que fez a
+     * primeira versão desta guarda bloquear copy honesta junto com copy falsa.
+     */
+    if (rotaAgendada('recompute-cycles')) return
+
+    const achados = achar(copyDaHome(), [/toda semana/i, /todo dia/i, /toda segunda/i])
+    expect(
+      achados,
+      `a home promete cadência da lista, mas 'recompute-cycles' não está no schedule do cron.yml. Termos: ${achados.join(', ')}`,
     ).toEqual([])
   })
 
