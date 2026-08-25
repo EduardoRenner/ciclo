@@ -2668,3 +2668,14 @@ renderizado. E o teste de mutação achou a QUARTA guarda cega desta auditoria: 
 500 caracteres a partir da região e o `{carregando}` do esqueleto logo abaixo caía na janela.
 Corolário novo, registrado no docs/21 §3: a regra do recorte vale como a do padrão — delimitar pelo
 fim real do elemento, nunca por número de caracteres.
+
+2026-08-25 · A busca de clientes anuncia o resultado e para de engolir a falha · Dois defeitos na
+mesma tela. (1) Acessibilidade: a pessoa digita, a lista inteira troca sem trocar de rota, e quem
+usa leitor de tela não sabia se achou trinta ou nenhum — é o caso mais clássico da WCAG 4.1.3.
+(2) Falha silenciosa, da família do docs/21 §0: as duas buscas usavam `.then().finally()` **sem
+`.catch()`**, então a que falhasse deixava a lista ANTERIOR na tela sem sinal nenhum. A pessoa
+digitava um nome, via os resultados de antes e concluía que aquele era o resultado — lista errada
+com cara de certa é pior que lista vazia. Agora há `catch` nas duas (termo e segmento), aviso
+visível com o que fazer, e o anúncio distingue os três estados: buscando, falhou, N encontrados. A
+guarda CONTA `.catch(` contra o número de `fetch` para `/api/v1/clients`, em vez de procurar uma
+ocorrência — é o que impede consertar metade, e foi o primeiro caso mutado.

@@ -16,6 +16,7 @@ import { describe, expect, it } from 'vitest'
 
 const AGENDAR = 'src/app/(public)/[slug]/agendar/agendar.tsx'
 const RECUPERAR = 'src/app/admin/recuperar/recuperar.tsx'
+const CLIENTES = 'src/app/admin/clientes/lista.tsx'
 
 /**
  * Sem comentário. O bloco que explica esta guarda cita `aria-live` várias vezes, e uma asserção
@@ -117,5 +118,43 @@ describe('a lista do Motor de Ciclo anuncia o que mudou ao trocar o filtro', () 
     expect(/lista\.count/.test(bloco), 'o anúncio precisa dizer a quantidade que os StatTiles mostram').toBe(true)
     expect(/lista\.totalValueCents/.test(bloco), 'o anúncio precisa dizer o valor que os StatTiles mostram').toBe(true)
     expect(/carregando/.test(bloco), 'o anúncio precisa cobrir o estado de carregando').toBe(true)
+  })
+})
+
+/**
+ * A busca de clientes é o caso mais clássico de todos: a pessoa digita, a lista inteira troca, e
+ * quem usa leitor de tela não sabe se achou trinta ou nenhum.
+ *
+ * E tinha um segundo defeito, da família do `docs/21` §0: `.then().finally()` **sem `.catch()`**.
+ * A busca que falhasse deixava a lista ANTERIOR na tela, sem sinal nenhum — a pessoa digitava um
+ * nome, via os resultados de antes e concluía que aquele era o resultado. Lista errada com cara de
+ * certa é pior que lista vazia.
+ */
+describe('a busca de clientes anuncia o resultado e não engole a falha', () => {
+  it('tem região viva, fora de comentário', () => {
+    expect(/aria-live="polite"/.test(fonte(CLIENTES))).toBe(true)
+  })
+
+  it('o anúncio diz a quantidade que a lista mostra', () => {
+    const src = fonte(CLIENTES)
+    const i = src.indexOf('aria-live="polite"')
+    const bloco = src.slice(i, src.indexOf('</p>', i))
+    expect(/clientes\.length/.test(bloco), 'o anúncio precisa dizer quantos a lista tem').toBe(true)
+    expect(/carregando/.test(bloco), 'o anúncio precisa cobrir o estado de buscando').toBe(true)
+  })
+
+  it('toda busca trata a falha — nenhuma deixa a lista velha sem aviso', () => {
+    /*
+     * Conta `.catch(` contra `/api/v1/clients` : são duas buscas (termo e segmento) e as duas
+     * precisam tratar. Contar em vez de procurar uma ocorrência é o que impede consertar metade.
+     */
+    const src = fonte(CLIENTES)
+    const buscas = (src.match(/fetch\(`\/api\/v1\/clients/g) ?? []).length
+    const tratadas = (src.match(/\.catch\(/g) ?? []).length
+    expect(buscas, 'não achei as buscas').toBeGreaterThan(0)
+    expect(
+      tratadas,
+      `${buscas} buscas e só ${tratadas} com catch — a que falhar deixa a lista anterior na tela como se fosse o resultado`,
+    ).toBeGreaterThanOrEqual(buscas)
   })
 })
