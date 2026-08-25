@@ -120,8 +120,8 @@ export default function Precos() {
           Comece de graça. Pague quando o CICLO já estiver te dando trabalho a menos.
         </h1>
         <p className="mt-4 max-w-[52ch] text-corpo text-txt-2">
-          Preço na tela, sem cadastro e sem &ldquo;fale com um consultor&rdquo;. Todo plano inclui lembrete, confirmação e o Motor
-          de Ciclo — não cobramos à parte por isso.
+          Preço na tela, sem cadastro e sem &ldquo;fale com um consultor&rdquo;. O Motor de Ciclo está em todos os planos,
+          inclusive no grátis — o que o pago libera é chamar todo mundo de uma vez, em vez de um por um.
         </p>
       </section>
 
