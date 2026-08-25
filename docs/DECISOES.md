@@ -2655,3 +2655,16 @@ tela. O que a auditoria de acessibilidade encontrou de resto está limpo e fica 
 verificado: alvos de toque (nenhum abaixo de 44px nas páginas públicas), nome acessível em todos os
 controles, hierarquia de títulos, `lang="pt-BR"`, `:focus-visible`, `prefers-reduced-motion`, e o
 componente `Input` com `<label htmlFor>`, `aria-invalid`, `aria-describedby` e `role="alert"`.
+
+2026-08-25 · A tela do Motor de Ciclo também não anunciava a troca de filtro · Mesmo defeito do
+agendamento público, e aqui dói mais: é o diferencial que sustenta o preço. Trocar o filtro
+recarrega a lista E os dois números do topo, sem trocar de rota, e nada avisava. Mesmo padrão:
+região `aria-live="polite"` que vive sempre no DOM, com texto saindo do MESMO `lista` que desenha os
+StatTiles — número lido diferente do número mostrado seria pior que silêncio. ⚠️ Rigor desigual,
+dito na cara: o caso do agendamento foi verificado no navegador ponta a ponta; ESTE não, porque
+`/admin` exige sessão e daqui não dá para autenticar sem credencial de produção. O mecanismo é o
+mesmo já provado na página pública; o que a guarda cobre aqui é a estrutura, não o comportamento
+renderizado. E o teste de mutação achou a QUARTA guarda cega desta auditoria: a asserção recortava
+500 caracteres a partir da região e o `{carregando}` do esqueleto logo abaixo caía na janela.
+Corolário novo, registrado no docs/21 §3: a regra do recorte vale como a do padrão — delimitar pelo
+fim real do elemento, nunca por número de caracteres.

@@ -15,14 +15,15 @@ import { describe, expect, it } from 'vitest'
  */
 
 const AGENDAR = 'src/app/(public)/[slug]/agendar/agendar.tsx'
+const RECUPERAR = 'src/app/admin/recuperar/recuperar.tsx'
 
 /**
  * Sem comentário. O bloco que explica esta guarda cita `aria-live` várias vezes, e uma asserção
  * que casasse com ele passaria com o elemento apagado — o erro que já apareceu três vezes nesta
  * família de testes (`docs/21-AUDITORIA-FALHA-SILENCIOSA.md` §3).
  */
-function fonte(): string {
-  return readFileSync(AGENDAR, 'utf8')
+function fonte(arquivo: string = AGENDAR): string {
+  return readFileSync(arquivo, 'utf8')
     .replace(/\/\*[\s\S]*?\*\//g, ' ')
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, ' ')
     .replace(/^\s*\/\/.*$/gm, ' ')
@@ -71,5 +72,50 @@ describe('o agendamento anuncia o que mudou sem trocar de rota', () => {
     const src = fonte()
     const bloco = src.slice(src.indexOf('aria-live="polite"'), src.indexOf('{slots ?'))
     expect(/sr-only/.test(bloco), 'a região precisa ser sr-only — ela é para o leitor de tela, não para a tela').toBe(true)
+  })
+})
+
+/**
+ * O mesmo defeito estava na tela do Motor de Ciclo, e ali dói mais: é o diferencial que sustenta
+ * o preço do produto. Trocar o filtro recarrega a lista E os dois números do topo, sem trocar de
+ * rota — e nada avisava.
+ *
+ * ⚠️ Diferença de rigor que precisa ficar dita: o caso do agendamento foi verificado no navegador
+ * ponta a ponta; este NÃO foi, porque `/admin` exige sessão e daqui não dá para autenticar sem
+ * credencial de produção. O mecanismo é o mesmo já provado na página pública; o que esta guarda
+ * cobre é a estrutura, não o comportamento renderizado.
+ */
+describe('a lista do Motor de Ciclo anuncia o que mudou ao trocar o filtro', () => {
+  it('tem região viva de verdade, fora de comentário', () => {
+    expect(/aria-live="polite"/.test(fonte(RECUPERAR)), 'não há região viva na tela de recuperar').toBe(true)
+  })
+
+  it('a região vem DEPOIS do filtro e ANTES da lista — existe antes de o conteúdo trocar', () => {
+    const src = fonte(RECUPERAR)
+    const filtro = src.indexOf('</FilterRow>')
+    const regiao = src.indexOf('aria-live="polite"')
+    expect(regiao, 'não achei a região viva').toBeGreaterThan(-1)
+    expect(regiao, 'a região precisa vir depois do filtro que dispara a troca').toBeGreaterThan(filtro)
+  })
+
+  it('o anúncio sai do mesmo `lista` que desenha os números do topo', () => {
+    /*
+     * Os StatTiles mostram `lista.count` e `lista.totalValueCents`. Se o anúncio tivesse fonte
+     * própria, a tela e o leitor de tela poderiam divergir — e número lido diferente do número
+     * mostrado é pior que silêncio, porque é mentira com cara de recurso.
+     */
+    /*
+     * O bloco vai da região até o `</p>` DELA, não um pedaço de N caracteres a partir dali. Com
+     * fatia por tamanho, o `{carregando}` do esqueleto de carregamento logo abaixo entrava na
+     * janela e a asserção passava com o anúncio já quebrado — quarta vez, nesta auditoria, que uma
+     * guarda casou com algo incidental vizinho (docs/21 §3). A regra que saiu de lá vale também
+     * para o RECORTE, não só para o padrão: delimitar pelo fim real do elemento.
+     */
+    const src = fonte(RECUPERAR)
+    const inicio = src.indexOf('aria-live="polite"')
+    const bloco = src.slice(inicio, src.indexOf('</p>', inicio))
+    expect(/lista\.count/.test(bloco), 'o anúncio precisa dizer a quantidade que os StatTiles mostram').toBe(true)
+    expect(/lista\.totalValueCents/.test(bloco), 'o anúncio precisa dizer o valor que os StatTiles mostram').toBe(true)
+    expect(/carregando/.test(bloco), 'o anúncio precisa cobrir o estado de carregando').toBe(true)
   })
 })

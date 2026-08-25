@@ -81,6 +81,15 @@ Uma guarda assim é pior que nenhuma, porque produz confiança sem informação.
 > volta — a chamada, a frase, o valor. Nunca com um nome que aparece no import, num rótulo, num
 > comentário ou numa string vizinha.
 
+**Quarta ocorrência, na auditoria de acessibilidade (2026-08-25):** uma asserção recortava 500
+caracteres a partir da região viva e procurava `carregando` dentro. O `{carregando}` do esqueleto
+de carregamento, logo **abaixo** no arquivo, caía dentro da janela — então a guarda passava com o
+anúncio já quebrado. Corrigido para delimitar pelo `</p>` real do elemento.
+
+> **Corolário do recorte:** a regra não vale só para o PADRÃO, vale para a JANELA. Fatiar por
+> número de caracteres coloca o vizinho dentro da asserção, e o vizinho quase sempre contém a
+> palavra que se procura.
+
 E o corolário, que custou caro para aprender:
 
 > **Guarda que nunca foi vista reprovando é guarda que ninguém sabe se funciona.** Reintroduzir o
