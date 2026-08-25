@@ -252,8 +252,26 @@ export default function Agendar({
           </div>
         ) : null}
 
+        {/*
+          A frase anterior prometia "você vai receber a confirmação por WhatsApp", e isso era falso
+          em três níveis: `criarAgendamentoPublico` não manda nada para o cliente (só um push para
+          a equipe); quem mandaria é o cron `reminders`, que está fora do `schedule` de propósito;
+          e o WhatsApp não tem credencial — sendo que este formulário nem coleta e-mail, então o
+          fallback também não alcança ninguém. Nada chegava, nunca.
+
+          Aqui a mentira custa mais caro que na landing: quem fica mal com um cliente esperando
+          confirmação que não vem não é o CICLO, é o salão que confiou nele.
+
+          O que a página diz agora é o que de fato acontece — o pedido chega para a equipe, e uma
+          pessoa confirma. Sem prometer canal, e mantendo o caminho de saída (telefone), porque
+          tirar a promessa falsa não pode virar silêncio sobre o que fazer.
+
+          Guardado por `tests/unit/design/agendamento-publico-nao-promete-demais.test.ts`, que
+          libera a frase de canal sozinho no dia em que `reminders` entrar no `schedule`.
+        */}
         <p className="mt-4 max-w-xs text-corpo text-txt-2">
-          Você vai receber a confirmação por WhatsApp. Se não confirmarmos em algumas horas, é só chamar por telefone.
+          Seu pedido chegou e já apareceu para a equipe. A confirmação vem de quem vai te atender, e
+          pode não ser na hora. Se não tiver retorno em algumas horas, é só chamar por telefone.
         </p>
 
         <div className="mt-5 flex flex-wrap justify-center gap-3">
