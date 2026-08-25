@@ -1241,11 +1241,42 @@ navegador, que o 403 não bloqueia.
 | # | O quê | Destrava |
 |---|---|---|
 | C-11 | Reescrita completa da home (subtítulo, cartões, "Feito para", fecho) | existir denominador para medir |
-| C-12 | Teste-guarda da home, no molde do `precos-nao-promete-demais` | impedir que a próxima promessa falsa entre sozinha |
+| ~~C-12~~ | ~~Teste-guarda da home~~ | ✅ **feito em 2026-08-24 — e estava sequenciado errado** |
 
 **C-12 merece nota:** a razão de as três promessas falsas terem sobrevivido até hoje é que
 `/precos` tem teste e a home não **[M]**. Sem esse teste, este documento inteiro é uma limpeza que
 vai sujar de novo.
+
+#### S.4.1 · ✅ C-12 feito, e a correção de sequência que ele expôs
+
+Eu tinha posto o C-12 aqui, atrás de "depois da instrumentação". **Isso estava errado, e o erro
+era meu:** um teste que varre o código-fonte não depende de medir visita nenhuma. Ele não tinha
+dependência alguma — podia ter sido o primeiro item do §S.1, junto das correções que ele guarda.
+Sequenciar por associação ("é sobre medir, então vai com a instrumentação") em vez de por
+dependência real é o tipo de erro que empurra para o fim justamente o que protege o começo.
+
+`tests/unit/design/home-nao-promete-demais.test.ts`, 11 casos, no molde dos outros testes de
+varredura do projeto (`preco-em-um-lugar-so`, `titulos-de-tela`, `actions-fixadas`). O que ele
+guarda:
+
+| Guarda | Ancorado em |
+|---|---|
+| Nada de cadência ou envio automático **enquanto `vercel.json` tiver `crons: []`** | lê o `vercel.json` de verdade: quando o P-0 ligar o cron, o teste libera a cadência sozinho |
+| Nada de "aprende", "aprendizado", "inteligência artificial", "machine learning" | `compute.ts` declara "determinístico, sem ML" |
+| O tenant de demonstração não é nomeado no texto (o link continua livre) | o seed o descreve como "tenant fictício" — §D.4.1 |
+| Nenhuma afirmação de tempo ("em menos de N minutos") | 09 §13.2 é meta, nunca medida |
+| Módulo que o Grátis não tem só aparece se a home nomear o degrau | reusa `menorPlanoCom` e `NOME_DO_PLANO` do core |
+
+**Duas coisas que só apareceram ao rodá-lo**, e valem mais que o teste em si:
+
+1. **Ele reprovou a si mesmo na primeira execução.** A home diz "A partir do plano Essencial" na
+   tela, mas no fonte é `${NOME_DO_PLANO.essencial}` — varredura de código não interpola. Guardar
+   só a string literal empurraria o autor a datilografar o nome do plano para o teste passar, que
+   é o oposto do que o `preco-em-um-lugar-so` pede. Agora aceita as duas formas.
+2. **Ele foi testado contra si mesmo.** Reintroduzi os cinco defeitos, um por um, e conferi que
+   cada um reprova: `aprende` ✅ · "menos de três minutos" ✅ · cadência automática ✅ · nomear o
+   tenant ✅ · caixa sem o degrau ✅. Guarda que nunca foi vista falhando é guarda que ninguém sabe
+   se funciona.
 
 ### S.5 · As três perguntas de transcrição para as 20 conversas
 
