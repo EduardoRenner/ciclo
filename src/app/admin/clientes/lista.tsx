@@ -37,11 +37,20 @@ export default function ListaClientes({ iniciais }: { iniciais: ClienteLinha[] }
   const [carregando, setCarregando] = useState(false)
   const debounce = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
+  const [falhou, setFalhou] = useState(false)
+
   const buscar = useCallback((valor: string) => {
     setCarregando(true)
+    setFalhou(false)
     fetch(`/api/v1/clients?q=${encodeURIComponent(valor)}`)
       .then((r) => r.json() as Promise<{ data?: { clients: ClienteLinha[] } }>)
       .then((json) => setClientes(json.data?.clients ?? []))
+      /*
+        Sem este `catch`, a busca que falhasse deixava a lista ANTERIOR na tela, sem nenhum sinal:
+        a pessoa digitava um nome, via os resultados de antes e concluía que aquele era o
+        resultado. Lista errada com cara de certa é pior que lista vazia.
+      */
+      .catch(() => setFalhou(true))
       .finally(() => setCarregando(false))
   }, [])
 
@@ -56,6 +65,7 @@ export default function ListaClientes({ iniciais }: { iniciais: ClienteLinha[] }
       fetch(`/api/v1/clients?segment=${segmento}`)
         .then((r) => r.json() as Promise<{ data?: { clients: ClienteLinha[] } }>)
         .then((json) => setClientes(json.data?.clients ?? []))
+        .catch(() => setFalhou(true))
         .finally(() => setCarregando(false))
       return
     }
@@ -102,6 +112,28 @@ export default function ListaClientes({ iniciais }: { iniciais: ClienteLinha[] }
           </Chip>
         ))}
       </FilterRow>
+
+      {/*
+        Busca que troca o conteúdo sem trocar de rota — o caso mais clássico de mudança sem aviso.
+        A pessoa digita, a lista inteira troca, e quem usa leitor de tela não sabe se achou trinta
+        ou nenhum. A região vive SEMPRE no DOM: leitor de tela precisa observar o nó antes de o
+        texto mudar (docs/21 §5.3).
+
+        O texto sai do MESMO `clientes` que desenha a lista, então o que se lê é o que se vê.
+      */}
+      <p aria-live="polite" className="sr-only">
+        {carregando
+          ? 'Buscando.'
+          : falhou
+            ? 'Não consegui buscar. A lista abaixo é a anterior.'
+            : `${clientes.length} ${clientes.length === 1 ? 'cliente encontrado' : 'clientes encontrados'}.`}
+      </p>
+
+      {falhou ? (
+        <p role="alert" className="mb-3 text-secundario text-bad">
+          Não consegui buscar agora. Confira a conexão e tente de novo — a lista abaixo é a de antes.
+        </p>
+      ) : null}
 
       {carregando ? (
         <div className="flex flex-col gap-2">
