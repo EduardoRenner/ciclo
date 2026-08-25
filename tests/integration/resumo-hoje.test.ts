@@ -99,6 +99,11 @@ afterAll(async () => {
  * confere status dentro de "hoje", não passado/futuro) ancora ao meio-dia
  * de hoje em TZ — longe o bastante da meia-noite pros offsets usados
  * (±240min) nunca cruzarem o limite do dia.
+ *
+ * Os que usam o agora real não podem ancorar, mas também não precisam dos
+ * minutos exatos: quem os escolhe é `marcosDeHoje`, logo abaixo, que posiciona
+ * os marcos dentro do dia de hoje em TZ e sem sobrepor. É o que fechou a flake
+ * que quebrava a CI em todo push feito à noite.
  */
 async function inserirAgendamento(minutosDeAgora: number, status: string, ancora: Date = new Date()) {
   const inicio = new Date(ancora.getTime() + minutosDeAgora * 60_000)
@@ -119,6 +124,70 @@ async function inserirAgendamento(minutosDeAgora: number, status: string, ancora
     .single()
   if (error) throw error
   return data.id
+}
+
+/**
+ * Quanto do dia de hoje já passou e quanto ainda resta, no fuso do TENANT — não em UTC.
+ *
+ * É isto que fecha a flake que quebrava a CI em todo push feito entre ~22:30 e a meia-noite de
+ * São Paulo: `resumoDeHoje` filtra pelo dia de calendário em TZ, então um agendamento a
+ * "+90 minutos de agora" nasce AMANHÃ quando faltam 84 minutos para a meia-noite, e o serviço
+ * corretamente não o devolve. O mesmo vale espelhado: logo depois da meia-noite, "-30 minutos"
+ * cai em ONTEM.
+ *
+ * Construído com `plainDate` + `toZonedDateTime`, e não somando 24h: dia de mudança de fuso tem
+ * 23 ou 25 horas, e a regra 4 do CLAUDE.md existe exatamente por isso.
+ */
+function janelaDeHoje(): { atras: number; frente: number } {
+  const agora = Temporal.Now.instant().toZonedDateTimeISO(TZ)
+  const inicio = agora.toPlainDate().toZonedDateTime({ timeZone: TZ, plainTime: '00:00' })
+  const fim = agora.toPlainDate().add({ days: 1 }).toZonedDateTime({ timeZone: TZ, plainTime: '00:00' })
+  const min = (ms: number) => Math.floor(ms / 60_000)
+  return {
+    atras: min(agora.epochMilliseconds - inicio.epochMilliseconds),
+    frente: min(fim.epochMilliseconds - agora.epochMilliseconds),
+  }
+}
+
+/** Quanto dura cada agendamento que este arquivo insere (`inserirAgendamento`). */
+const DURACAO_MIN = 30
+
+/**
+ * O passo entre marcos vizinhos. Tem que ser MAIOR que a duração, senão dois agendamentos se
+ * sobrepõem e o banco recusa com `appointments_no_overlap` — a primeira armadilha da tabela do
+ * `CLAUDE.md`, e exatamente onde a primeira versão deste conserto quebrou: ela encolhia os marcos
+ * proporcionalmente, preservava a ORDEM, e empilhava dois atendimentos de 30 min a 12 min de
+ * distância. Ordem certa, cenário impossível.
+ */
+const PASSO_MIN = 35
+
+/** Margem antes da meia-noite, para o FIM do último agendamento também caber em hoje. */
+const FOLGA_MIN = 5
+
+/**
+ * Os marcos de um cenário — um no passado (opcional) e `quantosFuturos` à frente — posicionados
+ * dentro do dia de hoje em TZ, sem se sobrepor.
+ *
+ * Marcos FIXOS e pequenos, não os originais encolhidos: os casos não afirmam "+45" nem "+90",
+ * afirmam "um depois do outro, e o passado fora". Distâncias pequenas provam o mesmo e cabem em
+ * muito mais horas do dia. Quando nem o cenário mínimo cabe, devolve `null` e o caso pula dizendo
+ * por quê — em vez de falhar vermelho por causa do relógio, ou pior, de passar vazio.
+ *
+ * Espaço necessário à frente: primeiro marco + (n-1) passos + a duração do último + folga.
+ */
+function marcosDeHoje(quantosFuturos: number, comPassado: boolean): { passado: number | null; futuros: number[] } | null {
+  const { atras, frente } = janelaDeHoje()
+
+  const primeiro = 5
+  const precisaAFrente = primeiro + (quantosFuturos - 1) * PASSO_MIN + DURACAO_MIN + FOLGA_MIN
+  if (frente < precisaAFrente) return null
+
+  // O passado precisa TERMINAR antes do primeiro futuro começar, e COMEÇAR ainda hoje.
+  const passado = comPassado ? -PASSO_MIN : null
+  if (comPassado && atras < PASSO_MIN + FOLGA_MIN) return null
+
+  const futuros = Array.from({ length: quantosFuturos }, (_, i) => primeiro + i * PASSO_MIN)
+  return { passado, futuros }
 }
 
 describe('resumoDeHoje', () => {
@@ -143,12 +212,18 @@ describe('resumoDeHoje', () => {
 
   it(
     'próxima cliente é o primeiro agendamento futuro ainda válido, ignorando os já passados',
-    async () => {
+    async (ctx) => {
+      const marcos = marcosDeHoje(2, true)
+      if (!marcos) {
+        ctx.skip(`não resta dia suficiente em ${TZ} para montar passado + dois futuros sem sobrepor`)
+        return
+      }
+
       await svc.from('appointments').delete().eq('tenant_id', tenantId) // dia limpo para este caso
 
-      await inserirAgendamento(-30, 'confirmed') // já passou, mas ninguém marcou o desfecho — não é "próxima"
-      const idFutura = await inserirAgendamento(45, 'confirmed')
-      await inserirAgendamento(90, 'pending')
+      await inserirAgendamento(marcos.passado!, 'confirmed') // já passou, mas ninguém marcou o desfecho — não é "próxima"
+      const idFutura = await inserirAgendamento(marcos.futuros[0]!, 'confirmed')
+      await inserirAgendamento(marcos.futuros[1]!, 'pending')
 
       const resumo = await resumoDeHoje(svc, tenantId, TZ)
       expect(resumo.nextClient?.id).toBe(idFutura)
@@ -156,14 +231,27 @@ describe('resumoDeHoje', () => {
     30_000,
   )
 
+  /**
+   * O único caso que NÃO pode ser encolhido: ele prova a fronteira literal de 3 horas, então o
+   * marco de +240 precisa estar simultaneamente FORA da janela de alerta e DENTRO de hoje.
+   * Quando falta menos que isso para a meia-noite, as duas exigências são incompatíveis — e aí
+   * o certo é pular dizendo por quê, não encolher (encolher moveria o +240 para dentro da janela
+   * de 3h e o caso passaria a provar o contrário do que ele afirma).
+   */
   it(
     'alerta é só pending que começa nas próximas 3 horas — confirmado não entra, mesmo que seja em breve',
-    async () => {
+    async (ctx) => {
+      const FORA_DA_JANELA = 240
+      if (janelaDeHoje().frente < FORA_DA_JANELA + DURACAO_MIN + FOLGA_MIN) {
+        ctx.skip(`faltam menos de ${FORA_DA_JANELA + DURACAO_MIN + FOLGA_MIN} min para a meia-noite em ${TZ}: não dá para ter um agendamento fora da janela de 3h e ainda dentro de hoje`)
+        return
+      }
+
       await svc.from('appointments').delete().eq('tenant_id', tenantId)
 
       const idAlerta = await inserirAgendamento(60, 'pending')
       await inserirAgendamento(120, 'confirmed') // pending vira alerta, confirmed não precisa de atenção
-      await inserirAgendamento(240, 'pending') // pending, mas longe demais (fora da janela de 3h)
+      await inserirAgendamento(FORA_DA_JANELA, 'pending') // pending, mas longe demais (fora da janela de 3h)
 
       const resumo = await resumoDeHoje(svc, tenantId, TZ)
       expect(resumo.alerts.map((a) => a.id)).toEqual([idAlerta])
@@ -172,25 +260,32 @@ describe('resumoDeHoje', () => {
   )
 
   /**
-   * FLAKE CONHECIDA, medida ao ligar o CI pela primeira vez (S13, 2026-08-24): `resumoDeHoje`
-   * filtra `restOfDay` pelo dia de calendário em TZ **antes** de comparar com o agora real
-   * (`resumo-hoje.ts`: `gte inicioDoDia / lt fimDoDia`, depois "ainda por vir") — correto, e por
-   * isso o `id2` a +90min NÃO pode ancorar num ponto fixo como `meioDiaDeHoje` (esse teste
-   * também depende do agora real, igual "próxima cliente"/"alerta" — ver comentário de
-   * `inserirAgendamento`). Se a suíte rodar nos ~90 minutos antes da meia-noite em São Paulo, o
-   * `id2` nasce amanhã de verdade, e `restOfDay` corretamente devolve só `[id1]`. Não é bug do
-   * serviço nem do teste — é o mesmo tipo de janela de tempo real que já existe documentada em
-   * `health.test.ts`. Fica registrado aqui em vez de "consertado" com uma âncora que quebraria a
-   * asserção de propósito (futuro/passado) que o teste existe para provar.
+   * Era a FLAKE que quebrava a CI em todo push entre ~22:30 e a meia-noite de São Paulo, medida
+   * ao ligar o CI (S13, 2026-08-24) e vista de novo em produção do CI em 2026-08-24T22:33 local.
+   * `resumoDeHoje` filtra `restOfDay` pelo dia de calendário em TZ antes de comparar com o agora
+   * real, então o `id2` a +90min nascia AMANHÃ e o serviço, corretamente, devolvia só `[id1]`.
+   *
+   * O registro anterior recusava consertar, e o argumento era bom: ancorar num ponto fixo como
+   * `meioDiaDeHoje` destruiria a asserção de futuro/passado contra o agora real, que é o que
+   * este caso existe para provar. **O que faltava era ver que há uma terceira saída.** Este caso
+   * não afirma "+90 minutos"; afirma "dois futuros, nesta ordem, e o passado fora". `futurosDeHoje`
+   * encolhe os marcos até caberem no que resta do dia preservando exatamente isso, e
+   * `passadoDeHoje` faz o espelho para a borda de logo depois da meia-noite.
    */
   it(
     'resto do dia inclui tudo que ainda vem, na ordem, e não repete o passado',
-    async () => {
+    async (ctx) => {
+      const marcos = marcosDeHoje(2, true)
+      if (!marcos) {
+        ctx.skip(`não resta dia suficiente em ${TZ} para montar passado + dois futuros sem sobrepor`)
+        return
+      }
+
       await svc.from('appointments').delete().eq('tenant_id', tenantId)
 
-      await inserirAgendamento(-10, 'done')
-      const id1 = await inserirAgendamento(30, 'confirmed')
-      const id2 = await inserirAgendamento(90, 'pending')
+      await inserirAgendamento(marcos.passado!, 'done')
+      const id1 = await inserirAgendamento(marcos.futuros[0]!, 'confirmed')
+      const id2 = await inserirAgendamento(marcos.futuros[1]!, 'pending')
 
       const resumo = await resumoDeHoje(svc, tenantId, TZ)
       expect(resumo.restOfDay.map((a) => a.id)).toEqual([id1, id2])
@@ -200,9 +295,22 @@ describe('resumoDeHoje', () => {
 
   it(
     'agendamento cancelado não aparece em nenhuma seção',
-    async () => {
+    async (ctx) => {
+      /*
+       * Este é o caso mais traiçoeiro dos cinco, e o único cujo defeito NÃO aparecia como
+       * vermelho: ele afirma que todas as seções ficam vazias. Se o agendamento a +30min
+       * escorregar para amanhã, tudo continua vazio e o caso passa — vazio pelo motivo errado,
+       * sem provar que "cancelado é ignorado". Falso verde é pior que flake: flake incomoda,
+       * falso verde tranquiliza.
+       */
+      const marcos = marcosDeHoje(1, false)
+      if (!marcos) {
+        ctx.skip(`não resta dia suficiente em ${TZ} para colocar o cancelado dentro de hoje — sem isso o caso passaria vazio, sem provar nada`)
+        return
+      }
+
       await svc.from('appointments').delete().eq('tenant_id', tenantId)
-      await inserirAgendamento(30, 'canceled')
+      await inserirAgendamento(marcos.futuros[0]!, 'canceled')
 
       const resumo = await resumoDeHoje(svc, tenantId, TZ)
       expect(resumo.restOfDay).toEqual([])
