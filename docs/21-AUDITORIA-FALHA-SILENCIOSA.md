@@ -203,6 +203,37 @@ economizar num campo de formulário na Vercel.
 
 ---
 
+## 5.2 · A landing resolve a sessão duas vezes, e por isso não pode ser cacheada
+
+Medido no código **[M]**:
+
+| Onde | O que faz |
+|---|---|
+| `src/middleware.ts` | `db.auth.getUser()` em **toda** requisição não-estática — o matcher só exclui `_next/static`, `_next/image` e imagem. Existe para renovar o access token de 15 min |
+| `src/app/page.tsx:116` | `sessaoAtual()` de novo, **só** para redirecionar quem já está logado para `/admin/hoje` |
+
+Duas resoluções de sessão por visita à landing. E a segunda é o que marca a página como dinâmica
+(`ƒ` no build **[M]**): a única tela do produto cujo trabalho é **convencer um visitante anônimo**
+é também a única que não pode ser servida de cache.
+
+TTFB medido em produção **[M]**, três amostras: `/` entre **0,44s e 0,83s**. Uma página estática
+sairia do CDN em fração disso.
+
+**A resposta já está no middleware.** Ele computa `data.user` de qualquer jeito; o redirecionamento
+de quem está logado caberia ali sem custo novo, e `/` voltaria a ser estática.
+
+**Não implementei**, e o motivo é o mesmo do §5.1: mexer em roteamento de autenticação exige
+verificar os dois caminhos, e daqui eu só consigo testar o anônimo. O caminho de quem está logado
+precisaria de credencial real. — **Recomendado**, com a ressalva de que o ganho (centenas de ms de
+TTFB) é menor que o do §5.1 (129 kB, metade da página).
+
+⚠️ **Nota de medição, para não virar achado falso:** `/precos` variou entre **0,78s e 2,47s** nas
+três amostras. Três amostras, de uma máquina só, não distinguem cold start de problema real —
+então **isso não é um achado**, é uma pergunta. Quem for medir de verdade precisa de amostragem ao
+longo do dia, e o próprio Sentry (§5.1) daria isso de graça se estivesse ligado.
+
+---
+
 ## 6 · Onde procurar da próxima vez
 
 Em ordem do que rendeu:
