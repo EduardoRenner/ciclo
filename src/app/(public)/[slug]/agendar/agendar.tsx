@@ -428,6 +428,32 @@ export default function Agendar({
         </p>
       ) : null}
 
+      {/*
+        Medido no navegador em 2026-08-25: escolher um dia carregava DEZ botões de horário, e
+        `[aria-live]`, `[role=status]` e `[role=alert]` continuavam em **zero** na página — com o
+        foco parado no `body`. Para quem usa leitor de tela, dez opções novas apareciam e nada
+        avisava; a pessoa não tinha como saber que a escolha do dia surtiu efeito. É a WCAG 4.1.3
+        (Status Messages), nível AA, e cai na página que atende o CLIENTE DO SALÃO.
+
+        A região fica SEMPRE no DOM, mesmo vazia, e é isso que a faz funcionar: leitor de tela
+        precisa estar observando o nó ANTES de o texto mudar. Live region que nasce junto com o
+        conteúdo costuma não ser anunciada — é o erro clássico, e seria fácil "consertar" assim e
+        achar que resolveu.
+
+        `polite` e não `assertive`: a pessoa acabou de tocar num dia e está esperando a resposta;
+        interromper a leitura não acrescenta nada. O texto sai do MESMO estado que desenha a tela
+        (`slots`), então os dois nunca divergem.
+      */}
+      <p aria-live="polite" className="sr-only">
+        {slots === null
+          ? 'Buscando horários.'
+          : diasFechados.has(dia)
+            ? 'Nesse dia o atendimento não abre.'
+            : slots.length === 0
+              ? 'Sem horários livres nesse dia.'
+              : `${slotsUnicos?.length ?? slots.length} ${(slotsUnicos?.length ?? slots.length) === 1 ? 'horário livre' : 'horários livres'} em ${paraData(dia).toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', timeZone: 'UTC' })}.`}
+      </p>
+
       {slots ? (
         slots.length === 0 ? (
           <p className="text-secundario text-txt-2">
