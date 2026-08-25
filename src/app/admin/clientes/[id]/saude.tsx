@@ -53,7 +53,7 @@ export default function Saude({ clientId, saude, fotos, consentimentos }: Props)
         }
         setFicha(json.data ?? {})
       })
-      .catch(() => setErro('Não consegui abrir o cofre agora.'))
+      .catch(() => setErro('Não consegui abrir o cofre agora. Confira a conexão e tente de novo.'))
       .finally(() => setCarregando(false))
   }
 
