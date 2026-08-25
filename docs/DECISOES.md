@@ -2679,3 +2679,19 @@ com cara de certa é pior que lista vazia. Agora há `catch` nas duas (termo e s
 visível com o que fazer, e o anúncio distingue os três estados: buscando, falhou, N encontrados. A
 guarda CONTA `.catch(` contra o número de `fetch` para `/api/v1/clients`, em vez de procurar uma
 ocorrência — é o que impede consertar metade, e foi o primeiro caso mutado.
+2026-08-25 · A tela de erro passa a decidir a saída pelo caminho onde o erro aconteceu · Medido no
+navegador quebrando o `fetch` de propósito em `/dom-rocha/agendar`: um único pedido que falha ao
+escolher o dia derruba a tela inteira, e `src/app/error.tsx` é o boundary da RAIZ — pega toda rota,
+inclusive as públicas. O que o CLIENTE DO SALÃO encontrava era escrito para outra pessoa: "Seus
+dados estão salvos" (ele estava escolhendo horário, não salvando nada) e um botão "Ir para Hoje"
+apontando para `/admin/hoje`, o painel do profissional, atrás de um login que não é dele. Mesmo
+raciocínio do docs/21 sobre a promessa de WhatsApp: na superfície do cliente do tenant o erro custa
+mais caro, porque quem fica mal é o salão. Agora a saída depende de `usePathname()`: no painel, "Ir
+para Hoje"; numa rota com slug, "Voltar para a página do estabelecimento" (`/{slug}`); no resto, "Ir
+para o início". A frase de conforto também virou condicional. ⚠️ Achado de contexto, e vale
+registrar: a hipótese inicial era que `await fetch` sem `try/catch` dentro de `useTransition` falharia
+em SILÊNCIO. Testado, e é o oposto — no React 19 a Action que rejeita é re-lançada para o error
+boundary, então uma piscada de rede derruba a tela toda. Pior que silêncio, e só apareceu porque
+quebrei o `fetch` de propósito em vez de deduzir pelo código. Sobra a pergunta maior, NÃO resolvida
+aqui: 22 arquivos têm `await fetch` dentro de transição e só 4 têm `try` — cada um deles troca uma
+falha de rede transitória por uma tela de erro inteira.
