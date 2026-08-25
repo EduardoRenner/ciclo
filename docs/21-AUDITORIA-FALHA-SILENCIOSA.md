@@ -130,6 +130,110 @@ não pode ser lido como prova de que o cenário funciona.
 
 ---
 
+## 5.1 · ⭐ Achado nº 7, na frente de performance: 129 kB de Sentry inerte
+
+Aberta a auditoria de performance, o primeiro número já era o achado — e ele é da **mesma família
+dos outros seis**, agora na camada do que o navegador baixa.
+
+**Medido em 2026-08-25**, sobre o build e sobre o bundle de produção:
+
+| | |
+|---|---|
+| First Load JS compartilhado por **todas** as páginas | **188 kB** **[M]** |
+| Dentro dele, o maior chunk | **129 kB** gzip · 412 kB brutos **[M]** |
+| O que há nesse chunk | **Sentry** — 170 ocorrências de `sentry`, mais `captureException` e `sentry.io`; zero Supabase, zero lucide **[M]** |
+| O segundo chunk | React, 54 kB **[M]** |
+| DSN no bundle de **produção** | **nenhum**, nos 12 chunks varridos **[M]** |
+
+`NEXT_PUBLIC_SENTRY_DSN` é inlinado no build. Não estando no bundle, `Sentry.init` roda em
+produção com `dsn: undefined`: o SDK inicializa e **não envia nada**.
+
+**Dois terços do JS inicial de qualquer tela são observabilidade que não observa** — num produto
+mobile-first, para quem atende de celular barato em 4G.
+
+### O custo, medido na página de produção que está no ar
+
+Baixando `ciclo-umber.vercel.app/` com `Accept-Encoding: gzip`, somando HTML, os 12 chunks e o
+CSS **[M]**:
+
+| | |
+|---|---|
+| HTML | 7 kB |
+| JS (12 chunks) | 242 kB |
+| CSS | 10 kB |
+| **Total** | **258 kB comprimidos** |
+| Sentry dentro disso | **129 kB — metade de tudo que a página baixa** |
+
+E em tempo, que é a unidade que a pessoa sente **[E]** (largura de banda nominal, sem latência):
+
+| Conexão | Hoje | Sem o Sentry |
+|---|---|---|
+| 3G lento (400 kbps) | **5,2s** | 2,6s |
+| 4G ruim (1,5 Mbps) | 1,4s | 0,7s |
+
+**A página carrega no dobro do tempo, numa conexão ruim, por causa de um SDK que hoje não envia
+nada.** Este é o número que transforma o achado de curiosidade técnica em decisão de produto: o
+público-alvo do CICLO é quem atende de celular, e a primeira tela é a única que precisa convencer.
+
+### A hipótese que eu testei e que estava errada
+
+Supus que o peso viesse do Replay viajando sem ser usado, e apliquei `bundleSizeOptimizations` no
+`withSentryConfig`. Medido antes e depois: **208 bytes brutos, 57 gzip. 0,0%.** O Sentry v10 já
+removia aquilo sozinho. **Revertido** — configuração que não faz nada é ruído que a próxima pessoa
+vai ler achando que faz.
+
+Fica registrado porque hipótese refutada com número vale mais que hipótese não testada.
+
+### As duas saídas, e por que a escolha não é minha
+
+| Saída | O que ganha | O que exige |
+|---|---|---|
+| **Ligar o Sentry** — definir `NEXT_PUBLIC_SENTRY_DSN` na Vercel | os 129 kB passam a pagar por si; erro de produção deixa de ser invisível | acesso à conta da Vercel, e aceitar que o dado comece a fluir (a redação do TICKET-057 já está pronta) |
+| **Não embarcar o que não se usa** — carregar o SDK por `import()` dinâmico, guardado pelo DSN | com DSN ausente, os 129 kB somem; com DSN presente, idêntico a hoje | mexer na fiação que o TICKET-057 montou, e o `onRouterTransitionStart` que o Next espera exportado |
+
+**Classificação: Do Eduardo.** — e eu não implementei a segunda, de propósito: **não tenho como
+testar o caminho com DSN presente**, porque não posso definir variável na Vercel. Entregar um ramo
+não verificado da fiação de observabilidade, numa auditoria cujo tema é "verificado × suposto",
+seria repetir o defeito com outro nome. Se a fiação quebrasse, ela quebraria em silêncio — que é
+literalmente o §0 deste documento.
+
+**Recomendação, se for para escolher uma:** ligar o DSN. O produto tem seis rotas de cron, uma fila
+offline e um cofre cifrado; descobrir falha de produção por relato de cliente é caro demais para
+economizar num campo de formulário na Vercel.
+
+---
+
+## 5.2 · A landing resolve a sessão duas vezes, e por isso não pode ser cacheada
+
+Medido no código **[M]**:
+
+| Onde | O que faz |
+|---|---|
+| `src/middleware.ts` | `db.auth.getUser()` em **toda** requisição não-estática — o matcher só exclui `_next/static`, `_next/image` e imagem. Existe para renovar o access token de 15 min |
+| `src/app/page.tsx:116` | `sessaoAtual()` de novo, **só** para redirecionar quem já está logado para `/admin/hoje` |
+
+Duas resoluções de sessão por visita à landing. E a segunda é o que marca a página como dinâmica
+(`ƒ` no build **[M]**): a única tela do produto cujo trabalho é **convencer um visitante anônimo**
+é também a única que não pode ser servida de cache.
+
+TTFB medido em produção **[M]**, três amostras: `/` entre **0,44s e 0,83s**. Uma página estática
+sairia do CDN em fração disso.
+
+**A resposta já está no middleware.** Ele computa `data.user` de qualquer jeito; o redirecionamento
+de quem está logado caberia ali sem custo novo, e `/` voltaria a ser estática.
+
+**Não implementei**, e o motivo é o mesmo do §5.1: mexer em roteamento de autenticação exige
+verificar os dois caminhos, e daqui eu só consigo testar o anônimo. O caminho de quem está logado
+precisaria de credencial real. — **Recomendado**, com a ressalva de que o ganho (centenas de ms de
+TTFB) é menor que o do §5.1 (129 kB, metade da página).
+
+⚠️ **Nota de medição, para não virar achado falso:** `/precos` variou entre **0,78s e 2,47s** nas
+três amostras. Três amostras, de uma máquina só, não distinguem cold start de problema real —
+então **isso não é um achado**, é uma pergunta. Quem for medir de verdade precisa de amostragem ao
+longo do dia, e o próprio Sentry (§5.1) daria isso de graça se estivesse ligado.
+
+---
+
 ## 6 · Onde procurar da próxima vez
 
 Em ordem do que rendeu:
@@ -144,6 +248,9 @@ Em ordem do que rendeu:
    agendada e uma credencial existente.
 5. **O que é publicado para fora.** `sitemap`, `robots`, metadados: eles falam com o mundo sem
    ninguém olhando.
+6. **Ferramenta instalada e não ligada.** O Sentry tinha SDK, redação, wrapper de build e ticket
+   fechado — e nenhum DSN em produção (§5.1). Instalar não é ligar, e o custo continua sendo pago
+   pelo usuário a cada tela.
 
 ---
 
