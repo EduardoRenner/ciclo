@@ -151,6 +151,30 @@ produção com `dsn: undefined`: o SDK inicializa e **não envia nada**.
 **Dois terços do JS inicial de qualquer tela são observabilidade que não observa** — num produto
 mobile-first, para quem atende de celular barato em 4G.
 
+### O custo, medido na página de produção que está no ar
+
+Baixando `ciclo-umber.vercel.app/` com `Accept-Encoding: gzip`, somando HTML, os 12 chunks e o
+CSS **[M]**:
+
+| | |
+|---|---|
+| HTML | 7 kB |
+| JS (12 chunks) | 242 kB |
+| CSS | 10 kB |
+| **Total** | **258 kB comprimidos** |
+| Sentry dentro disso | **129 kB — metade de tudo que a página baixa** |
+
+E em tempo, que é a unidade que a pessoa sente **[E]** (largura de banda nominal, sem latência):
+
+| Conexão | Hoje | Sem o Sentry |
+|---|---|---|
+| 3G lento (400 kbps) | **5,2s** | 2,6s |
+| 4G ruim (1,5 Mbps) | 1,4s | 0,7s |
+
+**A página carrega no dobro do tempo, numa conexão ruim, por causa de um SDK que hoje não envia
+nada.** Este é o número que transforma o achado de curiosidade técnica em decisão de produto: o
+público-alvo do CICLO é quem atende de celular, e a primeira tela é a única que precisa convencer.
+
 ### A hipótese que eu testei e que estava errada
 
 Supus que o peso viesse do Replay viajando sem ser usado, e apliquei `bundleSizeOptimizations` no
