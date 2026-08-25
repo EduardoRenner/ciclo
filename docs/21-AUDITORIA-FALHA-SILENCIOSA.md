@@ -10,17 +10,19 @@
 
 ## 0 · A família
 
-Nenhum dos seis defeitos abaixo aparecia como erro. **Todos passavam em teste, respondiam 200, ou
-funcionavam exatamente como escritos.** É por isso que sobreviveram — alguns por meses.
+Nenhum dos defeitos deste documento aparecia como erro. **Todos passavam em teste, respondiam 200,
+ou funcionavam exatamente como escritos.** É por isso que sobreviveram — alguns por meses.
 
 > **Um sistema que não faz nada e diz que está bem é pior que um que quebra.** O que quebra pede
 > socorro. O que finge não pede, e ninguém procura.
 
-A auditoria não começou por essa tese; ela apareceu ao terceiro achado e organizou o resto.
+A auditoria não começou por essa tese; ela apareceu ao terceiro achado e organizou o resto — e
+depois puxou mais três frentes que nasceram como assunto separado e voltaram para a mesma família:
+performance (§5.1–5.2), acessibilidade (§5.3) e resiliência de rede (§5.4).
 
 ---
 
-## 1 · Os seis achados
+## 1 · Os achados da primeira frente
 
 | # | Onde | O que parecia | O que era | PR |
 |---|---|---|---|---|
@@ -31,7 +33,19 @@ A auditoria não começou por essa tese; ela apareceu ao terceiro achado e organ
 | 5 | `sair.tsx` | logout limpa o aparelho | **descartava trabalho pendente sem avisar** — doze atendimentos marcados sem rede sumiam calados | [#6](https://github.com/EduardoRenner/ciclo/pull/6) |
 | 6 | `agendar.tsx` | "Você vai receber a confirmação por WhatsApp" | falso em **três níveis independentes**; nenhum canal alcançava aquela pessoa | [#7](https://github.com/EduardoRenner/ciclo/pull/7) |
 
-**Base de testes:** 668 → 698 **[M]**.
+**Base de testes ao longo de toda a auditoria:** 668 → 713 **[M]**.
+
+### 1.0 · Mapa das frentes, porque este documento cresceu
+
+| Frente | Onde | Achados |
+|---|---|---|
+| Falha silenciosa | §1 | 6, corrigidos |
+| Performance | §5.1, §5.2 | 2, medidos e **não** corrigidos — dependem do Eduardo |
+| Acessibilidade | §5.3 | 2 corrigidos, mais o registro do que voltou **limpo** |
+| Resiliência de rede | §5.4 | 1 corrigido no público, 18 telas em **linha de base** |
+
+O §6 é a lista de onde procurar da próxima vez, em ordem do que rendeu. É a parte com prazo de
+validade mais longo.
 
 ### 1.1 · O achado nº 6 merece nota separada
 
