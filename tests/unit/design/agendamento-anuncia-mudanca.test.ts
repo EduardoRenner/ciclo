@@ -158,3 +158,31 @@ describe('a busca de clientes anuncia o resultado e não engole a falha', () => 
     ).toBeGreaterThanOrEqual(buscas)
   })
 })
+
+/**
+ * Achado DENTRO do conserto, e por isso vale guardar: a primeira versão do `catch` de rede fazia
+ * `setSlots([])`, e com a lista vazia a região viva passava a anunciar "Sem horários livres nesse
+ * dia" — mentira, quando o que houve foi a rede cair. Podem existir dez horários; ninguém sabe.
+ *
+ * Afirmar ao leitor de tela o que não se sabe é o mesmo defeito que a auditoria persegue, cometido
+ * dentro da correção dele. Pego na verificação em navegador, não em revisão de código.
+ */
+describe('o anúncio não inventa resultado quando a rede cai', () => {
+  it('o catch de rede não esvazia a lista', () => {
+    const src = fonte()
+    const i = src.indexOf('catch')
+    const bloco = src.slice(i, i + 400)
+    expect(
+      /setSlots\(\[\]\)/.test(bloco),
+      'esvaziar a lista no catch faz a região viva anunciar "sem horários" quando o que houve foi falha de rede',
+    ).toBe(false)
+  })
+
+  it('havendo erro, a região de status cala e quem fala é o alerta', () => {
+    const src = fonte()
+    const i = src.indexOf('aria-live="polite"')
+    const bloco = src.slice(i, src.indexOf('</p>', i))
+    expect(/\{erro\s*\?/.test(bloco), 'o anúncio precisa considerar o estado de erro antes de tudo').toBe(true)
+    expect(/role="alert"/.test(src), 'precisa existir um alerta para falar do erro').toBe(true)
+  })
+})
