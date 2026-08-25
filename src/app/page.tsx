@@ -2,7 +2,7 @@ import { ArrowRight, CalendarCheck, Link2, Wallet } from 'lucide-react'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
-import { precoDoPlano } from '@/core/billing/planos'
+import { NOME_DO_PLANO, precoDoPlano } from '@/core/billing/planos'
 import IconeAnel from '@/components/ui/icone-anel'
 import { sessaoAtual } from '@/server/auth/session'
 
@@ -15,16 +15,29 @@ import type { Metadata } from 'next'
  * antes de criar conta. Esta página é a única do projeto cujo trabalho é
  * convencer; o resto do produto só serve quem já entrou.
  *
- * Sem preço de propósito: os planos são decisão comercial do Eduardo
- * (`docs/10-PROXIMOS-PASSOS.md` §4) e inventar número aqui seria mentira na
- * primeira tela. Sem depoimento e sem logotipo de cliente pelo mesmo motivo.
+ * O preço APARECE aqui, e isso inverteu a decisão antiga desta página ("sem
+ * preço de propósito, porque os planos ainda eram decisão comercial em aberto").
+ * A decisão saiu no `docs/18-MONETIZACAO-PLANO.md` (Fases D/E/M): preço visível
+ * sem cadastro, porque quatro dos treze concorrentes pesquisados escondem os
+ * degraus atrás de "fale com um consultor", e num público que lê isso como "vai
+ * ser caro" a transparência custa uma linha e compra confiança.
+ *
+ * O que NÃO mudou, e continua valendo pelo motivo original: sem depoimento, sem
+ * logotipo de cliente, sem contador de usuários. Prova social só quando for
+ * verdade (`docs/17-MONETIZACAO-PROMPT.md` §5.10), e hoje o número seria pequeno
+ * o bastante para a frase depor contra o produto.
+ *
+ * O que esta página pode e não pode prometer está medido em
+ * `docs/20-COPY-PLANO.md` §A.4, e guardado por
+ * `tests/unit/design/home-nao-promete-demais.test.ts` — que existe porque estas
+ * quatro promessas entraram aqui uma por rodada, cada uma soando bem, e ficaram.
  */
 export const metadata: Metadata = {
-  title: 'CICLO — a agenda que traz sua cliente de volta',
+  title: 'CICLO — a agenda que avisa quem parou de voltar',
   description:
-    'Agenda, site de agendamento e caixa para quem atende com hora marcada. O CICLO aprende de quanto em quanto tempo cada cliente volta, avisa quem atrasou e te dá a mensagem pronta para chamar.',
+    'Agenda, site de agendamento e caixa para quem atende com hora marcada. O CICLO calcula de quanto em quanto tempo cada cliente volta, mostra quem atrasou e te dá a mensagem pronta para chamar.',
   openGraph: {
-    title: 'CICLO — a agenda que traz sua cliente de volta',
+    title: 'CICLO — a agenda que avisa quem parou de voltar',
     description: 'Para barbearia, unhas, cílios, sobrancelha, depilação e estética. Feito para o celular, em português.',
     type: 'website',
     locale: 'pt_BR',
@@ -34,21 +47,21 @@ export const metadata: Metadata = {
 const RECURSOS = [
   {
     icone: IconeAnel,
-    titulo: 'Cliente sumida tem nome',
+    titulo: 'Quem sumiu tem nome',
     texto:
-      'O CICLO aprende o ritmo de cada pessoa — quem volta a cada 21 dias, quem volta a cada dois meses — e mostra quem passou do ponto. Com o valor que essa ausência representa e o texto pronto para chamar no WhatsApp.',
+      'O CICLO calcula o ritmo de cada pessoa — quem volta a cada 21 dias, quem volta a cada dois meses — e mostra quem passou do ponto. Com uma estimativa de quanto vale chamar cada uma (o preço do serviço vezes a chance de ela voltar) e o texto pronto para chamar no WhatsApp.',
   },
   {
     icone: Link2,
     titulo: 'Sua página de agendamento',
     texto:
-      'Um link para colar na bio do Instagram. A cliente escolhe serviço, profissional e horário sozinha, e o horário já entra na sua agenda sem risco de marcar dois no mesmo lugar.',
+      'Um link para colar na bio do Instagram. Quem for marcar escolhe serviço, profissional e horário sem precisar falar com você, e o horário já entra na sua agenda sem risco de marcar dois no mesmo lugar.',
   },
   {
     icone: Wallet,
     titulo: 'O dia fechado sem calculadora',
     texto:
-      'Quanto entrou, quanto foi de material, quanto ficou na maquininha, quanto é de comissão e quanto sobrou. Por dia e por mês, com o extrato de cada profissional.',
+      `Quanto entrou e quanto sobrou, com o extrato de cada profissional. Por dia e por mês. A partir do plano ${NOME_DO_PLANO.essencial}.`,
   },
 ]
 
@@ -63,7 +76,7 @@ const PASSOS = [
   },
   {
     titulo: 'Atenda. O resto o CICLO acompanha',
-    texto: 'Cada atendimento concluído alimenta o ciclo daquela cliente — e é assim que o sistema sabe quem está para voltar.',
+    texto: 'Cada atendimento concluído alimenta o ciclo daquela pessoa — e é assim que o sistema sabe quem está para voltar.',
   },
 ]
 
@@ -89,13 +102,13 @@ const PERGUNTAS = [
     resposta: 'Dá para importar de uma planilha. Nome e telefone bastam; o histórico vai sendo construído a partir dos atendimentos.',
   },
   {
-    pergunta: 'A cliente precisa baixar app ou criar conta?',
-    resposta: 'Não. Ela abre seu link, escolhe o horário e pronto. A confirmação vai pelo WhatsApp que você já usa.',
+    pergunta: 'Quem vai marcar precisa baixar app ou criar conta?',
+    resposta: 'Não. A pessoa abre seu link, escolhe o serviço e o horário, e o agendamento entra na sua agenda esperando você confirmar.',
   },
   {
-    pergunta: 'Funciona para quem atende sozinha?',
+    pergunta: 'Funciona para quem trabalha por conta?',
     resposta:
-      'Funciona, e é para quem está sozinha que ele mais serve: você não tem alguém olhando a agenda por você para lembrar de quem sumiu.',
+      'Funciona, e é para quem trabalha por conta que ele mais serve: você não tem alguém olhando a agenda por você para lembrar de quem sumiu.',
   },
 ]
 
@@ -152,12 +165,20 @@ export default async function Home() {
             <ArrowRight aria-hidden className="size-4" />
           </Link>
           {/*
-            O exemplo é a prova: em vez de descrever a página do salão, mostra
-            uma de verdade, com agenda funcionando. É o argumento mais forte que
-            o produto tem e ficava escondido atrás do cadastro.
+            O exemplo é a prova: em vez de descrever a página, mostra uma
+            funcionando de verdade. É o argumento mais forte que o produto tem e
+            ficava escondido atrás do cadastro.
+
+            Duas palavras que NÃO podem voltar aqui (docs/20-COPY-PLANO.md §D.4):
+            "salão", porque fecha num botão a porta que o resto da página abre para
+            as outras 9 das 17 profissões do catálogo; e o nome do tenant de demo,
+            porque `scripts/seed-demo-barbearia.mjs` o descreve como "tenant
+            fictício" — apresentá-lo como cliente de exemplo seria exatamente a
+            prova social inventada que o 17 §5.10 proíbe. "De exemplo" é o que
+            mantém a frase honesta.
           */}
           <Link href="/dom-rocha" className={botaoSecundario}>
-            Ver um salão de exemplo
+            Ver uma página de exemplo
           </Link>
         </div>
         {/*
@@ -246,7 +267,7 @@ export default async function Home() {
         <CalendarCheck aria-hidden className="mx-auto mb-3 size-8 text-acc-2" />
         <h2 className="text-titulo font-bold">Comece pela sua agenda de amanhã</h2>
         <p className="mx-auto mt-2 max-w-[42ch] text-secundario text-txt-2">
-          Criar a conta leva menos de três minutos, e o catálogo da sua profissão já vem preenchido.
+          Criar a conta é de graça, e o catálogo da sua profissão já vem preenchido.
         </p>
         <div className="mt-5 flex flex-wrap justify-center gap-3">
           <Link href="/cadastro" className={botaoPrimario}>

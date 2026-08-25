@@ -146,7 +146,7 @@ export default function FormularioOnboarding({ profissoes }: { profissoes: Profi
         required
         minLength={5}
         classNameCampo="tabular pl-[92px]"
-        ajuda="É o link que você manda para a cliente agendar."
+        ajuda="É o link que você manda para agendar."
       />
 
       {erro ? (

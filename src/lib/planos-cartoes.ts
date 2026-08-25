@@ -48,7 +48,14 @@ export const CARTOES: Plano[] = [
       { texto: 'Sua página de agendamento com link para a bio', modulo: 'public_page' },
       { texto: `${PLANOS.gratis.maxClientes} clientes com ficha e histórico`, modulo: 'clients' },
       { texto: 'Motor de Ciclo: veja quem sumiu e quanto isso vale', modulo: 'cycle_engine' },
-      { texto: 'Lembrete e confirmação de agendamento', modulo: 'reminders' },
+      /*
+        "Lembrete e confirmação de agendamento" saiu daqui em 2026-08-24 (docs/20-COPY-PLANO.md
+        §A.4 e §S.1/C-2). O módulo `reminders` existe e o Grátis o libera — mas `vercel.json` está
+        com `crons: []`, então a rota que dispara o lembrete nunca roda em produção. Anunciar numa
+        tabela de preço uma automação que não executa é a promessa mais cara que este produto pode
+        fazer, e o teste `precos-nao-promete-demais` não pega esta classe: ele confere o degrau,
+        não se o motor está ligado. Volta quando o P-0 do 18 estiver feito.
+      */
     ],
     naoInclui: ['Mandar mensagem para vários de uma vez — no grátis você manda um a um'],
   },
