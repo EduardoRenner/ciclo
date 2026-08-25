@@ -2605,3 +2605,19 @@ datilografar o slug no código (funciona hoje, some na próxima demonstração s
 esvaziar a lista. LIMITE CONHECIDO: não cobre os tenants órfãos que as suítes criam na base de
 produção, porque nascem com slug aleatório; aquilo é o P-B.1 do 18 §P.1.1 (apontar o teste para
 outro projeto Supabase), e continua pendente.
+
+2026-08-25 · Sair da conta com fila offline pendente passa a CONTAR e AVISAR antes de descartar ·
+O descarte em si estava certo e continua: num tablet de balcão compartilhado, entregar depois uma
+mutação em nome de quem entrar a seguir é pior que perdê-la, e o comentário original já dizia isso.
+O que faltava era a pessoa saber. Antes disto, quem marcasse doze atendimentos sem rede e tocasse
+"Sair da conta" perdia os doze **sem uma palavra** — a tela só prometia "limpa o que estiver
+guardado aqui". Descartar trabalho em silêncio é o defeito que só aparece no dia seguinte, quando o
+cliente chega para um horário que não existe. Agora: tenta drenar, RELÊ a fila (é o que de fato não
+subiu, seja por estar offline, seja por o envio ter falhado no meio), e se sobrou alguma coisa para
+e mostra a quantidade, com duas saídas — "Sair e descartar as N alterações" ou "Continuar na conta",
+mais a instrução do que fazer para não perder. Guarda em `tests/unit/shell/sair-da-conta.test.ts`.
+⚠️ Nota de método: o teste de mutação pegou um buraco na PRÓPRIA guarda — ela procurava
+`drenarFilaPendente` com `indexOf` e casava com a linha de `import` no topo, então passava mesmo se
+a contagem voltasse a acontecer antes da drenagem. Corrigido para procurar a CHAMADA
+(`await drenarFilaPendente(`). Guarda que nunca foi vista reprovando é guarda que ninguém sabe se
+funciona — e desta vez ela estava mesmo cega em um dos três casos.

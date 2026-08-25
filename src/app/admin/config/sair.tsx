@@ -28,18 +28,40 @@ export default function SairDaConta() {
   const router = useRouter()
   const [saindo, setSaindo] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
+  const [aDescartar, setADescartar] = useState<number | null>(null)
 
-  async function sair() {
+  /**
+   * `confirmado` só chega como `true` pelo segundo botão, o que a pessoa toca DEPOIS de ler
+   * quantas alterações vão embora.
+   */
+  async function sair(confirmado = false) {
     setSaindo(true)
     setErro(null)
 
     try {
-      // Tenta entregar o que estiver pendente antes de descartar. Se a rede estiver fora, o que
-      // sobrar é apagado mesmo assim — é dado de uma pessoa que está indo embora, e mandá-lo
-      // depois, em nome de quem entrar a seguir, seria pior.
+      // Tenta entregar o que estiver pendente antes de descartar. O que sobrar é apagado mesmo
+      // assim — é dado de uma pessoa que está indo embora, e mandá-lo depois, em nome de quem
+      // entrar a seguir, seria pior. Essa parte da decisão continua valendo.
       const pendentes = await listarMutacoes().catch(() => [])
       if (pendentes.length > 0 && navigator.onLine) {
         await drenarFilaPendente().catch(() => undefined)
+      }
+
+      /*
+        O que faltava não era a decisão de descartar, era CONTAR e AVISAR. Antes disto, uma
+        recepcionista que marcasse doze atendimentos sem rede e saísse perdia os doze sem uma
+        palavra — a tela só dizia "limpa o que estiver guardado aqui". Descartar trabalho de
+        alguém em silêncio é o tipo de coisa que a pessoa só descobre no dia seguinte, quando o
+        cliente aparece para um horário que não existe.
+
+        A contagem vem de reler a fila DEPOIS da drenagem: é exatamente o que não subiu, seja
+        porque estava offline, seja porque o envio falhou no meio.
+      */
+      const restantes = await listarMutacoes().catch(() => [])
+      if (restantes.length > 0 && !confirmado) {
+        setADescartar(restantes.length)
+        setSaindo(false)
+        return
       }
 
       const resposta = await fetch('/api/v1/auth/logout', { method: 'POST' })
@@ -62,14 +84,37 @@ export default function SairDaConta() {
       <div>
         <p className="text-corpo font-semibold">Sair da conta</p>
         <p className="text-secundario text-txt-2">
-          Encerra a sessão neste e nos outros aparelhos, e limpa o que estiver guardado aqui.
+          Encerra a sessão neste e nos outros aparelhos, e limpa o que estiver guardado aqui. O que
+          ainda não tiver subido é enviado antes, se houver internet.
         </p>
       </div>
 
-      <Button variante="secondary" onClick={sair} disabled={saindo}>
-        <LogOut aria-hidden className="size-4" />
-        {saindo ? 'Saindo…' : 'Sair da conta'}
-      </Button>
+      {aDescartar === null ? (
+        <Button variante="secondary" onClick={() => sair()} disabled={saindo}>
+          <LogOut aria-hidden className="size-4" />
+          {saindo ? 'Saindo…' : 'Sair da conta'}
+        </Button>
+      ) : (
+        <div className="flex flex-col gap-2">
+          <p role="alert" className="rounded-[var(--radius-sm)] bg-surface-2 p-3 text-secundario text-txt">
+            <span className="font-semibold">
+              {aDescartar === 1
+                ? '1 alteração ainda não subiu.'
+                : `${aDescartar} alterações ainda não subiram.`}
+            </span>{' '}
+            Elas ficaram guardadas neste aparelho e não podem ser enviadas em nome de quem entrar
+            depois de você. Se sair agora, {aDescartar === 1 ? 'ela será descartada' : 'elas serão descartadas'}.
+            Para não perder, conecte à internet e tente de novo.
+          </p>
+          <Button variante="secondary" onClick={() => sair(true)} disabled={saindo}>
+            <LogOut aria-hidden className="size-4" />
+            {saindo ? 'Saindo…' : `Sair e descartar ${aDescartar === 1 ? 'a alteração' : `as ${aDescartar} alterações`}`}
+          </Button>
+          <Button variante="secondary" onClick={() => setADescartar(null)} disabled={saindo}>
+            Continuar na conta
+          </Button>
+        </div>
+      )}
 
       {erro ? (
         <p role="alert" className="text-secundario text-bad">

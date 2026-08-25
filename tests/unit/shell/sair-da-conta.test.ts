@@ -65,4 +65,54 @@ describe('sair da conta (achado S9)', () => {
     expect(sair).toMatch(/router\.replace\(/)
     expect(sair).not.toMatch(/router\.push\(/)
   })
+
+  /**
+   * Segundo achado, 2026-08-25: a decisão de DESCARTAR o que não subiu estava certa e
+   * argumentada — num tablet de balcão, mandar depois em nome de quem entrar a seguir seria pior.
+   * O que faltava era contar e avisar. Antes disto, quem marcasse doze atendimentos sem rede e
+   * saísse perdia os doze sem uma palavra: a tela só dizia "limpa o que estiver guardado aqui".
+   *
+   * Descartar trabalho em silêncio é o defeito que a pessoa só descobre no dia seguinte, quando o
+   * cliente aparece para um horário que não existe.
+   */
+  it('conta o que sobrou DEPOIS de tentar drenar, não antes', () => {
+    const tela = conteudo.get(join('src', 'app', 'admin', 'config', 'sair.tsx'))
+    expect(tela).toBeDefined()
+
+    /*
+     * `await ...(` e não o nome solto: a primeira versão deste teste procurava `drenarFilaPendente`
+     * e casava com a linha de `import` no topo do arquivo, onde a ordem é a dos imports e não a da
+     * execução. Passava mesmo quando a contagem voltava a acontecer antes da drenagem — o próprio
+     * teste de mutação flagrou isso.
+     */
+    const depoisDaDrenagem = tela!.indexOf('await drenarFilaPendente(')
+    expect(depoisDaDrenagem, 'não achei a CHAMADA de drenarFilaPendente').toBeGreaterThan(-1)
+    const releitura = tela!.indexOf('await listarMutacoes(', depoisDaDrenagem)
+    expect(
+      releitura,
+      'a fila precisa ser relida DEPOIS da drenagem — contar antes mede o que ia subir, não o que ficou',
+    ).toBeGreaterThan(depoisDaDrenagem)
+  })
+
+  it('não apaga a fila sem a pessoa confirmar', () => {
+    const tela = conteudo.get(join('src', 'app', 'admin', 'config', 'sair.tsx'))!
+    expect(
+      /restantes\.length\s*>\s*0\s*&&\s*!confirmado/.test(tela),
+      'falta o portão: com mutação pendente e sem confirmação, sair tem que parar e avisar',
+    ).toBe(true)
+    expect(
+      tela.indexOf('setADescartar'),
+      'falta guardar a quantidade para poder dizê-la à pessoa',
+    ).toBeGreaterThan(-1)
+  })
+
+  it('o aviso diz o número, e oferece a saída de não perder', () => {
+    const tela = conteudo.get(join('src', 'app', 'admin', 'config', 'sair.tsx'))!
+    expect(/\$\{aDescartar\}|\{aDescartar\}/.test(tela), 'o aviso precisa mostrar a quantidade').toBe(true)
+    expect(/Continuar na conta/.test(tela), 'a pessoa precisa poder desistir de sair e salvar o trabalho').toBe(true)
+    expect(
+      /conecte à internet/i.test(tela),
+      'o aviso precisa dizer O QUE FAZER para não perder — erro que só descreve o problema é meio erro',
+    ).toBe(true)
+  })
 })
