@@ -2572,3 +2572,19 @@ marcos fixos e pequenos separados por um passo maior que a duração (`PASSO_MIN
 juntas — dentro do dia, sem sobrepor, em ordem estrita: zero violações. Efeito colateral honesto:
 entre 22:50 e 00:40 os dois casos de ordenação PULAM em vez de rodar, e **verde com skip não é
 prova** de que o cenário funciona — provar exige um run em horário em que ele execute.
+2026-08-25 · O `schedule` do cron passou de 1 para 5 horários, porque as rotas filtram por HORA
+LOCAL do tenant · Achado ao disparar o `cron.yml` pela primeira vez à mão (ele nunca tinha rodado:
+entrou em 24/08 às 18h UTC e o `schedule` só fecharia às 06:10 UTC). Os dois jobs voltaram **verdes,
+HTTP 200, `tenantsProcessados: 0`** — e zero era o correto naquele instante, porque as rotas só
+agem no tenant cuja hora local bate com a delas (`recompute-cycles` às 3h, `segments` às 4h). Esse
+desenho pressupunha o cron do Vercel disparando a cada 15 min, que era o plano antigo; o comentário
+no topo da rota ainda descreve esse mundo. Com UM disparo diário às 06:10 UTC, `recompute-cycles`
+só alcançava UTC-3 e `segments` só alcançaria UTC-2 — Fernando de Noronha, ou seja, ninguém. Como o
+fuso do tenant vem do NAVEGADOR no onboarding, quem se cadastrasse em Manaus, Cuiabá ou Rio Branco
+nunca teria o Motor de Ciclo recalculado, **e nada apitaria**: 200, zero processados, job verde.
+Rodar de hora em hora consertaria e custaria ~43% da cota de Actions do repositório privado; as
+cinco horas escolhidas (05–09 UTC) cobrem hora local 3 e 4 nos quatro fusos do Brasil por ~9%. A
+proteção que importa não é o YAML, é o teste: `tests/unit/server/cron-cobre-os-fusos.test.ts` lê o
+schedule E o filtro dentro de cada rota e confere a cobertura fuso a fuso, além de proibir
+`reminders`/`campaigns` dentro de `schedule`. Reprovação verificada contra os três defeitos reais:
+voltar ao horário único, mudar a hora dentro da rota, e agendar uma rota que fala com cliente final.
