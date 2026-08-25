@@ -171,6 +171,39 @@ contrário.
 Existe teste guardando `/precos` (`tests/unit/design/precos-nao-promete-demais.test.ts`) **[M]**.
 **Não existe nada guardando a home** — e é exatamente por isso que as três de cima passaram.
 
+#### A.4.1 · ⚠️ A quinta, achada depois: o produto publica um negócio inventado como se fosse real
+
+Confirmado com o Eduardo em 2026-08-24: **o `dom-rocha` é inteiramente fictício** — tenant,
+clientes, histórico, faltas e aniversários, todos semeados por `scripts/seed-demo-barbearia.mjs`
+**[M]**. Isso não fica contido na demonstração:
+
+| O que acontece | Onde | Consequência |
+|---|---|---|
+| O `sitemap.ts` lista **todo tenant** com `deleted_at is null` | `src/app/sitemap.ts` **[M]** | `/dom-rocha` é entregue a buscador como estabelecimento real — junto com `ruivo-barber` (teste) e com os tenants órfãos que as suítes criam na base de produção (18 §P.1.1) |
+| O `robots.ts` libera `/` e só bloqueia `/admin`, `/api` e as rotas de conta | `src/app/robots.ts` **[M]** | nada impede a indexação |
+| A página pública `/[slug]` **não tem nenhuma marca** de exemplo ou demonstração | `src/app/(public)/[slug]/` **[M]** | quem chega pela busca, e não pelo botão da home, não tem como saber |
+| O agendamento público está ligado nela | idem | **dá para marcar horário numa barbearia que não existe** |
+
+O botão da home diz "de exemplo", e isso resolve para **quem passa pela home**. Não resolve para
+quem chega pela busca — e a home é justamente o caminho que este documento está tornando mais
+visível.
+
+**Não é copy, e por isso não se conserta aqui.** É a mesma classe de defeito que o resto da Fase A
+(o produto afirmando para fora algo que não é verdade), e fica registrado como achado de produto,
+com as saídas em ordem de custo:
+
+1. **Excluir do `sitemap.ts` os tenants de demonstração e de teste.** Exige distingui-los — uma
+   coluna `is_demo` em `tenants`, ou uma lista de slugs no servidor. É o mínimo, e resolve a
+   indexação. — **Recomendado**
+2. **Marcar a página do tenant de demonstração** com uma faixa discreta ("Página de exemplo do
+   CICLO — este estabelecimento não existe"), que é o que protege quem chega direto pela URL.
+3. **Desligar o agendamento público no tenant de demonstração**, ou aceitá-lo sabendo que ninguém
+   atende do outro lado.
+
+O 18 §P.1.1 já pedia separar o ambiente de teste do de produção por causa da métrica suja. **Este
+achado dá um segundo motivo, mais caro que métrica:** enquanto as suítes criarem tenant na base
+real, o sitemap publica fixture de teste como negócio.
+
 ### A.5 · A pergunta que organiza o resto
 
 **Em quantos segundos alguém que nunca ouviu falar do CICLO entende o que ele faz e para quem?**
