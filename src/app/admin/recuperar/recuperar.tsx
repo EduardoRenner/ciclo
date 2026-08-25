@@ -139,6 +139,25 @@ export default function RecuperarReceita({
         ))}
       </FilterRow>
 
+      {/*
+        Mesmo defeito que a página pública de agendamento tinha, e nesta tela dói mais: aqui é o
+        Motor de Ciclo, o diferencial que sustenta o preço do produto. Trocar o filtro recarrega a
+        lista E os dois números do topo, sem trocar de rota — e, para quem usa leitor de tela, nada
+        avisava que a escolha surtiu efeito.
+
+        A região vive SEMPRE no DOM, mesmo vazia: leitor de tela precisa observar o nó antes de o
+        texto mudar. Região que nasce junto com o conteúdo costuma não ser anunciada — é o erro que
+        deixaria o atributo presente e o anúncio inútil.
+
+        O texto sai do MESMO `lista` que desenha os StatTiles, então o que se lê e o que se vê não
+        podem divergir.
+      */}
+      <p aria-live="polite" className="sr-only">
+        {carregando
+          ? 'Carregando a lista.'
+          : `${lista.count} ${lista.count === 1 ? 'cliente' : 'clientes'}, ${dinheiro.format(lista.totalValueCents / 100)} para recuperar.`}
+      </p>
+
       {aviso ? <p className="mb-4 rounded-[var(--radius-sm)] bg-acc-soft p-3 text-secundario text-txt">{aviso}</p> : null}
 
 

@@ -81,6 +81,15 @@ Uma guarda assim é pior que nenhuma, porque produz confiança sem informação.
 > volta — a chamada, a frase, o valor. Nunca com um nome que aparece no import, num rótulo, num
 > comentário ou numa string vizinha.
 
+**Quarta ocorrência, na auditoria de acessibilidade (2026-08-25):** uma asserção recortava 500
+caracteres a partir da região viva e procurava `carregando` dentro. O `{carregando}` do esqueleto
+de carregamento, logo **abaixo** no arquivo, caía dentro da janela — então a guarda passava com o
+anúncio já quebrado. Corrigido para delimitar pelo `</p>` real do elemento.
+
+> **Corolário do recorte:** a regra não vale só para o PADRÃO, vale para a JANELA. Fatiar por
+> número de caracteres coloca o vizinho dentro da asserção, e o vizinho quase sempre contém a
+> palavra que se procura.
+
 E o corolário, que custou caro para aprender:
 
 > **Guarda que nunca foi vista reprovando é guarda que ninguém sabe se funciona.** Reintroduzir o
@@ -234,6 +243,72 @@ longo do dia, e o próprio Sentry (§5.1) daria isso de graça se estivesse liga
 
 ---
 
+## 5.3 · Acessibilidade — medida no navegador, e a metade que voltou limpa
+
+Última grande área do produto sem auditoria. Rodei as páginas públicas a **375px** e medi o DOM
+renderizado, em vez de ler o código e opinar.
+
+### O que voltou limpo — e isto vale tanto quanto os achados
+
+Auditoria que só lista defeito faz a próxima pessoa refazer tudo. Estes ficam **registrados como
+verificados em 2026-08-25** **[M]**:
+
+| Verificado | Resultado |
+|---|---|
+| Alvos de toque, `/` e `/[slug]/agendar` | nenhum abaixo de 44px, entre 12 e 34 controles por página |
+| Nome acessível | todos os controles têm |
+| Hierarquia de títulos | correta (H1 → H2 → H3), um H1 por página |
+| `lang="pt-BR"` · `:focus-visible` · `prefers-reduced-motion` | os três presentes; o de movimento cobre `animation`, `transition` e o caso do sheet |
+| Componente `Input` | `<label htmlFor>` de verdade, `aria-invalid`, `aria-describedby`, `role="alert"` no erro, 48px de altura, fonte que não faz o Safari do iPhone dar zoom |
+| Skip link | **ausente** — mas só há **2** alvos focáveis antes do conteúdo (a Topbar), bloco repetido pequeno demais para caracterizar violação da 2.4.1 |
+
+O `Input` merece nota: ele resolve, num componente só, o que costuma ser o defeito mais espalhado
+de um formulário. Quem o escreveu já tinha feito esta auditoria na cabeça.
+
+### O falso alarme, que quase virou achado
+
+A árvore de acessibilidade parecia mostrar **seis botões sem rótulo** na página de agendamento. Fui
+ao DOM conferir antes de escrever: eles têm texto (`"Corte 40min R$ 45,00"`). Era limitação da
+ferramenta de leitura com botão de conteúdo aninhado — **não** defeito do produto.
+
+Fica registrado de propósito: numa auditoria cujo tema é *verificado × suposto*, reportar isso sem
+conferir teria sido o mesmo defeito com o crachá trocado.
+
+### O achado: mudança sem aviso
+
+Clicar num dia trazia **dez botões de horário** para a tela **[M]**:
+
+| | antes de clicar | depois |
+|---|---|---|
+| regiões vivas na página | **0** | **0** |
+| horários na tela | 0 | **10** |
+| foco | `body` | `body` |
+
+Dez opções novas apareciam e nada avisava. **WCAG 4.1.3 (Status Messages), nível AA** — na página
+que atende o **cliente do salão**. O mesmo estava em `/admin/recuperar`, a lista do Motor de Ciclo,
+onde trocar o filtro recarrega a lista **e** os dois números do topo.
+
+**O que faz a correção funcionar** não é o atributo, é a região existir **antes** do conteúdo
+mudar: leitor de tela precisa estar observando o nó. Região que nasce junto costuma não ser
+anunciada — seria fácil "consertar" assim, ver `aria-live` no HTML e achar que resolveu. Esse caso
+está entre os mutados.
+
+Verificado no navegador, ponta a ponta **[M]**: ao abrir, *"9 horários livres em terça-feira, 25 de
+agosto"*; ao clicar, *"Buscando horários."*; depois de carregar, o mesmo texto — com **9 horários
+de fato na tela**.
+
+### O que NÃO consegui medir, e por quê
+
+As telas de `/admin` exigem sessão, e daqui não dá para autenticar sem credencial de produção. A
+correção do Motor de Ciclo foi feita pelo padrão já provado na página pública, e a guarda cobre a
+**estrutura**, não o comportamento renderizado. **A diferença de rigor entre os dois casos está
+escrita no teste, no commit e aqui** — porque auditoria que apaga essa diferença vira exatamente o
+tipo de documento que este §0 acusa.
+
+Sobra, para quem tiver sessão: medir `/admin` a 375px com o mesmo script.
+
+---
+
 ## 6 · Onde procurar da próxima vez
 
 Em ordem do que rendeu:
@@ -248,7 +323,10 @@ Em ordem do que rendeu:
    agendada e uma credencial existente.
 5. **O que é publicado para fora.** `sitemap`, `robots`, metadados: eles falam com o mundo sem
    ninguém olhando.
-6. **Ferramenta instalada e não ligada.** O Sentry tinha SDK, redação, wrapper de build e ticket
+6. **Conteúdo que troca sem trocar de rota.** Filtro, busca, seletor de dia: a tela muda inteira e
+   quem não enxerga não é avisado. O sintoma é sempre o mesmo — `[aria-live]` em zero numa página
+   cujo conteúdo é todo dinâmico (§5.3).
+7. **Ferramenta instalada e não ligada.** O Sentry tinha SDK, redação, wrapper de build e ticket
    fechado — e nenhum DSN em produção (§5.1). Instalar não é ligar, e o custo continua sendo pago
    pelo usuário a cada tela.
 
@@ -262,3 +340,8 @@ Em ordem do que rendeu:
 - [x] Cada decisão registrada em `docs/DECISOES.md`
 - [x] O que ficou aberto está no §5, com classificação e dono
 - [x] Nenhuma correção depende de migration não aplicada
+- [x] Acessibilidade medida no navegador a 375px, com o que voltou **limpo** registrado (§5.3)
+- [x] O que **não** foi possível medir está dito, com o motivo — e a diferença de rigor entre um
+      caso verificado no navegador e outro verificado só na estrutura aparece no teste, no commit
+      e no documento
+- [x] Um falso alarme descartado antes de virar achado (§5.3), porque conferir custou dois minutos

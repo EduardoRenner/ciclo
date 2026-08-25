@@ -2638,3 +2638,33 @@ asserção do caminho de saída procurava `/telefone/` e casava com o RÓTULO DO
 (WhatsApp)"), que está sempre lá. Terceira guarda desta rodada que o teste de mutação flagrou
 casando com algo incidental em vez do que importa. Padrão que vale para as próximas: guarda de copy
 tem que casar com a FRASE, não com uma palavra que a página contém por outro motivo.
+
+2026-08-25 · A página de agendamento passa a anunciar a mudança de horários para leitor de tela ·
+Medido no navegador, não deduzido: clicar num dia trazia DEZ botões de horário para a tela, e
+`[aria-live]`/`[role=status]`/`[role=alert]` continuavam em ZERO na página, com o foco parado no
+`body`. Dez opções novas apareciam e nada avisava — WCAG 4.1.3 (Status Messages), nível AA, na
+página que atende o cliente do salão. A região é `aria-live="polite"` (a pessoa acabou de tocar num
+dia e está esperando; interromper não acrescenta) e vive SEMPRE no DOM, mesmo vazia — leitor de tela
+precisa observar o nó antes de o texto mudar, e região que nasce junto com o conteúdo costuma não
+ser anunciada. É o erro que tornaria o atributo presente e o anúncio inútil, e foi mutado para
+confirmar que a guarda pega. O texto sai do MESMO estado que desenha a tela (`slots`), então os dois
+não podem divergir — tela mostrando nove horários e leitor dizendo outra coisa seria pior que
+silêncio. Verificado no navegador ponta a ponta: ao abrir "9 horários livres em terça-feira, 25 de
+agosto", ao clicar "Buscando horários.", depois de carregar o mesmo texto com 9 horários de fato na
+tela. O que a auditoria de acessibilidade encontrou de resto está limpo e fica registrado como
+verificado: alvos de toque (nenhum abaixo de 44px nas páginas públicas), nome acessível em todos os
+controles, hierarquia de títulos, `lang="pt-BR"`, `:focus-visible`, `prefers-reduced-motion`, e o
+componente `Input` com `<label htmlFor>`, `aria-invalid`, `aria-describedby` e `role="alert"`.
+
+2026-08-25 · A tela do Motor de Ciclo também não anunciava a troca de filtro · Mesmo defeito do
+agendamento público, e aqui dói mais: é o diferencial que sustenta o preço. Trocar o filtro
+recarrega a lista E os dois números do topo, sem trocar de rota, e nada avisava. Mesmo padrão:
+região `aria-live="polite"` que vive sempre no DOM, com texto saindo do MESMO `lista` que desenha os
+StatTiles — número lido diferente do número mostrado seria pior que silêncio. ⚠️ Rigor desigual,
+dito na cara: o caso do agendamento foi verificado no navegador ponta a ponta; ESTE não, porque
+`/admin` exige sessão e daqui não dá para autenticar sem credencial de produção. O mecanismo é o
+mesmo já provado na página pública; o que a guarda cobre aqui é a estrutura, não o comportamento
+renderizado. E o teste de mutação achou a QUARTA guarda cega desta auditoria: a asserção recortava
+500 caracteres a partir da região e o `{carregando}` do esqueleto logo abaixo caía na janela.
+Corolário novo, registrado no docs/21 §3: a regra do recorte vale como a do padrão — delimitar pelo
+fim real do elemento, nunca por número de caracteres.
