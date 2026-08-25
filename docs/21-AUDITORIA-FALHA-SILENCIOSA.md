@@ -309,6 +309,58 @@ Sobra, para quem tiver sessão: medir `/admin` a 375px com o mesmo script.
 
 ---
 
+## 5.4 · A hipótese que caiu: no React 19 não é silêncio, é a tela inteira
+
+Varrendo `catch` que devolve padrão (o item 3 do §6), tropecei em **27 callbacks** onde `await
+fetch` roda dentro de uma transição sem `try`. A hipótese óbvia era falha silenciosa: a promessa
+rejeita, `setErro` nunca roda, a pessoa toca em salvar e nada acontece.
+
+**Testei quebrando o `fetch` de propósito em `/dom-rocha/agendar`, e é o oposto.** No React 19 a
+Action que rejeita é **re-lançada para o error boundary** — a tela inteira some **[M]**:
+
+> Algo saiu do lugar · Não consegui carregar esta tela. **Seus dados estão salvos** — foi só a
+> exibição que falhou. · [ Tentar de novo ] [ **Ir para Hoje** ]
+
+Numa rede de subsolo, que é o cenário declarado do produto (§10 do design system), isso acontece
+por **uma piscada** — e leva junto o serviço, o profissional e o dia que a pessoa já escolheu.
+
+### O achado dentro do achado
+
+Aquela tela de erro é o boundary da **raiz**, e o texto dela foi escrito para o profissional. Quem
+estava ali era o **cliente do salão**: lia "Seus dados estão salvos" (não estava salvando nada) e
+recebia um botão para `/admin/hoje`, **o painel do dono**, atrás de um login que não é dele.
+
+### E o achado dentro do conserto
+
+A primeira versão do `catch` fazia `setSlots([])`. Com a lista vazia, a região viva da §5.3 passava
+a anunciar *"Sem horários livres nesse dia"* — **mentira**: o que houve foi a rede cair, e podem
+existir dez horários.
+
+**Cometi, dentro da correção, exatamente o defeito que esta auditoria persegue.** Só apareceu na
+verificação em navegador; revisão de código nenhuma teria ido olhar o texto da região viva depois de
+um `catch`.
+
+### Por que 18 telas continuam com o defeito, de propósito
+
+| Saída considerada | Por que não |
+|---|---|
+| Consertar as 18 de uma vez | edição mecânica grande em telas que dependem de sessão e que **não consigo abrir no navegador**. Trocar um defeito conhecido por 18 mudanças não verificadas não é progresso |
+| Um helper central de `fetch` | o `CLAUDE.md` proíbe **[M]**: "nada de `utils.ts` genérico" |
+| Usar o `apiFetch` que já existe | ele **enfileira em vez de estourar** — mas devolve `{queued}` **sem o corpo da resposta**, e a maioria das telas precisa do dado criado de volta. É a razão provável de a adoção ter parado em **2 telas** |
+
+O que existe hoje é `tests/unit/design/rede-nao-derruba-tela.test.ts`, com **linha de base**: tela
+nova com o defeito reprova, e tela já consertada que continue na lista **também** reprova. A dívida
+para de crescer e a lista só encolhe.
+
+**A terceira asserção guarda o próprio detector:** se o regex parar de casar, a lista de "já
+consertadas" fica cheia e o teste grita — em vez de passar verde vazio. Foi a que mais importou.
+
+> **Nota de método, e custou uma confusão:** a primeira tentativa de mutar essa asserção usou `sed`
+> com escapes e **não chegou a aplicar**. Deu "guarda cega" falso. **Mutação que não é confirmada
+> como aplicada não prova nada — nem a favor nem contra.**
+
+---
+
 ## 6 · Onde procurar da próxima vez
 
 Em ordem do que rendeu:
@@ -326,7 +378,10 @@ Em ordem do que rendeu:
 6. **Conteúdo que troca sem trocar de rota.** Filtro, busca, seletor de dia: a tela muda inteira e
    quem não enxerga não é avisado. O sintoma é sempre o mesmo — `[aria-live]` em zero numa página
    cujo conteúdo é todo dinâmico (§5.3).
-7. **Ferramenta instalada e não ligada.** O Sentry tinha SDK, redação, wrapper de build e ticket
+7. **Costura entre biblioteca e versão.** O mesmo código muda de comportamento entre React 18 e
+   19: o que era falha silenciosa virou tela derrubada (§5.4). Suposição sobre framework envelhece
+   sem avisar — teste, não deduza.
+8. **Ferramenta instalada e não ligada.** O Sentry tinha SDK, redação, wrapper de build e ticket
    fechado — e nenhum DSN em produção (§5.1). Instalar não é ligar, e o custo continua sendo pago
    pelo usuário a cada tela.
 
