@@ -1,3 +1,4 @@
+import { ehDemonstracao } from '@/core/tenants/demonstracao'
 import { withNovoTenant } from '@/server/db/with-tenant'
 
 import type { MetadataRoute } from 'next'
@@ -46,11 +47,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Preço é a única outra rota estática que vale indexar: é a pergunta que o público faz antes
     // de qualquer coisa, e a concorrência que esconde preço deixa esse espaço de busca vago.
     { url: `${base}/precos`, changeFrequency: 'monthly', priority: 0.7 },
-    ...tenants.map((t) => ({
-      url: `${base}/${t.slug}`,
-      lastModified: t.created_at ?? undefined,
-      changeFrequency: 'weekly' as const,
-      priority: 0.8,
-    })),
+    /*
+      Tenant de demonstração fica FORA do sitemap: ele não é um negócio, e entregá-lo ao buscador
+      como se fosse é o que permitia alguém achar a barbearia de exemplo no Google e marcar
+      horário nela. Ver `src/core/tenants/demonstracao.ts` e `docs/20-COPY-PLANO.md` §A.4.1.
+    */
+    ...tenants
+      .filter((t) => !ehDemonstracao(t.slug))
+      .map((t) => ({
+        url: `${base}/${t.slug}`,
+        lastModified: t.created_at ?? undefined,
+        changeFrequency: 'weekly' as const,
+        priority: 0.8,
+      })),
   ]
 }

@@ -2588,3 +2588,20 @@ proteção que importa não é o YAML, é o teste: `tests/unit/server/cron-cobre
 schedule E o filtro dentro de cada rota e confere a cobertura fuso a fuso, além de proibir
 `reminders`/`campaigns` dentro de `schedule`. Reprovação verificada contra os três defeitos reais:
 voltar ao horário único, mudar a hora dentro da rota, e agendar uma rota que fala com cliente final.
+
+2026-08-25 · Tenant de demonstração sai do sitemap por lista em `core/`, não por coluna no banco ·
+O `sitemap.ts` entregava o `dom-rocha` ao buscador como estabelecimento real — e ele é INTEIRAMENTE
+fictício (`scripts/seed-demo-barbearia.mjs`: "um tenant fictício"), com o agendamento público
+ligado. Dava para achar a barbearia de exemplo numa busca e marcar horário num lugar que não
+existe. O desenho durável seria uma coluna `is_demo` em `tenants`, e ela continua sendo o alvo — mas
+**migration neste projeto não é aplicada por deploy**: a CI só aplica em banco efêmero e produção é
+manual (ver a entrada da 0040). Código consultando coluna inexistente ficaria quebrado no intervalo
+entre o deploy e a migration, e o sintoma seria um sitemap VAZIO — pior que o problema original.
+Lista pura em `src/core/tenants/demonstracao.ts` funciona no instante em que sobe. Três leitores
+usam a mesma regra, e é isso que o teste guarda: o sitemap filtra, o `generateMetadata` marca
+`noindex`, e a página mostra um aviso visível — este último é o único que alcança quem abre a URL
+direto, por print ou link no WhatsApp, que nem sitemap nem robots protegem. O teste também proíbe
+datilografar o slug no código (funciona hoje, some na próxima demonstração semeada) e proíbe
+esvaziar a lista. LIMITE CONHECIDO: não cobre os tenants órfãos que as suítes criam na base de
+produção, porque nascem com slug aleatório; aquilo é o P-B.1 do 18 §P.1.1 (apontar o teste para
+outro projeto Supabase), e continua pendente.
