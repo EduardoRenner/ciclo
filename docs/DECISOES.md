@@ -2710,3 +2710,16 @@ houve foi a rede cair. Podem existir dez horários; ninguém sabe. Afirmar ao le
 se sabe é o defeito que esta auditoria persegue, cometido dentro da correção dele. Pego na
 VERIFICAÇÃO EM NAVEGADOR, não em revisão de código — revisão nenhuma teria olhado o texto da região
 viva depois de um catch. Agora, havendo erro, a região de status cala e quem fala é o `role="alert"`.
+
+2026-08-25 · A dívida dos 18 `fetch` sem `try` em transição virou linha de base, não conserto em
+massa · O detector preciso (casando chaves do callback, não grep de arquivo) achou 25 callbacks em
+18 telas do painel. Consertar as 18 de uma vez seria uma edição mecânica grande em telas que
+dependem de sessão e que não consigo abrir no navegador para verificar — trocar um defeito conhecido
+por 18 mudanças não verificadas não é progresso. E criar um helper central esbarra na regra do
+CLAUDE.md ("nada de utils.ts genérico"). Então: `tests/unit/design/rede-nao-derruba-tela.test.ts`
+guarda nos DOIS sentidos — tela nova com o defeito reprova (a dívida para de crescer), e tela já
+consertada que continue na lista TAMBÉM reprova (a lista só encolhe, e nunca vira decoração). A
+terceira asserção guarda contra o próprio detector: se o regex parar de casar, a lista de
+"consertadas" fica cheia e o teste grita, em vez de passar verde vazio — foi a mutação que mais
+importou verificar. Caminho para zerar a lista passa por resolver o limite do `apiFetch` (devolve
+`{queued}` sem o corpo da resposta), ou por tratar caso a caso com verificação.
