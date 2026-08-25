@@ -2621,3 +2621,20 @@ mais a instrução do que fazer para não perder. Guarda em `tests/unit/shell/sa
 a contagem voltasse a acontecer antes da drenagem. Corrigido para procurar a CHAMADA
 (`await drenarFilaPendente(`). Guarda que nunca foi vista reprovando é guarda que ninguém sabe se
 funciona — e desta vez ela estava mesmo cega em um dos três casos.
+2026-08-25 · A página de agendamento público prometia confirmação por WhatsApp, e nada chegava ·
+Achado rastreando a cadeia inteira, e a promessa era falsa em TRÊS níveis independentes:
+(1) `criarAgendamentoPublico` não manda nada para o cliente — só um push para a equipe;
+(2) quem mandaria é `identificarLembretesPendentes`, chamada só por `/api/cron/reminders`;
+(3) `reminders` está fora do `schedule` de propósito e o WhatsApp não tem credencial — e o
+formulário público nem coleta e-mail, então o fallback de `enviarComFallback` também não alcança
+ninguém. Nenhum canal chegava a essa pessoa, nunca. Aqui a mentira custa mais caro que na landing:
+quem fica mal com um cliente esperando confirmação que não vem não é o CICLO, é o salão que confiou
+nele. A copy passa a dizer o que de fato acontece ("Seu pedido chegou e já apareceu para a equipe. A
+confirmação vem de quem vai te atender…"), sem prometer canal e mantendo o caminho de saída, porque
+tirar promessa falsa não pode virar silêncio sobre o que fazer. A leitura do `cron.yml` saiu de
+dentro do teste da home para `tests/helpers/cron.ts`: eram duas cópias, e foi justamente a cópia
+que nasceu lendo o arquivo errado (`vercel.json`). ⚠️ Método: das três mutações, UMA passou — a
+asserção do caminho de saída procurava `/telefone/` e casava com o RÓTULO DO CAMPO ("Seu telefone
+(WhatsApp)"), que está sempre lá. Terceira guarda desta rodada que o teste de mutação flagrou
+casando com algo incidental em vez do que importa. Padrão que vale para as próximas: guarda de copy
+tem que casar com a FRASE, não com uma palavra que a página contém por outro motivo.

@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs'
 
 import { describe, expect, it } from 'vitest'
 
+import { rotaDeCronAgendada } from '../../helpers/cron'
+
 import { NOME_DO_PLANO, PLANOS, menorPlanoCom, type ModuloKey } from '@/core/billing/planos'
 
 /**
@@ -30,25 +32,13 @@ function copyDaHome(): string {
 }
 
 /**
- * Uma rota de cron só roda sozinha se estiver no `schedule` do `.github/workflows/cron.yml`.
- *
- * ⚠️ A primeira versão desta guarda lia o `vercel.json`, e estava ERRADA — erro meu, da mesma
- * família que ela existe para pegar. O `vercel.json` continua com `crons: []` de propósito e vai
- * continuar para sempre: o agendador deste projeto é o GitHub Actions, escolhido em
- * `docs/18-MONETIZACAO-PLANO.md` §L.5 porque o Vercel Hobby trava em uma execução por dia e o Pro
- * custa 2,4 assinantes só para pagar o agendador. Ancorada no arquivo errado, a guarda bloquearia
- * a copy de cadência para sempre, inclusive depois do cron passar a funcionar.
+ * A leitura do `cron.yml` mora em `tests/helpers/cron.ts` porque DOIS testes de copy dependem da
+ * mesma resposta — este e o do agendamento público. Enquanto estava duplicada aqui, a cópia foi
+ * escrita lendo o arquivo errado (`vercel.json`, que tem `crons: []` de propósito e para sempre,
+ * porque o agendador é o GitHub Actions — `docs/18-MONETIZACAO-PLANO.md` §L.5). Ancorada assim,
+ * ela bloquearia copy honesta para sempre, inclusive depois de o cron funcionar.
  */
-function rotaAgendada(rota: string): boolean {
-  const yml = readFileSync('.github/workflows/cron.yml', 'utf8')
-  const bloco = yml.split(/^jobs:/m)[0]!
-  // Sem horário no `on:`, nada roda sozinho, por mais que a matriz liste a rota.
-  if (!/^\s*-\s*cron:/m.test(bloco)) return false
-
-  const matriz = yml.match(/rota:\s*\[([^\]]+)\]/)
-  if (!matriz) return false
-  return matriz[1]!.split(',').map((r) => r.trim()).includes(rota)
-}
+const rotaAgendada = rotaDeCronAgendada
 
 function achar(texto: string, termos: RegExp[]): string[] {
   return termos.filter((t) => t.test(texto)).map((t) => t.source)
