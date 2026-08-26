@@ -1,12 +1,12 @@
 'use client'
 
 import { ChevronLeft, Settings } from 'lucide-react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
-import MarcaCiclo from '@/components/ui/marca-ciclo'
-
 import { paiDaRota } from './navegacao'
+import wordmark from '../../../public/marca/ciclo-wordmark-aqua.png'
 
 /**
  * Barra do topo. Deixou de ser um enfeite de marca e virou **navegação**: na
@@ -42,10 +42,11 @@ export default function Topbar() {
           {pai.rotulo}
         </Link>
       ) : (
-        <div className="flex h-12 items-center gap-2">
-          {/* Marca estática (redesenho do uróboros, 2026-08-26) — cor própria, sem cápsula. */}
-          <MarcaCiclo className="size-7" />
-          <span className="text-label font-semibold uppercase tracking-[0.13em] text-txt-3">CICLO</span>
+        <div className="flex h-12 items-center">
+          {/* Lockup completo (redesenho aqua, 2026-08-26) — nunca mais o nome
+              digitado à parte do símbolo; onde "Ciclo" aparece fora de frase,
+              é a marca de verdade. */}
+          <Image src={wordmark} alt="CICLO" className="h-7 w-auto" />
         </div>
       )}
 
