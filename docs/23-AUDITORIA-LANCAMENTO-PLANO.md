@@ -199,18 +199,67 @@ de plano limita o que dá para **fazer** e nunca esconde o que **existe**. Isso 
 
 ---
 
-## 7 · F5 · Coerência do que o plano promete
-
-`exigirModulo` está em **4** rotas [M]: `campaigns`, `quotes`, `inventory/entries`, `clients/[id]/vault`.
+## 7 · F5 · Coerência do que o plano promete — **o segundo achado grave**
 
 **Correção de memória desatualizada:** a lacuna de `docs/18 §L.2.1` — "a tela promete que Campanhas
 é do Essencial mas `POST /api/v1/campaigns` continua liberado" — **está fechada** [M]
-(`src/app/api/v1/campaigns/route.ts:21`). O documento `18` está desatualizado neste ponto e a
-execução deve corrigi-lo, não replicá-lo.
+(`src/app/api/v1/campaigns/route.ts:21`). O `docs/18` está desatualizado nesse ponto.
 
-O que resta é o inverso: varrer `/precos` e `/admin/config/modulos` e conferir que **toda
-afirmação tem um `exigirModulo` atrás**. Atenção ao limite suave de 50 clientes (`docs/18 §L.1`):
-limite suave é decisão legítima; **anunciá-lo como rígido** é o defeito.
+**Mas o problema era maior do que aquela linha, e continua aberto.** Varrendo as 67 rotas de
+escrita de `/api/v1` contra os módulos anunciados nos cartões de preço [M]:
+
+| Módulo | Vendido em | Trava no servidor |
+|---|---|---|
+| `campaigns` | Essencial R$ 49 | ✅ |
+| `quotes` | Essencial R$ 49 | ✅ |
+| **`register`** (Comanda e caixa) | **Essencial R$ 49** | ❌ **nenhuma** |
+| **`team`** (Agenda por profissional, comissão) | **Equipe R$ 99** | ❌ **nenhuma** |
+| **`loyalty`** (Fidelidade e pontos) | **Equipe R$ 99** | ❌ **nenhuma** |
+| `stock` | Avançado R$ 179 | ✅ |
+| `health_records` | Avançado R$ 179 | ✅ |
+| **`recurrence`** (Recorrência e pacotes) | **Avançado R$ 179** | ❌ **nenhuma** |
+
+**Metade do que é vendido como pago não é travado por nada.** Hoje um tenant `gratis` abre e fecha
+comanda, lança fidelidade, cria série recorrente e usa agenda por profissional — tudo o que os três
+degraus pagos existem para vender.
+
+### 7.1 · Por que o teste que existia não pegou
+
+`tests/unit/design/precos-nao-promete-demais.test.ts` confere que o degrau **anunciado** no cartão
+é o mesmo que o `core` libera. Isso é consistência de **configuração**, e ele está certo no que
+faz. Mas config coerente não é limite: `podeUsarModulo()` só decide alguma coisa **se alguém
+chamar**. Um módulo pode estar corretamente marcado como "Essencial" no cartão e no core, e ainda
+assim não ter uma única rota perguntando.
+
+**É o mesmo formato de defeito da F1:** a guarda provava a aritmética, não a entrega. Duas vezes na
+mesma auditoria, em subsistemas sem relação — o que sugere que é um padrão desta base, não azar.
+
+### 7.2 · O conserto, e por que ele é seguro agora
+
+Medido antes de decidir [M]: os dois tenants `gratis` reais (`ruivo-barber`, `lang-barber`) têm
+**zero** comandas, zero lançamentos de fidelidade, zero séries, zero assinaturas e **1 profissional
+cada**. `dom-rocha` é `avancado`, então nada lhe é tirado. **Ligar a trava hoje não tira nada de
+ninguém** — que é exatamente a ordem obrigatória do `docs/18 §L.2.1` (migration → plano atribuído →
+enforcement), e ela já está cumprida.
+
+Regra de aplicação: **só rota de escrita**. `GET` continua livre — cair de plano limita o que dá
+para **fazer** e nunca esconde o que **existe** (`docs/18` regra 5.1).
+
+⚠️ **Detalhe que precisa de decisão junto:** `concluirAgendamento()` cria a comanda
+automaticamente ao concluir um atendimento [R]. Travar as rotas de escrita de `tickets` faz um
+tenant `gratis` acumular comanda aberta que ele não pode fechar. Isso é pressão de upsell
+intencional ou defeito? **É decisão de produto** — mas o cartão de preço já a tomou ao vender
+"Comanda, caixa e fechamento do dia" como Essencial. Registrar a consequência, não reabrir o preço.
+
+### 7.3 · Guarda criada
+
+`tests/unit/design/precos-tem-trava-no-servidor.test.ts`, no formato de linha de base já usado em
+`rede-nao-derruba-tela.test.ts`: módulo pago novo sem trava reprova (a dívida para de crescer) e
+módulo já travado que continue na lista também reprova (a lista só encolhe). Três mutações
+confirmadas como aplicadas e as três pegas — incluindo a do detector cego.
+
+Atenção ao limite suave de 50 clientes (`docs/18 §L.1`): limite suave é decisão legítima;
+**anunciá-lo como rígido** é o defeito. Fora do escopo desta frente, segue aberto.
 
 ---
 
