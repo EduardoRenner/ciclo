@@ -1,6 +1,6 @@
 import Image from 'next/image'
 
-import wordmark from '../../../public/marca/ciclo-wordmark-escuro.png'
+import wordmark from '../../../public/marca/ciclo-wordmark-aqua.png'
 
 /**
  * Marca do CICLO — o uróboros: anel aberto com cabeça de seta, lê `C` num

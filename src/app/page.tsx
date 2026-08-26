@@ -5,10 +5,9 @@ import { redirect } from 'next/navigation'
 
 import { NOME_DO_PLANO, precoDoPlano } from '@/core/billing/planos'
 import IconeAnel from '@/components/ui/icone-anel'
-import MarcaCiclo from '@/components/ui/marca-ciclo'
 import { sessaoAtual } from '@/server/auth/session'
 
-import wordmark from '../../public/marca/ciclo-wordmark-escuro.png'
+import wordmark from '../../public/marca/ciclo-wordmark-aqua.png'
 
 import type { Metadata } from 'next'
 
@@ -130,10 +129,7 @@ export default async function Home() {
   return (
     <main className="mx-auto min-h-dvh max-w-[720px] px-[var(--gutter)] pb-16">
       <header className="flex items-center justify-between gap-3 py-5">
-        <div className="flex items-center gap-2">
-          <MarcaCiclo className="size-8" />
-          <span className="text-label font-semibold uppercase tracking-[0.13em] text-txt-3">CICLO</span>
-        </div>
+        <Image src={wordmark} alt="CICLO" className="h-7 w-auto" />
         <nav className="flex items-center gap-1">
           <Link
             href="/precos"
