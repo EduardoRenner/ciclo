@@ -155,15 +155,18 @@ nesta sessão para abrir a tela de verdade.
 O `10-PROXIMOS-PASSOS` §3 já registra que **não há instrumentação do funil de onboarding**,
 por falta de tráfego real **[M]**. Com o piloto da F3 isso deixa de ser justificativa.
 
-| # | Ticket | Por quê |
-|---|---|---|
-| 11 | Instrumentar o funil: cadastro → primeira profissão → primeiro cliente → primeiro agendamento → primeira mensagem enviada | Sem isso a F3 gera anedota, não dado |
-| 12 | Colocar `/admin/clientes/importar` no caminho crítico do onboarding | É o *aha moment*. Já existe e está escondido. |
-| 13 | "Primeira previsão": ao terminar a importação, mostrar imediatamente o que o Motor calculou em cima da base dele | Transforma importar-contatos (chato) em ver-o-futuro (o produto) |
+| # | Ticket | Por quê | Status |
+|---|---|---|---|
+| 11 | Instrumentar o funil: cadastro → primeira profissão → primeiro cliente → primeiro agendamento → primeira mensagem enviada | Sem isso a F3 gera anedota, não dado | ⏸️ **Não construído nesta execução** — o projeto não tem nenhuma infra de evento/analytics hoje (só Sentry, para erro; `docs/05-FAQ-DEV.md`/`ESPECIFICACAO-COMPLETA.md` mencionam PostHog, mas é aspiracional — confirmado ausente em `package.json` e nas migrations). Instrumentar de verdade é decisão de ferramenta (self-hosted vs. PostHog/terceiro, com implicação de custo e de compartilhamento de dado com terceiro sob LGPD) — não é ticket de uma sessão, é escolha do dono. Ver `DECISOES.md`. |
+| 12 | Colocar `/admin/clientes/importar` no caminho crítico do onboarding | É o *aha moment*. Já existe e está escondido. | ✅ Link na lista de clientes vazia (`lista.tsx`) |
+| 13 | "Primeira previsão": ao terminar a importação, mostrar imediatamente o que o Motor calculou em cima da base dele | Transforma importar-contatos (chato) em ver-o-futuro (o produto) | ✅ Coluna opcional de última visita + prévia calculada com `computeCycle` de verdade, não persistida em `client_cycles` (exige `service_id`, que um cliente importado não tem) |
 
 O 13 é o ticket com maior retorno da lista inteira. O momento em que o barbeiro importa 200
 contatos e a tela responde *"37 destes já passaram do tempo de voltar"* é o momento em que o
 CICLO deixa de ser uma agenda e vira outra coisa. Hoje esse momento não acontece em lugar nenhum.
+
+Não verificado em navegador ao vivo (mesma ressalva da F1): typecheck, lint, suíte unitária e de
+integração completas, RLS e build de produção passam.
 
 ### F3 · Piloto de 10 — a única fase sem código
 

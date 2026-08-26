@@ -2788,3 +2788,19 @@ decisão já tomada e é o tipo de trabalho que o red-team do `18` avisa para n�
 Decisão: registrar como já desenhado, e oferecer a recompensa **à mão** durante o piloto manual
 (F3 de `docs/25-ESTRATEGIA-E-EXECUCAO.md`) se/quando fizer sentido comercialmente — sem
 `billing_credits`, sem gatilho automático. Fase H entra em código só depois de ≥20 pagantes.
+
+2026-08-26 · F2 (`docs/25-ESTRATEGIA-E-EXECUCAO.md`), ticket 11 — instrumentação de funil de
+ativação **não construída nesta execução, de propósito** · O projeto não tem nenhuma infra de
+evento/analytics de produto hoje: só Sentry (erro/performance, com `redigirEventoSentry` para
+LGPD). `docs/05-FAQ-DEV.md` (J129) e `docs/ESPECIFICACAO-COMPLETA.md` citam "PostHog (funil de
+ativação)" como se existisse — é aspiracional, não reflete o repo (confirmado: nenhum pacote de
+analytics em `package.json`, nenhuma tabela `funnel_events`/`activation_events` em
+`supabase/migrations/`). `scripts/metricas-ativacao.mjs` é o único mecanismo hoje, e é derivado de
+timestamps já existentes (sem evento de front), com autodiagnóstico próprio de "isso é base
+semeada" quando os números não fazem sentido — já registrado em 2026-08-24 acima. Instrumentar de
+verdade exige escolher ferramenta (self-hospedado vs. PostHog/terceiro — implica custo recorrente
+e, sob LGPD, um NOVO fluxo de dado de cliente saindo para um processador terceiro) e desenhar o
+schema de evento — isso é decisão de arquitetura/vendor do dono do produto, não um ticket para
+decidir sozinho dentro de uma sessão de execução. Os tickets 12 e 13 da mesma fase (colocar a
+importação no caminho crítico, e a "primeira previsão" calculada com `computeCycle`) não dependem
+disso e foram implementados.
