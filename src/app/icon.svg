@@ -1,3 +1,4 @@
-<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="CICLO">
-  <path d="M44.93 15.45 A21 21 0 1 0 44.93 48.55" stroke="#F0EBE3" stroke-width="8" stroke-linecap="round"/>
+<svg viewBox="28 28 144 144" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="CICLO">
+  <path d="M138.6 146 A60 60 0 1 1 146 61.4" stroke="#14B8A6" stroke-width="24" stroke-linecap="butt"/>
+  <polygon points="160.5,41.4 167.9,87.4 123.7,72.2" fill="#14B8A6"/>
 </svg>

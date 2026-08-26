@@ -4,7 +4,7 @@ import { ChevronLeft, Settings } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
-import IconeAnel from '@/components/ui/icone-anel'
+import MarcaCiclo from '@/components/ui/marca-ciclo'
 
 import { paiDaRota } from './navegacao'
 
@@ -43,10 +43,8 @@ export default function Topbar() {
         </Link>
       ) : (
         <div className="flex h-12 items-center gap-2">
-          {/* Marca da Parte II §5 — anel aberto, sem ponto (abaixo de 64px). */}
-          <div className="flex size-7 shrink-0 items-center justify-center rounded-[var(--radius-pill)] bg-acc text-on-acc">
-            <IconeAnel className="size-[15px]" />
-          </div>
+          {/* Marca estática (redesenho do uróboros, 2026-08-26) — cor própria, sem cápsula. */}
+          <MarcaCiclo className="size-7" />
           <span className="text-label font-semibold uppercase tracking-[0.13em] text-txt-3">CICLO</span>
         </div>
       )}

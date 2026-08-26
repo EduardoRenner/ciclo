@@ -1,10 +1,14 @@
 import { ArrowRight, CalendarCheck, Link2, Wallet } from 'lucide-react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
 import { NOME_DO_PLANO, precoDoPlano } from '@/core/billing/planos'
 import IconeAnel from '@/components/ui/icone-anel'
+import MarcaCiclo from '@/components/ui/marca-ciclo'
 import { sessaoAtual } from '@/server/auth/session'
+
+import wordmark from '../../public/marca/ciclo-wordmark-escuro.png'
 
 import type { Metadata } from 'next'
 
@@ -127,12 +131,7 @@ export default async function Home() {
     <main className="mx-auto min-h-dvh max-w-[720px] px-[var(--gutter)] pb-16">
       <header className="flex items-center justify-between gap-3 py-5">
         <div className="flex items-center gap-2">
-          <div
-            aria-hidden
-            className="flex size-8 items-center justify-center rounded-[var(--radius-pill)] bg-acc text-on-acc"
-          >
-            <IconeAnel className="size-[17px]" />
-          </div>
+          <MarcaCiclo className="size-8" />
           <span className="text-label font-semibold uppercase tracking-[0.13em] text-txt-3">CICLO</span>
         </div>
         <nav className="flex items-center gap-1">
@@ -152,6 +151,14 @@ export default async function Home() {
       </header>
 
       <section className="animate-in py-10 fade-in slide-in-from-bottom-4 duration-500 sm:py-16">
+        {/*
+          O lockup completo (símbolo + "Ciclo" escrito) abre a página — é o único
+          momento da landing em que a marca aparece sozinha, sem navegação nem
+          rótulo ao redor, então ganha destaque cheio. O logo pequeno do
+          `<header>` acima continua sendo a referência utilitária de navegação;
+          este é a declaração de marca que abre o argumento da página.
+        */}
+        <Image src={wordmark} alt="CICLO" priority className="mb-6 h-11 w-auto sm:h-12" />
         <h1 className="text-numero font-bold sm:text-[2.75rem] sm:leading-[1.05] sm:tracking-[-0.02em]">
           A agenda que sabe quando cada cliente volta — e traz de volta quem sumiu.
         </h1>

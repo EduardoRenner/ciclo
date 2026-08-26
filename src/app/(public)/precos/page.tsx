@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { NOME_DO_PLANO, PLANOS, precoDoPlano } from '@/core/billing/planos'
 
 import { CARTOES } from '@/lib/planos-cartoes'
-import IconeAnel from '@/components/ui/icone-anel'
+import MarcaCiclo from '@/components/ui/marca-ciclo'
 
 import type { Metadata } from 'next'
 
@@ -99,12 +99,7 @@ export default function Precos() {
     <main className="mx-auto min-h-dvh max-w-[720px] px-[var(--gutter)] pb-16">
       <header className="flex items-center justify-between gap-3 py-5">
         <Link href="/" className="toque-48 flex items-center gap-2">
-          <div
-            aria-hidden
-            className="flex size-8 items-center justify-center rounded-[var(--radius-pill)] bg-acc text-on-acc"
-          >
-            <IconeAnel className="size-[17px]" />
-          </div>
+          <MarcaCiclo className="size-8" />
           <span className="text-label font-semibold uppercase tracking-[0.13em] text-txt-3">CICLO</span>
         </Link>
         <Link
