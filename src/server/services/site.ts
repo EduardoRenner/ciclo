@@ -50,11 +50,34 @@ export function lerSite(settings: unknown): Site {
   return resultado.success ? resultado.data : SITE_VAZIO
 }
 
+/**
+ * F0/item B pendente (`docs/25-ESTRATEGIA-E-EXECUCAO.md` — "interruptor por tenant, antes do
+ * passo 4"): o teto diário já limita o volume, mas o dono não tinha nenhum jeito de desligar o
+ * envio automático (reminders/campaigns) por conta própria — só desligando WHATSAPP_* inteiro
+ * pra TODOS os tenants, o que não existe como controle por tenant. Mesmo namespace de `settings`
+ * que `site` já usa, mesmo padrão de merge — não é coluna nova, não é migration.
+ */
+export const EsquemaMensageria = z.object({
+  paused: z.boolean(),
+})
+
+export type Mensageria = z.infer<typeof EsquemaMensageria>
+
+const MENSAGERIA_PADRAO: Mensageria = { paused: false }
+
+/** Nunca lança — mesmo raciocínio de `lerSite`: tenant sem essa chave em `settings` nunca esteve pausado. */
+export function lerMensageria(settings: unknown): Mensageria {
+  const bruto = settings && typeof settings === 'object' ? (settings as Record<string, unknown>).messaging : null
+  const resultado = EsquemaMensageria.safeParse(bruto ?? {})
+  return resultado.success ? resultado.data : MENSAGERIA_PADRAO
+}
+
 export const EsquemaTenant = z.object({
   name: z.string().trim().min(2, 'Digite o nome do negócio.').max(120, 'Nome muito longo.').nullish(),
   phone: TelefoneBR.nullish(),
   address: z.string().trim().max(300, 'Endereço muito longo.').nullish(),
   site: EsquemaSite.nullish(),
+  messaging: EsquemaMensageria.nullish(),
 })
 
 export type EntradaTenant = z.infer<typeof EsquemaTenant>
@@ -74,7 +97,7 @@ function paraEnderecoTexto(bruto: unknown): string | null {
 export async function lerTenant(db: Cliente, tenantId: string) {
   const { data, error } = await db.from('tenants').select(COLUNAS).eq('id', tenantId).single()
   if (error) throw new AppError('INTERNAL', { cause: error })
-  return { ...data, address: paraEnderecoTexto(data.address), site: lerSite(data.settings) }
+  return { ...data, address: paraEnderecoTexto(data.address), site: lerSite(data.settings), messaging: lerMensageria(data.settings) }
 }
 
 /**
@@ -90,14 +113,23 @@ export async function atualizarTenant(db: Cliente, tenantId: string, entrada: En
 
   const settingsAtual = (atual.settings ?? {}) as Record<string, unknown>
   const novoSite = entrada.site === undefined ? undefined : { ...lerSite(atual.settings), ...entrada.site }
+  // Mesmo raciocínio de `novoSite`: sem isso, atualizar SÓ `messaging` (sem tocar `site`) nunca
+  // gravaria nada — `novoSite === undefined` deixava `colunas.settings` inteiro de fora.
+  const novaMensageria = entrada.messaging === undefined ? undefined : { ...lerMensageria(atual.settings), ...entrada.messaging }
 
   const colunas: Database['public']['Tables']['tenants']['Update'] = {}
   if (entrada.name !== undefined && entrada.name !== null) colunas.name = entrada.name
   if (entrada.phone !== undefined) colunas.phone = entrada.phone ?? null
   if (entrada.address !== undefined) colunas.address = entrada.address ?? null
-  if (novoSite !== undefined) colunas.settings = { ...settingsAtual, site: novoSite }
+  if (novoSite !== undefined || novaMensageria !== undefined) {
+    colunas.settings = {
+      ...settingsAtual,
+      ...(novoSite !== undefined ? { site: novoSite } : {}),
+      ...(novaMensageria !== undefined ? { messaging: novaMensageria } : {}),
+    }
+  }
 
   const { data, error } = await db.from('tenants').update(colunas).eq('id', tenantId).select(COLUNAS).single()
   if (error) throw new AppError('INTERNAL', { cause: error })
-  return { ...data, address: paraEnderecoTexto(data.address), site: lerSite(data.settings) }
+  return { ...data, address: paraEnderecoTexto(data.address), site: lerSite(data.settings), messaging: lerMensageria(data.settings) }
 }

@@ -154,3 +154,87 @@ describe('importarClientes — contra o projeto real', () => {
     30_000,
   )
 })
+
+describe('importarClientes — previsão (F2/ticket 13, docs/25-ESTRATEGIA-E-EXECUCAO.md)', () => {
+  it(
+    'sem ninguém mapear a coluna de última visita, previsao é null',
+    async () => {
+      const marca = randomUUID().slice(0, 6)
+      const csv = ['Nome,Telefone', `Sem Previsao ${marca},`].join('\n')
+
+      const resultado = await importarClientes(svc, tenantId, csv, { name: 'Nome', phone: 'Telefone' })
+      expect(resultado.previsao).toBeNull()
+    },
+    30_000,
+  )
+
+  it(
+    'última visita há 2 anos: computeCycle de verdade marca como atrasado, em qualquer ciclo do tenant',
+    async () => {
+      const marca = randomUUID().slice(0, 6)
+      const duasAnosAtras = new Date()
+      duasAnosAtras.setFullYear(duasAnosAtras.getFullYear() - 2)
+      const dataIso = duasAnosAtras.toISOString().slice(0, 10)
+
+      const csv = ['Nome,Telefone,UltimaVisita', `Sumida ${marca},,${dataIso}`].join('\n')
+      const resultado = await importarClientes(svc, tenantId, csv, { name: 'Nome', phone: 'Telefone', lastVisit: 'UltimaVisita' })
+
+      expect(resultado.imported).toBe(1)
+      expect(resultado.previsao).toEqual({ comDataInformada: 1, jaDevendoVoltar: 1 })
+    },
+    30_000,
+  )
+
+  it(
+    'última visita ontem: dentro do ciclo, não conta como atrasado — mas conta em comDataInformada',
+    async () => {
+      const marca = randomUUID().slice(0, 6)
+      const ontem = new Date()
+      ontem.setDate(ontem.getDate() - 1)
+      const dataIso = ontem.toISOString().slice(0, 10)
+
+      const csv = ['Nome,Telefone,UltimaVisita', `Veio Ontem ${marca},,${dataIso}`].join('\n')
+      const resultado = await importarClientes(svc, tenantId, csv, { name: 'Nome', phone: 'Telefone', lastVisit: 'UltimaVisita' })
+
+      expect(resultado.imported).toBe(1)
+      expect(resultado.previsao).toEqual({ comDataInformada: 1, jaDevendoVoltar: 0 })
+    },
+    30_000,
+  )
+
+  it(
+    'data de última visita num formato que não é ISO: cliente importa igual, sem contar pra previsão',
+    async () => {
+      const marca = randomUUID().slice(0, 6)
+      const csv = ['Nome,Telefone,UltimaVisita', `Data Ruim ${marca},,10/03/2024`].join('\n')
+
+      const resultado = await importarClientes(svc, tenantId, csv, { name: 'Nome', phone: 'Telefone', lastVisit: 'UltimaVisita' })
+
+      expect(resultado.imported).toBe(1)
+      expect(resultado.errors).toEqual([])
+      expect(resultado.previsao).toBeNull()
+    },
+    30_000,
+  )
+
+  it(
+    'só conta quem foi de fato importado — a linha pulada por duplicata não entra na previsão',
+    async () => {
+      const marca = randomUUID().slice(0, 6)
+      const telefone = `1197${String(2000000 + Math.floor(Math.random() * 900000)).padStart(7, '0')}`
+      await criarCliente(svc, tenantId, { name: 'Já Existe Com Previsao', phone: telefone, tags: [], marketingOptIn: false })
+
+      const duasAnosAtras = new Date()
+      duasAnosAtras.setFullYear(duasAnosAtras.getFullYear() - 2)
+      const dataIso = duasAnosAtras.toISOString().slice(0, 10)
+
+      const csv = ['Nome,Telefone,UltimaVisita', `Duplicada ${marca},${telefone},${dataIso}`].join('\n')
+      const resultado = await importarClientes(svc, tenantId, csv, { name: 'Nome', phone: 'Telefone', lastVisit: 'UltimaVisita' })
+
+      expect(resultado.imported).toBe(0)
+      expect(resultado.skipped).toHaveLength(1)
+      expect(resultado.previsao).toBeNull()
+    },
+    30_000,
+  )
+})

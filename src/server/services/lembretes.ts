@@ -1,6 +1,8 @@
 import { lembretesDevidos } from '@/core/reminders/schedule'
+import { ehDemonstracao } from '@/core/tenants/demonstracao'
 import { gerarTokenConfirmacao } from '@/server/services/confirmacao-token'
 import { enviarComFallback } from '@/server/services/mensageria'
+import { lerMensageria } from '@/server/services/site'
 import { AppError } from '@/server/http/errors'
 
 import type { MessagingProvider } from '@/server/providers/messaging/types'
@@ -10,7 +12,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 type Cliente = SupabaseClient<Database>
 
 const COLUNAS_CANDIDATO =
-  'id, tenant_id, client_id, starts_at, status, clients ( name, phone_e164, email, whatsapp_opt_out ), services ( name ), tenants ( name, slug, timezone, phone )'
+  'id, tenant_id, client_id, starts_at, status, clients ( name, phone_e164, email, whatsapp_opt_out ), services ( name ), tenants ( name, slug, timezone, phone, settings )'
 
 type LinhaCandidata = {
   id: string
@@ -20,7 +22,7 @@ type LinhaCandidata = {
   status: string
   clients: { name: string; phone_e164: string | null; email: string | null; whatsapp_opt_out: boolean } | null
   services: { name: string } | null
-  tenants: { name: string; slug: string; timezone: string; phone: string | null } | null
+  tenants: { name: string; slug: string; timezone: string; phone: string | null; settings: unknown } | null
 }
 
 export type EnvioPendente = {
@@ -75,6 +77,11 @@ export async function identificarLembretesPendentes(db: Cliente, now: string): P
 
   for (const linha of linhas) {
     if (!linha.clients || !linha.tenants || linha.clients.whatsapp_opt_out) continue
+    // Tenant de demonstração não tem cliente de verdade do outro lado do telefone.
+    if (ehDemonstracao(linha.tenants.slug)) continue
+    // Interruptor manual do dono (F0, docs/25-ESTRATEGIA-E-EXECUCAO.md) — o teto diário
+    // (mensageria.ts) limita volume, isto aqui é "não mandar nada", ligado por escolha do dono.
+    if (lerMensageria(linha.tenants.settings).paused) continue
     // Confirmação transacional passa por cima de opt-out de marketing (H110),
     // mas sem telefone não tem para onde mandar — nem WhatsApp nem SMS existe.
     if (!linha.clients.phone_e164) continue

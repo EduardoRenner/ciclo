@@ -75,16 +75,25 @@ describe('o schedule do cron alcança a hora local de cada rota, em todo fuso do
   it('não agenda rota que fala com cliente final', () => {
     /*
      * `reminders` e `campaigns` mandam mensagem de verdade. O cabeçalho do `cron.yml` lista os
-     * três passos que precisam acontecer antes de ligar qualquer uma — entre eles conferir se os
-     * telefones do tenant de demonstração são de gente real. Enquanto isso não for feito, elas só
-     * podem existir como `workflow_dispatch`, nunca dentro de `schedule`.
+     * passos que precisam acontecer antes de ligar qualquer uma automaticamente — entre eles
+     * confirmar credencial de WhatsApp e conferir tenant real. Enquanto isso não for feito, elas
+     * só podem existir como `workflow_dispatch` (disparo manual, um de cada vez, sob decisão
+     * humana explícita a cada clique) — nunca dentro de `schedule` (automático, sem ninguém
+     * olhando). Por isso o teste isola só o bloco `schedule:`, não o `on:` inteiro: o segundo
+     * também contém `workflow_dispatch`, onde as duas têm que aparecer (F0, ver
+     * `docs/25-ESTRATEGIA-E-EXECUCAO.md`) para o disparo manual único do playbook ser possível.
      */
     const yml = readFileSync('.github/workflows/cron.yml', 'utf8')
-    const bloco = yml.slice(0, yml.indexOf('\njobs:'))
+    const inicioSchedule = yml.indexOf('\n  schedule:')
+    const fimSchedule = yml.indexOf('\n  workflow_dispatch:')
+    expect(inicioSchedule, 'não achei o bloco schedule: no cron.yml — o teste precisa ser atualizado junto').toBeGreaterThan(-1)
+    expect(fimSchedule, 'não achei o bloco workflow_dispatch: no cron.yml — o teste precisa ser atualizado junto').toBeGreaterThan(inicioSchedule)
+
+    const blocoSchedule = yml.slice(inicioSchedule, fimSchedule)
     for (const perigosa of ['reminders', 'campaigns']) {
       expect(
-        bloco.includes(perigosa),
-        `${perigosa} apareceu no bloco de agendamento — ela manda mensagem para cliente final e não pode rodar sozinha`,
+        blocoSchedule.includes(perigosa),
+        `${perigosa} apareceu dentro de schedule: — ela manda mensagem para cliente final e não pode rodar sozinha`,
       ).toBe(false)
     }
   })

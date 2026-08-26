@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { EsquemaSite, lerSite } from '@/server/services/site'
+import { EsquemaMensageria, EsquemaSite, lerMensageria, lerSite } from '@/server/services/site'
 
 /**
  * docs/13-CAUSA-RAIZ-LAYOUT-LEGADO.md (T3 + teste 6 de §8): a cor do site
@@ -42,6 +42,47 @@ describe('lerSite — accent', () => {
     expect(() => lerSite({ site: 'isto não é um objeto' })).not.toThrow()
     expect(lerSite({ site: 'isto não é um objeto' }).accent).toBeNull()
     expect(() => lerSite('settings inteiro corrompido')).not.toThrow()
+  })
+})
+
+/**
+ * F0 (`docs/25-ESTRATEGIA-E-EXECUCAO.md`): interruptor manual por tenant, mesmo namespace de
+ * `settings` que `site` já usa (`messaging`, não coluna nova). Nunca vazar "pausado" por
+ * acidente é a garantia que mais importa aqui — um tenant antigo sem essa chave em `settings`
+ * nunca esteve pausado, e não pode virar `true` por engano de parse.
+ */
+describe('lerMensageria — paused', () => {
+  it('settings sem messaging nenhum: nunca esteve pausado', () => {
+    expect(lerMensageria(null).paused).toBe(false)
+    expect(lerMensageria({}).paused).toBe(false)
+    expect(lerMensageria({ messaging: {} }).paused).toBe(false)
+  })
+
+  it('paused true/false explícito é respeitado', () => {
+    expect(lerMensageria({ messaging: { paused: true } }).paused).toBe(true)
+    expect(lerMensageria({ messaging: { paused: false } }).paused).toBe(false)
+  })
+
+  it('messaging corrompido (não é objeto, ou paused não é booleano) nunca lança e nunca fica pausado por acidente', () => {
+    expect(() => lerMensageria({ messaging: 'isto não é um objeto' })).not.toThrow()
+    expect(lerMensageria({ messaging: 'isto não é um objeto' }).paused).toBe(false)
+    expect(lerMensageria({ messaging: { paused: 'sim' } }).paused).toBe(false)
+    expect(() => lerMensageria('settings inteiro corrompido')).not.toThrow()
+  })
+
+  it('settings com site E messaging juntos: cada um lê o seu, sem vazar entre si', () => {
+    const settings = { site: { accent: '#f59e0b' }, messaging: { paused: true } }
+    expect(lerSite(settings).accent).toBe('#f59e0b')
+    expect(lerMensageria(settings).paused).toBe(true)
+  })
+})
+
+describe('EsquemaMensageria — validação de escrita (PATCH /api/v1/tenant)', () => {
+  it('exige paused como booleano — não aceita ausente nem outro tipo', () => {
+    expect(EsquemaMensageria.safeParse({ paused: true }).success).toBe(true)
+    expect(EsquemaMensageria.safeParse({ paused: false }).success).toBe(true)
+    expect(EsquemaMensageria.safeParse({}).success).toBe(false)
+    expect(EsquemaMensageria.safeParse({ paused: 'sim' }).success).toBe(false)
   })
 })
 

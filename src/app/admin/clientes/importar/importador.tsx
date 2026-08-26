@@ -1,6 +1,8 @@
 'use client'
 
-import { Upload } from 'lucide-react'
+import Link from 'next/link'
+
+import { CalendarClock, Upload } from 'lucide-react'
 import { useRef, useState, useTransition } from 'react'
 
 import Button from '@/components/ui/button'
@@ -8,8 +10,14 @@ import Card from '@/components/ui/card'
 import { useToast } from '@/components/ui/toast'
 
 type Preview = { colunas: string[]; sample: Record<string, string>[] }
-type Resultado = { imported: number; skipped: { linha: number; motivo: string }[]; errors: { linha: number; motivo: string }[] }
-type Mapeamento = { name: string; phone: string; email: string; tags: string }
+type Previsao = { comDataInformada: number; jaDevendoVoltar: number }
+type Resultado = {
+  imported: number
+  skipped: { linha: number; motivo: string }[]
+  errors: { linha: number; motivo: string }[]
+  previsao: Previsao | null
+}
+type Mapeamento = { name: string; phone: string; email: string; tags: string; lastVisit: string }
 
 const CAMPO_VAZIO = '__nenhum__'
 
@@ -23,7 +31,7 @@ async function enviarMultipart<T>(url: string, form: FormData): Promise<T> {
 export default function Importador() {
   const [arquivo, setArquivo] = useState<File | null>(null)
   const [preview, setPreview] = useState<Preview | null>(null)
-  const [mapa, setMapa] = useState<Mapeamento>({ name: '', phone: '', email: '', tags: '' })
+  const [mapa, setMapa] = useState<Mapeamento>({ name: '', phone: '', email: '', tags: '', lastVisit: '' })
   const [resultado, setResultado] = useState<Resultado | null>(null)
   const [pendente, iniciarTransicao] = useTransition()
   const mostrarToast = useToast()
@@ -42,7 +50,13 @@ export default function Importador() {
         setPreview(p)
         // Chute inicial: coluna cujo nome já bate com o campo.
         const achar = (alvo: string) => p.colunas.find((c) => c.toLowerCase().includes(alvo)) ?? ''
-        setMapa({ name: achar('nome'), phone: achar('telefone'), email: achar('mail'), tags: achar('etiqueta') })
+        setMapa({
+          name: achar('nome'),
+          phone: achar('telefone'),
+          email: achar('mail'),
+          tags: achar('etiqueta'),
+          lastVisit: p.colunas.find((c) => /visita|atendimento|compra/i.test(c)) ?? '',
+        })
       } catch (erro) {
         mostrarToast({ tom: 'erro', titulo: 'Não consegui ler o arquivo', descricao: (erro as Error).message })
       }
@@ -63,6 +77,7 @@ export default function Importador() {
             phone: mapa.phone || undefined,
             email: mapa.email || undefined,
             tags: mapa.tags || undefined,
+            lastVisit: mapa.lastVisit || undefined,
           }),
         )
         const r = await enviarMultipart<Resultado>('/api/v1/clients/import', form)
@@ -126,6 +141,7 @@ export default function Importador() {
                   ['phone', 'Telefone'],
                   ['email', 'E-mail'],
                   ['tags', 'Etiquetas'],
+                  ['lastVisit', 'Última visita (opcional, AAAA-MM-DD)'],
                 ] as const
               ).map(([campo, rotulo]) => (
                 <label key={campo} className="flex flex-col gap-1">
@@ -147,6 +163,16 @@ export default function Importador() {
                 </label>
               ))}
             </div>
+            {/*
+              F2/ticket 13: a coluna de última visita não é óbvia — sem essa explicação, "Última
+              visita" ao lado de Nome/Telefone/E-mail lê como campo de cadastro qualquer, e quem
+              não tem a informação na planilha nem tenta preencher.
+            */}
+            <p className="mt-3 text-secundario text-txt-2">
+              Se a sua planilha tiver a data do último atendimento de cada cliente, mapeie essa
+              coluna: assim que a importação terminar, o CICLO já mostra quem está atrasado para
+              voltar.
+            </p>
           </section>
 
           <section>
@@ -180,24 +206,52 @@ export default function Importador() {
           </section>
 
           {resultado ? (
-            <Card>
-              <p className="text-corpo font-semibold">{resultado.imported} clientes importados</p>
-              {resultado.skipped.length > 0 ? (
-                <p className="mt-1 text-secundario text-warn">{resultado.skipped.length} não importadas (duplicata)</p>
+            <>
+              {/*
+                F2/ticket 13 (docs/25-ESTRATEGIA-E-EXECUCAO.md): o momento em que a lista de
+                contatos (chato) vira "olha quem já devia ter voltado" (o produto) — calculado com
+                o mesmo algoritmo do Motor de Ciclo, não um número decorativo. Vem ANTES do card
+                de contagem simples porque é a resposta à pergunta que importou a planilha.
+              */}
+              {resultado.previsao && resultado.previsao.jaDevendoVoltar > 0 ? (
+                <Link href="/admin/recuperar" className="block">
+                  <Card pressionavel className="border-acc-2/40 bg-acc-soft">
+                    <div className="flex items-start gap-3">
+                      <CalendarClock aria-hidden className="mt-0.5 size-6 shrink-0 text-acc-2" />
+                      <div>
+                        <p className="text-corpo font-semibold text-acc-2">
+                          {resultado.previsao.jaDevendoVoltar}{' '}
+                          {resultado.previsao.jaDevendoVoltar === 1 ? 'cliente já está' : 'clientes já estão'} atrasados
+                          para voltar
+                        </p>
+                        <p className="mt-1 text-secundario text-txt-2">
+                          De {resultado.previsao.comDataInformada} com data de última visita informada. Ver quem são →
+                        </p>
+                      </div>
+                    </div>
+                  </Card>
+                </Link>
               ) : null}
-              {resultado.errors.length > 0 ? (
-                <div className="mt-2">
-                  <p className="text-secundario text-bad">{resultado.errors.length} linha(s) com erro:</p>
-                  <ul className="mt-1 list-inside list-disc text-secundario text-txt-2">
-                    {resultado.errors.slice(0, 10).map((e) => (
-                      <li key={e.linha}>
-                        Linha {e.linha}: {e.motivo}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ) : null}
-            </Card>
+
+              <Card>
+                <p className="text-corpo font-semibold">{resultado.imported} clientes importados</p>
+                {resultado.skipped.length > 0 ? (
+                  <p className="mt-1 text-secundario text-warn">{resultado.skipped.length} não importadas (duplicata)</p>
+                ) : null}
+                {resultado.errors.length > 0 ? (
+                  <div className="mt-2">
+                    <p className="text-secundario text-bad">{resultado.errors.length} linha(s) com erro:</p>
+                    <ul className="mt-1 list-inside list-disc text-secundario text-txt-2">
+                      {resultado.errors.slice(0, 10).map((e) => (
+                        <li key={e.linha}>
+                          Linha {e.linha}: {e.motivo}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+              </Card>
+            </>
           ) : (
             <Button largura="cheia" carregando={pendente} disabled={!mapa.name} onClick={confirmarImportacao}>
               Importar

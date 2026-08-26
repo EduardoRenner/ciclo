@@ -4,6 +4,7 @@ import { ErroDeEnvio, type MessagingProvider } from '@/server/providers/messagin
 import { WhatsAppCloudProvider } from '@/server/providers/messaging/whatsapp'
 import { AppError } from '@/server/http/errors'
 import { inscricoesPushDoCliente, inscricoesPushDoTenant, removerInscricaoPorEndpoint } from '@/server/services/push'
+import { limitador } from '@/server/services/rate-limit'
 
 import type { Database } from '@/server/db/types.gen'
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -28,20 +29,43 @@ export type EnviarMensagemEntrada = {
 
 const TENTATIVAS_WHATSAPP = 3
 
+// Freio antes do acelerador (F0/item B, `docs/25-ESTRATEGIA-E-EXECUCAO.md`): teto duro de envio
+// por tenant por dia. Valor estimado [S] — sem uso real ainda para calibrar; registrado em
+// `docs/DECISOES.md`. 'campaign' é marketing (menor); todo o resto é transacional/tempo-sensível
+// (reminder, confirmation, transactional, e qualquer kind futuro não listado — falha fechado
+// para o teto maior, nunca sem teto).
+const TETO_DIARIO_CAMPANHA = 100
+const TETO_DIARIO_TRANSACIONAL = 300
+const JANELA_TETO_DIARIO_SEGUNDOS = 86_400
+
+export type OpcoesTetoDiario = { limite: number; janelaSegundos: number }
+
+/** Exportado só para o teste medir a janela expirando sem esperar 24h de verdade. */
+async function dentroDoTetoDiario(tenantId: string, kind: Tipo, override?: OpcoesTetoDiario): Promise<boolean> {
+  const categoria = kind === 'campaign' ? 'campaign' : 'transacional'
+  const limite = override?.limite ?? (categoria === 'campaign' ? TETO_DIARIO_CAMPANHA : TETO_DIARIO_TRANSACIONAL)
+  const janelaSegundos = override?.janelaSegundos ?? JANELA_TETO_DIARIO_SEGUNDOS
+  const { permitido } = await limitador(`mensagens:${categoria}:${tenantId}:dia`, { limite, janelaSegundos })
+  return permitido
+}
+
 /**
  * §4: "se MessagingProvider falhar 3 vezes ou o template for rejeitado, cair
  * para push e, se não houver, e-mail. Nunca deixar o lembrete sumir em
  * silêncio."
  *
  * Toda tentativa termina gravada em `messages`, sucesso ou falha — é o "nunca
- * sumir em silêncio" virando linha de banco, não só log.
+ * sumir em silêncio" virando linha de banco, não só log. Exceção deliberada:
+ * bloqueio pelo teto diário (abaixo) NÃO grava — ver comentário no retorno `blocked`.
  */
 export async function enviarComFallback(
   db: Cliente,
   entrada: EnviarMensagemEntrada,
   provider: MessagingProvider = new WhatsAppCloudProvider(),
   enviarPushFn: (i: Parameters<typeof enviarPush>[0], p: PayloadPush) => ReturnType<typeof enviarPush> = enviarPush,
-): Promise<{ channel: Canal; status: 'sent' | 'failed'; providerId: string | null }> {
+  /** Só para teste medir o teto/janela sem esperar 100+ envios reais ou 24h de verdade. */
+  tetoDiarioOverride?: OpcoesTetoDiario,
+): Promise<{ channel: Canal; status: 'sent' | 'failed' | 'blocked'; providerId: string | null }> {
   // H110: opt-out bloqueia só marketing. Lembrete/confirmação (transacional)
   // segue até a cliente pedir para parar tudo, não só campanha.
   if (entrada.kind === 'campaign') {
@@ -50,6 +74,17 @@ export async function enviarComFallback(
     if (cliente.whatsapp_opt_out) {
       return registrar(db, entrada, 'whatsapp', 'failed', null, 'Cliente optou por não receber mensagens.')
     }
+  }
+
+  // Teto diário por tenant, ANTES de qualquer tentativa de transporte e ANTES de `registrar()`.
+  // Gravar essa tentativa em `messages` faria `messages_dedupe` marcar o lembrete/confirmação
+  // como "já enviado" pra sempre (perda de mensagem, não proteção) e inflaria a taxa de falha
+  // que `checarMensagens` monitora (achado do plano — a linha bloqueada não é uma falha real).
+  if (!(await dentroDoTetoDiario(entrada.tenantId, entrada.kind, tetoDiarioOverride))) {
+    console.warn(
+      JSON.stringify({ level: 'warn', event: 'mensagem_bloqueada_teto_diario', tenantId: entrada.tenantId, kind: entrada.kind }),
+    )
+    return { channel: 'whatsapp', status: 'blocked', providerId: null }
   }
 
   let ultimoErro: unknown
