@@ -137,22 +137,36 @@ Custou dois minutos de `git log --format='%ci'` e teria virado um S1 inventado n
 
 ## 4 · F2 · Mitigação fantasma no ambiente
 
-19 variáveis em produção [M]. Duas ausentes com código vivo apontando para elas:
+19 variáveis em produção [M]. Duas ausentes com código vivo apontando para elas — mas lendo o
+código, só **uma** é o achado que a hipótese inicial supunha.
 
-| Variável | Código | Efeito real da ausência |
-|---|---|---|
-| `UPSTASH_*` | `src/server/services/rate-limit.ts` | limite em memória de instância; em runtime serverless cada instância tem o próprio balde → **na prática, quase nenhum limite** [S] |
-| `HCAPTCHA_SECRET` | `src/server/services/captcha.ts` | verificação degrada e **deixa passar** [S] — o padrão declarado desta base |
+### 4.1 · `UPSTASH_*` reclassificado — não é achado
 
-Ambas nomeadas em `docs/16` e ainda abertas. O `[S]` das duas últimas colunas vira `[M]` na
-execução, lendo o código de degradação — **não presumir o comportamento, ler**.
+A hipótese em `§0.1` era "sem Upstash, limite vira memória por instância — quase nenhum limite".
+**Falsa, lida em `src/server/services/rate-limit.ts` [M]:** sem Upstash, o limitador cai para o
+**Postgres** (`consumir_rate_limit`, `on conflict do update` atômico) — compartilhado entre
+instâncias, correto. Só o teto global de 120/min usa memória, e isso é decisão consciente já
+documentada no próprio arquivo (poupar uma ida ao banco em toda requisição da API, para uma rede
+grossa cujo trabalho é conter laço maluco, não segurar ataque de verdade).
+
+**Registrado como falso alarme descartado, por regra do `docs/22 §2.3`** — a hipótese parecia certa
+até ler o código de degradação em vez de presumi-lo.
+
+### 4.2 · `HCAPTCHA_SECRET` — o achado real, aceito por decisão
+
+Ausente, `verificarCaptcha()` sempre devolve `true` [M] — o booking público fica sem essa camada.
+Honeypot e rate limit continuam ativos e não dependem de credencial nenhuma.
+
+**Decisão (`docs/DECISOES.md`, 2026-08-26):** aceitar por ora. Abrir conta hCaptcha é `[E]` e não
+bloqueia lançamento sem sinal de tráfego adversarial. Revisitar por volume ou spam observado, não
+por prazo.
 
 **Boa notícia [M]:** `PUBLIC_LINK_SIGNING_KEY`, o S1 mais grave de `docs/16` (links públicos
 assinados com o `CRON_SECRET`), **está em produção desde 24/08**. A execução confirma que a
 correção saiu da inércia — variável presente não é o mesmo que código usando a variável.
 
-**Regra de fechamento da frente:** cada variável termina em **ligada**, **código removido**, ou
-**aceita com dono e data**. Nenhuma termina como está.
+**Frente fechada.** Das duas variáveis levantadas, uma não era achado e a outra recebeu decisão
+com dono e gatilho — nenhuma "fica como está" sem registro.
 
 ---
 
