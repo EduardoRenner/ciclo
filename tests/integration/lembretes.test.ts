@@ -16,6 +16,22 @@ import type { Database } from '@/server/db/types.gen'
 
 dotenv.config({ path: '.env.local' })
 
+/**
+ * F0/item A (`docs/25-ESTRATEGIA-E-EXECUCAO.md`): tenant de demonstração não recebe lembrete.
+ * Mockado em vez de usar os slugs reais (`dom-rocha`, `ruivo-barber`) para não depender — nem
+ * colidir — com os tenants de demonstração de produção. O que este teste prova é a COSTURA
+ * (`identificarLembretesPendentes` chama `ehDemonstracao` e respeita o resultado), não a lista
+ * em si — essa já tem seu próprio teste-guarda (`demonstracao-fora-do-indice.test.ts`).
+ */
+// `Math.random()`, não `randomUUID()`: `vi.hoisted()` roda antes até dos imports serem
+// inicializados — referenciar um binding importado aqui estoura "Cannot access before initialization".
+const { SLUG_DEMO_DO_TESTE } = vi.hoisted(() => ({
+  SLUG_DEMO_DO_TESTE: `demo-teste-${Math.random().toString(36).slice(2, 10)}`,
+}))
+vi.mock('@/core/tenants/demonstracao', () => ({
+  ehDemonstracao: (slug: string) => slug === SLUG_DEMO_DO_TESTE,
+}))
+
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 if (!SUPABASE_URL || !SERVICE_KEY) {
@@ -198,6 +214,81 @@ describe('identificarLembretesPendentes', () => {
 
       const { count } = await svc.from('messages').select('id', { count: 'exact', head: true }).eq('appointment_id', agId)
       expect(count).toBe(1)
+    },
+    30_000,
+  )
+
+  it(
+    'tenant de demonstração não aparece — mesmo com agendamento que seria elegível',
+    async () => {
+      const marca = randomUUID().slice(0, 8)
+      const { data: userDemo, error: erroUser } = await svc.auth.admin.createUser({
+        email: `lembrete-demo-${marca}@ciclo.test`,
+        password: randomUUID(),
+        email_confirm: true,
+        user_metadata: { full_name: 'Dono da Demonstração' },
+      })
+      if (erroUser || !userDemo.user) throw new Error(`seed falhou: ${erroUser?.message}`)
+      usuarios.push(userDemo.user.id)
+
+      const { tenant: tenantDemo } = await executarOnboarding(svc, {
+        userId: userDemo.user.id,
+        businessName: 'Salão de Demonstração',
+        vertical: 'aesthetics',
+        slug: SLUG_DEMO_DO_TESTE,
+        timezone: TZ,
+      })
+      tenants.push(tenantDemo.id)
+
+      const profissionalDemo = await criarProfissional(svc, tenantDemo.id, {
+        displayName: 'Esteticista da Demonstração',
+        compModel: 'owner',
+        commissionBps: 0,
+        rentCents: 0,
+        acceptsOnline: true,
+      })
+      const servicoDemo = await criarServico(svc, tenantDemo.id, {
+        name: 'Serviço da Demonstração',
+        description: null,
+        durationMin: 60,
+        bufferBeforeMin: 0,
+        bufferAfterMin: 0,
+        priceCents: 8000,
+        pricingModel: 'fixed',
+        cycleDays: 21,
+        depositBps: 0,
+        depositMinCents: 0,
+        parallelCapacity: 1,
+        requiresAnamnesis: false,
+        bookableOnline: true,
+        categoryId: null,
+      })
+
+      const h = horariosDoTeste(8)
+      const clienteDemo = await svc
+        .from('clients')
+        .insert({ tenant_id: tenantDemo.id, name: 'Cliente da Demonstração', phone_e164: `+5511${Math.floor(1e8 + Math.random() * 9e7)}` })
+        .select('id')
+        .single()
+      const agDemo = await svc
+        .from('appointments')
+        .insert({
+          tenant_id: tenantDemo.id,
+          client_id: clienteDemo.data!.id,
+          professional_id: profissionalDemo.id,
+          service_id: servicoDemo.id,
+          starts_at: h.startsAt,
+          ends_at: new Date(new Date(h.startsAt).getTime() + 3_600_000).toISOString(),
+          status: 'pending',
+          price_cents: 8000,
+        })
+        .select('id')
+        .single()
+
+      // Mesma janela que faria QUALQUER outro tenant deste arquivo aparecer (ver o teste
+      // "acha a confirmação" acima) — a única diferença é o slug de demonstração.
+      const pendentes = await identificarLembretesPendentes(svc, h.depoisDaConfirmacao)
+      expect(pendentes.find((p) => p.appointmentId === agDemo.data!.id)).toBeUndefined()
     },
     30_000,
   )

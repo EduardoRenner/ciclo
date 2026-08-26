@@ -1,4 +1,5 @@
 import { lembretesDevidos } from '@/core/reminders/schedule'
+import { ehDemonstracao } from '@/core/tenants/demonstracao'
 import { gerarTokenConfirmacao } from '@/server/services/confirmacao-token'
 import { enviarComFallback } from '@/server/services/mensageria'
 import { AppError } from '@/server/http/errors'
@@ -75,6 +76,8 @@ export async function identificarLembretesPendentes(db: Cliente, now: string): P
 
   for (const linha of linhas) {
     if (!linha.clients || !linha.tenants || linha.clients.whatsapp_opt_out) continue
+    // Tenant de demonstração não tem cliente de verdade do outro lado do telefone.
+    if (ehDemonstracao(linha.tenants.slug)) continue
     // Confirmação transacional passa por cima de opt-out de marketing (H110),
     // mas sem telefone não tem para onde mandar — nem WhatsApp nem SMS existe.
     if (!linha.clients.phone_e164) continue

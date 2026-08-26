@@ -15,9 +15,12 @@
  * seria um sitemap vazio, que é pior que o problema original. Uma lista pura funciona no instante
  * em que sobe. A coluna continua sendo o alvo, e está registrada como tal.
  *
- * Em `core/` porque é regra de negócio sem I/O (regra 5 do CLAUDE.md) e porque tem TRÊS leitores
- * que precisam concordar: o sitemap, o `robots` da página e o aviso visível. Se eles divergirem,
- * volta a existir um caminho que indexa o que o outro esconde.
+ * Em `core/` porque é regra de negócio sem I/O (regra 5 do CLAUDE.md) e porque tem CINCO leitores
+ * que precisam concordar: o sitemap, o `robots` da página, o aviso visível, e (F0,
+ * `docs/25-ESTRATEGIA-E-EXECUCAO.md`) as rotas de `reminders` e `campaigns` — que não podem
+ * mandar WhatsApp/e-mail de verdade para um tenant que não tem cliente de verdade do outro lado
+ * do telefone. Se eles divergirem, volta a existir um caminho que indexa — ou mensageia — o que
+ * o outro esconde.
  */
 
 /**
