@@ -7,6 +7,7 @@ import { AppError } from '@/server/http/errors'
 import { rota } from '@/server/http/handler'
 import { comIdempotencia } from '@/server/http/idempotency'
 import { definirExpediente, EsquemaExpediente, listarExpediente } from '@/server/services/expediente'
+import { exigirModulo } from '@/server/services/planos'
 
 type Ctx = { params: Promise<{ id: string }> }
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -40,6 +41,19 @@ export const PUT = rota(async (req, params, requestId) => {
   }
 
   const db = await criarClienteDoUsuario()
+
+  /*
+   * "Agenda por profissional" é o que o cartão do Equipe vende (`planos-cartoes.ts`), e é
+   * exatamente esta rota quando vem um uuid. O expediente `default` (professional_id nulo) é o
+   * horário do próprio negócio: quem atende sozinho precisa dele para existir, e travá-lo
+   * cobraria pelo plano Equipe o direito de dizer que horas o salão abre.
+   *
+   * Por isso a trava é condicional. Ela não duplica o teto numérico de `POST /professionals` —
+   * aquele governa QUANTOS profissionais existem, este governa se cada um tem agenda própria.
+   * Antes da idempotência, como toda trava desta base.
+   */
+  if (professionalId !== null) await exigirModulo(db, ctx.tenantId, 'team')
+
   const resultado = await comIdempotencia(
     req,
     { tenantId: ctx.tenantId, endpoint: `/api/v1/professionals/${professionalId ?? 'default'}/business-hours` },
