@@ -119,9 +119,9 @@ describe('nenhuma rota agendada volta para a igualdade exata', () => {
    */
   function rotasNaMatrizDoYml(): string[] {
     const yml = readFileSync('.github/workflows/cron.yml', 'utf8')
-    const m = yml.match(/^\s*rota:\s*\[([^\]]+)\]/m)
-    expect(m, 'não achei a matriz `rota: [...]` no cron.yml — o teste precisa ser atualizado junto').not.toBeNull()
-    return m![1].split(',').map((s) => s.trim()).sort()
+    const dentroDosColchetes = yml.match(/^\s*rota:\s*\[([^\]]+)\]/m)?.[1]
+    expect(dentroDosColchetes, 'não achei a matriz `rota: [...]` no cron.yml — o teste precisa ser atualizado junto').toBeDefined()
+    return (dentroDosColchetes ?? '').split(',').map((s) => s.trim()).sort()
   }
 
   it('a lista deste teste é a mesma que o cron.yml agenda', () => {
