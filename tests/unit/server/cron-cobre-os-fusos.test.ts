@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs'
 
 import { describe, expect, it } from 'vitest'
 
+import { ROTAS_AGENDADAS } from '@/core/cron/agendadas'
+
 /**
  * A costura entre o AGENDADOR e a ROTA, que quase se soltou em silêncio.
  *
@@ -30,9 +32,17 @@ const FUSOS_BR: readonly { nome: string; offset: number }[] = [
   { nome: 'America/Rio_Branco', offset: -5 },
 ]
 
-/** As rotas agendadas por `schedule`. `reminders` e `campaigns` estão fora de propósito — elas
- *  falam com cliente final, e o cabeçalho do `cron.yml` explica por que não entram sozinhas. */
-const ROTAS_AGENDADAS = ['recompute-cycles', 'segments'] as const
+/*
+ * `ROTAS_AGENDADAS` vem de `@/core/cron/agendadas` — a lista morava aqui em cópia, e desde que o
+ * `/api/health` passou a depender dela (26/08) manter duas seria escolher qual das duas apodrece
+ * primeiro. Lá ela é ancorada ao `cron.yml` nas duas direções.
+ */
+
+/** As horas UTC em que uma rota de hora local `alvo` precisa ser disparada para alcançar os quatro
+ *  fusos — uma por fuso. A janela de 3h absorve o atraso a partir de cada uma delas. */
+function horasUtcNecessarias(alvo: number): { nome: string; utc: number }[] {
+  return FUSOS_BR.map(({ nome, offset }) => ({ nome, utc: ((alvo - offset) % 24 + 24) % 24 }))
+}
 
 function horasUtcDoSchedule(): number[] {
   const yml = readFileSync('.github/workflows/cron.yml', 'utf8')
@@ -62,10 +72,7 @@ describe('o schedule do cron alcança a hora local de cada rota, em todo fuso do
     const agendadas = horasUtcDoSchedule()
     const local = horaLocalExigida(rota)
 
-    const descobertos = FUSOS_BR.filter(({ offset }) => {
-      const utcNecessaria = ((local - offset) % 24 + 24) % 24
-      return !agendadas.includes(utcNecessaria)
-    })
+    const descobertos = horasUtcNecessarias(local).filter(({ utc }) => !agendadas.includes(utc))
 
     expect(
       descobertos.map((f) => f.nome),
@@ -98,5 +105,50 @@ describe('o schedule do cron alcança a hora local de cada rota, em todo fuso do
         `${perigosa} apareceu dentro de schedule: — ela manda mensagem para cliente final e não pode rodar sozinha`,
       ).toBe(false)
     }
+  })
+})
+
+/**
+ * O passo 4 do rodapé do `cron.yml` é a ÚNICA instrução que o dono do produto vai seguir para
+ * ligar a mensageria: descomentar aquelas linhas. Até 26/08 a linha de `campaigns` era
+ * `0 12 * * *` — e `campaigns` só age no tenant cuja hora local é 10, então 12:00 UTC alcançava
+ * apenas UTC-2. Seguir a receita à risca teria ligado a campanha para ninguém, com HTTP 200 e job
+ * verde: o mesmo silêncio de dois dias que a auditoria de ontem acabou de pagar para descobrir.
+ *
+ * Uma receita comentada não roda, então nada a testava. Este bloco testa.
+ */
+describe('a receita comentada do passo 4 já nasce certa', () => {
+  const yml = readFileSync('.github/workflows/cron.yml', 'utf8')
+  /** Só o rodapé, depois dos jobs — é onde as linhas comentadas moram. */
+  const rodape = yml.slice(yml.indexOf('\njobs:'))
+
+  function horasComentadasPara(rota: string): number[] {
+    return [...rodape.matchAll(/^#\s*-\s*cron:\s*'(\S+)\s+(\S+)[^']*'\s*#\s*(\S+)/gm)]
+      .filter((m) => m[3] === rota)
+      .map((m) => Number(m[2]))
+      .filter((h) => Number.isFinite(h))
+  }
+
+  it('as linhas de campaigns existem no rodapé — o teste não passa por não achar nada', () => {
+    expect(horasComentadasPara('campaigns').length).toBeGreaterThan(0)
+  })
+
+  it('as horas sugeridas para campaigns alcançam os quatro fusos', () => {
+    const sugeridas = horasComentadasPara('campaigns')
+    const local = horaLocalExigida('campaigns')
+    const descobertos = horasUtcNecessarias(local).filter(({ utc }) => !sugeridas.includes(utc))
+
+    expect(
+      descobertos.map((f) => f.nome),
+      `a receita do passo 4 sugere ${sugeridas.join(', ')} UTC, e campaigns exige hora local ` +
+        `${local}; esses fusos ficariam sem campanha nenhuma no dia em que alguém descomentar`,
+    ).toEqual([])
+  })
+
+  it('reminders pode ser um `*/15` só porque NÃO filtra por hora local do tenant', () => {
+    // Se um dia alguém puser janela por fuso em reminders, a linha `*/15` continua correta, mas
+    // esta afirmação deixa de ser o motivo — e aí a receita precisa ser revista junto.
+    const fonte = readFileSync('src/app/api/cron/reminders/route.ts', 'utf8')
+    expect(fonte).not.toMatch(/dentroDaJanela|horaLocalDe/)
   })
 })

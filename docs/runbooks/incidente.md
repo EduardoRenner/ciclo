@@ -6,7 +6,11 @@ Referência curta pra quando algo dá errado em produção. Passo a passo em `04
 ## 1. Detectar
 
 - Sentry (erro de aplicação).
-- `/api/health` (banco, fila parada, taxa de falha de mensagem, `send_reminders` sem rodar).
+- `/api/health` (banco, fila parada, taxa de falha de mensagem, e job de cron em silêncio). Leia o
+  CORPO, não só o código HTTP: cada check traz o motivo. Job que está fora do `schedule` de
+  `.github/workflows/cron.yml` aparece como `ok` com a dispensa escrita — é de propósito
+  (`src/core/cron/agendadas.ts`), para o endpoint não viver em 503 e esconder o vermelho que
+  importa. Hoje o único job de cron vigiado é `recompute_cycles`, o Motor de Ciclo.
 - Aviso externo (cliente, parceiro, pesquisador de segurança).
 
 ## 2. Conter
@@ -15,7 +19,16 @@ Referência curta pra quando algo dá errado em produção. Passo a passo em `04
   se for uma chave de API (WhatsApp, Asaas, Supabase), trocar no painel do provedor e atualizar
   a variável de ambiente na Vercel.
 - Serviço isolado: pausar o projeto Supabase (só em caso extremo — derruba todo mundo) ou
-  desabilitar o cron específico em `vercel.json` + redeploy.
+  desligar o cron. **O agendador é o GitHub Actions**, não a Vercel: o `vercel.json` fica com
+  `crons: []` de propósito e para sempre (`docs/18` §L.5), então mexer nele não desliga nada.
+  Em ordem de rapidez:
+  1. **Mensageria de um tenant só:** `/admin/config/mensagens` → interruptor, ou
+     `tenants.settings.messaging.paused = true`. Não precisa de deploy nem derruba os outros.
+  2. **Um job para todo mundo:** GitHub → Actions → workflow `cron` → `⋯` → *Disable workflow*
+     (desliga o arquivo inteiro), ou remova o horário do `on.schedule` em
+     `.github/workflows/cron.yml` e faça push — vale no próximo disparo, sem redeploy da Vercel.
+  3. **A rota, de vez:** trocar `CRON_SECRET` na Vercel invalida todo disparo (o Action passa a
+     receber 401), inclusive o manual. É o martelo — use se não souber o que está disparando.
 - **Nunca apague evidência** (log, linha de `audit_log`, `vault_access_log`) — mesmo que pareça
   a coisa certa a fazer, a investigação depende disso.
 
