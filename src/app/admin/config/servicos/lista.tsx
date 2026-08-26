@@ -43,14 +43,21 @@ export default function ListaServicos({ iniciais }: { iniciais: Servico[] }) {
     setErro(null)
 
     iniciarSalvamento(async () => {
-      const r = await fetch('/api/v1/services/reorder', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
-        body: JSON.stringify({ ids: nova.map((s) => s.id) }),
-      })
-      if (!r.ok) {
+      try {
+        const r = await fetch('/api/v1/services/reorder', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          body: JSON.stringify({ ids: nova.map((s) => s.id) }),
+        })
+        if (!r.ok) {
+          setServicos(anterior)
+          setErro('Não consegui salvar a nova ordem. Tente de novo.')
+        }
+      } catch {
+        // Rede caiu antes de chegar resposta — sem isto, o React 19 relança para o error
+        // boundary da raiz e a tela inteira some (docs/21 §5.4).
         setServicos(anterior)
-        setErro('Não consegui salvar a nova ordem. Tente de novo.')
+        setErro('Não consegui falar com o servidor. Confira a conexão e tente de novo.')
       }
     })
   }

@@ -51,23 +51,29 @@ export default function Fidelidade({ clientId, pontosIniciais, assinaturaInicial
       return
     }
     iniciarTransicao(async () => {
-      const r = await fetch(`/api/v1/clients/${clientId}/loyalty`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
-        body: JSON.stringify({ points: n * sinal, reason: motivoPontos || (sinal > 0 ? 'Pontos' : 'Resgate') }),
-      })
-      const json = (await r.json()) as { data?: { id: string }; error?: { message: string; details?: { fields?: Record<string, string> } } }
-      if (!r.ok || !json.data) {
-        const campo = json.error?.details?.fields ? Object.values(json.error.details.fields)[0] : undefined
-        setErro(campo ?? json.error?.message ?? 'Não consegui lançar.')
-        return
+      try {
+        const r = await fetch(`/api/v1/clients/${clientId}/loyalty`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          body: JSON.stringify({ points: n * sinal, reason: motivoPontos || (sinal > 0 ? 'Pontos' : 'Resgate') }),
+        })
+        const json = (await r.json()) as { data?: { id: string }; error?: { message: string; details?: { fields?: Record<string, string> } } }
+        if (!r.ok || !json.data) {
+          const campo = json.error?.details?.fields ? Object.values(json.error.details.fields)[0] : undefined
+          setErro(campo ?? json.error?.message ?? 'Não consegui lançar.')
+          return
+        }
+        setPontos((atual) => ({
+          saldo: atual.saldo + n * sinal,
+          lancamentos: [{ id: json.data!.id, points: n * sinal, reason: motivoPontos, createdAt: new Date().toISOString() }, ...atual.lancamentos],
+        }))
+        mostrarToast({ tom: 'ok', titulo: sinal > 0 ? 'Pontos adicionados' : 'Pontos resgatados' })
+        setLancandoPontos(false)
+      } catch {
+        // Rede caiu antes de chegar resposta — sem isto, o React 19 relança para o error
+        // boundary da raiz e a tela inteira some (docs/21 §5.4).
+        setErro('Não consegui falar com o servidor. Confira a conexão e tente de novo.')
       }
-      setPontos((atual) => ({
-        saldo: atual.saldo + n * sinal,
-        lancamentos: [{ id: json.data!.id, points: n * sinal, reason: motivoPontos, createdAt: new Date().toISOString() }, ...atual.lancamentos],
-      }))
-      mostrarToast({ tom: 'ok', titulo: sinal > 0 ? 'Pontos adicionados' : 'Pontos resgatados' })
-      setLancandoPontos(false)
     })
   }
 
@@ -79,43 +85,51 @@ export default function Fidelidade({ clientId, pontosIniciais, assinaturaInicial
       return
     }
     iniciarTransicao(async () => {
-      const r = await fetch(`/api/v1/clients/${clientId}/subscription`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
-        body: JSON.stringify({ planId: planoEscolhido, billingDay: dia }),
-      })
-      const json = (await r.json()) as { error?: { message: string; details?: { fields?: Record<string, string> } } }
-      if (!r.ok) {
-        const campo = json.error?.details?.fields ? Object.values(json.error.details.fields)[0] : undefined
-        setErro(campo ?? json.error?.message ?? 'Não consegui assinar.')
-        return
+      try {
+        const r = await fetch(`/api/v1/clients/${clientId}/subscription`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          body: JSON.stringify({ planId: planoEscolhido, billingDay: dia }),
+        })
+        const json = (await r.json()) as { error?: { message: string; details?: { fields?: Record<string, string> } } }
+        if (!r.ok) {
+          const campo = json.error?.details?.fields ? Object.values(json.error.details.fields)[0] : undefined
+          setErro(campo ?? json.error?.message ?? 'Não consegui assinar.')
+          return
+        }
+        const plano = planos.find((p) => p.id === planoEscolhido)!
+        setAssinatura({
+          id: crypto.randomUUID(),
+          planName: plano.name,
+          priceCents: plano.price_cents,
+          sessionsPerMonth: plano.sessions_per_month,
+          billingDay: dia,
+          startedOn: new Date().toISOString().slice(0, 10),
+        })
+        mostrarToast({ tom: 'ok', titulo: 'Assinatura ativada' })
+        setAssinando(false)
+      } catch {
+        setErro('Não consegui falar com o servidor. Confira a conexão e tente de novo.')
       }
-      const plano = planos.find((p) => p.id === planoEscolhido)!
-      setAssinatura({
-        id: crypto.randomUUID(),
-        planName: plano.name,
-        priceCents: plano.price_cents,
-        sessionsPerMonth: plano.sessions_per_month,
-        billingDay: dia,
-        startedOn: new Date().toISOString().slice(0, 10),
-      })
-      mostrarToast({ tom: 'ok', titulo: 'Assinatura ativada' })
-      setAssinando(false)
     })
   }
 
   function cancelar() {
     iniciarTransicao(async () => {
-      const r = await fetch(`/api/v1/clients/${clientId}/subscription`, {
-        method: 'DELETE',
-        headers: { 'idempotency-key': crypto.randomUUID() },
-      })
-      if (!r.ok) {
-        mostrarToast({ tom: 'erro', titulo: 'Não consegui cancelar' })
-        return
+      try {
+        const r = await fetch(`/api/v1/clients/${clientId}/subscription`, {
+          method: 'DELETE',
+          headers: { 'idempotency-key': crypto.randomUUID() },
+        })
+        if (!r.ok) {
+          mostrarToast({ tom: 'erro', titulo: 'Não consegui cancelar' })
+          return
+        }
+        setAssinatura(null)
+        mostrarToast({ tom: 'ok', titulo: 'Assinatura cancelada' })
+      } catch {
+        mostrarToast({ tom: 'erro', titulo: 'Não consegui falar com o servidor', descricao: 'Confira a conexão e tente de novo.' })
       }
-      setAssinatura(null)
-      mostrarToast({ tom: 'ok', titulo: 'Assinatura cancelada' })
     })
   }
 

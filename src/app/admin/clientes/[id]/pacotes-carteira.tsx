@@ -141,25 +141,31 @@ function VenderPacote({
     setErro(null)
 
     iniciar(async () => {
-      const r = await fetch('/api/v1/packages', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
-        body: JSON.stringify({
-          clientId,
-          serviceId,
-          totalSessions: quantidade,
-          paidCents: pagoCents,
-          expiresOn: vence || undefined,
-        }),
-      })
-      const json = (await r.json()) as { error?: { message?: string; details?: { fields?: Record<string, string> } } }
-      if (!r.ok) {
-        setErro(json.error?.details?.fields ? Object.values(json.error.details.fields)[0]! : (json.error?.message ?? 'Não consegui vender o pacote.'))
-        return
+      try {
+        const r = await fetch('/api/v1/packages', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          body: JSON.stringify({
+            clientId,
+            serviceId,
+            totalSessions: quantidade,
+            paidCents: pagoCents,
+            expiresOn: vence || undefined,
+          }),
+        })
+        const json = (await r.json()) as { error?: { message?: string; details?: { fields?: Record<string, string> } } }
+        if (!r.ok) {
+          setErro(json.error?.details?.fields ? Object.values(json.error.details.fields)[0]! : (json.error?.message ?? 'Não consegui vender o pacote.'))
+          return
+        }
+        aoFechar()
+        mostrarToast({ tom: 'ok', titulo: 'Pacote vendido', descricao: 'As sessões já podem ser usadas na comanda.' })
+        router.refresh()
+      } catch {
+        // Rede caiu antes de chegar resposta — sem isto, o React 19 relança para o error
+        // boundary da raiz e a tela inteira some (docs/21 §5.4).
+        setErro('Não consegui falar com o servidor. Confira a conexão e tente de novo.')
       }
-      aoFechar()
-      mostrarToast({ tom: 'ok', titulo: 'Pacote vendido', descricao: 'As sessões já podem ser usadas na comanda.' })
-      router.refresh()
     })
   }
 
@@ -211,19 +217,23 @@ function LancarCredito({ clientId, aoFechar }: { clientId: string; aoFechar: () 
     setErro(null)
 
     iniciar(async () => {
-      const r = await fetch('/api/v1/wallet/credit', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
-        body: JSON.stringify({ clientId, amountCents: valorCents, reason: motivo.trim() }),
-      })
-      const json = (await r.json()) as { error?: { message?: string; details?: { fields?: Record<string, string> } } }
-      if (!r.ok) {
-        setErro(json.error?.details?.fields ? Object.values(json.error.details.fields)[0]! : (json.error?.message ?? 'Não consegui lançar o crédito.'))
-        return
+      try {
+        const r = await fetch('/api/v1/wallet/credit', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          body: JSON.stringify({ clientId, amountCents: valorCents, reason: motivo.trim() }),
+        })
+        const json = (await r.json()) as { error?: { message?: string; details?: { fields?: Record<string, string> } } }
+        if (!r.ok) {
+          setErro(json.error?.details?.fields ? Object.values(json.error.details.fields)[0]! : (json.error?.message ?? 'Não consegui lançar o crédito.'))
+          return
+        }
+        aoFechar()
+        mostrarToast({ tom: 'ok', titulo: 'Crédito lançado', descricao: 'O saldo aparece na comanda dela.' })
+        router.refresh()
+      } catch {
+        setErro('Não consegui falar com o servidor. Confira a conexão e tente de novo.')
       }
-      aoFechar()
-      mostrarToast({ tom: 'ok', titulo: 'Crédito lançado', descricao: 'O saldo aparece na comanda dela.' })
-      router.refresh()
     })
   }
 

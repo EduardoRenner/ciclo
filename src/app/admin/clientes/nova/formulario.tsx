@@ -37,35 +37,41 @@ export default function FormularioCliente({ vertical }: { vertical: string }) {
   function salvar() {
     setErro(null)
     iniciarSalvamento(async () => {
-      const r = await fetch('/api/v1/clients', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
-        body: JSON.stringify({
-          name: nome,
-          phone: telefone.trim() || null,
-          birthDate: nascimento || null,
-          notes: notas.trim() || null,
-          tags: tags
-            .split(',')
-            .map((t) => t.trim())
-            .filter(Boolean),
-          preferences: Object.fromEntries(Object.entries(preferencias).filter(([, v]) => v.trim() !== '')),
-          marketingOptIn: aceitaMarketing,
-        }),
-      })
-      const json = (await r.json()) as {
-        data?: { id: string }
-        error?: { message: string; details?: { fields?: Record<string, string> } }
+      try {
+        const r = await fetch('/api/v1/clients', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          body: JSON.stringify({
+            name: nome,
+            phone: telefone.trim() || null,
+            birthDate: nascimento || null,
+            notes: notas.trim() || null,
+            tags: tags
+              .split(',')
+              .map((t) => t.trim())
+              .filter(Boolean),
+            preferences: Object.fromEntries(Object.entries(preferencias).filter(([, v]) => v.trim() !== '')),
+            marketingOptIn: aceitaMarketing,
+          }),
+        })
+        const json = (await r.json()) as {
+          data?: { id: string }
+          error?: { message: string; details?: { fields?: Record<string, string> } }
+        }
+        if (!r.ok || !json.data) {
+          const campo = json.error?.details?.fields ? Object.values(json.error.details.fields)[0] : undefined
+          setErro(campo ?? json.error?.message ?? 'Não consegui cadastrar.')
+          return
+        }
+        mostrarToast({ tom: 'ok', titulo: 'Cliente cadastrado' })
+        // Vai direto para a ficha: quem acabou de cadastrar quase sempre quer marcar o horário.
+        router.push(`/admin/clientes/${json.data.id}`)
+        router.refresh()
+      } catch {
+        // Rede caiu antes de chegar resposta — sem isto, o React 19 relança para o error
+        // boundary da raiz e a tela inteira some (docs/21 §5.4).
+        setErro('Não consegui falar com o servidor. Confira a conexão e tente de novo.')
       }
-      if (!r.ok || !json.data) {
-        const campo = json.error?.details?.fields ? Object.values(json.error.details.fields)[0] : undefined
-        setErro(campo ?? json.error?.message ?? 'Não consegui cadastrar.')
-        return
-      }
-      mostrarToast({ tom: 'ok', titulo: 'Cliente cadastrado' })
-      // Vai direto para a ficha: quem acabou de cadastrar quase sempre quer marcar o horário.
-      router.push(`/admin/clientes/${json.data.id}`)
-      router.refresh()
     })
   }
 

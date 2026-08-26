@@ -49,23 +49,30 @@ export default function NovaCampanha({
   function registrar() {
     if (!segmento || !modelo) return
     iniciarRegistro(async () => {
-      const r = await fetch('/api/v1/campaigns', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
-        body: JSON.stringify({
-          name: `${modelo.title} — ${segmento.rotulo}`,
-          segment: segmento.valor,
-          template: modelo.title,
-          clientIds: [...enviados],
-        }),
-      })
-      if (!r.ok) {
-        mostrarToast({ tom: 'erro', titulo: 'Não consegui registrar a campanha' })
-        return
+      try {
+        const r = await fetch('/api/v1/campaigns', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          body: JSON.stringify({
+            name: `${modelo.title} — ${segmento.rotulo}`,
+            segment: segmento.valor,
+            template: modelo.title,
+            clientIds: [...enviados],
+          }),
+        })
+        if (!r.ok) {
+          mostrarToast({ tom: 'erro', titulo: 'Não consegui registrar a campanha' })
+          return
+        }
+        mostrarToast({ tom: 'ok', titulo: 'Campanha registrada' })
+        router.push('/admin/campanhas')
+        router.refresh()
+      } catch {
+        // Rede caiu antes de chegar resposta — sem isto, o React 19 relança para o error
+        // boundary da raiz e a tela inteira some (docs/21 §5.4). Os toques já dados no
+        // WhatsApp (`enviados`) continuam intactos no estado — só o registro falhou.
+        mostrarToast({ tom: 'erro', titulo: 'Não consegui falar com o servidor', descricao: 'Confira a conexão e tente de novo.' })
       }
-      mostrarToast({ tom: 'ok', titulo: 'Campanha registrada' })
-      router.push('/admin/campanhas')
-      router.refresh()
     })
   }
 

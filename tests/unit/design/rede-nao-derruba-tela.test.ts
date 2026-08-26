@@ -23,6 +23,11 @@ import { describe, expect, it } from 'vitest'
  *   2. arquivo da lista que já foi consertado **também reprova**, pedindo para sair da lista — a
  *      lista só pode encolher, e nunca vira decoração.
  *
+ * **Os 18 foram corrigidos em 2026-08-26** (`try/catch` em volta de cada `await fetch` dentro da
+ * transição, revertendo estado otimista quando existia). `DIVIDA_CONHECIDA` está vazia — a guarda
+ * continua aqui porque a primeira asserção (nenhuma tela nova entra com o defeito) é permanente,
+ * não uma linha de base temporária.
+ *
  * O `apiFetch` de `src/lib/offline/api-client.ts` já resolve isto para escrita (enfileira em vez de
  * estourar), e só duas telas usam. O motivo provável está registrado no `DECISOES.md`: ele devolve
  * `{queued}` sem o corpo da resposta, então quem precisa do dado criado de volta não consegue
@@ -30,26 +35,7 @@ import { describe, expect, it } from 'vitest'
  */
 
 /** Arquivos que HOJE têm o defeito. Só pode encolher. */
-const DIVIDA_CONHECIDA: readonly string[] = [
-  'admin/agenda/detalhe.tsx',
-  'admin/agenda/novo/formulario.tsx',
-  'admin/campanhas/nova/nova.tsx',
-  'admin/clientes/[id]/direitos.tsx',
-  'admin/clientes/[id]/ficha.tsx',
-  'admin/clientes/[id]/fidelidade.tsx',
-  'admin/clientes/[id]/notas.tsx',
-  'admin/clientes/[id]/pacotes-carteira.tsx',
-  'admin/clientes/nova/formulario.tsx',
-  'admin/config/mensagens/editor.tsx',
-  'admin/config/negocio/formulario.tsx',
-  'admin/config/planos/editor.tsx',
-  'admin/config/planos/fidelidade-config.tsx',
-  'admin/config/profissionais/formulario.tsx',
-  'admin/config/servicos/formulario.tsx',
-  'admin/config/servicos/lista.tsx',
-  'admin/estoque/lista.tsx',
-  'admin/orcamentos/novo/formulario.tsx',
-]
+const DIVIDA_CONHECIDA: readonly string[] = []
 
 function telas(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
@@ -83,9 +69,12 @@ function corposDeTransicao(src: string): string[] {
   return corpos
 }
 
-function temFetchDesprotegido(arquivo: string): boolean {
-  const src = readFileSync(arquivo, 'utf8')
+function corpoTemODefeito(src: string): boolean {
   return corposDeTransicao(src).some((c) => c.includes('await fetch') && !c.includes('try {'))
+}
+
+function temFetchDesprotegido(arquivo: string): boolean {
+  return corpoTemODefeito(readFileSync(arquivo, 'utf8'))
 }
 
 const COM_DEFEITO = telas('src/app')
@@ -93,10 +82,40 @@ const COM_DEFEITO = telas('src/app')
   .map((f) => f.replace('src/app/', ''))
 
 describe('falha de rede não pode derrubar a tela', () => {
-  it('o detector acha alguma coisa — guarda contra passar vazio', () => {
-    // Se o regex parar de casar (mudança de nome do `useTransition`, por exemplo), a lista fica
-    // vazia e TODAS as asserções abaixo passam sem verificar nada. Falso verde, de novo.
-    expect(DIVIDA_CONHECIDA.length).toBeGreaterThan(0)
+  /*
+   * `DIVIDA_CONHECIDA` está vazia desde que os 18 foram corrigidos (2026-08-26) — não pode mais
+   * guardar o detector contra regex quebrado (ver acima). No lugar, um par de fixtures em
+   * memória: se o regex parar de casar `iniciar\w*(async () => {` ou parar de reconhecer
+   * `try {`, os dois casos abaixo trocam de veredito e o teste denuncia antes de qualquer coisa
+   * confiar no scanner vazio.
+   */
+  it('o detector reconhece o defeito quando ele existe', () => {
+    const comDefeito = `
+      function f() {
+        iniciarTransicao(async () => {
+          await fetch('/api/v1/x')
+        })
+      }
+    `
+    expect(corpoTemODefeito(comDefeito), 'o scanner deixou de casar `await fetch` sem `try` numa transição').toBe(true)
+  })
+
+  it('o detector NÃO acusa quando o fetch está protegido — prova que não é sempre-true', () => {
+    const protegido = `
+      function f() {
+        iniciarTransicao(async () => {
+          try {
+            await fetch('/api/v1/x')
+          } catch {
+            setErro('falhou')
+          }
+        })
+      }
+    `
+    expect(corpoTemODefeito(protegido), 'o scanner acusou uma transição que já tem try/catch — falso positivo').toBe(false)
+  })
+
+  it('o varredor de arquivos ainda encontra as telas do produto', () => {
     expect(telas('src/app').length, 'não achei telas para varrer').toBeGreaterThan(20)
   })
 
