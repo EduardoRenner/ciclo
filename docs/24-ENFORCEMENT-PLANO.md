@@ -245,18 +245,75 @@ Não mergeei: é a branch padrão do repositório e a decisão é do Eduardo (co
 reportar, não mexer). **Fica como o item mais urgente desta auditoria que não depende de código
 novo** — o conserto existe, está revisado e parado.
 
-### 6.5 · F1-b, medição em andamento
+### 6.5 · F1-b — **medido e fechado. E a resposta é a pior possível.**
 
-| Momento | Estado |
-|---|---|
-| 05:13 UTC | zero execuções `schedule` na história (correto — `docs/23 §3`) |
-| 05:24 UTC | slot das 05:10 **não disparou** |
-| 05:30 UTC | slot das 05:10 **ainda não disparou** — 20+ min de atraso |
+Os cinco disparos de 26/08 aconteceram, todos. Todos atrasados [M]:
 
-Consistente com o desenho best-effort que o F1 descreve. Para os 11 tenants em UTC-3, o slot que
-importa é o das **06:10** (hora local 3 com atraso de 0–49 min) — é o corpo dessa execução que
-responde se o Motor de Ciclo processa tenant sozinho. Ainda não aconteceu quando este parágrafo foi
-escrito.
+| Slot pedido | Rodou às | Atraso |
+|---|---|---|
+| 05:10 | 05:46 | +36 min |
+| 06:10 | 07:06 | +56 min |
+| 07:10 | 07:57 | +47 min |
+| 08:10 | 09:00 | +50 min |
+| 09:10 | 09:52 | +42 min |
+
+O atraso não é evento raro: é **característica**, entre 36 e 56 minutos, em 5 de 5. E como todos os
+slots atrasam **juntos**, a redundância de cinco horários não compensa — a janela inteira desliza.
+
+O corpo das respostas, lido por nome de job (não por ordem no log):
+
+| Run | `recompute-cycles` | `segments` |
+|---|---|---|
+| 07:06 | **0** | 11 |
+| 07:57 | **0** | 21 |
+| 09:00 | **0** | 0 |
+| 09:52 | **0** | 0 |
+
+**O Motor de Ciclo processou zero tenants em todos os cinco disparos — segundo dia seguido.**
+
+A causa não é a que o `docs/23` §2 supunha ter consertado. O conserto da janela estava certo e
+estava **em `main`** — mas nunca chegou em produção: este projeto não tem integração git↔Vercel, e
+o deploy é manual. Produção rodou o dia 26 inteiro com a igualdade exata do dia 25. Descoberto ao
+abrir o site de produção e ver que ele ainda servia `ciclo-wordmark-escuro.png`, arquivo que dois
+PRs atrás já tinha sido renomeado.
+
+**A lição, e ela é maior que o F1:** um conserto mergeado não é um conserto entregue. A auditoria
+inteira mediu `main` e concluiu que o F1 estava fechado. Nenhuma das frentes perguntou "isto está
+no ar?". Vale a mesma régua do `docs/22 §2.2` (job verde só conta quando alguém leu o corpo):
+**PR mergeado só conta quando alguém abriu a produção.**
+
+Deploy feito em 26/08 15:4x UTC, e verificado no ar depois (marca aqua, wordmark aparado, telefone
+com 49px tocáveis).
+
+**Falso alarme descartado no caminho:** `segments` reportou 21 tenants processados enquanto a base
+tem 11, e quase virou "o contador mente". Não mente — eram ~10 tenants transitórios de uma execução
+da suíte de integração, que roda contra produção por causa do `.env.local` (o F6 do `docs/23` §8).
+Foram apagados pelo `afterAll` depois, e é por isso que `created_at > now() - 24h` devolve zero
+agora.
+
+### 6.6 · O que o F1-b revelou de novo: o Motor de Ciclo não tinha vigilância nenhuma
+
+Investigando por que dois dias de silêncio não geraram nenhum sinal, a resposta apareceu inteira:
+
+- `cron.yml` confere **só o código HTTP** (`2xx passa`). `200 {"tenantsProcessados":0}` é verde.
+- `registrarHeartbeat` existe e é chamado por `campaigns` e `reminders` — **não por
+  `recompute-cycles`**.
+- `/api/health` vigia `send_reminders` e `send_campaigns` — **não o Motor de Ciclo**.
+
+O job que sustenta o preço do produto era o único sem heartbeat e sem checagem de saúde.
+
+**Conserto:** `recompute-cycles` passa a registrar heartbeat, e `/api/health` passa a vigiá-lo com
+limiar de 26h (mesmo de `send_campaigns`, que também é 1×/dia — e com folga de sobra para os 56 min
+de atraso medidos).
+
+O detalhe que decide se o conserto vale: **o heartbeat só bate quando `processados > 0`**.
+Registrar a cada chamada reproduziria o defeito numa camada nova — "a rota foi chamada" já era
+verdade nos dez disparos zerados. Há teste guardando as duas metades, e as duas foram vistas
+reprovando.
+
+**Consequência esperada e correta:** `/api/health` devolve **503** até o primeiro ciclo rodar de
+verdade (janela de 27/08). Não é regressão — é o endpoint finalmente dizendo a verdade que ele
+vinha escondendo há dois dias. Cura sozinho no primeiro disparo elegível.
 
 ### 6.6 · F1-b fechada, F3 decidida — continuação em outra sessão, mesmo dia
 
