@@ -1,24 +1,26 @@
-import IconeAnel from '@/components/ui/icone-anel'
+import Image from 'next/image'
+
+import wordmark from '../../../public/marca/ciclo-wordmark-escuro.png'
 
 /**
- * Marca do CICLO — um anel aberto: lê `C` num relance, lê "ciclo" (a cliente que
- * volta) no segundo olhar. `docs/08-REDESIGN-E-IDENTIDADE.md` Parte II §5
- * substitui o monograma antigo (letra `C` num círculo com gradiente — o
- * placeholder que toda ferramenta de geração produz quando não existe marca).
+ * Marca do CICLO — o uróboros: anel aberto com cabeça de seta, lê `C` num
+ * relance e "recomeça sozinho" no segundo olhar (o Motor de Ciclo trazendo a
+ * cliente de volta). Redesenho de 2026-08-26 substitui o anel sem seta da
+ * Parte II §5 (`docs/08-REDESIGN-E-IDENTIDADE.md`), que por sua vez já tinha
+ * substituído o monograma com gradiente original.
  *
- * Monocromática sempre, sem gradiente. `size-14` (56px) fica ABAIXO do corte de
- * 64px da Parte II §5.3 — rasterizado antes de virar regra: a variante com
- * ponto (a cliente voltando ao início do anel) só lê limpo a partir de 64px; a
- * 32px o ponto já lê como pontuação (`C.`). Por isso esta é sempre a versão
- * sem ponto.
+ * A versão em `TelaPublica` (login, cadastro, onboarding, erro) é o LOCKUP
+ * completo (símbolo + "Ciclo" escrito), não só o símbolo — é o único
+ * momento de marca sozinho na tela, sem navegação nem rótulo ao redor, então
+ * ganha destaque cheio. Nos "pontos especiais" (topbar, header da landing,
+ * tab bar) o símbolo sozinho (`MarcaCiclo`/`IconeAnel`) continua pequeno,
+ * ao lado do rótulo "CICLO" tipografado no próprio estilo do app.
+ *
+ * PNG com alpha, não SVG: o traço variável do "C" e o peso do "iclo" vieram
+ * prontos do redesenho e a fonte do wordmark (Helvetica Neue Bold) não é a
+ * do resto do app — não faz sentido recriar em tipo do sistema. `next/image`
+ * porque é asset estático local; sem domínio remoto para configurar.
  */
 export default function Selo() {
-  return (
-    <div
-      aria-hidden
-      className="flex size-14 items-center justify-center rounded-[var(--radius-pill)] bg-acc text-on-acc shadow-fab"
-    >
-      <IconeAnel className="size-[30px]" />
-    </div>
-  )
+  return <Image src={wordmark} alt="CICLO" priority className="h-16 w-auto" />
 }
