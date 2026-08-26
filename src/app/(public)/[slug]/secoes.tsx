@@ -222,7 +222,7 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
                 href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(perfil.address)}`}
                 target="_blank"
                 rel="noreferrer"
-                className="toque-48 flex items-start gap-2 text-corpo text-txt"
+                className="flex min-h-12 items-start gap-2 py-1 text-corpo text-txt"
               >
                 <MapPin aria-hidden className="mt-0.5 size-4 shrink-0 text-txt-3" />
                 <span>
@@ -231,8 +231,21 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
                 </span>
               </a>
             ) : null}
+            {/*
+              Alvo REAL (`min-h-12`), não o `toque-48`. Estas três linhas ficam
+              empilhadas com `gap-3` (12px), e o pseudo-elemento do `toque-48`
+              tem 48px centrados numa linha de 23px — ou seja, invade ~12px para
+              cada lado e ENCOSTA no vizinho. Medido em 2026-08-26: quem tocava
+              na metade de baixo do telefone abria o Instagram, porque entre dois
+              pseudo-elementos sobrepostos quem ganha é o último na ordem do DOM.
+              O telefone ficava com 29px tocáveis dos 48 prometidos.
+
+              `toque-48` continua certo onde é usado no resto do app: em alvo
+              isolado, ou em peça de 40px (`Chip`, `Button sm`) que só precisa de
+              4px para cada lado. Em lista empilhada de linha curta, ele mente.
+            */}
             {perfil.phone ? (
-              <a href={`tel:${perfil.phone}`} className="toque-48 flex items-center gap-2 text-corpo text-txt">
+              <a href={`tel:${perfil.phone}`} className="flex min-h-12 items-center gap-2 text-corpo text-txt">
                 <Phone aria-hidden className="size-4 shrink-0 text-txt-3" />
                 {perfil.phone}
               </a>
@@ -242,7 +255,7 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
                 href={`https://instagram.com/${perfil.instagram}`}
                 target="_blank"
                 rel="noreferrer"
-                className="toque-48 flex items-center gap-2 text-corpo text-txt"
+                className="flex min-h-12 items-center gap-2 text-corpo text-txt"
               >
                 <AtSign aria-hidden className="size-4 shrink-0 text-txt-3" />
                 {perfil.instagram}

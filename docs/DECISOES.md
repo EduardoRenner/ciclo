@@ -2830,3 +2830,27 @@ projeto é **Supabase Pro** (que inclui backup diário por padrão do plano) seg
 evidência disponível sem custo. Fica `[E]`: se um dia for preciso confirmar retenção/restauração de
 verdade, o caminho é o painel do Supabase (Database → Backups) direto, sem precisar de branch paga,
 ou aceitar o custo trivial da branch quando fizer sentido gastar.
+
+2026-08-26 · O acento do produto deixa de ser osso e passa a ser o aqua da marca · Decisão do
+Eduardo, tomada a partir de uma medição, não de gosto. Depois que o uróboros entrou (PRs #19/#20),
+uma varredura de todas as propriedades CSS da landing procurando `#14B8A6`/`#5EEAD4` voltou
+**vazia**: o turquesa existia só dentro do PNG do logo. Na prática o produto era osso monocromático
+com um símbolo colorido colado por cima — o logo lia como adesivo, não como origem do sistema. As
+três saídas oferecidas foram (a) aqua vira a cor específica do Motor de Ciclo, (b) aqua vira o
+acento do produto inteiro, (c) assumir o logo como ilha cromática e registrar. Escolhida a (b).
+`--acc: #f0ebe3 → #14b8a6`, `--acc-soft` idem. **O que se perde, aceito conscientemente:** osso dava
+16,46:1 sobre `--bg` e aqua dá 7,85:1 — continua bem acima do piso de 4,5 do §7, mas acaba o luxo de
+"nunca precisar pensar no contraste" que o E0–E6 tinha comprado. Medido depois: o aqua saiu de 0
+para 26 usos em CSS na landing, com zero reprovação de contraste. A página pública do salão foi
+conferida e **não vaza**: `--acc` lá continua vindo de `tenants.settings.site.accent`, e a marca do
+CICLO (`MarcaCiclo`, favicon) segue com o aqua cravado justamente para não vestir a cor do cliente.
+
+2026-08-26 · `--acc-2` é `#99F6E4` e não a menta `#5EEAD4` que veio no arquivo de marca · A menta
+era o candidato óbvio (é a variante clara do próprio logo) e passava em todos os testes que
+existiam. Medindo antes de aceitar: Δ luminância de **0,037** contra `--ok` (`#90dfba`). As duas são
+da família verde, e em daltonismo vermelho-verde (~8% dos homens, público direto de barbearia) link
+ativo e selo de sucesso seriam a mesma cor. O bloco de daltonismo do `contraste.test.ts` não pegava
+porque só comparava semântico com semântico, e `--acc-2` não é semântico. `#99F6E4` dá Δ0,160,
+acima do piso de 0,15 que o resto da paleta respeita. O teste foi **estendido** para comparar
+`--acc-2` com `ok/warn/risk/bad`, e a guarda foi vista reprovando (menta reintroduzida derruba
+exatamente o par `--acc-2 × --ok`).
