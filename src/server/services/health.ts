@@ -11,6 +11,13 @@ const LIMIAR_HEARTBEAT_MIN = 30
 // usar o mesmo limiar de 30min o marcaria "atrasado" ~23h por dia, todo dia. 26h cobre um dia
 // inteiro com folga para o cron de 5 horários (`.github/workflows/cron.yml`) atrasar.
 const LIMIAR_HEARTBEAT_CAMPANHAS_MIN = 26 * 60
+/*
+ * `recompute_cycles` roda 1×/dia por tenant (janela de 3h local), igual a `send_campaigns` — daí
+ * o mesmo 26h, que cobre um dia inteiro com folga para o agendador atrasar. O atraso medido em
+ * 26/08 nos cinco disparos foi de 36 a 56 minutos, então 26h tem margem de sobra; apertar isso
+ * transformaria o alarme em ruído diário, que é o jeito mais rápido de ninguém mais olhar.
+ */
+const LIMIAR_HEARTBEAT_CICLO_MIN = 26 * 60
 const LIMIAR_FALHA_MENSAGEM = 0.05 // 5%, J129
 
 export async function registrarHeartbeat(db: Cliente, kind: string): Promise<void> {
@@ -31,6 +38,7 @@ export type RelatorioSaude = {
     messages: ChecagemSaude
     sendReminders: ChecagemSaude
     sendCampaigns: ChecagemSaude
+    recomputeCycles: ChecagemSaude
   }
 }
 
@@ -47,10 +55,16 @@ export async function verificarSaude(db: Cliente, agora: Date = new Date()): Pro
   const messages = await checarMensagens(db, agora)
   const sendReminders = await checarHeartbeat(db, 'send_reminders', agora)
   const sendCampaigns = await checarHeartbeat(db, 'send_campaigns', agora, LIMIAR_HEARTBEAT_CAMPANHAS_MIN)
+  /*
+   * O Motor de Ciclo entrou aqui em 26/08, depois de passar DOIS dias seguidos sem processar um
+   * único tenant — com HTTP 200, job verde e ninguém sabendo. É o diferencial que sustenta o preço
+   * do produto e era o único job de cron sem vigilância nenhuma.
+   */
+  const recomputeCycles = await checarHeartbeat(db, 'recompute_cycles', agora, LIMIAR_HEARTBEAT_CICLO_MIN)
 
   return {
-    ok: database.ok && jobQueue.ok && messages.ok && sendReminders.ok && sendCampaigns.ok,
-    checks: { database, jobQueue, messages, sendReminders, sendCampaigns },
+    ok: database.ok && jobQueue.ok && messages.ok && sendReminders.ok && sendCampaigns.ok && recomputeCycles.ok,
+    checks: { database, jobQueue, messages, sendReminders, sendCampaigns, recomputeCycles },
   }
 }
 

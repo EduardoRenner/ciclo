@@ -4,6 +4,7 @@ import { AppError } from '@/server/http/errors'
 import { compararSegredo } from '@/server/http/segredo'
 import { rota } from '@/server/http/handler'
 import { recomputarCiclosDoTenant } from '@/server/services/ciclo'
+import { registrarHeartbeat } from '@/server/services/health'
 
 /**
  * §5.3: "03:00 no fuso de cada tenant". A cada disparo, checa QUAIS tenants estão passando pela
@@ -34,6 +35,29 @@ export const GET = rota(async (req) => {
 
       await recomputarCiclosDoTenant(svc, tenant.id, tenant.timezone, dataLocalDe(tenant.timezone, agora))
       processados++
+    }
+
+    /*
+     * O heartbeat só bate quando houve TRABALHO, e essa distinção é o ponto.
+     *
+     * Medido em 26/08: o Motor de Ciclo devolveu `{"tenantsProcessados":0}` nos CINCO disparos do
+     * dia, com HTTP 200 — e o `cron.yml` só olha o código de status (`2xx passa`), então os cinco
+     * jobs ficaram verdes. Foi o segundo dia seguido em que o diferencial que sustenta o preço do
+     * produto não rodou, e nada em lugar nenhum reclamou. Era a mesma falha do dia 25 (`docs/23`
+     * §2), sobrevivendo ao próprio conserto porque a correção da janela estava em `main` e não em
+     * produção.
+     *
+     * Registrar em toda chamada repetiria o defeito numa camada nova: "a rota foi chamada" já era
+     * verdade nos cinco disparos zerados. O que precisa ser observável é "algum tenant teve o
+     * ciclo recalculado" — por isso o `> 0`.
+     *
+     * Não derruba a rota se falhar: um heartbeat perdido não pode desfazer recálculo que já
+     * aconteceu, e a checagem de saúde acusa o silêncio no próximo ciclo de qualquer forma.
+     */
+    if (processados > 0) {
+      await registrarHeartbeat(svc, 'recompute_cycles').catch((erro: unknown) => {
+        console.error(JSON.stringify({ level: 'error', event: 'heartbeat_recompute_cycles_falhou' }), erro)
+      })
     }
 
     return { tenantsProcessados: processados }
