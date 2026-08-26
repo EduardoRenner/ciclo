@@ -1,8 +1,10 @@
+import { ehDemonstracao } from '@/core/tenants/demonstracao'
 import { withNovoTenant } from '@/server/db/with-tenant'
 import { AppError } from '@/server/http/errors'
 import { compararSegredo } from '@/server/http/segredo'
 import { rota } from '@/server/http/handler'
 import { executarCampanhaDiaria } from '@/server/services/campanhas'
+import { registrarHeartbeat } from '@/server/services/health'
 
 /**
  * TICKET-038. Sem hora fixa na especificação — 10h local escolhida por ficar bem dentro da
@@ -16,12 +18,15 @@ export const GET = rota(async (req) => {
   if (!compararSegredo(recebido, esperado)) throw new AppError('UNAUTHENTICATED')
 
   return withNovoTenant(async (svc) => {
-    const { data: tenants, error } = await svc.from('tenants').select('id, timezone').is('deleted_at', null)
+    const { data: tenants, error } = await svc.from('tenants').select('id, timezone, slug').is('deleted_at', null)
     if (error) throw new AppError('INTERNAL', { cause: error })
 
     let tenantsProcessados = 0
     let totalEnviadas = 0
     for (const tenant of tenants ?? []) {
+      // Tenant de demonstração não tem cliente de verdade do outro lado do telefone.
+      if (ehDemonstracao(tenant.slug)) continue
+
       const horaLocal = Number(
         new Intl.DateTimeFormat('en-US', { timeZone: tenant.timezone, hour: 'numeric', hourCycle: 'h23' }).format(new Date()),
       )
@@ -37,6 +42,10 @@ export const GET = rota(async (req) => {
       }
       tenantsProcessados++
     }
+
+    // Incondicional — tick sem nenhum tenant na hora certa ainda conta como "rodou" (mesmo
+    // padrão de `reminders/route.ts`), senão o heartbeat vira falso-negativo em dia sem tenant.
+    await registrarHeartbeat(svc, 'send_campaigns')
 
     return { tenantsProcessados, totalEnviadas }
   })

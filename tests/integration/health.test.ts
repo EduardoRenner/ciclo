@@ -56,6 +56,7 @@ describe('verificarSaude', () => {
     'heartbeat recém-registrado: sendReminders ok',
     async () => {
       await registrarHeartbeat(svc, 'send_reminders')
+      await registrarHeartbeat(svc, 'send_campaigns') // tabela global (0014) — não deixar `send_campaigns` atrasado derrubar `relatorio.ok` por um motivo alheio a este teste.
       const relatorio = await verificarSaude(svc)
       expect(relatorio.checks.sendReminders.ok).toBe(true)
       expect(relatorio.checks.database.ok).toBe(true)
@@ -68,12 +69,43 @@ describe('verificarSaude', () => {
     async () => {
       const trintaEUmMinutosAtras = new Date(Date.now() - 31 * 60_000)
       await svc.from('cron_heartbeats').upsert({ kind: 'send_reminders', last_run_at: trintaEUmMinutosAtras.toISOString() }, { onConflict: 'kind' })
+      await registrarHeartbeat(svc, 'send_campaigns')
 
       const relatorio = await verificarSaude(svc)
       expect(relatorio.checks.sendReminders.ok).toBe(false)
       expect(relatorio.ok).toBe(false)
 
       await registrarHeartbeat(svc, 'send_reminders') // devolve o estado saudável pros próximos testes/tenants
+    },
+    30_000,
+  )
+
+  it(
+    'send_campaigns recém-registrado: ok',
+    async () => {
+      await registrarHeartbeat(svc, 'send_reminders')
+      await registrarHeartbeat(svc, 'send_campaigns')
+      const relatorio = await verificarSaude(svc)
+      expect(relatorio.checks.sendCampaigns.ok).toBe(true)
+    },
+    30_000,
+  )
+
+  it(
+    // `send_campaigns` roda 1×/dia (não a cada 15min como reminders), então o limiar é 26h
+    // (health.ts), não os 30min de sendReminders — 27h atrás já estoura os dois de propósito.
+    'send_campaigns parado há mais de 26h dispara alerta, sem depender do limiar de 30min de sendReminders',
+    async () => {
+      await registrarHeartbeat(svc, 'send_reminders')
+      const vinteSeteHorasAtras = new Date(Date.now() - 27 * 60 * 60_000)
+      await svc.from('cron_heartbeats').upsert({ kind: 'send_campaigns', last_run_at: vinteSeteHorasAtras.toISOString() }, { onConflict: 'kind' })
+
+      const relatorio = await verificarSaude(svc)
+      expect(relatorio.checks.sendCampaigns.ok).toBe(false)
+      expect(relatorio.checks.sendReminders.ok).toBe(true)
+      expect(relatorio.ok).toBe(false)
+
+      await registrarHeartbeat(svc, 'send_campaigns') // devolve o estado saudável pros próximos testes/tenants
     },
     30_000,
   )
@@ -97,6 +129,7 @@ describe('verificarSaude', () => {
     'job parado na fila há mais de 15 min dispara alerta, sem afetar o resto',
     async () => {
       await registrarHeartbeat(svc, 'send_reminders')
+      await registrarHeartbeat(svc, 'send_campaigns') // tabela global — não deixar stale pros testes seguintes no mesmo processo.
       const dezesseisMinutosAtras = new Date(Date.now() - 16 * 60_000)
       const job = await svc
         .from('job_queue')
@@ -117,6 +150,7 @@ describe('verificarSaude', () => {
     'job preso em running há mais de 15 min também dispara alerta (achado S12)',
     async () => {
       await registrarHeartbeat(svc, 'send_reminders')
+      await registrarHeartbeat(svc, 'send_campaigns') // tabela global — não deixar stale pros testes seguintes no mesmo processo.
       const dezesseisMinutosAtras = new Date(Date.now() - 16 * 60_000)
 
       /*
