@@ -1,3 +1,4 @@
+import { heartbeatVigiado } from '@/core/cron/agendadas'
 import { AppError } from '@/server/http/errors'
 
 import type { Database } from '@/server/db/types.gen'
@@ -112,7 +113,20 @@ async function checarMensagens(db: Cliente, agora: Date): Promise<ChecagemSaude>
   return taxa <= LIMIAR_FALHA_MENSAGEM ? { ok: true } : { ok: false, detail: `${(taxa * 100).toFixed(1)}% de falha na última hora (limite ${LIMIAR_FALHA_MENSAGEM * 100}%)` }
 }
 
+/**
+ * Cobra execução recente de um job de cron — mas só de quem tem quem o dispare.
+ *
+ * A ressalva não é zelo: em 26/08, medido na produção, este endpoint devolvia 503 por
+ * `send_reminders` estar "atrasado" havia 454 minutos. `reminders` está fora do `schedule` de
+ * propósito (`src/core/cron/agendadas.ts` explica), então o atraso era permanente e crescente —
+ * e um 503 que nunca sai do vermelho esconde o vermelho que importa. A vigilância volta sozinha
+ * no dia em que a rota entrar no `schedule`.
+ */
 async function checarHeartbeat(db: Cliente, kind: string, agora: Date, limiarMinutos: number = LIMIAR_HEARTBEAT_MIN): Promise<ChecagemSaude> {
+  if (!heartbeatVigiado(kind)) {
+    return { ok: true, detail: `job "${kind}" não está no schedule de .github/workflows/cron.yml — vigilância desligada de propósito` }
+  }
+
   const { data, error } = await db.from('cron_heartbeats').select('last_run_at').eq('kind', kind).maybeSingle()
   if (error) return { ok: false, detail: error.message }
   if (!data) return { ok: false, detail: `job "${kind}" nunca rodou` }

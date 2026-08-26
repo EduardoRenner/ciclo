@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs'
 
 import { describe, expect, it } from 'vitest'
 
+import { bancoSaudavel as saudavel } from '../../helpers/saude'
+
 import { verificarSaude } from '@/server/services/health'
 
 /**
@@ -23,40 +25,6 @@ import { verificarSaude } from '@/server/services/health'
  */
 
 const HORA = 60 * 60_000
-
-/** Encena só a superfície que `verificarSaude` toca. `heartbeats` mapeia kind → minutos atrás. */
-function bancoFalso(heartbeats: Record<string, number | null>) {
-  const construtor = (tabela: string) => {
-    let kindPedido = ''
-    const encadeavel: Record<string, unknown> = {
-      select: () => encadeavel,
-      limit: () => encadeavel,
-      in: () => encadeavel,
-      gte: () => encadeavel,
-      lt: () => encadeavel,
-      eq: (_coluna: string, valor: string) => {
-        kindPedido = valor
-        return encadeavel
-      },
-      maybeSingle: async () => {
-        const minutos = heartbeats[kindPedido]
-        if (minutos == null) return { data: null, error: null }
-        return { data: { last_run_at: new Date(Date.now() - minutos * 60_000).toISOString() }, error: null }
-      },
-      then: (resolver: (v: unknown) => unknown) =>
-        Promise.resolve(
-          tabela === 'messages' ? { data: [], error: null } : { count: 0, error: null },
-        ).then(resolver),
-    }
-    return encadeavel
-  }
-  return { from: (tabela: string) => construtor(tabela) } as never
-}
-
-/** Todos os heartbeats recentes, menos os que o caso quiser envelhecer. */
-function saudavel(sobrescreve: Record<string, number | null> = {}) {
-  return bancoFalso({ send_reminders: 5, send_campaigns: 60, recompute_cycles: 60, ...sobrescreve })
-}
 
 describe('o Motor de Ciclo é observável', () => {
   it('o relatório inclui recomputeCycles e está ok quando o job rodou', async () => {

@@ -2854,3 +2854,37 @@ porque só comparava semântico com semântico, e `--acc-2` não é semântico. 
 acima do piso de 0,15 que o resto da paleta respeita. O teste foi **estendido** para comparar
 `--acc-2` com `ok/warn/risk/bad`, e a guarda foi vista reprovando (menta reintroduzida derruba
 exatamente o par `--acc-2 × --ok`).
+
+2026-08-26 · `/api/health` estava em **503 permanente por desenho**, e isso é o defeito de 25/26
+de agosto pelo avesso · Medido na produção às 17:38 (`https://ciclo-umber.vercel.app/api/health`):
+`{"ok":false,...,"sendReminders":{"ok":false,"detail":"job \"send_reminders\" sem execução há 454
+min (limite 30 min)"},"recomputeCycles":{"ok":false,"detail":"job \"recompute_cycles\" nunca
+rodou"}}`. O segundo é verdadeiro e esperado (cura sozinho no schedule de 27/08, `docs/24` §6.6).
+O primeiro **nunca ia curar**: `reminders` está fora do `on.schedule` de propósito — quem a liga é
+o dono do produto, no passo 4 do F0 (`docs/25`) — então o atraso só cresce, todo dia, para sempre.
+O mesmo valeria para `send_campaigns` a partir de amanhã (limiar de 26h, último disparo manual foi
+hoje). Ou seja: dois dos seis checks ficariam vermelhos por decisão consciente, e um endpoint que
+vive em 503 não distingue mais "desligado de propósito" de "o Motor de Ciclo morreu" — que é
+exatamente o sinal que a auditoria de ontem pagou dois dias de silêncio para construir.
+**O raciocínio já existia no repositório e não tinha sido aplicado aqui:** o passo 4 do rodapé do
+`cron.yml` diz, sobre o step de CI, *"ativá-lo antes faria o Action falhar sempre, porque um
+heartbeat que nunca rodou está sempre atrasado por definição"*. Valia igual para o `/api/health`,
+que fazia isso desde já. Decisão: **vigilância condicionada ao agendamento real**
+(`src/core/cron/agendadas.ts`). Job cuja rota não está no `schedule` volta `ok: true` com o motivo
+escrito no corpo (`não está no schedule de .github/workflows/cron.yml — vigilância desligada de
+propósito`) em vez de sumir do relatório: a regra da casa é ler o corpo, não a cor, e um check que
+desaparece é a mesma ausência silenciosa por outro nome. A vigilância **volta sozinha** no dia em
+que a rota entrar no schedule, sem ninguém lembrar de nada.
+`ROTAS_AGENDADAS` é uma **cópia** do que está no YAML — o bundle da Vercel não carrega `.github/`,
+então o runtime não tem como ler o arquivo de verdade. A cópia é ancorada por
+`tests/unit/server/saude-vigia-so-o-que-roda.test.ts`, que reprova nas duas direções (rota
+agendada fora da lista, rota da lista fora do schedule), confere `ROTAS_DE_CRON` contra os
+diretórios em disco e amarra cada `kind` de heartbeat à rota que o grava. As seis guardas foram
+**vistas reprovando** por mutação antes de aceitas (tirar `segments`, incluir `reminders`, esvaziar
+a lista, apontar o mapa para a rota errada, sumir com uma rota do disco, e remover a dispensa de
+dentro do `health.ts`). O dublê de banco de `motor-de-ciclo-observavel` virou `tests/helpers/saude.ts`
+no caminho, porque a segunda cópia dele nasceria aqui — e cópia de dublê foi como a leitura do
+`cron.yml` já errou de arquivo uma vez.
+**O que NÃO mudou, de propósito:** `checarFila` continua alarmando por job parado há 15 min mesmo
+com a rota `jobs` fora do schedule. Fila crescendo é problema real independentemente de quem devia
+drená-la — é trabalho enfileirado que não acontece, não um relógio parado.
