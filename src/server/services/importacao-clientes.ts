@@ -1,6 +1,8 @@
+import { Temporal } from '@js-temporal/polyfill'
 import Papa from 'papaparse'
 import { z } from 'zod'
 
+import { computeCycle } from '@/core/cycle/compute'
 import { AppError } from '@/server/http/errors'
 import { hashTelefone, normalizarTelefoneBR } from '@/server/services/telefone'
 
@@ -43,16 +45,40 @@ export const EsquemaMapeamento = z.object({
   phone: z.string().nullish(),
   email: z.string().nullish(),
   tags: z.string().nullish(),
+  /**
+   * F2/ticket 13 (`docs/25-ESTRATEGIA-E-EXECUCAO.md`): opcional. Sem data de última visita não
+   * há "última visita" para o Motor de Ciclo prever a partir dela (mesma regra de
+   * `computeCycle`: history vazio nunca é "atrasado", é "nunca veio").
+   */
+  lastVisit: z.string().nullish(),
 })
 
 export type Mapeamento = z.infer<typeof EsquemaMapeamento>
 
 export type LinhaComErro = { linha: number; motivo: string }
 
+/**
+ * F2/ticket 13: "a pessoa importa 200 contatos e a tela responde 'N já passaram do tempo de
+ * voltar'". Calculado com `computeCycle` (o MESMO algoritmo do Motor de Ciclo, não um número
+ * inventado) — mas nunca gravado em `client_cycles`, porque essa tabela exige `service_id`
+ * (PK composta, `0001_initial.sql`) e um cliente importado não tem nenhum atendimento ainda, logo
+ * nenhum serviço associado. É uma prévia de leitura única no momento da importação, não o
+ * sistema de registro — o ciclo de verdade nasce (e persiste) quando o primeiro atendimento
+ * daquele cliente for concluído, do jeito que já funciona para todo o resto do produto.
+ */
+export type PrevisaoImportacao = {
+  /** Quantos dos importados vieram com a coluna de última visita preenchida e válida. */
+  comDataInformada: number
+  /** Entre esses, quantos já passaram do ciclo esperado (`computeCycle` não devolveu on_track). */
+  jaDevendoVoltar: number
+}
+
 export type ResultadoImportacao = {
   imported: number
   skipped: LinhaComErro[]
   errors: LinhaComErro[]
+  /** `null` quando ninguém mapeou a coluna de última visita — não há o que prever. */
+  previsao: PrevisaoImportacao | null
 }
 
 function parsearCsv(texto: string): { colunas: string[]; linhas: Record<string, string>[] } {
@@ -80,7 +106,29 @@ export function preVisualizarCsv(texto: string, amostra = 10): { colunas: string
   return { colunas, sample: linhas.slice(0, amostra) }
 }
 
-type LinhaValida = { linha: number; name: string; phoneE164: string | null; email: string | null; tags: string[] }
+type LinhaValida = {
+  linha: number
+  name: string
+  phoneE164: string | null
+  email: string | null
+  tags: string[]
+  lastVisitDate: Temporal.PlainDate | null
+}
+
+/**
+ * Só o formato ISO (`Temporal.PlainDate.from` não aceita outro) — mesmo padrão do resto do
+ * projeto (nenhum lugar em `core/`/`server/` faz parsing de data em formato BR). Data inválida ou
+ * num formato diferente não derruba a linha: a última visita é só um bônus para a prévia, o
+ * cliente importa igual sem ela.
+ */
+function tentarParsearData(bruto: string | undefined): Temporal.PlainDate | null {
+  if (!bruto) return null
+  try {
+    return Temporal.PlainDate.from(bruto.trim())
+  } catch {
+    return null
+  }
+}
 
 /** Aplica o mapeamento de coluna e valida cada linha — sem tocar no banco ainda. */
 function validarLinhas(linhas: Record<string, string>[], mapa: Mapeamento): { validas: LinhaValida[]; errors: LinhaComErro[] } {
@@ -135,7 +183,10 @@ function validarLinhas(linhas: Record<string, string>[], mapa: Mapeamento): { va
           .slice(0, MAX_TAGS)
       : []
 
-    validas.push({ linha: numero, name, phoneE164, email: emailBruto || null, tags })
+    const lastVisitBruto = mapa.lastVisit ? linha[mapa.lastVisit]?.trim() : undefined
+    const lastVisitDate = tentarParsearData(lastVisitBruto)
+
+    validas.push({ linha: numero, name, phoneE164, email: emailBruto || null, tags, lastVisitDate })
   })
 
   return { validas, errors }
@@ -214,6 +265,7 @@ export async function importarClientes(
   }
 
   let imported = 0
+  const datasDeUltimaVisitaInseridas: Temporal.PlainDate[] = []
   for (let i = 0; i < paraInserir.length; i += TAMANHO_DO_LOTE) {
     const lote = paraInserir.slice(i, i + TAMANHO_DO_LOTE)
     const { error } = await db.from('clients').insert(
@@ -230,6 +282,7 @@ export async function importarClientes(
 
     if (!error) {
       imported += lote.length
+      for (const l of lote) if (l.lastVisitDate) datasDeUltimaVisitaInseridas.push(l.lastVisitDate)
       continue
     }
 
@@ -254,9 +307,39 @@ export async function importarClientes(
         }
       } else {
         imported++
+        if (linha.lastVisitDate) datasDeUltimaVisitaInseridas.push(linha.lastVisitDate)
       }
     }
   }
 
-  return { imported, skipped, errors }
+  const previsao = await calcularPrevisao(db, tenantId, datasDeUltimaVisitaInseridas)
+
+  return { imported, skipped, errors, previsao }
+}
+
+/**
+ * Ver `PrevisaoImportacao`. `defaultCycleDays` vem da média dos `cycle_days` já cadastrados no
+ * tenant (todo tenant sai do onboarding com um pacote de serviços — TICKET-072) porque o cliente
+ * importado não tem `service_id` nenhum ainda; 30 dias é só o último recurso, para um tenant sem
+ * nenhum serviço configurado (não deveria acontecer, mas não é motivo para a prévia quebrar).
+ */
+async function calcularPrevisao(
+  db: SupabaseClient<Database>,
+  tenantId: string,
+  datas: readonly Temporal.PlainDate[],
+): Promise<PrevisaoImportacao | null> {
+  if (datas.length === 0) return null
+
+  const { data: servicos, error } = await db.from('services').select('cycle_days').eq('tenant_id', tenantId).gt('cycle_days', 0)
+  if (error) throw new AppError('INTERNAL', { cause: error })
+
+  const ciclos = (servicos ?? []).map((s) => s.cycle_days).filter((c): c is number => c !== null)
+  const defaultCycleDays = ciclos.length > 0 ? Math.round(ciclos.reduce((soma, c) => soma + c, 0) / ciclos.length) : 30
+
+  const hoje = Temporal.Now.plainDateISO()
+  const jaDevendoVoltar = datas.filter(
+    (data) => computeCycle({ history: [{ date: data }], defaultCycleDays, today: hoje }).state !== 'on_track',
+  ).length
+
+  return { comDataInformada: datas.length, jaDevendoVoltar }
 }
