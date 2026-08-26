@@ -1,3 +1,4 @@
+import { dataLocalDe, dentroDaJanela, horaLocalDe } from '@/core/cron/janela'
 import { withNovoTenant } from '@/server/db/with-tenant'
 import { AppError } from '@/server/http/errors'
 import { compararSegredo } from '@/server/http/segredo'
@@ -5,12 +6,14 @@ import { rota } from '@/server/http/handler'
 import { recomputarCiclosDoTenant } from '@/server/services/ciclo'
 
 /**
- * §5.3: "03:00 no fuso de cada tenant". O cron do Vercel só sabe rodar em
- * UTC — dispara a cada 15min (vercel.json) e, a cada disparo, checa QUAL
- * tenant está passando pelas 3h da madrugada no próprio fuso agora. Rodar
- * `recomputarCiclosDoTenant` de novo pelo mesmo tenant no mesmo dia é
- * inofensivo (upsert por PK, TICKET-036) — a checagem de hora só existe para
- * não gastar processamento à toa, não para garantir corretude.
+ * §5.3: "03:00 no fuso de cada tenant". A cada disparo, checa QUAIS tenants estão passando pela
+ * madrugada no próprio fuso agora. Rodar `recomputarCiclosDoTenant` de novo pelo mesmo tenant no
+ * mesmo dia é inofensivo (upsert por PK, TICKET-036) — a checagem de hora só existe para não
+ * gastar processamento à toa, não para garantir corretude.
+ *
+ * É exatamente por isso que aqui é uma JANELA e não uma igualdade: o agendador atrasa, e trocar
+ * exatidão por folga custa só processamento. Em 25/08 a igualdade exata custou o dia inteiro do
+ * Motor de Ciclo por 56 minutos de atraso do GitHub. Ver `src/core/cron/janela.ts` e `docs/23` §2.
  */
 export const GET = rota(async (req) => {
   const esperado = process.env.CRON_SECRET
@@ -21,15 +24,15 @@ export const GET = rota(async (req) => {
     const { data: tenants, error } = await svc.from('tenants').select('id, timezone').is('deleted_at', null)
     if (error) throw new AppError('INTERNAL', { cause: error })
 
+    // Um instante só para todos os tenants: com `new Date()` dentro do laço, um tenant avaliado
+    // na virada da hora usaria um relógio diferente do vizinho.
+    const agora = new Date()
+
     let processados = 0
     for (const tenant of tenants ?? []) {
-      const horaLocal = Number(
-        new Intl.DateTimeFormat('en-US', { timeZone: tenant.timezone, hour: 'numeric', hourCycle: 'h23' }).format(new Date()),
-      )
-      if (horaLocal !== 3) continue
+      if (!dentroDaJanela(horaLocalDe(tenant.timezone, agora), 3)) continue
 
-      const hojeLocal = new Intl.DateTimeFormat('en-CA', { timeZone: tenant.timezone }).format(new Date()) // en-CA = YYYY-MM-DD
-      await recomputarCiclosDoTenant(svc, tenant.id, tenant.timezone, hojeLocal)
+      await recomputarCiclosDoTenant(svc, tenant.id, tenant.timezone, dataLocalDe(tenant.timezone, agora))
       processados++
     }
 

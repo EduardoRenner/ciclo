@@ -2723,3 +2723,16 @@ terceira asserção guarda contra o próprio detector: se o regex parar de casar
 "consertadas" fica cheia e o teste grita, em vez de passar verde vazio — foi a mutação que mais
 importou verificar. Caminho para zerar a lista passa por resolver o limite do `apiFetch` (devolve
 `{queued}` sem o corpo da resposta), ou por tratar caso a caso com verificação.
+
+2026-08-26 · Auditoria de lançamento (docs/22-23), F2 · `HCAPTCHA_SECRET` aceito ausente por ora,
+`UPSTASH_*` reclassificado — não é achado · A hipótese inicial (docs/23 §4) era que as duas
+credenciais ausentes eram "mitigação fantasma". Lendo `rate-limit.ts`: sem Upstash, o limitador cai
+para o Postgres (`consumir_rate_limit`, `on conflict do update` atômico) — compartilhado entre
+instâncias e correto, não uma memória por instância. Só o teto global de 120/min usa memória de
+propósito (decisão já documentada no próprio arquivo, para não pagar uma ida ao banco em toda
+requisição). **`UPSTASH_*` sai da lista de achados** — degradar para Postgres é o desenho, não uma
+falha. `HCAPTCHA_SECRET` é diferente: ausente, a verificação sempre devolve `true` — o booking
+público fica sem essa camada. Honeypot e rate limit continuam ativos e não dependem de credencial.
+Decisão: aceitar por ora (abrir conta hCaptcha é `[E]`, não bloqueia lançamento com zero tráfego
+adversarial observado até hoje), revisitar se o volume de agendamento público crescer ou se
+aparecer spam real nos logs. Dono: Eduardo, sem prazo — condicionado a sinal, não a data.
