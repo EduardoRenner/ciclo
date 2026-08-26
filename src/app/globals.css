@@ -43,19 +43,40 @@
   --txt-3: #99938c;
 
   /*
-   * Acento do PRODUTO — osso, fixo. 16,46:1 sobre --bg nos dois sentidos —
-   * nunca precisa compensar com peso de fonte, ao contrário do roxo (4,94:1).
+   * Acento do PRODUTO — aqua, a cor da marca. Fixo.
+   *
+   * Era osso (#f0ebe3, 16,46:1) desde o redesenho E0–E6. Trocado em 2026-08-26,
+   * depois de uma medição que mostrou o problema: o uróboros entrou como marca
+   * nova em turquesa e a varredura de CSS da landing achou o turquesa em ZERO
+   * propriedades — ele existia só dentro do PNG do logo. O produto era osso
+   * monocromático com um símbolo colorido colado por cima, e o logo lia como
+   * adesivo em vez de origem do sistema. Aqui a cor da marca passa a ser a cor
+   * do produto: botão primário, link, aba ativa, foco.
+   *
+   * O que se perde e foi aceito conscientemente: osso dava 16,46:1 e aqua dá
+   * 7,85:1. Continua bem acima do piso de 4,5 do §7, e o teste de contraste
+   * guarda isso — mas não é mais o caso de "nunca precisa pensar no contraste".
+   *
+   * --acc-2 é #99F6E4 e NÃO a menta #5EEAD4 do arquivo de marca, por um motivo
+   * medido: menta tem Δ luminância de 0,037 contra --ok (#90dfba). As duas são
+   * da família verde, e em daltonismo vermelho-verde (~8% dos homens, público
+   * direto de barbearia) seriam a mesma cor — link ativo indistinguível de selo
+   * de sucesso. #99F6E4 dá Δ0,160, acima do piso de 0,15 que o resto da paleta
+   * já respeita. Há teste guardando esse par agora.
    *
    * O acento do site público de cada salão (`/[slug]`) é OUTRA coisa e vem de
    * `tenants.settings.site.accent`, escolha do dono. NÃO vem mais de
    * `vertical_packs.accent_color` — era essa a fonte do "layout roxo" que
    * voltava em salão de cílios e sobrancelha (`docs/13-CAUSA-RAIZ-LAYOUT-
    * LEGADO.md` T3, executado no 14). Cor de acento nunca é hardcoded em
-   * componente, nem o valor antigo nem o novo.
+   * componente, nem o valor antigo nem o novo. É também por isso que a marca
+   * (`MarcaCiclo`, favicon) segue com o aqua CRAVADO e não `var(--acc)`: na
+   * página do salão o `--acc` é do tenant, e o logo do CICLO não pode vestir a
+   * cor do cliente.
    */
-  --acc: #f0ebe3;
-  --acc-2: #fffcf7;
-  --acc-soft: rgba(240, 235, 227, 0.1);
+  --acc: #14b8a6;
+  --acc-2: #99f6e4;
+  --acc-soft: rgba(20, 184, 166, 0.14);
   --on-acc: #0d0c0c;
   --ring: var(--acc-2);
 

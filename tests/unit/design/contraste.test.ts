@@ -97,6 +97,27 @@ describe('contraste dos tokens (WCAG AA)', () => {
       const delta = Math.abs(luminanciaToken(a) - luminanciaToken(b))
       expect(delta, `Δ(--${a}, --${b}) = ${delta.toFixed(3)}`).toBeGreaterThanOrEqual(PISO)
     })
+
+    /*
+     * O acento entrou nesta conta em 2026-08-26, e entrou porque escapou dela.
+     *
+     * Quando --acc virou a cor da marca (aqua), o candidato natural para --acc-2
+     * era a menta #5EEAD4 do próprio arquivo de logo. Ela dava Δ0,037 contra
+     * --ok: link ativo e selo de sucesso viram a MESMA cor em daltonismo
+     * vermelho-verde. O bloco acima não pegaria — ele só comparava semântico com
+     * semântico, e --acc-2 não é semântico.
+     *
+     * --acc-2 é texto (link, aba ativa, foco) e convive na mesma tela que os
+     * selos de estado, então precisa se separar deles pela mesma régua.
+     * --info fica fora pelo mesmo motivo do bloco de cima: é azul, outro eixo.
+     */
+    it.each([['ok'], ['warn'], ['risk'], ['bad']])(
+      '--acc-2 e --%s têm Δ luminância de pelo menos 0,15',
+      (semantico) => {
+        const delta = Math.abs(luminanciaToken('acc-2') - luminanciaToken(semantico))
+        expect(delta, `Δ(--acc-2, --${semantico}) = ${delta.toFixed(3)}`).toBeGreaterThanOrEqual(PISO)
+      },
+    )
   })
 
   it('as superfícies não colapsam umas nas outras', () => {
