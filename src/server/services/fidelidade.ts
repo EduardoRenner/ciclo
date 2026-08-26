@@ -1,7 +1,9 @@
 import { Temporal } from '@js-temporal/polyfill'
 import { z } from 'zod'
 
+import { podeUsarModulo } from '@/core/billing/planos'
 import { AppError } from '@/server/http/errors'
+import { contextoDePlano } from '@/server/services/planos'
 
 import type { Database } from '@/server/db/types.gen'
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -78,6 +80,25 @@ export async function pontuarAtendimentoConcluido(
   tenantId: string,
   entrada: { appointmentId: string; clientId: string; priceCents: number },
 ): Promise<void> {
+  /*
+   * A automação também é o módulo `loyalty`, e ela é o buraco que as travas de rota não alcançam:
+   * ninguém precisa apertar nada para cair nele. `CONFIG_PADRAO` nasce com `pointsPerReal: 1`, e
+   * `lerConfigFidelidade` devolve esse padrão para quem não tem `settings.loyalty`.
+   *
+   * Medido em produção em 2026-08-26, e é o que motivou esta linha: **nenhum** dos 11 tenants tem
+   * `settings.loyalty` gravado — e ainda assim `dom-rocha` acumulou 9 lançamentos em 263
+   * atendimentos concluídos. Ou seja, `PATCH /tenant/loyalty-config` nunca foi chamado por
+   * ninguém, e a fidelidade automática rodava mesmo assim. Travar aquela rota (o que o PR do lado
+   * fez, e está certo) impede LIGAR o que já vinha ligado por omissão; só esta checagem aqui
+   * impede um tenant `gratis` de continuar pontuando sozinho.
+   *
+   * Decide sem lançar, de propósito: o contrato desta função (documentado acima e garantido pelo
+   * `.catch()` de quem chama) é nunca derrubar a conclusão do atendimento. "Não tem o módulo" é
+   * uma decisão, não uma falha — não vira erro no log nem alerta no Sentry.
+   */
+  const plano = await contextoDePlano(db, tenantId)
+  if (podeUsarModulo(plano, 'loyalty').estado !== 'liberado') return
+
   const { data: tenant } = await db.from('tenants').select('settings').eq('id', tenantId).maybeSingle()
   const config = lerConfigFidelidade(tenant?.settings)
 

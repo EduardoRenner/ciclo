@@ -7,6 +7,7 @@ import { AppError } from '@/server/http/errors'
 import { rota } from '@/server/http/handler'
 import { comIdempotencia } from '@/server/http/idempotency'
 import { EsquemaPontos, extratoDePontos, lancarPontos } from '@/server/services/fidelidade'
+import { exigirModulo } from '@/server/services/planos'
 
 type Ctx = { params: Promise<{ id: string }> }
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -33,6 +34,18 @@ export const POST = rota(async (req, params, requestId) => {
   const id = await idValidado(params)
   const entrada = await lerCorpo(req, EsquemaPontos)
   const db = await criarClienteDoUsuario()
+
+  /*
+   * §L.2.1: o módulo vale no SERVIDOR, e só na ESCRITA. Ler o extrato continua liberado — o que
+   * trava é lançar ponto novo.
+   *
+   * E só ponto NOVO mesmo: `points < 0` é resgate (`lancarPontos` trata os dois casos, e recusa
+   * resgate que deixaria saldo negativo). Bloquear resgate junto não cobraria do dono do salão —
+   * cobraria da cliente dele, que juntou ponto sob uma promessa e ouviria "não dá para usar"
+   * porque o salão mudou de plano. A regra 5.1 protege o que já existe, e saldo acumulado é
+   * exatamente isso.
+   */
+  if (entrada.points > 0) await exigirModulo(db, ctx.tenantId, 'loyalty')
 
   const lancamento = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/clients/${id}/loyalty` }, () =>
     lancarPontos(db, ctx.tenantId, id, ctx.sessao.userId, entrada),

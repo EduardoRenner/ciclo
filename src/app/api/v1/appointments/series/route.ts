@@ -6,6 +6,7 @@ import { criarSerie, EsquemaCriarSerie } from '@/server/services/recorrencia'
 import { lerCorpo } from '@/server/http/body'
 import { rota } from '@/server/http/handler'
 import { comIdempotencia } from '@/server/http/idempotency'
+import { exigirModulo } from '@/server/services/planos'
 
 export const POST = rota(async (req, _ctx, requestId) => {
   const ctx = await contextoAtual(req)
@@ -13,6 +14,10 @@ export const POST = rota(async (req, _ctx, requestId) => {
 
   const entrada = await lerCorpo(req, EsquemaCriarSerie)
   const db = await criarClienteDoUsuario()
+
+  // §L.2.1: trava a CRIAÇÃO de série nova. Cancelar uma já existente fica de fora de propósito —
+  // ver docs/DECISOES.md — porque cancelar é encerrar o que já existe, não criar valor novo.
+  await exigirModulo(db, ctx.tenantId, 'recurrence')
 
   const { data: tenantRow } = await db.from('tenants').select('timezone').eq('id', ctx.tenantId).single()
 

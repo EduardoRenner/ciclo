@@ -79,6 +79,19 @@ beforeAll(async () => {
   })
   tenantId = tenant.id
 
+  /*
+   * Fidelidade é vendida no degrau Equipe (R$ 99), e desde 2026-08-26 a automação confere isso no
+   * servidor — `pontuarAtendimentoConcluido` não credita nada para tenant `gratis`, que é o plano
+   * com que todo onboarding nasce.
+   *
+   * Este arquivo testa o MECANISMO da automação (pontuar sozinho ao concluir, bônus de indicação
+   * nos dois lados), não a regra de plano — então o fixture declara o degrau que compra o recurso.
+   * A regra de plano em si tem teste próprio e unitário em
+   * `tests/unit/server/fidelidade-automacao.test.ts`, inclusive o caso do `gratis` que NÃO pontua.
+   */
+  const { error: erroPlano } = await svc.from('tenants').update({ plan: 'equipe' }).eq('id', tenantId)
+  if (erroPlano) throw new Error(`não consegui pôr o tenant no plano equipe: ${erroPlano.message}`)
+
   const profissional = await criarProfissional(svc, tenantId, {
     displayName: 'Profissional',
     compModel: 'owner',

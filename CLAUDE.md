@@ -5,7 +5,7 @@ Leia `docs/00-BRIEFING.md` antes de qualquer coisa. Este arquivo é o resumo ope
 
 #### Contexto em uma frase
 
-CICLO é um SaaS multi-tenant de gestão para profissionais da beleza (barbearia, unhas, cílios, sobrancelha, depilação, estética). Mobile-first, pt-BR, Next.js + Supabase. O diferencial é o **Motor de Ciclo**, que prevê quando cada cliente volta e traz de volta automaticamente.
+CICLO é um SaaS multi-tenant de gestão para **qualquer profissional que tem agenda e clientes que voltam** — não só beleza (barbearia, unhas, estética), mas também faxineira, eletricista, personal trainer e afins (`docs/09-PLATAFORMA.md`). Mobile-first, pt-BR, Next.js + Supabase. O diferencial é o **Motor de Ciclo**, que prevê quando cada cliente volta e traz de volta automaticamente.
 
 ---
 

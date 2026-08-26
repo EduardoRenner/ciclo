@@ -75,6 +75,8 @@ on:
           - segments
           - stock-alerts
           - jobs
+          - reminders
+          - campaigns
 
 permissions:
   contents: read
@@ -141,18 +143,34 @@ jobs:
           case "$codigo" in 2*) exit 0 ;; *) exit 1 ;; esac
 
 # ---------------------------------------------------------------------------------------------
-# DELIBERADAMENTE FORA DESTE AGENDAMENTO: `reminders` e `campaigns`.
+# DELIBERADAMENTE FORA DO `on.schedule`: `reminders` e `campaigns`.
 #
 # As duas MANDAM MENSAGEM PARA CLIENTE FINAL de verdade — `reminders` dispara confirmação e
-# lembrete de agendamento, `campaigns` dispara campanha. O tenant `dom-rocha` tem 46 clientes
-# cadastrados em produção. Ligar essas rotas num `schedule` é começar a falar com essas pessoas,
-# e essa não é uma decisão que se toma dentro de um arquivo de YAML.
+# lembrete de agendamento, `campaigns` dispara campanha. Ligar essas rotas num `schedule` é
+# começar a falar com gente de verdade, e essa não é uma decisão que se toma dentro de um
+# arquivo de YAML — fica para quando o dono do produto decidir, à mão.
 #
-# Para ligar, quando for a hora:
+# O que já mudou desde que este comentário foi escrito (`docs/25-ESTRATEGIA-E-EXECUCAO.md`, F0):
+#   - `dom-rocha` e `ruivo-barber` (tenants de demonstração, `src/core/tenants/demonstracao.ts`)
+#     agora são excluídos DENTRO das próprias rotas — nunca recebem mensagem, ligado ou não o
+#     schedule. O antigo passo "conferir se dom-rocha é gente real ou semente" está resolvido
+#     por código, não precisa mais de checagem manual para ESSES dois tenants especificamente.
+#   - Existe um teto diário de envio por tenant (`src/server/services/mensageria.ts`,
+#     `dentroDoTetoDiario`) — um laço não manda mais que N mensagens/dia, mesmo com o schedule
+#     ligado.
+#   - `campaigns` agora grava heartbeat (`send_campaigns`) e `/api/health` já checa os dois jobs.
+#
+# O que ainda falta, e continua exigindo decisão humana antes de ligar o `schedule`:
 #   1. confirmar que WHATSAPP_PHONE_NUMBER_ID / ACCESS_TOKEN / APP_SECRET existem (TICKET-043) —
 #      sem eles o provider levanta erro e cai no fallback de e-mail, que TAMBÉM é envio real;
-#   2. conferir a base de `dom-rocha`: telefone e e-mail são de gente real ou de semente?
-#   3. rodar uma vez por `workflow_dispatch`, olhar `messages`, e só então agendar.
+#   2. para QUALQUER tenant real (não-demo — hoje isso é `lang-barber`, e qualquer outro que
+#      passar a existir): confirmar que telefone/e-mail dos clientes são de gente real que
+#      espera receber mensagem do salão, não resíduo de teste;
+#   3. rodar uma vez por `workflow_dispatch` (já disponível no menu acima), olhar `messages`,
+#      e só então descomentar as linhas de `schedule` abaixo;
+#   4. só depois disso, ativar o step de CI que falha o Action quando `/api/health` reportar
+#      `send_reminders`/`send_campaigns` atrasado — ativá-lo antes faria o Action falhar sempre,
+#      porque um heartbeat que nunca rodou está sempre "atrasado" por definição.
 #
 #     - cron: '*/15 * * * *'   # reminders — §7 pede a cada 15 minutos
 #     - cron: '0 12 * * *'     # campaigns — uma vez por dia

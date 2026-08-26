@@ -36,8 +36,15 @@ import type { ModuloKey } from '@/core/billing/planos'
  * (`envio_em_lote`, `remover_selo`) já são verificadas onde importam.
  */
 
-/** Trava conhecida como ausente. Tirar daqui exige ter posto `exigirModulo` numa rota de escrita. */
-const SEM_TRAVA_AINDA: readonly ModuloKey[] = ['register', 'team', 'loyalty', 'recurrence']
+/**
+ * Trava conhecida como ausente. Tirar daqui exige ter posto `exigirModulo` numa rota de escrita.
+ *
+ * **Vazia desde 2026-08-26** — os quatro que moravam aqui (`register`, `team`, `loyalty`,
+ * `recurrence`) ganharam trava no PR "trava de plano no servidor". Lista vazia é o estado certo:
+ * ela existe para encolher, e o terceiro teste abaixo impede que ela volte a crescer sem que
+ * alguém escreva o nome do módulo aqui de propósito.
+ */
+const SEM_TRAVA_AINDA: readonly ModuloKey[] = []
 
 const RAIZ_DAS_ROTAS = 'src/app/api/v1'
 
@@ -122,6 +129,56 @@ describe('todo módulo vendido como pago tem trava no servidor', () => {
       sobrando,
       'estes módulos estão na lista de dívida mas não são anunciados em nenhum degrau pago — ' +
         'ou o cartão mudou, ou a lista envelheceu',
+    ).toEqual([])
+  })
+})
+
+/**
+ * O irmão numérico do bloco acima, e ele nasceu de um falso alarme — que é justamente por que vale
+ * a pena existir (`docs/24` §2).
+ *
+ * Auditando em 2026-08-26 eu grepei `podeCriar` e `verificarLimite`, achei zero chamadores de
+ * produção e quase reportei "o teto de profissional é decorativo". Era falso: existe um terceiro
+ * nome, `exigirLimite`, o wrapper de servidor — e ele está no lugar certo. Um grep negativo só vale
+ * o nome que você chutou.
+ *
+ * O que a medição revelou de verdade é que a trava inteira depende de **uma única linha**
+ * (`professionals/route.ts`), sem nada que reclame se ela sumir num refactor. Este bloco é essa
+ * reclamação. Ele lê a tabela `SEVERIDADE` do `core` em vez de repetir a lista aqui, então um
+ * recurso `'duro'` NOVO nasce cobrado sozinho.
+ */
+describe('todo recurso de teto duro tem `exigirLimite` numa rota de escrita', () => {
+  function recursosDeTetoDuro(): string[] {
+    const fonte = readFileSync('src/core/billing/planos.ts', 'utf8')
+    const bloco = /const SEVERIDADE[^{]*\{([^}]*)\}/.exec(fonte)?.[1] ?? ''
+    return [...bloco.matchAll(/(\w+)\s*:\s*'duro'/g)].flatMap((m) => (m[1] ? [m[1]] : []))
+  }
+
+  function recursosTravadosNoServidor(): Set<string> {
+    const achados = new Set<string>()
+    for (const { fonte } of rotasDeEscrita()) {
+      for (const m of fonte.matchAll(/exigirLimite\([^)]*,\s*'(\w+)'/g)) {
+        if (m[1]) achados.add(m[1])
+      }
+    }
+    return achados
+  }
+
+  it('a leitura da tabela de severidade não voltou vazia', () => {
+    // Mesma guarda-contra-o-detector do bloco de cima: se `SEVERIDADE` mudar de forma, o regex
+    // devolveria lista vazia e o teste abaixo passaria por não ter o que conferir.
+    expect(recursosDeTetoDuro(), 'nenhum recurso `duro` lido de `SEVERIDADE`').not.toEqual([])
+  })
+
+  it('recurso de teto duro sem `exigirLimite` reprova', () => {
+    const travados = recursosTravadosNoServidor()
+    const semTrava = recursosDeTetoDuro().filter((r) => !travados.has(r))
+
+    expect(
+      semTrava,
+      'estes recursos têm teto DURO declarado em `SEVERIDADE` e nenhuma rota de escrita chama ' +
+        '`exigirLimite` com eles — o teto vira número na tela e o servidor aceita o que vier. ' +
+        'Teto suave (`clientes`) é decisão consciente do `docs/18 §L.1` e não entra aqui.',
     ).toEqual([])
   })
 })

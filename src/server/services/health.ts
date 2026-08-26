@@ -7,6 +7,10 @@ type Cliente = SupabaseClient<Database>
 
 const LIMIAR_FILA_PARADA_MIN = 15
 const LIMIAR_HEARTBEAT_MIN = 30
+// `send_campaigns` roda 1×/dia (10h local do tenant), não a cada 15min como `send_reminders` —
+// usar o mesmo limiar de 30min o marcaria "atrasado" ~23h por dia, todo dia. 26h cobre um dia
+// inteiro com folga para o cron de 5 horários (`.github/workflows/cron.yml`) atrasar.
+const LIMIAR_HEARTBEAT_CAMPANHAS_MIN = 26 * 60
 const LIMIAR_FALHA_MENSAGEM = 0.05 // 5%, J129
 
 export async function registrarHeartbeat(db: Cliente, kind: string): Promise<void> {
@@ -26,6 +30,7 @@ export type RelatorioSaude = {
     jobQueue: ChecagemSaude
     messages: ChecagemSaude
     sendReminders: ChecagemSaude
+    sendCampaigns: ChecagemSaude
   }
 }
 
@@ -41,10 +46,11 @@ export async function verificarSaude(db: Cliente, agora: Date = new Date()): Pro
   const jobQueue = await checarFila(db, agora)
   const messages = await checarMensagens(db, agora)
   const sendReminders = await checarHeartbeat(db, 'send_reminders', agora)
+  const sendCampaigns = await checarHeartbeat(db, 'send_campaigns', agora, LIMIAR_HEARTBEAT_CAMPANHAS_MIN)
 
   return {
-    ok: database.ok && jobQueue.ok && messages.ok && sendReminders.ok,
-    checks: { database, jobQueue, messages, sendReminders },
+    ok: database.ok && jobQueue.ok && messages.ok && sendReminders.ok && sendCampaigns.ok,
+    checks: { database, jobQueue, messages, sendReminders, sendCampaigns },
   }
 }
 
@@ -92,13 +98,13 @@ async function checarMensagens(db: Cliente, agora: Date): Promise<ChecagemSaude>
   return taxa <= LIMIAR_FALHA_MENSAGEM ? { ok: true } : { ok: false, detail: `${(taxa * 100).toFixed(1)}% de falha na última hora (limite ${LIMIAR_FALHA_MENSAGEM * 100}%)` }
 }
 
-async function checarHeartbeat(db: Cliente, kind: string, agora: Date): Promise<ChecagemSaude> {
+async function checarHeartbeat(db: Cliente, kind: string, agora: Date, limiarMinutos: number = LIMIAR_HEARTBEAT_MIN): Promise<ChecagemSaude> {
   const { data, error } = await db.from('cron_heartbeats').select('last_run_at').eq('kind', kind).maybeSingle()
   if (error) return { ok: false, detail: error.message }
   if (!data) return { ok: false, detail: `job "${kind}" nunca rodou` }
 
   const minutosDesdeUltimoRun = (agora.getTime() - new Date(data.last_run_at).getTime()) / 60_000
-  return minutosDesdeUltimoRun <= LIMIAR_HEARTBEAT_MIN
+  return minutosDesdeUltimoRun <= limiarMinutos
     ? { ok: true }
-    : { ok: false, detail: `job "${kind}" sem execução há ${Math.round(minutosDesdeUltimoRun)} min (limite ${LIMIAR_HEARTBEAT_MIN} min)` }
+    : { ok: false, detail: `job "${kind}" sem execução há ${Math.round(minutosDesdeUltimoRun)} min (limite ${limiarMinutos} min)` }
 }

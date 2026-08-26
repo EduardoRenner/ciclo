@@ -1,10 +1,12 @@
 import { ExternalLink } from 'lucide-react'
 import { headers } from 'next/headers'
 import Link from 'next/link'
+import { Temporal } from '@js-temporal/polyfill'
 
 import PageHeader from '@/components/ui/page-header'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
+import { receitaAtribuidaAoCiclo } from '@/server/services/atribuicao'
 import { centralDeAcoes } from '@/server/services/crm'
 import { resumoDeHoje } from '@/server/services/resumo-hoje'
 
@@ -28,11 +30,18 @@ export default async function PaginaHoje() {
 
   const { data: tenantRow } = await db.from('tenants').select('name, slug, timezone').eq('id', ctx.tenantId).single()
   const timezone = tenantRow?.timezone ?? 'America/Sao_Paulo'
-  const [resumo, acoes] = await Promise.all([
+  const mesAtual = Temporal.PlainYearMonth.from(Temporal.Now.zonedDateTimeISO(timezone).toPlainDate())
+  const desde = mesAtual.toPlainDate({ day: 1 }).toString()
+  const ate = mesAtual.toPlainDate({ day: mesAtual.daysInMonth }).toString()
+
+  const [resumo, acoes, atribuicao] = await Promise.all([
     resumoDeHoje(db, ctx.tenantId, timezone),
     // Nunca derruba "Hoje": um resumo de CRM que falhar vira lista vazia, não erro na tela mais
     // importante do app.
     centralDeAcoes(db, ctx.tenantId).catch(() => ({ titulo: '', acoes: [] })),
+    // F1 (docs/25-ESTRATEGIA-E-EXECUCAO.md): em dia sem movimento, o herói mostra o que o Motor
+    // de Ciclo já trouxe este mês em vez de R$ 0,00. Mesmo cálculo de `/admin/recuperar`.
+    receitaAtribuidaAoCiclo(db, ctx.tenantId, desde, ate).catch(() => ({ totalCents: 0, count: 0, items: [] })),
   ])
 
   const data = new Intl.DateTimeFormat('pt-BR', {
@@ -71,7 +80,7 @@ export default async function PaginaHoje() {
         }
       />
 
-      <Hoje resumo={resumo}>
+      <Hoje resumo={resumo} atribuicao={atribuicao}>
         <CentralDeAcoes dados={acoes} />
       </Hoje>
     </>

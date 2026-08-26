@@ -145,20 +145,37 @@ export default function ListaClientes({ iniciais }: { iniciais: ClienteLinha[] }
           ))}
         </div>
       ) : clientes.length === 0 ? (
-        <Card className="p-0">
-          <EmptyState
-            icone={<Users aria-hidden className="size-6" />}
-            titulo={segmento ? 'Ninguém nesse grupo agora' : termo ? 'Nenhum resultado' : 'Sem clientes ainda'}
-            descricao={
-              segmento
-                ? 'Esse filtro atualiza todo dia — volte mais tarde.'
-                : termo
-                  ? 'Confira a grafia do nome ou o telefone digitado.'
-                  : 'Cadastre a primeira cliente para começar a marcar horários.'
-            }
-            acao={<Link href="/admin/clientes/nova">Cadastrar cliente</Link>}
-          />
-        </Card>
+        <>
+          <Card className="p-0">
+            <EmptyState
+              icone={<Users aria-hidden className="size-6" />}
+              titulo={segmento ? 'Ninguém nesse grupo agora' : termo ? 'Nenhum resultado' : 'Sem clientes ainda'}
+              descricao={
+                segmento
+                  ? 'Esse filtro atualiza todo dia — volte mais tarde.'
+                  : termo
+                    ? 'Confira a grafia do nome ou o telefone digitado.'
+                    : 'Cadastre a primeira cliente para começar a marcar horários.'
+              }
+              acao={<Link href="/admin/clientes/nova">Cadastrar cliente</Link>}
+            />
+          </Card>
+          {/*
+            F2 (docs/25-ESTRATEGIA-E-EXECUCAO.md): a importação em lote existe e funciona, mas o
+            único caminho de descoberta era um card entre três na Central de Ações — some assim
+            que o primeiro cliente é cadastrado. Aqui é onde quem tem uma lista pronta realmente
+            procura "adicionar clientes". Só na busca vazia de verdade — filtro/busca sem
+            resultado não tem nada a ver com importar uma planilha nova.
+          */}
+          {!segmento && !termo ? (
+            <p className="mt-3 text-center text-secundario text-txt-2">
+              Já tem uma lista pronta?{' '}
+              <Link href="/admin/clientes/importar" className="font-semibold text-acc-2 underline underline-offset-2">
+                Importe uma planilha
+              </Link>
+            </p>
+          ) : null}
+        </>
       ) : (
         <ul className="flex flex-col gap-2">
           {clientes.map((c) => (

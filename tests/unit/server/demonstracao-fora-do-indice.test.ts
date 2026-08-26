@@ -5,22 +5,44 @@ import { describe, expect, it } from 'vitest'
 import { SLUGS_DE_DEMONSTRACAO_PARA_TESTE, ehDemonstracao } from '@/core/tenants/demonstracao'
 
 /**
- * O tenant de demonstração tem TRÊS caminhos para o mundo, e eles precisam concordar:
+ * O tenant de demonstração tem cinco caminhos para o mundo, e eles precisam concordar. Os três
+ * originais evitam expor o tenant ao buscador:
  *
  *   1. o `sitemap.ts`, que entregava o slug ao buscador como estabelecimento real;
  *   2. o `robots` da própria página, para o caso de o buscador chegar por um link qualquer;
  *   3. o aviso visível, que é o único que alcança quem abre a URL direto — por um print, um link
  *      no WhatsApp, um resultado antigo de busca.
  *
+ * Os outros dois (F0, `docs/25-ESTRATEGIA-E-EXECUCAO.md`) evitam mandar mensagem de verdade para
+ * um tenant que não tem cliente de verdade do outro lado do telefone:
+ *
+ *   4. `lembretes.ts`, que identifica confirmação/lembrete de agendamento a enviar;
+ *   5. a rota de `campaigns`, que dispara campanha de recuperação por tenant.
+ *
  * Se um deles esquecer a regra, volta a existir um caminho que expõe o que os outros escondem —
  * e o sintoma é silencioso: a página funciona perfeitamente, com agendamento ligado, num
- * estabelecimento que não existe. Ver `docs/20-COPY-PLANO.md` §A.4.1.
+ * estabelecimento que não existe (ou o WhatsApp sai para um número que não existe). Ver
+ * `docs/20-COPY-PLANO.md` §A.4.1.
  *
  * Este teste lê os arquivos de verdade em vez de confiar que alguém lembrou.
  */
 
 const SITEMAP = 'src/app/sitemap.ts'
 const PAGINA = 'src/app/(public)/[slug]/page.tsx'
+const LEMBRETES = 'src/server/services/lembretes.ts'
+const CAMPAIGNS_ROUTE = 'src/app/api/cron/campaigns/route.ts'
+
+/**
+ * F0 (`docs/25-ESTRATEGIA-E-EXECUCAO.md`) acrescentou mais dois leitores: as rotas de cron que
+ * mandam mensagem de verdade para cliente final. Um tenant de demonstração não pode receber
+ * WhatsApp/e-mail automático — mesmo risco de regressão silenciosa que motivou este arquivo.
+ */
+const TODOS_OS_LEITORES: ReadonlyArray<[string, string]> = [
+  ['o sitemap', SITEMAP],
+  ['a página pública', PAGINA],
+  ['os lembretes', LEMBRETES],
+  ['a rota de campanhas', CAMPAIGNS_ROUTE],
+]
 
 describe('a regra de demonstração', () => {
   it('reconhece os slugs semeados, e ignora caixa e espaço', () => {
@@ -41,11 +63,8 @@ describe('a regra de demonstração', () => {
   })
 })
 
-describe('os três caminhos para o mundo usam a mesma regra', () => {
-  it.each([
-    ['o sitemap', SITEMAP],
-    ['a página pública', PAGINA],
-  ])('%s importa a regra do core em vez de repetir a lista', (_nome, arquivo) => {
+describe('os cinco caminhos para o mundo usam a mesma regra', () => {
+  it.each(TODOS_OS_LEITORES)('%s importa a regra do core em vez de repetir a lista', (_nome, arquivo) => {
     const src = readFileSync(arquivo, 'utf8')
     expect(
       /import\s*\{[^}]*ehDemonstracao[^}]*\}\s*from\s*'@\/core\/tenants\/demonstracao'/.test(src),
@@ -53,10 +72,7 @@ describe('os três caminhos para o mundo usam a mesma regra', () => {
     ).toBe(true)
   })
 
-  it.each([
-    ['o sitemap', SITEMAP],
-    ['a página pública', PAGINA],
-  ])('%s não datilografa nenhum slug de demonstração', (_nome, arquivo) => {
+  it.each(TODOS_OS_LEITORES)('%s não datilografa nenhum slug de demonstração', (_nome, arquivo) => {
     /*
      * O jeito errado de resolver isto é colar `slug !== 'dom-rocha'` no arquivo. Funciona hoje e
      * some na próxima demonstração que alguém semear. Comentário citando o slug é documentação —
