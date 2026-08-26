@@ -18,6 +18,7 @@ import DetalheAgendamento from '../agenda/detalhe'
 
 import type { EstadoAgendamento } from '@/core/scheduling/state'
 import type { LinhaAgendaDia } from '@/server/services/agendamentos'
+import type { ReceitaAtribuida } from '@/server/services/atribuicao'
 import type { LinhaHoje, ResumoHoje } from '@/server/services/resumo-hoje'
 
 function horaLocal(iso: string): string {
@@ -25,16 +26,37 @@ function horaLocal(iso: string): string {
 }
 
 /**
- * `children` é a "Central de ações", renderizada no servidor e encaixada aqui
- * entre o que está acontecendo agora e o resto do dia. Sem esse encaixe ela
- * teria que ficar antes do dinheiro (empurrando o número principal para baixo
- * da dobra) ou depois da lista inteira do dia, onde ninguém rola até.
+ * F1 (`docs/25-ESTRATEGIA-E-EXECUCAO.md`): em dia sem movimento nenhum (nada faturado, nada
+ * marcado pra frente), R$ 0,00 é a primeira coisa que a tela diz — pro profissional em teste, no
+ * dia 1, isso lê como fracasso. Exportada pura (sem props do componente) para poder testar a
+ * decisão sem montar React — este projeto não tem harness de render de componente.
  */
-export default function Hoje({ resumo, children }: { resumo: ResumoHoje; children?: React.ReactNode }) {
+export function deveMostrarHeroiDoMotor(revenueTodayCents: number, temProximoCliente: boolean, atribuicaoCount: number): boolean {
+  return revenueTodayCents === 0 && !temProximoCliente && atribuicaoCount > 0
+}
+
+/**
+ * `children` é a "Central de ações", renderizada no servidor. Com próximo cliente marcado, fica
+ * encaixada entre o que está acontecendo agora e o resto do dia — sem esse encaixe ela teria que
+ * ficar antes do dinheiro (empurrando o número principal para baixo da dobra) ou depois da lista
+ * inteira do dia, onde ninguém rola até. Sem próximo cliente (F1,
+ * `docs/25-ESTRATEGIA-E-EXECUCAO.md`), sobe para antes do card de "nada pra hoje" — é o trabalho
+ * que o Motor achou, e não deve ficar atrás de um card que só confirma que a agenda está vazia.
+ */
+export default function Hoje({
+  resumo,
+  atribuicao,
+  children,
+}: {
+  resumo: ResumoHoje
+  atribuicao: ReceitaAtribuida
+  children?: React.ReactNode
+}) {
   const router = useRouter()
   const [selecionado, setSelecionado] = useState<LinhaHoje | null>(null)
 
   const faltam = resumo.restOfDay.length
+  const mostrarHeroiDoMotor = deveMostrarHeroiDoMotor(resumo.revenueTodayCents, !!resumo.nextClient, atribuicao.count)
 
   return (
     <div>
@@ -50,24 +72,42 @@ export default function Hoje({ resumo, children }: { resumo: ResumoHoje; childre
         quanto sobrou?") tem tela desde esta rodada — tocar no número é o gesto
         natural para chegar nela.
       */}
-      <Link href="/admin/caixa" className="mb-6 block">
-        <StatTile
-          pressionavel
-          heroi
-          rotulo="Faturado hoje"
-          valor={dinheiro.format(resumo.revenueTodayCents / 100)}
-          apoio={
-            <span className="flex items-center justify-between gap-2">
-              {faltam === 0
-                ? 'Nada mais marcado para hoje'
-                : `Faltam ${faltam} ${faltam === 1 ? 'atendimento' : 'atendimentos'} hoje`}
-              <span className="flex shrink-0 items-center gap-0.5 font-semibold text-acc-2">
-                Ver o caixa
-                <ChevronRight aria-hidden className="size-4" />
+      <Link href={mostrarHeroiDoMotor ? '/admin/recuperar' : '/admin/caixa'} className="mb-6 block">
+        {mostrarHeroiDoMotor ? (
+          <StatTile
+            pressionavel
+            heroi
+            rotulo="O Motor de Ciclo trouxe este mês"
+            valor={dinheiro.format(atribuicao.totalCents / 100)}
+            apoio={
+              <span className="flex items-center justify-between gap-2">
+                {`${atribuicao.count} ${atribuicao.count === 1 ? 'agendamento recuperado' : 'agendamentos recuperados'}`}
+                <span className="flex shrink-0 items-center gap-0.5 font-semibold text-acc-2">
+                  Ver quem voltou
+                  <ChevronRight aria-hidden className="size-4" />
+                </span>
               </span>
-            </span>
-          }
-        />
+            }
+          />
+        ) : (
+          <StatTile
+            pressionavel
+            heroi
+            rotulo="Faturado hoje"
+            valor={dinheiro.format(resumo.revenueTodayCents / 100)}
+            apoio={
+              <span className="flex items-center justify-between gap-2">
+                {faltam === 0
+                  ? 'Nada mais marcado para hoje'
+                  : `Faltam ${faltam} ${faltam === 1 ? 'atendimento' : 'atendimentos'} hoje`}
+                <span className="flex shrink-0 items-center gap-0.5 font-semibold text-acc-2">
+                  Ver o caixa
+                  <ChevronRight aria-hidden className="size-4" />
+                </span>
+              </span>
+            }
+          />
+        )}
       </Link>
 
       {resumo.nextClient ? (
@@ -84,14 +124,22 @@ export default function Hoje({ resumo, children }: { resumo: ResumoHoje; childre
           </button>
         </section>
       ) : (
-        <Card className="mb-6 p-0">
-          <EmptyState
-            icone={<CalendarCheck aria-hidden className="size-6" />}
-            titulo="Nada mais para hoje"
-            descricao="A agenda de hoje está livre a partir de agora."
-            acao={<Link href="/admin/agenda/novo">Novo agendamento</Link>}
-          />
-        </Card>
+        <>
+          {/*
+            F1: sem próximo cliente, a Central de Ações vira o conteúdo principal da tela — o
+            trabalho que o Motor achou — em vez de vir depois de um card vazio que qualquer
+            pessoa em teste no dia 1 leria como "isto aqui não faz nada ainda".
+          */}
+          {children}
+          <Card className="mb-6 p-0">
+            <EmptyState
+              icone={<CalendarCheck aria-hidden className="size-6" />}
+              titulo="Nada mais para hoje"
+              descricao="A agenda de hoje está livre a partir de agora."
+              acao={<Link href="/admin/agenda/novo">Novo agendamento</Link>}
+            />
+          </Card>
+        </>
       )}
 
       {resumo.alerts.length > 0 ? (
@@ -116,7 +164,8 @@ export default function Hoje({ resumo, children }: { resumo: ResumoHoje; childre
         </section>
       ) : null}
 
-      {children}
+      {/* Quando não há próximo cliente, a Central de Ações já foi renderizada acima. */}
+      {resumo.nextClient ? children : null}
 
       {resumo.stockAlerts.length > 0 ? (
         <section className="mb-6">
