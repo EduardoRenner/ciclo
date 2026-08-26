@@ -154,13 +154,26 @@ sessão só.
 
 ---
 
-## 5 · Definição de pronto
+## 5 · Definição de pronto — **fechada em 2026-08-26**
 
-- [ ] Os 4 módulos pagos com trava em rota de escrita, e `SEM_TRAVA_AINDA` **vazia**
-- [ ] A única chamada de `exigirLimite` protegida por guarda (ver `§3`, PR 1)
-- [ ] As 5 execuções agendadas de hoje lidas **no corpo**, com o número de tenants processados
-- [ ] `pnpm verify` limpo em cada PR
-- [ ] Cada mutação de guarda **vista reprovando** antes de ser aceita ([[guarda-cega-teste-de-mutacao]])
+- [x] Os 4 módulos pagos com trava em rota de escrita, e `SEM_TRAVA_AINDA` **vazia** — PR #17/#16
+- [x] A única chamada de `exigirLimite` protegida por guarda — `precos-tem-trava-no-servidor.test.ts`
+- [x] As 5 execuções agendadas de hoje lidas **no corpo** — `§6.5`/`§6.6`, duas rodadas (a inicial
+      às 05:46–09:52 confirmou `tenantsProcessados: 0` em 5/5; a correção só chegou em produção às
+      15:4x, então a validação real acontece no schedule de amanhã)
+- [x] `pnpm verify` limpo em cada PR — typecheck/lint/unit/build, PRs #17, #20, #21, #22
+- [x] Cada mutação de guarda **vista reprovando** antes de ser aceita — registrado em cada PR
+
+**O que a auditoria também fechou, fora do escopo original do `§3`:** F3 (backup) decidida sem
+gastar (`docs/DECISOES.md`), o redesenho da marca (uróboros → aqua, 4 PRs) e a causa raiz do F1-b —
+o Motor de Ciclo estava sem heartbeat/vigilância havia dois dias, e o conserto de código do
+`docs/23` nunca tinha chegado em produção porque este projeto não tem deploy automático.
+
+**O que fica aberto, e por quê não é meu para fechar:** os itens do `docs/25-ESTRATEGIA-E-EXECUCAO.md`
+§F0 (credencial de WhatsApp), §F2 item 11 (ferramenta de analytics) e a F3 inteira (piloto de 10)
+são explicitamente decisão do dono do produto — envolvem custo, LGPD ou contato com cliente real.
+Continuar sem confirmação violaria o mesmo princípio que esta auditoria defende: mudança que fala
+com gente de verdade não se decide sozinho num arquivo de código.
 
 ### 5.1 · Tensão honesta, revisada depois do primeiro round
 
