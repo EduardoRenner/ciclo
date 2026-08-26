@@ -168,9 +168,17 @@ jobs:
 #      espera receber mensagem do salão, não resíduo de teste;
 #   3. rodar uma vez por `workflow_dispatch` (já disponível no menu acima), olhar `messages`,
 #      e só então descomentar as linhas de `schedule` abaixo;
-#   4. só depois disso, ativar o step de CI que falha o Action quando `/api/health` reportar
-#      `send_reminders`/`send_campaigns` atrasado — ativá-lo antes faria o Action falhar sempre,
-#      porque um heartbeat que nunca rodou está sempre "atrasado" por definição.
+#   4. ativar o step de CI que falha o Action quando `/api/health` reportar
+#      `send_reminders`/`send_campaigns` atrasado.
+#
+#      ATUALIZADO em 26/08: este passo NÃO depende mais dos três acima. O motivo original era que
+#      "um heartbeat que nunca rodou está sempre atrasado por definição" — e esse mesmo raciocínio
+#      valia para o `/api/health`, que por causa disso vivia em 503 na produção (medido: 454 min
+#      de atraso de um job que ninguém dispara). Desde `src/core/cron/agendadas.ts`, o endpoint só
+#      cobra execução de rota que ESTÁ neste `schedule`; as outras aparecem no corpo com a
+#      dispensa escrita. Quando `reminders`/`campaigns` entrarem aqui embaixo, a vigilância delas
+#      volta sozinha — e o teste `saude-vigia-so-o-que-roda` reprova se a lista do código não
+#      acompanhar este arquivo.
 #
 #     - cron: '*/15 * * * *'   # reminders — §7 pede a cada 15 minutos
 #     - cron: '0 12 * * *'     # campaigns — uma vez por dia
