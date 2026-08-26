@@ -37,7 +37,7 @@ import type { ModuloKey } from '@/core/billing/planos'
  */
 
 /** Trava conhecida como ausente. Tirar daqui exige ter posto `exigirModulo` numa rota de escrita. */
-const SEM_TRAVA_AINDA: readonly ModuloKey[] = ['register', 'team', 'loyalty', 'recurrence']
+const SEM_TRAVA_AINDA: readonly ModuloKey[] = ['register', 'team']
 
 const RAIZ_DAS_ROTAS = 'src/app/api/v1'
 

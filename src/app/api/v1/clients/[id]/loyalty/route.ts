@@ -7,6 +7,7 @@ import { AppError } from '@/server/http/errors'
 import { rota } from '@/server/http/handler'
 import { comIdempotencia } from '@/server/http/idempotency'
 import { EsquemaPontos, extratoDePontos, lancarPontos } from '@/server/services/fidelidade'
+import { exigirModulo } from '@/server/services/planos'
 
 type Ctx = { params: Promise<{ id: string }> }
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -33,6 +34,10 @@ export const POST = rota(async (req, params, requestId) => {
   const id = await idValidado(params)
   const entrada = await lerCorpo(req, EsquemaPontos)
   const db = await criarClienteDoUsuario()
+
+  // §L.2.1: o módulo vale no SERVIDOR, e só na ESCRITA. Ler o extrato continua liberado — o que
+  // trava é lançar ponto novo.
+  await exigirModulo(db, ctx.tenantId, 'loyalty')
 
   const lancamento = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/clients/${id}/loyalty` }, () =>
     lancarPontos(db, ctx.tenantId, id, ctx.sessao.userId, entrada),

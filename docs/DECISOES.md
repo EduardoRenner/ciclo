@@ -2736,3 +2736,26 @@ público fica sem essa camada. Honeypot e rate limit continuam ativos e não dep
 Decisão: aceitar por ora (abrir conta hCaptcha é `[E]`, não bloqueia lançamento com zero tráfego
 adversarial observado até hoje), revisitar se o volume de agendamento público crescer ou se
 aparecer spam real nos logs. Dono: Eduardo, sem prazo — condicionado a sinal, não a data.
+
+2026-08-26 · Auditoria de lançamento, F5 · `loyalty` e `recurrence` ganharam trava — mas não em
+toda rota que o nome sugeria · `POST /api/v1/appointments/series` (criar série) e
+`PATCH /api/v1/tenant/loyalty-config` (ligar `pointsPerReal`) receberam `exigirModulo`. A segunda
+importa mais do que a primeira: é ali, não em `clients/[id]/loyalty` (lançamento manual), que a
+fidelidade automática de verdade é ligada — `pontuarAtendimentoConcluido` roda sozinho em todo
+atendimento concluído depois disso, sem passar por rota nenhuma de novo. Travar só o lançamento
+manual teria deixado a automação de graça.
+
+Dois casos ficaram **de propósito** fora desta rodada, por serem decisão e não mecânica:
+
+1. **`POST /appointments/series/[id]/cancel`** — cancelar uma série já existente. Gating aqui
+   colidiria com a regra 5.1 ("cair de plano nunca esconde o que já existe"): cancelar é encerrar
+   algo que já existe, não criar valor novo. Deixar destravado parece certo, mas não foi decidido
+   com a mesma régua que decidiu o resto — só não foi mexido.
+2. **`POST /api/v1/packages`** (vender pacote) — a cópia de `/precos` anuncia "Recorrência **e
+   pacotes**" como um item só do Avançado, mas a rota usa a permissão `comanda:own`, do mesmo
+   mundo de `register` (Essencial), não de `recurrence`. Não travei porque a classificação do
+   próprio módulo está ambígua no código — decidir isso é escolher se "pacotes" é `recurrence`,
+   `register`, ou um módulo próprio, e essa escolha muda a página de preço, não só o servidor.
+
+Nenhum dos dois tenants `gratis` reais usa qualquer um dos dois hoje (medido: zero séries, zero
+pacotes) — não há urgência de quebra, só a decisão pendente.
