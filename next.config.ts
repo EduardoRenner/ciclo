@@ -10,9 +10,12 @@ const nextConfig: NextConfig = {
    * deixou o app roxo preso no cache de quem visitou antes do redesign.
    *
    * `VERCEL_GIT_COMMIT_SHA` só existe quando o deploy nasce de uma integração
-   * git — este projeto faz `vercel --prod` direto do CLI (achado ao verificar
-   * o primeiro deploy desta correção: a variável veio como string vazia, não
-   * ausente, e `??` não pega string vazia). `VERCEL_URL` é a rede de
+   * git. Até 2026-08-26 este projeto fazia `vercel --prod` direto do CLI e a
+   * variável vinha como string VAZIA — não ausente, e `??` não pega string
+   * vazia, que foi o achado do primeiro deploy desta correção. Desde que o
+   * repositório foi conectado (`vercel git connect`, prioridade 1 da auditoria
+   * de `docs/26`), o SHA passa a existir de verdade nos deploys de `main`; o
+   * encadeamento abaixo continua valendo para deploy manual. `VERCEL_URL` é a rede de
    * segurança: todo deploy da Vercel recebe uma URL com hash próprio
    * (`ciclo-<hash>-starkinovacoes.vercel.app`), git ou não, e isso já basta
    * para o nome do cache mudar a cada vez. `||` em vez de `??` de propósito:
