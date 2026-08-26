@@ -2804,3 +2804,29 @@ schema de evento — isso é decisão de arquitetura/vendor do dono do produto, 
 decidir sozinho dentro de uma sessão de execução. Os tickets 12 e 13 da mesma fase (colocar a
 importação no caminho crítico, e a "primeira previsão" calculada com `computeCycle`) não dependem
 disso e foram implementados.
+
+2026-08-26 · F1-b (`docs/23` §2.6/§9, `docs/24` §5) · **medido, com os 5 corpos de resposta reais
+de hoje** — e confirma exatamente o defeito que a auditoria previu · As 5 execuções agendadas de
+hoje (05:46, 07:06, 07:57, 09:00, 09:52 UTC) rodaram **todas antes** do merge do PR #15 (12:58 UTC)
+que corrige `recompute-cycles` para janela em vez de igualdade exata. Resultado, lido no corpo, não
+na cor do job: `recompute-cycles` devolveu `tenantsProcessados: 0` nas **5 de 5** execuções de
+hoje — o Motor de Ciclo não processou nenhum tenant no único dia em que o defeito original (`docs/23`
+§2) ainda estava em produção. `segments` (janela mais larga por sorte de desenho, não por correção)
+acertou 2 de 5 (11 e 21 tenants). Disparo manual `workflow_dispatch` às 13:15 UTC (depois do merge)
+também devolveu 0 — **não é regressão**: a janela de `recompute-cycles` é `[3h, 6h)` local
+(`TOLERANCIA_HORAS = 3`, `src/core/cron/janela.ts`), e 13:15 UTC é 10:15 local em UTC-3, fora da
+janela por desenho. A validação real da correção só acontece dentro da janela — a próxima chance é
+o schedule de amanhã (27/08), agora com o PR #15 já em `main`. Nada a fazer além de deixar o
+schedule rodar; registrado aqui para quem checar amanhã não precisar repetir a investigação.
+
+2026-08-26 · F3 (`docs/23` §5, `docs/24` §3) — restauração de backup verificada por decisão do
+Eduardo, e a decisão foi **não gastar** · O plano original pedia criar uma branch de teste no
+Supabase (`$0,01344/hora`, org Stark Inovações) e usar `restore_project` **só no `project_id` da
+branch, nunca no de produção** (`sukloaoodpxjukngyojo`), para comparar contagem de linhas contra
+produção. Apresentado o custo, a decisão foi explícita: "não precisa, não quero gastar o CICLO nem
+foi lançado ainda". Verificação alternativa sem custo: a API de gestão do Supabase usada aqui não
+expõe configuração de backup/PITR diretamente — o fato já registrado em sessão anterior de que o
+projeto é **Supabase Pro** (que inclui backup diário por padrão do plano) segue sendo a única
+evidência disponível sem custo. Fica `[E]`: se um dia for preciso confirmar retenção/restauração de
+verdade, o caminho é o painel do Supabase (Database → Backups) direto, sem precisar de branch paga,
+ou aceitar o custo trivial da branch quando fizer sentido gastar.
