@@ -139,15 +139,16 @@ sem código novo até o sinal de ≥20 pagantes aparecer.
 Nenhum destes constrói regra de negócio nova. São quatro mudanças de superfície em cima de
 dados que já existem.
 
-| # | Ticket | Onde |
-|---|---|---|
-| 7 | Herói condicional na home: sem agendamento hoje, o card de faturamento **não** é R$ 0,00 — é o que o Motor encontrou | `hoje.tsx` |
-| 8 | Subir `receitaAtribuidaAoCiclo` para a home | `resumo-hoje.ts` + `hoje/page.tsx` |
-| 9 | Central de Ações **acima** do card de agenda quando não há próximo cliente | `hoje.tsx` (ordem de render) |
-| 10 | Ícone de "Recuperar" na nav — hoje é um "C" no meio de ícones lucide outline | `components/shell/` |
+| # | Ticket | Onde | Status |
+|---|---|---|---|
+| 7 | Herói condicional na home: sem agendamento hoje, o card de faturamento **não** é R$ 0,00 — é o que o Motor encontrou | `hoje.tsx` | ✅ `deveMostrarHeroiDoMotor()`, testado |
+| 8 | Subir `receitaAtribuidaAoCiclo` para a home | `hoje/page.tsx` | ✅ Mesmo cálculo de `/admin/recuperar` (mês corrente) |
+| 9 | Central de Ações **acima** do card de agenda quando não há próximo cliente | `hoje.tsx` (ordem de render) | ✅ |
+| ~~10~~ | ~~Ícone de "Recuperar" na nav~~ | ~~`components/shell/`~~ | ❌ **Descartado** — o "C" (`icone: 'Anel'` em `tabs.ts`) não é acidente: é a marca do CICLO, escolhida deliberadamente para substituir um `Sparkles` que os designers descreveram como "o emblema universal de feito por IA" (`docs/08-REDESIGN-E-IDENTIDADE.md` Parte II §F1/§8). Eu tinha lido isso como inconsistência visual só olhando o print, sem ler o código — era decisão, não descuido. |
 
-O 10 parece cosmético e não é: a aba que carrega o diferencial é a única com ícone que destoa
-do sistema, o que a faz ler como "extra" em vez de "principal".
+Não verificado em navegador ao vivo (typecheck/lint/testes/build passam): `.env.local` deste
+ambiente aponta para o Supabase de produção, sem credencial de login de tenant real disponível
+nesta sessão para abrir a tela de verdade.
 
 ### F2 · Ativação — o buraco entre cadastro e valor
 
