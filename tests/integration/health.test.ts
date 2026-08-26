@@ -52,60 +52,66 @@ afterAll(async () => {
 }, 60_000)
 
 describe('verificarSaude', () => {
+  /*
+   * A vigilância de heartbeat é condicionada ao `on.schedule` do `cron.yml` desde 26/08
+   * (`src/core/cron/agendadas.ts`): job que ninguém dispara não pode ser cobrado, senão o
+   * `/api/health` vive em 503 e o vermelho que importa some no meio do vermelho de sempre.
+   *
+   * Por isso os casos abaixo usam `recompute_cycles` para provar a COBRANÇA — hoje ele é o único
+   * heartbeat de rota agendada — e `send_reminders`/`send_campaigns` para provar a DISPENSA.
+   * O limiar de 30 min (`LIMIAR_HEARTBEAT_MIN`) fica sem exercício de propósito: o único job que
+   * o usaria está fora do schedule. No dia em que `reminders` entrar, ele volta sozinho — e o
+   * `saude-vigia-so-o-que-roda` reprova se a lista do código não acompanhar o YAML.
+   */
   it(
-    'heartbeat recém-registrado: sendReminders ok',
+    'job agendado com heartbeat recente: ok',
     async () => {
-      await registrarHeartbeat(svc, 'send_reminders')
-      await registrarHeartbeat(svc, 'send_campaigns') // tabela global (0014) — não deixar `send_campaigns` atrasado derrubar `relatorio.ok` por um motivo alheio a este teste.
+      await registrarHeartbeat(svc, 'recompute_cycles')
       const relatorio = await verificarSaude(svc)
-      expect(relatorio.checks.sendReminders.ok).toBe(true)
+      expect(relatorio.checks.recomputeCycles.ok).toBe(true)
       expect(relatorio.checks.database.ok).toBe(true)
     },
     30_000,
   )
 
   it(
-    'heartbeat parado há mais de 30 min dispara alerta',
+    'job agendado parado além do limiar dispara alerta',
     async () => {
-      const trintaEUmMinutosAtras = new Date(Date.now() - 31 * 60_000)
-      await svc.from('cron_heartbeats').upsert({ kind: 'send_reminders', last_run_at: trintaEUmMinutosAtras.toISOString() }, { onConflict: 'kind' })
-      await registrarHeartbeat(svc, 'send_campaigns')
-
-      const relatorio = await verificarSaude(svc)
-      expect(relatorio.checks.sendReminders.ok).toBe(false)
-      expect(relatorio.ok).toBe(false)
-
-      await registrarHeartbeat(svc, 'send_reminders') // devolve o estado saudável pros próximos testes/tenants
-    },
-    30_000,
-  )
-
-  it(
-    'send_campaigns recém-registrado: ok',
-    async () => {
-      await registrarHeartbeat(svc, 'send_reminders')
-      await registrarHeartbeat(svc, 'send_campaigns')
-      const relatorio = await verificarSaude(svc)
-      expect(relatorio.checks.sendCampaigns.ok).toBe(true)
-    },
-    30_000,
-  )
-
-  it(
-    // `send_campaigns` roda 1×/dia (não a cada 15min como reminders), então o limiar é 26h
-    // (health.ts), não os 30min de sendReminders — 27h atrás já estoura os dois de propósito.
-    'send_campaigns parado há mais de 26h dispara alerta, sem depender do limiar de 30min de sendReminders',
-    async () => {
-      await registrarHeartbeat(svc, 'send_reminders')
       const vinteSeteHorasAtras = new Date(Date.now() - 27 * 60 * 60_000)
-      await svc.from('cron_heartbeats').upsert({ kind: 'send_campaigns', last_run_at: vinteSeteHorasAtras.toISOString() }, { onConflict: 'kind' })
+      await svc
+        .from('cron_heartbeats')
+        .upsert({ kind: 'recompute_cycles', last_run_at: vinteSeteHorasAtras.toISOString() }, { onConflict: 'kind' })
 
       const relatorio = await verificarSaude(svc)
-      expect(relatorio.checks.sendCampaigns.ok).toBe(false)
-      expect(relatorio.checks.sendReminders.ok).toBe(true)
+      expect(relatorio.checks.recomputeCycles.ok).toBe(false)
       expect(relatorio.ok).toBe(false)
 
-      await registrarHeartbeat(svc, 'send_campaigns') // devolve o estado saudável pros próximos testes/tenants
+      await registrarHeartbeat(svc, 'recompute_cycles') // devolve o estado saudável pros próximos testes
+    },
+    30_000,
+  )
+
+  it(
+    'job FORA do schedule não derruba a saúde, mesmo parado há horas — era o 503 permanente da produção',
+    async () => {
+      await registrarHeartbeat(svc, 'recompute_cycles')
+      // 454 min foi o número real medido em produção em 26/08, no `send_reminders`.
+      const horasAtras = new Date(Date.now() - 454 * 60_000)
+      await svc.from('cron_heartbeats').upsert({ kind: 'send_reminders', last_run_at: horasAtras.toISOString() }, { onConflict: 'kind' })
+      await svc.from('cron_heartbeats').upsert({ kind: 'send_campaigns', last_run_at: horasAtras.toISOString() }, { onConflict: 'kind' })
+
+      const relatorio = await verificarSaude(svc)
+      expect(relatorio.checks.sendReminders.ok).toBe(true)
+      expect(relatorio.checks.sendReminders.detail).toMatch(/não está no schedule/)
+      expect(relatorio.checks.sendCampaigns.ok).toBe(true)
+      /*
+       * `relatorio.ok` NÃO é afirmado aqui de propósito. A fila é global e `job-queue.test.ts`
+       * roda em paralelo contra o mesmo banco (a flake documentada logo abaixo), então um `ok`
+       * geral verdadeiro depende de um estado que este teste não controla. O que ele tem que
+       * provar é que os dois checks dispensados param de contribuir para o vermelho — e isso as
+       * duas asserções acima já provam. O caminho do `ok` geral está coberto sem rede em
+       * `tests/unit/server/saude-vigia-so-o-que-roda.test.ts`.
+       */
     },
     30_000,
   )
@@ -128,8 +134,7 @@ describe('verificarSaude', () => {
   it(
     'job parado na fila há mais de 15 min dispara alerta, sem afetar o resto',
     async () => {
-      await registrarHeartbeat(svc, 'send_reminders')
-      await registrarHeartbeat(svc, 'send_campaigns') // tabela global — não deixar stale pros testes seguintes no mesmo processo.
+      await registrarHeartbeat(svc, 'recompute_cycles') // tabela global — sem isto, o único check vigiado derruba `relatorio.ok` por motivo alheio a este teste.
       const dezesseisMinutosAtras = new Date(Date.now() - 16 * 60_000)
       const job = await svc
         .from('job_queue')
@@ -149,8 +154,7 @@ describe('verificarSaude', () => {
   it(
     'job preso em running há mais de 15 min também dispara alerta (achado S12)',
     async () => {
-      await registrarHeartbeat(svc, 'send_reminders')
-      await registrarHeartbeat(svc, 'send_campaigns') // tabela global — não deixar stale pros testes seguintes no mesmo processo.
+      await registrarHeartbeat(svc, 'recompute_cycles') // tabela global — sem isto, o único check vigiado derruba `relatorio.ok` por motivo alheio a este teste.
       const dezesseisMinutosAtras = new Date(Date.now() - 16 * 60_000)
 
       /*
