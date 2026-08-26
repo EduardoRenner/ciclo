@@ -3,8 +3,10 @@ import { headers } from 'next/headers'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { listarModelos } from '@/server/services/mensagens-prontas'
+import { lerMensageria } from '@/server/services/site'
 
 import EditorModelos from './editor'
+import PausarEnvios from './pausar-envios'
 import PageHeader from '@/components/ui/page-header'
 
 export const dynamic = 'force-dynamic'
@@ -17,12 +19,16 @@ export default async function PaginaMensagens() {
 
   const [modelos, negocio] = await Promise.all([
     listarModelos(db, ctx.tenantId),
-    db.from('tenants').select('name').eq('id', ctx.tenantId).single(),
+    db.from('tenants').select('name, settings').eq('id', ctx.tenantId).single(),
   ])
 
   return (
     <>
       <PageHeader titulo="Mensagens prontas" descricao="Escreva uma vez, mande com um toque. Use as variáveis para o texto sair com o nome de cada cliente." />
+
+      <div className="mb-4">
+        <PausarEnvios inicial={lerMensageria(negocio.data?.settings).paused} />
+      </div>
 
       <EditorModelos iniciais={modelos} nomeDoNegocio={negocio.data?.name ?? ''} />
     </>

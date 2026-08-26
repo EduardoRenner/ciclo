@@ -5,6 +5,7 @@ import { compararSegredo } from '@/server/http/segredo'
 import { rota } from '@/server/http/handler'
 import { executarCampanhaDiaria } from '@/server/services/campanhas'
 import { registrarHeartbeat } from '@/server/services/health'
+import { lerMensageria } from '@/server/services/site'
 
 /**
  * TICKET-038. Sem hora fixa na especificação — 10h local escolhida por ficar bem dentro da
@@ -18,7 +19,7 @@ export const GET = rota(async (req) => {
   if (!compararSegredo(recebido, esperado)) throw new AppError('UNAUTHENTICATED')
 
   return withNovoTenant(async (svc) => {
-    const { data: tenants, error } = await svc.from('tenants').select('id, timezone, slug').is('deleted_at', null)
+    const { data: tenants, error } = await svc.from('tenants').select('id, timezone, slug, settings').is('deleted_at', null)
     if (error) throw new AppError('INTERNAL', { cause: error })
 
     let tenantsProcessados = 0
@@ -26,6 +27,8 @@ export const GET = rota(async (req) => {
     for (const tenant of tenants ?? []) {
       // Tenant de demonstração não tem cliente de verdade do outro lado do telefone.
       if (ehDemonstracao(tenant.slug)) continue
+      // Interruptor manual do dono (F0, docs/25-ESTRATEGIA-E-EXECUCAO.md).
+      if (lerMensageria(tenant.settings).paused) continue
 
       const horaLocal = Number(
         new Intl.DateTimeFormat('en-US', { timeZone: tenant.timezone, hour: 'numeric', hourCycle: 'h23' }).format(new Date()),
