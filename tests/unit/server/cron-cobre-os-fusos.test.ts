@@ -42,11 +42,13 @@ function horasUtcDoSchedule(): number[] {
   return [...new Set(horas)].sort((a, b) => a - b)
 }
 
-/** A hora local que a rota exige, lida do próprio código: `if (horaLocal !== N) continue`. */
+/** A hora local que a rota toma como início da janela, lida do próprio código:
+ *  `dentroDaJanela(horaLocalDe(...), N)`. Casa com a CHAMADA, nunca com o nome solto — o nome
+ *  aparece também na linha de `import` (regra do `CLAUDE.md` sobre guarda cega). */
 function horaLocalExigida(rota: string): number {
   const src = readFileSync(`src/app/api/cron/${rota}/route.ts`, 'utf8')
-  const m = src.match(/horaLocal\s*!==\s*(\d+)/)
-  expect(m, `não achei o filtro de hora em ${rota}/route.ts — o teste precisa ser atualizado junto`).not.toBeNull()
+  const m = src.match(/dentroDaJanela\(.+,\s*(\d+)\)/)
+  expect(m, `não achei a janela de hora em ${rota}/route.ts — o teste precisa ser atualizado junto`).not.toBeNull()
   return Number(m![1])
 }
 

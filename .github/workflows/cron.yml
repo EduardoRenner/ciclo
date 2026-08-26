@@ -38,11 +38,27 @@ on:
     # Estas cinco horas cobrem hora local 3 E 4 nos quatro fusos do Brasil (UTC-2 a UTC-5) por ~9%.
     # `tests/unit/server/cron-cobre-os-fusos.test.ts` confere essa aritmética a cada build — se
     # alguém mudar a hora de uma rota ou mexer neste schedule, o teste reprova antes do silêncio.
+    #
+    # ATUALIZADO em 2026-08-26 pela auditoria de lançamento (`docs/23` §2). Duas mudanças:
+    #
+    # 1. As rotas deixaram de exigir hora local EXATA e passaram a aceitar uma janela
+    #    (`src/core/cron/janela.ts`). O motivo é medido: o único disparo agendado que já existiu
+    #    foi pedido para 06:10 UTC e aconteceu às 07:06 — 56 minutos de atraso. Todos os tenants
+    #    da base são UTC-3, então `recompute-cycles` (hora 3) caiu fora por 6 minutos e processou
+    #    ZERO. HTTP 200, job verde, Motor de Ciclo parado o dia inteiro.
+    #
+    # 2. Entrou um SEXTO horário, e quem pediu foi o teste, não eu. Com cinco,
+    #    `segments` (hora local 4) tinha UM único disparo elegível em America/Rio_Branco (UTC-5):
+    #    o schedule chegava no máximo às 4h locais de lá, então uma execução pulada pelo GitHub
+    #    custava o dia inteiro daquele fuso. Alargar a janela não resolveria — ela se estenderia
+    #    para horas locais que o schedule nunca alcança naquele fuso. Só um horário mais tarde
+    #    resolve. Custo: ~11% da cota de Actions em vez de ~9%.
     - cron: '10 5 * * *'
     - cron: '10 6 * * *'
     - cron: '10 7 * * *'
     - cron: '10 8 * * *'
     - cron: '10 9 * * *'
+    - cron: '10 10 * * *'
   workflow_dispatch:
     inputs:
       job:
