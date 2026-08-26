@@ -1,11 +1,9 @@
 import { ArrowRight, CalendarCheck, Link2, Wallet } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { redirect } from 'next/navigation'
 
 import { NOME_DO_PLANO, precoDoPlano } from '@/core/billing/planos'
 import IconeAnel from '@/components/ui/icone-anel'
-import { sessaoAtual } from '@/server/auth/session'
 
 import wordmark from '../../public/marca/ciclo-wordmark-aqua.png'
 
@@ -34,6 +32,13 @@ import type { Metadata } from 'next'
  * `docs/20-COPY-PLANO.md` §A.4, e guardado por
  * `tests/unit/design/home-nao-promete-demais.test.ts` — que existe porque estas
  * quatro promessas entraram aqui uma por rodada, cada uma soando bem, e ficaram.
+ *
+ * Página **estática** de propósito: nenhuma leitura de `cookies()`/sessão aqui. Quem já está
+ * logado é redirecionado para `/admin/hoje` pelo `middleware.ts`, que já resolve a sessão em
+ * toda requisição de qualquer forma — perguntar de novo aqui dentro é o que marcava esta rota
+ * como dinâmica (`ƒ`) e tirava do CDN a única página cujo trabalho é convencer um visitante
+ * anônimo (`docs/21-AUDITORIA-FALHA-SILENCIOSA.md` §5.2). Não reintroduza `sessaoAtual()`/
+ * `redirect()` aqui sem mover a checagem de volta para o middleware junto.
  */
 export const metadata: Metadata = {
   title: 'CICLO — a agenda que avisa quem parou de voltar',
@@ -115,10 +120,7 @@ const PERGUNTAS = [
   },
 ]
 
-export default async function Home() {
-  const sessao = await sessaoAtual()
-  if (sessao) redirect('/admin/hoje')
-
+export default function Home() {
   const botaoPrimario =
     'inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-sm)] bg-acc px-5 text-corpo ' +
     'font-semibold text-on-acc shadow-elevado transition duration-[var(--dur-1)] hover:brightness-110 active:scale-[.97]'
