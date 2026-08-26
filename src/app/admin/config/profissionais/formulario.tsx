@@ -63,25 +63,31 @@ export default function FormularioProfissional({ aberto, aoFechar, profissional,
     const corpo = { displayName: nome.trim(), bio: bio.trim() || null, color: cor, acceptsOnline: aceitaOnline }
 
     iniciarTransicao(async () => {
-      const url = editando ? `/api/v1/professionals/${profissional.id}` : '/api/v1/professionals'
-      const r = await fetch(url, {
-        method: editando ? 'PATCH' : 'POST',
-        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
-        body: JSON.stringify(corpo),
-      })
-      const json = (await r.json()) as {
-        data?: ProfissionalEditavel
-        error?: { message: string; details?: { fields?: Record<string, string> } }
-      }
-      if (!r.ok || !json.data) {
-        const primeiroCampo = json.error?.details?.fields ? Object.values(json.error.details.fields)[0] : undefined
-        setErro(primeiroCampo ?? json.error?.message ?? 'Não consegui salvar.')
-        return
-      }
+      try {
+        const url = editando ? `/api/v1/professionals/${profissional.id}` : '/api/v1/professionals'
+        const r = await fetch(url, {
+          method: editando ? 'PATCH' : 'POST',
+          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          body: JSON.stringify(corpo),
+        })
+        const json = (await r.json()) as {
+          data?: ProfissionalEditavel
+          error?: { message: string; details?: { fields?: Record<string, string> } }
+        }
+        if (!r.ok || !json.data) {
+          const primeiroCampo = json.error?.details?.fields ? Object.values(json.error.details.fields)[0] : undefined
+          setErro(primeiroCampo ?? json.error?.message ?? 'Não consegui salvar.')
+          return
+        }
 
-      mostrarToast({ tom: 'ok', titulo: editando ? 'Profissional atualizado' : 'Profissional cadastrado' })
-      aoSalvar(json.data)
-      aoFechar()
+        mostrarToast({ tom: 'ok', titulo: editando ? 'Profissional atualizado' : 'Profissional cadastrado' })
+        aoSalvar(json.data)
+        aoFechar()
+      } catch {
+        // Rede caiu antes de chegar resposta — sem isto, o React 19 relança para o error
+        // boundary da raiz e a tela inteira some (docs/21 §5.4).
+        setErro('Não consegui falar com o servidor. Confira a conexão e tente de novo.')
+      }
     })
   }
 

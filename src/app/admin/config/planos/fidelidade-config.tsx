@@ -26,23 +26,29 @@ export default function EditorFidelidade({ inicial }: { inicial: ConfigFidelidad
   function salvar() {
     setErro(null)
     iniciarTransicao(async () => {
-      const r = await fetch('/api/v1/tenant/loyalty-config', {
-        method: 'PATCH',
-        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
-        body: JSON.stringify({
-          pointsPerReal: Number(pointsPerReal) || 0,
-          referralBonusPoints: Number(referralBonusPoints) || 0,
-          rewardThreshold: Number(rewardThreshold) || 100,
-          rewardLabel: rewardLabel.trim() || null,
-        }),
-      })
-      const json = (await r.json()) as { error?: { message: string; details?: { fields?: Record<string, string> } } }
-      if (!r.ok) {
-        const campo = json.error?.details?.fields ? Object.values(json.error.details.fields)[0] : undefined
-        setErro(campo ?? json.error?.message ?? 'Não consegui salvar.')
-        return
+      try {
+        const r = await fetch('/api/v1/tenant/loyalty-config', {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          body: JSON.stringify({
+            pointsPerReal: Number(pointsPerReal) || 0,
+            referralBonusPoints: Number(referralBonusPoints) || 0,
+            rewardThreshold: Number(rewardThreshold) || 100,
+            rewardLabel: rewardLabel.trim() || null,
+          }),
+        })
+        const json = (await r.json()) as { error?: { message: string; details?: { fields?: Record<string, string> } } }
+        if (!r.ok) {
+          const campo = json.error?.details?.fields ? Object.values(json.error.details.fields)[0] : undefined
+          setErro(campo ?? json.error?.message ?? 'Não consegui salvar.')
+          return
+        }
+        mostrarToast({ tom: 'ok', titulo: 'Fidelidade atualizada' })
+      } catch {
+        // Rede caiu antes de chegar resposta — sem isto, o React 19 relança para o error
+        // boundary da raiz e a tela inteira some (docs/21 §5.4).
+        setErro('Não consegui falar com o servidor. Confira a conexão e tente de novo.')
       }
-      mostrarToast({ tom: 'ok', titulo: 'Fidelidade atualizada' })
     })
   }
 

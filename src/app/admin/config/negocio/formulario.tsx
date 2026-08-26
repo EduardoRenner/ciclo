@@ -59,18 +59,24 @@ export default function FormularioNegocio({ tenant, urlSite }: { tenant: Tenant;
     }
 
     iniciarTransicao(async () => {
-      const r = await fetch('/api/v1/tenant', {
-        method: 'PATCH',
-        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
-        body: JSON.stringify(corpo),
-      })
-      const json = (await r.json()) as { error?: { message: string; details?: { fields?: Record<string, string> } } }
-      if (!r.ok) {
-        const primeiroCampo = json.error?.details?.fields ? Object.values(json.error.details.fields)[0] : undefined
-        setErro(primeiroCampo ?? json.error?.message ?? 'Não consegui salvar.')
-        return
+      try {
+        const r = await fetch('/api/v1/tenant', {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          body: JSON.stringify(corpo),
+        })
+        const json = (await r.json()) as { error?: { message: string; details?: { fields?: Record<string, string> } } }
+        if (!r.ok) {
+          const primeiroCampo = json.error?.details?.fields ? Object.values(json.error.details.fields)[0] : undefined
+          setErro(primeiroCampo ?? json.error?.message ?? 'Não consegui salvar.')
+          return
+        }
+        mostrarToast({ tom: 'ok', titulo: 'Negócio atualizado' })
+      } catch {
+        // Rede caiu antes de chegar resposta — sem isto, o React 19 relança para o error
+        // boundary da raiz e a tela inteira some (docs/21 §5.4).
+        setErro('Não consegui falar com o servidor. Confira a conexão e tente de novo.')
       }
-      mostrarToast({ tom: 'ok', titulo: 'Negócio atualizado' })
     })
   }
 

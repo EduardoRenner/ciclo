@@ -81,22 +81,28 @@ export default function FormularioServico({ aberto, aoFechar, servico, aoSalvar 
     }
 
     iniciarTransicao(async () => {
-      const url = editando ? `/api/v1/services/${servico.id}` : '/api/v1/services'
-      const r = await fetch(url, {
-        method: editando ? 'PATCH' : 'POST',
-        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
-        body: JSON.stringify(corpo),
-      })
-      const json = (await r.json()) as { data?: ServicoEditavel; error?: { message: string; details?: { fields?: Record<string, string> } } }
-      if (!r.ok || !json.data) {
-        const primeiroCampo = json.error?.details?.fields ? Object.values(json.error.details.fields)[0] : undefined
-        setErro(primeiroCampo ?? json.error?.message ?? 'Não consegui salvar o serviço.')
-        return
-      }
+      try {
+        const url = editando ? `/api/v1/services/${servico.id}` : '/api/v1/services'
+        const r = await fetch(url, {
+          method: editando ? 'PATCH' : 'POST',
+          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          body: JSON.stringify(corpo),
+        })
+        const json = (await r.json()) as { data?: ServicoEditavel; error?: { message: string; details?: { fields?: Record<string, string> } } }
+        if (!r.ok || !json.data) {
+          const primeiroCampo = json.error?.details?.fields ? Object.values(json.error.details.fields)[0] : undefined
+          setErro(primeiroCampo ?? json.error?.message ?? 'Não consegui salvar o serviço.')
+          return
+        }
 
-      mostrarToast({ tom: 'ok', titulo: editando ? 'Serviço atualizado' : 'Serviço cadastrado' })
-      aoSalvar(json.data)
-      aoFechar()
+        mostrarToast({ tom: 'ok', titulo: editando ? 'Serviço atualizado' : 'Serviço cadastrado' })
+        aoSalvar(json.data)
+        aoFechar()
+      } catch {
+        // Rede caiu antes de chegar resposta — sem isto, o React 19 relança para o error
+        // boundary da raiz e a tela inteira some (docs/21 §5.4).
+        setErro('Não consegui falar com o servidor. Confira a conexão e tente de novo.')
+      }
     })
   }
 

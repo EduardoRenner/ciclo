@@ -32,19 +32,25 @@ export default function Notas({ clientId, iniciais }: { clientId: string; inicia
       return
     }
     iniciarTransicao(async () => {
-      const r = await fetch(`/api/v1/clients/${clientId}/notes`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
-        body: JSON.stringify({ body: texto.trim() }),
-      })
-      const json = (await r.json()) as { data?: { id: string; created_at: string }; error?: { message: string } }
-      if (!r.ok || !json.data) {
-        setErro(json.error?.message ?? 'Não consegui salvar.')
-        return
+      try {
+        const r = await fetch(`/api/v1/clients/${clientId}/notes`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          body: JSON.stringify({ body: texto.trim() }),
+        })
+        const json = (await r.json()) as { data?: { id: string; created_at: string }; error?: { message: string } }
+        if (!r.ok || !json.data) {
+          setErro(json.error?.message ?? 'Não consegui salvar.')
+          return
+        }
+        setNotas((atual) => [{ id: json.data!.id, body: texto.trim(), createdAt: json.data!.created_at, autor: null }, ...atual])
+        setTexto('')
+        setEscrevendo(false)
+      } catch {
+        // Rede caiu antes de chegar resposta — sem isto, o React 19 relança para o error
+        // boundary da raiz e a tela inteira some (docs/21 §5.4).
+        setErro('Não consegui falar com o servidor. Confira a conexão e tente de novo.')
       }
-      setNotas((atual) => [{ id: json.data!.id, body: texto.trim(), createdAt: json.data!.created_at, autor: null }, ...atual])
-      setTexto('')
-      setEscrevendo(false)
     })
   }
 

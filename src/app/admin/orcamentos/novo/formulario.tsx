@@ -79,21 +79,27 @@ export default function FormularioOrcamento({ profissionais }: { profissionais: 
     }
 
     iniciarTransicao(async () => {
-      const r = await fetch('/api/v1/quotes', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
-        body: JSON.stringify(corpo),
-      })
-      const json = (await r.json()) as { data?: { url: string }; error?: { message: string } }
+      try {
+        const r = await fetch('/api/v1/quotes', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          body: JSON.stringify(corpo),
+        })
+        const json = (await r.json()) as { data?: { url: string }; error?: { message: string } }
 
-      if (r.ok && json.data) {
-        const mensagemWhats = `Oi! Segue o orçamento: ${json.data.url}`
-        const digitos = clienteTelefone.replace(/\D/g, '')
-        setLinkPronto({ url: json.data.url, whatsapp: `https://wa.me/55${digitos}?text=${encodeURIComponent(mensagemWhats)}` })
-        return
+        if (r.ok && json.data) {
+          const mensagemWhats = `Oi! Segue o orçamento: ${json.data.url}`
+          const digitos = clienteTelefone.replace(/\D/g, '')
+          setLinkPronto({ url: json.data.url, whatsapp: `https://wa.me/55${digitos}?text=${encodeURIComponent(mensagemWhats)}` })
+          return
+        }
+
+        setErro(json.error?.message ?? 'Não consegui criar o orçamento.')
+      } catch {
+        // Rede caiu antes de chegar resposta — sem isto, o React 19 relança para o error
+        // boundary da raiz e a tela inteira some (docs/21 §5.4).
+        setErro('Não consegui falar com o servidor. Confira a conexão e tente de novo.')
       }
-
-      setErro(json.error?.message ?? 'Não consegui criar o orçamento.')
     })
   }
 

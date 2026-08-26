@@ -121,39 +121,45 @@ export default function FormularioAgendamento({
         return
       }
 
-      const r = await fetch('/api/v1/appointments', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
-        body: JSON.stringify(corpo),
-      })
-      const json = (await r.json()) as {
-        data?: { appointment: { id: string } }
-        error?: { code: string; message: string; details?: { alternatives?: string[] } }
-      }
-
-      if (r.ok && json.data) {
-        if (orcamentoId) {
-          // Best-effort: o agendamento já existe e é o que importa — se o vínculo falhar, a
-          // cliente já tem hora marcada, só o orçamento não fica marcado como "virou agendamento"
-          // (segue "Aprovado" na lista, sem perder nada; dá pra tentar nessa tela de novo depois).
-          await fetch(`/api/v1/quotes/${orcamentoId}/convert`, {
-            method: 'POST',
-            headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
-            body: JSON.stringify({ appointmentId: json.data.appointment.id }),
-          }).catch(() => {})
+      try {
+        const r = await fetch('/api/v1/appointments', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          body: JSON.stringify(corpo),
+        })
+        const json = (await r.json()) as {
+          data?: { appointment: { id: string } }
+          error?: { code: string; message: string; details?: { alternatives?: string[] } }
         }
-        mostrarToast({ tom: 'ok', titulo: 'Prontinho', descricao: 'Agendamento criado.' })
-        router.push('/admin/agenda')
-        return
-      }
 
-      if (json.error?.code === 'SLOT_TAKEN') {
-        setAlternativas(json.error.details?.alternatives ?? [])
-        setErro(json.error.message)
-        return
-      }
+        if (r.ok && json.data) {
+          if (orcamentoId) {
+            // Best-effort: o agendamento já existe e é o que importa — se o vínculo falhar, a
+            // cliente já tem hora marcada, só o orçamento não fica marcado como "virou agendamento"
+            // (segue "Aprovado" na lista, sem perder nada; dá pra tentar nessa tela de novo depois).
+            await fetch(`/api/v1/quotes/${orcamentoId}/convert`, {
+              method: 'POST',
+              headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+              body: JSON.stringify({ appointmentId: json.data.appointment.id }),
+            }).catch(() => {})
+          }
+          mostrarToast({ tom: 'ok', titulo: 'Prontinho', descricao: 'Agendamento criado.' })
+          router.push('/admin/agenda')
+          return
+        }
 
-      setErro(json.error?.message ?? 'Não consegui criar o agendamento.')
+        if (json.error?.code === 'SLOT_TAKEN') {
+          setAlternativas(json.error.details?.alternatives ?? [])
+          setErro(json.error.message)
+          return
+        }
+
+        setErro(json.error?.message ?? 'Não consegui criar o agendamento.')
+      } catch {
+        // Rede caiu no meio da chamada — sem isto, o React 19 relança para o error boundary da
+        // raiz e a tela inteira some (docs/21 §5.4).
+        setErro('Não consegui falar com o servidor. Confira a conexão e tente de novo.')
+      }
     })
   }
 
@@ -180,32 +186,36 @@ export default function FormularioAgendamento({
     }
 
     iniciarTransicao(async () => {
-      const r = await fetch('/api/v1/appointments/series', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
-        body: JSON.stringify(corpo),
-      })
-      const json = (await r.json()) as {
-        data?: { occurrences: { status: string }[] }
-        error?: { code: string; message: string }
-      }
-
-      if (r.ok && json.data) {
-        const total = json.data.occurrences.length
-        const puladas = json.data.occurrences.filter((o) => o.status !== 'agendada').length
-        mostrarToast({
-          tom: 'ok',
-          titulo: 'Série criada',
-          descricao:
-            puladas > 0
-              ? `${total - puladas} de ${total} horários marcados — ${puladas} pulados por folga ou conflito.`
-              : `${total} horários marcados.`,
+      try {
+        const r = await fetch('/api/v1/appointments/series', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          body: JSON.stringify(corpo),
         })
-        router.push('/admin/agenda')
-        return
-      }
+        const json = (await r.json()) as {
+          data?: { occurrences: { status: string }[] }
+          error?: { code: string; message: string }
+        }
 
-      setErro(json.error?.message ?? 'Não consegui criar a série.')
+        if (r.ok && json.data) {
+          const total = json.data.occurrences.length
+          const puladas = json.data.occurrences.filter((o) => o.status !== 'agendada').length
+          mostrarToast({
+            tom: 'ok',
+            titulo: 'Série criada',
+            descricao:
+              puladas > 0
+                ? `${total - puladas} de ${total} horários marcados — ${puladas} pulados por folga ou conflito.`
+                : `${total} horários marcados.`,
+          })
+          router.push('/admin/agenda')
+          return
+        }
+
+        setErro(json.error?.message ?? 'Não consegui criar a série.')
+      } catch {
+        setErro('Não consegui falar com o servidor. Confira a conexão e tente de novo.')
+      }
     })
   }
 

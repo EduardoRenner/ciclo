@@ -152,6 +152,22 @@ export async function middleware(req: NextRequest) {
   // teria como escrever o cookie novo.
   const { data } = await db.auth.getUser()
 
+  /*
+   * A landing (`/`) fazia essa mesma pergunta DE NOVO dentro do Server Component
+   * (`sessaoAtual()`, em `src/app/page.tsx`), só para redirecionar quem já está logado — e
+   * `cookies()`/sessão dentro de um Server Component marca a rota inteira como dinâmica (`ƒ`).
+   * Era a única razão da única página cujo trabalho é convencer um visitante anônimo não poder
+   * ser servida do CDN (`docs/21-AUDITORIA-FALHA-SILENCIOSA.md` §5.2). O middleware já resolve
+   * `data.user` para TODA rota — inclusive esta —, então a resposta já está aqui.
+   */
+  if (data.user && req.nextUrl.pathname === '/') {
+    const hoje = req.nextUrl.clone()
+    hoje.pathname = '/admin/hoje'
+    const redirecionamento = NextResponse.redirect(hoje)
+    aplicarCabecalhosDeSeguranca(redirecionamento, csp, semCache)
+    return redirecionamento
+  }
+
   if (!data.user && protegida) {
     const entrar = req.nextUrl.clone()
     entrar.pathname = '/entrar'

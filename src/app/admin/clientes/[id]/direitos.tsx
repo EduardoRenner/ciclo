@@ -45,43 +45,54 @@ export default function DireitosDaCliente({
   function baixar() {
     setPrecisaMfa(false)
     iniciar(async () => {
-      const r = await fetch(`/api/v1/clients/${clientId}/data-export`)
-      const json = (await r.json()) as { data?: unknown; error?: { code?: string; message?: string } }
-      if (!r.ok || !json.data) {
-        tratarFalha(json, 'Não consegui gerar a cópia')
-        return
-      }
+      try {
+        const r = await fetch(`/api/v1/clients/${clientId}/data-export`)
+        const json = (await r.json()) as { data?: unknown; error?: { code?: string; message?: string } }
+        if (!r.ok || !json.data) {
+          tratarFalha(json, 'Não consegui gerar a cópia')
+          return
+        }
 
-      // Arquivo montado no próprio navegador: o endereço do export não pode
-      // virar link solto (é dado pessoal numa URL que iria parar no histórico).
-      const blob = new Blob([JSON.stringify(json.data, null, 2)], { type: 'application/json' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `dados-${nome.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.json`
-      a.click()
-      URL.revokeObjectURL(url)
-      mostrarToast({ tom: 'ok', titulo: 'Cópia gerada', descricao: 'O arquivo tem tudo que o sistema guarda sobre ela.' })
+        // Arquivo montado no próprio navegador: o endereço do export não pode
+        // virar link solto (é dado pessoal numa URL que iria parar no histórico).
+        const blob = new Blob([JSON.stringify(json.data, null, 2)], { type: 'application/json' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `dados-${nome.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.json`
+        a.click()
+        URL.revokeObjectURL(url)
+        mostrarToast({ tom: 'ok', titulo: 'Cópia gerada', descricao: 'O arquivo tem tudo que o sistema guarda sobre ela.' })
+      } catch {
+        // Rede caiu antes de chegar resposta — sem isto, o React 19 relança para o error
+        // boundary da raiz e a tela inteira some (docs/21 §5.4).
+        mostrarToast({ tom: 'erro', titulo: 'Não consegui falar com o servidor', descricao: 'Confira a conexão e tente de novo.' })
+      }
     })
   }
 
   function apagar() {
     setPrecisaMfa(false)
     iniciar(async () => {
-      const r = await fetch(`/api/v1/clients/${clientId}/erase`, {
-        method: 'POST',
-        headers: { 'idempotency-key': crypto.randomUUID() },
-      })
-      const json = (await r.json()) as { data?: unknown; error?: { code?: string; message?: string } }
-      if (!r.ok) {
+      try {
+        const r = await fetch(`/api/v1/clients/${clientId}/erase`, {
+          method: 'POST',
+          headers: { 'idempotency-key': crypto.randomUUID() },
+        })
+        const json = (await r.json()) as { data?: unknown; error?: { code?: string; message?: string } }
+        if (!r.ok) {
+          setConfirmando(false)
+          tratarFalha(json, 'Não consegui apagar')
+          return
+        }
         setConfirmando(false)
-        tratarFalha(json, 'Não consegui apagar')
-        return
+        mostrarToast({ tom: 'ok', titulo: 'Dados apagados', descricao: 'O histórico que a lei exige guardar ficou sem identificação.' })
+        router.push('/admin/clientes')
+        router.refresh()
+      } catch {
+        setConfirmando(false)
+        mostrarToast({ tom: 'erro', titulo: 'Não consegui falar com o servidor', descricao: 'Confira a conexão e tente de novo.' })
       }
-      setConfirmando(false)
-      mostrarToast({ tom: 'ok', titulo: 'Dados apagados', descricao: 'O histórico que a lei exige guardar ficou sem identificação.' })
-      router.push('/admin/clientes')
-      router.refresh()
     })
   }
 

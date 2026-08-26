@@ -60,37 +60,47 @@ export default function EditorModelos({ iniciais, nomeDoNegocio }: { iniciais: M
     setErro(null)
     const novo = editando === 'novo'
     iniciarSalvamento(async () => {
-      const r = await fetch(novo ? '/api/v1/message-templates' : `/api/v1/message-templates/${(editando as Modelo).id}`, {
-        method: novo ? 'POST' : 'PATCH',
-        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
-        body: JSON.stringify({ title: titulo, body: corpo }),
-      })
-      const json = (await r.json()) as { data?: Modelo; error?: { message: string; details?: { fields?: Record<string, string> } } }
-      if (!r.ok || !json.data) {
-        const campo = json.error?.details?.fields ? Object.values(json.error.details.fields)[0] : undefined
-        setErro(campo ?? json.error?.message ?? 'Não consegui salvar.')
-        return
+      try {
+        const r = await fetch(novo ? '/api/v1/message-templates' : `/api/v1/message-templates/${(editando as Modelo).id}`, {
+          method: novo ? 'POST' : 'PATCH',
+          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          body: JSON.stringify({ title: titulo, body: corpo }),
+        })
+        const json = (await r.json()) as { data?: Modelo; error?: { message: string; details?: { fields?: Record<string, string> } } }
+        if (!r.ok || !json.data) {
+          const campo = json.error?.details?.fields ? Object.values(json.error.details.fields)[0] : undefined
+          setErro(campo ?? json.error?.message ?? 'Não consegui salvar.')
+          return
+        }
+        const salvo = json.data
+        setModelos((atual) => (novo ? [...atual, salvo] : atual.map((m) => (m.id === salvo.id ? salvo : m))))
+        mostrarToast({ tom: 'ok', titulo: novo ? 'Modelo criado' : 'Modelo atualizado' })
+        setEditando(null)
+      } catch {
+        // Rede caiu antes de chegar resposta — sem isto, o React 19 relança para o error
+        // boundary da raiz e a tela inteira some (docs/21 §5.4).
+        setErro('Não consegui falar com o servidor. Confira a conexão e tente de novo.')
       }
-      const salvo = json.data
-      setModelos((atual) => (novo ? [...atual, salvo] : atual.map((m) => (m.id === salvo.id ? salvo : m))))
-      mostrarToast({ tom: 'ok', titulo: novo ? 'Modelo criado' : 'Modelo atualizado' })
-      setEditando(null)
     })
   }
 
   function apagar(id: string) {
     iniciarSalvamento(async () => {
-      const r = await fetch(`/api/v1/message-templates/${id}`, {
-        method: 'DELETE',
-        headers: { 'idempotency-key': crypto.randomUUID() },
-      })
-      if (!r.ok) {
-        mostrarToast({ tom: 'erro', titulo: 'Não consegui apagar' })
-        return
+      try {
+        const r = await fetch(`/api/v1/message-templates/${id}`, {
+          method: 'DELETE',
+          headers: { 'idempotency-key': crypto.randomUUID() },
+        })
+        if (!r.ok) {
+          mostrarToast({ tom: 'erro', titulo: 'Não consegui apagar' })
+          return
+        }
+        setModelos((atual) => atual.filter((m) => m.id !== id))
+        mostrarToast({ tom: 'ok', titulo: 'Modelo apagado' })
+        setEditando(null)
+      } catch {
+        mostrarToast({ tom: 'erro', titulo: 'Não consegui falar com o servidor', descricao: 'Confira a conexão e tente de novo.' })
       }
-      setModelos((atual) => atual.filter((m) => m.id !== id))
-      mostrarToast({ tom: 'ok', titulo: 'Modelo apagado' })
-      setEditando(null)
     })
   }
 

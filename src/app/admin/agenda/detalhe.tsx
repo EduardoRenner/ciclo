@@ -92,38 +92,48 @@ export default function DetalheAgendamento({
   function confirmarCancelamento() {
     setErro(null)
     iniciarTransicao(async () => {
-      const r = await fetch(`/api/v1/appointments/${agendamento.id}`, {
-        method: 'DELETE',
-        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
-        body: JSON.stringify({ canceledBy: 'professional', reason: motivo || undefined }),
-      })
-      const json = (await r.json()) as { error?: { message: string } }
-      if (!r.ok) {
-        setErro(json.error?.message ?? 'Não consegui cancelar.')
-        return
+      try {
+        const r = await fetch(`/api/v1/appointments/${agendamento.id}`, {
+          method: 'DELETE',
+          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          body: JSON.stringify({ canceledBy: 'professional', reason: motivo || undefined }),
+        })
+        const json = (await r.json()) as { error?: { message: string } }
+        if (!r.ok) {
+          setErro(json.error?.message ?? 'Não consegui cancelar.')
+          return
+        }
+        mostrarToast({ tom: 'ok', titulo: 'Agendamento cancelado' })
+        onAtualizado()
+      } catch {
+        // Rede caiu antes de chegar resposta — sem isto, o React 19 relança para o error
+        // boundary da raiz e a tela inteira some (docs/21 §5.4).
+        setErro('Não consegui falar com o servidor. Confira a conexão e tente de novo.')
       }
-      mostrarToast({ tom: 'ok', titulo: 'Agendamento cancelado' })
-      onAtualizado()
     })
   }
 
   function confirmarRemarcacao() {
     setErro(null)
     iniciarTransicao(async () => {
-      const r = await fetch(`/api/v1/appointments/${agendamento.id}`, {
-        method: 'PATCH',
-        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
-        body: JSON.stringify({ startsAt: new Date(novoHorario).toISOString() }),
-      })
-      const json = (await r.json()) as { error?: { code: string; message: string } }
-      if (!r.ok) {
-        // SLOT_TAKEN é o caso mais comum aqui — a mensagem do servidor já
-        // explica; não precisa de tratamento especial além de mostrar.
-        setErro(json.error?.message ?? 'Não consegui remarcar.')
-        return
+      try {
+        const r = await fetch(`/api/v1/appointments/${agendamento.id}`, {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          body: JSON.stringify({ startsAt: new Date(novoHorario).toISOString() }),
+        })
+        const json = (await r.json()) as { error?: { code: string; message: string } }
+        if (!r.ok) {
+          // SLOT_TAKEN é o caso mais comum aqui — a mensagem do servidor já
+          // explica; não precisa de tratamento especial além de mostrar.
+          setErro(json.error?.message ?? 'Não consegui remarcar.')
+          return
+        }
+        mostrarToast({ tom: 'ok', titulo: 'Agendamento remarcado' })
+        onAtualizado()
+      } catch {
+        setErro('Não consegui falar com o servidor. Confira a conexão e tente de novo.')
       }
-      mostrarToast({ tom: 'ok', titulo: 'Agendamento remarcado' })
-      onAtualizado()
     })
   }
 

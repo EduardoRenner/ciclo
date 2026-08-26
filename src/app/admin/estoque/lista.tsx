@@ -135,23 +135,29 @@ function FormularioEntrada({
     setErro(null)
 
     iniciarSalvamento(async () => {
-      const r = await fetch('/api/v1/inventory/entries', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
-        body: JSON.stringify({
-          productId: produto.id,
-          qty: valor,
-          unitCostCents: custoCents,
-          note: nota.trim() || undefined,
-        }),
-      })
-      const json = (await r.json()) as { data?: { stock_qty: number; avg_cost_cents: number }; error?: { message: string } }
-      if (!r.ok || !json.data) {
-        setErro(json.error?.message ?? 'Não consegui registrar a entrada. Tente de novo.')
-        return
+      try {
+        const r = await fetch('/api/v1/inventory/entries', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          body: JSON.stringify({
+            productId: produto.id,
+            qty: valor,
+            unitCostCents: custoCents,
+            note: nota.trim() || undefined,
+          }),
+        })
+        const json = (await r.json()) as { data?: { stock_qty: number; avg_cost_cents: number }; error?: { message: string } }
+        if (!r.ok || !json.data) {
+          setErro(json.error?.message ?? 'Não consegui registrar a entrada. Tente de novo.')
+          return
+        }
+        aoSalvar(produto.id, json.data.stock_qty, json.data.avg_cost_cents)
+        aoFechar()
+      } catch {
+        // Rede caiu antes de chegar resposta — sem isto, o React 19 relança para o error
+        // boundary da raiz e a tela inteira some (docs/21 §5.4).
+        setErro('Não consegui falar com o servidor. Confira a conexão e tente de novo.')
       }
-      aoSalvar(produto.id, json.data.stock_qty, json.data.avg_cost_cents)
-      aoFechar()
     })
   }
 
