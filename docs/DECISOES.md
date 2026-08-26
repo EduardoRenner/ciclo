@@ -2888,3 +2888,29 @@ no caminho, porque a segunda cópia dele nasceria aqui — e cópia de dublê fo
 **O que NÃO mudou, de propósito:** `checarFila` continua alarmando por job parado há 15 min mesmo
 com a rota `jobs` fora do schedule. Fila crescendo é problema real independentemente de quem devia
 drená-la — é trabalho enfileirado que não acontece, não um relógio parado.
+
+2026-08-26 · A receita que o dono ia seguir para ligar a campanha estava errada — e nada a testava
+porque estava comentada · O rodapé do `cron.yml` (passo 4 do F0) mandava descomentar
+`- cron: '0 12 * * *'   # campaigns`. Mas `campaigns` só age no tenant cuja **hora local** é 10, e
+12:00 UTC é 10h local **só em UTC-2** — Fernando de Noronha, ou seja, ninguém; com os 36 a 56 min
+de atraso medidos do agendador (`docs/24` §6.5), nem lá. Descomentar aquela linha teria ligado a
+campanha para zero tenants, com HTTP 200 e job verde: **o mesmo defeito e o mesmo silêncio que o
+Motor de Ciclo passou dois dias produzindo**, esperando dentro da única instrução que existe para
+ligar a mensageria. Junto veio o defeito irmão: `campaigns` e `stock-alerts` eram as duas rotas que
+ainda usavam **igualdade exata** de hora (`horaLocal !== 10`, `!== 7`) — a auditoria do `docs/23`
+§2 trocou por janela só as duas que já estavam no `schedule`, e as outras duas ficaram como
+armadilha para o dia em que fossem agendadas. Corrigido: as duas passam por `dentroDaJanela`
+(`src/core/cron/janela.ts`), a receita do rodapé virou quatro horários (10h local em cada fuso), e
+`cron-cobre-os-fusos.test.ts` passou a conferir **as linhas comentadas** pela mesma aritmética das
+agendadas — receita errada agora reprova o build antes de alguém segui-la.
+**Por que alargar a janela de `campaigns` é seguro** (a pergunta que decide se isso pode ou não):
+duas passadas no mesmo dia não mandam duas mensagens. `enviarParaRecuperar` filtra por
+`last_campaign_at` + `DIAS_ENTRE_CAMPANHAS` antes de enviar, então a segunda passada devolve
+`rate_limited` para quem a primeira já pegou. Em `stock-alerts` o custo de repetir é uma linha de
+log — a rota não é fonte da verdade, a tela Hoje calcula o mesmo alerta ao vivo.
+`reminders` **não** ganhou janela porque não filtra por hora local nenhuma (ela olha a hora do
+agendamento, não a do tenant); por isso a receita dela continua sendo um `*/15` só, e há um teste
+que amarra essa justificativa ao código.
+Aproveitado no mesmo passo: `cron-cobre-os-fusos.test.ts` tinha a sua **própria cópia** da lista de
+rotas agendadas, que virou a terceira depois do `/api/health`. Agora as três leem
+`@/core/cron/agendadas`, que é a única ancorada ao YAML nas duas direções.

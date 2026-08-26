@@ -78,7 +78,12 @@ async function checarBanco(db: Cliente): Promise<ChecagemSaude> {
  * Duas perguntas diferentes, e até a auditoria de 2026-08-23 (achado S12) só a primeira era feita:
  *
  * 1. **Fila crescendo** — job `queued`/`failed` cuja hora já passou. Sintoma de worker que não
- *    está rodando (hoje o caso normal: `vercel.json` está com `crons: []` no plano Hobby).
+ *    está rodando — e hoje esse é o caso normal: a rota `jobs`, que drena a fila, só existe no
+ *    `workflow_dispatch` do `.github/workflows/cron.yml`, nunca no `schedule`. (A nota antiga
+ *    dizia "`vercel.json` com `crons: []`, plano Hobby": verdade, mas arquivo errado — o
+ *    agendador é o GitHub Actions desde `docs/18` §L.5.) Esta checagem NÃO é dispensada como as
+ *    de heartbeat: fila crescendo é trabalho enfileirado que não acontece, independentemente de
+ *    quem devia drená-la.
  * 2. **Job preso em `running`** — worker que morreu no meio. `claim_jobs` passou a reivindicar
  *    esses de volta (migration 0037), mas com teto de `max_attempts`: um job que derruba o
  *    worker toda vez para de ser reivindicado em vez de derrubar um worker por rodada. Quando

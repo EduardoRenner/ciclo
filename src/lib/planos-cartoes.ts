@@ -50,11 +50,18 @@ export const CARTOES: Plano[] = [
       { texto: 'Motor de Ciclo: veja quem sumiu e quanto isso vale', modulo: 'cycle_engine' },
       /*
         "Lembrete e confirmação de agendamento" saiu daqui em 2026-08-24 (docs/20-COPY-PLANO.md
-        §A.4 e §S.1/C-2). O módulo `reminders` existe e o Grátis o libera — mas `vercel.json` está
-        com `crons: []`, então a rota que dispara o lembrete nunca roda em produção. Anunciar numa
-        tabela de preço uma automação que não executa é a promessa mais cara que este produto pode
-        fazer, e o teste `precos-nao-promete-demais` não pega esta classe: ele confere o degrau,
-        não se o motor está ligado. Volta quando o P-0 do 18 estiver feito.
+        §A.4 e §S.1/C-2). O módulo `reminders` existe e o Grátis o libera — mas a rota que dispara
+        o lembrete não roda em produção. Anunciar numa tabela de preço uma automação que não
+        executa é a promessa mais cara que este produto pode fazer, e o teste
+        `precos-nao-promete-demais` não pega esta classe: ele confere o degrau, não se o motor está
+        ligado. Volta quando o passo 4 do F0 (`docs/25`) estiver feito.
+
+        A versão original desta nota dizia "mas `vercel.json` está com `crons: []`". O fato é
+        verdadeiro e a conclusão também, mas o ARQUIVO está errado — e ler o agendador no lugar
+        errado já produziu um defeito neste repositório (`tests/helpers/cron.ts`). O agendador é
+        `.github/workflows/cron.yml`; o `vercel.json` fica vazio de propósito e para sempre
+        (`docs/18` §L.5). Quem for conferir se o lembrete já roda, confere lá — e
+        `src/core/cron/agendadas.ts` é a lista que o código usa.
       */
     ],
     naoInclui: ['Mandar mensagem para vários de uma vez — no grátis você manda um a um'],

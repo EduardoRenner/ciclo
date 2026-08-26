@@ -180,6 +180,25 @@ jobs:
 #      volta sozinha — e o teste `saude-vigia-so-o-que-roda` reprova se a lista do código não
 #      acompanhar este arquivo.
 #
+# AS LINHAS PARA DESCOMENTAR NO PASSO 4 — e por que elas mudaram em 26/08.
+#
+# A receita anterior era `0 12 * * *` para `campaigns`, "uma vez por dia". Ela estava ERRADA, com
+# o mesmo defeito que a auditoria já tinha consertado nas outras duas rotas: `campaigns` só age no
+# tenant cuja hora LOCAL é 10, e 12:00 UTC é 10h local só em UTC-2 — Fernando de Noronha, ou seja,
+# ninguém. Com os 36 a 56 minutos de atraso medidos do agendador, nem lá. Descomentar aquela linha
+# teria ligado a campanha para zero tenants, com HTTP 200 e job verde, exatamente como o Motor de
+# Ciclo passou dois dias fazendo (`docs/24` §6.5).
+#
+# São quatro horários porque a rota tem hora local alvo: um por fuso, cada um caindo às 10h locais
+# de um deles (a janela de 3h de `src/core/cron/janela.ts` absorve o atraso a partir daí).
+# `reminders` não filtra por hora local — ela olha a hora do agendamento, não a do tenant —, então
+# um `*/15` cobre todo mundo sozinho.
+# `tests/unit/server/cron-cobre-os-fusos.test.ts` confere ESTAS LINHAS COMENTADAS pela mesma
+# aritmética das agendadas: uma receita errada no rodapé reprova o build antes de alguém segui-la.
+#
 #     - cron: '*/15 * * * *'   # reminders — §7 pede a cada 15 minutos
-#     - cron: '0 12 * * *'     # campaigns — uma vez por dia
+#     - cron: '10 12 * * *'    # campaigns — 10h local em UTC-2
+#     - cron: '10 13 * * *'    # campaigns — 10h local em UTC-3
+#     - cron: '10 14 * * *'    # campaigns — 10h local em UTC-4
+#     - cron: '10 15 * * *'    # campaigns — 10h local em UTC-5
 # ---------------------------------------------------------------------------------------------
