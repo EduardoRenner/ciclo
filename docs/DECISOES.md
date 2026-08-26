@@ -2759,3 +2759,32 @@ Dois casos ficaram **de propósito** fora desta rodada, por serem decisão e nã
 
 Nenhum dos dois tenants `gratis` reais usa qualquer um dos dois hoje (medido: zero séries, zero
 pacotes) — não há urgência de quebra, só a decisão pendente.
+
+2026-08-26 · F0 (`docs/25-ESTRATEGIA-E-EXECUCAO.md`): a pergunta "dom-rocha é gente real ou
+semente?" está fechada, e por dois caminhos que se reforçam · O `docs/20-COPY-PLANO.md` §A.4.1 já
+registrava confirmação do Eduardo de que o tenant é inteiramente fictício
+(`scripts/seed-demo-barbearia.mjs`), mas essa confirmação não tinha chegado ao `25`, que ainda
+tratava a pergunta como aberta — e o próprio `.github/workflows/cron.yml` também a lista como
+passo manual pendente antes de agendar `reminders`/`campaigns`. Em vez de rodar a consulta contra
+produção para fechar por medição, a exclusão por tenant (item A do F0) tornou a pergunta
+estruturalmente irrelevante: `dom-rocha` e `ruivo-barber` agora são pulados DENTRO das próprias
+rotas de mensageria (`ehDemonstracao()`, já eram excluídos do sitemap) — nenhum dos dois recebe
+WhatsApp/e-mail automático, gente real ou não. Curiosidade residual, não bloqueio: o 46º cliente
+de `dom-rocha` não está em nenhum script de seed rastreado (o array `CLIENTES` de
+`seed-demo-barbearia.mjs` tem 45 nomes); provavelmente cadastro manual de teste, sem consequência
+agora que a exclusão por tenant cobre o caso de qualquer forma.
+
+2026-08-26 · F0, teto diário de mensagem por tenant: 300/dia transacional (`reminder` +
+`confirmation` + `transactional`), 100/dia campanha — valor **estimado**, sem uso real para
+calibrar ainda · `src/server/services/mensageria.ts`, `dentroDoTetoDiario`. Ajustar depois que
+houver volume real de tenant pagante — hoje é freio de segurança, não previsão de tráfego.
+
+2026-08-26 · Programa de indicação (pedido nesta sessão: "quem indica ganha desconto/grátis")
+não entra em código agora · Já está inteiramente desenhado em `docs/18-MONETIZACAO-PLANO.md` Fase
+H (crédito em `billing_credits`, recompensa só no 1º pagamento do indicado, antifraude, teto de
+12 meses/ano) — e o mesmo documento trava a fase atrás de **≥20 pagantes** (linha 1276: "antes
+disso é máquina sem combustível"). A base tem zero pagantes hoje. Construir agora contradiria uma
+decisão já tomada e é o tipo de trabalho que o red-team do `18` avisa para não fazer cedo demais.
+Decisão: registrar como já desenhado, e oferecer a recompensa **à mão** durante o piloto manual
+(F3 de `docs/25-ESTRATEGIA-E-EXECUCAO.md`) se/quando fizer sentido comercialmente — sem
+`billing_credits`, sem gatilho automático. Fase H entra em código só depois de ≥20 pagantes.
