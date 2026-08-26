@@ -257,3 +257,18 @@ Consistente com o desenho best-effort que o F1 descreve. Para os 11 tenants em U
 importa é o das **06:10** (hora local 3 com atraso de 0–49 min) — é o corpo dessa execução que
 responde se o Motor de Ciclo processa tenant sozinho. Ainda não aconteceu quando este parágrafo foi
 escrito.
+
+### 6.6 · F1-b fechada, F3 decidida — continuação em outra sessão, mesmo dia
+
+**F1-b, com os 5 corpos lidos:** as 5 execuções agendadas de hoje (05:46–09:52 UTC) rodaram todas
+**antes** do merge do PR #15 (12:58 UTC) — o §6.4 acima registrou exatamente essa lacuna algumas
+horas antes de ela se confirmar. `recompute-cycles` devolveu `tenantsProcessados: 0` nas 5 de 5,
+`segments` acertou 2 de 5. Ou seja: a previsão do §6.4 ("produção roda com o defeito") bateu, com
+número. PR #14, #15 e #16 foram mesclados em `main` nesta continuação (decisão de quem estava
+consultando o Eduardo na hora — registrada em `docs/DECISOES.md`). Disparo manual de
+`workflow_dispatch` depois do merge (13:15 UTC) devolveu `0` de novo — não é regressão, é a janela
+`[3h, 6h)` local não alcançando as 10:15 locais do disparo. A validação real acontece sozinha no
+schedule de amanhã. Detalhe completo em `docs/DECISOES.md`, entrada de hoje.
+
+**F3, decidida sem gastar:** apresentado o custo real da branch de teste ($0,01344/hora), a decisão
+foi não gastar — CICLO ainda não foi lançado. Fica `[E]`, sem prazo. Detalhe em `docs/DECISOES.md`.
