@@ -197,6 +197,44 @@ Alvo concreto: rebaixar um tenant descartável **cheio** de `avancado` para `gra
 o dono perde acesso ao que já criou? A tela explica ou só quebra? `docs/18` regra 5.1 diz que cair
 de plano limita o que dá para **fazer** e nunca esconde o que **existe**. Isso é verificável.
 
+### 6.1 · Veredito da costura de rebaixamento: **nada encontrado** — e isso é resultado
+
+Percorri o caminho do rebaixamento no código, procurando a invariante que ele quebra: *"uso ≤
+teto"* deixa de valer no instante em que o plano cai. Quem lê esse número depois?
+
+| Ponto de leitura | O que acontece com uso **acima** do teto | Veredito |
+|---|---|---|
+| `verificarLimite(..., aAdicionar: 0)` | devolve `dentro: false`, `restante: 0` (com `Math.max`) | correto |
+| `podeCriar()` | função **com nome próprio** só para essa distinção, e a regra 5.1 escrita no cabeçalho | correto |
+| `/admin/config/meu-plano` | renderiza *"Acima do teto — nada foi removido"* | **já previsto** |
+| `StatTile progresso={3/1}` | `Math.min(1, Math.max(0, …))` — barra travada em 100% | correto |
+| Telas do admin | **nenhuma** chama `exigirModulo` — nada quebra ao cair de plano | coerente com 5.1 |
+| `/admin/config` (hub) | esconde o que o dono desligou e o que está fora do eixo; **mantém** o bloqueado pelo plano, com o caminho para o degrau | regra 5.2, e o filtro foi lido, não deduzido |
+| `modulos.ts` | raciocina explicitamente sobre *desligar → cair de degrau → voltar*, e recusa gravar "o dono desligou" para algo que ele nunca viu | cuidado acima da média |
+
+**Duas hipóteses minhas caíram ao serem medidas**, e entram aqui por regra do `docs/22 §2.3`:
+
+1. *"`progresso` acima de 1 estoura a barra visualmente."* — Falsa: o `StatTile` já trava com
+   `Math.min`.
+2. *"O comentário promete um filtro no hub que talvez não exista."* — Falsa: o filtro roda
+   (`src/app/admin/config/page.tsx:95`), lido linha a linha em vez de aceito pelo comentário.
+
+**Conclusão da frente:** o rebaixamento é a costura mais bem cuidada que encontrei nesta auditoria
+— provavelmente porque `docs/18` a escreveu como regra **antes** de alguém codar. Isso contrasta
+com F1 e F5, onde o defeito estava justamente onde **nenhum documento tinha escrito a regra
+primeiro**. É a lição mais transferível desta rodada.
+
+### 6.2 · O que esta frente **não** cobriu, e fica dito
+
+Verifiquei **uma fatia** — a que classifiquei como mais suspeita — não a sequência inteira do
+`§3.4` (cadastro → onboarding → agendamento público → comanda → LGPD). As etapas sob `/admin`
+exigem sessão, e a limitação registrada desde o TICKET-022 continua valendo: **não consigo abri-las
+no navegador desta sessão**. Marcar a frente como fechada seria o defeito que o `docs/22 §2.2`
+existe para impedir.
+
+**Estado honesto: F4 parcial.** A costura de plano está verificada; o resto da sequência é `[E]` —
+depende de alguém percorrer com sessão real, e essa pessoa é o Eduardo.
+
 ---
 
 ## 7 · F5 · Coerência do que o plano promete — **o segundo achado grave**
@@ -283,6 +321,48 @@ Duas consequências que a execução tem que separar:
    teste) custa **US$ 10/mês** e é `[E]`.
 
 Esta frente provavelmente termina em **recomendação com preço**, não em código.
+
+### 8.1 · Três medições que derrubaram o diagnóstico acima
+
+Tudo em §8 até aqui foi escrito **antes** de medir. Medido, quase nada se sustentou.
+
+**(a) O CI nunca tocou produção.** `ci.yml` sobe um Supabase efêmero (`supabase start`,
+`127.0.0.1:54321`) e tem uma trava que **reprova o job** se a URL não for local [M]. O problema
+nunca foi "a suíte roda contra produção" como propriedade do projeto — é só a execução **na máquina
+do dev**, onde `.env.local` aponta para a nuvem.
+
+**(b) A suíte limpa direito — o `docs/18` errou.** O item `P-B` afirma que limpar é inútil porque
+"a suíte os recria a cada execução". **Falso, medido:** rodei `test:integration` (264 casos) e
+`test:rls` (133 casos) completos contra produção nesta sessão e, vinte minutos depois,
+`count(*) filter (where created_at > now() - interval '2 hours')` = **0**. Nenhum tenant novo
+sobrou. Os 8 resíduos são de **23 e 24/08** — execuções interrompidas antes do `afterAll`, não
+rotina.
+
+**(c) A limpeza é por id, nunca por padrão.** `afterAll` faz `.delete().eq('id', t)` sobre ids que
+o próprio teste criou [M] — tanto em `recorrencia.test.ts` quanto em `isolation.test.ts`. **Não
+existe filtro que possa alcançar um tenant real.** O cenário de "`afterAll` com o filtro errado"
+que eu mesmo escrevi em §8.2 não tem como acontecer com o código atual.
+
+### 8.2 · Recomendação revisada — e ela ficou mais barata
+
+O projeto Supabase separado (**US$ 10/mês**, `[E]`) **não se justifica hoje**. O risco que ele
+compraria já está mitigado por desenho: CI isolado, limpeza por id, e a suíte não deixa resíduo em
+execução normal.
+
+O que sobra é pequeno e tem conserto de graça:
+
+| Risco real | Tamanho | Conserto |
+|---|---|---|
+| Execução interrompida (Ctrl-C, crash) deixa resíduo | 8 tenants em 3 dias de desenvolvimento pesado | limpar quando incomodar — **é durável**, ao contrário do que o `docs/18` dizia |
+| Testes criam usuário no pool de auth de produção | some junto com o tenant, por id | nenhum |
+| **Teste de carga** (10 mil clientes) contra a nuvem | foi a origem dos 76 tenants apagados em 19/08 [R] | este sim merece regra própria — é o único que gera volume |
+
+**Ação proposta, não executada:** apagar os 8 resíduos é seguro (slugs reconhecíveis, zero conteúdo
+real) e agora sabe-se que é **durável**. Não executei porque é exclusão em produção e não há
+urgência — fica como um comando de uma linha para aprovação.
+
+**Correção a levar para o `docs/18`:** o item `P-B` está com diagnóstico errado e deve ser
+reescrito — pela segunda vez, aliás; ele já tinha sido reescrito uma vez em 24/08.
 
 ---
 
