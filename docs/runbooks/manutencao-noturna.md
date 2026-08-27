@@ -401,6 +401,23 @@ Sheet), e o botão "Criar modelo" do topo passou a esconder quando a lista está
 seriam dois CTAs iguais. Mesmo padrão de `config/servicos/lista.tsx`. Commit
 `fix(mensagens): estado vazio na lista de modelos`. typecheck + eslint + 828 testes limpos.
 
+## 2026-08-27 07:12 (America/Sao_Paulo) — consistência de UX
+
+**O que foi olhado:** todas as ~40 mensagens de `AppError('NOT_FOUND', { message })` e
+`AppError.validacao` nas rotas `/api` e nos services, comparando o fraseado de situações
+equivalentes.
+
+**Achado — um único fora do padrão:** o projeto é rígido na voz — "Esse/Essa X não existe mais",
+2ª pessoa, "não está mais na sua lista / no seu time / no seu catálogo". A única exceção era
+`recorrencia.ts:279` → `'Série não encontrada.'` (impessoal, seco) — e a MESMA entidade em
+`appointments/series/[id]/cancel/route.ts:15` já dizia `'Essa série não existe mais.'`. Dois
+textos para o mesmo caso.
+
+**Ação:** `recorrencia.ts:279` alinhado para `'Essa série não existe mais.'`. Nenhum teste
+afirmava a string antiga. Commit `fix(recorrencia): mensagem de série não encontrada na voz da
+casa`. typecheck + eslint + 828 testes limpos. O resto das ~40 mensagens está consistente —
+sem mais achados nesta categoria.
+
 **Nota de estado:** 13 guardas de varredura de fonte já verificadas por mutação, todas íntegras;
 varreduras de export morto, escrita sem checar erro, enum de plano e modelo de preço todas limpas.
 A dívida técnica encontrável por leitura está bem baixa — os 3 achados reais até aqui (rótulo de
