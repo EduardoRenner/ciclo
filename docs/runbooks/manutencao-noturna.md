@@ -287,7 +287,27 @@ teste e no `formatarPreco` chamado pela página pública e pelo formulário de a
 
 **Ação:** nenhum commit de código — nada a corrigir. Só esta entrada.
 
-**Nota de estado:** 11 guardas de varredura de fonte já verificadas por mutação, todas íntegras;
+## 2026-08-27 02:45 (America/Sao_Paulo)
+
+**O que foi olhado:** (a) mutação de `tests/unit/server/lgpd-cobertura.test.ts` — guarda de
+COMPLIANCE (toda coluna de dado pessoal nas migrations tem tratamento declarado em
+`TRATAMENTO_NA_ELIMINACAO`); (b) comentários de código ligados à migration 0034 (débito de
+carteira atômico).
+
+**Achado (a) — guarda não está cega, nas duas direções:**
+1. Removi a entrada `clients.document` de `TRATAMENTO_NA_ELIMINACAO` → reprova ("Coluna nova capaz
+   de carregar dado pessoal, sem tratamento na eliminação... `clients.document`"). ✅
+2. Adicionei entrada `clients.coluna_que_nao_existe` → reprova ("Declaração sobrando: a coluna saiu
+   do schema... `clients.coluna_que_nao_existe`"). ✅
+Ambas revertidas, suíte do arquivo verde (11/11).
+
+**Achado (b):** nenhum comentário stale. `pacotes.ts:163/170/173`, `rate-limit.ts:57` e o cabeçalho
+da própria 0034 referenciam `debitar_carteira` (RPC) e o achado S11 corretamente — descrevem o
+estado atual, não o antigo `if` de JavaScript.
+
+**Ação:** nenhum commit de código — nada a corrigir. Só esta entrada.
+
+**Nota de estado:** 12 guardas de varredura de fonte já verificadas por mutação, todas íntegras;
 varreduras de export morto, escrita sem checar erro, enum de plano e modelo de preço todas limpas.
 A dívida técnica encontrável por leitura está bem baixa — os 3 achados reais até aqui (rótulo de
 teste, comentário de cron.yml, bloco de teste morto) foram todos "documentação que envelheceu",
