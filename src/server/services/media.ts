@@ -1,77 +1,9 @@
-import { randomUUID } from 'node:crypto'
-
-import sharp from 'sharp'
-import { z } from 'zod'
-
 import { withTenant } from '@/server/db/with-tenant'
 import { AppError } from '@/server/http/errors'
 import { registrarAcessoAoCofre } from '@/server/services/cofre-trilha'
 
 const BUCKET = 'media'
-const TAMANHO_MAX_BYTES = 10 * 1024 * 1024
 const URL_ASSINADA_SEGUNDOS = 5 * 60
-
-export const EsquemaUploadMedia = z.object({
-  clientId: z.uuid(),
-  appointmentId: z.uuid().nullish(),
-  phase: z.enum(['before', 'after', 'reference']).nullish(),
-})
-type EntradaUploadMedia = z.infer<typeof EsquemaUploadMedia>
-
-/**
- * TICKET-052. `§8`/`§9`: strip de EXIF por reencode — `sharp` só preserva
- * metadata se `.withMetadata()` for chamado, então não chamando, o EXIF
- * (que carrega GPS de onde a foto foi tirada) já não sobrevive. `.rotate()`
- * sem argumento é o auto-orient a partir do EXIF de orientação **antes** de
- * descartar o resto — sem isso a foto vira de lado (o EXIF de orientação é
- * o único pedaço que precisa ser lido, nunca gravado de volta).
- *
- * `storage_key` é `{tenantId}/{uuid}.webp` — aleatório, nunca
- * `{slug}/foto-1.jpg` (FAQ/§9: "nunca previsível").
- */
-export async function fazerUploadMedia(
-  tenantId: string,
-  entrada: EntradaUploadMedia,
-  arquivo: { buffer: Buffer; createdBy: string | null },
-) {
-  if (arquivo.buffer.length > TAMANHO_MAX_BYTES) throw AppError.validacao({ file: 'Arquivo maior que 10MB.' })
-
-  let processado: Buffer
-  try {
-    processado = await sharp(arquivo.buffer).rotate().webp({ quality: 82 }).toBuffer()
-  } catch {
-    // magic bytes ruins (não é imagem de verdade) derrubam o sharp com um erro nativo —
-    // vira 422, não 500: a pessoa mandou um arquivo errado, não é bug do servidor.
-    throw AppError.validacao({ file: 'Não foi possível processar essa imagem.' })
-  }
-  const metadados = await sharp(processado).metadata()
-
-  const storageKey = `${tenantId}/${randomUUID()}.webp`
-
-  return withTenant(tenantId, async (db) => {
-    const { error: erroUpload } = await db.storage.from(BUCKET).upload(storageKey, processado, { contentType: 'image/webp', cacheControl: '0' })
-    if (erroUpload) throw new AppError('INTERNAL', { cause: erroUpload })
-
-    const { data, error } = await db
-      .from('media')
-      .insert({
-        tenant_id: tenantId,
-        client_id: entrada.clientId,
-        appointment_id: entrada.appointmentId ?? null,
-        storage_key: storageKey,
-        kind: 'photo',
-        phase: entrada.phase ?? null,
-        width: metadados.width ?? null,
-        height: metadados.height ?? null,
-        bytes: processado.length,
-        created_by: arquivo.createdBy,
-      })
-      .select('*')
-      .single()
-    if (error) throw new AppError('INTERNAL', { cause: error })
-    return data
-  })
-}
 
 export type UrlAssinada = { url: string; expiresInSeconds: number }
 

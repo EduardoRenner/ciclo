@@ -1,6 +1,7 @@
 import { exigirPermissao } from '@/server/auth/rbac'
 import { contextoAtual } from '@/server/auth/tenant'
-import { EsquemaUploadMedia, fazerUploadMedia, listarMediaDoCliente } from '@/server/services/media'
+import { listarMediaDoCliente } from '@/server/services/media'
+import { EsquemaUploadMedia, fazerUploadMedia } from '@/server/services/media-upload'
 import { AppError } from '@/server/http/errors'
 import { lerJson } from '@/server/http/body'
 import { rota } from '@/server/http/handler'

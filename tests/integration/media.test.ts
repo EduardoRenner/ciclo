@@ -6,7 +6,8 @@ import sharp from 'sharp'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { registrarConsentimento, revogarConsentimento } from '@/server/services/consentimentos'
-import { fazerUploadMedia, listarMediaDoCliente, mediaParaPortfolio, urlAssinadaMedia } from '@/server/services/media'
+import { listarMediaDoCliente, mediaParaPortfolio, urlAssinadaMedia } from '@/server/services/media'
+import { fazerUploadMedia } from '@/server/services/media-upload'
 import { executarOnboarding } from '@/server/services/onboarding'
 
 import type { Database } from '@/server/db/types.gen'

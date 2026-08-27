@@ -7,7 +7,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { registrarConsentimento } from '@/server/services/consentimentos'
 import { eliminarCliente, exportarDadosDoCliente } from '@/server/services/lgpd'
-import { fazerUploadMedia } from '@/server/services/media'
+import { fazerUploadMedia } from '@/server/services/media-upload'
 import { executarOnboarding } from '@/server/services/onboarding'
 import { salvarRespostas } from '@/server/services/anamnese'
 

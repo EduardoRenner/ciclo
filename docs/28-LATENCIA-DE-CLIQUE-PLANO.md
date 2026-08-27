@@ -135,3 +135,65 @@ caro: no cliente o custo é download uma vez; no servidor é **500 ms em todo co
 
 **Pegadinha registrada:** o DSN é lido em tempo de *build*. Criar a variável na Vercel não liga o
 Sentry sozinho — precisa de um deploy novo.
+
+---
+
+## 7. Terceira rodada (27/08) — 19 MB de libvips na tela inicial
+
+Com o Sentry fora, medi a jornada **autenticada** de verdade contra produção (usuário de teste
+descartável, cookie de sessão real, seis requisições por rota):
+
+| Rota | 1ª (fria) | mediana (quente) |
+|---|---|---|
+| `/admin/hoje` | **1.870 ms** | 391 ms |
+| `/admin/agenda` | 258 ms | 355 ms |
+| `/admin/clientes` | 215 ms | 216 ms |
+| `/api/v1/clients` | 497 ms | 177 ms |
+
+Quente estava aceitável. **Frio, não** — e este produto tem tráfego baixo: quase toda visita
+começa fria.
+
+### O achado
+
+O que o Vercel empacota com cada rota:
+
+| Rota | Antes | Depois |
+|---|---|---|
+| `/admin/clientes` | 23,51 MB | 3,75 MB |
+| `/admin/hoje` | **23,40 MB** | **3,64 MB** |
+| `/admin/clientes/[id]` | 23,38 MB | 3,62 MB |
+| `/admin/campanhas/nova` | 23,38 MB | 3,62 MB |
+| mediana de todas as rotas | 1,80 MB | 0,76 MB |
+
+**19,2 MB eram `@img/*`** — o libvips nativo que o `sharp` carrega. Sete rotas o empacotavam;
+**uma** processa imagem de verdade (`POST /api/v1/clients/{id}/media`). Nas outras seis ele
+entrava de carona por um caminho de import de uma linha:
+
+```
+admin/hoje/page.tsx → crm.ts → media.ts → sharp
+```
+
+`crm.ts` importa de `media.ts` a função `listarMediaDoCliente`, que é **só um `select`**. Ela
+morava no mesmo arquivo do upload, e isso bastava.
+
+### Duas tentativas que não resolveram (registradas para não se repetirem)
+
+1. **`import()` dinâmico dentro de `fazerUploadMedia`.** Tira o custo de *carregar* o binário
+   (~53 ms quentes, muito mais num cold start), mas não o de *empacotar*: o tracing do Next segue
+   `import()` também — e com razão, ele não sabe se a chamada vai acontecer.
+2. **`outputFileTracingExcludes` no `next.config.ts`.** As chaves são **glob**, e `[id]` em glob
+   é classe de caractere ("um `i` ou um `d`"), não segmento dinâmico. Uma chave com colchete tirou
+   o `sharp` de **todas** as rotas — inclusive da que faz upload, o que quebraria o envio de foto
+   em produção com módulo não encontrado. Sem colchete, nenhuma chave casava com nada. Foi pego
+   pela verificação, não em produção.
+
+### O conserto
+
+Separar o arquivo: `media-upload.ts` (upload + `sharp`) e `media.ts` (só consultas). Quem
+consulta não tem caminho nenhum até o binário — correto por construção, sem depender de glob.
+
+`tests/unit/server/sharp-so-onde-precisa.test.ts` anda o grafo de imports e responde "dá para
+chegar no `sharp` a partir daqui?". Não procura a string `sharp` num arquivo: o defeito nunca
+esteve no arquivo que importa, e sim no **caminho** até ele — uma guarda por string passaria com
+o defeito de volta. Verificada por mutação nas duas direções: religar `crm.ts` ao upload quebra
+6 testes; tirar o `sharp` da rota de upload quebra 1.
