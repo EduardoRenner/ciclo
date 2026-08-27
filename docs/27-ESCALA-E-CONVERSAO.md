@@ -1494,6 +1494,57 @@ um bom sinal de que a distinção é real, e não uma conveniência escrita para
 
 ---
 
+## 7.6 · Quando parar — e por que o próximo passo não é meu
+
+Dezesseis rodadas de análise. Vale dizer honestamente o que ainda rende e o que já não rende.
+
+### O que os consertos ainda NÃO fizeram
+
+**Nada disto está em produção.** Conferido nesta sessão: `/orcamento/{token-inválido}` continua
+travado em *"Carregando orçamento…"* no site publicado **[M]**. Os quatro consertos vivem no branch
+`manutencao-noturna` e esperam revisão e merge.
+
+Isso inverte a prioridade: **mesclar vale mais que continuar procurando.** Um bug corrigido num
+branch não consertou nada para ninguém.
+
+### O ritmo caiu, e o número diz
+
+| Rodadas | Achados reais |
+|---|---|
+| 1–5 (interface, fluxo, agendamento, landing) | 4 defeitos + 4 gaps de conversão |
+| 6–12 (token, retenção, mensageria, performance) | 3 defeitos |
+| 13–16 (N+1 em outros lugares, a11y semântica, classe do orçamento) | **1 defeito, 3 varreduras limpas** |
+
+As varreduras limpas **não são desperdício** — "procurei e não há" é resultado, e foi o que
+permitiu dizer que o N+1 não é sistêmico e que a classe do orçamento é caso único. Mas o custo por
+achado subiu, e isso é o sinal normal de que a veia está se esgotando.
+
+### O que ainda valeria investigar
+
+| Alvo | Por que vale | Por que não fiz |
+|---|---|---|
+| **Admin a 375 px** (`hoje`, `agenda`, `clientes`) | são as telas mais usadas pelo dono e nunca foram medidas nesta análise | exige sessão de tenant, que não tenho; só daria leitura de fonte, e o método que achou tudo foi **medir** |
+| **Medir de novo depois do merge** | o ganho do N+1 é previsão, não medição (§7.2) | depende do deploy |
+| **Instrumentar o funil** (P5) | sem isso, tudo na §2 é hipótese sem placar | é construção, não análise |
+
+### O que virou rendimento decrescente
+
+Continuar varrendo o código atrás de mais defeitos da mesma família. As três últimas varreduras
+foram limpas, e o padrão dos quatro achados diz por quê: **eles não estavam no código — estavam na
+diferença entre o código e o que a pessoa vê.** Sem sessão de tenant e sem tráfego real, as
+superfícies que sobram para medir acabaram.
+
+### A recomendação
+
+1. **Revisar e mesclar o branch** — quatro defeitos esperando, um deles no ar agora.
+2. **Responder as cinco decisões** (§Sumário). Duas delas — `ciclo.app` e o título da landing —
+   sangram a cada dia que passa e custam minutos para decidir.
+3. **Depois, medir de novo** o que o merge mudou, e só então decidir se vale outra rodada.
+
+Análise a mais, agora, rende menos que qualquer uma dessas três.
+
+---
+
 ## 8. Higiene — e ela é maior do que o `25` §6 estimou
 
 O `25` §6 registra que o `CLAUDE.md` ainda abre com *"profissionais da beleza"*, enquanto a virada
