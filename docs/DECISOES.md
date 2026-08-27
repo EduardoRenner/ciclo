@@ -2914,3 +2914,13 @@ que amarra essa justificativa ao código.
 Aproveitado no mesmo passo: `cron-cobre-os-fusos.test.ts` tinha a sua **própria cópia** da lista de
 rotas agendadas, que virou a terceira depois do `/api/health`. Agora as três leem
 `@/core/cron/agendadas`, que é a única ancorada ao YAML nas duas direções.
+
+2026-08-26 · Quando desligar o assistente de IA, se ninguém usar · Regra registrada ANTES de
+existir uso para julgá-la: se, passados 30 dias com pelo menos 5 tenants com o módulo `assistant`
+liberado, o uso médio ficar abaixo de 1 pergunta por semana por tenant, o assistente é desligado e
+o esforço para na Fase A (docs/26-AGENTE-IA-PLANO.md §9). Não é aprovação de feature — é a
+condição de parada de um experimento, escrita antes do apego ao trabalho já feito poder distorcer
+a decisão. Pendente aprovação do Eduardo (§10 do plano); até lá vale como proposta, não como regra
+em vigor. Junto: aprovar o provider (Gemini 2.5 Flash) e confirmar nos termos que dado enviado não
+treina modelo — sem isso, mandar pergunta com contexto de cliente para o provedor é exposição de
+LGPD que nenhuma minimização de payload cobre sozinha.
