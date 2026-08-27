@@ -143,3 +143,23 @@ morto está esgotada por ora (2 achados reais nas rodadas anteriores: `listarAva
 Todas revertidas, suíte verde (79 arquivos / 811 testes).
 
 **Ação:** nenhum commit de código — nada a corrigir. Só esta entrada.
+
+## 2026-08-27 01:15 (America/Sao_Paulo)
+
+**O que foi olhado:** guarda `tests/unit/core/modulos-catalogo.test.ts` (varre o SQL das
+migrations e compara com `CATALOGO` do core).
+
+**Achado (a) — guarda não está cega:** removida a chave `assistant` de `CATALOGO` em
+`src/core/billing/planos.ts` → reprova em duas asserções (`toEqual(naMigration)` e "assistant está
+no plano gratis e fora do catálogo"). Mutação revertida. (Primeira tentativa de mutação via
+`node -e` com `.replace` não aplicou — confirmei com `grep` antes de ler o resultado, conforme
+`CLAUDE.md`; refeita com `sed -i`.)
+
+**Achado (b) — inconsistência real, corrigida:** o `describe` dizia "core e migration 0041" e o
+`it` "as mesmas 16 chaves", mas a própria asserção logo abaixo é `toHaveLength(17)` e lê de
+`0041` **e** `0043` (o 17º módulo, `assistant`, entrou na 0043). Rótulo do teste contradizia o
+que o teste faz. Corrigido `describe`/`it`/comentário do topo para 17 chaves e migrations
+0041/0043.
+
+**Ação:** commit `test(catalogo): corrige rótulo obsoleto — 17 módulos, migrations 0041/0043`.
+eslint + testes do arquivo limpos.
