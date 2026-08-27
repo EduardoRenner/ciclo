@@ -148,7 +148,15 @@ export default function DetalheAgendamento({
   return (
     <div aria-busy={pendente} className="flex flex-col gap-4">
       <div>
-        <p className="text-corpo font-semibold">{new Date(agendamento.starts_at).toLocaleString('pt-BR')}</p>
+        <p className="text-corpo font-semibold">
+          {new Date(agendamento.starts_at).toLocaleString('pt-BR', {
+            weekday: 'short',
+            day: '2-digit',
+            month: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+          })}
+        </p>
         <p className="mt-0.5 text-secundario text-txt-2">{dinheiro.format(agendamento.price_cents / 100)}</p>
       </div>
 
