@@ -2953,3 +2953,18 @@ visita: não existe nenhuma contagem de visita — é justamente o que exigiria 
 Não corrigido no 18 (documento de outra fase); registrado aqui e em `docs/27-ESCALA-E-CONVERSAO.md`
 §7.4. Decisão de escopo junto: painel de sinais de churn NÃO entra no plano enquanto houver 2
 tenants — é consulta SQL, não produto, pela mesma lógica que trava a indicação B2B em ≥20 pagantes.
+
+2026-08-27 · O fallback de mensagem alcança a metade errada da base · Medido ao auditar
+`enviarComFallback` (WhatsApp → push → e-mail). Dois fatos que mudam a leitura do `25` F0 passo 2:
+(1) o ramo de PUSH para cliente nunca dispara para ninguém — `inscricoesPushDoCliente` resolve
+`clients.user_id`, e NADA no projeto escreve essa coluna; o comentário da 0001 diz "se criou conta
+no app da cliente", app que não existe e que o FAQ da landing promete que não vai existir. É
+andaime, como `trial_ends_at`. (2) `EsquemaBookingPublico` não coleta e-mail, enquanto
+`EsquemaCliente` e a importação de CSV coletam. Consequência: ligar `reminders` sem WhatsApp
+entregaria e-mail à base importada/manual (onde mora o risco que o passo 1 do F0 quer medir, e
+quem o salão já contata por outro meio) e NADA a quem agendou pela página pública (quem mais
+espera retorno, e a população que o laço de crescimento gera). O canal disponível hoje alcança quem
+menos precisa e não alcança quem mais precisa. Conserto barato possível: campo opcional de e-mail
+no formulário público — mas cobra conversão num formulário de 2 campos obrigatórios, e vira
+redundante se o F0b (WhatsApp) acontecer. Decisão do dono, encadeada à do F0b. Detalhe em
+`docs/27-ESCALA-E-CONVERSAO.md` §7.3.

@@ -1066,6 +1066,73 @@ Com isso, a E1 inteira sai do bloqueio sem furar a regra que criou o bloqueio.
 
 ---
 
+## 7.3 · O fallback de mensagem alcança a metade errada da base
+
+`enviarComFallback` tenta três canais em ordem: **WhatsApp → push → e-mail** **[M]**. O código é
+bom — nada falha em silêncio: sem e-mail ele lança *"Cliente sem e-mail cadastrado — nenhum canal
+de fallback disponível"* e grava em `messages` a linha `failed` com os três erros concatenados.
+Não é ramo morto silencioso, que era a hipótese. É outra coisa.
+
+**O push para o cliente nunca dispara, para ninguém** **[M]**. `inscricoesPushDoCliente` resolve
+`clients.user_id` antes de consultar `push_subscriptions` — indireção correta. Só que **nada no
+projeto inteiro escreve `clients.user_id`**. O comentário da coluna na 0001 diz o porquê: *"se
+criou conta no app da cliente"* — um app de cliente que não existe, e que o FAQ da landing promete
+que não vai existir (*"Quem vai marcar precisa baixar app ou criar conta? Não."*). É andaime,
+como o `trial_ends_at`.
+
+**E o e-mail só alcança quem não veio pela página pública** **[M]**:
+
+| Como o cliente entrou na base | WhatsApp | Push | E-mail | Alcançável hoje? |
+|---|---|---|---|---|
+| Importado por CSV com e-mail | ❌ sem credencial | ❌ | ✅ | **sim** |
+| Cadastrado à mão com e-mail | ❌ | ❌ | ✅ | **sim** |
+| Cadastrado à mão sem e-mail | ❌ | ❌ | ❌ | não |
+| **Agendou pela página pública** | ❌ | ❌ | ❌ **o formulário não coleta e-mail** | **não, por construção** |
+
+`EsquemaBookingPublico` tem `name`, `phone`, `address`, honeypot — **nenhum campo de e-mail**
+**[M]**. `EsquemaCliente` (cadastro manual) e a importação de CSV têm **[M]**.
+
+### Por que isso muda a conversa do F0
+
+O `25` F0, passo 2, justifica a cautela assim:
+
+> *"Sem elas [as credenciais do WhatsApp] o provider cai no fallback de e-mail — que **também é
+> envio real**."*
+
+Verdadeiro, e **mais estreito do que parece**. Cruzando com a tabela acima, ligar `reminders` sem
+WhatsApp entregaria mensagem exatamente para a metade errada:
+
+- **Quem receberia:** a base importada/cadastrada à mão — justamente onde mora o risco que o passo 1
+  do F0 existe para medir (telefone/e-mail de gente real vs. semente), e quem o salão já tem outro
+  jeito de contatar.
+- **Quem não receberia nada:** quem **acabou de agendar pela página pública** — que é quem mais
+  espera retorno, porque acabou de digitar o próprio telefone num formulário, e é a população que
+  o laço de crescimento do produto gera.
+
+> O canal disponível hoje alcança quem menos precisa dele e não alcança quem mais precisa.
+
+**A consequência prática para o B1.** A frase que corrigi (*"É por aqui que quem vai te atender
+fala com você"*) não era só a mais honesta disponível — para quem agenda pela página pública, é a
+**única** verdade possível: nenhum canal automático alcança essa pessoa, e quem vai falar com ela é
+mesmo uma pessoa.
+
+### O conserto barato, e o seu custo
+
+**Um campo opcional de e-mail no formulário público.** Daria ao fallback de e-mail uma população
+real e tornaria `reminders` entregável a quem agenda online **antes** de o WhatsApp existir.
+
+Mas o formulário tem hoje **dois campos obrigatórios** e isso é uma força medida (§1.65). Todo
+campo novo cobra conversão, mesmo opcional. Então:
+
+- **Não decidir isoladamente.** Se o WhatsApp vier (F0b), o e-mail vira redundante para este uso.
+- **Se a decisão do F0b demorar**, o campo opcional é o caminho mais barato de tornar o produto
+  capaz de confirmar um agendamento — e o passo que permitiria a frase verdadeira do B1 voltar a
+  ser a promessa forte.
+
+É **decisão do dono**, encadeada à do F0b — não lacuna a preencher.
+
+---
+
 ## 7.4 · Retenção — e um `[M]` do `18` que é 1 de 3
 
 O `18` §I.3, sobre sinais de churn, afirma:
