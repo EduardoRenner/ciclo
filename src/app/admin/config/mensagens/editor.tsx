@@ -1,10 +1,11 @@
 'use client'
 
-import { Eye, MessageSquarePlus, Trash2 } from 'lucide-react'
+import { Eye, MessageSquare, MessageSquarePlus, Trash2 } from 'lucide-react'
 import { useRef, useState, useTransition } from 'react'
 
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
+import EmptyState from '@/components/ui/empty-state'
 import Sheet from '@/components/ui/sheet'
 import { useToast } from '@/components/ui/toast'
 import { aplicarVariaveis, VARIAVEIS_DISPONIVEIS } from '@/lib/mensagens'
@@ -106,25 +107,38 @@ export default function EditorModelos({ iniciais, nomeDoNegocio }: { iniciais: M
 
   return (
     <div className="pb-8">
-      <Button variante="secondary" largura="cheia" onClick={() => abrir('novo')} className="mb-4">
-        <MessageSquarePlus aria-hidden className="size-4" />
-        Criar modelo
-      </Button>
+      {modelos.length > 0 ? (
+        <Button variante="secondary" largura="cheia" onClick={() => abrir('novo')} className="mb-4">
+          <MessageSquarePlus aria-hidden className="size-4" />
+          Criar modelo
+        </Button>
+      ) : null}
 
-      <ul className="flex flex-col gap-2">
-        {modelos.map((m) => (
-          <li key={m.id}>
-            <button type="button" onClick={() => abrir(m)} className="w-full text-left">
-              <Card className="transition-colors hover:border-acc/40 hover:bg-surface-2">
-                <p className="text-corpo font-semibold">{m.title}</p>
-                <p className="mt-1 line-clamp-2 text-secundario text-txt-2">
-                  {aplicarVariaveis(m.body, { ...EXEMPLO, negocio: nomeDoNegocio })}
-                </p>
-              </Card>
-            </button>
-          </li>
-        ))}
-      </ul>
+      {modelos.length === 0 ? (
+        <Card className="p-0">
+          <EmptyState
+            icone={<MessageSquare aria-hidden className="size-6" />}
+            titulo="Nenhum modelo salvo"
+            descricao="Modelos são mensagens prontas com o nome e a data já no lugar — você só revisa e envia."
+            acao={<Button onClick={() => abrir('novo')}>Criar modelo</Button>}
+          />
+        </Card>
+      ) : (
+        <ul className="flex flex-col gap-2">
+          {modelos.map((m) => (
+            <li key={m.id}>
+              <button type="button" onClick={() => abrir(m)} className="w-full text-left">
+                <Card className="transition-colors hover:border-acc/40 hover:bg-surface-2">
+                  <p className="text-corpo font-semibold">{m.title}</p>
+                  <p className="mt-1 line-clamp-2 text-secundario text-txt-2">
+                    {aplicarVariaveis(m.body, { ...EXEMPLO, negocio: nomeDoNegocio })}
+                  </p>
+                </Card>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
 
       <Sheet
         aberto={editando !== null}
