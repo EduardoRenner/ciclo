@@ -39,6 +39,17 @@ describe('lembretesDevidos', () => {
     expect(depoisDas8.find((d) => d.kind === 'reminder')).toMatchObject({ template: 'lembrete_d0' })
   })
 
+  it('T-3h depois das 21h (agendamento de madrugada) é grudado nas 20h, não mandado tarde da noite', () => {
+    // Agendamento à 1h da manhã: T-3h cairia às 22h do dia anterior, fora da janela (§7, FIM 21h).
+    const startsAt = '2026-09-11T01:00:00-03:00'
+
+    const antesDas20 = lembretesDevidos(startsAt, TZ, '2026-09-10T19:59:00-03:00')
+    const depoisDas20 = lembretesDevidos(startsAt, TZ, '2026-09-10T20:00:01-03:00')
+
+    expect(antesDas20.find((d) => d.kind === 'reminder')).toBeUndefined()
+    expect(depoisDas20.find((d) => d.kind === 'reminder')).toMatchObject({ template: 'lembrete_d0' })
+  })
+
   it('as duas datas podem estar devidas ao mesmo tempo se o job ficou parado', () => {
     const startsAt = '2026-09-10T14:00:00-03:00'
     const devidos = lembretesDevidos(startsAt, TZ, '2026-09-10T12:00:00-03:00')
