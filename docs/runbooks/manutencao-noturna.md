@@ -266,3 +266,30 @@ stale.
 Ambas revertidas, suíte do arquivo verde (11/11).
 
 **Ação:** nenhum commit de código — nada a corrigir. Só esta entrada.
+
+## 2026-08-27 02:32 (America/Sao_Paulo)
+
+**O que foi olhado:** (a) mutação de `tests/unit/server/motor-de-ciclo-observavel.test.ts`;
+(b) consistência do `pricing_model` (migration 0029) entre migration, `core/pricing/formatar.ts`,
+o teste `formatar-preco.test.ts` e a UI; (c) varredura de `TODO`/`FIXME`/`@deprecated` em `src/`.
+
+**Achado (a) — guarda não está cega:** troquei `if (processados > 0)` por `if (true)` em
+`recompute-cycles/route.ts` → reprova ("o heartbeat de recompute_cycles precisa ficar DENTRO de
+`if (processados > 0)`"). ✅ (Primeira mutação via `node -e` não aplicou — conferido com `grep`
+antes de ler o resultado; refeita com `sed -i`.)
+
+**Achado (b):** consistente. Os 4 modelos (`fixed`/`hourly`/`visit_hourly`/`daily`) + `half_day_
+price_cents` aparecem iguais na migration 0029, no enum `ModeloDePreco` do core, nos 6 casos do
+teste e no `formatarPreco` chamado pela página pública e pelo formulário de agenda.
+
+**Achado (c):** nenhum `TODO`/`FIXME`/`XXX`/`HACK`/`@deprecated` real em `src/` — as ocorrências de
+"TODO" são a palavra portuguesa "todo" ("todo deploy", "todo tenant") em comentário.
+
+**Ação:** nenhum commit de código — nada a corrigir. Só esta entrada.
+
+**Nota de estado:** 11 guardas de varredura de fonte já verificadas por mutação, todas íntegras;
+varreduras de export morto, escrita sem checar erro, enum de plano e modelo de preço todas limpas.
+A dívida técnica encontrável por leitura está bem baixa — os 3 achados reais até aqui (rótulo de
+teste, comentário de cron.yml, bloco de teste morto) foram todos "documentação que envelheceu",
+não bug. Próximas rodadas: guardas restantes + rastrear cada migration 0026–0043 por comentário
+de código que ela tornou obsoleto.
