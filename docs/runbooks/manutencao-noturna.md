@@ -438,6 +438,26 @@ telas de agenda fugiam disso com um "Prontinho" genérico:
 "Prontinho" — é ilustrativo, não fluxo real. Commit `fix(agenda): toast de sucesso diz o que
 aconteceu, não 'Prontinho' genérico`. typecheck + eslint + 828 testes limpos.
 
+## 2026-08-27 07:26 (America/Sao_Paulo) — consistência de UX
+
+**O que foi olhado:** todos os ~30 formatadores de data/hora do app (`Intl.DateTimeFormat`,
+`toLocaleString`/`toLocaleDateString`/`toLocaleTimeString`), comparando as opções passadas para
+o mesmo tipo de dado.
+
+**Achado — um defeito real:** `agenda/detalhe.tsx:151` — o cabeçalho da folha de detalhe do
+agendamento (o horário, em destaque) usava `toLocaleString('pt-BR')` **sem opções** → renderiza
+com SEGUNDOS ("12/09/2026 15:30:00"). Todo o resto da agenda formata explícito e sem segundos
+(`agenda.tsx:50`, `hoje.tsx:25`, `novo/formulario.tsx:34`).
+
+**Ficou de fora, por decisão:** `profissionais/lista.tsx:192` e `editor-expediente.tsx:204` usam
+`toLocaleDateString('pt-BR')` sem opções → "dd/mm/aaaa". É formato válido e legível em pt-BR para
+os contextos secundários deles (vencimento de convite, intervalo de folga); trocar seria cosmético,
+não conserto.
+
+**Ação:** `detalhe.tsx` alinhado a `{ weekday: 'short', day: '2-digit', month: '2-digit',
+hour: '2-digit', minute: '2-digit' }` (o mesmo formato de `novo/formulario.tsx`). Commit
+`fix(agenda): data do detalhe sem segundos`. typecheck + eslint + 828 testes limpos.
+
 **Nota de estado:** 13 guardas de varredura de fonte já verificadas por mutação, todas íntegras;
 varreduras de export morto, escrita sem checar erro, enum de plano e modelo de preço todas limpas.
 A dívida técnica encontrável por leitura está bem baixa — os 3 achados reais até aqui (rótulo de
