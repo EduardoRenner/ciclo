@@ -418,6 +418,26 @@ afirmava a string antiga. Commit `fix(recorrencia): mensagem de série não enco
 casa`. typecheck + eslint + 828 testes limpos. O resto das ~40 mensagens está consistente —
 sem mais achados nesta categoria.
 
+## 2026-08-27 07:22 (America/Sao_Paulo) — consistência de UX
+
+**O que foi olhado:** todos os ~45 `mostrarToast({ tom: 'ok', ... })` do app, comparando o
+padrão de título entre telas.
+
+**Achado — o único fora do padrão:** o padrão é "título = o que aconteceu" ("Cliente cadastrado",
+"Serviço atualizado", "Comanda fechada", "Agendamento cancelado", "Agendamento remarcado"). Duas
+telas de agenda fugiam disso com um "Prontinho" genérico:
+- `agenda/detalhe.tsx:84` — `executar()` cobre confirmar/chegou/concluir/faltou e disparava um
+  `titulo: 'Prontinho'` sem dizer QUAL transição — no mesmo arquivo, cancelar/remarcar já diziam
+  o específico;
+- `agenda/novo/formulario.tsx:146` — `titulo: 'Prontinho', descricao: 'Agendamento criado.'`, com
+  a informação relegada à descrição (todo outro "criar" põe o fato no título).
+
+**Ação:** adicionado `TITULO_FEITO` (estado → "Agendamento confirmado" / "Chegada registrada" /
+"Atendimento concluído" / "Falta registrada") em `detalhe.tsx`; `formulario.tsx` passou a
+`titulo: 'Agendamento criado'` direto. `dev/ui/vitrine.tsx` (vitrine do design system) mantém
+"Prontinho" — é ilustrativo, não fluxo real. Commit `fix(agenda): toast de sucesso diz o que
+aconteceu, não 'Prontinho' genérico`. typecheck + eslint + 828 testes limpos.
+
 **Nota de estado:** 13 guardas de varredura de fonte já verificadas por mutação, todas íntegras;
 varreduras de export morto, escrita sem checar erro, enum de plano e modelo de preço todas limpas.
 A dívida técnica encontrável por leitura está bem baixa — os 3 achados reais até aqui (rótulo de
