@@ -422,12 +422,15 @@ export async function listarAgendaDoDia(
 export async function listarAgendamentos(
   db: Cliente,
   tenantId: string,
-  filtros: { from?: string; to?: string; professionalId?: string; status?: string },
+  filtros: { from?: string; to?: string; professionalId?: string; status?: string; clientId?: string },
 ) {
   let consulta = db.from('appointments').select(COLUNAS).eq('tenant_id', tenantId)
   if (filtros.from) consulta = consulta.gte('starts_at', filtros.from)
   if (filtros.to) consulta = consulta.lte('starts_at', filtros.to)
   if (filtros.professionalId) consulta = consulta.eq('professional_id', filtros.professionalId)
+  // docs/26-AGENTE-IA-PLANO.md §3 — ferramenta `historico_do_cliente` do assistente reusa esta
+  // função em vez de duplicar a consulta; único filtro que faltava aqui.
+  if (filtros.clientId) consulta = consulta.eq('client_id', filtros.clientId)
   // Valor de query string fora do enum é ignorado, não vira 500 — a pessoa só
   // não filtra por nada, o que é inofensivo.
   if (filtros.status && ESTADOS_VALIDOS.has(filtros.status as EstadoAgendamento)) {
