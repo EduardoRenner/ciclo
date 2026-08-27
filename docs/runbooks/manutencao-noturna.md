@@ -477,6 +477,21 @@ troquei o `timeZone` de `dataLocalDe` para `'UTC'` → teste de fuso do tenant v
 **Ação:** commit `test(core): cobre horaLocalDe e dataLocalDe de cron/janela.ts`. typecheck +
 eslint + 833 testes limpos (era 828 + 5).
 
+## 2026-08-27 07:31 (America/Sao_Paulo) — cobertura, rodada 2
+
+**`src/core/cron/agendadas.ts`:** `heartbeatVigiado` (o que decide se o `/api/health` cobra
+execução recente de um job) e `rodaSozinha` só eram exercitados por dentro de `verificarSaude`
+em `saude-vigia-so-o-que-roda.test.ts`. Faltava o teste direto dos três ramos:
+kind desconhecido → vigiado (padrão seguro); kind de rota agendada → vigiado; kind de rota fora
+do schedule (`reminders`/`campaigns`) → NÃO vigiado.
+
+**Visto reprovando:** `heartbeatVigiado` forçado a `return true` → ramo "não vigiado" vermelho;
+`rodaSozinha` forçado a `return true` → "só é verdade para rota em ROTAS_AGENDADAS" vermelho.
+Revertido, 5/5 verde.
+
+**Ação:** commit `test(core): cobre os tres ramos de heartbeatVigiado + rodaSozinha`. typecheck
++ eslint + 838 testes limpos (era 833 + 5).
+
 **Nota de estado:** 13 guardas de varredura de fonte já verificadas por mutação, todas íntegras;
 varreduras de export morto, escrita sem checar erro, enum de plano e modelo de preço todas limpas.
 A dívida técnica encontrável por leitura está bem baixa — os 3 achados reais até aqui (rótulo de
