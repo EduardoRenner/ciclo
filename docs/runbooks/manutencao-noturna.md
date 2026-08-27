@@ -539,6 +539,20 @@ vermelho. Revertido, 9/9 verde.
 **Ação:** commit `test(core): cobre o sort de campanhas por sentAt em atribuirReceita`. typecheck
 + eslint + 843 testes limpos (era 842 + 1).
 
+## 2026-08-27 07:46 (America/Sao_Paulo) — cobertura, rodada 6
+
+**`src/core/cycle/compute.ts`:** cobertura excepcional (3 ramos de contagem de gaps, os dois
+clamps, descarte de outlier, janela dos últimos 5, override de agendamento futuro, tabela inteira
+de `estadoPorAtraso`). Faltava só o ramo PAR de `mediana` — a média dos dois valores do meio —,
+que só é atingido com nº par de gaps; e nenhum teste tinha exatamente 2 gaps (o `gaps.length <= 2`
+com 2, não 1).
+
+**Visto reprovando:** `mediana` par trocado por "devolve o do meio superior" → o novo teste
+(2 gaps [20,30] → mediana 25 → blend 23,4) fica vermelho. Revertido, 20/20 verde.
+
+**Ação:** commit `test(core): cobre o ramo par de mediana + gaps.length==2 em computeCycle`.
+typecheck + eslint + 844 testes limpos (era 843 + 1).
+
 **Nota de estado:** 13 guardas de varredura de fonte já verificadas por mutação, todas íntegras;
 varreduras de export morto, escrita sem checar erro, enum de plano e modelo de preço todas limpas.
 A dívida técnica encontrável por leitura está bem baixa — os 3 achados reais até aqui (rótulo de
