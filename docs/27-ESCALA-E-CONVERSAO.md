@@ -993,6 +993,10 @@ Nenhuma toca WhatsApp, cartão de crédito ou conta em terceiro. Todas verificá
 | 12 | **Indicação do salão** (P4) | 1 tenant com base real; não precisa de pagante |
 | 13 | **Reativação de quem desceu** (`18` §I.4) | precisa do evento `teste_terminou` do item 5 |
 
+**Fora da lista, de propósito:** painel de sinais de churn (`18` §I.3). Com 2 tenants é consulta
+SQL, não produto — ver §7.4. E o `18` §I.3 precisa de uma correção: dos três sinais que ele dá como
+calculáveis, **um é direto, um exige encanamento e um não existe**.
+
 ### E3 · Travado, e a trava está certa
 
 | # | Peça | Gate | Fonte |
@@ -1059,6 +1063,62 @@ Com isso, a E1 inteira sai do bloqueio sem furar a regra que criou o bloqueio.
 4. **Tudo isto pressupõe tráfego que ainda não existe.** A E1 é barata de propósito: se o piloto
    do `25` F3 não trouxer ninguém, perdeu-se pouco — e a instrumentação continua valendo para a
    próxima tentativa.
+
+---
+
+## 7.4 · Retenção — e um `[M]` do `18` que é 1 de 3
+
+O `18` §I.3, sobre sinais de churn, afirma:
+
+> *"Queda de agendamentos criados/semana · sem login há 14 dias · página pública sem visita há 30
+> dias. Todos calculáveis com timestamps que **já existem** **[M]** — **não exigem instrumentação
+> nova**."*
+
+Conferido contra o schema **[M]**:
+
+| Sinal | Calculável hoje? | Onde mora |
+|---|---|---|
+| Queda de agendamentos criados/semana | ✅ **sim, direto** | `appointments.created_at` (0001), com RLS e índice |
+| Sem login há 14 dias | ⚠️ **sim, com encanamento** | `auth.users.last_sign_in_at` — existe, mas **fora do schema `public`** |
+| Página pública sem visita há 30 dias | ❌ **não** | não existe nada |
+
+**O segundo merece precisão, porque quase escrevi que era impossível.** O Supabase Auth mantém
+`last_sign_in_at`, e o `service_role` que `withNovoTenant` já entrega alcança via
+`auth.admin.listUsers()`. Não precisa de migration nem de coluna nova. Mas também não é "só
+consultar": está fora do `public`, então **não dá para juntar com dado de tenant em SQL** — a
+listagem é paginada, vem de todos os usuários, e precisa ser cruzada com `memberships` no código
+para virar "este tenant não entra há N dias". Nada disso existe hoje (**zero** uso de `auth.admin`
+no projeto **[M]**). É viável e é trabalho.
+
+**O terceiro é simplesmente falso.** Não há nenhuma contagem de visita de página pública — foi o
+achado da rodada 1 (o P5 existe justamente porque não há instrumentação nenhuma). E é exatamente
+neste que a frase *"não exigem instrumentação nova"* erra: ele exige, e é o P5 inteiro.
+
+> Placar honesto: **um direto, um com encanamento, um que não existe.** A frase do `18` §I.3
+> deveria dizer "um dos três", não "todos".
+
+### E eles não pertencem ao P2 — a premissa estava errada, inclusive a minha
+
+Eu tinha anotado "desenhar como os sinais de churn entram no extrato do Motor (P2)". Ao olhar,
+não entram, e o motivo é de público:
+
+- **P2 é do tenant para o tenant** — "o Motor te trouxe R$ 1.240".
+- **Sinal de churn é da plataforma sobre o tenant** — "o salão X não entra há 14 dias". Quem lê é
+  o Eduardo, não o dono do salão.
+
+São superfícies diferentes com destinatários diferentes. Enfiar um no outro faria o produto avisar
+o cliente de que ele está prestes a cancelar.
+
+**E, com 2 tenants reais, a resposta honesta é que isto não é feature.** É uma consulta SQL que se
+roda quando quiser. Construir painel de churn para dois tenants é a mesma "máquina sem combustível"
+que trava a indicação B2B em ≥20 pagantes (`18` Fase H) — e este documento perderia a autoridade
+de dizer aquilo se recomendasse isto.
+
+**O que já existe do lado do tenant, e é o que importa agora:** a Central de Ações já mostra
+*"N clientes estão sumindo"* com o valor e o caminho **[M]**. O sinal de desaceleração do negócio,
+para o dono, já tem superfície — e ela vem com alavanca, que é a diferença entre informar e
+desanimar. Dizer a um profissional "seu movimento caiu" sem dar o que fazer é cobrança; dizer
+"12 clientes estão atrasados, R$ 890" é o produto trabalhando.
 
 ---
 

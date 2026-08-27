@@ -2940,3 +2940,16 @@ manutenção noturna). Pendência pro Eduardo: adicionar ao `isolation.test.ts` 
 `clienteAnon.from(t).select('*')` para `t` em `['rate_limits','webhook_events','cron_heartbeats']`
 e exija erro ou lista vazia — rodável no `supabase start` local ou no job de CI, nunca no
 `.env.local`.
+
+2026-08-27 · Correção de um [M] do 18 §I.3 (sinais de churn) · O §I.3 afirma que os três sinais
+("queda de agendamentos criados/semana", "sem login há 14 dias", "página pública sem visita há 30
+dias") são "todos calculáveis com timestamps que já existem — não exigem instrumentação nova".
+Conferido contra o schema: é um de três. (1) Agendamentos por semana: sim, direto,
+`appointments.created_at`. (2) Sem login: o dado existe em `auth.users.last_sign_in_at` e o
+`service_role` de `withNovoTenant` alcança por `auth.admin.listUsers()` — mas está fora do schema
+`public`, então não junta com dado de tenant em SQL; precisa de paginação e cruzamento com
+`memberships` no código, e hoje há ZERO uso de `auth.admin` no projeto. (3) Página pública sem
+visita: não existe nenhuma contagem de visita — é justamente o que exigiria instrumentação nova.
+Não corrigido no 18 (documento de outra fase); registrado aqui e em `docs/27-ESCALA-E-CONVERSAO.md`
+§7.4. Decisão de escopo junto: painel de sinais de churn NÃO entra no plano enquanto houver 2
+tenants — é consulta SQL, não produto, pela mesma lógica que trava a indicação B2B em ≥20 pagantes.
