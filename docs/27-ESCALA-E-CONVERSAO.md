@@ -493,6 +493,65 @@ distribuição do produto.)*
 
 ---
 
+## 1.67 · As telas por token — e o buraco que elas revelam
+
+Auditadas as quatro superfícies que o cliente do salão abre vindo de um link: `/confirmar/[token]`,
+`/avaliar/[token]`, `/lista-espera/[token]`, `/orcamento/[token]` **[M]**.
+
+**A copy está limpa.** Nenhuma promessa de canal, nenhum número inventado. E é copy boa: *"Confirma
+seu horário?"* com *"Vou sim"* / *"Preciso desmarcar"* — linguagem de gente, não de sistema. Quem
+desmarca ganha um botão *"Marcar outro horário"* que leva ao `/[slug]/agendar` — o erro não vira
+beco. Os estados de erro dizem o que fazer (*"Tente de novo em instantes"*). Nada a corrigir aqui.
+
+**Mas auditar o `/confirmar` levou a um buraco de produto, e ele não é de copy.**
+
+### D1 · O cliente desmarca pelo link e ninguém fica sabendo **[M]**
+
+`notificarEquipe()` existe (`mensageria.ts:151`) e é chamada em dois lugares:
+
+| Evento | Chama `notificarEquipe`? |
+|---|---|
+| Cliente **agenda** pela página pública (`public-booking.ts:405`) | ✅ |
+| Cliente **aprova/recusa orçamento** (`orcamentos.ts:170`) | ✅ |
+| **Cliente desmarca pelo link de confirmação** (`public/appointments/cancel/[token]`) | ❌ **ninguém** |
+
+E há um segundo efeito, pior. Quando o **profissional** cancela pelo painel
+(`api/v1/appointments/[id]/route.ts:85`), o código chama `notificarProximoDaLista()` — oferece o
+horário liberado a quem está na fila de espera. Quando o **cliente** cancela pelo link, não chama.
+
+| Quem cancela | Equipe avisada | Fila de espera acionada |
+|---|---|---|
+| Profissional, pelo painel | (ele mesmo fez) | ✅ |
+| **Cliente, pelo link** | ❌ | ❌ |
+
+O caminho que fica sem nada é justamente **aquele para o qual o link de confirmação existe**: a
+pessoa desmarcando sozinha, provavelmente fora do horário comercial — que é a razão de se mandar
+um link em vez de ligar.
+
+**O custo é dinheiro, e é o dinheiro que o produto promete defender.** Uma cadeira vazia que
+alguém da fila de espera teria pago, e um profissional que só descobre o buraco ao abrir a agenda.
+O CICLO tem `waitlist`, tem `notificarProximoDaLista`, tem a tela `/lista-espera/[token]` para
+reivindicar o encaixe — a máquina inteira está construída e **este gatilho não está ligado**.
+
+### O conserto se divide exatamente na linha do F0a/F0b (§6)
+
+E a divisão importa, porque metade é segura hoje e a outra metade **não pode** ser feita agora:
+
+| Metade | Destinatário | Depende de | Status |
+|---|---|---|---|
+| `notificarEquipe` no cancelamento público | **o dono** — push VAPID | nada | ✅ **seguro hoje** (F0a) |
+| `notificarProximoDaLista` no cancelamento público | **o cliente da fila** — lê `phone_e164`/`email` **[M]** | WhatsApp/e-mail | 🔒 **travado** (F0b) |
+
+Ligar a segunda metade agora começaria a mandar mensagem para cliente final sem a credencial
+confirmada — exatamente o que o portão do `25` F0 existe para impedir. A primeira metade é o mesmo
+`void notificarEquipe(...).catch(...)` que o agendamento público já faz três arquivos ao lado.
+
+**Não implementei.** Ao contrário do B1 — que era uma frase falsa no ar e eu corrigi — este é um
+**comportamento novo**: o produto passaria a mandar uma notificação que hoje não manda. Merece um
+sim explícito, mesmo sendo push para o próprio dono. Está pronto para executar em uma linha.
+
+---
+
 ## 1.7 · O que os grandes fazem no dia 1 — e o que disso cabe aqui
 
 O padrão é um só, e nenhum deles mostra estado vazio no primeiro acesso:
@@ -891,6 +950,7 @@ mensurável e porque cada dia com a landing errada é tráfego mal atendido.
 | 0 | ✅ ~~Tirar a promessa de confirmação da página do cliente~~ (P10) | **B1** | **feito** — `cbba771`, `2757af5` |
 | 6 | Dias fechados desabilitados no trilho, sem ida à rede | B2 | o expediente já está carregado |
 | 7 | **Título e H1 da landing** + fechar a conjugação na guarda | **C1** | copy — **decisão do dono** (§1.66) |
+| 8 | **Avisar a equipe quando o cliente desmarca pelo link** | **D1** | 1 linha — **aguarda um sim** (§1.67) |
 
 **O item 0 vem antes de tudo e está numerado assim de propósito.** É a única coisa em todo este
 documento que está **quebrada em produção agora**, na superfície de maior volume, contra uma regra
