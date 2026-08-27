@@ -1245,6 +1245,45 @@ diferença entre "que prático" e "trava".
 
 ---
 
+## 7.24 · Token inválido deixava o orçamento carregando para sempre
+
+A auditoria das telas por token (§1.67) cobriu a copy e **não cobriu a expiração**. Cobrindo agora,
+com token inválido de propósito **[M]**:
+
+| Tela | O que a API responde | O que a pessoa vê |
+|---|---|---|
+| `/avaliar/{token}` | 404, *"Esse link de avaliação não é mais válido."* | ✅ *"Não consegui abrir"* + a mensagem |
+| **`/orcamento/{token}`** | **404 em ~400 ms**, *"Link inválido ou expirado."* | ❌ ***"Carregando orçamento…"* por mais de 15 s** — sem mensagem, sem ação, sem saída |
+
+> **O servidor fazia tudo certo — mensagem boa, resposta rápida — e o cliente engolia.**
+
+E o defeito é de uma linha, de ordem:
+
+```ts
+if (estado === 'carregando' || !dados) { …carregando… }   // ← vinha primeiro
+if (estado === 'erro')                 { …erro…       }   // ← inalcançável
+```
+
+O `|| !dados` estava lá para o **TypeScript** estreitar o tipo no resto da função. E **erro é
+exatamente o caso em que `dados` é `null`** — então o guard do typechecker decidia o que a pessoa
+vê, e decidia errado. Typecheck feliz, testes verdes, pessoa esperando para sempre. O irmão
+`/avaliar` nunca teve o `|| !dados`, e por isso sempre funcionou.
+
+> ✅ **CORRIGIDO** (commit `a74d45f`). A decisão virou `telaDoOrcamento()`, pura e testada — mesmo
+> padrão de `deveMostrarHeroiDoMotor`, porque o projeto não tem harness de render de componente.
+
+**Duas notas de método, e as duas são sobre erro meu.**
+
+1. **Reintroduzi o bug dentro do próprio conserto.** Na primeira tentativa mantive a ordem e só
+   troquei a condição por `tela === 'carregando' || !dados` — que engole o erro pelo mesmíssimo
+   caminho. Só não foi commitado porque reli antes.
+2. **A primeira mutação não aplicou, e o teste passou verde.** Se eu tivesse lido aquele verde como
+   prova, teria concluído que a guarda funcionava sem nunca tê-la visto reprovar — o passo 3 do
+   procedimento do `CLAUDE.md` existe exatamente para isso, e cobrou. Refeita, a guarda reprova
+   nomeando *"o defeito exato que estava no ar"*.
+
+---
+
 ## 7.25 · Acessibilidade medida no renderizado — e um anel de foco apagado
 
 O projeto tem `tests/unit/design/contraste.test.ts`, que recalcula o contraste **dos tokens** a
