@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 
-import { FERRAMENTAS, ferramentasPermitidas, paraJsonSchema } from '@/core/assistente/ferramentas'
+import { FERRAMENTAS, ferramentasPermitidas, paraJsonSchema } from '@/server/assistente/ferramentas'
 
 /**
  * docs/26-AGENTE-IA-PLANO.md §3/§6 (A8) — parte pura do catálogo, sem I/O: não precisa de

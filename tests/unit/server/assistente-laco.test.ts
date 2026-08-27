@@ -3,8 +3,8 @@ import { z } from 'zod'
 
 import { executarLaco } from '@/server/services/assistente'
 
-import type { ContextoFerramenta, Ferramenta } from '@/core/assistente/ferramentas'
-import type { AiProvider, PedidoAoModelo, RespostaDoModelo } from '@/server/providers/ai/types'
+import type { ContextoFerramenta, Ferramenta } from '@/server/assistente/ferramentas'
+import type { AiProvider, RespostaDoModelo } from '@/server/providers/ai/types'
 
 /**
  * docs/26-AGENTE-IA-PLANO.md §6 (ticket A8): testes do laço puro, sem Supabase — `executarLaco`
@@ -31,7 +31,7 @@ function ferramentaFalsa(sobrescreve: Partial<Ferramenta> = {}): Ferramenta {
 function providerComRoteiro(roteiro: RespostaDoModelo[]): AiProvider {
   let i = 0
   return {
-    perguntar: vi.fn(async (_pedido: PedidoAoModelo) => {
+    perguntar: vi.fn(async () => {
       const resposta = roteiro[i]
       i++
       if (!resposta) throw new Error('roteiro do provider falso acabou antes do esperado')

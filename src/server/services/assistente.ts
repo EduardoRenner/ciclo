@@ -1,6 +1,6 @@
 import type { Papel } from '@/server/auth/rbac'
 import { AppError } from '@/server/http/errors'
-import { FERRAMENTAS, paraJsonSchema, type ContextoFerramenta, type Ferramenta } from '@/core/assistente/ferramentas'
+import { FERRAMENTAS, paraJsonSchema, type ContextoFerramenta, type Ferramenta } from '@/server/assistente/ferramentas'
 import { avaliarPermissao } from '@/server/auth/rbac'
 import { podeUsarModulo } from '@/core/billing/planos'
 import { contextoDePlano } from '@/server/services/planos'
@@ -158,6 +158,11 @@ export async function executarLaco(opcoes: {
       // Aqui isso vira "não consegui consultar", NUNCA um resultado vazio: resposta vazia
       // parece "você não tem nada atrasado", que é mentira quando a causa foi a consulta ter
       // quebrado, não a lista estar realmente vazia.
+      //
+      // O erro em si não pode só desaparecer aqui (mesma armadilha de "catch que descarta" do
+      // CLAUDE.md) — sem isto, uma ferramenta quebrando em produção nunca aparece em lugar
+      // nenhum, só o texto genérico que o dono vê.
+      console.error(JSON.stringify({ level: 'error', event: 'assistente_ferramenta_falhou', ferramenta: resposta.nome }), erro)
       mensagens.push({ papel: 'ferramenta', nome: resposta.nome, conteudo: 'Não consegui consultar isso agora. Tente de novo em instantes.' })
     }
   }

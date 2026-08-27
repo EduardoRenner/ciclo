@@ -31,7 +31,7 @@ export type ContextoFerramenta = {
   timezone: string
 }
 
-export type Ferramenta<T = any> = {
+export type Ferramenta<T = unknown> = {
   nome: string
   descricao: string
   schema: z.ZodType<T>
@@ -76,32 +76,43 @@ function hojeNoFuso(timezone: string): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: timezone }).format(new Date())
 }
 
+/**
+ * Apaga o tipo específico de argumento (`T`) de uma ferramenta concreta para o array
+ * heterogêneo abaixo — cada ferramenta continua com o schema/executar fortemente tipados entre
+ * si (o Zod garante isso em `safeParse`/`executar`); só a COLEÇÃO precisa ser homogênea, e é só
+ * aqui, num lugar só, que a variância se resolve. Preferível a `any` espalhado (regra 8 do
+ * CLAUDE.md) porque o "esquecimento de tipo" fica contido nesta função, não em cada ferramenta.
+ */
+function apagarTipo<T>(f: Ferramenta<T>): Ferramenta {
+  return f as Ferramenta
+}
+
 export const FERRAMENTAS: Ferramenta[] = [
-  {
+  apagarTipo({
     nome: 'resumo_de_hoje',
     descricao: 'O que está na agenda de hoje: próxima cliente, faturado até agora, confirmações pendentes e alertas de estoque.',
     schema: EsquemaVazio,
     permissao: 'appointment:read',
     modulo: 'agenda',
     executar: async (ctx) => resumoDeHoje(ctx.db, ctx.tenantId, ctx.timezone),
-  },
-  {
+  }),
+  apagarTipo({
     nome: 'clientes_para_recuperar',
     descricao: 'Lista de clientes atrasadas para voltar, ordenada pelo valor em risco — o que o Motor de Ciclo já calculou.',
     schema: EsquemaVazio,
     permissao: 'client:read',
     modulo: 'cycle_engine',
     executar: async (ctx) => listarParaRecuperar(ctx.db, ctx.tenantId, { limit: 20 }),
-  },
-  {
+  }),
+  apagarTipo({
     nome: 'buscar_cliente',
     descricao: 'Procura clientes pelo nome ou telefone. Use antes de historico_do_cliente para achar o id.',
     schema: EsquemaBusca,
     permissao: 'client:read',
     modulo: 'clients',
     executar: async (ctx, { termo }) => listarClientes(ctx.db, ctx.tenantId, { busca: termo, limite: 10 }),
-  },
-  {
+  }),
+  apagarTipo({
     nome: 'historico_do_cliente',
     descricao: 'Dados cadastrais e os últimos agendamentos de uma cliente específica, pelo id.',
     schema: EsquemaClienteId,
@@ -116,8 +127,8 @@ export const FERRAMENTAS: Ferramenta[] = [
       // contexto e não muda a resposta de "quando ela veio da última vez".
       return { cliente, ultimosAgendamentos: agendamentos.slice(-10).reverse() }
     },
-  },
-  {
+  }),
+  apagarTipo({
     nome: 'faturamento_do_periodo',
     descricao: 'Faturamento, custo de material, taxa, comissão e lucro de um mês (AAAA-MM). Vem direto do fechamento de caixa.',
     schema: EsquemaMes,
@@ -125,8 +136,8 @@ export const FERRAMENTAS: Ferramenta[] = [
     modulo: 'register',
     executar: async (ctx, args: z.infer<typeof EsquemaMes> | Record<string, never>) =>
       resumoMensal(ctx.db, ctx.tenantId, ctx.timezone, 'mes' in args && args.mes ? args.mes : mesCorrente(ctx.timezone)),
-  },
-  {
+  }),
+  apagarTipo({
     nome: 'ocupacao_do_dia',
     descricao: 'Quantos agendamentos e qual a taxa de ocupação do expediente em um dia (AAAA-MM-DD) — serve para achar horário vago.',
     schema: EsquemaData,
@@ -137,8 +148,8 @@ export const FERRAMENTAS: Ferramenta[] = [
       const resumo = await listarAgendaDoDia(ctx.db, ctx.tenantId, data, ctx.timezone)
       return { data, quantidadeDeAgendamentos: resumo.appointments.length, taxaDeOcupacao: resumo.occupancyRate, faturamentoPrevistoCents: resumo.forecastCents }
     },
-  },
-  {
+  }),
+  apagarTipo({
     nome: 'orcamentos_parados',
     descricao: 'Orçamentos enviados que ainda não foram aprovados nem recusados pela cliente, com quantos dias estão parados.',
     schema: EsquemaVazio,
@@ -152,15 +163,15 @@ export const FERRAMENTAS: Ferramenta[] = [
         .map((o) => ({ ...o, diasParado: Math.floor((hoje - new Date(o.createdAt).getTime()) / 86_400_000) }))
         .sort((a, b) => b.diasParado - a.diasParado)
     },
-  },
-  {
+  }),
+  apagarTipo({
     nome: 'alertas_de_estoque',
     descricao: 'Produtos para recomprar ou perto de vencer.',
     schema: EsquemaVazio,
     permissao: 'inventory:read',
     modulo: 'stock',
     executar: async (ctx) => listarAlertasDeEstoque(ctx.db, ctx.tenantId, hojeNoFuso(ctx.timezone)),
-  },
+  }),
 ]
 
 /**
@@ -168,6 +179,7 @@ export const FERRAMENTAS: Ferramenta[] = [
  * API rejeita. `z.toJSONSchema` (Zod 4 nativo, sem dependência nova) gera o resto certo.
  */
 export function paraJsonSchema(schema: z.ZodType): Record<string, unknown> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- os dois só existem para SAIR do objeto (`resto`); nunca lidos.
   const { $schema, additionalProperties, ...resto } = z.toJSONSchema(schema, { target: 'draft-7' }) as Record<string, unknown>
   return resto
 }
