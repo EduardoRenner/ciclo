@@ -359,6 +359,30 @@ defeito da rodada anterior.
 **Ação:** commit `test(design): guarda de cobertura de loading.tsx nas telas do /admin`.
 typecheck + eslint + 828 testes limpos (era 799 + 29).
 
+## 2026-08-27 03:40 (America/Sao_Paulo) — consistência de UX
+
+**O que foi olhado:** `aria-hidden` em ícone lucide decorativo dentro de elemento que já tem nome
+acessível (texto visível ou `aria-label`). O padrão dominante do projeto é `<Icon aria-hidden>`
+nesses casos (`button.tsx:73`, dezenas de `<Plus aria-hidden>` etc.) — mas ~10 lugares escaparam.
+
+**Achado — inconsistência real:** ícones sem `aria-hidden` dentro de botão/IconButton com texto,
+em 5 arquivos: `campanhas/page.tsx` (Megaphone + "Nova campanha"), `clientes/[id]/ficha.tsx`
+(Pencil no IconButton "Editar ficha"; CalendarDays "Horário"; MessageCircle "Mensagem"),
+`clientes/[id]/fidelidade.tsx` (Minus "Resgatar"; Plus "Adicionar"), `clientes/[id]/saude.tsx`
+(Lock e Camera decorativos em Card com texto completo), `config/mensagens/editor.tsx`
+(MessageSquarePlus "Criar modelo"; Trash2 "Apagar modelo"), `orcamentos/novo/formulario.tsx`
+(Trash2 no botão "Remover item"; Plus "Adicionar item"). Sem `aria-hidden`, o leitor de tela
+anuncia o `<svg>` além do texto do botão — ruído redundante.
+
+**Ficou de fora de propósito:** `caixa.tsx:89` e `bloqueio-plano.tsx:74` (pai já é `aria-hidden`);
+`campanhas/nova/nova.tsx:198/200` (Check/Send são indicadores de ESTADO, não decoração —
+esconder apagaria informação; precisariam de texto sr-only, é outra decisão).
+
+**Ação:** `aria-hidden` adicionado nas 10 ocorrências decorativas. Commit
+`fix(a11y): aria-hidden nos ícones decorativos dentro de botão com texto`. typecheck + eslint +
+828 testes limpos. (Guarda para isto não foi criada: os casos legítimos de exceção — ícone de
+estado como Check/Send — são difíceis de distinguir de decoração num regex sem falso positivo.)
+
 **Nota de estado:** 13 guardas de varredura de fonte já verificadas por mutação, todas íntegras;
 varreduras de export morto, escrita sem checar erro, enum de plano e modelo de preço todas limpas.
 A dívida técnica encontrável por leitura está bem baixa — os 3 achados reais até aqui (rótulo de
