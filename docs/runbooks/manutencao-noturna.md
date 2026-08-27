@@ -203,3 +203,22 @@ estado real do arquivo.
 sobre o route.ts removido). Só comentário YAML — sem mudança estrutural. Commit
 `docs(cron): corrige comentário do schedule — seis horários, referência cruzada morta`.
 eslint + 811 testes + guarda `cron-cobre-os-fusos` limpos.
+
+## 2026-08-27 01:52 (America/Sao_Paulo)
+
+**O que foi olhado:** mutação de `tests/unit/design/precos-tem-trava-no-servidor.test.ts` — guarda
+de SEGURANÇA (todo módulo pago tem `exigirModulo` numa rota de escrita; todo recurso de teto `duro`
+tem `exigirLimite`), nunca verificada por mutação.
+
+**Achado:** guarda não está cega, nos dois blocos.
+1. Removido `exigirModulo(db, ctx.tenantId, 'register')` de `tickets/[id]/items/route.ts` → reprova
+   ("estes módulos são anunciados num degrau pago e nenhuma rota chama `exigirModulo`... `register`"). ✅
+2. Removido `exigirLimite(db, ctx.tenantId, 'profissionais')` de `professionals/route.ts` → reprova
+   ("recursos com teto DURO... nenhuma rota chama `exigirLimite`... `profissionais`"). ✅
+Ambas revertidas, suíte do arquivo verde (6/6).
+
+Também verifiquei consistência do teto de chamadas do assistente (`MAX_CHAMADAS_DE_FERRAMENTA = 3`)
+e dos tetos de uso da rota (`LIMITE_POR_TENANT_DIA`/`LIMITE_POR_USUARIO_HORA`) — número único por
+constante, sem duplicação divergente.
+
+**Ação:** nenhum commit de código — nada a corrigir. Só esta entrada.
