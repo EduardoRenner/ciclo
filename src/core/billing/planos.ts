@@ -31,6 +31,7 @@ export type ModuloKey =
   | 'team'
   | 'health_records'
   | 'documents'
+  | 'assistant'
 
 /** Capacidades que não são módulo — são o que o degrau permite fazer com o módulo que já tem. */
 export type Capacidade = 'envio_em_lote' | 'remover_selo'
@@ -63,6 +64,9 @@ export const CATALOGO: readonly { key: ModuloKey; label: string; sempreLigado: b
   { key: 'team', label: 'Equipe e comissão', sempreLigado: false },
   { key: 'health_records', label: 'Anamnese e dado de saúde', sempreLigado: false },
   { key: 'documents', label: 'Documentos e contratos', sempreLigado: false },
+  // docs/26-AGENTE-IA-PLANO.md §6/§10 — liberado para todo tenant desde o grátis, porque agora
+  // é medição de uso, não receita. Não `sempreLigado`: o dono precisa poder desligar (§4.4).
+  { key: 'assistant', label: 'Assistente', sempreLigado: false },
 ]
 
 type Definicao = {
@@ -88,7 +92,11 @@ const PROPRIOS: Record<PlanoTier, Omit<Definicao, 'modulos'> & { modulos: readon
     // O Motor de Ciclo está aqui de propósito (§D.2): o grátis MOSTRA quem sumiu e quanto vale.
     // O que ele não dá é a alavanca de mandar para todos de uma vez — e mandar um a um pelo
     // wa.me continua funcionando para sempre, de graça.
-    modulos: ['agenda', 'cycle_engine', 'public_page', 'clients', 'reminders'],
+    //
+    // `assistant` também nasce aqui (docs/26 §10): custo de LLM é ruído (~R$0,40/mês/tenant a
+    // 100 perguntas), então travar por plano não defenderia receita nenhuma — só atrapalharia a
+    // medição de uso que decide se o assistente continua existindo.
+    modulos: ['agenda', 'cycle_engine', 'public_page', 'clients', 'reminders', 'assistant'],
     capacidades: [],
   },
   essencial: {
