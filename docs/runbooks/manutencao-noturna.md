@@ -343,6 +343,22 @@ não pinta nada entre o clique e o Server Component terminar — lê como travad
 e meu-plano`. typecheck + eslint + 799 testes limpos. (Um teste-guarda de cobertura de
 `loading.tsx` seria útil, mas é escopo de outra rodada — anotado.)
 
+## 2026-08-27 03:25 (America/Sao_Paulo)
+
+**O que foi feito:** criada a guarda que faltava — `tests/unit/design/telas-do-admin-tem-loading.test.ts`.
+Para cada `page.tsx` sob `src/app/admin` que é `export default async function` + tem `await` no
+corpo (Server Component que busca dados), exige um `loading.tsx` irmão. Casa com o que MUDA quando
+o defeito volta (a combinação async+await), não com o nome. `admin/page.tsx` (redirect puro, não
+`async`) e telas estáticas ficam de fora naturalmente. Sanity: ≥25 páginas, ≥20 que buscam —
+não passa por vacuidade.
+
+**Vista reprovando:** removi `config/modulos/loading.tsx` → vermelho com a mensagem certa;
+removi `config/meu-plano/loading.tsx` → idem. Restaurados, 29/29 verde. Reproduz exatamente o
+defeito da rodada anterior.
+
+**Ação:** commit `test(design): guarda de cobertura de loading.tsx nas telas do /admin`.
+typecheck + eslint + 828 testes limpos (era 799 + 29).
+
 **Nota de estado:** 13 guardas de varredura de fonte já verificadas por mutação, todas íntegras;
 varreduras de export morto, escrita sem checar erro, enum de plano e modelo de preço todas limpas.
 A dívida técnica encontrável por leitura está bem baixa — os 3 achados reais até aqui (rótulo de
