@@ -412,8 +412,9 @@ mordeu.
 O trilho oferece **14 dias**. A Barbearia Dom Rocha fecha domingo e segunda **[M]** — são
 **4 dias** no trilho. Todos **clicáveis**: `disabled: false`, sem `aria-disabled` **[M]**.
 
-Tocar num deles dispara consulta de rede e, medido nesta sessão, **~6 segundos** até a resposta
-*"Nesse dia o atendimento não abre"* **[M]**.
+Tocar num deles dispara consulta de rede. Medido nesta sessão: **ainda carregando aos 2,6 s** e
+resolvido em algum ponto até 6,6 s **[M]** — a medição foi por amostragem em dois instantes, não
+por cronômetro no evento, então o número honesto é *"mais de 2,6 s"*, não "6 s".
 
 O expediente **já está carregado** — a página de perfil do mesmo tenant lista os sete dias com
 seus horários. O servidor sabe, antes de renderizar o trilho, quais datas não abrem. Está-se
@@ -742,34 +743,40 @@ o fluxo que ele observa — mesma regra do heartbeat). View `v_funil_ativacao` c
 
 ---
 
-### P6 · O paywall que mostra o dinheiro — a peça que só o CICLO consegue fazer
+### P6 · O paywall que mostra o dinheiro — ⚠️ **já existe. Eu propus o que já estava construído.**
 
-**O que é.** Hoje, quando um tenant do Grátis se aproxima do teto de 50 clientes, o produto
-"avisa quando chega perto" **[M]**. É um aviso de *limite*. Trocar por um aviso de *dinheiro*:
+> **Correção de 2026-08-27, na revisão deste documento.** A versão original desta seção descrevia
+> esta tática como nova, chamava-a de *"a peça que só o CICLO consegue fazer"* e dizia *"por que
+> ninguém copia isso"*. **Está construída, e bem.** Eu propus sem conferir — o erro exato que este
+> documento acusa em outros lugares.
 
-> **Você tem 47 clientes.**
-> 12 deles passaram do tempo de voltar — **R$ 890 parados**.
-> No Grátis você chama um por um. No Essencial, os 12 de uma vez.
-> `Chamar os 12 →`
+O que existe **[M]**: `components/ui/bloqueio-plano.tsx` recebe uma `evidencia` com
+`quantidade` + `valorCents` e renderiza *"…somando R$ X"*. O comentário do próprio arquivo já
+enuncia a tese inteira:
 
-**A psicologia.** Todo paywall de SaaS é escrito em **funcionalidade** ("desbloqueie envio em
-lote"). Este é escrito em **dinheiro do próprio usuário, medido**. A diferença é que o primeiro
-pede para o cliente fazer uma conta hipotética ("será que envio em lote vale R$ 49?") e o segundo
-já entrega a conta pronta, com o número dele: R$ 890 contra R$ 49 é 18×.
+> *"o que converte, além disso, é mostrar o valor concreto do outro lado **COM O DADO DELA**.
+> Sem isto vira folheto."*
 
-É **aversão à perda aplicada a dinheiro real e presente** — não a um recurso abstrato. E o gatilho
-é contextual: aparece no momento em que a dor existe, não numa tela de preço genérica.
+E está ligado ao dado real: `recuperar.tsx:242` passa
+`{ quantidade: itensSelecionados.length, valorCents: valorSelecionadoCents }` **[M]** — o valor em
+risco calculado pelo Motor, para os clientes que a pessoa acabou de selecionar. Um tenant do Grátis
+que tenta chamar em lote vê exatamente a peça que descrevi.
 
-**Por que ninguém copia isso.** Trinks e Booksy vendem funcionalidade porque **não calculam esse
-número** **[P]**. `receitaAtribuidaAoCiclo()` e `listarParaRecuperar()` são o que torna esta peça
-possível, e são exatamente o que o `25` §2.1 chama de "o ativo comercial mais forte do produto".
+**O que sobra de proposta, e é bem menor.** O gatilho existe em **um** lugar: a tentativa de envio
+em lote em `/admin/recuperar`. O aviso de **teto de clientes** (`clientes/page.tsx`, a partir de
+80% do limite **[M]**) é neutro — fala de limite, não de dinheiro.
 
-**O dev.** Sem regra nova: `listarParaRecuperar()` já devolve a lista com valor em risco, e
-`verificarLimite()` já sabe a distância do teto. É um componente que junta os dois. Vive em
-`components/ui/bloqueio-plano.tsx` (que já existe) e no card de teto de "Meu plano".
+E aqui é preciso respeitar uma decisão já tomada: o comentário daquele arquivo diz
+*"Nada aqui usa urgência inventada nem prazo (§5.10)"* **[M]**. A neutralidade é deliberada.
 
-**Limite de honestidade:** o botão "Chamar os 12 de uma vez" só pode existir depois do F0b. Antes
-disso, a peça mostra o número e o caminho manual — que funciona hoje.
+A pergunta que sobra, então, não é *"por que não fizeram isto?"* — é **"o número medido do Motor
+conta como urgência inventada?"**. Eu diria que não: R$ 890 parados é fato calculado, não prazo
+falso, e é a mesma evidência que o `bloqueio-plano` já usa três telas ao lado. Mas é **decisão do
+dono**, não lacuna a preencher — e proposta contra uma posição pensada, não contra um esquecimento.
+
+**A lição de método, que vale mais que a tática.** Eu cheguei a esta ideia por raciocínio de
+mercado e ela estava certa — o time chegou primeiro, e escreveu a justificativa no código. Ler o
+código antes de propor não é burocracia: é a diferença entre somar e repetir.
 
 ---
 
@@ -791,6 +798,10 @@ Sua conta está pronta em 40%
 Drèze (2006) deram a clientes de lava-rápido dois cartões — um de 8 selos vazio e um de 10 selos
 com 2 já carimbados. **Mesmo trabalho.** A conclusão saiu de 19% para **34%** **[P]**. A tarefa
 não muda; o que muda é começar de zero ou começar já andando.
+
+*(Os dois números são citados de memória da literatura, não de fonte lida nesta sessão. O efeito é
+sólido e replicado; se algum dia forem para uma peça de venda, confira a fonte primeiro — é a
+mesma regra de "Suposto vestido de Medido" que o `18` §2.4 aplica aos números do próprio produto.)*
 
 No CICLO os dois riscos são **verdadeiros**: a conta foi criada e o pacote da profissão realmente
 preenche serviços, duração e preço **[M]**. Não é um selo de brinde — é o produto reconhecendo
@@ -976,7 +987,7 @@ Nenhuma toca WhatsApp, cartão de crédito ou conta em terceiro. Todas verificá
 
 | # | Peça | Gate |
 |---|---|---|
-| 9 | **Paywall que mostra o dinheiro** (P6) | precisa de tenant perto do teto; o botão de lote espera o F0b |
+| 9 | ~~Paywall que mostra o dinheiro~~ — **já existe** (P6). Sobra só levar a mesma moldura ao aviso de teto, e isso é decisão do dono | contra uma posição já pensada (§5.10) |
 | 10 | **Landing por profissão** (P9) | nada técnico — é volume de conteúdo, vale quando houver tráfego para dividir |
 | 11 | **Anual** (P3) | precisa de cobrança funcionando — `18` Fase J |
 | 12 | **Indicação do salão** (P4) | 1 tenant com base real; não precisa de pagante |
@@ -1048,6 +1059,30 @@ Com isso, a E1 inteira sai do bloqueio sem furar a regra que criou o bloqueio.
 4. **Tudo isto pressupõe tráfego que ainda não existe.** A E1 é barata de propósito: se o piloto
    do `25` F3 não trouxer ninguém, perdeu-se pouco — e a instrumentação continua valendo para a
    próxima tentativa.
+
+---
+
+## 7.5 · Auditoria deste documento
+
+Revisado como um todo em 2026-08-27, procurando o que ele mesmo acusa nos outros: contradição
+interna, tática proposta sem conferir o código, e `[M]` afirmado sem medição.
+
+**Um achado grave, corrigido:** o **P6** descrevia como nova uma peça **já construída e ligada ao
+dado real** (`bloqueio-plano.tsx` + `recuperar.tsx:242`), e ainda a chamava de "a peça que só o
+CICLO consegue fazer". Reescrito com a correção em cima, sem apagar o erro — porque o erro é o
+argumento: **é exatamente o que acontece quando se propõe antes de ler.**
+
+**Uma imprecisão, corrigida:** o "~6 segundos" do B2 era amostragem em dois instantes, não
+cronômetro. Trocado por "mais de 2,6 s", que é o que de fato se mediu.
+
+**Duas atenuações:** os números do estudo de progresso dotado (P7) passaram a declarar que são
+citados de memória; o `[M]` de "`dom-rocha` em Avançado de cortesia" foi conferido contra
+`DECISOES.md:2513` — estava certo, mas eu o havia escrito de memória.
+
+**O que resistiu:** os demais `[M]` foram medidos nesta sessão (código lido linha a linha ou DOM
+medido no ar) e nenhuma contradição interna apareceu entre as seções. A divisão F0a/F0b do §6 se
+sustentou sozinha quando o D1 (§1.67) caiu exatamente em cima dela duas rodadas depois — o que é
+um bom sinal de que a distinção é real, e não uma conveniência escrita para justificar a §6.
 
 ---
 
