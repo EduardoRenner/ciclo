@@ -553,6 +553,23 @@ com 2, não 1).
 **Ação:** commit `test(core): cobre o ramo par de mediana + gaps.length==2 em computeCycle`.
 typecheck + eslint + 844 testes limpos (era 843 + 1).
 
+## 2026-08-27 07:50 (America/Sao_Paulo) — cobertura, rodada 7 (sem achado)
+
+Conferidos: `core/risk/no-show-score.ts` (todos os pesos, os dois clamps, limites =14/4-vs-5+, "ou"
+de sábado/18h, features passthrough — exaustivo); `core/offline/queue.ts` (os 4 desfechos, ordem,
+vazio, all-conflict — completo); `core/scheduling/available-slots.ts` (expediente, múltiplas
+janelas, serviço grande, buffer nos dois lados, folga, lead-time min/max nos limites, paralelismo
+1/2/over, e uma seção inteira de DST 23h/25h — modelar).
+
+Tentei cobrir o `continue` de "janela invertida/vazia" em `available-slots.ts`, mas **a mutação
+não é observável**: o `if (fimServico > fechaInstant) break` interno já trata janela invertida e
+janela vazia sozinho — o `continue` é defensivo redundante, não há comportamento que o distinga.
+Testes que não podem ser vistos reprovando não entram (regra do `CLAUDE.md`). Descartados.
+
+**Conclusão:** a cobertura de `src/core/` está **madura**. 6 gaps reais fechados nas rodadas 1–6
+(janela, agendadas, pricing, reminders, attribution, cycle), todos vistos reprovando por mutação;
+agora 3 arquivos seguidos sem gap mutável. Próxima rodada decide o pivô (ver sugestão no fim).
+
 **Nota de estado:** 13 guardas de varredura de fonte já verificadas por mutação, todas íntegras;
 varreduras de export morto, escrita sem checar erro, enum de plano e modelo de preço todas limpas.
 A dívida técnica encontrável por leitura está bem baixa — os 3 achados reais até aqui (rótulo de
