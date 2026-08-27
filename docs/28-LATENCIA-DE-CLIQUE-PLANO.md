@@ -320,3 +320,9 @@ Em ambos, quando o registro não existe a segunda consulta volta vazia à toa �
 não pagar duas idas em série no caminho comum, que é o registro existir.
 
 Suíte completa (1286 testes), lint e `next build` verdes antes do deploy.
+
+Também `baixarEstoqueDaComanda` (`src/server/services/estoque.ts`): a baixa de cada produto é
+três idas ao banco (`select` do produto, `insert` do movimento, `update` do estoque), e produtos
+diferentes rodavam em série no fechamento de uma comanda. Como `consumoPorProduto` já dedupe por
+`productId`, produtos diferentes não competem pela mesma linha — seguro rodar em paralelo. Uma
+comanda com 3 produtos diferentes ia de ~9 idas seriais para 3 conjuntos em paralelo.

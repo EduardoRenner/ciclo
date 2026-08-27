@@ -43,15 +43,21 @@ export async function baixarEstoqueDaComanda(db: Cliente, tenantId: string, tick
     consumoPorProduto.set(item.product_id, (consumoPorProduto.get(item.product_id) ?? 0) + item.qty)
   }
 
-  for (const [productId, qty] of consumoPorProduto) {
-    await registrarMovimento(db, tenantId, {
-      productId,
-      kind: 'out',
-      qty: -qty,
-      source: 'ticket',
-      sourceId: ticketId,
-    })
-  }
+  // Cada produto é uma linha independente (`consumoPorProduto` já está deduplicado e somado por
+  // `productId`), então os `registrarMovimento` de produtos diferentes não competem por linha
+  // nenhuma — rodavam em série, três idas ao banco por produto, uma comanda de N produtos atrás
+  // da outra no fechamento (docs/28-LATENCIA-DE-CLIQUE-PLANO.md §10).
+  await Promise.all(
+    [...consumoPorProduto].map(([productId, qty]) =>
+      registrarMovimento(db, tenantId, {
+        productId,
+        kind: 'out',
+        qty: -qty,
+        source: 'ticket',
+        sourceId: ticketId,
+      }),
+    ),
+  )
 }
 
 /**
