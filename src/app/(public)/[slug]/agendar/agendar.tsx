@@ -9,6 +9,7 @@ import Chip from "@/components/ui/chip";
 import FilterRow from "@/components/ui/filter-row";
 import Input from "@/components/ui/input";
 import PhoneInput from "@/components/ui/phone-input";
+import { textoDoCanalDeConfirmacao } from "@/core/messaging/promessa";
 import { montarIcs, type EventoIcs } from "@/core/scheduling/ics";
 import { dinheiro, duracao } from "@/lib/formato";
 
@@ -664,7 +665,7 @@ export default function Agendar({
             rotulo="Seu telefone (WhatsApp)"
             valor={telefone}
             aoMudar={setTelefone}
-            ajuda="É por aqui que a confirmação chega."
+            ajuda={textoDoCanalDeConfirmacao()}
             required
           />
           {/* Opcional: pedir endereço sempre (não só de quem "vai até o cliente")
