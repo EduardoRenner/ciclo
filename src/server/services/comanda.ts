@@ -45,16 +45,17 @@ export async function buscarTicketIdPorAgendamento(db: Cliente, tenantId: string
 }
 
 export async function buscarComanda(db: Cliente, tenantId: string, ticketId: string) {
-  const { data: ticket, error: erroTicket } = await db.from('tickets').select('*').eq('tenant_id', tenantId).eq('id', ticketId).maybeSingle()
+  // As duas consultas não dependem uma da outra — `items` só precisa do `ticketId`, que já veio
+  // por parâmetro. Rodavam em série (docs/28-LATENCIA-DE-CLIQUE-PLANO.md §10): abrir uma comanda
+  // pagava duas idas ao banco uma atrás da outra, na tela mais operacional do dia a dia. Quando o
+  // ticket não existe, a consulta de itens volta vazia à toa — troca aceitável por não pagar duas
+  // idas em série no caminho comum, que é o ticket existir.
+  const [{ data: ticket, error: erroTicket }, { data: items, error: erroItems }] = await Promise.all([
+    db.from('tickets').select('*').eq('tenant_id', tenantId).eq('id', ticketId).maybeSingle(),
+    db.from('ticket_items').select('*').eq('tenant_id', tenantId).eq('ticket_id', ticketId).order('id'),
+  ])
   if (erroTicket) throw new AppError('INTERNAL', { cause: erroTicket })
   if (!ticket) throw new AppError('NOT_FOUND')
-
-  const { data: items, error: erroItems } = await db
-    .from('ticket_items')
-    .select('*')
-    .eq('tenant_id', tenantId)
-    .eq('ticket_id', ticketId)
-    .order('id')
   if (erroItems) throw new AppError('INTERNAL', { cause: erroItems })
 
   return { ticket, items: items ?? [] }

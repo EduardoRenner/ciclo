@@ -108,13 +108,21 @@ export async function orcamentoPublico(db: Cliente, token: string): Promise<Orca
   const quoteId = verificarTokenOrcamento(token)
   if (!quoteId) throw new AppError('NOT_FOUND', { message: 'Link inválido ou expirado.' })
 
-  const { data: quote, error } = await db
-    .from('quotes')
-    .select('id, tenant_id, status, total_cents, valid_until, message, tenants ( name, timezone )')
-    .eq('id', quoteId)
-    .maybeSingle()
+  // `itens` só precisa do `quoteId` do parâmetro — não do `quote` que a consulta acima devolve
+  // (é o mesmo id, por definição do `.eq('id', quoteId)`). Rodavam em série
+  // (docs/28-LATENCIA-DE-CLIQUE-PLANO.md §10) numa tela pública que o cliente abre pelo
+  // WhatsApp: duas idas ao banco uma atrás da outra antes de mostrar qualquer coisa.
+  const [{ data: quote, error }, { data: itens, error: erroItens }] = await Promise.all([
+    db
+      .from('quotes')
+      .select('id, tenant_id, status, total_cents, valid_until, message, tenants ( name, timezone )')
+      .eq('id', quoteId)
+      .maybeSingle(),
+    db.from('quote_items').select('description, qty, unit_price_cents, total_cents').eq('quote_id', quoteId),
+  ])
   if (error) throw new AppError('INTERNAL', { cause: error })
   if (!quote) throw new AppError('NOT_FOUND', { message: 'Esse orçamento não existe mais.' })
+  if (erroItens) throw new AppError('INTERNAL', { cause: erroItens })
 
   const tenant = quote.tenants as unknown as { name: string; timezone: string }
   let status = quote.status
@@ -123,9 +131,6 @@ export async function orcamentoPublico(db: Cliente, token: string): Promise<Orca
     const { error: erroExpirar } = await db.from('quotes').update({ status: 'expired' }).eq('id', quote.id)
     if (erroExpirar) throw new AppError('INTERNAL', { cause: erroExpirar })
   }
-
-  const { data: itens, error: erroItens } = await db.from('quote_items').select('description, qty, unit_price_cents, total_cents').eq('quote_id', quote.id)
-  if (erroItens) throw new AppError('INTERNAL', { cause: erroItens })
 
   return {
     status,

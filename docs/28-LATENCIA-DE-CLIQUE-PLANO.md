@@ -300,3 +300,23 @@ instância quente (Fluid Compute), que é configuração de projeto na Vercel.
   `getUser()`, mas o middleware roda no Edge e a tela no Node — não dá para compartilhar o
   `cache()`, e um header confiável exigiria assinatura. Superfície de segurança nova por 30 ms
   num caminho que já está em 180–220 ms.
+
+---
+
+## 10. Quinta rodada (27/08) — duas idas serial que viraram paralelas
+
+Varredura pelos `services/` procurando consultas independentes rodando uma atrás da outra em vez
+de juntas. A maioria já estava em `Promise.all`; dois pontos não:
+
+- **`buscarComanda`** (`src/server/services/comanda.ts`): buscava o `ticket` e só depois os
+  `ticket_items`, embora `items` só precise do `ticketId` que já veio por parâmetro — não de
+  nada que a consulta do ticket devolve. É a tela de abrir uma comanda, a mais operacional do dia
+  a dia; duas idas em série viraram duas em paralelo.
+- **`orcamentoPublico`** (`src/server/services/orcamentos.ts`): mesma forma — `quote_items`
+  filtra por `quote_id`, que é o mesmo `quoteId` do parâmetro (`.eq('id', quoteId)` na consulta
+  de `quote`). É a tela pública que o cliente abre pelo link do WhatsApp.
+
+Em ambos, quando o registro não existe a segunda consulta volta vazia à toa — troca aceitável por
+não pagar duas idas em série no caminho comum, que é o registro existir.
+
+Suíte completa (1286 testes), lint e `next build` verdes antes do deploy.
