@@ -13,7 +13,7 @@ import wordmark from '../../../public/marca/ciclo-wordmark-aqua.png'
  * completo (símbolo + "Ciclo" escrito), não só o símbolo — é o único
  * momento de marca sozinho na tela, sem navegação nem rótulo ao redor, então
  * ganha destaque cheio. Nos "pontos especiais" (topbar, header da landing,
- * tab bar) o símbolo sozinho (`MarcaCiclo`/`IconeAnel`) continua pequeno,
+ * tab bar) o símbolo sozinho (`IconeAnel`) continua pequeno,
  * ao lado do rótulo "CICLO" tipografado no próprio estilo do app.
  *
  * PNG com alpha, não SVG: o traço variável do "C" e o peso do "iclo" vieram

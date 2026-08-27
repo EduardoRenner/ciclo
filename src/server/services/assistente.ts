@@ -1,7 +1,6 @@
 import type { Papel } from '@/server/auth/rbac'
 import { AppError } from '@/server/http/errors'
-import { FERRAMENTAS, paraJsonSchema, type ContextoFerramenta, type Ferramenta } from '@/server/assistente/ferramentas'
-import { avaliarPermissao } from '@/server/auth/rbac'
+import { ferramentasPermitidas, paraJsonSchema, type ContextoFerramenta, type Ferramenta } from '@/server/assistente/ferramentas'
 import { podeUsarModulo } from '@/core/billing/planos'
 import { contextoDePlano } from '@/server/services/planos'
 import type { AiProvider, MensagemDoAssistente } from '@/server/providers/ai/types'
@@ -30,14 +29,15 @@ export type ResultadoDoAssistente = {
 }
 
 /**
- * Ferramentas que este papel, neste tenant, pode de fato chamar agora — RBAC (`avaliarPermissao`)
- * e módulo do plano (`podeUsarModulo`) combinados. Filtrar ANTES de montar o pedido ao modelo é o
- * que garante que ele nunca vê, e portanto nunca tenta chamar, uma ferramenta fora do alcance —
- * a segunda camada (checar de novo antes de executar, abaixo) é rede, não a única trava.
+ * Ferramentas que este papel, neste tenant, pode de fato chamar agora — o filtro de RBAC
+ * (`ferramentasPermitidas`, a mesma tabela de papéis das rotas) mais o módulo do plano
+ * (`podeUsarModulo`). Filtrar ANTES de montar o pedido ao modelo é o que garante que ele nunca vê,
+ * e portanto nunca tenta chamar, uma ferramenta fora do alcance — a segunda camada (checar de novo
+ * antes de executar, abaixo) é rede, não a única trava.
  */
 async function ferramentasDisponiveisAgora(db: Cliente, tenantId: string, papel: Papel): Promise<Ferramenta[]> {
   const ctxPlano = await contextoDePlano(db, tenantId)
-  return FERRAMENTAS.filter((f) => avaliarPermissao(papel, f.permissao) !== null && podeUsarModulo(ctxPlano, f.modulo).estado === 'liberado')
+  return ferramentasPermitidas(papel).filter((f) => podeUsarModulo(ctxPlano, f.modulo).estado === 'liberado')
 }
 
 /**

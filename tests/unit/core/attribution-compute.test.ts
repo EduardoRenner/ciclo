@@ -65,6 +65,21 @@ describe('atribuirReceita', () => {
     expect(resultado.map((r) => r.appointmentId).sort()).toEqual(['a1', 'a2'])
   })
 
+  it('a campanha MAIS ANTIGA reivindica, mesmo chegando fora de ordem no array', () => {
+    // Duas campanhas para o mesmo cliente, passadas em ordem cronológica INVERSA; um único
+    // agendamento dentro da janela das duas. A de 01/08 (a que "trouxe de volta" primeiro) é
+    // quem leva — sem o sort interno, a de 10/08 reivindicaria por vir antes no array.
+    const resultado = atribuirReceita(
+      [
+        { clientId: 'c1', sentAt: instante('2026-08-10T10:00:00Z') },
+        { clientId: 'c1', sentAt: instante('2026-08-01T10:00:00Z') },
+      ],
+      [{ id: 'a1', clientId: 'c1', createdAt: instante('2026-08-12T10:00:00Z'), valueCents: 8_000 }],
+    )
+    expect(resultado).toHaveLength(1)
+    expect(resultado[0]!.campaignSentAt).toEqual(instante('2026-08-01T10:00:00Z'))
+  })
+
   it('campanha de outro cliente nunca reivindica agendamento de quem não a recebeu', () => {
     const resultado = atribuirReceita(
       [{ clientId: 'outro-cliente', sentAt: instante('2026-08-01T10:00:00Z') }],

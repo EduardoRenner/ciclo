@@ -266,7 +266,7 @@ export default function Ficha({
           </p>
         </div>
         <IconButton onClick={() => setEditando(true)} aria-label="Editar ficha">
-          <Pencil className="size-5" />
+          <Pencil aria-hidden className="size-5" />
         </IconButton>
       </header>
 
@@ -504,11 +504,11 @@ export default function Ficha({
       <ActionBar>
         <div className="grid grid-cols-2 gap-2">
           <Button variante="secondary" largura="cheia" onClick={() => router.push(`/admin/agenda/novo?cliente=${cliente.id}`)}>
-            <CalendarDays className="size-4" />
+            <CalendarDays aria-hidden className="size-4" />
             Horário
           </Button>
           <Button largura="cheia" onClick={() => setEscolhendoMensagem(true)}>
-            <MessageCircle className="size-4" />
+            <MessageCircle aria-hidden className="size-4" />
             Mensagem
           </Button>
         </div>

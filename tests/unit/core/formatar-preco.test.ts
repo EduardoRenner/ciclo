@@ -37,6 +37,14 @@ describe('formatarPreco', () => {
       `${r(20000)} (diária) · ${r(12000)} (meia diária)`,
     )
   })
+
+  it('visit_hourly sem taxa da hora (dado inconsistente) não quebra — cai pra R$ 0,00/hora', () => {
+    // A constraint do banco impede isso, mas o `?? 0` do código é a rede; sem teste ninguém
+    // sabe se ela funciona.
+    expect(formatarPreco({ pricingModel: 'visit_hourly', priceCents: 6000, hourlyRateCents: null, halfDayPriceCents: null })).toBe(
+      `${r(6000)} (visita) + ${r(0)}/hora`,
+    )
+  })
 })
 
 describe('estimativaParaDuracao', () => {
@@ -52,5 +60,13 @@ describe('estimativaParaDuracao', () => {
 
   it('visit_hourly soma a taxa de visita à hora estimada', () => {
     expect(estimativaParaDuracao({ pricingModel: 'visit_hourly', priceCents: 8000, hourlyRateCents: 4000, halfDayPriceCents: null }, 60)).toBe(12000)
+  })
+
+  it('visit_hourly sem taxa da hora estima só a visita', () => {
+    expect(estimativaParaDuracao({ pricingModel: 'visit_hourly', priceCents: 8000, hourlyRateCents: null, halfDayPriceCents: null }, 120)).toBe(8000)
+  })
+
+  it('daily ignora a duração — a diária é a diária', () => {
+    expect(estimativaParaDuracao({ pricingModel: 'daily', priceCents: 20000, hourlyRateCents: null, halfDayPriceCents: 12000 }, 480)).toBe(20000)
   })
 })

@@ -52,6 +52,23 @@ describe('o agendamento público não promete canal que não entrega', () => {
     ).toEqual([])
   })
 
+  it('a frase de canal vem da função, não escrita à mão na tela', () => {
+    /*
+     * Em 2026-08-27 a lista de regex acima estava verde com *"É por aqui que a confirmação chega"*
+     * no ar (`agendar.tsx:667`) — uma quinta redação que nenhuma das quatro pegava. O conserto não
+     * foi um quinto regex: a copy virou `core/messaging/promessa.ts`, um lugar só.
+     *
+     * Esta asserção casa com a CHAMADA (`textoDoCanalDeConfirmacao(`), nunca com o nome solto —
+     * o nome aparece também na linha de `import`, e casar com ele seria a guarda cega nº 1 da
+     * tabela do `CLAUDE.md`.
+     */
+    expect(
+      /textoDoCanalDeConfirmacao\(/.test(copyDaPagina()),
+      'a ajuda do campo de telefone precisa vir de `textoDoCanalDeConfirmacao()` — prosa escrita ' +
+        'à mão na tela é como a promessa falsa voltou da última vez',
+    ).toBe(true)
+  })
+
   it('continua dizendo o que fazer se a confirmação não vier', () => {
     /*
      * Tirar a promessa falsa não pode virar silêncio: sem o caminho alternativo, a pessoa fica

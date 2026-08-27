@@ -6,8 +6,8 @@ import { CATALOGO, PLANOS, type ModuloKey } from '@/core/billing/planos'
 
 /**
  * O catálogo de módulos existe em dois lugares por motivos diferentes: em `core` para a interface
- * ter rótulo sem ida ao banco, e na migration 0041 para `tenant_modules.modulo` ter alvo de chave
- * estrangeira. Duplicação vigiada é segura; duplicação silenciosa é a armadilha da §L.6 outra vez.
+ * ter rótulo sem ida ao banco, e nas migrations 0041/0043 para `tenant_modules.modulo` ter alvo de
+ * chave estrangeira. Duplicação vigiada é segura; duplicação silenciosa é a armadilha da §L.6 outra vez.
  *
  * Este teste é a vigia. Se alguém acrescentar um módulo em um dos lados e esquecer o outro, quebra
  * aqui — e não em produção, com um módulo que a tela mostra e o banco recusa (ou o contrário).
@@ -29,8 +29,8 @@ function chavesDaMigration(): string[] {
   return [...chavesDoInsert(SQL, '0041'), ...chavesDoInsert(SQL_ASSISTENTE, '0043')]
 }
 
-describe('catálogo de módulos: core e migration 0041 não podem divergir', () => {
-  it('as mesmas 16 chaves, na mesma ordem', () => {
+describe('catálogo de módulos: core e migrations 0041/0043 não podem divergir', () => {
+  it('as mesmas 17 chaves, na mesma ordem', () => {
     const naMigration = chavesDaMigration()
     const noCore = CATALOGO.map((m) => m.key)
 

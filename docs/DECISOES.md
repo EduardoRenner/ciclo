@@ -2924,3 +2924,61 @@ a decisão. Pendente aprovação do Eduardo (§10 do plano); até lá vale como 
 em vigor. Junto: aprovar o provider (Gemini 2.5 Flash) e confirmar nos termos que dado enviado não
 treina modelo — sem isso, mandar pergunta com contexto de cliente para o provedor é exposição de
 LGPD que nenhuma minimização de payload cobre sozinha.
+
+2026-08-27 · Lacuna de teste: tabelas globais "negadas por design" sem verificação de deny-all ·
+Achado na manutenção noturna (rodada de revisão de RLS). `tests/rls/isolation.test.ts` verifica
+que `idempotency_keys` e `job_queue` (RLS on + force + zero políticas) não devolvem nada ao
+cliente. Mas a descoberta automática (`tenant_rls_report()`, migration 0005) só enxerga tabelas
+com coluna `tenant_id` — então as 3 tabelas globais que seguem o MESMO padrão de deny-all
+(`rate_limits`, `webhook_events`, `cron_heartbeats`) nunca entram no relatório e **nenhum teste
+confirma que elas negam acesso ao cliente**. Uma política permissiva adicionada a qualquer uma
+delas por engano passaria despercebida. O comentário de `0038_grants_base_postgrest.sql`
+("zero políticas com RLS forçada nega tudo... é o comportamento que o teste de isolamento já
+cobra") superdeclara: o teste cobre 2 das 5, não as 5. NÃO corrigido no loop (o conserto é um
+`it` novo em `tests/rls/`, que roda contra o Supabase de PRODUÇÃO — fora do escopo seguro da
+manutenção noturna). Pendência pro Eduardo: adicionar ao `isolation.test.ts` um bloco que faça
+`clienteAnon.from(t).select('*')` para `t` em `['rate_limits','webhook_events','cron_heartbeats']`
+e exija erro ou lista vazia — rodável no `supabase start` local ou no job de CI, nunca no
+`.env.local`.
+
+2026-08-27 · Correção de um [M] do 18 §I.3 (sinais de churn) · O §I.3 afirma que os três sinais
+("queda de agendamentos criados/semana", "sem login há 14 dias", "página pública sem visita há 30
+dias") são "todos calculáveis com timestamps que já existem — não exigem instrumentação nova".
+Conferido contra o schema: é um de três. (1) Agendamentos por semana: sim, direto,
+`appointments.created_at`. (2) Sem login: o dado existe em `auth.users.last_sign_in_at` e o
+`service_role` de `withNovoTenant` alcança por `auth.admin.listUsers()` — mas está fora do schema
+`public`, então não junta com dado de tenant em SQL; precisa de paginação e cruzamento com
+`memberships` no código, e hoje há ZERO uso de `auth.admin` no projeto. (3) Página pública sem
+visita: não existe nenhuma contagem de visita — é justamente o que exigiria instrumentação nova.
+Não corrigido no 18 (documento de outra fase); registrado aqui e em `docs/27-ESCALA-E-CONVERSAO.md`
+§7.4. Decisão de escopo junto: painel de sinais de churn NÃO entra no plano enquanto houver 2
+tenants — é consulta SQL, não produto, pela mesma lógica que trava a indicação B2B em ≥20 pagantes.
+
+2026-08-27 · O fallback de mensagem alcança a metade errada da base · Medido ao auditar
+`enviarComFallback` (WhatsApp → push → e-mail). Dois fatos que mudam a leitura do `25` F0 passo 2:
+(1) o ramo de PUSH para cliente nunca dispara para ninguém — `inscricoesPushDoCliente` resolve
+`clients.user_id`, e NADA no projeto escreve essa coluna; o comentário da 0001 diz "se criou conta
+no app da cliente", app que não existe e que o FAQ da landing promete que não vai existir. É
+andaime, como `trial_ends_at`. (2) `EsquemaBookingPublico` não coleta e-mail, enquanto
+`EsquemaCliente` e a importação de CSV coletam. Consequência: ligar `reminders` sem WhatsApp
+entregaria e-mail à base importada/manual (onde mora o risco que o passo 1 do F0 quer medir, e
+quem o salão já contata por outro meio) e NADA a quem agendou pela página pública (quem mais
+espera retorno, e a população que o laço de crescimento gera). O canal disponível hoje alcança quem
+menos precisa e não alcança quem mais precisa. Conserto barato possível: campo opcional de e-mail
+no formulário público — mas cobra conversão num formulário de 2 campos obrigatórios, e vira
+redundante se o F0b (WhatsApp) acontecer. Decisão do dono, encadeada à do F0b. Detalhe em
+`docs/27-ESCALA-E-CONVERSAO.md` §7.3.
+
+2026-08-27 · A página pública de agendamento leva ~4,3 s até o primeiro horário · Medido no ar
+(3 amostras consecutivas, cache no-store): HTML ~1,3 s e API de disponibilidade ~2,9-3,7 s. Não é
+cold start — as amostras batem entre si; o primeiro acesso da sessão (esse frio) deu TTFB 4196 ms e
+primeiro horário perto de 7,6 s. Causa parcial MEDIDA: `disponibilidadePublica` faz QUATRO idas ao
+banco em série (tenantPeloSlug → services → professionals → Promise.all de business_hours/time_off/
+appointments), e as duas pontas estão em continentes diferentes — Supabase em sa-east-1 e função
+Vercel no padrão `iad1`, porque `vercel.json` não define `regions`. NÃO PROVADO daqui que a latência
+transcontinental responda pela maior parte dos 3 s (exigiria medir de uma função em gru1). Dois
+consertos: (a) `"regions": ["gru1"]` — uma linha, MAS escolha de região é historicamente recurso de
+plano pago na Vercel e o projeto está no Hobby; conferir antes de contar com isso; (b) paralelizar
+`services` e `professionals` num Promise.all — eles não dependem um do outro, corta 4 saltos em
+série para 3, não depende de plano nem de decisão de ninguém. Detalhe em
+`docs/27-ESCALA-E-CONVERSAO.md` §7.2.

@@ -70,7 +70,7 @@
    * voltava em salão de cílios e sobrancelha (`docs/13-CAUSA-RAIZ-LAYOUT-
    * LEGADO.md` T3, executado no 14). Cor de acento nunca é hardcoded em
    * componente, nem o valor antigo nem o novo. É também por isso que a marca
-   * (`MarcaCiclo`, favicon) segue com o aqua CRAVADO e não `var(--acc)`: na
+   * (`IconeAnel`, wordmark, favicon) segue com o aqua CRAVADO e não `var(--acc)`: na
    * página do salão o `--acc` é do tenant, e o logo do CICLO não pode vestir a
    * cor do cliente.
    */

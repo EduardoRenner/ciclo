@@ -20,12 +20,11 @@ name: cron
 
 on:
   schedule:
-    # CINCO horários, e a razão é uma costura que quase passou em silêncio.
+    # SEIS horários, e a razão é uma costura que quase passou em silêncio.
     #
     # As rotas não processam "todos os tenants": cada uma só age no tenant cuja HORA LOCAL bate
     # com a dela — `recompute-cycles` às 3h, `segments` às 4h. Esse desenho pressupunha o cron do
-    # Vercel disparando a cada 15 minutos, que era o plano antigo (o comentário no topo de
-    # `src/app/api/cron/recompute-cycles/route.ts` ainda descreve esse mundo).
+    # Vercel disparando a cada 15 minutos, que era o plano antigo.
     #
     # Com UM disparo diário às 06:10 UTC, o resultado medido era:
     #   recompute-cycles  → só pegava UTC-3 (São Paulo);
@@ -35,7 +34,8 @@ on:
     # — e o fuso vem do NAVEGADOR no onboarding, então isso não é hipótese remota.
     #
     # Rodar de hora em hora consertaria, e custaria ~43% da cota de Actions do repositório privado.
-    # Estas cinco horas cobrem hora local 3 E 4 nos quatro fusos do Brasil (UTC-2 a UTC-5) por ~9%.
+    # Estes seis horários cobrem hora local 3 E 4 nos quatro fusos do Brasil (UTC-2 a UTC-5) por ~11%
+    # (eram cinco por ~9% até a auditoria de 26/08 pedir o sexto — ver ponto 2 abaixo).
     # `tests/unit/server/cron-cobre-os-fusos.test.ts` confere essa aritmética a cada build — se
     # alguém mudar a hora de uma rota ou mexer neste schedule, o teste reprova antes do silêncio.
     #
