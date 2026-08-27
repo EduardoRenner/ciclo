@@ -246,6 +246,119 @@ carrega o benefício de quem o lê, não a ferramenta de quem o exibe.
 
 ---
 
+## 1.6 · O fluxo autenticado — do cadastro à primeira tela
+
+Não há credencial de tenant nesta sessão, então esta seção é **leitura de código**, não navegação.
+Tudo **[M]** por arquivo e linha.
+
+**O que está certo:** o onboarding é **uma tela e três campos** (nome, profissão, endereço) — mais
+enxuto que a maioria dos concorrentes. A busca de profissão usa `sinonimos` (digitar "diarista"
+acha "faxina") **[M]**. O `slug` é derivado do nome automaticamente e só para de seguir se a
+pessoa mexer nele. O botão de compartilhar link usa `window.location.origin`, então o link copiado
+**funciona** **[M]**. Nada disso precisa mudar.
+
+Três achados.
+
+### A1 · O conserto do "dia 1" não dispara no dia 1 **[M]**
+
+O `25` §2.2 diagnosticou, com print do painel real:
+
+> *"Para o barbeiro em teste, **dia 1**, agenda ainda vazia, a primeira coisa que o produto
+> comunica é R$ 0,00 e 'não tem nada aqui'."*
+
+A F1 ticket 7 corrigiu com `deveMostrarHeroiDoMotor()`, e o teste passa. Mas a condição é
+(`hoje.tsx:34`):
+
+```ts
+return revenueTodayCents === 0 && !temProximoCliente && atribuicaoCount > 0
+```
+
+`atribuicaoCount` é quantos clientes **o Motor já trouxe de volta este mês**. Num tenant recém-criado
+ele é **zero, necessariamente** — não há histórico, não há ciclo calculado, não há campanha.
+
+| Condição | Tenant novo, dia 1 |
+|---|---|
+| `revenueTodayCents === 0` | ✅ |
+| `!temProximoCliente` | ✅ |
+| `atribuicaoCount > 0` | ❌ **sempre falso** |
+
+→ o herói do Motor **não** aparece → a tela mostra **"FATURADO HOJE · R$ 0,00"**.
+
+E logo abaixo, `central-de-acoes.tsx:23`: `if (acoes.length === 0) return null` — sem clientes, sem
+ciclos, sem estoque, a Central não renderiza nada. Sobra o `EmptyState` *"Nada mais para hoje"*.
+
+**A primeira tela de quem acabou de se cadastrar continua sendo, exatamente:**
+
+```
+FATURADO HOJE
+R$ 0,00
+                          ← Central de Ações: null
+[ Nada mais para hoje ]
+  A agenda de hoje está livre a partir de agora.
+```
+
+O conserto está certo e resolve um caso real — o **tenant estabelecido num dia fraco**. Mas a
+população que o `25` citou como motivo (*"em teste, dia 1"*) é a única que a guarda exclui por
+construção. É a diferença entre *"não tenho movimento hoje"* e *"acabei de chegar"*, e as duas
+telas não podem ser a mesma.
+
+### A2 · O produto exibe um domínio que não é o dele **[M]**
+
+| Onde | O que mostra | Realidade |
+|---|---|---|
+| `onboarding/formulario.tsx:140` | prefixo **`ciclo.app/`** no campo do endereço | — |
+| `config/negocio/formulario.tsx:123` | campo travado com **`ciclo.app/{slug}`** | — |
+| Botão "Compartilhar" (`compartilhar.tsx:21`) | `window.location.origin` | ✅ correto |
+| No ar hoje | | `ciclo-umber.vercel.app` **[M]** |
+
+`robots.ts` e `sitemap.ts` ao menos leem `NEXT_PUBLIC_APP_URL` antes de cair em `ciclo.app`; os
+dois pontos de **interface** não leem nada — está cravado.
+
+O link que a pessoa **copia** funciona. O que ela **lê** — no exato instante em que escolhe o
+endereço, que é o momento de maior comprometimento do onboarding — é um domínio que o projeto não
+tem. Quem digitar de memória na bio do Instagram publica um link morto.
+
+Isso é decisão de dono antes de ser conserto de código: **ou o `ciclo.app` é comprado** (é a marca,
+e o domínio já está escrito em quatro lugares como se fosse), **ou a interface passa a mostrar o
+endereço real**. O que não pode continuar é o produto anunciar um endereço que não responde.
+
+### A3 · O onboarding cria valor e não mostra **[M]**
+
+`aplicarPacoteDaProfissao` carrega serviços, duração, preço sugerido e horário de funcionamento no
+instante do cadastro **[M]**. Para a barbearia são 6 serviços reais.
+
+A pessoa **nunca vê isso acontecer**: preenche três campos, aperta "Criar meu negócio", e
+`router.push('/admin/hoje')` a joga na tela do A1 — R$ 0,00 e agenda vazia.
+
+O produto fez trabalho de verdade e comunicou o vazio.
+
+---
+
+## 1.7 · O que os grandes fazem no dia 1 — e o que disso cabe aqui
+
+O padrão é um só, e nenhum deles mostra estado vazio no primeiro acesso:
+
+| Produto | O que faz no dia 1 | Mecanismo |
+|---|---|---|
+| **Slack** | manda você trocar mensagem com o Slackbot antes de ter equipe | valor **dentro** do fluxo, não depois |
+| **Stripe** | painel com dados em modo de teste já circulando | ver o produto funcionando antes de integrar |
+| **Shopify** | guia de configuração com progresso persistente | progresso dotado (P7) |
+| **Canva / Figma** | abre num modelo, nunca numa tela em branco | remover a página em branco |
+| **Duolingo** | primeira lição **antes** de criar conta | valor antes do compromisso |
+
+> **A regra comum: no dia 1, mostre o produto trabalhando com o que já existe — nunca o vazio.**
+
+E o CICLO tem com o que trabalhar: o catálogo da profissão **já foi carregado** (A3). A tela do dia
+1 não precisa inventar dado nem prometer nada — precisa dizer o que acabou de acontecer:
+
+> **Seu catálogo de barbearia está pronto**
+> 6 serviços, com duração e preço sugerido. Ajuste quando quiser.
+> **Falta 1 passo para receber agendamento sozinho:** compartilhe seu link → `copiar`
+
+É o P7 (progresso dotado) aterrissando no lugar exato onde o A1 deixa um buraco.
+
+---
+
 ## 2. A camada de persuasão — o que construir, e por que funciona
 
 Cada peça abaixo tem três partes: **o que é**, **a psicologia** (por que converte, com o mecanismo
@@ -478,6 +591,20 @@ contagens que já existem (`services.count`, `clients.count`, primeiro `appointm
 `source='public'`). Componente na home, sumindo sozinho quando os 5 fecham. Cada passo emite
 evento em `product_events` (P5), então o funil se instrumenta sozinho.
 
+**E é aqui que o A1 se resolve.** A guarda `deveMostrarHeroiDoMotor()` tem hoje dois estados
+possíveis — herói do Motor ou "FATURADO HOJE R$ 0,00" — e o tenant novo cai sempre no segundo
+(§1.6 A1). São necessários **três**:
+
+| Estado do tenant | O que a home mostra |
+|---|---|
+| Tem movimento hoje | faturamento — como já é |
+| Estabelecido, dia fraco (`atribuicaoCount > 0`) | herói do Motor — como a F1 já faz |
+| **Recém-criado** (`atribuicaoCount === 0` **e** ativação incompleta) | **este cartão** — o catálogo pronto + o passo que falta |
+
+A decisão continua pura e testável: `estadoDaHome(fatos) → 'faturamento' | 'motor' | 'ativacao'`,
+substituindo o booleano por um veredito de três valores. O teste-guarda existente passa a cobrir a
+terceira coluna — que é exatamente o caso que o `25` §2.2 descreveu e que nenhum teste pega hoje.
+
 ---
 
 ### P8 · O selo que converte, e que dá para medir
@@ -562,6 +689,10 @@ mensurável e porque cada dia com a landing errada é tráfego mal atendido.
 | 2 | CTA no meio da landing, ao fim da seção do Motor | I2 | 1 componente |
 | 3 | `href="/?de={slug}"` no selo + evento | I3 | 1 linha |
 | 4 | Copy do selo voltada a quem lê; exemplo com selo visível | I3/I4 | copy + config do tenant demo |
+| 5 | **Endereço real na interface** (ou comprar o `ciclo.app`) | A2 | 2 linhas — mas a **decisão é do dono** |
+
+O item 5 é o único de E0 que não é só execução: é escolher entre comprar o domínio da marca ou
+parar de exibi-lo. Enquanto não se decide, a interface promete um endereço que não responde.
 
 ### E1 · A máquina — sem depender de decisão de ninguém
 
