@@ -21,8 +21,8 @@ export default async function PaginaRecuperar() {
   const ctx = await contextoAtual(new Request('https://interno/recuperar', { headers: await headers() }))
   const db = await criarClienteDoUsuario()
 
-  const { data: tenant } = await db.from('tenants').select('timezone').eq('id', ctx.tenantId).maybeSingle()
-  const timezone = tenant?.timezone ?? 'America/Sao_Paulo'
+  // `docs/28` §8: o `timezone` chega no contexto, sem segunda ida ao banco.
+  const timezone = ctx.tenant.timezone
   const mesAtual = Temporal.PlainYearMonth.from(Temporal.Now.zonedDateTimeISO(timezone).toPlainDate())
   const desde = mesAtual.toPlainDate({ day: 1 }).toString()
   const ate = mesAtual.toPlainDate({ day: mesAtual.daysInMonth }).toString()

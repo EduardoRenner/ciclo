@@ -28,8 +28,9 @@ export default async function PaginaHoje() {
   const ctx = await contextoAtual(new Request('https://interno/hoje', { headers: await headers() }))
   const db = await criarClienteDoUsuario()
 
-  const { data: tenantRow } = await db.from('tenants').select('name, slug, timezone').eq('id', ctx.tenantId).single()
-  const timezone = tenantRow?.timezone ?? 'America/Sao_Paulo'
+  // Vem junto do `select` que revalida o membership — era uma ida de rede serial, e o
+  // `timezone` decide o intervalo de tudo que vem depois (`docs/28` §8).
+  const timezone = ctx.tenant.timezone
   const mesAtual = Temporal.PlainYearMonth.from(Temporal.Now.zonedDateTimeISO(timezone).toPlainDate())
   const desde = mesAtual.toPlainDate({ day: 1 }).toString()
   const ate = mesAtual.toPlainDate({ day: mesAtual.daysInMonth }).toString()
@@ -62,19 +63,19 @@ export default async function PaginaHoje() {
       <PageHeader
         overline={data}
         titulo={saudacao(timezone)}
-        descricao={tenantRow?.name ?? undefined}
+        descricao={ctx.tenant.name}
         acao={
-          tenantRow?.slug ? (
+          ctx.tenant.slug ? (
             <div className="flex items-center gap-1">
               <Link
-                href={`/${tenantRow.slug}`}
+                href={`/${ctx.tenant.slug}`}
                 target="_blank"
                 className="flex h-12 items-center gap-1 text-label font-semibold text-acc-2 transition active:scale-[.97]"
               >
                 Ver meu site
                 <ExternalLink aria-hidden className="size-3.5" />
               </Link>
-              <CompartilharSite slug={tenantRow.slug} nome={tenantRow.name ?? 'nosso salão'} />
+              <CompartilharSite slug={ctx.tenant.slug} nome={ctx.tenant.name} />
             </div>
           ) : null
         }

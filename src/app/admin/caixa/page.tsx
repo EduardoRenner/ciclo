@@ -66,8 +66,8 @@ export default async function PaginaCaixa({ searchParams }: { searchParams: Prom
     )
   }
 
-  const { data: tenantRow } = await db.from('tenants').select('timezone').eq('id', ctx.tenantId).single()
-  const timezone = tenantRow?.timezone ?? 'America/Sao_Paulo'
+  // `docs/28` §8: o `timezone` chega no contexto, sem segunda ida ao banco.
+  const timezone = ctx.tenant.timezone
 
   const hoje = Temporal.Now.instant().toZonedDateTimeISO(timezone).toPlainDate()
   const dia = diaPedido((await searchParams).dia, hoje)

@@ -21,8 +21,8 @@ export default async function PaginaAgenda({
   const ctx = await contextoAtual(new Request('https://interno/agenda', { headers: await headers() }))
   const db = await criarClienteDoUsuario()
 
-  const { data: tenantRow } = await db.from('tenants').select('timezone').eq('id', ctx.tenantId).single()
-  const timezone = tenantRow?.timezone ?? 'America/Sao_Paulo'
+  // `docs/28` §8: o `timezone` chega no contexto, sem segunda ida ao banco.
+  const timezone = ctx.tenant.timezone
 
   /*
    * O dia padrão saía de `new Date().toISOString().slice(0, 10)` — "hoje em

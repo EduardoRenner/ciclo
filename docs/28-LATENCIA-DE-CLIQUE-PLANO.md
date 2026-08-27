@@ -197,3 +197,64 @@ chegar no `sharp` a partir daqui?". Não procura a string `sharp` num arquivo: o
 esteve no arquivo que importa, e sim no **caminho** até ele — uma guarda por string passaria com
 o defeito de volta. Verificada por mutação nas duas direções: religar `crm.ts` ao upload quebra
 6 testes; tirar o `sharp` da rota de upload quebra 1.
+
+---
+
+## 8. Quarta rodada (27/08) — o que a medição desmentiu
+
+Medido em produção depois do conserto do `sharp`, com sessão real:
+
+| Rota | 1ª (fria) | mediana (quente) |
+|---|---|---|
+| `/admin/hoje` | 1.706 ms | **293 ms** (era 391) |
+| `/admin/agenda` | 246 ms | 232 ms (era 355) |
+| `/admin/clientes` | 213 ms | 246 ms |
+| `/api/v1/clients` | 559 ms | 168 ms (era 177) |
+
+E então a medição desmentiu uma suposição que eu estava prestes a otimizar. Bati em **oito telas
+diferentes**, uma vez cada, nenhuma delas visitada antes:
+
+```
+/admin/caixa            1036 ms   ← a única fria
+/admin/estoque           296 ms
+/admin/recuperar         253 ms
+/admin/series            224 ms
+/admin/orcamentos        226 ms
+/admin/campanhas         182 ms
+/admin/config            221 ms
+/admin/config/servicos   184 ms
+```
+
+**Não é uma função fria por tela.** É *uma* instância compartilhada: paga-se o cold start uma vez
+por período de ociosidade, e daí em diante toda tela responde em 180–300 ms. O sintoma real é
+"a primeira coisa que eu faço depois de um tempo parado demora ~1 s; o resto vai".
+
+Isso reordena o que vale a pena:
+
+- **Tamanho de bundle** rende menos do que parecia — o cold start é um só, não um por tela. (O
+  conserto do `sharp` continua valendo: é ele que a instância única carrega.)
+- **Idas de rede em série** rendem mais, porque são pagas em **toda** requisição.
+
+### O conserto desta rodada
+
+Dez telas faziam `from('tenants').select(...)` na linha seguinte ao `contextoAtual`, e em cinco
+(`hoje`, `agenda`, `caixa`, `estoque`, `recuperar`) a ida era **serial e bloqueante**: o
+`timezone` decide o intervalo de todas as consultas seguintes, então nada começava antes dela
+voltar. Agora os quatro campos vêm de carona no `select` que já revalida o membership.
+
+`settings` ficou de fora de propósito: é JSON que cresce por tenant, e cobrá-lo de toda
+requisição para servir três telas troca uma ida de rede por bytes em todas.
+
+### Decisão registrada: a trilha de auditoria fica no caminho crítico
+
+O P1-b (`writeAudit` via `after()`/`waitUntil`) economizaria ~15–30 ms por mutação. **Não vale.**
+`audit_log` é trilha de acesso a dado de saúde (LGPD); hoje ela é gravada **antes** de a pessoa
+ver "feito". Mover para depois da resposta abre uma janela em que a operação aconteceu e a trilha
+não existe. Trocar essa garantia por 15 ms é um mau negócio.
+
+### O que sobra é infraestrutura, não código
+
+O cold start de ~1 s se divide em boot do contêiner + runtime do Node/Next. Medido localmente
+(`next start`, sem contêiner), o custo de carregar os módulos da página é ~480 ms; o resto é da
+plataforma. Não há mais gordura de aplicação relevante ali — o que resolve é manter a instância
+quente (Fluid Compute), que é configuração de projeto na Vercel, não código.

@@ -11,10 +11,32 @@ import type { Papel } from '@/server/auth/rbac'
 /** Nome fixado pelo briefing (`01-ESPEC-TECNICA §2.1`). */
 export const COOKIE_TENANT = 'ciclo_tenant'
 
+export type DadosDoTenant = {
+  name: string
+  slug: string
+  timezone: string
+  vertical: string | null
+}
+
 export type Contexto = {
   sessao: Sessao
   tenantId: string
   papel: Papel
+  /**
+   * Os quatro campos do tenant que quase toda tela pede logo depois de resolver o contexto —
+   * vêm de carona no `select` que já revalida o membership, em vez de uma segunda ida ao banco
+   * (`docs/28-LATENCIA-DE-CLIQUE-PLANO.md` §8).
+   *
+   * Dez telas faziam `from('tenants').select(...)` na linha seguinte ao `contextoAtual`, e em
+   * cinco delas (`hoje`, `agenda`, `caixa`, `estoque`, `recuperar`) essa ida era **serial e
+   * bloqueante**: o `timezone` decide o intervalo das consultas seguintes, então nada podia
+   * começar antes dela voltar.
+   *
+   * `settings` **não** entra aqui de propósito: é JSON que cresce por tenant, e cobrar isso de
+   * toda requisição para servir três telas seria trocar uma ida de rede por bytes em todas.
+   * Quem precisa de `settings` continua buscando por conta própria.
+   */
+  tenant: DadosDoTenant
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -32,12 +54,23 @@ const vinculosAtivos = cache(async function vinculosAtivos(userId: string) {
   const db = await criarClienteDoUsuario()
   const { data, error } = await db
     .from('memberships')
-    .select('tenant_id, role')
+    .select('tenant_id, role, tenants(name, slug, timezone, vertical)')
     .eq('user_id', userId)
     .eq('active', true)
   if (error) throw new AppError('INTERNAL', { cause: error })
   return data ?? []
 })
+
+/**
+ * O join do PostgREST devolve `null` quando a linha do lado de lá não existe. Não deveria
+ * acontecer (`memberships.tenant_id` é FK), mas o tipo gerado admite — e cair aqui com
+ * `TENANT_MISMATCH` é o comportamento certo: membership apontando para tenant que sumiu não é
+ * um contexto válido para trabalhar.
+ */
+function dadosDoTenant(bruto: { name: string; slug: string; timezone: string; vertical: string | null } | null): DadosDoTenant {
+  if (!bruto) throw new AppError('TENANT_MISMATCH')
+  return { name: bruto.name, slug: bruto.slug, timezone: bruto.timezone, vertical: bruto.vertical }
+}
 
 /**
  * Resolve o tenant ativo e **revalida o membership em toda requisição**
@@ -61,7 +94,7 @@ export async function contextoAtual(req: Request): Promise<Contexto> {
     // Mesmo erro para "tenant não existe" e "existe mas não é seu": a diferença
     // vira um verificador de quais estabelecimentos existem no CICLO.
     if (!escolhido) throw new AppError('TENANT_MISMATCH')
-    return { sessao, tenantId: escolhido.tenant_id, papel: escolhido.role }
+    return { sessao, tenantId: escolhido.tenant_id, papel: escolhido.role, tenant: dadosDoTenant(escolhido.tenants) }
   }
 
   if (ativos.length === 0) {
@@ -78,5 +111,5 @@ export async function contextoAtual(req: Request): Promise<Contexto> {
     )
   }
 
-  return { sessao, tenantId: unico.tenant_id, papel: unico.role }
+  return { sessao, tenantId: unico.tenant_id, papel: unico.role, tenant: dadosDoTenant(unico.tenants) }
 }

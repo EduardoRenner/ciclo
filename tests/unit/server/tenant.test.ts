@@ -11,7 +11,17 @@ vi.mock('@/server/db/server-client', () => ({ criarClienteDoUsuario: vi.fn() }))
 const TENANT_A = '11111111-1111-4111-8111-111111111111'
 const TENANT_B = '22222222-2222-4222-8222-222222222222'
 
-type Vinculo = { tenant_id: string; role: string }
+type DadosTenant = { name: string; slug: string; timezone: string; vertical: string | null }
+type Vinculo = { tenant_id: string; role: string; tenants: DadosTenant }
+
+/**
+ * O `select` de memberships passou a trazer os dados do tenant de carona (`docs/28` §8), então o
+ * vínculo de mentira também precisa deles — sem isso o `contextoAtual` recusa com
+ * `TENANT_MISMATCH`, que é o comportamento certo para membership apontando para tenant que sumiu.
+ */
+function vinculo(tenantId: string, role: string): Vinculo {
+  return { tenant_id: tenantId, role, tenants: { name: 'Salão de Teste', slug: 'salao-de-teste', timezone: 'America/Sao_Paulo', vertical: null } }
+}
 
 /**
  * Cliente de mentira que responde `getUser` e a consulta de memberships. Os
@@ -50,7 +60,7 @@ describe('resolução do tenant ativo', () => {
   afterEach(() => vi.restoreAllMocks())
 
   it('usa o tenant do header quando existe membership ativo', async () => {
-    comUsuarioEVinculos(USUARIO, [{ tenant_id: TENANT_A, role: 'owner' }])
+    comUsuarioEVinculos(USUARIO, [vinculo(TENANT_A, 'owner')])
     comCookie(null)
 
     const ctx = await contextoAtual(req({ 'x-tenant-id': TENANT_A }))
@@ -58,7 +68,7 @@ describe('resolução do tenant ativo', () => {
   })
 
   it('cai para o cookie quando não vem header', async () => {
-    comUsuarioEVinculos(USUARIO, [{ tenant_id: TENANT_A, role: 'manager' }])
+    comUsuarioEVinculos(USUARIO, [vinculo(TENANT_A, 'manager')])
     comCookie(TENANT_A)
 
     expect(await contextoAtual(req())).toMatchObject({ tenantId: TENANT_A, papel: 'manager' })
@@ -66,7 +76,7 @@ describe('resolução do tenant ativo', () => {
 
   it('header forjado de outro tenant devolve TENANT_MISMATCH', async () => {
     // O banco só devolve o vínculo com A; pedir B é exatamente o ataque.
-    comUsuarioEVinculos(USUARIO, [{ tenant_id: TENANT_A, role: 'owner' }])
+    comUsuarioEVinculos(USUARIO, [vinculo(TENANT_A, 'owner')])
     comCookie(null)
 
     await expect(contextoAtual(req({ 'x-tenant-id': TENANT_B }))).rejects.toMatchObject({
@@ -76,14 +86,14 @@ describe('resolução do tenant ativo', () => {
   })
 
   it('cookie forjado também não passa — a revalidação não olha a origem', async () => {
-    comUsuarioEVinculos(USUARIO, [{ tenant_id: TENANT_A, role: 'owner' }])
+    comUsuarioEVinculos(USUARIO, [vinculo(TENANT_A, 'owner')])
     comCookie(TENANT_B)
 
     await expect(contextoAtual(req())).rejects.toMatchObject({ code: 'TENANT_MISMATCH' })
   })
 
   it('header que nem uuid é leva o mesmo erro, sem ir ao banco', async () => {
-    comUsuarioEVinculos(USUARIO, [{ tenant_id: TENANT_A, role: 'owner' }])
+    comUsuarioEVinculos(USUARIO, [vinculo(TENANT_A, 'owner')])
     comCookie(null)
 
     await expect(contextoAtual(req({ 'x-tenant-id': "' or 1=1 --" }))).rejects.toMatchObject({
@@ -92,7 +102,7 @@ describe('resolução do tenant ativo', () => {
   })
 
   it('sem header e sem cookie, com um vínculo só, assume esse', async () => {
-    comUsuarioEVinculos(USUARIO, [{ tenant_id: TENANT_A, role: 'professional' }])
+    comUsuarioEVinculos(USUARIO, [vinculo(TENANT_A, 'professional')])
     comCookie(null)
 
     expect(await contextoAtual(req())).toMatchObject({ tenantId: TENANT_A, papel: 'professional' })
@@ -100,8 +110,8 @@ describe('resolução do tenant ativo', () => {
 
   it('sem escolha e com dois vínculos, pede para escolher', async () => {
     comUsuarioEVinculos(USUARIO, [
-      { tenant_id: TENANT_A, role: 'professional' },
-      { tenant_id: TENANT_B, role: 'professional' },
+      vinculo(TENANT_A, 'professional'),
+      vinculo(TENANT_B, 'professional'),
     ])
     comCookie(null)
 
@@ -130,7 +140,7 @@ describe('no envelope da rota', () => {
 
   it('o TENANT_MISMATCH sai como 403 e sem dado do outro tenant', async () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {})
-    comUsuarioEVinculos(USUARIO, [{ tenant_id: TENANT_A, role: 'owner' }])
+    comUsuarioEVinculos(USUARIO, [vinculo(TENANT_A, 'owner')])
     comCookie(null)
 
     const handler = rota(async (r: Request) => {
