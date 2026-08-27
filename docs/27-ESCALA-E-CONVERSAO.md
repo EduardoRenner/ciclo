@@ -1220,6 +1220,24 @@ branch, e comparar exige deploy. O número acima é previsão a partir da contag
 medição — e é justamente a distinção que o `18` §2.4 chama de "Suposto vestido de Medido". Medir
 de novo depois do merge é um passo do plano, não um detalhe.
 
+### O padrão não é sistêmico — varri o resto e não há segundo caso
+
+Depois de achar o N+1 em `public-booking`, varri **todos** os `for`/`forEach`/`while` com `await`
+dentro em `src/server/` e `src/app/api/` **[M]**. Vinte ocorrências. Nenhuma outra vale conserto,
+e as razões são boas:
+
+| Padrão | Onde | Por que está certo |
+|---|---|---|
+| **Paginação** | `caixa.ts`, `ciclo.ts`, `crm.ts`, `importacao-clientes.ts` | Só se sabe se há próxima página depois que a atual volta. Sequencial é a natureza do laço, não descuido. |
+| **Envio de mensagem** | `mensageria.ts`, `lembretes.ts`, `recuperar-receita.ts` | Serializar **é** a correção: há teto diário, e o dedupe lê `last_campaign_at` que o próprio laço escreve. Paralelizar criaria corrida e mandaria mensagem repetida. |
+| **Escrita com efeito** | `estoque.ts`, `recorrencia.ts`, `job-queue.ts`, `lgpd.ts` | Movimento de estoque, ocorrência de série (que disputa a constraint de sobreposição), fila de jobs. Ordem é semântica. |
+| **N pequeno, caminho frio** | `comanda.ts` (itens de uma comanda) | 1 a 4 itens, uma vez por atendimento, e é caminho de dinheiro. Risco maior que o ganho. |
+| ✅ **já paralelizado** | `alertas-estoque.ts` | `Promise.all(duvidosos.map(...))`, com comentário raciocinando exatamente sobre isto: *"Esta tela roda a cada carregamento de 'Hoje': N consultas por padrão seria caro à toa."* |
+
+O último é o mais interessante: **alguém já teve essa preocupação nesta base, no lugar certo, e
+escreveu o porquê**. O caso do `public-booking` não era ignorância do padrão — era um lugar onde
+ele escapou.
+
 **Por que isto importa mais do que parece.** Esta é a superfície que o laço de crescimento produz:
 todo cliente de todo tenant passa por ela, e é a primeira impressão que alguém tem do CICLO sem
 saber que é o CICLO. Uma página de agendamento que demora 4 s para mostrar um horário é a
