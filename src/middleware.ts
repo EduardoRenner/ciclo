@@ -38,6 +38,31 @@ export function naoCacheavel(pathname: string): boolean {
 }
 
 /**
+ * O middleware só precisa falar com o servidor de auth quando a resposta é uma **tela**.
+ *
+ * `docs/28-LATENCIA-DE-CLIQUE-PLANO.md` §3 P1-a. O `getUser()` lá embaixo é uma ida de rede ao
+ * servidor de auth do Supabase (~110 ms medidos daqui, ~40 ms de dentro do `gru1`), e ela
+ * acontecia em **toda** requisição que o matcher pega — inclusive nas ~90 rotas de `/api/v1`,
+ * que logo em seguida perguntam a mesma coisa de novo pelo `contextoAtual`. Uma ida inteira
+ * duplicada no caminho de todo clique.
+ *
+ * Por que é seguro tirar de `/api/*`:
+ *
+ * - **Guarda.** `exigeSessao` já devolve `false` para `/api/*` de propósito — quem protege rota
+ *   de API é `exigirSessao()` dentro dela, com `401` no envelope JSON, não um `302` que nenhum
+ *   `fetch()` sabe ler. Nada de autorização mora aqui.
+ * - **Renovação de token.** É o único serviço real que o `getUser()` do middleware presta a uma
+ *   rota de API, e ela não depende dele: Route Handler **pode escrever cookie** (ao contrário de
+ *   Server Component), então o `setAll` de `criarClienteDoUsuario` funciona e o próprio
+ *   `@supabase/ssr` renova e persiste o token quando ele estiver vencido.
+ *
+ * Tela continua passando pelo caminho completo, porque aí a renovação só pode acontecer aqui.
+ */
+export function precisaRenovarSessao(pathname: string): boolean {
+  return !(pathname === '/api' || pathname.startsWith('/api/'))
+}
+
+/**
  * TICKET-057. CSP com nonce por requisição, gerado no Edge Runtime (que tem
  * `crypto.randomUUID()` global, sem precisar de `node:crypto`). O nonce vai
  * no header **da requisição** (não só da resposta) porque é assim que o
@@ -134,6 +159,9 @@ export async function middleware(req: NextRequest) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   if (!url || !anon) return resposta
+  // Rota de API já sai daqui com CSP e `no-store` aplicados — o que ela não paga mais é a ida
+  // de rede ao servidor de auth que ela mesma refaz um instante depois.
+  if (!precisaRenovarSessao(req.nextUrl.pathname)) return resposta
 
   const db = createServerClient(url, anon, {
     cookies: {

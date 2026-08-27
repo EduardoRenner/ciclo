@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { exigeSessao, naoCacheavel } from '@/middleware'
+import { exigeSessao, naoCacheavel, precisaRenovarSessao } from '@/middleware'
 
 /**
  * Achado S10 da auditoria de 2026-08-23: `Cache-Control: no-store` era aplicado só onde o
@@ -65,5 +65,46 @@ describe('exigeSessao continua valendo só para telas', () => {
 
   it('rota pública não exige sessão', () => {
     expect(exigeSessao('/dom-rocha/agendar')).toBe(false)
+  })
+})
+
+/**
+ * `docs/28-LATENCIA-DE-CLIQUE-PLANO.md` §3 P1-a. O `getUser()` do middleware é uma ida de rede
+ * ao servidor de auth, e ela acontecia em toda requisição — inclusive nas ~90 rotas de
+ * `/api/v1`, que refazem a mesma pergunta pelo `contextoAtual` um instante depois.
+ *
+ * O risco de errar aqui é de segurança, não de performance: se este predicado devolvesse `false`
+ * para uma **tela**, a renovação de token pararia de acontecer no único lugar em que ela pode
+ * acontecer (Server Component não escreve cookie) e a pessoa cairia em `/entrar` a cada 15
+ * minutos. Por isso o par de casos: API sai do caminho, tela nunca sai.
+ */
+describe('precisaRenovarSessao (§3 P1-a — ida de rede duplicada)', () => {
+  it.each(['/api', '/api/v1/clients', '/api/v1/appointments/abc/confirm', '/api/cron/reminders', '/api/health'])(
+    '%s não paga a ida ao servidor de auth — a própria rota pergunta e renova',
+    (caminho) => {
+      expect(precisaRenovarSessao(caminho)).toBe(false)
+    },
+  )
+
+  it.each(['/admin/hoje', '/admin/agenda', '/onboarding', '/', '/entrar', '/dom-rocha/agendar'])(
+    '%s é tela e continua renovando a sessão no middleware',
+    (caminho) => {
+      expect(precisaRenovarSessao(caminho)).toBe(true)
+    },
+  )
+
+  it('não confunde rota que apenas COMEÇA com as letras de /api', () => {
+    // Mesma armadilha de prefixo sem barra que `naoCacheavel` já cobre: `/apiario` é uma tela
+    // pública qualquer e precisa da renovação como qualquer outra.
+    expect(precisaRenovarSessao('/apiario')).toBe(true)
+  })
+
+  it('toda rota que sai da renovação continua sendo não-cacheável (S10 não afrouxa)', () => {
+    // As duas regras coincidem em `/api/*` hoje. Se alguém mexer numa e esquecer da outra, a
+    // resposta de `/vault` volta a poder ser guardada por proxy — este teste é o que impede.
+    for (const caminho of ['/api/v1/clients/x/vault', '/api/v1/media/x/url', '/api/health']) {
+      expect(precisaRenovarSessao(caminho)).toBe(false)
+      expect(naoCacheavel(caminho)).toBe(true)
+    }
   })
 })
