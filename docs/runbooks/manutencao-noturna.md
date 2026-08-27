@@ -49,3 +49,24 @@ foi aplicada continua funcionando.
 
 **Ação:** nenhum commit de correção — arquivo temporário apagado, árvore limpa, suíte verde.
 Sessão pausada aqui a pedido do usuário (vai testar com outra IA); log deixado pra quem continuar.
+
+## 2026-08-27 00:22 (America/Sao_Paulo)
+
+**O que foi olhado:** mutação das asserções de `tests/unit/design/titulos-de-tela.test.ts`
+(guarda que varre os `page.tsx` de `/admin`, `(auth)`, `onboarding`, `(public)` exigindo
+`metadata.title` próprio e não repetindo a marca — nunca vista reprovando desta forma).
+Alvo: `src/app/admin/agenda/page.tsx`.
+
+**Achado:** as duas asserções reprovam certo.
+1. `title: "CICLO"` (repete a marca) → reprova em `not.toContain('ciclo')`. ✅
+2. `export const metadata` removido inteiro → reprova em "não exporta metadata.title nem
+   generateMetadata". ✅
+
+A guarda não está cega. Mutações revertidas com `git checkout --` (árvore limpa antes de cada
+uma), suíte confirmada verde (79 arquivos / 811 testes).
+
+**Ação:** nenhum commit — nada a corrigir.
+
+**Próxima rodada, sugestão:** `home-nao-promete-demais.test.ts` e
+`runbook-aponta-pro-agendador-certo.test.ts` ainda não verificadas por mutação; ou varredura de
+export morto.
