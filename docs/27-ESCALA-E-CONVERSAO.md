@@ -1156,17 +1156,24 @@ cita — é pior.
 
 ### O que eu consegui medir da causa
 
-**Quatro idas ao banco em série** dentro de `disponibilidadePublica` **[M]**:
+Eu havia escrito aqui "quatro idas em série, e o passo 4 já está paralelizado corretamente".
+**Estava errado, e para menos.** Ao abrir a função inteira, o `Promise.all` das três consultas
+está **dentro de um laço sobre os profissionais** **[M]**:
 
 ```
-1. tenantPeloSlug(svc, slug)          ← await
-2. services (pelo tenant)             ← await
-3. professionals                      ← await
-4. Promise.all([business_hours, time_off, appointments])   ← 3 em paralelo, bem feito
+1. tenantPeloSlug(svc, slug)                             ← await
+2. services                                              ← await
+3. professionals                                         ← await
+4. for (const prof of profissionais) {                   ← await POR PROFISSIONAL
+     Promise.all([business_hours, time_off, appointments])
+   }
 ```
 
-O passo 4 já está paralelizado corretamente. Os passos 2 e 3 **não dependem um do outro** — os dois
-só precisam do `tenant` do passo 1 — e mesmo assim são sequenciais.
+São **3 + N idas em série**, com N = número de profissionais. A Barbearia Dom Rocha tem **3**
+**[M]** — então eram **seis** travessias em série, não quatro. É um N+1 clássico: o `Promise.all`
+paraleliza dentro de cada profissional, e o laço serializa entre eles.
+
+Os passos 2 e 3 também não dependem um do outro — os dois só precisam do `tenant` do passo 1.
 
 **E as duas pontas estão em continentes diferentes** **[M]**:
 
@@ -1194,10 +1201,24 @@ com o conserto**. Se for restrito, é um argumento novo (e melhor que o do cron)
 upgrade — mas o `25` §5 já decidiu não subir para Pro por causa de cron, e isso continua valendo:
 US$ 20/mês são 2,4 assinantes Essencial.
 
-**(b) Paralelizar os passos 2 e 3 — inteiramente nas suas mãos.**
-`services` e `professionals` num `Promise.all` cortam **quatro saltos em série para três**. Não
-depende de plano, de região nem de decisão de ninguém: é o mesmo padrão que o passo 4 já usa três
-linhas abaixo. Ganho esperado: ~25% do tempo que é gasto só esperando a rede.
+**(b) ✅ FEITO — o N+1 saiu.** Commit `1e689ec`.
+
+Duas mudanças, nenhuma altera semântica:
+
+- `services` e `professionals` em paralelo — só dependem de `tenant`, não um do outro. **A ordem
+  das checagens de erro é a de antes**, de propósito: paralelizar muda quando as consultas partem,
+  nunca qual erro a pessoa vê.
+- **os profissionais também em paralelo** — nada no corpo do laço era compartilhado além do
+  acumulador (virou o retorno), e a lista já era ordenada por `startsAt` no fim, então a ordem de
+  chegada nunca importou.
+
+**De `3 + N` para `3` idas em série.** Para a Dom Rocha, de seis para três — metade. Para um salão
+com cinco profissionais, de oito para três.
+
+typecheck, eslint e 848 testes limpos. **Mas o "depois" ainda não foi medido**: a mudança está no
+branch, e comparar exige deploy. O número acima é previsão a partir da contagem de saltos, não
+medição — e é justamente a distinção que o `18` §2.4 chama de "Suposto vestido de Medido". Medir
+de novo depois do merge é um passo do plano, não um detalhe.
 
 **Por que isto importa mais do que parece.** Esta é a superfície que o laço de crescimento produz:
 todo cliente de todo tenant passa por ela, e é a primeira impressão que alguém tem do CICLO sem
