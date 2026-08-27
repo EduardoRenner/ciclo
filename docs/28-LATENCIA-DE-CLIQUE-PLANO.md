@@ -326,3 +326,35 @@ três idas ao banco (`select` do produto, `insert` do movimento, `update` do est
 diferentes rodavam em série no fechamento de uma comanda. Como `consumoPorProduto` já dedupe por
 `productId`, produtos diferentes não competem pela mesma linha — seguro rodar em paralelo. Uma
 comanda com 3 produtos diferentes ia de ~9 idas seriais para 3 conjuntos em paralelo.
+
+---
+
+## 11. Sexta rodada (27/08) — RLS duplicada na tabela mais quente do banco
+
+`get_advisors(type: performance)` do Supabase apontou `multiple_permissive_policies` em
+`memberships`: duas políticas permissivas (`memberships_select` e `memberships_write`, esta
+última `for all` — que inclui SELECT) cobrindo a mesma ação. Todo `select` em `memberships`
+pagava as duas: `has_tenant(tenant_id)` OU `tenant_role(tenant_id) = 'owner'` — e as duas funções,
+por sua vez, cada uma faz sua própria subconsulta em `memberships`. É a tabela que
+`contextoAtual()` consulta em **toda** requisição autenticada.
+
+**A verificação, antes de mexer:** conferi as duas funções (`has_tenant`, `tenant_role`) direto no
+catálogo do Postgres. `tenant_role(tenant_id) = 'owner'` só é verdadeiro quando existe membership
+ativa do usuário atual nesse tenant com `role='owner'` — o que **já satisfaz** `has_tenant`, que só
+exige membership ativa, qualquer papel. É implicação lógica, não suposição: toda linha que
+`memberships_write` deixava passar por SELECT já passava por `memberships_select`.
+
+Fiz o mesmo raciocínio para `profiles` (mesmo aviso do advisor) e a conclusão foi oposta:
+`profiles_self` cobre o caso de alguém ver o próprio perfil **antes de ter qualquer membership**
+(onboarding) — não é implicado por `profiles_same_tenant`. Ficou de fora de propósito; mexer ali
+quebraria a tela de cadastro.
+
+**Migration 0044**: `memberships_write` (`for all`) virou três políticas — `insert`, `update`,
+`delete` — sem a branch de SELECT redundante.
+
+**Verificação, não confiança:** escrevi `tests/rls/memberships-write-policy.test.ts` com clientes
+autenticados de verdade (nunca `service_role`, que ignora RLS e não provaria nada) e rodei **duas
+vezes**: antes da migration (baseline, 7/7 verde no estado antigo) e depois (mesmo resultado). A
+suíte de isolamento inteira (142 testes de RLS) e a suíte completa (1292 testes) seguem verdes.
+`get_advisors` confirma o aviso sumiu para `memberships`; o de `profiles` continua, deixado de
+propósito.
