@@ -167,6 +167,85 @@ conversa de conformidade que hoje não existe.
 
 ---
 
+## 1.5 · A interface, medida no ar
+
+Esta seção foi escrita **olhando o site publicado** (`ciclo-umber.vercel.app`, 2026-08-27), não o
+código. Tudo aqui é **[M]**, medido no DOM real a 375 px — o screenshot do painel não compõe
+quadro nesta sessão (armadilha já registrada), então a medição é por `getBoundingClientRect` e
+texto extraído, que é mais preciso de qualquer forma.
+
+**O que está certo e não deve ser mexido:** sem overflow horizontal a 375 px; CTA principal a
+492 px de 812 px (acima da dobra); alvos de toque de 48 px; `/precos` com preço na tela, sem
+"fale com um consultor", e um FAQ que **admite que a cobrança automática não está no ar** — essa
+honestidade é um ativo, não um bug a corrigir. O cartão Equipe já tem destaque visual, com o
+raciocínio de ancoragem escrito no próprio arquivo. Nada disso precisa mudar.
+
+Os quatro achados de superfície:
+
+### I1 · A landing vende para o mercado errado — e o produto já atende o certo **[M]**
+
+A landing diz, no subtítulo do herói:
+
+> *"Para quem atende com hora marcada: barbearia, unhas, cílios, sobrancelha, depilação, estética."*
+
+E a seção **FEITO PARA** lista 8 verticais: Barbearia · Unhas · Cílios · Sobrancelha · Depilação ·
+Estética · Cabelo · Tatuagem. **Todas de beleza.**
+
+O catálogo do produto tem **17 profissões** **[M]** (`0022` + `0026`). As 9 que a landing omite:
+
+> Faxina e diarista · Eletricista · Encanador · Jardineiro · Personal trainer · Psicólogo ·
+> Professor particular · Fotógrafo · Banho e tosa
+
+Cruzando com o `25` §5 e §F3, isso é pior do que uma omissão:
+
+| | Onde a landing vende | Onde a landing **não** vende |
+|---|---|---|
+| Concorrência | Trinks (13 anos, 44 mil negócios), Booksy, Fresha, Avec, AppBarber **[P]** | **Trinks e Booksy não estão** **[P]** |
+| Preço do concorrente | R$ 39,90 – R$ 110 **[P]** | software de campo começa em **R$ 295** **[P]** |
+| Recomendação do `25` | *"não competir com Trinks em beleza completa — esse terreno está perdido"* | *"a aposta mais interessante"* |
+
+> **A landing vende exatamente no terreno onde o `25` manda não competir, e cala no terreno onde
+> não há concorrência.**
+
+Isso é maior que a higiene do `CLAUDE.md` que o `25` §6 registra. Aquilo é um documento interno
+que enviesa sessões futuras; isto é a **superfície pública**, e enviesa cada visitante.
+
+### I2 · 2.000 px de landing sem nada clicável **[M]**
+
+A 375 px a página tem **2.820 px de altura** (~3,5 telas). Os CTAs:
+
+| CTA | Posição |
+|---|---|
+| "Criar minha conta" | 492 px |
+| *(nada)* | — |
+| "Criar minha conta" | **2.567 px** |
+
+São **2.075 px — cerca de 2,5 telas de rolagem — sem um único ponto de conversão**, e é
+justamente o trecho que contém a seção mais forte do produto ("Quem sumiu tem nome", que explica
+o Motor de Ciclo). Quem se convence ali precisa rolar até o fim ou voltar ao topo.
+
+### I3 · O melhor laço de crescimento não é atribuível **[M]**
+
+O selo existe e funciona: `{perfil.mostrarSelo ? <footer>Feito com <Link href="/">CICLO</Link>` —
+`secoes.tsx:279`. O `18` §G o classifica como o laço de custo R$ 0 que **nem Trinks nem AppBarber
+têm** **[P]**, e o §G5 pede: *"vale medir quantas visitas chegam à `/precos` vindas de um
+`/[slug]/agendar`"*.
+
+**Esse `href="/"` não tem parâmetro nenhum.** A medição que o próprio plano pede é impossível
+hoje. É uma linha de código.
+
+E um detalhe com graça: a página de exemplo linkada da landing ("Ver uma página de exemplo" →
+`/dom-rocha`) é justamente a que **não** mostra o selo — `dom-rocha` está em Avançado de
+cortesia **[M]**. A vitrine do laço de distribuição é a única página com o laço desligado.
+
+### I4 · O selo fala do salão, não de quem lê **[M]**
+
+*"Feito com CICLO"* diz o que o salão usou. Quem lê é **cliente de um salão** — e uma parte dessas
+pessoas é profissional autônoma, que é exatamente o ICP. Um selo de distribuição converte quando
+carrega o benefício de quem o lê, não a ferramenta de quem o exibe.
+
+---
+
 ## 2. A camada de persuasão — o que construir, e por que funciona
 
 Cada peça abaixo tem três partes: **o que é**, **a psicologia** (por que converte, com o mecanismo
@@ -332,6 +411,121 @@ o fluxo que ele observa — mesma regra do heartbeat). View `v_funil_ativacao` c
 
 ---
 
+### P6 · O paywall que mostra o dinheiro — a peça que só o CICLO consegue fazer
+
+**O que é.** Hoje, quando um tenant do Grátis se aproxima do teto de 50 clientes, o produto
+"avisa quando chega perto" **[M]**. É um aviso de *limite*. Trocar por um aviso de *dinheiro*:
+
+> **Você tem 47 clientes.**
+> 12 deles passaram do tempo de voltar — **R$ 890 parados**.
+> No Grátis você chama um por um. No Essencial, os 12 de uma vez.
+> `Chamar os 12 →`
+
+**A psicologia.** Todo paywall de SaaS é escrito em **funcionalidade** ("desbloqueie envio em
+lote"). Este é escrito em **dinheiro do próprio usuário, medido**. A diferença é que o primeiro
+pede para o cliente fazer uma conta hipotética ("será que envio em lote vale R$ 49?") e o segundo
+já entrega a conta pronta, com o número dele: R$ 890 contra R$ 49 é 18×.
+
+É **aversão à perda aplicada a dinheiro real e presente** — não a um recurso abstrato. E o gatilho
+é contextual: aparece no momento em que a dor existe, não numa tela de preço genérica.
+
+**Por que ninguém copia isso.** Trinks e Booksy vendem funcionalidade porque **não calculam esse
+número** **[P]**. `receitaAtribuidaAoCiclo()` e `listarParaRecuperar()` são o que torna esta peça
+possível, e são exatamente o que o `25` §2.1 chama de "o ativo comercial mais forte do produto".
+
+**O dev.** Sem regra nova: `listarParaRecuperar()` já devolve a lista com valor em risco, e
+`verificarLimite()` já sabe a distância do teto. É um componente que junta os dois. Vive em
+`components/ui/bloqueio-plano.tsx` (que já existe) e no card de teto de "Meu plano".
+
+**Limite de honestidade:** o botão "Chamar os 12 de uma vez" só pode existir depois do F0b. Antes
+disso, a peça mostra o número e o caminho manual — que funciona hoje.
+
+---
+
+### P7 · Progresso dotado — a lista que já começa com dois riscos
+
+**O que é.** Um cartão de ativação na home dos primeiros dias, com 5 passos — e os **dois
+primeiros já marcados**:
+
+```
+Sua conta está pronta em 40%
+  ✓ Conta criada
+  ✓ Catálogo de barbearia carregado (6 serviços)
+  ○ Compartilhe seu link          → copiar
+  ○ Traga sua lista de clientes   → importar
+  ○ Receba o primeiro agendamento pelo link
+```
+
+**A psicologia.** Isto é **progresso dotado** (*endowed progress*), e tem medição famosa: Nunes &
+Drèze (2006) deram a clientes de lava-rápido dois cartões — um de 8 selos vazio e um de 10 selos
+com 2 já carimbados. **Mesmo trabalho.** A conclusão saiu de 19% para **34%** **[P]**. A tarefa
+não muda; o que muda é começar de zero ou começar já andando.
+
+No CICLO os dois riscos são **verdadeiros**: a conta foi criada e o pacote da profissão realmente
+preenche serviços, duração e preço **[M]**. Não é um selo de brinde — é o produto reconhecendo
+trabalho que ele mesmo fez.
+
+Somado ao **efeito Zeigarnik** (tarefa aberta ocupa memória até fechar), o cartão vira o motivo
+de voltar no dia 2 — que é exatamente onde SaaS de autônomo perde gente.
+
+**O quinto passo é o "aha".** O `18` §I.1 nomeia: *"o primeiro agendamento que chega sozinho pela
+página pública"*. Hoje nada no produto conduz até lá — espera-se que aconteça. O passo 3
+("compartilhe seu link", com um toque para mandar pelo `wa.me` que já existe) transforma a espera
+em ação.
+
+**O dev.** Uma função pura em `core/` — `passosDeAtivacao(fatos) → Passo[]` — alimentada por
+contagens que já existem (`services.count`, `clients.count`, primeiro `appointment` com
+`source='public'`). Componente na home, sumindo sozinho quando os 5 fecham. Cada passo emite
+evento em `product_events` (P5), então o funil se instrumenta sozinho.
+
+---
+
+### P8 · O selo que converte, e que dá para medir
+
+Três mudanças pequenas no `footer` de `secoes.tsx`:
+
+1. **Atribuição:** `href="/?de={slug}"` + registro do evento. Destrava a medição que o `18` §G5
+   pede e hoje é impossível (I3).
+2. **Copy voltada a quem lê:** o leitor é cliente do salão, não o salão.
+   *"Feito com CICLO"* → **"Sua agenda também pode ser assim — CICLO, grátis"**.
+   Continua verdade: o Grátis é grátis para sempre, sem cartão.
+3. **Página de exemplo com selo.** O `/dom-rocha` linkado da landing está em Avançado de cortesia
+   e por isso não mostra o selo (I3). Ou a vitrine mostra o produto como a maioria vai vê-lo, ou
+   ela não é vitrine.
+
+**A psicologia.** É **prova social por contexto**: quem vê o selo acabou de ter uma experiência boa
+de agendamento. A associação já está formada quando a oferta aparece — é o momento de maior
+disposição, e é grátis.
+
+---
+
+### P9 · A landing que fala com as 17 profissões
+
+Corrigir I1 não é trocar palavra — é decidir posicionamento. Duas saídas, e recomendo a segunda:
+
+**(a) Listar as 17.** Barato e honesto. Mas "servimos todo mundo" é a mensagem mais fraca que uma
+landing pode dar.
+
+**(b) Herói por profissão.** A rota `/{profissao}` já teria dado de catálogo para se sustentar:
+`/para/eletricista` com o herói, os serviços e o preço sugerido daquela profissão — dado que a
+migration `0026` já semeou **[M]**. É a mesma landing, com o subtítulo, os exemplos e a seção
+"FEITO PARA" trocados por profissão.
+
+**A psicologia.** **Especificidade auto-referente**: *"para eletricistas"* converte mais que *"para
+profissionais de serviço"* porque a pessoa se reconhece sem precisar traduzir. É o que Stripe faz
+com `/use-cases`, e a Shopify com landing por segmento.
+
+**E resolve a armadilha do SEO do `18` §G.1** — que diz que páginas `/{slug}` finas e quase
+idênticas são penalizadas, e que o laço só vale com dezenas de páginas com conteúdo real. Uma
+página por profissão, com catálogo e preço próprios, é conteúdo real **desde a primeira** — e não
+depende de ter tenants.
+
+**O dev.** Rota `(public)/para/[profissao]/page.tsx` lendo `professions` + `profession_services`
+(as duas já populadas e com política de leitura pública **[M]**), reusando as seções da landing.
+`generateStaticParams` a partir do catálogo, `sitemap.ts` incluindo as 17.
+
+---
+
 ## 3. O que **não** fazer — e por quê
 
 O pedido citou "o que apps e sites grandes usam para converter". Boa parte do que eles usam é
@@ -356,24 +550,40 @@ manipulação, e neste repositório ela não passaria nem no teste automatizado.
 Três fases. O critério de ordenação não é esforço — é **o que destrava medição, e depois o que
 compõe**.
 
-### E1 · Agora — não depende de decisão de ninguém
+### E0 · A tarde de correções — horas, não dias
+
+Quatro achados de superfície (§1.5) cujo conserto é copy e uma linha de código. Nenhum depende de
+decisão, migration ou terceiro. Fazer isto **antes** do resto, porque é o que torna o resto
+mensurável e porque cada dia com a landing errada é tráfego mal atendido.
+
+| # | Conserto | Achado | Tamanho |
+|---|---|---|---|
+| 1 | Subtítulo do herói e "FEITO PARA" cobrindo as 17 profissões | I1 | copy |
+| 2 | CTA no meio da landing, ao fim da seção do Motor | I2 | 1 componente |
+| 3 | `href="/?de={slug}"` no selo + evento | I3 | 1 linha |
+| 4 | Copy do selo voltada a quem lê; exemplo com selo visível | I3/I4 | copy + config do tenant demo |
+
+### E1 · A máquina — sem depender de decisão de ninguém
 
 | # | Peça | Depende de | Retorno |
 |---|---|---|---|
-| 1 | **`product_events`** (P5) | nada | destrava medir tudo abaixo |
-| 2 | **Teste reverso** (P1) | nada | maior conversão-por-esforço do documento |
-| 3 | **Extrato do Motor por push** (P2) | rota nova + linha no `cron.yml` | retenção + upgrade + churn-save |
+| 5 | **`product_events`** (P5) | nada | destrava medir tudo abaixo |
+| 6 | **Teste reverso** (P1) | nada | maior conversão-por-esforço do documento |
+| 7 | **Extrato do Motor por push** (P2) | rota nova + linha no `cron.yml` | retenção + upgrade + churn-save |
+| 8 | **Progresso dotado** (P7) | item 5, para instrumentar | ativação no dia 2 |
 
-Nenhuma das três toca WhatsApp, cartão de crédito ou conta em terceiro. As três podem ser
-construídas e verificadas com `pnpm test:unit`.
+Nenhuma toca WhatsApp, cartão de crédito ou conta em terceiro. Todas verificáveis com
+`pnpm test:unit`.
 
 ### E2 · Quando houver sinal (≥1 tenant ativo de verdade)
 
 | # | Peça | Gate |
 |---|---|---|
-| 4 | **Anual** (P3) | precisa de cobrança funcionando — `18` Fase J |
-| 5 | **Indicação do salão** (P4) | 1 tenant com base real; não precisa de pagante |
-| 6 | **Reativação de quem desceu** (`18` §I.4) | precisa do evento `teste_terminou` do item 1 |
+| 9 | **Paywall que mostra o dinheiro** (P6) | precisa de tenant perto do teto; o botão de lote espera o F0b |
+| 10 | **Landing por profissão** (P9) | nada técnico — é volume de conteúdo, vale quando houver tráfego para dividir |
+| 11 | **Anual** (P3) | precisa de cobrança funcionando — `18` Fase J |
+| 12 | **Indicação do salão** (P4) | 1 tenant com base real; não precisa de pagante |
+| 13 | **Reativação de quem desceu** (`18` §I.4) | precisa do evento `teste_terminou` do item 5 |
 
 ### E3 · Travado, e a trava está certa
 
@@ -390,8 +600,12 @@ Uma métrica por peça, todas calculáveis com o que a E1 constrói:
 
 | Peça | Métrica | Alvo honesto **[E]** |
 |---|---|---|
-| Teste reverso | % que assina até 7 dias depois do fim | 3–5% (referência de mercado para produto sem vendedor) |
+| Selo atribuível (E0.3) | visitas em `/?de=` → cadastro | **medir antes de mirar** — hoje é zero por falta de parâmetro, não por falta de laço |
+| Landing multi-profissão | % dos cadastros que escolhem profissão fora de beleza | qualquer número > 0 já refuta a landing atual |
+| Teste reverso | % que assina até 7 dias depois do fim | 3–5% (referência de produto sem vendedor) |
 | Extrato do Motor | % de tenants que abrem o app em 48h do push | > 40% |
+| Progresso dotado | % que fecha os 5 passos em 7 dias | > 34% seria repetir o resultado do lava-rápido **[P]** |
+| Paywall do dinheiro | % que sobe de plano vindo dele vs. vindo da `/precos` | o vindo dele deveria ser múltiplo do outro |
 | Anual | % dos assinantes que escolhem anual | 20–30% |
 | Indicação do salão | clientes novos com `referred_by` / total | > 10% |
 | Funil | conta criada → 1º agendamento pelo link | é o "aha" do `18` §I.1; medir antes de mirar |
@@ -440,9 +654,18 @@ Com isso, a E1 inteira sai do bloqueio sem furar a regra que criou o bloqueio.
 
 ---
 
-## 8. Higiene, herdada do `25` §6 e ainda pendente
+## 8. Higiene — e ela é maior do que o `25` §6 estimou
 
-O `CLAUDE.md` ainda abre com *"SaaS multi-tenant de gestão para profissionais da beleza"*. A virada
-multi-profissão já aconteceu no código **[M]**. Enquanto a primeira frase disser beleza, toda
-sessão nova — e todo raciocínio de posicionamento, inclusive de preço — começa mirando o mercado
-onde a concorrência é mais dura e o CICLO é mais fraco.
+O `25` §6 registra que o `CLAUDE.md` ainda abre com *"profissionais da beleza"*, enquanto a virada
+multi-profissão já aconteceu no código. Está certo, e a medição desta sessão mostra que o problema
+não parou no documento interno:
+
+| Onde | O que diz | Alcance |
+|---|---|---|
+| `CLAUDE.md` | "profissionais da beleza (barbearia, unhas, cílios…)" | enviesa toda sessão de desenvolvimento |
+| **Landing publicada** | "barbearia, unhas, cílios, sobrancelha, depilação, estética" + 8 verticais em FEITO PARA **[M]** | **enviesa todo visitante** |
+| Catálogo do produto | **17 profissões**, 9 delas fora de beleza **[M]** | é o que o código realmente faz |
+
+São três descrições do mesmo produto, e a única correta é a terceira. O `CLAUDE.md` custa
+retrabalho interno; a landing custa mercado — é o E0.1, e é a correção de maior alcance por
+caractere digitado deste documento inteiro.
