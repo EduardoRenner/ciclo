@@ -258,3 +258,45 @@ O cold start de ~1 s se divide em boot do contêiner + runtime do Node/Next. Med
 (`next start`, sem contêiner), o custo de carregar os módulos da página é ~480 ms; o resto é da
 plataforma. Não há mais gordura de aplicação relevante ali — o que resolve é manter a instância
 quente (Fluid Compute), que é configuração de projeto na Vercel, não código.
+
+---
+
+## 9. Onde chegou (27/08, medido em produção com sessão real)
+
+Mediana de cinco requisições quentes, medidas de uma rede residencial no Brasil — **~75 ms de
+cada número é a minha rede até a Vercel**, então a melhora do lado do servidor é maior em
+proporção do que a tabela mostra.
+
+| Rota | Antes (início da sessão) | Depois | |
+|---|---|---|---|
+| `/admin/hoje` | 391 ms | **219 ms** | −44% |
+| `/admin/agenda` | 355 ms | **181 ms** | −49% |
+| `/admin/clientes` | 216 ms | **202 ms** | −6% |
+| `/api/v1/clients` | 177 ms | **172 ms** | −3% |
+
+Descontada a minha rede, `/admin/hoje` saiu de ~315 ms para ~145 ms de trabalho de servidor.
+
+**Cold start continua em ~950 ms**, uma vez por período de ociosidade — e a partir dele tudo
+responde em 180–220 ms. Isso não é mais código: é boot de contêiner. Quem resolve é manter a
+instância quente (Fluid Compute), que é configuração de projeto na Vercel.
+
+### Resumo dos consertos
+
+| # | Conserto | Medida |
+|---|---|---|
+| 1 | Funções em `gru1` em vez de `iad1` | ~140 ms → ~10 ms por ida ao banco |
+| 2 | `cache()` em sessão e membership | −2 idas por requisição |
+| 3 | `router.refresh()` fora da transição | botão solta ao responder, não ao re-renderizar |
+| 4 | Sentry do servidor só com DSN | −500 ms de `require` em todo cold start; trace 11,43 → 1,81 MB |
+| 5 | API não repete o `getUser()` do middleware | −1 ida em toda chamada de API |
+| 6 | `sharp` só na rota que processa imagem | `/admin/hoje` 23,40 → 3,64 MB |
+| 7 | Tenant de carona no membership | −1 ida **serial e bloqueante** em 5 telas |
+
+### O que ficou de fora, e por quê
+
+- **`writeAudit` via `after()`** (~15–30 ms/mutação): `audit_log` é trilha de acesso a dado de
+  saúde e hoje é gravada antes de a pessoa ver "feito". Não vale a janela.
+- **Passar o usuário do middleware para a tela por header** (~30 ms/tela): tiraria o segundo
+  `getUser()`, mas o middleware roda no Edge e a tela no Node — não dá para compartilhar o
+  `cache()`, e um header confiável exigiria assinatura. Superfície de segurança nova por 30 ms
+  num caminho que já está em 180–220 ms.
