@@ -492,6 +492,23 @@ Revertido, 5/5 verde.
 **Ação:** commit `test(core): cobre os tres ramos de heartbeatVigiado + rodaSozinha`. typecheck
 + eslint + 838 testes limpos (era 833 + 5).
 
+## 2026-08-27 07:34 (America/Sao_Paulo) — cobertura, rodada 3
+
+**`src/core/pricing/formatar.ts`:** o teste existente cobria bem `formatarPreco` mas deixava 3
+ramos de fora: (1) `estimativaParaDuracao` com `pricingModel: 'daily'` (cai no fall-through —
+"a diária é a diária, ignora a duração"); (2) `estimativaParaDuracao` `visit_hourly` com
+`hourlyRateCents: null` (o `?? 0` defensivo); (3) `formatarPreco` `visit_hourly` com
+`hourlyRateCents: null` (mesmo `?? 0`). Os dois últimos são a rede que existe caso a constraint
+`services_visit_hourly_tem_taxa` do banco fosse burlada — sem teste, ninguém sabia se a rede
+segurava.
+
+**Visto reprovando:** `?? 0` → `?? 999`/`?? 777` nos dois pontos → testes de "sem taxa" vermelhos;
+ramo `daily` trocado por `Math.ceil((duracaoMin/60) * priceCents)` → teste "a diária é a diária"
+vermelho. Revertido, 12/12 verde.
+
+**Ação:** commit `test(core): cobre ramos daily e hourlyRate-nulo de estimativaParaDuracao/
+formatarPreco`. typecheck + eslint + 841 testes limpos (era 838 + 3).
+
 **Nota de estado:** 13 guardas de varredura de fonte já verificadas por mutação, todas íntegras;
 varreduras de export morto, escrita sem checar erro, enum de plano e modelo de preço todas limpas.
 A dívida técnica encontrável por leitura está bem baixa — os 3 achados reais até aqui (rótulo de
