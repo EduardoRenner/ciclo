@@ -458,6 +458,25 @@ não conserto.
 hour: '2-digit', minute: '2-digit' }` (o mesmo formato de `novo/formulario.tsx`). Commit
 `fix(agenda): data do detalhe sem segundos`. typecheck + eslint + 828 testes limpos.
 
+## 2026-08-27 07:35 (America/Sao_Paulo) — nova tática: cobertura de teste em funções puras
+
+A pedido do Eduardo ("acha outra coisa para fazer"), a fase de consistência de UX (6 achados
+seguidos, todos corrigidos) cede lugar a: **backfill de teste unitário para função pura de
+`src/core/` sem cobertura direta, uma por rodada, cada teste visto reprovando por mutação.**
+
+**Rodada 1 — `src/core/cron/janela.ts`:** `dentroDaJanela` já era exercitada em
+`cron-sobrevive-a-atraso.test.ts`, mas os dois wrappers de `Intl` (`horaLocalDe`, `dataLocalDe`)
+não tinham teste nenhum — e é neles que moram as duas armadilhas que o comentário do arquivo
+descreve sem medir: (1) sem `hourCycle: 'h23'`, meia-noite volta como "24" e a comparação
+`horaLocal === 3` erra em silêncio; (2) a hora/data tem que ser a do fuso do tenant, não a de UTC.
+
+**Visto reprovando:** removi `hourCycle: 'h23'` de `horaLocalDe` → teste de meia-noite vermelho;
+troquei o `timeZone` de `dataLocalDe` para `'UTC'` → teste de fuso do tenant vermelho. Revertido,
+5/5 verde.
+
+**Ação:** commit `test(core): cobre horaLocalDe e dataLocalDe de cron/janela.ts`. typecheck +
+eslint + 833 testes limpos (era 828 + 5).
+
 **Nota de estado:** 13 guardas de varredura de fonte já verificadas por mutação, todas íntegras;
 varreduras de export morto, escrita sem checar erro, enum de plano e modelo de preço todas limpas.
 A dívida técnica encontrável por leitura está bem baixa — os 3 achados reais até aqui (rótulo de
