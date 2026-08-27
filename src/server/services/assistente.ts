@@ -1,6 +1,6 @@
 import type { Papel } from '@/server/auth/rbac'
 import { AppError } from '@/server/http/errors'
-import { FERRAMENTAS, FERRAMENTAS_POR_NOME, paraJsonSchema, type ContextoFerramenta, type Ferramenta } from '@/core/assistente/ferramentas'
+import { FERRAMENTAS, paraJsonSchema, type ContextoFerramenta, type Ferramenta } from '@/core/assistente/ferramentas'
 import { avaliarPermissao } from '@/server/auth/rbac'
 import { podeUsarModulo } from '@/core/billing/planos'
 import { contextoDePlano } from '@/server/services/planos'
@@ -53,10 +53,9 @@ function serializarResultado(valor: unknown): string {
 }
 
 /**
- * O laço: pergunta → o modelo escolhe uma ferramenta ou responde → se escolheu, executa e volta
- * o resultado → repete até responder em texto ou até MAX_CHAMADAS_DE_FERRAMENTA. Nunca escreve no
- * banco — todas as ferramentas de hoje (Fase A) são de leitura; a Fase B que introduzir proposta
- * ainda devolve só objeto, quem executa continua sendo o endpoint normal com clique do dono.
+ * Ponto de entrada real: resolve RBAC + módulo do plano (I/O) e delega o laço puro abaixo.
+ * Separado de `executarLaco` só por isto — o laço em si não precisa saber de banco, e testá-lo
+ * sem um Supabase de verdade é o que a Fase A (§6, A8) pede.
  */
 export async function perguntarAoAssistente(opcoes: {
   provider: AiProvider
@@ -69,8 +68,30 @@ export async function perguntarAoAssistente(opcoes: {
   const { provider, db, tenantId, timezone, papel, pergunta } = opcoes
 
   const disponiveis = await ferramentasDisponiveisAgora(db, tenantId, papel)
-  const descricoes = disponiveis.map((f) => ({ nome: f.nome, descricao: f.descricao, parametros: paraJsonSchema(f.schema) }))
   const ctxFerramenta: ContextoFerramenta = { db, tenantId, timezone }
+
+  return executarLaco({ provider, ferramentas: disponiveis, ctxFerramenta, pergunta })
+}
+
+/**
+ * O laço puro: pergunta → o modelo escolhe uma ferramenta ou responde → se escolheu, executa e
+ * volta o resultado → repete até responder em texto ou até MAX_CHAMADAS_DE_FERRAMENTA. Recebe a
+ * lista de ferramentas já filtrada (RBAC + módulo resolvidos por quem chama) e não faz I/O fora
+ * de `ferramenta.executar()` — por isso dá para testar com um provider falso e ferramentas falsas,
+ * sem Supabase nenhum.
+ *
+ * Nunca escreve no banco — todas as ferramentas de hoje (Fase A) são de leitura; a Fase B que
+ * introduzir proposta ainda devolve só objeto, quem executa continua sendo o endpoint normal com
+ * clique do dono.
+ */
+export async function executarLaco(opcoes: {
+  provider: AiProvider
+  ferramentas: Ferramenta[]
+  ctxFerramenta: ContextoFerramenta
+  pergunta: string
+}): Promise<ResultadoDoAssistente> {
+  const { provider, ferramentas: disponiveis, ctxFerramenta, pergunta } = opcoes
+  const descricoes = disponiveis.map((f) => ({ nome: f.nome, descricao: f.descricao, parametros: paraJsonSchema(f.schema) }))
 
   const mensagens: MensagemDoAssistente[] = [
     { papel: 'sistema', texto: PROMPT_DE_SISTEMA },
@@ -93,11 +114,20 @@ export async function perguntarAoAssistente(opcoes: {
       return { resposta: resposta.texto, ferramentasUsadas }
     }
 
+    // Trava dura: na última volta o pedido não ofereceu NENHUMA ferramenta (`ferramentas: []`
+    // acima). Um provedor bem-comportado responde em texto; um que ainda assim devolve chamada
+    // de ferramenta está sendo ignorado de propósito — sem isto, MAX_CHAMADAS_DE_FERRAMENTA vira
+    // sugestão, não limite (achado do teste de A8: "corta o laço maluco").
+    if (noUltimaVolta) {
+      return { resposta: 'Não consegui terminar de responder. Tente reformular a pergunta.', ferramentasUsadas }
+    }
+
     // resposta.tipo === 'chamada_ferramenta'
-    const ferramenta = FERRAMENTAS_POR_NOME.get(resposta.nome)
-    // Segunda checagem, na hora de executar — não confia só no filtro que montou o prompt.
-    const permitida = ferramenta && disponiveis.some((f) => f.nome === ferramenta.nome)
-    if (!ferramenta || !permitida) {
+    // Procura só dentro de `disponiveis` — nunca no catálogo global. É a segunda checagem, na
+    // hora de executar: mesmo que o modelo alucine o nome de uma ferramenta real mas fora do
+    // alcance deste papel/plano, ela não está nesta lista e cai no ramo abaixo.
+    const ferramenta = disponiveis.find((f) => f.nome === resposta.nome)
+    if (!ferramenta) {
       mensagens.push({ papel: 'assistente', texto: null, chamadaFerramenta: { nome: resposta.nome, argumentos: resposta.argumentos } })
       mensagens.push({ papel: 'ferramenta', nome: resposta.nome, conteudo: 'Ferramenta indisponível para este usuário.' })
       continue

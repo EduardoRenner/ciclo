@@ -163,9 +163,6 @@ export const FERRAMENTAS: Ferramenta[] = [
   },
 ]
 
-/** Índice por nome — o laço do assistente (A4) recebe o nome que o modelo escolheu e busca aqui. */
-export const FERRAMENTAS_POR_NOME: ReadonlyMap<string, Ferramenta> = new Map(FERRAMENTAS.map((f) => [f.nome, f]))
-
 /**
  * JSON Schema no formato que o Gemini aceita: sem `$schema` nem `additionalProperties`, que a
  * API rejeita. `z.toJSONSchema` (Zod 4 nativo, sem dependência nova) gera o resto certo.
