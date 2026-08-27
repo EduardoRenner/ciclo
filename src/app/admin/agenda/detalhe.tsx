@@ -29,6 +29,14 @@ const ROTA_ACAO: Partial<Record<EstadoAgendamento, string>> = {
   no_show: 'no-show',
 }
 
+/** Confirmação específica no toast — na mesma voz de "Agendamento cancelado"/"remarcado" logo abaixo. */
+const TITULO_FEITO: Partial<Record<EstadoAgendamento, string>> = {
+  confirmed: 'Agendamento confirmado',
+  arrived: 'Chegada registrada',
+  done: 'Atendimento concluído',
+  no_show: 'Falta registrada',
+}
+
 async function post(url: string) {
   const r = await fetch(url, { method: 'POST', headers: { 'idempotency-key': crypto.randomUUID() } })
   const json = (await r.json()) as { data?: unknown; error?: { message: string } }
@@ -81,7 +89,7 @@ export default function DetalheAgendamento({
         // faltou) não têm o que avaliar ainda.
         const link = (resultado as { reviewLink?: string } | undefined)?.reviewLink
         if (novoEstado === 'done' && link) setLinkAvaliacao(link)
-        mostrarToast({ tom: 'ok', titulo: 'Prontinho' })
+        mostrarToast({ tom: 'ok', titulo: TITULO_FEITO[novoEstado] ?? 'Feito' })
         onAtualizado()
       } catch (e) {
         setErro((e as Error).message)

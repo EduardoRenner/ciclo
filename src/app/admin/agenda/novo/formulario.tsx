@@ -143,7 +143,7 @@ export default function FormularioAgendamento({
               body: JSON.stringify({ appointmentId: json.data.appointment.id }),
             }).catch(() => {})
           }
-          mostrarToast({ tom: 'ok', titulo: 'Prontinho', descricao: 'Agendamento criado.' })
+          mostrarToast({ tom: 'ok', titulo: 'Agendamento criado' })
           router.push('/admin/agenda')
           return
         }
