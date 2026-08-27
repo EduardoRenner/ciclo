@@ -121,3 +121,25 @@ do arquivo estava desatualizado ("usado em topbar, header da landing, `Selo`").
 comentários (`selo.tsx`, `globals.css`). Commit
 `chore(marca): remove MarcaCiclo, componente sem uso desde o wordmark PNG`.
 typecheck + eslint + 811 testes limpos.
+
+## 2026-08-27 01:05 (America/Sao_Paulo)
+
+**O que foi olhado:** (a) `ts-prune` completo de novo — confirmar que não resta export morto fora
+de `src/app/`; (b) mutação de `tests/unit/design/home-nao-promete-demais.test.ts` (guarda com 12
+asserções, nunca verificada por mutação).
+
+**Achado (a):** nada. O que `ts-prune` ainda lista é 100% handler de rota do Next (`GET`/`POST`/
+`PATCH`/`DELETE`), `generateMetadata`/`generateViewport`, `default`/`metadata`/`config` de página,
+e falsos-positivos de parser (`satisfies`/`Record`/`readonly`). A varredura de export/componente
+morto está esgotada por ora (2 achados reais nas rodadas anteriores: `listarAvaliacoesRecentes`,
+`MarcaCiclo`).
+
+**Achado (b):** guarda não está cega. Mutações em `src/app/page.tsx`:
+1. "Avisamos sua cliente automaticamente" → reprova (promessa de mensagem automática sem `reminders` no schedule). ✅
+2. "Criar a conta leva menos de três minutos" → reprova (tempo não medido). ✅
+3. "Veja a Barbearia Dom Rocha" → reprova (nomeia tenant de demonstração fictício). ✅
+4. Trocar `${NOME_DO_PLANO.essencial}` por "Consulte os planos" (mantendo "caixa" na copy) → reprova
+   ("fala de register sem dizer que é do Essencial"). ✅
+Todas revertidas, suíte verde (79 arquivos / 811 testes).
+
+**Ação:** nenhum commit de código — nada a corrigir. Só esta entrada.
