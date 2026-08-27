@@ -388,6 +388,25 @@ typecheck, lint, teste unitário ou de integração jamais reprovaria — é o
 *"mudança que a pessoa vê se verifica no navegador, não se deduz do código"* do próprio
 `CLAUDE.md`, cobrado de volta.
 
+> ✅ **CORRIGIDO em 2026-08-27** (commits `cbba771` e `2757af5`). A copy virou
+> `core/messaging/promessa.ts` (P10) e a guarda passou a testar a função nos dois estados. As três
+> mutações foram vistas reprovando: a string original de volta na tela, o ramo honesto voltando a
+> prometer, e os dois ramos colapsados.
+
+**Uma nota que valeu a rodada inteira.** A primeira versão da guarda nova usava
+`/confirma\w*\s+(chega|vem)/i` — e **não casava com "confirmação chega"**. Em JavaScript sem a
+flag `u`, `\w` é `[A-Za-z0-9_]`: **`ç` e `ã` não entram**. A asserção nasceu cega, exatamente
+dentro do conserto de uma guarda cega, e só apareceu porque a mutação foi rodada: ficou verde, e
+quem reprovou foi outra asserção do mesmo arquivo. Corrigido para `[^\s]*`.
+
+Varredura no repositório inteiro depois disso: **é o único caso** **[M]**. Todos os outros `\w`
+(em `lgpd-cobertura`, `rpc-existe`, `precos-tem-trava-no-servidor`, `rede-nao-derruba-tela`,
+`mensagens.ts`) casam com **identificadores** — nomes de tabela, de função, de módulo, variáveis
+de modelo (`{{negocio}}`, `{{servico}}`, deliberadamente sem acento). O que protege o projeto é a
+sua própria regra de estilo: *"código, tabelas e colunas em inglês; UI e mensagens em português"*.
+O único lugar onde prosa em português encontra regex é a guarda que varre copy — e foi lá que
+mordeu.
+
 ### B2 · 29% do seletor de dias leva a lugar nenhum **[M]**
 
 O trilho oferece **14 dias**. A Barbearia Dom Rocha fecha domingo e segunda **[M]** — são
