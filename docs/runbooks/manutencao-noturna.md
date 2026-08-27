@@ -383,6 +383,24 @@ esconder apagaria informação; precisariam de texto sr-only, é outra decisão)
 828 testes limpos. (Guarda para isto não foi criada: os casos legítimos de exceção — ícone de
 estado como Check/Send — são difíceis de distinguir de decoração num regex sem falso positivo.)
 
+## 2026-08-27 03:55 (America/Sao_Paulo) — consistência de UX
+
+**O que foi olhado:** cobertura de `EmptyState` nas telas de lista do `/admin`. Cruzei os
+consumidores de `@/components/ui/empty-state` com todas as telas que renderizam `.map()` numa
+lista.
+
+**Achado — inconsistência real:** 13 telas de lista usam `EmptyState` (clientes, campanhas,
+orçamentos, séries, estoque, serviços, profissionais, planos, recuperar, agenda, hoje, caixa,
+trilha do cofre). Só `config/mensagens/editor.tsx` renderizava `{modelos.map(...)}` num `<ul>`
+sem tratamento de lista vazia — quem apagasse o último modelo na sessão ficava com espaço em
+branco embaixo do botão até recarregar (o re-seed de `listarModelos` só roda na leitura do
+servidor). É a única tela de lista fora do padrão.
+
+**Ação:** adicionado `EmptyState` (ícone `MessageSquare`, ação "Criar modelo" abrindo o mesmo
+Sheet), e o botão "Criar modelo" do topo passou a esconder quando a lista está vazia — senão
+seriam dois CTAs iguais. Mesmo padrão de `config/servicos/lista.tsx`. Commit
+`fix(mensagens): estado vazio na lista de modelos`. typecheck + eslint + 828 testes limpos.
+
 **Nota de estado:** 13 guardas de varredura de fonte já verificadas por mutação, todas íntegras;
 varreduras de export morto, escrita sem checar erro, enum de plano e modelo de preço todas limpas.
 A dívida técnica encontrável por leitura está bem baixa — os 3 achados reais até aqui (rótulo de
