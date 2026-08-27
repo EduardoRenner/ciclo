@@ -3,7 +3,6 @@
 import Link from 'next/link'
 
 import { TriangleAlert, CalendarCheck, ChevronRight, PackageX } from 'lucide-react'
-import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
 import AppointmentRow from '@/components/ui/appointment-row'
@@ -12,6 +11,7 @@ import EmptyState from '@/components/ui/empty-state'
 import SectionHeader from '@/components/ui/section-header'
 import Sheet from '@/components/ui/sheet'
 import StatTile from '@/components/ui/stat-tile'
+import { useAtualizarDepois } from '@/lib/atualizar-depois'
 import { dinheiro } from '@/lib/formato'
 
 import DetalheAgendamento from '../agenda/detalhe'
@@ -52,7 +52,7 @@ export default function Hoje({
   atribuicao: ReceitaAtribuida
   children?: React.ReactNode
 }) {
-  const router = useRouter()
+  const atualizarDepois = useAtualizarDepois()
   const [selecionado, setSelecionado] = useState<LinhaHoje | null>(null)
 
   const faltam = resumo.restOfDay.length
@@ -228,7 +228,7 @@ export default function Hoje({
             onFechar={() => setSelecionado(null)}
             onAtualizado={() => {
               setSelecionado(null)
-              router.refresh()
+              atualizarDepois()
             }}
           />
         ) : null}

@@ -1,3 +1,5 @@
+import { cache } from 'react'
+
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { AppError } from '@/server/http/errors'
 
@@ -15,7 +17,16 @@ export type Sessao = {
  * cookie e acredita nele, enquanto `getUser()` manda o token para o servidor de
  * auth conferir a assinatura. Cookie é coisa que o cliente escreve.
  */
-export async function sessaoAtual(): Promise<Sessao | null> {
+/**
+ * `cache()` do React, e não memo global: o escopo é **uma requisição**, então dois trechos do
+ * mesmo request (o guard da rota e o `contextoAtual` logo depois; a página e o serviço que ela
+ * chama) param de pagar duas idas de rede para perguntar a mesma coisa. Entre requisições nada
+ * é compartilhado — a sessão de um usuário nunca alcança a de outro.
+ *
+ * Era 2 idas por chamada de API e 2 por render de tela, todas em série no caminho do clique
+ * (`docs/28-LATENCIA-DE-CLIQUE-PLANO.md` §1).
+ */
+export const sessaoAtual = cache(async function sessaoAtual(): Promise<Sessao | null> {
   const db = await criarClienteDoUsuario()
 
   const { data, error } = await db.auth.getUser()
@@ -28,7 +39,7 @@ export async function sessaoAtual(): Promise<Sessao | null> {
     email: data.user.email ?? '',
     aal: nivel?.currentLevel ?? 'aal1',
   }
-}
+})
 
 /** Guard das rotas autenticadas: sem sessão válida, `401 UNAUTHENTICATED`. */
 export async function exigirSessao(): Promise<Sessao> {

@@ -1,5 +1,7 @@
 import { cookies } from 'next/headers'
 
+import { cache } from 'react'
+
 import { exigirSessao, type Sessao } from '@/server/auth/session'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { AppError } from '@/server/http/errors'
@@ -18,13 +20,32 @@ export type Contexto = {
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 /**
+ * A revalidação de membership da FAQ C27 continua acontecendo em toda requisição — o que mudou é
+ * que ela acontece **uma vez por requisição**, não uma vez por chamada de `contextoAtual`. Uma
+ * rota que resolve contexto no guard e um serviço que resolve de novo lá dentro faziam a mesma
+ * consulta duas vezes, em série, no caminho do clique (`docs/28-LATENCIA-DE-CLIQUE-PLANO.md` §1).
+ *
+ * A chave do `cache()` é o `userId`, não o `Request` — cada chamada monta um `Request` novo, e
+ * cachear por objeto não deduplicaria nada.
+ */
+const vinculosAtivos = cache(async function vinculosAtivos(userId: string) {
+  const db = await criarClienteDoUsuario()
+  const { data, error } = await db
+    .from('memberships')
+    .select('tenant_id, role')
+    .eq('user_id', userId)
+    .eq('active', true)
+  if (error) throw new AppError('INTERNAL', { cause: error })
+  return data ?? []
+})
+
+/**
  * Resolve o tenant ativo e **revalida o membership em toda requisição**
  * (FAQ C27). O header e o cookie dizem qual tenant a pessoa quer; quem responde
  * se ela pode é o banco.
  */
 export async function contextoAtual(req: Request): Promise<Contexto> {
   const sessao = await exigirSessao()
-  const db = await criarClienteDoUsuario()
 
   const jar = await cookies()
   const pedido = req.headers.get('x-tenant-id') ?? jar.get(COOKIE_TENANT)?.value ?? null
@@ -33,14 +54,7 @@ export async function contextoAtual(req: Request): Promise<Contexto> {
   // que a de tenant alheio: quem forjou não descobre se o id existe.
   if (pedido !== null && !UUID.test(pedido)) throw new AppError('TENANT_MISMATCH')
 
-  const { data: vinculos, error } = await db
-    .from('memberships')
-    .select('tenant_id, role')
-    .eq('user_id', sessao.userId)
-    .eq('active', true)
-  if (error) throw new AppError('INTERNAL', { cause: error })
-
-  const ativos = vinculos ?? []
+  const ativos = await vinculosAtivos(sessao.userId)
 
   if (pedido !== null) {
     const escolhido = ativos.find((v) => v.tenant_id === pedido)

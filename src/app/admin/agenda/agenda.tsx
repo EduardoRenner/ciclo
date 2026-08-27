@@ -13,6 +13,7 @@ import EmptyState from '@/components/ui/empty-state'
 import FilterRow from '@/components/ui/filter-row'
 import Sheet from '@/components/ui/sheet'
 import StatTile from '@/components/ui/stat-tile'
+import { useAtualizarDepois } from '@/lib/atualizar-depois'
 import { dinheiro } from '@/lib/formato'
 import { cn } from '@/lib/utils'
 
@@ -62,6 +63,7 @@ export default function Agenda({
   profissionalSelecionado?: string
 }) {
   const router = useRouter()
+  const atualizarDepois = useAtualizarDepois()
   const [selecionado, setSelecionado] = useState<LinhaAgendaDia | null>(null)
 
   function navegar(novoDia: string, novoProfissional?: string) {
@@ -168,7 +170,7 @@ export default function Agenda({
             onFechar={() => setSelecionado(null)}
             onAtualizado={() => {
               setSelecionado(null)
-              router.refresh()
+              atualizarDepois()
             }}
           />
         ) : null}
