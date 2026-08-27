@@ -163,3 +163,24 @@ que o teste faz. Corrigido `describe`/`it`/comentário do topo para 17 chaves e 
 
 **Ação:** commit `test(catalogo): corrige rótulo obsoleto — 17 módulos, migrations 0041/0043`.
 eslint + testes do arquivo limpos.
+
+## 2026-08-27 01:28 (America/Sao_Paulo)
+
+**O que foi olhado:** (a) varredura própria de escrita `supabase-js` (`insert`/`update`/`upsert`/
+`delete`) em `src/` sem checagem de `{ error }` — o padrão que a auditoria de 2026-08-23 achou 9x;
+(b) mutação de `tests/unit/server/cron-cobre-os-fusos.test.ts`.
+
+**Achado (a):** nada. Script varreu todos os `.from(...).insert/update/upsert/delete` e conferiu se
+`erro`/`error`/`throwOnError` aparece na janela do statement — zero ocorrências sem checagem. (A
+primeira passada deu vários falsos-positivos porque o regex só procurava `error`; o código usa
+`erro*` em português — `erroInsert`, `erroUpdate`. Corrigido o regex, resultado limpou.) Confirma
+a conclusão da auditoria anterior: "hoje não resta nenhum no projeto".
+
+**Achado (b):** guarda não está cega. Duas mutações:
+1. `dentroDaJanela(horaLocalDe(...), 4)` → `13` em `segments/route.ts` → reprova ("segments exige
+   hora local 13; o schedule nunca chega nesses fusos"). ✅
+2. Linha `- cron: '5 5 * * *' # reminders` adicionada dentro de `schedule:` no `cron.yml` → reprova
+   ("reminders apareceu dentro de schedule: — manda mensagem para cliente final"). ✅
+Ambas revertidas, suíte verde.
+
+**Ação:** nenhum commit de código — nada a corrigir. Só esta entrada.
