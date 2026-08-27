@@ -106,3 +106,18 @@ adiciona o filtro de módulo do plano. Predicado de permissão num lugar só, e 
 passou a ter consumidor de produção real. Commit
 `refactor(assistente): ferramentasDisponiveisAgora reusa ferramentasPermitidas`.
 typecheck + eslint + 811 testes limpos.
+
+## 2026-08-27 00:55 (America/Sao_Paulo)
+
+**O que foi olhado:** componente `src/components/ui/marca-ciclo.tsx` (`MarcaCiclo`), apontado
+por `ts-prune`.
+
+**Achado — componente morto:** desde o commit `b320f97` (#20, wordmark PNG substitui texto solto)
+`Selo` e `Topbar` passaram a usar `ciclo-wordmark-aqua.png`; `tab-bar`/`badge`/`alert-banner` usam
+`IconeAnel`. `MarcaCiclo` ficou sem nenhum import — nem em `src/`, nem em teste. O próprio comentário
+do arquivo estava desatualizado ("usado em topbar, header da landing, `Selo`").
+
+**Ação:** `git rm` do componente + correção das duas menções obsoletas a `MarcaCiclo` em
+comentários (`selo.tsx`, `globals.css`). Commit
+`chore(marca): remove MarcaCiclo, componente sem uso desde o wordmark PNG`.
+typecheck + eslint + 811 testes limpos.
