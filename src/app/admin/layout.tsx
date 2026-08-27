@@ -1,4 +1,5 @@
 import ToastProvider from '@/components/ui/toast'
+import AssistenteFlutuante from '@/components/shell/assistente-flutuante'
 import ResolucaoDeFila from '@/components/shell/resolucao-de-fila'
 import TabBar from '@/components/shell/tab-bar'
 import TransicaoDeTela from '@/components/shell/transicao-de-tela'
@@ -57,6 +58,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         {/* `fixed`: fica fora da coluna de conteúdo para poder virar barra lateral no `lg`. */}
         <TabBar />
         <ResolucaoDeFila />
+        {/*
+          docs/26-AGENTE-IA-PLANO.md §4.4/§7: `Boolean(process.env.GEMINI_API_KEY)` é leitura de
+          variável de ambiente, não I/O — não transforma este layout num fetch novo por navegação
+          (a mesma razão pela qual `Topbar` continua sem buscar dado). Sem chave, o componente
+          nem monta o botão; o módulo desligado pelo dono ainda é pego dentro do painel, na
+          primeira pergunta, porque isso sim depende de banco e de tenant.
+        */}
+        <AssistenteFlutuante disponivel={Boolean(process.env.GEMINI_API_KEY)} />
       </div>
     </ToastProvider>
   )
