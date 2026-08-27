@@ -525,6 +525,20 @@ lembrete devido só a partir das 20h) fica vermelho. Revertido, 8/8 verde.
 **Ação:** commit `test(core): cobre o clamp noturno (T-3h > 21h) de lembretesDevidos`. typecheck
 + eslint + 842 testes limpos (era 841 + 1).
 
+## 2026-08-27 07:42 (America/Sao_Paulo) — cobertura, rodada 5
+
+**`src/core/attribution/compute.ts`:** cobertura muito boa (janela antes/depois/=30, trava 1:1,
+cross-client, vazio) — só faltava um: a garantia de ORDEM. As campanhas são processadas ordenadas
+por `sentAt` (a mais antiga reivindica primeiro), mas nenhum teste passava campanhas fora de ordem
+no array; um `[...campanhas].sort(...)` removido num refactor não seria pego.
+
+**Visto reprovando:** removido o `.sort()` de `campanhasOrdenadas` → o novo teste (duas campanhas
+em ordem cronológica inversa no array, a de 01/08 tem que reivindicar, não a de 10/08) fica
+vermelho. Revertido, 9/9 verde.
+
+**Ação:** commit `test(core): cobre o sort de campanhas por sentAt em atribuirReceita`. typecheck
++ eslint + 843 testes limpos (era 842 + 1).
+
 **Nota de estado:** 13 guardas de varredura de fonte já verificadas por mutação, todas íntegras;
 varreduras de export morto, escrita sem checar erro, enum de plano e modelo de preço todas limpas.
 A dívida técnica encontrável por leitura está bem baixa — os 3 achados reais até aqui (rótulo de
