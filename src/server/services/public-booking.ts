@@ -231,18 +231,6 @@ export async function disponibilidadePublica(
   return withNovoTenant(async (svc) => {
     const tenant = await tenantPeloSlug(svc, slug)
 
-    const { data: servico, error: erroServico } = await svc
-      .from('services')
-      .select('duration_min, parallel_capacity, buffer_before_min, buffer_after_min')
-      .eq('id', serviceId)
-      .eq('tenant_id', tenant.id)
-      .eq('active', true)
-      .eq('bookable_online', true)
-      .is('deleted_at', null)
-      .maybeSingle()
-    if (erroServico) throw new AppError('INTERNAL', { cause: erroServico })
-    if (!servico) throw AppError.validacao({ serviceId: 'Esse serviço não está disponível para agendar online.' })
-
     let consultaProfissionais = svc
       .from('professionals')
       .select('id')
@@ -251,7 +239,34 @@ export async function disponibilidadePublica(
       .eq('accepts_online', true)
       .is('deleted_at', null)
     if (professionalId) consultaProfissionais = consultaProfissionais.eq('id', professionalId)
-    const { data: profissionais, error: erroProf } = await consultaProfissionais
+
+    /*
+     * Serviço e profissionais em paralelo: os dois só dependem de `tenant`, e nenhum do outro.
+     * Em série eram duas idas ao banco somadas — e a função roda longe dele (Supabase em
+     * sa-east-1, Vercel no padrão `iad1`), então cada salto custa a travessia inteira.
+     *
+     * A ORDEM DAS CHECAGENS ABAIXO É A DE ANTES, de propósito: erro de infraestrutura do serviço,
+     * depois "serviço não agendável", depois erro dos profissionais. Paralelizar muda quando as
+     * consultas partem, nunca qual erro a pessoa vê.
+     */
+    const [resServico, resProfissionais] = await Promise.all([
+      svc
+        .from('services')
+        .select('duration_min, parallel_capacity, buffer_before_min, buffer_after_min')
+        .eq('id', serviceId)
+        .eq('tenant_id', tenant.id)
+        .eq('active', true)
+        .eq('bookable_online', true)
+        .is('deleted_at', null)
+        .maybeSingle(),
+      consultaProfissionais,
+    ])
+
+    const { data: servico, error: erroServico } = resServico
+    if (erroServico) throw new AppError('INTERNAL', { cause: erroServico })
+    if (!servico) throw AppError.validacao({ serviceId: 'Esse serviço não está disponível para agendar online.' })
+
+    const { data: profissionais, error: erroProf } = resProfissionais
     if (erroProf) throw new AppError('INTERNAL', { cause: erroProf })
 
     const dia = Temporal.PlainDate.from(date)
@@ -263,77 +278,85 @@ export async function disponibilidadePublica(
     const inicioDia = dia.toZonedDateTime({ timeZone: tenant.timezone, plainTime: '00:00' }).toInstant().toString()
     const fimDia = dia.add({ days: 1 }).toZonedDateTime({ timeZone: tenant.timezone, plainTime: '00:00' }).toInstant().toString()
 
-    const resultado: SlotPublico[] = []
+    /*
+     * Um profissional por vez era N+1: o `Promise.all` de baixo paraleliza as TRÊS consultas
+     * daquele profissional, mas o laço `for ... await` esperava cada um antes de começar o
+     * próximo. Um salão com 3 profissionais pagava 3 travessias em série; com 5, cinco.
+     *
+     * Aqui os profissionais também vão juntos. Seguro porque nada no corpo é compartilhado: cada
+     * volta só lê `tenant`/`servico`/`config` (constantes) e devolve os próprios horários — não
+     * havia acumulador além do `push`, que virou o retorno. E a lista final é ordenada por
+     * `startsAt` no fim de qualquer forma, então a ordem de chegada nunca importou.
+     */
+    const porProfissional = await Promise.all(
+      (profissionais ?? []).map(async (prof) => {
+        const [horarios, folgas, agendamentos] = await Promise.all([
+          svc
+            .from('business_hours')
+            .select('professional_id, weekday, opens_at, closes_at')
+            .eq('tenant_id', tenant.id)
+            .eq('weekday', weekdayPg(dia))
+            .or(`professional_id.eq.${prof.id},professional_id.is.null`),
+          svc
+            .from('time_off')
+            .select('starts_at, ends_at')
+            .eq('tenant_id', tenant.id)
+            .or(`professional_id.eq.${prof.id},professional_id.is.null`)
+            .lt('starts_at', fimDia)
+            .gt('ends_at', inicioDia),
+          svc
+            .from('appointments')
+            .select('starts_at, ends_at')
+            .eq('tenant_id', tenant.id)
+            .eq('professional_id', prof.id)
+            .in('status', ['pending', 'confirmed', 'arrived'])
+            .lt('starts_at', fimDia)
+            .gt('ends_at', inicioDia),
+        ])
+        if (horarios.error) throw new AppError('INTERNAL', { cause: horarios.error })
+        if (folgas.error) throw new AppError('INTERNAL', { cause: folgas.error })
+        if (agendamentos.error) throw new AppError('INTERNAL', { cause: agendamentos.error })
 
-    for (const prof of profissionais ?? []) {
-      const [horarios, folgas, agendamentos] = await Promise.all([
-        svc
-          .from('business_hours')
-          .select('professional_id, weekday, opens_at, closes_at')
-          .eq('tenant_id', tenant.id)
-          .eq('weekday', weekdayPg(dia))
-          .or(`professional_id.eq.${prof.id},professional_id.is.null`),
-        svc
-          .from('time_off')
-          .select('starts_at, ends_at')
-          .eq('tenant_id', tenant.id)
-          .or(`professional_id.eq.${prof.id},professional_id.is.null`)
-          .lt('starts_at', fimDia)
-          .gt('ends_at', inicioDia),
-        svc
-          .from('appointments')
-          .select('starts_at, ends_at')
-          .eq('tenant_id', tenant.id)
-          .eq('professional_id', prof.id)
-          .in('status', ['pending', 'confirmed', 'arrived'])
-          .lt('starts_at', fimDia)
-          .gt('ends_at', inicioDia),
-      ])
-      if (horarios.error) throw new AppError('INTERNAL', { cause: horarios.error })
-      if (folgas.error) throw new AppError('INTERNAL', { cause: folgas.error })
-      if (agendamentos.error) throw new AppError('INTERNAL', { cause: agendamentos.error })
+        const doProfissional = horarios.data.filter((h) => h.professional_id === prof.id)
+        const doPadrao = horarios.data.filter((h) => h.professional_id === null)
+        const businessHours: IntervaloExpediente[] = (doProfissional.length > 0 ? doProfissional : doPadrao).map((h) => ({
+          opensAt: h.opens_at,
+          closesAt: h.closes_at,
+        }))
+        if (businessHours.length === 0) return []
 
-      const doProfissional = horarios.data.filter((h) => h.professional_id === prof.id)
-      const doPadrao = horarios.data.filter((h) => h.professional_id === null)
-      const businessHours: IntervaloExpediente[] = (doProfissional.length > 0 ? doProfissional : doPadrao).map((h) => ({
-        opensAt: h.opens_at,
-        closesAt: h.closes_at,
-      }))
-      if (businessHours.length === 0) continue
+        const timeOff: IntervaloOcupado[] = (folgas.data ?? []).map((f) => ({ start: f.starts_at, end: f.ends_at }))
+        const ocupados: IntervaloOcupado[] = (agendamentos.data ?? []).map((a) => ({ start: a.starts_at, end: a.ends_at }))
 
-      const timeOff: IntervaloOcupado[] = (folgas.data ?? []).map((f) => ({ start: f.starts_at, end: f.ends_at }))
-      const ocupados: IntervaloOcupado[] = (agendamentos.data ?? []).map((a) => ({ start: a.starts_at, end: a.ends_at }))
+        const slots = availableSlots({
+          date,
+          timezone: tenant.timezone,
+          businessHours,
+          timeOff,
+          appointments: ocupados,
+          serviceDurationMin: servico.duration_min,
+          // Achado na auditoria pré-`/admin`: vinha fixo em 0, ignorando o que o
+          // serviço cadastra — o buffer só funcionava no agendamento interno, nunca
+          // no site público. Agora que o formulário de serviço expõe os dois campos
+          // (Fase 2), o dono vai configurar e esperar que valha aqui também.
+          bufferBeforeMin: servico.buffer_before_min,
+          bufferAfterMin: servico.buffer_after_min,
+          slotGranularityMin: config.slotGranularityMin,
+          minLeadTimeMinutes: config.minLeadTimeMinutes,
+          maxAdvanceDays: config.maxAdvanceDays,
+          now,
+          parallelCapacity: servico.parallel_capacity,
+        })
 
-      const slots = availableSlots({
-        date,
-        timezone: tenant.timezone,
-        businessHours,
-        timeOff,
-        appointments: ocupados,
-        serviceDurationMin: servico.duration_min,
-        // Achado na auditoria pré-`/admin`: vinha fixo em 0, ignorando o que o
-        // serviço cadastra — o buffer só funcionava no agendamento interno, nunca
-        // no site público. Agora que o formulário de serviço expõe os dois campos
-        // (Fase 2), o dono vai configurar e esperar que valha aqui também.
-        bufferBeforeMin: servico.buffer_before_min,
-        bufferAfterMin: servico.buffer_after_min,
-        slotGranularityMin: config.slotGranularityMin,
-        minLeadTimeMinutes: config.minLeadTimeMinutes,
-        maxAdvanceDays: config.maxAdvanceDays,
-        now,
-        parallelCapacity: servico.parallel_capacity,
-      })
-
-      for (const s of slots) {
-        resultado.push({
+        return slots.map((s) => ({
           startsAt: s,
           endsAt: Temporal.Instant.from(s).add({ minutes: servico.duration_min }).toString(),
           professionalId: prof.id,
-        })
-      }
-    }
+        }))
+      }),
+    )
 
-    return resultado.sort((a, b) => (a.startsAt < b.startsAt ? -1 : 1))
+    return porProfissional.flat().sort((a, b) => (a.startsAt < b.startsAt ? -1 : 1))
   })
 }
 
