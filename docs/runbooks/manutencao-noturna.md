@@ -184,3 +184,22 @@ a conclusão da auditoria anterior: "hoje não resta nenhum no projeto".
 Ambas revertidas, suíte verde.
 
 **Ação:** nenhum commit de código — nada a corrigir. Só esta entrada.
+
+## 2026-08-27 01:40 (America/Sao_Paulo)
+
+**O que foi olhado:** comentário grande do bloco `schedule:` em `.github/workflows/cron.yml` vs.
+estado real do arquivo.
+
+**Achado — comentário contradiz o próprio arquivo, em dois pontos:**
+1. Abria com "CINCO horários" mas o `schedule:` tem SEIS linhas de `cron:` (5–10 UTC), e o próprio
+   adendo mais abaixo ("Entrou um SEXTO horário") já dizia isso. Idem "Estas cinco horas ... por
+   ~9%" — o adendo corrige para ~11% com o sexto.
+2. Dizia "o comentário no topo de `recompute-cycles/route.ts` ainda descreve esse mundo [de cron a
+   cada 15 min]" — mas esse comentário foi reescrito na auditoria de 26/08 e hoje fala de janela,
+   atraso do agendador e do incidente de 25/08. Referência cruzada apontando para um texto que não
+   existe mais.
+
+**Ação:** comentário atualizado (SEIS horários / ~11%, com nota do que era antes; parêntese morto
+sobre o route.ts removido). Só comentário YAML — sem mudança estrutural. Commit
+`docs(cron): corrige comentário do schedule — seis horários, referência cruzada morta`.
+eslint + 811 testes + guarda `cron-cobre-os-fusos` limpos.
