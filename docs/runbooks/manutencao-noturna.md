@@ -244,3 +244,25 @@ de `[slug]/layout.tsx:36` ("Fallback se o pack não tiver accent_color válido")
 para refletir o fluxo real (cor é escolha do dono; roxo por profissão removido na 0033). Commit
 `test(contraste): remove bloco de acento por vertical — mecanismo removido na migration 0033`.
 typecheck + eslint + 799 testes limpos.
+
+## 2026-08-27 02:18 (America/Sao_Paulo)
+
+**O que foi olhado:** (a) evolução do enum `plan_tier` pelas migrations 0030 e 0040 vs. core e
+`types.gen.ts`; (b) mutação de `tests/unit/server/saude-vigia-so-o-que-roda.test.ts`.
+
+**Achado (a):** consistente ponta a ponta. 0030 (`start/studio/network` → `gratis/profissional/
+avancado`, `pro` intacto) + 0040 (`pro` → `essencial`, `profissional` → `equipe`) → estado final
+`gratis | essencial | equipe | avancado`, que bate exatamente com `PlanoTier` em
+`src/core/billing/planos.ts:13` e com `types.gen.ts:3367/3565`. Comentários das migrations
+descrevem a história corretamente. Referências a `start/studio/network` em `docs/09-PLATAFORMA.md`
+e `docs/ESPECIFICACAO-COMPLETA.md` são citações históricas (o handoff congelado), não afirmações
+stale.
+
+**Achado (b) — guarda não está cega, nas duas direções:**
+1. Removi `'segments'` de `ROTAS_DE_CRON` → reprova ("ROTAS_DE_CRON é exatamente o que existe em
+   src/app/api/cron"). ✅
+2. Troquei `send_campaigns: 'campaigns'` por `'segments'` em `ROTA_DO_HEARTBEAT` → reprova
+   ("segments/route.ts não grava o heartbeat 'send_campaigns'"). ✅
+Ambas revertidas, suíte do arquivo verde (11/11).
+
+**Ação:** nenhum commit de código — nada a corrigir. Só esta entrada.
