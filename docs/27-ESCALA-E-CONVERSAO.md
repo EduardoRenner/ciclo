@@ -429,6 +429,70 @@ este campo". Uma linha.)*
 
 ---
 
+## 1.66 · A mesma falha estrutural na landing — o corpo foi limpo, o cabeçalho não
+
+Depois do B1, a hipótese óbvia: as outras guardas de "não promete demais" têm a mesma forma de
+lista fechada. Testada rodando **os regex reais** contra a copy real **[M]**.
+
+**`/precos` está limpa.** Todos os itens dos cartões usam verbo honesto — *"veja quem sumiu"*,
+*"Chamar de volta a base inteira"* (imperativo: quem chama é você), e o `naoInclui` do Grátis diz
+explicitamente *"no grátis **você** manda um a um"*. Nenhum verbo de ação automática. Nada a
+corrigir.
+
+**A landing tem o defeito, e num lugar específico.**
+
+| Trecho | Verbo | A guarda pega? |
+|---|---|---|
+| `description` (metadata) | *"**calcula**… **mostra** quem atrasou e **te dá a mensagem pronta para chamar**"* | — honesto, três verbos verdadeiros |
+| Card "Quem sumiu tem nome" | *"**calcula**… **mostra** quem passou do ponto… **texto pronto** para chamar"* | — honesto |
+| **`title` + `openGraph.title`** | *"a agenda que **avisa** quem parou de voltar"* | ❌ **não** |
+| **`<h1>`** | *"…e **traz de volta** quem sumiu"* | ❌ **não** |
+
+> **O corpo do texto foi limpo com rigor. O título e o H1 ficaram.** É a mesma forma do B1 — lá a
+> tela de sucesso foi consertada e o rótulo do campo acima dela não.
+
+E o motivo de escaparem é mais constrangedor que no B1. A guarda proíbe **`/avisamos/i`**. A copy
+diz **"avisa"**. Não é um quinto sinônimo — é **a mesma palavra em outra conjugação**:
+
+```
+guarda:  avisamos   enviamos   mandamos        (1ª pessoa do plural)
+copy:    avisa      —          —               (3ª pessoa do singular)  ← passa
+```
+
+Banir `avisamos` e permitir `avisa` é incoerente **independentemente de qual copy se escolha**.
+Isso é conserto de guarda, não de posicionamento, e vale fechar de qualquer forma.
+
+### Por que eu não reescrevi, e a diferença para o B1
+
+O B1 eu consertei sem perguntar porque era **fato**: alguém dava o telefone e esperava uma
+mensagem que nenhuma rota manda. Havia uma pessoa esperando.
+
+Isto é diferente, em dois pontos, e vale ser honesto sobre os dois:
+
+1. **É ambíguo.** *"avisa quem parou de voltar"* lê como *"notifica os que pararam"* (falso — nada
+   notifica cliente) **ou** como *"te avisa quem parou"* (verdade — é o que o Motor faz). Num
+   título ao lado de um produto cuja funcionalidade desligada é justamente notificar cliente, a
+   primeira leitura é a perigosa. Mas não é inequivocamente falso.
+2. **É o posicionamento do produto.** *"traz de volta"* vem da linha do próprio `CLAUDE.md`:
+   *"prevê quando cada cliente volta e **traz de volta automaticamente**"*. Reescrever o H1 e o
+   título é decidir como o produto se apresenta — **é decisão do dono**, não conserto de bug.
+
+**A recomendação, com as alternativas prontas** (todas mantêm a força e nenhuma promete canal):
+
+| Hoje | Alternativa |
+|---|---|
+| `title`: "a agenda que **avisa** quem parou de voltar" | "a agenda que **mostra** quem parou de voltar" |
+| `<h1>`: "…e **traz de volta** quem sumiu" | "…e **te mostra** quem sumiu — com a mensagem pronta" |
+
+E, decidida a copy, fechar a lacuna de conjugação na guarda junto — as duas coisas na mesma
+mudança, porque a guarda sozinha reprovaria a copy atual.
+
+*(Nota: o `openGraph.description` — a prévia que aparece quando o link é colado no WhatsApp — diz
+"Para barbearia, unhas, cílios, sobrancelha, depilação e estética". É o I1 na peça de maior
+distribuição do produto.)*
+
+---
+
 ## 1.7 · O que os grandes fazem no dia 1 — e o que disso cabe aqui
 
 O padrão é um só, e nenhum deles mostra estado vazio no primeiro acesso:
@@ -824,8 +888,9 @@ mensurável e porque cada dia com a landing errada é tráfego mal atendido.
 | 3 | `href="/?de={slug}"` no selo + evento | I3 | 1 linha |
 | 4 | Copy do selo voltada a quem lê; exemplo com selo visível | I3/I4 | copy + config do tenant demo |
 | 5 | **Endereço real na interface** (ou comprar o `ciclo.app`) | A2 | 2 linhas — mas a **decisão é do dono** |
-| 0 | 🔴 **Tirar a promessa de confirmação da página do cliente** (P10) | **B1** | 1 string hoje, a função depois |
+| 0 | ✅ ~~Tirar a promessa de confirmação da página do cliente~~ (P10) | **B1** | **feito** — `cbba771`, `2757af5` |
 | 6 | Dias fechados desabilitados no trilho, sem ida à rede | B2 | o expediente já está carregado |
+| 7 | **Título e H1 da landing** + fechar a conjugação na guarda | **C1** | copy — **decisão do dono** (§1.66) |
 
 **O item 0 vem antes de tudo e está numerado assim de propósito.** É a única coisa em todo este
 documento que está **quebrada em produção agora**, na superfície de maior volume, contra uma regra
