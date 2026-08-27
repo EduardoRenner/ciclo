@@ -14,6 +14,77 @@ sequenciamento, com justificativa explícita na §6.
 
 ---
 
+## Sumário executivo — leia isto se não ler mais nada
+
+Este documento cresceu ao longo de **nove rodadas de análise**, e boa parte do que ele contém não
+estava planejado: começou como plano de conversão e virou também auditoria, porque **olhar o
+produto publicado encontrou coisas que nenhum teste encontra**.
+
+### A frase que resume tudo
+
+> **O CICLO não tem problema de conversão. Tem problema de entrada** — zero pagantes, o motor
+> desligado, nenhuma instrumentação. Instalar mecânica de conversão num funil sem tráfego
+> multiplica zero. A ordem certa é construir a máquina, na sequência em que cada peça paga a
+> próxima (§4).
+
+### O que já foi corrigido nesta análise
+
+| | O que era | Onde |
+|---|---|---|
+| ✅ **B1** | A página do cliente dizia *"É por aqui que a confirmação chega"* — e nada chega. **A guarda passava verde**, porque proibia quatro redações e essa era a quinta. Corrigido com `core/messaging/promessa.ts`; guarda passou a testar a função, 3 mutações vistas reprovando | §1.65, P10 |
+| ✅ **guarda cega** | A guarda nova nasceu cega: `\w` não casa `ç`/`ã`, então `/confirma\w*/` não pegava "confirmação". Só apareceu ao rodar a mutação | §1.65 |
+
+### As cinco decisões que dependem de você
+
+Nenhuma é execução — cada uma é uma escolha que eu não devo fazer sozinho.
+
+| # | Decisão | Por que é sua | Onde |
+|---|---|---|---|
+| 1 | **`ciclo.app`: comprar ou parar de exibir** | A interface mostra um domínio que o projeto não tem, no instante em que a pessoa escolhe o link | §1.6 A2 |
+| 2 | **Título e H1 da landing** | *"avisa"* / *"traz de volta"* prometem o motor desligado — mas é ambíguo e é o posicionamento do produto, não um fato errado. Alternativas prontas | §1.66 C1 |
+| 3 | **Avisar a equipe quando o cliente desmarca pelo link** | Comportamento novo (o produto passaria a notificar). Uma linha, pronta | §1.67 D1 |
+| 4 | **Campo opcional de e-mail no booking** | Encadeada ao F0b: se o WhatsApp vier, é redundante; se demorar, é o caminho mais barato de conseguir confirmar um agendamento | §7.3 |
+| 5 | **Moldura de dinheiro no aviso de teto** | Contraria uma posição já pensada no código (*"nada aqui usa urgência inventada"*) | P6 |
+
+### Os achados que ninguém tinha visto
+
+Ordenados por consequência, não por ordem de descoberta:
+
+1. **O conserto do "dia 1" não dispara no dia 1** (§1.6 A1). `deveMostrarHeroiDoMotor` exige
+   `atribuicaoCount > 0`, que num tenant novo é zero por construção. A tela que o `25` §2.2 mandou
+   consertar continua sendo **R$ 0,00 + agenda vazia** para quem acabou de se cadastrar — a única
+   população que a guarda exclui.
+2. **O cliente desmarca pelo link e ninguém fica sabendo** (§1.67 D1) — nem a equipe, nem a fila de
+   espera. A máquina inteira (`waitlist`, `notificarProximoDaLista`, tela de encaixe) está
+   construída e o gatilho não está ligado.
+3. **O canal disponível alcança quem menos precisa** (§7.3). O e-mail chega à base importada e
+   **não chega a quem agendou pela página pública** — o formulário não coleta e-mail. E o push
+   para cliente é andaime: `clients.user_id` nunca é escrito.
+4. **A landing vende no terreno onde o `25` manda não competir** (§1.5 I1) e cala nas 9 profissões
+   sem concorrência que o produto já atende.
+5. **`trial_ends_at` existe desde a migration 0001 e nada o lê** (§1 achado 1) — o produto não tem
+   período de demonstração nenhum.
+
+### O mapa, para não ler 1.200 linhas
+
+| Se você quer… | Vá para |
+|---|---|
+| o diagnóstico e os seis achados de fundo | §0, §1 |
+| **o que está errado na interface, medido no ar** | §1.5 a §1.67 |
+| **o que construir, com a psicologia de cada peça** | §2 (P1–P10) |
+| o que **não** fazer, e por quê | §3 |
+| **a ordem de execução** | §4 (E0 → E3) |
+| como medir se funcionou | §5 |
+| onde discordo do `25` | §6 |
+| os erros deste próprio documento | §7.5 |
+
+**Um aviso de leitura:** a numeração das seções é irregular (1.5, 1.65, 1.66…) porque elas foram
+inseridas em rodadas sucessivas entre seções que já existiam. Renumerar quebraria as referências
+cruzadas espalhadas pelo texto; o mapa acima resolve, e a irregularidade fica como registro
+honesto de que o documento foi crescendo, não nasceu pronto.
+
+---
+
 ## 0. O diagnóstico, em uma frase
 
 > **O CICLO não tem problema de conversão. Tem problema de entrada.**
