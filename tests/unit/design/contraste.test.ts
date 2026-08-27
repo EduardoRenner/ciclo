@@ -129,25 +129,3 @@ describe('contraste dos tokens (WCAG AA)', () => {
     expect(css).toMatch(/--line:\s*rgba/)
   })
 })
-
-describe('acento de cada vertical', () => {
-  // A tabela de §1 troca --acc por pack. Se um acento novo entrar sem contraste,
-  // o botão primário daquela vertical nasce ilegível.
-  const ACENTOS: Array<[string, string, string]> = [
-    ['cílios', '#a855f7', '#c084fc'],
-    ['unhas', '#ec4899', '#f9a8d4'],
-    ['barbearia', '#f59e0b', '#fcd34d'],
-    ['sobrancelhas', '#8b5cf6', '#a78bfa'],
-    ['estética', '#10b981', '#6ee7b7'],
-    ['depilação', '#f97316', '#fdba74'],
-  ]
-
-  it.each(ACENTOS)('%s: texto escuro lê sobre o gradiente', (_pack, acc, acc2) => {
-    expect(contraste('#0a0a0f', acc)).toBeGreaterThanOrEqual(4.5)
-    expect(contraste('#0a0a0f', acc2)).toBeGreaterThanOrEqual(4.5)
-  })
-
-  it.each(ACENTOS)('%s: o tom claro serve de texto sobre a superfície', (_pack, _acc, acc2) => {
-    expect(contraste(acc2, SURFACE)).toBeGreaterThanOrEqual(4.5)
-  })
-})

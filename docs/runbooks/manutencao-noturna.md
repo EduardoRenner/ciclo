@@ -222,3 +222,25 @@ e dos tetos de uso da rota (`LIMITE_POR_TENANT_DIA`/`LIMITE_POR_USUARIO_HORA`) �
 constante, sem duplicação divergente.
 
 **Ação:** nenhum commit de código — nada a corrigir. Só esta entrada.
+
+## 2026-08-27 02:05 (America/Sao_Paulo)
+
+**O que foi olhado:** (a) mutação de `tests/unit/server/actions-fixadas.test.ts`; (b) o bloco
+`describe('acento de cada vertical')` de `tests/unit/design/contraste.test.ts`.
+
+**Achado (a) — guarda não está cega:** troquei um SHA por `@v4` em `ci.yml` → reprova ("action
+presa em ref móvel"); tirei o comentário `# v4` de um SHA → reprova ("SHA sem comentário"). ✅
+
+**Achado (b) — cobertura de teste morta + comentários obsoletos:** a migration `0033_cor_do_site_
+por_tenant.sql` zerou todos os `vertical_packs.accent_color` e tornou a coluna nullable; a cor do
+site público passou a vir só de `settings.site.accent` (escolha do dono) com fallback osso
+(`public-booking.ts:145`, `site.ts:20`). O bloco `describe('acento de cada vertical')` continuava
+testando 6 pares `(acc, acc2)` cravados de cores por profissão que não existem mais em lugar
+nenhum — os valores de `acc2` (`#c084fc` etc.) nunca existiram fora desse teste. O comentário
+"A tabela de §1 troca --acc por pack" descrevia o mecanismo que a 0033 removeu. Idem o comentário
+de `[slug]/layout.tsx:36` ("Fallback se o pack não tiver accent_color válido").
+
+**Ação:** removido o bloco morto (12 casos, 811→799 testes) + comentário de `layout.tsx` corrigido
+para refletir o fluxo real (cor é escolha do dono; roxo por profissão removido na 0033). Commit
+`test(contraste): remove bloco de acento por vertical — mecanismo removido na migration 0033`.
+typecheck + eslint + 799 testes limpos.
