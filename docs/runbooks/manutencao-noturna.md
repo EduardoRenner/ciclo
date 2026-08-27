@@ -70,3 +70,22 @@ uma), suíte confirmada verde (79 arquivos / 811 testes).
 **Próxima rodada, sugestão:** `home-nao-promete-demais.test.ts` e
 `runbook-aponta-pro-agendador-certo.test.ts` ainda não verificadas por mutação; ou varredura de
 export morto.
+
+## 2026-08-27 00:40 (America/Sao_Paulo)
+
+**O que foi olhado:** (a) mutação de `tests/unit/design/runbook-aponta-pro-agendador-certo.test.ts`
+— guarda nunca vista reprovando; (b) varredura de export morto com `ts-prune`.
+
+**Achado (a):** guarda não está cega. Duas mutações em `docs/runbooks/incidente.md`:
+1. Linha "Desabilite o cron no vercel.json e faça redeploy" → reprova ("manda mexer no vercel.json"). ✅
+2. `.github/workflows/cron.yml` trocado por texto genérico → reprova ("nomeia o arquivo que realmente agenda"). ✅
+Ambas revertidas, suíte verde.
+
+**Achado (b) — export morto real:** `listarAvaliacoesRecentes` + o tipo `AvaliacaoRecente` em
+`src/server/services/avaliacoes.ts` nasceram no commit `dc8cce5` e nunca tiveram consumidor —
+nenhum import em `src/`, nenhum teste. A página pública calcula a média/lista de reviews dentro de
+`perfilPublico()`; o painel admin usa `resumoAvaliacoes` (esse tem teste de integração). A função
+recente ficou órfã. Removida.
+
+**Ação:** commit `fix(avaliacoes): remove listarAvaliacoesRecentes, export sem consumidor`.
+typecheck + eslint + 811 testes unitários limpos.

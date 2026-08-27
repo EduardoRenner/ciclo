@@ -95,23 +95,3 @@ export async function resumoAvaliacoes(db: Cliente, tenantId: string): Promise<R
     distribuicao,
   }
 }
-
-export type AvaliacaoRecente = { id: string; rating: number; comment: string | null; createdAt: string; clientName: string | null }
-
-export async function listarAvaliacoesRecentes(db: Cliente, tenantId: string, limite = 20): Promise<AvaliacaoRecente[]> {
-  const { data, error } = await db
-    .from('client_reviews')
-    .select('id, rating, comment, created_at, clients(name)')
-    .eq('tenant_id', tenantId)
-    .order('created_at', { ascending: false })
-    .limit(limite)
-  if (error) throw new AppError('INTERNAL', { cause: error })
-
-  return (data ?? []).map((r) => ({
-    id: r.id,
-    rating: r.rating,
-    comment: r.comment,
-    createdAt: r.created_at,
-    clientName: r.clients?.name ?? null,
-  }))
-}
