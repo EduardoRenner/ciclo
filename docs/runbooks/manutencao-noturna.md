@@ -509,6 +509,22 @@ vermelho. Revertido, 12/12 verde.
 **Ação:** commit `test(core): cobre ramos daily e hourlyRate-nulo de estimativaParaDuracao/
 formatarPreco`. typecheck + eslint + 841 testes limpos (era 838 + 3).
 
+## 2026-08-27 07:38 (America/Sao_Paulo) — cobertura, rodada 4
+
+Conferidos e já **bem cobertos** (sem gap real): `core/recurrence/descrever.ts` (todos os 3 tipos
++ ordinal 5 + concordância de gênero), `core/estoque/alertas.ts` (todos os ramos + limites =30/D+0/
+≤vs<), `core/comanda/totals.ts` (clamps, as duas bases de comissão, drift de ponto flutuante).
+
+**`src/core/reminders/schedule.ts`:** o teste cobria o clamp da manhã (`T-3h < 8h` → gruda nas 8h)
+mas NÃO o clamp da noite (`T-3h >= 21h` → gruda nas 20h) — só alcançável com agendamento de
+madrugada (ex.: 1h da manhã → T-3h natural 22h do dia anterior). Ramo de código sem nenhum teste.
+
+**Visto reprovando:** removido o `if (bruto.hour >= FIM_JANELA)` → o novo teste (agendamento à 1h,
+lembrete devido só a partir das 20h) fica vermelho. Revertido, 8/8 verde.
+
+**Ação:** commit `test(core): cobre o clamp noturno (T-3h > 21h) de lembretesDevidos`. typecheck
++ eslint + 842 testes limpos (era 841 + 1).
+
 **Nota de estado:** 13 guardas de varredura de fonte já verificadas por mutação, todas íntegras;
 varreduras de export morto, escrita sem checar erro, enum de plano e modelo de preço todas limpas.
 A dívida técnica encontrável por leitura está bem baixa — os 3 achados reais até aqui (rótulo de
