@@ -89,3 +89,20 @@ recente ficou órfã. Removida.
 
 **Ação:** commit `fix(avaliacoes): remove listarAvaliacoesRecentes, export sem consumidor`.
 typecheck + eslint + 811 testes unitários limpos.
+
+## 2026-08-27 00:48 (America/Sao_Paulo)
+
+**O que foi olhado:** regra de RBAC duplicada entre `src/server/assistente/ferramentas.ts`
+(`ferramentasPermitidas`) e `src/server/services/assistente.ts` (`ferramentasDisponiveisAgora`).
+
+**Achado:** `ferramentasPermitidas` só era exercitada pelos próprios testes — produção nunca
+importava (usava `avaliarPermissao(papel, f.permissao) !== null` reescrito à mão dentro de
+`ferramentasDisponiveisAgora`). Dois lugares com o mesmo predicado de permissão: se um ganhar
+nuance (ex.: tratar `null` diferente), o outro diverge calado — e o teste continuaria verde
+porque cobre só a cópia não usada.
+
+**Ação:** `ferramentasDisponiveisAgora` agora compõe sobre `ferramentasPermitidas` (RBAC) e só
+adiciona o filtro de módulo do plano. Predicado de permissão num lugar só, e a função testada
+passou a ter consumidor de produção real. Commit
+`refactor(assistente): ferramentasDisponiveisAgora reusa ferramentasPermitidas`.
+typecheck + eslint + 811 testes limpos.
