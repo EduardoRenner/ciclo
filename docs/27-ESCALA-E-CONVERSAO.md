@@ -1245,6 +1245,47 @@ diferença entre "que prático" e "trava".
 
 ---
 
+## 7.25 · Acessibilidade medida no renderizado — e um anel de foco apagado
+
+O projeto tem `tests/unit/design/contraste.test.ts`, que recalcula o contraste **dos tokens** a
+partir do `globals.css`. É bom e não prova o que a pessoa vê: token certo com composição errada
+(texto claro sobre superfície clara aninhada) passaria. É a classe "verde não é prova" do
+`CLAUDE.md`. Então medi o DOM renderizado.
+
+**Contraste: aprovado, sem ressalva.** 53 elementos de texto visíveis em `/dom-rocha/agendar` a
+375 px, cada um comparado com o **fundo real herdado** (subindo a árvore até achar cor opaca), com
+o limiar certo por tamanho e peso (3:1 para texto grande, 4,5:1 para o resto): **zero reprovados**
+**[M]**. O trabalho de tokens se sustenta na composição.
+
+**Uma medição minha que era falsa, e eu descartei.** Primeiro medi foco chamando `.focus()` em
+cada elemento focável: 38 de 38 "sem anel". **Falso positivo** — o projeto usa `:focus-visible`
+(globals.css:308), que por definição **não** casa com foco programático. Descartada. Tentei refazer
+com `Tab` de verdade e o teclado não alcança o painel nesta sessão, então **a renderização do anel
+continua não verificada** — fica registrado como não medido, não como aprovado.
+
+**O que a leitura do código achou, e é real:**
+
+`admin/caixa/seletor-de-dia.tsx` tinha um `<input type="date">` com `outline-none` **e nenhum
+substituto** **[M]**. A borda visível ali é do `<label>` em volta, que não reage ao foco do input —
+então quem chegava por teclado não via sinal nenhum. WCAG 2.4.7.
+
+A ironia está no próprio arquivo: o comentário três linhas acima elogia o campo nativo porque
+*"já vem acessível e traduzido"* — e a classe seguinte remove exatamente a acessibilidade elogiada.
+É o reflexo mais comum de front-end: apagar o outline feio do navegador sem pôr nada no lugar.
+
+> ✅ **CORRIGIDO** (commit `0ab9cc9`), no padrão que a casa já usa: `components/ui/input.tsx`
+> mantém o anel global e só acrescenta cor de borda, com comentário dizendo isso.
+
+**E virou guarda**, porque a próxima pessoa vai ter o mesmo reflexo: varre todo `className` com
+`outline-none` e exige um indicador de foco no mesmo `className`. **Não proíbe apagar — proíbe
+apagar sem repor.** Vista reprovando nas duas direções:
+
+1. devolvendo o defeito exato no seletor de dia → vermelho, nomeando arquivo e classe;
+2. tirando o `focus:border-acc-2` do `assistente-flutuante` (o caso **legítimo**, que apaga e
+   repõe) → vermelho. Isso prova que a guarda distingue os dois, em vez de só detectar a string.
+
+---
+
 ## 7.3 · O fallback de mensagem alcança a metade errada da base
 
 `enviarComFallback` tenta três canais em ordem: **WhatsApp → push → e-mail** **[M]**. O código é
