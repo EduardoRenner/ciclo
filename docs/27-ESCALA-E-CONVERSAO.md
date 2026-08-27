@@ -1137,6 +1137,75 @@ Com isso, a E1 inteira sai do bloqueio sem furar a regra que criou o bloqueio.
 
 ---
 
+## 7.2 · A tela mais usada do produto leva ~4,3 s para mostrar um horário
+
+Medido no ar em `/dom-rocha/agendar`, três amostras consecutivas cada, com `cache: 'no-store'`
+**[M]**:
+
+| | 1 | 2 | 3 |
+|---|---|---|---|
+| HTML da página | 1290 ms | 1329 ms | 1241 ms |
+| **API de disponibilidade** | **2901 ms** | **3669 ms** | **2872 ms** |
+
+Não é cold start — as três amostras da API batem entre si. O primeiro carregamento da sessão, esse
+sim frio, deu TTFB de 4196 ms e primeiro horário visível perto de **7,6 s** **[M]**.
+
+Em regime, quem abre o link do salão espera **~1,3 s pela página e mais ~3 s pelo primeiro
+horário**. Numa rede móvel de verdade — a "rede de subsolo" que o `error.tsx` do próprio projeto
+cita — é pior.
+
+### O que eu consegui medir da causa
+
+**Quatro idas ao banco em série** dentro de `disponibilidadePublica` **[M]**:
+
+```
+1. tenantPeloSlug(svc, slug)          ← await
+2. services (pelo tenant)             ← await
+3. professionals                      ← await
+4. Promise.all([business_hours, time_off, appointments])   ← 3 em paralelo, bem feito
+```
+
+O passo 4 já está paralelizado corretamente. Os passos 2 e 3 **não dependem um do outro** — os dois
+só precisam do `tenant` do passo 1 — e mesmo assim são sequenciais.
+
+**E as duas pontas estão em continentes diferentes** **[M]**:
+
+| | Onde | Fonte |
+|---|---|---|
+| Banco | Supabase **sa-east-1** (São Paulo) | `DECISOES.md:30` |
+| Função | Vercel **`iad1`** (Washington) — o padrão | `vercel.json` é só `{"crons": []}`, **sem `regions`** |
+
+Cada uma das quatro idas atravessa ~7.500 km nos dois sentidos.
+
+### O que é inferência, e precisa ser dito
+
+**Não provei a causa daqui.** Provar exige medir de uma função em `gru1` e comparar. O que está
+medido é: o tempo, o número de saltos em série, a ausência de configuração de região e a distância
+entre as duas pontas. A conclusão de que a latência transcontinental responde por boa parte dos
+3 s é **inferência plausível, não medição**.
+
+### Dois consertos, e só um depende de terceiro
+
+**(a) Região da função — uma linha, mas pode esbarrar no plano.**
+`"regions": ["gru1"]` no `vercel.json` põe a função na mesma cidade do banco. **Atenção:** o projeto
+está no plano **Hobby** (`DECISOES.md`), e a escolha de região para Serverless Functions é
+historicamente um recurso de plano pago na Vercel — **isso precisa ser conferido antes de contar
+com o conserto**. Se for restrito, é um argumento novo (e melhor que o do cron) para a conversa de
+upgrade — mas o `25` §5 já decidiu não subir para Pro por causa de cron, e isso continua valendo:
+US$ 20/mês são 2,4 assinantes Essencial.
+
+**(b) Paralelizar os passos 2 e 3 — inteiramente nas suas mãos.**
+`services` e `professionals` num `Promise.all` cortam **quatro saltos em série para três**. Não
+depende de plano, de região nem de decisão de ninguém: é o mesmo padrão que o passo 4 já usa três
+linhas abaixo. Ganho esperado: ~25% do tempo que é gasto só esperando a rede.
+
+**Por que isto importa mais do que parece.** Esta é a superfície que o laço de crescimento produz:
+todo cliente de todo tenant passa por ela, e é a primeira impressão que alguém tem do CICLO sem
+saber que é o CICLO. Uma página de agendamento que demora 4 s para mostrar um horário é a
+diferença entre "que prático" e "trava".
+
+---
+
 ## 7.3 · O fallback de mensagem alcança a metade errada da base
 
 `enviarComFallback` tenta três canais em ordem: **WhatsApp → push → e-mail** **[M]**. O código é

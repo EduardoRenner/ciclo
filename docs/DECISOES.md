@@ -2968,3 +2968,17 @@ menos precisa e não alcança quem mais precisa. Conserto barato possível: camp
 no formulário público — mas cobra conversão num formulário de 2 campos obrigatórios, e vira
 redundante se o F0b (WhatsApp) acontecer. Decisão do dono, encadeada à do F0b. Detalhe em
 `docs/27-ESCALA-E-CONVERSAO.md` §7.3.
+
+2026-08-27 · A página pública de agendamento leva ~4,3 s até o primeiro horário · Medido no ar
+(3 amostras consecutivas, cache no-store): HTML ~1,3 s e API de disponibilidade ~2,9-3,7 s. Não é
+cold start — as amostras batem entre si; o primeiro acesso da sessão (esse frio) deu TTFB 4196 ms e
+primeiro horário perto de 7,6 s. Causa parcial MEDIDA: `disponibilidadePublica` faz QUATRO idas ao
+banco em série (tenantPeloSlug → services → professionals → Promise.all de business_hours/time_off/
+appointments), e as duas pontas estão em continentes diferentes — Supabase em sa-east-1 e função
+Vercel no padrão `iad1`, porque `vercel.json` não define `regions`. NÃO PROVADO daqui que a latência
+transcontinental responda pela maior parte dos 3 s (exigiria medir de uma função em gru1). Dois
+consertos: (a) `"regions": ["gru1"]` — uma linha, MAS escolha de região é historicamente recurso de
+plano pago na Vercel e o projeto está no Hobby; conferir antes de contar com isso; (b) paralelizar
+`services` e `professionals` num Promise.all — eles não dependem um do outro, corta 4 saltos em
+série para 3, não depende de plano nem de decisão de ninguém. Detalhe em
+`docs/27-ESCALA-E-CONVERSAO.md` §7.2.
