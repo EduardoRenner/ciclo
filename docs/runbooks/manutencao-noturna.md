@@ -325,6 +325,24 @@ cosmético — regra do prompt).
 
 **Ação:** nenhum commit de código — nada a corrigir. Só esta entrada.
 
+## 2026-08-27 03:12 (America/Sao_Paulo) — nova tática: consistência de UX
+
+**O que foi olhado:** `loading.tsx` faltando em rota do `/admin` que faz fetch. Para cada
+`page.tsx` sob `src/app/admin`, conferido se há `loading.tsx` irmão.
+
+**Achado — inconsistência real:** de ~28 telas do `/admin`, só duas telas `async` com fetch de
+banco não tinham `loading.tsx`: `config/modulos` (lê `listarModulos`) e `config/meu-plano` (lê
+`contextoDePlano` + 2 counts). Todas as outras ~20 telas de `config/*` têm. As duas entraram
+depois (Fase M/monetização, docs/18) e escaparam do padrão que a memória do projeto registra
+("18 telas ficaram sem loading.tsx" → sistematizado com `esqueleto-tela.tsx`). Sem elas, o Next
+não pinta nada entre o clique e o Server Component terminar — lê como travado (mesmo defeito de
+2026-08-18). Nenhum teste-guarda cobre cobertura de `loading.tsx`, por isso escaparam.
+
+**Ação:** criados os dois `loading.tsx` reusando `EsqueletoCabecalho`/`EsqueletoLista`/
+`EsqueletoNumeros`, mesmo padrão dos irmãos. Commit `fix(config): adiciona loading.tsx em modulos
+e meu-plano`. typecheck + eslint + 799 testes limpos. (Um teste-guarda de cobertura de
+`loading.tsx` seria útil, mas é escopo de outra rodada — anotado.)
+
 **Nota de estado:** 13 guardas de varredura de fonte já verificadas por mutação, todas íntegras;
 varreduras de export morto, escrita sem checar erro, enum de plano e modelo de preço todas limpas.
 A dívida técnica encontrável por leitura está bem baixa — os 3 achados reais até aqui (rótulo de
