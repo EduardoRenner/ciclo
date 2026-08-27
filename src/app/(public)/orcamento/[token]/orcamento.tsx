@@ -13,6 +13,32 @@ type Dados = { status: string; totalCents: number; validUntil: string | null; me
 type Estado = 'carregando' | 'pronto' | 'recusando' | 'aprovado' | 'recusado' | 'erro'
 
 /**
+ * Qual tela mostrar — e o motivo de isto ser função em vez de uma sequência de `if` no render.
+ *
+ * Até 2026-08-27 o primeiro `if` era `estado === 'carregando' || !dados`, e o de erro vinha
+ * DEPOIS. O `|| !dados` estava lá para o TypeScript estreitar `dados` no resto da função — mas
+ * **erro é justamente o caso em que `dados` é `null`**, então o ramo de erro nunca era alcançado.
+ *
+ * Medido no ar: com token inválido, a API responde **404 em ~400 ms** com a mensagem certa
+ * ("Link inválido ou expirado.") e a tela ficava em *"Carregando orçamento…"* **para sempre** —
+ * mais de 15 s sem mensagem, sem ação, sem saída. O servidor fazia tudo certo e o cliente
+ * engolia. O irmão `/avaliar` não tem o `|| !dados` e por isso sempre funcionou.
+ *
+ * Pura e exportada porque este projeto não tem harness de render de componente — mesmo padrão de
+ * `deveMostrarHeroiDoMotor` em `admin/hoje/hoje.tsx`. A ordem é a regra: **erro antes de
+ * carregando**, sempre.
+ */
+export type TelaDoOrcamento = 'erro' | 'carregando' | 'aprovado' | 'recusado' | 'conteudo'
+
+export function telaDoOrcamento(estado: Estado, temDados: boolean): TelaDoOrcamento {
+  if (estado === 'erro') return 'erro'
+  if (estado === 'carregando' || !temDados) return 'carregando'
+  if (estado === 'aprovado') return 'aprovado'
+  if (estado === 'recusado') return 'recusado'
+  return 'conteudo'
+}
+
+/**
  * docs/09-PLATAFORMA.md §11: "orçamento sem valor visível é assinatura em branco" — o total
  * aparece antes de qualquer botão de decisão, nunca escondido atrás de um clique. A
  * `Referrer-Policy: strict-origin-when-cross-origin` do middleware global já cobre o cuidado do
@@ -83,11 +109,12 @@ export default function Orcamento({ token }: { token: string }) {
       })
   }
 
-  if (estado === 'carregando' || !dados) {
-    return <p className="text-corpo text-txt-2">Carregando orçamento…</p>
-  }
+  const tela = telaDoOrcamento(estado, dados !== null)
 
-  if (estado === 'erro') {
+  // O ERRO VEM PRIMEIRO, e a ordem é a correção inteira: erro é o caso em que `dados` é `null`,
+  // então qualquer ramo com `!dados` acima deste o engole — foi assim que a tela ficou em
+  // "Carregando…" para sempre com token inválido.
+  if (tela === 'erro') {
     return (
       <>
         <XCircle aria-hidden className="mb-4 size-14 text-bad" />
@@ -95,6 +122,12 @@ export default function Orcamento({ token }: { token: string }) {
         <p className="mt-2 text-corpo text-txt-2">{mensagemErro}</p>
       </>
     )
+  }
+
+  // `|| !dados` aqui é só estreitamento de tipo para o resto da função — a decisão já foi tomada
+  // por `telaDoOrcamento`, e o ramo de erro já saiu acima.
+  if (tela === 'carregando' || !dados) {
+    return <p className="text-corpo text-txt-2">Carregando orçamento…</p>
   }
 
   if (dados.status === 'expired') {
