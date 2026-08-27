@@ -49,6 +49,7 @@ Base: `/api/v1`. Tudo JSON, `Content-Type: application/json`. Textos de erro em 
 | `PLAN_LIMIT` | 402 | Estourou limite do plano |
 | `OPT_OUT` | 422 | Cliente pediu para não receber mensagem |
 | `VAULT_LOCKED` | 423 | Cofre exige reautenticação |
+| `ASSISTANT_UNAVAILABLE` | 503 | Assistente sem credencial ou provedor fora do ar (docs/26 §4.4) |
 | `INTERNAL` | 500 | Nunca vazar stack trace |
 
 #### Paginação

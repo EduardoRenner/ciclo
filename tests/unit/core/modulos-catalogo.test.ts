@@ -14,12 +14,19 @@ import { CATALOGO, PLANOS, type ModuloKey } from '@/core/billing/planos'
  */
 
 const SQL = readFileSync('supabase/migrations/0041_modules_catalogo.sql', 'utf8')
+// docs/26-AGENTE-IA-PLANO.md §6 (A6): 0041 já foi aplicada em produção e não pode ser editada —
+// o 17º módulo (`assistant`) entrou como INSERT novo nesta migration.
+const SQL_ASSISTENTE = readFileSync('supabase/migrations/0043_modulo_assistente.sql', 'utf8')
 
-/** Lê as chaves do `insert into modules (...) values ('agenda', ...), ('cycle_engine', ...)`. */
-function chavesDaMigration(): string[] {
-  const bloco = /insert into modules[\s\S]*?;/.exec(SQL)
-  if (!bloco) throw new Error('não achei o insert de `modules` na migration 0041')
+/** Lê as chaves de um `insert into modules (...) values ('agenda', ...), ('cycle_engine', ...)`. */
+function chavesDoInsert(sql: string, origem: string): string[] {
+  const bloco = /insert into modules[\s\S]*?;/.exec(sql)
+  if (!bloco) throw new Error(`não achei o insert de \`modules\` em ${origem}`)
   return [...bloco[0].matchAll(/^\s*\('([a-z_]+)'/gm)].map((m) => m[1] as string)
+}
+
+function chavesDaMigration(): string[] {
+  return [...chavesDoInsert(SQL, '0041'), ...chavesDoInsert(SQL_ASSISTENTE, '0043')]
 }
 
 describe('catálogo de módulos: core e migration 0041 não podem divergir', () => {
@@ -27,7 +34,7 @@ describe('catálogo de módulos: core e migration 0041 não podem divergir', () 
     const naMigration = chavesDaMigration()
     const noCore = CATALOGO.map((m) => m.key)
 
-    expect(naMigration).toHaveLength(16)
+    expect(naMigration).toHaveLength(17)
     expect(noCore).toEqual(naMigration)
   })
 
