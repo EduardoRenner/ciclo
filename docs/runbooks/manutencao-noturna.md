@@ -307,7 +307,25 @@ estado atual, não o antigo `if` de JavaScript.
 
 **Ação:** nenhum commit de código — nada a corrigir. Só esta entrada.
 
-**Nota de estado:** 12 guardas de varredura de fonte já verificadas por mutação, todas íntegras;
+## 2026-08-27 02:58 (America/Sao_Paulo)
+
+**O que foi olhado:** (a) mutação de `tests/unit/design/erro-nao-manda-cliente-pro-admin.test.ts`;
+(b) comentários de código ligados às migrations 0036 (`can_see_appointment`) e 0037 (`claim_jobs`
+retoma job preso em `running`).
+
+**Achado (a) — guarda não está cega:** frase "Seus dados estão salvos" solta fora do condicional
+`noPainel` → reprova ("a frase precisa estar condicionada ao painel"); `href={voltarPara}` trocado
+por `href="/admin/hoje"` fixo → reprova ("o link para o painel está fixo"). ✅
+
+**Achado (b):** aceitável. `rbac.ts:31` e `health.ts:87` descrevem 0036/0037 corretamente.
+`job-queue.ts:53` cita só "migration 0009" para `claim_jobs` (a 0037 depois acrescentou a retomada
+de job travado) — comentário incompleto, mas não errado, e o comportamento novo está documentado
+em `health.ts:87` e nas próprias migrations. Não vale um commit só pra isso (evitar polimento
+cosmético — regra do prompt).
+
+**Ação:** nenhum commit de código — nada a corrigir. Só esta entrada.
+
+**Nota de estado:** 13 guardas de varredura de fonte já verificadas por mutação, todas íntegras;
 varreduras de export morto, escrita sem checar erro, enum de plano e modelo de preço todas limpas.
 A dívida técnica encontrável por leitura está bem baixa — os 3 achados reais até aqui (rótulo de
 teste, comentário de cron.yml, bloco de teste morto) foram todos "documentação que envelheceu",
