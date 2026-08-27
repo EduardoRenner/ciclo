@@ -18,9 +18,18 @@ describe('textoDoCanalDeConfirmacao', () => {
   it('com `reminders` FORA do schedule, não afirma que algo chega sozinho', () => {
     const texto = textoDoCanalDeConfirmacao(false)
 
-    // O conceito, não a redação: nada pode dizer que uma mensagem CHEGA por ali, porque nenhuma
-    // rota manda. Se um dia a frase mudar de palavras, esta asserção continua valendo.
-    expect(/confirma\w*\s+(chega|vem|ser[áa])/i.test(texto), `prometeu chegada: "${texto}"`).toBe(false)
+    /*
+     * O conceito, não a redação: nada pode dizer que uma mensagem CHEGA por ali, porque nenhuma
+     * rota manda. Se um dia a frase mudar de palavras, esta asserção continua valendo.
+     *
+     * `[^\s]*` e não `\w*`: em JS sem a flag `u`, `\w` é `[A-Za-z0-9_]` — **`ç` e `ã` não entram**.
+     * A primeira versão desta linha era `/confirma\w*\s+chega/i` e **não casava com
+     * "confirmação chega"**, que é literalmente a frase que este arquivo existe para proibir.
+     * Só apareceu ao rodar a mutação: ela ficou verde, e quem reprovou foi outra asserção.
+     * Guarda cega escrita dentro do conserto de uma guarda cega — em português, o acento é o
+     * detalhe que faz `\w` mentir.
+     */
+    expect(/confirma[^\s]*\s+(chega|vem|ser[áa])/i.test(texto), `prometeu chegada: "${texto}"`).toBe(false)
     expect(/voc[êe] (vai|ir[áa]) receber/i.test(texto), `prometeu recebimento: "${texto}"`).toBe(false)
 
     // E não pode virar silêncio: o campo continua precisando explicar por que pede o telefone.
