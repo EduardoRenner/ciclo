@@ -36,3 +36,16 @@ sem edição não commitada por perto, então o `checkout` não corria o risco d
 forma — `preco-em-um-lugar-so.test.ts`, `titulos-de-tela.test.ts`, `home-nao-promete-demais.test.ts`
 — ou varredura de export morto com `ts-prune`/busca manual por símbolo exportado sem nenhum
 `import` correspondente fora do próprio arquivo.
+
+## 2026-08-27 00:18 (America/Sao_Paulo)
+
+**O que foi olhado:** mutação das 2 asserções de varredura de `tests/unit/design/preco-em-um-lugar-so.test.ts`
+(a guarda que documenta ter sido cega uma vez — "passava vazio para sempre" antes de normalizar o
+NBSP). Arquivo temporário `src/_mutacao_teste_tmp.ts` criado fora de `core/billing/planos.ts`
+com (1) a tabela de nomes redeclarada e (2) `'R$ 49'` escrito à mão com espaço comum.
+
+**Achado:** as duas reprovam certo. A guarda não está mais cega — a normalização de NBSP que já
+foi aplicada continua funcionando.
+
+**Ação:** nenhum commit de correção — arquivo temporário apagado, árvore limpa, suíte verde.
+Sessão pausada aqui a pedido do usuário (vai testar com outra IA); log deixado pra quem continuar.
