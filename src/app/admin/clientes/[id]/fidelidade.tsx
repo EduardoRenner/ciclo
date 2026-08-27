@@ -266,11 +266,11 @@ export default function Fidelidade({ clientId, pontosIniciais, assinaturaInicial
           ) : null}
           <div className="grid grid-cols-2 gap-3">
             <Button variante="secondary" carregando={pendente} onClick={() => lancar(-1)}>
-              <Minus className="size-4" />
+              <Minus aria-hidden className="size-4" />
               Resgatar
             </Button>
             <Button carregando={pendente} onClick={() => lancar(1)}>
-              <Plus className="size-4" />
+              <Plus aria-hidden className="size-4" />
               Adicionar
             </Button>
           </div>

@@ -70,7 +70,7 @@ export default function Saude({ clientId, saude, fotos, consentimentos }: Props)
                 saude.temAlerta ? 'flex items-center gap-3 border-bad/30 bg-bad/5' : 'flex items-center gap-3'
               }
             >
-              <Lock className={saude.temAlerta ? 'size-5 shrink-0 text-bad' : 'size-5 shrink-0 text-txt-3'} />
+              <Lock aria-hidden className={saude.temAlerta ? 'size-5 shrink-0 text-bad' : 'size-5 shrink-0 text-txt-3'} />
               <div className="min-w-0 flex-1">
                 <p className="text-corpo font-semibold">Ficha de saúde</p>
                 <p className={saude.temAlerta ? 'text-secundario text-bad' : 'text-secundario text-txt-2'}>
@@ -83,7 +83,7 @@ export default function Saude({ clientId, saude, fotos, consentimentos }: Props)
 
         {fotos.length > 0 ? (
           <Card className="flex items-center gap-3">
-            <Camera className="size-5 shrink-0 text-txt-3" />
+            <Camera aria-hidden className="size-5 shrink-0 text-txt-3" />
             <p className="text-corpo">
               {fotos.length} {fotos.length === 1 ? 'foto' : 'fotos'} de antes/depois
             </p>

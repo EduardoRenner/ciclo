@@ -164,7 +164,7 @@ export default function FormularioOrcamento({ profissionais }: { profissionais: 
                   className="mb-1 flex h-12 w-12 shrink-0 items-center justify-center rounded-[var(--radius-sm)] text-bad"
                   aria-label="Remover item"
                 >
-                  <Trash2 className="size-4" />
+                  <Trash2 aria-hidden className="size-4" />
                 </button>
               ) : null}
             </div>
@@ -175,7 +175,7 @@ export default function FormularioOrcamento({ profissionais }: { profissionais: 
           onClick={() => setItens((atual) => [...atual, { ...ITEM_VAZIO }])}
           className="flex h-12 items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-line-2 text-corpo font-semibold text-txt-2"
         >
-          <Plus className="size-4" />
+          <Plus aria-hidden className="size-4" />
           Adicionar item
         </button>
       </div>

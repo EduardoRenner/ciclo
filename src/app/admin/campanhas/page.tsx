@@ -78,7 +78,7 @@ export default async function PaginaCampanhas() {
 
       <Link href="/admin/campanhas/nova" className="mt-4 block">
         <Button largura="cheia">
-          <Megaphone className="size-4" />
+          <Megaphone aria-hidden className="size-4" />
           Nova campanha
         </Button>
       </Link>

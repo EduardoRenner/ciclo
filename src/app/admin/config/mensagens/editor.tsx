@@ -107,7 +107,7 @@ export default function EditorModelos({ iniciais, nomeDoNegocio }: { iniciais: M
   return (
     <div className="pb-8">
       <Button variante="secondary" largura="cheia" onClick={() => abrir('novo')} className="mb-4">
-        <MessageSquarePlus className="size-4" />
+        <MessageSquarePlus aria-hidden className="size-4" />
         Criar modelo
       </Button>
 
@@ -195,7 +195,7 @@ export default function EditorModelos({ iniciais, nomeDoNegocio }: { iniciais: M
               onClick={() => apagar(editando.id)}
               className="flex items-center justify-center gap-1.5 py-2 text-secundario text-txt-3 transition-colors hover:text-bad"
             >
-              <Trash2 className="size-4" />
+              <Trash2 aria-hidden className="size-4" />
               Apagar modelo
             </button>
           ) : null}
