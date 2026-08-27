@@ -29,10 +29,19 @@ produto publicado encontrou coisas que nenhum teste encontra**.
 
 ### O que já foi corrigido nesta análise
 
+Quatro defeitos reais, todos achados **medindo o produto publicado** — nenhum apareceria em
+typecheck, lint ou na suíte de testes.
+
 | | O que era | Onde |
 |---|---|---|
-| ✅ **B1** | A página do cliente dizia *"É por aqui que a confirmação chega"* — e nada chega. **A guarda passava verde**, porque proibia quatro redações e essa era a quinta. Corrigido com `core/messaging/promessa.ts`; guarda passou a testar a função, 3 mutações vistas reprovando | §1.65, P10 |
-| ✅ **guarda cega** | A guarda nova nasceu cega: `\w` não casa `ç`/`ã`, então `/confirma\w*/` não pegava "confirmação". Só apareceu ao rodar a mutação | §1.65 |
+| ✅ **B1** | A página do cliente dizia *"É por aqui que a confirmação chega"* — e nada chega. **A guarda passava verde**, porque proibia quatro redações e essa era a quinta. Corrigido com `core/messaging/promessa.ts`; 3 mutações vistas reprovando | §1.65, P10 |
+| ✅ **N+1** | A disponibilidade fazia **3 + N** idas ao banco em série (N = profissionais), cada uma cruzando o continente. Agora são 3 | §7.2 |
+| ✅ **foco apagado** | `<input type="date">` do caixa com `outline-none` e nenhum substituto — teclado sem sinal nenhum (WCAG 2.4.7). Guarda nova vista reprovando nas duas direções | §7.25 |
+| ✅ **orçamento travado** | Token inválido deixava a tela em *"Carregando…"* para sempre, enquanto a API respondia 404 em 400 ms com a mensagem certa | §7.24 |
+| ✅ **guarda cega** | A guarda do B1 nasceu cega: `\w` não casa `ç`/`ã`, então `/confirma\w*/` não pegava "confirmação". Só apareceu ao rodar a mutação | §1.65 |
+
+**O padrão dos quatro é o mesmo, e é a conclusão mais útil deste documento:** cada um passava por
+todos os portões automáticos do projeto. O que os encontrou foi abrir a página publicada e medir.
 
 ### As cinco decisões que dependem de você
 
@@ -1271,6 +1280,19 @@ vê, e decidia errado. Typecheck feliz, testes verdes, pessoa esperando para sem
 
 > ✅ **CORRIGIDO** (commit `a74d45f`). A decisão virou `telaDoOrcamento()`, pura e testada — mesmo
 > padrão de `deveMostrarHeroiDoMotor`, porque o projeto não tem harness de render de componente.
+
+**A classe é de um caso só.** Depois do conserto, varri `src/` inteiro atrás do mesmo padrão em
+duas formas — ramo de render com `|| !algo` antes do ramo de erro, e a variante sem `||` **[M]**.
+Único acerto: `avaliar.tsx:25`, que é **falso positivo** (está dentro do `fetch`, definindo o
+estado de erro — o padrão correto). Nenhum segundo caso.
+
+**E os estados "já usado" — o outro buraco da §1.67 — estão todos certos** **[M]**:
+
+| Situação | O que acontece |
+|---|---|
+| `/confirmar` clicado duas vezes | a rota devolve **sucesso** com o status atual, não erro. Comentada: *"Clicar duas vezes no link não pode parecer quebrado"* |
+| `/lista-espera` já reivindicado | ramo de erro mostra a mensagem do servidor (*"Esse encaixe já foi usado."*) |
+| `/orcamento` já aprovado/recusado | ramos próprios, alcançáveis |
 
 **Duas notas de método, e as duas são sobre erro meu.**
 
