@@ -19,7 +19,15 @@ export default function SeletorDeDia({ dia, hoje }: { dia: string; hoje: string 
         value={dia}
         max={hoje}
         onChange={(e) => e.target.value && router.push(`/admin/caixa?dia=${e.target.value}`)}
-        className="tabular w-full bg-transparent text-corpo text-txt outline-none"
+        /*
+         * Sem `outline-none`: o anel global de `:focus-visible` (globals.css §7, "foco visível em
+         * todo elemento interativo") é o ÚNICO indicador que este campo tem — a borda visível é do
+         * `<label>` em volta, e não reage ao foco do input. Removê-lo deixava quem navega por
+         * teclado sem nenhum sinal de onde está, no mesmo componente cujo comentário acima elogia
+         * o campo nativo por "já vir acessível". Mesmo padrão de `components/ui/input.tsx`, que
+         * mantém o anel global e só acrescenta cor de borda.
+         */
+        className="tabular w-full bg-transparent text-corpo text-txt"
         aria-label="Escolher o dia do caixa"
       />
     </label>
