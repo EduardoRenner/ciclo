@@ -37,14 +37,30 @@ const nextConfig: NextConfig = {
   },
 };
 
-// TICKET-057. Sem `SENTRY_AUTH_TOKEN`/`SENTRY_ORG`/`SENTRY_PROJECT` (nenhum
-// credencial de terceiro deste projeto ainda foi provisionado pelo Eduardo —
-// mesmo padrão do Asaas/WhatsApp), o plugin pula sozinho o upload de source
-// map e só avisa no log do build; não falha o build por isso.
-export default withSentryConfig(nextConfig, {
-  org: process.env.SENTRY_ORG,
-  project: process.env.SENTRY_PROJECT,
-  authToken: process.env.SENTRY_AUTH_TOKEN,
-  silent: true,
-  widenClientFileUpload: true,
-});
+/**
+ * TICKET-057, revisto em 27/08 pela lentidão (`docs/28-LATENCIA-DE-CLIQUE-PLANO.md` §6).
+ *
+ * `withSentryConfig` é o que injeta a auto-instrumentação do SDK no grafo do servidor — e ela
+ * entrava mesmo **sem `SENTRY_DSN`**, que é o estado real de produção (conferido com
+ * `vercel env ls production`). O resultado era 1,58 MB de `@sentry` + `@opentelemetry` no chunk
+ * que toda rota de `/api/v1` carrega, e ~500 ms de `require` em todo cold start, para um SDK
+ * que não mandava nada.
+ *
+ * Com DSN, o wrapper volta inteiro, com upload de source map quando também houver
+ * `SENTRY_AUTH_TOKEN`/`SENTRY_ORG`/`SENTRY_PROJECT` (nenhum provisionado até hoje — mesmo padrão
+ * do Asaas/WhatsApp). Sem DSN, o config sai limpo: nada a observar, nada a carregar.
+ *
+ * A variável é lida em tempo de **build**. Ligar o Sentry depois de existir DSN exige um deploy
+ * novo, não só a variável — está registrado aqui para ninguém procurar bug quando isso acontecer.
+ */
+const temSentry = Boolean(process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN);
+
+export default temSentry
+  ? withSentryConfig(nextConfig, {
+      org: process.env.SENTRY_ORG,
+      project: process.env.SENTRY_PROJECT,
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+      silent: true,
+      widenClientFileUpload: true,
+    })
+  : nextConfig;

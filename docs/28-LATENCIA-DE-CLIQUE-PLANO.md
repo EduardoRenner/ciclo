@@ -95,3 +95,43 @@ por rota no envelope de log de `handler.ts` e olhar as 5 rotas mais lentas.
 - Não é a fila offline: `apiFetch` só enfileira quando a rede falha.
 - Se o teste foi em `pnpm dev`, some ainda a compilação sob demanda do Next — que **não** existe
   em produção. Medir em produção antes de concluir qualquer coisa.
+
+---
+
+## 6. Segunda rodada (27/08) — o que a região não explicava
+
+Com `gru1` no ar, as páginas públicas mediram TTFB de **150–300 ms quentes** — mas a **primeira**
+requisição de cada série media **850 ms a 1,3 s**. A diferença entre quente e frio é cold start,
+não distância. E este produto tem tráfego baixo: quase toda visita é um cold start.
+
+### O achado
+
+`src/instrumentation.ts` importava `@sentry/nextjs` no topo e chamava `Sentry.init()` em todo
+runtime de servidor. Medido:
+
+| Medida | Antes | Depois |
+|---|---|---|
+| `require('@sentry/nextjs')` | **~500 ms** por cold start | não acontece |
+| Trace de uma rota de `/api/v1` | **11,43 MB** (120 arquivos) | **1,81 MB** (105) |
+| Chunk compartilhado de toda rota | 1,58 MB, dominado por `@sentry`+`@opentelemetry` | some |
+| `.next/server` | 52 MB | 19 MB |
+
+E do outro lado da balança, nada: **`vercel env ls production` não tem `SENTRY_DSN`**. O SDK
+subia, instalava auto-instrumentação de OpenTelemetry em cima de todo `http` de saída — inclusive
+de toda chamada ao Supabase — e não mandava um evento sequer.
+
+É a mesma correção que `instrumentation-client.ts` recebeu em 26/08 (`import()` gated por DSN,
+129 kB de 188 kB de First Load JS), aplicada ao lado que ficou de fora. O lado do servidor era o
+caro: no cliente o custo é download uma vez; no servidor é **500 ms em todo cold start**.
+
+### O conserto
+
+- `src/instrumentation.ts`: `import()` dinâmico, condicionado a `SENTRY_DSN`. `onRequestError`
+  continua exportado de forma síncrona (o Next lê o módulo para achar o gancho) e vira no-op sem
+  DSN — que é o que `init({ dsn: undefined })` já era na prática.
+- `next.config.ts`: `withSentryConfig` só embrulha quando existe DSN. É ele que injeta a
+  auto-instrumentação no grafo do servidor; sem isso o SDK não sai do bundle nem com o
+  `import()` dinâmico.
+
+**Pegadinha registrada:** o DSN é lido em tempo de *build*. Criar a variável na Vercel não liga o
+Sentry sozinho — precisa de um deploy novo.
