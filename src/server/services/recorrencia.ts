@@ -276,7 +276,7 @@ export async function criarSerie(db: Cliente, tenantId: string, timezone: string
 async function buscarSerie(db: Cliente, tenantId: string, id: string) {
   const { data, error } = await db.from('appointment_series').select('*').eq('id', id).eq('tenant_id', tenantId).maybeSingle()
   if (error) throw new AppError('INTERNAL', { cause: error })
-  if (!data) throw new AppError('NOT_FOUND', { message: 'Série não encontrada.' })
+  if (!data) throw new AppError('NOT_FOUND', { message: 'Essa série não existe mais.' })
   return data
 }
 
