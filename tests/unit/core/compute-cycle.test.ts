@@ -47,6 +47,17 @@ describe('computeCycle — §5.3', () => {
     expect(r.predictedDate.toString()).toBe(dia('2026-01-31').add({ days: 26 }).toString())
   })
 
+  it('2 gaps (3 visitas): mediana é a média dos dois, ainda no blend 60/40', () => {
+    // Dois gaps: 20 e 30 → mediana par = (20+30)/2 = 25. Blend: 0.6*25 + 0.4*21 = 23.4.
+    // Cobre o ramo par de `mediana` E o `gaps.length <= 2` com exatamente 2.
+    const r = computeCycle({
+      history: historicoDeGaps('2026-01-01', [20, 30]),
+      defaultCycleDays: 21,
+      today: dia('2026-01-01'),
+    })
+    expect(r.personalCycleDays).toBeCloseTo(23.4, 5)
+  })
+
   it('5 gaps (6 visitas): mediana dos últimos 5, sem misturar com o padrão', () => {
     const gaps = [20, 22, 21, 19, 23] // mediana = 21
     const r = computeCycle({
