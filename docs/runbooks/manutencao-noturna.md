@@ -594,6 +594,33 @@ de isolamento já cobra") superdeclara.
 em `tests/rls/`, que roda contra o Supabase de PRODUÇÃO (fora do escopo seguro do loop). Nenhum
 commit de código.
 
+## 2026-08-27 08:00 (America/Sao_Paulo) — revisão de políticas RLS: íntegra. Manutenção concluída.
+
+**O que foi olhado:** toda `create policy` das migrations, e toda função `security definer` que
+escreve.
+
+**Íntegro, sem exceção:**
+- Toda política de `for update` e `for all` tem `with check` além de `using` — o template
+  `%1$s_tenant_all` da 0001, `appointments_update`, `appointment_series_update`, `quotes_update`,
+  `quote_items_update`, `tenants_update`, `memberships_write`, `profiles_self`, e todas as
+  `_tenant_all` das migrations de CRM (0015–0025). Nenhuma deixa mover linha pra outro tenant.
+- As 3 funções `security definer` que escrevem — `handle_new_user` (0006), `apply_vertical_pack`
+  (0008), `apply_profession_pack` (0031) — têm `revoke ... from public, anon, authenticated`.
+- `debitar_carteira` (0034) NÃO é `security definer` (só o comentário discute o porquê da escolha)
+  — roda como invoker, RLS de `wallet_entries`/`clients` aplica inteira; `grant ... to
+  authenticated` é correto ali.
+- As funções `security definer` de leitura usadas em política (`has_tenant`, `tenant_role`,
+  `can_see_appointment`, `my_professional_id`) seguem executáveis de propósito (revogar quebra a
+  RLS); as de introspecção/infra (`tenant_rls_report`, `fk_sem_indice_report`, `claim_jobs`,
+  `finish_job`) têm `revoke`.
+
+**Conclusão — manutenção noturna concluída por ora.** Nada mais seguro e delimitado a fazer sem
+tocar produção. O branch `manutencao-noturna` tem ~22 commits para revisão manual do Eduardo:
+guardas verificadas (docs), 6 correções de consistência de UX, 1 guarda nova (loading.tsx),
+6 testes de cobertura de core, 2 achados registrados em `DECISOES.md` (lacuna de teste RLS das
+tabelas globais; ver também a entrada do assistente). Recomendação: revisar, fazer merge manual,
+e reativar o loop quando quiser. Loop pausado.
+
 **Nota de estado:** 13 guardas de varredura de fonte já verificadas por mutação, todas íntegras;
 varreduras de export morto, escrita sem checar erro, enum de plano e modelo de preço todas limpas.
 A dívida técnica encontrável por leitura está bem baixa — os 3 achados reais até aqui (rótulo de
