@@ -570,6 +570,30 @@ Testes que não podem ser vistos reprovando não entram (regra do `CLAUDE.md`). 
 (janela, agendadas, pricing, reminders, attribution, cycle), todos vistos reprovando por mutação;
 agora 3 arquivos seguidos sem gap mutável. Próxima rodada decide o pivô (ver sugestão no fim).
 
+## 2026-08-27 07:55 (America/Sao_Paulo) — pivô: revisão de RLS nas migrations
+
+**O que foi olhado:** as 18 tabelas criadas depois da 0001, mais as globais da 0001 — `enable` +
+`force` RLS + política; `security_invoker` em views; `revoke execute` em função `security definer`
+que escreve.
+
+**Íntegro:** todas as 18 tabelas novas têm `enable row level security` + `force row level
+security` + pelo menos uma política (ou estão corretamente sem política, sendo globais). As 4
+views (`v_recover_revenue`, `v_daily_cash`, `v_client_segments`, `v_carteira_resumo`) têm
+`security_invoker = true`. `consumir_rate_limit` e `tenant_rls_report` têm `revoke execute from
+public, anon, authenticated`. Os GRANT de base do PostgREST (0038) são explícitos e comentados.
+
+**Achado — lacuna de teste, não buraco de segurança:** `tenant_rls_report()` (migration 0005) só
+enxerga tabelas com coluna `tenant_id`. As 3 tabelas globais que seguem o padrão deny-all
+(`rate_limits`, `webhook_events`, `cron_heartbeats`) nunca entram no relatório, e `tests/rls/
+isolation.test.ts` só verifica deny-all para 2 das 5 tabelas "negadas por design"
+(`idempotency_keys`, `job_queue`). Uma política permissiva adicionada por engano a uma das 3
+globais não seria pega por teste nenhum. O comentário de `0038` ("é o comportamento que o teste
+de isolamento já cobra") superdeclara.
+
+**Ação:** registrado em `docs/DECISOES.md` como pendência pro Eduardo — o conserto é um `it` novo
+em `tests/rls/`, que roda contra o Supabase de PRODUÇÃO (fora do escopo seguro do loop). Nenhum
+commit de código.
+
 **Nota de estado:** 13 guardas de varredura de fonte já verificadas por mutação, todas íntegras;
 varreduras de export morto, escrita sem checar erro, enum de plano e modelo de preço todas limpas.
 A dívida técnica encontrável por leitura está bem baixa — os 3 achados reais até aqui (rótulo de

@@ -2924,3 +2924,19 @@ a decisão. Pendente aprovação do Eduardo (§10 do plano); até lá vale como 
 em vigor. Junto: aprovar o provider (Gemini 2.5 Flash) e confirmar nos termos que dado enviado não
 treina modelo — sem isso, mandar pergunta com contexto de cliente para o provedor é exposição de
 LGPD que nenhuma minimização de payload cobre sozinha.
+
+2026-08-27 · Lacuna de teste: tabelas globais "negadas por design" sem verificação de deny-all ·
+Achado na manutenção noturna (rodada de revisão de RLS). `tests/rls/isolation.test.ts` verifica
+que `idempotency_keys` e `job_queue` (RLS on + force + zero políticas) não devolvem nada ao
+cliente. Mas a descoberta automática (`tenant_rls_report()`, migration 0005) só enxerga tabelas
+com coluna `tenant_id` — então as 3 tabelas globais que seguem o MESMO padrão de deny-all
+(`rate_limits`, `webhook_events`, `cron_heartbeats`) nunca entram no relatório e **nenhum teste
+confirma que elas negam acesso ao cliente**. Uma política permissiva adicionada a qualquer uma
+delas por engano passaria despercebida. O comentário de `0038_grants_base_postgrest.sql`
+("zero políticas com RLS forçada nega tudo... é o comportamento que o teste de isolamento já
+cobra") superdeclara: o teste cobre 2 das 5, não as 5. NÃO corrigido no loop (o conserto é um
+`it` novo em `tests/rls/`, que roda contra o Supabase de PRODUÇÃO — fora do escopo seguro da
+manutenção noturna). Pendência pro Eduardo: adicionar ao `isolation.test.ts` um bloco que faça
+`clienteAnon.from(t).select('*')` para `t` em `['rate_limits','webhook_events','cron_heartbeats']`
+e exija erro ou lista vazia — rodável no `supabase start` local ou no job de CI, nunca no
+`.env.local`.
