@@ -334,6 +334,82 @@ O produto fez trabalho de verdade e comunicou o vazio.
 
 ---
 
+## 1.65 · A superfície de maior volume — quem agenda
+
+Medido no ar em `/dom-rocha/agendar`, 375 px **[M]**. É a tela que mais gente vai ver do CICLO:
+todo cliente de todo tenant passa por aqui, e nenhuma sessão anterior a auditou.
+
+**O que está muito certo:** o formulário final pede **dois campos obrigatórios** (nome, telefone),
+com `autocomplete="name"`/`"tel"` e `inputmode="tel"` — preenchimento automático funciona **[M]**.
+Honeypot corretamente escondido (`position:absolute; left:-9999px; height:0`, `tabindex="-1"`) —
+antispam sem CAPTCHA. Resumo do que se confirma acima do formulário (serviço, dia, duração,
+preço). Horários agrupados em Tarde/Noite. Região `aria-live` anunciando *"18 horários livres em
+quinta-feira, 27 de agosto"*. E a mensagem de dia fechado é exemplar: *"Nesse dia o atendimento não
+abre. Escolha outra data no trilho acima."* — diz o problema **e** o que fazer.
+
+Dois achados. O primeiro é o mais sério de toda esta análise.
+
+### B1 · A página do cliente promete um canal que não existe — e a guarda passa verde **[M]**
+
+`agendar.tsx:667`, abaixo do campo de telefone:
+
+> **"É por aqui que a confirmação chega."**
+
+`reminders` **não está no `schedule`** **[M]**. Nada chega. A pessoa dá o telefone acreditando que
+receberá confirmação, e fica esperando.
+
+O `CLAUDE.md` tem uma linha na tabela de armadilhas exatamente sobre isto:
+
+> *"Prometer canal ('vai receber por WhatsApp') — só se houver rota **agendada** e credencial
+> existente. **A promessa mais cara é a da página do cliente do tenant: quem fica mal é o salão,
+> não o CICLO.**"*
+
+E existe uma guarda para isso — `agendamento-publico-nao-promete-demais.test.ts`. **Ela passa.**
+Rodada nesta sessão: **2/2 verde, com o defeito no ar** **[M]**.
+
+Porque ela proíbe **quatro frases**:
+
+| Regex da guarda | Casa com "É por aqui que a confirmação chega"? |
+|---|---|
+| `/confirmação por WhatsApp/i` | não |
+| `/receber[áa]? (a )?confirmação/i` | não |
+| `/vamos (te )?(avisar\|mandar\|enviar)/i` | não |
+| `/você vai receber/i` | não |
+
+> **A guarda enumera maneiras de dizer. O defeito é uma afirmação.** O quinto jeito de dizer passa
+> direto — e passou.
+
+Isto é a "guarda cega" que o `CLAUDE.md` dedica uma seção inteira a evitar, na sua forma mais
+difícil: não está casando com algo incidental (o erro já catalogado), está casando com uma
+**lista fechada de sinônimos de um conceito aberto**. Nenhuma quantidade de regex fecha isso.
+
+**E o modo como foi achado é o ponto:** só apareceu **abrindo a página publicada**. Nenhum
+typecheck, lint, teste unitário ou de integração jamais reprovaria — é o
+*"mudança que a pessoa vê se verifica no navegador, não se deduz do código"* do próprio
+`CLAUDE.md`, cobrado de volta.
+
+### B2 · 29% do seletor de dias leva a lugar nenhum **[M]**
+
+O trilho oferece **14 dias**. A Barbearia Dom Rocha fecha domingo e segunda **[M]** — são
+**4 dias** no trilho. Todos **clicáveis**: `disabled: false`, sem `aria-disabled` **[M]**.
+
+Tocar num deles dispara consulta de rede e, medido nesta sessão, **~6 segundos** até a resposta
+*"Nesse dia o atendimento não abre"* **[M]**.
+
+O expediente **já está carregado** — a página de perfil do mesmo tenant lista os sete dias com
+seus horários. O servidor sabe, antes de renderizar o trilho, quais datas não abrem. Está-se
+cobrando uma ida à rede para informar o que já se sabia, e num público que o próprio
+`error.tsx` do projeto descreve como estando "numa rede de subsolo".
+
+Não é bug — a tela se recupera bem. É **atrito na superfície de maior volume do produto**: 29% dos
+toques do seletor terminam em espera e recomeço.
+
+*(Nota menor de acessibilidade: o honeypot está corretamente fora da ordem de tabulação, mas sem
+`aria-hidden="true"` um leitor de tela ainda o encontra navegando por campos e ouve "Não preencha
+este campo". Uma linha.)*
+
+---
+
 ## 1.7 · O que os grandes fazem no dia 1 — e o que disso cabe aqui
 
 O padrão é um só, e nenhum deles mostra estado vazio no primeiro acesso:
@@ -653,6 +729,45 @@ depende de ter tenants.
 
 ---
 
+### P10 · Promessa de canal em um lugar só — o conserto do B1 que não é um quinto regex
+
+**O errado.** Acrescentar `/confirmação chega/i` à lista da guarda. Fecha esta frase e deixa a
+sexta aberta ("avisamos assim que confirmar", "chega no seu WhatsApp", "te retornamos por aqui"…).
+O defeito não é a frase; é **prosa solta afirmando um canal**.
+
+**O certo, e é o padrão que a casa já usa duas vezes.** `NOME_DO_PLANO` resolveu preço em cinco
+lugares virando **uma** definição; `ROTAS_AGENDADAS` resolveu a lista de cron virando **uma** cópia
+ancorada nas duas direções. Mesma forma aqui:
+
+```ts
+// core/messaging/promessa.ts — puro, sem I/O
+export function textoDoCanalDeConfirmacao(remindersAgendada: boolean): string {
+  return remindersAgendada
+    ? 'É por aqui que a confirmação chega.'
+    : 'Usamos para falar com você se precisar remarcar.'
+}
+```
+
+O que muda:
+
+- **A copy deixa de ser prosa** e passa a ser retorno de função. Não há onde uma sexta frase
+  nascer, porque não há mais frase escrita à mão na tela.
+- **A guarda deixa de caçar sinônimos** e passa a testar a função: com `false`, não promete
+  chegada; com `true`, promete. Duas asserções, ambas mutáveis, ambas verificáveis por mutação —
+  o critério do `CLAUDE.md`.
+- **Vira reversível sozinha.** No dia em que o F0b ligar `reminders`, a frase verdadeira volta em
+  todas as telas de uma vez, sem ninguém caçar string.
+- **Serve as outras superfícies.** A mesma função atende a home, a `/precos` e a tela de
+  confirmação — que hoje têm cada uma a sua guarda própria, com a sua própria lista de regex e o
+  seu próprio quinto jeito de dizer esperando.
+
+**E uma guarda estrutural nova, essa sim fechável:** nenhum arquivo sob `app/(public)/` pode
+conter prosa que afirme chegada de mensagem **fora** dessa função. Isso é uma varredura de
+`readFileSync` — o formato que este projeto já domina — e casa com o que muda quando o defeito
+volta: alguém escrevendo a frase à mão de novo.
+
+---
+
 ## 3. O que **não** fazer — e por quê
 
 O pedido citou "o que apps e sites grandes usam para converter". Boa parte do que eles usam é
@@ -690,6 +805,13 @@ mensurável e porque cada dia com a landing errada é tráfego mal atendido.
 | 3 | `href="/?de={slug}"` no selo + evento | I3 | 1 linha |
 | 4 | Copy do selo voltada a quem lê; exemplo com selo visível | I3/I4 | copy + config do tenant demo |
 | 5 | **Endereço real na interface** (ou comprar o `ciclo.app`) | A2 | 2 linhas — mas a **decisão é do dono** |
+| 0 | 🔴 **Tirar a promessa de confirmação da página do cliente** (P10) | **B1** | 1 string hoje, a função depois |
+| 6 | Dias fechados desabilitados no trilho, sem ida à rede | B2 | o expediente já está carregado |
+
+**O item 0 vem antes de tudo e está numerado assim de propósito.** É a única coisa em todo este
+documento que está **quebrada em produção agora**, na superfície de maior volume, contra uma regra
+escrita no próprio `CLAUDE.md` — e com a guarda que deveria pegá-la passando verde. Trocar a
+string é trabalho de minutos; a função do P10 pode vir depois. O que não pode é continuar no ar.
 
 O item 5 é o único de E0 que não é só execução: é escolher entre comprar o domínio da marca ou
 parar de exibi-lo. Enquanto não se decide, a interface promete um endereço que não responde.
