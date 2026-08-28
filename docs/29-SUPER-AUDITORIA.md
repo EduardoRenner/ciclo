@@ -542,3 +542,125 @@ rodada 2, duas na rodada 3).
 **Não coberto ainda:** `webhook_events` e `job_queue` continuam sem limpeza (o primeiro está vazio —
 nenhum PSP integrado; o segundo acumula linhas `done`); unicidade em `loyalty_entries`; o que a
 migration 0045 encontra em produção; e-2-e no navegador de verdade.
+
+
+---
+
+## Rodada 4 — o dia do salão virava dia em UTC
+
+### Sumário
+
+| # | Achado | Severidade | Estado |
+|---|---|---|---|
+| E1 | Comissão de comanda fechada depois das 21h saía do mês trabalhado | **ALTO** | corrigido + guarda |
+| E2 | `<= 23:59:59` deixava uma fresta de menos de um segundo sem período nenhum | MÉDIO | corrigido + guarda |
+| E3 | O extrato de comissão vinha truncado no teto do PostgREST, e o total vinha menor | **ALTO** | corrigido + guarda |
+| E4 | "O CICLO trouxe R$ X este mês" contava um mês em UTC ao lado de um caixa que conta o mês do salão | MÉDIO | corrigido + guarda |
+| E5 | `job_queue` é andaime completo: zero produtores, `HANDLERS` vazio, rota fora do schedule | BAIXO | registrado |
+
+Verificado e **correto**: `verificarTokenAssinado` confere **todas** as chaves mesmo depois de uma
+bater (o tempo de resposta não revela qual chave assinou), compara com `timingSafeEqual` guardado
+por igualdade de tamanho, e o escopo entra na assinatura; `alertas-estoque.ts` usa janela corrida de
+30 dias e a diferença de fuso não muda a decisão — registrado como dívida consciente, não como
+esquecimento.
+
+---
+
+### E1–E3 · O extrato de comissão — **ALTO**
+
+Trinta linhas, três defeitos, e os dois primeiros tiram dinheiro de quem trabalhou:
+
+```ts
+.gte('tickets.closed_at', `${desde}T00:00:00Z`)
+.lte('tickets.closed_at', `${ate}T23:59:59Z`)
+```
+
+**E1 — o dia era UTC.** É exatamente o bug que o `caixa.ts` documenta e evita desde o TICKET-047,
+com o comentário escrito no arquivo: *"um fechamento às 23h de Brasília (02h UTC do dia seguinte)
+cairia no dia errado"*. Em São Paulo (UTC−3), toda comanda fechada depois das 21h cai no dia
+seguinte em UTC. No fechamento do mês ela **some do mês trabalhado e reaparece no seguinte**. Salão
+que fecha às 20h perde a última hora de todo dia; barbearia aberta até 22h perde mais.
+
+E o agravante: o extrato aparece na **mesma tela** que o caixa (`admin/caixa/page.tsx`, seção
+"Comissão do mês por profissional"). Dois números do mesmo mês, um ao lado do outro, contando dias
+diferentes.
+
+**E2 — `23:59:59` não é o fim do dia.** Comanda fechada em `23:59:59.4` não entrava em período
+nenhum: nem neste, que acaba em `23:59:59`, nem no seguinte, que começa em `00:00:00`. O intervalo
+agora é semiaberto `[início, fim)`, com `fim` na meia-noite do dia **seguinte** — a mesma forma do
+`caixa.ts`.
+
+**E3 — sem paginação.** O PostgREST corta a resposta no teto de linhas do projeto e **não avisa**.
+O extrato de um mês movimentado vinha truncado, e `totalCents` — somado das linhas devolvidas —
+vinha **menor**, sem nada na tela dizendo que faltou. O `caixa.ts` já paginava em blocos de 1000, e
+o comentário lá explica por quê. Aqui não paginava.
+
+---
+
+### E4 · A mesma classe, no número que vende o produto — MÉDIO
+
+`receitaAtribuidaAoCiclo` alimenta *"o CICLO trouxe R$ X este mês"* na tela inicial do painel e em
+`/admin/recuperar`. Os **três** chamadores já montam `desde`/`ate` com
+`Temporal.Now.zonedDateTimeISO(timezone)` — eles falam o calendário do salão. Era a função que
+reinterpretava aquelas datas como UTC, duas vezes: no filtro (`T00:00:00Z` / `T23:59:59Z`) e na
+janela (`timeZone: 'UTC'`).
+
+Diferente do extrato, aqui não havia contradição interna — estava errado de forma consistente. O
+que não sobrevive é a comparação: o mesmo painel mostra "este mês" do Motor num calendário e "este
+mês" do caixa em outro.
+
+Blast radius hoje é pequeno (a rota `campaigns` está fora do `on.schedule`, então quase não há
+`messages.kind = 'campaign'`). É justamente por isso que o conserto sai barato agora, antes de o
+número virar argumento de venda.
+
+---
+
+### O padrão que liga a rodada 1 à rodada 4
+
+Quatro rodadas, e o achado mais caro de cada uma tem a mesma forma: **um conserto certo, aplicado
+num lugar só.**
+
+| Rodada | Onde estava certo | Onde a mesma classe sobrevivia |
+|---|---|---|
+| 1 | `debitar_carteira` virou compare-and-swap no achado S11 | `fecharComanda`, `cancelarComandaFechada`, `transicaoSimples`, `cancelarAgendamento` |
+| 2 | `TRATAMENTO_NA_ELIMINACAO` cobre toda coluna textual com FK para `clients` | `audit_log` e `idempotency_keys`, que guardam a cliente em `jsonb` |
+| 3 | `409` virava card desde o TICKET-055 | todo o resto do 4xx, e o `401` que apagava o trabalho |
+| 4 | `caixa.ts` conta o dia no fuso do tenant desde o TICKET-047 | `comissao.ts` e `atribuicao.ts` |
+
+Nenhum deles é descuido de quem escreveu: em todos os quatro, o autor do conserto original
+**documentou a razão no arquivo que consertou** — e a documentação não viaja. A pergunta que
+faltava, todas as vezes, era *"onde mais este mesmo raciocínio se aplica?"*.
+
+Por isso as guardas desta auditoria são, quando dá, **de classe e não de caso**:
+`dia-do-salao-nao-e-utc` varre `src/server` e `src/app` inteiros com lista de dívida que só encolhe,
+em vez de travar as três funções que eu conheço hoje.
+
+---
+
+### E5 · `job_queue` é andaime completo — BAIXO, registrado
+
+Medido: `enfileirar()` tem **zero** chamadores; `HANDLERS` na rota `api/cron/jobs` é
+`{}` (o comentário diz "por ora o registro fica vazio"); e a rota está fora do `on.schedule` do
+`cron.yml`. A tabela não recebe linha nenhuma, nunca.
+
+Isso encerra o item que a rodada 3 deixou aberto: `job_queue` não é um problema de retenção, porque
+não cresce. É andaime, como `hold_expires_at` e `webhook_events` — coerente com o bloqueio de
+pagamento e de mensageria. `finish_job` marca estado e nunca apaga, então **quando** a fila for
+ligada, a retenção passa a ser uma pergunta de verdade. Fica dito aqui para não ser redescoberto.
+
+---
+
+### Cobertura acumulada (rodadas 1 a 4)
+
+**Varrido e limpo:** RLS por tabela (52/52); `security_invoker` nas 4 views; `search_path` nas 16
+funções `security definer`; 0 vulnerabilidades em 931 dependências; ordem/conflito/parada da fila
+offline; estabilidade da chave de idempotência entre reenvios; limpeza própria de `rate_limits`;
+compare-and-swap em pacotes; HMAC dos links públicos (todas as chaves conferidas, `timingSafeEqual`,
+escopo assinado).
+
+**Guardas submetidas a mutação:** 20 existentes × 30 mutações + 11 novas × 32 mutações. Todas as
+existentes pegaram; **quatro das novas nasceram cegas e foram corrigidas antes de entrar.**
+
+**Não coberto ainda:** unicidade em `loyalty_entries` (hoje fechada pelo CAS da rodada 1, sem trava
+própria); estados de vazio e de erro por tela, que a "definição de pronto" do `CLAUDE.md` exige e
+nenhuma guarda confere; e-2-e no navegador de verdade; o que a migration 0045 encontra em produção.

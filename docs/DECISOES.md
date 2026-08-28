@@ -3071,3 +3071,21 @@ qualquer hora.
 · Uma hora porque nenhuma função serverless dura isso — abaixo disso haveria risco de apagar
 reserva em voo. Trinta dias porque a fila offline não reenvia com esse atraso, e porque
 `response_body` carrega a cliente inteira (necessidade, LGPD art. 6).
+
+
+2026-08-28 · O período do extrato de comissão passa a exigir o fuso do tenant como parâmetro · A
+alternativa era buscar `tenants.timezone` dentro da própria função, mas ela é chamada em laço na
+tela do caixa (uma vez por profissional) e isso viraria N idas ao banco por render. Os três
+chamadores já tinham o fuso em mãos: a rota lê como `cash/daily` já lê, e as duas páginas recebem
+pelo contexto.
+
+2026-08-28 · `alertas-estoque.ts` fica na lista de dívida do dia-em-UTC, e não é consertado · A
+janela é CORRIDA de 30 dias, para tirar consumo médio diário dividindo por 30 fixo. Três horas em
+720 não mudam a decisão de "está na hora de repor", e o número não vira pagamento de ninguém.
+Consertar exigiria passar o fuso por mais uma cadeia para não mudar resultado nenhum. Fica
+declarado na guarda, que reprova se ele for consertado e a lista não encolher junto.
+
+2026-08-28 · A guarda do dia-em-UTC é de classe, não das três funções conhecidas · Varre
+`src/server` e `src/app` procurando o TEXTO do instante literal (`T00:00:00Z`, `T23:59:59`), com
+lista de dívida que só encolhe. Travar só `caixa`/`comissao`/`atribuicao` deixaria o próximo arquivo
+livre para repetir — que é exatamente como esta classe chegou à quarta rodada.
