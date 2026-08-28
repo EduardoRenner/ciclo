@@ -193,3 +193,66 @@ describe('eliminarCliente', () => {
     30_000,
   )
 })
+
+
+/**
+ * Achado de 2026-08-28 — o ponto cego do `jsonb`.
+ *
+ * `audit_log` e `idempotency_keys` guardam a linha inteira da cliente dentro de um `jsonb` e não
+ * referenciam `clients`. Nem o detector do teste de cobertura (que procura FK + coluna textual)
+ * nem `eliminarCliente` chegavam nelas: o sistema respondia `anonymized: true` com CPF, endereço
+ * e contato de emergência de um terceiro intactos, a uma consulta de distância — e legíveis para
+ * `owner`, `manager` e `finance`, que é quem a política `audit_read` deixa ler.
+ */
+describe('a eliminação alcança a trilha e a chave de idempotência', () => {
+  it(
+    'CPF, endereço e contato de emergência não sobrevivem em audit_log nem em idempotency_keys',
+    async () => {
+      const { clientId } = await clienteCompleto('Trilha da Maria')
+
+      // A trilha como ela nasce na rota: `after` é a linha da cliente, inteira.
+      const { data: linha } = await svc.from('clients').select('*').eq('id', clientId).single()
+      const trilha = await svc
+        .from('audit_log')
+        .insert({ tenant_id: tenantId, action: 'client.create', entity: 'clients', entity_id: clientId, after: linha as never, request_id: 'teste' })
+        .select('id')
+        .single()
+      if (trilha.error) throw trilha.error
+
+      const chave = `${tenantId}:${randomUUID()}`
+      const idem = await svc
+        .from('idempotency_keys')
+        .insert({ key: chave, tenant_id: tenantId, endpoint: '/api/v1/clients', request_hash: 'x', response_status: 200, response_body: linha as never })
+        .select('key')
+        .single()
+      if (idem.error) throw idem.error
+
+      // Sanidade: sem isto, o teste passaria por o dado nunca ter chegado lá.
+      const antes = await svc.from('audit_log').select('after').eq('id', trilha.data!.id).single()
+      expect(JSON.stringify(antes.data!.after), 'o CPF não chegou à trilha — o cenário não foi montado').toContain('123.456.789-09')
+
+      await eliminarCliente(svc, tenantId, clientId)
+
+      const depoisTrilha = await svc.from('audit_log').select('id, action, entity_id, before, after').eq('id', trilha.data!.id).single()
+      expect(depoisTrilha.data, 'a LINHA da trilha some — regra 11 diz que registro de auditoria nunca é apagado').not.toBeNull()
+      expect(depoisTrilha.data!.action, 'a trilha perdeu o que ela existe para guardar').toBe('client.create')
+      expect(depoisTrilha.data!.after, 'o corpo da trilha ainda carrega a cliente eliminada').toBeNull()
+      expect(depoisTrilha.data!.before).toBeNull()
+
+      const depoisChave = await svc.from('idempotency_keys').select('key, response_body').eq('key', chave).single()
+      expect(depoisChave.data, 'a chave sumiu — uma repetição da fila offline reexecutaria a mutação').not.toBeNull()
+      expect(JSON.stringify(depoisChave.data!.response_body), 'o corpo guardado ainda tem o CPF').not.toContain('123.456.789-09')
+    },
+    60_000,
+  )
+
+  it(
+    'a RPC recusa redigir a trilha de uma cliente ATIVA',
+    async () => {
+      const { clientId } = await clienteCompleto('Ativa da Silva')
+      const r = await svc.rpc('redigir_trilha_do_cliente', { p_tenant: tenantId, p_client: clientId })
+      expect(r.error, 'a RPC aceitou redigir a trilha de quem não foi eliminada').not.toBeNull()
+    },
+    60_000,
+  )
+})
