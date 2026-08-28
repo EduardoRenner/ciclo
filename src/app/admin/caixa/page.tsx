@@ -105,7 +105,7 @@ export default async function PaginaCaixa({ searchParams }: { searchParams: Prom
         (profissionais.data ?? []).map(async (p) => ({
           id: p.id,
           nome: p.display_name,
-          totalCents: (await extratoDeComissao(db, ctx.tenantId, p.id, inicioDoMes, fimDoMes)).totalCents,
+          totalCents: (await extratoDeComissao(db, ctx.tenantId, p.id, timezone, inicioDoMes, fimDoMes)).totalCents,
         })),
       )
     : []

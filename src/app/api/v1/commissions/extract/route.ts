@@ -22,5 +22,10 @@ export const GET = rota(async (req) => {
   if (!ate || !DATA.test(ate)) throw AppError.validacao({ ate: 'Informe a data de fim (AAAA-MM-DD).' })
 
   const db = await criarClienteDoUsuario()
-  return extratoDeComissao(db, ctx.tenantId, professionalId, desde, ate)
+  // O período é dito em datas do salão, não em UTC — mesma leitura que `cash/daily` faz antes de
+  // chamar o fechamento. Sem isto, comanda fechada às 22h em Brasília cai no mês seguinte.
+  const { data: tenant, error } = await db.from('tenants').select('timezone').eq('id', ctx.tenantId).maybeSingle()
+  if (error) throw new AppError('INTERNAL', { cause: error })
+
+  return extratoDeComissao(db, ctx.tenantId, professionalId, tenant?.timezone ?? 'America/Sao_Paulo', desde, ate)
 })

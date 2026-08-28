@@ -35,8 +35,30 @@ export type ReceitaAtribuida = {
  * `tickets.total_cents` — o TICKET-042 (comanda com itens de verdade) ainda não existe nesta
  * base; quando existir, revisar para usar o total real da comanda fechada.
  */
-export async function receitaAtribuidaAoCiclo(db: Cliente, tenantId: string, desde: string, ate: string): Promise<ReceitaAtribuida> {
+export async function receitaAtribuidaAoCiclo(
+  db: Cliente,
+  tenantId: string,
+  timezone: string,
+  desde: string,
+  ate: string,
+): Promise<ReceitaAtribuida> {
+  /*
+   * Auditoria de 2026-08-28, mesma classe do extrato de comissão. Os TRÊS chamadores já montam
+   * `desde`/`ate` com `Temporal.Now.zonedDateTimeISO(timezone)` — eles falam o calendário do
+   * salão. Era esta função que reinterpretava aquelas datas como se fossem UTC, no filtro
+   * (`T00:00:00Z` / `T23:59:59Z`) e na janela (`timeZone: 'UTC'`).
+   *
+   * Em Brasília isso desloca o mês em três horas: agendamento criado depois das 21h do último dia
+   * do mês entra no mês seguinte, e as três primeiras horas do dia 1º ainda contam para o mês
+   * anterior. O número aparece como "o CICLO trouxe R$ X este mês" na tela inicial do painel,
+   * ao lado do caixa — que conta o mês no fuso do salão desde o TICKET-047. Dois "este mês"
+   * diferentes na mesma sessão.
+   *
+   * `lte '23:59:59'` some junto: intervalo semiaberto, como no `caixa.ts`.
+   */
   const inicioBusca = Temporal.PlainDate.from(desde).subtract({ days: JANELA_DIAS }).toString()
+  const inicioBuscaInstante = Temporal.PlainDate.from(inicioBusca).toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant().toString()
+  const fimBuscaInstante = Temporal.PlainDate.from(ate).add({ days: 1 }).toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant().toString()
 
   const [mensagens, agendamentos] = await Promise.all([
     db
@@ -45,15 +67,15 @@ export async function receitaAtribuidaAoCiclo(db: Cliente, tenantId: string, des
       .eq('tenant_id', tenantId)
       .eq('kind', 'campaign')
       .eq('status', 'sent')
-      .gte('sent_at', `${inicioBusca}T00:00:00Z`)
-      .lte('sent_at', `${ate}T23:59:59Z`),
+      .gte('sent_at', inicioBuscaInstante)
+      .lt('sent_at', fimBuscaInstante),
     db
       .from('appointments')
       .select('id, client_id, created_at, price_cents, clients(name)')
       .eq('tenant_id', tenantId)
       .eq('status', 'done')
-      .gte('created_at', `${inicioBusca}T00:00:00Z`)
-      .lte('created_at', `${ate}T23:59:59Z`),
+      .gte('created_at', inicioBuscaInstante)
+      .lt('created_at', fimBuscaInstante),
   ])
   if (mensagens.error) throw new AppError('INTERNAL', { cause: mensagens.error })
   if (agendamentos.error) throw new AppError('INTERNAL', { cause: agendamentos.error })
@@ -71,8 +93,8 @@ export async function receitaAtribuidaAoCiclo(db: Cliente, tenantId: string, des
     elegiveis.push({ id: ag.id, clientId: ag.client_id, createdAt: Temporal.Instant.from(ag.created_at), valueCents: ag.price_cents })
   }
 
-  const inicioJanela = Temporal.PlainDate.from(desde).toZonedDateTime({ timeZone: 'UTC' }).toInstant()
-  const fimJanela = Temporal.PlainDate.from(ate).add({ days: 1 }).toZonedDateTime({ timeZone: 'UTC' }).toInstant()
+  const inicioJanela = Temporal.PlainDate.from(desde).toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant()
+  const fimJanela = Temporal.PlainDate.from(ate).add({ days: 1 }).toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant()
 
   // A busca trouxe campanhas com folga de `JANELA_DIAS` antes de `desde` só para não perder
   // campanha antiga com efeito tardio — o agendamento em si tem que cair DENTRO do período

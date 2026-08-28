@@ -28,5 +28,5 @@ export const GET = rota(async (req) => {
   const desde = mesReferencia.toPlainDate({ day: 1 }).toString()
   const ate = mesReferencia.toPlainDate({ day: mesReferencia.daysInMonth }).toString()
 
-  return receitaAtribuidaAoCiclo(db, ctx.tenantId, desde, ate)
+  return receitaAtribuidaAoCiclo(db, ctx.tenantId, timezone, desde, ate)
 })

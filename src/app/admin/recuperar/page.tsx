@@ -29,7 +29,7 @@ export default async function PaginaRecuperar() {
 
   const [lista, atribuicao, plano] = await Promise.all([
     listarParaRecuperar(db, ctx.tenantId),
-    receitaAtribuidaAoCiclo(db, ctx.tenantId, desde, ate),
+    receitaAtribuidaAoCiclo(db, ctx.tenantId, timezone, desde, ate),
     contextoDePlano(db, ctx.tenantId),
   ])
 

@@ -1,5 +1,7 @@
 import { randomUUID } from 'node:crypto'
 
+import { Temporal } from '@js-temporal/polyfill'
+
 import { createClient } from '@supabase/supabase-js'
 import dotenv from 'dotenv'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
@@ -97,8 +99,10 @@ describe('extratoDeComissao', () => {
     async () => {
       await fecharComandaDoProfissional() // 50% de 10.000 = 5.000
 
-      const hoje = new Date().toISOString().slice(0, 10)
-      const extrato = await extratoDeComissao(svc, tenantId, professionalId, hoje, hoje)
+      // No fuso do SALÃO. Com `new Date().toISOString()` este teste ficava vermelho entre 00h e
+      // 03h UTC — que é justamente a janela do defeito que o extrato passou a tratar.
+      const hoje = Temporal.Now.plainDateISO(TZ).toString()
+      const extrato = await extratoDeComissao(svc, tenantId, professionalId, TZ, hoje, hoje)
 
       expect(extrato.items).toHaveLength(1)
       expect(extrato.items[0]!.commissionCents).toBe(5_000)
@@ -106,7 +110,7 @@ describe('extratoDeComissao', () => {
 
       await svc.from('professionals').update({ commission_bps: 1_000 }).eq('id', professionalId)
 
-      const extratoDeNovo = await extratoDeComissao(svc, tenantId, professionalId, hoje, hoje)
+      const extratoDeNovo = await extratoDeComissao(svc, tenantId, professionalId, TZ, hoje, hoje)
       expect(extratoDeNovo.totalCents).toBe(5_000) // continua o valor congelado, não recalcula com o novo percentual
     },
     30_000,
@@ -117,9 +121,62 @@ describe('extratoDeComissao', () => {
     async () => {
       await fecharComandaDoProfissional()
 
-      const extratoDeOutroDia = await extratoDeComissao(svc, tenantId, professionalId, '2020-01-01', '2020-01-31')
+      const extratoDeOutroDia = await extratoDeComissao(svc, tenantId, professionalId, TZ, '2020-01-01', '2020-01-31')
       expect(extratoDeOutroDia.items).toHaveLength(0)
       expect(extratoDeOutroDia.totalCents).toBe(0)
+    },
+    30_000,
+  )
+})
+
+
+/**
+ * Achado da auditoria de 2026-08-28. O extrato filtrava por
+ * `closed_at >= '{desde}T00:00:00Z'` e `<= '{ate}T23:59:59Z'` — dia em UTC, e fim de dia por
+ * `23:59:59`. Em Brasília, toda comanda fechada depois das 21h cai no dia seguinte em UTC: no
+ * fechamento do mês ela sumia do mês trabalhado e reaparecia no seguinte. E o extrato aparece na
+ * MESMA TELA que o caixa (`admin/caixa/page.tsx`), que já contava certo desde o TICKET-047 —
+ * dois números do mesmo mês, lado a lado, contando dias diferentes.
+ */
+describe('o extrato conta o dia no fuso do salão', () => {
+  it(
+    'comanda fechada às 22h de Brasília pertence ao dia local, não ao dia seguinte em UTC',
+    async () => {
+      const fechada = await fecharComandaDoProfissional()
+
+      // 2026-03-10 22:30 em São Paulo = 2026-03-11 01:30 UTC. O `closed_at` é reescrito à mão
+      // porque `fecharComanda` carimba `now()` — o que importa aqui é o instante, não o caminho.
+      const instante = Temporal.ZonedDateTime.from({ year: 2026, month: 3, day: 10, hour: 22, minute: 30, timeZone: TZ }).toInstant().toString()
+      await svc.from('tickets').update({ closed_at: instante }).eq('id', fechada.id)
+
+      const noDiaLocal = await extratoDeComissao(svc, tenantId, professionalId, TZ, '2026-03-10', '2026-03-10')
+      expect(noDiaLocal.items, 'a comissão sumiu do dia em que o trabalho aconteceu').toHaveLength(1)
+      expect(noDiaLocal.totalCents).toBe(5_000)
+
+      const noDiaSeguinte = await extratoDeComissao(svc, tenantId, professionalId, TZ, '2026-03-11', '2026-03-11')
+      expect(noDiaSeguinte.items, 'a comissão apareceu no dia seguinte — é o defeito de volta').toHaveLength(0)
+
+      // E o mês fecha com ela dentro, que é o número que vira pagamento.
+      const noMes = await extratoDeComissao(svc, tenantId, professionalId, TZ, '2026-03-01', '2026-03-31')
+      expect(noMes.totalCents).toBe(5_000)
+    },
+    30_000,
+  )
+
+  it(
+    'o último instante do dia entra no período — `23:59:59` deixava uma fresta sem dono',
+    async () => {
+      const fechada = await fecharComandaDoProfissional()
+
+      // 23:59:59.500 local: com o corte antigo (`<= 23:59:59Z`), este instante não entrava neste
+      // dia nem no seguinte, que começa em 00:00:00.
+      const instante = Temporal.ZonedDateTime.from({
+        year: 2026, month: 3, day: 10, hour: 23, minute: 59, second: 59, millisecond: 500, timeZone: TZ,
+      }).toInstant().toString()
+      await svc.from('tickets').update({ closed_at: instante }).eq('id', fechada.id)
+
+      const noDia = await extratoDeComissao(svc, tenantId, professionalId, TZ, '2026-03-10', '2026-03-10')
+      expect(noDia.items, 'meio segundo antes da meia-noite não pertencia a período nenhum').toHaveLength(1)
     },
     30_000,
   )
