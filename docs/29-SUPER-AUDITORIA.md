@@ -781,3 +781,122 @@ existentes pegaram; **cinco das novas nasceram cegas e foram corrigidas antes de
 renderizado) — as quatro rodadas do `docs/15` cobriram as telas públicas, o `/admin` a 390 px não
 foi remedido nesta auditoria; e-2-e; unicidade em `loyalty_entries` (F3, junto da conferência da
 0045).
+
+
+---
+
+## Rodada 6 — a capacidade que o banco recusa
+
+### Sumário
+
+| # | Achado | Severidade | Estado |
+|---|---|---|---|
+| G1 | `parallel_capacity` é oferecido pela disponibilidade e **proibido pelo banco** | MÉDIO (latente) | guarda de mão dupla |
+| G2 | A capacidade contava encostos, não simultaneidade — horário sumia da agenda | MÉDIO | corrigido + teste |
+
+Verificado e **correto**: `computeCycle` (o Motor de Ciclo) — o histórico é ordenado
+explicitamente e convertido para o fuso do tenant antes de entrar; descarte de outlier, mistura com
+o padrão, clamp e estados batem com o §5.3 passo a passo; `availableSlots` resolve o expediente
+para `Instant` uma vez só, com `ZonedDateTime`, e há teste de dia de 23 h e de 25 h.
+
+---
+
+### G2 · Capacidade era contagem, não simultaneidade — MÉDIO
+
+```ts
+sobrepostosDeAgendamento++
+if (sobrepostosDeAgendamento >= parallelCapacity) return false
+```
+
+Contava quantos agendamentos **encostam** na janela do candidato. Com capacidade 2, um serviço de
+3 h e dois atendimentos curtos que nem se cruzam — 10:00–10:30 e 11:30–12:00 — somavam 2 e
+derrubavam o horário, apesar de em nenhum instante existirem três pessoas. Quanto mais longo o
+serviço, mais vizinhos ele encosta e mais horário some.
+
+O sintoma é o que ninguém reclama: a página pública mostra **menos** horários do que o salão tem.
+Não gera overbooking, gera agenda vazia — e a capacidade paralela existe justamente para a secagem
+de esmalte (§5.5), onde o serviço é longo e os vizinhos são curtos.
+
+Virou linha de varredura: recorta cada ocupação ao pedaço que cai dentro da janela, ordena os
+eventos e olha o **pico**. Fim antes de início no mesmo instante, porque atendimento que termina
+10:30 e outro que começa 10:30 não são simultâneos. Os dois testes que já existiam (dois que se
+cruzam derrubam; folga ignora capacidade) continuam passando — a trava não foi afrouxada.
+
+---
+
+### G1 · E o motivo de ninguém ter visto — MÉDIO, latente
+
+```sql
+alter table appointments add constraint appointments_no_overlap
+  exclude using gist (professional_id with =, period with &&)
+  where (status in ('pending','confirmed','arrived'));
+```
+
+A restrição **não sabe o que é capacidade**: proíbe qualquer sobreposição do mesmo profissional. E
+a disponibilidade é calculada por profissional, filtrando `appointments` por `professional_id` e
+pelos mesmos três estados. Ou seja: com capacidade 2, a disponibilidade oferece o horário e o
+`insert` bate na constraint (`23P01`), que o app traduz para `SLOT_TAKEN` — *"esse horário acabou de
+ser reservado"*, num horário que o próprio salão abriu.
+
+Não virou incêndio por um acidente: **o formulário de serviço não expõe o campo**. O comentário
+dele lista "sinal/capacidade paralela/anamnese" como o que ficou de fora, e só quem chama a API
+direto consegue passar de 1. É armadilha, não incêndio — e ela dispara no dia em que alguém
+completar o formulário, que é um passo óbvio e já anotado como pendência.
+
+**Não "consertei" escolhendo um lado**, e o motivo é que a escolha não é técnica: ou o banco aprende
+a contar capacidade (exclusion constraint não expressa "no máximo N sobrepostos" — precisaria de
+trigger com trava, e trava mal feita devolve a corrida que a constraint resolve), ou a capacidade
+paralela sai do produto. As duas são decisão de quem define o produto.
+
+O que dá para fazer sozinho é impedir que a armadilha dispare, e é o que a guarda faz, nos dois
+sentidos: enquanto o banco não souber contar, o formulário não pode oferecer o campo; e a restrição
+de sobreposição não pode sumir — sem ela, o problema deixa de ser agenda vazia e passa a ser
+cliente marcada em dobro.
+
+---
+
+## Fechamento — o que ficou, e por que paro aqui
+
+Seis rodadas, **23 achados**, 14 commits, 949 testes passando (eram 877), zero regressão.
+
+### As três coisas que precisam de você
+
+1. **A migration `0045` para o deploy** se existir agendamento com duas comandas em produção. A
+   consulta de diagnóstico está na mensagem de erro dela. Apagar comanda é proibido pela regra 11 —
+   qual das duas fica com o atendimento é decisão de quem conhece o dado. A unicidade de
+   `loyalty_entries` (§F3) deve ir na mesma passada.
+2. **`tenants.plan` não tem escritor** (§C1). A trava de plano está inteira de pé sobre uma coluna
+   que ninguém escreve: se alguém pagar hoje, não existe caminho no repositório para entregar o que
+   comprou. Quem pode promover um tenant é decisão de produto.
+3. **Capacidade paralela** (§G1): ou o banco aprende a contar, ou o campo sai do produto.
+
+### O que esta auditoria não cobriu, e fica dito
+
+Medição no navegador de verdade — `/admin` a 390 px, alvos de toque, contraste renderizado. As
+quatro rodadas do `docs/15` cobriram as telas **públicas**; o painel não foi remedido aqui, e
+leitura de código não pega alvo de toque nem overflow. Também não houve e-2-e nem qualquer execução
+contra banco: `tests/integration` e `tests/rls` **não foram rodados** nesta máquina — de propósito,
+porque o achado A1 é justamente que eles escreveriam em produção. Tudo que depende deles está
+escrito para rodar na CI.
+
+### Por que paro
+
+O retorno caiu de forma clara e medida:
+
+| Rodada | Achados ALTO de correção de dados |
+|---|---|
+| 1 | 3 |
+| 2 | 2 |
+| 3 | 2 |
+| 4 | 2 |
+| 5 | 0 |
+| 6 | 0 |
+
+As duas últimas rodadas não encontraram nenhum defeito que corrompa ou perca dado — encontraram
+uma classe de acessibilidade e uma armadilha latente. E as frentes que sobram (navegador, e-2-e,
+banco) **não são coisa de ler código**: precisam de um Supabase local e de um navegador medindo, que
+é exatamente o que o `docs/15` e o `docs/28` fizeram quando foi a hora deles.
+
+Continuar varrendo o mesmo código produziria mais texto e menos achado — que é o oposto do que este
+documento existe para fazer. O `docs/25` §"quando parar" já tinha escrito essa regra para a
+manutenção noturna; ela vale aqui igual.

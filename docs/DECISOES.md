@@ -3107,3 +3107,17 @@ pontuação já está fechado no app pelo compare-and-swap da rodada 1. Um índi
 pode ter duplicata histórica PARA o deploy, e já existe uma migration nessa condição (`0045`)
 esperando conferência em produção. As duas devem ir juntas, na mesma passada em que alguém rodar a
 consulta de diagnóstico no banco de verdade.
+
+
+2026-08-28 · Não escolhi um lado da capacidade paralela · `parallel_capacity` é oferecido pela
+disponibilidade e proibido por `appointments_no_overlap`. Ou o banco aprende a contar (exclusion
+constraint não expressa "no máximo N sobrepostos" — precisaria de trigger com trava, e trava mal
+feita devolve a corrida que a constraint resolve), ou a capacidade sai do produto. As duas são
+decisão de produto. O que dá para fazer sozinho é impedir que a armadilha dispare: a guarda proíbe
+o formulário de oferecer o campo enquanto o banco não souber contar, e proíbe a restrição de
+sobreposição de sumir.
+
+2026-08-28 · Consertei a conta da capacidade mesmo com o recurso bloqueado · `cabeSemColidir` é
+função pura em `core/`, com contrato escrito (§5.5) e testes próprios, e estava errada em relação
+ao próprio contrato. Deixar errado "porque o recurso não funciona mesmo" faria o conserto do banco,
+quando vier, herdar um bug silencioso de agenda vazia.
