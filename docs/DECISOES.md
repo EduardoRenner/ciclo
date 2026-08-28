@@ -3041,3 +3041,33 @@ tem chamador e sempre voltaria vazia (`consent_id` nunca é gravado). Apagar a f
 implementação pensada do TICKET-051; deixá-la sem aviso faz o repositório parecer entregar uma
 galeria que não existe. Escolhida a guarda de mão dupla, mesma forma do quadro "Taxa": proíbe ligar
 antes de existir escritor, e exige o cruzamento com `revoked_at` depois que existir.
+
+
+2026-08-28 · `401`/`403` na fila offline viram `retry`, não descarte · Sessão vencida e permissão
+revogada são estados do cliente, não veredito sobre a mutação: entrar de novo faz a mesma mutação
+passar. O risco aceito é a fila ficar tentando enquanto a sessão estiver vencida — sem perda de
+dado, e a drenagem só roda no evento `online` ou no botão, então não é laço quente. O caminho
+oposto (descartar) apagava o agendamento que a pessoa criou sem rede, em silêncio.
+
+2026-08-28 · Descarte da fila vira card SEM "tentar de novo" · Diferente do 409, o descarte vem de
+recusa definitiva do servidor (400/402/404/422): reenviar daria o mesmo resultado, e oferecer o
+botão seria mentir sobre o que ele faz. O card conta o que se perdeu e oferece "Entendi"; refazer é
+pela tela normal, que mostra o motivo real do erro.
+
+2026-08-28 · A classificação de status saiu do adaptador de browser e virou `core` · O adaptador é
+declaradamente intestável neste projeto (Vitest em `node`, sem jsdom). Deixar ali a regra que decide
+entre reenviar, avisar e **apagar trabalho** significava a única parte da fila sem teste ser a que
+destrói dado. `classificarResposta` é função pura, em `core/offline/queue.ts`, com teste de
+comportamento.
+
+2026-08-28 · A faxina de `idempotency_keys` mora no `recompute-cycles` · Não tem relação com o Motor
+de Ciclo, e é o preço de não ter agendador dedicado: `recompute-cycles` e `segments` são as duas
+únicas rotas no `on.schedule` do `cron.yml`, e a primeira dispara seis vezes por dia. Uma sétima
+rota de cron só para varrer uma tabela obrigaria a mexer no `cron.yml`, no `ROTAS_DE_CRON` e nas
+duas guardas de agendamento. Fica fora do `if (processados > 0)` porque chave órfã prende reenvio a
+qualquer hora.
+
+2026-08-28 · Reserva de idempotência é considerada órfã depois de 1 hora, e a chave vence em 30 dias
+· Uma hora porque nenhuma função serverless dura isso — abaixo disso haveria risco de apagar
+reserva em voo. Trinta dias porque a fila offline não reenvia com esse atraso, e porque
+`response_body` carrega a cliente inteira (necessidade, LGPD art. 6).

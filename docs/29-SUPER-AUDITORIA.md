@@ -376,7 +376,169 @@ ficou lá, e vale sempre que o teste contiver regex.
 20 guardas × 30 mutações + 6 guardas novas × 12 mutações.
 
 **Não coberto ainda:** fila offline e PWA além do que o `service-worker.test.ts` já cobre;
-dependências e supply chain; retenção (`idempotency_keys`, `rate_limits`, `webhook_events` e
-`job_queue` crescem para sempre — nenhuma limpeza por idade existe no projeto); concorrência em
-fidelidade (`loyalty_entries` não tem unicidade por atendimento — hoje fechado pelo CAS da rodada 1,
-mas sem trava própria); o que a migration 0045 encontra em produção.
+dependências e supply chain; retenção (`idempotency_keys`, `webhook_events` e `job_queue` crescem
+para sempre); concorrência em fidelidade (`loyalty_entries` não tem unicidade por atendimento —
+hoje fechado pelo CAS da rodada 1, mas sem trava própria); o que a migration 0045 encontra em
+produção.
+
+> **Correção feita na rodada 3:** a frase acima chegou a incluir `rate_limits` na lista de tabelas
+> sem limpeza. Estava errada, e a rodada 3 mediu: `consumir_rate_limit` já faz uma limpeza
+> oportunista, limitada a 50 linhas, quando uma janela nova começa. Foi uma afirmação por analogia
+> ("as quatro tabelas de infra são iguais") em vez de leitura — o oposto do que este documento pede.
+
+
+---
+
+## Rodada 3 — o que a fila offline jogava fora
+
+### Sumário
+
+| # | Achado | Severidade | Estado |
+|---|---|---|---|
+| D1 | Sessão vencida durante a noite **apagava** o agendamento que estava na fila | **ALTO** | corrigido + guarda |
+| D2 | Qualquer recusa definitiva sumia da fila sem uma palavra — a metade não entregue do §4.2.5 | **ALTO** | corrigido + guarda |
+| D3 | Reserva de idempotência órfã devolvia `429` para a mesma chave **para sempre** | MÉDIO | corrigido + guarda |
+| D4 | `idempotency_keys` guardava a cliente inteira sem prazo nenhum | MÉDIO | corrigido + guarda |
+| M3 | Método: uma afirmação da rodada 2 caiu quando foi medida | — | corrigido no texto |
+
+Verificado e **correto**: `pnpm audit` → **0 vulnerabilidades** em 931 dependências;
+`drenarFila` (`core/offline/queue.ts`) trata ordem, conflito e parada por rede exatamente como o
+§4.2.4 pede, e já tinha teste; a chave de idempotência da fila é o `id` da mutação, **estável entre
+reenvios** — a repetição não reexecuta nada, que é a metade difícil e estava certa;
+`consumir_rate_limit` já limpava a própria tabela; a página pública de agendamento **não** usa
+`apiFetch` (e o comentário no arquivo explica por quê), então nada disto alcançava a cliente final.
+
+---
+
+### D1 · A noite sem rede apagava o agendamento — **ALTO**
+
+`enviarMutacao` classificava o status da resposta assim:
+
+```ts
+if (resposta.ok) return { kind: 'ok' }
+if (resposta.status === 409) return { kind: 'conflict' }
+if (resposta.status === 429 || resposta.status >= 500) return { kind: 'retry' }
+return { kind: 'discard' }          // ← 401 e 403 caem aqui
+```
+
+`discard` faz `drenarFilaPendente` chamar `removerMutacao(id)`. Ou seja: **`401` apagava a mutação
+do IndexedDB.**
+
+O cenário não é exótico, é o mais provável de todos. Tablet do balcão, agendamento criado sem rede
+no fim do expediente, aparelho passa a noite offline, a sessão vence, de manhã a rede volta, o
+`online` dispara a drenagem, o servidor responde `401` — e o trabalho some. A pessoa tinha visto
+*"Agendamento entrou na fila e será enviado quando a conexão voltar"* e nunca mais ouve falar do
+assunto.
+
+Sessão vencida e permissão revogada são estados **do cliente**, não veredito sobre a mutação:
+entrar de novo (ou o gerente devolver a permissão) faz a mesma mutação passar. Viraram `retry`.
+
+---
+
+### D2 · A metade não entregue do §4.2.5 — **ALTO**
+
+A especificação diz, com estas palavras: *"409 marca o item como precisa da sua atenção. **Nunca
+descarta em silêncio.**"* A metade do `409` estava entregue desde o TICKET-055: vira card, com
+"tentar de novo" e "descartar".
+
+A outra metade não. Qualquer recusa definitiva (`400`, `402`, `404`, `422`) removia a mutação do
+IndexedDB e emitia um evento `descartada` que o **único assinante do projeto** —
+`ResolucaoDeFila` — usava apenas para *sumir com o card de conflito*. O evento nem carregava a
+mutação: só o `id`. Não havia o que mostrar mesmo que alguém quisesse.
+
+Reachability, medida: `apiFetch` tem **um** chamador de verdade, `admin/agenda/novo/formulario.tsx`
+— e `ResolucaoDeFila` é montado no `admin/layout.tsx`, então a tela certa está no ar. A página
+pública de agendamento **não** usa `apiFetch`, de propósito e com o motivo escrito no arquivo
+(precisa distinguir `SLOT_TAKEN`, e o `apiFetch` devolve só `{queued}`). Então o estrago era do
+profissional, não da cliente final — o que não o torna menor: o profissional é quem marca a agenda.
+
+**Conserto.** O descarte vira card próprio, com a diferença que importa: **não há "tentar de
+novo"**, porque o servidor recusou em definitivo. Só resta contar o que se perdeu, e por isso o
+evento passou a levar a mutação junto — lida **antes** do `removerMutacao`, senão não há mais o que
+ler. O card diz o quê ("Um agendamento criado sem conexão não foi enviado") em vez de "alguma coisa
+falhou".
+
+**E a regra virou `core`.** A classificação do status morava dentro do adaptador de browser, que o
+próprio arquivo declara intestável neste projeto (sem jsdom). Era a única parte da fila offline sem
+teste — e era justamente a que apagava trabalho. Virou `classificarResposta`, função pura, com teste
+de comportamento nos seis grupos de status, incluindo uma asserção contra ela mesma: uma
+implementação que devolvesse sempre `retry` passaria em dois dos testes e faria a fila nunca
+esvaziar.
+
+---
+
+### D3 · A reserva órfã prendia a chave para sempre — MÉDIO
+
+`comIdempotencia` faz três coisas em sequência: reserva a chave (`insert`), executa a mutação,
+grava a resposta (`update`). O `catch` solta a reserva quando a mutação **lança** — mas não há
+`catch` para o processo simplesmente morrer entre a reserva e a gravação (função derrubada, timeout
+duro da plataforma). A linha fica com `response_status` nulo.
+
+E o caminho de repetição trata `response_status === null` como *"a primeira tentativa ainda está
+rodando"* e devolve `429` com "tente de novo em instantes". Para sempre — nada limpa aquela linha.
+
+A fila offline reenvia com a **mesma** chave (`mutacao.id`, e isso está certo, é o que faz o reenvio
+ser seguro). Então uma mutação que caiu nessa janela **nunca mais entra**: todo reenvio recebe
+`429`, que a fila classifica como `retry`, que reenfileira, que recebe `429`… A mutação fica
+circulando na fila até alguém desistir.
+
+Reserva parada há mais de uma hora não é "ainda rodando": nenhuma função serverless dura isso.
+
+---
+
+### D4 · A chave guardava a cliente inteira, sem prazo — MÉDIO
+
+`idempotency_keys.response_body` guarda o corpo da resposta, e o corpo de `POST /api/v1/clients`
+**é a cliente**: nome, telefone, e-mail, CPF, endereço. Era a única tabela do projeto com dado
+pessoal e **nenhuma limpeza por idade**.
+
+Guardar isso indefinidamente para deduplicar um reenvio que não virá contraria a necessidade
+(LGPD art. 6). A rodada 2 fez a eliminação da titular alcançar a tabela (migration 0046); esta
+alcança quem **continua** cliente.
+
+**Onde a faxina mora, e por quê.** Em `recompute-cycles` — que não tem nada a ver com o assunto.
+O motivo é único: é a **única rota deste projeto que roda sozinha de verdade** em produção (ela e
+`segments` são as duas do `on.schedule`, e esta dispara seis vezes por dia). Limpeza pendurada numa
+rota que ninguém agenda é limpeza que não existe, e criar uma sétima rota de cron só para varrer uma
+tabela obrigaria a mexer no `cron.yml`, no `ROTAS_DE_CRON` e nas duas guardas de agendamento.
+
+Fica **fora** do `if (processados > 0)` de propósito: chave órfã prende reenvio a qualquer hora, não
+só na madrugada dos tenants. Teto de 500 linhas por passada, no mesmo espírito da limpeza que
+`consumir_rate_limit` já fazia. E o resultado vai na resposta (`chavesOrfas`, `chavesVencidas`) —
+número que ninguém vê é número que ninguém confere, que é a lição inteira dos
+`tenantsProcessados: 0`.
+
+---
+
+### M3 · Uma afirmação da rodada 2 caiu quando foi medida
+
+A rodada 2 fechou dizendo que `idempotency_keys`, **`rate_limits`**, `webhook_events` e `job_queue`
+"crescem para sempre — nenhuma limpeza por idade existe no projeto". A rodada 3 foi ler
+`consumir_rate_limit` e encontrou, dentro dela, uma limpeza oportunista limitada a 50 linhas, que
+roda quando uma janela nova começa.
+
+Foi uma afirmação **por analogia** — "as quatro tabelas de infraestrutura são iguais, logo nenhuma
+tem limpeza" — num documento cuja regra de abertura é que achado só entra depois de visto
+acontecendo. O texto da rodada 2 foi corrigido no lugar, com a correção marcada.
+
+Vale registrar o padrão, porque ele é diferente do M1 e do M2: aqueles eram **ferramenta** cega;
+este é **preguiça de leitura** disfarçada de conclusão. As quatro tabelas nascem no mesmo bloco da
+0001, com o mesmo comentário ("sem política, de propósito") — e uma delas ganhou tratamento próprio
+três migrations depois. Semelhança de origem não é semelhança de estado.
+
+---
+
+### Cobertura acumulada (rodadas 1 a 3)
+
+**Varrido e limpo:** RLS por tabela (52/52); `security_invoker` nas 4 views; `search_path` nas 16
+funções `security definer`; fonte única do caixa; compare-and-swap em pacotes; **0 vulnerabilidades
+em 931 dependências**; ordem/conflito/parada da fila offline; estabilidade da chave de idempotência
+entre reenvios; limpeza própria de `rate_limits`.
+
+**Guardas submetidas a mutação:** 20 existentes × 30 mutações + 9 novas × 23 mutações. Todas as
+existentes pegaram; **quatro das novas nasceram cegas e foram corrigidas antes de entrar** (duas na
+rodada 2, duas na rodada 3).
+
+**Não coberto ainda:** `webhook_events` e `job_queue` continuam sem limpeza (o primeiro está vazio —
+nenhum PSP integrado; o segundo acumula linhas `done`); unicidade em `loyalty_entries`; o que a
+migration 0045 encontra em produção; e-2-e no navegador de verdade.
