@@ -3009,3 +3009,35 @@ diagnóstico na própria mensagem, e a decisão fica com quem conhece o dado.
 `tests/unit` não abre banco e não deve carregar `.env.local` nem pagar a checagem. `test:integration`
 e `test:rls` passam a rodar com `--config vitest.banco.config.ts`. Escape explícito:
 `PERMITIR_BANCO_REMOTO=1`, para o caso legítimo de apontar para um projeto de staging.
+
+
+2026-08-28 · A redação da trilha é `service_role`, não `authenticated` · `audit_log` e
+`idempotency_keys` não têm política de UPDATE de propósito, então redigi-las exige `security
+definer`. Conceder essa função a `authenticated` — mesmo com `has_tenant` + papel conferidos dentro
+— entrega a quem está logado uma ferramenta de apagar o próprio rastro. Escolhido conceder só a
+`service_role` e chamar por `withTenant()`; a autorização de quem pode eliminar já é feita na rota
+(`client:delete` + AAL2). Dentro da função fica a trava que não depende do chamador:
+`anonymized_at is not null`.
+
+2026-08-28 · A chave de idempotência guarda um marcador, não `null`, e a linha não é apagada ·
+Apagar a linha faria uma repetição da fila offline com a mesma chave **reexecutar** a mutação —
+recriando a cliente que acabou de ser eliminada. `null` faria a repetição devolver `null` onde a API
+promete um objeto. `{"eliminado": true}` mantém a chave reservada, a repetição continua não
+reexecutando nada, e o corpo não carrega mais ninguém.
+
+2026-08-28 · `preferences` passa a ser redigido na trilha; `document` e `address` não ·
+`preferences` tem campo `alergia` em seis das sete verticais — dado de saúde, e a regra 9 é
+absoluta. CPF e endereço são dado pessoal comum: a trilha existe para mostrar **o que mudou**, e
+redigir tudo na escrita a esvaziaria. Eles saem na eliminação, que é o que a LGPD art. 18 VI pede,
+pela RPC da 0046.
+
+2026-08-28 · Não construí caminho para promover um tenant de plano · `tenants.plan` é lido pela
+trava inteira e escrito por ninguém. Quem pode promover (super-admin? webhook do PSP? o dono do
+CICLO?) é decisão de produto, e o `CLAUDE.md` proíbe criar arquivo que o ticket não pediu. Fica
+reportado em `docs/29` §C1, com o caminho mais barato descrito para quando a decisão existir.
+
+2026-08-28 · O portfólio ganhou guarda em vez de código morto removido · `mediaParaPortfolio` não
+tem chamador e sempre voltaria vazia (`consent_id` nunca é gravado). Apagar a função perderia a
+implementação pensada do TICKET-051; deixá-la sem aviso faz o repositório parecer entregar uma
+galeria que não existe. Escolhida a guarda de mão dupla, mesma forma do quadro "Taxa": proíbe ligar
+antes de existir escritor, e exige o cruzamento com `revoked_at` depois que existir.

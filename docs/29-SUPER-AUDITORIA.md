@@ -218,3 +218,165 @@ dinheiro duas vezes não existe aqui).
 retenção, cofre); fila offline e PWA; dependências e supply chain; andaime morto além do
 `fee_cents`; concorrência em pacotes, fidelidade e carteira; o que a migration 0045 encontra em
 produção.
+
+
+---
+
+## Rodada 2 — o ponto cego do `jsonb`, e o que o produto não consegue fazer
+
+### Sumário
+
+| # | Achado | Severidade | Estado |
+|---|---|---|---|
+| B1 | A eliminação da titular não alcançava `audit_log` nem `idempotency_keys` — CPF, endereço e o contato de emergência de um TERCEIRO sobreviviam | **ALTO** | corrigido + guarda |
+| B2 | `clients.preferences` carrega `alergia` e ia inteiro para a trilha — dado de saúde em log, contra a regra 9 | **ALTO** | corrigido + guarda |
+| C1 | `tenants.plan` é lido por toda a trava de plano e **escrito por ninguém** | **ALTO** | reportado (decisão de produto) |
+| C2 | O portfólio de fotos não existe em duas camadas — e a tela já pede o consentimento que ele gastaria | MÉDIO | guarda de mão dupla |
+| C3 | `appointments.hold_expires_at`: coluna + índice parcial para uma reserva por sinal que ninguém escreve | BAIXO | registrado |
+| M2 | Método: mais duas cegueiras do meu próprio detector | — | registrado |
+
+Verificado e **correto**: `pacotes.ts` já fazia compare-and-swap em `used_sessions` (`.eq('used_sessions', atual)`) — o que confirma que o A4 da rodada 1 era uma **classe** mal aplicada, não um descuido isolado; as 4 views seguem com `security_invoker`; a nova função da 0046 fixa `search_path` como as outras 15.
+
+---
+
+### B1 · O que a eliminação não alcançava — **ALTO**
+
+`writeAudit` recebe `after: cliente` em `POST /api/v1/clients` e `before` + `after` no `PATCH`. O
+que vai para `audit_log` é a **linha inteira**, e `COLUNAS` de `clientes.ts` diz exatamente qual:
+
+> `name, phone_e164, email, birth_date, notes, tags, source, referred_by, preferences, document,
+> gender, address, emergency_contact, ...`
+
+`document` é o CPF. `emergency_contact` é o nome e o telefone de um **terceiro**, que nunca foi
+cliente de ninguém e nunca consentiu nada. E a mesma linha vai para
+`idempotency_keys.response_body`, porque o corpo da resposta *é* a cliente.
+
+`eliminarCliente` nunca tocou nenhuma das duas. O sistema respondia `anonymized: true`, a tela
+dizia "Cliente eliminada", e o cadastro completo seguia legível para `owner`, `manager` e
+`finance` — que é exatamente quem a política `audit_read` deixa ler.
+
+**Por que a guarda de LGPD não pegava.** `lgpd-cobertura` varre as migrations procurando tabela com
+`references clients(id)` e coluna de tipo textual. `audit_log` não referencia `clients` — o vínculo
+é `entity_id`, um `uuid` solto — e `idempotency_keys` não referencia nem `tenants`. Nas duas, o dado
+mora em `jsonb`. **O ponto cego é o jsonb**, e ele é estrutural: um detector que segue chave
+estrangeira nunca vai enxergar um dado que viaja como documento.
+
+**Conserto.** Migration `0046`, `redigir_trilha_do_cliente`: zera `before`/`after` da trilha e troca
+o `response_body` da chave por um marcador. A **linha sobrevive nas duas** — na trilha por causa da
+regra 11, e na chave porque apagá-la faria uma repetição da fila offline **reexecutar** a mutação,
+recriando a cliente que acabou de ser eliminada.
+
+O `execute` é concedido **só a `service_role`**, e `eliminarCliente` chega lá pelo `withTenant()`.
+Uma `security definer` que redige trilha, concedida a `authenticated`, é a ferramenta perfeita para
+quem quer sumir com o próprio rastro — e nenhuma checagem dentro dela compensa ter aberto a porta.
+Dentro sobra a trava que não depende de quem chamou: **a cliente já tem que estar eliminada**
+(`anonymized_at is not null`). Não existe caminho para redigir a trilha de uma cliente ativa.
+
+---
+
+### B2 · Alergia na trilha — **ALTO**
+
+`clients.preferences` tem um campo `alergia` em **seis das sete** verticais de
+`src/lib/preferencias.ts` — as dicas do próprio formulário são "acetona, resina", "amônia, PPD",
+"cola, cianoacrilato". Alergia é dado de saúde, e a regra 9 do `CLAUDE.md` não abre exceção para
+trilha: *"dado de saúde nunca em log, Sentry ou analytics. Redija antes."*
+
+A lista de redação de `writeAudit` protegia o cofre (`answers`, `ciphertext`, `iv`, `auth_tag`) e
+não protegia o caminho de fora do cofre. `preferences` e `alert_label` entraram.
+
+A guarda é de **comportamento**, não de lista: ela monta uma linha de `clients` como ela chega em
+`after` e confere que `preferences` sai redigido **e que `name` continua lá** — uma redação que
+apaga tudo deixaria a trilha sem valor nenhum, e passaria numa guarda que só olhasse a lista.
+
+---
+
+### C1 · A trava de plano está inteira sobre uma coluna que ninguém escreve — **ALTO**
+
+Medido: `tenants.plan` é **lido** em `contextoDePlano` (`planos.ts`) e em `public-booking.ts`, e
+alimenta `exigirModulo`/`exigirLimite` em **11 rotas de escrita**. E é **escrito em zero lugares** —
+nenhuma linha de TypeScript, nenhuma migration, nenhum seed, nenhum script.
+
+A coluna nasce `plan_tier not null default 'start'`, renomeado para `gratis` pela migration 0030.
+Logo: **todo tenant é `gratis`, para sempre.** A trava de plano funciona perfeitamente contra um
+valor que não tem como mudar.
+
+O `docs/09 §P11` registrou, em 2026-08-20, que *"grep confirmou que nenhuma linha de código lê
+`tenants.plan` hoje"* — e essa frase envelheceu no melhor sentido possível: o lado da **leitura**
+foi construído desde então (planos, módulos, capacidades, paywall, `precos-tem-trava-no-servidor`).
+O lado da **escrita** não. Hoje o produto sabe cobrar e não sabe promover.
+
+O que isso significa na prática, e é concreto: **se alguém pagar hoje, por Pix, na mão, não existe
+caminho no repositório para entregar o que a pessoa comprou** — nem rota, nem tela, nem script.
+Só um `UPDATE` datilografado no painel do Supabase.
+
+**Não corrigido, de propósito.** Quem pode promover um tenant (existe super-admin? é o dono do
+CICLO? é o webhook do PSP?) é decisão de produto, e o `CLAUDE.md` é explícito: *"nunca crie arquivo
+que o ticket não pediu"*. O caminho mais barato, quando a decisão existir, é um script em
+`scripts/` no molde de `rotacionar-kek.mjs` — chave de serviço, tier validado contra
+`ORDEM_DOS_PLANOS`, e uma linha em `audit_log`.
+
+---
+
+### C2 · O portfólio não existe em duas camadas — MÉDIO
+
+`mediaParaPortfolio` filtra por `consent_id` não-nulo e cruza com `consents.revoked_at`, cumprindo
+o critério do TICKET-051: *"revogar imagem esconde a foto do portfólio imediatamente"*. Medido:
+
+1. **nada no projeto grava `media.consent_id`** — `fazerUploadMedia` insere `tenant_id`,
+   `client_id`, `storage_key`, `kind` e `phase`, e nunca a coluna do consentimento;
+2. **nenhuma rota, página ou serviço chama `mediaParaPortfolio`.**
+
+A segunda é o que salva: como ninguém chama, ninguém vê galeria vazia. Mas o critério do TICKET-051
+está cumprido **por vacuidade** — "revogar esconde a foto" é verdade porque não existe foto para
+esconder, não porque a revogação funcione. E a tela de saúde da cliente **coleta** o consentimento
+`image_use`: o salão já pede à cliente uma autorização cujo efeito não existe.
+
+Guarda de mão dupla, como a do `fee_cents`: enquanto ninguém gravar `consent_id`, ela proíbe ligar o
+portfólio numa tela; no dia em que o upload gravar a coluna, ela para de proibir e passa a **exigir**
+que o cruzamento com `revoked_at` continue de pé.
+
+---
+
+### C3 · `hold_expires_at` — BAIXO, registrado
+
+`appointments.hold_expires_at` existe desde a 0001, com um índice parcial dedicado
+(`... where status = 'pending'`) e o comentário *"reserva aguardando o sinal"*. Ninguém escreve a
+coluna e não há job que expire reserva. É andaime coerente com o bloqueio de pagamento (o sinal
+depende de PSP), e fica registrado para não ser confundido com funcionalidade no dia em que alguém
+for ligar depósito.
+
+---
+
+### M2 · Mais duas cegueiras do meu próprio detector
+
+O M1 da rodada 1 disse que *"a guarda não pegou" é hipótese, não achado, até o detector ter sido
+conferido nas duas direções*. A rodada 2 pagou para ver, duas vezes — e as duas foram em guardas
+**que eu tinha acabado de escrever**:
+
+| O que a mutação mostrou | O que era |
+|---|---|
+| trocar `to service_role` por `to authenticated, service_role` não reprovava | a asserção estava escrita como `not.toMatch(/\bauthenticated\b/)`. O `\b`, escrito no heredoc, virou o caractere **backspace** (`0x08`) dentro da string — a regex procurava `<BS>authenticated<BS>` e nunca casava. Uma asserção que parecia rigorosa e não testava nada. |
+| ligar o portfólio numa tela não reprovava | o leitor de "quem grava `consent_id`" varria `src/` inteiro, e `types.gen.ts` declara `consent_id` para **toda** tabela. A lista de escritores nunca era vazia, então a guarda caía sempre no ramo *"já tem escritor"* e desistia. |
+
+As duas passam pelo mesmo lugar: **o ramo que a guarda toma é ele próprio um detector**, e um
+`if (x.length > 0) return` cego é indistinguível de um teste que passou. Por isso a guarda do
+portfólio ganhou uma asserção de sanidade sobre a própria lista, e a varredura passou a excluir
+arquivo gerado.
+
+Depois de conferir a saída do Vitest (rodada 1), agora também: **conferir o texto do arquivo
+escrito.** `\b`, `\s` e `\.` sobrevivem mal a heredoc — `grep` com `cat -v` mostra o que de fato
+ficou lá, e vale sempre que o teste contiver regex.
+
+---
+
+### Cobertura acumulada
+
+**Varrido e limpo (rodadas 1 e 2):** RLS por tabela (52/52); `security_invoker` nas 4 views;
+`search_path` nas 16 funções `security definer`; fonte única do caixa; compare-and-swap em pacotes;
+20 guardas × 30 mutações + 6 guardas novas × 12 mutações.
+
+**Não coberto ainda:** fila offline e PWA além do que o `service-worker.test.ts` já cobre;
+dependências e supply chain; retenção (`idempotency_keys`, `rate_limits`, `webhook_events` e
+`job_queue` crescem para sempre — nenhuma limpeza por idade existe no projeto); concorrência em
+fidelidade (`loyalty_entries` não tem unicidade por atendimento — hoje fechado pelo CAS da rodada 1,
+mas sem trava própria); o que a migration 0045 encontra em produção.
