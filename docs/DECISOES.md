@@ -2982,3 +2982,30 @@ plano pago na Vercel e o projeto está no Hobby; conferir antes de contar com is
 `services` e `professionals` num Promise.all — eles não dependem um do outro, corta 4 saltos em
 série para 3, não depende de plano nem de decisão de ninguém. Detalhe em
 `docs/27-ESCALA-E-CONVERSAO.md` §7.2.
+
+
+2026-08-28 · O quadro "Taxa" do caixa some, em vez de virar "em breve" · Nada no projeto escreve
+`tickets.fee_cents`, então o quadro mostrava R$ 0,00 desde a primeira comanda. Três saídas:
+(a) implementar taxa de maquininha — depende de credencial de pagamento, que é o mesmo bloqueio do
+TICKET-043; (b) rotular como "em breve" — ocupa espaço numa tela de 375px para não informar nada;
+(c) tirar. Escolhida a (c), que é a mais simples e atende ao critério. A coluna, o campo do resumo
+da API e o desconto dentro de `calcularSobraDaComanda` ficam, e a guarda
+`caixa-nao-promete-taxa` EXIGE o quadro de volta no dia em que alguém escrever `fee_cents` — a
+decisão não vira dívida esquecida.
+
+2026-08-28 · A comissão continua sobre o total do item, sem o desconto da comanda · Ao consertar
+`profit_cents` apareceu a pergunta: desconto de R$ 20 numa comanda de R$ 100 reduz a comissão do
+profissional? Decidido que não. O desconto é concessão comercial do dono; o profissional entregou o
+serviço inteiro. Consequência assumida: o desconto sai inteiro da linha do salão, e é exatamente
+por isso que ele precisa aparecer no "Sobrou".
+
+2026-08-28 · A migration 0045 falha alto em vez de limpar duplicata sozinha · O índice único de
+`tickets(appointment_id)` não pode ser criado se já existir agendamento com duas comandas. Resolver
+apagando é proibido pela regra 11. Resolver zerando o `appointment_id` da mais nova seria decidir,
+sem contexto, qual comanda tem o faturamento certo. A migration levanta exceção com a consulta de
+diagnóstico na própria mensagem, e a decisão fica com quem conhece o dado.
+
+2026-08-28 · A trava de banco local mora numa config separada, não na `vitest.config.ts` ·
+`tests/unit` não abre banco e não deve carregar `.env.local` nem pagar a checagem. `test:integration`
+e `test:rls` passam a rodar com `--config vitest.banco.config.ts`. Escape explícito:
+`PERMITIR_BANCO_REMOTO=1`, para o caso legítimo de apontar para um projeto de staging.
