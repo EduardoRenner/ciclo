@@ -664,3 +664,120 @@ existentes pegaram; **quatro das novas nasceram cegas e foram corrigidas antes d
 **Não coberto ainda:** unicidade em `loyalty_entries` (hoje fechada pelo CAS da rodada 1, sem trava
 própria); estados de vazio e de erro por tela, que a "definição de pronto" do `CLAUDE.md` exige e
 nenhuma guarda confere; e-2-e no navegador de verdade; o que a migration 0045 encontra em produção.
+
+
+---
+
+## Rodada 5 — o botão que trava e não diz por quê
+
+### Sumário
+
+| # | Achado | Severidade | Estado |
+|---|---|---|---|
+| F1 | Sem serviço cadastrado, "Confirmar agendamento" nasce morto e nada indica o caminho | **ALTO** | corrigido + guarda |
+| F2 | Mais oito controles travados sem explicação, um deles na página pública | MÉDIO | corrigido + guarda |
+| F3 | `loyalty_entries` continua sem unicidade por atendimento | BAIXO | registrado, com motivo para não consertar agora |
+
+Verificado e **correto**: das 33 telas do `/admin` que renderizam lista, 26 já tratam o vazio; das
+7 restantes, 4 renderizam lista **estática** (as cores do profissional, o catálogo de 17 módulos,
+os campos de preferência da vertical) e as outras 3 são exatamente os `<select>` cujo vazio o
+achado F1 passou a explicar. Não sobrou tela de lista com vazio mudo.
+
+---
+
+### F1–F2 · A prop existia e era usada em cinco lugares — **ALTO**
+
+O TICKET-105 fechou esta classe em duas telas públicas: `A6` ("Enviar avaliação") e `A15`
+("Confirmar agendamento" na página do cliente), com o motivo escrito no arquivo — *"no leitor de
+tela saía 'Confirmar agendamento, indisponível' e ponto"*. Para isso nasceu `motivoDesabilitado`,
+que o `Button` transforma em `title` e em `<span class="sr-only">`.
+
+Medido: **25** botões com `disabled` no projeto, **5** com a explicação, **9** travados por uma
+condição de conteúdo e mudos. O pior deles não é de acessibilidade — é de produto:
+
+> `admin/agenda/novo` → `disabled={servicos.length === 0 || profissionais.length === 0}`
+
+Um salão que apagou os serviços semeados pelo pacote da vertical abre "Novo agendamento", vê o
+botão morto e **não descobre por quê**. Não há empty state, não há link, não há frase. A tela mais
+usada do produto trava sem uma palavra.
+
+Os outros oito: `orcamentos/novo` (sem profissional), `comanda/[id]` ("Fechar comanda" sem item),
+`clientes/importar` (sem escolher a coluna do nome), `config/profissionais` (salvar sem nome),
+`config/seguranca` e `(auth)/verificar` (código de 6 dígitos incompleto), e os **dois** botões de
+`(public)/confirmar`, que travam enquanto o **outro** está em curso — o spinner que explicaria a
+espera está no botão vizinho, não neste.
+
+Junto veio o checkbox de módulo "sempre ligado" em `config/modulos`: o leitor de tela dizia
+*"Desligar Agenda, caixa de seleção, marcada, indisponível"*. Quem tenta desligar não descobria que
+não dá — descobria que não funcionou.
+
+**A guarda é de classe.** Varre todo `<Button>` com `disabled` em `src/app` e `src/components` e
+exige a explicação. Dois detalhes que a fazem funcionar:
+
+- **delimita pelo fim real do elemento** (o `>` fora de chaves), não por uma janela de N
+  caracteres — com janela, o `motivoDesabilitado` do botão vizinho vaza para dentro e a guarda
+  passa. É a armadilha nº 4 da tabela do `CLAUDE.md`, e o teste do próprio leitor prova que não
+  acontece;
+- **a dispensa é uma lista fechada** de condições que significam "já estou enviando", e há um teste
+  que reprova se essa lista crescer para engolir `!nome` ou `length === 0`. Exceção que cresce
+  sozinha é a forma mais silenciosa de uma regra virar decoração.
+
+Mais uma asserção contra copy vazia: `motivoDesabilitado="Indisponível"` reprova. A regra da casa é
+que o texto diga **o que fazer**.
+
+---
+
+### F3 · `loyalty_entries` sem unicidade — BAIXO, e por que não consertei agora
+
+`loyalty_entries` não tem restrição de unicidade por `(appointment_id, reason)`, e
+`pontuarAtendimentoConcluido` insere sem conferir. Antes da rodada 1, dois "concluir" simultâneos
+pontuavam duas vezes.
+
+Hoje o caminho está fechado no app: `transicaoSimples` virou compare-and-swap, então só uma das
+duas requisições chega a pontuar. O que falta é a segunda camada, no banco.
+
+**Não adicionei**, e o motivo é o mesmo que fez a `0045` falhar alto em vez de limpar sozinha: um
+índice único sobre dado que já pode ter duplicata **para o deploy**. Já existe uma migration nessa
+condição esperando conferência em produção; empilhar uma segunda multiplica a chance de o deploy
+travar por um motivo que ninguém antecipou. As duas devem ir juntas, na mesma passada em que
+alguém rodar a consulta de diagnóstico da `0045` no banco de verdade.
+
+---
+
+### M4 · O heredoc comeu a barra invertida — de novo, e agora com nome
+
+Três vezes nesta auditoria uma asserção nasceu quebrada pelo mesmo motivo, e vale registrar como
+procedimento porque não é sobre este projeto:
+
+| O que eu escrevi | O que ficou no arquivo |
+|---|---|
+| `not.toMatch(/\bauthenticated\b/)` | `/<BS>authenticated<BS>/` — `\b` virou o caractere **backspace** (0x08), e a regex nunca casava |
+| `[\s\S]{0,120}` numa template string | `sS{0,120}` — `\s` dentro de template literal JS não é `\s` de regex |
+| `'linha1\nlinha2'` numa fixture | uma quebra de linha de verdade no meio da string, e o arquivo nem compilava |
+
+A causa é sempre a mesma: escrever arquivo por heredoc de shell, que colapsa `\` em `\`, e depois
+uma linguagem que interpreta `\` de novo. **Regra prática:** nada de barra invertida dentro de
+heredoc — use `String.fromCharCode()` no destino, ou monte o texto sem escape. E, sempre que a
+guarda contiver regex, **ler o arquivo escrito** (`grep | cat -v` mostra caractere de controle) antes
+de acreditar no verde.
+
+As três só apareceram porque cada guarda nova passou por mutação antes de entrar. A do `\b` teria
+entrado no repositório parecendo rigorosa e testando nada.
+
+---
+
+### Cobertura acumulada (rodadas 1 a 5)
+
+**Varrido e limpo:** RLS por tabela (52/52); `security_invoker` nas 4 views; `search_path` nas 16
+funções `security definer`; 0 vulnerabilidades em 931 dependências; ordem/conflito/parada da fila
+offline; estabilidade da chave de idempotência entre reenvios; limpeza própria de `rate_limits`;
+compare-and-swap em pacotes; HMAC dos links públicos; estados de vazio das 33 telas de lista do
+`/admin`.
+
+**Guardas submetidas a mutação:** 20 existentes × 30 mutações + 12 novas × 35 mutações. Todas as
+existentes pegaram; **cinco das novas nasceram cegas e foram corrigidas antes de entrar.**
+
+**Não coberto ainda:** medição no navegador de verdade (390 px, alvos de toque, contraste
+renderizado) — as quatro rodadas do `docs/15` cobriram as telas públicas, o `/admin` a 390 px não
+foi remedido nesta auditoria; e-2-e; unicidade em `loyalty_entries` (F3, junto da conferência da
+0045).

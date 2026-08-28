@@ -3089,3 +3089,21 @@ declarado na guarda, que reprova se ele for consertado e a lista não encolher j
 `src/server` e `src/app` procurando o TEXTO do instante literal (`T00:00:00Z`, `T23:59:59`), com
 lista de dívida que só encolhe. Travar só `caixa`/`comissao`/`atribuicao` deixaria o próximo arquivo
 livre para repetir — que é exatamente como esta classe chegou à quarta rodada.
+
+
+2026-08-28 · A dispensa da guarda de botão travado é uma lista fechada, não um padrão · "Parece
+estado de envio" (qualquer identificador terminado em -ndo, por exemplo) deixaria qualquer condição
+nova entrar sem justificar. A lista é explícita (`pendente`, `salvando`, `saindo`, `enviando`,
+`carregando`, `importando`, `processando`) e há um teste que reprova se ela crescer para casar
+`!nome` ou `length === 0`.
+
+2026-08-28 · Os dois botões de `(public)/confirmar` ganharam motivo em vez de entrar na dispensa ·
+Eles travam enquanto o OUTRO está em curso — o spinner que explicaria a espera está no botão
+vizinho. Tecnicamente é "ação em curso"; para quem usa leitor de tela, não é: o feedback está em
+outro elemento. Alargar a exceção para cobrir esse caso a tornaria inútil.
+
+2026-08-28 · Não adicionei índice único em `loyalty_entries` nesta rodada · O caminho de dupla
+pontuação já está fechado no app pelo compare-and-swap da rodada 1. Um índice único sobre dado que
+pode ter duplicata histórica PARA o deploy, e já existe uma migration nessa condição (`0045`)
+esperando conferência em produção. As duas devem ir juntas, na mesma passada em que alguém rodar a
+consulta de diagnóstico no banco de verdade.
