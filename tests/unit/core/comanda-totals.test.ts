@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { calcularComissaoItem, calcularTotalItem, calcularTotaisComanda } from '@/core/comanda/totals'
+import { calcularComissaoItem, calcularSobraDaComanda, calcularTotalItem, calcularTotaisComanda } from '@/core/comanda/totals'
 
 describe('calcularTotalItem', () => {
   it('qty inteira × preço, sem desconto', () => {
@@ -68,5 +68,96 @@ describe('calcularTotaisComanda', () => {
     const r = calcularTotaisComanda({ items, discountCents: 0, tipCents: 0 })
     expect(r.subtotalCents).toBe(items.reduce((s, i) => s + i.totalCents, 0))
     expect(Number.isInteger(r.subtotalCents)).toBe(true)
+  })
+})
+
+describe('calcularSobraDaComanda', () => {
+  /*
+   * O caso que estava errado em produção. A tela do caixa promete
+   * "Sobrou = o que entrou menos material, taxa e comissão" — e `profit_cents` era
+   * `subtotal − material − comissão`, sem o desconto. Com R$ 20 de desconto numa comanda
+   * de R$ 100 e nenhum custo, "Entrou" mostrava R$ 80 e "Sobrou" mostrava R$ 100.
+   */
+  it('o desconto da comanda sai da sobra — sobrar mais do que entrou é impossível', () => {
+    const sobra = calcularSobraDaComanda({
+      subtotalCents: 10_000,
+      discountCents: 2_000,
+      tipCents: 0,
+      materialCents: 0,
+      feeCents: 0,
+      commissionCents: 0,
+    })
+    expect(sobra).toBe(8_000)
+  })
+
+  it('a gorjeta não vira lucro do salão — ela é 100% do profissional (F84)', () => {
+    const { totalCents } = calcularTotaisComanda({ items: [{ totalCents: 10_000 }], discountCents: 0, tipCents: 3_000 })
+    const sobra = calcularSobraDaComanda({
+      subtotalCents: 10_000,
+      discountCents: 0,
+      tipCents: 3_000,
+      materialCents: 0,
+      feeCents: 0,
+      commissionCents: 0,
+    })
+    expect(totalCents).toBe(13_000)
+    expect(sobra).toBe(10_000)
+  })
+
+  it('material, taxa e comissão saem todos — os três nomes que a tela promete', () => {
+    const sobra = calcularSobraDaComanda({
+      subtotalCents: 10_000,
+      discountCents: 0,
+      tipCents: 0,
+      materialCents: 1_500,
+      feeCents: 300,
+      commissionCents: 4_000,
+    })
+    expect(sobra).toBe(4_200)
+  })
+
+  it('desconto maior que o subtotal não vira receita negativa antes dos custos', () => {
+    const sobra = calcularSobraDaComanda({
+      subtotalCents: 1_000,
+      discountCents: 5_000,
+      tipCents: 0,
+      materialCents: 0,
+      feeCents: 0,
+      commissionCents: 0,
+    })
+    expect(sobra).toBe(0)
+  })
+
+  it('a sobra pode ser negativa quando o custo passa a receita — prejuízo não é escondido', () => {
+    const sobra = calcularSobraDaComanda({
+      subtotalCents: 10_000,
+      discountCents: 0,
+      tipCents: 0,
+      materialCents: 12_000,
+      feeCents: 0,
+      commissionCents: 0,
+    })
+    expect(sobra).toBe(-2_000)
+  })
+
+  /*
+   * A invariante que a tela do caixa depende: "Sobrou" nunca passa de "Entrou". Cobre o par
+   * desconto/gorjeta em conjunto, que é onde as duas fórmulas divergiam.
+   */
+  it('em toda combinação de desconto e gorjeta, a sobra nunca passa do que entrou', () => {
+    for (const discountCents of [0, 500, 2_000, 9_999, 20_000]) {
+      for (const tipCents of [0, 1_000, 5_000]) {
+        const { totalCents } = calcularTotaisComanda({ items: [{ totalCents: 10_000 }], discountCents, tipCents })
+        const sobra = calcularSobraDaComanda({
+          subtotalCents: 10_000,
+          discountCents,
+          tipCents,
+          materialCents: 0,
+          feeCents: 0,
+          commissionCents: 0,
+        })
+        expect(sobra, `desconto ${discountCents}, gorjeta ${tipCents}`).toBeLessThanOrEqual(totalCents)
+      }
+    }
   })
 })

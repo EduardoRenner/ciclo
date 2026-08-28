@@ -102,7 +102,7 @@ export default function Caixa({ dia, hoje, diario, mensal, comissoes, atendidoCe
             titulo="Nenhuma comanda fechada nesse dia"
             descricao={
               atendidoCents > 0
-                ? `Você concluiu ${dinheiro.format(atendidoCents / 100)} em atendimentos, mas o caixa só conta o que passou pela comanda — é ela que sabe material, taxa e comissão.`
+                ? `Você concluiu ${dinheiro.format(atendidoCents / 100)} em atendimentos, mas o caixa só conta o que passou pela comanda — é ela que sabe material e comissão.`
                 : 'O caixa soma o que foi cobrado nas comandas. Feche a comanda do atendimento e o valor aparece aqui.'
             }
             acao={<Link href="/admin/agenda">Ver a agenda</Link>}
@@ -122,12 +122,21 @@ export default function Caixa({ dia, hoje, diario, mensal, comissoes, atendidoCe
             className="mb-3"
             rotulo="Sobrou"
             valor={dinheiro.format(diario.profitCents / 100)}
-            apoio="O que entrou menos material, taxa da maquininha e comissão."
+            apoio="O que entrou, menos a gorjeta do profissional, o material e a comissão."
           />
 
-          <div className="mb-6 grid grid-cols-3 gap-2">
+          {/*
+            Havia um terceiro quadro aqui, "Taxa", que mostrava R$ 0,00 todo dia desde sempre:
+            NADA no projeto escreve `tickets.fee_cents` — nem a comanda, nem o pagamento, nem job
+            nenhum. Um quadro permanentemente zerado ao lado de Material e Comissão não é neutro:
+            ele afirma que a taxa da maquininha está sendo descontada do "Sobrou", e o dono do
+            salão fecha o mês achando que sobrou mais do que sobrou. `fee_cents` continua na
+            tabela e no resumo da API, e `calcularSobraDaComanda` já a desconta — no dia em que
+            existir quem preencha, o quadro volta. `tests/unit/design/caixa-nao-promete-taxa.test.ts`
+            reprova se ele voltar antes disso.
+          */}
+          <div className="mb-6 grid grid-cols-2 gap-2">
             <StatTile rotulo="Material" valor={dinheiro.format(diario.materialCents / 100)} />
-            <StatTile rotulo="Taxa" valor={dinheiro.format(diario.feeCents / 100)} />
             <StatTile rotulo="Comissão" valor={dinheiro.format(diario.commissionCents / 100)} />
           </div>
         </>

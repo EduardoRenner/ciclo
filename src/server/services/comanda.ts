@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { calcularComissaoItem, calcularTotalItem, calcularTotaisComanda, type BaseComissao } from '@/core/comanda/totals'
+import { calcularComissaoItem, calcularSobraDaComanda, calcularTotalItem, calcularTotaisComanda, type BaseComissao } from '@/core/comanda/totals'
 import { AppError } from '@/server/http/errors'
 import { baixarEstoqueDaComanda, estornarBaixaDaComanda } from '@/server/services/estoque'
 
@@ -199,8 +199,21 @@ export async function fecharComanda(db: Cliente, tenantId: string, ticketId: str
 
   const { subtotalCents, totalCents } = calcularTotaisComanda({ items: items.map((i) => ({ totalCents: i.total_cents })), discountCents: ticket.discount_cents, tipCents: ticket.tip_cents })
   const custoTotalCents = items.reduce((soma, item) => soma + item.cost_cents, 0)
-  const profitCents = subtotalCents - custoTotalCents - commissaoTotalCents
+  const profitCents = calcularSobraDaComanda({
+    subtotalCents,
+    discountCents: ticket.discount_cents,
+    tipCents: ticket.tip_cents,
+    materialCents: custoTotalCents,
+    feeCents: ticket.fee_cents,
+    commissionCents: commissaoTotalCents,
+  })
 
+  // `.eq('status', 'open')` no próprio UPDATE, e não só na leitura acima: entre o
+  // `buscarComanda` e este ponto rodam N consultas de comissão, uma por item. Duas requisições
+  // simultâneas passavam as duas pela verificação de estado e fechavam a mesma comanda duas
+  // vezes — e `baixarEstoqueDaComanda` não é idempotente, então o estoque descia em dobro sem
+  // nada reprovar. É a mesma correção que o achado S11 fez no débito de carteira: quem decide o
+  // estado é o banco, numa operação só.
   const { data: fechado, error } = await db
     .from('tickets')
     .update({
@@ -214,9 +227,11 @@ export async function fecharComanda(db: Cliente, tenantId: string, ticketId: str
     })
     .eq('tenant_id', tenantId)
     .eq('id', ticketId)
+    .eq('status', 'open')
     .select('*')
-    .single()
+    .maybeSingle()
   if (error) throw new AppError('INTERNAL', { cause: error })
+  if (!fechado) throw new AppError('INVALID_TRANSITION', { message: 'Essa comanda já foi fechada.' })
 
   // §5.6/TICKET-044: baixa DEPOIS de fechar, nunca ao abrir — uma comanda aberta pode ganhar e
   // perder item várias vezes antes de fechar, e nada disso deveria mexer em estoque de verdade.
@@ -236,10 +251,22 @@ export async function cancelarComandaFechada(db: Cliente, tenantId: string, tick
   if (!ticket) throw new AppError('NOT_FOUND')
   if (ticket.status !== 'closed') throw new AppError('INVALID_TRANSITION', { message: 'Só dá para cancelar uma comanda fechada e ainda não paga.' })
 
-  await estornarBaixaDaComanda(db, tenantId, ticketId)
-
-  const { data: cancelado, error } = await db.from('tickets').update({ status: 'canceled' }).eq('tenant_id', tenantId).eq('id', ticketId).select('*').single()
+  // Mesma razão do `fecharComanda`: a troca de estado vem ANTES do estorno, e com
+  // `.eq('status', 'closed')` no próprio UPDATE. `estornarBaixaDaComanda` lê os `out` do ticket e
+  // gera um `return` para cada um — chamada duas vezes, devolve o dobro ao estoque e ninguém
+  // percebe. Quem perder a corrida não passa daqui e não estorna nada.
+  const { data: cancelado, error } = await db
+    .from('tickets')
+    .update({ status: 'canceled' })
+    .eq('tenant_id', tenantId)
+    .eq('id', ticketId)
+    .eq('status', 'closed')
+    .select('*')
+    .maybeSingle()
   if (error) throw new AppError('INTERNAL', { cause: error })
+  if (!cancelado) throw new AppError('INVALID_TRANSITION', { message: 'Só dá para cancelar uma comanda fechada e ainda não paga.' })
+
+  await estornarBaixaDaComanda(db, tenantId, ticketId)
 
   return cancelado
 }

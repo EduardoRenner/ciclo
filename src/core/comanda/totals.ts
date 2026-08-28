@@ -52,3 +52,34 @@ export function calcularTotaisComanda(entrada: EntradaTotaisComanda): ResultadoT
   const totalCents = Math.max(0, subtotalCents - entrada.discountCents) + entrada.tipCents
   return { subtotalCents, totalCents }
 }
+
+export type EntradaFechamento = {
+  subtotalCents: number
+  discountCents: number
+  tipCents: number
+  materialCents: number
+  feeCents: number
+  commissionCents: number
+}
+
+/**
+ * O que sobra para o salão quando a comanda fecha.
+ *
+ * A tela do caixa diz, com estas palavras: *"Sobrou — o que entrou menos material, taxa da
+ * maquininha e comissão"*. Até esta auditoria a conta guardada em `tickets.profit_cents` era
+ * `subtotal − material − comissão`, ignorando o desconto e a gorjeta do nível da comanda. As duas
+ * pontas discordavam justamente onde dói:
+ *
+ *   - **desconto**: numa comanda de R$ 100 com R$ 20 de desconto, "Entrou" mostrava R$ 80 e
+ *     "Sobrou" mostrava R$ 100 — sobrava mais do que entrou. O desconto é dinheiro que o salão
+ *     abriu mão de receber, e saía do relatório de graça;
+ *   - **gorjeta**: entra no `total` (a cliente paga) e é 100% do profissional (F84) — então tem
+ *     que sair de novo aqui, ou vira lucro que o salão nunca viu.
+ *
+ * A comissão continua calculada sobre o total do item, sem o desconto da comanda: o desconto é
+ * concessão do dono, não do profissional. Por isso ele aparece inteiro aqui, na linha do salão.
+ */
+export function calcularSobraDaComanda(entrada: EntradaFechamento): number {
+  const receitaDoSalao = Math.max(0, entrada.subtotalCents - entrada.discountCents)
+  return receitaDoSalao - entrada.materialCents - entrada.feeCents - entrada.commissionCents
+}
