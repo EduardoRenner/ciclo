@@ -17,6 +17,34 @@ export type ResultadoEnvio = { kind: 'ok' } | { kind: 'conflict' } | { kind: 'di
 
 export type Enviador = (mutacao: Mutacao) => Promise<ResultadoEnvio>
 
+/**
+ * O que fazer com o status que o servidor devolveu para uma mutação da fila.
+ *
+ * Morava dentro de `enviarMutacao`, no adaptador de browser — que o próprio arquivo declara
+ * intestável neste projeto (sem jsdom). Ou seja: a regra que decide entre *reenviar*, *pedir
+ * ajuda* e **jogar fora o trabalho da pessoa** era a única parte da fila offline sem teste.
+ *
+ * Auditoria de 2026-08-28: `401` e `403` caíam no `descarte`. O cenário não é raro — é o mais
+ * provável de todos. O tablet do balcão passa a noite sem rede com um agendamento na fila, a
+ * sessão vence, a rede volta, o servidor responde `401`, e a mutação é **apagada do IndexedDB**.
+ * A pessoa tinha visto "será enviado quando a conexão voltar" e nunca mais ouve falar do assunto.
+ * Sessão vencida é recuperável: quem entra de novo drena a fila. Vira `retry`.
+ */
+export function classificarResposta(status: number): ResultadoEnvio['kind'] {
+  if (status >= 200 && status < 300) return 'ok'
+  // §4.2.5: conflito vira card, nunca descarte.
+  if (status === 409) return 'conflict'
+  // Autenticação e autorização são estados do CLIENTE, não veredito sobre a mutação: entrar de
+  // novo (ou o gerente devolver a permissão) faz a mesma mutação passar.
+  if (status === 401 || status === 403) return 'retry'
+  // Excesso de requisições e falha do servidor: tentar de novo é literalmente o que o servidor pede.
+  if (status === 429 || status >= 500) return 'retry'
+  // O que sobra é recusa definitiva (400, 404, 422, 402...). Sai da fila — e quem chama TEM que
+  // contar isso para alguém: apagar trabalho em silêncio é o defeito que a pessoa só descobre
+  // quando a cliente aparece para um horário que não existe.
+  return 'discard'
+}
+
 export type ResultadoDrenagem = {
   sincronizadas: string[]
   /** §4.2.5: "409 marca o item como precisa da sua atenção. Nunca descarta em silêncio." */

@@ -1,6 +1,6 @@
 'use client'
 
-import { drenarFila, type Mutacao, type ResultadoEnvio } from '@/core/offline/queue'
+import { classificarResposta, drenarFila, type Mutacao, type ResultadoEnvio } from '@/core/offline/queue'
 
 import { listarMutacoes, removerMutacao, salvarMutacao } from './db'
 
@@ -16,7 +16,11 @@ import { listarMutacoes, removerMutacao, salvarMutacao } from './db'
  * via DevTools → Network → Offline, registrado em `docs/DECISOES.md`.
  */
 
-export type EventoFila = { tipo: 'sincronizada'; id: string } | { tipo: 'descartada'; id: string } | { tipo: 'conflito'; mutacao: Mutacao }
+export type EventoFila =
+  | { tipo: 'sincronizada'; id: string }
+  /** Leva a `mutacao` junto: sem ela a UI não tem o que mostrar, e o descarte volta a ser mudo. */
+  | { tipo: 'descartada'; id: string; mutacao: Mutacao | null }
+  | { tipo: 'conflito'; mutacao: Mutacao }
 
 const assinantes = new Set<(evento: EventoFila) => void>()
 
@@ -36,10 +40,7 @@ async function enviarMutacao(mutacao: Mutacao): Promise<ResultadoEnvio> {
       headers: { 'content-type': 'application/json', 'idempotency-key': mutacao.id },
       body: mutacao.method === 'DELETE' ? undefined : JSON.stringify(mutacao.body),
     })
-    if (resposta.ok) return { kind: 'ok' }
-    if (resposta.status === 409) return { kind: 'conflict' }
-    if (resposta.status === 429 || resposta.status >= 500) return { kind: 'retry' }
-    return { kind: 'discard' }
+    return { kind: classificarResposta(resposta.status) }
   } catch {
     return { kind: 'retry' } // rede fora do ar — `TypeError: Failed to fetch`
   }
@@ -57,8 +58,11 @@ export async function drenarFilaPendente(): Promise<void> {
     emitir({ tipo: 'sincronizada', id })
   }
   for (const id of resultado.descartadas) {
+    // A mutação é lida ANTES de sair do IndexedDB: depois do `removerMutacao` não há mais o que
+    // mostrar, e o aviso viraria "alguma coisa falhou".
+    const mutacao = fila.find((m) => m.id === id) ?? null
     await removerMutacao(id)
-    emitir({ tipo: 'descartada', id })
+    emitir({ tipo: 'descartada', id, mutacao })
   }
   for (const id of resultado.conflitos) {
     const mutacao = fila.find((m) => m.id === id)
