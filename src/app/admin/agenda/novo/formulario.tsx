@@ -373,7 +373,17 @@ export default function FormularioAgendamento({
         </Card>
       ) : null}
 
-      <Button type="submit" largura="cheia" carregando={pendente} disabled={servicos.length === 0 || profissionais.length === 0}>
+      <Button
+        type="submit"
+        largura="cheia"
+        carregando={pendente}
+        disabled={servicos.length === 0 || profissionais.length === 0}
+        motivoDesabilitado={
+          servicos.length === 0
+            ? 'Cadastre pelo menos um serviço em Configurações para poder agendar.'
+            : 'Cadastre pelo menos um profissional em Configurações para poder agendar.'
+        }
+      >
         {repetir ? 'Criar série' : 'Confirmar agendamento'}
       </Button>
     </form>

@@ -235,7 +235,13 @@ export default function Comanda({
       </Card>
 
       {aberta ? (
-        <Button largura="cheia" carregando={pendente} disabled={itens.length === 0} onClick={fechar}>
+        <Button
+          largura="cheia"
+          carregando={pendente}
+          disabled={itens.length === 0}
+          motivoDesabilitado="Adicione pelo menos um item para poder fechar a comanda."
+          onClick={fechar}
+        >
           Fechar comanda
         </Button>
       ) : (

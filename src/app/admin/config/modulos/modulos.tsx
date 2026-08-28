@@ -84,11 +84,22 @@ export default function Modulos({ iniciais }: { iniciais: ModuloNaTela[] }) {
               /* O quadradinho tem 20px; quem precisa de 48 é o dedo — o rótulo em volta é a área
                  de toque, como na lista de "Recuperar receita". */
               <label className="-my-2 -mr-1.5 grid size-12 shrink-0 cursor-pointer place-items-center">
-                <span className="sr-only">{`${m.ligado ? 'Desligar' : 'Ligar'} ${m.label}`}</span>
+                {/*
+                  Módulo "sempre ligado" (agenda e Motor de Ciclo) chega aqui travado. Sem a
+                  segunda frase, o leitor de tela dizia só "Desligar Agenda, marcada, indisponível"
+                  — e quem tenta desligar não descobre que não dá, descobre que não funcionou.
+                  Mesma correção dos botões de `motivoDesabilitado` (auditoria de 2026-08-28).
+                */}
+                <span className="sr-only">
+                  {m.sempreLigado
+                    ? `${m.label} faz parte do produto e não pode ser desligado.`
+                    : `${m.ligado ? 'Desligar' : 'Ligar'} ${m.label}`}
+                </span>
                 <input
                   type="checkbox"
                   checked={m.ligado}
                   disabled={m.sempreLigado || salvando === m.key}
+                  title={m.sempreLigado ? `${m.label} faz parte do produto e não pode ser desligado.` : undefined}
                   onChange={(e) => alternar(m, e.target.checked)}
                   className="size-5 rounded border-line-2 bg-surface-2 accent-[var(--acc-2)] disabled:opacity-40"
                 />

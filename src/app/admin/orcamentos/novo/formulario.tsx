@@ -202,7 +202,13 @@ export default function FormularioOrcamento({ profissionais }: { profissionais: 
         </Card>
       ) : null}
 
-      <Button type="submit" largura="cheia" carregando={pendente} disabled={profissionais.length === 0}>
+      <Button
+        type="submit"
+        largura="cheia"
+        carregando={pendente}
+        disabled={profissionais.length === 0}
+        motivoDesabilitado="Cadastre pelo menos um profissional em Configurações para montar um orçamento."
+      >
         Criar orçamento
       </Button>
     </form>

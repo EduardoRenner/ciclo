@@ -55,7 +55,13 @@ export default function FormularioVerificar({ factorId, proximo }: { factorId: s
           {erro}
         </p>
       ) : null}
-      <Button type="submit" largura="cheia" carregando={pendente} disabled={codigo.length !== 6}>
+      <Button
+        type="submit"
+        largura="cheia"
+        carregando={pendente}
+        disabled={codigo.length !== 6}
+        motivoDesabilitado="Digite os 6 dígitos do código que chegou para continuar."
+      >
         Confirmar
       </Button>
     </form>
