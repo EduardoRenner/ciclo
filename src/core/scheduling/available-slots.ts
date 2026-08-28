@@ -114,13 +114,30 @@ function seSobrepoe(aInicio: Temporal.Instant, aFim: Temporal.Instant, bInicio: 
   return Temporal.Instant.compare(aInicio, bFim) < 0 && Temporal.Instant.compare(bInicio, aFim) < 0
 }
 
+/**
+ * §5.5: com capacidade N, cabem N atendimentos SIMULTÂNEOS.
+ *
+ * Auditoria de 2026-08-28: isto contava quantos agendamentos **encostam** na janela do candidato,
+ * não quantos acontecem ao mesmo tempo. Com capacidade 2, um serviço de 3 h e dois atendimentos
+ * curtos que nem se cruzam (10:00–10:30 e 11:30–12:00) somavam 2 e derrubavam o horário — apesar
+ * de em nenhum instante existirem três pessoas. Quanto mais longo o serviço, mais vizinhos ele
+ * encosta e mais horário some.
+ *
+ * O sintoma é do tipo que ninguém reclama: a página pública mostra MENOS horários do que o salão
+ * tem. Não gera overbooking, gera agenda vazia — e a capacidade paralela existe justamente para o
+ * caso da secagem de esmalte, onde o serviço é longo e os vizinhos são curtos.
+ *
+ * A conta certa é a de linha de varredura: recorta cada ocupação ao pedaço que cai dentro da
+ * janela, ordena os eventos e olha o PICO. Fim antes de início no mesmo instante, porque
+ * atendimento que termina 10:30 e outro que começa 10:30 não são simultâneos.
+ */
 function cabeSemColidir(
   blocoInicio: Temporal.Instant,
   blocoFim: Temporal.Instant,
   ocupados: BlocoOcupado[],
   parallelCapacity: number,
 ): boolean {
-  let sobrepostosDeAgendamento = 0
+  const eventos: { quando: Temporal.Instant; delta: number }[] = []
 
   for (const bloco of ocupados) {
     if (!seSobrepoe(blocoInicio, blocoFim, bloco.start, bloco.end)) continue
@@ -128,10 +145,21 @@ function cabeSemColidir(
     // Folga: qualquer sobreposição já derruba o slot, não importa paralelismo.
     if (!bloco.contaParaParalelismo) return false
 
-    sobrepostosDeAgendamento++
-    // §5.5: com capacidade N, cabem N atendimentos simultâneos. O (N+1)-ésimo
-    // já não cabe mais.
-    if (sobrepostosDeAgendamento >= parallelCapacity) return false
+    const inicio = Temporal.Instant.compare(bloco.start, blocoInicio) > 0 ? bloco.start : blocoInicio
+    const fim = Temporal.Instant.compare(bloco.end, blocoFim) < 0 ? bloco.end : blocoFim
+    eventos.push({ quando: inicio, delta: 1 }, { quando: fim, delta: -1 })
+  }
+
+  eventos.sort((a, b) => {
+    const ordem = Temporal.Instant.compare(a.quando, b.quando)
+    return ordem !== 0 ? ordem : a.delta - b.delta
+  })
+
+  let simultaneos = 0
+  for (const evento of eventos) {
+    simultaneos += evento.delta
+    // Com capacidade N, o (N+1)-ésimo simultâneo é o que não cabe — e o candidato seria ele.
+    if (simultaneos >= parallelCapacity) return false
   }
 
   return true

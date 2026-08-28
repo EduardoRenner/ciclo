@@ -259,3 +259,71 @@ describe('availableSlots — dia de mudança de horário de verão', () => {
     expect(slots.length).toBeGreaterThan(0)
   })
 })
+
+
+/**
+ * Achado da auditoria de 2026-08-28. `cabeSemColidir` contava QUANTOS agendamentos tocam a janela
+ * do candidato, não quantos acontecem AO MESMO TEMPO. Com `parallelCapacity` maior que 1 e um
+ * serviço longo, dois atendimentos curtos que nem se cruzam somavam 2 e derrubavam o horário —
+ * mesmo sem existir nenhum instante com 3 pessoas ao mesmo tempo.
+ *
+ * O sintoma é do tipo que ninguém reclama: a página pública mostra MENOS horários do que o salão
+ * tem. Não gera overbooking, gera agenda vazia — e a `parallelCapacity` existe justamente para o
+ * caso da secagem de esmalte (§5.5), onde o serviço é longo e os vizinhos são curtos.
+ */
+describe('availableSlots — capacidade é simultaneidade, não contagem', () => {
+  it('dois agendamentos que NÃO se cruzam não somam contra a capacidade', () => {
+    const slots = availableSlots({
+      ...BASE,
+      appointments: [
+        { start: '2026-08-20T13:00:00Z', end: '2026-08-20T13:30:00Z' }, // 10:00–10:30 local
+        { start: '2026-08-20T14:30:00Z', end: '2026-08-20T15:00:00Z' }, // 11:30–12:00 local
+      ],
+      serviceDurationMin: 180, // 10:00–13:00 local, encosta nos dois
+      slotGranularityMin: 60,
+      parallelCapacity: 2,
+    })
+    // Em nenhum instante haveria 3 pessoas: às 10:15 são 2 (a nova e a primeira), às 11:45 são 2
+    // (a nova e a segunda). Com capacidade 2, o horário cabe.
+    expect(slots.map(horaLocal)).toContain('10:00')
+  })
+
+  it('mas dois que SE cruzam continuam derrubando — a trava não foi afrouxada', () => {
+    const slots = availableSlots({
+      ...BASE,
+      appointments: [
+        { start: '2026-08-20T13:00:00Z', end: '2026-08-20T14:00:00Z' }, // 10:00–11:00
+        { start: '2026-08-20T13:15:00Z', end: '2026-08-20T14:15:00Z' }, // 10:15–11:15, cruza a de cima
+      ],
+      serviceDurationMin: 180,
+      slotGranularityMin: 60,
+      parallelCapacity: 2,
+    })
+    expect(slots.map(horaLocal)).not.toContain('10:00')
+  })
+
+  it('capacidade 3: três curtos em sequência ainda cabem sob um longo', () => {
+    const slots = availableSlots({
+      ...BASE,
+      appointments: [
+        { start: '2026-08-20T13:00:00Z', end: '2026-08-20T13:30:00Z' },
+        { start: '2026-08-20T14:00:00Z', end: '2026-08-20T14:30:00Z' },
+        { start: '2026-08-20T15:00:00Z', end: '2026-08-20T15:30:00Z' },
+      ],
+      serviceDurationMin: 180,
+      slotGranularityMin: 60,
+      parallelCapacity: 2,
+    })
+    expect(slots.map(horaLocal)).toContain('10:00')
+  })
+
+  it('capacidade 1 continua sendo "qualquer encosto derruba" — o padrão não mudou', () => {
+    const slots = availableSlots({
+      ...BASE,
+      appointments: [{ start: '2026-08-20T14:30:00Z', end: '2026-08-20T15:00:00Z' }], // 11:30–12:00
+      serviceDurationMin: 180,
+      slotGranularityMin: 60,
+    })
+    expect(slots.map(horaLocal)).not.toContain('10:00')
+  })
+})
