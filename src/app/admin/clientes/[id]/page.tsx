@@ -7,6 +7,7 @@ import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { AppError } from '@/server/http/errors'
 import { fichaDoCliente } from '@/server/services/crm'
 import { lerConfigFidelidade, listarPlanos } from '@/server/services/fidelidade'
+import { gerarTokenIndicacao } from '@/server/services/indicacao'
 import { listarModelos } from '@/server/services/mensagens-prontas'
 import { listarProfissionais } from '@/server/services/profissionais'
 import { listarServicos } from '@/server/services/servicos'
@@ -28,13 +29,22 @@ export default async function PaginaFicha({ params }: { params: Promise<{ id: st
       throw erro
     }),
     listarModelos(db, ctx.tenantId),
-    db.from('tenants').select('name, vertical, settings').eq('id', ctx.tenantId).single(),
+    db.from('tenants').select('name, slug, vertical, settings').eq('id', ctx.tenantId).single(),
     listarPlanos(db, ctx.tenantId),
     listarProfissionais(db, ctx.tenantId),
     listarServicos(db, ctx.tenantId),
   ])
 
   if (!ficha) notFound()
+
+  /**
+   * I-5, `docs/30-INDICACAO-PLANO.md` §6.2c: o link é gerado sempre (é HMAC puro, não bate no
+   * banco) — só depende de haver `slug`, que todo tenant tem. Quem decide se o botão funciona é
+   * a tela, pelo telefone da cliente (§6.4).
+   */
+  const linkIndicacao = negocio.data?.slug
+    ? `${process.env.NEXT_PUBLIC_APP_URL}/${negocio.data.slug}/agendar?ind=${gerarTokenIndicacao(id)}`
+    : null
 
   return (
     <Ficha
@@ -48,6 +58,7 @@ export default async function PaginaFicha({ params }: { params: Promise<{ id: st
       podeApagarCliente={avaliarPermissao(ctx.papel, 'client:delete') !== null}
       podeLancarPacote={avaliarPermissao(ctx.papel, 'comanda:own') !== null}
       servicos={servicos.map((s) => ({ id: s.id, name: s.name, priceCents: s.price_cents }))}
+      linkIndicacao={linkIndicacao}
     />
   )
 }

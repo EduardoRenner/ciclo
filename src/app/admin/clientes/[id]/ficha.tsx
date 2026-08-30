@@ -8,6 +8,7 @@ import {
   MessageCircle,
   Pencil,
   Scissors,
+  Share2,
   TriangleAlert,
   UserPlus,
 } from 'lucide-react'
@@ -107,6 +108,7 @@ export default function Ficha({
   podeApagarCliente,
   podeLancarPacote,
   servicos,
+  linkIndicacao,
 }: {
   ficha: FichaCliente
   modelos: Modelo[]
@@ -121,6 +123,8 @@ export default function Ficha({
   podeLancarPacote: boolean
   /** Para vender pacote sem sair da ficha. */
   servicos: { id: string; name: string; priceCents: number }[]
+  /** I-5, `docs/30-INDICACAO-PLANO.md` §6.2c: convite assinado desta cliente. `null` só se o tenant não tiver `slug` ainda. */
+  linkIndicacao: string | null
 }) {
   const router = useRouter()
   const parametros = useSearchParams()
@@ -151,6 +155,7 @@ export default function Ficha({
 
   const [editando, setEditando] = useState(false)
   const [escolhendoMensagem, setEscolhendoMensagem] = useState(false)
+  const [indicando, setIndicando] = useState(false)
 
   // `notasRegistradas` (o histórico de anotações datadas) e `notas` (o estado local do campo de
   // observação livre no formulário de edição, abaixo) são coisas diferentes — nomes parecidos de
@@ -200,9 +205,23 @@ export default function Ficha({
       hora: proximo
         ? new Date(proximo.startsAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
         : null,
+      link: linkIndicacao,
     }),
-    [cliente.name, proximo, ultimoServico, nomeDoNegocio, metricas.ticketMedioCents],
+    [cliente.name, proximo, ultimoServico, nomeDoNegocio, metricas.ticketMedioCents, linkIndicacao],
   )
+
+  /**
+   * I-5, `docs/30-INDICACAO-PLANO.md` §6.2c: o texto pronto e o link, num único botão que abre o
+   * WhatsApp DESTA cliente — é ela quem decide indicar, o dono só está pedindo. Moldura de
+   * presente (§2.2): o prêmio de quem indica nunca é o título.
+   */
+  const textoIndicacao = linkIndicacao
+    ? aplicarVariaveis(
+        '{{nome}}, adoro te atender! Que tal indicar uma amiga? Ela agenda o primeiro horário por aqui, sem esperar resposta — {{link}}',
+        variaveis,
+      )
+    : ''
+  const linkWhatsAppIndicacao = linkIndicacao ? linkWhatsApp(cliente.phoneE164, textoIndicacao) : null
 
   function salvar() {
     setErro(null)
@@ -364,6 +383,20 @@ export default function Ficha({
             <FileText className="size-4" />
             Criar orçamento
           </Button>
+
+          {linkIndicacao ? (
+            <Button
+              variante="secondary"
+              largura="cheia"
+              className="mt-2"
+              onClick={() => setIndicando(true)}
+              disabled={!cliente.phoneE164}
+              motivoDesabilitado="Cadastre o telefone da cliente para poder mandar o convite."
+            >
+              <Share2 className="size-4" />
+              Indicar
+            </Button>
+          ) : null}
 
       {(cliente.birthDate || cliente.preferredProfessionalName || indicadoPor || indicados.length > 0) && (
         <section className="mt-7">
@@ -562,6 +595,28 @@ export default function Ficha({
             </Link>
           </div>
         )}
+      </Sheet>
+
+      {/* ─── indicar (I-5) ─── */}
+      <Sheet aberto={indicando} aoFechar={(a) => !a && setIndicando(false)} titulo="Indicar">
+        <div className="flex flex-col gap-3">
+          <Card>
+            <div className="flex items-start gap-3">
+              <Gift aria-hidden className="mt-0.5 size-5 shrink-0 text-acc-2" />
+              <p className="text-corpo text-txt">{textoIndicacao}</p>
+            </div>
+          </Card>
+          <a
+            href={linkWhatsAppIndicacao ?? '#'}
+            target="_blank"
+            rel="noreferrer"
+            onClick={() => setIndicando(false)}
+            className="toque-48 flex items-center justify-center gap-2 rounded-[var(--radius-pill)] bg-acc px-5 text-corpo font-semibold text-on-acc"
+          >
+            <MessageCircle aria-hidden className="size-4" />
+            Mandar no WhatsApp
+          </a>
+        </div>
       </Sheet>
 
       {/* ─── editar ficha ─── */}

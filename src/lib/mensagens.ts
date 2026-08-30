@@ -11,6 +11,8 @@ export type VariaveisMensagem = {
   hora?: string | null
   valor?: string | null
   negocio?: string | null
+  /** I-5, `docs/30-INDICACAO-PLANO.md` §6.2c: o convite assinado desta cliente, pronto pra colar. */
+  link?: string | null
 }
 
 /** As chaves que o editor de modelos oferece — a tela mostra esta lista como botões. */
@@ -21,6 +23,7 @@ export const VARIAVEIS_DISPONIVEIS: { chave: keyof VariaveisMensagem; rotulo: st
   { chave: 'hora', rotulo: 'Hora' },
   { chave: 'valor', rotulo: 'Valor' },
   { chave: 'negocio', rotulo: 'Nome do negócio' },
+  { chave: 'link', rotulo: 'Link de indicação' },
 ]
 
 /**
