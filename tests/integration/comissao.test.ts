@@ -144,6 +144,16 @@ describe('o extrato conta o dia no fuso do salão', () => {
     async () => {
       const fechada = await fecharComandaDoProfissional()
 
+      /*
+       * O esperado sai da comanda que ACABOU de fechar, não de um número escrito à mão. Este teste
+       * é sobre a JANELA DE DIA; a comissão é só o valor que tem que aparecer nela. A primeira
+       * versão fixava 5.000 e reprovou na CI recebendo 1.000 — o teste do congelamento, mais
+       * acima, muda `commission_bps` para 1.000 e não restaura. Derivar torna o teste indiferente
+       * à ordem da suíte e o deixa medindo uma coisa só.
+       */
+      const comissaoDaComanda = fechada.commission_cents
+      expect(comissaoDaComanda, 'a comanda fechou sem comissão — o cenário não foi montado').toBeGreaterThan(0)
+
       // 2026-03-10 22:30 em São Paulo = 2026-03-11 01:30 UTC. O `closed_at` é reescrito à mão
       // porque `fecharComanda` carimba `now()` — o que importa aqui é o instante, não o caminho.
       const instante = Temporal.ZonedDateTime.from({ year: 2026, month: 3, day: 10, hour: 22, minute: 30, timeZone: TZ }).toInstant().toString()
@@ -151,14 +161,14 @@ describe('o extrato conta o dia no fuso do salão', () => {
 
       const noDiaLocal = await extratoDeComissao(svc, tenantId, professionalId, TZ, '2026-03-10', '2026-03-10')
       expect(noDiaLocal.items, 'a comissão sumiu do dia em que o trabalho aconteceu').toHaveLength(1)
-      expect(noDiaLocal.totalCents).toBe(5_000)
+      expect(noDiaLocal.totalCents).toBe(comissaoDaComanda)
 
       const noDiaSeguinte = await extratoDeComissao(svc, tenantId, professionalId, TZ, '2026-03-11', '2026-03-11')
       expect(noDiaSeguinte.items, 'a comissão apareceu no dia seguinte — é o defeito de volta').toHaveLength(0)
 
       // E o mês fecha com ela dentro, que é o número que vira pagamento.
       const noMes = await extratoDeComissao(svc, tenantId, professionalId, TZ, '2026-03-01', '2026-03-31')
-      expect(noMes.totalCents).toBe(5_000)
+      expect(noMes.totalCents).toBe(comissaoDaComanda)
     },
     30_000,
   )
@@ -168,15 +178,22 @@ describe('o extrato conta o dia no fuso do salão', () => {
     async () => {
       const fechada = await fecharComandaDoProfissional()
 
-      // 23:59:59.500 local: com o corte antigo (`<= 23:59:59Z`), este instante não entrava neste
-      // dia nem no seguinte, que começa em 00:00:00.
+      /*
+       * Dia 12, e não 10: o teste acima já deixou uma comanda fechada em 10/03, e os dois moram no
+       * mesmo tenant. A primeira versão usava a mesma data e reprovou na CI esperando 1 item e
+       * recebendo 2 — dois testes disputando o mesmo dia do calendário.
+       *
+       * 23:59:59.500 local: com o corte antigo (`<= 23:59:59Z`), este instante não entrava neste
+       * dia nem no seguinte, que começa em 00:00:00.
+       */
       const instante = Temporal.ZonedDateTime.from({
-        year: 2026, month: 3, day: 10, hour: 23, minute: 59, second: 59, millisecond: 500, timeZone: TZ,
+        year: 2026, month: 3, day: 12, hour: 23, minute: 59, second: 59, millisecond: 500, timeZone: TZ,
       }).toInstant().toString()
       await svc.from('tickets').update({ closed_at: instante }).eq('id', fechada.id)
 
-      const noDia = await extratoDeComissao(svc, tenantId, professionalId, TZ, '2026-03-10', '2026-03-10')
+      const noDia = await extratoDeComissao(svc, tenantId, professionalId, TZ, '2026-03-12', '2026-03-12')
       expect(noDia.items, 'meio segundo antes da meia-noite não pertencia a período nenhum').toHaveLength(1)
+      expect(noDia.totalCents).toBe(fechada.commission_cents)
     },
     30_000,
   )

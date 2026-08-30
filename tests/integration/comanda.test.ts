@@ -192,6 +192,12 @@ describe('comanda — o que sobra e a trava de estado', () => {
   it(
     'o desconto da comanda sai do lucro: sobrar mais do que entrou era possível',
     async () => {
+      // A comissão é FIXADA aqui, não herdada do `beforeAll`: o teste do congelamento, acima,
+      // muda `commission_bps` para 1.000 e não restaura. Este teste é sobre a aritmética do
+      // desconto, então ele não pode depender da ordem em que a suíte roda — foi assim que a
+      // primeira versão dele reprovou na CI esperando 4.000 e recebendo 1.000.
+      await svc.from('professionals').update({ commission_bps: 4_000 }).eq('id', professionalId)
+
       const ticketId = await abrirTicketVazio()
       // Serviço de R$ 100, comissão de 40% (R$ 40), sem material. Desconto de R$ 20 na comanda.
       await adicionarItemComanda(svc, tenantId, ticketId, { serviceId: servicoId, professionalId, qty: 1, discountCents: 0 })
@@ -200,7 +206,7 @@ describe('comanda — o que sobra e a trava de estado', () => {
       const fechado = await fecharComanda(svc, tenantId, ticketId)
 
       expect(fechado.total_cents).toBe(8_000) // 10.000 - 2.000
-      expect(fechado.commission_cents).toBe(4_000) // 40% do item, o desconto é do dono
+      expect(fechado.commission_cents, 'a comissão não é a que este teste fixou — a aritmética abaixo não vale').toBe(4_000)
       // Antes: 10.000 - 0 - 4.000 = 6.000, e a tela mostrava "Entrou 80, Sobrou 60" com o
       // desconto sumindo do relatório.
       expect(fechado.profit_cents).toBe(4_000) // (10.000 - 2.000) - 0 - 4.000
@@ -212,6 +218,8 @@ describe('comanda — o que sobra e a trava de estado', () => {
   it(
     'a gorjeta entra no total e não vira lucro do salão',
     async () => {
+      await svc.from('professionals').update({ commission_bps: 4_000 }).eq('id', professionalId)
+
       const ticketId = await abrirTicketVazio()
       await adicionarItemComanda(svc, tenantId, ticketId, { serviceId: servicoId, professionalId, qty: 1, discountCents: 0 })
       await atualizarDescontoEGorjeta(svc, tenantId, ticketId, { discountCents: 0, tipCents: 3_000 })
