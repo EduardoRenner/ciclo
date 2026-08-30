@@ -471,6 +471,9 @@ export default function AssistenteFlutuante({ disponivel }: { disponivel: boolea
                           <dl className="grid gap-1">
                             {[
                               ['Cliente', t.proposta.resumo.cliente],
+                              // Só aparece quando a cliente ainda não existe: o toque vai
+                              // cadastrar E marcar, e o cartão tem que dizer as duas coisas.
+                              ['Cadastrar nova', t.proposta.resumo.clienteNova],
                               ['Serviço', t.proposta.resumo.servico],
                               ['Com', t.proposta.resumo.profissional],
                               ['Quando', typeof t.proposta.resumo.quando === 'string' ? formatarQuando(t.proposta.resumo.quando) : null],

@@ -3795,3 +3795,22 @@ viajando, ou um celular com fuso errado, marcaria no horário errado — e o err
 quando a cliente batesse na porta na hora errada. É a armadilha literal do `CLAUDE.md` ("nunca
 aritmética em horário local"), e `Temporal` ainda resolve o dia de mudança de horário de verão,
 que tem 23 ou 25 horas.
+
+2026-08-30 · Cliente nova pelo chat: o fluxo do balcão deixa de travar em "não achei" · Antes, o
+caso mais comum do balcão — "marca pra Fulana, ela é nova" — morria num "não encontrei". O
+assistente sabia dizer que não existia e nada mais.
+
+`criarAgendamento` **já** aceitava `clientDraft` (nome + telefone) e já reusava cliente existente
+pelo telefone. Então não foi preciso ferramenta nova nem regra nova: `preparar_agendamento` ganhou
+um `telefone` opcional e, quando a cliente não existe, propõe cadastrar e marcar no MESMO toque —
+com o serviço decidindo quem é a pessoa, não o assistente. Refazer essa regra aqui criaria uma
+segunda verdade sobre "quem é essa cliente", e é assim que se cria cliente duplicada.
+
+Duas decisões que valem registro:
+- **Só cadastra com telefone.** Sem número, o assistente devolve `podeCadastrar` e o prompt manda
+  PEDIR o telefone, nunca inventar. Ficha sem contato é ficha que não serve para chamar de volta —
+  e chamar de volta é o produto inteiro.
+- **O cartão diz "Cadastrar nova"**, com o telefone, além de "Cliente". São duas coisas
+  acontecendo num toque só; mostrar apenas "marcar horário" seria a confirmação mentindo por
+  omissão — exatamente o que a pesquisa sobre fadiga de aprovação diz que destrói a confiança no
+  gesto de confirmar.

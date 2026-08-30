@@ -97,6 +97,10 @@ const EsquemaPrepararAgendamento = z.object({
     .regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/)
     .describe('data e hora no formato AAAA-MM-DDTHH:MM, no fuso do salão. Use a data de hoje do prompt para resolver "amanhã", "terça" etc.'),
   profissional: z.string().optional().describe('nome do profissional; omita se o dono não disse'),
+  telefone: z
+    .string()
+    .optional()
+    .describe('telefone da cliente, SÓ quando ela ainda não está cadastrada e o dono informou o número'),
 })
 
 /**
@@ -215,7 +219,7 @@ export const FERRAMENTAS: Ferramenta[] = [
     // e o dono levaria o 'não' só no fim, depois de confirmar.
     permissao: 'appointment:create',
     modulo: 'agenda',
-    executar: async (ctx, { cliente, servico, quando, profissional }) => {
+    executar: async (ctx, { cliente, servico, quando, profissional, telefone }) => {
       const [clientes, servicos, profissionais] = await Promise.all([
         listarClientes(ctx.db, ctx.tenantId, { busca: cliente, limite: 20 }),
         listarServicos(ctx.db, ctx.tenantId),
@@ -227,7 +231,14 @@ export const FERRAMENTAS: Ferramenta[] = [
       const candProf: Candidato[] = profissionais.map((p) => ({ id: p.id, nome: p.display_name }))
 
       const rc = resolverPorNome(cliente, candCliente)
-      if (rc.tipo === 'nenhum') return { status: 'nao_achei', oQue: 'cliente', termo: cliente }
+      // Cliente que ainda não existe não é beco sem saída: `criarAgendamento` aceita
+      // `clientDraft` (nome + telefone) e cria junto, reusando pelo telefone se já houver. Sem
+      // isto o fluxo mais comum do balcão — "marca pra Fulana, é nova" — travava num "não achei".
+      // Mas só com telefone: cadastrar alguém sem contato cria ficha que não serve para chamar
+      // de volta, que é o produto inteiro.
+      if (rc.tipo === 'nenhum') {
+        if (!telefone) return { status: 'nao_achei', oQue: 'cliente', termo: cliente, podeCadastrar: true }
+      }
       if (rc.tipo === 'ambiguo') return { status: 'qual_delas', oQue: 'cliente', opcoes: rc.opcoes.map((o) => o.nome) }
 
       const rs = resolverPorNome(servico, candServico)
@@ -250,7 +261,13 @@ export const FERRAMENTAS: Ferramenta[] = [
         // `dados` é o corpo que a tela vai mandar para `POST /api/v1/appointments` quando o dono
         // confirmar. O assistente NUNCA chama essa rota: ele devolve o que preencher.
         dados: {
-          clientId: rc.item.id,
+          // Cliente existente vai por id; cliente nova vai como rascunho, e o SERVIÇO decide o
+          // resto (reusa pelo telefone se já houver alguém com aquele número — `criarAgendamento`
+          // já faz isso, e refazer a regra aqui criaria uma segunda verdade sobre "quem é essa
+          // pessoa"). Um dos dois é obrigatório: o `.refine` do esquema recusa vazio.
+          ...(rc.tipo === 'achou'
+            ? { clientId: rc.item.id }
+            : { clientDraft: { name: cliente, phone: telefone! } }),
           serviceId: rs.item.id,
           professionalId: rp.item.id,
           // `startsAt` COM offset, que é o que `EsquemaCriarAgendamento` exige — e convertido
@@ -267,7 +284,10 @@ export const FERRAMENTAS: Ferramenta[] = [
         // o dono confirma lendo nome de gente e preço, não UUID (pesquisa da Anthropic sobre
         // fadiga de aprovação: confirmação que não dá para julgar vira clique automático).
         resumo: {
-          cliente: rc.item.nome,
+          cliente: rc.tipo === 'achou' ? rc.item.nome : cliente,
+          // O cartão precisa dizer que vai CADASTRAR alguém, não só marcar: é uma segunda coisa
+          // acontecendo no mesmo toque, e esconder isso seria a confirmação mentir por omissão.
+          clienteNova: rc.tipo === 'achou' ? undefined : telefone,
           servico: rs.item.nome,
           profissional: rp.item.nome,
           quando,

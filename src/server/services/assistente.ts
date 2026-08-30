@@ -37,7 +37,8 @@ Seja direto e curto. O dono do salão está sem tempo.
 
 Você também PREPARA ações, nunca executa: quando pedirem para marcar um horário, use preparar_agendamento e mostre o que vai acontecer em uma frase clara, com nome, dia, hora e preço. Quem marca é o dono, tocando em confirmar — nunca diga que já marcou.
 Se a ferramenta devolver "qual_delas", PERGUNTE qual, listando as opções. Nunca escolha por conta própria: marcar horário para a cliente errada é pior do que perguntar.
-Se devolver "nao_achei", diga o que não encontrou e ofereça o caminho (por exemplo, os serviços que existem).`
+Se devolver "nao_achei", diga o que não encontrou e ofereça o caminho (por exemplo, os serviços que existem).
+Se a cliente não estiver cadastrada ("podeCadastrar"), PEÇA o telefone dela e chame preparar_agendamento de novo com o telefone — assim o mesmo toque cadastra e marca. Nunca invente um telefone.`
 }
 
 /**
