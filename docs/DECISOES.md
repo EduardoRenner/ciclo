@@ -3383,3 +3383,20 @@ não confiar no texto concatenado da página inteira.
 "Modulos" (sem acento), "voce" (2×), "so" — só nesse um bloco de `config/page.tsx`, resto do
 arquivo com acentuação correta. Corrigido: "Módulos", "você" (2×), "só" — no texto visível e no
 comentário interno do código.
+
+2026-08-30 · "Popout não mexe no PC" — reproduzido e corrigido: arrasto só funcionava pegando a
+faixa fina do cabeçalho · Pedido do Eduardo relatando que a janela flutuante não arrastava.
+Testado no Chrome real (não a ferramenta de automação), com drag de mouse de verdade, não evento
+sintético: (1) a janela abre bem posicionada, dentro da tela — não é bug de posição; (2) arrastar
+pela faixa do cabeçalho (ícone + "Assistente") FUNCIONA, moveu de (838,34) para (417,265) num
+teste real; (3) arrastar pelo CORPO da janela (onde ficam as sugestões e o campo de texto) NÃO
+FAZ NADA — testado, posição não mudou. Essa é a explicação mais provável do relato: o corpo é a
+maior parte visual da janela, é o lugar mais óbvio para tentar arrastar primeiro, e só a faixa
+fina do topo respondia.
+
+Corrigido: o clique-e-arraste agora funciona em qualquer parte da janela que não seja um elemento
+interativo (`closest('button, input, textarea, a, select')` barra o início do arrasto) — a
+mesma regra que Windows/macOS usam em janelas de verdade: qualquer área "morta" da janela arrasta,
+só que a área "morta" aqui é a maioria do painel, não só uma faixa de 56px. O cursor visual de
+"arrastar" continua só na faixa do cabeçalho (dica mais forte), mas a função funciona na janela
+inteira.

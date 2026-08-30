@@ -291,7 +291,15 @@ export default function AssistenteFlutuante({ disponivel }: { disponivel: boolea
     setAberto(true)
   }
 
+  // 2026-08-30, achado testando com mouse de verdade (não só evento sintético): arrastar só
+  // funcionava pegando exatamente a faixa fina do cabeçalho — testado ao vivo, tentar puxar pelo
+  // corpo da janela (onde ficam as sugestões e o campo) não movia nada, e é o lugar mais óbvio
+  // pra alguém tentar primeiro. Agora o clique-e-arraste funciona em QUALQUER parte não
+  // interativa da janela (não em cima de botão, campo, link) — só ignora onde já existe uma ação
+  // de clique, pra não brigar com "tocar numa sugestão" ou "escrever no campo".
   function iniciarArrasto(e: React.PointerEvent) {
+    const alvo = e.target as HTMLElement
+    if (alvo.closest('button, input, textarea, a, select')) return
     const janela = janelaRef.current
     if (!janela) return
     arrastandoRef.current = { offsetX: e.clientX - janela.getBoundingClientRect().left, offsetY: e.clientY - janela.getBoundingClientRect().top }
@@ -443,13 +451,14 @@ export default function AssistenteFlutuante({ disponivel }: { disponivel: boolea
             ref={janelaRef}
             role="dialog"
             aria-label="Assistente"
+            onPointerDown={iniciarArrasto}
             style={{ left: posicao.x, top: posicao.y, width: LARGURA_JANELA, maxHeight: ALTURA_MAX_JANELA }}
             className="fixed z-40 flex flex-col overflow-hidden rounded-[var(--radius-sheet)] border border-line-2 bg-surface shadow-flutuante"
           >
-            <div
-              onPointerDown={iniciarArrasto}
-              className="flex cursor-grab items-center justify-between gap-2 border-b border-line px-4 py-3 active:cursor-grabbing"
-            >
+            {/* O cursor de "arrastar" só aparece aqui (dica visual mais forte), mas o
+                `onPointerDown` está na janela inteira — arrastar funciona em qualquer parte que
+                não seja botão/campo/link, não só nesta faixa. */}
+            <div className="flex cursor-grab items-center justify-between gap-2 border-b border-line px-4 py-3 active:cursor-grabbing">
               <div className="flex items-center gap-2">
                 <GripHorizontal aria-hidden className="size-4 text-txt-3" />
                 <span className="text-secundario font-semibold text-txt">Assistente</span>
