@@ -36,6 +36,11 @@
  *
  * Rebaixar usa o mesmo comando (regra 5.1: cair de degrau nunca apaga nem esconde dado — o que
  * trava é CRIAR mais, e disso quem cuida é `podeCriar`).
+ *
+ * Os caminhos de erro usam `process.exitCode` e `return`, nunca `process.exit()`: com a conexão
+ * do supabase-js ainda aberta, o desligamento abrupto dispara um assert do libuv no Windows
+ * (`UV_HANDLE_CLOSING`) DEPOIS da mensagem — quem lê acha que quebrou, quando na verdade a recusa
+ * funcionou. O código de saída continua 1 para quem encadear o comando.
  */
 import { createClient } from '@supabase/supabase-js'
 import { config } from 'dotenv'
@@ -87,7 +92,8 @@ async function promover(slug, degrau, motivo) {
 
   if (!antes) {
     console.error(`Não existe tenant ativo com o slug "${slug}". Rode com --listar para ver os que existem.`)
-    process.exit(1)
+    process.exitCode = 1
+    return
   }
 
   if (antes.plan === degrau) {
@@ -110,7 +116,8 @@ async function promover(slug, degrau, motivo) {
    */
   if (!depois) {
     console.error('O update não alcançou nenhuma linha — nada foi gravado. Confira o slug e a chave de serviço.')
-    process.exit(1)
+    process.exitCode = 1
+    return
   }
 
   /*
@@ -132,7 +139,8 @@ async function promover(slug, degrau, motivo) {
   })
   if (erroTrilha) {
     console.error('ATENÇÃO: o degrau mudou, mas a trilha de auditoria falhou:', erroTrilha.message)
-    process.exit(1)
+    process.exitCode = 1
+    return
   }
 
   console.log(`\n${depois.name} (${depois.slug})`)
