@@ -1,4 +1,4 @@
-import { BadgeDollarSign, Bell, Clock, FileText, MessageSquareText, Megaphone, Repeat, Repeat2, ScrollText, Scissors, ShieldCheck, Package, Store, ToggleRight, Users, Wallet } from 'lucide-react'
+import { BadgeDollarSign, Bell, Bot, Clock, FileText, MessageSquareText, Megaphone, Repeat, Repeat2, ScrollText, Scissors, ShieldCheck, Package, Store, ToggleRight, Users, Wallet } from 'lucide-react'
 import Link from 'next/link'
 
 import { headers } from 'next/headers'
@@ -35,6 +35,7 @@ const GRUPOS = [
     titulo: 'Falar com a cliente',
     itens: [
       { href: '/admin/config/mensagens', titulo: 'Mensagens prontas', descricao: 'Textos que você manda com um toque', icone: MessageSquareText },
+      { href: '/admin/config/automacoes', titulo: 'Automações', descricao: 'O que o CICLO faz sozinho, e quanta rédea você dá', icone: Bot },
       { href: '/admin/campanhas', titulo: 'Campanhas', descricao: 'Mandar em lote e ver quanto voltou em receita', icone: Megaphone, modulo: 'campaigns' },
       { href: '/admin/config/notificacoes', titulo: 'Notificações', descricao: 'Ativar lembretes no aparelho', icone: Bell },
     ],

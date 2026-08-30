@@ -3626,3 +3626,43 @@ Verificado e NÃO mexido: `importar/importador.tsx` casa cabeçalho de planilha 
 `toLowerCase().includes()` com os alvos `nome`, `telefone`, `mail`, `etiqueta` — nenhum tem
 acento, então não há defeito medido. Fica anotado que o dia em que alguém adicionar um alvo
 acentuado (`endereço`) o mesmo problema aparece ali, e a função já existe para resolver.
+
+2026-08-30 · Regra "não construir antes de pagantes" REVOGADA pelo Eduardo — e a tela de
+automações do `docs/33 §3.2` construída · Eu vinha aplicando o gate de sequenciamento do
+`docs/33 §7.2` (etapa 3 travada em uso real, etapa 4 em ≥10 pagantes) como se fosse regra de
+segurança. **Não é** — é regra de PRIORIZAÇÃO, e priorização é decisão do dono do produto. O
+Eduardo foi explícito: não vai lançar amanhã, quer lançar com o produto forte, e deixar pronto
+agora não é desperdício. Regra excluída; não reabrir.
+
+O que continua travado **não é regra minha e não é opinião**: `reminders`/`campaigns` precisam de
+`WHATSAPP_ACCESS_TOKEN`/`PHONE_NUMBER_ID`/`APP_SECRET` (TICKET-043), que não existem. Sem
+credencial o envio não funciona, ligado ou não. A copy já está preparada para o dia em que entrar:
+`promessa.ts` e o catálogo de automações leem `ROTAS_AGENDADAS`, então a frase e o selo viram
+"ativa" sozinhos, sem ninguém caçar string.
+
+**Construído** (`/admin/config/automacoes`, o dial do §3.1 na tela do §3.2):
+- `core/automacoes/catalogo.ts` — as 6 automações reais do produto, com nome em português, teto de
+  autonomia por automação e o MOTIVO do teto. Funções puras: `nivelEfetivo`, `niveisDisponiveis`,
+  `rodaDeVerdade`.
+- `core/automacoes/config.ts` — leitura de `tenants.settings.automacoes`, que nunca lança: o que
+  não dá para entender vira nível 1, o valor seguro por definição.
+- `server/services/automacoes.ts` + `PATCH /api/v1/tenant/automacoes` — grava uma automação por
+  vez, com merge no `settings` (padrão de `atualizarConfigFidelidade`), teto aplicado no
+  SERVIDOR e não só na tela, e `writeAudit` da mudança de nível (§6 item 2: sem clique humano
+  depois, o log é a única prova de quem ligou e quando).
+
+Três decisões do plano que viraram código executável, não prosa:
+1. **Padrão de fábrica é 1** — tenant novo, `settings` vazio ou JSON estranho, todos caem no 1.
+2. **Nível que a automação não alcança nem aparece** (§3.1) — e quando o dial trava, a tela DIZ
+   por quê. Campanha para no 2 pela régua (d) do §2.1: alcança várias de uma vez.
+3. **"Você escolheu" ≠ "o produto consegue"** — o selo Ativa/Parada vem de `ROTAS_AGENDADAS`, não
+   do desejo. É a trava que impede esta tela de repetir a mentira que a de mensagens contava.
+
+Guarda vista reprovando em QUATRO mutações antes de ser aceita: teto ignorado, padrão de fábrica
+virando 3, `rodaDeVerdade` sempre true, e teto da campanha subindo para 3 (que seria envio em
+lote sozinho — o cenário do pré-mortem do §8.1).
+
+**E uma guarda da casa me pegou de novo**: `telas-do-admin-tem-loading` reprovou a tela nova por
+falta de `loading.tsx` — Server Component async com fetch e sem esqueleto fica imóvel entre o
+clique e a resposta. Corrigido. É a segunda vez hoje que uma guarda desta base pega uma adição
+minha antes do commit (a primeira foi a de LGPD).
