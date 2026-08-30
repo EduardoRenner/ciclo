@@ -2,6 +2,7 @@ import type { Papel } from '@/server/auth/rbac'
 import { AppError } from '@/server/http/errors'
 import { ferramentasPermitidas, hojeNoFuso, paraJsonSchema, type ContextoFerramenta, type Ferramenta } from '@/server/assistente/ferramentas'
 import { podeUsarModulo } from '@/core/billing/planos'
+import { extrairProposta } from '@/core/assistente/proposta'
 import { contextoDePlano } from '@/server/services/planos'
 import type { AiProvider, MensagemDoAssistente } from '@/server/providers/ai/types'
 import { ErroDeInferencia } from '@/server/providers/ai/types'
@@ -39,9 +40,25 @@ Se a ferramenta devolver "qual_delas", PERGUNTE qual, listando as opções. Nunc
 Se devolver "nao_achei", diga o que não encontrou e ofereça o caminho (por exemplo, os serviços que existem).`
 }
 
+/**
+ * A proposta que uma ferramenta de preparo devolveu nesta pergunta, se devolveu. É o que vira o
+ * cartão com botão no chat: sem isto, o assistente diz "confirma?" e o dono não tem onde tocar —
+ * teria que ir à tela marcar na mão, e a proposta viraria só um texto bonito.
+ *
+ * `dados` é o corpo pronto para a ROTA DE EXECUÇÃO (`POST /api/v1/appointments`). O assistente
+ * nunca chama essa rota: ele diz o que preencher, e o clique do dono é que executa — a regra
+ * inegociável nº4 do `docs/26 §0`, agora com um botão de verdade atrás dela.
+ */
+export type PropostaDoAssistente = {
+  acao: string
+  dados: Record<string, unknown>
+  resumo: Record<string, unknown>
+}
+
 export type ResultadoDoAssistente = {
   resposta: string
   ferramentasUsadas: string[]
+  proposta?: PropostaDoAssistente
 }
 
 /**
@@ -116,6 +133,9 @@ export async function executarLaco(opcoes: {
   ]
 
   const ferramentasUsadas: string[] = []
+  // A ÚLTIMA proposta vence: se o modelo preparar duas vezes na mesma pergunta (corrigindo a si
+  // mesmo depois de uma desambiguação), o cartão tem que refletir a última, não a primeira.
+  let proposta: PropostaDoAssistente | undefined
 
   for (let chamada = 0; chamada <= MAX_CHAMADAS_DE_FERRAMENTA; chamada++) {
     const noUltimaVolta = chamada === MAX_CHAMADAS_DE_FERRAMENTA
@@ -128,7 +148,7 @@ export async function executarLaco(opcoes: {
     }
 
     if (resposta.tipo === 'texto') {
-      return { resposta: resposta.texto, ferramentasUsadas }
+      return { resposta: resposta.texto, ferramentasUsadas, proposta }
     }
 
     // Trava dura: na última volta o pedido não ofereceu NENHUMA ferramenta (`ferramentas: []`
@@ -168,6 +188,7 @@ export async function executarLaco(opcoes: {
     ferramentasUsadas.push(ferramenta.nome)
     try {
       const resultado = await ferramenta.executar(ctxFerramenta, validado.data)
+      proposta = extrairProposta(resultado) ?? proposta
       mensagens.push({ papel: 'ferramenta', nome: resposta.nome, conteudo: serializarResultado(resultado) })
     } catch (erro) {
       // Regra do plano (§8.1): supabase-js não lança em erro de banco — todo `executar()` das

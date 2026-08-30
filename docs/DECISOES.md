@@ -3727,3 +3727,33 @@ feliz; o que interessa é o que ela faz quando NÃO tem certeza.
 **A prova que fecha o desenho**: consultado o banco depois de três pedidos de "marca um corte",
 `0` agendamentos criados. A ferramenta prepara e nada mais — quem escreve continua sendo o
 endpoint normal, com o clique do dono.
+
+2026-08-30 · O cartão de confirmação: a proposta vira botão, e o laço fecha · Sem isto, a
+ferramenta preparava e o dono lia "confirma?" — sem nada onde tocar. Teria que ir à tela marcar na
+mão, e a proposta seria só um texto bonito. Agora o chat opera de verdade.
+
+Desenho, e ele preserva a regra em vez de contorná-la: a proposta viaja até a tela
+(`ResultadoDoAssistente.proposta`), vira cartão com os campos resolvidos, e o botão manda os
+`dados` para a **rota normal** (`POST /api/v1/appointments`) — a mesma que a tela de "Novo
+agendamento" usa, com a mesma validação, RLS, idempotência e trava de horário sobreposto. O
+assistente segue sem escrever nada: ele diz o que preencher; o clique do dono executa.
+
+O cartão mostra Cliente · Serviço · Com · Quando · Valor, em português, com nome de gente e preço
+formatado — nunca id nem JSON. Isso é resposta direta à pesquisa da Anthropic sobre fadiga de
+aprovação: confirmação que a pessoa não consegue JULGAR vira clique automático, e aí não protege
+ninguém. `formatarQuando` não usa `new Date()` de propósito — a string já vem no fuso do salão, e
+deixar o navegador interpretá-la reintroduziria a classe de bug de fuso que o `docs/28` já pagou.
+
+**Terceira guarda cega desta sessão, e a mais instrutiva.** A guarda de `extrairProposta` (a porta
+que decide se um retorno vira botão) passou VERDE com a checagem de `status` removida do produto.
+Motivo: todos os meus casos negativos — `qual_delas`, `nao_achei`, retorno de ferramenta de
+leitura — falhavam por **outro** motivo (não tinham `acao`). A checagem de status nunca era
+exercitada sozinha; ela passava por acidente. Corrigido com um caso que isola a variável: objeto
+completo e perfeito em tudo, MENOS no status. Aí a mutação reprova.
+
+É a mesma lição pela terceira vez, agora numa forma nova: não basta ter caso negativo — o caso
+negativo precisa falhar pelo motivo que você quer testar. Caso que reprova por acidente cobre o
+acidente, não a regra.
+
+Guarda final pega três mutações: status não verificado, `dados`/`resumo` não validados, e `acao`
+vazia aceita.

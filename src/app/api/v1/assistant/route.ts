@@ -91,5 +91,8 @@ export const POST = rota(async (req, _ctx, requestId) => {
     req,
   )
 
-  return { resposta: resultado.resposta, ferramentasUsadas: resultado.ferramentasUsadas }
+  // `proposta` vai junto quando alguma ferramenta preparou uma ação: é o que a tela transforma
+  // em cartão com botão. Sem ela o campo simplesmente não existe na resposta, e o chat segue
+  // sendo só texto — nenhuma tela quebra por isso.
+  return { resposta: resultado.resposta, ferramentasUsadas: resultado.ferramentasUsadas, proposta: resultado.proposta }
 })

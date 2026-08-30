@@ -71,8 +71,33 @@ function sugestoesPara(pathname: string): Sugestao[] {
   return SUGESTOES_POR_ROTA.find((s) => pathname.startsWith(s.prefixo))?.sugestoes ?? SUGESTOES_PADRAO
 }
 
-type RespostaOk = { resposta: string; ferramentasUsadas: string[] }
-type Turno = { pergunta: string; resposta: string; carregando?: boolean }
+type Proposta = { acao: string; dados: Record<string, unknown>; resumo: Record<string, unknown> }
+type RespostaOk = { resposta: string; ferramentasUsadas: string[]; proposta?: Proposta }
+type Turno = {
+  pergunta: string
+  resposta: string
+  carregando?: boolean
+  proposta?: Proposta
+  /** Vira `feito` depois do clique — o cartão não pode oferecer o mesmo botão duas vezes. */
+  estadoDaProposta?: 'pendente' | 'executando' | 'feito' | 'erro'
+  erroDaProposta?: string
+}
+
+/** Onde cada ação preparada é de fato executada. O assistente NUNCA chama estas rotas. */
+const ROTA_DA_ACAO: Record<string, string> = {
+  criar_agendamento: '/api/v1/appointments',
+}
+
+function formatarQuando(iso: string): string {
+  // `2026-08-31T15:00` → "31/08 às 15:00". Sem `new Date()`: a string já vem no fuso do salão, e
+  // deixar o navegador interpretá-la reintroduziria o bug de fuso que o `docs/28` já pagou.
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(iso)
+  return m ? `${m[3]}/${m[2]} às ${m[4]}:${m[5]}` : iso
+}
+
+function dinheiroBR(cents: unknown): string | null {
+  return typeof cents === 'number' ? (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : null
+}
 
 // Mesmo ponto de corte que `tab-bar.tsx` usa para trocar de barra inferior para lateral — a casa
 // já decidiu que 1024px é "desktop de verdade" aqui. Abaixo disso a janela continua sendo a folha
@@ -342,10 +367,65 @@ export default function AssistenteFlutuante({ disponivel }: { disponivel: boolea
       }
 
       const corpo = (await r.json()) as { data: RespostaOk }
-      setTurnos((atual) => atual.map((t, i) => (i === atual.length - 1 ? { ...t, resposta: corpo.data.resposta, carregando: false } : t)))
+      setTurnos((atual) =>
+        atual.map((t, i) =>
+          i === atual.length - 1
+            ? {
+                ...t,
+                resposta: corpo.data.resposta,
+                carregando: false,
+                proposta: corpo.data.proposta,
+                estadoDaProposta: corpo.data.proposta ? ('pendente' as const) : undefined,
+              }
+            : t,
+        ),
+      )
     } catch {
       setTurnos((atual) => atual.map((t, i) => (i === atual.length - 1 ? { ...t, resposta: 'Não consegui responder agora.', carregando: false } : t)))
       mostrarToast({ tom: 'erro', titulo: 'Sem conexão com o assistente' })
+    }
+  }
+
+  /**
+   * O clique que executa. A proposta trouxe o corpo pronto; aqui ele vai para a ROTA NORMAL de
+   * criação — a mesma que a tela de "Novo agendamento" usa, com a mesma validação, RLS,
+   * idempotência e trava de horário sobreposto. O assistente preparou; quem executa é o dono.
+   */
+  async function confirmarProposta(indice: number) {
+    const turno = turnos[indice]
+    const proposta = turno?.proposta
+    if (!proposta || turno.estadoDaProposta !== 'pendente') return
+
+    const rota = ROTA_DA_ACAO[proposta.acao]
+    if (!rota) {
+      // Ação que a tela não sabe executar não vira botão quebrado: some o botão e diz o porquê.
+      setTurnos((a) => a.map((t, i) => (i === indice ? { ...t, estadoDaProposta: 'erro', erroDaProposta: 'Essa ação ainda não pode ser feita por aqui.' } : t)))
+      return
+    }
+
+    setTurnos((a) => a.map((t, i) => (i === indice ? { ...t, estadoDaProposta: 'executando' } : t)))
+
+    try {
+      const r = await fetch(rota, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+        body: JSON.stringify(proposta.dados),
+      })
+      if (!r.ok) {
+        const json = (await r.json().catch(() => null)) as { error?: { message?: string } } | null
+        setTurnos((a) =>
+          a.map((t, i) =>
+            i === indice ? { ...t, estadoDaProposta: 'erro', erroDaProposta: json?.error?.message ?? 'Não deu para fazer agora.' } : t,
+          ),
+        )
+        return
+      }
+      setTurnos((a) => a.map((t, i) => (i === indice ? { ...t, estadoDaProposta: 'feito' } : t)))
+      mostrarToast({ tom: 'ok', titulo: 'Horário marcado' })
+    } catch {
+      setTurnos((a) =>
+        a.map((t, i) => (i === indice ? { ...t, estadoDaProposta: 'erro', erroDaProposta: 'Sem conexão agora. Nada foi marcado.' } : t)),
+      )
     }
   }
 
@@ -379,6 +459,50 @@ export default function AssistenteFlutuante({ disponivel }: { disponivel: boolea
                     </div>
                     <div className="min-w-0 flex-1 text-corpo text-txt [&_p:not(:last-child)]:mb-2 [&_div:not(:last-child)]:mb-2">
                       {t.carregando ? <PontosDigitando /> : renderMarkdownLeve(t.resposta)}
+                      {/*
+                        O cartão de confirmação: é o que separa "assistente que sugere" de
+                        "assistente que opera". Mostra o que VAI acontecer em português, com nome
+                        de gente e preço — nunca id nem JSON. A pesquisa da Anthropic sobre fadiga
+                        de aprovação é explícita: confirmação que a pessoa não consegue julgar
+                        vira clique automático, e aí não protege ninguém.
+                      */}
+                      {t.proposta && !t.carregando ? (
+                        <div className="mt-3 rounded-[var(--radius-sm)] border border-acc-2/40 bg-acc-soft/40 p-3">
+                          <dl className="grid gap-1">
+                            {[
+                              ['Cliente', t.proposta.resumo.cliente],
+                              ['Serviço', t.proposta.resumo.servico],
+                              ['Com', t.proposta.resumo.profissional],
+                              ['Quando', typeof t.proposta.resumo.quando === 'string' ? formatarQuando(t.proposta.resumo.quando) : null],
+                              ['Valor', dinheiroBR(t.proposta.resumo.precoCents)],
+                            ]
+                              .filter((par): par is [string, string] => typeof par[1] === 'string' && par[1] !== '')
+                              .map(([rotulo, valor]) => (
+                                <div key={String(rotulo)} className="flex justify-between gap-3">
+                                  <dt className="text-secundario text-txt-3">{rotulo}</dt>
+                                  <dd className="text-right text-secundario font-semibold text-txt">{String(valor)}</dd>
+                                </div>
+                              ))}
+                          </dl>
+
+                          {t.estadoDaProposta === 'feito' ? (
+                            <p className="mt-2.5 text-secundario font-semibold text-ok">Marcado.</p>
+                          ) : t.estadoDaProposta === 'erro' ? (
+                            <p role="alert" className="mt-2.5 text-secundario text-bad">
+                              {t.erroDaProposta}
+                            </p>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => confirmarProposta(i)}
+                              disabled={t.estadoDaProposta === 'executando'}
+                              className="mt-2.5 grid h-12 w-full place-items-center rounded-[var(--radius-sm)] bg-acc font-semibold text-on-acc transition active:scale-[.98] disabled:opacity-60"
+                            >
+                              {t.estadoDaProposta === 'executando' ? 'Marcando…' : 'Confirmar'}
+                            </button>
+                          )}
+                        </div>
+                      ) : null}
                     </div>
                   </div>
                 </div>
