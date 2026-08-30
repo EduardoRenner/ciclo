@@ -3534,3 +3534,30 @@ Guarda final vista reprovando em DUAS mutações independentes antes de ser acei
 volta (4 asserções falham) e `Math.floor` no lugar de `Math.ceil` (1 asserção falha — prêmio
 mínimo 1 viraria limiar 0, e `saldo >= 0` dispararia o card para a base inteira, inclusive quem
 nunca pontuou). 1010 testes passando (eram 1005), build limpo.
+
+2026-08-30 · Varredura final por outros números mágicos em automação — e por que a rodada parou ·
+Depois de corrigir o limiar de fidelidade, varredura sistemática nos serviços de automação e
+proatividade (`resumo-hoje`, `recuperar-receita`, `alertas-estoque`, `fidelidade`, `ciclo`) atrás
+do MESMO padrão: número fixo ignorando configuração que o dono já pode escolher. **Não há outro.**
+O que existe se divide em duas categorias, nenhuma delas defeito:
+
+- **Técnicos**: `TAMANHO_PAGINA = 1000` (teto do PostgREST), `LIMITE_PADRAO = 200`,
+  `JANELA_CONSUMO_DIAS = 30` (base estatística do consumo médio de estoque).
+- **Proteções deliberadas, que afrouxar seria PIORAR**: `JANELA_PERMITIDA_INICIO/FIM = 8/21`
+  (não mandar mensagem de madrugada) e `DIAS_ENTRE_CAMPANHAS = 7` (não bombardear a mesma
+  pessoa). Personalizá-las é dar ao dono a corda para irritar a cliente dele — e a `docs/33 §1.4`
+  (caso Air Canada) lembra de quem sobra o prejuízo: do salão, na frente da cliente. Se um dia a
+  etapa 4 destravar, estes são os candidatos naturais a virar configuração **com teto**, nunca
+  livres. Registrado, não construído.
+
+`JANELA_ALERTA_HORAS = 3` (confirmações "das próximas 3 horas", em `resumo-hoje`) é o único
+limítrofe: é preferência, não proteção. Mas não há configuração existente sendo ignorada — criar
+uma agora seria inventar funcionalidade sem medição que a justifique, que é exatamente a regra
+desta rodada. Fica anotado como candidato SE alguém pedir.
+
+**Loop encerrado por ausência de melhoria honesta restante, não por limite de tempo.** As
+automações que de fato rodam (Motor de Ciclo, segmentos, e a camada proativa da tela "Hoje") já
+têm a personalização que faz sentido: `cycle_days` por serviço, `reorder_point` por produto,
+`rewardThreshold` por tenant — e o único ponto onde essa configuração era ignorada foi corrigido.
+O resto do que se chamaria "personalizar automação" hoje é ou personalizar máquina desligada
+(`reminders`/`campaigns`), ou construir envio autônomo — ambos travados por decisão registrada.
