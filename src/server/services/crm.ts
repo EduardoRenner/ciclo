@@ -2,13 +2,14 @@ import { z } from 'zod'
 
 import { alertaDoCliente } from '@/server/services/anamnese'
 import { statusConsentimentos } from '@/server/services/consentimentos'
-import { assinaturaAtiva, extratoDePontos, type AssinaturaDoCliente, type ExtratoPontos } from '@/server/services/fidelidade'
+import { assinaturaAtiva, extratoDePontos, lerConfigFidelidade, type AssinaturaDoCliente, type ExtratoPontos } from '@/server/services/fidelidade'
 import { listarMediaDoCliente } from '@/server/services/media'
 import { listarNotas, type NotaDoCliente } from '@/server/services/notas'
 import { listarOrcamentos } from '@/server/services/orcamentos'
 import { listarPacotesDoCliente, saldoCarteira } from '@/server/services/pacotes'
 import { contextoDePlano } from '@/server/services/planos'
 import { podeUsarModulo } from '@/core/billing/planos'
+import { limiarPertoDoPremio } from '@/core/loyalty/limiar'
 
 import { AppError } from '@/server/http/errors'
 
@@ -450,7 +451,7 @@ export async function centralDeAcoes(db: Cliente, tenantId: string): Promise<Cen
   // docs/33 §7.2): esta função JÁ ERA o "resumo proativo, sem LLM, calculado ao abrir o painel"
   // que a Fase C pedia — faltava só orçamento parado, que a Fase A do assistente já sabia
   // responder (`orcamentos_parados`) mas a tela "Hoje" nunca mostrava sem o dono perguntar.
-  const [clientes, agendamentos, emRisco, aniversariantes, resgataveis, orcamentos, ctxPlano] = await Promise.all([
+  const [clientes, agendamentos, emRisco, aniversariantes, resgataveis, orcamentos, ctxPlano, tenantSettings] = await Promise.all([
     db.from('clients').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId).is('deleted_at', null),
     db.from('appointments').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId),
     db.from('client_cycles').select('client_id', { count: 'exact', head: true }).eq('tenant_id', tenantId).in('state', ['late', 'at_risk', 'lost']),
@@ -458,6 +459,10 @@ export async function centralDeAcoes(db: Cliente, tenantId: string): Promise<Cen
     db.from('loyalty_entries').select('client_id, points').eq('tenant_id', tenantId),
     listarOrcamentos(db, tenantId),
     contextoDePlano(db, tenantId),
+    // `settings` não vem em `contextoDePlano` (que seleciona só as colunas de plano) e o card de
+    // fidelidade precisa do prêmio que o DONO configurou — ver `limiarPertoDoPremio` abaixo.
+    // Mais uma consulta no mesmo `Promise.all`: paralela, sem round-trip serial a mais.
+    db.from('tenants').select('settings').eq('id', tenantId).maybeSingle(),
   ])
 
   // Sem cliente E sem agendamento é conta que ainda não começou — quem só usa
@@ -498,7 +503,17 @@ export async function centralDeAcoes(db: Cliente, tenantId: string): Promise<Cen
     if (!l.client_id) continue
     saldoPorCliente.set(l.client_id, (saldoPorCliente.get(l.client_id) ?? 0) + l.points)
   }
-  const comPontosAltos = [...saldoPorCliente.values()].filter((s) => s >= 80).length
+  // 2026-08-30: era `>= 80`, número fixo, enquanto o prêmio (`rewardThreshold`) é escolha do
+  // dono — `min(1).max(100_000)`, padrão 100. Com o padrão, 80 é 80% do caminho e a conta
+  // fechava; fora dele o card mentia nas duas direções, e a pior é a segunda:
+  //   • prêmio em 500 → "perto do prêmio" com 16% andado, cedo demais;
+  //   • prêmio em 50  → quem está DE FATO perto (40 pts) nunca aparece, porque 40 < 80. A
+  //     automação proativa ficava cega justamente para quem ela existe para pegar.
+  // `limiarPertoDoPremio` (core/loyalty) preserva a intenção original (80% do prêmio) e passa a acompanhar
+  // a configuração — mesmo padrão de "número mágico vira regra derivada" do resto da casa.
+  const { rewardThreshold } = lerConfigFidelidade(tenantSettings.data?.settings)
+  const limiarDePontos = limiarPertoDoPremio(rewardThreshold)
+  const comPontosAltos = [...saldoPorCliente.values()].filter((s) => s >= limiarDePontos).length
   if (comPontosAltos > 0) {
     acoes.push({
       chave: 'pontos',

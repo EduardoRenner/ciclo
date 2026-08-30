@@ -3489,3 +3489,48 @@ Consertar exigiria **criar uma rota GET pública nova**, que expõe dado de agen
 sem sessão: superfície de segurança nova, com escolha de o que devolver, rate-limit próprio, e um
 round-trip a mais em toda abertura do link (contra o que o `docs/28` fez por latência) — inclusive
 nos 99% de casos válidos. Isso é decisão de produto/segurança sua, não de loop.
+
+2026-08-30 · "Aprimorar automações" — o que a MEDIÇÃO deixou construir, e o que ela impediu ·
+Pedido do Eduardo. Antes de escrever código, a tensão declarada: nesta mesma sessão foi corrigida
+uma tela que prometia automação que não roda; construir personalização rica para automações
+desligadas seria a mesma mentira com outra roupa. Então primeiro medir o que roda.
+
+**O que REALMENTE roda sozinho hoje** (`ROTAS_AGENDADAS` + matriz do job `seguros` no `cron.yml`):
+só `recompute-cycles` (Motor de Ciclo) e `segments`. Nenhum dos dois fala com o mundo externo.
+`reminders`/`campaigns` estão fora por decisão; `stock-alerts` e `jobs` existem só no
+`workflow_dispatch`. **Roda a cada abertura de tela** (não é cron, e é onde o `docs/33 §7.1` diz
+estar "quase toda a sensação"): `centralDeAcoes` (o "Vale a pena hoje"), `resumoDeHoje`, e
+`pontuarAtendimentoConcluido` (fidelidade, dentro da conclusão do atendimento).
+
+**O que a medição IMPEDIU de construir — e é o resultado mais valioso desta rodada.** O candidato
+óbvio era personalizar o Motor de Ciclo: `estadoPorAtraso` (`core/cycle/compute.ts`) usa limiares
+ABSOLUTOS (`late` ≤10 dias, `at_risk` ≤30, depois `lost`) enquanto o ciclo em si é RELATIVO
+(`personalCycleDays`). Em serviço de ciclo longo isso marca "perdida" cedo demais — 31 dias de
+atraso num ciclo semestral é 17%, não abandono. Parecia achado forte. **Medido na base real:
+`cycle_days` vai de 1 a 40, média 24, ZERO serviços acima de 45 dias.** Na faixa que existe, 10 e
+30 dias são 25% e 75% do ciclo — os limiares fixos funcionam. O defeito é teórico, e construir
+personalização para ele seria inventar funcionalidade que a medição não justifica. Não construído,
+de propósito. Fica registrado para reabrir SE aparecer tenant de ciclo longo (eletricista,
+manutenção semestral — nichos que o `docs/09` prevê).
+
+**O que foi construído:** o card "clientes perto do prêmio" do resumo proativo usava `>= 80`
+cravado, enquanto `rewardThreshold` é escolha do dono (1 a 100.000, padrão 100). No padrão a conta
+fechava por coincidência (80 é 80% de 100) — foi por isso que sobreviveu. Fora dele mentia nas
+duas direções, e a segunda é a pior:
+  • prêmio 500 → anunciava "perto do prêmio" com 16% do caminho andado;
+  • prêmio 50  → quem estava DE FATO perto (40 pontos, 80%) NUNCA aparecia, porque 40 < 80 — a
+    automação proativa ficava cega justamente para quem ela existe para pegar.
+Corrigido: o limiar virou `limiarPertoDoPremio(rewardThreshold)`, derivado de `FRACAO_PERTO_DO_PREMIO
+= 0.8`, preservando exatamente o comportamento no prêmio padrão.
+
+**Guarda cega pega em flagrante, e por isso a regra foi para `core/`.** A primeira versão do teste
+espelhava `Math.ceil(0.8 * premio)` DENTRO do próprio arquivo de teste: provava que a fórmula é
+proporcional, não que o produto a usa. Com o defeito reintroduzido em `crm.ts`
+(`const limiarDePontos = 80`), ela passou **verde** — terceira aparição da mesma armadilha nesta
+base. Por isso a regra saiu de `crm.ts` e virou `core/loyalty/limiar.ts` (função pura, sem I/O,
+regra 5 do `CLAUDE.md`), e o teste passou a chamar a MESMA função que a tela chama.
+
+Guarda final vista reprovando em DUAS mutações independentes antes de ser aceita: número fixo de
+volta (4 asserções falham) e `Math.floor` no lugar de `Math.ceil` (1 asserção falha — prêmio
+mínimo 1 viraria limiar 0, e `saldo >= 0` dispararia o card para a base inteira, inclusive quem
+nunca pontuou). 1010 testes passando (eram 1005), build limpo.
