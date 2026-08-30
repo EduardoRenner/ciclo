@@ -686,6 +686,7 @@ export type Database = {
           ltv_cents: number
           marketing_opt_in: boolean
           name: string
+          name_busca: string | null
           no_show_count: number
           notes: string | null
           online_booking_blocked: boolean

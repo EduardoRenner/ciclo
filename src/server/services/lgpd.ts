@@ -110,6 +110,11 @@ export type ResultadoEliminacao = {
 export const TRATAMENTO_NA_ELIMINACAO: Record<string, Record<string, string>> = {
   clients: {
     name: 'anonimiza',
+    // Coluna GERADA (`generated always as`, migration 0047): não aceita escrita, e não precisa.
+    // Deriva de `name`, que vira 'Cliente eliminada' logo abaixo — no mesmo `update`, o Postgres
+    // recalcula esta sozinha. Declarada aqui porque carrega o nome e a guarda de cobertura tem
+    // que enxergá-la; NÃO adicionar ao `update` de eliminação, que o banco recusaria a escrita.
+    name_busca: 'anonimiza',
     phone_e164: 'anonimiza',
     phone_hash: 'anonimiza',
     email: 'anonimiza',

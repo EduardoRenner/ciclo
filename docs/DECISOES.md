@@ -3561,3 +3561,45 @@ têm a personalização que faz sentido: `cycle_days` por serviço, `reorder_poi
 `rewardThreshold` por tenant — e o único ponto onde essa configuração era ignorada foi corrigido.
 O resto do que se chamaria "personalizar automação" hoje é ou personalizar máquina desligada
 (`reminders`/`campaigns`), ou construir envio autônomo — ambos travados por decisão registrada.
+
+2026-08-30 · Busca de cliente não perdoava acento — metade das buscas reais falhava · Rodada
+"referências de grandes players". Problema escolhido por ser diário, de alta frequência e
+específico do português.
+
+**Medido em produção antes de mexer**, na base de teste, via `/api/v1/clients?q=`:
+"Otávio"→acha · **"Otavio"→NADA** · "João"→acha · **"Joao"→NADA** · "Vinícius"→acha ·
+**"Vinicius"→NADA** · "Sérgio"→acha · **"Sergio"→NADA**. Quatro de oito, e são justamente as
+quatro que a pessoa digita de verdade: ninguém põe acento com pressa, no celular, com a cliente
+na frente. Causa: `ilike` do Postgres é case-insensitive mas **não** é accent-insensitive.
+
+**Pesquisa** ([PostgreSQL docs, F.48 unaccent](https://www.postgresql.org/docs/current/unaccent.html)
+· [Neon Docs](https://neon.com/docs/extensions/unaccent), consultados 2026-08-30): o caminho
+canônico é a extensão `unaccent` + wrapper IMMUTABLE (o `unaccent()` padrão é STABLE e por isso
+não entra em índice de expressão) + índice GIN `pg_trgm` sobre a expressão normalizada, aplicando
+a normalização **nos dois lados** da comparação.
+
+**Desenho escolhido, e por que não RPC:** `supabase-js` não sabe aplicar função no lado da
+coluna, então usar o wrapper no path de query obrigaria uma RPC. Em vez disso a normalização foi
+**materializada**: coluna gerada `clients.name_busca` (`generated always as
+imutavel_sem_acento(name) stored`) + índice `clients_name_busca_trgm`. O termo digitado passa
+pelo par em JS (`semAcento`, `core/text/normalizar.ts`), e a comparação volta a ser um `ilike`
+simples — que é o que o `supabase-js` faz e o que o trigram indexa. `clients_name_trgm` original
+ficou onde estava. Migration `0047`, aditiva: nenhuma coluna some, nenhum dado muda.
+
+**A guarda de LGPD da casa pegou a mudança, e isso é o melhor que aconteceu nesta rodada.**
+`lgpd-cobertura.test.ts` reprovou o commit porque `clients.name_busca` carrega o nome da cliente
+e não tinha tratamento declarado em `TRATAMENTO_NA_ELIMINACAO` (LGPD art. 18, VI). Não foi
+guarda cega nenhuma: foi escrita para exatamente este caso — coluna nova, capaz de carregar dado
+pessoal, entrando sem ninguém pensar na eliminação. Declarada como `anonimiza`, **sem** adicionar
+escrita: é coluna gerada, deriva de `name` (que vira 'Cliente eliminada' no mesmo `update`), e o
+Postgres recalcula sozinho — tentar escrever nela quebraria a eliminação, no pior momento
+possível. O comentário ao lado registra isso para quem vier depois.
+
+Guarda nova (`busca-perdoa-acento.test.ts`) vista reprovando em duas mutações antes de ser
+aceita: sem `NFD` (4 asserções falham) e com regex guloso `[^a-zA-Z0-9]` (1 falha — a asserção
+que protege espaço, hífen e apóstrofo, para não quebrar "Ana Clara" e "D'Ávila"). Ela exercita a
+MESMA função que a busca usa, não uma cópia — lição da guarda cega pega mais cedo hoje.
+
+Nota de ambiente: `pnpm db:types` falhou (`SUPABASE_PROJECT_REF` só existe na Vercel, não local) e
+sobrescreveu `types.gen.ts` com o JSON do erro. Restaurado do git; a coluna foi adicionada à mão
+**só em `Row`** — é gerada, nunca aceita `Insert`/`Update`.

@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { semAcento } from '@/core/text/normalizar'
 import { AppError } from '@/server/http/errors'
 import { hashTelefone, normalizarTelefoneBR } from '@/server/services/telefone'
 
@@ -116,10 +117,18 @@ export async function listarClientes(
       // PostgREST para filtro composto, que usa `(` e `,` como separador.
       consulta = consulta.eq('phone_hash', hashTelefone(porTelefone))
     } else {
-      // Nome usa o índice trigram (`clients_name_trgm`), que acelera `ilike`
-      // `%termo%` de verdade — sem ele seria varredura completa a cada letra
-      // digitada.
-      consulta = consulta.ilike('name', `%${termo}%`)
+      // Nome busca na coluna GERADA `name_busca` (migration 0047), que guarda o nome sem acento
+      // e em minúsculas — e o termo digitado passa pela MESMA normalização (`semAcento`, o par
+      // em JS de `imutavel_sem_acento` no banco).
+      //
+      // Medido em produção antes de existir: "Otávio" achava e **"Otavio" não achava nada**;
+      // idem "Joao", "Vinicius", "Sergio". `ilike` é case-insensitive mas não accent-insensitive,
+      // então metade das buscas falhava — justamente a metade que a pessoa digita de verdade,
+      // com pressa, no celular, com a cliente na frente.
+      //
+      // O índice trigram continua valendo: `clients_name_busca_trgm` é o gêmeo do
+      // `clients_name_trgm` sobre a coluna nova, então `%termo%` segue sem varredura completa.
+      consulta = consulta.ilike('name_busca', `%${semAcento(termo)}%`)
     }
   }
 
