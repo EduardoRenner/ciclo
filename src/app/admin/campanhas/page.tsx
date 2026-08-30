@@ -29,7 +29,15 @@ function Etapa({
   /** A etapa de topo é a régua das outras: mostrar "100%" nela só ocupa espaço sem informar. */
   base?: boolean
 }) {
-  const pct = total > 0 ? Math.round((valor / total) * 100) : 0
+  // 2026-08-30, achado medindo a tela ao vivo: `booked_count` não tem nenhum job/trigger no
+  // código que o escreve hoje (só o default 0 na migration) — se um dia a atribuição de
+  // campanha contar errado (ex.: cliente que marcou por outro canal no mesmo período, ou
+  // reatribuição em lote), `valor` pode passar de `total` e a etapa mostraria "444%". Uma etapa
+  // de funil nunca é maior que a de cima dela — travar em 100% aqui é a rede de segurança da UI,
+  // não conserta a causa (que hoje é só dado de teste inconsistente), mas garante que a tela
+  // nunca mostra um número que a própria régua do funil torna impossível.
+  const pctBruto = total > 0 ? (valor / total) * 100 : 0
+  const pct = Math.round(Math.min(100, pctBruto))
   return (
     <div>
       <div className="flex items-baseline justify-between">

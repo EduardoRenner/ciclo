@@ -3328,3 +3328,32 @@ Corrigido nos três lugares que leem `occupancyRate` (`listarAgendaDoDia`, `agen
 
 Testado em produção nos dois sentidos: domingo (sem expediente) → "—"; terça (com expediente
 cadastrado) → "9%" real, sem regressão no caminho normal. 1001 testes unit passando, build limpo.
+
+2026-08-30 · Achado real: "Marcaram horário: 444%" em Campanhas — e uma armadilha de deploy que
+vale registrar pra família toda · Medido ao vivo, tela /admin/campanhas: duas campanhas mostravam
+444% e 233% de conversão — impossível matematicamente (mais gente "marcou horário" do que
+mensagens enviadas). Causa raiz: `booked_count`/`revenue_cents` não têm NENHUM job/trigger no
+código ou nas migrations que os escreva (só o default 0) — é dado de seed manual inconsistente
+nesta conta de teste, não bug de lógica de atribuição (que não existe ainda). Corrigido na camada
+de exibição (`Etapa`, `campanhas/page.tsx`): `pct` agora trava em `Math.min(100, ...)` — uma etapa
+de funil nunca pode ser maior que a de cima dela, não importa a causa do dado errado.
+
+**A armadilha, e por que ela comeu ~40 minutos desta rodada:** depois de deployado via `vercel
+--prod` (CLI, direto do working directory local, sem commit), a tela continuou mostrando 444% —
+em aba nova, sem service worker, sem cache de navegador, direto do servidor. `.next` local
+recompilado do zero confirmava o fix presente no bundle certo. A explicação: **o deploy via CLI
+não é o único gatilho neste projeto** — o repositório está conectado ao GitHub e cada `git push`
+dispara um deploy automático próprio. Como o fix ainda estava só no working directory (não
+commitado), o deploy automático mais recente — disparado pelo commit ANTERIOR, sem o fix —
+corria em paralelo ou depois do meu deploy manual e reassumia o alias de produção, apagando o
+resultado do `vercel --prod` sem aviso nenhum.
+
+**A lição, registrada para não repetir**: neste projeto (e provavelmente em qualquer um com
+Vercel+GitHub conectados), `vercel --prod` isolado, sem commit, é instável — o alias pode voltar
+para trás a qualquer momento por um gatilho automático que não aparece no terminal. **A partir de
+agora: commitar e empurrar ANTES de considerar um deploy manual definitivo**, ou pelo menos
+verificar de novo alguns minutos depois. Nesta sessão, cada rodada anterior já vinha
+commitando+empurrando logo após o `vercel --prod` funcionar — a diferença desta vez foi testar
+demais antes de commitar, o que abriu a janela para o gatilho automático competir.
+
+Testado depois do commit+push: `444%`/`233%` viram `100%` na tela, em aba nova, sem cache.
