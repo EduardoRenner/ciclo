@@ -242,3 +242,37 @@ item — dizendo que é padrão adotado, não decisão dele:
 4. **Credencial de WhatsApp Business** (`WHATSAPP_PHONE_NUMBER_ID`, `ACCESS_TOKEN`, `APP_SECRET`).
 5. **DSN do Sentry** — é gratuito no tier de hobby e destrava o L-10.
 6. **Revisão jurídica** dos termos e da política que eu escrever.
+
+---
+
+## 7 · O que foi executado nesta rodada (2026-08-30, madrugada)
+
+| # | Estado | O quê |
+|---|---|---|
+| — | ✅ | **Motor de Ciclo consertado** — parado há 2 dias e meio, `/api/health` em 503. Commit `807b6a0`, guarda nova vista reprovando nas duas direções |
+| **L-1** | ⛔ | **Mesclar a PR #30 — BLOQUEADO.** A ação foi recusada pelo classificador de segurança do harness (merge dispara deploy em produção). Não contornei: é exatamente a classe de ação que merece confirmação humana. **O bloqueador de DADOS que travava a PR não existe mais** (§2.2) — falta só o clique |
+| **L-2** | ⛔ | Aplicar `0045`/`0046` — depende do L-1, e aplicar migration sem o código correspondente no ar seria pior que esperar |
+| **L-3** | ⛔ | Rebasear e mesclar a #31 — depende do L-1 |
+| **L-4** | ⏸ | Apagar os 8 tenants de teste — é escrita destrutiva em produção. Com o sinal de que o harness barra ação de estado compartilhado, não fiz sozinho |
+| **L-5** | ✅ | **`scripts/promover-tenant.mjs`** — o escritor de `tenants.plan` que não existia. Valida o degrau, confere que a escrita alcançou linha, grava trilha de auditoria |
+| **L-6** | ✅ | **`plano-tem-escritor.test.ts`** — 4 mutações, 4 reprovações |
+| **L-7** | ✅ | **`/termos` e `/privacidade`** — não existia nenhuma das duas. Ligadas no rodapé da landing e de `/precos`, verificadas no navegador a 375 px |
+| **L-8..L-9** | ⛔ | Domínio, CNPJ, contador — só o Eduardo |
+| **L-10..L-12** | ⏭ | Sentry, fila de mensagens e polimento de toque — próxima rodada |
+
+### O caminho crítico, agora
+
+Tudo que eu podia fazer sozinho sem tocar em produção está feito e enviado. **O próximo passo é
+um clique seu**, e ele destrava todo o resto:
+
+1. Mesclar a [PR #30](https://github.com/EduardoRenner/ciclo/pull/30) — CI verde, e a consulta que
+   a travava deu zero linhas (§2.2).
+2. Mesclar a [PR #31](https://github.com/EduardoRenner/ciclo/pull/31) depois dela.
+3. Aí sim aplicar `0045`/`0046` em produção.
+
+Depois disso o CICLO tem: os 23 consertos da super auditoria, o laço de indicação inteiro, o Motor
+de Ciclo voltando a rodar, um caminho para promover quem pagar, e as duas páginas que faltavam
+para vender sem exposição jurídica.
+
+O que continua faltando e **não é código**: domínio, CNPJ, contador, PSP e credencial de WhatsApp.
+São os cinco itens do §6, na ordem.
