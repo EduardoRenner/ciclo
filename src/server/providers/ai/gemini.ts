@@ -26,9 +26,8 @@ const MODELO = 'gemini-3.1-flash-lite'
 // 2026-08-30: mesmo o `gemini-3.1-flash-lite` (rápido no caso comum) teve UMA em três chamadas
 // de teste travar por completo, sem resposta nenhuma em 20s — é modelo preview, sob "alta
 // demanda" (503 medido à parte). 15s dá margem sem deixar a UI travada por tempo grande demais;
-// não elimina a falha ocasional, só evita que ela prenda o handler além do necessário. Retry
-// automático em cima de timeout NÃO foi adicionado nesta rodada — fica registrado como
-// pendência, não como resolvido.
+// não elimina a falha ocasional, só evita que ela prenda o handler além do necessário. O retry
+// que faltava foi adicionado no `perguntar()` abaixo — ver o comentário lá.
 const TIMEOUT_MS = 15_000
 
 function config(): { apiKey: string } {
@@ -111,20 +110,44 @@ export class GeminiProvider implements AiProvider {
       ]
     }
 
-    let resposta: Response
-    try {
-      resposta = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODELO}:generateContent`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', 'x-goog-api-key': apiKey },
-        body: JSON.stringify(corpo),
-        signal: AbortSignal.timeout(TIMEOUT_MS),
-      })
-    } catch (erro) {
-      if (erro instanceof DOMException && erro.name === 'TimeoutError') {
-        throw new ErroDeInferencia('Gemini não respondeu a tempo.', 'timeout')
+    // Uma segunda tentativa em falha TRANSITÓRIA — a pendência que o comentário do TIMEOUT_MS
+    // acima registrou em aberto, e que virou urgente quando o assistente passou a OPERAR o
+    // produto (30/08): errar uma pergunta é chato; errar a marcação de um horário é o dono
+    // perdendo a confiança na feature. Medido: `gemini-3.1-flash-lite` travou 1 de 3 chamadas
+    // num teste, e o 503 "high demand" apareceu à parte.
+    //
+    // Só timeout e 5xx entram no retry. 4xx NUNCA: `400` (schema errado), `401` (chave),
+    // `404` (modelo) não melhoram repetindo — repetir erro de código é gastar o tempo do dono
+    // duas vezes para chegar no mesmo lugar. E é UMA tentativa extra, não um laço: com
+    // TIMEOUT_MS de 15s, duas já são 30s no pior caso, e `maxDuration` da rota é 60.
+    let resposta: Response | undefined
+    let ultimoErro: ErroDeInferencia | undefined
+
+    for (let tentativa = 0; tentativa < 2; tentativa++) {
+      try {
+        const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODELO}:generateContent`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'x-goog-api-key': apiKey },
+          body: JSON.stringify(corpo),
+          signal: AbortSignal.timeout(TIMEOUT_MS),
+        })
+        // 5xx é o provedor de joelhos, não pedido errado: vale repetir uma vez.
+        if (r.status >= 500 && tentativa === 0) {
+          ultimoErro = new ErroDeInferencia(`Gemini devolveu ${r.status}.`, 'falha_do_provedor')
+          continue
+        }
+        resposta = r
+        break
+      } catch (erro) {
+        const ehTimeout = erro instanceof DOMException && erro.name === 'TimeoutError'
+        ultimoErro = ehTimeout
+          ? new ErroDeInferencia('Gemini não respondeu a tempo.', 'timeout')
+          : new ErroDeInferencia('Falha de rede ao chamar o Gemini.', 'falha_do_provedor')
+        // Na última volta o erro sobe; na primeira, tenta de novo.
       }
-      throw new ErroDeInferencia('Falha de rede ao chamar o Gemini.', 'falha_do_provedor')
     }
+
+    if (!resposta) throw ultimoErro ?? new ErroDeInferencia('Falha ao chamar o Gemini.', 'falha_do_provedor')
 
     if (!resposta.ok) {
       // O corpo do erro do Gemini traz o motivo real (ex.: "missing thought_signature") — sem

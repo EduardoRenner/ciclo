@@ -3757,3 +3757,24 @@ acidente, não a regra.
 
 Guarda final pega três mutações: status não verificado, `dados`/`resumo` não validados, e `acao`
 vazia aceita.
+
+2026-08-30 · Retry no Gemini — a pendência que virou urgente quando o assistente passou a operar ·
+Testando o fluxo completo no navegador, o pedido "marca um corte pro Kleber dia 05/09 às 10h"
+voltou "O assistente está indisponível agora". Conferido no log antes de concluir qualquer coisa:
+`ErroDeInferencia: Gemini não respondeu a tempo` / `motivo: 'timeout'` — a instabilidade já
+medida e registrada do `gemini-3.1-flash-lite` (1 de 3 chamadas travou num teste; o 503 "high
+demand" apareceu à parte). **Não era regressão**: o mesmo pedido funcionou pela API minutos antes.
+
+O comentário do `TIMEOUT_MS` registrava, em aberto: *"Retry automático em cima de timeout NÃO foi
+adicionado nesta rodada — fica registrado como pendência, não como resolvido."* Ela virou urgente
+agora: errar uma pergunta é chato; **errar a marcação de um horário é o dono perdendo a confiança
+na feature inteira**. Resolvida.
+
+Desenho do retry, e o que ele NÃO faz:
+- **Uma** tentativa extra, não um laço. Com `TIMEOUT_MS` de 15s, duas já são 30s no pior caso, e
+  o `maxDuration` da rota é 60 — cabe, com folga para o laço de ferramentas.
+- **Só timeout e 5xx.** `4xx` nunca: `400` (schema errado), `401` (chave), `404` (modelo) não
+  melhoram repetindo. Repetir erro de código é gastar o tempo do dono duas vezes para chegar no
+  mesmo lugar — e foi um `400` e um `404` que custaram esta manhã inteira.
+- Não esconde falha permanente: esgotadas as tentativas, o erro sobe igual e a tela mostra o 503
+  honesto, em vez de fingir resposta.
