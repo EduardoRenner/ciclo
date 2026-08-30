@@ -70,6 +70,9 @@ importers:
       '@eslint/eslintrc':
         specifier: ^3
         version: 3.3.6
+      '@next/swc-wasm-nodejs':
+        specifier: 15.5.23
+        version: 15.5.23
       '@tailwindcss/postcss':
         specifier: ^4
         version: 4.3.3
@@ -764,6 +767,9 @@ packages:
     cpu: [x64]
     os: [linux]
     libc: [musl]
+
+  '@next/swc-wasm-nodejs@15.5.23':
+    resolution: {integrity: sha512-BECk6Wr3fYWeY5KiOF6tR2IJA/NjwdH4ftTsOKOOYNvu8MKj0nY0AW/qyklOCu1S6sZAmzZXrdc5GJ0JEKQyJw==}
 
   '@next/swc-win32-arm64-msvc@15.5.23':
     resolution: {integrity: sha512-Wc29KFOdT7XBcII3Vtmw7aoU8Uk3Mes/FNJfhFeSHdYBFJWMcR/DsI8U9BCPUhq/uycsUVuqSKGthW15tLsigA==}
@@ -5391,6 +5397,8 @@ snapshots:
 
   '@next/swc-linux-x64-musl@15.5.23':
     optional: true
+
+  '@next/swc-wasm-nodejs@15.5.23': {}
 
   '@next/swc-win32-arm64-msvc@15.5.23':
     optional: true
