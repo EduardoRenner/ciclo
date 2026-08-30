@@ -900,3 +900,46 @@ banco) **não são coisa de ler código**: precisam de um Supabase local e de um
 Continuar varrendo o mesmo código produziria mais texto e menos achado — que é o oposto do que este
 documento existe para fazer. O `docs/25` §"quando parar" já tinha escrito essa regra para a
 manutenção noturna; ela vale aqui igual.
+
+
+---
+
+## Adendo — H1 · `clients.referred_by` não tem escritor (achado de 2026-08-29)
+
+Encontrado ao pesquisar o pedido de "funcionalidade de indicação". É o **quarto** caso da classe que
+as rodadas 2, 4 e 5 abriram, e o mais completo dos quatro.
+
+| Peça | Estado |
+|---|---|
+| `clients.referred_by` (migration 0001) + índice próprio (0021) | existe |
+| Crédito automático **para os dois lados** em `fidelidade.ts:120-132` | existe |
+| Config "Bônus por indicação", padrão 20 pontos | existe na tela |
+| "Veio por indicação de" na ficha; "quem indicou quem" no CRM | existem |
+| **Qualquer código que ESCREVA `referred_by`** | **não existe** |
+
+`EsquemaCliente` não tem o campo, `paraColunas` não toca a coluna, o agendamento público não coleta,
+a importação de CSV não importa. Logo `cliente?.referred_by` é sempre `null` e o `if` que credita os
+dois lados **nunca é verdadeiro**.
+
+**Por que sobreviveu, e é a parte interessante:** o único lugar do repositório que grava aquela
+coluna é `scripts/seed-demo-barbearia.mjs`. No tenant de demonstração o recurso funciona — a ficha
+mostra "Veio por indicação de", o CRM mostra quem trouxe quem. Em todo tenant de verdade, não. O
+`docs/27` §Achado 4 chegou a registrar *"já está construído e funcionando"*: a frase foi conferida
+contra a demonstração.
+
+> Isso acrescenta um lugar à lista de `falha-silenciosa-onde-procurar`: **o que só a semente escreve.**
+> Coluna que aparece preenchida na demonstração e vazia em produção passa por qualquer inspeção
+> visual, e a inspeção visual é justamente o que se faz quando se quer conferir rápido.
+
+A mesma classe, agora com quatro instâncias medidas nesta base:
+
+| Coluna | Lida por | Escrita por |
+|---|---|---|
+| `tickets.fee_cents` | resumo do caixa + quadro "Taxa" | ninguém |
+| `media.consent_id` | `mediaParaPortfolio` | ninguém |
+| `tenants.plan` | `contextoDePlano` → 11 rotas com trava | ninguém |
+| `clients.referred_by` | fidelidade, CRM, ficha, LGPD | **só o seed da demonstração** |
+
+**Não corrigido aqui**, e de propósito: ligar `referred_by` é decidir onde a indicação entra no
+produto e em que degrau de plano ela vive — decisão que virou o `docs/30-INDICACAO-PLANO.md`, com a
+pesquisa que a sustenta. O ticket I-2 de lá é a guarda de mão dupla desta classe.
