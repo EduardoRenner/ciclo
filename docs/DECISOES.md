@@ -3454,3 +3454,38 @@ forma demais). Mais firme: a copy verdadeira não encosta na construção proibi
 Guarda nova **vista reprovando** antes de ser aceita (regra do `CLAUDE.md`): mutação reintroduziu
 a frase original no ramo não-agendado, 2 asserções reprovaram apontando o texto exato, arquivo
 restaurado do backup e conferido. 1005 testes passando (eram 1001), build limpo.
+
+2026-08-30 · Varredura "aprimora tudo" — as outras 3 áreas, e a pendência que fica para o Eduardo ·
+Áreas 1–5 medidas em produção. Além dos dois achados corrigidos (telefone cru na vitrine, promessa
+falsa de envio automático), o que foi conferido e estava LIMPO:
+
+- **Site público** (`/{slug}`, `/{slug}/agendar`): sem overflow horizontal; dia fechado explica
+  ("Nesse dia o atendimento não abre. Escolha outra data no trilho acima"), não é tela muda.
+- **Landing/preços**: sem overflow; a feature que o Grátis NÃO tem aparece com ícone `minus` e
+  cor terciária, distinta das disponíveis — inspecionado no elemento, não no `innerText`.
+- **Config** (11 subtelas): todos os 11 `href` do menu têm diretório correspondente, nenhum link
+  quebrado. `/admin/config/time` deu 404 num primeiro teste, mas era **erro meu** — o href real é
+  `/admin/config/profissionais`; falso positivo descartado antes de virar "achado".
+- **Fluxo de entrada**: `/cadastro` e `/recuperar-senha` redirecionam ao painel quando já logado
+  (correto). Login com credencial inexistente devolve `401` + *"E-mail ou senha não conferem."* —
+  medido ao vivo. Mensagem única para "e-mail não existe" e "senha errada", com o motivo comentado
+  no código (separar as duas entregaria a lista de quem tem conta). Segurança bem feita.
+- **Fidelidade automática** (`/config/planos`): a tela afirma que o cliente "ganha pontos sozinho".
+  Verificado em vez de presumido, logo depois de corrigir uma afirmação parecida que era falsa:
+  aqui é **verdade** — `pontuarAtendimentoConcluido` roda dentro da conclusão do atendimento
+  (`agendamentos.ts`), não depende de cron. A diferença entre as duas é exatamente essa.
+
+**PENDÊNCIA PARA O EDUARDO — `/confirmar/[token]` com token inválido.** Das quatro páginas
+públicas de token, três rejeitam link morto ao carregar: `/orcamento` ("Link inválido ou
+expirado"), `/avaliar` ("Esse link de avaliação não é mais válido"), `/lista-espera` ("Esse link de
+encaixe não é mais válido"). `/confirmar` **não** — mostra "Confirma seu horário? Vou sim /
+Preciso desmarcar" normalmente, e a cliente só descobre que o link morreu depois de tocar.
+
+Não corrigi de propósito, e o motivo importa: as três que validam têm rota **GET** pública
+(`quotes/[token]`, `reviews/[token]`); `appointments/confirm|cancel/[token]` só têm **POST**, e a
+tela deliberadamente não dispara ação ao carregar (comentário em `confirmar.tsx`, `docs/09` G12:
+com duas ações possíveis, disparar uma sozinha não faria sentido — decisão correta, não reabri).
+Consertar exigiria **criar uma rota GET pública nova**, que expõe dado de agendamento por token
+sem sessão: superfície de segurança nova, com escolha de o que devolver, rate-limit próprio, e um
+round-trip a mais em toda abertura do link (contra o que o `docs/28` fez por latência) — inclusive
+nos 99% de casos válidos. Isso é decisão de produto/segurança sua, não de loop.
