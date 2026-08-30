@@ -1,6 +1,7 @@
 import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 
+import { podeUsarModulo } from '@/core/billing/planos'
 import { avaliarPermissao } from '@/server/auth/rbac'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
@@ -9,6 +10,7 @@ import { fichaDoCliente } from '@/server/services/crm'
 import { lerConfigFidelidade, listarPlanos } from '@/server/services/fidelidade'
 import { gerarTokenIndicacao } from '@/server/services/indicacao'
 import { listarModelos } from '@/server/services/mensagens-prontas'
+import { contextoDePlano } from '@/server/services/planos'
 import { listarProfissionais } from '@/server/services/profissionais'
 import { listarServicos } from '@/server/services/servicos'
 
@@ -23,7 +25,7 @@ export default async function PaginaFicha({ params }: { params: Promise<{ id: st
   const ctx = await contextoAtual(new Request('https://interno/clientes', { headers: await headers() }))
   const db = await criarClienteDoUsuario()
 
-  const [ficha, modelos, negocio, planos, profissionais, servicos] = await Promise.all([
+  const [ficha, modelos, negocio, planos, profissionais, servicos, plano] = await Promise.all([
     fichaDoCliente(db, ctx.tenantId, id).catch((erro: unknown) => {
       if (erro instanceof AppError && erro.code === 'NOT_FOUND') return null
       throw erro
@@ -33,6 +35,7 @@ export default async function PaginaFicha({ params }: { params: Promise<{ id: st
     listarPlanos(db, ctx.tenantId),
     listarProfissionais(db, ctx.tenantId),
     listarServicos(db, ctx.tenantId),
+    contextoDePlano(db, ctx.tenantId),
   ])
 
   if (!ficha) notFound()
@@ -59,6 +62,10 @@ export default async function PaginaFicha({ params }: { params: Promise<{ id: st
       podeLancarPacote={avaliarPermissao(ctx.papel, 'comanda:own') !== null}
       servicos={servicos.map((s) => ({ id: s.id, name: s.name, priceCents: s.price_cents }))}
       linkIndicacao={linkIndicacao}
+      // I-9, `docs/30-INDICACAO-PLANO.md` §5.3 gatilho 2: o valor entregue primeiro (a lista de
+      // quem ela trouxe já apareceu), a automação oferecida depois. Só faz sentido se o degrau
+      // atual não tem `loyalty` — quem já tem não precisa ver a mesma frase de novo.
+      mostrarPaywallFidelidade={podeUsarModulo(plano, 'loyalty').estado !== 'liberado'}
     />
   )
 }
