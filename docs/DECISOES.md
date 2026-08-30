@@ -3299,3 +3299,10 @@ autorização.
 Não forcei polimento de UX sem achado real: as três telas mais usadas (Hoje, Recuperar, Caixa)
 já foram medidas nesta sessão (touch target, contraste, overflow) sem defeito novo encontrado.
 Loop parado aqui — o que sobrou é decisão sua, não falta de trabalho.
+
+2026-08-30 · B9 resolvido — 8 tenants de teste órfãos apagados de produção · Autorizado pelo
+Eduardo. Conferido antes: toda tabela com `tenant_id` tem `ON DELETE CASCADE` (37 tabelas
+checadas via `information_schema`), então o `delete from tenants` levou clientes, agendamentos,
+orçamentos etc. desses 8 tenants junto, sem deixar linha órfã de dado real de gente (eram todos
+sintéticos, criados por teste de integração rodando contra produção — causa raiz já travada
+separadamente). Confirmado depois: `0` tenants restantes com o padrão de slug sintético.
