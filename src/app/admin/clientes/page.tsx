@@ -72,6 +72,24 @@ export default async function PaginaClientes() {
       </div>
 
       {/*
+        I-6, `docs/30-INDICACAO-PLANO.md` §5.3/§6.2e: a barra que enche é o gatilho de upgrade nº
+        1, e por isso é DIFERENTE do aviso abaixo — fica visível desde o primeiro dia, não só a
+        partir de 80% (StatTile com barra já é vocabulário normal desta tela, como "Voltam de
+        novo" acima; não é o contador permanente e sozinho que o comentário original evitava).
+        Só existe quando o degrau atual TEM teto de clientes — Essencial pra cima não tem o quê
+        mostrar aqui.
+      */}
+      {limiteClientes.limite !== null ? (
+        <div className="mb-4">
+          <StatTile
+            rotulo="Clientes do plano"
+            valor={`${painel.total} de ${limiteClientes.limite}`}
+            progresso={painel.total / limiteClientes.limite}
+          />
+        </div>
+      ) : null}
+
+      {/*
         O aviso de teto vem ANTES dos atalhos de carteira: é informação sobre a conta, não sobre o
         dia. Aparece só a partir de 80% do teto (`perto`) — antes disso é ruído, e um contador
         permanente de "42/50" no alto da tela de clientes transforma trabalho normal em ansiedade.
