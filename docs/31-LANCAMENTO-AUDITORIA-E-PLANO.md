@@ -160,9 +160,15 @@ Aqui a notícia é boa, e vale registrar o que **não** é problema para ningué
   a área clicável vai de −4 px acima a +40 px abaixo da caixa visual, sem roubar o toque do
   vizinho. **Falso positivo descartado por medição** — exatamente o que a leitura de código teria
   reportado errado.
-- Dois alvos pequenos de verdade, ambos secundários: o link "Preços" do cabeçalho (39×14) e
-  "Voltar para o início" no rodapé de `/precos` (101×13). Não bloqueiam nada; entram como
-  polimento.
+- ~~Dois alvos pequenos de verdade, ambos secundários: o link "Preços" do cabeçalho (39×14) e
+  "Voltar para o início" no rodapé de `/precos` (101×13).~~ **CORRIGIDO em 30/08: era falso
+  positivo meu.** A medição usou `getBoundingClientRect().height < 44`, que enxerga só a caixa
+  visual — e `toque-48` não muda a caixa visual, adiciona um `::after` de 48 px. Remedido por
+  sondagem com `elementFromPoint`: os quatro links têm caixa de 16–38 px e **área efetiva de
+  48–49 px**. A régua estava errada, não o produto.
+
+  O erro rendeu duas coisas boas: a guarda `alvo-de-toque-tem-48.test.ts`, que encoda a régua
+  certa, e um alvo pequeno **de verdade** que ela achou no caminho — ver §7, L-12.
 
 ---
 
@@ -258,7 +264,9 @@ item — dizendo que é padrão adotado, não decisão dele:
 | **L-6** | ✅ | **`plano-tem-escritor.test.ts`** — 4 mutações, 4 reprovações |
 | **L-7** | ✅ | **`/termos` e `/privacidade`** — não existia nenhuma das duas. Ligadas no rodapé da landing e de `/precos`, verificadas no navegador a 375 px |
 | **L-8..L-9** | ⛔ | Domínio, CNPJ, contador — só o Eduardo |
-| **L-10..L-12** | ⏭ | Sentry, fila de mensagens e polimento de toque — próxima rodada |
+| **L-10** | ✅ | **Guarda do Sentry** — o código já estava certo (import dinâmico, redação de PII), mas **nada protegia isso**: um `import` no topo devolve 129 kB ao First Load JS de toda tela e 1,58 MB + ~500 ms de cold start em toda rota, que foi como a regressão nasceu da primeira vez. `/api/health` passa a dizer se o rastreio está ligado — a variável é lida no **build**, então criá-la na Vercel sem deploy novo deixa tudo desligado em silêncio |
+| **L-11** | ✅ | **`/api/health` saiu do 503 permanente.** A fila tem 20+ jobs de fixture (`teste_saude`, `seed`) e `HANDLERS` está vazio — nenhum deles pode ser processado, nunca, então eram recontados como "parados" para sempre. Mesmo defeito que `agendadas.ts` já consertara para os heartbeats, no vizinho que ficou de fora. Junto: o endpoint voltou a mandar `charset=utf-8` (os acentos chegavam como `hÃ¡`) |
+| **L-12** | ✅ | Os dois alvos que reportei **não existiam** (§3.3). Em compensação a guarda nova achou um real: o seletor de profissão do onboarding, 44 px, na **primeira tela de quem acabou de criar conta**. Corrigido e medido: 44 → 48 px de área efetiva, sem zona morta e sem roubar o vizinho |
 
 ### O caminho crítico, agora
 
@@ -276,3 +284,27 @@ para vender sem exposição jurídica.
 
 O que continua faltando e **não é código**: domínio, CNPJ, contador, PSP e credencial de WhatsApp.
 São os cinco itens do §6, na ordem.
+
+---
+
+## 8 · O erro de medição desta rodada, e por que ele fica escrito
+
+O L-12 nasceu de um falso positivo meu: reportei dois alvos de toque pequenos que não existiam,
+porque medi a caixa **visual** e o `toque-48` desta casa estende a área **tocável** por um
+`::after`. Um detector que acusa o que está certo custa tanto quanto um que absolve o que está
+errado — ele manda alguém "consertar" código bom.
+
+E aí o mesmo arquivo cometeu, sozinho, a armadilha nº 1 da tabela de guarda cega do `CLAUDE.md`.
+A guarda nova pegou o alvo real do onboarding na primeira execução. O conserto entrou **junto com
+um comentário explicando por que `toque-48` era seguro ali** — e o comentário passou a satisfazer
+a busca sozinho. Na mutação de conferência a classe foi removida do `className`, o comentário
+ficou, e **a guarda passou verde protegendo nada**.
+
+Só apareceu porque a mutação é obrigatória, e porque o `CLAUDE.md` manda **confirmar que a mutação
+foi aplicada** antes de ler o resultado — a primeira tentativa de mutar não casou a string, deu um
+"verde" falso, e quase encerrou o assunto. Duas travas do processo trabalhando, uma salvando a
+outra.
+
+A conclusão vale além deste arquivo: **guarda escrita junto com o conserto é a mais fácil de
+nascer cega**, porque o texto que explica o conserto mora ao lado do que a guarda procura. Casar
+com o valor do `className`, nunca com o recorte do elemento.
