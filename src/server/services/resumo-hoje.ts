@@ -37,6 +37,12 @@ export type ResumoHoje = {
   restOfDay: LinhaHoje[]
   /** TICKET-045: produto pra recomprar ou perto de vencer. Vazio não aparece na tela. */
   stockAlerts: AlertaEstoque[]
+  /**
+   * I-7, `docs/30-INDICACAO-PLANO.md` §5.3/§6.2d: quantas clientes NASCERAM indicadas
+   * (`referred_by` gravado no cadastro, I-1) este mês corrido do fuso do tenant. É o extrato do
+   * laço — sem ele o card só teria número; com ele vira motivo de usar (§2.4).
+   */
+  indicacoesEsteMes: number
 }
 
 const JANELA_ALERTA_HORAS = 3
@@ -53,11 +59,30 @@ export async function resumoDeHoje(db: Cliente, tenantId: string, timezone: stri
   const inicioDoDia = hoje.toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant()
   const fimDoDia = hoje.add({ days: 1 }).toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant()
 
-  const [{ data, error }, stockAlerts] = await Promise.all([
+  const inicioDoMes = hoje
+    .with({ day: 1 })
+    .toZonedDateTime({ timeZone: timezone, plainTime: '00:00' })
+    .toInstant()
+  const inicioDoMesSeguinte = hoje
+    .with({ day: 1 })
+    .add({ months: 1 })
+    .toZonedDateTime({ timeZone: timezone, plainTime: '00:00' })
+    .toInstant()
+
+  const [{ data, error }, stockAlerts, { count: indicacoesEsteMes, error: erroIndicacoes }] = await Promise.all([
     db.from('appointments').select(COLUNAS_HOJE).eq('tenant_id', tenantId).gte('starts_at', inicioDoDia.toString()).lt('starts_at', fimDoDia.toString()).order('starts_at'),
     listarAlertasDeEstoque(db, tenantId, hoje.toString()),
+    db
+      .from('clients')
+      .select('id', { count: 'exact', head: true })
+      .eq('tenant_id', tenantId)
+      .is('deleted_at', null)
+      .not('referred_by', 'is', null)
+      .gte('created_at', inicioDoMes.toString())
+      .lt('created_at', inicioDoMesSeguinte.toString()),
   ])
   if (error) throw new AppError('INTERNAL', { cause: error })
+  if (erroIndicacoes) throw new AppError('INTERNAL', { cause: erroIndicacoes })
 
   const linhas = (data ?? []) as unknown as LinhaHoje[]
 
@@ -80,5 +105,6 @@ export async function resumoDeHoje(db: Cliente, tenantId: string, timezone: stri
     alerts,
     restOfDay: aindaPorVir,
     stockAlerts,
+    indicacoesEsteMes: indicacoesEsteMes ?? 0,
   }
 }
