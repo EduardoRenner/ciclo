@@ -3357,3 +3357,24 @@ commitando+empurrando logo após o `vercel --prod` funcionar — a diferença de
 demais antes de commitar, o que abriu a janela para o gatilho automático competir.
 
 Testado depois do commit+push: `444%`/`233%` viram `100%` na tela, em aba nova, sem cache.
+
+2026-08-30 · Correção do achado anterior — "444%" nunca foi bug de matemática, era falta de
+separador de texto · Investigação mais funda depois do commit `2b93ebc` revelou o diagnóstico
+original errado. O `<span>` externo do `Etapa` mostra `{valor}` (ex.: "4") seguido, sem nenhum
+caractere entre eles, do `<span>` interno com `{pct}%` (ex.: "44%") — o `ml-1.5` que os separa é
+`margin` CSS, que afasta visualmente mas não produz espaço nenhum em extração de texto. Leitor de
+tela, copiar-e-colar, e o próprio teste desta sessão (que lê `body.innerText`) veem "4" + "44%" =
+"444%", sem pausa — dois números corretos, grudados. Confirmado depois de um teste exaustivo (SW,
+Cache Storage, HTTP cache, Router Cache do Next, deploy automático via GitHub, tudo descartado um
+por um) que o servidor **sempre** mandou o número certo; o problema nunca esteve no back-end.
+
+Mantido o teto `Math.min(100, ...)` do commit anterior — continua correto como rede de segurança
+para quando a atribuição de campanha existir de verdade, só não era a causa do que foi visto.
+Adicionado separador de texto de verdade (`· ` antes do `{pct}%`) para o número parar de grudar
+em qualquer forma de extração de texto, não só visualmente.
+
+**A lição real desta rodada, para não repetir**: extração de texto via `innerText`/`get_page_text`
+NÃO é confiável para provar que dois números estão "grudados" ou não — `margin`/`padding` CSS
+nunca aparecem como caractere. Para julgar se falta separador de verdade, a checagem certa é opon
+`querySelector` no elemento específico e olhar sua estrutura (como foi feito aqui, tarde demais),
+não confiar no texto concatenado da página inteira.

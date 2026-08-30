@@ -29,13 +29,18 @@ function Etapa({
   /** A etapa de topo é a régua das outras: mostrar "100%" nela só ocupa espaço sem informar. */
   base?: boolean
 }) {
-  // 2026-08-30, achado medindo a tela ao vivo: `booked_count` não tem nenhum job/trigger no
-  // código que o escreve hoje (só o default 0 na migration) — se um dia a atribuição de
-  // campanha contar errado (ex.: cliente que marcou por outro canal no mesmo período, ou
-  // reatribuição em lote), `valor` pode passar de `total` e a etapa mostraria "444%". Uma etapa
-  // de funil nunca é maior que a de cima dela — travar em 100% aqui é a rede de segurança da UI,
-  // não conserta a causa (que hoje é só dado de teste inconsistente), mas garante que a tela
-  // nunca mostra um número que a própria régua do funil torna impossível.
+  // 2026-08-30, achado medindo a tela ao vivo, e corrigido duas vezes na mesma rodada:
+  // 1ª leitura (errada): "444%" parecia uma taxa de conversão impossível (mais gente marcou
+  // horário do que mensagens enviadas). Não era — `valor` (4) e `pct` (44%) já eram dois números
+  // CORRETOS, só grudados sem separador de texto: o `ml-1.5` entre eles é `margin`, que afasta
+  // visualmente mas não produz caractere nenhum — extração de texto (leitor de tela, copiar e
+  // colar, e o teste automatizado que achou isto) lê "4" + "44%" = "444%", sem pausa. Manter o
+  // teto `Math.min(100, ...)` mesmo assim: é rede de segurança correta para o dia em que a
+  // atribuição de campanha existir de verdade e puder contar errado — só não é o que causava o
+  // que foi visto aqui.
+  // 2ª correção (a real): separador de texto de verdade entre `valor` e `pct`, não só espaço
+  // visual — para quem lê a tela sem olhar (leitor de tela) ou copia o texto, ver os dois
+  // números como dois números, não um só.
   const pctBruto = total > 0 ? (valor / total) * 100 : 0
   const pct = Math.round(Math.min(100, pctBruto))
   return (
@@ -44,7 +49,7 @@ function Etapa({
         <span className="text-secundario text-txt-2">{rotulo}</span>
         <span className="tabular text-corpo font-semibold">
           {valor}
-          {base ? null : <span className="ml-1.5 text-secundario text-txt-3">{pct}%</span>}
+          {base ? null : <span className="ml-1.5 text-secundario text-txt-3">· {pct}%</span>}
         </span>
       </div>
       <div className="mt-1 h-2 overflow-hidden rounded-[var(--radius-pill)] bg-surface-3">
