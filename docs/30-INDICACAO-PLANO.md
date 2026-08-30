@@ -453,16 +453,20 @@ pergunta "a indicação funciona?" só tem resposta por impressão — e a taxa 
 
 ## 9 · O que é decisão sua
 
-1. **O link de convite fica no Grátis?** (§5.2) Recomendo que sim, com os pontos automáticos no
-   Equipe. É a decisão que define se o laço vira motor de upgrade ou recurso de quem já paga.
+> **Duas já foram decididas em 29/08 e estão em `docs/DECISOES.md`:** o link de convite fica no
+> **Grátis** (com os pontos automáticos no Equipe), e a **auditoria é mesclada antes** de a
+> indicação começar. As duas de baixo continuam abertas.
+
+1. ~~**O link de convite fica no Grátis?**~~ **Decidido: sim** — link, `referred_by`, "quem trouxe
+   quem" e card do dono no Grátis; pontos automáticos, níveis e extrato no Equipe. Isso torna o
+   ticket **I-8 obrigatório**, e ele passa a ser pré-requisito do I-9.
 2. **Qual é o prêmio, e quanto?** Hoje o padrão é 20 pontos dos dois lados. A pesquisa diz para dar
    "mais do que a pessoa já valoriza" — no salão isso é desconto em reais ou serviço curto de
    brinde, não ponto abstrato. Se for manter ponto, a tela precisa dizer quanto vale um ponto.
 3. **Valores iguais dos dois lados?** Recomendo sim, contra o costume brasileiro (§2.3).
-4. **Entra antes ou depois de mesclar a auditoria?** A branch `auditoria-guardas-cegas` tem 16
-   commits não mesclados e duas migrations que podem parar o deploy até alguém conferir produção.
-   Recomendo **mesclar a auditoria primeiro** — I-1 mexe em `public-booking.ts` e em
-   `clientes.ts`, dois arquivos que a auditoria tocou.
+4. ~~**Entra antes ou depois de mesclar a auditoria?**~~ **Decidido: depois.** A auditoria vai
+   primeiro, e as migrations `0045`/`0046` precisam alcançar produção antes de qualquer coisa nova
+   entrar por cima delas.
 
 ---
 

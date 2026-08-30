@@ -3121,3 +3121,18 @@ sobreposição de sumir.
 função pura em `core/`, com contrato escrito (§5.5) e testes próprios, e estava errada em relação
 ao próprio contrato. Deixar errado "porque o recurso não funciona mesmo" faria o conserto do banco,
 quando vier, herdar um bug silencioso de agenda vazia.
+
+
+2026-08-29 · O link de indicação fica no Grátis; os pontos automáticos ficam no Equipe · Decidido
+pelo Eduardo. O módulo `loyalty` (que credita os dois lados) continua no Equipe, mas o **link de
+convite**, a gravação de `referred_by`, o "quem trouxe quem" e o card do dono passam a valer desde
+o Grátis. Três motivos: (1) cada link compartilhado é uma página `/{slug}` do CICLO circulando no
+WhatsApp de quem não é usuário, com o selo do Grátis — é distribuição; (2) o laço enche o teto de 50
+clientes, que é o gatilho de upgrade para o Essencial, e travá-lo mataria o laço exatamente onde ele
+gera mais pressão; (3) o salão do Grátis continua recompensando na mão ("10% no próximo"), que
+funciona para sempre — o que ele não tem é o automático, e automação é o que se cobra. Detalhe em
+`docs/30-INDICACAO-PLANO.md` §5.2.
+
+2026-08-29 · A auditoria é mesclada antes de a indicação começar · Decidido pelo Eduardo. O ticket
+I-1 mexe em `public-booking.ts` e `clientes.ts`, dois arquivos que a auditoria tocou; e as migrations
+`0045`/`0046` precisam ir para produção antes de qualquer coisa nova entrar por cima delas.
