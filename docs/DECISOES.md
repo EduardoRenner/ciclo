@@ -3211,3 +3211,19 @@ até 600px com conversa longa). Arrastado até o fundo, o rodapé ficava 271px f
 Corrigido: o limite agora mede `janelaRef.current.getBoundingClientRect().height` de verdade a
 cada arrasto, em vez de presumir um valor. Testado nos dois extremos (canto superior-esquerdo e
 inferior-direito) depois do conserto — os dois travam dentro do viewport.
+
+2026-08-30 · Assistente ganha visual de conversa (parecido com Claude/GPT) · Pedido do Eduardo:
+"a interface do chat em si tá feia, deixa que nem dos grandes players". Medido antes de mexer:
+o Gemini já respondia em Markdown de verdade (negrito, listas numeradas, sub-itens) — a tela
+mostrava tudo como texto puro, com `**` aparecendo literal na tela. Não era só estética, era bug
+de renderização. Corrigido com um parser de Markdown-lite local (`renderMarkdownLeve`,
+`assistente-flutuante.tsx`), sem dependência nova — cobre só o que foi medido nas respostas reais
+(negrito + lista de até dois níveis), de propósito não é um Markdown completo.
+
+Junto, o resto do pacote "parece um chat de verdade": pergunta em bolha alinhada à direita
+(`bg-acc-soft`), resposta com ícone (sem caixa pesada, texto flui como nos grandes players),
+"digitando…" com três pontos animados em vez do texto "Consultando…", campo de texto que cresce
+com o conteúdo (até 128px) em vez de uma linha só, Enter envia / Shift+Enter quebra linha, rolagem
+automática para a mensagem mais nova. Testado ao vivo contra uma resposta real de 13 negritos e
+lista de dois níveis — zero `**` literal na tela, tudo renderizado como HTML de verdade. Mesmo
+`conteudo` compartilhado entre a janela flutuante (desktop) e o Sheet (mobile) — testado nos dois.

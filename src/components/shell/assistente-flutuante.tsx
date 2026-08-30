@@ -2,11 +2,12 @@
 
 import { GripHorizontal, Sparkles, X } from 'lucide-react'
 import { usePathname } from 'next/navigation'
-import { useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 
 import Card from '@/components/ui/card'
 import Sheet from '@/components/ui/sheet'
 import { useToast } from '@/components/ui/toast'
+import { cn } from '@/lib/utils'
 
 type Sugestao = {
   rotulo: string
@@ -125,6 +126,83 @@ function limitarNaTela(pos: Posicao, alturaReal: number): Posicao {
   }
 }
 
+/** `**negrito**` vira `<strong>` — o único destaque inline que o Gemini usa nas respostas medidas. */
+function renderInline(texto: string): React.ReactNode {
+  const partes = texto.split(/(\*\*[^*]+\*\*)/g)
+  return partes.map((parte, i) => {
+    const m = /^\*\*([^*]+)\*\*$/.exec(parte)
+    return m ? <strong key={i}>{m[1]}</strong> : <Fragment key={i}>{parte}</Fragment>
+  })
+}
+
+/**
+ * 2026-08-30: o Gemini responde em Markdown de verdade (negrito, listas numeradas, sub-itens
+ * com `- `) — medido direto na API, não suposição. Mostrar isso como `<span>` de texto puro
+ * deixava `**` literal na tela, o tipo de "feio" que não é gosto, é bug de renderização. Este
+ * parser cobre só o que foi medido nas respostas reais (negrito + lista de um ou dois níveis) —
+ * de propósito não é um Markdown completo: mais que isso e a resposta do assistente vira HTML
+ * arbitrário para desenhar, complexidade que este produto não precisa.
+ */
+function renderMarkdownLeve(texto: string): React.ReactNode {
+  const blocos = texto.split(/\n{2,}/)
+
+  return blocos.map((bloco, i) => {
+    const linhas = bloco.split('\n').filter((l) => l.trim().length > 0)
+    const ehBlocoDeLista = linhas.length > 0 && linhas.every((l) => /^\s*(\d+\.|[-*])\s/.test(l))
+
+    if (ehBlocoDeLista) {
+      return (
+        <div key={i} className="flex flex-col gap-1">
+          {linhas.map((linha, j) => {
+            const m = /^(\s*)(\d+\.|[-*])\s+(.*)$/.exec(linha)
+            if (!m) return null
+            const indentacao = m[1] ?? ''
+            const marcadorBruto = m[2] ?? ''
+            const texto = m[3] ?? ''
+            const aninhada = indentacao.length >= 2
+            const marcador = marcadorBruto === '-' || marcadorBruto === '*' ? '•' : marcadorBruto
+            return (
+              <div key={j} className={cn('flex gap-2', aninhada && 'pl-5 text-secundario text-txt-2')}>
+                <span className="shrink-0 text-txt-3">{marcador}</span>
+                <span>{renderInline(texto)}</span>
+              </div>
+            )
+          })}
+        </div>
+      )
+    }
+
+    return (
+      <p key={i}>
+        {bloco.split('\n').map((linha, j, arr) => (
+          <Fragment key={j}>
+            {renderInline(linha)}
+            {j < arr.length - 1 ? <br /> : null}
+          </Fragment>
+        ))}
+      </p>
+    )
+  })
+}
+
+/** Três pontos com "respiro" defasado — o "digitando…" que os grandes usam em vez de texto de status. */
+function PontosDigitando() {
+  return (
+    <div className="flex items-center gap-1 py-1.5" aria-label="Consultando" role="status">
+      {[0, 1, 2].map((i) => (
+        <span key={i} className="size-1.5 animate-bounce rounded-full bg-txt-3" style={{ animationDelay: `${i * 140}ms` }} />
+      ))}
+    </div>
+  )
+}
+
+const ALTURA_MAX_CAMPO_PX = 128
+
+function ajustarAlturaDoCampo(el: HTMLTextAreaElement) {
+  el.style.height = 'auto'
+  el.style.height = `${Math.min(el.scrollHeight, ALTURA_MAX_CAMPO_PX)}px`
+}
+
 /**
  * docs/26-AGENTE-IA-PLANO.md §5/§6 (A7) — painel do assistente, presente em toda tela do `/admin`.
  * `disponivel` vem do layout (server component, `Boolean(process.env.GEMINI_API_KEY)`, sem I/O) —
@@ -138,10 +216,10 @@ function limitarNaTela(pos: Posicao, alturaReal: number): Posicao {
  * janela flutuante persistente precisa ser. No mobile continua sendo o `Sheet` de sempre, modal e
  * de baixo para cima, que já é o padrão certo numa tela pequena.
  *
- * Escopo conhecido desta fase: o "cartão estruturado" do §5 (número grande + lista + botões) fica
- * para quando as ferramentas devolverem forma própria de UI; por ora a resposta do modelo já vem
- * em texto redigido, mostrada dentro de um Card — cartão de verdade, nunca parágrafo solto na
- * tela, mas sem o detalhamento visual da versão final.
+ * Mesma data, segunda rodada — visual de conversa: pergunta em bolha à direita, resposta com
+ * ícone à esquerda (sem caixa pesada, texto flui como nos grandes players), Markdown renderizado
+ * de verdade, "digitando…" animado em vez de texto de status, campo que cresce com o texto,
+ * Enter envia / Shift+Enter quebra linha, rolagem automática para a mensagem mais nova.
  */
 export default function AssistenteFlutuante({ disponivel }: { disponivel: boolean }) {
   const pathname = usePathname()
@@ -154,6 +232,8 @@ export default function AssistenteFlutuante({ disponivel }: { disponivel: boolea
   const [posicao, setPosicao] = useState<Posicao | null>(null)
   const arrastandoRef = useRef<{ offsetX: number; offsetY: number } | null>(null)
   const janelaRef = useRef<HTMLDivElement>(null)
+  const campoRef = useRef<HTMLTextAreaElement>(null)
+  const fimDaListaRef = useRef<HTMLDivElement>(null)
 
   // Reancorar dentro da tela quando a janela do navegador muda de tamanho — sem isto, redimensionar
   // depois de arrastar para a borda deixa a janela flutuante presa fora da área visível.
@@ -197,6 +277,13 @@ export default function AssistenteFlutuante({ disponivel }: { disponivel: boolea
     return () => window.removeEventListener('keydown', aoTeclar)
   }, [aberto])
 
+  // Rolar para a mensagem mais nova — sem isto, uma conversa que passa da altura da janela deixa
+  // a resposta que acabou de chegar fora de vista, escondida acima da dobra.
+  useEffect(() => {
+    if (turnos.length === 0) return
+    fimDaListaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+  }, [turnos, aberto])
+
   if (!disponivel) return null
 
   function abrir() {
@@ -215,6 +302,7 @@ export default function AssistenteFlutuante({ disponivel }: { disponivel: boolea
     if (!limpo || turnos.some((t) => t.carregando)) return
 
     setPergunta('')
+    if (campoRef.current) campoRef.current.style.height = 'auto'
     setTurnos((atual) => [...atual, { pergunta: limpo, resposta: '', carregando: true }])
 
     try {
@@ -273,19 +361,21 @@ export default function AssistenteFlutuante({ disponivel }: { disponivel: boolea
               ))}
             </div>
           ) : (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-5">
               {turnos.map((t, i) => (
-                <div key={i} className="flex flex-col gap-2">
-                  <p className="text-secundario font-semibold text-txt-3">{t.pergunta}</p>
-                  <Card flutuante>
-                    {t.carregando ? (
-                      <span className="text-corpo text-txt-3">Consultando…</span>
-                    ) : (
-                      <span className="text-corpo text-txt">{t.resposta}</span>
-                    )}
-                  </Card>
+                <div key={i} className="flex flex-col gap-3">
+                  <div className="ml-auto max-w-[85%] rounded-[var(--radius-sm)] bg-acc-soft px-4 py-2.5 text-corpo text-txt">{t.pergunta}</div>
+                  <div className="flex gap-2.5">
+                    <div className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-acc text-on-acc">
+                      <Sparkles aria-hidden className="size-3.5" />
+                    </div>
+                    <div className="min-w-0 flex-1 text-corpo text-txt [&_p:not(:last-child)]:mb-2 [&_div:not(:last-child)]:mb-2">
+                      {t.carregando ? <PontosDigitando /> : renderMarkdownLeve(t.resposta)}
+                    </div>
+                  </div>
                 </div>
               ))}
+              <div ref={fimDaListaRef} />
             </div>
           )}
 
@@ -294,18 +384,30 @@ export default function AssistenteFlutuante({ disponivel }: { disponivel: boolea
               e.preventDefault()
               perguntar(pergunta)
             }}
-            className="flex gap-2"
+            className="flex items-end gap-2"
           >
-            <input
+            <textarea
+              ref={campoRef}
               value={pergunta}
-              onChange={(e) => setPergunta(e.target.value)}
+              onChange={(e) => {
+                setPergunta(e.target.value)
+                ajustarAlturaDoCampo(e.target)
+              }}
+              onKeyDown={(e) => {
+                // Enter envia, Shift+Enter quebra linha — mesmo padrão de qualquer chat grande.
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault()
+                  perguntar(pergunta)
+                }
+              }}
               placeholder="Pergunte alguma coisa…"
               maxLength={500}
-              className="h-12 flex-1 rounded-[var(--radius-sm)] border border-line bg-surface px-4 text-corpo text-txt outline-none focus:border-acc-2"
+              rows={1}
+              className="max-h-32 min-h-12 flex-1 resize-none rounded-[var(--radius-sm)] border border-line bg-surface px-4 py-3 text-corpo text-txt outline-none focus:border-acc-2"
             />
             <button
               type="submit"
-              className="grid h-12 place-items-center rounded-[var(--radius-sm)] bg-acc px-4 font-semibold text-on-acc active:scale-[.97]"
+              className="grid h-12 shrink-0 place-items-center rounded-[var(--radius-sm)] bg-acc px-4 font-semibold text-on-acc active:scale-[.97]"
             >
               Enviar
             </button>
