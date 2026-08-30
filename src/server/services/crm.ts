@@ -5,7 +5,10 @@ import { statusConsentimentos } from '@/server/services/consentimentos'
 import { assinaturaAtiva, extratoDePontos, type AssinaturaDoCliente, type ExtratoPontos } from '@/server/services/fidelidade'
 import { listarMediaDoCliente } from '@/server/services/media'
 import { listarNotas, type NotaDoCliente } from '@/server/services/notas'
+import { listarOrcamentos } from '@/server/services/orcamentos'
 import { listarPacotesDoCliente, saldoCarteira } from '@/server/services/pacotes'
+import { contextoDePlano } from '@/server/services/planos'
+import { podeUsarModulo } from '@/core/billing/planos'
 
 import { AppError } from '@/server/http/errors'
 
@@ -439,16 +442,22 @@ const PRIMEIROS_PASSOS: AcaoSugerida[] = [
 ]
 
 export async function centralDeAcoes(db: Cliente, tenantId: string): Promise<CentralDeAcoes> {
-  // As cinco consultas saem juntas de propósito. Descobrir "é conta nova?" antes
-  // de pedir o resto custaria um round-trip a mais em TODO carregamento de
-  // "Hoje" — a tela mais aberta do produto — para economizar três consultas
-  // vazias só em contas que ainda não têm dado nenhum.
-  const [clientes, agendamentos, emRisco, aniversariantes, resgataveis] = await Promise.all([
+  // As seis consultas (mais o contexto de plano) saem juntas de propósito. Descobrir "é conta
+  // nova?" antes de pedir o resto custaria um round-trip a mais em TODO carregamento de "Hoje" —
+  // a tela mais aberta do produto — para economizar consultas vazias só em contas sem dado nenhum.
+  //
+  // 2026-08-30, docs/33-AUTOMACAO-AGENTE-PLANO.md §2.3/Etapa 2 (docs/26 §1 Fase C, revisada em
+  // docs/33 §7.2): esta função JÁ ERA o "resumo proativo, sem LLM, calculado ao abrir o painel"
+  // que a Fase C pedia — faltava só orçamento parado, que a Fase A do assistente já sabia
+  // responder (`orcamentos_parados`) mas a tela "Hoje" nunca mostrava sem o dono perguntar.
+  const [clientes, agendamentos, emRisco, aniversariantes, resgataveis, orcamentos, ctxPlano] = await Promise.all([
     db.from('clients').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId).is('deleted_at', null),
     db.from('appointments').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId),
     db.from('client_cycles').select('client_id', { count: 'exact', head: true }).eq('tenant_id', tenantId).in('state', ['late', 'at_risk', 'lost']),
     db.from('v_client_segments').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId).eq('is_aniversariante', true),
     db.from('loyalty_entries').select('client_id, points').eq('tenant_id', tenantId),
+    listarOrcamentos(db, tenantId),
+    contextoDePlano(db, tenantId),
   ])
 
   // Sem cliente E sem agendamento é conta que ainda não começou — quem só usa
@@ -498,6 +507,22 @@ export async function centralDeAcoes(db: Cliente, tenantId: string): Promise<Cen
       href: '/admin/clientes',
       tom: 'ok',
     })
+  }
+
+  // Só para quem tem o módulo — plano Grátis não tem orçamento, não faz sentido sugerir resolver
+  // o que a conta não pode nem abrir. Mesma permissão que a ferramenta `orcamentos_parados` do
+  // assistente já exige (`server/assistente/ferramentas.ts`).
+  if (podeUsarModulo(ctxPlano, 'quotes').estado === 'liberado') {
+    const parados = orcamentos.filter((o) => o.status === 'sent')
+    if (parados.length > 0) {
+      acoes.push({
+        chave: 'orcamentos',
+        titulo: `${parados.length} ${parados.length === 1 ? 'orçamento parado' : 'orçamentos parados'}`,
+        descricao: 'Esperando resposta da cliente. Um lembrete pode ser o empurrão que faltava.',
+        href: '/admin/orcamentos',
+        tom: 'warn',
+      })
+    }
   }
 
   return { titulo: 'Vale a pena hoje', acoes }

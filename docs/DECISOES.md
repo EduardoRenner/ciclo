@@ -3227,3 +3227,39 @@ com o conteúdo (até 128px) em vez de uma linha só, Enter envia / Shift+Enter 
 automática para a mensagem mais nova. Testado ao vivo contra uma resposta real de 13 negritos e
 lista de dois níveis — zero `**` literal na tela, tudo renderizado como HTML de verdade. Mesmo
 `conteudo` compartilhado entre a janela flutuante (desktop) e o Sheet (mobile) — testado nos dois.
+
+2026-08-30 · Etapa 2 do docs/33 (resumo proativo) completada — orçamento parado some da lista de
+"perguntar ao assistente" e vira card em "Hoje" · Pedido do Eduardo: avançar nas automações do
+`docs/33-AUTOMACAO-AGENTE-PLANO.md` via `/loop`, respeitando a trava explícita da etapa 4 (nível
+3, "escreve/envia sozinho" — travada em ≥10 pagantes, zero hoje, NADA implementado nessa
+direção).
+
+Achado antes de escrever qualquer linha: `centralDeAcoes` (`server/services/crm.ts`, já mostrado
+em "Hoje" como "Vale a pena hoje") **já era** a Etapa 2/Fase C do `docs/26` — proativo, sem LLM,
+calculado a cada carregamento da tela mais aberta do produto. Cobria clientes sumindo,
+aniversariantes e pontos de fidelidade; confirmação pendente já tinha seção própria
+("Precisa confirmar"). Faltava só **orçamento parado** — a única lacuna real, dado que o
+assistente já sabia responder isso (`orcamentos_parados`, `orcamentos_sem_resposta`) mas a tela
+nunca mostrava sem o dono perguntar.
+
+Nota sobre o gate: `docs/26` original travava a Fase C em **≥30 pagantes**; `docs/33 §7.2`
+revisou esse gate para "etapa 1 medida" (Fase A no ar), classificando como Recomendado — decisão
+já tomada num documento mais recente, não inventada agora. Zero pagantes ainda hoje, então
+"medida" aqui significa o teste extensivo desta própria sessão, não uso real de cliente pagante —
+registrado como o que é, não maquiado de "medido" de verdade.
+
+Implementação: nova consulta a `listarOrcamentos` (já existente, reusada — mesma que os tools do
+assistente usam) mais `contextoDePlano`/`podeUsarModulo(ctx, 'quotes')` para NÃO mostrar o card em
+plano Grátis (que não tem módulo de orçamento). Testado em produção inserindo um orçamento
+`status='sent'` de verdade na conta `teste-essencial` via SQL, confirmando "1 orçamento parado"
+aparecer na posição certa com gramática singular correta, e apagando o dado de teste depois —
+zero sujeira deixada no banco.
+
+Pendência que NÃO foi testada: o caminho negativo (tenant em plano Grátis não deveria ver o card)
+não tem uma conta de teste em `gratis` disponível nesta sessão para confirmar ao vivo — a
+garantia vem só de revisão de código (mesmo `podeUsarModulo` que a ferramenta do assistente já
+usa) e typecheck, não de teste real. Fica registrado, não escondido.
+
+`pnpm verify` completo continua fora de alcance neste ambiente (sem Docker para
+`test:integration`/`test:rls`) — typecheck, lint, `test:unit` (1001 testes, 0 falhas) e `build`
+passaram limpos.
