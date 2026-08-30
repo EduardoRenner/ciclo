@@ -3,6 +3,7 @@
 import { useState } from 'react'
 
 import Card from '@/components/ui/card'
+import { textoDoEnvioAutomatico } from '@/core/messaging/promessa'
 
 /**
  * F0 (`docs/25-ESTRATEGIA-E-EXECUCAO.md`): interruptor manual por tenant. O teto diário
@@ -47,11 +48,12 @@ export default function PausarEnvios({ inicial }: { inicial: boolean }) {
     <Card className="flex items-center gap-3">
       <div className="min-w-0 flex-1">
         <p className="text-corpo font-semibold text-txt">Lembretes e campanhas automáticos</p>
-        <p className="mt-0.5 text-secundario text-txt-2">
-          {pausado
-            ? 'Pausado — o CICLO não manda WhatsApp/e-mail sozinho para clientes agora.'
-            : 'Ligado — lembrete de agendamento e campanha de recuperação saem sozinhos, no horário certo.'}
-        </p>
+        {/*
+          A frase NÃO mora aqui: prosa na tela foi exatamente como nasceu a mentira que esta
+          linha corrige (ver `core/messaging/promessa.ts`). Quem decide o que o produto pode
+          afirmar sobre envio automático é `ROTAS_AGENDADAS`, um lugar só, com guarda própria.
+        */}
+        <p className="mt-0.5 text-secundario text-txt-2">{textoDoEnvioAutomatico(pausado)}</p>
         {erro ? (
           <p role="alert" className="mt-1 text-secundario text-bad">
             {erro}

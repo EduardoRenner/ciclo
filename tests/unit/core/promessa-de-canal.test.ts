@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { textoDoCanalDeConfirmacao } from '@/core/messaging/promessa'
+import { textoDoCanalDeConfirmacao, textoDoEnvioAutomatico } from '@/core/messaging/promessa'
 
 /**
  * O irmão de `agendamento-publico-nao-promete-demais.test.ts`, e a razão de ele não ter bastado.
@@ -45,5 +45,46 @@ describe('textoDoCanalDeConfirmacao', () => {
     // Guarda contra o próprio detector: se alguém colapsar os dois ramos num texto só, as duas
     // asserções acima podem continuar passando e a função vira decoração.
     expect(textoDoCanalDeConfirmacao(false)).not.toBe(textoDoCanalDeConfirmacao(true))
+  })
+})
+
+/**
+ * O mesmo conceito virado para DENTRO do produto. A guarda acima protege a promessa feita à
+ * cliente do salão; esta protege a promessa feita ao DONO do salão, no interruptor de
+ * `config/mensagens` — que em 2026-08-30 afirmava "saem sozinhos, no horário certo" enquanto
+ * `reminders`/`campaigns` estavam fora de `ROTAS_AGENDADAS`. A guarda irmã passava verde porque
+ * aquela tela escrevia a frase à mão, sem chamar função nenhuma: guarda não alcança quem não a
+ * chama, e é por isso que a copy migrou para cá.
+ */
+describe('textoDoEnvioAutomatico', () => {
+  it('com `reminders` FORA do schedule, não afirma que algo sai sozinho', () => {
+    const texto = textoDoEnvioAutomatico(false, false)
+
+    // O conceito, não a redação. `[^\s]*` e não `\w*` pela mesma razão registrada acima: em JS
+    // sem a flag `u`, `\w` não casa `ã`/`ç` — "automático" e "automação" escapariam de `\w`.
+    expect(/sa[ei]m?\s+sozinh/i.test(texto), `prometeu envio sozinho: "${texto}"`).toBe(false)
+    expect(/autom[^\s]*\s+(sai|saem|vai|v[ãa]o)/i.test(texto), `prometeu automação: "${texto}"`).toBe(false)
+    expect(/no hor[áa]rio certo/i.test(texto), `prometeu horário certo: "${texto}"`).toBe(false)
+
+    // E não pode virar silêncio: o dono precisa saber que a mensagem depende dele hoje.
+    expect(texto.trim().length, 'ficou sem explicação nenhuma').toBeGreaterThan(20)
+  })
+
+  it('com `reminders` NO schedule, a frase de automação volta — a guarda não trava copy honesta', () => {
+    expect(textoDoEnvioAutomatico(false, true)).toMatch(/sozinh/i)
+  })
+
+  it('pausado vence agendado: nem no mundo agendado promete envio', () => {
+    // Sem isto, alguém poderia ignorar `pausado` e a tela diria "saem sozinhos" com a pausa ligada.
+    expect(/sozinh/i.test(textoDoEnvioAutomatico(true, true))).toBe(false)
+  })
+
+  it('os três casos dizem coisas diferentes', () => {
+    // Guarda contra o próprio detector, igual à de cima: se alguém colapsar os ramos, as
+    // asserções acima podem continuar passando e a função vira decoração.
+    const desligado = textoDoEnvioAutomatico(false, false)
+    const ligado = textoDoEnvioAutomatico(false, true)
+    const pausado = textoDoEnvioAutomatico(true, false)
+    expect(new Set([desligado, ligado, pausado]).size).toBe(3)
   })
 })

@@ -3417,3 +3417,40 @@ que a cliente final vê, e (por `docs/33`) a que o salão mostra pro bairro dele
 Corrigido em `src/app/(public)/[slug]/secoes.tsx`: `{formatarTelefone(perfil.phone)}` no texto,
 `href` intocado. Conferido que era o único lugar — os outros dois usos de `perfil.phone` em
 `(public)/` são o schema.org (deve ser E.164) e uma checagem de existência.
+
+2026-08-30 · A tela mentia para o DONO: "lembrete e campanha saem sozinhos" com `reminders` fora
+do schedule · Rodada "aprimora tudo", área 4 (subtelas de config). O achado mais grave da sessão.
+`/admin/config/mensagens` mostrava, no estado ligado do interruptor: *"Ligado — lembrete de
+agendamento e campanha de recuperação saem sozinhos, no horário certo."*
+
+Medido, não deduzido: `ROTAS_AGENDADAS` (`core/cron/agendadas.ts`) é `['recompute-cycles',
+'segments']`; no `cron.yml` o job que roda em `on.schedule` tem `matrix: rota:
+[recompute-cycles, segments]`, com comentário explícito — *"só os jobs que APENAS calculam e
+gravam no próprio banco; nenhum deles fala com o mundo externo"*. `reminders` e `campaigns`
+aparecem só nas opções do `workflow_dispatch` (menu manual). E as credenciais de WhatsApp seguem
+não provisionadas (TICKET-043). Ou seja: nada saía sozinho, e a tela dizia que saía.
+
+**Por que isso é grave e não é typo:** é exatamente a armadilha que o `CLAUDE.md` lista
+("prometer canal só se houver rota agendada e credencial existente"), virada para dentro. Quem é
+enganado aqui não é a cliente do salão — é o **dono**, que confia que o produto está trabalhando
+por ele e não manda a mensagem que deveria mandar na mão. O prejuízo é o cliente dele não voltar.
+
+**Por que a guarda existente passou verde:** `promessa-de-canal.test.ts` foi bem escrita — ataca o
+conceito e não a redação, e exercita `textoDoCanalDeConfirmacao()` nos dois estados do mundo. Mas
+`pausar-envios.tsx` escrevia a frase **à mão**, sem chamar função nenhuma. Guarda não alcança quem
+não a chama — uma terceira variação da mesma lição já registrada duas vezes neste arquivo.
+
+Corrigido no padrão que a casa já tinha escolhido para este conceito: a copy virou
+`textoDoEnvioAutomatico(pausado, remindersAgendada)` em `core/messaging/promessa.ts` — um lugar
+só, ao lado da função irmã, lendo a mesma `ROTAS_AGENDADAS`. No dia em que `reminders` entrar no
+`schedule`, a frase verdadeira volta sozinha, sem ninguém caçar string.
+
+Detalhe que a mutação ensinou: a primeira redação honesta era *"nada sai sozinho ainda"* — e a
+guarda **reprovou**, porque proíbe a construção e não sabe ler negação. Ensinar a regex a
+entender "nada"/"não" seria a mesma lista fechada que já falhou antes (negação em português tem
+forma demais). Mais firme: a copy verdadeira não encosta na construção proibida. Ficou *"Liberado
+— mas o disparo é seu: a mensagem vai quando você toca em 'Avisar', pelo WhatsApp."*
+
+Guarda nova **vista reprovando** antes de ser aceita (regra do `CLAUDE.md`): mutação reintroduziu
+a frase original no ramo não-agendado, 2 asserções reprovaram apontando o texto exato, arquivo
+restaurado do backup e conferido. 1005 testes passando (eram 1001), build limpo.
