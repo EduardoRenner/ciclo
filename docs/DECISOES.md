@@ -3778,3 +3778,20 @@ Desenho do retry, e o que ele NÃO faz:
   mesmo lugar — e foi um `400` e um `404` que custaram esta manhã inteira.
 - Não esconde falha permanente: esgotadas as tentativas, o erro sobe igual e a tela mostra o 503
   honesto, em vez de fingir resposta.
+
+2026-08-30 · Fluxo completo do chat testado de ponta a ponta em produção · "marca um corte pro
+Kleber Dias dia 05/09 às 10h" → assistente resolveu tudo → proposta estruturada → o corpo exato
+que o botão manda → `POST /api/v1/appointments` → **200, agendamento criado**. Conferido no banco:
+`starts_at = 2026-09-05 13:00:00+00`, e `at time zone 'America/Sao_Paulo'` = **10:00:00** — a hora
+que foi pedida no chat. Agendamento de teste apagado, base conferida de volta em zero para o dia.
+
+**O defeito que só apareceu porque testei antes de confiar:** a primeira versão da proposta
+mandava `startsAtLocal: "2026-09-05T10:00"`, mas `EsquemaCriarAgendamento` exige `startsAt` **com
+offset**. O botão teria falhado no clique — o pior lugar para falhar, porque o dono já tinha lido,
+julgado e confirmado. Corrigido convertendo no SERVIDOR, com `Temporal` e o fuso do salão.
+
+Por que não converter na tela, que seria mais simples: a tela tem o fuso do APARELHO. Uma dona
+viajando, ou um celular com fuso errado, marcaria no horário errado — e o erro apareceria só
+quando a cliente batesse na porta na hora errada. É a armadilha literal do `CLAUDE.md` ("nunca
+aritmética em horário local"), e `Temporal` ainda resolve o dia de mudança de horário de verão,
+que tem 23 ou 25 horas.
