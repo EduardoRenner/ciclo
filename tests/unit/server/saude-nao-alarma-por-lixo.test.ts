@@ -2,8 +2,8 @@ import { readFileSync } from 'node:fs'
 
 import { describe, expect, it } from 'vitest'
 
-import { TIPOS_DE_JOB_COM_HANDLER, tipoDeJobTemHandler } from '@/core/jobs/registro'
 import { verificarSaude } from '@/server/services/health'
+import { ERRO_SEM_HANDLER, semHandlerRegistrado } from '@/server/services/job-queue'
 
 /**
  * O irmão de `saude-vigia-so-o-que-roda.test.ts`, e a razão de ele não ter bastado.
@@ -28,7 +28,7 @@ import { verificarSaude } from '@/server/services/health'
  */
 
 /** Um `db` de mentira que devolve as linhas de `job_queue` que o teste quiser. */
-function bancoFalso(jobs: { kind: string; status: string }[]) {
+function bancoFalso(jobs: { kind: string; status: string; last_error?: string | null }[]) {
   const tabela = (nome: string) => {
     if (nome === 'job_queue') {
       const construtor = {
@@ -42,7 +42,13 @@ function bancoFalso(jobs: { kind: string; status: string }[]) {
           construtor._status = [valor]
           return construtor
         },
-        lt: () => Promise.resolve({ data: jobs.filter((j) => construtor._status.includes(j.status)).map((j) => ({ kind: j.kind })), error: null }),
+        lt: () =>
+          Promise.resolve({
+            data: jobs
+              .filter((j) => construtor._status.includes(j.status))
+              .map((j) => ({ kind: j.kind, last_error: j.last_error ?? null })),
+            error: null,
+          }),
       }
       return construtor
     }
@@ -61,7 +67,7 @@ function bancoFalso(jobs: { kind: string; status: string }[]) {
 describe('a leitura deste teste', () => {
   it('o banco falso devolve o que a checagem de fila pede', async () => {
     // Guarda contra o teste inteiro passar vazio se o mock parar de casar com o código.
-    const r = await verificarSaude(bancoFalso([{ kind: 'qualquer', status: 'failed' }]))
+    const r = await verificarSaude(bancoFalso([{ kind: 'qualquer', status: 'failed', last_error: `${ERRO_SEM_HANDLER} "qualquer".` }]))
     expect(r.checks.jobQueue.detail, 'o mock não chegou na checagem de fila').toBeDefined()
   })
 })
@@ -69,8 +75,8 @@ describe('a leitura deste teste', () => {
 describe('lixo na fila não pinta o endpoint de vermelho', () => {
   it('job de tipo SEM handler não derruba a saúde, mas aparece escrito', async () => {
     const r = await verificarSaude(bancoFalso([
-      { kind: 'teste_saude', status: 'failed' },
-      { kind: 'seed', status: 'failed' },
+      { kind: 'teste_saude', status: 'failed', last_error: `${ERRO_SEM_HANDLER} "teste_saude".` },
+      { kind: 'seed', status: 'failed', last_error: `${ERRO_SEM_HANDLER} "seed".` },
     ]))
 
     expect(
@@ -92,64 +98,61 @@ describe('lixo na fila não pinta o endpoint de vermelho', () => {
   })
 })
 
-describe('job de tipo conhecido parado CONTINUA sendo alarme', () => {
+describe('job que PODE ser processado continua sendo alarme', () => {
   /*
-   * O contrapeso do teste acima. Se a dispensa do lixo crescer e passar a engolir job de verdade,
-   * a fila para de ser vigiada — que é o defeito oposto, e pior: trabalho enfileirado sumindo em
-   * silêncio é o que o §7 da espec proíbe.
-   *
-   * `TIPOS_DE_JOB_COM_HANDLER` está vazio hoje (nenhum handler foi escrito ainda), então este
-   * caso exercita a função de decisão direto, em vez de depender de um tipo real existir.
+   * O contrapeso, e a razão de este teste existir na forma atual. A primeira versão do conserto
+   * manteve um registro paralelo dos tipos com handler e silenciava todo o resto — a CI reprovou,
+   * porque com o registro vazio NENHUM job podia disparar o alarme e dois testes de integração
+   * que provam "trabalho parado acusa" quebraram. Silenciar demais é o defeito oposto, e pior:
+   * trabalho enfileirado sumindo em silêncio é o que o §7 da espec proíbe.
    */
-  it('a decisão distingue tipo conhecido de desconhecido', () => {
-    expect(tipoDeJobTemHandler('tipo_que_ninguem_registrou')).toBe(false)
-    for (const tipo of TIPOS_DE_JOB_COM_HANDLER) {
-      expect(tipoDeJobTemHandler(tipo), `${tipo} está no registro mas a função não o reconhece`).toBe(true)
-    }
+  it('job parado sem erro nenhum (worker não rodou) derruba a saúde', async () => {
+    const r = await verificarSaude(bancoFalso([{ kind: 'send_reminders', status: 'queued', last_error: null }]))
+    expect(
+      r.checks.jobQueue.ok,
+      'job enfileirado que nunca foi tentado é fila crescendo — tem que alarmar, é a metade que ' +
+        'o conserto do lixo NÃO pode engolir',
+    ).toBe(false)
+    expect(r.checks.jobQueue.detail).toMatch(/parado\(s\)/)
   })
 
-  it('a dispensa é estreita — não vale para qualquer coisa parecida com lixo', () => {
-    // Se um dia alguém trocar a checagem por "nome que começa com teste_", isto reprova.
-    expect(tipoDeJobTemHandler('teste_saude')).toBe(false)
-    expect(tipoDeJobTemHandler('send_reminders')).toBe(false) // ainda não tem handler — e é honesto
+  it('job que falhou por OUTRO motivo derruba a saúde', async () => {
+    const r = await verificarSaude(bancoFalso([{ kind: 'send_reminders', status: 'failed', last_error: 'timeout do provedor' }]))
+    expect(r.checks.jobQueue.ok, 'falha real não pode ser confundida com lixo').toBe(false)
+  })
+
+  it('lixo e trabalho de verdade convivem: alarma, e conta os dois separados', async () => {
+    const r = await verificarSaude(bancoFalso([
+      { kind: 'teste_saude', status: 'failed', last_error: `${ERRO_SEM_HANDLER} "teste_saude".` },
+      { kind: 'send_reminders', status: 'queued', last_error: null },
+    ]))
+    expect(r.checks.jobQueue.ok).toBe(false)
+    expect(r.checks.jobQueue.detail, 'o job de verdade tem que aparecer').toMatch(/1 job\(s\) parado\(s\)/)
+    expect(r.checks.jobQueue.detail, 'e o lixo também, sem inflar a contagem do de verdade').toContain('sem handler')
+  })
+
+  it('a dispensa é estreita — casa com o começo da mensagem, não com "parece lixo"', () => {
+    expect(semHandlerRegistrado(`${ERRO_SEM_HANDLER} "x".`)).toBe(true)
+    expect(semHandlerRegistrado(null)).toBe(false)
+    expect(semHandlerRegistrado('timeout')).toBe(false)
+    // Não pode bastar mencionar a frase no meio de outro erro.
+    expect(semHandlerRegistrado(`falhou porque: ${ERRO_SEM_HANDLER} "x".`)).toBe(false)
   })
 })
 
-describe('as duas listas de handler não podem divergir', () => {
+describe('a mensagem de erro é fonte única', () => {
   /**
-   * `HANDLERS` mora na rota e `TIPOS_DE_JOB_COM_HANDLER` no core, porque um serviço não pode
-   * importar de `app/api/.../route.ts` sem inverter a direção das dependências. Duplicação
-   * vigiada é segura; duplicação silenciosa é como um handler novo nasce invisível para a
-   * vigilância — o job dele passaria a ter quem o processe e, no mesmo instante, deixaria de ser
-   * cobrado quando parasse.
+   * `job-queue.ts` GRAVA a mensagem e `health.ts` a RECONHECE. Se as duas fossem cópias de string,
+   * mudar o texto do `throw` deixaria o reconhecedor cego em silêncio — e o 503 permanente
+   * voltaria sem ninguém notar. Por isso a constante é exportada e usada nos dois lados; este caso
+   * prova que quem grava usa mesmo a constante.
    */
-  const ROTA = 'src/app/api/cron/jobs/route.ts'
-
-  function chavesDoHandlerNaRota(): string[] {
-    const fonte = readFileSync(ROTA, 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^\s*\/\/.*$/gm, ' ')
-
-    /*
-     * Delimita pela CHAVE de abertura do objeto até a que a fecha, contando profundidade — não
-     * por um regex do tipo. O tipo é `Record<string, (job: unknown) => Promise<void>>`, e um
-     * `[^>]*` para no primeiro `>` de `=>`: a primeira versão deste teste não achou nada e
-     * reprovou por isso, que é o comportamento certo de um detector que perde o alvo, mas
-     * inutilizaria a guarda.
-     */
-    const inicio = fonte.indexOf('{', fonte.indexOf('HANDLERS'))
-    expect(inicio, `não achei o objeto HANDLERS em ${ROTA} — o teste precisa ser atualizado junto`).toBeGreaterThan(-1)
-
-    let profundidade = 0
-    let fim = inicio
-    for (; fim < fonte.length; fim++) {
-      if (fonte[fim] === '{') profundidade++
-      else if (fonte[fim] === '}' && --profundidade === 0) break
-    }
-
-    const corpo = fonte.slice(inicio + 1, fim)
-    return [...corpo.matchAll(/['"]?([a-z_][a-z0-9_]*)['"]?\s*:/gi)].map((x) => x[1]!).sort()
-  }
-
-  it('a rota e o registro do core listam os mesmos tipos', () => {
-    expect(chavesDoHandlerNaRota()).toEqual([...TIPOS_DE_JOB_COM_HANDLER].sort())
+  it('o throw da fila usa a constante exportada, não uma cópia literal', () => {
+    const fonte = readFileSync('src/server/services/job-queue.ts', 'utf8')
+    expect(
+      /throw new Error\(`\$\{ERRO_SEM_HANDLER\}/.test(fonte),
+      'job-queue.ts voltou a montar a mensagem à mão. health.ts reconhece o erro por essa ' +
+        'constante: uma cópia literal aqui deixa o reconhecedor cego no dia em que o texto mudar.',
+    ).toBe(true)
   })
 })

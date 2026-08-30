@@ -1,6 +1,6 @@
 import { heartbeatVigiado } from '@/core/cron/agendadas'
-import { tipoDeJobTemHandler } from '@/core/jobs/registro'
 import { AppError } from '@/server/http/errors'
+import { semHandlerRegistrado } from '@/server/services/job-queue'
 
 import type { Database } from '@/server/db/types.gen'
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -124,30 +124,27 @@ async function checarFila(db: Cliente, agora: Date): Promise<ChecagemSaude> {
   const limite = new Date(agora.getTime() - LIMIAR_FILA_PARADA_MIN * 60_000).toISOString()
 
   /*
-   * Traz o `kind` junto, e não só a contagem, porque a pergunta mudou em 30/08: não é "quantos
-   * jobs estão parados?", é "quantos jobs que ALGUÉM SABE PROCESSAR estão parados?".
-   *
-   * Sem essa distinção o endpoint vivia em 503 por causa de 20 jobs de fixture (`teste_saude`,
-   * `seed`) que a suíte de teste despejou na produção e que nenhum handler existe para atender —
-   * eles falham, voltam para `failed`, e são recontados como "parados" para sempre. O raciocínio
-   * inteiro está em `src/core/jobs/registro.ts`; é o mesmo conserto que `agendadas.ts` já tinha
-   * feito para os heartbeats, aplicado ao vizinho que ficou de fora.
+   * Traz `kind` e `last_error`, e não só a contagem, porque a pergunta mudou em 30/08: não é
+   * "quantos jobs estão parados?", é "quantos jobs que ALGUÉM PODE processar estão parados?".
+   * O porquê, medido, está em `semHandlerRegistrado()` — sem essa distinção o endpoint vivia em
+   * 503 por causa de resíduo de fixture que nenhum handler existe para atender.
    */
   const [aguardando, travados] = await Promise.all([
-    db.from('job_queue').select('kind').in('status', ['queued', 'failed']).lt('run_after', limite),
-    db.from('job_queue').select('kind').eq('status', 'running').lt('locked_at', limite),
+    db.from('job_queue').select('kind, last_error').in('status', ['queued', 'failed']).lt('run_after', limite),
+    db.from('job_queue').select('kind, last_error').eq('status', 'running').lt('locked_at', limite),
   ])
   if (aguardando.error) return { ok: false, detail: aguardando.error.message }
   if (travados.error) return { ok: false, detail: travados.error.message }
 
-  const comHandler = (linhas: { kind: string }[] | null) => (linhas ?? []).filter((j) => tipoDeJobTemHandler(j.kind))
-  const semHandler = [...(aguardando.data ?? []), ...(travados.data ?? [])].filter((j) => !tipoDeJobTemHandler(j.kind))
+  const processaveis = (linhas: { last_error: string | null }[] | null) =>
+    (linhas ?? []).filter((j) => !semHandlerRegistrado(j.last_error)).length
+  const lixo = [...(aguardando.data ?? []), ...(travados.data ?? [])].filter((j) => semHandlerRegistrado(j.last_error))
 
   const problemas: string[] = []
-  const aguardandoProcessavel = comHandler(aguardando.data).length
-  const travadosProcessaveis = comHandler(travados.data).length
-  if (aguardandoProcessavel > 0) problemas.push(`${aguardandoProcessavel} job(s) parado(s) há mais de ${LIMIAR_FILA_PARADA_MIN} min`)
-  if (travadosProcessaveis > 0) problemas.push(`${travadosProcessaveis} job(s) preso(s) em running há mais de ${LIMIAR_FILA_PARADA_MIN} min`)
+  const nAguardando = processaveis(aguardando.data)
+  const nTravados = processaveis(travados.data)
+  if (nAguardando > 0) problemas.push(`${nAguardando} job(s) parado(s) há mais de ${LIMIAR_FILA_PARADA_MIN} min`)
+  if (nTravados > 0) problemas.push(`${nTravados} job(s) preso(s) em running há mais de ${LIMIAR_FILA_PARADA_MIN} min`)
 
   /*
    * O lixo aparece no relatório com o nome dos tipos, mas NÃO pinta o endpoint de vermelho: 503
@@ -155,8 +152,8 @@ async function checarFila(db: Cliente, agora: Date): Promise<ChecagemSaude> {
    * doente — deixa a fila suja. Esconder seria o erro oposto, então ele vai escrito.
    */
   const avisoDeLixo =
-    semHandler.length > 0
-      ? `${semHandler.length} job(s) de tipo sem handler (${[...new Set(semHandler.map((j) => j.kind))].sort().join(', ')}) — não contam como fila parada`
+    lixo.length > 0
+      ? `${lixo.length} job(s) de tipo sem handler (${[...new Set(lixo.map((j) => j.kind))].sort().join(', ')}) — não contam como fila parada`
       : null
 
   if (problemas.length > 0) {
