@@ -3145,3 +3145,10 @@ repassar nenhuma query string — um convite pra raiz perderia o token no primei
 chegar na única tela que lê `?ind=`. Corrigido para apontar direto pra `/{slug}/agendar`, e o
 `docs/30` foi atualizado com a correção registrada inline. Poupa um clique de quem já sabe o que
 quer, de quebra.
+
+2026-08-30 · I-10 fica pra depois, não travado por técnica · I-1 a I-9 do `docs/30` mesclados
+(escritor, guarda, convite no pico, moldura de chegada, botão manual, barra de upgrade, extrato
+mensal, paywall no instante da prova). I-10 (níveis e barra de progresso da cliente, degrau Equipe)
+não entrou porque grava pontuação em cima de duas perguntas que `docs/30` §9 deixa abertas: qual é
+o prêmio e se os dois lados recebem o mesmo valor. Construir a UI de nível agora seria herdar um
+número que pode mudar. Falta decidir §9.2 e §9.3 pra desbloquear.

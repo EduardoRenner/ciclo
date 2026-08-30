@@ -417,22 +417,29 @@ do Equipe**: é a automação, e é o que se cobra. No Grátis a ficha mostra a 
 
 Cada um é entregável sozinho. **Nenhum precisa de migration** — a mecânica de banco já existe.
 
-| # | Ticket | Entrega | Risco | Depende de |
-|---|---|---|---|---|
-| **I-1** | Escritor de `referred_by` | `?ind=` resolvido no agendamento público; cliente nova nasce indicada. **Liga o que já existe.** | baixo | — |
-| **I-2** | Guarda `indicacao-tem-escritor` | reprova se `referred_by` voltar a não ter escritor — a guarda da classe (`fee_cents`, `consent_id`, `plan`) | baixo | I-1 |
-| **I-3** | Convite na tela de avaliação (nota ≥ 4) | o pico, com a moldura de presente | baixo | I-1 |
-| **I-4** | Moldura de chegada em `/{slug}/agendar?ind=` | "A Ana te deu R$ 20" | baixo | I-1 |
-| **I-5** | Botão "Indicar" na ficha + "Trouxe: …" | o dono pede quando quiser | baixo | I-1 |
-| **I-6** | Barra `38/50` na lista de clientes | o gatilho de upgrade nº 1 | baixo | — |
-| **I-7** | Card "trouxeram 4 novas" no `/admin/hoje` | o extrato do laço | baixo | I-1 |
-| **I-8** | Reposicionar link/tracking para o Grátis | decisão de plano (§5.2) | **médio** | **decisão sua** |
-| **I-9** | Paywall no instante da prova | "no Equipe, a Ana ganharia sozinha" | baixo | I-8 |
-| **I-10** | Níveis e barra da cliente (Equipe) | gamificação | médio | I-8 |
+| # | Ticket | Entrega | Risco | Depende de | Status |
+|---|---|---|---|---|---|
+| **I-1** | Escritor de `referred_by` | `?ind=` resolvido no agendamento público; cliente nova nasce indicada. **Liga o que já existe.** | baixo | — | ✅ feito |
+| **I-2** | Guarda `indicacao-tem-escritor` | reprova se `referred_by` voltar a não ter escritor — a guarda da classe (`fee_cents`, `consent_id`, `plan`) | baixo | I-1 | ✅ feito |
+| **I-3** | Convite na tela de avaliação (nota ≥ 4) | o pico, com a moldura de presente | baixo | I-1 | ✅ feito |
+| **I-4** | Moldura de chegada em `/{slug}/agendar?ind=` | "A Ana te deu R$ 20" | baixo | I-1 | ✅ feito |
+| **I-5** | Botão "Indicar" na ficha + "Trouxe: …" | o dono pede quando quiser | baixo | I-1 | ✅ feito |
+| **I-6** | Barra `38/50` na lista de clientes | o gatilho de upgrade nº 1 | baixo | — | ✅ feito |
+| **I-7** | Card "trouxeram 4 novas" no `/admin/hoje` | o extrato do laço | baixo | I-1 | ✅ feito |
+| **I-8** | Reposicionar link/tracking para o Grátis | decisão de plano (§5.2) | **médio** | **decisão sua** | ✅ decidido e guardado (`indicacao-no-gratis.test.ts`) |
+| **I-9** | Paywall no instante da prova | "no Equipe, a Ana ganharia sozinha" | baixo | I-8 | ✅ feito |
+| **I-10** | Níveis e barra da cliente (Equipe) | gamificação | médio | I-8 | ⏸ aguarda §9.2/§9.3 (prêmio e valor ainda em aberto) |
 
 **Comece por I-1 + I-2 + I-3.** Os três juntos são pequenos, e depois deles o laço existe de
 verdade: alguém indica, alguém chega marcada como indicada, e os dois lados são creditados pelo
 código que já estava lá.
+
+**2026-08-30 — I-1 a I-9 mesclados.** O laço B2C está de ponta a ponta: link assinado, escritor,
+convite no pico da avaliação, moldura de chegada, botão manual na ficha, barra de upgrade na lista
+de clientes, extrato mensal no `/admin/hoje`, e o paywall que oferece a automação sem bloquear
+nada. **I-10 fica pra depois**: ele grava nível/pontuação e isso depende de `referralBonusPoints` e
+"valores iguais dos dois lados", que são as duas perguntas que §9 ainda deixa em aberto — construir
+a barra de nível em cima de um valor que pode mudar seria trabalho jogado fora.
 
 ### O que medir, senão vira anedota
 
