@@ -361,3 +361,21 @@ Registrado porque "procurei e não achei" é resultado, e sem escrever vira retr
 
   E em todos os casos a página devolve 200: **convite inválido nunca transforma "agendar" em
   "não consigo agendar"**, que era o contrato escrito em `quemIndicou`.
+
+---
+
+## 11 · Mesclado, migrado e no ar (30/08, 14:20 UTC)
+
+- **PR #30 e #31 mescladas em `main`.** A #31 precisou de rebase — o squash-merge da #30 trocou
+  os hashes que ela usava como base, `git rebase --onto origin/main` resolveu sem conflito (mesmo
+  conteúdo, histórico diferente), 1001 testes reconferidos antes do push.
+- **Migrations `0045` e `0046` aplicadas em produção.** A consulta de segurança da `0045`
+  reconferida na hora (zero linhas, de novo). Advisors de segurança do banco conferidos depois:
+  nada novo, só os itens que já eram conhecidos.
+- **Deploy de produção confirmado** (Vercel, 14:19:54 UTC).
+- **O conserto do cron provado ao vivo:** disparo manual de `recompute-cycles` —
+  `tenantsProcessados: 12`, os doze tenants, num disparo só, sem depender de hora nenhuma.
+- **`/api/health` voltou a `ok: true`** pela primeira vez desde 27/08. Sobra só o aviso honesto de
+  `errorTracking` desligado (L-10, esperando `SENTRY_DSN`).
+
+O que falta agora é só ecossistema: os cinco itens do §6. Nenhum é código.
