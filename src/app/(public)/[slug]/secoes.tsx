@@ -4,7 +4,7 @@ import Link from 'next/link'
 import Badge from '@/components/ui/badge'
 import Card from '@/components/ui/card'
 import { formatarPreco } from '@/core/pricing/formatar'
-import { duracao } from '@/lib/formato'
+import { duracao, formatarTelefone } from '@/lib/formato'
 
 import type { PerfilPublico } from '@/server/services/public-booking'
 
@@ -245,9 +245,14 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
               4px para cada lado. Em lista empilhada de linha curta, ele mente.
             */}
             {perfil.phone ? (
+              // 2026-08-30, medido na página pública em produção: o texto visível era o E.164
+              // cru (`+5511999990000`) — o `href` continua E.164 de propósito (é o formato certo
+              // para `tel:`), mas quem LÊ é a cliente final, e `formatarTelefone` já existia e já
+              // era usada nas telas do admin. A vitrine do produto ficou de fora da formatação
+              // que o resto do app aplica.
               <a href={`tel:${perfil.phone}`} className="flex min-h-12 items-center gap-2 text-corpo text-txt">
                 <Phone aria-hidden className="size-4 shrink-0 text-txt-3" />
-                {perfil.phone}
+                {formatarTelefone(perfil.phone)}
               </a>
             ) : null}
             {perfil.instagram ? (

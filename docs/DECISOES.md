@@ -3400,3 +3400,20 @@ mesma regra que Windows/macOS usam em janelas de verdade: qualquer área "morta"
 só que a área "morta" aqui é a maioria do painel, não só uma faixa de 56px. O cursor visual de
 "arrastar" continua só na faixa do cabeçalho (dica mais forte), mas a função funciona na janela
 inteira.
+
+2026-08-30 · Telefone cru na vitrine — a página pública do salão mostrava E.164 para a cliente
+final · Rodada "aprimora tudo", área 1 (site público, `/{slug}`). Medido em produção, inspecionando
+o ELEMENTO e não o `innerText` (lição do "444%"): o `<a href="tel:...">` da seção Contato tinha
+como texto visível `+5511999990000` — E.164 cru. O `href` está correto e continua E.164 (é o
+formato certo para `tel:`, e o schema.org `LocalBusiness.telephone` em `page.tsx` também deve
+continuar assim). O problema é só o texto que a CLIENTE LÊ.
+
+Peso do achado: `formatarTelefone()` (`src/lib/formato.ts`) já existia, com o comentário
+explicando que `(11) 98765-4321` "é o formato que a profissional reconhece de cabeça", e já era
+aplicada em `clientes/lista.tsx` e `clientes/[id]/ficha.tsx`. Ou seja: a formatação foi feita nas
+telas internas e a **vitrine ficou de fora** — justamente a tela mais exposta do produto, a única
+que a cliente final vê, e (por `docs/33`) a que o salão mostra pro bairro dele.
+
+Corrigido em `src/app/(public)/[slug]/secoes.tsx`: `{formatarTelefone(perfil.phone)}` no texto,
+`href` intocado. Conferido que era o único lugar — os outros dois usos de `perfil.phone` em
+`(public)/` são o schema.org (deve ser E.164) e uma checagem de existência.
