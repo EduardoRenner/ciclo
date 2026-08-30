@@ -3378,3 +3378,8 @@ NÃO é confiável para provar que dois números estão "grudados" ou não — `
 nunca aparecem como caractere. Para julgar se falta separador de verdade, a checagem certa é opon
 `querySelector` no elemento específico e olhar sua estrutura (como foi feito aqui, tarde demais),
 não confiar no texto concatenado da página inteira.
+
+2026-08-30 · Acentuação faltando em "Sua conta no CICLO" (Configurações) · Medido ao vivo:
+"Modulos" (sem acento), "voce" (2×), "so" — só nesse um bloco de `config/page.tsx`, resto do
+arquivo com acentuação correta. Corrigido: "Módulos", "você" (2×), "só" — no texto visível e no
+comentário interno do código.

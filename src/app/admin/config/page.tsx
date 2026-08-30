@@ -56,15 +56,15 @@ const GRUPOS = [
   },
   {
     /*
-      Grupo proprio: "Meu plano" e sobre a conta do PROFISSIONAL no CICLO, e nao cabe em nenhum
-      dos outros. Colocar junto de "Fidelidade e assinatura" — que e o salao vendendo plano para a
+      Grupo próprio: "Meu plano" é sobre a conta do PROFISSIONAL no CICLO, e não cabe em nenhum
+      dos outros. Colocar junto de "Fidelidade e assinatura" — que é o salão vendendo plano para a
       CLIENTE dele — seria juntar exatamente as duas coisas que a regra 5.6 do plano de
-      monetizacao manda manter separadas.
+      monetização manda manter separadas.
     */
     titulo: 'Sua conta no CICLO',
     itens: [
-      { href: '/admin/config/meu-plano', titulo: 'Meu plano', descricao: 'O que voce usa, o que cada plano libera', icone: BadgeDollarSign },
-      { href: '/admin/config/modulos', titulo: 'Modulos', descricao: 'Ligue so o que voce usa na interface', icone: ToggleRight },
+      { href: '/admin/config/meu-plano', titulo: 'Meu plano', descricao: 'O que você usa, o que cada plano libera', icone: BadgeDollarSign },
+      { href: '/admin/config/modulos', titulo: 'Módulos', descricao: 'Ligue só o que você usa na interface', icone: ToggleRight },
     ],
   },
   {
