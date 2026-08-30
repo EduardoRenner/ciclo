@@ -1,3 +1,4 @@
+import { Temporal } from '@js-temporal/polyfill'
 import { z } from 'zod'
 
 import type { ModuloKey } from '@/core/billing/planos'
@@ -252,7 +253,15 @@ export const FERRAMENTAS: Ferramenta[] = [
           clientId: rc.item.id,
           serviceId: rs.item.id,
           professionalId: rp.item.id,
-          startsAtLocal: quando,
+          // `startsAt` COM offset, que é o que `EsquemaCriarAgendamento` exige — e convertido
+          // AQUI, no servidor, com o fuso do salão. Mandar a hora local para a tela converter
+          // usaria o fuso do APARELHO: uma dona viajando, ou um celular com fuso errado, marcaria
+          // no horário errado. É a armadilha do `CLAUDE.md` ("nunca aritmética em horário local"),
+          // e `Temporal` resolve inclusive o dia de mudança de horário de verão.
+          startsAt: Temporal.PlainDateTime.from(quando)
+            .toZonedDateTime(ctx.timezone)
+            .toInstant()
+            .toString(),
         },
         // O resumo é o que aparece no cartão de confirmação. Em português, com tudo resolvido —
         // o dono confirma lendo nome de gente e preço, não UUID (pesquisa da Anthropic sobre
