@@ -135,6 +135,7 @@ export default function Agendar({
   hours,
   services,
   professionals,
+  ind,
 }: {
   slug: string;
   nomeDoSalao: string;
@@ -144,6 +145,8 @@ export default function Agendar({
   hours: { weekday: number; opensAt: string; closesAt: string }[];
   services: Servico[];
   professionals: Profissional[];
+  /** Token de `?ind=` (I-1) — repassado cru ao `POST book`, que confere e resolve sozinho. */
+  ind: string | null;
 }) {
   const dias = useMemo(
     () => proximosDias(14, hojeNoSalao(timezone)),
@@ -289,6 +292,7 @@ export default function Agendar({
             phone: telefone,
             address: endereco.trim() || undefined,
             website: website || undefined,
+            ind: ind || undefined,
           }),
         });
         const json = (await r.json()) as {

@@ -59,3 +59,12 @@ export function linkWhatsApp(telefoneE164: string | null, texto: string): string
   if (numero.length < 10) return null
   return `https://wa.me/${numero}?text=${encodeURIComponent(texto)}`
 }
+
+/**
+ * `wa.me` SEM telefone — abre o seletor de contato do próprio WhatsApp de quem está mandando.
+ * Para o convite de indicação (I-3, `docs/30-INDICACAO-PLANO.md`): quem indica escolhe a amiga
+ * na hora, não tem como o CICLO já saber o telefone dela.
+ */
+export function linkWhatsAppCompartilhar(texto: string): string {
+  return `https://wa.me/?text=${encodeURIComponent(texto)}`
+}

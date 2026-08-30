@@ -11,6 +11,7 @@ import { normalizarPlano } from '@/server/services/planos'
 import { lerSite } from '@/server/services/site'
 import { normalizarTelefoneBR } from '@/server/services/telefone'
 import { criarAgendamento } from '@/server/services/agendamentos'
+import { verificarTokenIndicacao } from '@/server/services/indicacao'
 import { notificarEquipe } from '@/server/services/mensageria'
 import { AppError } from '@/server/http/errors'
 
@@ -377,6 +378,11 @@ export const EsquemaBookingPublico = z.object({
   // já entregaria "notei o honeypot" para quem está tentando burlar. A
   // decisão de responder como sucesso sem criar nada é da rota, não do schema.
   website: z.string().nullish(),
+  // I-1, `docs/30-INDICACAO-PLANO.md` §4.1: token assinado de `/{slug}?ind=`. Só string — a
+  // verificação (escopo, expiração, existência do referenciador no tenant) é toda de
+  // `criarAgendamentoPublico`, não do schema. Um token inválido nunca vira erro de validação:
+  // vira, na pior das hipóteses, um agendamento sem indicação.
+  ind: z.string().trim().nullish(),
 })
 
 /**
@@ -403,6 +409,12 @@ export async function criarAgendamentoPublico(slug: string, entrada: z.infer<typ
       professionalId = achado.professionalId
     }
 
+    // I-1: resolve o `client_id` de quem indicou. Escopo próprio (`indicacao`) impede um token
+    // de avaliação ou de orçamento ser aceito aqui — mesma proteção que já vale para os outros
+    // três. Token ausente, vencido ou de outro tenant vira `null` em silêncio: um convite velho
+    // não pode transformar "agendar" em "não consigo agendar".
+    const referredBy = entrada.ind ? verificarTokenIndicacao(entrada.ind) : null
+
     const agendamento = await criarAgendamento(
       svc,
       tenant.id,
@@ -418,6 +430,7 @@ export async function criarAgendamentoPublico(slug: string, entrada: z.infer<typ
         address: entrada.address ?? null,
       },
       tenant.settings,
+      referredBy,
     )
 
     // §4 eixo 3 (docs/09-PLATAFORMA.md): o cliente já lê "você vai receber a

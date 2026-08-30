@@ -32,8 +32,17 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   }
 }
 
-export default async function PaginaAgendar({ params }: { params: Promise<{ slug: string }> }) {
+export default async function PaginaAgendar({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>
+  // I-1, `docs/30-INDICACAO-PLANO.md`: `?ind=<token>` é o convite de indicação. Só string bruta
+  // aqui — a verificação inteira (escopo, expiração, existência) é do servidor, no `POST book`.
+  searchParams: Promise<{ ind?: string }>
+}) {
   const { slug } = await params
+  const { ind } = await searchParams
 
   const perfil = await perfilPublico(slug).catch((erro: unknown) => {
     if (erro instanceof AppError && erro.code === 'NOT_FOUND') return null
@@ -55,6 +64,7 @@ export default async function PaginaAgendar({ params }: { params: Promise<{ slug
         hours={perfil.hours}
         services={perfil.services}
         professionals={perfil.professionals}
+        ind={ind ?? null}
       />
     </main>
   )
