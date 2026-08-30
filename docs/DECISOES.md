@@ -3152,3 +3152,46 @@ mensal, paywall no instante da prova). I-10 (níveis e barra de progresso da cli
 não entrou porque grava pontuação em cima de duas perguntas que `docs/30` §9 deixa abertas: qual é
 o prêmio e se os dois lados recebem o mesmo valor. Construir a UI de nível agora seria herdar um
 número que pode mudar. Falta decidir §9.2 e §9.3 pra desbloquear.
+
+2026-08-30 · Assistente de IA destravado; 4 bugs corrigidos; 9 sugestões viram resposta sem
+LLM · Chave `GEMINI_API_KEY` criada pelo Eduardo e testada de ponta a ponta em produção pela
+primeira vez desde que o `docs/26` foi escrito (a Fase A nunca tinha rodado contra a API real).
+Quatro bugs de infraestrutura achados e corrigidos nesta rodada, todos medidos direto contra a
+API do Gemini, não deduzidos:
+1. `gemini-2.5-flash` devolvia 404 — o modelo foi descontinuado para chaves novas entre 26/08
+   (quando o `docs/26` foi escrito) e hoje. Trocado por `gemini-3.1-flash-lite` (`gemini.ts`).
+2. `gemini-3.6-flash` (tentativa intermediária) é modelo de raciocínio por padrão — gastava
+   tokens de "pensamento" até em pergunta trivial e estourava o timeout de 10s numa chamada real
+   com ferramenta (medido 12,7s só na primeira chamada). `flash-lite` não tem esse problema.
+3. Gemini 3.x exige reenviar o `thoughtSignature` da resposta anterior em qualquer `functionCall`
+   reenviado no histórico — sem isso, 400 "missing thought_signature" na segunda chamada do laço
+   (a que vem depois de rodar a ferramenta). Campo opcional novo em `MensagemDoAssistente`/
+   `RespostaDoModelo` (`types.ts`), capturado em `gemini.ts`, replicado em `assistente.ts`.
+4. "Tenho horário vago amanhã?" respondia com uma data de outro ano — `EsquemaData`/`EsquemaMes`
+   marcavam o campo como obrigatório no JSON Schema que o Gemini lê, mas a pergunta nem sempre
+   especifica data; sem valor natural para preencher o campo obrigatório, o MODELO inventava um.
+   Corrigido em duas frentes: os campos viraram `.optional()` de verdade (batendo com o fallback
+   que o `executar()` já tinha), e o prompt de sistema passou a levar a data de hoje no fuso do
+   tenant (`promptDeSistema(hojeNoFuso(...))`) — sem isso a instrução "nunca invente data" não
+   tinha como ser obedecida, porque não havia nenhuma data de referência no contexto.
+
+Além dos bugs, implementada a "Opção 1" discutida com o Eduardo: as 9 sugestões prontas do
+assistente (3 em `/admin/hoje`, 3 em `/admin/recuperar`, 2 em `/admin/caixa`, 1 em
+`/admin/orcamentos`) agora respondem via `POST /api/v1/assistant/rapido`
+(`src/server/assistente/respostas-rapidas.ts`) — template de texto fixo com o número vindo direto
+do mesmo serviço que a ferramenta equivalente do Gemini usaria, ZERO chamada ao LLM. Latência
+medida: 400-950ms (contra 2-8s no caminho com Gemini). Cada id tem seu próprio par
+módulo+permissão em `PERMISSAO_POR_ID`, igual ao par que a ferramenta Gemini equivalente já
+exigia — nenhuma resposta rápida contorna RBAC ou módulo do plano. Pergunta livre digitada pelo
+usuário continua indo para o Gemini normalmente; só as 9 sugestões com clique têm atalho.
+
+Achado colateral: o rótulo do botão em `/admin/caixa` dizia "Quanto faturei essa semana?" mas a
+pergunta por trás sempre foi o mês corrente — corrigido para "Quanto faturei este mês?" ao
+escrever o template fixo (a resposta determinística ia contradizer o próprio botão).
+
+Pendência registrada, não resolvida: o custo real por pergunta do `gemini-3.1-flash-lite` ainda
+não foi medido (o `docs/26 §7` estimava ~R$0,004 para o `2.5-flash`, hoje desatualizado) — falta
+volume de uso real para calibrar, mesma regra do `docs/17 §4.8` sobre não fingir dado que não
+existe. `pnpm verify` completo não pôde rodar nesta sessão: não há Docker disponível neste
+ambiente para `supabase start`, então `test:integration` e `test:rls` ficaram fora — typecheck,
+lint, `test:unit` (1001 testes, 0 falhas) e `build` passaram limpos.

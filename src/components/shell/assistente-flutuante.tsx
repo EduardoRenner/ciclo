@@ -8,7 +8,19 @@ import Card from '@/components/ui/card'
 import Sheet from '@/components/ui/sheet'
 import { useToast } from '@/components/ui/toast'
 
-type Sugestao = { rotulo: string; pergunta: string }
+type Sugestao = {
+  rotulo: string
+  pergunta: string
+  /**
+   * 2026-08-30: quando presente, o clique NÃO passa pelo Gemini — vai para
+   * `POST /api/v1/assistant/rapido` com este id, que devolve uma resposta 100% determinística
+   * (o mesmo dado que a tela já mostra, só em frase). Latência medida do caminho com LLM: 2-8s;
+   * deste caminho: consulta única ao banco, sem chamada externa. Reserve para sugestão cuja
+   * resposta é sempre a mesma pergunta feita da mesma forma — mudou o texto do botão, muda o id
+   * em `respostas-rapidas.ts` também, os dois têm que casar.
+   */
+  idRapido?: string
+}
 
 /**
  * docs/26-AGENTE-IA-PLANO.md §5 — sugestões por tela, nunca caixa vazia: dono de salão não sabe o
@@ -19,29 +31,33 @@ const SUGESTOES_POR_ROTA: { prefixo: string; sugestoes: Sugestao[] }[] = [
   {
     prefixo: '/admin/hoje',
     sugestoes: [
-      { rotulo: 'Quem falta confirmar hoje?', pergunta: 'Quem falta confirmar hoje?' },
-      { rotulo: 'Quanto já faturei hoje?', pergunta: 'Quanto eu já faturei hoje?' },
-      { rotulo: 'Tenho horário vago amanhã?', pergunta: 'Eu tenho horário vago amanhã?' },
+      { rotulo: 'Quem falta confirmar hoje?', pergunta: 'Quem falta confirmar hoje?', idRapido: 'hoje_confirmar' },
+      { rotulo: 'Quanto já faturei hoje?', pergunta: 'Quanto eu já faturei hoje?', idRapido: 'hoje_faturamento' },
+      { rotulo: 'Tenho horário vago amanhã?', pergunta: 'Eu tenho horário vago amanhã?', idRapido: 'hoje_horario_vago_amanha' },
     ],
   },
   {
     prefixo: '/admin/recuperar',
     sugestoes: [
-      { rotulo: 'Quem eu chamo primeiro?', pergunta: 'De quem eu deveria chamar primeiro para recuperar?' },
-      { rotulo: 'Quanto tem parado aqui?', pergunta: 'Quanto de receita está parado, esperando eu chamar de volta?' },
-      { rotulo: 'Quem sumiu há mais de 60 dias?', pergunta: 'Quais clientes estão sumidas há mais de 60 dias?' },
+      { rotulo: 'Quem eu chamo primeiro?', pergunta: 'De quem eu deveria chamar primeiro para recuperar?', idRapido: 'recuperar_quem_primeiro' },
+      { rotulo: 'Quanto tem parado aqui?', pergunta: 'Quanto de receita está parado, esperando eu chamar de volta?', idRapido: 'recuperar_total_parado' },
+      { rotulo: 'Quem sumiu há mais de 60 dias?', pergunta: 'Quais clientes estão sumidas há mais de 60 dias?', idRapido: 'recuperar_sumidos_60' },
     ],
   },
   {
     prefixo: '/admin/caixa',
     sugestoes: [
-      { rotulo: 'Quanto faturei essa semana?', pergunta: 'Quanto eu faturei neste mês até agora?' },
-      { rotulo: 'Qual foi meu lucro no mês?', pergunta: 'Qual foi meu lucro neste mês?' },
+      // 2026-08-30: rótulo dizia "essa semana" mas a pergunta sempre foi mês corrente — corrigido
+      // para bater (achado ao escrever o template fixo: a resposta ia contradizer o botão).
+      { rotulo: 'Quanto faturei este mês?', pergunta: 'Quanto eu faturei neste mês até agora?', idRapido: 'caixa_faturamento_mes' },
+      { rotulo: 'Qual foi meu lucro no mês?', pergunta: 'Qual foi meu lucro neste mês?', idRapido: 'caixa_lucro_mes' },
     ],
   },
   {
     prefixo: '/admin/orcamentos',
-    sugestoes: [{ rotulo: 'Quais orçamentos estão sem resposta?', pergunta: 'Quais orçamentos estão parados, sem resposta da cliente?' }],
+    sugestoes: [
+      { rotulo: 'Quais orçamentos estão sem resposta?', pergunta: 'Quais orçamentos estão parados, sem resposta da cliente?', idRapido: 'orcamentos_sem_resposta' },
+    ],
   },
 ]
 
@@ -78,7 +94,7 @@ export default function AssistenteFlutuante({ disponivel }: { disponivel: boolea
 
   if (!disponivel) return null
 
-  async function perguntar(texto: string) {
+  async function perguntar(texto: string, idRapido?: string) {
     const limpo = texto.trim()
     if (!limpo || turnos.some((t) => t.carregando)) return
 
@@ -86,11 +102,20 @@ export default function AssistenteFlutuante({ disponivel }: { disponivel: boolea
     setTurnos((atual) => [...atual, { pergunta: limpo, resposta: '', carregando: true }])
 
     try {
-      const r = await fetch('/api/v1/assistant', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ pergunta: limpo }),
-      })
+      // Sugestão com `idRapido`: pula o Gemini, vai direto para a resposta determinística —
+      // ver o comentário em `Sugestao.idRapido` acima. Texto livre digitado nunca tem id, então
+      // sempre cai no caminho normal.
+      const r = idRapido
+        ? await fetch('/api/v1/assistant/rapido', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ id: idRapido }),
+          })
+        : await fetch('/api/v1/assistant', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ pergunta: limpo }),
+          })
 
       if (r.status === 403 || r.status === 503) {
         // Módulo desligado pelo dono, ou provedor fora do ar depois do botão já ter aparecido —
@@ -139,7 +164,7 @@ export default function AssistenteFlutuante({ disponivel }: { disponivel: boolea
                     <button
                       key={s.rotulo}
                       type="button"
-                      onClick={() => perguntar(s.pergunta)}
+                      onClick={() => perguntar(s.pergunta, s.idRapido)}
                       className="rounded-[var(--radius-sm)] border border-line px-4 py-3 text-left text-corpo text-txt-2 transition hover:border-line-2 hover:bg-surface-2 active:scale-[.99]"
                     >
                       {s.rotulo}

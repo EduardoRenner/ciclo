@@ -19,14 +19,19 @@ export type DescricaoFerramenta = {
 export type MensagemDoAssistente =
   | { papel: 'sistema'; texto: string }
   | { papel: 'usuario'; texto: string }
-  /** Resposta anterior do modelo, quando o laço já chamou uma ferramenta antes (docs/26 §2). */
-  | { papel: 'assistente'; texto: string | null; chamadaFerramenta?: { nome: string; argumentos: string } }
+  /**
+   * Resposta anterior do modelo, quando o laço já chamou uma ferramenta antes (docs/26 §2).
+   * `assinatura`: token opaco que ALGUNS provedores (Gemini 3.x) exigem de volta, inalterado,
+   * junto da chamada de ferramenta reenviada no histórico — sem ele o Gemini 3 recusa o próximo
+   * turno com 400 ("missing thought_signature"). Provedor que não usa isso ignora o campo.
+   */
+  | { papel: 'assistente'; texto: string | null; chamadaFerramenta?: { nome: string; argumentos: string; assinatura?: string } }
   /** Resultado de uma ferramenta já executada, devolvido ao modelo no próximo turno do laço. */
   | { papel: 'ferramenta'; nome: string; conteudo: string }
 
 export type RespostaDoModelo =
   | { tipo: 'texto'; texto: string }
-  | { tipo: 'chamada_ferramenta'; nome: string; argumentos: string }
+  | { tipo: 'chamada_ferramenta'; nome: string; argumentos: string; assinatura?: string }
 
 export type PedidoAoModelo = {
   mensagens: MensagemDoAssistente[]

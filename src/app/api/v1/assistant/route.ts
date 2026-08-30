@@ -16,6 +16,13 @@ const EsquemaPergunta = z.object({
   pergunta: z.string().trim().min(1, 'Digite uma pergunta.').max(500, 'Pergunta muito longa.'),
 })
 
+// 2026-08-30: `executarLaco` (assistente.ts) permite até MAX_CHAMADAS_DE_FERRAMENTA + 1 = 4
+// chamadas ao Gemini em sequência (escolhe ferramenta → repete até responder em texto). Cada
+// uma aborta sozinha em TIMEOUT_MS (gemini.ts, 15s) no pior caso — 4×15s = 60s no limite
+// absoluto, bem acima do padrão da plataforma (10s) sem isto. Piso alto de propósito: é melhor
+// a função esperar do que morrer antes do timeout interno conseguir agir e devolver 503 correto.
+export const maxDuration = 60
+
 // docs/26-AGENTE-IA-PLANO.md §4.4: teto por tenant e por usuário, para conter abuso — não para
 // conter custo normal (a R$ 0,004/pergunta o custo em si não justifica limite nenhum).
 const LIMITE_POR_TENANT_DIA = { limite: 60, janelaSegundos: 86_400 }

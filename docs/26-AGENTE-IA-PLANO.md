@@ -314,6 +314,22 @@ não desenhe nada para economizar token.** Desenhe para conter abuso (teto por t
 poder trocar de provider (interface). O custo que importa neste produto continua sendo mensagem
 de WhatsApp e minuto de suporte — não inferência.
 
+**Atualização 2026-08-30 — recalibrado para `gemini-3.1-flash-lite`, o modelo em produção hoje.**
+O `2.5-flash` foi descontinuado pelo Google entre a escrita deste plano e a chave ser criada
+(ver `docs/DECISOES.md` 2026-08-30). Preço oficial **[M]**, [ai.google.dev/gemini-api/docs/pricing](https://ai.google.dev/gemini-api/docs/pricing), consultado 2026-08-30: US$ 0,25/M entrada,
+US$ 1,50/M saída. Câmbio **[M]**, consultado 2026-08-30: R$ 5,19/US$.
+
+| Base | Entrada | Saída | Por pergunta | 100/mês |
+|---|---:|---:|---:|---:|
+| Mesma premissa deste §7 (3.000 in / 400 out) — **[E]** | 3.000 | 400 | R$ 0,0070 | R$ 0,70 |
+| Chamada real medida contra a API, 1 ferramenta, 8 declaradas — **[M]**, não é volume de produção | ~484–600 | ~14–30 | ~R$ 0,0015 | ~R$ 0,15 |
+
+A chamada real medida veio **bem abaixo** da premissa de 3.000/400 tokens — o catálogo de 8
+ferramentas + prompt de sistema não chega a 500 tokens de entrada na prática. A conclusão do
+parágrafo acima continua de pé, com folga maior ainda: mesmo a estimativa mais alta das duas é
+ruído contra R$ 45,57 de líquido. **O número exato por tenant/mês continua [S] até existir uso
+real** — nenhuma das duas linhas acima é volume de produção, é ordem de grandeza por chamada.
+
 ---
 
 ## §8 · Armadilhas desta casa que vão pegar esta implementação

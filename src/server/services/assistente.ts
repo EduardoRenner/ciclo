@@ -1,6 +1,6 @@
 import type { Papel } from '@/server/auth/rbac'
 import { AppError } from '@/server/http/errors'
-import { ferramentasPermitidas, paraJsonSchema, type ContextoFerramenta, type Ferramenta } from '@/server/assistente/ferramentas'
+import { ferramentasPermitidas, hojeNoFuso, paraJsonSchema, type ContextoFerramenta, type Ferramenta } from '@/server/assistente/ferramentas'
 import { podeUsarModulo } from '@/core/billing/planos'
 import { contextoDePlano } from '@/server/services/planos'
 import type { AiProvider, MensagemDoAssistente } from '@/server/providers/ai/types'
@@ -16,12 +16,24 @@ type Cliente = SupabaseClient<Database>
 // de qualquer pergunta a, na pior das hipóteses, 3 idas ao banco + 4 chamadas ao provedor.
 const MAX_CHAMADAS_DE_FERRAMENTA = 3
 
-const PROMPT_DE_SISTEMA = `Você é o assistente do CICLO, um painel de gestão para profissionais de beleza.
-Responda só com base no que as ferramentas devolverem — nunca invente número, nome ou data.
+/**
+ * 2026-08-30: achado testando o laço pela primeira vez contra a API real — pergunta "tenho
+ * horário vago amanhã?" voltou com uma data de 2025 inventada. A instrução "nunca invente data"
+ * sozinha não bastava: sem NENHUMA data de referência no contexto, o modelo não tem como saber
+ * que dia é hoje para calcular "amanhã" — ele estava adivinhando, não desobedecendo. Ferramentas
+ * como `ocupacao_do_dia` (EsquemaData) pedem uma data em AAAA-MM-DD; sem esta âncora, é o modelo
+ * quem tem que inventar o número que preenche esse campo, o que é exatamente o que a regra
+ * inegociável nº1 do docs/26 (`§0` item 1) proíbe.
+ */
+function promptDeSistema(hojeIso: string): string {
+  return `Você é o assistente do CICLO, um painel de gestão para profissionais de beleza.
+Hoje é ${hojeIso} (formato AAAA-MM-DD). Use esta data para calcular "hoje", "amanhã", "essa semana" e datas parecidas — nunca invente ou chute uma data fora deste cálculo.
+Responda só com base no que as ferramentas devolverem — nunca invente número, nome ou dado que não veio de uma ferramenta.
 Se a pergunta exigir um dado que nenhuma ferramenta traz, diga que não consegue responder isso.
 Nunca dê conselho médico, clínico, jurídico ou fiscal — recuse e sugira falar com um profissional da área.
 Nunca afirme um resultado futuro ("essa campanha vai trazer X clientes") — descreva só o que já aconteceu ou já está calculado.
 Seja direto e curto. O dono do salão está sem tempo.`
+}
 
 export type ResultadoDoAssistente = {
   resposta: string
@@ -94,7 +106,7 @@ export async function executarLaco(opcoes: {
   const descricoes = disponiveis.map((f) => ({ nome: f.nome, descricao: f.descricao, parametros: paraJsonSchema(f.schema) }))
 
   const mensagens: MensagemDoAssistente[] = [
-    { papel: 'sistema', texto: PROMPT_DE_SISTEMA },
+    { papel: 'sistema', texto: promptDeSistema(hojeNoFuso(ctxFerramenta.timezone)) },
     { papel: 'usuario', texto: pergunta },
   ]
 
@@ -128,7 +140,7 @@ export async function executarLaco(opcoes: {
     // alcance deste papel/plano, ela não está nesta lista e cai no ramo abaixo.
     const ferramenta = disponiveis.find((f) => f.nome === resposta.nome)
     if (!ferramenta) {
-      mensagens.push({ papel: 'assistente', texto: null, chamadaFerramenta: { nome: resposta.nome, argumentos: resposta.argumentos } })
+      mensagens.push({ papel: 'assistente', texto: null, chamadaFerramenta: { nome: resposta.nome, argumentos: resposta.argumentos, assinatura: resposta.assinatura } })
       mensagens.push({ papel: 'ferramenta', nome: resposta.nome, conteudo: 'Ferramenta indisponível para este usuário.' })
       continue
     }
@@ -141,7 +153,7 @@ export async function executarLaco(opcoes: {
     }
     const validado = ferramenta.schema.safeParse(argumentos)
 
-    mensagens.push({ papel: 'assistente', texto: null, chamadaFerramenta: { nome: resposta.nome, argumentos: resposta.argumentos } })
+    mensagens.push({ papel: 'assistente', texto: null, chamadaFerramenta: { nome: resposta.nome, argumentos: resposta.argumentos, assinatura: resposta.assinatura } })
 
     if (!validado.success) {
       mensagens.push({ papel: 'ferramenta', nome: resposta.nome, conteudo: 'Argumentos inválidos para esta ferramenta.' })

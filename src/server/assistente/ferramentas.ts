@@ -51,18 +51,26 @@ const EsquemaBusca = z.object({
   termo: z.string().min(2).describe('nome ou telefone (com ou sem formatação) da cliente a procurar'),
 })
 
+// `.optional()`: sem isto, o schema vira `"required": ["mes"]` no JSON Schema que o Gemini lê —
+// achado 2026-08-30 testando contra a API real (`docs/32/33` §2.4 item 3, aplicado aqui em
+// retrospecto): campo obrigatório sem valor natural na pergunta força o MODELO a inventar um
+// valor plausível (uma data de outro ano, por exemplo) só para satisfazer o schema. Opcional de
+// verdade deixa o modelo omitir o campo quando a pergunta não especifica período, e o `executar`
+// abaixo já tem o fallback certo (mês/dia corrente) para quando isso acontece.
 const EsquemaMes = z.object({
   mes: z
     .string()
     .regex(/^\d{4}-\d{2}$/)
-    .describe('mês no formato AAAA-MM; se não informado, usa o mês corrente'),
+    .describe('mês no formato AAAA-MM; se não informado, usa o mês corrente')
+    .optional(),
 })
 
 const EsquemaData = z.object({
   data: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
-    .describe('data no formato AAAA-MM-DD; se não informado, usa hoje'),
+    .describe('data no formato AAAA-MM-DD; se não informado, usa hoje')
+    .optional(),
 })
 
 /** `YYYY-MM` do mês corrente no fuso do tenant, sem depender de `new Date()` no chamador. */
@@ -72,7 +80,8 @@ function mesCorrente(timezone: string): string {
     .replace('/', '-')
 }
 
-function hojeNoFuso(timezone: string): string {
+/** Exportada: `assistente.ts` reusa para ancorar o prompt de sistema com a data de hoje. */
+export function hojeNoFuso(timezone: string): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: timezone }).format(new Date())
 }
 
