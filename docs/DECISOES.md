@@ -3706,3 +3706,24 @@ virando escolha silenciosa. Uma quinta descoberta veio de graça: a primeira ver
 esperava 2 opções para "Maria" e o código devolveu 3, incluindo "Mariana Lopes" — a EXPECTATIVA
 estava errada, não o código. Esconder uma opção legítima para a lista ficar bonita é escolher pelo
 dono por outro caminho. Registrado no próprio teste.
+
+2026-08-30 · `preparar_agendamento` testada em produção — os quatro caminhos · Não só o caminho
+feliz; o que interessa é o que ela faz quando NÃO tem certeza.
+
+1. **Caminho feliz** — "marca um corte pro Bruno Almeida amanhã às 15h" → resolveu serviço,
+   cliente, profissional, data e preço, e respondeu *"Preparei... Confirma para eu prosseguir?"*.
+   Não disse que marcou. É a diferença entre preparar e executar, e ela apareceu na frase.
+2. **Não existe** — "marca um corte pra Maria" (não há Maria na base) → *"Não encontrei nenhuma
+   cliente chamada Maria. Você teria o sobrenome dela ou o telefone?"*. Perguntou em vez de pegar
+   a primeira da lista, que era o modo de falha mais perigoso.
+3. **Ambiguidade real, o pré-mortem do §8.1** — criadas duas clientes de teste com o mesmo
+   prefixo ("Joana ZZTESTE Alves" e "Joana ZZTESTE Braga"), pedido "marca um corte pra Joana" →
+   *"Encontrei duas clientes com o nome Joana: ... Qual delas?"*. **Não desempatou.** Dado de
+   teste apagado e a base conferida de volta em 22 clientes.
+4. **Prefixo vence "contém", e isso importa** — "marca pro Eduardo" resolveu direto para "Eduardo
+   Nogueira" mesmo existindo "Carlos Eduardo Lima" na base. Correto: quem diz "Eduardo" quer
+   alguém cujo nome COMEÇA com Eduardo. Perguntar aqui seria ruído, e ruído também é defeito.
+
+**A prova que fecha o desenho**: consultado o banco depois de três pedidos de "marca um corte",
+`0` agendamentos criados. A ferramenta prepara e nada mais — quem escreve continua sendo o
+endpoint normal, com o clique do dono.
