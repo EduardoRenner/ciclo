@@ -15,7 +15,13 @@
  * diacríticos combinantes — remover só ele preserva `ç`→`c`? Não: `ç` é decomposto em `c` + `¸`
  * (cedilha, U+0327), que está no bloco. Então cobre cedilha também, que é o outro caso que
  * importa em português ("Conceicao" achar "Conceição").
+ *
+ * O `.trim()` faz parte da normalização: `onboarding/formulario.tsx` tinha uma cópia desta mesma
+ * função (`normalizar`, com o mesmo NFD + mesmo range) e aparava as pontas. Duas cópias da mesma
+ * regra é a condição exata para elas divergirem — e para uma guarda cobrir uma e deixar a outra
+ * sem rede. Consolidadas aqui, num lugar só, no mesmo espírito de `ROTAS_AGENDADAS` e
+ * `promessa.ts`. Na busca de cliente o `.trim()` é no-op: o termo já chega aparado.
  */
 export function semAcento(texto: string): string {
-  return texto.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+  return texto.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
 }

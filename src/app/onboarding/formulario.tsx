@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react'
 
 import Button from '@/components/ui/button'
 import Input from '@/components/ui/input'
+import { semAcento } from '@/core/text/normalizar'
 
 export type Profissao = { id: string; nome: string; grupo: string; sinonimos: string[] }
 
@@ -16,15 +17,6 @@ function slugificar(texto: string): string {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 40)
-}
-
-/** Mesmo tratamento de acento/caixa de `slugificar`, sem virar slug — é só pra comparar texto de busca. */
-function normalizar(texto: string): string {
-  return texto
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase()
-    .trim()
 }
 
 /**
@@ -52,9 +44,9 @@ export default function FormularioOnboarding({ profissoes }: { profissoes: Profi
   const profissaoEscolhida = profissoes.find((p) => p.id === professionId) ?? null
 
   const filtradas = useMemo(() => {
-    const termo = normalizar(buscaProfissao)
+    const termo = semAcento(buscaProfissao)
     if (!termo) return profissoes
-    return profissoes.filter((p) => normalizar(p.nome).includes(termo) || p.sinonimos.some((s) => normalizar(s).includes(termo)))
+    return profissoes.filter((p) => semAcento(p.nome).includes(termo) || p.sinonimos.some((s) => semAcento(s).includes(termo)))
   }, [buscaProfissao, profissoes])
 
   async function enviar(e: React.FormEvent) {

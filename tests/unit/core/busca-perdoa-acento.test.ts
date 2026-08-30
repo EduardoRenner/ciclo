@@ -41,6 +41,14 @@ describe('semAcento — busca que perdoa como a pessoa digita', () => {
     expect(semAcento('otávio')).toBe('otavio')
   })
 
+  it('apara as pontas — a cópia consolidada do onboarding fazia isso, e a busca depende', () => {
+    // `onboarding/formulario.tsx` tinha uma segunda cópia desta regra, com `.trim()`. Ao unir as
+    // duas, o `.trim()` veio junto: sem ele, " Otavio " deixaria de casar e a busca de profissão
+    // do onboarding regrediria em silêncio.
+    expect(semAcento('  Otávio  ')).toBe('otavio')
+    expect(semAcento('  João  ')).toBe('joao')
+  })
+
   it('não destrói o que não é acento — nome sem diacrítico atravessa inteiro', () => {
     // Guarda contra o próprio detector: um regex guloso demais (ex.: remover [^a-z]) passaria
     // nos casos acima e comeria espaço, hífen e apóstrofo — quebrando "Ana Clara" e "D'Ávila".

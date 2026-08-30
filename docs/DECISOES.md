@@ -3603,3 +3603,26 @@ MESMA função que a busca usa, não uma cópia — lição da guarda cega pega 
 Nota de ambiente: `pnpm db:types` falhou (`SUPABASE_PROJECT_REF` só existe na Vercel, não local) e
 sobrescreveu `types.gen.ts` com o JSON do erro. Restaurado do git; a coluna foi adicionada à mão
 **só em `Row`** — é gerada, nunca aceita `Insert`/`Update`.
+
+2026-08-30 · Segunda cópia da mesma normalização — consolidada em `core/text/normalizar.ts` ·
+Ao varrer o projeto atrás de OUTRAS buscas com o mesmo problema de acento (extensão natural do
+achado anterior, não trabalho inventado), o resultado:
+- **`ilike` existe em um lugar só** no projeto inteiro — o de `clientes.ts`, já corrigido. Não há
+  outra query com o defeito.
+- **Mas havia uma segunda cópia da regra**: `onboarding/formulario.tsx` tinha `normalizar()` com
+  exatamente o mesmo `normalize('NFD')` + mesmo range de diacríticos + `.toLowerCase()`, mais um
+  `.trim()`. Ou seja: ao criar `semAcento` eu tinha acabado de escrever a terceira versão da
+  mesma ideia sem perceber.
+
+Duas cópias da mesma regra é a condição exata para divergirem — e para uma guarda cobrir uma e
+deixar a outra sem rede, que é como as duas guardas cegas desta sessão nasceram. Consolidadas:
+`semAcento` absorveu o `.trim()` (no-op na busca de cliente, onde o termo já chega aparado) e o
+onboarding passou a importar de `core/`. Mesmo espírito de `ROTAS_AGENDADAS`, `NOME_DO_PLANO` e
+`promessa.ts`: um lugar só. Guarda ganhou o caso do `.trim()` e foi vista reprovando sem ele
+(`'  otavio  '` ≠ `'otavio'`) — sem essa asserção, a busca de profissão do onboarding regrediria
+em silêncio.
+
+Verificado e NÃO mexido: `importar/importador.tsx` casa cabeçalho de planilha por
+`toLowerCase().includes()` com os alvos `nome`, `telefone`, `mail`, `etiqueta` — nenhum tem
+acento, então não há defeito medido. Fica anotado que o dia em que alguém adicionar um alvo
+acentuado (`endereço`) o mesmo problema aparece ali, e a função já existe para resolver.
