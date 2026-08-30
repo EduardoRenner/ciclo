@@ -135,6 +135,8 @@ export default function Agendar({
   hours,
   services,
   professionals,
+  ind,
+  indicadaPor,
 }: {
   slug: string;
   nomeDoSalao: string;
@@ -144,6 +146,10 @@ export default function Agendar({
   hours: { weekday: number; opensAt: string; closesAt: string }[];
   services: Servico[];
   professionals: Profissional[];
+  /** Token de `?ind=` (I-1) — repassado cru ao `POST book`, que confere e resolve sozinho. */
+  ind: string | null;
+  /** I-4: primeiro nome de quem indicou, já resolvido no servidor. `null` = sem convite válido. */
+  indicadaPor: string | null;
 }) {
   const dias = useMemo(
     () => proximosDias(14, hojeNoSalao(timezone)),
@@ -289,6 +295,7 @@ export default function Agendar({
             phone: telefone,
             address: endereco.trim() || undefined,
             website: website || undefined,
+            ind: ind || undefined,
           }),
         });
         const json = (await r.json()) as {
@@ -438,6 +445,27 @@ export default function Agendar({
 
   return (
     <div className="flex flex-col gap-5">
+      {/*
+        I-4, `docs/30-INDICACAO-PLANO.md` §6.2b — a moldura de chegada. Prova social de par: a
+        nova cliente lê o nome de alguém que ela conhece ANTES do primeiro clique, e é isso que a
+        pesquisa chama de "encaixe melhor" (§2.4).
+
+        Não promete desconto nem valor nenhum: QUAL é o prêmio e QUANTO continuam em aberto no
+        §9, e estampar "R$ 20" aqui seria a mesma classe de promessa vazia que o quadro "Taxa" do
+        caixa (achado da rodada 1 da auditoria). O que é verdade em qualquer plano é o convite.
+      */}
+      {indicadaPor ? (
+        <Card className="border-acc/40 bg-acc-soft">
+          <p className="text-corpo font-semibold text-txt">
+            {indicadaPor} indicou este lugar pra você
+          </p>
+          <p className="mt-1 text-secundario text-txt-2">
+            Marque seu primeiro horário abaixo — {nomeDoSalao} vai saber que foi {indicadaPor} quem
+            te trouxe.
+          </p>
+        </Card>
+      ) : null}
+
       <section>
         <Passo numero={1} titulo="Serviço" />
         <div className="flex flex-col gap-2">

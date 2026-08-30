@@ -20,39 +20,32 @@ name: cron
 
 on:
   schedule:
-    # SEIS horários, e a razão é uma costura que quase passou em silêncio.
+    # SEIS horários — e desde 30/08 eles não têm mais nada a ver com fuso horário.
     #
-    # As rotas não processam "todos os tenants": cada uma só age no tenant cuja HORA LOCAL bate
-    # com a dela — `recompute-cycles` às 3h, `segments` às 4h. Esse desenho pressupunha o cron do
-    # Vercel disparando a cada 15 minutos, que era o plano antigo.
+    # A HISTÓRIA, porque ela se repetiu três vezes e o padrão importa mais que o número:
     #
-    # Com UM disparo diário às 06:10 UTC, o resultado medido era:
-    #   recompute-cycles  → só pegava UTC-3 (São Paulo);
-    #   segments          → só pegaria UTC-2, ou seja, Fernando de Noronha. Na prática, ninguém.
-    # E falhava em SILÊNCIO: a rota devolve 200 com `tenantsProcessados: 0` e o job fica verde.
-    # Quem se cadastrasse em Manaus, Cuiabá ou Rio Branco nunca teria o Motor de Ciclo recalculado
-    # — e o fuso vem do NAVEGADOR no onboarding, então isso não é hipótese remota.
+    #   25/08 — as rotas exigiam hora local EXATA do tenant (3h para o Motor de Ciclo, 4h para
+    #           segmentos). O disparo pedido para 06:10 UTC aconteceu às 07:06. 56 minutos de
+    #           atraso, hora local virou 4:06, caiu fora: ZERO tenants, HTTP 200, job verde.
+    #   26/08 — conserto: a igualdade virou uma JANELA de 3 horas, e estes seis horários foram
+    #           escolhidos para cobrir hora local 3 e 4 nos quatro fusos do Brasil.
+    #   30/08 — medido com `gh run list`: o atraso REAL do `schedule` do GitHub nesta base é de
+    #           5 a 6,5 HORAS. Os seis disparos nominais abaixo aconteceram às 11:38, 12:39,
+    #           13:09, 13:48, 14:24 e 15:02 UTC. Todos os tenants são UTC-3, ou seja hora local
+    #           8,6 a 12,0 — contra uma janela elegível de 3h-5h. Nenhum disparo pegou nenhum
+    #           tenant, seis vezes por dia, por dois dias e meio. Verde o tempo todo.
     #
-    # Rodar de hora em hora consertaria, e custaria ~43% da cota de Actions do repositório privado.
-    # Estes seis horários cobrem hora local 3 E 4 nos quatro fusos do Brasil (UTC-2 a UTC-5) por ~11%
-    # (eram cinco por ~9% até a auditoria de 26/08 pedir o sexto — ver ponto 2 abaixo).
-    # `tests/unit/server/cron-cobre-os-fusos.test.ts` confere essa aritmética a cada build — se
-    # alguém mudar a hora de uma rota ou mexer neste schedule, o teste reprova antes do silêncio.
+    # A LIÇÃO: `schedule` do GitHub Actions é best-effort e atrasa em HORAS, não em minutos.
+    # Enquanto a rota depender do relógio do disparo, existe um atraso que a zera — e alargar a
+    # janela só empurra o problema. Por isso as rotas agendadas **deixaram de olhar a hora local**
+    # e passam por todos os tenants em todo disparo. Reprocessar o mesmo tenant no mesmo dia é
+    # upsert por PK (TICKET-036), então isso é economia de processamento que não vale o risco.
+    # `tests/unit/server/cron-sobrevive-a-atraso.test.ts` guarda esse invariante.
     #
-    # ATUALIZADO em 2026-08-26 pela auditoria de lançamento (`docs/23` §2). Duas mudanças:
-    #
-    # 1. As rotas deixaram de exigir hora local EXATA e passaram a aceitar uma janela
-    #    (`src/core/cron/janela.ts`). O motivo é medido: o único disparo agendado que já existiu
-    #    foi pedido para 06:10 UTC e aconteceu às 07:06 — 56 minutos de atraso. Todos os tenants
-    #    da base são UTC-3, então `recompute-cycles` (hora 3) caiu fora por 6 minutos e processou
-    #    ZERO. HTTP 200, job verde, Motor de Ciclo parado o dia inteiro.
-    #
-    # 2. Entrou um SEXTO horário, e quem pediu foi o teste, não eu. Com cinco,
-    #    `segments` (hora local 4) tinha UM único disparo elegível em America/Rio_Branco (UTC-5):
-    #    o schedule chegava no máximo às 4h locais de lá, então uma execução pulada pelo GitHub
-    #    custava o dia inteiro daquele fuso. Alargar a janela não resolveria — ela se estenderia
-    #    para horas locais que o schedule nunca alcança naquele fuso. Só um horário mais tarde
-    #    resolve. Custo: ~11% da cota de Actions em vez de ~9%.
+    # Então por que ainda SEIS horários, se nenhum deles precisa acertar hora nenhuma? Por
+    # redundância: `schedule` também PULA execução, e seis tentativas por dia significam que o
+    # Motor de Ciclo só fica um dia sem rodar se o GitHub falhar seis vezes seguidas. O custo
+    # continua sendo ~11% da cota de Actions do repositório.
     - cron: '10 5 * * *'
     - cron: '10 6 * * *'
     - cron: '10 7 * * *'

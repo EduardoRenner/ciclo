@@ -2,26 +2,22 @@ import { readFileSync } from 'node:fs'
 
 import { describe, expect, it } from 'vitest'
 
-import { ROTAS_AGENDADAS } from '@/core/cron/agendadas'
-
 /**
- * A costura entre o AGENDADOR e a ROTA, que quase se soltou em silêncio.
+ * O que este arquivo guarda HOJE, depois de 30/08: duas coisas sobre o `cron.yml`, nenhuma delas
+ * sobre as rotas agendadas.
  *
- * As rotas de cron não processam "todos os tenants": cada uma age só no tenant cuja hora LOCAL
- * bate com a dela (`if (horaLocal !== 3) continue`). Esse desenho pressupunha um disparo a cada
- * 15 minutos — era o plano do cron do Vercel. Quando o agendamento passou para o GitHub Actions
- * (`docs/18-MONETIZACAO-PLANO.md` §L.5), virou UM disparo diário, e as duas metades deixaram de
- * conversar sem que nada apitasse:
+ *   1. **Nada que fale com cliente final entra no `schedule`.** `reminders` e `campaigns` mandam
+ *      mensagem de verdade e só podem existir como `workflow_dispatch`, sob decisão humana a cada
+ *      clique.
+ *   2. **A receita comentada que liga `campaigns` já nasce certa.** Ela é a única instrução que o
+ *      dono vai seguir para ligar a mensageria, e `campaigns` filtra por hora local — uma receita
+ *      errada ligaria a campanha para zero tenants, com job verde.
  *
- *   - `recompute-cycles` (hora 3) às 06:10 UTC só alcançava UTC-3;
- *   - `segments` (hora 4) às 06:10 UTC só alcançaria UTC-2 — Fernando de Noronha;
- *   - e a rota devolve **200** com `tenantsProcessados: 0`, então o job fica **verde**.
- *
- * Medido em produção em 2026-08-24: disparo manual, os dois jobs verdes, zero tenants processados.
- * Um sistema que não faz nada e diz que está bem é pior que um que quebra.
- *
- * Este teste lê os dois arquivos de verdade — o YAML e o `.ts` de cada rota — em vez de uma lista
- * copiada. Mudar a hora dentro da rota, ou tirar uma linha do schedule, reprova aqui.
+ * O que este arquivo guardava ANTES, e não guarda mais: que o schedule nominal encostasse na hora
+ * local exigida por cada rota agendada. Essa premissa morreu em 30/08 junto com o filtro de hora
+ * dessas rotas — o disparo real do GitHub atrasa de 5 a 6,5 horas nesta base, e nenhuma janela
+ * sobrevive a isso. Quem guarda o invariante novo ("rota agendada não olha o relógio do disparo")
+ * é `cron-sobrevive-a-atraso.test.ts`, com o histórico medido das três rodadas.
  */
 
 /** Os quatro fusos do Brasil. O produto é brasileiro; nenhum deles tem offset quebrado. */
@@ -32,14 +28,9 @@ const FUSOS_BR: readonly { nome: string; offset: number }[] = [
   { nome: 'America/Rio_Branco', offset: -5 },
 ]
 
-/*
- * `ROTAS_AGENDADAS` vem de `@/core/cron/agendadas` — a lista morava aqui em cópia, e desde que o
- * `/api/health` passou a depender dela (26/08) manter duas seria escolher qual das duas apodrece
- * primeiro. Lá ela é ancorada ao `cron.yml` nas duas direções.
- */
-
 /** As horas UTC em que uma rota de hora local `alvo` precisa ser disparada para alcançar os quatro
- *  fusos — uma por fuso. A janela de 3h absorve o atraso a partir de cada uma delas. */
+ *  fusos — uma por fuso. Só `campaigns` ainda usa isto: é a única rota que resta filtrando por
+ *  hora local e que tem receita de agendamento escrita para alguém seguir. */
 function horasUtcNecessarias(alvo: number): { nome: string; utc: number }[] {
   return FUSOS_BR.map(({ nome, offset }) => ({ nome, utc: ((alvo - offset) % 24 + 24) % 24 }))
 }
@@ -68,18 +59,20 @@ describe('o schedule do cron alcança a hora local de cada rota, em todo fuso do
     expect(horasUtcDoSchedule().length).toBeGreaterThan(0)
   })
 
-  it.each(ROTAS_AGENDADAS)('%s é alcançada em todos os quatro fusos', (rota) => {
-    const agendadas = horasUtcDoSchedule()
-    const local = horaLocalExigida(rota)
-
-    const descobertos = horasUtcNecessarias(local).filter(({ utc }) => !agendadas.includes(utc))
-
-    expect(
-      descobertos.map((f) => f.nome),
-      `${rota} exige hora local ${local}; o schedule (${agendadas.join(', ')} UTC) nunca chega nesses fusos — ` +
-        `e a rota devolve 200 com zero processados, então isso falharia em silêncio`,
-    ).toEqual([])
-  })
+  /*
+   * O caso "%s é alcançada em todos os quatro fusos" morava aqui e SAIU em 2026-08-30, junto com o
+   * filtro de hora das rotas agendadas. Ele provava que o schedule NOMINAL encostava na janela de
+   * cada rota — e estava verde no dia em que o Motor de Ciclo passou dois dias e meio processando
+   * zero, porque o disparo REAL do GitHub atrasa de 5 a 6,5 horas nesta base.
+   *
+   * A premissa que ele testava não existe mais: rota agendada não olha a hora local (o porquê,
+   * medido, está em `cron-sobrevive-a-atraso.test.ts`, que é quem guarda esse invariante agora).
+   * Manter o caso aqui seria pior que removê-lo — `horaLocalExigida` não acharia mais a chamada,
+   * e o teste ou explodiria ou passaria vazio afirmando cobertura que ninguém precisa.
+   *
+   * O bloco de `campaigns` no fim deste arquivo CONTINUA valendo: aquela rota mantém o filtro de
+   * hora de propósito, e a receita comentada que a liga precisa nascer certa.
+   */
 
   it('não agenda rota que fala com cliente final', () => {
     /*

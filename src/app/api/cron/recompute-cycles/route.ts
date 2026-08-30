@@ -1,4 +1,4 @@
-import { dataLocalDe, dentroDaJanela, horaLocalDe } from '@/core/cron/janela'
+import { dataLocalDe } from '@/core/cron/janela'
 import { withNovoTenant } from '@/server/db/with-tenant'
 import { AppError } from '@/server/http/errors'
 import { limparChavesDeIdempotencia } from '@/server/http/idempotency'
@@ -8,14 +8,32 @@ import { recomputarCiclosDoTenant } from '@/server/services/ciclo'
 import { registrarHeartbeat } from '@/server/services/health'
 
 /**
- * §5.3: "03:00 no fuso de cada tenant". A cada disparo, checa QUAIS tenants estão passando pela
- * madrugada no próprio fuso agora. Rodar `recomputarCiclosDoTenant` de novo pelo mesmo tenant no
- * mesmo dia é inofensivo (upsert por PK, TICKET-036) — a checagem de hora só existe para não
- * gastar processamento à toa, não para garantir corretude.
+ * §5.3 pedia "03:00 no fuso de cada tenant". **Esse filtro de hora saiu em 2026-08-30, e a razão
+ * é medida** — é a terceira vez que a MESMA falha derruba o Motor de Ciclo, cada vez sobrevivendo
+ * ao próprio conserto porque o conserto atacava o sintoma:
  *
- * É exatamente por isso que aqui é uma JANELA e não uma igualdade: o agendador atrasa, e trocar
- * exatidão por folga custa só processamento. Em 25/08 a igualdade exata custou o dia inteiro do
- * Motor de Ciclo por 56 minutos de atraso do GitHub. Ver `src/core/cron/janela.ts` e `docs/23` §2.
+ *   - 25/08: igualdade exata (`hora == 3`), atraso de 56 min do GitHub → zero tenants (`docs/23` §2);
+ *   - 26/08: conserto vira JANELA de 3h, calibrada contra aquele atraso de 56 min;
+ *   - 30/08: medido de novo, com `gh run list`. O atraso do `schedule` do GitHub nesta base é de
+ *     **5 a 6,5 horas**, não 56 minutos. Os seis disparos nominais (05:10–10:10 UTC) aconteceram
+ *     às 11:38, 12:39, 13:09, 13:48, 14:24 e 15:02 UTC. Todos os tenants são UTC-3, então isso é
+ *     hora local 8,6 a 12,0 — e a janela elegível era 3h–5h. **Nenhum disparo pegou nenhum tenant
+ *     por dois dias e meio**, com HTTP 200 e job verde nas seis execuções de cada dia.
+ *
+ * Alargar a janela de novo seria repetir o erro: 7h de tolerância cobriria um terço do dia e
+ * ainda seria refém do humor do agendador. O filtro sai inteiro, porque o próprio comentário
+ * original já dizia a verdade que torna isso seguro: **a checagem de hora é economia de
+ * processamento, não corretude.** Reprocessar o mesmo tenant no mesmo dia é inofensivo (upsert
+ * por PK, TICKET-036).
+ *
+ * O que isso custa: 12 tenants × 6 disparos = 72 recálculos/dia, cada um poucas consultas. Nada.
+ * **Quando revisitar:** se a base passar de ~500 tenants, o custo volta a importar — e aí a saída
+ * NÃO é ressuscitar o filtro de hora (o agendador continua sendo best-effort), é registrar por
+ * tenant a última data local processada e pular quem já rodou hoje. Fica escrito aqui para
+ * ninguém "reotimizar" de volta para o defeito.
+ *
+ * Rotas que MANDAM MENSAGEM (`campaigns`, `reminders`) continuam com o filtro de hora, e ali ele
+ * não é economia: é não acordar cliente às 3 da manhã.
  */
 export const GET = rota(async (req) => {
   const esperado = process.env.CRON_SECRET
@@ -32,8 +50,6 @@ export const GET = rota(async (req) => {
 
     let processados = 0
     for (const tenant of tenants ?? []) {
-      if (!dentroDaJanela(horaLocalDe(tenant.timezone, agora), 3)) continue
-
       await recomputarCiclosDoTenant(svc, tenant.id, tenant.timezone, dataLocalDe(tenant.timezone, agora))
       processados++
     }

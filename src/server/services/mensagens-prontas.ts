@@ -42,7 +42,7 @@ export const MODELOS_PADRAO: { slug: string; title: string; body: string }[] = [
   { slug: 'pos_atendimento', title: 'Depois do atendimento', body: 'Obrigado pela confiança, {{nome}}! Qualquer dúvida sobre o que foi feito, é só chamar.' },
   { slug: 'reagendar', title: 'Preciso remarcar', body: 'Oi {{nome}}, tudo bem? Preciso remarcar seu horário do dia {{data}}. Tenho outros horários livres — qual fica melhor pra você?' },
   { slug: 'promocao', title: 'Promoção da semana', body: 'Oi {{nome}}! Essa semana o {{servico}} está saindo por {{valor}}. Quer que eu separe um horário?' },
-  { slug: 'indicacao', title: 'Pedir indicação', body: '{{nome}}, obrigado por confiar no meu trabalho! 🙏 Indicando um amigo, vocês dois ganham desconto no próximo horário.' },
+  { slug: 'indicacao', title: 'Pedir indicação', body: '{{nome}}, obrigado por confiar no meu trabalho! 🙏 Dê um desconto pra uma amiga: ela agenda o primeiro horário por aqui, sem esperar resposta — {{link}}' },
   { slug: 'falta', title: 'Cliente faltou', body: 'Oi {{nome}}, senti sua falta no horário das {{hora}}. Aconteceu alguma coisa? Se quiser eu já remarco.' },
   { slug: 'agradecimento', title: 'Agradecer cliente fiel', body: '{{nome}}, obrigado por confiar em mim esse tempo todo! Cliente como você é o que faz diferença.' },
 ]

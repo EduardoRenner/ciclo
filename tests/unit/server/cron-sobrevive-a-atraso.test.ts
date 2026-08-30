@@ -2,157 +2,97 @@ import { readFileSync } from 'node:fs'
 
 import { describe, expect, it } from 'vitest'
 
-import { TOLERANCIA_HORAS, dentroDaJanela } from '@/core/cron/janela'
+import { ROTAS_AGENDADAS } from '@/core/cron/agendadas'
 
 /**
- * O irmão de `cron-cobre-os-fusos.test.ts`, e a razão de ele não ter bastado.
+ * A MESMA falha derrubou o Motor de Ciclo três vezes, e cada conserto sobreviveu ao próprio
+ * defeito porque atacava o sintoma. Este arquivo é a terceira tentativa, e ele guarda um
+ * invariante diferente dos dois anteriores.
  *
- * Aquele teste prova que o schedule NOMINAL alcança a hora local de cada rota nos quatro fusos.
- * Ele estava verde em 2026-08-25, e naquele mesmo dia o Motor de Ciclo processou zero tenants:
- * o disparo pedido para 06:10 UTC aconteceu às 07:06 — 56 minutos de atraso — e a rota exigia
- * hora local exatamente 3. Job verde, `tenantsProcessados: 0`, ninguém avisado (`docs/23` §2).
+ *   - **25/08** — a rota exigia hora local EXATA (`hora === 3`). O disparo pedido para 06:10 UTC
+ *     aconteceu às 07:06 (56 min de atraso), virou 04:06 local, caiu fora. Zero tenants, HTTP 200,
+ *     job verde (`docs/23` §2).
+ *   - **26/08** — conserto: a igualdade virou uma JANELA de 3h (`TOLERANCIA_HORAS`), calibrada
+ *     contra aquele atraso de 56 min. O teste desta época provava que a janela sobrevivia a 2h de
+ *     atraso, e passava.
+ *   - **30/08** — medido com `gh run list` na produção: o atraso real do `schedule` do GitHub
+ *     nesta base é de **5 a 6,5 horas**. Os seis disparos nominais (05:10–10:10 UTC) aconteceram
+ *     às 11:38, 12:39, 13:09, 13:48, 14:24 e 15:02. Todos os tenants são UTC-3 → hora local 8,6 a
+ *     12,0, contra uma janela elegível de 3h–5h. **Zero sobreposição, seis disparos por dia, dois
+ *     dias e meio seguidos.** A guarda de 26/08 estava verde o tempo todo: ela modelava 2h de
+ *     atraso porque 2h era o dobro do único atraso já medido — e a realidade triplicou aquilo.
  *
- * Ou seja: a guarda antiga provava a ARITMÉTICA do agendamento, não a ENTREGA. `schedule` do
- * GitHub Actions é best-effort — atrasa sob carga e pode pular execução — e isso não estava
- * modelado em lugar nenhum.
+ * **A lição que este arquivo codifica:** enquanto a rota puder ser dessincronizada pelo relógio do
+ * agendador, existe um atraso que a derruba, e nenhum teste consegue adivinhar qual é. A saída não
+ * é uma janela maior — é a rota **não depender da hora do disparo**. Para as rotas agendadas isso
+ * é de graça, porque o filtro de hora nelas sempre foi economia de processamento e nunca
+ * corretude: reprocessar o mesmo tenant no mesmo dia é upsert por PK (TICKET-036).
  *
- * Este teste modela o atraso. Ele reprova se alguém estreitar a janela de volta para uma
- * igualdade, ou mexer no schedule de um jeito que deixe algum fuso na mão sob atraso plausível.
+ * Então o invariante guardado aqui é: **rota dentro do `schedule` não olha a hora local do
+ * tenant.** Sem relógio na condição, não há atraso que a zere.
  */
-
-const FUSOS_BR: readonly { nome: string; offset: number }[] = [
-  { nome: 'America/Noronha', offset: -2 },
-  { nome: 'America/Sao_Paulo', offset: -3 },
-  { nome: 'America/Manaus', offset: -4 },
-  { nome: 'America/Rio_Branco', offset: -5 },
-]
-
-const ROTAS_AGENDADAS = ['recompute-cycles', 'segments'] as const
 
 /**
- * Atraso, em horas, que o agendamento tem que tolerar sem deixar nenhum fuso sem processamento.
+ * Rotas que disparam num horário de conveniência do tenant, e por isso PRECISAM continuar olhando
+ * a hora local. Em `campaigns` o relógio não é economia — é não acordar cliente às 3 da manhã; em
+ * `stock-alerts` é entregar o aviso quando o dono abre o salão, e não de madrugada.
  *
- * Duas horas é mais que o dobro do único atraso já medido nesta base (56 min, em 25/08). Não é
- * um número tirado do ar nem uma promessa do GitHub — é a margem que este projeto escolheu
- * bancar, e o teste existe para que ela não se perca numa mudança futura de schedule.
+ * `reminders` fica fora desta lista de propósito: ela nunca olhou a hora do TENANT, e sim a hora
+ * do AGENDAMENTO — é por isso que a receita comentada dela no `cron.yml` pode ser um curinga de
+ * 15 em 15 minutos, sem hora fixa. Ver o caso equivalente em `cron-cobre-os-fusos.test.ts`.
  */
-const ATRASO_TOLERADO_HORAS = 2
+const ROTAS_COM_HORARIO_DE_CONVENIENCIA = ['campaigns', 'stock-alerts'] as const
+
+function fonteDaRota(rota: string): string {
+  return readFileSync(`src/app/api/cron/${rota}/route.ts`, 'utf8')
+}
 
 /**
- * Quantos disparos elegíveis cada tenant precisa ter, sem atraso nenhum, para que UMA execução
- * pulada pelo GitHub não zere o dia dele.
+ * Casa com a CHAMADA (`dentroDaJanela(`), nunca com o nome solto: o nome também aparece na linha
+ * de `import`, e casar com ele daria um falso positivo eterno — é a armadilha nº 1 da tabela de
+ * guarda cega do `CLAUDE.md`.
  */
-const DISPAROS_ELEGIVEIS_MINIMOS = 2
-
-function horasUtcDoSchedule(): number[] {
-  const yml = readFileSync('.github/workflows/cron.yml', 'utf8')
-  const bloco = yml.slice(0, yml.indexOf('\njobs:'))
-  const horas = [...bloco.matchAll(/^\s*-\s*cron:\s*['"]\s*\d+\s+(\d+)\s/gm)].map((m) => Number(m[1]))
-  return [...new Set(horas)].sort((a, b) => a - b)
+function filtraPorHoraLocal(fonte: string): boolean {
+  return /dentroDaJanela\s*\(/.test(fonte) || /horaLocalDe\s*\(/.test(fonte)
 }
 
-/** Lida do código da rota, não de uma lista copiada — se a rota mudar de alvo, este teste muda junto. */
-function alvoDaRota(rota: string): number {
-  const src = readFileSync(`src/app/api/cron/${rota}/route.ts`, 'utf8')
-  const m = src.match(/dentroDaJanela\(.+,\s*(\d+)\)/)
-  expect(m, `não achei a janela de hora em ${rota}/route.ts — o teste precisa ser atualizado junto`).not.toBeNull()
-  return Number(m![1])
-}
-
-/** As horas LOCAIS em que aquele fuso é visitado, dado o schedule e um atraso uniforme. */
-function horasLocaisVisitadas(offset: number, atrasoHoras: number): number[] {
-  return horasUtcDoSchedule().map((utc) => ((utc + atrasoHoras + offset) % 24 + 24) % 24)
-}
-
-function disparosElegiveis(offset: number, alvo: number, atrasoHoras: number): number {
-  return horasLocaisVisitadas(offset, atrasoHoras).filter((local) => dentroDaJanela(local, alvo)).length
-}
-
-describe('o agendamento entrega mesmo quando o GitHub atrasa', () => {
-  it('o schedule tem pelo menos um horário', () => {
-    // Guarda contra este arquivo inteiro passar vazio se o regex do YAML parar de casar.
-    expect(horasUtcDoSchedule().length).toBeGreaterThan(0)
-  })
-
-  it('a janela é maior que uma hora — igualdade exata é o defeito que este teste existe para pegar', () => {
-    expect(
-      TOLERANCIA_HORAS,
-      'com tolerância 1 a janela vira a igualdade exata que fez o Motor de Ciclo processar zero em 25/08',
-    ).toBeGreaterThan(1)
-  })
-
-  it.each(ROTAS_AGENDADAS)('%s alcança todo fuso do Brasil mesmo com atraso', (rota) => {
-    const alvo = alvoDaRota(rota)
-
-    const descobertos: string[] = []
-    for (const { nome, offset } of FUSOS_BR) {
-      for (let atraso = 0; atraso <= ATRASO_TOLERADO_HORAS; atraso++) {
-        if (disparosElegiveis(offset, alvo, atraso) === 0) descobertos.push(`${nome} com ${atraso}h de atraso`)
-      }
+describe('a leitura deste teste', () => {
+  it('enxerga o código das rotas — não passa por não ter lido nada', () => {
+    for (const rota of [...ROTAS_AGENDADAS, ...ROTAS_COM_HORARIO_DE_CONVENIENCIA]) {
+      expect(fonteDaRota(rota).length, `${rota}/route.ts veio vazio`).toBeGreaterThan(300)
     }
-
-    expect(
-      descobertos,
-      `${rota} (alvo ${alvo}h local, janela de ${TOLERANCIA_HORAS}h) fica sem nenhum disparo elegível nesses casos — ` +
-        'e a rota devolve 200 com zero processados, então isso falharia em silêncio',
-    ).toEqual([])
   })
 
-  it.each(ROTAS_AGENDADAS)('%s tem disparo sobrando, para o caso de o GitHub pular um', (rota) => {
-    const alvo = alvoDaRota(rota)
-
-    const semFolga = FUSOS_BR.filter(({ offset }) => disparosElegiveis(offset, alvo, 0) < DISPAROS_ELEGIVEIS_MINIMOS)
-
-    expect(
-      semFolga.map((f) => f.nome),
-      `${rota} tem menos de ${DISPAROS_ELEGIVEIS_MINIMOS} disparos elegíveis nesses fusos: uma execução pulada ` +
-        'pelo GitHub já custaria o dia inteiro',
-    ).toEqual([])
+  it('o detector reconhece uma chamada de filtro quando existe uma', () => {
+    // Guarda contra o próprio detector: se o regex parar de casar, os testes abaixo passariam
+    // vazios afirmando que ninguém filtra — que é exatamente o resultado que eles procuram.
+    expect(filtraPorHoraLocal('if (!dentroDaJanela(horaLocalDe(tz, agora), 3)) continue')).toBe(true)
+    expect(filtraPorHoraLocal("import { dentroDaJanela } from '@/core/cron/janela'")).toBe(false)
+    expect(filtraPorHoraLocal('const x = 1')).toBe(false)
   })
 })
 
-describe('nenhuma rota agendada volta para a igualdade exata', () => {
-  /**
-   * A lista acima é escrita à mão. Se alguém agendar uma rota nova e não vier aqui, os testes de
-   * cima passariam sem nunca olhar para ela — verde vazio, o defeito que o `CLAUDE.md` nomeia.
-   * Este caso lê a matriz do YAML e obriga as duas listas a concordarem.
-   */
-  function rotasNaMatrizDoYml(): string[] {
-    const yml = readFileSync('.github/workflows/cron.yml', 'utf8')
-    const dentroDosColchetes = yml.match(/^\s*rota:\s*\[([^\]]+)\]/m)?.[1]
-    expect(dentroDosColchetes, 'não achei a matriz `rota: [...]` no cron.yml — o teste precisa ser atualizado junto').toBeDefined()
-    return (dentroDosColchetes ?? '').split(',').map((s) => s.trim()).sort()
-  }
-
-  it('a lista deste teste é a mesma que o cron.yml agenda', () => {
-    expect(rotasNaMatrizDoYml()).toEqual([...ROTAS_AGENDADAS].sort())
-  })
-
-  it.each(ROTAS_AGENDADAS)('%s não filtra hora por igualdade', (rota) => {
-    const src = readFileSync(`src/app/api/cron/${rota}/route.ts`, 'utf8')
+describe('rota agendada não pode ser dessincronizada pelo atraso do agendador', () => {
+  it.each(ROTAS_AGENDADAS)('%s não filtra por hora local do tenant', (rota) => {
     expect(
-      /horaLocal\s*!==/.test(src),
-      `${rota} voltou a comparar hora local por igualdade — é exatamente o que fez o Motor de Ciclo ` +
-        'processar zero tenants em 25/08, com o job verde',
+      filtraPorHoraLocal(fonteDaRota(rota)),
+      `${rota} voltou a filtrar por hora local. Isso já custou o Motor de Ciclo três vezes: com ` +
+        'igualdade exata (25/08, 56 min de atraso) e com janela de 3h (30/08, 5–6,5h de atraso). ' +
+        'O `schedule` do GitHub é best-effort e o atraso medido nesta base é de horas, não de ' +
+        'minutos — qualquer janela é refém dele, e a rota devolve 200 com zero processados, então ' +
+        'a falha é SILENCIOSA. Nestas rotas o filtro de hora é economia de processamento, não ' +
+        'corretude (upsert por PK, TICKET-036): processar todo tenant em todo disparo é a versão ' +
+        'certa. Se o custo voltar a importar (~500 tenants), registre a última data local ' +
+        'processada por tenant — não ressuscite o relógio do disparo.',
     ).toBe(false)
   })
-})
 
-describe('a janela em si', () => {
-  it('aceita o alvo e as horas seguintes, e recusa a anterior', () => {
-    expect(dentroDaJanela(3, 3)).toBe(true)
-    expect(dentroDaJanela(4, 3)).toBe(true)
-    expect(dentroDaJanela(2, 3)).toBe(false)
-    expect(dentroDaJanela(3 + TOLERANCIA_HORAS, 3)).toBe(false)
-  })
-
-  it('atravessa a meia-noite sem virar do avesso', () => {
-    // Nenhuma rota usa alvo 23 hoje. A alternativa é uma conta que funciona por acidente até
-    // alguém mudar um número — e aí falha de madrugada, em silêncio, que é o tema deste arquivo.
-    expect(dentroDaJanela(23, 23, 3)).toBe(true)
-    expect(dentroDaJanela(0, 23, 3)).toBe(true)
-    expect(dentroDaJanela(1, 23, 3)).toBe(true)
-    expect(dentroDaJanela(2, 23, 3)).toBe(false)
-    expect(dentroDaJanela(22, 23, 3)).toBe(false)
+  it.each(ROTAS_COM_HORARIO_DE_CONVENIENCIA)('%s CONTINUA filtrando por hora — ali o relógio é conveniência do tenant, não economia', (rota) => {
+    expect(
+      filtraPorHoraLocal(fonteDaRota(rota)),
+      `${rota} parou de olhar a hora local do tenant — sem esse filtro ela entrega de madrugada. ` +
+        'O motivo de tirar o filtro das rotas agendadas (elas só calculam e gravam no proprio ' +
+        'banco) NAO vale aqui: nestas a hora e o proposito, nao economia.',
+    ).toBe(true)
   })
 })

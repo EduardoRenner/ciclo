@@ -54,11 +54,27 @@ export const EsquemaCancelar = z.object({
 
 type EntradaCriar = z.infer<typeof EsquemaCriarAgendamento>
 
-/** Resolve `clientId` ou cria a partir de `clientDraft`, reaproveitando cliente existente pelo telefone. */
+/**
+ * Resolve `clientId` ou cria a partir de `clientDraft`, reaproveitando cliente existente pelo
+ * telefone.
+ *
+ * `referredBy` é o I-1 do `docs/30-INDICACAO-PLANO.md`: `clients.referred_by` existe desde a
+ * migration 0001, `pontuarAtendimentoConcluido` já credita os dois lados na primeira visita
+ * concluída — e, até esta rodada, nada no produto escrevia a coluna. O único lugar que a
+ * escrevia era `scripts/seed-demo-barbearia.mjs`, então o recurso funcionava na demonstração e
+ * em tenant nenhum de verdade.
+ *
+ * Só entra no ramo de CRIAÇÃO — indicação é para trazer gente nova. Quem já é cliente ignora o
+ * convite em silêncio (o token não é reaproveitável de qualquer forma: a página de agendamento
+ * não teria como saber se a pessoa "já era cliente" antes de o telefone chegar, e forçar
+ * `referred_by` sobre um cadastro existente reescreveria a origem de alguém que o salão talvez já
+ * tenha conquistado sozinho).
+ */
 export async function resolverCliente(
   db: Cliente,
   tenantId: string,
   entrada: { clientId?: string | null; clientDraft?: { name: string; phone: string } | null },
+  referredBy?: string | null,
 ): Promise<string> {
   if (entrada.clientId) {
     const { data, error } = await db
@@ -88,9 +104,27 @@ export async function resolverCliente(
   if (erroExistente) throw new AppError('INTERNAL', { cause: erroExistente })
   if (existente) return existente.id
 
+  /*
+   * O token de indicação já prova que ALGUÉM assinou aquele `client_id` — mas não prova que ele
+   * ainda existe NESTE tenant, nem que não foi eliminado (LGPD art. 18 VI) depois de assinado.
+   * Um token velho ou forjado não pode quebrar o agendamento: em vez de erro, a referência
+   * simplesmente não entra, e a cliente nasce como qualquer outra.
+   */
+  let referenciaValida: string | null = null
+  if (referredBy) {
+    const { data: referenciador } = await db
+      .from('clients')
+      .select('id')
+      .eq('id', referredBy)
+      .eq('tenant_id', tenantId)
+      .is('deleted_at', null)
+      .maybeSingle()
+    referenciaValida = referenciador?.id ?? null
+  }
+
   const { data: criado, error: erroCriar } = await db
     .from('clients')
-    .insert({ tenant_id: tenantId, name: draft.name, phone_e164: e164, phone_hash: hash, source: 'agenda' })
+    .insert({ tenant_id: tenantId, name: draft.name, phone_e164: e164, phone_hash: hash, source: 'agenda', referred_by: referenciaValida })
     .select('id')
     .single()
   if (erroCriar) throw new AppError('INTERNAL', { cause: erroCriar })
@@ -266,9 +300,13 @@ export async function criarAgendamento(
   createdBy: string | null,
   entrada: EntradaCriar,
   settingsDoTenant: unknown,
+  // I-1 (`docs/30-INDICACAO-PLANO.md`): `client_id` de quem indicou, resolvido do token `?ind=`
+  // pela própria rota de booking público. Omitido em toda chamada interna (`app`) — a indicação
+  // só nasce de um link compartilhado, nunca do cadastro manual.
+  referredBy?: string | null,
 ) {
   const [servico] = await Promise.all([servicoDoTenant(db, tenantId, entrada.serviceId), profissionalDoTenant(db, tenantId, entrada.professionalId)])
-  const clientId = await resolverCliente(db, tenantId, entrada)
+  const clientId = await resolverCliente(db, tenantId, entrada, referredBy)
 
   const startsAt = Temporal.Instant.from(entrada.startsAt)
   const endsAt = startsAt.add({ minutes: servico.duration_min })

@@ -16,8 +16,15 @@ import { processarLote } from '@/server/services/job-queue'
  * Handlers reais por tipo de job (send_reminders, expire_holds…) chegam nos
  * tickets que os pedem; por ora o registro fica vazio, e todo job sem handler
  * morre marcado — nunca falha em silêncio.
+ *
+ * As CHAVES deste objeto são espelhadas em `src/core/jobs/registro.ts`, que é de onde
+ * `/api/health` lê para saber o que é fila atrasada de verdade e o que é lixo (job de tipo que
+ * ninguém sabe processar, e que por isso não pode pintar o endpoint de vermelho para sempre).
+ * `tests/unit/server/saude-nao-alarma-por-lixo.test.ts` reprova se as duas listas divergirem —
+ * um handler novo que não chegue lá faria o job dele parar de ser vigiado justamente quando
+ * passasse a ter quem o processe.
  */
-const HANDLERS: Record<string, (job: unknown) => Promise<void>> = {}
+export const HANDLERS: Record<string, (job: unknown) => Promise<void>> = {}
 
 export const GET = rota(async (req) => {
   const esperado = process.env.CRON_SECRET

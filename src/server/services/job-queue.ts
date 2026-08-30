@@ -5,6 +5,41 @@ import type { Database } from '@/server/db/types.gen'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 type Cliente = SupabaseClient<Database>
+
+/**
+ * O começo da mensagem que um job sem handler grava em `last_error`.
+ *
+ * Vive aqui, exportado, porque `/api/health` precisa RECONHECER esse erro — e reconhecer por
+ * cópia da string seria a duplicação silenciosa de sempre. Ver `semHandlerRegistrado()`.
+ */
+export const ERRO_SEM_HANDLER = 'Nenhum handler registrado para o tipo de job'
+
+/**
+ * Este job falhou porque ninguém sabe processar o tipo dele?
+ *
+ * **Por que `/api/health` precisa dessa distinção.** Medido na produção em 2026-08-30: o endpoint
+ * devolvia 503 com `1 job(s) parado(s) há mais de 15 min`, sem defeito nenhum. A fila tinha 20+
+ * jobs de tipo `teste_saude` e `seed` — resíduo de fixture despejado pela suíte de teste
+ * (`.env.local` aponta para produção, achado A1) — e o registro de handlers está vazio, porque os
+ * handlers reais chegam nos tickets que os pedem. Nenhum deles PODE ser processado: falham,
+ * voltam para `failed`, e são recontados como "parados" no disparo seguinte, para sempre.
+ *
+ * É o mesmo defeito que `src/core/cron/agendadas.ts` já consertou para os heartbeats em 26/08,
+ * com a lição escrita lá: *alarme que toca todo dia por um motivo conhecido esconde o dia em que
+ * algo quebra de verdade.* O conserto foi aplicado à vigilância de heartbeat e não à da fila, que
+ * fazia a mesma coisa ao lado — o padrão que a super auditoria nomeou como o achado mais reusável
+ * desta base: **um conserto certo, aplicado num lugar só.**
+ *
+ * **Por que casa com o ERRO e não com uma lista de tipos conhecidos.** A primeira tentativa
+ * manteve um registro paralelo dos tipos que têm handler, e a CI reprovou: com o registro vazio,
+ * NENHUM job podia disparar o alarme, e dois testes de integração que provam "trabalho parado
+ * acusa" quebraram. O erro gravado é o sinal honesto — ele diz o que de fato aconteceu com aquele
+ * job, não o que uma lista afirma sobre o mundo. Fila crescendo por worker que não roda continua
+ * alarmando, que é como tem que ser.
+ */
+export function semHandlerRegistrado(lastError: string | null): boolean {
+  return lastError !== null && lastError.startsWith(ERRO_SEM_HANDLER)
+}
 type LinhaJob = Database['public']['Tables']['job_queue']['Row']
 
 export type Job<Payload = Record<string, unknown>> = Omit<LinhaJob, 'payload'> & { payload: Payload }
@@ -72,7 +107,7 @@ export async function processarLote(
     const handler = handlers[job.kind]
 
     try {
-      if (!handler) throw new Error(`Nenhum handler registrado para o tipo de job "${job.kind}".`)
+      if (!handler) throw new Error(`${ERRO_SEM_HANDLER} "${job.kind}".`)
       await handler(job as Job)
       const { error: erroFim } = await db.rpc('finish_job', { p_id: job.id, p_status: 'done' })
       if (erroFim) throw erroFim

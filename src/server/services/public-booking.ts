@@ -11,6 +11,7 @@ import { normalizarPlano } from '@/server/services/planos'
 import { lerSite } from '@/server/services/site'
 import { normalizarTelefoneBR } from '@/server/services/telefone'
 import { criarAgendamento } from '@/server/services/agendamentos'
+import { verificarTokenIndicacao } from '@/server/services/indicacao'
 import { notificarEquipe } from '@/server/services/mensageria'
 import { AppError } from '@/server/http/errors'
 
@@ -360,6 +361,45 @@ export async function disponibilidadePublica(
   })
 }
 
+/**
+ * I-4, `docs/30-INDICACAO-PLANO.md` §6.2b: o primeiro nome de quem indicou, para a moldura de
+ * chegada. É prova social de par — a nova cliente lê o nome de alguém que ela conhece antes do
+ * primeiro clique, que é o "encaixe melhor" que a pesquisa (§2.4) aponta como metade do porquê
+ * cliente indicado vale mais.
+ *
+ * **Só o primeiro nome, e é decisão de privacidade, não de estilo.** Quem tem o link vê esse
+ * nome, e o link circula em WhatsApp de terceiro. A própria cliente é quem compartilhou, então
+ * ela está revelando o próprio nome de propósito — mas sobrenome é dado a mais sem função aqui.
+ * Mesma regra que `aplicarVariaveis` já aplica nas mensagens prontas.
+ *
+ * Devolve `null` em silêncio para token ausente, vencido, de outro tenant, de cliente excluída ou
+ * **eliminada** (`anonymized_at`, LGPD art. 18 VI — o nome dela virou "Cliente eliminada", e
+ * estampar isso na página seria pior que não mostrar nada). Nunca lança: um convite velho não pode
+ * transformar "agendar" em "não consigo agendar".
+ */
+export async function quemIndicou(slug: string, token: string | null | undefined): Promise<string | null> {
+  if (!token) return null
+  const clientId = verificarTokenIndicacao(token)
+  if (!clientId) return null
+
+  return withNovoTenant(async (svc) => {
+    const tenant = await tenantPeloSlug(svc, slug).catch(() => null)
+    if (!tenant) return null
+
+    const { data } = await svc
+      .from('clients')
+      .select('name')
+      .eq('id', clientId)
+      .eq('tenant_id', tenant.id)
+      .is('deleted_at', null)
+      .is('anonymized_at', null)
+      .maybeSingle()
+
+    const primeiroNome = data?.name?.trim().split(/\s+/)[0]
+    return primeiroNome || null
+  })
+}
+
 export const EsquemaBookingPublico = z.object({
   serviceId: z.uuid('Escolha um serviço.'),
   professionalId: z.uuid().nullish(),
@@ -377,6 +417,11 @@ export const EsquemaBookingPublico = z.object({
   // já entregaria "notei o honeypot" para quem está tentando burlar. A
   // decisão de responder como sucesso sem criar nada é da rota, não do schema.
   website: z.string().nullish(),
+  // I-1, `docs/30-INDICACAO-PLANO.md` §4.1: token assinado de `/{slug}?ind=`. Só string — a
+  // verificação (escopo, expiração, existência do referenciador no tenant) é toda de
+  // `criarAgendamentoPublico`, não do schema. Um token inválido nunca vira erro de validação:
+  // vira, na pior das hipóteses, um agendamento sem indicação.
+  ind: z.string().trim().nullish(),
 })
 
 /**
@@ -403,6 +448,12 @@ export async function criarAgendamentoPublico(slug: string, entrada: z.infer<typ
       professionalId = achado.professionalId
     }
 
+    // I-1: resolve o `client_id` de quem indicou. Escopo próprio (`indicacao`) impede um token
+    // de avaliação ou de orçamento ser aceito aqui — mesma proteção que já vale para os outros
+    // três. Token ausente, vencido ou de outro tenant vira `null` em silêncio: um convite velho
+    // não pode transformar "agendar" em "não consigo agendar".
+    const referredBy = entrada.ind ? verificarTokenIndicacao(entrada.ind) : null
+
     const agendamento = await criarAgendamento(
       svc,
       tenant.id,
@@ -418,6 +469,7 @@ export async function criarAgendamentoPublico(slug: string, entrada: z.infer<typ
         address: entrada.address ?? null,
       },
       tenant.settings,
+      referredBy,
     )
 
     // §4 eixo 3 (docs/09-PLATAFORMA.md): o cliente já lê "você vai receber a

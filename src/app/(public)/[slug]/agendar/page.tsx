@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 
 import { AppError } from '@/server/http/errors'
-import { perfilPublico } from '@/server/services/public-booking'
+import { perfilPublico, quemIndicou } from '@/server/services/public-booking'
 
 import Agendar from './agendar'
 
@@ -32,14 +32,26 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   }
 }
 
-export default async function PaginaAgendar({ params }: { params: Promise<{ slug: string }> }) {
+export default async function PaginaAgendar({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>
+  // I-1, `docs/30-INDICACAO-PLANO.md`: `?ind=<token>` é o convite de indicação. Só string bruta
+  // aqui — a verificação inteira (escopo, expiração, existência) é do servidor, no `POST book`.
+  searchParams: Promise<{ ind?: string }>
+}) {
   const { slug } = await params
+  const { ind } = await searchParams
 
   const perfil = await perfilPublico(slug).catch((erro: unknown) => {
     if (erro instanceof AppError && erro.code === 'NOT_FOUND') return null
     throw erro
   })
   if (!perfil) notFound()
+
+  // I-4: a moldura de chegada. Nunca derruba a página — sem o nome, a tela é a de sempre.
+  const indicadaPor = await quemIndicou(slug, ind).catch(() => null)
 
   return (
     <main className="mx-auto min-h-dvh max-w-[560px] px-[18px] py-8">
@@ -55,6 +67,8 @@ export default async function PaginaAgendar({ params }: { params: Promise<{ slug
         hours={perfil.hours}
         services={perfil.services}
         professionals={perfil.professionals}
+        ind={ind ?? null}
+        indicadaPor={indicadaPor}
       />
     </main>
   )

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 
-import { TriangleAlert, CalendarCheck, ChevronRight, PackageX } from 'lucide-react'
+import { TriangleAlert, CalendarCheck, ChevronRight, Gift, PackageX } from 'lucide-react'
 import { useState } from 'react'
 
 import AppointmentRow from '@/components/ui/appointment-row'
@@ -109,6 +109,25 @@ export default function Hoje({
           />
         )}
       </Link>
+
+      {/*
+        I-7, `docs/30-INDICACAO-PLANO.md` §5.3/§6.2d: o extrato do laço. Segue o padrão do
+        `hoje-heroi-do-motor` — entra ABAIXO do herói, nunca disputa o lugar dele. Só aparece
+        quando houve indicação no mês: número sem contexto é anedota, e mês sem indicação
+        nenhuma não tem o que "trouxeram" mostrar.
+      */}
+      {resumo.indicacoesEsteMes > 0 ? (
+        <Card className="mb-6 flex items-start gap-3">
+          <Gift aria-hidden className="mt-0.5 size-5 shrink-0 text-acc-2" />
+          <p className="text-corpo text-txt">
+            Suas clientes trouxeram{' '}
+            <span className="font-semibold">
+              {resumo.indicacoesEsteMes} {resumo.indicacoesEsteMes === 1 ? 'cliente nova' : 'clientes novas'}
+            </span>{' '}
+            este mês. Quem vem por indicação costuma voltar mais.
+          </p>
+        </Card>
+      ) : null}
 
       {resumo.nextClient ? (
         <section className="mb-6">

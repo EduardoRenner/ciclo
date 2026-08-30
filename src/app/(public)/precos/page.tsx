@@ -179,12 +179,23 @@ export default function Precos() {
         </dl>
       </section>
 
-      <p className="text-center text-label text-txt-3">
-        Preços em reais, por mês.{' '}
+      <p className="text-center text-label text-txt-3">Preços em reais, por mês.</p>
+
+      {/* L-7 (`docs/31`): quem está lendo preço é quem vai assinar — os termos e a política têm
+          que estar a um toque daqui, não escondidos só na porta de entrada. */}
+      <footer className="mt-3 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center text-label text-txt-3">
+        <Link href="/termos" className="toque-48 font-semibold text-txt-2 underline underline-offset-2">
+          Termos
+        </Link>
+        <span aria-hidden>·</span>
+        <Link href="/privacidade" className="toque-48 font-semibold text-txt-2 underline underline-offset-2">
+          Privacidade
+        </Link>
+        <span aria-hidden>·</span>
         <Link href="/" className="toque-48 font-semibold text-acc-2 underline underline-offset-2">
           Voltar para o início
         </Link>
-      </p>
+      </footer>
     </main>
   )
 }

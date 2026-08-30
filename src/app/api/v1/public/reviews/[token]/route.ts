@@ -30,5 +30,22 @@ export const POST = rota(async (req, ctx) => {
   const appointmentId = idDoAgendamento(token)
   const entrada = await lerCorpo(req, EsquemaAvaliacao)
 
-  return withNovoTenant((svc) => registrarAvaliacao(svc, appointmentId, entrada))
+  const resultado = await withNovoTenant((svc) => registrarAvaliacao(svc, appointmentId, entrada))
+
+  /*
+   * I-3 (`docs/30-INDICACAO-PLANO.md`): o link absoluto é montado aqui, não no serviço — mesmo
+   * padrão de `POST .../complete` (link de avaliação) e `POST /quotes` (link de orçamento), que
+   * também resolvem `NEXT_PUBLIC_APP_URL` na rota.
+   *
+   * Aponta direto para `/{slug}/agendar`, não para `/{slug}` (o perfil): o CTA "Agendar" do
+   * perfil (`secoes.tsx`) linka para `/${slug}/agendar` SEM repassar query string nenhuma — um
+   * convite para `/{slug}?ind=` perderia o token no primeiro toque, antes de chegar na tela que
+   * lê `?ind=` (`agendar/page.tsx`). Levar direto para lá também poupa um clique de quem já sabe
+   * o que quer: agendar.
+   */
+  const referralLink = resultado.indicacao
+    ? `${process.env.NEXT_PUBLIC_APP_URL}/${resultado.indicacao.slug}/agendar?ind=${resultado.indicacao.token}`
+    : null
+
+  return { id: resultado.id, rating: resultado.rating, duplicado: resultado.duplicado, referralLink }
 })

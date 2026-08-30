@@ -3136,3 +3136,19 @@ funciona para sempre — o que ele não tem é o automático, e automação é o
 2026-08-29 · A auditoria é mesclada antes de a indicação começar · Decidido pelo Eduardo. O ticket
 I-1 mexe em `public-booking.ts` e `clientes.ts`, dois arquivos que a auditoria tocou; e as migrations
 `0045`/`0046` precisam ir para produção antes de qualquer coisa nova entrar por cima delas.
+
+
+2026-08-30 · O link do convite de indicação aponta pra /{slug}/agendar, não pra /{slug} · O
+`docs/30` original desenhava o link como `/{slug}?ind=`, a raiz do perfil do tenant. Medido durante
+a implementação do I-1: o CTA "Agendar" daquela tela (`secoes.tsx`) linka pra `/{slug}/agendar` SEM
+repassar nenhuma query string — um convite pra raiz perderia o token no primeiro toque, antes de
+chegar na única tela que lê `?ind=`. Corrigido para apontar direto pra `/{slug}/agendar`, e o
+`docs/30` foi atualizado com a correção registrada inline. Poupa um clique de quem já sabe o que
+quer, de quebra.
+
+2026-08-30 · I-10 fica pra depois, não travado por técnica · I-1 a I-9 do `docs/30` mesclados
+(escritor, guarda, convite no pico, moldura de chegada, botão manual, barra de upgrade, extrato
+mensal, paywall no instante da prova). I-10 (níveis e barra de progresso da cliente, degrau Equipe)
+não entrou porque grava pontuação em cima de duas perguntas que `docs/30` §9 deixa abertas: qual é
+o prêmio e se os dois lados recebem o mesmo valor. Construir a UI de nível agora seria herdar um
+número que pode mudar. Falta decidir §9.2 e §9.3 pra desbloquear.
