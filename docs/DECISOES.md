@@ -3263,3 +3263,39 @@ usa) e typecheck, não de teste real. Fica registrado, não escondido.
 `pnpm verify` completo continua fora de alcance neste ambiente (sem Docker para
 `test:integration`/`test:rls`) — typecheck, lint, `test:unit` (1001 testes, 0 falhas) e `build`
 passaram limpos.
+
+2026-08-30 · Rodada de "aprimora e executa" — o que foi checado, o que ficou pendente de você ·
+Revisão de `docs/29-SUPER-AUDITORIA.md` e `docs/31-LANCAMENTO-AUDITORIA-E-PLANO.md` em busca de
+achados ainda abertos, antes de inventar polimento sem necessidade.
+
+**Descoberta: os dois docs já estavam desatualizados no mesmo dia.** B2 (`tenants.plan` sem
+escritor) e B3 (sem termos/privacidade), listados como bloqueadores no `docs/31` (11:49), já
+tinham sido resolvidos por trabalho posterior à própria escrita do doc — `scripts/promover-tenant.mjs`
+existe (criado 11:18, ANTES do doc que reclama da ausência dele, numa corrida de sessões em
+paralelo) e `src/app/(public)/termos`/`privacidade` existem. B8 (25 commits presos em PRs #30/#31
+sem revisão) também está resolvido — as duas já foram mescladas (`git log`: `61b246f`, `3a4b7ba`).
+Confirmado por leitura de código, não presumido.
+
+**O que segue de pé, sem eu poder resolver sozinho:**
+- B1/B4/B5/B6/B7 (cobrança, domínio, CNPJ, WhatsApp, Sentry) — todos dependem de credencial ou
+  decisão de negócio sua, já registrado no próprio `docs/31 §6`.
+- **B9, quantificado agora: 8 tenants de teste órfãos em produção** (`rls-a-f16e1b5a`,
+  `rls-a-2fa03eaf`, `rls-a-3c0109d3`, `risco-cb7633df`, `clientes-d639e994`, `recuperar-4be7726b`,
+  `alertas-estoque-ce1e38f5`, `health-a8a70755`), todos criados 23–24/08 pela mesma causa raiz já
+  travada (`.env.local` apontando pra produção durante teste de integração). São lixo de teste
+  claro pelo padrão do nome/slug, não cliente real. **Não apaguei** — excluir linha de tenant é
+  ação irreversível em produção, e mesmo parecendo óbvio isso é confirmação sua, não decisão que
+  o loop toma sozinho. Comando pronto para quando você autorizar:
+  `delete from tenants where slug in ('rls-a-f16e1b5a','rls-a-2fa03eaf','rls-a-3c0109d3','risco-cb7633df','clientes-d639e994','recuperar-4be7726b','alertas-estoque-ce1e38f5','health-a8a70755');`
+  (a cascata de FK deve levar clientes/agendamentos/etc. desses tenants junto — conferir
+  `on delete cascade` antes de rodar, não assumir).
+
+**O que também ficou pendente, sem risco mas sem como testar hoje:** o caminho negativo do gate
+de módulo do card de orçamento (tenant Grátis não deveria ver "orçamento parado") — as únicas
+contas Grátis disponíveis em produção são as 8 órfãs acima ou `lang-barber` (tenant real, não-
+demo, citado no `cron.yml` como cliente de verdade) — nenhuma segura para eu logar e testar sem
+autorização.
+
+Não forcei polimento de UX sem achado real: as três telas mais usadas (Hoje, Recuperar, Caixa)
+já foram medidas nesta sessão (touch target, contraste, overflow) sem defeito novo encontrado.
+Loop parado aqui — o que sobrou é decisão sua, não falta de trabalho.
