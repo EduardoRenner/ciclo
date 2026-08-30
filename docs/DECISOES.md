@@ -2982,3 +2982,157 @@ plano pago na Vercel e o projeto está no Hobby; conferir antes de contar com is
 `services` e `professionals` num Promise.all — eles não dependem um do outro, corta 4 saltos em
 série para 3, não depende de plano nem de decisão de ninguém. Detalhe em
 `docs/27-ESCALA-E-CONVERSAO.md` §7.2.
+
+
+2026-08-28 · O quadro "Taxa" do caixa some, em vez de virar "em breve" · Nada no projeto escreve
+`tickets.fee_cents`, então o quadro mostrava R$ 0,00 desde a primeira comanda. Três saídas:
+(a) implementar taxa de maquininha — depende de credencial de pagamento, que é o mesmo bloqueio do
+TICKET-043; (b) rotular como "em breve" — ocupa espaço numa tela de 375px para não informar nada;
+(c) tirar. Escolhida a (c), que é a mais simples e atende ao critério. A coluna, o campo do resumo
+da API e o desconto dentro de `calcularSobraDaComanda` ficam, e a guarda
+`caixa-nao-promete-taxa` EXIGE o quadro de volta no dia em que alguém escrever `fee_cents` — a
+decisão não vira dívida esquecida.
+
+2026-08-28 · A comissão continua sobre o total do item, sem o desconto da comanda · Ao consertar
+`profit_cents` apareceu a pergunta: desconto de R$ 20 numa comanda de R$ 100 reduz a comissão do
+profissional? Decidido que não. O desconto é concessão comercial do dono; o profissional entregou o
+serviço inteiro. Consequência assumida: o desconto sai inteiro da linha do salão, e é exatamente
+por isso que ele precisa aparecer no "Sobrou".
+
+2026-08-28 · A migration 0045 falha alto em vez de limpar duplicata sozinha · O índice único de
+`tickets(appointment_id)` não pode ser criado se já existir agendamento com duas comandas. Resolver
+apagando é proibido pela regra 11. Resolver zerando o `appointment_id` da mais nova seria decidir,
+sem contexto, qual comanda tem o faturamento certo. A migration levanta exceção com a consulta de
+diagnóstico na própria mensagem, e a decisão fica com quem conhece o dado.
+
+2026-08-28 · A trava de banco local mora numa config separada, não na `vitest.config.ts` ·
+`tests/unit` não abre banco e não deve carregar `.env.local` nem pagar a checagem. `test:integration`
+e `test:rls` passam a rodar com `--config vitest.banco.config.ts`. Escape explícito:
+`PERMITIR_BANCO_REMOTO=1`, para o caso legítimo de apontar para um projeto de staging.
+
+
+2026-08-28 · A redação da trilha é `service_role`, não `authenticated` · `audit_log` e
+`idempotency_keys` não têm política de UPDATE de propósito, então redigi-las exige `security
+definer`. Conceder essa função a `authenticated` — mesmo com `has_tenant` + papel conferidos dentro
+— entrega a quem está logado uma ferramenta de apagar o próprio rastro. Escolhido conceder só a
+`service_role` e chamar por `withTenant()`; a autorização de quem pode eliminar já é feita na rota
+(`client:delete` + AAL2). Dentro da função fica a trava que não depende do chamador:
+`anonymized_at is not null`.
+
+2026-08-28 · A chave de idempotência guarda um marcador, não `null`, e a linha não é apagada ·
+Apagar a linha faria uma repetição da fila offline com a mesma chave **reexecutar** a mutação —
+recriando a cliente que acabou de ser eliminada. `null` faria a repetição devolver `null` onde a API
+promete um objeto. `{"eliminado": true}` mantém a chave reservada, a repetição continua não
+reexecutando nada, e o corpo não carrega mais ninguém.
+
+2026-08-28 · `preferences` passa a ser redigido na trilha; `document` e `address` não ·
+`preferences` tem campo `alergia` em seis das sete verticais — dado de saúde, e a regra 9 é
+absoluta. CPF e endereço são dado pessoal comum: a trilha existe para mostrar **o que mudou**, e
+redigir tudo na escrita a esvaziaria. Eles saem na eliminação, que é o que a LGPD art. 18 VI pede,
+pela RPC da 0046.
+
+2026-08-28 · Não construí caminho para promover um tenant de plano · `tenants.plan` é lido pela
+trava inteira e escrito por ninguém. Quem pode promover (super-admin? webhook do PSP? o dono do
+CICLO?) é decisão de produto, e o `CLAUDE.md` proíbe criar arquivo que o ticket não pediu. Fica
+reportado em `docs/29` §C1, com o caminho mais barato descrito para quando a decisão existir.
+
+2026-08-28 · O portfólio ganhou guarda em vez de código morto removido · `mediaParaPortfolio` não
+tem chamador e sempre voltaria vazia (`consent_id` nunca é gravado). Apagar a função perderia a
+implementação pensada do TICKET-051; deixá-la sem aviso faz o repositório parecer entregar uma
+galeria que não existe. Escolhida a guarda de mão dupla, mesma forma do quadro "Taxa": proíbe ligar
+antes de existir escritor, e exige o cruzamento com `revoked_at` depois que existir.
+
+
+2026-08-28 · `401`/`403` na fila offline viram `retry`, não descarte · Sessão vencida e permissão
+revogada são estados do cliente, não veredito sobre a mutação: entrar de novo faz a mesma mutação
+passar. O risco aceito é a fila ficar tentando enquanto a sessão estiver vencida — sem perda de
+dado, e a drenagem só roda no evento `online` ou no botão, então não é laço quente. O caminho
+oposto (descartar) apagava o agendamento que a pessoa criou sem rede, em silêncio.
+
+2026-08-28 · Descarte da fila vira card SEM "tentar de novo" · Diferente do 409, o descarte vem de
+recusa definitiva do servidor (400/402/404/422): reenviar daria o mesmo resultado, e oferecer o
+botão seria mentir sobre o que ele faz. O card conta o que se perdeu e oferece "Entendi"; refazer é
+pela tela normal, que mostra o motivo real do erro.
+
+2026-08-28 · A classificação de status saiu do adaptador de browser e virou `core` · O adaptador é
+declaradamente intestável neste projeto (Vitest em `node`, sem jsdom). Deixar ali a regra que decide
+entre reenviar, avisar e **apagar trabalho** significava a única parte da fila sem teste ser a que
+destrói dado. `classificarResposta` é função pura, em `core/offline/queue.ts`, com teste de
+comportamento.
+
+2026-08-28 · A faxina de `idempotency_keys` mora no `recompute-cycles` · Não tem relação com o Motor
+de Ciclo, e é o preço de não ter agendador dedicado: `recompute-cycles` e `segments` são as duas
+únicas rotas no `on.schedule` do `cron.yml`, e a primeira dispara seis vezes por dia. Uma sétima
+rota de cron só para varrer uma tabela obrigaria a mexer no `cron.yml`, no `ROTAS_DE_CRON` e nas
+duas guardas de agendamento. Fica fora do `if (processados > 0)` porque chave órfã prende reenvio a
+qualquer hora.
+
+2026-08-28 · Reserva de idempotência é considerada órfã depois de 1 hora, e a chave vence em 30 dias
+· Uma hora porque nenhuma função serverless dura isso — abaixo disso haveria risco de apagar
+reserva em voo. Trinta dias porque a fila offline não reenvia com esse atraso, e porque
+`response_body` carrega a cliente inteira (necessidade, LGPD art. 6).
+
+
+2026-08-28 · O período do extrato de comissão passa a exigir o fuso do tenant como parâmetro · A
+alternativa era buscar `tenants.timezone` dentro da própria função, mas ela é chamada em laço na
+tela do caixa (uma vez por profissional) e isso viraria N idas ao banco por render. Os três
+chamadores já tinham o fuso em mãos: a rota lê como `cash/daily` já lê, e as duas páginas recebem
+pelo contexto.
+
+2026-08-28 · `alertas-estoque.ts` fica na lista de dívida do dia-em-UTC, e não é consertado · A
+janela é CORRIDA de 30 dias, para tirar consumo médio diário dividindo por 30 fixo. Três horas em
+720 não mudam a decisão de "está na hora de repor", e o número não vira pagamento de ninguém.
+Consertar exigiria passar o fuso por mais uma cadeia para não mudar resultado nenhum. Fica
+declarado na guarda, que reprova se ele for consertado e a lista não encolher junto.
+
+2026-08-28 · A guarda do dia-em-UTC é de classe, não das três funções conhecidas · Varre
+`src/server` e `src/app` procurando o TEXTO do instante literal (`T00:00:00Z`, `T23:59:59`), com
+lista de dívida que só encolhe. Travar só `caixa`/`comissao`/`atribuicao` deixaria o próximo arquivo
+livre para repetir — que é exatamente como esta classe chegou à quarta rodada.
+
+
+2026-08-28 · A dispensa da guarda de botão travado é uma lista fechada, não um padrão · "Parece
+estado de envio" (qualquer identificador terminado em -ndo, por exemplo) deixaria qualquer condição
+nova entrar sem justificar. A lista é explícita (`pendente`, `salvando`, `saindo`, `enviando`,
+`carregando`, `importando`, `processando`) e há um teste que reprova se ela crescer para casar
+`!nome` ou `length === 0`.
+
+2026-08-28 · Os dois botões de `(public)/confirmar` ganharam motivo em vez de entrar na dispensa ·
+Eles travam enquanto o OUTRO está em curso — o spinner que explicaria a espera está no botão
+vizinho. Tecnicamente é "ação em curso"; para quem usa leitor de tela, não é: o feedback está em
+outro elemento. Alargar a exceção para cobrir esse caso a tornaria inútil.
+
+2026-08-28 · Não adicionei índice único em `loyalty_entries` nesta rodada · O caminho de dupla
+pontuação já está fechado no app pelo compare-and-swap da rodada 1. Um índice único sobre dado que
+pode ter duplicata histórica PARA o deploy, e já existe uma migration nessa condição (`0045`)
+esperando conferência em produção. As duas devem ir juntas, na mesma passada em que alguém rodar a
+consulta de diagnóstico no banco de verdade.
+
+
+2026-08-28 · Não escolhi um lado da capacidade paralela · `parallel_capacity` é oferecido pela
+disponibilidade e proibido por `appointments_no_overlap`. Ou o banco aprende a contar (exclusion
+constraint não expressa "no máximo N sobrepostos" — precisaria de trigger com trava, e trava mal
+feita devolve a corrida que a constraint resolve), ou a capacidade sai do produto. As duas são
+decisão de produto. O que dá para fazer sozinho é impedir que a armadilha dispare: a guarda proíbe
+o formulário de oferecer o campo enquanto o banco não souber contar, e proíbe a restrição de
+sobreposição de sumir.
+
+2026-08-28 · Consertei a conta da capacidade mesmo com o recurso bloqueado · `cabeSemColidir` é
+função pura em `core/`, com contrato escrito (§5.5) e testes próprios, e estava errada em relação
+ao próprio contrato. Deixar errado "porque o recurso não funciona mesmo" faria o conserto do banco,
+quando vier, herdar um bug silencioso de agenda vazia.
+
+
+2026-08-29 · O link de indicação fica no Grátis; os pontos automáticos ficam no Equipe · Decidido
+pelo Eduardo. O módulo `loyalty` (que credita os dois lados) continua no Equipe, mas o **link de
+convite**, a gravação de `referred_by`, o "quem trouxe quem" e o card do dono passam a valer desde
+o Grátis. Três motivos: (1) cada link compartilhado é uma página `/{slug}` do CICLO circulando no
+WhatsApp de quem não é usuário, com o selo do Grátis — é distribuição; (2) o laço enche o teto de 50
+clientes, que é o gatilho de upgrade para o Essencial, e travá-lo mataria o laço exatamente onde ele
+gera mais pressão; (3) o salão do Grátis continua recompensando na mão ("10% no próximo"), que
+funciona para sempre — o que ele não tem é o automático, e automação é o que se cobra. Detalhe em
+`docs/30-INDICACAO-PLANO.md` §5.2.
+
+2026-08-29 · A auditoria é mesclada antes de a indicação começar · Decidido pelo Eduardo. O ticket
+I-1 mexe em `public-booking.ts` e `clientes.ts`, dois arquivos que a auditoria tocou; e as migrations
+`0045`/`0046` precisam ir para produção antes de qualquer coisa nova entrar por cima delas.

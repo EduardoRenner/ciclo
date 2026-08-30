@@ -63,7 +63,18 @@ export default function ConfirmarAgendamento({ token }: { token: string }) {
         <p className="text-titulo font-bold">Confirma seu horário?</p>
         <p className="mt-2 mb-6 text-corpo text-txt-2">Toque numa opção abaixo.</p>
         <div className="flex w-full flex-col gap-2.5">
-          <Button largura="cheia" carregando={estado === 'confirmando'} disabled={estado === 'cancelando'} onClick={confirmar}>
+          {/*
+            Cada botão trava enquanto o OUTRO está em curso — o spinner que explicaria a espera
+            está no botão vizinho, não neste. No leitor de tela saía "Vou sim, indisponível" sem
+            motivo nenhum. Auditoria de 2026-08-28, mesma classe do A6/A15.
+          */}
+          <Button
+            largura="cheia"
+            carregando={estado === 'confirmando'}
+            disabled={estado === 'cancelando'}
+            motivoDesabilitado="Aguarde: estamos desmarcando seu horário."
+            onClick={confirmar}
+          >
             Vou sim
           </Button>
           <Button
@@ -71,6 +82,7 @@ export default function ConfirmarAgendamento({ token }: { token: string }) {
             variante="secondary"
             carregando={estado === 'cancelando'}
             disabled={estado === 'confirmando'}
+            motivoDesabilitado="Aguarde: estamos confirmando seu horário."
             onClick={cancelar}
           >
             Preciso desmarcar

@@ -1,6 +1,7 @@
 import { dataLocalDe, dentroDaJanela, horaLocalDe } from '@/core/cron/janela'
 import { withNovoTenant } from '@/server/db/with-tenant'
 import { AppError } from '@/server/http/errors'
+import { limparChavesDeIdempotencia } from '@/server/http/idempotency'
 import { compararSegredo } from '@/server/http/segredo'
 import { rota } from '@/server/http/handler'
 import { recomputarCiclosDoTenant } from '@/server/services/ciclo'
@@ -60,6 +61,23 @@ export const GET = rota(async (req) => {
       })
     }
 
-    return { tenantsProcessados: processados }
+    /*
+     * Faxina de `idempotency_keys` de carona. Ela não tem nada a ver com o Motor de Ciclo, e mora
+     * aqui por um motivo só: esta é a ÚNICA rota do projeto que roda sozinha de verdade em
+     * produção (`recompute-cycles` e `segments` são as duas do `on.schedule`, e esta dispara seis
+     * vezes por dia). Limpeza pendurada numa rota que ninguém agenda é limpeza que não existe —
+     * e criar uma sétima rota de cron só para isso obrigaria a mexer no `cron.yml`, no
+     * `ROTAS_DE_CRON` e nas duas guardas de agendamento, para varrer uma tabela.
+     *
+     * Fora do `if (processados > 0)` de propósito: as chaves órfãs prendem reenvio da fila
+     * offline em qualquer hora do dia, não só na madrugada dos tenants. E não derruba a rota se
+     * falhar — recálculo que já aconteceu não pode ser desfeito por uma faxina.
+     */
+    const faxina = await limparChavesDeIdempotencia(svc, agora).catch((erro: unknown) => {
+      console.error(JSON.stringify({ level: 'error', event: 'faxina_idempotencia_falhou' }), erro)
+      return { orfas: 0, vencidas: 0 }
+    })
+
+    return { tenantsProcessados: processados, chavesOrfas: faxina.orfas, chavesVencidas: faxina.vencidas }
   })
 })

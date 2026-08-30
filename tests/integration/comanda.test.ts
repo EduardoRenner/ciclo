@@ -180,3 +180,84 @@ describe('comanda — abrir, itens, desconto, gorjeta, fechar', () => {
     30_000,
   )
 })
+
+
+/**
+ * Achados de dinheiro e de corrida da auditoria de 2026-08-28. Os dois moram aqui porque só o
+ * banco de verdade prova: o teste de `tests/integration/caixa.test.ts` insere `profit_cents` na
+ * mão, então ele somava certo um número que `fecharComanda` tinha calculado errado, e o verde
+ * cobria os dois lados.
+ */
+describe('comanda — o que sobra e a trava de estado', () => {
+  it(
+    'o desconto da comanda sai do lucro: sobrar mais do que entrou era possível',
+    async () => {
+      // A comissão é FIXADA aqui, não herdada do `beforeAll`: o teste do congelamento, acima,
+      // muda `commission_bps` para 1.000 e não restaura. Este teste é sobre a aritmética do
+      // desconto, então ele não pode depender da ordem em que a suíte roda — foi assim que a
+      // primeira versão dele reprovou na CI esperando 4.000 e recebendo 1.000.
+      await svc.from('professionals').update({ commission_bps: 4_000 }).eq('id', professionalId)
+
+      const ticketId = await abrirTicketVazio()
+      // Serviço de R$ 100, comissão de 40% (R$ 40), sem material. Desconto de R$ 20 na comanda.
+      await adicionarItemComanda(svc, tenantId, ticketId, { serviceId: servicoId, professionalId, qty: 1, discountCents: 0 })
+      await atualizarDescontoEGorjeta(svc, tenantId, ticketId, { discountCents: 2_000, tipCents: 0 })
+
+      const fechado = await fecharComanda(svc, tenantId, ticketId)
+
+      expect(fechado.total_cents).toBe(8_000) // 10.000 - 2.000
+      expect(fechado.commission_cents, 'a comissão não é a que este teste fixou — a aritmética abaixo não vale').toBe(4_000)
+      // Antes: 10.000 - 0 - 4.000 = 6.000, e a tela mostrava "Entrou 80, Sobrou 60" com o
+      // desconto sumindo do relatório.
+      expect(fechado.profit_cents).toBe(4_000) // (10.000 - 2.000) - 0 - 4.000
+      expect(fechado.profit_cents).toBeLessThanOrEqual(fechado.total_cents)
+    },
+    30_000,
+  )
+
+  it(
+    'a gorjeta entra no total e não vira lucro do salão',
+    async () => {
+      await svc.from('professionals').update({ commission_bps: 4_000 }).eq('id', professionalId)
+
+      const ticketId = await abrirTicketVazio()
+      await adicionarItemComanda(svc, tenantId, ticketId, { serviceId: servicoId, professionalId, qty: 1, discountCents: 0 })
+      await atualizarDescontoEGorjeta(svc, tenantId, ticketId, { discountCents: 0, tipCents: 3_000 })
+
+      const fechado = await fecharComanda(svc, tenantId, ticketId)
+
+      expect(fechado.total_cents).toBe(13_000)
+      expect(fechado.profit_cents).toBe(6_000) // 10.000 - 4.000 de comissão; a gorjeta é do profissional
+      expect(fechado.profit_cents).toBeLessThanOrEqual(fechado.total_cents)
+    },
+    30_000,
+  )
+
+  it(
+    'fechar a mesma comanda duas vezes ao mesmo tempo fecha uma vez só',
+    async () => {
+      const ticketId = await abrirTicketVazio()
+      await adicionarItemComanda(svc, tenantId, ticketId, { serviceId: servicoId, professionalId, qty: 1, discountCents: 0 })
+
+      // Simultâneas de verdade: é a janela entre ler `status = 'open'` e escrever `closed` que o
+      // `.eq('status', 'open')` do UPDATE fechou. Em série as duas já eram recusadas antes.
+      const resultados = await Promise.allSettled([
+        fecharComanda(svc, tenantId, ticketId),
+        fecharComanda(svc, tenantId, ticketId),
+      ])
+
+      const aceitas = resultados.filter((r) => r.status === 'fulfilled')
+      expect(aceitas, 'as duas chamadas fecharam a mesma comanda').toHaveLength(1)
+
+      // A consequência de verdade: `baixarEstoqueDaComanda` não é idempotente, então a segunda
+      // passagem teria descido o estoque de novo. Sem produto na ficha não há movimento nenhum —
+      // e é justamente isso que precisa continuar valendo.
+      const { data: movimentos } = await svc.from('stock_moves').select('id').eq('tenant_id', tenantId).eq('source_id', ticketId)
+      expect(movimentos ?? []).toHaveLength(0)
+
+      const { data: depois } = await svc.from('tickets').select('status, closed_at').eq('id', ticketId).single()
+      expect(depois!.status).toBe('closed')
+    },
+    30_000,
+  )
+})

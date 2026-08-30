@@ -32,16 +32,31 @@ const REDIGIR = new Set([
   'access_token',
   'refresh_token',
   'signature_base64',
+  /*
+   * Auditoria de 2026-08-28. `POST /api/v1/clients` grava a linha inteira da cliente em
+   * `after` — e `clients.preferences` tem um campo `alergia` em SEIS das sete verticais de
+   * `src/lib/preferencias.ts` ("acetona, resina", "amônia, PPD", "cola, cianoacrilato"). Alergia
+   * é dado de saúde, e a regra 9 do CLAUDE.md não abre exceção para trilha: *"dado de saúde nunca
+   * em log, Sentry ou analytics. Redija antes."* O cofre era protegido pelo `answers` acima; o
+   * caminho de fora do cofre não era.
+   */
+  'preferences',
+  'alert_label',
 ])
 
-/** Troca o valor dos campos sensíveis por um marcador, em qualquer profundidade. */
-function redigir(valor: unknown, profundidade = 0): unknown {
+/**
+ * Troca o valor dos campos sensíveis por um marcador, em qualquer profundidade.
+ *
+ * Exportada só para o teste: a regra 9 é absoluta e uma guarda que confere a LISTA em vez do
+ * COMPORTAMENTO passaria com o `redigir` quebrado por dentro.
+ */
+export function redigirParaTrilha(valor: unknown, profundidade = 0): unknown {
   if (profundidade > 6 || valor === null || typeof valor !== 'object') return valor
-  if (Array.isArray(valor)) return valor.map((v) => redigir(v, profundidade + 1))
+  if (Array.isArray(valor)) return valor.map((v) => redigirParaTrilha(v, profundidade + 1))
 
   const saida: Record<string, unknown> = {}
   for (const [chave, v] of Object.entries(valor)) {
-    saida[chave] = REDIGIR.has(chave.toLowerCase()) ? '[redigido]' : redigir(v, profundidade + 1)
+    saida[chave] = REDIGIR.has(chave.toLowerCase()) ? '[redigido]' : redigirParaTrilha(v, profundidade + 1)
   }
   return saida
 }
@@ -77,8 +92,8 @@ export async function writeAudit(entrada: EntradaAuditoria, req: Request): Promi
         action: entrada.action,
         entity: entrada.entity ?? null,
         entity_id: entrada.entityId ?? null,
-        before: (redigir(entrada.before) ?? null) as never,
-        after: (redigir(entrada.after) ?? null) as never,
+        before: (redigirParaTrilha(entrada.before) ?? null) as never,
+        after: (redigirParaTrilha(entrada.after) ?? null) as never,
         ip: ipDe(req),
         user_agent: req.headers.get('user-agent')?.slice(0, 400) ?? null,
         request_id: entrada.requestId,

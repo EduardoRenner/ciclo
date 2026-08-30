@@ -1,5 +1,8 @@
 import { createHash } from 'node:crypto'
 
+import type { Database } from '@/server/db/types.gen'
+import type { SupabaseClient } from '@supabase/supabase-js'
+
 import { withTenant } from '@/server/db/with-tenant'
 import { AppError } from '@/server/http/errors'
 
@@ -118,4 +121,67 @@ export async function comIdempotencia<T>(
 
     return resultado
   })
+}
+
+
+/** Reserva sem resposta gravada é órfã depois disto — nenhuma função serverless vive uma hora. */
+const HORAS_PARA_ORFA = 1
+/** Depois disto a chave não serve para deduplicar nada: nenhuma fila offline reenvia com 30 dias. */
+const DIAS_DE_GUARDA = 30
+/** Teto por passada, no mesmo espírito do `consumir_rate_limit`: limpeza nunca vira varredura cara. */
+const MAXIMO_POR_PASSADA = 500
+
+export type FaxinaDeIdempotencia = { orfas: number; vencidas: number }
+
+/**
+ * Limpeza de `idempotency_keys`. Roda de carona no `recompute-cycles`, que é a única rota deste
+ * projeto que roda sozinha de verdade — não há cron dedicado, e limpeza que ninguém dispara é
+ * limpeza que não existe.
+ *
+ * Duas faxinas diferentes, e a primeira é a que conserta comportamento:
+ *
+ * 1. **Reserva órfã.** `comIdempotencia` reserva a chave, executa, e grava a resposta. Se o
+ *    processo morrer entre a reserva e a gravação (função derrubada, timeout duro), a linha fica
+ *    com `response_status` nulo — e toda repetição com aquela chave passa a receber `429` com
+ *    "tente de novo em instantes", **para sempre**. A fila offline reenvia com a MESMA chave
+ *    (`mutacao.id`), então uma mutação que caiu nessa janela nunca mais entra. Reserva parada há
+ *    mais de uma hora não é "ainda rodando": nenhuma função serverless dura isso.
+ *
+ * 2. **Retenção.** `response_body` guarda o corpo da resposta, e o corpo de
+ *    `POST /api/v1/clients` **é a cliente** — nome, telefone, CPF, endereço. Guardar isso para
+ *    sempre para deduplicar um reenvio que nunca vai vir contraria a necessidade (LGPD art. 6) e
+ *    era, até a auditoria de 2026-08-28, a única tabela do projeto com dado pessoal e nenhuma
+ *    limpeza por idade. A eliminação da titular já alcança a tabela (migration 0046); isto alcança
+ *    quem continua cliente.
+ *
+ * Duas idas ao banco por faxina (selecionar as chaves, apagar por `in`) em vez de um `delete`
+ * aberto: PostgREST não garante `limit` em `DELETE`, e um `delete` sem teto numa tabela que
+ * cresceu é exatamente o tipo de varredura que derruba a função que deveria ser barata.
+ */
+export async function limparChavesDeIdempotencia(
+  db: SupabaseClient<Database>,
+  agora: Date,
+): Promise<FaxinaDeIdempotencia> {
+  const limiteOrfa = new Date(agora.getTime() - HORAS_PARA_ORFA * 60 * 60_000).toISOString()
+  const limiteGuarda = new Date(agora.getTime() - DIAS_DE_GUARDA * 24 * 60 * 60_000).toISOString()
+
+  async function apagar(filtrar: (q: ReturnType<typeof consultaBase>) => typeof q): Promise<number> {
+    const { data, error } = await filtrar(consultaBase()).limit(MAXIMO_POR_PASSADA)
+    if (error) throw new AppError('INTERNAL', { cause: error })
+    const chaves = (data ?? []).map((linha) => linha.key)
+    if (chaves.length === 0) return 0
+
+    const { error: erroApagar } = await db.from('idempotency_keys').delete().in('key', chaves)
+    if (erroApagar) throw new AppError('INTERNAL', { cause: erroApagar })
+    return chaves.length
+  }
+
+  function consultaBase() {
+    return db.from('idempotency_keys').select('key')
+  }
+
+  const orfas = await apagar((q) => q.is('response_status', null).lt('created_at', limiteOrfa))
+  const vencidas = await apagar((q) => q.lt('created_at', limiteGuarda))
+
+  return { orfas, vencidas }
 }

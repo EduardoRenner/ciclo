@@ -3275,6 +3275,13 @@ export type Database = {
           restante: number
         }[]
       }
+      redigir_trilha_do_cliente: {
+        Args: {
+          p_client: string
+          p_tenant: string
+        }
+        Returns: Json
+      }
       debitar_carteira: {
         Args: {
           p_client: string

@@ -1,5 +1,6 @@
 import { deBytea } from '@/server/crypto/bytea'
 import { decryptVault } from '@/server/crypto/vault'
+import { withTenant } from '@/server/db/with-tenant'
 import { AppError } from '@/server/http/errors'
 import { registrarAcessoAoCofre } from '@/server/services/cofre-trilha'
 
@@ -93,6 +94,12 @@ export type ResultadoEliminacao = {
  *
  * O filtro do teste é por TIPO: text, citext, jsonb, inet e array de texto. Coluna numérica, uuid
  * ou timestamp não cabe um nome nem um endereço, então não precisa de declaração.
+ *
+ * **Duas tabelas ficam FORA desta lista, e não por esquecimento:** `audit_log` e
+ * `idempotency_keys` guardam a linha da cliente dentro de um `jsonb` e não referenciam `clients`,
+ * então o detector do teste não as enxerga (achado de 2026-08-28). Elas são tratadas pela RPC
+ * `redigir_trilha_do_cliente` (migration 0046), chamada no fim de `eliminarCliente` — e há guarda
+ * própria em `tests/unit/server/trilha-nao-guarda-dado-eliminado.test.ts`.
  *
  * Significado de cada valor:
  * - `anonimiza`  — a coluna é o próprio dado pessoal e vira null (ou marcador) na linha da cliente;
@@ -342,11 +349,33 @@ export async function eliminarCliente(db: Cliente, tenantId: string, clientId: s
     .eq('id', clientId)
   if (erroAnon) throw new AppError('INTERNAL', { cause: erroAnon })
 
+  /*
+   * Por último, e só depois de `anonymized_at` estar gravado: a RPC exige que a cliente já esteja
+   * eliminada, justamente para não existir caminho que redija a trilha de alguém ativo.
+   *
+   * `audit_log` e `idempotency_keys` guardam a linha inteira da cliente em `jsonb` — a trilha
+   * porque `writeAudit` recebe `after: cliente`, a chave porque o corpo da resposta É a cliente.
+   * Nenhuma das duas referencia `clients`, então nem o detector do teste de cobertura nem esta
+   * função as alcançavam: o sistema respondia `anonymized: true` com CPF e endereço intactos a uma
+   * consulta de distância.
+   *
+   * Vai pelo `withTenant` e não pelo `db` de quem chamou: as duas tabelas não têm política de
+   * UPDATE (trilha que o auditado escreve não é trilha), e conceder uma `security definer` que
+   * redige trilha a `authenticated` seria dar a ferramenta a quem quer sumir com o próprio rastro.
+   * A RPC só aceita `service_role`. Quem pode eliminar já foi conferido na rota (`client:delete`
+   * + AAL2).
+   */
+  const redigidas = await withTenant(tenantId, async (servico, tenant) => {
+    const trilha = await servico.rpc('redigir_trilha_do_cliente', { p_tenant: tenant, p_client: clientId })
+    if (trilha.error) throw new AppError('INTERNAL', { cause: trilha.error })
+    return (trilha.data ?? {}) as Record<string, number>
+  })
+
   return {
     anonymized: true,
     healthRecordsRemoved: rowsRemoved.health_records ?? 0,
     mediaRemoved: rowsRemoved.media ?? 0,
     rowsRemoved,
-    rowsRedacted,
+    rowsRedacted: { ...rowsRedacted, audit_log: redigidas.audit_log ?? 0, idempotency_keys: redigidas.idempotency_keys ?? 0 },
   }
 }

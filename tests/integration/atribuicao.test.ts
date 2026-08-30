@@ -132,7 +132,7 @@ describe('receitaAtribuidaAoCiclo', () => {
       await criarCampanhaEnviada(cliente, '2026-08-01T13:00:00Z')
       const agendamentoId = await criarAgendamentoConcluido(cliente, '2026-08-05T13:00:00Z', 9_000)
 
-      const resultado = await receitaAtribuidaAoCiclo(svc, tenantId, '2026-08-01', '2026-08-31')
+      const resultado = await receitaAtribuidaAoCiclo(svc, tenantId, TZ, '2026-08-01', '2026-08-31')
 
       expect(resultado.totalCents).toBeGreaterThanOrEqual(9_000)
       expect(resultado.items.some((i) => i.appointmentId === agendamentoId && i.valueCents === 9_000)).toBe(true)
@@ -146,7 +146,7 @@ describe('receitaAtribuidaAoCiclo', () => {
       const cliente = await criarCliente('Nunca Recebeu Campanha')
       const agendamentoId = await criarAgendamentoConcluido(cliente, '2026-08-06T13:00:00Z', 9_000)
 
-      const resultado = await receitaAtribuidaAoCiclo(svc, tenantId, '2026-08-01', '2026-08-31')
+      const resultado = await receitaAtribuidaAoCiclo(svc, tenantId, TZ, '2026-08-01', '2026-08-31')
 
       expect(resultado.items.some((i) => i.appointmentId === agendamentoId)).toBe(false)
     },
@@ -156,7 +156,7 @@ describe('receitaAtribuidaAoCiclo', () => {
   it(
     'mês sem nenhum agendamento atribuível devolve zero, não erro',
     async () => {
-      const resultado = await receitaAtribuidaAoCiclo(svc, tenantId, '2026-01-01', '2026-01-31')
+      const resultado = await receitaAtribuidaAoCiclo(svc, tenantId, TZ, '2026-01-01', '2026-01-31')
       expect(resultado).toEqual({ totalCents: 0, count: 0, items: [] })
     },
     30_000,

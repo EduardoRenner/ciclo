@@ -253,7 +253,13 @@ export default function Importador() {
               </Card>
             </>
           ) : (
-            <Button largura="cheia" carregando={pendente} disabled={!mapa.name} onClick={confirmarImportacao}>
+            <Button
+              largura="cheia"
+              carregando={pendente}
+              disabled={!mapa.name}
+              motivoDesabilitado="Escolha acima qual coluna do arquivo tem o nome da cliente."
+              onClick={confirmarImportacao}
+            >
               Importar
             </Button>
           )}

@@ -15,9 +15,32 @@ import type { Mutacao } from '@/core/offline/queue'
  * novo — fora do escopo desta primeira versão (ainda não existe leitura
  * genérica por URL); mostra a mutação que ficou pendente e deixa a pessoa
  * decidir entre tentar de novo (o servidor pode ter mudado) ou descartar.
+ *
+ * **A segunda metade da frase só chegou na auditoria de 2026-08-28.** O `409` virava card desde
+ * sempre; o DESCARTE (qualquer 4xx definitivo — 400, 404, 422, 402) removia a mutação do
+ * IndexedDB e emitia um evento que este componente usava apenas para **sumir com o card de
+ * conflito**. Ninguém era avisado de nada. O caminho inteiro existia: a pessoa via
+ * "Agendamento entrou na fila e será enviado quando a conexão voltar", ia embora, e o
+ * agendamento simplesmente não existia — a mesma classe do descarte silencioso que apagou a fila
+ * no logout. Agora descarte também vira card, com a diferença que importa: não há "tentar de
+ * novo", porque o servidor recusou em definitivo. Só resta contar.
  */
+/** O que a pessoa consegue fazer com o item — e é a única diferença entre os dois cards. */
+type Descartada = { id: string; descricao: string }
+
+/** "POST /api/v1/appointments" vira "Novo agendamento". Sem isto o aviso não diz o que se perdeu. */
+function descrever(mutacao: Mutacao | null): string {
+  if (!mutacao) return 'Uma alteração feita offline'
+  const caminho = mutacao.url.split('?')[0] ?? ''
+  if (caminho.includes('/appointments')) return mutacao.method === 'POST' ? 'Um agendamento criado sem conexão' : 'Uma alteração num agendamento'
+  if (caminho.includes('/clients')) return mutacao.method === 'POST' ? 'Uma cliente cadastrada sem conexão' : 'Uma alteração no cadastro de uma cliente'
+  if (caminho.includes('/tickets')) return 'Uma alteração numa comanda'
+  return 'Uma alteração feita offline'
+}
+
 export default function ResolucaoDeFila() {
   const [conflitos, setConflitos] = useState<Mutacao[]>([])
+  const [descartadas, setDescartadas] = useState<Descartada[]>([])
 
   useEffect(() => {
     return assinarEventosDeFila((evento) => {
@@ -27,10 +50,15 @@ export default function ResolucaoDeFila() {
       if (evento.tipo === 'sincronizada' || evento.tipo === 'descartada') {
         setConflitos((atual) => atual.filter((m) => m.id !== evento.id))
       }
+      if (evento.tipo === 'descartada') {
+        setDescartadas((atual) =>
+          atual.some((d) => d.id === evento.id) ? atual : [...atual, { id: evento.id, descricao: descrever(evento.mutacao) }],
+        )
+      }
     })
   }, [])
 
-  if (conflitos.length === 0) return null
+  if (conflitos.length === 0 && descartadas.length === 0) return null
 
   return (
     <div className="fixed inset-x-0 bottom-[calc(var(--tabbar-h)+env(safe-area-inset-bottom)+12px)] z-40 mx-auto flex w-full max-w-[560px] flex-col gap-2 px-[var(--gutter)]">
@@ -54,6 +82,29 @@ export default function ResolucaoDeFila() {
                   className="toque-48 text-label font-semibold text-txt-3 underline"
                 >
                   Descartar
+                </button>
+              </div>
+            </div>
+          </div>
+        </Card>
+      ))}
+
+      {descartadas.map((d) => (
+        <Card key={d.id} flutuante className="border-bad/50">
+          <div className="flex items-start gap-2">
+            <TriangleAlert aria-hidden className="mt-0.5 size-4 shrink-0 text-bad" />
+            <div className="min-w-0 flex-1">
+              <p className="text-secundario font-semibold text-txt">{d.descricao} não foi enviado</p>
+              <p className="mt-0.5 text-label text-txt-2">
+                O servidor recusou em definitivo — reenviar daria o mesmo resultado. Refaça pela tela normal para ver o motivo.
+              </p>
+              <div className="mt-2 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setDescartadas((atual) => atual.filter((x) => x.id !== d.id))}
+                  className="toque-48 text-label font-semibold text-acc-2 underline"
+                >
+                  Entendi
                 </button>
               </div>
             </div>

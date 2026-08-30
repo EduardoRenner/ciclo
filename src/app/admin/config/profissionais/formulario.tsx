@@ -164,7 +164,14 @@ export default function FormularioProfissional({ aberto, aoFechar, profissional,
           </p>
         ) : null}
 
-        <Button type="button" largura="cheia" carregando={pendente} onClick={enviar} disabled={!nome.trim()}>
+        <Button
+          type="button"
+          largura="cheia"
+          carregando={pendente}
+          onClick={enviar}
+          disabled={!nome.trim()}
+          motivoDesabilitado="Digite o nome do profissional para poder salvar."
+        >
           {editando ? 'Salvar alterações' : 'Cadastrar profissional'}
         </Button>
       </div>

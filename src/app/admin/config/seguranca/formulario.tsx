@@ -116,7 +116,13 @@ export default function FormularioSeguranca({ fatoresIniciais }: { fatoresInicia
               {erro}
             </p>
           ) : null}
-          <Button type="submit" largura="cheia" carregando={pendente} disabled={codigo.length !== 6}>
+          <Button
+            type="submit"
+            largura="cheia"
+            carregando={pendente}
+            disabled={codigo.length !== 6}
+            motivoDesabilitado="Digite os 6 dígitos que o aplicativo mostra para confirmar."
+          >
             Confirmar e ativar
           </Button>
           <Button type="button" variante="secondary" largura="cheia" onClick={() => setCadastro(null)} disabled={pendente}>

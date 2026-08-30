@@ -527,9 +527,11 @@ export async function cancelarAgendamento(db: Cliente, tenantId: string, id: str
     })
     .eq('id', id)
     .eq('tenant_id', tenantId)
+    .eq('status', atual.status)
     .select(COLUNAS)
-    .single()
+    .maybeSingle()
   if (error) throw new AppError('INTERNAL', { cause: error })
+  if (!data) throw new AppError('INVALID_TRANSITION', { message: 'Esse agendamento mudou de estado enquanto você decidia. Recarregue a agenda.' })
   return data
 }
 
@@ -543,14 +545,24 @@ async function transicaoSimples(
   const atual = await buscarAgendamento(db, tenantId, id)
   exigirTransicao(atual.status as EstadoAgendamento, novoEstado)
 
+  /*
+   * `.eq('status', atual.status)` no próprio UPDATE. Sem isso a validação era ler-decidir-escrever
+   * com uma ida ao banco no meio: dois toques simultâneos — "concluir" num aparelho e "faltou" no
+   * outro, ou o mesmo botão duas vezes na rede ruim de um salão — passavam os dois pelo
+   * `exigirTransicao` lendo `arrived`, e o último a escrever ganhava. Pior no `concluir`, que cria
+   * a comanda depois: os dois criavam a sua, e o agendamento acabava `no_show` com faturamento
+   * lançado. A máquina de estados só vale se a transição for atômica.
+   */
   const { data, error } = await db
     .from('appointments')
     .update({ status: novoEstado, ...camposExtra })
     .eq('id', id)
     .eq('tenant_id', tenantId)
+    .eq('status', atual.status)
     .select(COLUNAS)
-    .single()
+    .maybeSingle()
   if (error) throw new AppError('INTERNAL', { cause: error })
+  if (!data) throw new AppError('INVALID_TRANSITION', { message: 'Esse agendamento mudou de estado enquanto você decidia. Recarregue a agenda.' })
   return data
 }
 
@@ -567,8 +579,9 @@ export const marcarFalta = (db: Cliente, tenantId: string, id: string) => transi
  * `02-API §2.5`). A comanda nasce vazia (sem itens ainda) — populá-la é
  * trabalho do módulo de comanda, que ainda não existe; aqui só garante que
  * concluir sempre tem uma comanda do outro lado, criando-a se for a primeira
- * vez (idempotente por `appointment_id`, que não tem índice único ainda —
- * por isso a busca antes do insert).
+ * vez. A unicidade é do banco desde a migration 0045
+ * (`tickets_um_por_agendamento`): a busca antes do insert é o caminho comum, e o `23505` abaixo
+ * é o que sobra quando duas escritas chegam juntas.
  */
 export async function concluirAgendamento(db: Cliente, tenantId: string, id: string) {
   const agendamento = await transicaoSimples(db, tenantId, id, 'done', { completed_at: new Date().toISOString() })
@@ -633,8 +646,23 @@ export async function concluirAgendamento(db: Cliente, tenantId: string, id: str
       professional_id: agendamento.professional_id,
     })
     .select('id, status')
-    .single()
+    .maybeSingle()
+
+  // `23505` aqui só acontece se outra escrita criou a comanda deste agendamento entre a busca
+  // acima e este insert. A comanda existe e é a certa — devolvê-la é o resultado correto, não um
+  // erro. Mesmo desenho do `SLOT_TAKEN` em `criarAgendamento`: deixa a constraint decidir.
+  if (erroTicket?.code === '23505') {
+    const { data: existenteAgora, error: erroBusca } = await db
+      .from('tickets')
+      .select('id, status')
+      .eq('tenant_id', tenantId)
+      .eq('appointment_id', id)
+      .maybeSingle()
+    if (erroBusca) throw new AppError('INTERNAL', { cause: erroBusca })
+    if (existenteAgora) return { appointment: agendamento, ticket: existenteAgora }
+  }
   if (erroTicket) throw new AppError('INTERNAL', { cause: erroTicket })
+  if (!ticket) throw new AppError('INTERNAL')
 
   return { appointment: agendamento, ticket }
 }
