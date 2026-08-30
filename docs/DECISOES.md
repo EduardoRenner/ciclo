@@ -3666,3 +3666,43 @@ lote sozinho — o cenário do pré-mortem do §8.1).
 falta de `loading.tsx` — Server Component async com fetch e sem esqueleto fica imóvel entre o
 clique e a resposta. Corrigido. É a segunda vez hoje que uma guarda desta base pega uma adição
 minha antes do commit (a primeira foi a de LGPD).
+
+2026-08-30 · O chat passa a OPERAR o produto: primeira ferramenta de escrita, e a pesquisa que
+mudou o desenho · Pedido do Eduardo ("o chat que ele já controlaria as coisas"). Até aqui as 8
+ferramentas do assistente eram todas de leitura (`docs/33 §2.3`).
+
+**Pesquisa, e ela contradisse o instinto** ([Anthropic — How we contain Claude](https://www.anthropic.com/engineering/how-we-contain-claude)
+· [Tool use overview](https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview),
+consultados 2026-08-30). Três achados que valem mais que a feature:
+1. **Fadiga de aprovação é medida, não teórica**: usuários aprovaram ~93% dos pedidos de
+   permissão, e *quanto mais aprovações veem, menos atenção dão a cada uma*. Encher de
+   confirmação não aumenta segurança — gasta a atenção que deveria sobrar para o que importa.
+2. **A supervisão tem que caber em quem supervisiona**: "um trabalhador não-técnico não deveria
+   ter que julgar comandos bash". Aqui quem confirma é dono de salão, não engenheiro — logo a
+   confirmação precisa ser legível em português, com nome de gente e preço, nunca JSON nem id.
+3. **Contenção ambiental vence portão de aprovação**: melhor limitar o que a ferramenta ALCANÇA
+   do que esperar que o diálogo pegue o erro. Isso valida a régua do `docs/33 §2.1` por outro
+   caminho — ela é, em outras palavras, um limite de raio de alcance.
+
+**Construído: `preparar_agendamento`** — a ferramenta resolve "marca a Maria pra terça 14h" em
+ids e devolve uma PROPOSTA legível; **não escreve nada**. Quem executa continua sendo
+`POST /api/v1/appointments` com o clique do dono, que é literalmente a regra inegociável nº4 do
+`docs/26 §0`. Ela exige `appointment:create` — a MESMA permissão da rota de execução, para o
+assistente nunca preparar o que o papel não poderia executar depois.
+
+**A regra que dá nome à guarda: empatou, pergunta — nunca desempata sozinho.** É o pré-mortem do
+`docs/33 §8.1` (o modelo escolheu a cliente errada) aplicado ao nível com confirmação. Duas
+"Maria" na base devolvem `qual_delas` com as opções, e o prompt manda perguntar. A resolução mora
+em `core/assistente/resolver.ts` (função pura, regra 5 do `CLAUDE.md`) justamente para a guarda
+exercitar o código real — não uma cópia, que foi como duas guardas cegas nasceram nesta sessão.
+
+Detalhe do desenho que a medição impôs: a busca tenta EXATO → PREFIXO → CONTÉM e para no primeiro
+resultado único. Sem essa ordem, "Ana" viraria ambiguidade por causa de "Mariana" — e perguntar
+onde havia resposta certa também é defeito, só que de ruído.
+
+Guarda vista reprovando em QUATRO mutações: empate virando escolha do primeiro (o pré-mortem),
+"não achou" virando primeiro da lista, perda da ordem exato>prefixo, e vários profissionais
+virando escolha silenciosa. Uma quinta descoberta veio de graça: a primeira versão do teste
+esperava 2 opções para "Maria" e o código devolveu 3, incluindo "Mariana Lopes" — a EXPECTATIVA
+estava errada, não o código. Esconder uma opção legítima para a lista ficar bonita é escolher pelo
+dono por outro caminho. Registrado no próprio teste.

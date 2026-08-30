@@ -9,6 +9,9 @@ import { buscarCliente, listarClientes } from '@/server/services/clientes'
 import { listarAgendaDoDia } from '@/server/services/agendamentos'
 import { listarOrcamentos } from '@/server/services/orcamentos'
 import { listarParaRecuperar } from '@/server/services/recuperar-receita'
+import { listarServicos } from '@/server/services/servicos'
+import { listarProfissionais } from '@/server/services/profissionais'
+import { resolverPorNome, resolverProfissional, type Candidato } from '@/core/assistente/resolver'
 import { resumoDeHoje } from '@/server/services/resumo-hoje'
 
 import type { Database } from '@/server/db/types.gen'
@@ -84,6 +87,16 @@ function mesCorrente(timezone: string): string {
 export function hojeNoFuso(timezone: string): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: timezone }).format(new Date())
 }
+
+const EsquemaPrepararAgendamento = z.object({
+  cliente: z.string().min(2).describe('nome da cliente, como o dono falou — não precisa ser exato'),
+  servico: z.string().min(2).describe('nome do serviço, como o dono falou'),
+  quando: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/)
+    .describe('data e hora no formato AAAA-MM-DDTHH:MM, no fuso do salão. Use a data de hoje do prompt para resolver "amanhã", "terça" etc.'),
+  profissional: z.string().optional().describe('nome do profissional; omita se o dono não disse'),
+})
 
 /**
  * Apaga o tipo específico de argumento (`T`) de uma ferramenta concreta para o array
@@ -190,6 +203,70 @@ export const FERRAMENTAS: Ferramenta[] = [
     permissao: 'inventory:read',
     modulo: 'stock',
     executar: async (ctx) => listarAlertasDeEstoque(ctx.db, ctx.tenantId, hojeNoFuso(ctx.timezone)),
+  }),
+  apagarTipo({
+    nome: 'preparar_agendamento',
+    descricao:
+      'Prepara um agendamento a partir do que o dono falou (cliente, serviço, dia e hora) e devolve uma PROPOSTA para ele confirmar. NÃO marca nada — quem marca é o dono, tocando em confirmar. Se houver mais de uma cliente ou profissional possível, devolve as opções para você PERGUNTAR qual, nunca escolha por conta própria.',
+    schema: EsquemaPrepararAgendamento,
+    // MESMA permissão que `POST /api/v1/appointments` exige: o assistente nunca prepara o que o
+    // papel não poderia executar depois. Sem isso ele montaria uma proposta que a rota recusa,
+    // e o dono levaria o 'não' só no fim, depois de confirmar.
+    permissao: 'appointment:create',
+    modulo: 'agenda',
+    executar: async (ctx, { cliente, servico, quando, profissional }) => {
+      const [clientes, servicos, profissionais] = await Promise.all([
+        listarClientes(ctx.db, ctx.tenantId, { busca: cliente, limite: 20 }),
+        listarServicos(ctx.db, ctx.tenantId),
+        listarProfissionais(ctx.db, ctx.tenantId),
+      ])
+
+      const candCliente: Candidato[] = clientes.map((c) => ({ id: c.id, nome: c.name }))
+      const candServico: Candidato[] = servicos.map((s) => ({ id: s.id, nome: s.name }))
+      const candProf: Candidato[] = profissionais.map((p) => ({ id: p.id, nome: p.display_name }))
+
+      const rc = resolverPorNome(cliente, candCliente)
+      if (rc.tipo === 'nenhum') return { status: 'nao_achei', oQue: 'cliente', termo: cliente }
+      if (rc.tipo === 'ambiguo') return { status: 'qual_delas', oQue: 'cliente', opcoes: rc.opcoes.map((o) => o.nome) }
+
+      const rs = resolverPorNome(servico, candServico)
+      if (rs.tipo === 'nenhum') {
+        return { status: 'nao_achei', oQue: 'servico', termo: servico, servicosDisponiveis: candServico.map((s) => s.nome) }
+      }
+      if (rs.tipo === 'ambiguo') return { status: 'qual_delas', oQue: 'servico', opcoes: rs.opcoes.map((o) => o.nome) }
+
+      const rp = resolverProfissional(profissional, candProf)
+      if (rp.tipo === 'nenhum') return { status: 'nao_achei', oQue: 'profissional', termo: profissional }
+      if (rp.tipo === 'ambiguo') return { status: 'qual_delas', oQue: 'profissional', opcoes: rp.opcoes.map((o) => o.nome) }
+
+      const servicoEscolhido = servicos.find((s) => s.id === rs.item.id)!
+
+      // A PROPOSTA, não a execução. `precoCents` e `duracaoMin` vêm do catálogo, nunca do modelo
+      // (regra inegociável nº1 do docs/26 §0) — o modelo só lê o que já está resolvido aqui.
+      return {
+        status: 'proposta',
+        acao: 'criar_agendamento',
+        // `dados` é o corpo que a tela vai mandar para `POST /api/v1/appointments` quando o dono
+        // confirmar. O assistente NUNCA chama essa rota: ele devolve o que preencher.
+        dados: {
+          clientId: rc.item.id,
+          serviceId: rs.item.id,
+          professionalId: rp.item.id,
+          startsAtLocal: quando,
+        },
+        // O resumo é o que aparece no cartão de confirmação. Em português, com tudo resolvido —
+        // o dono confirma lendo nome de gente e preço, não UUID (pesquisa da Anthropic sobre
+        // fadiga de aprovação: confirmação que não dá para julgar vira clique automático).
+        resumo: {
+          cliente: rc.item.nome,
+          servico: rs.item.nome,
+          profissional: rp.item.nome,
+          quando,
+          precoCents: servicoEscolhido.price_cents,
+          duracaoMin: servicoEscolhido.duration_min,
+        },
+      }
+    },
   }),
 ]
 

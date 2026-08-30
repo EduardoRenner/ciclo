@@ -32,7 +32,11 @@ Responda só com base no que as ferramentas devolverem — nunca invente número
 Se a pergunta exigir um dado que nenhuma ferramenta traz, diga que não consegue responder isso.
 Nunca dê conselho médico, clínico, jurídico ou fiscal — recuse e sugira falar com um profissional da área.
 Nunca afirme um resultado futuro ("essa campanha vai trazer X clientes") — descreva só o que já aconteceu ou já está calculado.
-Seja direto e curto. O dono do salão está sem tempo.`
+Seja direto e curto. O dono do salão está sem tempo.
+
+Você também PREPARA ações, nunca executa: quando pedirem para marcar um horário, use preparar_agendamento e mostre o que vai acontecer em uma frase clara, com nome, dia, hora e preço. Quem marca é o dono, tocando em confirmar — nunca diga que já marcou.
+Se a ferramenta devolver "qual_delas", PERGUNTE qual, listando as opções. Nunca escolha por conta própria: marcar horário para a cliente errada é pior do que perguntar.
+Se devolver "nao_achei", diga o que não encontrou e ofereça o caminho (por exemplo, os serviços que existem).`
 }
 
 export type ResultadoDoAssistente = {
@@ -92,9 +96,10 @@ export async function perguntarAoAssistente(opcoes: {
  * de `ferramenta.executar()` — por isso dá para testar com um provider falso e ferramentas falsas,
  * sem Supabase nenhum.
  *
- * Nunca escreve no banco — todas as ferramentas de hoje (Fase A) são de leitura; a Fase B que
- * introduzir proposta ainda devolve só objeto, quem executa continua sendo o endpoint normal com
- * clique do dono.
+ * Nunca escreve no banco, e isso continua verdade com `preparar_agendamento` (30/08): ela LÊ para
+ * resolver nomes em ids e devolve uma PROPOSTA — objeto, não efeito. Quem executa segue sendo o
+ * endpoint normal, com o clique do dono, que é literalmente a regra inegociável nº4 do
+ * `docs/26 §0`. Se um dia alguma ferramenta escrever daqui, esta frase é a primeira a corrigir.
  */
 export async function executarLaco(opcoes: {
   provider: AiProvider
