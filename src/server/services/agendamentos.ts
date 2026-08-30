@@ -383,8 +383,17 @@ export type LinhaAgendaDia = {
 
 export type ResumoAgendaDia = {
   appointments: LinhaAgendaDia[]
-  /** 0 a 1 — minutos ocupados / minutos de expediente do dia. Sem expediente cadastrado, é 0 (nada para ocupar). */
+  /** 0 a 1 — minutos ocupados / minutos de expediente do dia. Sem expediente cadastrado, é 0. */
   occupancyRate: number
+  /**
+   * 2026-08-30, achado medindo a tela ao vivo: sem isto, um dia sem `business_hours` cadastrado
+   * (ex.: domingo fechado) mostra "0% de ocupação" mesmo com agendamentos reais marcados — o
+   * número está matematicamente certo (0 minutos de expediente para dividir) mas lido como
+   * "dia vazio", que é falso. Quem mostra `occupancyRate` tem que checar isto primeiro e trocar
+   * o texto por "sem expediente cadastrado" em vez de "0%" — mesma classe do achado docs/29 A3
+   * ("Taxa" sempre R$ 0,00: número certo, leitura errada).
+   */
+  temExpediente: boolean
   /** Soma do `price_cents` dos agendamentos que ainda valem (não cancelados/vencidos/faltosos). */
   forecastCents: number
 }
@@ -453,6 +462,7 @@ export async function listarAgendaDoDia(
   return {
     appointments: linhas,
     occupancyRate: minutosDeExpediente > 0 ? Math.min(1, minutosOcupados / minutosDeExpediente) : 0,
+    temExpediente: janelas.length > 0,
     forecastCents,
   }
 }

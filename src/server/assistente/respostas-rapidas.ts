@@ -109,6 +109,15 @@ async function hojeHorarioVagoAmanha(ctx: ContextoRapido): Promise<RespostaRapid
   if (resumo.appointments.length === 0) {
     return { resposta: `Sim, amanhã (${dataFmt}) sua agenda está totalmente livre.`, ferramentasUsadas: ['ocupacao_do_dia'] }
   }
+  // 2026-08-30, achado ao vivo: dia sem expediente cadastrado (ex.: domingo fechado) tem
+  // occupancyRate=0 mesmo com agendamentos reais — "0% de ocupação" lê como dia vazio, que é
+  // falso. Mesma correção da tela da Agenda (docs/DECISOES.md, mesma data).
+  if (!resumo.temExpediente) {
+    return {
+      resposta: `Sim, amanhã (${dataFmt}) você tem horário vago — ${resumo.appointments.length} agendamento(s) marcado(s). Não há expediente cadastrado para esse dia.`,
+      ferramentasUsadas: ['ocupacao_do_dia'],
+    }
+  }
   if (ocupacaoPct >= 100) {
     return { resposta: `Não, amanhã (${dataFmt}) sua agenda já está cheia (100% ocupada).`, ferramentasUsadas: ['ocupacao_do_dia'] }
   }

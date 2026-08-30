@@ -3306,3 +3306,25 @@ checadas via `information_schema`), então o `delete from tenants` levou cliente
 orçamentos etc. desses 8 tenants junto, sem deixar linha órfã de dado real de gente (eram todos
 sintéticos, criados por teste de integração rodando contra produção — causa raiz já travada
 separadamente). Confirmado depois: `0` tenants restantes com o padrão de slug sintético.
+
+2026-08-30 · "0% de ocupação" ao lado de agendamentos reais — achado medindo /admin/agenda ao
+vivo · Rodada de polimento pedida pelo Eduardo ("aprimora como os dos grandes players"). Medido
+antes de mudar (regra da casa: "verde não é prova"): domingo (hoje) tinha 3 agendamentos reais na
+tela e mostrava "OCUPAÇÃO DO DIA: 0%" — matematicamente certo (`minutosDeExpediente=0` porque este
+salão de teste não tem `business_hours` cadastrado pra domingo/segunda) mas lido como "dia vazio",
+que é falso. Mesma classe do achado `docs/29 A3` ("Taxa" sempre R$ 0,00: número certo, leitura
+errada).
+
+Corrigido nos três lugares que leem `occupancyRate` (`listarAgendaDoDia`, `agendamentos.ts`):
+- `ResumoAgendaDia` ganhou `temExpediente: boolean` (`janelas.length > 0`), sem mudar o cálculo
+  de `occupancyRate` em si — quem já fazia conta com o número continua funcionando igual.
+- Tela da Agenda (`agenda.tsx`): mostra "—" em vez de "0%" quando não há expediente, e esconde a
+  barra de progresso (`progresso={undefined}`), não mostra uma barra zerada.
+- `ocupacao_do_dia` (ferramenta do assistente): devolve `temExpedienteCadastrado` no objeto que o
+  Gemini lê — testado ao vivo, o modelo já explica sozinho "não há expediente cadastrado... por
+  isso a taxa é 0%" em vez de só afirmar "0% de ocupação" sem contexto.
+- `hoje_horario_vago_amanha` (resposta rápida, sem LLM): troca "0% de ocupação" por "Não há
+  expediente cadastrado para esse dia" quando `temExpediente` é falso.
+
+Testado em produção nos dois sentidos: domingo (sem expediente) → "—"; terça (com expediente
+cadastrado) → "9%" real, sem regressão no caminho normal. 1001 testes unit passando, build limpo.

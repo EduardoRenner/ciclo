@@ -131,7 +131,14 @@ export default function Agenda({
       ) : null}
 
       <div className="mb-4 grid grid-cols-2 gap-3">
-        <StatTile rotulo="Ocupação do dia" valor={`${Math.round(resumo.occupancyRate * 100)}%`} progresso={resumo.occupancyRate} />
+        {/* 2026-08-30: "0%" ao lado de agendamentos reais lê como dia vazio quando na verdade é
+            dia sem expediente cadastrado (ex.: domingo fechado) — mesma classe do achado docs/29
+            A3 ("Taxa" sempre R$ 0,00: número certo, leitura errada). */}
+        <StatTile
+          rotulo="Ocupação do dia"
+          valor={resumo.temExpediente ? `${Math.round(resumo.occupancyRate * 100)}%` : '—'}
+          progresso={resumo.temExpediente ? resumo.occupancyRate : undefined}
+        />
         <StatTile rotulo="Previsto" valor={dinheiro.format(resumo.forecastCents / 100)} />
       </div>
 

@@ -155,7 +155,17 @@ export const FERRAMENTAS: Ferramenta[] = [
     executar: async (ctx, args: z.infer<typeof EsquemaData> | Record<string, never>) => {
       const data = 'data' in args && args.data ? args.data : hojeNoFuso(ctx.timezone)
       const resumo = await listarAgendaDoDia(ctx.db, ctx.tenantId, data, ctx.timezone)
-      return { data, quantidadeDeAgendamentos: resumo.appointments.length, taxaDeOcupacao: resumo.occupancyRate, faturamentoPrevistoCents: resumo.forecastCents }
+      // 2026-08-30: `temExpedienteCadastrado: false` é o sinal para o modelo dizer "sem
+      // expediente cadastrado" em vez de "0% de ocupação" — a mesma leitura errada que a tela da
+      // Agenda tinha (docs/DECISOES.md, mesma data). O nome do campo já carrega a explicação
+      // porque é o modelo, não um humano, quem lê este objeto.
+      return {
+        data,
+        quantidadeDeAgendamentos: resumo.appointments.length,
+        taxaDeOcupacao: resumo.occupancyRate,
+        temExpedienteCadastrado: resumo.temExpediente,
+        faturamentoPrevistoCents: resumo.forecastCents,
+      }
     },
   }),
   apagarTipo({
