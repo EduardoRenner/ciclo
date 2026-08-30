@@ -361,6 +361,45 @@ export async function disponibilidadePublica(
   })
 }
 
+/**
+ * I-4, `docs/30-INDICACAO-PLANO.md` §6.2b: o primeiro nome de quem indicou, para a moldura de
+ * chegada. É prova social de par — a nova cliente lê o nome de alguém que ela conhece antes do
+ * primeiro clique, que é o "encaixe melhor" que a pesquisa (§2.4) aponta como metade do porquê
+ * cliente indicado vale mais.
+ *
+ * **Só o primeiro nome, e é decisão de privacidade, não de estilo.** Quem tem o link vê esse
+ * nome, e o link circula em WhatsApp de terceiro. A própria cliente é quem compartilhou, então
+ * ela está revelando o próprio nome de propósito — mas sobrenome é dado a mais sem função aqui.
+ * Mesma regra que `aplicarVariaveis` já aplica nas mensagens prontas.
+ *
+ * Devolve `null` em silêncio para token ausente, vencido, de outro tenant, de cliente excluída ou
+ * **eliminada** (`anonymized_at`, LGPD art. 18 VI — o nome dela virou "Cliente eliminada", e
+ * estampar isso na página seria pior que não mostrar nada). Nunca lança: um convite velho não pode
+ * transformar "agendar" em "não consigo agendar".
+ */
+export async function quemIndicou(slug: string, token: string | null | undefined): Promise<string | null> {
+  if (!token) return null
+  const clientId = verificarTokenIndicacao(token)
+  if (!clientId) return null
+
+  return withNovoTenant(async (svc) => {
+    const tenant = await tenantPeloSlug(svc, slug).catch(() => null)
+    if (!tenant) return null
+
+    const { data } = await svc
+      .from('clients')
+      .select('name')
+      .eq('id', clientId)
+      .eq('tenant_id', tenant.id)
+      .is('deleted_at', null)
+      .is('anonymized_at', null)
+      .maybeSingle()
+
+    const primeiroNome = data?.name?.trim().split(/\s+/)[0]
+    return primeiroNome || null
+  })
+}
+
 export const EsquemaBookingPublico = z.object({
   serviceId: z.uuid('Escolha um serviço.'),
   professionalId: z.uuid().nullish(),

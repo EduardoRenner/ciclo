@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 
 import { AppError } from '@/server/http/errors'
-import { perfilPublico } from '@/server/services/public-booking'
+import { perfilPublico, quemIndicou } from '@/server/services/public-booking'
 
 import Agendar from './agendar'
 
@@ -50,6 +50,9 @@ export default async function PaginaAgendar({
   })
   if (!perfil) notFound()
 
+  // I-4: a moldura de chegada. Nunca derruba a página — sem o nome, a tela é a de sempre.
+  const indicadaPor = await quemIndicou(slug, ind).catch(() => null)
+
   return (
     <main className="mx-auto min-h-dvh max-w-[560px] px-[18px] py-8">
       <header className="mb-6">
@@ -65,6 +68,7 @@ export default async function PaginaAgendar({
         services={perfil.services}
         professionals={perfil.professionals}
         ind={ind ?? null}
+        indicadaPor={indicadaPor}
       />
     </main>
   )
