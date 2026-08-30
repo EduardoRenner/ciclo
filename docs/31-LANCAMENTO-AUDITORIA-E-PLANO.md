@@ -308,3 +308,26 @@ outra.
 A conclusão vale além deste arquivo: **guarda escrita junto com o conserto é a mais fácil de
 nascer cega**, porque o texto que explica o conserto mora ao lado do que a guarda procura. Casar
 com o valor do `className`, nunca com o recorte do elemento.
+
+---
+
+## 9 · A CI reprovou a primeira versão do L-11, e ela estava certa
+
+Vale registrar porque é a segunda lição de processo desta rodada, e ela é o espelho da §8.
+
+O primeiro conserto do 503 permanente criou um `core/jobs/registro.ts` com a lista dos tipos de
+job que têm handler, e silenciava todo o resto. Passou nos meus testes de unidade — que eu mesmo
+escrevi em volta do desenho que eu tinha acabado de escolher. **A CI reprovou**, e o motivo era
+real: com o registro vazio (nenhum handler foi escrito ainda), o alarme da fila virava
+*inalcançável*. Dois testes de integração que provam "trabalho parado acusa" quebraram.
+
+Silenciar demais é o defeito **oposto** ao que eu estava consertando, e é o pior dos dois —
+trabalho enfileirado sumindo em silêncio é exatamente o que o §7 da espec proíbe.
+
+O desenho certo veio de trocar a pergunta: em vez de manter uma lista paralela afirmando o que o
+mundo tem, casar com o **erro que a própria fila gravou naquele job**. O sinal diz o que de fato
+aconteceu, não o que uma lista acha; e não há duas listas para dessincronizar. Prova de que o
+desenho novo está certo: **os dois testes de integração passaram sem eu tocar em nenhum deles.**
+
+> Teste de unidade escrito pelo autor do desenho concorda com o desenho. O que discorda é o teste
+> que já existia — e é por isso que quebrar um teste antigo é informação, não obstáculo.
