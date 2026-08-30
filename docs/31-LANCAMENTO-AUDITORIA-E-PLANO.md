@@ -331,3 +331,33 @@ desenho novo está certo: **os dois testes de integração passaram sem eu tocar
 
 > Teste de unidade escrito pelo autor do desenho concorda com o desenho. O que discorda é o teste
 > que já existia — e é por isso que quebrar um teste antigo é informação, não obstáculo.
+
+---
+
+## 10 · Rodada de verificação (30/08, manhã) — o que foi conferido e não estava quebrado
+
+Registrado porque "procurei e não achei" é resultado, e sem escrever vira retrabalho na próxima.
+
+- **Agendamento público, o caminho do dinheiro.** Disponibilidade medida dia a dia por uma semana
+  em `dom-rocha`: fechado domingo e segunda, 126 horários de terça a sábado. Coerente com o
+  expediente — o caminho que traz cliente novo está de pé.
+- **Escrita supabase sem conferir `{ error }`.** O padrão que já custou 9 casos numa varredura
+  anterior (incluindo `writeAudit` falhando calado, que é LGPD). Varrido de novo: **nenhum caso**.
+- **`catch` que descarta em silêncio.** Um único `.catch(() => {})` no projeto, em
+  `agenda/novo/formulario.tsx` — e ele é legítimo e documentado: o agendamento já foi criado, só
+  o vínculo com o orçamento falha, o orçamento segue "Aprovado" e dá para refazer. Nada é
+  descartado. **Não virou achado de propósito** — acusar o que está certo custa tanto quanto
+  absolver o que está errado (§8).
+- **O laço de indicação (I-1..I-9), que eu construí e nunca tinha visto rodar.** Verificado de
+  ponta a ponta contra dados reais, com token assinado de verdade:
+
+  | Caso | Resultado |
+  |---|---|
+  | token válido | *"Alexandre indicou este lugar pra você"* — só o primeiro nome, como o desenho de privacidade exige |
+  | sem token | silêncio |
+  | token adulterado | silêncio (o HMAC pega) |
+  | lixo no lugar do token | silêncio |
+  | **token válido de OUTRO tenant** | **silêncio** — o escopo por tenant segura |
+
+  E em todos os casos a página devolve 200: **convite inválido nunca transforma "agendar" em
+  "não consigo agendar"**, que era o contrato escrito em `quemIndicou`.
