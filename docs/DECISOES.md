@@ -3195,3 +3195,19 @@ volume de uso real para calibrar, mesma regra do `docs/17 §4.8` sobre não fing
 existe. `pnpm verify` completo não pôde rodar nesta sessão: não há Docker disponível neste
 ambiente para `supabase start`, então `test:integration` e `test:rls` ficaram fora — typecheck,
 lint, `test:unit` (1001 testes, 0 falhas) e `build` passaram limpos.
+
+2026-08-30 · Assistente vira janela flutuante arrastável no desktop · Pedido do Eduardo,
+comparando com Intercom/Drift/ChatGPT: "movível que nem os grandes". No desktop (≥1024px, mesmo
+corte que `tab-bar.tsx` já usa pra virar barra lateral) o painel deixou de ser o `Sheet` modal
+(que sobe do fundo, trava a tela) e virou uma janela flutuante NÃO modal, arrastável pela alça do
+cabeçalho, ancorada perto do botão que a abre. Sem overlay, sem travar o resto da página — igual
+ao padrão dos widgets de chat grandes. No mobile (<1024px) continua sendo o `Sheet` de sempre,
+sem nenhuma mudança: arrastar uma janela pela tela não faz sentido numa largura de 390px.
+
+Bug achado e corrigido durante o teste ao vivo (arrastar até o canto extremo da tela): o limite
+vertical (`limitarNaTela`) travava contra um número fixo (`- 80`, copiado do cálculo da posição
+INICIAL) em vez da altura REAL da janela, que muda com o conteúdo (367px com poucas sugestões,
+até 600px com conversa longa). Arrastado até o fundo, o rodapé ficava 271px fora da tela.
+Corrigido: o limite agora mede `janelaRef.current.getBoundingClientRect().height` de verdade a
+cada arrasto, em vez de presumir um valor. Testado nos dois extremos (canto superior-esquerdo e
+inferior-direito) depois do conserto — os dois travam dentro do viewport.
