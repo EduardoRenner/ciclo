@@ -5085,3 +5085,20 @@ apagava `media` mas nunca soube de `portfolio_photos` — corrigido, com bucket 
 bucket público só é permitida a service_role, migration 0051). Ao consertar isso percebi que o
 MESMO problema provavelmente já existe pro bucket `media` dentro de `eliminarCliente` — não
 corrigido aqui (fora de escopo), registrado como tarefa separada (spawn_task).
+
+**2026-08-31 · toda campanha voltou a mostrar retorno de verdade (migration 0054)**: fechou o
+"próximo passo" que a rodada de "campanhas dizia R$ 0,00" tinha deixado escrito — `messages`
+ganhou `campaign_id` (nullable, `on delete set null`: apagar uma campanha nunca apaga o histórico
+de envio). `registrarCampanha` grava o vínculo nas mensagens que ela mesma insere;
+`receitaPorCampanha` (nova, `atribuicao.ts`) roda a mesma `atribuirReceita` já usada pela tela
+"Hoje", sem janela de mês (um cartão de campanha é registro permanente, não relatório mensal), e
+agrupa por campanha. `campaigns.booked_count`/`revenue_cents` continuam mortas de propósito —
+quem calcula é a atribuição ao vivo, nunca um contador gravado que precisaria de cron pra não
+divergir. A guarda `campanhas-nao-inventam-retorno.test.ts` era de DIREÇÃO desde a rodada
+anterior (seu próprio comentário já previa "messages ganhando campaign_id" como gatilho) mas só
+checava `campaigns.update` — não pegaria esta mudança. Reescrita para checar o novo caminho real
+(campaign_id gravado, `receitaPorCampanha` usada) e reprovar se `campaigns` ganhar um `update` de
+volta (isso reintroduziria a classe de bug original — número guardado divergindo do calculado).
+Confirmado que reprova: revertida a escrita de `campaign_id`, o teste falhou; restaurada, passou.
+Verificado ao vivo: duas campanhas para clientes diferentes, cada uma mostra só o que ELA trouxe
+("1 pessoa voltou · R$ 90,00" vs "Ninguém voltou por aqui ainda"), sem misturar receita entre elas.

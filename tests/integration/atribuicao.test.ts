@@ -7,7 +7,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { criarProfissional } from '@/server/services/profissionais'
 import { criarServico } from '@/server/services/servicos'
 import { executarOnboarding } from '@/server/services/onboarding'
-import { receitaAtribuidaAoCiclo } from '@/server/services/atribuicao'
+import { receitaAtribuidaAoCiclo, receitaPorCampanha } from '@/server/services/atribuicao'
+import { registrarCampanha } from '@/server/services/crm'
 
 import type { Database } from '@/server/db/types.gen'
 
@@ -91,7 +92,7 @@ async function criarCliente(nome: string) {
   return cliente.data.id
 }
 
-async function criarCampanhaEnviada(clientId: string, sentAtIso: string) {
+async function criarCampanhaEnviada(clientId: string, sentAtIso: string, campaignId: string | null = null) {
   const { error } = await svc.from('messages').insert({
     tenant_id: tenantId,
     client_id: clientId,
@@ -99,6 +100,7 @@ async function criarCampanhaEnviada(clientId: string, sentAtIso: string) {
     kind: 'campaign',
     status: 'sent',
     sent_at: sentAtIso,
+    campaign_id: campaignId,
   })
   if (error) throw error
 }
@@ -158,6 +160,62 @@ describe('receitaAtribuidaAoCiclo', () => {
     async () => {
       const resultado = await receitaAtribuidaAoCiclo(svc, tenantId, TZ, '2026-01-01', '2026-01-31')
       expect(resultado).toEqual({ totalCents: 0, count: 0, items: [] })
+    },
+    30_000,
+  )
+})
+
+describe('registrarCampanha + receitaPorCampanha (migration 0054)', () => {
+  it(
+    'registrarCampanha grava campaign_id na mensagem, e receitaPorCampanha acha o retorno certo',
+    async () => {
+      const cliente = await criarCliente('Voltou Por Esta Campanha')
+
+      const campanha = await registrarCampanha(svc, tenantId, {
+        name: 'Campanha de Teste 0054',
+        segment: 'teste',
+        template: 'Vem cá!',
+        clientIds: [cliente],
+      })
+
+      const linhaMensagem = await svc.from('messages').select('campaign_id, sent_at').eq('tenant_id', tenantId).eq('client_id', cliente).eq('kind', 'campaign').single()
+      expect(linhaMensagem.data?.campaign_id).toBe(campanha.id)
+
+      await criarAgendamentoConcluido(cliente, new Date(Date.now() + 3_600_000).toISOString(), 12_000)
+
+      const resultado = await receitaPorCampanha(svc, tenantId)
+      expect(resultado.get(campanha.id)).toEqual({ bookedCount: 1, revenueCents: 12_000 })
+    },
+    30_000,
+  )
+
+  it(
+    'duas campanhas diferentes: cada uma só conta o que ela mesma trouxe, nunca a soma das duas',
+    async () => {
+      const clienteA = await criarCliente('Cliente da Campanha A')
+      const clienteB = await criarCliente('Cliente da Campanha B')
+
+      const campanhaA = await registrarCampanha(svc, tenantId, { name: 'Campanha A 0054', segment: 'teste', template: 'A', clientIds: [clienteA] })
+      const campanhaB = await registrarCampanha(svc, tenantId, { name: 'Campanha B 0054', segment: 'teste', template: 'B', clientIds: [clienteB] })
+
+      await criarAgendamentoConcluido(clienteA, new Date(Date.now() + 3_600_000).toISOString(), 5_000)
+      await criarAgendamentoConcluido(clienteB, new Date(Date.now() + 3_600_000).toISOString(), 7_000)
+
+      const resultado = await receitaPorCampanha(svc, tenantId)
+      expect(resultado.get(campanhaA.id)).toEqual({ bookedCount: 1, revenueCents: 5_000 })
+      expect(resultado.get(campanhaB.id)).toEqual({ bookedCount: 1, revenueCents: 7_000 })
+    },
+    30_000,
+  )
+
+  it(
+    'campanha sem ninguém voltando ainda não aparece no mapa — o cartão mostra "ninguém voltou" em vez de zero inventado',
+    async () => {
+      const cliente = await criarCliente('Ainda Não Voltou')
+      const campanha = await registrarCampanha(svc, tenantId, { name: 'Campanha Sem Retorno 0054', segment: 'teste', template: 'X', clientIds: [cliente] })
+
+      const resultado = await receitaPorCampanha(svc, tenantId)
+      expect(resultado.has(campanha.id)).toBe(false)
     },
     30_000,
   )

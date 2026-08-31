@@ -16,6 +16,7 @@ export type ItemReceitaAtribuida = {
   clientName: string
   valueCents: number
   campaignSentAt: string
+  campaignId: string | null
 }
 
 export type ReceitaAtribuida = {
@@ -63,7 +64,7 @@ export async function receitaAtribuidaAoCiclo(
   const [mensagens, agendamentos] = await Promise.all([
     db
       .from('messages')
-      .select('client_id, sent_at')
+      .select('client_id, sent_at, campaign_id')
       .eq('tenant_id', tenantId)
       .eq('kind', 'campaign')
       .eq('status', 'sent')
@@ -81,8 +82,8 @@ export async function receitaAtribuidaAoCiclo(
   if (agendamentos.error) throw new AppError('INTERNAL', { cause: agendamentos.error })
 
   const campanhas: CampanhaEnviada[] = (mensagens.data ?? [])
-    .filter((m): m is { client_id: string; sent_at: string } => m.client_id !== null && m.sent_at !== null)
-    .map((m) => ({ clientId: m.client_id, sentAt: Temporal.Instant.from(m.sent_at) }))
+    .filter((m): m is { client_id: string; sent_at: string; campaign_id: string | null } => m.client_id !== null && m.sent_at !== null)
+    .map((m) => ({ clientId: m.client_id, sentAt: Temporal.Instant.from(m.sent_at), campaignId: m.campaign_id }))
 
   const nomePorCliente = new Map<string, string>()
   const elegiveis: AgendamentoElegivel[] = []
@@ -113,6 +114,54 @@ export async function receitaAtribuidaAoCiclo(
       clientName: nomePorCliente.get(a.clientId) ?? '',
       valueCents: a.valueCents,
       campaignSentAt: a.campaignSentAt.toString(),
+      campaignId: a.campaignId,
     })),
   }
+}
+
+export type ResultadoPorCampanha = { bookedCount: number; revenueCents: number }
+
+/**
+ * TICKET-039/09-PLATAFORMA §continuação, migration 0054: `campaigns.booked_count`/`revenue_cents`
+ * nunca tiveram escritor de propósito ("quem preenche é a atribuição, não o usuário") — a
+ * campanha lida hoje precisa do número de VERDADE ao lado, não de um contador de dígito digitado.
+ *
+ * Diferente de `receitaAtribuidaAoCiclo` (mês corrente, para "quanto o CICLO trouxe"): aqui não há
+ * janela de data — uma campanha de 3 meses atrás continua sendo um cartão permanente na tela, não
+ * um relatório mensal, então o total dela não pode sumir quando o mês vira. `atribuirReceita`
+ * ainda roda sobre o conjunto INTEIRO de mensagens/agendamentos do tenant (a prioridade por
+ * campanha mais antiga é a mesma regra de sempre) — só o agrupamento final é por `campaignId`.
+ */
+
+/**
+ * Nota de transição: a busca já filtra `campaign_id is not null`, então mensagens de campanha
+ * enviadas ANTES da migration 0054 (sem o vínculo) não entram nesta prioridade — um agendamento
+ * que uma campanha antiga teria reivindicado primeiro pode, por um tempo, aparecer atribuído a
+ * uma campanha mais nova aqui. Passa sozinho conforme mensagem antiga sai da janela de 30 dias de
+ * qualquer atribuição; não é uma discrepância permanente, e forçar as duas contas a baterem 100%
+ * durante a transição custaria mais do que vale.
+ */
+export async function receitaPorCampanha(db: Cliente, tenantId: string): Promise<Map<string, ResultadoPorCampanha>> {
+  const [mensagens, agendamentos] = await Promise.all([
+    db.from('messages').select('client_id, sent_at, campaign_id').eq('tenant_id', tenantId).eq('kind', 'campaign').eq('status', 'sent').not('campaign_id', 'is', null),
+    db.from('appointments').select('id, client_id, created_at, price_cents').eq('tenant_id', tenantId).eq('status', 'done'),
+  ])
+  if (mensagens.error) throw new AppError('INTERNAL', { cause: mensagens.error })
+  if (agendamentos.error) throw new AppError('INTERNAL', { cause: agendamentos.error })
+
+  const campanhas: CampanhaEnviada[] = (mensagens.data ?? [])
+    .filter((m): m is { client_id: string; sent_at: string; campaign_id: string } => m.client_id !== null && m.sent_at !== null && m.campaign_id !== null)
+    .map((m) => ({ clientId: m.client_id, sentAt: Temporal.Instant.from(m.sent_at), campaignId: m.campaign_id }))
+
+  const elegiveis: AgendamentoElegivel[] = (agendamentos.data ?? [])
+    .filter((ag): ag is typeof ag & { client_id: string } => ag.client_id !== null)
+    .map((ag) => ({ id: ag.id, clientId: ag.client_id, createdAt: Temporal.Instant.from(ag.created_at), valueCents: ag.price_cents }))
+
+  const resultado = new Map<string, ResultadoPorCampanha>()
+  for (const a of atribuirReceita(campanhas, elegiveis)) {
+    if (!a.campaignId) continue
+    const atual = resultado.get(a.campaignId) ?? { bookedCount: 0, revenueCents: 0 }
+    resultado.set(a.campaignId, { bookedCount: atual.bookedCount + 1, revenueCents: atual.revenueCents + a.valueCents })
+  }
+  return resultado
 }

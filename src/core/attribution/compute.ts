@@ -3,6 +3,11 @@ import { Temporal } from '@js-temporal/polyfill'
 export type CampanhaEnviada = {
   clientId: string
   sentAt: Temporal.Instant
+  /**
+   * `null` cobre mensagem antiga, enviada antes de `messages.campaign_id` existir (migration
+   * 0054) — continua contando pro agregado do tenant, só não entra na quebra por campanha.
+   */
+  campaignId: string | null
 }
 
 export type AgendamentoElegivel = {
@@ -17,6 +22,7 @@ export type AtribuicaoReceita = {
   clientId: string
   valueCents: number
   campaignSentAt: Temporal.Instant
+  campaignId: string | null
 }
 
 const JANELA_DIAS_PADRAO = 30
@@ -58,7 +64,7 @@ export function atribuirReceita(
     if (!alvo) continue
 
     reivindicados.add(alvo.id)
-    resultado.push({ appointmentId: alvo.id, clientId: alvo.clientId, valueCents: alvo.valueCents, campaignSentAt: campanha.sentAt })
+    resultado.push({ appointmentId: alvo.id, clientId: alvo.clientId, valueCents: alvo.valueCents, campaignSentAt: campanha.sentAt, campaignId: campanha.campaignId })
   }
 
   return resultado

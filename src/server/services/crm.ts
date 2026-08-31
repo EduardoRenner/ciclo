@@ -447,6 +447,10 @@ export async function registrarCampanha(db: Cliente, tenantId: string, entrada: 
       status: 'sent' as const,
       template: entrada.template,
       sent_at: agora,
+      // Migration 0054: sem isto, a atribuição de receita (`receitaPorCampanha`) nunca saberia
+      // que ESTA mensagem saiu DESTA campanha — voltaria a ser o "R$ 0,00 estrutural" que a
+      // auditoria de 2026-08-31 achou.
+      campaign_id: data.id,
     })),
   )
   if (erroMensagens) throw new AppError('INTERNAL', { cause: erroMensagens })

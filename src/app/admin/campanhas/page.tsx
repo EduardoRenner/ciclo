@@ -12,7 +12,7 @@ import PageHeader from '@/components/ui/page-header'
 import { dinheiro } from '@/lib/formato'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
-import { receitaAtribuidaAoCiclo } from '@/server/services/atribuicao'
+import { receitaAtribuidaAoCiclo, receitaPorCampanha } from '@/server/services/atribuicao'
 
 export const dynamic = 'force-dynamic'
 
@@ -59,6 +59,13 @@ export default async function PaginaCampanhas() {
     mesAtual.toPlainDate({ day: mesAtual.daysInMonth }).toString(),
   ).catch(() => ({ totalCents: 0, count: 0, items: [] }))
 
+  /*
+   * Migration 0054: agora existe o vínculo mensagem→campanha, então cada cartão pode mostrar o
+   * que ele de fato trouxe — sem janela de mês, porque um cartão de campanha é registro
+   * permanente, não relatório mensal (diferente do "Voltaram este mês" do topo, que É mensal).
+   */
+  const porCampanha = await receitaPorCampanha(db, ctx.tenantId).catch(() => new Map())
+
   return (
     <div className="pb-8">
       <PageHeader titulo="Campanhas" descricao="Quem voltou depois de receber mensagem, e quanto isso trouxe." />
@@ -93,24 +100,36 @@ export default async function PaginaCampanhas() {
           </Card>
         ) : (
           <ul className="flex flex-col gap-3">
-            {lista.map((c) => (
-              <li key={c.id}>
-                <Card>
-                  <div className="flex items-start justify-between gap-3">
-                    <p className="min-w-0 flex-1 text-corpo font-semibold">{c.name}</p>
-                    <p className="tabular shrink-0 text-corpo font-semibold text-txt-2">
-                      {c.sent_count} {c.sent_count === 1 ? 'mensagem' : 'mensagens'}
-                    </p>
-                  </div>
+            {lista.map((c) => {
+              const resultado = porCampanha.get(c.id)
+              return (
+                <li key={c.id}>
+                  <Card>
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="min-w-0 flex-1 text-corpo font-semibold">{c.name}</p>
+                      <p className="tabular shrink-0 text-corpo font-semibold text-txt-2">
+                        {c.sent_count} {c.sent_count === 1 ? 'mensagem' : 'mensagens'}
+                      </p>
+                    </div>
 
-                  {/*
-                    Não há linha de retorno POR campanha porque o dado não existe: `messages` não
-                    guarda de qual campanha a mensagem saiu. Mostrar "R$ 0,00" era pior que não
-                    mostrar — afirmava que a campanha não trouxe nada.
-                  */}
-                </Card>
-              </li>
-            ))}
+                    {/*
+                      Migration 0054: `resultado` vem de `receitaPorCampanha`, que casa mensagem
+                      DESTA campanha com agendamento concluído — o dado de verdade, não mais a
+                      ausência de linha que a versão anterior mostrava (nunca "R$ 0,00" quando o
+                      certo é "ninguém voltou ainda", que são coisas diferentes).
+                    */}
+                    {resultado && resultado.bookedCount > 0 ? (
+                      <p className="mt-2 text-secundario text-txt-2">
+                        {resultado.bookedCount} {resultado.bookedCount === 1 ? 'pessoa voltou' : 'pessoas voltaram'} ·{' '}
+                        <span className="tabular font-semibold text-acc-2">{dinheiro.format(resultado.revenueCents / 100)}</span>
+                      </p>
+                    ) : (
+                      <p className="mt-2 text-secundario text-txt-3">Ninguém voltou por aqui ainda.</p>
+                    )}
+                  </Card>
+                </li>
+              )
+            })}
           </ul>
         )}
       </section>
