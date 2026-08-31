@@ -24,7 +24,21 @@ export function textoDeEspera(segundos: number): string {
       : `Você fez muitas perguntas seguidas. Tente de novo daqui a cerca de ${horas} horas.`
   }
 
-  // O caso do limite diário: não promete hora certa porque a janela é deslizante — o crédito volta
-  // aos poucos, não à meia-noite. Prometer "amanhã às 00h" seria trocar uma frase errada por outra.
+  /*
+   * O caso do limite diário não promete hora certa, e o motivo mudou depois de eu conferir o
+   * limitador em vez de supor. Eu tinha escrito aqui que "a janela é deslizante, o crédito volta
+   * aos poucos". Está errado: `rate-limit.ts` usa janela FIXA — `expiraEm` é gravado na primeira
+   * requisição e a contagem zera de uma vez quando ele passa.
+   *
+   * A frase genérica continua certa, por outra razão: `limiteDeTaxa()` recebe o TAMANHO da janela,
+   * não quanto falta dela. `Resultado` do limitador só devolve `{ permitido, restante }`, sem o
+   * instante de reset — então quem monta esta mensagem não tem como saber se faltam 5 minutos ou
+   * 20 horas. Prometer hora certa com esse dado seria inventar.
+   *
+   * Consequência conhecida e NÃO consertada aqui: o `Retry-After` também sai com a janela inteira,
+   * e portanto superestima a espera. Consertar de verdade exige devolver o instante de reset nos
+   * três backends (memória, Upstash e a RPC `consumir_rate_limit`, que é migração) — e fazer só
+   * num deles deixaria o cabeçalho certo às vezes, que é pior do que errado sempre.
+   */
   return 'Você atingiu o limite de uso de hoje. Tente de novo mais tarde.'
 }

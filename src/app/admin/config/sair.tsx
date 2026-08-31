@@ -9,6 +9,8 @@ import Card from '@/components/ui/card'
 import { drenarFilaPendente } from '@/lib/offline/api-client'
 import { apagarBancoOffline, listarMutacoes } from '@/lib/offline/db'
 
+import { avisoAntesDeSair, type AvisoDeSaida, type LeituraDaFila } from '@/core/offline/aviso-de-saida'
+
 /**
  * Auditoria de segurança, achado S9: **não existia como sair da conta.** A rota
  * `POST /api/v1/auth/logout` estava escrita e correta desde o TICKET-009 — inclusive com
@@ -28,7 +30,7 @@ export default function SairDaConta() {
   const router = useRouter()
   const [saindo, setSaindo] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
-  const [aDescartar, setADescartar] = useState<number | null>(null)
+  const [aviso, setAviso] = useState<AvisoDeSaida | null>(null)
 
   /**
    * `confirmado` só chega como `true` pelo segundo botão, o que a pessoa toca DEPOIS de ler
@@ -57,9 +59,19 @@ export default function SairDaConta() {
         A contagem vem de reler a fila DEPOIS da drenagem: é exatamente o que não subiu, seja
         porque estava offline, seja porque o envio falhou no meio.
       */
-      const restantes = await listarMutacoes().catch(() => [])
-      if (restantes.length > 0 && !confirmado) {
-        setADescartar(restantes.length)
+      /*
+        `.catch(() => [])` aqui era o furo: ele dizia "a fila está vazia" quando o que houve foi
+        "não consegui ler a fila". IndexedDB falha de verdade — janela anônima, armazenamento
+        cheio, base corrompida — e nesses casos a proteção acima se desligava sozinha, em silêncio,
+        justamente na hora em que mais importa. Agora "não sei" é um estado próprio.
+      */
+      const leitura: LeituraDaFila = await listarMutacoes().then(
+        (m) => ({ ok: true, quantidade: m.length }) as const,
+        () => ({ ok: false }) as const,
+      )
+      const oQueAvisar = avisoAntesDeSair(leitura)
+      if (oQueAvisar.tipo !== 'pode_sair' && !confirmado) {
+        setAviso(oQueAvisar)
         setSaindo(false)
         return
       }
@@ -89,7 +101,7 @@ export default function SairDaConta() {
         </p>
       </div>
 
-      {aDescartar === null ? (
+      {aviso === null ? (
         <Button variante="secondary" onClick={() => sair()} disabled={saindo}>
           <LogOut aria-hidden className="size-4" />
           {saindo ? 'Saindo…' : 'Sair da conta'}
@@ -97,20 +109,37 @@ export default function SairDaConta() {
       ) : (
         <div className="flex flex-col gap-2">
           <p role="alert" className="rounded-[var(--radius-sm)] bg-surface-2 p-3 text-secundario text-txt">
-            <span className="font-semibold">
-              {aDescartar === 1
-                ? '1 alteração ainda não subiu.'
-                : `${aDescartar} alterações ainda não subiram.`}
-            </span>{' '}
-            Elas ficaram guardadas neste aparelho e não podem ser enviadas em nome de quem entrar
-            depois de você. Se sair agora, {aDescartar === 1 ? 'ela será descartada' : 'elas serão descartadas'}.
-            Para não perder, conecte à internet e tente de novo.
+            {aviso.tipo === 'vai_descartar' ? (
+              <>
+                <span className="font-semibold">
+                  {aviso.quantidade === 1 ? '1 alteração ainda não subiu.' : `${aviso.quantidade} alterações ainda não subiram.`}
+                </span>{' '}
+                Elas ficaram guardadas neste aparelho e não podem ser enviadas em nome de quem entrar
+                depois de você. Se sair agora, {aviso.quantidade === 1 ? 'ela será descartada' : 'elas serão descartadas'}.
+                Para não perder, conecte à internet e tente de novo.
+              </>
+            ) : (
+              /*
+                O caso "não sei". Não diz um número que não temos, e também não finge que está tudo
+                certo — as duas coisas seriam inventar. Diz o que se sabe e deixa a escolha com quem
+                está saindo.
+              */
+              <>
+                <span className="font-semibold">Não consegui verificar se há alterações não enviadas.</span>{' '}
+                Este aparelho não deixou ler o que está guardado aqui. Se houver algo que não subiu, sair
+                agora descarta. Para não arriscar, conecte à internet e tente de novo.
+              </>
+            )}
           </p>
           <Button variante="secondary" onClick={() => sair(true)} disabled={saindo}>
             <LogOut aria-hidden className="size-4" />
-            {saindo ? 'Saindo…' : `Sair e descartar ${aDescartar === 1 ? 'a alteração' : `as ${aDescartar} alterações`}`}
+            {saindo
+              ? 'Saindo…'
+              : aviso.tipo === 'vai_descartar'
+                ? `Sair e descartar ${aviso.quantidade === 1 ? 'a alteração' : `as ${aviso.quantidade} alterações`}`
+                : 'Sair mesmo assim'}
           </Button>
-          <Button variante="secondary" onClick={() => setADescartar(null)} disabled={saindo}>
+          <Button variante="secondary" onClick={() => setAviso(null)} disabled={saindo}>
             Continuar na conta
           </Button>
         </div>
