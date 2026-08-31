@@ -1,6 +1,7 @@
 import { Temporal } from '@js-temporal/polyfill'
 import { z } from 'zod'
 
+import { deveCreditarIndicacao } from '@/core/loyalty/indicacao'
 import { podeUsarModulo } from '@/core/billing/planos'
 import { AppError } from '@/server/http/errors'
 import { contextoDePlano } from '@/server/services/planos'
@@ -24,6 +25,14 @@ export type ExtratoPontos = {
 }
 
 // ───────────────────────────────────────────── configuração e automação
+
+/*
+ * Estes dois textos deixaram de ser rótulo e viraram CHAVE: `MOTIVO_VEIO_POR_INDICACAO` é o que
+ * `creditarPontos` consulta para saber se o bônus de indicação já foi pago. Mudar a string sem
+ * migrar as linhas existentes faz o bônus ser pago de novo para quem já recebeu.
+ */
+export const MOTIVO_VEIO_POR_INDICACAO = 'Veio por indicação'
+export const MOTIVO_INDICOU = 'Indicou um novo cliente'
 
 export const EsquemaConfigFidelidade = z.object({
   /** 0 desliga a pontuação automática — nem todo negócio quer fidelidade ligada. */
@@ -118,19 +127,40 @@ export async function pontuarAtendimentoConcluido(
   }
 
   if (config.referralBonusPoints > 0) {
-    const { data: cliente } = await db
-      .from('clients')
-      .select('referred_by, visits_count')
-      .eq('id', entrada.clientId)
-      .maybeSingle()
+    const { data: cliente } = await db.from('clients').select('referred_by').eq('id', entrada.clientId).maybeSingle()
 
-    // `visits_count` só reflete o job diário — na conclusão de agora ele ainda mostra o número
-    // ANTES desta visita. `=== 0` é exatamente "esta é a primeira vez que ele conclui algo".
-    if (cliente?.referred_by && cliente.visits_count === 0) {
-      lancamentos.push(
-        { tenant_id: tenantId, client_id: cliente.referred_by, points: config.referralBonusPoints, reason: 'Indicou um novo cliente' },
-        { tenant_id: tenantId, client_id: entrada.clientId, points: config.referralBonusPoints, reason: 'Veio por indicação' },
-      )
+    if (cliente?.referred_by) {
+      /*
+       * A condição aqui era `visits_count === 0`, com o raciocínio de que o contador só reflete o
+       * job diário e portanto ainda mostra o número ANTES desta visita. O raciocínio está certo e
+       * o efeito é o oposto do pretendido: como o contador NÃO muda entre uma conclusão e a
+       * seguinte, ele continua `0` na segunda, na terceira, e em toda conclusão até o cron rodar
+       * — e o `segments` roda uma vez por dia, com 5 a 6 horas de atraso medido do GitHub Actions.
+       *
+       * Ou seja, duas conclusões da mesma cliente antes do cron pagavam o bônus de indicação DUAS
+       * VEZES, para ela e para quem indicou. Corte e barba marcados como dois atendimentos no
+       * mesmo dia bastam. Ponto de fidelidade é resgatável, então é dinheiro saindo por engano —
+       * e do jeito mais difícil de perceber, porque o extrato mostra dois lançamentos com o mesmo
+       * motivo e nada acusa.
+       *
+       * Conferir o LIVRO-RAZÃO em vez do contador não depende de cron nenhum: se o lançamento
+       * existe, o bônus já foi pago. Idempotente por construção, que é o que uma regra de
+       * "primeira vez" precisa ser.
+       */
+      const { count, error: erroBonus } = await db
+        .from('loyalty_entries')
+        .select('id', { count: 'exact', head: true })
+        .eq('tenant_id', tenantId)
+        .eq('client_id', entrada.clientId)
+        .eq('reason', MOTIVO_VEIO_POR_INDICACAO)
+      if (erroBonus) throw new AppError('INTERNAL', { cause: erroBonus })
+
+      if (deveCreditarIndicacao({ bonusPoints: config.referralBonusPoints, referredBy: cliente.referred_by, bonusJaCreditado: (count ?? 0) > 0 })) {
+        lancamentos.push(
+          { tenant_id: tenantId, client_id: cliente.referred_by, points: config.referralBonusPoints, reason: MOTIVO_INDICOU },
+          { tenant_id: tenantId, client_id: entrada.clientId, points: config.referralBonusPoints, reason: MOTIVO_VEIO_POR_INDICACAO },
+        )
+      }
     }
   }
 
