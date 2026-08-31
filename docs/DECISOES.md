@@ -4905,3 +4905,39 @@ errado.
 **Para ligar, quando for a hora:** rodar com `?simular=1` primeiro e olhar o número, depois
 acrescentar `lgpd-retention` ao `on.schedule` do `cron.yml` e a `ROTAS_AGENDADAS`. A guarda vai
 reprovar pedindo que a G92 do FAQ seja atualizada junto — de propósito.
+
+---
+
+### 2026-08-31 · Revisando o próprio trabalho: eu quase troquei defasado por truncado
+
+Rodada de auto-revisão, olhando o que construí na madrugada como se não tivesse escrito. Achou um
+defeito meu e um que já existia.
+
+**O meu.** Quando as métricas da ficha da cliente deixaram de ler colunas desnormalizadas
+(TICKET-062/065) e passaram a contar as linhas de verdade, a consulta saiu **sem paginação**. O
+PostgREST corta em `max_rows = 1000` (`supabase/config.toml`) e **não erra ao cortar**: devolve as
+primeiras mil e cala.
+
+Ou seja, troquei *"completo porém defasado"* por *"fresco porém truncável em silêncio"* — e a
+segunda é pior, porque erra com cara de exata. Uma cliente semanal por vinte anos passaria de mil.
+
+Medido antes de consertar, para não exagerar o achado: o maior histórico por cliente nesta base é
+de **7 atendimentos**. O risco é teórico hoje. Consertei mesmo assim, porque o custo é zero para o
+caso normal (uma requisição, igual a antes) e porque silêncio em número de dinheiro é exatamente o
+que passei a noite removendo.
+
+**O que já existia.** A guarda nova pediu que o paginador morasse num lugar só — e achou uma
+**terceira cópia**, em `ciclo.ts`, que eu não tinha visto. A duplicação já era de dois antes de eu
+começar.
+
+Consolidado em `src/server/db/paginar.ts`, com a melhor prosa das três preservada: a história do
+TICKET-036, em que um tenant com 10 mil atendimentos perdia 90% deles e quem denunciou foi o teste
+de performance — `processados` deu **1000**, não 10000.
+
+De brinde, uma confusão de nomes foi desfeita: `TAMANHO_PAGINA` era usada tanto para o teto de
+LEITURA do PostgREST quanto para o tamanho do LOTE de escrita do upsert. São decisões diferentes
+que coincidiam no valor; agora o lote se chama `TAMANHO_DO_LOTE` e mora com quem escreve.
+
+**Uma guarda minha de duas rodadas atrás precisou de ajuste**, e é o caso honesto do gênero: ela
+casava com `concluidosBruto.data`, que deixou de existir quando a leitura virou paginada. A
+asserção seguiu a mudança; a intenção não mudou — e ganhou uma linha a mais, exigindo a paginação.
