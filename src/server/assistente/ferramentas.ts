@@ -14,6 +14,7 @@ import { listarParaRecuperar } from '@/server/services/recuperar-receita'
 import { listarServicos } from '@/server/services/servicos'
 import { buscarTicketIdPorAgendamento } from '@/server/services/comanda'
 import { listarProfissionais } from '@/server/services/profissionais'
+import { limparParaGemini } from '@/core/assistente/json-schema'
 import { resolverPorNome, resolverProfissional, type Candidato } from '@/core/assistente/resolver'
 import { semAcento } from '@/core/text/normalizar'
 import { resumoDeHoje } from '@/server/services/resumo-hoje'
@@ -529,9 +530,10 @@ export const FERRAMENTAS: Ferramenta[] = [
  * API rejeita. `z.toJSONSchema` (Zod 4 nativo, sem dependência nova) gera o resto certo.
  */
 export function paraJsonSchema(schema: z.ZodType): Record<string, unknown> {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- os dois só existem para SAIR do objeto (`resto`); nunca lidos.
-  const { $schema, additionalProperties, ...resto } = z.toJSONSchema(schema, { target: 'draft-7' }) as Record<string, unknown>
-  return resto
+  // Lista do que PODE, aplicada em profundidade — ver `core/assistente/json-schema.ts` para o
+  // porquê de ser lista de permitidos e não de proibidos. Isto substitui o descarte manual de
+  // `$schema`/`additionalProperties`, que era a mesma defesa cobrindo só dois casos conhecidos.
+  return limparParaGemini(z.toJSONSchema(schema, { target: 'draft-7' })) as Record<string, unknown>
 }
 
 /**

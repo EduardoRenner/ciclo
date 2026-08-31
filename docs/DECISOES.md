@@ -3853,8 +3853,13 @@ passa, e esvaziando a lista de ações sem volta o aviso some da tela em silênc
 ### 2026-08-30 · Nota na ficha pelo chat, e a guarda que faltava entre PREPARAR e EXECUTAR
 
 **A régua do `docs/33 §2.1`.** Manda mensagem para fora? Não. Escreve em registro de cliente? Sim.
-Gasta dinheiro? Não. Alcança mais de uma pessoa? Não. É a de **menor risco das quatro** — e a única
-totalmente reversível, porque nota é aditiva: some sem deixar buraco.
+Gasta dinheiro? Não. Alcança mais de uma pessoa? Não. É a de **menor risco das quatro**.
+
+**Correção do que este parágrafo dizia antes.** Registrei nota como "totalmente reversível". Está
+errado, e conferir em vez de deduzir foi o que mostrou: `client_notes` **não tem rota de exclusão**
+em lugar nenhum do produto — nem API, nem tela. Nota criada fica. Ela continua sendo a de menor
+risco, porque é aditiva e não dispara nada, mas o eixo da reversibilidade é o que decide o aviso no
+cartão, e chamar de reversível o que não é envenena a próxima aplicação da régua.
 
 Uma trava, ainda assim: nota na ficha **errada** é pior que nota nenhuma. Vira informação falsa
 sobre uma pessoa que ninguém vai desconfiar depois, porque ficha de cliente é lida como verdade. Por
