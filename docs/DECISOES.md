@@ -4314,3 +4314,33 @@ Nota de processo: mutei este arquivo sem commitar antes, e o `git checkout --` d
 junto a correção. É literalmente o passo 1 do procedimento de teste-guarda do CLAUDE.md
 ("Commite antes de mutar"), e ele existe porque isso já custou um conserto commitado sem o código
 que ele guardava.
+
+---
+
+### 2026-08-31 · O cadastro por e-mail NÃO está quebrado — a `docs/31` §6 está desatualizada
+
+`docs/31-LANCAMENTO-AUDITORIA-E-PLANO.md` §6 item 1 afirma que, sem trocar o Site URL no Supabase,
+*"o link de confirmação de e-mail continua caindo em `localhost:3000`"*. Repeti isso num relatório
+para o Eduardo antes de conferir. Fui conferir, e é falso.
+
+**A medida que decide.** Em `auth.users` há 17 usuários, todos confirmados. O que separa "confirmou
+clicando" de "nasceu confirmado" é a distância entre `created_at` e `email_confirmed_at`:
+
+| conta | envio de confirmação | demora para confirmar |
+|---|---|---|
+| `merlin.ia.smart@gmail.com` | **sim** | **24,7 s** |
+| `teste.*@ciclo.app` (3) | não | ~4 ms |
+| `*.ciclo.test` (13) | não | ~3 ms |
+
+Vinte e quatro segundos é uma pessoa abrindo o e-mail e clicando. Os outros dezesseis foram criados
+por script/admin, sem envio, confirmados no mesmo instante. O código já mandava
+`emailRedirectTo: ${NEXT_PUBLIC_APP_URL}/auth/callback` explicitamente, e o Supabase o honrou.
+
+O que continua verdade, e mudou de natureza: trocar o domínio **sem** atualizar Site URL e Redirect
+URLs no Supabase quebra a confirmação. Deixa de ser "está quebrado, o domínio conserta" e passa a
+ser "funciona, e o domínio pode quebrar se feito pela metade" — que é um aviso, não um bloqueador.
+
+Também conferido nesta rodada, e correto: os tenants de teste estão `noindex, nofollow` **e** fora
+do sitemap (as duas metades da mesma lista); o tenant de demonstração não emite JSON-LD; e a página
+pública do salão não vaza identidade — a consulta de avaliações seleciona `rating, comment,
+created_at` e nada mais, então não há como o nome de uma cliente aparecer ao lado da nota.
