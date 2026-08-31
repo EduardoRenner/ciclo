@@ -4724,3 +4724,41 @@ consertar:
 o build — conferido reintroduzindo. Uma das guardas novas é de COSTURA e não de comportamento, por
 um motivo medido: apagar a linha `started_on: diaNoFuso(timezone)` **compila e nenhum teste de
 unidade reprova**. O defeito voltaria calado, exatamente como entrou.
+
+---
+
+### 2026-08-31 · Um falso positivo meu, um produto correto, e um comando que não existia
+
+**Fui medir no navegador em vez de ler código**, e a rodada rendeu três coisas — nenhuma delas do
+tipo que eu esperava.
+
+**1. As outras listas de dívida estão limpas.** `rede-nao-derruba-tela` e `precos-tem-trava` já
+estão zeradas. A única entrada viva é `alertas-estoque.ts` em `dia-do-salao-nao-e-utc`, e o
+argumento dela é sólido: janela CORRIDA de 30 dias para tirar média diária, três horas em 720 não
+mudam "está na hora de repor", e o número não vira pagamento de ninguém. Fica.
+
+**2. O produto está certo, e a régua era minha.** Medi a página pública de agendamento a 375 px e
+achei 30 botões de horário com caixa visual de 66×40 px — abaixo do piso de 48. Antes de reportar,
+segui a receita que a própria guarda `alvo-de-toque-tem-48` documenta: sondar `elementFromPoint`
+ponto a ponto. **Área efetiva: 48–49 px em toda a amostra.** A classe `toque-48` faz exatamente o
+que promete — adiciona um `::after` que não muda a caixa visual.
+
+É o mesmo falso positivo que a auditoria de 30/08 cometeu, e que está escrito naquele arquivo em
+letras grandes. Repeti o erro documentado; a receita registrada foi o que me salvou de reportá-lo.
+
+Também errei a sondagem na primeira tentativa: `elementFromPoint` usa coordenadas de viewport, e os
+botões estavam abaixo da dobra — deu "área efetiva 0", que é resultado sem sentido. Resultado
+absurdo é sinal de instrumento quebrado, não de defeito encontrado.
+
+**3. `pnpm test:e2e` nunca existiu.** O `CLAUDE.md` listava o comando entre os do projeto, o
+`package.json` tinha o script, e `tests/e2e/` tem só um `.gitkeep`. Rodando: *"'playwright' não é
+reconhecido como um comando"* — o pacote nem está instalado.
+
+Isso é pior que um comando quebrado: quem lê a lista de comandos conclui que existe cobertura de
+ponta a ponta. O `CLAUDE.md` passou a dizer que não existe, e o script passou a falhar com a frase
+que explica, em vez de um erro do Windows.
+
+**Não montei o Playwright**, e é decisão: a CI não roda e2e, o harness precisaria de navegador
+baixado e servidor de pé, e montar isso de madrugada entregaria infraestrutura que ninguém pediu
+para rodar. O que a guarda de toque pede — medição no navegador — continua sendo manual, com a
+receita escrita nela.

@@ -16,7 +16,7 @@ pnpm dev            # sobe o app (precisa de `supabase start` antes)
 pnpm verify         # typecheck + lint + test:unit + test:rls + build  ← rode antes de todo commit
 pnpm test:unit      # Vitest em src/core
 pnpm test:rls       # isolamento multi-tenant (NUNCA pule)
-pnpm test:e2e       # Playwright
+# pnpm test:e2e     # NÃO EXISTE AINDA — sem Playwright instalado e sem config (ver DECISOES 31/08)
 pnpm db:types       # regenera src/server/db/types.gen.ts
 pnpm db:reset       # reset local + seed (bloqueado em produção)
 pnpm db:new <nome>  # cria nova migration
