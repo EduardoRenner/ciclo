@@ -61,3 +61,41 @@ describe('o FAQ nao promete anonimizacao automatica que nao roda', () => {
     expect(FAQ, 'sumiu o aviso de nao dizer isso ao titular').toMatch(/n[aã]o diga ao titular/i)
   })
 })
+
+describe('a fila de retencao so alcanca quem ja passou da carencia', () => {
+  /*
+   * Guarda de fonte, e aqui isso e o certo: a consulta e destrutiva e IRREVERSIVEL, e o modo de
+   * falha nao e "quebra" — e "alcanca gente demais, em silencio".
+   *
+   * Provado por mutacao: apagar a linha do filtro de carencia deixa a rota anonimizar cliente
+   * excluida ha segundos, e NENHUM teste reprovava. Typecheck e lint passam iguais. Sem esta
+   * guarda, o defeito entraria num commit de refatoracao sem ninguem ver.
+   */
+  const ROTA = semComentarios(readFileSync('src/app/api/cron/lgpd-retention/route.ts', 'utf8'))
+
+  it('so pega quem tem deleted_at preenchido', () => {
+    expect(ROTA, 'sumiu o filtro de excluida — alcancaria cliente ATIVA').toContain("not('deleted_at', 'is', null)")
+  })
+
+  it('so pega quem passou da carencia', () => {
+    expect(ROTA, 'sumiu o filtro de carencia — anonimizaria quem foi excluida agora').toContain(
+      "lt('deleted_at', limite)",
+    )
+  })
+
+  it('nao mexe em quem ja foi eliminada', () => {
+    expect(ROTA, 'sumiu o filtro de ja anonimizada').toContain("is('anonymized_at', null)")
+  })
+
+  it('a carencia e de pelo menos 30 dias', () => {
+    const m = ROTA.match(/DIAS_DE_CARENCIA = (\d+)/)
+    expect(m, 'a constante de carencia sumiu').not.toBeNull()
+    expect(Number(m![1]), 'a carencia encolheu — 30 dias e o prazo do FAQ e da expiracao de backup').toBeGreaterThanOrEqual(30)
+  })
+
+  it('da para simular antes de agendar', () => {
+    // O primeiro disparo de um job destrutivo nao pode ser tambem a primeira vez que alguem
+    // descobre quantas linhas ele alcanca.
+    expect(ROTA, 'sumiu o modo de simulacao').toContain('simular')
+  })
+})
