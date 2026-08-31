@@ -7,7 +7,9 @@ import Card from '@/components/ui/card'
 import EmptyState from '@/components/ui/empty-state'
 import PageHeader from '@/components/ui/page-header'
 import { avaliarPermissao } from '@/server/auth/rbac'
+import { podeUsarModulo } from '@/core/billing/planos'
 import { contextoAtual } from '@/server/auth/tenant'
+import { contextoDePlano } from '@/server/services/planos'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { listarAlertasDeEstoque } from '@/server/services/alertas-estoque'
 
@@ -69,6 +71,7 @@ export default async function PaginaEstoque() {
         }
       />
       <ListaEstoque
+        podeLancar={podeUsarModulo(await contextoDePlano(db, ctx.tenantId), 'stock').estado === 'liberado'}
         produtos={(produtos ?? []).map((p) => ({
           id: p.id,
           nome: p.name,

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useState, useTransition } from 'react'
 
 import Badge from '@/components/ui/badge'
+import BloqueioPlano from '@/components/ui/bloqueio-plano'
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import EmptyState from '@/components/ui/empty-state'
@@ -38,7 +39,17 @@ function diasAte(iso: string): number {
   return Math.round((alvo - inicioDeHoje) / 86_400_000)
 }
 
-export default function ListaEstoque({ produtos }: { produtos: ProdutoEstoque[] }) {
+export default function ListaEstoque({
+  produtos,
+  podeLancar,
+}: {
+  produtos: ProdutoEstoque[]
+  /**
+   * O plano do salão libera `stock`. A tela CONTINUA visível sem ele — regra 5.2: bloqueio mostra
+   * o motivo e o caminho, e sumir com o item esconderia o que dá para comprar.
+   */
+  podeLancar: boolean
+}) {
   const mostrarToast = useToast()
   const [lista, setLista] = useState(produtos)
   const [entrando, setEntrando] = useState<ProdutoEstoque | null>(null)
@@ -46,6 +57,8 @@ export default function ListaEstoque({ produtos }: { produtos: ProdutoEstoque[] 
   // Alerta em cima: quem abre esta tela veio resolver o aviso de "Hoje".
   const ordenados = [...lista].sort((a, b) => Number(b.emAlerta) - Number(a.emAlerta) || a.nome.localeCompare(b.nome, 'pt-BR'))
 
+
+  const emAlerta = ordenados.filter((p) => p.emAlerta).length
   if (lista.length === 0) {
     return (
       <Card className="p-0">
@@ -83,13 +96,39 @@ export default function ListaEstoque({ produtos }: { produtos: ProdutoEstoque[] 
                   {p.custoMedioCents > 0 ? ` · ${dinheiro.format(p.custoMedioCents / 100)} cada` : ''}
                 </p>
               </div>
-              <Button tamanho="sm" variante="secondary" onClick={() => setEntrando(p)}>
+              {/*
+                Sem o módulo, o botão trava AQUI e diz por quê — em vez de abrir o formulário,
+                deixar a pessoa preencher quantidade e custo, e só então a rota recusar
+                (`exigirModulo(..., 'stock')` em `inventory/entries`). Trabalho jogado fora é a
+                pior forma de descobrir que o recurso é pago.
+              */}
+              <Button
+                tamanho="sm"
+                variante="secondary"
+                disabled={!podeLancar}
+                motivoDesabilitado={podeLancar ? undefined : 'Registrar compra é do plano Avançado'}
+                onClick={() => setEntrando(p)}
+              >
                 Entrada
               </Button>
             </Card>
           )
         })}
       </div>
+
+      {!podeLancar ? (
+        /*
+          Vem DEPOIS da lista de propósito: quem chega aqui veio olhar o estoque, e o número de
+          produtos abaixo do ponto de recompra é o argumento — §M.1 diz que o que converte é o
+          valor concreto com o dado dela, não o folheto.
+        */
+        <BloqueioPlano
+          className="mt-4"
+          precisaDo="avancado"
+          acao="registrar compra e manter o estoque em dia"
+          evidencia={{ quantidade: emAlerta, substantivo: 'produtos abaixo do ponto de recompra' }}
+        />
+      ) : null}
 
       {entrando ? (
         <FormularioEntrada
