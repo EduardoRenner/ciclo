@@ -3,6 +3,8 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
+import { semComentarios as semComentariosDe } from '../../helpers/fonte'
+
 /**
  * I-2, `docs/30-INDICACAO-PLANO.md`. É a guarda da MESMA classe que `caixa-nao-promete-taxa` e
  * `portfolio-nao-promete-foto` (rodadas 1 e 2 da super auditoria de 2026-08-28): coluna lida por
@@ -33,10 +35,7 @@ const REVIEWS_ROUTE = 'src/app/api/v1/public/reviews/[token]/route.ts'
 const SECOES = 'src/app/(public)/[slug]/secoes.tsx'
 
 function semComentarios(caminho: string): string {
-  return readFileSync(caminho, 'utf8')
-    .replace(/[{][/][*][\s\S]*?[*][/][}]/g, ' ')
-    .replace(/[/][*][\s\S]*?[*][/]/g, ' ')
-    .replace(/^\s*[/][/].*$/gm, ' ')
+  return semComentariosDe(readFileSync(caminho, 'utf8'))
 }
 
 /**

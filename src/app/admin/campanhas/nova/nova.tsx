@@ -190,8 +190,23 @@ export default function NovaCampanha({
                       <div className="flex items-center gap-3">
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-corpo font-semibold">{alvo.name}</p>
+                          {/*
+                            Era "já gastou R$ X" / "ainda não gastou". Duas imprecisões numa linha:
+                            o valor vem de `clients.ltv_cents`, que soma o PREÇO DE TABELA dos
+                            atendimentos concluídos — não enxerga desconto dado na comanda nem item
+                            extra — e é escrito só pelo cron diário. Como sinal para decidir quem
+                            chamar de volta, os dois limites são aceitáveis: é ranking, não fatura.
+                            Já "gastou" não era: afirma o que uma pessoa com nome na tela pagou.
+
+                            "ainda não gastou" virou "ainda sem atendimento", que descreve o
+                            REGISTRO em vez da pessoa — com o cron atrasado, uma cliente atendida
+                            hoje ainda aparece zerada, e dizer que ela "não gastou" seria errado
+                            sobre ela; dizer que não há atendimento registrado é sempre verdade.
+                          */}
                           <p className="text-secundario text-txt-3">
-                            {alvo.ltvCents > 0 ? `já gastou ${dinheiro.format(alvo.ltvCents / 100)}` : 'ainda não gastou'}
+                            {alvo.ltvCents > 0
+                              ? `${dinheiro.format(alvo.ltvCents / 100)} em atendimentos`
+                              : 'ainda sem atendimento'}
                           </p>
                         </div>
                         {jaFoi ? (

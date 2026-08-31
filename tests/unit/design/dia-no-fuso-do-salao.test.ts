@@ -4,6 +4,8 @@ import { join } from 'node:path'
 import { Temporal } from '@js-temporal/polyfill'
 import { describe, expect, it } from 'vitest'
 
+import { semComentarios as semComentariosDe } from '../../helpers/fonte'
+
 import { computeCycle } from '@/core/cycle/compute'
 
 /**
@@ -65,9 +67,6 @@ function derivaDeAgora(arg: string): boolean {
  * comentário que explica a correção em `agenda/page.tsx` reprovaria o teste —
  * e guarda que tropeça na documentação faz as pessoas apagarem a documentação.
  */
-function semComentarios(src: string): string {
-  return src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '')
-}
 
 function arquivos(dir: string): string[] {
   const achados: string[] = []
@@ -80,7 +79,7 @@ function arquivos(dir: string): string[] {
 }
 
 function infrator(arquivo: string): boolean {
-  const src = semComentarios(readFileSync(arquivo, 'utf8'))
+  const src = semComentariosDe(readFileSync(arquivo, 'utf8'))
   return [...src.matchAll(CONSTRUCAO)].some((m) => derivaDeAgora(m[1] ?? ''))
 }
 

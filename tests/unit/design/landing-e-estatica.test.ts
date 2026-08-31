@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs'
 
 import { describe, expect, it } from 'vitest'
 
+import { semComentarios as semComentariosDe } from '../../helpers/fonte'
+
 /**
  * `/` é a única página do produto cujo trabalho é convencer um visitante anônimo — o resto só
  * serve quem já entrou. Até 26/08 ela chamava `sessaoAtual()` dentro do Server Component só para
@@ -22,7 +24,7 @@ const MIDDLEWARE = 'src/middleware.ts'
 /** Só o código. Este arquivo cita `sessaoAtual()` e `redirect()` no PRÓPRIO comentário de aviso
  *  de `page.tsx` — sem tirar comentário, o teste reprovaria a própria documentação que o protege. */
 function semComentarios(caminho: string): string {
-  return readFileSync(caminho, 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^\s*\/\/.*$/gm, ' ')
+  return semComentariosDe(readFileSync(caminho, 'utf8'))
 }
 
 describe('a landing não resolve sessão dentro do Server Component', () => {

@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs'
 
 import { describe, expect, it } from 'vitest'
 
+import { semComentarios } from '../../helpers/fonte'
+
 import { deveCreditarIndicacao } from '@/core/loyalty/indicacao'
 
 /*
@@ -10,15 +12,6 @@ import { deveCreditarIndicacao } from '@/core/loyalty/indicacao'
  * tabela do CLAUDE.md ("casa com algo que o arquivo contem por outro motivo"), e a segunda vez que
  * ela me pega hoje: a mesma coisa aconteceu com "R$ 49" dentro do comentario do llms.txt.
  */
-function semComentarios(fonte: string): string {
-  return fonte
-    .split(NL)
-    .filter((l) => {
-      const t = l.trim()
-      return !t.startsWith('*') && !t.startsWith('//') && !t.startsWith('/*')
-    })
-    .join(NL)
-}
 
 const NL = String.fromCharCode(10)
 const FIDELIDADE = semComentarios(readFileSync('src/server/services/fidelidade.ts', 'utf8'))

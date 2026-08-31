@@ -3,6 +3,8 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
+import { semComentarios as semComentariosDe } from '../../helpers/fonte'
+
 /**
  * Achado da auditoria de 2026-08-28, na família "promete o canal que não entrega" — desta vez em
  * dinheiro.
@@ -36,10 +38,7 @@ function arquivos(dir: string): string[] {
 }
 
 function semComentarios(caminho: string): string {
-  return readFileSync(caminho, 'utf8')
-    .replace(/\{\/\*[\s\S]*?\*\/\}/g, ' ')
-    .replace(/\/\*[\s\S]*?\*\//g, ' ')
-    .replace(/^\s*\/\/.*$/gm, ' ')
+  return semComentariosDe(readFileSync(caminho, 'utf8'))
 }
 
 /**
