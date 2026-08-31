@@ -4417,3 +4417,33 @@ passa a ser visível em vez de acidental.
 A escolha da frase virou função pura em `core/ciclo/vazio-de-recuperar.ts`: o que precisa de guarda
 é a decisão, não a marcação. Três mutações, três reprovações — o "Volte mais tarde" de volta, as
 três situações dizendo a mesma coisa, e o extrator cego (que grita em vez de passar vazio).
+
+---
+
+### 2026-08-31 · "Faturado hoje" era mentira por uma palavra
+
+Dois números de "hoje", de fontes diferentes, e um deles se chamava faturamento:
+
+| tela | rótulo | o que soma |
+|---|---|---|
+| Hoje | ~~"Faturado hoje"~~ → **"Atendido hoje"** | `appointments.price_cents` dos concluídos — **preço de tabela** |
+| Caixa | "Entrou no dia" | `tickets.total_cents` das comandas **fechadas** — o dinheiro |
+
+O número do Hoje não enxerga desconto dado na comanda, item extra lançado nem gorjeta. **Num dia
+com desconto, "Faturado hoje" mostra mais do que a pessoa recebeu** — e "faturar", em português de
+negócio, é o que entrou. O comentário do serviço reforçava o erro: dizia "faturado de verdade".
+
+Os dois números estão certos para o que medem, e é bom que sejam diferentes: um responde "o que eu
+atendi", o outro "o que entrou no caixa". O errado era só o nome de um deles. Achado comparando as
+duas telas de propósito — a classe de "duas fontes para a mesma pergunta" que já rendeu o rótulo
+`expired` e o cartão em branco esta semana.
+
+Conserto de uma palavra, mas o rótulo virou constante documentada (`ROTULO_DO_ATENDIDO`) em vez de
+string solta no JSX: assim o motivo mora ao lado da decisão, e a guarda tem onde ancorar sem casar
+com texto que aparece por outro motivo. A segunda mutação foi exatamente essa — transformar de
+volta em string solta faz a guarda GRITAR ("se virou string solta, este teste fica cego") em vez de
+passar vazia.
+
+Não mudei a matemática de propósito. Somar comandas no Hoje mostraria zero até alguém fechar a
+comanda, e a tela principal do dia ficaria mentindo para baixo em vez de para cima — trocar uma
+mentira por outra.
