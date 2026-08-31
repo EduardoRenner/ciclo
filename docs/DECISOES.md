@@ -4447,3 +4447,36 @@ passar vazia.
 Não mudei a matemática de propósito. Somar comandas no Hoje mostraria zero até alguém fechar a
 comanda, e a tela principal do dia ficaria mentindo para baixo em vez de para cima — trocar uma
 mentira por outra.
+
+---
+
+### 2026-08-31 · "Já gastou" na ficha: número de ontem, sobre preço de tabela
+
+Puxando o fio de "Faturado hoje", a mesma classe apareceu por cliente — e mais grave, porque aqui o
+número tem nome de pessoa ao lado.
+
+**Defasagem.** "Visitas" e "Já gastou" vinham de `clients.visits_count` e `clients.ltv_cents`.
+Rastreado até o único escritor: `recalcularSegmentosDoTenant`, ou seja o cron `segments` — o mesmo
+que esta madrugada eu descobri rodando **sem vigilância nenhuma**. Ele recalcula tudo do zero uma
+vez por dia, e o atraso real do GitHub Actions nesta base é de 5 a 6 horas. Concluir um atendimento
+às 14h e abrir a ficha da cliente mostrava o número de ontem.
+
+Isso também recontextualiza o heartbeat de ontem: se aquele cron parasse, não era só segmentação
+que congelava — era o histórico de valor de toda cliente, em silêncio.
+
+**Preço de tabela.** E "Já gastou" prometia mais do que sabe: o valor sai do `price_cents` do
+AGENDAMENTO, então não enxerga desconto dado na comanda nem item extra. Dizer a uma dona de salão
+que a cliente "já gastou R$ 540" quando ela deu R$ 60 de desconto ao longo do ano é errar sobre uma
+pessoa específica. Virou **"Valor atendido"**, a mesma palavra de "Atendido hoje": no CICLO
+"atendido" passa a ser preço de tabela e "entrou" é dinheiro no caixa. Vocabulário, não sinônimo.
+
+**O conserto da defasagem custa zero de latência.** O histórico da ficha não servia para recalcular
+— é `limit(40)`, e uma cliente antiga daria um total menor que o verdadeiro, que é pior que
+defasado: seria errado com cara de exato. Uma consulta agregada de uma coluna, no mesmo
+`Promise.all` que já existia, resolve com exatidão. O ticket médio passou a usar o mesmo valor: com
+fontes diferentes, média e total discordariam na mesma tela.
+
+**A guarda nasceu cega e a mutação pegou.** A primeira versão recortava 400 caracteres a partir do
+primeiro `metricas: {` — que é a DECLARAÇÃO DE TIPO, não o retorno. Reverter para
+`cliente.ltv_cents` passou verde. É exatamente a armadilha da "janela de N caracteres" da tabela do
+CLAUDE.md. Reescrita para casar com a leitura em si, em qualquer lugar do arquivo; aí reprova.

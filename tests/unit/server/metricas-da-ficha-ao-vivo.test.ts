@@ -16,11 +16,14 @@ const FICHA = readFileSync('src/app/admin/clientes/[id]/ficha.tsx', 'utf8')
 
 describe('as metricas da ficha sao do agora, nao do cron de ontem', () => {
   it('visitas e valor NAO saem mais da coluna desnormalizada', () => {
-    // O que muda quando o defeito volta: voltar a ler `cliente.visits_count` / `cliente.ltv_cents`
-    // dentro do calculo das metricas.
-    const bloco = CRM.slice(CRM.indexOf('metricas: {'), CRM.indexOf('metricas: {') + 400)
-    expect(bloco, 'a ficha voltou a ler o contador que o cron escreve').not.toContain('cliente.ltv_cents')
-    expect(bloco, 'a ficha voltou a ler o contador que o cron escreve').not.toContain('cliente.visits_count')
+    /*
+     * Sem janela de N caracteres. A primeira versao recortava 400 chars a partir do primeiro
+     * `metricas: {` — que e a DECLARACAO DE TIPO, la em cima, e nao o retorno. A mutacao passou
+     * verde: guarda cega classica, e a armadilha da janela por contagem que o CLAUDE.md registra.
+     * Agora casa com a LEITURA em si, em qualquer lugar do arquivo.
+     */
+    expect(CRM, 'a ficha voltou a ler o LTV que o cron escreve').not.toContain('cliente.ltv_cents')
+    expect(CRM, 'a ficha voltou a ler o contador de visitas que o cron escreve').not.toContain('cliente.visits_count')
   })
 
   it('existe a consulta ao vivo dos concluidos', () => {
