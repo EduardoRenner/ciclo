@@ -284,6 +284,7 @@ export type Database = {
           entity_id: string | null
           id: number
           ip: unknown
+          orphaned_at: string | null
           request_id: string | null
           tenant_id: string | null
           user_agent: string | null
@@ -299,6 +300,7 @@ export type Database = {
           entity_id?: string | null
           id?: number
           ip?: unknown
+          orphaned_at?: string | null
           request_id?: string | null
           tenant_id?: string | null
           user_agent?: string | null
@@ -314,6 +316,7 @@ export type Database = {
           entity_id?: string | null
           id?: number
           ip?: unknown
+          orphaned_at?: string | null
           request_id?: string | null
           tenant_id?: string | null
           user_agent?: string | null
@@ -2858,6 +2861,7 @@ export type Database = {
           created_at: string
           id: number
           ip: unknown
+          orphaned_at: string | null
           tenant_id: string
           user_agent: string | null
         }
@@ -2869,6 +2873,7 @@ export type Database = {
           created_at?: string
           id?: number
           ip?: unknown
+          orphaned_at?: string | null
           tenant_id: string
           user_agent?: string | null
         }
@@ -2880,6 +2885,7 @@ export type Database = {
           created_at?: string
           id?: number
           ip?: unknown
+          orphaned_at?: string | null
           tenant_id?: string
           user_agent?: string | null
         }
