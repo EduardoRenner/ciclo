@@ -4,6 +4,7 @@ import Link from 'next/link'
 import Badge from '@/components/ui/badge'
 import Card from '@/components/ui/card'
 import { formatarPreco } from '@/core/pricing/formatar'
+import { apelidoDoInstagram, urlDoInstagram } from '@/core/text/instagram'
 import { duracao, formatarTelefone } from '@/lib/formato'
 
 import type { PerfilPublico } from '@/server/services/public-booking'
@@ -44,7 +45,10 @@ function linkWhatsapp(numero: string, mensagem: string): string {
  * quebrada por causa disso. Só nome + serviços são garantidos.
  */
 export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
-  const temContato = perfil.phone || perfil.whatsapp || perfil.address || perfil.instagram
+  // Pelo apelido normalizado, não pelo campo cru: um valor que não vira apelido não desenha
+  // linha nenhuma, e contá-lo aqui abriria o cartão de contato vazio.
+  const instagram = apelidoDoInstagram(perfil.instagram)
+  const temContato = perfil.phone || perfil.whatsapp || perfil.address || instagram
   const temHorario = perfil.hours.length > 0
 
   const agora = agoraNoSalao(perfil.timezone)
@@ -255,15 +259,20 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
                 {formatarTelefone(perfil.phone)}
               </a>
             ) : null}
-            {perfil.instagram ? (
+            {/*
+              O endereço sai de `urlDoInstagram`, nunca concatenado aqui: tenant cadastrado antes
+              de 31/08 pode ter o endereço inteiro colado no campo, e concatenar produzia
+              `instagram.com/https://instagram.com/nome`. Ver `core/text/instagram.ts`.
+            */}
+            {instagram ? (
               <a
-                href={`https://instagram.com/${perfil.instagram}`}
+                href={urlDoInstagram(perfil.instagram)!}
                 target="_blank"
                 rel="noreferrer"
                 className="flex min-h-12 items-center gap-2 text-corpo text-txt"
               >
                 <AtSign aria-hidden className="size-4 shrink-0 text-txt-3" />
-                {perfil.instagram}
+                {instagram}
               </a>
             ) : null}
           </Card>

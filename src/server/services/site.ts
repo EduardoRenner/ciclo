@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { apelidoDoInstagram } from '@/core/text/instagram'
 import { AppError } from '@/server/http/errors'
 import { TelefoneBR } from '@/server/auth/schemas'
 
@@ -26,11 +27,16 @@ export const EsquemaSite = z.object({
   tagline: z.string().trim().max(140, 'Frase muito longa.').nullish(),
   about: z.string().trim().max(2000, 'Texto muito longo.').nullish(),
   whatsapp: TelefoneBR.nullish(),
+  /*
+   * Guarda o APELIDO, nunca o que foi colado. Antes só o `@` inicial saía, e colar o endereço do
+   * perfil — o gesto mais provável de quem tem o Instagram aberto — fazia a página pública montar
+   * `instagram.com/https://instagram.com/nome`. Ver `core/text/instagram.ts`.
+   */
   instagram: z
     .string()
     .trim()
-    .max(60, 'Muito longo.')
-    .transform((s) => s.replace(/^@/, ''))
+    .max(120, 'Muito longo.')
+    .transform((s) => apelidoDoInstagram(s))
     .nullish(),
   accent: z
     .string()

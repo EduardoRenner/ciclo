@@ -6,6 +6,8 @@
  * no mundo, procura "barbearia perto de mim". Sem dados estruturados, a página do salão compete só
  * pelo texto; com eles, entra nos resultados ricos.
  */
+import { urlDoInstagram } from '@/core/text/instagram'
+
 export type ServicoParaSeo = { name: string; priceCents: number | null; pricingModel: string }
 
 export type EntradaSeoDoSalao = {
@@ -50,7 +52,14 @@ export function dadosEstruturadosDoSalao(e: EntradaSeoDoSalao): Record<string, u
   // de fingir que temos cidade, estado e CEP separados. Inventar campo estruturado a partir de uma
   // string única daria endereço errado em resultado rico — pior que endereço ausente.
   if (e.endereco) dados.address = { '@type': 'PostalAddress', streetAddress: e.endereco }
-  if (e.instagram) dados.sameAs = [e.instagram]
+  /*
+   * `sameAs` é URL pelo schema.org — o apelido cru (`"barbeariadomrocha"`, que é o que o cadastro
+   * guarda) é marcação inválida, e marcação inválida custa mais que campo ausente. Mesma régua do
+   * `aggregateRating` logo abaixo. Tenant antigo pode ter um endereço colado inteiro no campo;
+   * `urlDoInstagram` reduz ao apelido antes de montar, então o valor herdado também sai certo.
+   */
+  const instagramUrl = urlDoInstagram(e.instagram)
+  if (instagramUrl) dados.sameAs = [instagramUrl]
 
   /*
    * `aggregateRating` só entra quando existe avaliação DE VERDADE. Com `ratingCount: 0` o Google
