@@ -4013,3 +4013,39 @@ vier, senão um `totalCents` novo apareceria como "4500" na tela.
 A guarda lê as chaves de `resumo` **do código-fonte das ferramentas** e passa pelo renderizador
 real, exigindo que toda chave declarada vire linha. Vista reprovando com a lista fixa de volta (5
 casos) e com o extrator cego (aí ela grita, em vez de aprovar por não ter o que checar).
+
+---
+
+### 2026-08-30 · "expired" aparecia em inglês na ficha da cliente
+
+Varrendo o resto do produto atrás da MESMA classe do cartão em branco — tela que lê uma lista fixa
+de chaves enquanto a fonte cresce — apareceu um caso vivo.
+
+`appointment_status` tem **sete** valores no banco. O `ROTULO_STATUS` da ficha da cliente traduzia
+seis: faltava `expired`. E `expired` é alcançável de verdade — `pending → expired` está na máquina
+de estados. O `?? h.status` no fim da linha, que existe justamente para não quebrar, fazia a tela
+mostrar a palavra inglesa crua **"expired"** no histórico, numa tela inteira em português.
+
+A causa é a de sempre: dois lugares guardando a mesma verdade. `appointment-row.tsx` já traduzia
+(`expired: 'Vencido'`); a ficha era uma segunda cópia que ficou para trás.
+
+**O que NÃO foi feito, de propósito:** fundir os dois mapas. Os rótulos diferem por gramática, não
+por descuido — na linha da agenda o sujeito é o agendamento ("Concluído", "Cancelado"), na ficha é
+a cliente ("Atendida", "Cancelada"). Unificar quebraria o português. O conserto certo era outro:
+tipar os mapas por `EstadoAgendamento` e `EstadoCiclo` em vez de `Record<string, …>`, e apertar os
+tipos na origem (`crm.ts` devolvia `status: string`). Agora acrescentar um estado quebra o build
+nos dois lugares — que é onde tem que quebrar.
+
+**Mas o TypeScript só conhece a união, e não sabe se ela ainda bate com o ENUM do banco.** Essa
+costura é por onde o buraco entrou, e é o que a guarda nova cobre: lê o `create type … as enum` das
+migrações e a união do código e exige que sejam iguais.
+
+Nota sobre a própria guarda: ela nasceu **gritando**, porque um `\s` dentro de template literal
+vira `s` e o regex parou de casar. Foi ela que me avisou do meu próprio defeito, em vez de aprovar
+vazia — que é exatamente o que se pede dela. Consertado com `String.raw`, e a mutação confirma:
+extrator quebrado reprova, união sem `expired` reprova.
+
+Também conferidos e SEM lacuna: `ROTULO_MENSAGEM` cobre os 6 de `message_kind`,
+`ROTULO_CONSENTIMENTO` cobre os 4 de `consent_type`, `ROTULO_CICLO` cobre os 5 de `cycle_state`.
+`ROTULO_ORIGEM` é de texto livre (`source` é string no schema), então o `?? cliente.source` ali é
+correto e não é lacuna.
