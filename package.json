@@ -17,7 +17,7 @@
     "test:e2e": "node -e \"console.error('test:e2e ainda nao existe: sem playwright instalado, sem playwright.config e tests/e2e vazio. Ver docs/DECISOES.md (31/08).'); process.exit(1)\"",
     "verify": "pnpm typecheck && pnpm lint && pnpm test:unit && pnpm test:integration && pnpm test:rls && pnpm build",
     "db:types": "node scripts/gerar-types.mjs",
-    "db:reset": "supabase db reset",
+    "db:reset": "node scripts/db-reset.mjs",
     "db:new": "supabase migration new",
     "db:types:local": "node scripts/gerar-types.mjs --local",
     "test:integration": "vitest run --config vitest.banco.config.ts --dir tests/integration"

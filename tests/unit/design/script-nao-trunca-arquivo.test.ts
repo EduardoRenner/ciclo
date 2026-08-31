@@ -66,3 +66,37 @@ describe('script nao trunca arquivo versionado', () => {
     expect(posEscrita, 'a escrita voltou a acontecer antes das checagens').toBeGreaterThan(posChecagem)
   })
 })
+
+describe('db:reset tem a trava que o FAQ promete', () => {
+  /*
+   * Ate 31/08 o FAQ B23 respondia "e bloqueado por guard no package.json quando
+   * NODE_ENV=production" e o script era so `supabase db reset`. Nao havia trava nenhuma.
+   *
+   * Promessa de seguranca falsa e pior que a ausencia dela: quem le o FAQ age com a confianca de
+   * quem tem rede. E o perigo real nao e NODE_ENV — e `--linked`, porque linkar e passo normal
+   * para `db push`, e o `.env.local` desta casa aponta para PRODUCAO.
+   */
+  it('o script passa pela trava, nao direto pro supabase', () => {
+    expect(PACOTE.scripts['db:reset'], 'db:reset voltou a chamar `supabase db reset` sem trava').toContain(
+      'db-reset.mjs',
+    )
+  })
+
+  it('a trava recusa banco remoto e --linked', () => {
+    const trava = readFileSync('scripts/db-reset.mjs', 'utf8')
+    expect(trava, 'sumiu a recusa de --linked').toContain('--linked')
+    // `localhost`, e nao `127.0.0.1`: no fonte o IP aparece escapado dentro do regex
+    // (`127BARRA.0BARRA.0BARRA.1`), entao casar com a forma sem escape reprovava um script correto.
+    expect(trava, 'sumiu a regra de URL local').toContain('localhost')
+    expect(trava, 'a trava parou de olhar a URL do Supabase').toContain('NEXT_PUBLIC_SUPABASE_URL')
+    expect(trava, 'sumiu o escape consciente').toContain('PERMITIR_BANCO_REMOTO')
+  })
+
+  it('o FAQ descreve a trava que existe, nao uma inventada', () => {
+    const faq = readFileSync('docs/05-FAQ-DEV.md', 'utf8')
+    expect(faq, 'o FAQ voltou a prometer um guard por NODE_ENV que nunca existiu').not.toContain(
+      'bloqueado por guard no `package.json` quando `NODE_ENV=production`',
+    )
+    expect(faq, 'o FAQ nao aponta para a trava real').toContain('scripts/db-reset.mjs')
+  })
+})

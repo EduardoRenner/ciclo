@@ -77,7 +77,18 @@ Não.
 `supabase/migrations/NNNN_descricao.sql`. **Nunca edite migration já aplicada** — crie uma nova. `db/schema.sql` deste pacote vira a `0001_initial.sql`.
 
 **B23. Posso rodar `supabase db reset` em produção?**
-Nunca. O comando é bloqueado por guard no `package.json` quando `NODE_ENV=production`.
+Nunca — e agora existe trava de verdade. **Até 31/08/2026 esta resposta estava errada**: ela
+prometia um guard por `NODE_ENV=production` no `package.json`, e o script era só
+`"db:reset": "supabase db reset"`. Não havia trava nenhuma, e promessa de segurança falsa é pior
+que a ausência dela — quem lê aqui age com a confiança de quem tem rede.
+
+`NODE_ENV=production` também seria a trava errada: ninguém define isso na máquina de
+desenvolvimento, então ela nunca dispararia no caso real. O caminho perigoso é `--linked`, e linkar
+é passo normal para `db push`.
+
+Hoje `pnpm db:reset` passa por `scripts/db-reset.mjs`, que recusa quando `--linked`/`--db-url`
+aparecem, ou quando `NEXT_PUBLIC_SUPABASE_URL` não é local — a mesma regra de
+`tests/setup/so-banco-local.ts`. Escape consciente: `PERMITIR_BANCO_REMOTO=1`.
 
 **B24. Como faço deploy?**
 Push na `main` → Vercel prod. PR → preview. Migration roda por GitHub Action com `supabase db push`, antes do deploy do app.
