@@ -96,19 +96,31 @@ describe('sair da conta (achado S9)', () => {
 
   it('não apaga a fila sem a pessoa confirmar', () => {
     const tela = conteudo.get(join('src', 'app', 'admin', 'config', 'sair.tsx'))!
+    /*
+     * 2026-08-31: o portão passou a consultar `avisoAntesDeSair` (core), porque o `.catch(() => [])`
+     * que alimentava a contagem transformava "não consegui LER a fila" em "a fila está vazia" — e
+     * a proteção se desligava sozinha no escuro. A LÓGICA agora tem teste de comportamento em
+     * `tests/unit/core/nao-sei-nao-e-zero.test.ts`; aqui fica a costura, que é o que este arquivo
+     * sabe testar.
+     */
     expect(
-      /restantes\.length\s*>\s*0\s*&&\s*!confirmado/.test(tela),
-      'falta o portão: com mutação pendente e sem confirmação, sair tem que parar e avisar',
+      /!==\s*'pode_sair'\s*&&\s*!confirmado/.test(tela),
+      'falta o portão: sem confirmação, sair só pode seguir quando a regra disser que pode',
     ).toBe(true)
     expect(
-      tela.indexOf('setADescartar'),
-      'falta guardar a quantidade para poder dizê-la à pessoa',
+      tela.indexOf('avisoAntesDeSair(leitura)'),
+      'o portão precisa vir da regra do core, não de uma contagem solta na tela',
     ).toBeGreaterThan(-1)
   })
 
   it('o aviso diz o número, e oferece a saída de não perder', () => {
     const tela = conteudo.get(join('src', 'app', 'admin', 'config', 'sair.tsx'))!
-    expect(/\$\{aDescartar\}|\{aDescartar\}/.test(tela), 'o aviso precisa mostrar a quantidade').toBe(true)
+    expect(/\{aviso\.quantidade\}|\$\{aviso\.quantidade\}/.test(tela), 'o aviso precisa mostrar a quantidade').toBe(true)
+    // E o caso em que a quantidade é desconhecida precisa avisar mesmo assim, sem inventar número.
+    expect(
+      /Não consegui verificar/i.test(tela),
+      'falta o aviso do caso "não sei" — sem ele, falha de leitura volta a sair calado',
+    ).toBe(true)
     expect(/Continuar na conta/.test(tela), 'a pessoa precisa poder desistir de sair e salvar o trabalho').toBe(true)
     expect(
       /conecte à internet/i.test(tela),
