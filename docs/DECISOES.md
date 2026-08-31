@@ -3917,3 +3917,33 @@ não sai da casa, uma pessoa. Passa. Duas travas:
 
 **A guarda de paridade de permissão agora cobre as quatro**, e reprova se uma quinta nascer sem
 entrada no mapa.
+
+---
+
+### 2026-08-30 · Um campo `quantidade` derrubou o assistente inteiro em produção
+
+**O achado mais caro da rodada, e ele não estava em nenhuma das quatro ferramentas.**
+
+`z.number().int().positive()` no campo `quantidade` de `preparar_item_na_comanda` gerou
+`exclusiveMinimum` no JSON Schema. O Gemini não ignora palavra que não conhece — recusa a
+requisição inteira: `Unknown name "exclusiveMinimum" ... Cannot find field`. E como **todas** as
+ferramentas viajam no mesmo `tools[0]`, o 400 levou junto as outras: perguntar "quanto faturei"
+parou de funcionar por causa de um campo de comanda. `ASSISTANT_UNAVAILABLE` em toda pergunta.
+
+**Typecheck, lint, 1052 testes e build passaram.** Nenhum deles fala com a API do Gemini. Foi mais
+um caso do "verde não é prova" do CLAUDE.md, e o mais direto de todos: o verde não sabia da
+existência do único juiz que importava.
+
+Também é o motivo de a disciplina mandar **testar em produção de verdade**. Este defeito não tinha
+como aparecer na máquina.
+
+**O conserto: lista do que PODE, não do que não pode.** `paraJsonSchema` já descartava `$schema` e
+`additionalProperties` — a mesma defesa, cobrindo só os dois casos que já tinham acontecido. Uma
+lista de proibidos só conhece os erros do passado: a próxima palavra que o Zod resolver emitir
+passaria direto e derrubaria tudo de novo. `core/assistente/json-schema.ts` inverte para uma lista
+de permitidos, aplicada em profundidade. O que sai fora afrouxa a descrição para o modelo e não
+enfraquece nada de verdade — quem valida é o Zod no servidor, que roda depois.
+
+A guarda percorre o schema de **toda** ferramenta e reprova em palavra fora da lista. Vista
+reprovando com a limpeza desligada, e ela pegou de saída que `pattern` e `minLength` já viajavam
+para a API antes — o Gemini tolerava esses dois, e era só questão de qual palavra chegaria primeiro.
