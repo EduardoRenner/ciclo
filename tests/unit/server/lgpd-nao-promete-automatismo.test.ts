@@ -21,13 +21,32 @@ import { semComentarios } from '../../helpers/fonte'
  */
 const FAQ = readFileSync('docs/05-FAQ-DEV.md', 'utf8')
 const LGPD = semComentarios(readFileSync('src/server/services/lgpd.ts', 'utf8'))
-const AGENDADAS = readFileSync('src/core/cron/agendadas.ts', 'utf8')
+import { ROTAS_AGENDADAS, ROTAS_DE_CRON } from '@/core/cron/agendadas'
 
 describe('o FAQ nao promete anonimizacao automatica que nao roda', () => {
-  const temJobAutomatico = /lgpd/i.test(semComentarios(AGENDADAS))
+  /*
+   * O que decide nao e a rota EXISTIR, e ela estar AGENDADA.
+   *
+   * A primeira versao desta guarda lia o arquivo `agendadas.ts` inteiro e reprovava assim que a
+   * rota `lgpd-retention` foi criada — mesmo ela ficando de proposito fora do `on.schedule`, como
+   * `reminders` e `campaigns`. Rota que existe e ninguem dispara nao anonimiza ninguem, entao o
+   * FAQ continuava certo. Imprecisao de guarda cobra conserto onde nao ha defeito, que custa tanto
+   * quanto absolver o errado.
+   */
+  const agendado = ROTAS_AGENDADAS.some((r) => r.includes('lgpd'))
 
-  it('nao ha rota de cron de LGPD — se houver, esta guarda precisa mudar junto', () => {
-    expect(temJobAutomatico, 'apareceu cron de LGPD: atualize a G92 do FAQ, que hoje diz que nao existe').toBe(false)
+  it('o job de LGPD nao esta agendado — se entrar no schedule, o FAQ muda junto', () => {
+    expect(
+      agendado,
+      'lgpd-retention entrou no on.schedule: agora a anonimizacao acontece sozinha, e a G92 do FAQ ' +
+        'precisa dizer isso — hoje ela diz que nao existe automatismo.',
+    ).toBe(false)
+  })
+
+  it('a rota existe, e isso e de proposito — o dono liga quando decidir', () => {
+    // Construida em 31/08 e deixada fora do schedule: ligar destruicao irreversivel de dado
+    // pessoal e decisao do dono, nao efeito colateral de deploy.
+    expect(ROTAS_DE_CRON as readonly string[], 'a rota de retencao sumiu do catalogo').toContain('lgpd-retention')
   })
 
   it('a eliminacao de verdade continua existindo e sendo chamada', () => {

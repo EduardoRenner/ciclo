@@ -24,7 +24,7 @@
  */
 
 /** Toda rota sob `src/app/api/cron/`. O teste confere contra o disco. */
-export const ROTAS_DE_CRON = ['campaigns', 'jobs', 'recompute-cycles', 'reminders', 'segments', 'stock-alerts'] as const
+export const ROTAS_DE_CRON = ['campaigns', 'jobs', 'lgpd-retention', 'recompute-cycles', 'reminders', 'segments', 'stock-alerts'] as const
 
 export type RotaDeCron = (typeof ROTAS_DE_CRON)[number]
 
