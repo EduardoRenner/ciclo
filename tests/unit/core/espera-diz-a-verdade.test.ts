@@ -44,6 +44,6 @@ describe('a frase da espera corresponde à espera', () => {
   it('o erro de verdade carrega a frase certa, não só a função isolada', () => {
     // Sem isto a guarda testaria uma função que ninguém chama — a costura é o que interessa.
     const erro = AppError.limiteDeTaxa(86_400)
-    expect(erro.mensagem ?? erro.message, 'o AppError não usa textoDeEspera').toContain('limite de uso de hoje')
+    expect(erro.message, 'o AppError não usa textoDeEspera').toContain('limite de uso de hoje')
   })
 })

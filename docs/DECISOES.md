@@ -4132,3 +4132,29 @@ e rota (bate), e o filtro por módulo roda antes de montar o pedido (correto).
 Registrado como lacuna de produto, sem conserto: **não existe comanda avulsa**. O único caminho é
 concluir um agendamento, então um cliente de passagem que só leva um produto não tem por onde ser
 lançado — e o caminho do dinheiro não é exercitável de ponta a ponta sem uma ação irreversível.
+
+---
+
+### 2026-08-30 · "Espere um instante" para uma espera de 24 horas
+
+Achado por acidente, e vale registrar o acidente: esbarrei no limite do próprio assistente
+testando o conserto anterior. A resposta veio com `"Espere um instante e tente de novo."` e, no
+mesmo corpo, `retryAfterSeconds: 86400`.
+
+As janelas deste produto vão de 2 segundos a 86.400 e **todas** recebiam a mesma frase, porque
+`RATE_LIMITED` tinha uma mensagem fixa e `limiteDeTaxa()` só preenchia o `Retry-After`. Para o
+limite diário do assistente (60 perguntas por salão), "um instante" são 24 horas.
+
+Terceira ocorrência da mesma classe hoje — **a frase não descreve o fato** — depois do cartão em
+branco e do "O endereço não existe ou mudou de lugar". O dano aqui é específico: quem lê "um
+instante" tenta de novo em vinte segundos, tenta em um minuto, e conclui que o produto quebrou,
+quando ele está funcionando exatamente como projetado e só não soube dizer isso.
+
+`core/http/espera.ts` faz a frase acompanhar a janela. Uma decisão de redação merece registro: no
+caso diário ele diz "Tente de novo mais tarde" e **não** promete "amanhã". A janela é deslizante —
+o crédito volta aos poucos, não à meia-noite — e prometer hora certa seria trocar uma frase errada
+por outra.
+
+A guarda tem um caso para a costura, não só para a função: `AppError.limiteDeTaxa(86_400)` tem que
+carregar a frase certa. Sem ele, o teste aprovaria uma função que ninguém chama — e a primeira
+mutação (tirar `message:` do `AppError`) foi exatamente esse caso, reprovando só ali.
