@@ -7,12 +7,12 @@ import { usePathname } from 'next/navigation'
 import IconeAnel from '@/components/ui/icone-anel'
 import { cn } from '@/lib/utils'
 
-import { ABAS, abaAtiva, type Aba } from './tabs'
+import { ABAS, HREF_DO_CENTRO, hrefDaAbaAtiva, type Aba } from './tabs'
 
-const ICONES: Record<Aba['icone'], typeof Home | typeof IconeAnel> = { Home, CalendarDays, Users, Anel: IconeAnel }
+const ICONES: Record<Aba['icone'], typeof Home | typeof IconeAnel> = { Home, CalendarDays, Users, Plus, Anel: IconeAnel }
 
 type Props = {
-  /** Rota do FAB — sempre "novo agendamento" no MVP; parametrizado para o teste não depender de string solta. */
+  /** Rota do botão central. Parametrizado para o teste não depender de string solta. */
   hrefFab?: string
 }
 
@@ -29,8 +29,9 @@ type Props = {
  * barra era `inset-x-0` puro e, em qualquer monitor, espalhava quatro ícones
  * por 1920px enquanto o app vivia numa coluna estreita no meio.
  */
-export default function TabBar({ hrefFab = '/admin/agenda/novo' }: Props) {
+export default function TabBar({ hrefFab = HREF_DO_CENTRO }: Props) {
   const pathname = usePathname()
+  const ativo = hrefDaAbaAtiva(pathname)
   const [esquerda, direita] = [ABAS.slice(0, 2), ABAS.slice(2)]
 
   return (
@@ -55,19 +56,24 @@ export default function TabBar({ hrefFab = '/admin/agenda/novo' }: Props) {
         )}
       >
         {esquerda.map((aba) => (
-          <ItemAba key={aba.href} aba={aba} ativa={abaAtiva(pathname, aba.href)} />
+          <ItemAba key={aba.href} aba={aba} ativa={ativo === aba.href} />
         ))}
 
         <div className="flex flex-1 items-center justify-center lg:order-first lg:flex-none lg:pb-4">
           {/*
-            O FAB sobe para fora da barra: com 64px de altura ele não cabe mais
-            dentro sem espremer os rótulos, e a peça mais importante da tela
-            (marcar horário é o gesto que sustenta o produto) passa a flutuar
-            sobre o conteúdo em vez de dividir espaço com quatro ícones.
+            O botão central sobe para fora da barra: com 64px de altura ele não cabe mais dentro
+            sem espremer os rótulos, e a peça mais importante da tela passa a flutuar sobre o
+            conteúdo em vez de dividir espaço com quatro ícones.
+
+            31/08: essa "peça mais importante" deixou de ser marcar horário e passou a ser o Motor
+            de Ciclo — o porquê está em `tabs.ts`, junto de `HREF_DO_CENTRO`. Resumo: o centro é o
+            único ponto que o polegar alcança sem reposicionar a mão, e estava com a ação mais
+            comum em vez da mais valiosa.
           */}
           <Link
             href={hrefFab}
-            aria-label="Novo agendamento"
+            aria-label="Recuperar receita"
+            aria-current={pathname.startsWith(HREF_DO_CENTRO) ? 'page' : undefined}
             className={cn(
               'grid size-14 -translate-y-4 place-items-center rounded-[var(--radius-pill)]',
               'border-4 border-surface bg-acc text-on-acc shadow-fab',
@@ -76,7 +82,7 @@ export default function TabBar({ hrefFab = '/admin/agenda/novo' }: Props) {
               'transition duration-[var(--dur-1)] ease-[var(--ease-ios)] hover:brightness-110 active:scale-[.92]',
             )}
           >
-            <Plus aria-hidden className="size-7 lg:size-5" />
+            <IconeAnel aria-hidden className="size-7 lg:size-5" />
             {/*
               Na coluna lateral o botão tem 207px de largura e trazia só o "+"
               encostado na esquerda — medido. Os quatro destinos logo abaixo
@@ -85,12 +91,12 @@ export default function TabBar({ hrefFab = '/admin/agenda/novo' }: Props) {
               para um rótulo que nunca foi escrito. No celular o FAB continua
               redondo e só com o ícone: lá o `aria-label` basta e texto não cabe.
             */}
-            <span className="hidden text-corpo font-semibold lg:inline">Novo agendamento</span>
+            <span className="hidden text-corpo font-semibold lg:inline">Recuperar receita</span>
           </Link>
         </div>
 
         {direita.map((aba) => (
-          <ItemAba key={aba.href} aba={aba} ativa={abaAtiva(pathname, aba.href)} />
+          <ItemAba key={aba.href} aba={aba} ativa={ativo === aba.href} />
         ))}
       </div>
     </nav>
