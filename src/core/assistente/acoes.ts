@@ -19,6 +19,10 @@ const ROTAS: Record<string, MontarRota> = {
     // Id que não é UUID não vira URL: sem isto, `"x/../../outra-coisa"` sairia daqui como rota.
     return typeof id === 'string' && UUID.test(id) ? `/api/v1/appointments/${id}/complete` : null
   },
+  adicionar_item_comanda: (d) => {
+    const id = d.ticketId
+    return typeof id === 'string' && UUID.test(id) ? `/api/v1/tickets/${id}/items` : null
+  },
   cadastrar_cliente: () => '/api/v1/clients',
   adicionar_nota: (d) => {
     const id = d.clientId

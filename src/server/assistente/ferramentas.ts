@@ -4,6 +4,7 @@ import { z } from 'zod'
 import type { ModuloKey } from '@/core/billing/planos'
 import { avaliarPermissao, type Papel } from '@/server/auth/rbac'
 import { listarAgendamentos } from '@/server/services/agendamentos'
+import { listarProdutosAtivos } from '@/server/services/estoque'
 import { listarAlertasDeEstoque } from '@/server/services/alertas-estoque'
 import { resumoMensal } from '@/server/services/caixa'
 import { buscarCliente, listarClientes } from '@/server/services/clientes'
@@ -11,6 +12,7 @@ import { listarAgendaDoDia } from '@/server/services/agendamentos'
 import { listarOrcamentos } from '@/server/services/orcamentos'
 import { listarParaRecuperar } from '@/server/services/recuperar-receita'
 import { listarServicos } from '@/server/services/servicos'
+import { buscarTicketIdPorAgendamento } from '@/server/services/comanda'
 import { listarProfissionais } from '@/server/services/profissionais'
 import { resolverPorNome, resolverProfissional, type Candidato } from '@/core/assistente/resolver'
 import { semAcento } from '@/core/text/normalizar'
@@ -102,6 +104,13 @@ const EsquemaPrepararAgendamento = z.object({
     .string()
     .optional()
     .describe('telefone da cliente, SÓ quando ela ainda não está cadastrada e o dono informou o número'),
+})
+
+const EsquemaItemNaComanda = z.object({
+  cliente: z.string().min(2).describe('nome da cliente cuja comanda vai receber o item'),
+  item: z.string().min(2).describe('nome do serviço ou do produto, como o dono falou'),
+  quantidade: z.number().int().positive().max(99).optional().describe('quantas unidades; some se ele não disser'),
+  data: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().describe('dia do atendimento (AAAA-MM-DD); some se for hoje'),
 })
 
 const EsquemaNotaNaFicha = z.object({
@@ -354,6 +363,88 @@ export const FERRAMENTAS: Ferramenta[] = [
           servico: escolhido.services?.name ?? 'Serviço',
           quando: escolhido.starts_at,
           precoCents: escolhido.price_cents,
+        },
+      }
+    },
+  }),
+  apagarTipo({
+    nome: 'preparar_item_na_comanda',
+    descricao:
+      'Prepara o lançamento de um serviço ou produto EXTRA na comanda de um atendimento já concluído, e devolve uma PROPOSTA para o dono confirmar. NAO lanca nada. Use quando o dono disser que a cliente levou um produto ou fez algo a mais. NUNCA informe preco: o preco sai do catalogo sozinho.',
+    schema: EsquemaItemNaComanda,
+    // Mesma permissão que `POST /api/v1/tickets/[id]/items` exige.
+    permissao: 'comanda:own',
+    modulo: 'register',
+    executar: async (ctx, { cliente, item, quantidade, data }) => {
+      const dia = data ?? hojeNoFuso(ctx.timezone)
+      const [agenda, servicos, produtos] = await Promise.all([
+        listarAgendaDoDia(ctx.db, ctx.tenantId, dia, ctx.timezone),
+        listarServicos(ctx.db, ctx.tenantId),
+        listarProdutosAtivos(ctx.db, ctx.tenantId),
+      ])
+
+      // Comanda só existe depois que o atendimento foi concluído — é `concluirAgendamento` que a
+      // abre. Filtrar por `done` antes de resolver o nome evita propor lançamento numa comanda
+      // que ainda não nasceu, que a rota recusaria com 404.
+      const concluidos = agenda.appointments.filter((a) => a.status === 'done')
+      if (concluidos.length === 0) {
+        return { status: 'nao_da', motivo: 'nenhuma_comanda_aberta', dia }
+      }
+
+      const rc = resolverPorNome(cliente, concluidos.map((a) => ({ id: a.id, nome: a.clients?.name ?? 'Cliente' })))
+      if (rc.tipo === 'nenhum') return { status: 'nao_achei', oQue: 'comanda', termo: cliente, dia }
+      if (rc.tipo === 'ambiguo') return { status: 'qual_delas', oQue: 'comanda', opcoes: rc.opcoes.map((o) => o.nome) }
+
+      const atendimento = concluidos.find((a) => a.id === rc.item.id)!
+      const ticketId = await buscarTicketIdPorAgendamento(ctx.db, ctx.tenantId, atendimento.id)
+      if (!ticketId) return { status: 'nao_da', motivo: 'comanda_nao_encontrada', cliente: rc.item.nome }
+
+      // Serviço e produto vivem em catálogos separados, e a rota exige um OU outro, nunca os dois.
+      // Procura nos dois e recusa o empate ENTRE eles: um "hidratação" que é serviço e produto ao
+      // mesmo tempo tem que virar pergunta, não um chute com consequência em estoque.
+      const porServico = resolverPorNome(item, servicos.map((x) => ({ id: x.id, nome: x.name })))
+      const porProduto = resolverPorNome(item, produtos.map((x) => ({ id: x.id, nome: x.name })))
+      if (porServico.tipo === 'ambiguo') return { status: 'qual_delas', oQue: 'servico', opcoes: porServico.opcoes.map((o) => o.nome) }
+      if (porProduto.tipo === 'ambiguo') return { status: 'qual_delas', oQue: 'produto', opcoes: porProduto.opcoes.map((o) => o.nome) }
+      if (porServico.tipo === 'achou' && porProduto.tipo === 'achou') {
+        return { status: 'qual_delas', oQue: 'item', opcoes: [`${porServico.item.nome} (serviço)`, `${porProduto.item.nome} (produto)`] }
+      }
+      if (porServico.tipo === 'nenhum' && porProduto.tipo === 'nenhum') {
+        return { status: 'nao_achei', oQue: 'item', termo: item }
+      }
+
+      const ehServico = porServico.tipo === 'achou'
+      const escolhido = ehServico ? porServico.item : (porProduto as { item: Candidato }).item
+      const qty = quantidade ?? 1
+
+      /*
+       * O preço NÃO vai no corpo, e isso é a trava central desta ferramenta. `unitPriceCents` é
+       * opcional em `EsquemaItemComanda`: omitido, `adicionarItemComanda` lê o preço do catálogo
+       * na hora. Aceitar preço aqui seria deixar o modelo produzir um número que vira dinheiro
+       * cobrado da cliente — o oposto da regra "número nunca vem do modelo". Por isso
+       * `EsquemaItemNaComanda` não tem campo de preço nenhum: não há o que preencher errado.
+       */
+      const dados: Record<string, unknown> = {
+        ticketId,
+        professionalId: atendimento.professional_id,
+        qty,
+        ...(ehServico ? { serviceId: escolhido.id } : { productId: escolhido.id }),
+      }
+
+      const precoCatalogo = ehServico
+        ? servicos.find((x) => x.id === escolhido.id)?.price_cents
+        : produtos.find((x) => x.id === escolhido.id)?.price_cents
+
+      return {
+        status: 'proposta',
+        acao: 'adicionar_item_comanda',
+        dados,
+        resumo: {
+          Cliente: rc.item.nome,
+          Item: `${escolhido.nome}${ehServico ? ' (serviço)' : ' (produto)'}`,
+          Quantidade: qty,
+          // Só para o dono CONFERIR. Não volta como entrada: quem cobra é o catálogo.
+          precoCents: precoCatalogo,
         },
       }
     },

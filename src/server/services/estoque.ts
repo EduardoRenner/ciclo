@@ -153,3 +153,20 @@ export async function registrarEntradaEstoque(db: Cliente, tenantId: string, ent
 
   return produtoAtualizado
 }
+
+/**
+ * Produtos ativos, para quem precisa RESOLVER um nome em id — o assistente lançando item na
+ * comanda. Devolve o preço junto só para o cartão de confirmação mostrar; quem decide o preço
+ * cobrado continua sendo `adicionarItemComanda`, lendo o catálogo na hora.
+ */
+export async function listarProdutosAtivos(db: Cliente, tenantId: string) {
+  const { data, error } = await db
+    .from('products')
+    .select('id, name, price_cents, stock_qty')
+    .eq('tenant_id', tenantId)
+    .eq('active', true)
+    .is('deleted_at', null)
+    .order('name')
+  if (error) throw new AppError('INTERNAL', { cause: error })
+  return data ?? []
+}
