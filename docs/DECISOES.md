@@ -4344,3 +4344,36 @@ Também conferido nesta rodada, e correto: os tenants de teste estão `noindex, 
 do sitemap (as duas metades da mesma lista); o tenant de demonstração não emite JSON-LD; e a página
 pública do salão não vaza identidade — a consulta de avaliações seleciona `rating, comment,
 created_at` e nada mais, então não há como o nome de uma cliente aparecer ao lado da nota.
+
+---
+
+### 2026-08-31 · O Motor de Ciclo foi para o centro da barra; marcar horário assumiu o slot dele
+
+Pedido do Eduardo, e a razão de projeto sustenta o pedido: **o slot central é o único que o polegar
+alcança sem reposicionar a mão**, e estava com a ação mais COMUM do dia — não a mais valiosa.
+Marcar horário é o que qualquer caderno faz. O Motor de Ciclo é o que justifica o produto ter
+preço, e vivia no canto direito, que é de onde as coisas somem da rotina. Um recurso que precisa
+ser LEMBRADO não gera receita — e receita recuperada é justamente a que ninguém buscaria sozinho.
+
+Foi uma troca, não uma remoção: "Marcar" ocupou a quarta aba, e continua também nos botões da tela
+"Hoje" e da agenda, que são de onde o gesto costuma partir de verdade.
+
+**Duas coisas quebraram na troca, e as duas eram guardas antigas fazendo o trabalho delas:**
+
+1. **Duas abas acendendo ao mesmo tempo.** `/admin/agenda/novo` casa com a aba Agenda por PREFIXO e
+   com a própria Marcar por igualdade. Sem desempate, a barra diria à pessoa que ela está em dois
+   lugares. Resolvido com `hrefDaAbaAtiva`: vence a mais específica.
+
+2. **O formulário perdeu o botão voltar.** A regra era *"está na lista de abas ⇒ sem voltar"*, e
+   fazia sentido enquanto toda aba era um destino de topo. `/admin/agenda/novo` é um FORMULÁRIO
+   aninhado sob a Agenda: quem chega pelo botão da agenda ficava sem saída. A barra continuaria
+   ali, mas "voltar para a agenda" e "trocar de aba" não são o mesmo gesto nem levam ao mesmo lugar
+   na cabeça de quem usa.
+
+   A regra passou a ser **topológica em vez de baseada na lista**: uma aba cujo href é sub-rota de
+   OUTRA aba é um formulário, e mantém o voltar do pai. Isso é mais verdadeiro do que a regra
+   antiga era mesmo antes desta mudança — a lista era um proxy para "é raiz", e o proxy quebrou
+   assim que uma aba deixou de ser raiz.
+
+Quatro mutações, quatro reprovações: Motor de volta ao canto; desempate removido; regra de voltar
+baseada na lista de novo; e a checagem de que as abas de topo de verdade continuam sem voltar.
