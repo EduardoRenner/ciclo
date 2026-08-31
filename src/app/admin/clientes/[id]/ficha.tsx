@@ -384,7 +384,15 @@ export default function Ficha({
       {aba === 'resumo' ? (
         <div className="mt-4">
           <div className="grid grid-cols-2 gap-3">
-            <StatTile rotulo="Já gastou" valor={dinheiro.format(metricas.ltvCents / 100)} />
+            {/*
+              Era "Já gastou", e prometia mais do que sabe: o valor sai do `price_cents` DO
+              AGENDAMENTO, ou seja PREÇO DE TABELA — não enxerga desconto dado na comanda nem item
+              extra. Dizer a uma dona de salão que a cliente "já gastou R$ 540" quando ela deu
+              R$ 60 de desconto ao longo do ano é errar sobre uma pessoa específica, com nome na
+              tela. Mesma palavra de "Atendido hoje", na tela Hoje, de propósito: no CICLO
+              "atendido" é preço de tabela e "entrou" é dinheiro no caixa.
+            */}
+            <StatTile rotulo="Valor atendido" valor={dinheiro.format(metricas.ltvCents / 100)} />
             <StatTile rotulo="Visitas" valor={String(metricas.visitas)} />
             <StatTile rotulo="Ticket médio" valor={dinheiro.format(metricas.ticketMedioCents / 100)} />
             <StatTile rotulo="Faltas" valor={String(metricas.faltas)} />

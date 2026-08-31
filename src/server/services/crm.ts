@@ -110,6 +110,7 @@ export async function fichaDoCliente(db: Cliente, tenantId: string, clientId: st
 
   const [
     historicoBruto,
+    concluidosBruto,
     ciclosBruto,
     mensagensBruto,
     indicadosBruto,
@@ -131,6 +132,25 @@ export async function fichaDoCliente(db: Cliente, tenantId: string, clientId: st
       .eq('client_id', clientId)
       .order('starts_at', { ascending: false })
       .limit(40),
+    /*
+     * As métricas da ficha ("Visitas" e o valor atendido) vinham de `clients.visits_count` e
+     * `clients.ltv_cents` — colunas desnormalizadas cujo ÚNICO escritor é o cron `segments`, que
+     * roda uma vez por dia e, medido em 31/08, com 5 a 6 horas de atraso do GitHub Actions.
+     * Concluir um atendimento às 14h e abrir a ficha da cliente mostrava o número de ontem.
+     *
+     * O histórico logo acima não serve para recalcular: é `limit(40)`, e uma cliente antiga daria
+     * um total menor que o verdadeiro — pior que defasado, seria errado com cara de exato.
+     *
+     * Esta consulta traz só `price_cents` dos concluídos, sem limite. É uma coluna de uma tabela
+     * já indexada por `client_id`, entra no MESMO `Promise.all` (latência somada: zero) e o
+     * volume é o de uma pessoa, não o do salão.
+     */
+    db
+      .from('appointments')
+      .select('price_cents')
+      .eq('tenant_id', tenantId)
+      .eq('client_id', clientId)
+      .eq('status', 'done'),
     db
       .from('client_cycles')
       .select('state, late_days, predicted_on, services(name)')
@@ -173,7 +193,10 @@ export async function fichaDoCliente(db: Cliente, tenantId: string, clientId: st
   }))
 
   const cicloBruto = ciclosBruto.data?.[0]
-  const visitas = cliente.visits_count
+  // Ao vivo, não da coluna que o cron escreve uma vez por dia.
+  const concluidos = concluidosBruto.data ?? []
+  const visitas = concluidos.length
+  const ltvCents = concluidos.reduce((soma, a) => soma + a.price_cents, 0)
   const nomePorServico = new Map((servicosBruto.data ?? []).map((s) => [s.id, s.name]))
 
   return {
@@ -199,11 +222,11 @@ export async function fichaDoCliente(db: Cliente, tenantId: string, clientId: st
       createdAt: cliente.created_at,
     },
     metricas: {
-      ltvCents: cliente.ltv_cents,
+      ltvCents,
       visitas,
       faltas: cliente.no_show_count,
       // Ticket médio sobre visitas concluídas — dividir por 0 na cliente que nunca veio daria NaN na tela.
-      ticketMedioCents: visitas > 0 ? Math.round(cliente.ltv_cents / visitas) : 0,
+      ticketMedioCents: visitas > 0 ? Math.round(ltvCents / visitas) : 0,
       ultimaVisita: cliente.last_visit_at,
     },
     ciclo: cicloBruto
