@@ -7,6 +7,24 @@ import { paiDaRota } from '@/components/shell/navegacao'
  * navegador. Uma rota que caia no `null` sem ser raiz de aba é um beco sem
  * saída de verdade — por isso isto tem teste.
  */
+describe('aba que é formulário mantém o voltar', () => {
+  /*
+   * 31/08: "Marcar" (`/admin/agenda/novo`) entrou na barra quando o Motor de Ciclo foi para o
+   * botão central. Ela é uma ABA e, ao mesmo tempo, um formulário aninhado sob a Agenda — e a
+   * regra antiga ("está na lista de abas ⇒ sem voltar") tirava a saída de quem chega pelo botão
+   * da agenda, que é o caminho mais comum até ali.
+   */
+  it('/admin/agenda/novo volta para a Agenda, mesmo sendo aba', () => {
+    expect(paiDaRota('/admin/agenda/novo')).toEqual({ href: '/admin/agenda', rotulo: 'Agenda' })
+  })
+
+  it('aba de topo de verdade continua sem voltar', () => {
+    for (const raiz of ['/admin/hoje', '/admin/agenda', '/admin/clientes']) {
+      expect(paiDaRota(raiz), `${raiz} ganhou um voltar que seria mentira`).toBeNull()
+    }
+  })
+})
+
 describe('paiDaRota', () => {
   it('raiz de aba não tem voltar — a tab bar já é a navegação', () => {
     expect(paiDaRota('/admin/hoje')).toBeNull()

@@ -39,9 +39,22 @@ const REGRAS: { prefixo: string; pai: Pai }[] = [
 /**
  * `null` quando a rota é a raiz de uma aba — lá o "voltar" seria uma mentira: a
  * tab bar já é a navegação, e sair de "Hoje" para trás significaria sair do app.
+ *
+ * 31/08: "estar na lista de abas" deixou de ser o mesmo que "ser raiz". Com o Motor de Ciclo indo
+ * para o botão central, "Marcar" (`/admin/agenda/novo`) entrou na barra — e ela é um FORMULÁRIO
+ * aninhado sob a Agenda, não um destino de topo. Sem esta distinção o formulário perdia o voltar
+ * para quem chega pelo botão da agenda, que é o caminho mais comum: a barra continuaria ali, mas
+ * "voltar para a agenda" e "trocar de aba" não são o mesmo gesto nem levam ao mesmo lugar na
+ * cabeça de quem usa.
+ *
+ * A regra passa a ser topológica em vez de baseada na lista: uma aba cujo href é sub-rota de OUTRA
+ * aba é um formulário, e mantém o voltar do pai.
  */
 export function paiDaRota(pathname: string): Pai | null {
-  if (ABAS.some((aba) => aba.href === pathname)) return null
+  const ehRaizDeAba = ABAS.some(
+    (aba) => aba.href === pathname && !ABAS.some((outra) => outra.href !== aba.href && aba.href.startsWith(`${outra.href}/`)),
+  )
+  if (ehRaizDeAba) return null
 
   const regra = REGRAS.find((r) => pathname.startsWith(r.prefixo))
   if (regra) return regra.pai
