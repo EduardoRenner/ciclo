@@ -1,3 +1,4 @@
+import { textoDeEspera } from '@/core/http/espera'
 /**
  * Lista fechada de erros da API (`docs/02-API.md §1`). Adicionar código aqui sem
  * adicionar na documentação é o mesmo que inventar código: a UI trata pelo `code`,
@@ -86,6 +87,8 @@ export class AppError extends Error {
   static limiteDeTaxa(segundos: number): AppError {
     const espera = Math.max(1, Math.ceil(segundos))
     return new AppError('RATE_LIMITED', {
+      // A frase acompanha a janela: 'um instante' para 2s e para 24h não pode ser a mesma coisa.
+      message: textoDeEspera(espera),
       headers: { 'Retry-After': String(espera) },
       details: { retryAfterSeconds: espera },
     })
