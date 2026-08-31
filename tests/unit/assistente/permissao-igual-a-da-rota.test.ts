@@ -46,7 +46,9 @@ function permissaoDaRota(arquivo: string, metodo: string): string {
 
   const m = bloco.match(/exigirPermissao\(ctx\.papel,\s*'([^']+)'\)/)
   expect(m, `${metodo} de ${arquivo} nao chama exigirPermissao`).not.toBeNull()
-  return m![1]
+  const permissao = m![1]
+  expect(permissao, 'exigirPermissao casou sem capturar a permissao').toBeTypeOf('string')
+  return permissao!
 }
 
 describe('permissao da ferramenta = permissao da rota', () => {

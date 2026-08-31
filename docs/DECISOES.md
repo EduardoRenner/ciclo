@@ -3847,3 +3847,34 @@ Não há transição de saída. A interface não desfaz.
 
 A guarda foi vista reprovando nas duas mutações: sem a validação de UUID a travessia de caminho
 passa, e esvaziando a lista de ações sem volta o aviso some da tela em silêncio.
+
+---
+
+### 2026-08-30 · Nota na ficha pelo chat, e a guarda que faltava entre PREPARAR e EXECUTAR
+
+**A régua do `docs/33 §2.1`.** Manda mensagem para fora? Não. Escreve em registro de cliente? Sim.
+Gasta dinheiro? Não. Alcança mais de uma pessoa? Não. É a de **menor risco das quatro** — e a única
+totalmente reversível, porque nota é aditiva: some sem deixar buraco.
+
+Uma trava, ainda assim: nota na ficha **errada** é pior que nota nenhuma. Vira informação falsa
+sobre uma pessoa que ninguém vai desconfiar depois, porque ficha de cliente é lida como verdade. Por
+isso reusa `resolverPorNome` igual às outras — empatou, pergunta.
+
+E o prompt manda copiar a anotação **palavra por palavra**. Um modelo que "melhora" o texto do dono
+está escrevendo na ficha uma coisa que ele não disse.
+
+**O achado desta rodada foi outro, e vale para todas as ferramentas.** Toda ferramenta declara uma
+`permissao`, e a rota que executa exige a dela. As duas estão certas sozinhas — só a **distância
+entre elas** pode estar errada. Se a da ferramenta for mais frouxa, o assistente monta a proposta, o
+cartão aparece, o dono confirma e leva 403. Nenhum teste pega: cada metade passa.
+
+`tests/unit/assistente/permissao-igual-a-da-rota.test.ts` lê a permissão **do arquivo da rota** e
+compara com a do catálogo real. Escrever a permissão esperada dentro do teste seria exatamente a
+guarda cega de 2026-08-25 — passaria verde com a rota mudando embaixo.
+
+Três coisas fazem a guarda não ser cega, e as três foram vistas reprovando:
+1. Afrouxar a permissão da ferramenta reprova.
+2. Ferramenta `preparar_*` nova **sem entrada no mapa** reprova — senão a próxima nasce sem guarda e
+   a suíte segue verde por omissão.
+3. Rota **sem** `exigirPermissao` faz a guarda **gritar**, não passar vazio. Este é o guard contra o
+   próprio detector: um regex que para de casar é como as três guardas cegas sobreviveram.
