@@ -106,6 +106,12 @@ const EsquemaPrepararAgendamento = z.object({
     .describe('telefone da cliente, SÓ quando ela ainda não está cadastrada e o dono informou o número'),
 })
 
+const EsquemaCadastroDeCliente = z.object({
+  nome: z.string().min(2).max(120).describe('nome completo da cliente, como o dono falou'),
+  telefone: z.string().min(8).max(20).describe('telefone com DDD. OBRIGATORIO: se o dono nao disser, PERGUNTE. Nunca invente um numero.'),
+  aniversario: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().describe('data de nascimento (AAAA-MM-DD), so se ele disser'),
+})
+
 const EsquemaItemNaComanda = z.object({
   cliente: z.string().min(2).describe('nome da cliente cuja comanda vai receber o item'),
   item: z.string().min(2).describe('nome do serviço ou do produto, como o dono falou'),
@@ -363,6 +369,44 @@ export const FERRAMENTAS: Ferramenta[] = [
           servico: escolhido.services?.name ?? 'Serviço',
           quando: escolhido.starts_at,
           precoCents: escolhido.price_cents,
+        },
+      }
+    },
+  }),
+  apagarTipo({
+    nome: 'preparar_cadastro_de_cliente',
+    descricao:
+      'Prepara o cadastro de uma cliente nova (sem marcar horario junto) e devolve uma PROPOSTA para o dono confirmar. NAO cadastra nada. Precisa do telefone: se ele nao disser, PERGUNTE — nunca invente um numero. Se ele quiser cadastrar E marcar no mesmo pedido, use preparar_agendamento, que faz as duas coisas de uma vez.',
+    schema: EsquemaCadastroDeCliente,
+    // Mesma permissão que `POST /api/v1/clients` exige.
+    permissao: 'client:create',
+    modulo: 'clients',
+    executar: async (ctx, { nome, telefone, aniversario }) => {
+      // Cadastrar de novo quem já existe não dá erro — dá uma SEGUNDA ficha, e a partir dali o
+      // histórico da pessoa se parte em duas sem ninguém perceber. O serviço só reusa pelo
+      // telefone dentro de `criarAgendamento`; aqui a checagem é nossa.
+      const [porTelefone, porNome] = await Promise.all([
+        listarClientes(ctx.db, ctx.tenantId, { busca: telefone, limite: 5 }),
+        listarClientes(ctx.db, ctx.tenantId, { busca: nome, limite: 5 }),
+      ])
+      if (porTelefone.length > 0) {
+        const j = porTelefone[0]!
+        return { status: 'ja_existe', motivo: 'mesmo_telefone', cliente: { id: j.id, nome: j.name } }
+      }
+      // Nome igual NÃO bloqueia — homônimo é comum e o telefone já provou que é outra pessoa.
+      // Mas o cartão avisa, para o dono decidir com a informação na frente dele.
+      const homonimas = porNome.map((c) => c.name)
+
+      return {
+        status: 'proposta',
+        acao: 'cadastrar_cliente',
+        // Corpo exato de `EsquemaCliente`.
+        dados: { name: nome, phone: telefone, ...(aniversario ? { birthDate: aniversario } : {}) },
+        resumo: {
+          Cliente: nome,
+          Telefone: telefone,
+          ...(aniversario ? { Aniversário: aniversario } : {}),
+          ...(homonimas.length > 0 ? { 'Já tem ficha com nome parecido': homonimas.join(', ') } : {}),
         },
       }
     },

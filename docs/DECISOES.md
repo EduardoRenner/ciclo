@@ -3878,3 +3878,37 @@ Três coisas fazem a guarda não ser cega, e as três foram vistas reprovando:
    a suíte segue verde por omissão.
 3. Rota **sem** `exigirPermissao` faz a guarda **gritar**, não passar vazio. Este é o guard contra o
    próprio detector: um regex que para de casar é como as três guardas cegas sobreviveram.
+
+---
+
+### 2026-08-30 · Item na comanda e cadastro de cliente: as duas travas que o modelo não pode furar
+
+**Item na comanda — régua do `docs/33 §2.1`.** Mensagem para fora? Não. Escreve em registro de
+cliente? Sim. Gasta dinheiro? **Registra** dinheiro, dentro da comanda do próprio atendimento — não
+cobra nada de fora. Alcança mais de uma pessoa? Não. Reversível: sim, o item se remove.
+
+A trava central não é nenhuma dessas. É o **preço**. `unitPriceCents` é opcional em
+`EsquemaItemComanda`: omitido, o serviço lê o catálogo; preenchido, ele cobra o que veio no corpo.
+Se a ferramenta aceitasse preço, um número inventado pelo modelo viraria o valor cobrado da cliente
+— e o cartão mostraria **esse mesmo número inventado**. O dono conferiria a invenção contra ela
+mesma e confirmaria. Por isso `EsquemaItemNaComanda` não tem campo de dinheiro nenhum: o modelo não
+enxerga onde errar, e o que ele mandar por cima o Zod descarta. As duas metades têm guarda, e as
+duas foram vistas reprovando com o campo de volta.
+
+Segunda decisão: um nome que existe como serviço **e** como produto vira pergunta, nunca chute.
+Produto baixa estoque no fechamento; serviço não. Adivinhar ali tem consequência em duas tabelas.
+
+**Cadastro de cliente — mesma régua.** Escreve em registro de cliente, reversível por soft delete,
+não sai da casa, uma pessoa. Passa. Duas travas:
+
+- **Telefone obrigatório**, pela razão já registrada: ficha sem contato não serve para chamar de
+  volta, e chamar de volta é o produto. O prompt manda PERGUNTAR — inventar telefone é a pior
+  forma do erro, porque parece certo até alguém ligar.
+- **Telefone repetido bloqueia; nome repetido só avisa.** Cadastrar de novo quem já existe não dá
+  erro — dá uma segunda ficha, e dali em diante o histórico da pessoa se parte em duas sem ninguém
+  perceber. Já homônima é comum, e o telefone diferente já provou que é outra pessoa: bloquear ali
+  seria o sistema recusando um cadastro legítimo. Então o cartão mostra as fichas parecidas e quem
+  decide é o dono, com a informação na frente.
+
+**A guarda de paridade de permissão agora cobre as quatro**, e reprova se uma quinta nascer sem
+entrada no mapa.

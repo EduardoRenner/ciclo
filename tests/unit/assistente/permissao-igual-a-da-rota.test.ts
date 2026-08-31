@@ -24,6 +24,11 @@ const EXECUCAO: Record<string, { ferramenta: string; arquivo: string; metodo: st
     arquivo: 'src/app/api/v1/appointments/[id]/complete/route.ts',
     metodo: 'POST',
   },
+  cadastrar_cliente: {
+    ferramenta: 'preparar_cadastro_de_cliente',
+    arquivo: 'src/app/api/v1/clients/route.ts',
+    metodo: 'POST',
+  },
   adicionar_item_comanda: {
     ferramenta: 'preparar_item_na_comanda',
     arquivo: 'src/app/api/v1/tickets/[id]/items/route.ts',
