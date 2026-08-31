@@ -5143,3 +5143,74 @@ Verificado ao vivo, ponta a ponta: criar → aprovar pelo link público → conv
 `quotes.status` vira `converted` com `converted_appointment_id` certo → tela mostra "Virou
 agendamento" e some o botão → tentar converter de novo é recusado (`INVALID_TRANSITION`). Nada a
 corrigir; registrado pra não reabrir essas pendências por engano.
+
+---
+
+### 2026-08-31 · Auditoria de segurança: o limite que existia em duas rotas e faltava em nove
+
+Pedido do Eduardo ("reforçar cyber segurança, proteção de dados, contra ataque de requisição").
+Comecei medindo em vez de deduzir: `pnpm audit` limpo, headers completos (CSP com nonce, HSTS,
+`frame-ancestors 'none'`, COOP/CORP), `ipDe` já endurecido contra `X-Forwarded-For` forjado,
+`timingSafeEqual` nos tokens, origem conferida nas mutações. O que estava bom continua bom.
+
+**O buraco estava na cobertura, não no mecanismo.** A auditoria anterior (achado S4) construiu o
+limitador compartilhado no Postgres e o aplicou em `book` e `availability`. Contei as rotas hoje:
+**9 das 11** sob `api/v1/public/` não tinham limite próprio. Elas caíam no teto global do `rota()`,
+que é `somenteMemoria: true` **de propósito** (troca consciente, documentada) — e por isso não
+conta entre instâncias. Num deploy serverless, "120/min por IP" é na verdade 120/min por lambda
+viva.
+
+O que estava exposto, e por que cada um importa:
+
+- **as quatro rotas que MUDAM estado por link assinado** — confirmar/cancelar agendamento,
+  aprovar/recusar orçamento. O HMAC impede forjar; não impede martelar um token que vazou, e link
+  reencaminhado em grupo de WhatsApp é o caso comum, não o exótico.
+- **`GET /{slug}`** — perfil inteiro em várias consultas por chamada, com slug enumerável pelo
+  próprio `sitemap.xml`. A rota mais barata de abusar e a mais cara de servir.
+- `POST /reviews/{token}` escreve linha; `/reconhecer` faz quatro idas ao banco.
+
+**O achado que mais me surpreendeu foi nas rotas de e-mail.** `/auth/password/forgot` e
+`/auth/signup` não têm limite de app — a decisão registrada era "quem limita é o Supabase Auth". E
+limita mesmo, **só que por projeto**. Ou seja: um script batendo em `forgot` com o e-mail de UMA
+pessoa queimava a cota de e-mail do CICLO inteiro, e a partir dali ninguém mais confirmava cadastro
+nem recuperava senha. Um atacante derrubava o onboarding de todos os salões sem precisar de conta.
+Dois baldes agora: por IP e por destinatário (hash, nunca em claro) — trocar de IP é justamente o
+que o atacante faz, e o segundo balde sobrevive a isso. Quando o balde por e-mail estoura, a
+resposta é **idêntica** à do caminho feliz: dizer "esse e-mail pediu demais" devolveria a
+confirmação de existência que o resto da rota existe para esconder.
+
+**`lerCorpo` não tinha teto.** `req.json()` carrega o corpo inteiro na memória antes de o Zod ver o
+primeiro campo — o `max()` de cada schema chegava tarde. A Vercel corta em ~4,5 MB, mas esse é o
+limite de OUTRA pessoa: some em self-host, container e dev local, e não estava escrito em lugar
+nenhum deste repositório. 512 KB, conferido em duas etapas (o `content-length` como atalho barato,
+a contagem real de bytes porque header é dica de quem chamou, não prova — corpo `chunked` não tem).
+
+**Defesa em profundidade no filtro do PostgREST.** Seis lugares montavam
+`` `professional_id.eq.${id},...` `` com interpolação crua. `.or()` recebe string de consulta, não
+parâmetro ligado. Nenhum é explorável hoje — Zod valida na borda, ou o id vem de uma linha do banco
+— mas a segurança estava inteira FORA da função, dependendo de todo chamador presente e futuro
+lembrar. Movida para onde o valor vira sintaxe (`server/db/filtro.ts`), que lança em vez de
+devolver filtro vazio (filtro vazio seria consulta sem a trava que deveria ter).
+
+**A guarda nova nasceu cega, e a mutação pegou.** A asserção "o teto é conferido antes do parse"
+comparava `BODY.indexOf('TAMANHO_MAX_CORPO')` com o `JSON.parse` — e o primeiro
+`TAMANHO_MAX_CORPO` do arquivo é a **declaração da constante**, no topo, que está antes do parse
+aconteça o que acontecer. Mover a checagem para depois passava verde. Reancorada na COMPARAÇÃO
+(`Buffer.byteLength(...) > TAMANHO_MAX_CORPO`), que é o que muda quando o defeito volta. É a
+armadilha nº1 da tabela do CLAUDE.md pela enésima vez, agora numa forma nova: casar com a
+declaração em vez do uso.
+
+**E o meu script de conferência da mutação caiu na armadilha irmã**: usei `indexOf` sobre o arquivo
+cru para confirmar que a mutação tinha sido aplicada, e ele achou `Buffer.byteLength` dentro do
+COMENTÁRIO que explica a linha, concluindo "não aplicada" quando estava. A guarda em si usa
+`semComentarios` e passou perto; o passo 3 do procedimento (confirmar que a mutação foi aplicada)
+precisa da mesma disciplina do teste. Registrado porque o passo 3 é justamente o que impede
+diagnosticar guarda boa como cega — e desta vez quase fez o contrário.
+
+As três mutações foram vistas reprovando: limite removido de `quotes/approve` (reprovou **só**
+naquele arquivo, os outros 10 seguiram verdes — prova de que não casa com algo incidental), teto
+movido para depois do parse, e contagem de bytes removida.
+
+**Guarda de CLASSE, não de caso:** `tests/unit/server/rota-publica-tem-limite.test.ts` varre
+`api/v1/public/` inteiro e cobra de todo `route.ts` que exporte handler. Rota pública nova nasce
+coberta ou reprova — sem isso o conserto seria "os 9 de hoje, e o 12º de amanhã esquecido de novo".

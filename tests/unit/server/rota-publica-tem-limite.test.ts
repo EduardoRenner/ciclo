@@ -91,11 +91,24 @@ describe('o corpo tem teto antes de virar objeto', () => {
   })
 
   it('o teto é conferido ANTES do parse — depois já gastou a memória', () => {
-    const posTeto = BODY.indexOf('TAMANHO_MAX_CORPO')
+    /*
+     * Esta asserção NASCEU CEGA e foi pega pela própria mutação (31/08/2026). A primeira versão
+     * comparava `BODY.indexOf('TAMANHO_MAX_CORPO')` com o `JSON.parse` — e o primeiro
+     * `TAMANHO_MAX_CORPO` do arquivo é a **declaração da constante**, lá no topo, que está antes
+     * do parse aconteça o que acontecer. Mover a checagem para depois do parse passava verde.
+     *
+     * O que muda quando o defeito volta é a posição da COMPARAÇÃO, não a da declaração — então é
+     * nela que a guarda ancora.
+     */
+    const comparacao = /Buffer\.byteLength\([^)]*\)\s*>\s*TAMANHO_MAX_CORPO/.exec(BODY)
+    expect(comparacao, 'sumiu a comparação de bytes contra o teto').not.toBeNull()
+
     const posParse = BODY.indexOf('JSON.parse')
-    expect(posTeto, 'o teto sumiu').toBeGreaterThan(-1)
     expect(posParse, 'o parse sumiu').toBeGreaterThan(-1)
-    expect(posTeto, 'o parse passou a acontecer antes da checagem de tamanho').toBeLessThan(posParse)
+    expect(
+      comparacao!.index,
+      'o parse passou a acontecer ANTES da checagem de tamanho — a memória já foi gasta quando o teto reprova',
+    ).toBeLessThan(posParse)
   })
 
   it('não confia só no content-length, que é dica de quem chamou', () => {
