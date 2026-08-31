@@ -1,3 +1,4 @@
+import { Temporal } from '@js-temporal/polyfill'
 import { Megaphone, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
 import { headers } from 'next/headers'
@@ -11,53 +12,10 @@ import PageHeader from '@/components/ui/page-header'
 import { dinheiro } from '@/lib/formato'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
+import { receitaAtribuidaAoCiclo } from '@/server/services/atribuicao'
 
 export const dynamic = 'force-dynamic'
 
-/** Barra do funil — largura proporcional ao topo, para a queda entre etapas ser visível. */
-function Etapa({
-  rotulo,
-  valor,
-  total,
-  tom,
-  base = false,
-}: {
-  rotulo: string
-  valor: number
-  total: number
-  tom: string
-  /** A etapa de topo é a régua das outras: mostrar "100%" nela só ocupa espaço sem informar. */
-  base?: boolean
-}) {
-  // 2026-08-30, achado medindo a tela ao vivo, e corrigido duas vezes na mesma rodada:
-  // 1ª leitura (errada): "444%" parecia uma taxa de conversão impossível (mais gente marcou
-  // horário do que mensagens enviadas). Não era — `valor` (4) e `pct` (44%) já eram dois números
-  // CORRETOS, só grudados sem separador de texto: o `ml-1.5` entre eles é `margin`, que afasta
-  // visualmente mas não produz caractere nenhum — extração de texto (leitor de tela, copiar e
-  // colar, e o teste automatizado que achou isto) lê "4" + "44%" = "444%", sem pausa. Manter o
-  // teto `Math.min(100, ...)` mesmo assim: é rede de segurança correta para o dia em que a
-  // atribuição de campanha existir de verdade e puder contar errado — só não é o que causava o
-  // que foi visto aqui.
-  // 2ª correção (a real): separador de texto de verdade entre `valor` e `pct`, não só espaço
-  // visual — para quem lê a tela sem olhar (leitor de tela) ou copia o texto, ver os dois
-  // números como dois números, não um só.
-  const pctBruto = total > 0 ? (valor / total) * 100 : 0
-  const pct = Math.round(Math.min(100, pctBruto))
-  return (
-    <div>
-      <div className="flex items-baseline justify-between">
-        <span className="text-secundario text-txt-2">{rotulo}</span>
-        <span className="tabular text-corpo font-semibold">
-          {valor}
-          {base ? null : <span className="ml-1.5 text-secundario text-txt-3">· {pct}%</span>}
-        </span>
-      </div>
-      <div className="mt-1 h-2 overflow-hidden rounded-[var(--radius-pill)] bg-surface-3">
-        <div className={`h-full rounded-[var(--radius-pill)] ${tom}`} style={{ width: `${Math.max(pct, 2)}%` }} />
-      </div>
-    </div>
-  )
-}
 
 export const metadata = { title: "Campanhas" }
 
@@ -67,25 +25,50 @@ export default async function PaginaCampanhas() {
 
   const { data: campanhas } = await db
     .from('campaigns')
-    .select('id, name, template, status, sent_count, booked_count, revenue_cents, created_at')
+    // Sem `booked_count`/`revenue_cents`: ninguem escreve nelas, entao buscar era trazer zero pra tela.
+    .select('id, name, template, status, sent_count, created_at')
     .eq('tenant_id', ctx.tenantId)
     .order('created_at', { ascending: false })
 
   const lista = campanhas ?? []
   const enviadas = lista.reduce((s, c) => s + c.sent_count, 0)
-  const agendaram = lista.reduce((s, c) => s + c.booked_count, 0)
-  const receita = lista.reduce((s, c) => s + c.revenue_cents, 0)
+
+  /*
+   * Os números do topo saíam de `campaigns.booked_count` e `campaigns.revenue_cents` — colunas que
+   * NINGUÉM escreve. O `insert` de `registrarCampanha` as deixa em zero de propósito ("quem
+   * preenche é a atribuição, não o usuário") e a atribuição nunca escreveu de volta: não há um
+   * único `update` em `campaigns` no repositório.
+   *
+   * O resultado não era um funil decorativo, era pior. Toda campanha aparecia com receita
+   * R$ 0,00, "Marcaram horário: 0" e a frase "Cada mensagem valeu R$ 0,00 em média" — a tela
+   * dizia ao salão que TODA campanha que ele já rodou não valeu nada. Estruturalmente, para
+   * sempre.
+   *
+   * `receitaAtribuidaAoCiclo` é o número de verdade e já existe: casa mensagem de campanha
+   * enviada com atendimento concluído na janela, e é a mesma função em que a tela "Hoje" confia.
+   * O que ela NÃO faz é separar por campanha — `messages` não guarda de qual campanha a linha
+   * saiu, então essa quebra não existe no banco. O topo passa a mostrar o real; o cartão de cada
+   * campanha passa a mostrar só o que é verdade sobre ela.
+   */
+  const mesAtual = Temporal.PlainYearMonth.from(Temporal.Now.zonedDateTimeISO(ctx.tenant.timezone).toPlainDate())
+  const atribuicao = await receitaAtribuidaAoCiclo(
+    db,
+    ctx.tenantId,
+    ctx.tenant.timezone,
+    mesAtual.toPlainDate({ day: 1 }).toString(),
+    mesAtual.toPlainDate({ day: mesAtual.daysInMonth }).toString(),
+  ).catch(() => ({ totalCents: 0, count: 0, items: [] }))
 
   return (
     <div className="pb-8">
-      <PageHeader titulo="Campanhas" descricao="Quanto cada mensagem enviada virou cliente na cadeira." />
+      <PageHeader titulo="Campanhas" descricao="Quem voltou depois de receber mensagem, e quanto isso trouxe." />
 
       <div className="grid grid-cols-2 gap-3">
-        <StatTile rotulo="Receita gerada" valor={dinheiro.format(receita / 100)} />
+        <StatTile rotulo="Voltaram este mês" valor={dinheiro.format(atribuicao.totalCents / 100)} />
         <StatTile
-          rotulo="Viraram horário"
-          valor={enviadas > 0 ? `${Math.round((agendaram / enviadas) * 100)}%` : '—'}
-          progresso={enviadas > 0 ? agendaram / enviadas : 0}
+          rotulo="Atendimentos"
+          valor={String(atribuicao.count)}
+          apoio={<span>de {enviadas} {enviadas === 1 ? 'mensagem' : 'mensagens'} já enviadas</span>}
         />
       </div>
 
@@ -115,21 +98,16 @@ export default async function PaginaCampanhas() {
                 <Card>
                   <div className="flex items-start justify-between gap-3">
                     <p className="min-w-0 flex-1 text-corpo font-semibold">{c.name}</p>
-                    <p className="tabular shrink-0 text-corpo font-bold text-ok">
-                      {dinheiro.format(c.revenue_cents / 100)}
+                    <p className="tabular shrink-0 text-corpo font-semibold text-txt-2">
+                      {c.sent_count} {c.sent_count === 1 ? 'mensagem' : 'mensagens'}
                     </p>
                   </div>
 
-                  <div className="mt-3 grid gap-2.5">
-                    <Etapa rotulo="Mensagens enviadas" valor={c.sent_count} total={c.sent_count} tom="bg-info" base />
-                    <Etapa rotulo="Marcaram horário" valor={c.booked_count} total={c.sent_count} tom="bg-ok" />
-                  </div>
-
-                  {c.sent_count > 0 ? (
-                    <p className="mt-3 text-secundario text-txt-3">
-                      Cada mensagem valeu {dinheiro.format(c.revenue_cents / c.sent_count / 100)} em média.
-                    </p>
-                  ) : null}
+                  {/*
+                    Não há linha de retorno POR campanha porque o dado não existe: `messages` não
+                    guarda de qual campanha a mensagem saiu. Mostrar "R$ 0,00" era pior que não
+                    mostrar — afirmava que a campanha não trouxe nada.
+                  */}
                 </Card>
               </li>
             ))}
