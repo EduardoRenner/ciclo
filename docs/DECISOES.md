@@ -5214,3 +5214,37 @@ movido para depois do parse, e contagem de bytes removida.
 **Guarda de CLASSE, não de caso:** `tests/unit/server/rota-publica-tem-limite.test.ts` varre
 `api/v1/public/` inteiro e cobra de todo `route.ts` que exporte handler. Rota pública nova nasce
 coberta ou reprova — sem isso o conserto seria "os 9 de hoje, e o 12º de amanhã esquecido de novo".
+
+### 2026-08-31 · Segunda rodada da auditoria: o 2FA estava sem teto
+
+Perguntado se "já estava perfeito", fui olhar o que a primeira rodada não tinha coberto — as rotas
+de credencial, que tinham a decisão registrada de "quem limita é o Supabase Auth". Ele limita
+mesmo. **Por projeto**, como o achado do `password/forgot` já tinha mostrado horas antes.
+
+**`mfa/verify` não tinha limite nenhum, e é a rota que menos podia ficar sem.** O código é de 6
+dígitos — 1.000.000 de combinações — e quem chega ali **já passou pela senha**: `exigirSessao()`
+aceita `aal1`, que é exatamente o nível que `signInWithPassword` devolve antes do segundo fator.
+O cenário não é hipotético: quem tem a senha vazada abre a sessão `aal1` e martela o segundo fator
+até acertar. Sem teto, o 2FA era decoração **exatamente no caso para o qual ele existe**.
+
+O balde é por **usuário**, não por IP, e isso é o ponto: o IP é a parte que o atacante troca de
+graça. Provado ao vivo com **um IP diferente em cada requisição** — o limite disparou na 9ª
+mesmo assim. Se fosse por IP, as 11 teriam passado. 8 em 10 minutos transforma 1M de tentativas
+em ~48/hora: de horas para séculos.
+
+`login` ganhou dois baldes (por conta em hash, por IP), pelo mesmo motivo — e também verificado
+com IP rotativo: bloqueia por conta na 10ª, e outra conta segue respondendo 401 normal.
+
+**O trade-off que isso cria, e que fica registrado em aberto:** limite por conta é lockout. Depois
+de 10 tentativas erradas, o dono legítimo também espera 15 minutos — e um atacante que saiba o
+e-mail consegue manter alguém de fora repetindo isso. É a troca clássica, e escolhi o lado do
+takeover: sequestro de conta é irreversível e silencioso, lockout é 15 minutos e se cura sozinho.
+A saída que evita os dois é CAPTCHA no lugar do lockout — e `verificarCaptcha` (hCaptcha) **já
+existe no código**, mas hoje é no-op: sem `HCAPTCHA_SECRET` ela deixa passar e registra aviso, e a
+conta hCaptcha está na mesma fila de Asaas e WhatsApp. Quando existir, o desenho certo é CAPTCHA
+depois de N falhas em vez de bloqueio seco.
+
+Três mutações vistas reprovando: limite removido do MFA (reprovou nas duas asserções), balde
+trocado de usuário para IP (reprovou **só** na asserção específica — "tem limite" continuou verde,
+que é a discriminação certa: ter limite e ter o limite CERTO são coisas diferentes), e as rotas de
+credencial cobertas por uma lista explícita que reprova se alguma perder o teto.
