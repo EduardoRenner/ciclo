@@ -9,6 +9,7 @@ import { registrarConsentimento } from '@/server/services/consentimentos'
 import { eliminarCliente, exportarDadosDoCliente } from '@/server/services/lgpd'
 import { fazerUploadMedia } from '@/server/services/media-upload'
 import { executarOnboarding } from '@/server/services/onboarding'
+import { publicarNoPortfolio } from '@/server/services/portfolio-upload'
 import { salvarRespostas } from '@/server/services/anamnese'
 
 import type { Database } from '@/server/db/types.gen'
@@ -178,6 +179,27 @@ describe('eliminarCliente', () => {
       expect(consentimento.data?.version).toBe('1.0')
       expect(consentimento.data?.ip).toBeNull()
       expect(consentimento.data?.user_agent).toBeNull()
+    },
+    30_000,
+  )
+
+  it(
+    'TICKET-115: apaga a linha e o arquivo do bucket PÚBLICO vitrine — não só o media privado',
+    async () => {
+      const { clientId, mediaId } = await clienteCompleto('Para Eliminar Com Foto Publicada')
+      const publicada = await publicarNoPortfolio(tenantId, mediaId)
+      const chaveVitrine = publicada.url.split('/vitrine/')[1]!
+
+      const antes = await svc.storage.from('vitrine').list(tenantId, { search: chaveVitrine.split('/')[1] })
+      expect(antes?.data?.length ?? 0).toBeGreaterThan(0)
+
+      await eliminarCliente(svc, tenantId, clientId)
+
+      const linha = await svc.from('portfolio_photos').select('id').eq('client_id', clientId).maybeSingle()
+      expect(linha.data).toBeNull()
+
+      const depois = await svc.storage.from('vitrine').list(tenantId, { search: chaveVitrine.split('/')[1] })
+      expect(depois?.data?.length ?? 0).toBe(0)
     },
     30_000,
   )

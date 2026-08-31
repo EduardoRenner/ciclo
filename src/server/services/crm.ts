@@ -69,7 +69,7 @@ export type FichaCliente = {
   assinatura: AssinaturaDoCliente | null
   pacotes: { id: string; serviceName: string; restantes: number; total: number; expiresOn: string | null }[]
   saldoCarteiraCents: number
-  fotos: { id: string; phase: string | null; createdAt: string }[]
+  fotos: { id: string; phase: string | null; createdAt: string; publicada: boolean }[]
   /** `consentId`: `null` quando esse tipo nunca foi respondido — nada pra revogar nem reusar num upload. */
   consentimentos: { kind: string; consentId: string | null; granted: boolean; grantedAt: string | null }[]
   /**

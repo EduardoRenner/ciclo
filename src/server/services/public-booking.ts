@@ -105,6 +105,13 @@ export type PerfilPublico = {
    * ajuda quem está decidindo se agenda.
    */
   reviews: { average: number; count: number; recentes: { rating: number; comment: string; createdAt: string }[] }
+  /**
+   * TICKET-115 (docs/35-FOTOS-CONSENTIMENTO-PLANO.md): a galeria se enche sozinha conforme o
+   * salão atende e publica — cada linha aqui já passou por consentimento `image_use` ativo NO
+   * MOMENTO de publicar (`publicarNoPortfolio`) e é uma cópia própria no bucket público
+   * `vitrine`, nunca o `media` privado. Vazio é o caso comum: ninguém é obrigado a publicar nada.
+   */
+  portfolio: string[]
 }
 
 /**
@@ -116,7 +123,7 @@ export const perfilPublico = cache(async (slug: string): Promise<PerfilPublico> 
   return withNovoTenant(async (svc) => {
     const tenant = await tenantPeloSlug(svc, slug)
 
-    const [servicos, profissionais, horarioPadrao, todasAsNotas, comentariosRecentes] = await Promise.all([
+    const [servicos, profissionais, horarioPadrao, todasAsNotas, comentariosRecentes, portfolio] = await Promise.all([
       svc
         .from('services')
         .select(
@@ -145,11 +152,13 @@ export const perfilPublico = cache(async (slug: string): Promise<PerfilPublico> 
         .not('comment', 'is', null)
         .order('created_at', { ascending: false })
         .limit(5),
+      svc.from('portfolio_photos').select('storage_key').eq('tenant_id', tenant.id).order('created_at', { ascending: false }),
     ])
     if (servicos.error) throw new AppError('INTERNAL', { cause: servicos.error })
     if (profissionais.error) throw new AppError('INTERNAL', { cause: profissionais.error })
     if (todasAsNotas.error) throw new AppError('INTERNAL', { cause: todasAsNotas.error })
     if (comentariosRecentes.error) throw new AppError('INTERNAL', { cause: comentariosRecentes.error })
+    if (portfolio.error) throw new AppError('INTERNAL', { cause: portfolio.error })
 
     const site = lerSite(tenant.settings)
     // docs/13-CAUSA-RAIZ-LAYOUT-LEGADO.md (T3): a cor é escolha do dono
@@ -219,6 +228,9 @@ export const perfilPublico = cache(async (slug: string): Promise<PerfilPublico> 
           createdAt: r.created_at,
         })),
       },
+      portfolio: (portfolio.data ?? [])
+        .map((p) => urlDaVitrine(p.storage_key))
+        .filter((url): url is string => url !== null),
     }
   })
 })

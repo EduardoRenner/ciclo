@@ -239,6 +239,30 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
       ) : null}
 
       {/*
+        docs/35-FOTOS-CONSENTIMENTO-PLANO.md, TICKET-115: "a galeria se enche sozinha conforme o
+        salão atende e publica" — cada foto aqui já passou por consentimento `image_use` ativo no
+        momento de publicar. Vazio (nenhum salão publicou nada ainda) é o caso comum, sem seção.
+      */}
+      {perfil.portfolio.length > 0 ? (
+        <section className="py-6">
+          <h2 className="mb-3 text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">Trabalhos</h2>
+          <div className="grid grid-cols-3 gap-2">
+            {perfil.portfolio.map((url, i) => (
+              /* Já é WebP dimensionado na publicação (`portfolio-upload.ts`) — mesmo padrão de logo/capa. */
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                key={url}
+                src={url}
+                alt=""
+                loading={i < 6 ? 'eager' : 'lazy'}
+                className="aspect-square w-full rounded-[var(--radius-sm)] border border-line-2 object-cover"
+              />
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {/*
         docs/09-PLATAFORMA.md §8: a página pública prometia "avaliações" desde
         que o plano foi escrito e nunca entregou — client_reviews só era lido
         no painel. Nota sem texto não ajuda quem decide se agenda, por isso só

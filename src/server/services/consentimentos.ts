@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto'
 
 import { z } from 'zod'
 
+import { withTenant } from '@/server/db/with-tenant'
 import { AppError } from '@/server/http/errors'
 
 import type { Database } from '@/server/db/types.gen'
@@ -67,11 +68,11 @@ export async function registrarConsentimento(
  * `granted`/`text_hash`/`signature_key`: consentimento é histórico, revogar
  * é um evento novo (`revoked_at`), não reescrever o passado.
  *
- * §critério: "revogar imagem esconde a foto do portfólio imediatamente" — a
- * exclusão em si é responsabilidade de quem lista mídia (TICKET-052, que
- * ainda não existe nesta base): a leitura de `media` precisa filtrar por
- * `consents.revoked_at is null` do `consent_id` de cada foto. Registrado
- * aqui para não se perder quando 052 nascer.
+ * §critério: "revogar imagem esconde a foto do portfólio imediatamente". Dois lugares dependem
+ * disso, dos dois lados de quando foram construídos: `mediaParaPortfolio` (TICKET-052) filtra por
+ * `consents.revoked_at is null` na LEITURA — nunca precisou de ação aqui. `portfolio_photos`
+ * (TICKET-115) é diferente: é uma CÓPIA já publicada no bucket público `vitrine`, que não some
+ * sozinha só porque o consentimento mudou de estado — por isso a cascata explícita abaixo.
  */
 export async function revogarConsentimento(db: Cliente, tenantId: string, clientId: string, kind: TipoConsentimentoCliente) {
   const { data, error } = await db
@@ -86,7 +87,44 @@ export async function revogarConsentimento(db: Cliente, tenantId: string, client
     .maybeSingle()
   if (error) throw new AppError('INTERNAL', { cause: error })
   if (!data) throw new AppError('NOT_FOUND', { message: 'Não há consentimento ativo desse tipo para revogar.' })
+
+  if (kind === 'image_use') await despublicarTudoDoCliente(tenantId, clientId)
+
   return data
+}
+
+/**
+ * A escrita no bucket `vitrine` só aceita `service_role` (migration 0051) — o `db` recebido aqui
+ * pode ser um cliente de sessão (rota) ou de teste (`svc`), nenhum dos dois com permissão de
+ * escrita no Storage. Por isso `withTenant` próprio aqui, independente de quem chamou
+ * `revogarConsentimento`: a cascata funciona sempre, não só quando o chamador por acaso já tinha
+ * um cliente de serviço em mãos.
+ */
+async function despublicarTudoDoCliente(tenantId: string, clientId: string): Promise<void> {
+  await withTenant(tenantId, async (svc) => {
+    const { data: publicadas, error: erroLeitura } = await svc
+      .from('portfolio_photos')
+      .select('id, storage_key')
+      .eq('tenant_id', tenantId)
+      .eq('client_id', clientId)
+    if (erroLeitura) throw new AppError('INTERNAL', { cause: erroLeitura })
+    if (!publicadas || publicadas.length === 0) return
+
+    const { error: erroDelete } = await svc
+      .from('portfolio_photos')
+      .delete()
+      .eq('tenant_id', tenantId)
+      .in(
+        'id',
+        publicadas.map((p) => p.id),
+      )
+    if (erroDelete) throw new AppError('INTERNAL', { cause: erroDelete })
+
+    const { error: erroStorage } = await svc.storage.from('vitrine').remove(publicadas.map((p) => p.storage_key))
+    if (erroStorage) {
+      console.warn(JSON.stringify({ level: 'warn', event: 'portfolio_orfao_nao_removido_ao_revogar', tenantId, clientId }))
+    }
+  })
 }
 
 export type StatusConsentimento = {

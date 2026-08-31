@@ -10,10 +10,125 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.15"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
+      appointment_series: {
+        Row: {
+          address: string | null
+          canceled_at: string | null
+          client_id: string
+          created_at: string
+          created_by: string | null
+          ends_on: string | null
+          horario: string
+          id: string
+          intervalo_dias: number | null
+          intervalo_semanas: number | null
+          max_ocorrencias: number | null
+          note: string | null
+          ocorrencias_geradas: number
+          ordinal_no_mes: number | null
+          professional_id: string
+          service_id: string
+          starts_on: string
+          status: string
+          tenant_id: string
+          tipo: string
+          weekday: number | null
+        }
+        Insert: {
+          address?: string | null
+          canceled_at?: string | null
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          ends_on?: string | null
+          horario: string
+          id?: string
+          intervalo_dias?: number | null
+          intervalo_semanas?: number | null
+          max_ocorrencias?: number | null
+          note?: string | null
+          ocorrencias_geradas?: number
+          ordinal_no_mes?: number | null
+          professional_id: string
+          service_id: string
+          starts_on: string
+          status?: string
+          tenant_id: string
+          tipo: string
+          weekday?: number | null
+        }
+        Update: {
+          address?: string | null
+          canceled_at?: string | null
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          ends_on?: string | null
+          horario?: string
+          id?: string
+          intervalo_dias?: number | null
+          intervalo_semanas?: number | null
+          max_ocorrencias?: number | null
+          note?: string | null
+          ocorrencias_geradas?: number
+          ordinal_no_mes?: number | null
+          professional_id?: string
+          service_id?: string
+          starts_on?: string
+          status?: string
+          tenant_id?: string
+          tipo?: string
+          weekday?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointment_series_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_series_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "v_client_segments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_series_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_series_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_series_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_series_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointments: {
         Row: {
           address: string | null
@@ -150,121 +265,6 @@ export type Database = {
           },
           {
             foreignKeyName: "appointments_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      appointment_series: {
-        Row: {
-          address: string | null
-          canceled_at: string | null
-          client_id: string
-          created_at: string
-          created_by: string | null
-          ends_on: string | null
-          horario: string
-          id: string
-          intervalo_dias: number | null
-          intervalo_semanas: number | null
-          max_ocorrencias: number | null
-          note: string | null
-          ocorrencias_geradas: number
-          ordinal_no_mes: number | null
-          professional_id: string
-          service_id: string
-          starts_on: string
-          status: string
-          tenant_id: string
-          tipo: string
-          weekday: number | null
-        }
-        Insert: {
-          address?: string | null
-          canceled_at?: string | null
-          client_id: string
-          created_at?: string
-          created_by?: string | null
-          ends_on?: string | null
-          horario: string
-          id?: string
-          intervalo_dias?: number | null
-          intervalo_semanas?: number | null
-          max_ocorrencias?: number | null
-          note?: string | null
-          ocorrencias_geradas?: number
-          ordinal_no_mes?: number | null
-          professional_id: string
-          service_id: string
-          starts_on: string
-          status?: string
-          tenant_id: string
-          tipo: string
-          weekday?: number | null
-        }
-        Update: {
-          address?: string | null
-          canceled_at?: string | null
-          client_id?: string
-          created_at?: string
-          created_by?: string | null
-          ends_on?: string | null
-          horario?: string
-          id?: string
-          intervalo_dias?: number | null
-          intervalo_semanas?: number | null
-          max_ocorrencias?: number | null
-          note?: string | null
-          ocorrencias_geradas?: number
-          ordinal_no_mes?: number | null
-          professional_id?: string
-          service_id?: string
-          starts_on?: string
-          status?: string
-          tenant_id?: string
-          tipo?: string
-          weekday?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "appointment_series_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "clients"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "appointment_series_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "v_client_segments"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "appointment_series_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "appointment_series_professional_id_fkey"
-            columns: ["professional_id"]
-            isOneToOne: false
-            referencedRelation: "professionals"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "appointment_series_service_id_fkey"
-            columns: ["service_id"]
-            isOneToOne: false
-            referencedRelation: "services"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "appointment_series_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -720,6 +720,7 @@ export type Database = {
           ltv_cents?: number
           marketing_opt_in?: boolean
           name: string
+          name_busca?: string | null
           no_show_count?: number
           notes?: string | null
           online_booking_blocked?: boolean
@@ -750,6 +751,7 @@ export type Database = {
           ltv_cents?: number
           marketing_opt_in?: boolean
           name?: string
+          name_busca?: string | null
           no_show_count?: number
           notes?: string | null
           online_booking_blocked?: boolean
@@ -1477,6 +1479,30 @@ export type Database = {
           },
         ]
       }
+      modules: {
+        Row: {
+          eixo: string | null
+          key: string
+          label: string
+          ordem: number
+          sempre_ligado: boolean
+        }
+        Insert: {
+          eixo?: string | null
+          key: string
+          label: string
+          ordem: number
+          sempre_ligado?: boolean
+        }
+        Update: {
+          eixo?: string | null
+          key?: string
+          label?: string
+          ordem?: number
+          sempre_ligado?: boolean
+        }
+        Relationships: []
+      }
       package_uses: {
         Row: {
           appointment_id: string | null
@@ -1695,6 +1721,62 @@ export type Database = {
             columns: ["ticket_id"]
             isOneToOne: false
             referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      portfolio_photos: {
+        Row: {
+          client_id: string
+          created_at: string
+          id: string
+          source_media_id: string | null
+          storage_key: string
+          tenant_id: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          id?: string
+          source_media_id?: string | null
+          storage_key: string
+          tenant_id: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          id?: string
+          source_media_id?: string | null
+          storage_key?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portfolio_photos_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portfolio_photos_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "v_client_segments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portfolio_photos_source_media_id_fkey"
+            columns: ["source_media_id"]
+            isOneToOne: false
+            referencedRelation: "media"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portfolio_photos_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -2535,6 +2617,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "tenant_modules_modulo_fkey"
+            columns: ["modulo"]
+            isOneToOne: false
+            referencedRelation: "modules"
+            referencedColumns: ["key"]
+          },
+          {
             foreignKeyName: "tenant_modules_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
@@ -3113,11 +3202,15 @@ export type Database = {
       }
       v_client_segments: {
         Row: {
+          address: string | null
           anonymized_at: string | null
           birth_date: string | null
           created_at: string | null
           deleted_at: string | null
+          document: string | null
           email: string | null
+          emergency_contact: string | null
+          gender: string | null
           id: string | null
           is_aniversariante: boolean | null
           is_primeira_visita_sem_retorno: boolean | null
@@ -3126,10 +3219,14 @@ export type Database = {
           ltv_cents: number | null
           marketing_opt_in: boolean | null
           name: string | null
+          name_busca: string | null
           no_show_count: number | null
           notes: string | null
+          online_booking_blocked: boolean | null
           phone_e164: string | null
           phone_hash: string | null
+          preferences: Json | null
+          preferred_professional_id: string | null
           referred_by: string | null
           source: string | null
           tags: string[] | null
@@ -3139,6 +3236,13 @@ export type Database = {
           whatsapp_opt_out: boolean | null
         }
         Relationships: [
+          {
+            foreignKeyName: "clients_preferred_professional_id_fkey"
+            columns: ["preferred_professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "clients_referred_by_fkey"
             columns: ["referred_by"]
@@ -3238,10 +3342,7 @@ export type Database = {
     }
     Functions: {
       apply_profession_pack: {
-        Args: {
-          p_profession_id: string
-          p_tenant: string
-        }
+        Args: { p_profession_id: string; p_tenant: string }
         Returns: undefined
       }
       apply_vertical_pack: {
@@ -3285,13 +3386,6 @@ export type Database = {
           restante: number
         }[]
       }
-      redigir_trilha_do_cliente: {
-        Args: {
-          p_client: string
-          p_tenant: string
-        }
-        Returns: Json
-      }
       debitar_carteira: {
         Args: {
           p_client: string
@@ -3310,8 +3404,21 @@ export type Database = {
         }
         Returns: undefined
       }
+      fk_sem_indice_report: {
+        Args: never
+        Returns: {
+          colunas: string[]
+          constraint_name: string
+          tabela: string
+        }[]
+      }
       has_tenant: { Args: { t: string }; Returns: boolean }
+      imutavel_sem_acento: { Args: { texto: string }; Returns: string }
       my_professional_id: { Args: { t: string }; Returns: string }
+      redigir_trilha_do_cliente: {
+        Args: { p_client: string; p_tenant: string }
+        Returns: Json
+      }
       set_tenant_context: { Args: { t: string }; Returns: undefined }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
@@ -3328,6 +3435,7 @@ export type Database = {
         Args: { t: string }
         Returns: Database["public"]["Enums"]["user_role"]
       }
+      unaccent: { Args: { "": string }; Returns: string }
     }
     Enums: {
       appointment_origin:

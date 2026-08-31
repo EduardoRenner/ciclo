@@ -1,6 +1,6 @@
 'use client'
 
-import { Camera, ImagePlus, ShieldCheck, Trash2 } from 'lucide-react'
+import { Camera, Globe, ImagePlus, ShieldCheck, Trash2 } from 'lucide-react'
 import { useRef, useState } from 'react'
 
 import Button from '@/components/ui/button'
@@ -10,7 +10,7 @@ import SectionHeader from '@/components/ui/section-header'
 import Sheet from '@/components/ui/sheet'
 import { useToast } from '@/components/ui/toast'
 
-type Foto = { id: string; phase: string | null; createdAt: string }
+type Foto = { id: string; phase: string | null; createdAt: string; publicada: boolean }
 type Fase = 'before' | 'after' | 'reference'
 
 const ROTULO_FASE: Record<Fase, string> = { before: 'Antes', after: 'Depois', reference: 'Referência' }
@@ -62,12 +62,15 @@ export default function Fotos({ clientId, fotos: fotosIniciais, consentimentoIma
       if (comConsentId) form.append('consentId', comConsentId)
 
       const r = await fetch(`/api/v1/clients/${clientId}/media`, { method: 'POST', body: form })
-      const json = (await r.json()) as { data?: Foto; error?: { message: string } }
+      // A rota devolve a linha CRUA de `media` (snake_case, sem `publicada` — esse campo só existe
+      // no join de `listarMediaDoCliente`). Nunca confiar essa forma como se fosse `Foto`: uma
+      // foto recém-subida nunca está publicada, então o valor é conhecido sem round-trip nenhum.
+      const json = (await r.json()) as { data?: { id: string; phase: string | null; created_at: string }; error?: { message: string } }
       if (!r.ok || !json.data) {
         mostrarToast({ tom: 'erro', titulo: 'Não consegui subir a foto', descricao: json.error?.message ?? 'Tente outra imagem.' })
         return
       }
-      setFotos((atuais) => [json.data!, ...atuais])
+      setFotos((atuais) => [{ id: json.data!.id, phase: json.data!.phase, createdAt: json.data!.created_at, publicada: false }, ...atuais])
       mostrarToast({ tom: 'ok', titulo: 'Foto adicionada' })
     } catch {
       mostrarToast({ tom: 'erro', titulo: 'Não consegui falar com o servidor', descricao: 'Confira sua conexão e tente de novo.' })
@@ -123,20 +126,55 @@ export default function Fotos({ clientId, fotos: fotosIniciais, consentimentoIma
     }
   }
 
-  async function abrir(id: string) {
-    setCarregandoId(id)
+  async function abrir(foto: Foto) {
+    setCarregandoId(foto.id)
     try {
-      const r = await fetch(`/api/v1/media/${id}/url`)
+      const r = await fetch(`/api/v1/media/${foto.id}/url`)
       const json = (await r.json()) as { data?: { url: string }; error?: { message: string } }
       if (!r.ok || !json.data) {
         mostrarToast({ tom: 'erro', titulo: 'Não consegui abrir a foto', descricao: json.error?.message ?? 'Tente de novo.' })
         return
       }
-      setVisualizando({ id, url: json.data.url })
+      setVisualizando({ id: foto.id, url: json.data.url })
     } catch {
       mostrarToast({ tom: 'erro', titulo: 'Não consegui falar com o servidor', descricao: 'Confira sua conexão e tente de novo.' })
     } finally {
       setCarregandoId(null)
+    }
+  }
+
+  async function publicar(id: string) {
+    setCarregando(true)
+    try {
+      const r = await fetch(`/api/v1/media/${id}/publish`, { method: 'POST', headers: { 'idempotency-key': crypto.randomUUID() } })
+      const json = (await r.json()) as { error?: { message: string } }
+      if (!r.ok) {
+        mostrarToast({ tom: 'erro', titulo: 'Não consegui publicar', descricao: json.error?.message ?? 'Tente de novo.' })
+        return
+      }
+      setFotos((atuais) => atuais.map((f) => (f.id === id ? { ...f, publicada: true } : f)))
+      mostrarToast({ tom: 'ok', titulo: 'Foto publicada no site' })
+    } catch {
+      mostrarToast({ tom: 'erro', titulo: 'Não consegui falar com o servidor', descricao: 'Confira sua conexão e tente de novo.' })
+    } finally {
+      setCarregando(false)
+    }
+  }
+
+  async function despublicar(id: string) {
+    setCarregando(true)
+    try {
+      const r = await fetch(`/api/v1/media/${id}/publish`, { method: 'DELETE', headers: { 'idempotency-key': crypto.randomUUID() } })
+      if (!r.ok) {
+        mostrarToast({ tom: 'erro', titulo: 'Não consegui tirar do site', descricao: 'Tente de novo.' })
+        return
+      }
+      setFotos((atuais) => atuais.map((f) => (f.id === id ? { ...f, publicada: false } : f)))
+      mostrarToast({ tom: 'ok', titulo: 'Foto tirada do site' })
+    } catch {
+      mostrarToast({ tom: 'erro', titulo: 'Não consegui falar com o servidor', descricao: 'Confira sua conexão e tente de novo.' })
+    } finally {
+      setCarregando(false)
     }
   }
 
@@ -218,10 +256,13 @@ export default function Fotos({ clientId, fotos: fotosIniciais, consentimentoIma
               <button
                 key={f.id}
                 type="button"
-                onClick={() => abrir(f.id)}
+                onClick={() => abrir(f)}
                 disabled={carregandoId === f.id}
-                className="toque-48 flex aspect-square flex-col items-center justify-center gap-1 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 text-txt-3 transition hover:bg-surface-3 disabled:opacity-60"
+                className="toque-48 relative flex aspect-square flex-col items-center justify-center gap-1 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 text-txt-3 transition hover:bg-surface-3 disabled:opacity-60"
               >
+                {f.publicada ? (
+                  <Globe aria-hidden className="absolute right-1.5 top-1.5 size-3.5 text-acc-2" />
+                ) : null}
                 <Camera aria-hidden className="size-5" />
                 {f.phase ? <span className="text-label">{ROTULO_FASE[f.phase as Fase] ?? f.phase}</span> : null}
               </button>
@@ -261,6 +302,23 @@ export default function Fotos({ clientId, fotos: fotosIniciais, consentimentoIma
             {/* URL assinada de 5 min, vinda de `urlAssinadaMedia` — sempre nova, nunca cacheada entre aberturas. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={visualizando.url} alt="" className="w-full rounded-[var(--radius-sm)] object-contain" />
+            {fotos.find((f) => f.id === visualizando.id)?.publicada ? (
+              <Button variante="secondary" onClick={() => despublicar(visualizando.id)} carregando={carregando}>
+                <Globe aria-hidden className="size-4" />
+                Publicada no site · tirar do ar
+              </Button>
+            ) : (
+              <Button
+                variante="secondary"
+                onClick={() => publicar(visualizando.id)}
+                carregando={carregando}
+                disabled={!concedido}
+                motivoDesabilitado="Conceda a autorização de uso de imagem desta cliente antes de publicar."
+              >
+                <Globe aria-hidden className="size-4" />
+                Publicar no site
+              </Button>
+            )}
             <Button variante="secondary" onClick={() => excluir(visualizando.id)} carregando={carregando}>
               <Trash2 aria-hidden className="size-4" />
               Excluir foto

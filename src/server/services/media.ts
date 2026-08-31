@@ -1,6 +1,7 @@
 import { withTenant } from '@/server/db/with-tenant'
 import { AppError } from '@/server/http/errors'
 import { registrarAcessoAoCofre } from '@/server/services/cofre-trilha'
+import { despublicarDoPortfolio } from '@/server/services/portfolio'
 
 const BUCKET = 'media'
 const URL_ASSINADA_SEGUNDOS = 5 * 60
@@ -31,9 +32,13 @@ export async function urlAssinadaMedia(tenantId: string, mediaId: string, quem: 
 }
 
 /**
- * Regra 11 do CLAUDE.md: nunca delete de verdade, use estado. `deleted_at` some da ficha e do
- * portfólio sem apagar o arquivo do bucket nem a trilha — o mesmo raciocínio de agendamento e
- * movimento de estoque, aplicado a foto de cliente.
+ * Regra 11 do CLAUDE.md: nunca delete de verdade, use estado. `deleted_at` some da ficha SEM
+ * apagar o arquivo do bucket nem a trilha — o mesmo raciocínio de agendamento e movimento de
+ * estoque, aplicado a foto de cliente.
+ *
+ * Do portfólio PÚBLICO, sim, apaga de verdade (TICKET-115): se a foto original saiu porque
+ * alguém pediu (a cliente, um erro de upload), a cópia visível no site não pode continuar lá só
+ * porque o soft delete original não mexe em `portfolio_photos`.
  */
 export async function deletarMedia(tenantId: string, mediaId: string): Promise<void> {
   return withTenant(tenantId, async (db) => {
@@ -46,23 +51,33 @@ export async function deletarMedia(tenantId: string, mediaId: string): Promise<v
     if (error) throw new AppError('INTERNAL', { cause: error })
     // Idempotente de propósito: apagar de novo uma foto já apagada (duplo toque, aba dupla)
     // não pode virar 404 — zero linhas afetadas aqui só quer dizer "já estava assim".
-  })
+  }).then(() => despublicarDoPortfolio(tenantId, mediaId))
 }
 
-export type LinhaMedia = { id: string; phase: string | null; createdAt: string }
+export type LinhaMedia = { id: string; phase: string | null; createdAt: string; publicada: boolean }
 
+/**
+ * `publicada`: TICKET-115. Join contra `portfolio_photos` (nunca mais de uma linha por
+ * `source_media_id` — `publicarNoPortfolio` apaga a anterior antes de gravar de novo), pra
+ * `fotos.tsx` saber se mostra "Publicar no site" ou "Publicado · remover" sem outra ida ao banco.
+ */
 export async function listarMediaDoCliente(tenantId: string, clientId: string): Promise<LinhaMedia[]> {
   return withTenant(tenantId, async (db) => {
     const { data, error } = await db
       .from('media')
-      .select('id, phase, created_at')
+      .select('id, phase, created_at, portfolio_photos ( id )')
       .eq('tenant_id', tenantId)
       .eq('client_id', clientId)
       .eq('kind', 'photo')
       .is('deleted_at', null)
       .order('created_at', { ascending: false })
     if (error) throw new AppError('INTERNAL', { cause: error })
-    return (data ?? []).map((m) => ({ id: m.id, phase: m.phase, createdAt: m.created_at }))
+    return (data ?? []).map((m) => ({
+      id: m.id,
+      phase: m.phase,
+      createdAt: m.created_at,
+      publicada: Array.isArray(m.portfolio_photos) ? m.portfolio_photos.length > 0 : m.portfolio_photos !== null,
+    }))
   })
 }
 
@@ -73,7 +88,7 @@ export async function listarMediaDoCliente(tenantId: string, clientId: string): 
  * Foto sem `consent_id` (uso clínico interno, não portfólio) nunca aparece
  * aqui — é o oposto do padrão de `listarMediaDoCliente`, de propósito.
  */
-export async function mediaParaPortfolio(tenantId: string, clientId: string): Promise<LinhaMedia[]> {
+export async function mediaParaPortfolio(tenantId: string, clientId: string): Promise<Omit<LinhaMedia, 'publicada'>[]> {
   return withTenant(tenantId, async (db) => {
     const { data, error } = await db
       .from('media')

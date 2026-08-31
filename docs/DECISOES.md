@@ -5075,3 +5075,13 @@ como parâmetro. "Publicar no site" precisaria de 3 camadas de UI que não exist
 nessa quarta. Reclassifiquei de médio pra alto em `docs/34-PAGINA-PUBLICA-PLANO.md` e tirei do
 escopo deste plano — é candidato a ticket próprio (completar TICKET-052), não item de "página
 pública".
+
+**2026-08-31 · TICKET-115, publicar foto no site (docs/35-FOTOS-CONSENTIMENTO-PLANO.md)**:
+`portfolio_photos` (migration 0053) é uma CÓPIA no bucket público `vitrine`, nunca o `media`
+privado — mesma disciplina de logo/capa (0051). Revalida consentimento `image_use` no momento de
+publicar, não confia em estado da tela. Achado ao implementar: `eliminarCliente` (LGPD) já
+apagava `media` mas nunca soube de `portfolio_photos` — corrigido, com bucket `vitrine` limpo via
+`withTenant` (service_role), nunca o `db` de sessão recebido (a escrita em `storage.objects` do
+bucket público só é permitida a service_role, migration 0051). Ao consertar isso percebi que o
+MESMO problema provavelmente já existe pro bucket `media` dentro de `eliminarCliente` — não
+corrigido aqui (fora de escopo), registrado como tarefa separada (spawn_task).

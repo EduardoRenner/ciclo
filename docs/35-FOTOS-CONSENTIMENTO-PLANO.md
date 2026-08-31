@@ -1,10 +1,25 @@
 # 35 · Fotos de antes/depois + consentimento — plano
 
-**TICKET-114 executado e verificado ao vivo em 31/08/2026** (commit seguinte). As três telas do
-escopo (§"Escopo deste ticket") estão prontas: conceder/revogar `image_use` na ficha, upload com
-`consentId` vinculado, visualização e exclusão (soft delete) de foto. `mediaParaPortfolio` deixa
-de ser código morto — agora existe caminho real pra gerar o dado que ela filtra. "Publicar no
-site" (TICKET-115) continua de fora, é o próximo passo natural.
+**TICKET-114 executado e verificado ao vivo em 31/08/2026.** As três telas do escopo (§"Escopo
+deste ticket") estão prontas: conceder/revogar `image_use` na ficha, upload com `consentId`
+vinculado, visualização e exclusão (soft delete) de foto. `mediaParaPortfolio` deixa de ser código
+morto — agora existe caminho real pra gerar o dado que ela filtra.
+
+**TICKET-115 executado e verificado ao vivo em 31/08/2026 (mesmo dia).** "Publicar no site":
+`portfolio_photos` (migration 0053) guarda a cópia reencodada no bucket público `vitrine`,
+independente do `media` privado. Botão "Publicar no site" na ficha (revalida o consentimento NO
+MOMENTO de publicar, nunca confia em estado que a tela já tinha carregado); galeria "Trabalhos"
+na página pública, vazia por padrão. Três cascatas de remoção conferidas: revogar `image_use` tira
+TODAS as fotos publicadas daquela cliente do site na hora; apagar a foto original (soft delete em
+`media`) tira a cópia publicada também; e a eliminação LGPD (`eliminarCliente`) agora apaga
+`portfolio_photos` e o arquivo do bucket `vitrine`, que tinha ficado de fora até esta rodada — achado
+ao implementar, registrado em `docs/DECISOES.md`.
+
+Achado ao implementar, fora do escopo deste ticket, registrado como tarefa separada: a limpeza do
+bucket PRIVADO `media` dentro de `eliminarCliente` provavelmente falha em silêncio quando chamada
+pelo botão manual da ficha (cliente de sessão, sem permissão de escrita no Storage) — só funciona
+pelo caminho do cron noturno (service_role). Não é um bug desta rodada, mas foi visto de perto
+consertando o mesmo problema pro bucket `vitrine`.
 
 Aberto em 31/08/2026 a partir de um achado do plano da página pública
 (`docs/34-PAGINA-PUBLICA-PLANO.md`): "prova social que se escreve sozinha" supunha que só faltava

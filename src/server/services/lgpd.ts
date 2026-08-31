@@ -178,6 +178,12 @@ export const TRATAMENTO_NA_ELIMINACAO: Record<string, Record<string, string>> = 
     kind: 'apaga_linha',
     phase: 'apaga_linha',
   },
+  // TICKET-115: cópia publicada no bucket PÚBLICO `vitrine`. Diferente de `media` (privado, URL
+  // assinada), uma foto publicada que sobrevivesse à eliminação continuaria visível pra qualquer
+  // visitante da página do salão — o oposto do que "apagar meus dados" promete.
+  portfolio_photos: {
+    storage_key: 'apaga_linha',
+  },
   payments: {
     psp: 'preserva', // registro financeiro: nome do provedor, sem dado pessoal
     psp_charge_id: 'preserva', // id da cobrança no PSP, necessário para conciliação contábil
@@ -197,7 +203,7 @@ export const TRATAMENTO_NA_ELIMINACAO: Record<string, Record<string, string>> = 
 }
 
 /** Tabelas cuja linha inteira some: nenhuma delas guarda registro fiscal. */
-const TABELAS_APAGADAS = ['client_notes', 'waitlist'] as const
+const TABELAS_APAGADAS = ['client_notes', 'waitlist', 'portfolio_photos'] as const
 
 /**
  * `POST .../erase 🔐`, §critério: "apaga cofre e mídia de verdade e preserva o registro fiscal
@@ -245,6 +251,28 @@ export async function eliminarCliente(db: Cliente, tenantId: string, clientId: s
     // Arquivo já não estar lá não pode travar a eliminação — o objetivo é o dado sumir; se já
     // sumiu, ótimo, segue o fluxo.
     if (erroStorage) console.error(JSON.stringify({ level: 'error', event: 'erase_storage_falhou', tenantId, clientId }), erroStorage)
+  }
+
+  // TICKET-115: bucket SEPARADO (`vitrine`, público) de `media` (privado) — a mesma limpeza de
+  // `caminhos` acima não alcança aqui, e uma foto publicada é exatamente o dado mais visível de
+  // todos: fica na página que qualquer um abre, não atrás de sessão nenhuma.
+  //
+  // `withTenant` (service_role) aqui, NUNCA o `db` recebido: a escrita em `storage.objects` do
+  // bucket `vitrine` só é permitida pra service_role (migration 0051, "nenhuma política de
+  // insert para anon/authenticated") — chamado com o `db` de sessão de `POST .../erase`, o
+  // `.remove()` falharia em silêncio (o `catch` de erro aqui não lança, de propósito) e a "coisa
+  // mais visível de todos" sobreviveria à eliminação sem ninguém notar.
+  const { data: portfolioParaApagar, error: erroListarPortfolio } = await db
+    .from('portfolio_photos')
+    .select('storage_key')
+    .eq('tenant_id', tenantId)
+    .eq('client_id', clientId)
+  if (erroListarPortfolio) throw new AppError('INTERNAL', { cause: erroListarPortfolio })
+  if (portfolioParaApagar && portfolioParaApagar.length > 0) {
+    await withTenant(tenantId, async (svc) => {
+      const { error: erroStorageVitrine } = await svc.storage.from('vitrine').remove(portfolioParaApagar.map((p) => p.storage_key))
+      if (erroStorageVitrine) console.error(JSON.stringify({ level: 'error', event: 'erase_storage_vitrine_falhou', tenantId, clientId }), erroStorageVitrine)
+    })
   }
 
   // ── linhas que somem inteiras
