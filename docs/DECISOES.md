@@ -5066,3 +5066,12 @@ disponível pra provar posse de verdade. Resolvido com um token HMAC (mesmo meca
 cru — e o payload assinado carrega o `tenantId`, então um token de um salão nunca reconhece nada
 em outro. Nome/telefone pré-preenchidos são 100% client-side (o mesmo navegador já sabe o que a
 pessoa digitou da última vez), sem round-trip nenhum pra essa parte.
+
+**2026-08-31 · "prova social" fica de fora do plano da página pública**: ao investigar pra
+implementar, achei que `media.consent_id`/`mediaParaPortfolio` (TICKET-051/052) são infraestrutura
+morta — sem upload UI, sem captura de consentimento UI, sem visualização de foto em lugar nenhum
+do admin (a ficha só mostra "N fotos", sem abrir), e `fazerUploadMedia` nem aceita `consentId`
+como parâmetro. "Publicar no site" precisaria de 3 camadas de UI que não existem antes de chegar
+nessa quarta. Reclassifiquei de médio pra alto em `docs/34-PAGINA-PUBLICA-PLANO.md` e tirei do
+escopo deste plano — é candidato a ticket próprio (completar TICKET-052), não item de "página
+pública".

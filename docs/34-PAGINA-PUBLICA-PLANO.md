@@ -52,8 +52,16 @@ referência de fase/prioridade; o estado de cada item é atualizado aqui conform
 
 ## Ideias registradas, não uma fase numerada
 
-- **Prova social que se escreve sozinha** (médio) — `client_reviews` + `media` com fotos
-  antes/depois já existem com consentimento registrado; falta o dono autorizar exibição pública.
+- **Prova social que se escreve sozinha** (reclassificado de médio para **alto** ao investigar,
+  31/08) — a leitura original assumia que só faltava "o dono autorizar exibição pública" em cima
+  de upload+consentimento já prontos. Não é o caso: `mediaParaPortfolio` (filtro por
+  `image_use` ativo) existe desde TICKET-051/052, mas é **código morto** — não há UI nenhuma,
+  em lugar nenhum do admin, para (a) capturar consentimento de uso de imagem, (b) subir uma foto
+  de antes/depois, ou (c) visualizar as que já existem (a ficha só mostra uma contagem, sem
+  abrir). E `fazerUploadMedia` nem aceita `consentId` — mesmo com UI, nenhuma foto nasceria
+  elegível para portfólio hoje. "Publicar no site" seria a QUARTA camada em cima de três que
+  ainda não existem. Fica registrado como próximo TICKET candidato, fora do escopo deste plano
+  (que é sobre a página pública, não sobre completar TICKET-052).
 
 ## Não fazer
 
