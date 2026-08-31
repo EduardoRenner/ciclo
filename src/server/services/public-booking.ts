@@ -4,6 +4,7 @@ import { z } from 'zod'
 
 import { podeUsarCapacidade } from '@/core/billing/planos'
 import { availableSlots, type IntervaloExpediente, type IntervaloOcupado } from '@/core/scheduling/available-slots'
+import { urlDaVitrine } from '@/core/text/vitrine'
 import { withNovoTenant } from '@/server/db/with-tenant'
 import { listarExpediente } from '@/server/services/expediente'
 import { lerConfiguracoesAgenda } from '@/server/services/configuracoes-agenda'
@@ -57,6 +58,9 @@ export type PerfilPublico = {
   about: string | null
   whatsapp: string | null
   instagram: string | null
+  /** Endereço público já montado — `null` quando o salão não subiu imagem. */
+  logoUrl: string | null
+  coverUrl: string | null
   accentColor: { acc: string; acc2: string }
   /**
    * docs/18-MONETIZACAO-PLANO.md §D.3 e §G.1: o selo "Feito com CICLO" era incondicional, e
@@ -158,6 +162,11 @@ export const perfilPublico = cache(async (slug: string): Promise<PerfilPublico> 
       about: site.about ?? null,
       whatsapp: site.whatsapp ?? null,
       instagram: site.instagram ?? null,
+      // Endereço montado aqui, uma vez, em vez de a tela concatenar — mesmo motivo do Instagram.
+      // `urlDaVitrine` vive em `core/` e é puro: a página pública não pode ter caminho de import
+      // até `vitrine-upload.ts`, que carrega o `sharp`.
+      logoUrl: urlDaVitrine(site.logoKey),
+      coverUrl: urlDaVitrine(site.coverKey),
       accentColor: { acc, acc2: ACENTO_PADRAO.acc2 === acc ? acc : misturarComBranco(acc, 0.3) },
       // `remover_selo` é capacidade do primeiro degrau pago (§D.3). `normalizarPlano` cobre a
       // janela em que o banco ainda responde os nomes anteriores à migration 0040.

@@ -75,7 +75,56 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
         A cor do salão (acento por vertical, Parte II §3.8/§E7) entra numa
         rodada futura, de forma pontual — não como glow de fundo.
       */}
-      <section className="relative -mx-[var(--gutter)] flex flex-col items-center gap-4 overflow-hidden px-[var(--gutter)] pb-8 pt-12 text-center">
+      {/*
+        A capa é a "rodada futura" que o comentário acima previa, e entra do jeito que ele pede:
+        pontual, não como glow. Fica FORA da `section` do nome para poder sangrar de borda a
+        borda sem arrastar o padding do miolo junto.
+
+        `loading="eager"` de propósito, contra o padrão: esta é a maior imagem acima da dobra —
+        ou seja, o LCP da página. Preguiça aqui atrasa exatamente a métrica que ela existe para
+        proteger. `alt=""` porque a capa é decorativa: o nome do salão já está no `h1` logo
+        abaixo, e um alt descritivo faria o leitor de tela anunciar o mesmo nome duas vezes.
+      */}
+      {perfil.coverUrl ? (
+        <div className="relative -mx-[var(--gutter)] -mt-2 h-36 overflow-hidden sm:h-44">
+          {/*
+            `<img>` e não `next/image`, de propósito: a imagem JÁ sobe otimizada — o
+            `vitrine-upload.ts` reencoda para WebP q82 e redimensiona no `sharp` antes de gravar,
+            então o otimizador do Next reprocessaria o que já está pronto, e otimização de imagem
+            é cobrada por origem na Vercel. `width`/`height` explícitos entregam o ganho que
+            importa aqui (reserva de espaço, sem salto de layout) sem esse custo. Usar `next/image`
+            também exigiria `remotePatterns` para o host do Supabase no `next.config.ts`.
+          */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={perfil.coverUrl} alt="" width={1600} height={600} loading="eager" className="size-full object-cover" />
+          {/*
+            Sem este véu, o nome do salão cai sobre uma foto de brilho imprevisível — que é o
+            defeito clássico de capa em página de perfil. O gradiente termina opaco no tom do
+            fundo, então a emenda com o resto da página não aparece.
+          */}
+          <div aria-hidden className="absolute inset-0 bg-gradient-to-b from-transparent via-bg/40 to-bg" />
+        </div>
+      ) : null}
+
+      <section className="relative -mx-[var(--gutter)] flex flex-col items-center gap-4 overflow-hidden px-[var(--gutter)] pb-8 text-center"
+        style={{ paddingTop: perfil.coverUrl ? undefined : '3rem' }}
+      >
+        {/*
+          Sobe sobre a capa quando ela existe (margem negativa), e vira só um selo acima do nome
+          quando não existe — sem capa não há o que sobrepor, e a margem negativa comeria o topo.
+        */}
+        {perfil.logoUrl ? (
+          /* Mesmo motivo da capa acima: já é WebP dimensionado no upload. */
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={perfil.logoUrl}
+            alt={`Logo de ${perfil.name}`}
+            width={512}
+            height={512}
+            loading="eager"
+            className={`size-20 rounded-full border-2 border-bg bg-surface-2 object-cover shadow-elevado ${perfil.coverUrl ? '-mt-14' : 'mt-12'}`}
+          />
+        ) : null}
         <h1 className="text-numero font-bold">{perfil.name}</h1>
         {perfil.tagline ? <p className="max-w-sm text-corpo text-txt-2">{perfil.tagline}</p> : null}
 

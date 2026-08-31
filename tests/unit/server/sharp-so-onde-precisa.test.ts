@@ -83,6 +83,16 @@ const SEM_SHARP = [
   'src/app/admin/agenda/page.tsx',
   'src/app/api/v1/campaigns/route.ts',
   'src/app/api/v1/media/[id]/url/route.ts',
+  /*
+   * As duas páginas públicas entraram junto com a logo e a capa (31/08). São as que MAIS importam
+   * nesta lista: é o link que a cliente abre no 4G, e o único que quem não é cliente do CICLO vê.
+   * Elas leem a chave da imagem de `settings.site` e montam o endereço com `core/text/vitrine.ts`,
+   * que é puro de propósito — se alguém trocar isso por um import de `vitrine-upload.ts` para
+   * reaproveitar uma constante, o libvips vai junto para o pacote da rota e ninguém percebe até a
+   * página ficar lenta.
+   */
+  'src/app/(public)/[slug]/page.tsx',
+  'src/app/(public)/[slug]/agendar/page.tsx',
 ]
 
 describe('sharp só onde precisa (§7 — 19,2 MB de libvips)', () => {
@@ -91,11 +101,14 @@ describe('sharp só onde precisa (§7 — 19,2 MB de libvips)', () => {
     expect(pacotes.has('sharp'), `chegou no sharp via ${caminho.get('sharp')}`).toBe(false)
   })
 
-  it('a rota que processa imagem CONTINUA alcançando o sharp', () => {
+  it.each([
+    'src/app/api/v1/clients/[id]/media/route.ts',
+    'src/app/api/v1/tenant/vitrine/route.ts',
+  ])('%s CONTINUA alcançando o sharp', (rel) => {
     // O outro lado da regra. Sem isto, "ninguém importa sharp" passaria — inclusive com o
     // upload quebrado em produção por módulo não encontrado, que foi o efeito colateral real
     // da tentativa com `outputFileTracingExcludes`.
-    const { pacotes } = alcancaveis(join(RAIZ, 'src/app/api/v1/clients/[id]/media/route.ts'))
+    const { pacotes } = alcancaveis(join(RAIZ, rel))
     expect(pacotes.has('sharp')).toBe(true)
   })
 

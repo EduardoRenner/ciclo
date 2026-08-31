@@ -43,11 +43,30 @@ export const EsquemaSite = z.object({
     .trim()
     .regex(/^#[0-9a-f]{6}$/i, 'Use uma cor no formato #rrggbb.')
     .nullish(),
+  /*
+   * Logo e capa da página pública. Guardam a CHAVE no bucket `vitrine` (`{tenantId}/{uuid}.webp`),
+   * nunca a URL inteira: a origem do Supabase muda de projeto para projeto e já vive em
+   * `NEXT_PUBLIC_SUPABASE_URL` — gravar a URL completa criaria uma segunda fonte da verdade que
+   * quebra silenciosamente em qualquer restauração de banco em outro projeto. Quem monta o
+   * endereço é `urlDaVitrine`, num lugar só.
+   *
+   * Não são campos de texto livre para o dono: só `fazerUploadDaVitrine` escreve aqui.
+   */
+  logoKey: z.string().trim().max(200).nullish(),
+  coverKey: z.string().trim().max(200).nullish(),
 })
 
 export type Site = z.infer<typeof EsquemaSite>
 
-const SITE_VAZIO: Site = { tagline: null, about: null, whatsapp: null, instagram: null, accent: null }
+const SITE_VAZIO: Site = {
+  tagline: null,
+  about: null,
+  whatsapp: null,
+  instagram: null,
+  accent: null,
+  logoKey: null,
+  coverKey: null,
+}
 
 /** Nunca lança — `settings` de um tenant antigo pode não ter `site` nenhum, e isso não é erro. */
 export function lerSite(settings: unknown): Site {
