@@ -27,3 +27,12 @@ export function diaNoFuso(timezone: string, quando: Date = new Date()): string {
 export function diaDaquiA(timezone: string, dias: number, quando: Date = new Date()): string {
   return diaNoFuso(timezone, new Date(quando.getTime() + dias * 86_400_000))
 }
+
+/**
+ * Quantos dias (inteiros, nunca negativo) se passaram desde um instante `timestamptz`. Usado
+ * pelo banner "faz N dias" de `reconhecimento.ts` — `Math.floor`, não arredondado, porque "faz 24
+ * dias" tem que bater com o que `personal_cycle_days` mediu, não com uma aproximação para cima.
+ */
+export function diasDesde(isoAntigo: string, agora: Date = new Date()): number {
+  return Math.max(0, Math.floor((agora.getTime() - new Date(isoAntigo).getTime()) / 86_400_000))
+}

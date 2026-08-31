@@ -12,6 +12,10 @@ import PhoneInput from "@/components/ui/phone-input";
 import { textoDoCanalDeConfirmacao } from "@/core/messaging/promessa";
 import { montarIcs, type EventoIcs } from "@/core/scheduling/ics";
 import { dinheiro, duracao } from "@/lib/formato";
+import {
+  lerReconhecimentoLocal,
+  salvarReconhecimentoLocal,
+} from "@/lib/reconhecimento-local";
 
 type Servico = {
   id: string;
@@ -23,6 +27,11 @@ type Servico = {
 };
 type Profissional = { id: string; displayName: string; photoUrl: string | null };
 type Slot = { startsAt: string; endsAt: string; professionalId: string };
+type Reconhecimento = {
+  primeiroNome: string;
+  diasDesdeUltima: number | null;
+  sugestao: { serviceId: string; serviceName: string; professionalId: string | null } | null;
+};
 
 /**
  * "Hoje" é no fuso do salão, não no do aparelho de quem agenda. A versão
@@ -215,6 +224,55 @@ export default function Agendar({
   const [erro, setErro] = useState<string | null>(null);
   const [pendente, iniciarTransicao] = useTransition();
 
+  /*
+    docs/34-PAGINA-PUBLICA-PLANO.md, Fase 2 — "reconhecer quem já é cliente". `reconhecimento`
+    só existe quando o navegador guarda um token de um agendamento anterior NESTE tenant
+    (`reconhecimento-local.ts`); nunca vem de telefone digitado agora, então não há como um
+    visitante pedir a ficha de outra pessoa. `null` = navegador novo ou token vencido — o caso
+    comum, sem banner nenhum.
+  */
+  const [reconhecimento, setReconhecimento] = useState<Reconhecimento | null>(null);
+  const [reconhecimentoDispensado, setReconhecimentoDispensado] = useState(false);
+
+  useEffect(() => {
+    const salvo = lerReconhecimentoLocal(slug);
+    if (!salvo) return;
+    // Só preenche quem ainda não digitou nada — reaproveita o nome/telefone da vez anterior,
+    // sem sobrescrever o que a pessoa já está escrevendo se voltar à tela no meio do preenchimento.
+    setNome((atual) => atual || salvo.name);
+    setTelefone((atual) => atual || salvo.phone);
+
+    let cancelado = false;
+    fetch(`/api/v1/public/${slug}/reconhecer?token=${encodeURIComponent(salvo.token)}`)
+      .then((r) => r.json())
+      .then((json: { data?: { conhecida: boolean } & Partial<Reconhecimento> }) => {
+        if (cancelado || !json.data?.conhecida) return;
+        setReconhecimento({
+          primeiroNome: json.data.primeiroNome ?? "",
+          diasDesdeUltima: json.data.diasDesdeUltima ?? null,
+          sugestao: json.data.sugestao ?? null,
+        });
+      })
+      .catch(() => {
+        // Silencioso de propósito: sem o banner de reconhecimento a tela continua funcionando
+        // normalmente, é a mesma experiência de quem nunca agendou aqui.
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, [slug]);
+
+  function aplicarSugestao() {
+    if (!reconhecimento?.sugestao) return;
+    setReconhecimentoDispensado(true);
+    const { serviceId: sugerido, professionalId: profissionalSugerido } = reconhecimento.sugestao;
+    setServiceId(sugerido);
+    if (profissionalSugerido && professionals.some((p) => p.id === profissionalSugerido)) {
+      setProfessionalId(profissionalSugerido);
+    }
+    buscarDisponibilidade(dia, sugerido);
+  }
+
   const servicoEscolhido = services.find((s) => s.id === serviceId);
 
   // Carrega os horários do primeiro dia sozinho — a versão anterior exigia
@@ -310,6 +368,7 @@ export default function Agendar({
           }),
         });
         const json = (await r.json()) as {
+          data?: { reconhecimentoToken?: string | null };
           error?: {
             code: string;
             message: string;
@@ -326,6 +385,11 @@ export default function Agendar({
             json.error?.message ?? "Não consegui confirmar. Tente de novo.",
           );
           return;
+        }
+        // Fase 2 de docs/34-PAGINA-PUBLICA-PLANO.md: guarda o token pra próxima visita reconhecer
+        // sozinha. Sem token (honeypot) não há o que guardar — silencioso, não é o caminho normal.
+        if (json.data?.reconhecimentoToken) {
+          salvarReconhecimentoLocal(slug, { name: nome, phone: telefone, token: json.data.reconhecimentoToken });
         }
         setConfirmado(true);
       } catch {
@@ -489,6 +553,40 @@ export default function Agendar({
             Marque seu primeiro horário abaixo — {nomeDoSalao} vai saber que foi {indicadaPor} quem
             te trouxe.
           </p>
+        </Card>
+      ) : null}
+
+      {/*
+        docs/34-PAGINA-PUBLICA-PLANO.md, Fase 2 — "a página sabe quando ela deveria voltar". Só
+        aparece pra quem já tem o token guardado deste tenant (ver o efeito de montagem acima) e
+        ainda não dispensou o banner nesta visita. Nunca oferece o botão de aplicar sem sugestão
+        de serviço — sem ela não há o que pré-marcar.
+      */}
+      {reconhecimento && !reconhecimentoDispensado ? (
+        <Card className="border-acc/40 bg-acc-soft">
+          <p className="text-corpo font-semibold text-txt">
+            Oi, {reconhecimento.primeiroNome}!
+          </p>
+          <p className="mt-1 text-secundario text-txt-2">
+            {reconhecimento.sugestao
+              ? `Da última vez foi ${reconhecimento.sugestao.serviceName}${
+                  reconhecimento.diasDesdeUltima !== null
+                    ? `, faz ${reconhecimento.diasDesdeUltima} ${reconhecimento.diasDesdeUltima === 1 ? "dia" : "dias"}`
+                    : ""
+                }. Quer marcar de novo?`
+              : "Que bom te ver de novo por aqui."}
+          </p>
+          {reconhecimento.sugestao ? (
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button onClick={aplicarSugestao}>Marcar de novo</Button>
+              <Button
+                variante="secondary"
+                onClick={() => setReconhecimentoDispensado(true)}
+              >
+                Agora não
+              </Button>
+            </div>
+          ) : null}
         </Card>
       ) : null}
 

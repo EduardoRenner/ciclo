@@ -5054,3 +5054,15 @@ no seletor livre ganhava texto ilegível. Agora é calculado por luminância (`c
 `corDeContraste`) e escopado por tenant em `[slug]/layout.tsx`, junto de `--acc`. Motivo de não
 fazer temas completos: só `--acc`/`--acc-2`/`--acc-soft` são escopados por tenant hoje — trocar
 `--bg`/`--surface` por tenant exigiria reauditar contraste na árvore inteira da vitrine.
+
+**2026-08-31 · reconhecer cliente sem lookup aberto por telefone (TICKET-071, plano
+`docs/34-PAGINA-PUBLICA-PLANO.md`)**: o plano original pedia "telefone digitado → ficha
+encontrada", mas isso seria um endpoint público que devolve nome+padrão de visita de qualquer
+pessoa para quem souber (ou tentar em sequência) o número dela — enumeração, sem OTP/SMS
+disponível pra provar posse de verdade. Resolvido com um token HMAC (mesmo mecanismo de
+`token-assinado.ts` já usado em confirmação/avaliação/orçamento): `POST .../book` devolve um
+`reconhecimentoToken` só depois que a pessoa PROVOU o telefone agendando; o token vai só pro
+`localStorage`, nunca cookie nem URL. `GET .../reconhecer` só aceita esse token — nunca telefone
+cru — e o payload assinado carrega o `tenantId`, então um token de um salão nunca reconhece nada
+em outro. Nome/telefone pré-preenchidos são 100% client-side (o mesmo navegador já sabe o que a
+pessoa digitou da última vez), sem round-trip nenhum pra essa parte.

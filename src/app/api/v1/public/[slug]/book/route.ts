@@ -12,7 +12,7 @@ import { ipDe } from '@/server/http/ip'
 type Ctx = { params: Promise<{ slug: string }> }
 
 /** Honeypot: resposta com a mesma forma de sucesso, para não ensinar o script a se adaptar. */
-const RESPOSTA_HONEYPOT = { appointmentId: null }
+const RESPOSTA_HONEYPOT = { appointmentId: null, reconhecimentoToken: null }
 
 export const POST = rota(async (req, ctx) => {
   const { slug } = await (ctx as Ctx).params

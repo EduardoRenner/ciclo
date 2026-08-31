@@ -31,9 +31,16 @@ referência de fase/prioridade; o estado de cada item é atualizado aqui conform
 - [x] **Horários por faixa** (commit `27269e1`, TICKET-063).
 - [x] **Sinal visível para a cliente** (commit `7756402`, TICKET-064) — exibição; cobrança de
       verdade continua bloqueada por Asaas (031/032/033).
-- [ ] **Reconhecer quem já é cliente** (médio) — telefone digitado → ficha encontrada (reusa
-      `client_cycles` e a busca por telefone que já existe) → sugestão de rebook em 1 toque.
-      Cuidado de privacidade: nunca revelar dado antes de confirmar posse do número.
+- [x] **Reconhecer quem já é cliente** (TICKET-071) — banner "Oi, {nome}! Da última vez foi
+      {serviço}, faz N dias. Quer marcar de novo?" com botão que pré-marca serviço e
+      profissional. Implementado SEM lookup por telefone digitado (o risco de enumeração que
+      este item avisava): `POST .../book` devolve um `reconhecimentoToken` HMAC-assinado
+      (`{tenantId}:{phone}`, escopo próprio, 180 dias), guardado só no `localStorage` do
+      navegador de quem agendou. Na próxima visita, o front reenvia esse token para
+      `GET .../reconhecer` — só quem já provou (agendando) que aquele telefone é dele recebe
+      nome/ciclo de volta; um visitante não pode consultar o telefone de outra pessoa digitando
+      ele na hora. Nome/telefone são pré-preenchidos direto do `localStorage`, sem round-trip ao
+      servidor (são os mesmos dados que a própria pessoa digitou da última vez).
 
 ## Fase 3 · o outro negócio
 

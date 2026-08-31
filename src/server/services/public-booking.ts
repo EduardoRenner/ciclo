@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { podeUsarCapacidade } from '@/core/billing/planos'
 import { availableSlots, type IntervaloExpediente, type IntervaloOcupado } from '@/core/scheduling/available-slots'
 import { sinalEmCentavos } from '@/core/pricing/sinal'
+import { primeiroNome } from '@/core/text/nome'
 import { urlDaVitrine } from '@/core/text/vitrine'
 import { withNovoTenant } from '@/server/db/with-tenant'
 import { listarExpediente } from '@/server/services/expediente'
@@ -15,6 +16,7 @@ import { normalizarTelefoneBR } from '@/server/services/telefone'
 import { criarAgendamento } from '@/server/services/agendamentos'
 import { verificarTokenIndicacao } from '@/server/services/indicacao'
 import { notificarEquipe } from '@/server/services/mensageria'
+import { gerarTokenReconhecimento } from '@/server/services/reconhecimento'
 import { AppError } from '@/server/http/errors'
 
 import type { Database } from '@/server/db/types.gen'
@@ -426,8 +428,7 @@ export async function quemIndicou(slug: string, token: string | null | undefined
       .is('anonymized_at', null)
       .maybeSingle()
 
-    const primeiroNome = data?.name?.trim().split(/\s+/)[0]
-    return primeiroNome || null
+    return data?.name ? primeiroNome(data.name) : null
   })
 }
 
@@ -515,6 +516,11 @@ export async function criarAgendamentoPublico(slug: string, entrada: z.infer<typ
       console.error(JSON.stringify({ level: 'error', event: 'push_equipe_falhou', tenantId: tenant.id }), erro)
     })
 
-    return { appointmentId: agendamento.id }
+    /*
+     * `docs/34-PAGINA-PUBLICA-PLANO.md`, Fase 2 — "reconhecer quem já é cliente". O token só
+     * chega ao navegador de quem ACABOU de provar, agendando, que este telefone é dele; fica só
+     * no `localStorage`, nunca em cookie nem em URL (`reconhecimento.ts` explica por quê).
+     */
+    return { appointmentId: agendamento.id, reconhecimentoToken: gerarTokenReconhecimento(tenant.id, telefone) }
   })
 }
