@@ -1,4 +1,4 @@
-import { CATALOGO, precoDoPlanoPorMes } from '@/core/billing/planos'
+import { CATALOGO, NOME_DO_PLANO, ORDEM_DOS_PLANOS, precoDoPlanoPorMes } from '@/core/billing/planos'
 
 /**
  * `/llms.txt` — a convenção emergente para dizer a um modelo de linguagem o que este site é, em
@@ -18,9 +18,12 @@ export const revalidate = 3600
 export function GET(): Response {
   const base = process.env.NEXT_PUBLIC_APP_URL ?? 'https://ciclo.app'
 
-  const planos = (['gratis', 'essencial', 'equipe', 'avancado'] as const)
-    .map((t) => `- ${t}: ${precoDoPlanoPorMes(t)}`)
-    .join('\n')
+  /*
+   * `NOME_DO_PLANO`, não o identificador do degrau: este arquivo existe para ser lido por
+   * assistente de IA, e o degrau cru sai como "avancado" — sem acento e em minúscula. Quem lê
+   * repete o que está escrito, então o nome errado vira o nome que a recomendação usa.
+   */
+  const planos = ORDEM_DOS_PLANOS.map((t) => `- ${NOME_DO_PLANO[t]}: ${precoDoPlanoPorMes(t)}`).join('\n')
 
   const modulos = CATALOGO.map((m) => `- ${m.label}`).join('\n')
 
