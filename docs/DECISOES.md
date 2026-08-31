@@ -4679,3 +4679,48 @@ versão dela reprovava as versões antigas de 0010/0018, acusando defeito já co
 qualquer forma de corte de data, não só `now()` — `v_daily_cash` usa `date_trunc('day',
 t.closed_at)` sobre `timestamptz`, e a primeira versão não a pegava. Ela fica como exceção
 declarada, com o motivo escrito: ninguém a consulta.
+
+---
+
+### 2026-08-31 · A dívida do "dia em UTC" foi zerada — e o comentário dela ensinou como
+
+Levei a pergunta das views para as funções SQL e para o TypeScript.
+
+**Funções SQL: negativo limpo.** As cinco que mexem com tempo (`touch_updated_at`, `claim_jobs`,
+`finish_job`, `consumir_rate_limit`) usam `now()` como INSTANTE, nunca truncado para dia — que é o
+uso correto e independe de fuso. O detector marcou por `now()`; conferir uma a uma mostrou que
+nenhuma trunca.
+
+**TypeScript: três falsos positivos e dois defeitos reais.** `agenda.tsx`, `caixa.tsx` e
+`agendar.tsx` usam `toISOString().slice(0,10)` de propósito — constroem a data a partir de uma
+string `AAAA-MM-DD` já resolvida com `Date.UTC`, fazem aritmética em UTC e leem de volta em UTC. A
+ida e volta é exata, e os comentários dizem isso. Meu detector pegou a FORMA, não o defeito: a
+forma perigosa é `new Date()` (agora) → `toISOString()`.
+
+**Os dois reais já estavam catalogados**, com motivo escrito, numa lista de dívida conhecida em
+`tests/unit/design/dia-no-fuso-do-salao.test.ts`. E o motivo de cada um é o que mostrou como
+consertar:
+
+1. **`started_on` da assinatura.** O comentário dizia que a raiz era o `default current_date` da
+   coluna (0019) e que "mexer nela é migration". Não foi preciso: `assinar()` passou a gravar a
+   data no fuso do salão. O default do banco **não pode** fazer isso — ele não enxerga o tenant, e
+   o fuso é por salão. Assinatura feita às 22h do dia 31 nascia começando no mês seguinte, e isso é
+   data de cobrança.
+
+   O mesmo comentário avisava que "corrigir só o cliente faria a tela discordar do dado guardado" —
+   e o inverso vale igual. Por isso o valor otimista da tela foi junto, no mesmo commit.
+
+2. **Validade do orçamento.** Aqui **revertí uma decisão consciente** de quem veio antes: o
+   comentário julgou que um dia a mais é "a favor de quem recebe o orçamento" e "não paga o risco".
+   Discordo, e o motivo é a costura: `orcamentoExpirado(valid_until, tenant.timezone)` — a outra
+   ponta da MESMA regra — já lia no fuso do salão. Gravar num fuso e conferir noutro é ter duas
+   ideias de "que dia é hoje" dentro da mesma regra. E o salão combinou 7 dias, não "7 ou 8 conforme
+   a hora". O conserto custou uma prop.
+
+`diaNoFuso`/`diaDaquiA` foram para `core/tempo/dia.ts` — eram uma função pura morando dentro de
+`server/assistente/ferramentas.ts`, onde só o assistente alcançava.
+
+**A lista de dívida está zerada**, e continua fazendo efeito: um arquivo novo com o defeito reprova
+o build — conferido reintroduzindo. Uma das guardas novas é de COSTURA e não de comportamento, por
+um motivo medido: apagar a linha `started_on: diaNoFuso(timezone)` **compila e nenhum teste de
+unidade reprova**. O defeito voltaria calado, exatamente como entrou.
