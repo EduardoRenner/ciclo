@@ -4049,3 +4049,38 @@ Também conferidos e SEM lacuna: `ROTULO_MENSAGEM` cobre os 6 de `message_kind`,
 `ROTULO_CONSENTIMENTO` cobre os 4 de `consent_type`, `ROTULO_CICLO` cobre os 5 de `cycle_state`.
 `ROTULO_ORIGEM` é de texto livre (`source` é string no schema), então o `?? cliente.source` ali é
 correto e não é lacuna.
+
+---
+
+### 2026-08-30 · "Ver comanda" levava a uma mentira: "O endereço não existe ou mudou de lugar"
+
+A ponte `/admin/comanda/agendamento/[id]` chamava `notFound()` quando o agendamento não tinha
+comanda. A tela então dizia *"O endereço não existe ou mudou de lugar"* — e isso é **falso**: o
+endereço está certo e o agendamento existe; o que não existe é a comanda. O dono passa a duvidar do
+endereço, quando devia duvidar do dado.
+
+**O tamanho disso só apareceu medindo o banco: 263 de 263** atendimentos concluídos da Barbearia
+Dom Rocha — o tenant de demonstração — estão nesse caso. E é 100% em todos os tenants. Ou seja,
+hoje, TODO atendimento concluído do sistema mostra um botão que leva a esse beco.
+
+**Diagnóstico honesto da causa:** não é defeito de código de hoje. `POST .../complete` é o único
+caminho para `done` e sempre cria a comanda (`concluirAgendamento`); a importação de clientes não
+cria agendamento; o PATCH genérico só remarca e cancela. Os 263 vieram de semente escrita direto no
+banco. **Mas dado histórico não some por o código ter melhorado** — quem abrir a demo hoje encontra
+o beco, e um salão que migrar histórico por SQL cairá no mesmo lugar.
+
+O conserto é a frase, não o fluxo: em vez de `notFound()`, um estado vazio que diz a verdade
+("Esse atendimento não tem comanda... foi concluído antes disso") com caminho de volta — §4, estado
+vazio nunca é beco sem saída.
+
+**O que NÃO foi feito, e é a parte importante:** criar a comanda que falta. Abrir comanda é escrita
+em registro de dinheiro, e uma navegação (GET) que escreve transforma um refresh em dois
+lançamentos. Também não foi feito backfill dos 263 — isso é migração de dado financeiro e é decisão
+do dono, não minha.
+
+Varridos os outros `notFound()` do app: os cinco restantes (`!perfil`, `!ficha`, `!profissional`)
+são legítimos — ali o endereço realmente não existe. Nenhuma outra ocorrência da mesma armadilha.
+
+Sem guarda nova de propósito: o que restaria seria varrer o arquivo atrás de `notFound(`, que é
+exatamente o padrão brittle que o CLAUDE.md registra como fonte de guarda cega. A verificação aqui
+é a tela no ar.
