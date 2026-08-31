@@ -4480,3 +4480,42 @@ fontes diferentes, média e total discordariam na mesma tela.
 primeiro `metricas: {` — que é a DECLARAÇÃO DE TIPO, não o retorno. Reverter para
 `cliente.ltv_cents` passou verde. É exatamente a armadilha da "janela de N caracteres" da tabela do
 CLAUDE.md. Reescrita para casar com a leitura em si, em qualquer lugar do arquivo; aí reprova.
+
+---
+
+### 2026-08-31 · O bônus de indicação pagava duas vezes
+
+Puxando o fio das colunas desnormalizadas, o terceiro leitor de `visits_count` não era tela — era
+**regra**. E estava errada.
+
+`pontuarAtendimentoConcluido` decidia o bônus de indicação por `cliente.visits_count === 0`, com um
+comentário que raciocinava exatamente sobre a defasagem: *"`visits_count` só reflete o job diário —
+na conclusão de agora ele ainda mostra o número ANTES desta visita"*. O raciocínio está certo e o
+efeito é o oposto do pretendido: **como o contador não muda entre uma conclusão e a seguinte, ele
+continua `0` na segunda, na terceira, e em toda conclusão até o cron rodar** — uma vez por dia, com
+5 a 6 horas de atraso medido.
+
+Corte e barba marcados como dois atendimentos no mesmo dia bastam para pagar o bônus duas vezes,
+para a cliente e para quem indicou. Ponto de fidelidade é resgatável: é dinheiro saindo por engano,
+e do jeito mais difícil de perceber — o extrato mostra dois lançamentos com o mesmo motivo e nada
+acusa.
+
+**Latente, não ativo:** medido em produção, não existe nenhum lançamento de indicação ainda. Mas
+morde o primeiro salão que usar o laço de indicação, que é o canal de aquisição do produto.
+
+O conserto pergunta ao **livro-razão** em vez do contador: se o lançamento existe, o bônus já foi
+pago. Idempotente por construção, que é o que uma regra de "primeira vez" precisa ser, e não
+depende de cron nenhum. Os dois textos de motivo viraram constantes porque deixaram de ser rótulo:
+`MOTIVO_VEIO_POR_INDICACAO` agora é chave de idempotência, e mudá-lo sem migrar as linhas
+existentes repagaria o bônus de quem já recebeu — está escrito lá.
+
+**Duas guardas antigas reprovaram a refatoração, e as duas estavam certas.** Uma casava com a
+condição inteira (`referred_by && visits_count === 0`), a outra com o literal `'Indicou um novo
+cliente'` — que virou constante e mudou de posição no arquivo, passando a ficar ANTES da trava de
+módulo e fazendo a guarda medir a declaração em vez do lançamento. Reescritas para ancorar no USO,
+e depois **mutadas** para provar que ainda pegam o que existiam para pegar: fidelidade sem ler
+`referred_by`, e bônus fora da trava de módulo.
+
+**Minha guarda nova nasceu casando com o próprio comentário** que explica por que não usar mais
+`visits_count` — segunda vez hoje (a primeira foi "R$ 49" dentro do comentário do `llms.txt`).
+Passou a ignorar linhas de comentário antes de casar.
