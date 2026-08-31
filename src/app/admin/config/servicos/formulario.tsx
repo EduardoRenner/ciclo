@@ -2,7 +2,9 @@
 
 import { useState, useTransition } from 'react'
 
+import { urlDaVitrine } from '@/core/text/vitrine'
 import { dinheiro } from '@/lib/formato'
+import UploadDeFoto from '@/components/config/upload-de-foto'
 import Button from '@/components/ui/button'
 import Input from '@/components/ui/input'
 import MoneyInput from '@/components/ui/money-input'
@@ -26,6 +28,8 @@ export type ServicoEditavel = {
   bookable_online: boolean
   /** Percentual do sinal em basis points — 3000 = 30%. */
   deposit_bps: number
+  /** Chave da foto no bucket `vitrine`. Escrita só pela rota de upload. */
+  image_key: string | null
 }
 
 type ModeloDePreco = 'fixed' | 'hourly' | 'visit_hourly' | 'daily'
@@ -214,6 +218,15 @@ export default function FormularioServico({ aberto, aoFechar, servico, aoSalvar 
           classNameCampo="tabular"
           ajuda="É o que o Motor de Ciclo usa até aprender o ritmo de cada cliente."
         />
+
+        {/*
+          Só ao editar: a foto precisa de um `id` para ser vinculada, e no cadastro a linha ainda
+          não existe. O componente diz isso em vez de aparecer quebrado.
+        */}
+        <div className="flex flex-col gap-1">
+          <span className="text-label font-semibold text-txt-2">Foto do serviço</span>
+          <UploadDeFoto tipo="service" id={servico?.id ?? null} urlAtual={urlDaVitrine(servico?.image_key ?? null)} />
+        </div>
 
         <Input
           rotulo="Sinal (%)"

@@ -7,7 +7,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 /** Colunas devolvidas pela API. `cost_cents` fica de fora: é estimativa interna, não vai para a UI de catálogo. */
 const COLUNAS =
-  'id, name, description, duration_min, buffer_before_min, buffer_after_min, price_cents, pricing_model, hourly_rate_cents, half_day_price_cents, cycle_days, deposit_bps, deposit_min_cents, parallel_capacity, requires_anamnesis, bookable_online, active, position, category_id'
+  'id, name, description, duration_min, buffer_before_min, buffer_after_min, price_cents, pricing_model, hourly_rate_cents, half_day_price_cents, cycle_days, deposit_bps, deposit_min_cents, parallel_capacity, requires_anamnesis, bookable_online, active, position, category_id, image_key'
 
 /**
  * Limites copiados dos `check` da 0001 — validar aqui devolve erro de campo em

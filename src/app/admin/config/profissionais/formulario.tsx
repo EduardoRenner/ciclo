@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from 'react'
 
+import { urlDaVitrine } from '@/core/text/vitrine'
+import UploadDeFoto from '@/components/config/upload-de-foto'
 import Button from '@/components/ui/button'
 import Sheet from '@/components/ui/sheet'
 import { useToast } from '@/components/ui/toast'
@@ -12,6 +14,8 @@ export type ProfissionalEditavel = {
   bio: string | null
   color: string | null
   accepts_online: boolean
+  /** Chave da foto no bucket `vitrine`. Escrita só pela rota de upload. */
+  photo_key: string | null
 }
 
 type Props = {
@@ -94,6 +98,19 @@ export default function FormularioProfissional({ aberto, aoFechar, profissional,
   return (
     <Sheet aberto={aberto} aoFechar={(a) => !a && aoFechar()} titulo={editando ? 'Editar profissional' : 'Novo profissional'}>
       <div className="flex flex-col gap-3">
+        {/*
+          A foto vem primeiro: é o que a cliente vê na hora de escolher com quem marcar. Só ao
+          editar — no cadastro a linha ainda não existe para vincular a imagem.
+        */}
+        <div className="flex flex-col gap-1">
+          <span className="text-label font-semibold text-txt-2">Foto</span>
+          <UploadDeFoto
+            tipo="professional"
+            id={profissional?.id ?? null}
+            urlAtual={urlDaVitrine(profissional?.photo_key ?? null)}
+            formato="redonda"
+          />
+        </div>
         <label className="flex flex-col gap-1">
           <span className="text-label font-semibold text-txt-2">Nome</span>
           <input
