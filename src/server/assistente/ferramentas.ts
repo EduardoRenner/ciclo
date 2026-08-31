@@ -15,6 +15,7 @@ import { listarServicos } from '@/server/services/servicos'
 import { buscarTicketIdPorAgendamento } from '@/server/services/comanda'
 import { listarProfissionais } from '@/server/services/profissionais'
 import { limparParaGemini } from '@/core/assistente/json-schema'
+import { diaNoFuso } from '@/core/tempo/dia'
 import { resolverPorNome, resolverProfissional, type Candidato } from '@/core/assistente/resolver'
 import { semAcento } from '@/core/text/normalizar'
 import { resumoDeHoje } from '@/server/services/resumo-hoje'
@@ -88,9 +89,14 @@ function mesCorrente(timezone: string): string {
     .replace('/', '-')
 }
 
-/** Exportada: `assistente.ts` reusa para ancorar o prompt de sistema com a data de hoje. */
+/**
+ * Exportada: `assistente.ts` reusa para ancorar o prompt de sistema com a data de hoje.
+ *
+ * A implementacao desceu para `core/tempo/dia.ts` — e regra pura sem I/O, e aqui so o assistente
+ * a alcancava. Este re-export existe para nao mexer nos chamadores.
+ */
 export function hojeNoFuso(timezone: string): string {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: timezone }).format(new Date())
+  return diaNoFuso(timezone)
 }
 
 const EsquemaPrepararAgendamento = z.object({

@@ -28,7 +28,7 @@ export const POST = rota(async (req, params, requestId) => {
   const assinatura = await comIdempotencia(
     req,
     { tenantId: ctx.tenantId, endpoint: `/api/v1/clients/${id}/subscription` },
-    () => assinar(db, ctx.tenantId, id, entrada),
+    () => assinar(db, ctx.tenantId, id, entrada, ctx.tenant.timezone),
   )
 
   await writeAudit(

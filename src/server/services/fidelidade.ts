@@ -2,6 +2,7 @@ import { Temporal } from '@js-temporal/polyfill'
 import { z } from 'zod'
 
 import { deveCreditarIndicacao } from '@/core/loyalty/indicacao'
+import { diaNoFuso } from '@/core/tempo/dia'
 import { podeUsarModulo } from '@/core/billing/planos'
 import { AppError } from '@/server/http/errors'
 import { contextoDePlano } from '@/server/services/planos'
@@ -315,7 +316,19 @@ export async function assinar(
   tenantId: string,
   clientId: string,
   entrada: z.infer<typeof EsquemaAssinatura>,
+  timezone: string,
 ) {
+  /*
+   * `started_on` sai daqui, e nao mais do `default current_date` da coluna (0019).
+   *
+   * `current_date` e avaliado no fuso da SESSAO, e a do PostgREST e UTC — medido em producao em
+   * 31/08. Em Brasilia, assinatura feita das 21h a meia-noite nascia com inicio no DIA SEGUINTE, e
+   * no ultimo dia do mes isso joga o comeco da cobranca para o mes seguinte. E a mesma classe das
+   * views corrigidas nas migrations 0048/0049, agora num default de coluna.
+   *
+   * Fica no servico em vez de virar outro default no banco porque o default nao enxerga o tenant:
+   * o fuso e por salao, e so quem tem o contexto pode decidir.
+   */
   const { data, error } = await db
     .from('client_subscriptions')
     .insert({
@@ -323,6 +336,7 @@ export async function assinar(
       client_id: clientId,
       plan_id: entrada.planId,
       billing_day: entrada.billingDay,
+      started_on: diaNoFuso(timezone),
     })
     .select('id')
     .single()

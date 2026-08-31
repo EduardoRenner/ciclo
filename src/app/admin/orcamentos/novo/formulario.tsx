@@ -4,6 +4,7 @@ import { Plus, Trash2 } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState, useTransition } from 'react'
 
+import { diaDaquiA } from '@/core/tempo/dia'
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import Input from '@/components/ui/input'
@@ -18,7 +19,14 @@ type Item = { description: string; qty: string; unitPriceCents: number }
 
 const ITEM_VAZIO: Item = { description: '', qty: '1', unitPriceCents: 0 }
 
-export default function FormularioOrcamento({ profissionais }: { profissionais: Profissional[] }) {
+export default function FormularioOrcamento({
+  profissionais,
+  timezone,
+}: {
+  profissionais: Profissional[]
+  /** Fuso do salao: a validade e uma data de calendario, e calendario e do salao, nao do aparelho. */
+  timezone: string
+}) {
   const router = useRouter()
   const [pendente, iniciarTransicao] = useTransition()
 
@@ -58,10 +66,17 @@ export default function FormularioOrcamento({ profissionais }: { profissionais: 
     e.preventDefault()
     setErro(null)
 
-    const validUntil =
-      validade === 'sem_validade'
-        ? null
-        : new Date(Date.now() + Number(validade) * 86_400_000).toISOString().slice(0, 10)
+    /*
+     * Era `new Date(...).toISOString().slice(0, 10)` — "daqui a N dias em UTC", nao no salao. Em
+     * Brasilia, um orcamento feito das 21h a meia-noite nascia valendo um dia a MAIS do que a
+     * pessoa combinou.
+     *
+     * E a metade errada de uma costura: quem confere a expiracao (`orcamentoExpirado`, em
+     * `orcamentos.ts`) ja usa `tenant.timezone` corretamente. Gravar no fuso do servidor e conferir
+     * no fuso do salao e ter duas ideias diferentes de "que dia e hoje" nas duas pontas da mesma
+     * regra.
+     */
+    const validUntil = validade === 'sem_validade' ? null : diaDaquiA(timezone, Number(validade))
 
     const corpo = {
       clientDraft: { name: clienteNome, phone: clienteTelefone },

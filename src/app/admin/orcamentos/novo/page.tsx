@@ -18,7 +18,10 @@ export default async function PaginaNovoOrcamento() {
   return (
     <>
       <PageHeader titulo="Novo orçamento" />
-      <FormularioOrcamento profissionais={profissionais.map((p) => ({ id: p.id, display_name: p.display_name }))} />
+      <FormularioOrcamento
+        profissionais={profissionais.map((p) => ({ id: p.id, display_name: p.display_name }))}
+        timezone={ctx.tenant.timezone}
+      />
     </>
   )
 }

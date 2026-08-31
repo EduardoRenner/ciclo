@@ -329,7 +329,7 @@ describe('clube de assinatura', () => {
         active: true,
       })
 
-      await assinar(svc, tenantId, semOptInId, { planId: plano.id, billingDay: 10 })
+      await assinar(svc, tenantId, semOptInId, { planId: plano.id, billingDay: 10 }, 'America/Sao_Paulo')
       const ativa = await assinaturaAtiva(svc, tenantId, semOptInId)
       expect(ativa).toMatchObject({ planName: 'Plano de teste', priceCents: 9_900, billingDay: 10 })
 
@@ -357,8 +357,8 @@ describe('clube de assinatura', () => {
         active: true,
       })
 
-      await assinar(svc, tenantId, optOutId, { planId: plano.id, billingDay: 1 })
-      const erro = await assinar(svc, tenantId, optOutId, { planId: plano.id, billingDay: 15 }).catch((e: unknown) => e)
+      await assinar(svc, tenantId, optOutId, { planId: plano.id, billingDay: 1 }, 'America/Sao_Paulo')
+      const erro = await assinar(svc, tenantId, optOutId, { planId: plano.id, billingDay: 15 }, 'America/Sao_Paulo').catch((e: unknown) => e)
       expect(erro).toMatchObject({ code: 'VALIDATION_ERROR' })
 
       await cancelarAssinatura(svc, tenantId, (await assinaturaAtiva(svc, tenantId, optOutId))!.id)
