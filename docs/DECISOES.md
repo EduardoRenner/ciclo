@@ -3814,3 +3814,36 @@ Duas decisões que valem registro:
   acontecendo num toque só; mostrar apenas "marcar horário" seria a confirmação mentindo por
   omissão — exatamente o que a pesquisa sobre fadiga de aprovação diz que destrói a confiança no
   gesto de confirmar.
+
+---
+
+### 2026-08-30 · Concluir atendimento pelo chat: passa na régua, mas com aviso e URL montada no código
+
+**Pergunta.** O assistente pode concluir um atendimento?
+
+**A régua do `docs/33 §2.1`, item por item.** Manda mensagem para fora? Não. Escreve em registro de
+cliente? Sim — abre comanda e credita ponto de fidelidade. Gasta dinheiro? Não, só registra o que já
+foi combinado. Alcança mais de uma pessoa? Não, uma cliente por vez. **Passa** — mas com a agravante
+que o item 2 não cobre: `done` é estado **terminal** (`core/scheduling/state.ts`: `done: new Set([])`).
+Não há transição de saída. A interface não desfaz.
+
+**Decisão: existe, com três travas.**
+
+1. **Só propõe o que a máquina de estados aceita.** A ferramenta filtra `status === 'arrived'` — o
+   único estado com transição para `done`. Sem ninguém em atendimento ela devolve
+   `nao_da: nenhum_atendimento_em_andamento` com a situação da cliente, e o assistente explica que
+   falta marcar "Chegou". Propor o impossível e deixar a rota recusar depois seria fazer o dono
+   confirmar para receber erro.
+2. **O cartão avisa antes do toque.** `acaoTemVolta` separa por reversibilidade, que é o eixo que a
+   pesquisa da Anthropic usa: o que dá para desfazer pode passar batido, o que não dá precisa de um
+   gesto consciente. Ação sem volta ganha a linha "Depois de confirmar, não dá para desfazer por
+   aqui."
+3. **A URL é montada no código, não vem da proposta.** Esta é a que quase passou despercebida. A
+   proposta atravessa o modelo, e o modelo lê nome de cliente — campo que o **cliente final**
+   preenche no agendamento público. Se a tela aceitasse uma rota vinda dali, o destino do POST seria
+   influenciável por texto de terceiro. `core/assistente/acoes.ts` fixa o formato e aceita da
+   proposta só o id, validado como UUID: `../../../admin/config` não vira rota, vira `null`, e o
+   botão não dispara nada.
+
+A guarda foi vista reprovando nas duas mutações: sem a validação de UUID a travessia de caminho
+passa, e esvaziando a lista de ações sem volta o aviso some da tela em silêncio.

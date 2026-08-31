@@ -7,6 +7,7 @@ import { Fragment, useEffect, useRef, useState } from 'react'
 import Card from '@/components/ui/card'
 import Sheet from '@/components/ui/sheet'
 import { useToast } from '@/components/ui/toast'
+import { acaoTemVolta, rotaDaAcao } from '@/core/assistente/acoes'
 import { cn } from '@/lib/utils'
 
 type Sugestao = {
@@ -83,10 +84,6 @@ type Turno = {
   erroDaProposta?: string
 }
 
-/** Onde cada ação preparada é de fato executada. O assistente NUNCA chama estas rotas. */
-const ROTA_DA_ACAO: Record<string, string> = {
-  criar_agendamento: '/api/v1/appointments',
-}
 
 function formatarQuando(iso: string): string {
   // `2026-08-31T15:00` → "31/08 às 15:00". Sem `new Date()`: a string já vem no fuso do salão, e
@@ -396,7 +393,9 @@ export default function AssistenteFlutuante({ disponivel }: { disponivel: boolea
     const proposta = turno?.proposta
     if (!proposta || turno.estadoDaProposta !== 'pendente') return
 
-    const rota = ROTA_DA_ACAO[proposta.acao]
+    // A URL é montada por `core/assistente/acoes` — a tela nunca aceita rota vinda da proposta,
+    // que passou pelo modelo. Id inválido devolve `null` e o botão não dispara nada.
+    const rota = rotaDaAcao(proposta.acao, proposta.dados)
     if (!rota) {
       // Ação que a tela não sabe executar não vira botão quebrado: some o botão e diz o porquê.
       setTurnos((a) => a.map((t, i) => (i === indice ? { ...t, estadoDaProposta: 'erro', erroDaProposta: 'Essa ação ainda não pode ser feita por aqui.' } : t)))
@@ -421,7 +420,7 @@ export default function AssistenteFlutuante({ disponivel }: { disponivel: boolea
         return
       }
       setTurnos((a) => a.map((t, i) => (i === indice ? { ...t, estadoDaProposta: 'feito' } : t)))
-      mostrarToast({ tom: 'ok', titulo: 'Horário marcado' })
+      mostrarToast({ tom: 'ok', titulo: 'Feito' })
     } catch {
       setTurnos((a) =>
         a.map((t, i) => (i === indice ? { ...t, estadoDaProposta: 'erro', erroDaProposta: 'Sem conexão agora. Nada foi marcado.' } : t)),
@@ -495,14 +494,26 @@ export default function AssistenteFlutuante({ disponivel }: { disponivel: boolea
                               {t.erroDaProposta}
                             </p>
                           ) : (
+                            <>
+                            {/*
+                              Ação sem volta avisa ANTES do toque. A pesquisa da Anthropic separa
+                              justamente por reversibilidade: o que dá para desfazer pode passar
+                              batido, o que não dá precisa de um gesto consciente. Concluir abre
+                              comanda e credita pontos, e `done` é estado terminal na máquina de
+                              estados — a interface não desfaz.
+                            */}
+                            {!acaoTemVolta(t.proposta.acao) ? (
+                              <p className="mt-2.5 text-secundario text-warn">Depois de confirmar, não dá para desfazer por aqui.</p>
+                            ) : null}
                             <button
                               type="button"
                               onClick={() => confirmarProposta(i)}
                               disabled={t.estadoDaProposta === 'executando'}
                               className="mt-2.5 grid h-12 w-full place-items-center rounded-[var(--radius-sm)] bg-acc font-semibold text-on-acc transition active:scale-[.98] disabled:opacity-60"
                             >
-                              {t.estadoDaProposta === 'executando' ? 'Marcando…' : 'Confirmar'}
+                              {t.estadoDaProposta === 'executando' ? 'Confirmando…' : 'Confirmar'}
                             </button>
+                            </>
                           )}
                         </div>
                       ) : null}

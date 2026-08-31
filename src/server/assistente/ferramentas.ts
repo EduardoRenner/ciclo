@@ -13,6 +13,7 @@ import { listarParaRecuperar } from '@/server/services/recuperar-receita'
 import { listarServicos } from '@/server/services/servicos'
 import { listarProfissionais } from '@/server/services/profissionais'
 import { resolverPorNome, resolverProfissional, type Candidato } from '@/core/assistente/resolver'
+import { semAcento } from '@/core/text/normalizar'
 import { resumoDeHoje } from '@/server/services/resumo-hoje'
 
 import type { Database } from '@/server/db/types.gen'
@@ -101,6 +102,15 @@ const EsquemaPrepararAgendamento = z.object({
     .string()
     .optional()
     .describe('telefone da cliente, SÓ quando ela ainda não está cadastrada e o dono informou o número'),
+})
+
+const EsquemaConcluirAtendimento = z.object({
+  cliente: z.string().min(2).describe('nome da cliente cujo atendimento terminou'),
+  data: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional()
+    .describe('dia do atendimento em AAAA-MM-DD; omita para hoje'),
 })
 
 /**
@@ -293,6 +303,52 @@ export const FERRAMENTAS: Ferramenta[] = [
           quando,
           precoCents: servicoEscolhido.price_cents,
           duracaoMin: servicoEscolhido.duration_min,
+        },
+      }
+    },
+  }),
+  apagarTipo({
+    nome: 'preparar_conclusao_de_atendimento',
+    descricao:
+      'Prepara a conclusão de um atendimento que já aconteceu (a cliente chegou e foi atendida) e devolve uma PROPOSTA para o dono confirmar. NÃO conclui nada. Concluir abre a comanda e credita os pontos da cliente, e NÃO tem como desfazer depois.',
+    schema: EsquemaConcluirAtendimento,
+    // Mesma permissão que `POST /api/v1/appointments/[id]/complete` exige.
+    permissao: 'appointment:update',
+    modulo: 'agenda',
+    executar: async (ctx, { cliente, data }) => {
+      const dia = data ?? hojeNoFuso(ctx.timezone)
+      const agenda = await listarAgendaDoDia(ctx.db, ctx.tenantId, dia, ctx.timezone)
+
+      // Só o que a máquina de estados deixa concluir (`core/scheduling/state.ts`: arrived → done).
+      // Filtrar ANTES de resolver o nome evita propor uma conclusão que a rota recusaria.
+      const concluiveis = agenda.appointments.filter((a) => a.status === 'arrived')
+      if (concluiveis.length === 0) {
+        const daCliente = agenda.appointments.filter((a) => semAcento(a.clients?.name ?? '').includes(semAcento(cliente)))
+        return {
+          status: 'nao_da',
+          motivo: 'nenhum_atendimento_em_andamento',
+          dia,
+          // Diz em que estado ela está: "confirmado" precisa de "Chegou" antes de concluir.
+          situacaoDaCliente: daCliente.map((a) => ({ cliente: a.clients?.name, status: a.status })),
+        }
+      }
+
+      const candidatos: Candidato[] = concluiveis.map((a) => ({ id: a.id, nome: a.clients?.name ?? 'Cliente' }))
+      const rc = resolverPorNome(cliente, candidatos)
+      if (rc.tipo === 'nenhum') return { status: 'nao_achei', oQue: 'atendimento', termo: cliente, dia }
+      if (rc.tipo === 'ambiguo') return { status: 'qual_delas', oQue: 'atendimento', opcoes: rc.opcoes.map((o) => o.nome) }
+
+      const escolhido = concluiveis.find((a) => a.id === rc.item.id)!
+
+      return {
+        status: 'proposta',
+        acao: 'concluir_atendimento',
+        dados: { appointmentId: escolhido.id },
+        resumo: {
+          cliente: rc.item.nome,
+          servico: escolhido.services?.name ?? 'Serviço',
+          quando: escolhido.starts_at,
+          precoCents: escolhido.price_cents,
         },
       }
     },
