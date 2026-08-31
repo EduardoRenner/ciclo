@@ -6,6 +6,7 @@ import { useState, useTransition } from 'react'
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import { useToast } from '@/components/ui/toast'
+import { PALETA_PRESET } from '@/core/text/cor'
 
 type Tenant = {
   name: string
@@ -191,14 +192,31 @@ export default function FormularioNegocio({ tenant, urlSite }: { tenant: Tenant;
           />
         </label>
 
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-2">
           <span className="text-label font-semibold text-txt-2">Cor do seu site</span>
+          <div className="flex flex-wrap items-center gap-2">
+            {PALETA_PRESET.map((p) => (
+              <button
+                key={p.hex}
+                type="button"
+                onClick={() => setAcento(p.hex)}
+                aria-label={`Usar a cor ${p.nome}`}
+                aria-pressed={acento === p.hex}
+                title={p.nome}
+                style={{ backgroundColor: p.hex }}
+                className={
+                  'size-10 shrink-0 rounded-full border-2 transition ' +
+                  (acento === p.hex ? 'border-txt' : 'border-transparent hover:border-line-2')
+                }
+              />
+            ))}
+          </div>
           <div className="flex items-center gap-3">
             <input
               type="color"
               value={acento ?? ACENTO_PADRAO}
               onChange={(e) => setAcento(e.target.value)}
-              aria-label="Escolher a cor do site"
+              aria-label="Escolher outra cor do site"
               className="size-12 shrink-0 cursor-pointer rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 p-1"
             />
             {acento !== null ? (
@@ -210,7 +228,7 @@ export default function FormularioNegocio({ tenant, urlSite }: { tenant: Tenant;
                 Usar a cor padrão
               </button>
             ) : (
-              <span className="text-secundario text-txt-3">Cor padrão do CICLO. Toque na amostra para escolher a sua.</span>
+              <span className="text-secundario text-txt-3">Cor padrão do CICLO, ou escolha outra ao lado.</span>
             )}
           </div>
         </div>

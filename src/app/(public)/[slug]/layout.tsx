@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 
+import { corDeContraste } from '@/core/text/cor'
 import { AppError } from '@/server/http/errors'
 import { perfilPublico } from '@/server/services/public-booking'
 
@@ -47,6 +48,7 @@ export default async function LayoutSlug({
           '--acc': acc,
           '--acc-2': acc2,
           '--acc-soft': `color-mix(in srgb, ${acc} 16%, transparent)`,
+          '--on-acc': corDeContraste(acc),
         } as React.CSSProperties
       }
     >

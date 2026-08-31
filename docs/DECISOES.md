@@ -5045,3 +5045,12 @@ em qualquer lugar do arquivo — e havia OUTRA ocorrência, no formulário de en
 apagava a explicação do botão passava verde por causa da vizinha. Só descobri porque confirmei que
 a mutação tinha sido aplicada antes de ler o resultado, que é o passo 3 do procedimento do
 CLAUDE.md. Reancorada no bloco do botão.
+
+**2026-08-31 · presets de cor (TICKET-070, plano `docs/34-PAGINA-PUBLICA-PLANO.md`)**: em vez de
+"temas" completos (claro/escuro/vibrante), entreguei 6 swatches curados ao lado do seletor de cor
+livre já existente, e corrigi um bug latente achado ao implementar — `--on-acc` (texto do botão
+primário na página pública) era fixo `#0d0c0c` global, então um dono que já escolhia acento escuro
+no seletor livre ganhava texto ilegível. Agora é calculado por luminância (`core/text/cor.ts`,
+`corDeContraste`) e escopado por tenant em `[slug]/layout.tsx`, junto de `--acc`. Motivo de não
+fazer temas completos: só `--acc`/`--acc-2`/`--acc-soft` são escopados por tenant hoje — trocar
+`--bg`/`--surface` por tenant exigiria reauditar contraste na árvore inteira da vitrine.
