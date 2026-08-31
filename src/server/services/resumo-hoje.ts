@@ -28,7 +28,17 @@ export type LinhaHoje = {
 }
 
 export type ResumoHoje = {
-  /** Faturado de verdade — soma do `price_cents` só do que já foi concluído hoje. Não é previsão. */
+  /**
+   * Soma do `price_cents` DO AGENDAMENTO dos atendimentos concluídos hoje. Não é previsão — mas
+   * também não é o faturamento: é PREÇO DE TABELA, e não enxerga desconto dado na comanda, item
+   * extra lançado nem gorjeta.
+   *
+   * O comentário aqui dizia "faturado de verdade", e a tela chamava de "Faturado hoje" (corrigido
+   * em 31/08 para "Atendido hoje"). Quem tem o número do dinheiro é `caixa.ts`, que soma
+   * `tickets.total_cents` das comandas FECHADAS — outro número, de propósito, com outro rótulo
+   * ("Entrou no dia"). Os dois estão certos para o que medem; o errado era um deles se chamar
+   * faturamento.
+   */
   revenueTodayCents: number
   nextClient: LinhaHoje | null
   /** Confirmações pendentes que começam nas próximas 3 horas — o que precisa de atenção agora, não o dia inteiro. */

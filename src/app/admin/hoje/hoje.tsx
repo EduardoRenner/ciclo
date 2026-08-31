@@ -31,6 +31,20 @@ function horaLocal(iso: string): string {
  * dia 1, isso lê como fracasso. Exportada pura (sem props do componente) para poder testar a
  * decisão sem montar React — este projeto não tem harness de render de componente.
  */
+/**
+ * "Faturado hoje" era mentira por uma palavra, e ficou escrito aqui para não voltar.
+ *
+ * O número embaixo deste rótulo soma o `price_cents` DO AGENDAMENTO dos atendimentos concluídos —
+ * preço de tabela. Ele não sabe de desconto dado na comanda, de item extra lançado, nem de
+ * gorjeta. Num dia com desconto, "faturado" mostrava mais do que a pessoa recebeu.
+ *
+ * "Faturar" é o que entrou; isto é o que foi atendido. Quem tem o número do dinheiro é o caixa
+ * (`caixa.ts`, rótulo "Entrou no dia", soma `tickets.total_cents` das comandas FECHADAS) — e o
+ * link para ele já está na linha de apoio, logo abaixo do valor. Os dois números estão certos
+ * para o que medem; o errado era um deles se chamar faturamento.
+ */
+const ROTULO_DO_ATENDIDO = 'Atendido hoje'
+
 export function deveMostrarHeroiDoMotor(revenueTodayCents: number, temProximoCliente: boolean, atribuicaoCount: number): boolean {
   return revenueTodayCents === 0 && !temProximoCliente && atribuicaoCount > 0
 }
@@ -93,7 +107,7 @@ export default function Hoje({
           <StatTile
             pressionavel
             heroi
-            rotulo="Faturado hoje"
+            rotulo={ROTULO_DO_ATENDIDO}
             valor={dinheiro.format(resumo.revenueTodayCents / 100)}
             apoio={
               <span className="flex items-center justify-between gap-2">
