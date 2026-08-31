@@ -63,7 +63,12 @@ export default function ListaServicos({ iniciais }: { iniciais: Servico[] }) {
   }
 
   function aoSalvarNovo(servico: ServicoEditavel) {
-    setServicos((atual) => [...atual, { ...servico, deposit_bps: 0, active: true, position: atual.length }])
+    /*
+     * `deposit_bps` vem do servidor junto com o resto — era fixado em 0 aqui de quando não havia
+     * como definir sinal no formulário. Desde que passou a haver, sobrescrever fazia o selo
+     * "Sinal X%" não aparecer num serviço recém-criado COM sinal, até alguém recarregar a página.
+     */
+    setServicos((atual) => [...atual, { ...servico, active: true, position: atual.length }])
   }
 
   function aoSalvarEditado(servico: ServicoEditavel) {

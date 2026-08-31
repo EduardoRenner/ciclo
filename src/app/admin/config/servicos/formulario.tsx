@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 
+import { dinheiro } from '@/lib/formato'
 import Button from '@/components/ui/button'
 import Input from '@/components/ui/input'
 import MoneyInput from '@/components/ui/money-input'
@@ -23,6 +24,8 @@ export type ServicoEditavel = {
   buffer_before_min: number
   buffer_after_min: number
   bookable_online: boolean
+  /** Percentual do sinal em basis points — 3000 = 30%. */
+  deposit_bps: number
 }
 
 type ModeloDePreco = 'fixed' | 'hourly' | 'visit_hourly' | 'daily'
@@ -59,6 +62,12 @@ export default function FormularioServico({ aberto, aoFechar, servico, aoSalvar 
   const [preparoAntes, setPreparoAntes] = useState(String(servico?.buffer_before_min ?? 0))
   const [preparoDepois, setPreparoDepois] = useState(String(servico?.buffer_after_min ?? 0))
   const [apareceNoSite, setApareceNoSite] = useState(servico?.bookable_online ?? true)
+  /*
+    O sinal existia na API e no banco desde a 0001, e a lista já mostrava o selo "Sinal X%" — mas
+    não havia onde definir. Guardado em pontos percentuais aqui e convertido para basis points no
+    envio: o dono pensa em "30%", o banco guarda 3000 (regra 3 do CLAUDE.md).
+  */
+  const [sinalPercentual, setSinalPercentual] = useState(String((servico?.deposit_bps ?? 0) / 100))
   const [erro, setErro] = useState<string | null>(null)
 
   const editando = !!servico
@@ -78,6 +87,8 @@ export default function FormularioServico({ aberto, aoFechar, servico, aoSalvar 
       bufferBeforeMin: Number(preparoAntes),
       bufferAfterMin: Number(preparoDepois),
       bookableOnline: apareceNoSite,
+      // Percentual → basis points. `Math.round` porque o campo aceita decimal (12,5%).
+      depositBps: Math.round(Number(sinalPercentual.replace(',', '.') || 0) * 100),
     }
 
     iniciarTransicao(async () => {
@@ -202,6 +213,24 @@ export default function FormularioServico({ aberto, aoFechar, servico, aoSalvar 
           onChange={(e) => setCicloDias(e.target.value)}
           classNameCampo="tabular"
           ajuda="É o que o Motor de Ciclo usa até aprender o ritmo de cada cliente."
+        />
+
+        <Input
+          rotulo="Sinal (%)"
+          name="sinal"
+          type="number"
+          inputMode="decimal"
+          min={0}
+          max={100}
+          step="0.5"
+          value={sinalPercentual}
+          onChange={(e) => setSinalPercentual(e.target.value)}
+          classNameCampo="tabular"
+          ajuda={
+            precoCentavos > 0 && Number(sinalPercentual.replace(',', '.')) > 0
+              ? `A cliente vê "sinal de ${dinheiro.format((precoCentavos * Number(sinalPercentual.replace(',', '.'))) / 10000)}" antes de confirmar. Você combina o pagamento com ela — o CICLO não cobra.`
+              : 'Deixe 0 se não pede sinal. O valor aparece para a cliente antes dela confirmar o horário.'
+          }
         />
 
         <label className="flex min-h-12 items-center gap-3 py-1">

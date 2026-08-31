@@ -114,6 +114,17 @@ for (const prof of profissionais) {
     expediente.push({ tenant_id: tenantId, professional_id: prof, weekday, opens_at: '09:00', closes_at: '19:00' })
   }
 }
+/*
+ * O expediente GERAL (`professional_id: null`) precisa existir junto: é ele que a página pública
+ * lê (`listarExpediente(svc, tenantId, null)`) para saber o horário de funcionamento e gerar
+ * slots. A primeira versão deste script apagava o que o `apply_vertical_pack` tinha criado e
+ * recriava só o por-profissional — o resultado era uma página que respondia "Sem horários livres
+ * nesse dia" para TODOS os dias, indistinguível de agenda lotada. Medido em 31/08 nos dois
+ * tenants lang-*.
+ */
+for (const weekday of [2, 3, 4, 5, 6]) {
+  expediente.push({ tenant_id: tenantId, professional_id: null, weekday, opens_at: '09:00', closes_at: '19:00' })
+}
 await svc.from('business_hours').delete().eq('tenant_id', tenantId)
 precisa((await svc.from('business_hours').insert(expediente)).error, 'expediente')
 

@@ -18,6 +18,8 @@ type Servico = {
   name: string;
   durationMin: number;
   priceCents: number;
+  /** Quanto a cliente adianta para segurar o horário. `null` = este serviço não pede sinal. */
+  depositCents: number | null;
 };
 type Profissional = { id: string; displayName: string };
 type Slot = { startsAt: string; endsAt: string; professionalId: string };
@@ -725,6 +727,24 @@ export default function Agendar({
             {servicoEscolhido.priceCents > 0 ? (
               <p className="tabular mt-2 text-stat font-bold text-acc-2">
                 {dinheiro.format(servicoEscolhido.priceCents / 100)}
+              </p>
+            ) : null}
+            {/*
+              O sinal aparece no RESUMO, não na lista de serviços: aqui é o último instante antes
+              de confirmar, e é onde a expectativa precisa estar posta para valer alguma coisa.
+              Na lista ele viraria um segundo número competindo com o preço em cada linha.
+
+              O texto é deliberadamente sobre combinar, nunca sobre pagar: não existe cobrança no
+              CICLO, e prometer um pagamento que a tela não processa seria a mesma classe de
+              promessa vazia que a regra do canal de mensagem proíbe.
+            */}
+            {servicoEscolhido.depositCents !== null ? (
+              <p className="mt-2 rounded-[var(--radius-sm)] bg-surface-2 px-3 py-2 text-secundario text-txt-2">
+                Este horário pede um sinal de{" "}
+                <strong className="tabular font-semibold text-txt">
+                  {dinheiro.format(servicoEscolhido.depositCents / 100)}
+                </strong>
+                . Quem te atende combina o pagamento com você depois de confirmar.
               </p>
             ) : null}
           </div>

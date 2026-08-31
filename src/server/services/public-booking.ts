@@ -4,6 +4,7 @@ import { z } from 'zod'
 
 import { podeUsarCapacidade } from '@/core/billing/planos'
 import { availableSlots, type IntervaloExpediente, type IntervaloOcupado } from '@/core/scheduling/available-slots'
+import { sinalEmCentavos } from '@/core/pricing/sinal'
 import { urlDaVitrine } from '@/core/text/vitrine'
 import { withNovoTenant } from '@/server/db/with-tenant'
 import { listarExpediente } from '@/server/services/expediente'
@@ -86,6 +87,8 @@ export type PerfilPublico = {
     pricingModel: 'fixed' | 'hourly' | 'visit_hourly' | 'daily'
     hourlyRateCents: number | null
     halfDayPriceCents: number | null
+    /** Quanto a cliente adianta para segurar o horário. `null` = este serviço não pede sinal. */
+    depositCents: number | null
   }[]
   professionals: { id: string; displayName: string }[]
   /**
@@ -112,7 +115,9 @@ export const perfilPublico = cache(async (slug: string): Promise<PerfilPublico> 
     const [servicos, profissionais, horarioPadrao, todasAsNotas, comentariosRecentes] = await Promise.all([
       svc
         .from('services')
-        .select('id, name, description, duration_min, price_cents, pricing_model, hourly_rate_cents, half_day_price_cents')
+        .select(
+          'id, name, description, duration_min, price_cents, pricing_model, hourly_rate_cents, half_day_price_cents, deposit_bps, deposit_min_cents',
+        )
         .eq('tenant_id', tenant.id)
         .eq('active', true)
         .eq('bookable_online', true)
@@ -184,6 +189,17 @@ export const perfilPublico = cache(async (slug: string): Promise<PerfilPublico> 
         pricingModel: s.pricing_model as 'fixed' | 'hourly' | 'visit_hourly' | 'daily',
         hourlyRateCents: s.hourly_rate_cents,
         halfDayPriceCents: s.half_day_price_cents,
+        /*
+         * `deposit_bps` existe desde a 0001 e o painel já mostra o selo "Sinal X%", mas o valor
+         * nunca chegava a quem agenda — ou seja, dava para configurar um sinal que a cliente
+         * jamais veria. Isto NÃO cobra nada (não há meio de pagamento no produto): põe a
+         * expectativa na tela antes de confirmar, que é a parte do efeito que não depende de PSP.
+         */
+        depositCents: sinalEmCentavos({
+          precoCents: s.price_cents,
+          depositBps: s.deposit_bps,
+          depositMinCents: s.deposit_min_cents,
+        }),
       })),
       professionals: (profissionais.data ?? []).map((p) => ({ id: p.id, displayName: p.display_name })),
       reviews: {
