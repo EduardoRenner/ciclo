@@ -3979,3 +3979,37 @@ trabalho: o painel do assistente "não abrir" era leitura errada da árvore de a
 abre — `role="dialog"`, `data-state=open`, textarea presente), e o overlay com `opacity: 0`
 bloqueando clique era a aba oculta congelando a animação em `currentTime: 0`. Nenhum dos dois é
 defeito.
+
+---
+
+### 2026-08-30 · O cartão de confirmação saía EM BRANCO em três das quatro ferramentas novas
+
+**Medido no navegador, em produção: o `<dl>` do cartão com ZERO filhos.** O dono via um botão
+"Confirmar" sobre uma caixa vazia.
+
+A causa é de uma banalidade que assusta. O cartão procurava uma **lista fixa** de seis chaves
+minúsculas — `cliente`, `clienteNova`, `servico`, `profissional`, `quando`, `precoCents` — escrita
+quando `preparar_agendamento` era a única ferramenta que existia. As três de hoje devolveram
+`Cliente`, `Telefone`, `Anotação`. JavaScript diferencia maiúscula: toda busca deu `undefined`, o
+`.filter()` descartou tudo, e o `<dl>` ficou vazio sem erro nenhum.
+
+**É a pior forma do erro possível neste produto.** A proposta estava certa, o JSON estava certo,
+1069 testes verdes, o build limpo, e o único pedaço em branco era exatamente aquele que uma pessoa
+de verdade tinha que ler para decidir se confirmava. O comentário que fica logo acima desse código
+já avisava: *"confirmação que a pessoa não consegue julgar vira clique automático, e aí não protege
+ninguém."* O código embaixo do comentário fazia o contrário do que ele dizia.
+
+E só apareceu porque a rodada anterior **abriu a tela e olhou o elemento**. Os testes de proposta
+passaram, a resposta da API veio perfeita nas quatro, e nada disso toca em renderização — mesma
+lição de `auditoria-medir-nao-estimar`, agora com um caso onde o defeito estava a um `Object.keys`
+de distância.
+
+**O conserto tira a lista fixa do caminho.** `core/assistente/resumo.ts` DERIVA as linhas do
+`resumo`: chave conhecida ganha rótulo e formatação próprios, e qualquer outra aparece com o
+próprio nome. Ferramenta futura não consegue mais nascer com cartão em branco — que era a
+verdadeira falha, não as três chaves erradas. Chave terminada em `Cents` é dinheiro venha de onde
+vier, senão um `totalCents` novo apareceria como "4500" na tela.
+
+A guarda lê as chaves de `resumo` **do código-fonte das ferramentas** e passa pelo renderizador
+real, exigindo que toda chave declarada vire linha. Vista reprovando com a lista fixa de volta (5
+casos) e com o extrator cego (aí ela grita, em vez de aprovar por não ter o que checar).
