@@ -4,8 +4,17 @@ import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { lerCorpo } from '@/server/http/body'
 import { AppError } from '@/server/http/errors'
 import { rota } from '@/server/http/handler'
+import { limitarRotaPublica } from '@/server/http/limite-publico'
 
 export const POST = rota(async (req) => {
+  /*
+   * Mesma razão do `password/forgot` (auditoria de 31/08/2026): o limite de e-mail do Supabase
+   * é do PROJETO, então cadastro em massa daqui queima a cota que o resto da plataforma precisa
+   * para confirmar conta. 5 em 10 minutos por IP é folgado para gente cadastrando de verdade
+   * (inclusive errando e tentando de novo) e apertado para script.
+   */
+  await limitarRotaPublica(req, 'cadastro', { limite: 5, janelaSegundos: 600 })
+
   const { email, password, fullName, phone } = await lerCorpo(req, EsquemaCadastro)
 
   await exigirSenhaForte(password)

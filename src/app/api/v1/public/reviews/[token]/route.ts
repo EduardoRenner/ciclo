@@ -2,6 +2,7 @@ import { withNovoTenant } from '@/server/db/with-tenant'
 import { lerCorpo } from '@/server/http/body'
 import { AppError } from '@/server/http/errors'
 import { rota } from '@/server/http/handler'
+import { LIMITE_ACAO, limitarRotaPublica } from '@/server/http/limite-publico'
 import { dadosParaAvaliar, EsquemaAvaliacao, registrarAvaliacao, verificarTokenAvaliacao } from '@/server/services/avaliacoes'
 
 type Ctx = { params: Promise<{ token: string }> }
@@ -13,8 +14,9 @@ function idDoAgendamento(token: string): string {
 }
 
 /** Página pública lê por aqui — nunca com sessão, o token é a única prova de identidade. */
-export const GET = rota(async (_req, ctx) => {
+export const GET = rota(async (req, ctx) => {
   const { token } = await (ctx as Ctx).params
+  await limitarRotaPublica(req, 'avaliar')
   const appointmentId = idDoAgendamento(token)
 
   const dados = await withNovoTenant((svc) => dadosParaAvaliar(svc, appointmentId))
@@ -27,6 +29,7 @@ export const GET = rota(async (_req, ctx) => {
 // trata o 23505 respondendo como sucesso em vez de erro.
 export const POST = rota(async (req, ctx) => {
   const { token } = await (ctx as Ctx).params
+  await limitarRotaPublica(req, 'avaliar-enviar', LIMITE_ACAO)
   const appointmentId = idDoAgendamento(token)
   const entrada = await lerCorpo(req, EsquemaAvaliacao)
 

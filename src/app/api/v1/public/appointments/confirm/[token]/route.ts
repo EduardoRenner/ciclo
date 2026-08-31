@@ -3,6 +3,7 @@ import { confirmarAgendamento } from '@/server/services/agendamentos'
 import { verificarTokenConfirmacao } from '@/server/services/confirmacao-token'
 import { AppError } from '@/server/http/errors'
 import { rota } from '@/server/http/handler'
+import { LIMITE_ACAO, limitarRotaPublica } from '@/server/http/limite-publico'
 
 type Ctx = { params: Promise<{ token: string }> }
 
@@ -11,8 +12,9 @@ type Ctx = { params: Promise<{ token: string }> }
  * recebeu o link (mandado só para o telefone/e-mail da cliente) — não
  * precisa de sessão para confirmar o próprio horário.
  */
-export const POST = rota(async (_req, ctx) => {
+export const POST = rota(async (req, ctx) => {
   const { token } = await (ctx as Ctx).params
+  await limitarRotaPublica(req, 'confirmar', LIMITE_ACAO)
 
   const appointmentId = verificarTokenConfirmacao(token)
   if (!appointmentId) throw new AppError('NOT_FOUND', { message: 'Esse link de confirmação não é mais válido.' })

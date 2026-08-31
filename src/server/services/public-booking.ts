@@ -1,3 +1,4 @@
+import { ouDoProfissionalOuGeral } from '@/server/db/filtro'
 import { Temporal } from '@js-temporal/polyfill'
 import { cache } from 'react'
 import { z } from 'zod'
@@ -342,12 +343,12 @@ export async function disponibilidadePublica(
             .select('professional_id, weekday, opens_at, closes_at')
             .eq('tenant_id', tenant.id)
             .eq('weekday', weekdayPg(dia))
-            .or(`professional_id.eq.${prof.id},professional_id.is.null`),
+            .or(ouDoProfissionalOuGeral('professional_id', prof.id)),
           svc
             .from('time_off')
             .select('starts_at, ends_at')
             .eq('tenant_id', tenant.id)
-            .or(`professional_id.eq.${prof.id},professional_id.is.null`)
+            .or(ouDoProfissionalOuGeral('professional_id', prof.id))
             .lt('starts_at', fimDia)
             .gt('ends_at', inicioDia),
           svc

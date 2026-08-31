@@ -1,3 +1,4 @@
+import { ouDoProfissionalOuGeral } from '@/server/db/filtro'
 import { Temporal } from '@js-temporal/polyfill'
 import { z } from 'zod'
 
@@ -171,7 +172,7 @@ async function plantarOcorrencias(
       .from('time_off')
       .select('professional_id, starts_at, ends_at')
       .eq('tenant_id', tenantId)
-      .or(`professional_id.eq.${serie.professional_id},professional_id.is.null`)
+      .or(ouDoProfissionalOuGeral('professional_id', serie.professional_id))
       .lt('starts_at', fimJanela)
       .gt('ends_at', inicioJanela),
     db

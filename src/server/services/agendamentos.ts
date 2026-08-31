@@ -1,3 +1,4 @@
+import { ouDoProfissionalOuGeral } from '@/server/db/filtro'
 import { Temporal } from '@js-temporal/polyfill'
 import { z } from 'zod'
 
@@ -197,12 +198,12 @@ async function slotsDaJanela(
       .from('business_hours')
       .select('professional_id, weekday, opens_at, closes_at')
       .eq('tenant_id', tenantId)
-      .or(`professional_id.eq.${professionalId},professional_id.is.null`),
+      .or(ouDoProfissionalOuGeral('professional_id', professionalId)),
     db
       .from('time_off')
       .select('professional_id, starts_at, ends_at')
       .eq('tenant_id', tenantId)
-      .or(`professional_id.eq.${professionalId},professional_id.is.null`)
+      .or(ouDoProfissionalOuGeral('professional_id', professionalId))
       .lt('starts_at', fimJanela)
       .gt('ends_at', inicioJanela),
     db
@@ -433,7 +434,7 @@ export async function listarAgendaDoDia(
           .select('professional_id, opens_at, closes_at')
           .eq('tenant_id', tenantId)
           .eq('weekday', weekdayPg(dia))
-          .or(`professional_id.eq.${professionalId},professional_id.is.null`)
+          .or(ouDoProfissionalOuGeral('professional_id', professionalId))
       : db.from('business_hours').select('professional_id, opens_at, closes_at').eq('tenant_id', tenantId).eq('weekday', weekdayPg(dia)).is('professional_id', null),
   ])
   if (erroAg) throw new AppError('INTERNAL', { cause: erroAg })

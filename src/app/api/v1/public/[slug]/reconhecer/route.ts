@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { reconhecerCliente } from '@/server/services/reconhecimento'
 import { AppError } from '@/server/http/errors'
 import { rota } from '@/server/http/handler'
+import { limitarRotaPublica } from '@/server/http/limite-publico'
 
 type Ctx = { params: Promise<{ slug: string }> }
 
@@ -17,6 +18,7 @@ const EsquemaQuery = z.object({ token: z.string().trim().min(1) })
  */
 export const GET = rota(async (req, ctx) => {
   const { slug } = await (ctx as Ctx).params
+  await limitarRotaPublica(req, 'reconhecer')
   const { searchParams } = new URL(req.url)
   const entrada = EsquemaQuery.safeParse({ token: searchParams.get('token') ?? '' })
   if (!entrada.success) throw AppError.validacao({ token: 'Token ausente.' })
