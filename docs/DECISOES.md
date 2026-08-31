@@ -5102,3 +5102,17 @@ volta (isso reintroduziria a classe de bug original — número guardado divergi
 Confirmado que reprova: revertida a escrita de `campaign_id`, o teste falhou; restaurada, passou.
 Verificado ao vivo: duas campanhas para clientes diferentes, cada uma mostra só o que ELA trouxe
 ("1 pessoa voltou · R$ 90,00" vs "Ninguém voltou por aqui ainda"), sem misturar receita entre elas.
+
+**2026-08-31 · `search_path` fixado em `imutavel_sem_acento` (migration 0055)**: `get_advisors`
+(Supabase) apontou `function_search_path_mutable` — a função da busca sem acento (0047) não
+fixava `search_path`. Não é `SECURITY DEFINER` (risco baixo), mas é hardening padrão de graça:
+`alter function ... set search_path = pg_catalog, public`, sem recriar a função nem a coluna
+gerada (`clients.name_busca`) nem o índice. Confirmado que `imutavel_sem_acento('Otávio')`
+continua devolvendo `'otavio'` depois, e o advisor não aponta mais essa função. Os outros achados
+do advisor são intencionais/já reasoned-through: `has_tenant`/`tenant_role`/`can_see_appointment`/
+`my_professional_id` PRECISAM ser executáveis por anon/authenticated (são a base da própria RLS,
+ver `with-tenant.ts`); tabelas de infraestrutura (`job_queue`, `rate_limits` etc.) com RLS sem
+política são o padrão seguro (deny-by-default, nunca acessadas fora de service_role); extensão em
+`public` é estilo, não risco real, e mover exigiria recriar objetos dependentes sem necessidade
+clara; `auth_leaked_password_protection` é toggle do painel do Supabase, fora do que migration
+alcança.
