@@ -52,6 +52,7 @@ export default async function PaginaFicha({ params }: { params: Promise<{ id: st
   return (
     <Ficha
       ficha={ficha}
+      timezone={ctx.tenant.timezone}
       modelos={modelos.filter((m) => m.active)}
       nomeDoNegocio={negocio.data?.name ?? ''}
       vertical={negocio.data?.vertical ?? 'barber'}

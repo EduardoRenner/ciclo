@@ -3,6 +3,7 @@
 import { Award, CreditCard, Minus, Plus, Repeat } from 'lucide-react'
 import { useState, useTransition } from 'react'
 
+import { diaNoFuso } from '@/core/tempo/dia'
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import SectionHeader from '@/components/ui/section-header'
@@ -20,6 +21,8 @@ type Props = {
   assinaturaInicial: AssinaturaDoCliente | null
   planos: Plano[]
   config: ConfigFidelidade
+  /** Fuso do salao: a data de inicio precisa bater com a que o servidor grava. */
+  timezone: string
 }
 
 /**
@@ -27,7 +30,7 @@ type Props = {
  * dedicada a isso). Os dois vivem juntos aqui porque resolvem a mesma pergunta do dono: "como eu
  * faço esse cliente voltar todo mês".
  */
-export default function Fidelidade({ clientId, pontosIniciais, assinaturaInicial, planos, config }: Props) {
+export default function Fidelidade({ clientId, pontosIniciais, assinaturaInicial, planos, config, timezone }: Props) {
   const mostrarToast = useToast()
   const [pendente, iniciarTransicao] = useTransition()
 
@@ -104,7 +107,15 @@ export default function Fidelidade({ clientId, pontosIniciais, assinaturaInicial
           priceCents: plano.price_cents,
           sessionsPerMonth: plano.sessions_per_month,
           billingDay: dia,
-          startedOn: new Date().toISOString().slice(0, 10),
+          /*
+            Era `toISOString().slice(0, 10)` — data em UTC. Ficou errado de um jeito novo quando
+            `assinar()` passou a gravar `started_on` no fuso do salao (antes o banco decidia, com
+            `default current_date`, que tambem e UTC): das 21h a meia-noite a tela mostraria um dia
+            e o banco guardaria outro. A guarda `dia-no-fuso-do-salao` ja avisava disso — "corrigir
+            so o cliente faria a tela discordar do dado guardado". Agora os dois lados usam a mesma
+            regra.
+          */
+          startedOn: diaNoFuso(timezone),
         })
         mostrarToast({ tom: 'ok', titulo: 'Assinatura ativada' })
         setAssinando(false)

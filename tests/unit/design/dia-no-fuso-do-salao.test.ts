@@ -26,24 +26,28 @@ import { computeCycle } from '@/core/cycle/compute'
  */
 
 /**
- * Dívida conhecida — os dois casos que sobraram, cada um por um motivo que está escrito, não por
- * esquecimento. A lista só pode encolher: arquivo novo com o mesmo defeito reprova o build.
+ * Dívida conhecida — **zerada em 2026-08-31**. A lista só pode encolher: arquivo novo com o mesmo
+ * defeito reprova o build.
  *
- * 1. `fidelidade.tsx` monta o `startedOn` do estado otimista em UTC — e está **certo assim**.
- *    Quem grava a coluna é o banco, com `started_on date not null default current_date`
- *    (migration 0019), e o `current_date` do Postgres roda no fuso da sessão, que no Supabase é
- *    UTC. Corrigir só o cliente faria a tela discordar do dado guardado. A raiz é o default da
- *    coluna, e mexer nela é migration — assunto da auditoria técnica.
+ * Os dois casos que estavam aqui foram consertados na raiz, e o raciocínio que os mantinha é o que
+ * mostrou como consertar:
  *
- * 2. `orcamentos/novo/formulario.tsx` gera a validade como "agora + N dias" em UTC. Das 21h à
- *    meia-noite isso dá um dia a mais — mas a favor de quem recebe o orçamento, e o servidor já
- *    interpreta o vencimento no fuso do salão (`orcamentoExpirado(valid_until, timezone)`).
- *    Impacto real: orçamento aberto um dia a mais, três horas por noite. Não paga o risco.
+ * 1. `fidelidade.tsx` — o comentário dizia que a raiz era o `default current_date` da coluna
+ *    (0019) e que "mexer nela é migration". Não foi preciso migration: `assinar()` passou a gravar
+ *    `started_on` no fuso do salão, porque o default do banco não enxerga o tenant e o fuso é por
+ *    salão. O cliente foi junto, no mesmo commit — o comentário avisava que "corrigir só o cliente
+ *    faria a tela discordar do dado guardado", e o inverso também vale.
+ *
+ * 2. `orcamentos/novo/formulario.tsx` — o comentário julgou que um dia a mais é "a favor de quem
+ *    recebe o orçamento" e "não paga o risco". Revertido conscientemente: o salão combinou 7 dias,
+ *    não "7 ou 8 conforme a hora em que o orçamento foi feito", e a outra ponta da mesma regra
+ *    (`orcamentoExpirado`) já lia no fuso do salão. Gravar num fuso e conferir noutro é ter duas
+ *    ideias de "que dia é hoje" dentro da mesma regra. O conserto custou uma prop.
+ *
+ * O texto antigo dos dois casos fica no histórico do git — aqui vale o estado atual.
+ *
  */
-const DIVIDA_CONHECIDA = [
-  join('src', 'app', 'admin', 'clientes', '[id]', 'fidelidade.tsx'),
-  join('src', 'app', 'admin', 'orcamentos', 'novo', 'formulario.tsx'),
-]
+const DIVIDA_CONHECIDA: string[] = []
 
 /**
  * Toda construção `new Date(<arg>).toISOString().slice(0, 10)`, com `<arg>`

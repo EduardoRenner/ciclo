@@ -112,6 +112,7 @@ const ABAS_FICHA = [
 
 export default function Ficha({
   ficha,
+  timezone,
   modelos,
   nomeDoNegocio,
   vertical,
@@ -125,6 +126,8 @@ export default function Ficha({
   mostrarPaywallFidelidade,
 }: {
   ficha: FichaCliente
+  /** Fuso do salao: a data de inicio da assinatura e de calendario, e calendario e do salao. */
+  timezone: string
   modelos: Modelo[]
   nomeDoNegocio: string
   vertical: string
@@ -501,7 +504,14 @@ export default function Ficha({
 
       {aba === 'fidelidade' ? (
         <div className="mt-4">
-          <Fidelidade clientId={cliente.id} pontosIniciais={pontos} assinaturaInicial={assinatura} planos={planos} config={configFidelidade} />
+          <Fidelidade
+            clientId={cliente.id}
+            pontosIniciais={pontos}
+            assinaturaInicial={assinatura}
+            planos={planos}
+            config={configFidelidade}
+            timezone={timezone}
+          />
           <PacotesCarteira
             clientId={cliente.id}
             pacotes={pacotes}
