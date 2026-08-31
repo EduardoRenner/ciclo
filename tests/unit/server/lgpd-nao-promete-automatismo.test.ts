@@ -93,6 +93,21 @@ describe('a fila de retencao so alcanca quem ja passou da carencia', () => {
     expect(Number(m![1]), 'a carencia encolheu — 30 dias e o prazo do FAQ e da expiracao de backup').toBeGreaterThanOrEqual(30)
   })
 
+  it('o lote cabe no tempo da funcao', () => {
+    /*
+     * A primeira versao pegava 500 por execucao. Cada eliminacao faz varias consultas, apaga
+     * arquivos no storage e redige a trilha — 500 sequenciais nao cabem em `maxDuration` nenhum, e
+     * o job morreria no meio toda vez.
+     *
+     * Morrer no meio e SEGURO aqui (a proxima execucao continua de onde parou), mas job que sempre
+     * estoura e job em que ninguem confia.
+     */
+    const m = ROTA.match(/POR_EXECUCAO = (\d+)/)
+    expect(m, 'a constante do lote sumiu').not.toBeNull()
+    expect(Number(m![1]), 'o lote cresceu a ponto de nao caber no tempo da funcao').toBeLessThanOrEqual(200)
+    expect(ROTA, 'a rota parou de declarar maxDuration').toContain('maxDuration')
+  })
+
   it('da para simular antes de agendar', () => {
     // O primeiro disparo de um job destrutivo nao pode ser tambem a primeira vez que alguem
     // descobre quantas linhas ele alcanca.

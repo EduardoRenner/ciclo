@@ -23,6 +23,30 @@ import { rota } from '@/server/http/handler'
  */
 const DIAS_DE_CARENCIA = 30
 
+/*
+ * Lote pequeno de propósito, e o número saiu de contar o trabalho — não de arredondar.
+ *
+ * Cada `eliminarCliente` faz várias consultas (cliente, mídia, consentimentos), apaga arquivos no
+ * storage, atualiza colunas e redige a trilha de auditoria. A primeira versão desta rota pegava
+ * 500 por execução: sequencialmente, isso passa de qualquer `maxDuration` de função serverless, e
+ * o job morreria no meio.
+ *
+ * Morrer no meio aqui é SEGURO — `eliminarCliente` recusa quem já tem `anonymized_at`, então a
+ * execução seguinte continua de onde parou em vez de repetir. Mas job que sempre estoura é job que
+ * ninguém confia, e o log fica cheio de timeout que não significa nada.
+ *
+ * Com 100, a fila normal (ninguém apaga cliente todo dia) esvazia numa execução, e uma fila grande
+ * esvazia em alguns dias — o que é aceitável, porque a carência de 30 dias já disse que isto não
+ * é urgente. Quem pede eliminação imediata usa o botão da ficha, que é síncrono.
+ */
+const POR_EXECUCAO = 100
+
+/**
+ * 60s, como `/api/v1/assistant`. É o teto que o plano dá, e a conta acima foi feita para caber
+ * dentro dele com folga.
+ */
+export const maxDuration = 60
+
 export const GET = rota(async (req) => {
   const esperado = process.env.CRON_SECRET
   const recebido = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
@@ -45,12 +69,12 @@ export const GET = rota(async (req) => {
       .lt('deleted_at', limite)
       .is('anonymized_at', null)
       .order('deleted_at')
-      .limit(500)
+      .limit(POR_EXECUCAO)
     if (error) throw new AppError('INTERNAL', { cause: error })
 
     const fila = vencidos ?? []
     if (simular) {
-      return { simulacao: true, diasDeCarencia: DIAS_DE_CARENCIA, elegiveis: fila.length, limite }
+      return { simulacao: true, diasDeCarencia: DIAS_DE_CARENCIA, porExecucao: POR_EXECUCAO, nesteLote: fila.length, limite }
     }
 
     let eliminados = 0
@@ -70,6 +94,6 @@ export const GET = rota(async (req) => {
       }
     }
 
-    return { simulacao: false, diasDeCarencia: DIAS_DE_CARENCIA, elegiveis: fila.length, eliminados, falhas: falhas.length }
+    return { simulacao: false, diasDeCarencia: DIAS_DE_CARENCIA, porExecucao: POR_EXECUCAO, nesteLote: fila.length, eliminados, falhas: falhas.length }
   })
 })
