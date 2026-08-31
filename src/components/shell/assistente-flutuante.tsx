@@ -8,6 +8,7 @@ import Card from '@/components/ui/card'
 import Sheet from '@/components/ui/sheet'
 import { useToast } from '@/components/ui/toast'
 import { acaoTemVolta, rotaDaAcao } from '@/core/assistente/acoes'
+import { linhasDoResumo } from '@/core/assistente/resumo'
 import { cn } from '@/lib/utils'
 
 type Sugestao = {
@@ -468,16 +469,15 @@ export default function AssistenteFlutuante({ disponivel }: { disponivel: boolea
                       {t.proposta && !t.carregando ? (
                         <div className="mt-3 rounded-[var(--radius-sm)] border border-acc-2/40 bg-acc-soft/40 p-3">
                           <dl className="grid gap-1">
-                            {[
-                              ['Cliente', t.proposta.resumo.cliente],
-                              // Só aparece quando a cliente ainda não existe: o toque vai
-                              // cadastrar E marcar, e o cartão tem que dizer as duas coisas.
-                              ['Cadastrar nova', t.proposta.resumo.clienteNova],
-                              ['Serviço', t.proposta.resumo.servico],
-                              ['Com', t.proposta.resumo.profissional],
-                              ['Quando', typeof t.proposta.resumo.quando === 'string' ? formatarQuando(t.proposta.resumo.quando) : null],
-                              ['Valor', dinheiroBR(t.proposta.resumo.precoCents)],
-                            ]
+                            {linhasDoResumo(t.proposta.resumo)
+                              .map((linha) => [
+                                linha.rotulo,
+                                linha.tipo === 'dinheiro'
+                                  ? dinheiroBR(linha.valor)
+                                  : linha.tipo === 'data' && typeof linha.valor === 'string'
+                                    ? formatarQuando(linha.valor)
+                                    : String(linha.valor),
+                              ])
                               .filter((par): par is [string, string] => typeof par[1] === 'string' && par[1] !== '')
                               .map(([rotulo, valor]) => (
                                 <div key={String(rotulo)} className="flex justify-between gap-3">
