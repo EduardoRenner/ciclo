@@ -13,7 +13,6 @@ import { deveCreditarIndicacao } from '@/core/loyalty/indicacao'
  * ela me pega hoje: a mesma coisa aconteceu com "R$ 49" dentro do comentario do llms.txt.
  */
 
-const NL = String.fromCharCode(10)
 const FIDELIDADE = semComentarios(readFileSync('src/server/services/fidelidade.ts', 'utf8'))
 
 /**

@@ -19,7 +19,6 @@ import { semComentarios } from '../../helpers/fonte'
  * Esta guarda protege o vocabulario, nao um texto especifico: se um numero derivado de preco de
  * tabela voltar a se chamar "faturado" ou "gastou", ela reprova.
  */
-const NL = String.fromCharCode(10)
 const BARRA = String.fromCharCode(92)
 
 

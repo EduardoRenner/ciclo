@@ -4519,3 +4519,41 @@ e depois **mutadas** para provar que ainda pegam o que existiam para pegar: fide
 **Minha guarda nova nasceu casando com o próprio comentário** que explica por que não usar mais
 `visits_count` — segunda vez hoje (a primeira foi "R$ 49" dentro do comentário do `llms.txt`).
 Passou a ignorar linhas de comentário antes de casar.
+
+---
+
+### 2026-08-31 · Dinheiro tem duas palavras, e cinco cópias do detector de comentários
+
+**Fim da varredura dos leitores de `ltv_cents`.** A tela de criar campanha dizia "já gastou R$ X"
+sobre cada cliente da lista — mesma imprecisão da ficha, e aqui ao lado da decisão de quem recebe
+mensagem. Virou "R$ X em atendimentos".
+
+O "ainda não gastou" virou **"ainda sem atendimento"**, e a troca não é cosmética: com o cron
+atrasado, uma cliente atendida hoje ainda aparece zerada, e dizer que ela "não gastou" erra sobre
+uma pessoa. Dizer que não há atendimento registrado descreve o REGISTRO, e é sempre verdade.
+
+**Deixada como está, por decisão:** a lista de clientes mostra o valor sem rótulo, ao lado de
+"12 visitas" — lê-se como "valor dessas visitas", que é o que é. Não afirma "gastou", então não
+entra na regra. Mudar tudo o que casa com um padrão é como uma guarda fica ruim.
+
+O vocabulário virou guarda: **nenhuma tela que exibe valor derivado de preço de tabela pode chamá-lo
+de "faturado" ou "gastou"**. No CICLO, "atendido" é preço de tabela e "entrou" é dinheiro no caixa.
+
+---
+
+**E o achado de infraestrutura, que vale mais que a copy.** A guarda nova reprovou casando com
+"gastou" dentro do meu próprio comentário JSX — **terceira vez no mesmo dia** (antes: "R$ 49" no
+comentário do `llms.txt`, `visits_count` no comentário do `fidelidade.ts`).
+
+Investigando, achei **cinco cópias** de `semComentarios` espalhadas pelos testes, com
+implementações diferentes. As três antigas estavam certas por acidente feliz — remover `/* … */`
+também apaga o miolo de `{/* … */}`. As duas escritas hoje filtravam por PREFIXO DE LINHA e eram
+cegas a comentário JSX, cujas linhas internas não começam com `*`.
+
+Cinco cópias divergentes de uma regra é a mesma armadilha de "duas fontes da mesma verdade" que
+este projeto persegue no produto — aplicada à ferramenta que faz a perseguição. Consolidadas em
+`tests/helpers/fonte.ts`.
+
+A mutação que prova a consolidação é a mais bonita da noite: quebrar o stripper compartilhado faz
+**15 testes gritarem "veio vazio"** em vez de passarem por não terem olhado nada. As guardas antigas
+já se protegiam contra o próprio detector — exatamente o passo 4 do procedimento do CLAUDE.md.
