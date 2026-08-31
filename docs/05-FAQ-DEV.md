@@ -315,10 +315,26 @@ Não. O modo impersonation nunca carrega a DEK. Se precisar dar suporte a um cas
 Nunca: dado de saúde, telefone completo, e-mail, CPF, foto, token, chave. Configure `beforeSend` do Sentry para redigir. Existe teste que injeta PII e verifica que foi redigida.
 
 **G92. Como funciona a exclusão por LGPD?**
-Três estágios: (1) `deleted_at` — some da UI; (2) após 30 dias, **anonimização**: nome → "Cliente removido", telefone/e-mail → null, cofre e mídia **apagados de verdade**, `anonymized_at` preenchido; (3) registros financeiros (comanda, pagamento) **permanecem** sem vínculo pessoal, porque a lei fiscal exige guarda. Explique isso ao titular na resposta.
+**Corrigido em 31/08/2026** — a resposta anterior descrevia como automático um estágio que não roda.
+
+O que EXISTE e funciona: o botão de apagar na ficha chama `eliminarCliente` (`lgpd.ts`), que faz a
+anonimização inteira na hora — nome vira marcador, telefone/e-mail viram null, cofre e mídia são
+apagados de verdade, `anonymized_at` é preenchido, e a trilha de auditoria é redigida
+(`redigir_trilha_do_cliente`, migration 0046). Registros financeiros permanecem sem vínculo
+pessoal, porque a lei fiscal exige guarda.
+
+O que **NÃO existe**: a passagem automática de `deleted_at` para anonimização após 30 dias. O job
+`lgpd_retention` diário está registrado como pendência no próprio `lgpd.ts` ("ainda não existe nesta
+base") e não há rota de cron para ele. Um cliente apenas soft-deletado permanece soft-deletado.
+
+**Não diga ao titular que a anonimização acontece sozinha em 30 dias.** Diga que a eliminação
+acontece quando pedida, e peça-a. A política pública (`/privacidade`) já está correta: ela descreve
+o botão, não um prazo automático.
 
 **G93. E os backups?**
-Backup expira em 30 dias. Se houver restauração dentro da janela, um job reaplica as exclusões pendentes (`lgpd_retention` guarda a fila de titulares eliminados). Documente isso no aviso de privacidade.
+Backup expira em 30 dias. **A reaplicação automática após restauração ainda não existe** — depende
+do mesmo `lgpd_retention` da G92, que é pendência. Hoje, restauração dentro da janela exige
+reexecutar as eliminações à mão. Não documente no aviso de privacidade um automatismo que não roda.
 
 **G94. Foto: quanto tempo guardo?**
 Padrão 24 meses ou até revogação do consentimento de imagem, o que vier primeiro. Configurável por tenant, com mínimo de 12 meses (para prova) e máximo de 60.
