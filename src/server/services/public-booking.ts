@@ -89,8 +89,10 @@ export type PerfilPublico = {
     halfDayPriceCents: number | null
     /** Quanto a cliente adianta para segurar o horário. `null` = este serviço não pede sinal. */
     depositCents: number | null
+    /** Foto do serviço — endereço já montado. `null` quando o salão não subiu nenhuma. */
+    imageUrl: string | null
   }[]
-  professionals: { id: string; displayName: string }[]
+  professionals: { id: string; displayName: string; photoUrl: string | null }[]
   /**
    * docs/09-PLATAFORMA.md §8: a página pública promete "avaliações" desde a
    * escrita do plano e nunca entregou — `client_reviews` (TICKET das
@@ -116,7 +118,7 @@ export const perfilPublico = cache(async (slug: string): Promise<PerfilPublico> 
       svc
         .from('services')
         .select(
-          'id, name, description, duration_min, price_cents, pricing_model, hourly_rate_cents, half_day_price_cents, deposit_bps, deposit_min_cents',
+          'id, name, description, duration_min, price_cents, pricing_model, hourly_rate_cents, half_day_price_cents, deposit_bps, deposit_min_cents, image_key',
         )
         .eq('tenant_id', tenant.id)
         .eq('active', true)
@@ -125,7 +127,7 @@ export const perfilPublico = cache(async (slug: string): Promise<PerfilPublico> 
         .order('position'),
       svc
         .from('professionals')
-        .select('id, display_name')
+        .select('id, display_name, photo_key')
         .eq('tenant_id', tenant.id)
         .eq('active', true)
         .eq('accepts_online', true)
@@ -200,8 +202,9 @@ export const perfilPublico = cache(async (slug: string): Promise<PerfilPublico> 
           depositBps: s.deposit_bps,
           depositMinCents: s.deposit_min_cents,
         }),
+        imageUrl: urlDaVitrine(s.image_key),
       })),
-      professionals: (profissionais.data ?? []).map((p) => ({ id: p.id, displayName: p.display_name })),
+      professionals: (profissionais.data ?? []).map((p) => ({ id: p.id, displayName: p.display_name, photoUrl: urlDaVitrine(p.photo_key) })),
       reviews: {
         average:
           todasAsNotas.data && todasAsNotas.data.length > 0

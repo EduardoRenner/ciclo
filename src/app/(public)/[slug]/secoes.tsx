@@ -165,7 +165,24 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
             {perfil.services.map((s) => (
               <Card key={s.id} pressionavel>
                 <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
+                  {/*
+                    A foto entra ANTES do nome, em miniatura: escolher "Platinado" por um retângulo
+                    de texto é diferente de escolher vendo o resultado. Quem não subiu foto não
+                    ganha espaço reservado nem moldura vazia — a linha continua exatamente como era.
+                  */}
+                  {s.imageUrl ? (
+                    /* Já é WebP dimensionado no upload — ver comentário da capa acima. */
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={s.imageUrl}
+                      alt=""
+                      width={800}
+                      height={600}
+                      loading="lazy"
+                      className="size-14 shrink-0 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 object-cover"
+                    />
+                  ) : null}
+                  <div className="min-w-0 flex-1">
                     <p className="text-corpo font-semibold">{s.name}</p>
                     {s.description ? <p className="mt-0.5 text-secundario text-txt-2">{s.description}</p> : null}
                     <p className="tabular mt-1 text-secundario text-txt-3">{duracao(s.durationMin)}</p>

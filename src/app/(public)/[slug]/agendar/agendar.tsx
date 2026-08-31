@@ -21,7 +21,7 @@ type Servico = {
   /** Quanto a cliente adianta para segurar o horário. `null` = este serviço não pede sinal. */
   depositCents: number | null;
 };
-type Profissional = { id: string; displayName: string };
+type Profissional = { id: string; displayName: string; photoUrl: string | null };
 type Slot = { startsAt: string; endsAt: string; professionalId: string };
 
 /**
@@ -552,6 +552,23 @@ export default function Agendar({
                   buscarDisponibilidade(dia);
                 }}
               >
+                {/*
+                  Rosto antes do nome: a cliente marca com ALGUÉM, não com uma string. Dentro do
+                  Chip para não mudar o alvo de toque nem a linha — quem não tem foto continua
+                  aparecendo só com o nome, sem moldura vazia denunciando a ausência.
+                */}
+                {p.photoUrl ? (
+                  /* Já é WebP dimensionado no upload. */
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={p.photoUrl}
+                    alt=""
+                    width={512}
+                    height={512}
+                    loading="lazy"
+                    className="-ml-1 mr-1.5 inline-block size-6 rounded-full object-cover align-text-bottom"
+                  />
+                ) : null}
                 {p.displayName}
               </Chip>
             ))}

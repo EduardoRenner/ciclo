@@ -6,7 +6,7 @@ import type { Database } from '@/server/db/types.gen'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 const COLUNAS =
-  'id, display_name, avatar_url, bio, color, comp_model, commission_bps, rent_cents, accepts_online, active, user_id'
+  'id, display_name, photo_key, bio, color, comp_model, commission_bps, rent_cents, accepts_online, active, user_id'
 
 /**
  * `comp_model`/`commission_bps`/`rent_cents` do enum e dos `check` da 0001 —

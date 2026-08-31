@@ -1849,7 +1849,6 @@ export type Database = {
         Row: {
           accepts_online: boolean
           active: boolean
-          avatar_url: string | null
           bio: string | null
           color: string | null
           commission_bps: number
@@ -1858,6 +1857,7 @@ export type Database = {
           deleted_at: string | null
           display_name: string
           id: string
+          photo_key: string | null
           rent_cents: number
           tenant_id: string
           user_id: string | null
@@ -1865,7 +1865,6 @@ export type Database = {
         Insert: {
           accepts_online?: boolean
           active?: boolean
-          avatar_url?: string | null
           bio?: string | null
           color?: string | null
           commission_bps?: number
@@ -1874,6 +1873,7 @@ export type Database = {
           deleted_at?: string | null
           display_name: string
           id?: string
+          photo_key?: string | null
           rent_cents?: number
           tenant_id: string
           user_id?: string | null
@@ -1881,7 +1881,6 @@ export type Database = {
         Update: {
           accepts_online?: boolean
           active?: boolean
-          avatar_url?: string | null
           bio?: string | null
           color?: string | null
           commission_bps?: number
@@ -1890,6 +1889,7 @@ export type Database = {
           deleted_at?: string | null
           display_name?: string
           id?: string
+          photo_key?: string | null
           rent_cents?: number
           tenant_id?: string
           user_id?: string | null
@@ -2299,6 +2299,7 @@ export type Database = {
           half_day_price_cents: number | null
           hourly_rate_cents: number | null
           id: string
+          image_key: string | null
           name: string
           parallel_capacity: number
           position: number
@@ -2324,6 +2325,7 @@ export type Database = {
           half_day_price_cents?: number | null
           hourly_rate_cents?: number | null
           id?: string
+          image_key?: string | null
           name: string
           parallel_capacity?: number
           position?: number
@@ -2349,6 +2351,7 @@ export type Database = {
           half_day_price_cents?: number | null
           hourly_rate_cents?: number | null
           id?: string
+          image_key?: string | null
           name?: string
           parallel_capacity?: number
           position?: number

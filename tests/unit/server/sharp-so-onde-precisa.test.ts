@@ -104,6 +104,7 @@ describe('sharp só onde precisa (§7 — 19,2 MB de libvips)', () => {
   it.each([
     'src/app/api/v1/clients/[id]/media/route.ts',
     'src/app/api/v1/tenant/vitrine/route.ts',
+    'src/app/api/v1/tenant/vitrine/entidade/route.ts',
   ])('%s CONTINUA alcançando o sharp', (rel) => {
     // O outro lado da regra. Sem isto, "ninguém importa sharp" passaria — inclusive com o
     // upload quebrado em produção por módulo não encontrado, que foi o efeito colateral real

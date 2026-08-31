@@ -37,12 +37,26 @@ const TAMANHO_MAX_BYTES = 2 * 1024 * 1024
 const FORMATOS = {
   logo: { largura: 512, altura: 512, ajuste: 'inside' as const },
   cover: { largura: 1600, altura: 600, ajuste: 'cover' as const },
+  /* Serviço aparece em cartão largo na lista; profissional, em avatar redondo. */
+  service: { largura: 800, altura: 600, ajuste: 'cover' as const },
+  professional: { largura: 512, altura: 512, ajuste: 'cover' as const },
 }
 
 export const EsquemaUploadVitrine = z.object({
   tipo: z.enum(['logo', 'cover']),
 })
 export type TipoDeVitrine = z.infer<typeof EsquemaUploadVitrine>['tipo']
+
+/**
+ * Foto de serviço e de profissional. Separado do esquema do tenant porque estas precisam de um
+ * `id` — a imagem pertence a uma linha, não ao negócio inteiro.
+ */
+export const EsquemaUploadDeEntidade = z.object({
+  tipo: z.enum(['service', 'professional']),
+  id: z.uuid(),
+})
+export type TipoDeEntidade = z.infer<typeof EsquemaUploadDeEntidade>['tipo']
+
 
 /**
  * Reencoda para WebP e sobe. O reencode não é só compressão: `sharp` só preserva metadata se
@@ -110,6 +124,106 @@ export async function fazerUploadDaVitrine(
     }
 
     return { key: storageKey }
+  })
+}
+
+/**
+ * Reencoda e grava a foto de UMA linha (um serviço, um profissional).
+ *
+ * O `eq('tenant_id')` no update não é redundante com a RLS: `withTenant` usa `service_role`, que
+ * a RLS não alcança — sem ele, um `id` de outro tenant escreveria em cima. Mesma disciplina da
+ * regra "nunca confie no tenant_id do corpo da requisição".
+ */
+export async function fazerUploadDaEntidade(
+  tenantId: string,
+  entrada: { tipo: TipoDeEntidade; id: string },
+  arquivo: { buffer: Buffer },
+): Promise<{ key: string }> {
+  if (arquivo.buffer.length > TAMANHO_MAX_BYTES) {
+    throw AppError.validacao({ file: 'Imagem maior que 2MB. Tente uma menor.' })
+  }
+
+  const formato = FORMATOS[entrada.tipo]
+
+  let processado: Buffer
+  try {
+    processado = await sharp(arquivo.buffer)
+      .rotate()
+      .resize(formato.largura, formato.altura, { fit: formato.ajuste, withoutEnlargement: true })
+      .webp({ quality: 82 })
+      .toBuffer()
+  } catch {
+    throw AppError.validacao({ file: 'Não foi possível processar essa imagem.' })
+  }
+
+  const storageKey = `${tenantId}/${randomUUID()}.webp`
+
+  return withTenant(tenantId, async (db) => {
+    /*
+     * As duas ramificações são escritas por extenso, e não por tabela/coluna em variável: com nome
+     * dinâmico o supabase-js não consegue resolver o tipo da coluna e o `update` cai em `never` —
+     * o que só se contorna com `as any`, ou seja, trocando a verificação real por silêncio.
+     * Verbosidade aqui compra um erro de compilação se a coluna sumir ou trocar de nome.
+     */
+    const chaveAntiga = await lerChaveAtual(db, entrada, tenantId)
+
+    const { error: erroUpload } = await db.storage
+      .from(BUCKET)
+      .upload(storageKey, processado, { contentType: 'image/webp', cacheControl: '31536000' })
+    if (erroUpload) throw new AppError('INTERNAL', { cause: erroUpload })
+
+    const alcancou =
+      entrada.tipo === 'service'
+        ? await db.from('services').update({ image_key: storageKey }).eq('id', entrada.id).eq('tenant_id', tenantId).select('id').maybeSingle()
+        : await db.from('professionals').update({ photo_key: storageKey }).eq('id', entrada.id).eq('tenant_id', tenantId).select('id').maybeSingle()
+
+    if (alcancou.error) throw new AppError('INTERNAL', { cause: alcancou.error })
+    /*
+     * `UPDATE` de zero linhas não levanta erro no supabase-js — devolve `data: null` com
+     * `error: null`. Sem esta checagem, o arquivo subiria e a coluna ficaria vazia, com a
+     * resposta dizendo que deu certo. É a armadilha que já apareceu quatro vezes nesta base.
+     */
+    if (!alcancou.data) throw new AppError('INTERNAL', { message: 'A imagem subiu mas não foi vinculada. Tente de novo.' })
+
+    if (chaveAntiga && chaveAntiga !== storageKey) {
+      const { error: erroRemocao } = await db.storage.from(BUCKET).remove([chaveAntiga])
+      if (erroRemocao) {
+        console.warn(JSON.stringify({ level: 'warn', event: 'vitrine_orfa_nao_removida', tenantId, chave: chaveAntiga }))
+      }
+    }
+
+    return { key: storageKey }
+  })
+}
+
+/** A chave que está gravada hoje — para apagar o arquivo antigo só depois de a nova estar no lugar. */
+async function lerChaveAtual(
+  db: Awaited<Parameters<Parameters<typeof withTenant>[1]>[0]>,
+  entrada: { tipo: TipoDeEntidade; id: string },
+  tenantId: string,
+): Promise<string | null> {
+  const r =
+    entrada.tipo === 'service'
+      ? await db.from('services').select('image_key').eq('id', entrada.id).eq('tenant_id', tenantId).maybeSingle()
+      : await db.from('professionals').select('photo_key').eq('id', entrada.id).eq('tenant_id', tenantId).maybeSingle()
+
+  if (r.error) throw new AppError('INTERNAL', { cause: r.error })
+  if (!r.data) throw new AppError('NOT_FOUND', { message: 'Esse item não está mais na sua lista.' })
+  return 'image_key' in r.data ? r.data.image_key : r.data.photo_key
+}
+
+/** Tira a foto de uma linha. O arquivo sai do bucket junto. */
+export async function removerDaEntidade(tenantId: string, tipo: TipoDeEntidade, id: string): Promise<void> {
+  return withTenant(tenantId, async (db) => {
+    const chave = await lerChaveAtual(db, { tipo, id }, tenantId)
+    if (!chave) return
+
+    if (tipo === 'service') {
+      await db.from('services').update({ image_key: null }).eq('id', id).eq('tenant_id', tenantId)
+    } else {
+      await db.from('professionals').update({ photo_key: null }).eq('id', id).eq('tenant_id', tenantId)
+    }
+    await db.storage.from(BUCKET).remove([chave])
   })
 }
 
