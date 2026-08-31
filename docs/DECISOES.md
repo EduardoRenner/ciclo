@@ -4209,3 +4209,37 @@ devolver o instante de reset nos três backends (memória, Upstash e a RPC `cons
 Verificado em produção nesta rodada: a mensagem do TICKET-054 está no ar ("Você atingiu o limite de
 uso de hoje"). O caminho feliz do assistente segue **não** reverificado — a cota do tenant de teste
 ainda não voltou, e a janela é fixa, então volta de uma vez.
+
+---
+
+### 2026-08-31 · A outra rota agendada rodava seis vezes por dia sem ninguém olhando
+
+Em 26/08 o Motor de Ciclo passou dois dias sem processar tenant nenhum, com HTTP 200 e job verde. O
+conserto foi dar heartbeat a ele e vigiá-lo em `/api/health`.
+
+**O conserto olhou o job que tinha falhado, não a pergunta que o defeito fazia:** *quais jobs
+agendados ninguém observa?* Cinco dias depois, `segments` — a OUTRA rota do `on.schedule`, seis
+disparos por dia — continuava sem heartbeat e sem checagem. Se falhasse em todo disparo,
+`/api/health` ficaria verde para sempre, porque a **ausência de sinal era lida como "está tudo
+bem"**. É a mesma família das quatro frases desta semana: a interface afirma um estado que ninguém
+verificou.
+
+Medido antes de mexer, para não consertar o que não estava quebrado: `recompute_cycles` bateu há
+12h (dentro da janela, com o atraso de horas já documentado do GitHub Actions) e os 111 ciclos foram
+recalculados nos últimos 2 dias. O Motor está saudável — o problema era só o vizinho sem vigia.
+
+Agora `segments` grava `recompute_segments`, com o mesmo `> 0` de `recompute-cycles`: "a rota foi
+chamada" já era verdade nos cinco disparos zerados de 26/08; o que precisa ser observável é que
+algum tenant teve segmento recalculado.
+
+**A guarda é para a PERGUNTA, não para o caso.** `todo-cron-agendado-tem-heartbeat.test.ts` cobre os
+três pontos da costura, cada um visto reprovando: rota agendada sem `kind` no mapa; `kind` no mapa
+mas rota que não chama `registrarHeartbeat` (o defeito espelhado — promete sinal que ninguém emite);
+e sinal gravado que `/api/health` não lê. Rota nova no `schedule` sem vigia agora reprova antes de
+virar mais um silêncio de dois dias.
+
+**Uma armadilha que quase entrou junto**, e que o próprio `agendadas.ts` já avisava: *"um heartbeat
+que nunca rodou está sempre atrasado por definição"*. Como `recompute_segments` nunca rodou, o
+`/api/health` fica **503 até o primeiro disparo** — reintroduzindo o vermelho permanente que o
+conserto de 26/08 removeu. Por isso o passo seguinte não é opcional: disparar `segments` à mão pelo
+`workflow_dispatch` logo após o deploy, o que também verifica o heartbeat novo de ponta a ponta.

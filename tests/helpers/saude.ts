@@ -35,5 +35,5 @@ export function bancoDeSaudeFalso(heartbeats: Record<string, number | null>) {
 
 /** Todos os heartbeats recentes, menos os que o caso quiser envelhecer ou apagar. */
 export function bancoSaudavel(sobrescreve: Record<string, number | null> = {}) {
-  return bancoDeSaudeFalso({ send_reminders: 5, send_campaigns: 60, recompute_cycles: 60, ...sobrescreve })
+  return bancoDeSaudeFalso({ send_reminders: 5, send_campaigns: 60, recompute_cycles: 60, recompute_segments: 60, ...sobrescreve })
 }
