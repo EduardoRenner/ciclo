@@ -4243,3 +4243,52 @@ que nunca rodou está sempre atrasado por definição"*. Como `recompute_segment
 `/api/health` fica **503 até o primeiro disparo** — reintroduzindo o vermelho permanente que o
 conserto de 26/08 removeu. Por isso o passo seguinte não é opcional: disparar `segments` à mão pelo
 `workflow_dispatch` logo após o deploy, o que também verifica o heartbeat novo de ponta a ponta.
+
+---
+
+### 2026-08-31 · SEO: o que faltava era prévia, dados ricos e llms.txt — não sitemap
+
+Pedido: "implementa sitemap, robots, llms.txt e SEO". Auditado antes de escrever, e **metade já
+existia e estava bem feita**: `sitemap.ts` lista os tenants ativos com revalidação de 1h e deixa o
+tenant de demonstração de fora; `robots.ts` bloqueia painel, API e rotas de sessão; a página do
+salão já tinha canonical, openGraph, twitter e `noindex` na demo. Não refiz nada disso.
+
+O que faltava de verdade:
+
+**1. `metadataBase` + imagem de prévia.** Sem `metadataBase`, todo caminho relativo de imagem em
+`openGraph` fica relativo e o WhatsApp não resolve — o link do CICLO colado num grupo aparecia sem
+prévia nenhuma. Para um produto cujo canal de aquisição é o link mandado de um profissional para
+outro, isso é a vitrine fechada.
+
+A imagem é **gerada** (`opengraph-image.tsx`, `ImageResponse`) e não um PNG em `public/`, por uma
+medição: os dois arquivos de marca são 1102×448 (2,46:1) e 894×950 (0,94:1), e o formato que as
+redes cortam é 1200×630 (1,91:1). Usar qualquer um direto entrega o logo cortado ou espremido.
+
+**2. Dados estruturados de verdade.** Já existia um `jsonLdNegocioLocal` inline com quatro campos e
+`@type: 'LocalBusiness'` genérico. Foi **substituído** — não duplicado — por
+`core/seo/dados-estruturados.ts`, que agora usa o `vertical` do tenant para dizer `HairSalon`,
+`NailSalon` ou `TattooParlor` (especificidade é o que o buscador usa para casar com a intenção),
+mais `aggregateRating`, `priceRange`, `hasOfferCatalog` e `sameAs`.
+
+Três decisões que valem mais que o código:
+
+- **`aggregateRating` só com avaliação de verdade.** Com `ratingCount: 0` o Google trata como
+  marcação inválida e pode desqualificar o resultado rico da página inteira — o oposto do objetivo.
+  Salão novo simplesmente não tem estrelas.
+- **Serviço por hora não vira oferta.** Anunciar o valor da hora como preço do serviço faz a busca
+  mostrar um número que a cliente não vai pagar, e preço errado na busca é pior que preço nenhum.
+- **Endereço vai como `streetAddress` de um `PostalAddress`**, não decomposto: o cadastro é texto
+  livre e inventar cidade/estado/CEP daria endereço errado em resultado rico.
+
+O tenant de demonstração não recebe marcação nenhuma, pelo mesmo motivo que já está fora do sitemap.
+
+**3. `/llms.txt`.** Rota gerada, não arquivo estático, e por uma razão registrada: preço de plano
+fora de `core/billing/planos.ts` é proibido neste repo, com guarda. Um `public/llms.txt` com
+"R$ 49" seria a primeira coisa que um modelo lê e a última que alguém lembra de atualizar. Os
+planos e a lista de módulos saem de `precoDoPlanoPorMes()` e `CATALOGO`.
+
+**A guarda do llms.txt nasceu errada e o erro é instrutivo.** A primeira versão varria o
+arquivo-fonte proibindo `/R\$\s*\d/` — e reprovou casando com "R$ 49" dentro de um COMENTÁRIO que
+explicava justamente por que não escrever preço à mão. É a armadilha nº1 da tabela do CLAUDE.md.
+Reescrita para chamar o handler e conferir o TEXTO SERVIDO contra `precoDoPlanoPorMes()`: deixa de
+ser varredura de fonte, vira teste de comportamento, e ainda prova que a rota responde.

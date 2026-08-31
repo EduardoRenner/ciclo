@@ -8,7 +8,6 @@ import { perfilPublico } from '@/server/services/public-booking'
 import SecoesPublicas from './secoes'
 
 import type { Metadata, Viewport } from 'next'
-import type { PerfilPublico } from '@/server/services/public-booking'
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params

@@ -12,7 +12,6 @@ const OG = readFileSync('src/app/opengraph-image.tsx', 'utf8')
 const CSS = readFileSync('src/app/globals.css', 'utf8')
 const ROBOTS = readFileSync('src/app/robots.ts', 'utf8')
 const SITEMAP = readFileSync('src/app/sitemap.ts', 'utf8')
-const LLMS = readFileSync('src/app/llms.txt/route.ts', 'utf8')
 
 describe('o link colado no WhatsApp mostra prévia', () => {
   it('existe metadataBase — sem ele imagem relativa não vira absoluta', () => {
