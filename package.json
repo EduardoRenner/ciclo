@@ -16,10 +16,10 @@
     "test:rls": "vitest run --config vitest.banco.config.ts --dir tests/rls",
     "test:e2e": "node -e \"console.error('test:e2e ainda nao existe: sem playwright instalado, sem playwright.config e tests/e2e vazio. Ver docs/DECISOES.md (31/08).'); process.exit(1)\"",
     "verify": "pnpm typecheck && pnpm lint && pnpm test:unit && pnpm test:integration && pnpm test:rls && pnpm build",
-    "db:types": "supabase gen types typescript --project-id $SUPABASE_PROJECT_REF > src/server/db/types.gen.ts",
+    "db:types": "node scripts/gerar-types.mjs",
     "db:reset": "supabase db reset",
     "db:new": "supabase migration new",
-    "db:types:local": "supabase gen types typescript --local > src/server/db/types.gen.ts",
+    "db:types:local": "node scripts/gerar-types.mjs --local",
     "test:integration": "vitest run --config vitest.banco.config.ts --dir tests/integration"
   },
   "dependencies": {
