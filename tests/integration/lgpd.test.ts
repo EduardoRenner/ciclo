@@ -214,6 +214,54 @@ describe('eliminarCliente', () => {
     },
     30_000,
   )
+
+  it(
+    'chamado com o cliente de SESSÃO real de POST .../erase (não service_role): o arquivo some do bucket privado de verdade',
+    async () => {
+      /*
+       * Medido ao vivo em 31/08/2026: até este commit, `eliminarCliente` sempre foi testado com
+       * `svc` (service_role) neste arquivo — o mesmo cliente que o job noturno usa. O botão
+       * manual da ficha (`POST .../clients/[id]/erase`) usa `criarClienteDoUsuario()`, um
+       * cliente de SESSÃO — e o bucket `media` só aceita escrita de `storage.objects` via
+       * service_role (migration 0013). Um teste que só usa `svc` nunca pegaria essa diferença;
+       * por isso este aqui faz login de verdade com senha e token, o mesmo caminho que o
+       * navegador percorre.
+       */
+      const senha = randomUUID()
+      const emailSessao = `lgpd-sessao-${randomUUID().slice(0, 8)}@ciclo.test`
+      const { data: usuarioSessao, error: erroUsuarioSessao } = await svc.auth.admin.createUser({
+        email: emailSessao,
+        password: senha,
+        email_confirm: true,
+        user_metadata: { full_name: 'Sessão do Erase' },
+      })
+      if (erroUsuarioSessao || !usuarioSessao.user) throw new Error(`seed de usuário de sessão falhou: ${erroUsuarioSessao?.message}`)
+      usuarios.push(usuarioSessao.user.id)
+      await svc.from('memberships').insert({ tenant_id: tenantId, user_id: usuarioSessao.user.id, role: 'owner' })
+
+      const { clientId, mediaId, storageKey } = await clienteCompleto('Eliminada Por Sessão Real')
+
+      const anon = createClient<Database>(SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      })
+      const login = await anon.auth.signInWithPassword({ email: emailSessao, password: senha })
+      if (login.error || !login.data.session) throw new Error(`login de sessão falhou: ${login.error?.message}`)
+
+      const sessao = createClient<Database>(SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+        auth: { persistSession: false, autoRefreshToken: false },
+        global: { headers: { Authorization: `Bearer ${login.data.session.access_token}` } },
+      })
+
+      await eliminarCliente(sessao, tenantId, clientId)
+
+      const linha = await svc.from('media').select('id').eq('id', mediaId).maybeSingle()
+      expect(linha.data).toBeNull()
+
+      const { data: listaStorage } = await svc.storage.from('media').list(tenantId)
+      expect(listaStorage?.some((f) => storageKey.endsWith(f.name))).toBe(false)
+    },
+    30_000,
+  )
 })
 
 

@@ -247,21 +247,27 @@ export async function eliminarCliente(db: Cliente, tenantId: string, clientId: s
   ]
 
   if (caminhos.length > 0) {
-    const { error: erroStorage } = await db.storage.from('media').remove(caminhos)
-    // Arquivo já não estar lá não pode travar a eliminação — o objetivo é o dado sumir; se já
-    // sumiu, ótimo, segue o fluxo.
-    if (erroStorage) console.error(JSON.stringify({ level: 'error', event: 'erase_storage_falhou', tenantId, clientId }), erroStorage)
+    /*
+     * `withTenant` (service_role) aqui, NUNCA o `db` recebido — achado medindo ao vivo em
+     * 31/08/2026: o bucket `media` também só aceita escrita de service_role (migration 0013,
+     * "o acesso é sempre via service_role no servidor"), igual ao `vitrine` (TICKET-115). Com o
+     * `db` de SESSÃO que `POST .../clients/[id]/erase` usa (o botão manual da ficha, o caminho
+     * que a dona do salão realmente aperta), o `.remove()` falhava em silêncio — a linha em
+     * `media` sumia, a resposta dizia "eliminado com sucesso", e o arquivo ficava órfão pra
+     * sempre no bucket privado. Só o job noturno (`svc` já é service_role ali) removia de
+     * verdade. Medido: `tests/integration/lgpd.test.ts`, "cliente de sessão real".
+     */
+    await withTenant(tenantId, async (svcStorage) => {
+      const { error: erroStorage } = await svcStorage.storage.from('media').remove(caminhos)
+      // Arquivo já não estar lá não pode travar a eliminação — o objetivo é o dado sumir; se já
+      // sumiu, ótimo, segue o fluxo.
+      if (erroStorage) console.error(JSON.stringify({ level: 'error', event: 'erase_storage_falhou', tenantId, clientId }), erroStorage)
+    })
   }
 
-  // TICKET-115: bucket SEPARADO (`vitrine`, público) de `media` (privado) — a mesma limpeza de
-  // `caminhos` acima não alcança aqui, e uma foto publicada é exatamente o dado mais visível de
-  // todos: fica na página que qualquer um abre, não atrás de sessão nenhuma.
-  //
-  // `withTenant` (service_role) aqui, NUNCA o `db` recebido: a escrita em `storage.objects` do
-  // bucket `vitrine` só é permitida pra service_role (migration 0051, "nenhuma política de
-  // insert para anon/authenticated") — chamado com o `db` de sessão de `POST .../erase`, o
-  // `.remove()` falharia em silêncio (o `catch` de erro aqui não lança, de propósito) e a "coisa
-  // mais visível de todos" sobreviveria à eliminação sem ninguém notar.
+  // TICKET-115: bucket SEPARADO (`vitrine`, público) de `media` (privado) — a limpeza acima não
+  // alcança aqui, e uma foto publicada é o dado mais visível de todos: fica na página que
+  // qualquer um abre. Mesmo raciocínio de `withTenant` explicado no bloco de cima.
   const { data: portfolioParaApagar, error: erroListarPortfolio } = await db
     .from('portfolio_photos')
     .select('storage_key')
