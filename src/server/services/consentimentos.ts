@@ -90,6 +90,12 @@ export async function revogarConsentimento(db: Cliente, tenantId: string, client
 }
 
 export type StatusConsentimento = {
+  /*
+   * TICKET-114: sem o `id` da linha, a tela não tem como mandar `consentId` de volta no upload
+   * de foto — precisaria adivinhar ou reconsultar. É a linha mais recente (ver `order` abaixo),
+   * então o `id` aqui é sempre o consentimento que estaria ATIVO se `granted && !revokedAt`.
+   */
+  id: string
   kind: TipoConsentimentoCliente
   granted: boolean
   version: string
@@ -101,7 +107,7 @@ export type StatusConsentimento = {
 export async function statusConsentimentos(db: Cliente, tenantId: string, clientId: string): Promise<Record<TipoConsentimentoCliente, StatusConsentimento>> {
   const { data, error } = await db
     .from('consents')
-    .select('kind, granted, version, granted_at, revoked_at')
+    .select('id, kind, granted, version, granted_at, revoked_at')
     .eq('tenant_id', tenantId)
     .eq('client_id', clientId)
     .in('kind', TIPOS_CONSENTIMENTO_CLIENTE)
@@ -112,7 +118,7 @@ export async function statusConsentimentos(db: Cliente, tenantId: string, client
   for (const linha of data ?? []) {
     const kind = linha.kind as TipoConsentimentoCliente
     if (resultado[kind]) continue // já achou a mais recente (ordenado desc); as seguintes são histórico
-    resultado[kind] = { kind, granted: linha.granted, version: linha.version, grantedAt: linha.granted_at, revokedAt: linha.revoked_at }
+    resultado[kind] = { id: linha.id, kind, granted: linha.granted, version: linha.version, grantedAt: linha.granted_at, revokedAt: linha.revoked_at }
   }
   return resultado
 }

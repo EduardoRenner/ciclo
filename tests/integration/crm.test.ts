@@ -182,6 +182,25 @@ describe('fichaDoCliente', () => {
   )
 
   it(
+    'consentimento image_use: consentId só aparece ativo (concedido e não revogado) — TICKET-114',
+    async () => {
+      const { registrarConsentimento, revogarConsentimento } = await import('@/server/services/consentimentos')
+
+      const antes = await fichaDoCliente(svc, tenantId, semOptInId)
+      expect(antes.consentimentos.find((c) => c.kind === 'image_use')?.consentId).toBeNull()
+
+      const gravado = await registrarConsentimento(svc, tenantId, semOptInId, { kind: 'image_use', version: '1.0', text: 'texto', granted: true }, { ip: null, userAgent: null })
+      const concedido = await fichaDoCliente(svc, tenantId, semOptInId)
+      expect(concedido.consentimentos.find((c) => c.kind === 'image_use')?.consentId).toBe(gravado.id)
+
+      await revogarConsentimento(svc, tenantId, semOptInId, 'image_use')
+      const revogado = await fichaDoCliente(svc, tenantId, semOptInId)
+      expect(revogado.consentimentos.find((c) => c.kind === 'image_use')?.consentId).toBeNull()
+    },
+    30_000,
+  )
+
+  it(
     'id de outro tenant devolve NOT_FOUND, não a ficha alheia',
     async () => {
       const erro = await fichaDoCliente(svc, randomUUID(), fielId).catch((e: unknown) => e)

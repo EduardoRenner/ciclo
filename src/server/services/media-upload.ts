@@ -42,6 +42,14 @@ export const EsquemaUploadMedia = z.object({
   clientId: z.uuid(),
   appointmentId: z.uuid().nullish(),
   phase: z.enum(['before', 'after', 'reference']).nullish(),
+  /*
+   * `docs/35-FOTOS-CONSENTIMENTO-PLANO.md`, TICKET-114: até aqui `media.consent_id` existia na
+   * coluna desde a origem mas nenhum caminho do app escrevia nela — `mediaParaPortfolio`
+   * (filtro por `image_use` ativo) nunca tinha o que achar. A validação de que o consentimento
+   * é do MESMO tenant/cliente e está ativo é de `fazerUploadMedia`, não deste schema: aqui é só
+   * formato.
+   */
+  consentId: z.uuid().nullish(),
 })
 type EntradaUploadMedia = z.infer<typeof EsquemaUploadMedia>
 
@@ -76,6 +84,28 @@ export async function fazerUploadMedia(
   const storageKey = `${tenantId}/${randomUUID()}.webp`
 
   return withTenant(tenantId, async (db) => {
+    /*
+     * Confere ANTES de subir o arquivo, não depois: um `consentId` de outro cliente (ou
+     * revogado, ou de outro tipo) não pode gravar `media.consent_id` — seria uma foto elegível
+     * pra portfólio sem consentimento de uso de imagem de verdade por trás. Mesma disciplina de
+     * "nunca confiar no id vindo do corpo" que `resolverCliente` já aplica pra `referredBy`: um
+     * id inválido vira `null` em silêncio, não erro — a foto ainda sobe, só sem o vínculo.
+     */
+    let consentId: string | null = null
+    if (entrada.consentId) {
+      const { data: consentimento } = await db
+        .from('consents')
+        .select('id')
+        .eq('id', entrada.consentId)
+        .eq('tenant_id', tenantId)
+        .eq('client_id', entrada.clientId)
+        .eq('kind', 'image_use')
+        .eq('granted', true)
+        .is('revoked_at', null)
+        .maybeSingle()
+      consentId = consentimento?.id ?? null
+    }
+
     const { error: erroUpload } = await db.storage.from(BUCKET).upload(storageKey, processado, { contentType: 'image/webp', cacheControl: '0' })
     if (erroUpload) throw new AppError('INTERNAL', { cause: erroUpload })
 
@@ -88,6 +118,7 @@ export async function fazerUploadMedia(
         storage_key: storageKey,
         kind: 'photo',
         phase: entrada.phase ?? null,
+        consent_id: consentId,
         width: metadados.width ?? null,
         height: metadados.height ?? null,
         bytes: processado.length,

@@ -1,6 +1,6 @@
 'use client'
 
-import { Camera, FileCheck2, ShieldAlert, Lock } from 'lucide-react'
+import { FileCheck2, ShieldAlert, Lock } from 'lucide-react'
 import { useState } from 'react'
 
 import Card from '@/components/ui/card'
@@ -10,7 +10,8 @@ import Sheet from '@/components/ui/sheet'
 type Props = {
   clientId: string
   saude: { temFicha: boolean; temAlerta: boolean; alerta: string | null }
-  fotos: { id: string; phase: string | null; createdAt: string }[]
+  // `image_use` some daqui: `fotos.tsx` (TICKET-114) já mostra o estado dele de forma
+  // interativa (conceder/revogar), listar de novo aqui seria a mesma informação em dois lugares.
   consentimentos: { kind: string; granted: boolean; grantedAt: string | null }[]
 }
 
@@ -29,7 +30,7 @@ type Vault = { data?: { respostas?: Record<string, unknown>; alertLabel?: string
  * navegador quando a pessoa pede para abrir: cada abertura é um acesso registrado na trilha
  * (`vault_access_log`), então não cabe pré-carregar.
  */
-export default function Saude({ clientId, saude, fotos, consentimentos }: Props) {
+export default function Saude({ clientId, saude, consentimentos }: Props) {
   const [aberto, setAberto] = useState(false)
   const [carregando, setCarregando] = useState(false)
   const [ficha, setFicha] = useState<Vault['data'] | null>(null)
@@ -57,7 +58,8 @@ export default function Saude({ clientId, saude, fotos, consentimentos }: Props)
       .finally(() => setCarregando(false))
   }
 
-  if (!saude.temFicha && fotos.length === 0 && consentimentos.every((c) => !c.granted)) return null
+  const consentimentosVisiveis = consentimentos.filter((c) => c.kind !== 'image_use')
+  if (!saude.temFicha && consentimentosVisiveis.every((c) => !c.granted)) return null
 
   return (
     <section className="mt-7">
@@ -81,22 +83,13 @@ export default function Saude({ clientId, saude, fotos, consentimentos }: Props)
           </button>
         ) : null}
 
-        {fotos.length > 0 ? (
-          <Card className="flex items-center gap-3">
-            <Camera aria-hidden className="size-5 shrink-0 text-txt-3" />
-            <p className="text-corpo">
-              {fotos.length} {fotos.length === 1 ? 'foto' : 'fotos'} de antes/depois
-            </p>
-          </Card>
-        ) : null}
-
-        {consentimentos.some((c) => c.granted) ? (
+        {consentimentosVisiveis.some((c) => c.granted) ? (
           <Card className="flex items-start gap-3">
             <FileCheck2 className="mt-0.5 size-5 shrink-0 text-txt-3" />
             <div className="min-w-0 flex-1">
               <p className="text-corpo">Termos assinados</p>
               <p className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-secundario text-txt-3">
-                {consentimentos
+                {consentimentosVisiveis
                   .filter((c) => c.granted)
                   .map((c) => (
                     <span key={c.kind}>{ROTULO_CONSENTIMENTO[c.kind] ?? c.kind}</span>

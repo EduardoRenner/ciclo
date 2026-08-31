@@ -6,7 +6,7 @@ import sharp from 'sharp'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { registrarConsentimento, revogarConsentimento } from '@/server/services/consentimentos'
-import { listarMediaDoCliente, mediaParaPortfolio, urlAssinadaMedia } from '@/server/services/media'
+import { deletarMedia, listarMediaDoCliente, mediaParaPortfolio, urlAssinadaMedia } from '@/server/services/media'
 import { fazerUploadMedia } from '@/server/services/media-upload'
 import { executarOnboarding } from '@/server/services/onboarding'
 
@@ -90,6 +90,95 @@ describe('fazerUploadMedia', () => {
 
       const lista = await listarMediaDoCliente(tenantId, clientId)
       expect(lista.some((m) => m.phase === 'after')).toBe(true)
+    },
+    30_000,
+  )
+})
+
+describe('fazerUploadMedia com consentId (TICKET-114)', () => {
+  it(
+    'consentimento image_use ativo, do mesmo cliente: vincula media.consent_id',
+    async () => {
+      const cliente = await svc.from('clients').insert({ tenant_id: tenantId, name: 'Cliente Autorizou' }).select('id').single()
+      const id = cliente.data!.id
+      const consentimento = await registrarConsentimento(svc, tenantId, id, { kind: 'image_use', version: '1.0', text: 'autorizo', granted: true }, { ip: null, userAgent: null })
+
+      const registro = await fazerUploadMedia(tenantId, { clientId: id, appointmentId: null, phase: 'before', consentId: consentimento.id }, { buffer: await pngComExif(), createdBy: null })
+
+      const linha = await svc.from('media').select('consent_id').eq('id', registro.id).single()
+      expect(linha.data?.consent_id).toBe(consentimento.id)
+    },
+    30_000,
+  )
+
+  it(
+    'consentId de OUTRO cliente é ignorado — nunca vincula foto a consentimento alheio',
+    async () => {
+      const donaDoConsentimento = await svc.from('clients').insert({ tenant_id: tenantId, name: 'Dona do Consentimento' }).select('id').single()
+      const outraCliente = await svc.from('clients').insert({ tenant_id: tenantId, name: 'Outra Cliente' }).select('id').single()
+      const consentimento = await registrarConsentimento(
+        svc,
+        tenantId,
+        donaDoConsentimento.data!.id,
+        { kind: 'image_use', version: '1.0', text: 'autorizo', granted: true },
+        { ip: null, userAgent: null },
+      )
+
+      const registro = await fazerUploadMedia(
+        tenantId,
+        { clientId: outraCliente.data!.id, appointmentId: null, phase: 'before', consentId: consentimento.id },
+        { buffer: await pngComExif(), createdBy: null },
+      )
+
+      const linha = await svc.from('media').select('consent_id').eq('id', registro.id).single()
+      expect(linha.data?.consent_id).toBeNull()
+    },
+    30_000,
+  )
+
+  it(
+    'consentId revogado é ignorado — foto sobe sem vínculo, não vira erro',
+    async () => {
+      const cliente = await svc.from('clients').insert({ tenant_id: tenantId, name: 'Cliente Revogou Antes' }).select('id').single()
+      const id = cliente.data!.id
+      const consentimento = await registrarConsentimento(svc, tenantId, id, { kind: 'image_use', version: '1.0', text: 'autorizo', granted: true }, { ip: null, userAgent: null })
+      await revogarConsentimento(svc, tenantId, id, 'image_use')
+
+      const registro = await fazerUploadMedia(tenantId, { clientId: id, appointmentId: null, phase: 'before', consentId: consentimento.id }, { buffer: await pngComExif(), createdBy: null })
+
+      const linha = await svc.from('media').select('consent_id').eq('id', registro.id).single()
+      expect(linha.data?.consent_id).toBeNull()
+    },
+    30_000,
+  )
+})
+
+describe('deletarMedia', () => {
+  it(
+    'some da listagem (soft delete) sem apagar o arquivo do bucket',
+    async () => {
+      const registro = await fazerUploadMedia(tenantId, { clientId, appointmentId: null, phase: 'reference' }, { buffer: await pngComExif(), createdBy: null })
+
+      await deletarMedia(tenantId, registro.id)
+
+      const lista = await listarMediaDoCliente(tenantId, clientId)
+      expect(lista.some((m) => m.id === registro.id)).toBe(false)
+
+      const linha = await svc.from('media').select('deleted_at, storage_key').eq('id', registro.id).single()
+      expect(linha.data?.deleted_at).not.toBeNull()
+
+      const { data: arquivo } = await svc.storage.from('media').list(tenantId, { search: linha.data!.storage_key.split('/')[1] })
+      expect(arquivo?.length ?? 0).toBeGreaterThan(0)
+    },
+    30_000,
+  )
+
+  it(
+    'apagar de novo uma foto já apagada não lança erro (idempotente)',
+    async () => {
+      const registro = await fazerUploadMedia(tenantId, { clientId, appointmentId: null, phase: 'reference' }, { buffer: await pngComExif(), createdBy: null })
+      await deletarMedia(tenantId, registro.id)
+      await expect(deletarMedia(tenantId, registro.id)).resolves.toBeUndefined()
     },
     30_000,
   )

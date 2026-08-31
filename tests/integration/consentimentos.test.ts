@@ -85,6 +85,27 @@ describe('registrarConsentimento', () => {
     },
     30_000,
   )
+
+  it(
+    'statusConsentimentos devolve o id da linha — TICKET-114 precisa dele pra vincular o upload',
+    async () => {
+      const outroCliente = await svc.from('clients').insert({ tenant_id: tenantId, name: 'Cliente do Id' }).select('id').single()
+      const id = outroCliente.data!.id
+
+      const gravado = await registrarConsentimento(svc, tenantId, id, { kind: 'image_use', version: '1.0', text: 'texto', granted: true }, { ip: null, userAgent: null })
+
+      const status = await statusConsentimentos(svc, tenantId, id)
+      expect(status.image_use?.id).toBe(gravado.id)
+
+      await revogarConsentimento(svc, tenantId, id, 'image_use')
+      const depoisDeRevogar = await statusConsentimentos(svc, tenantId, id)
+      // A linha continua existindo (histórico) — `id` aponta pra ela mesmo revogada; quem decide
+      // que ela não serve mais pra upload é `granted && !revokedAt`, não a ausência do id.
+      expect(depoisDeRevogar.image_use?.id).toBe(gravado.id)
+      expect(depoisDeRevogar.image_use?.revokedAt).not.toBeNull()
+    },
+    30_000,
+  )
 })
 
 describe('revogarConsentimento', () => {

@@ -30,6 +30,25 @@ export async function urlAssinadaMedia(tenantId: string, mediaId: string, quem: 
   })
 }
 
+/**
+ * Regra 11 do CLAUDE.md: nunca delete de verdade, use estado. `deleted_at` some da ficha e do
+ * portfólio sem apagar o arquivo do bucket nem a trilha — o mesmo raciocínio de agendamento e
+ * movimento de estoque, aplicado a foto de cliente.
+ */
+export async function deletarMedia(tenantId: string, mediaId: string): Promise<void> {
+  return withTenant(tenantId, async (db) => {
+    const { error } = await db
+      .from('media')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('tenant_id', tenantId)
+      .eq('id', mediaId)
+      .is('deleted_at', null)
+    if (error) throw new AppError('INTERNAL', { cause: error })
+    // Idempotente de propósito: apagar de novo uma foto já apagada (duplo toque, aba dupla)
+    // não pode virar 404 — zero linhas afetadas aqui só quer dizer "já estava assim".
+  })
+}
+
 export type LinhaMedia = { id: string; phase: string | null; createdAt: string }
 
 export async function listarMediaDoCliente(tenantId: string, clientId: string): Promise<LinhaMedia[]> {

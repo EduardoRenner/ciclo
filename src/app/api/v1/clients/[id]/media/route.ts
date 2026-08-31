@@ -38,11 +38,13 @@ export const POST = rota(async (req, params) => {
 
   const appointmentIdBruto = form?.get('appointmentId')
   const phaseBruto = form?.get('phase')
+  const consentIdBruto = form?.get('consentId')
 
   const entrada = lerJson(EsquemaUploadMedia, {
     clientId: id,
     appointmentId: typeof appointmentIdBruto === 'string' && appointmentIdBruto ? appointmentIdBruto : null,
     phase: typeof phaseBruto === 'string' && phaseBruto ? phaseBruto : null,
+    consentId: typeof consentIdBruto === 'string' && consentIdBruto ? consentIdBruto : null,
   })
 
   const buffer = Buffer.from(await arquivo.arrayBuffer())

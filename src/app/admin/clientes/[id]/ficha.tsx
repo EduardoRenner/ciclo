@@ -38,6 +38,7 @@ import type { ConfigFidelidade } from '@/server/services/fidelidade'
 
 import Fidelidade from './fidelidade'
 import DireitosDaCliente from './direitos'
+import Fotos from './fotos'
 import Notas from './notas'
 import PacotesCarteira from './pacotes-carteira'
 import Saude from './saude'
@@ -525,7 +526,13 @@ export default function Ficha({
       {aba === 'ficha' ? (
         <div className="mt-4">
           <Notas clientId={cliente.id} iniciais={notasRegistradas} />
-          <Saude clientId={cliente.id} saude={saude} fotos={fotos} consentimentos={consentimentos} />
+          <Saude clientId={cliente.id} saude={saude} consentimentos={consentimentos} />
+          <Fotos
+            clientId={cliente.id}
+            fotos={fotos}
+            consentimentoImagemConcedido={consentimentos.some((c) => c.kind === 'image_use' && c.consentId !== null)}
+            consentId={consentimentos.find((c) => c.kind === 'image_use')?.consentId ?? null}
+          />
           <DireitosDaCliente clientId={cliente.id} nome={cliente.name} podeApagar={podeApagarCliente} />
         </div>
       ) : null}

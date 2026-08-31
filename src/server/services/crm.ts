@@ -70,7 +70,8 @@ export type FichaCliente = {
   pacotes: { id: string; serviceName: string; restantes: number; total: number; expiresOn: string | null }[]
   saldoCarteiraCents: number
   fotos: { id: string; phase: string | null; createdAt: string }[]
-  consentimentos: { kind: string; granted: boolean; grantedAt: string | null }[]
+  /** `consentId`: `null` quando esse tipo nunca foi respondido — nada pra revogar nem reusar num upload. */
+  consentimentos: { kind: string; consentId: string | null; granted: boolean; grantedAt: string | null }[]
   /**
    * Só o SINAL de que existe alerta de saúde, nunca o conteúdo: abrir a ficha do cofre é ação
    * deliberada, que passa por `/vault` e fica registrada na trilha de acesso (TICKET-053).
@@ -296,6 +297,9 @@ export async function fichaDoCliente(db: Cliente, tenantId: string, clientId: st
     // concedido" na tela, que é o estado correto: silêncio nunca é consentimento.
     consentimentos: Object.entries(consentimentosBruto).map(([kind, s]) => ({
       kind,
+      // Consentimento revogado não é reusável num upload novo — `granted && !revokedAt` é o
+      // mesmo critério que `fazerUploadMedia` confere no servidor, aqui só decide o que expor.
+      consentId: s && s.granted && !s.revokedAt ? s.id : null,
       granted: s?.granted ?? false,
       grantedAt: s?.grantedAt ?? null,
     })),
