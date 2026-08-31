@@ -104,6 +104,11 @@ const EsquemaPrepararAgendamento = z.object({
     .describe('telefone da cliente, SÓ quando ela ainda não está cadastrada e o dono informou o número'),
 })
 
+const EsquemaNotaNaFicha = z.object({
+  cliente: z.string().min(2).describe('nome da cliente, como o dono falou'),
+  anotacao: z.string().min(2).max(2000).describe('o texto da anotação, EXATAMENTE como o dono ditou — não resuma, não reescreva, não corrija'),
+})
+
 const EsquemaConcluirAtendimento = z.object({
   cliente: z.string().min(2).describe('nome da cliente cujo atendimento terminou'),
   data: z
@@ -350,6 +355,35 @@ export const FERRAMENTAS: Ferramenta[] = [
           quando: escolhido.starts_at,
           precoCents: escolhido.price_cents,
         },
+      }
+    },
+  }),
+  apagarTipo({
+    nome: 'preparar_nota_na_ficha',
+    descricao:
+      'Prepara uma anotação na ficha de uma cliente e devolve uma PROPOSTA para o dono confirmar. NÃO salva nada. Use quando o dono quiser registrar algo sobre a cliente (preferência, alergia declarada, o que conversaram). Copie a anotação PALAVRA POR PALAVRA como ele ditou.',
+    schema: EsquemaNotaNaFicha,
+    // A MESMA permissão que `POST /api/v1/clients/[id]/notes` exige. Se fosse mais frouxa, o
+    // assistente prepararia o que o papel não pode executar — o dono confirmaria para receber 403.
+    permissao: 'client:update',
+    modulo: 'clients',
+    executar: async (ctx, { cliente, anotacao }) => {
+      const clientes = await listarClientes(ctx.db, ctx.tenantId, { busca: cliente, limite: 20 })
+      const cand: Candidato[] = clientes.map((c) => ({ id: c.id, nome: c.name }))
+
+      const rc = resolverPorNome(cliente, cand)
+      // Nota é aditiva, mas na ficha ERRADA ela é pior que nenhuma: vira informação falsa sobre
+      // uma pessoa que ninguém vai desconfiar depois. Empatou, pergunta — nunca desempata sozinho.
+      if (rc.tipo === 'nenhum') return { status: 'nao_achei', oQue: 'cliente', termo: cliente }
+      if (rc.tipo === 'ambiguo') return { status: 'qual_delas', oQue: 'cliente', opcoes: rc.opcoes.map((o) => o.nome) }
+
+      return {
+        status: 'proposta',
+        acao: 'adicionar_nota',
+        // Corpo exato de `EsquemaNota`. `clientId` sai daqui só para montar a rota, e é validado
+        // como UUID de novo em `core/assistente/acoes.ts` antes de virar URL.
+        dados: { clientId: rc.item.id, body: anotacao },
+        resumo: { Cliente: rc.item.nome, Anotação: anotacao },
       }
     },
   }),
