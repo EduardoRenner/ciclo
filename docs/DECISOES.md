@@ -4292,3 +4292,25 @@ arquivo-fonte proibindo `/R\$\s*\d/` — e reprovou casando com "R$ 49" dentro d
 explicava justamente por que não escrever preço à mão. É a armadilha nº1 da tabela do CLAUDE.md.
 Reescrita para chamar o handler e conferir o TEXTO SERVIDO contra `precoDoPlanoPorMes()`: deixa de
 ser varredura de fonte, vira teste de comportamento, e ainda prova que a rota responde.
+
+---
+
+### 2026-08-31 · Os tenants de teste de plano estavam no sitemap de produção
+
+Achado **baixando o `/sitemap.xml` do ar**, não lendo código — e essa é a parte que importa. O
+`sitemap.ts` estava certo, o `ehDemonstracao` estava certo; a lista só não conhecia
+`teste-essencial`, `teste-equipe` e `teste-avancado`. Eles são as contas criadas para exercitar
+cada degrau de plano, não são negócio nenhum, e estavam sendo entregues ao Google como
+estabelecimentos. É o mesmo defeito que criou `core/tenants/demonstracao.ts`, com outro nome.
+
+Adicionados à lista, que é exatamente o caso que ela cobre: slug conhecido e permanente.
+
+**NÃO tocados, e a decisão é do Eduardo:** `lang-barber` e `lang-unhas` também estão no sitemap.
+Pela aparência (1 e 0 clientes) parecem contas de experimento, mas tirar do buscador a página de um
+salão de verdade é pior do que deixar uma conta de teste indexada — então fica perguntado, não
+adivinhado.
+
+Nota de processo: mutei este arquivo sem commitar antes, e o `git checkout --` da restauração levou
+junto a correção. É literalmente o passo 1 do procedimento de teste-guarda do CLAUDE.md
+("Commite antes de mutar"), e ele existe porque isso já custou um conserto commitado sem o código
+que ele guardava.

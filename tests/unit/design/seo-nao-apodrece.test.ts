@@ -46,6 +46,20 @@ describe('o que não pode ser indexado continua fora', () => {
     // Sem isto alguém acha a barbearia de exemplo no Google e marca horário nela.
     expect(SITEMAP).toContain('ehDemonstracao')
   })
+
+  it('os tenants de teste de PLANO também ficam fora', async () => {
+    /*
+     * Conferido no `/sitemap.xml` de produção em 31/08: os três estavam lá, indo para o buscador
+     * como se fossem estabelecimentos. Ler o código não teria mostrado — a lista estava "certa",
+     * só não conhecia esses slugs.
+     */
+    const { ehDemonstracao } = await import('@/core/tenants/demonstracao')
+    for (const slug of ['teste-essencial', 'teste-equipe', 'teste-avancado']) {
+      expect(ehDemonstracao(slug), `${slug} voltaria a ser indexado como negócio real`).toBe(true)
+    }
+    // E um slug de salão de verdade continua indexável — a lista não pode virar peneira.
+    expect(ehDemonstracao('barbearia-do-ze')).toBe(false)
+  })
 })
 
 describe('llms.txt não vira tabela de preço paralela', () => {

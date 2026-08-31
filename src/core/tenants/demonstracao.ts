@@ -34,7 +34,22 @@
  * projeto Supabase, que já está registrada como P-B.1 no `docs/18-MONETIZACAO-PLANO.md` §P.1.1.
  * Enquanto isso não acontecer, esta lista resolve os dois casos conhecidos e permanentes.
  */
-const SLUGS_DE_DEMONSTRACAO: readonly string[] = ['dom-rocha', 'ruivo-barber']
+/*
+ * 31/08: os três tenants de PLANO estavam no sitemap em produção — conferido baixando
+ * `/sitemap.xml` do ar, não lendo código. `teste-essencial`, `teste-equipe` e `teste-avancado`
+ * existem para exercitar cada degrau de plano e não são negócio nenhum; entregá-los ao buscador
+ * é o mesmo defeito que criou este arquivo, com outro nome.
+ *
+ * Eles são exatamente o caso que a lista cobre: slug conhecido e permanente. Os órfãos de slug
+ * aleatório continuam fora do alcance dela, pelo motivo já escrito acima.
+ */
+const SLUGS_DE_DEMONSTRACAO: readonly string[] = [
+  'dom-rocha',
+  'ruivo-barber',
+  'teste-essencial',
+  'teste-equipe',
+  'teste-avancado',
+]
 
 /** O tenant deste slug é uma demonstração, e não um negócio de verdade. */
 export function ehDemonstracao(slug: string): boolean {
