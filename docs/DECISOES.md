@@ -5011,3 +5011,37 @@ corrigi hoje. Não entra na regra do vocabulário porque "ticket médio" é term
 definição própria, e renomeá-lo confundiria mais do que esclarece. A guarda mira quem afirma
 dinheiro RECEBIDO ("faturado", "gastou"); esta é uma média de valor atendido, e o nome não promete
 outra coisa.
+
+---
+
+### 2026-08-31 · Estoque: o botão abria o formulário e a rota recusava depois
+
+Varrendo as telas que ainda não tinha aberto (caixa, estoque, orçamentos, séries — todas 200, sem
+zero estrutural como o das campanhas), o estoque tinha um problema real.
+
+`/admin/estoque` abre **inteira** para um tenant sem o módulo `stock` — este de teste é Essencial, e
+`stock` é do Avançado. Com um botão "Entrada" **habilitado** em cada produto. O formulário abre, a
+pessoa preenche quantidade e custo, e só então `exigirModulo(..., 'stock')` recusa na rota.
+
+**Não é falha de segurança**, e conferi: a escrita está travada no servidor, que é a regra da casa
+(*"o módulo vale no SERVIDOR, e só na ESCRITA"*). É falha de **aviso** — e a regra 5.2 é explícita:
+bloqueio mostra o motivo e o caminho.
+
+A tela continua visível sem o módulo, de propósito: sumir com ela esconderia o que dá para comprar.
+O que muda é o botão travado com `motivoDesabilitado` (que vira `title` e `sr-only` — sem ela, o
+leitor de tela anuncia "Entrada, indisponível" e ponto) e o `BloqueioPlano` com o dado dela: quantos
+produtos estão abaixo do ponto de recompra.
+
+Usei a peça que já existia em vez de inventar outra. O comentário dela explica por que é o lugar
+certo: *"a peça de conversão mais importante do produto, mais que a página de preço, porque aparece
+no momento em que a pessoa JÁ QUER FAZER alguma coisa"*.
+
+**A guarda existente não cobria este caso**, e vale registrar a distinção:
+`botao-travado-diz-por-que` varre `<Button disabled>` — botão que se vê travado. Aqui o botão
+parecia disponível e falhava depois. É a mesma família, um degrau pior.
+
+**E a minha guarda nova nasceu cega.** A asserção "o botão explica" casava com `motivoDesabilitado`
+em qualquer lugar do arquivo — e havia OUTRA ocorrência, no formulário de entrada. A mutação que
+apagava a explicação do botão passava verde por causa da vizinha. Só descobri porque confirmei que
+a mutação tinha sido aplicada antes de ler o resultado, que é o passo 3 do procedimento do
+CLAUDE.md. Reancorada no bloco do botão.

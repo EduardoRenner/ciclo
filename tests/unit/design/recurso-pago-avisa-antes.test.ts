@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
@@ -33,9 +33,15 @@ describe('tela de recurso pago avisa antes do toque', () => {
     })
 
     it(`${nome}: e diz por que, em vez de so ficar cinza`, () => {
-      // `motivoDesabilitado` vira `title` e `sr-only` — no leitor de tela, sem ela, sai
-      // "Entrada, indisponivel" e ponto.
-      expect(fonte, 'o botao trava sem explicar').toContain('motivoDesabilitado')
+      /*
+       * Recortado no BOTAO, nao no arquivo. A primeira versao casava com `motivoDesabilitado` em
+       * qualquer lugar — e o arquivo ja tinha OUTRA ocorrencia, no formulario de entrada. A
+       * mutacao que apagava a explicacao do botao passava verde por causa da vizinha.
+       */
+      const i = fonte.indexOf('disabled={!podeLancar}')
+      expect(i, 'nao achei o botao travado pelo plano').toBeGreaterThan(-1)
+      const bloco = fonte.slice(i, fonte.indexOf('>', fonte.indexOf('onClick', i)))
+      expect(bloco, 'o botao trava sem explicar').toContain('motivoDesabilitado')
     })
 
     it(`${nome}: oferece o caminho, nao so a recusa`, () => {
