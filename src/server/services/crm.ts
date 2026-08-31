@@ -147,10 +147,10 @@ export async function fichaDoCliente(db: Cliente, tenantId: string, clientId: st
      */
     db
       .from('appointments')
-      .select('price_cents')
+      .select('price_cents, starts_at, status')
       .eq('tenant_id', tenantId)
       .eq('client_id', clientId)
-      .eq('status', 'done'),
+      .in('status', ['done', 'no_show']),
     db
       .from('client_cycles')
       .select('state, late_days, predicted_on, services(name)')
@@ -193,10 +193,29 @@ export async function fichaDoCliente(db: Cliente, tenantId: string, clientId: st
   }))
 
   const cicloBruto = ciclosBruto.data?.[0]
-  // Ao vivo, não da coluna que o cron escreve uma vez por dia.
-  const concluidos = concluidosBruto.data ?? []
+  /*
+   * Ao vivo, das linhas de verdade — nenhuma das quatro métricas depende mais de coluna
+   * desnormalizada.
+   *
+   * `faltas` era o caso mais grave e de outra natureza: `clients.no_show_count` é lida aqui e o
+   * ÚNICO escritor dela no repositório inteiro é `scripts/seed-demo-barbearia.mjs`. Em uso real a
+   * coluna fica em ZERO para sempre — a ficha mostrava "Faltas: 0" para uma cliente que faltou
+   * cinco vezes. É a mesma classe de `referred_by` e `fee_cents`: coluna lida por todo mundo e
+   * escrita por ninguém. E aqui doi de verdade, porque é com esse número que se decide cobrar
+   * sinal ou confirmar com mais cuidado.
+   *
+   * `visitas`, `ltvCents` e `ultimaVisita` vinham do cron `segments` (uma vez por dia, 5-6h de
+   * atraso medido). Custam nada aqui: já são as mesmas linhas.
+   */
+  const linhasDoCliente = concluidosBruto.data ?? []
+  const concluidos = linhasDoCliente.filter((a) => a.status === 'done')
   const visitas = concluidos.length
   const ltvCents = concluidos.reduce((soma, a) => soma + a.price_cents, 0)
+  const faltas = linhasDoCliente.filter((a) => a.status === 'no_show').length
+  const ultimaVisita = concluidos.reduce<string | null>(
+    (maisRecente, a) => (maisRecente === null || a.starts_at > maisRecente ? a.starts_at : maisRecente),
+    null,
+  )
   const nomePorServico = new Map((servicosBruto.data ?? []).map((s) => [s.id, s.name]))
 
   return {
@@ -224,10 +243,10 @@ export async function fichaDoCliente(db: Cliente, tenantId: string, clientId: st
     metricas: {
       ltvCents,
       visitas,
-      faltas: cliente.no_show_count,
+      faltas,
       // Ticket médio sobre visitas concluídas — dividir por 0 na cliente que nunca veio daria NaN na tela.
       ticketMedioCents: visitas > 0 ? Math.round(ltvCents / visitas) : 0,
-      ultimaVisita: cliente.last_visit_at,
+      ultimaVisita,
     },
     ciclo: cicloBruto
       ? {

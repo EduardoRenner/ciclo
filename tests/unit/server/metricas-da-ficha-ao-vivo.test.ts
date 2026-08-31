@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs'
 
 import { describe, expect, it } from 'vitest'
 
+import { semComentarios } from '../../helpers/fonte'
+
 /**
  * As metricas da ficha da cliente vinham de `clients.visits_count` e `clients.ltv_cents` —
  * colunas desnormalizadas cujo UNICO escritor e o cron `segments`, uma vez por dia e, medido em
@@ -11,7 +13,7 @@ import { describe, expect, it } from 'vitest'
  * E o rotulo dizia "Ja gastou" sobre um valor que e PRECO DE TABELA: nao enxerga desconto dado na
  * comanda nem item extra. Errar isso e errar sobre uma pessoa especifica, com nome na tela.
  */
-const CRM = readFileSync('src/server/services/crm.ts', 'utf8')
+const CRM = semComentarios(readFileSync('src/server/services/crm.ts', 'utf8'))
 const FICHA = readFileSync('src/app/admin/clientes/[id]/ficha.tsx', 'utf8')
 
 describe('as metricas da ficha sao do agora, nao do cron de ontem', () => {
@@ -27,12 +29,31 @@ describe('as metricas da ficha sao do agora, nao do cron de ontem', () => {
   })
 
   it('existe a consulta ao vivo dos concluidos', () => {
-    expect(CRM, 'sumiu a consulta que torna a metrica exata').toContain("const concluidos = concluidosBruto.data")
-    expect(CRM).toContain('const visitas = concluidos.length')
+    expect(CRM, 'sumiu a leitura das linhas de verdade').toContain('concluidosBruto.data')
+    expect(CRM, 'as visitas voltaram a nao ser contadas das linhas').toContain('const visitas = concluidos.length')
   })
 
   it('o ticket medio usa o mesmo valor ao vivo — senao media e total discordam na mesma tela', () => {
     expect(CRM).toContain('Math.round(ltvCents / visitas)')
+  })
+
+  it('FALTAS nao sai de no_show_count — coluna que so a semente da demo escreve', () => {
+    /*
+     * O achado mais grave desta familia, e de outra natureza que a defasagem: o UNICO escritor de
+     * `clients.no_show_count` no repositorio inteiro e `scripts/seed-demo-barbearia.mjs`. Em uso
+     * real a coluna fica em ZERO para sempre, e a ficha mostrava "Faltas: 0" para quem faltou
+     * cinco vezes — que e o numero com que se decide cobrar sinal.
+     */
+    expect(CRM, 'a ficha voltou a ler a coluna que ninguem escreve').not.toContain('cliente.no_show_count')
+    expect(CRM, 'sumiu a contagem de faltas ao vivo').toContain("a.status === 'no_show'")
+  })
+
+  it('ULTIMA VISITA tambem nao sai da coluna do cron', () => {
+    expect(CRM, 'a ficha voltou a ler last_visit_at').not.toContain('cliente.last_visit_at')
+  })
+
+  it('a consulta traz os dois estados — sem no_show ela nao teria como contar falta', () => {
+    expect(CRM).toContain("in('status', ['done', 'no_show'])")
   })
 
   it('o rotulo nao promete que a cliente GASTOU aquilo', () => {
