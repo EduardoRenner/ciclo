@@ -4762,3 +4762,38 @@ que explica, em vez de um erro do Windows.
 baixado e servidor de pé, e montar isso de madrugada entregaria infraestrutura que ninguém pediu
 para rodar. O que a guarda de toque pede — medição no navegador — continua sendo manual, com a
 receita escrita nela.
+
+---
+
+### 2026-08-31 · `pnpm db:types` destruía o arquivo de tipos, e saía com código 0
+
+Continuando a conferência dos comandos que o `CLAUDE.md` promete, achei um pior que o `test:e2e`
+inexistente: um que **funciona o suficiente para destruir**.
+
+```
+db:types → supabase gen types typescript --project-id $SUPABASE_PROJECT_REF > src/server/db/types.gen.ts
+```
+
+O `>` do shell **trunca o destino antes de o comando rodar**. E `SUPABASE_PROJECT_REF` só existe na
+Vercel — conferido: na máquina de desenvolvimento ela é vazia.
+
+**Reproduzido sobre uma cópia descartável:** 3.590 linhas viraram **1**, com
+`{"_tag":"Error","error":{"code":"UnknownError","message":"Must specify one of --local, --linked,
+--project-id..."}}` dentro. O arquivo destruído é o de tipos de que o app inteiro depende. Já
+aconteceu nesta base e foi recuperado do git.
+
+**E o detalhe que torna isso especialmente traiçoeiro:** o `supabase gen types` **saiu com código
+0** enquanto imprimia o erro no stdout. Nem "o comando falhou" servia de aviso — o shell fez
+exatamente o que mandaram, gravando o erro com a mesma naturalidade com que gravaria os tipos.
+
+Agora passa por `scripts/gerar-types.mjs`, que falha ANTES de tocar o arquivo quando a variável não
+existe, e que confere três coisas na saída antes de gravar: tamanho mínimo, a marca
+`export type Json`, e a presença de `tenants:`. As três existem por causa do código 0 — sem elas, o
+"conserto" gravaria o erro com a mesma naturalidade de antes.
+
+Conferido rodando: `pnpm db:types` sem a variável agora falha com a explicação e o arquivo continua
+com 3.590 linhas.
+
+A guarda é a regra, não o caso: **nenhum script do `package.json` pode redirecionar (`>`) para
+dentro de `src/`, `supabase/` ou `tests/`**. E confere que a escrita do gerador vem DEPOIS das
+checagens — a segunda mutação inverte a ordem e ela reprova, que é o que de fato protege.
