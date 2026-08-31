@@ -5248,3 +5248,42 @@ Três mutações vistas reprovando: limite removido do MFA (reprovou nas duas as
 trocado de usuário para IP (reprovou **só** na asserção específica — "tem limite" continuou verde,
 que é a discriminação certa: ter limite e ter o limite CERTO são coisas diferentes), e as rotas de
 credencial cobertas por uma lista explícita que reprova se alguma perder o teto.
+
+### 2026-08-31 · Auditoria de segurança, segunda varredura — e a guarda que nasceu cega por falta de ponto e vírgula
+
+Perguntado se já estava "perfeito", varri as áreas que a primeira rodada não tinha tocado:
+autorização, isolamento entre tenants, upload, redirect aberto, segredos, LGPD e o assistente de IA.
+Resultado completo em `docs/36-SEGURANCA-AUDITORIA-E-PLANO.md`.
+
+**O que estava certo e é bom registrar** (para "não achei nada" significar alguma coisa): RBAC em
+65 das 67 rotas autenticadas, com as 2 exceções sendo desenho documentado; `data-export`/`vault`/
+`erase` exigindo AAL2 **e** permissão; chave de storage `{tenantId}/{uuid}` sem entrada do usuário;
+zero mass assignment; zero PII em log; nenhum `.env` versionado; e o teste de isolamento de RLS
+descobrindo tabela por **introspecção**, o que explica `portfolio_photos` ter entrado coberta
+sozinha ontem.
+
+**O achado desta varredura foi de classe, não de caso:** `withTenant` empresta `service_role`, que
+ignora a RLS — o isolamento entre salões, ali dentro, não é garantido pelo banco, e sim por alguém
+ter lembrado de escrever `.eq('tenant_id', ...)`. Auditei as 19 consultas sem filtro uma por uma:
+nenhuma explorável. Mas é a mesma fragilidade do `.or()` com interpolação crua da rodada anterior —
+não estava quebrado, estava apoiado em disciplina. Virou guarda com lista justificada, em que
+entrar exige escrever o motivo (o custo de justificar é o ponto: é nesse momento que se pensa se é
+mesmo seguro).
+
+**E a guarda nasceu cega de um jeito novo: por falta de ponto e vírgula.** Eu delimitava a cadeia
+`.from(...).select(...)` cortando no primeiro `;` e, sem achar, caía numa janela de 900 caracteres.
+**Este projeto usa Prettier com `semi: false`** — o corte nunca acontecia, a janela vazava para a
+função vizinha, e como quase toda função vizinha tem `tenant_id` em algum lugar, consulta sem
+filtro acrescentada logo antes de uma que filtra passava verde. Descoberto pela mutação B
+(acrescentar consulta sem filtro num arquivo que JÁ estava na lista justificada).
+
+O conserto foi trocar a janela por um andador de cadeia que conta parênteses e para onde o
+encadeamento realmente termina. **E aí o número mudou de 15 para 19**: o delimitador cego estava
+escondendo quatro consultas reais (`fidelidade.ts` ×2, `recuperar-receita.ts::services`, e mais
+duas em `orcamentos.ts::quotes`). Auditei as quatro — todas seguras, todas justificadas — mas o
+ponto é que **guarda com delimitador ruim não erra só para o lado de deixar passar: ela também
+esconde do auditor o que ele foi procurar.**
+
+Terceira aparição da armadilha nº4 da tabela do CLAUDE.md ("delimite pelo fim real do elemento,
+nunca por contagem de caracteres"), agora com uma causa que vale escrever: **num projeto sem `;`,
+qualquer heurística de "fim de statement" baseada em `;` é no-op silenciosa.**

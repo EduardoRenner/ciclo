@@ -65,6 +65,18 @@ const JUSTIFICADAS: { arquivo: string; tabela: string; quantas: number; porque: 
     porque: 'serviceId vem de uma combinação montada a partir de linhas já filtradas por tenant',
   },
   {
+    arquivo: 'src/server/services/fidelidade.ts',
+    tabela: 'clients',
+    quantas: 1,
+    porque: 'clientId vem do agendamento que concluirAgendamento já conferiu contra o tenant',
+  },
+  {
+    arquivo: 'src/server/services/fidelidade.ts',
+    tabela: 'loyalty_entries',
+    quantas: 1,
+    porque: 'insert de array montado em variável — cada objeto leva tenant_id, que a varredura não enxerga de dentro',
+  },
+  {
     arquivo: 'src/server/services/health.ts',
     tabela: 'messages',
     quantas: 1,
@@ -103,8 +115,9 @@ const JUSTIFICADAS: { arquivo: string; tabela: string; quantas: number; porque: 
   {
     arquivo: 'src/server/services/orcamentos.ts',
     tabela: 'quotes',
-    quantas: 2,
-    porque: 'updates por id de linha já conferida contra o tenant na consulta imediatamente anterior',
+    quantas: 4,
+    porque:
+      'ação pública por token HMAC (o token É a autorização, e o tenant sai da própria linha) mais updates por id de linha já lida logo acima',
   },
   {
     arquivo: 'src/server/services/portfolio-upload.ts',
@@ -119,12 +132,57 @@ const JUSTIFICADAS: { arquivo: string; tabela: string; quantas: number; porque: 
     porque: 'só roda depois do gate de client_cycles com .eq(tenant_id) — id de outro tenant cai no continue',
   },
   {
+    arquivo: 'src/server/services/recuperar-receita.ts',
+    tabela: 'services',
+    quantas: 1,
+    porque: 'mesmo gate: o client_cycles conferido acima casa tenant_id E service_id, então o par já é do tenant',
+  },
+  {
     arquivo: 'src/server/services/trilha-cofre.ts',
     tabela: 'clients',
     quantas: 1,
     porque: 'ids colhidos da própria trilha, que já foi lida filtrada por tenant',
   },
 ]
+
+/**
+ * Fim REAL da cadeia `.from(...).select(...).eq(...)`, não uma janela de N caracteres.
+ *
+ * A primeira versão desta função cortava no primeiro `;` e, se não achasse, usava 900 caracteres.
+ * **Este projeto não usa ponto e vírgula** (Prettier com `semi: false`), então o corte nunca
+ * acontecia e a janela vazava para a função vizinha — que quase sempre tem `tenant_id` em algum
+ * lugar. Resultado: consulta sem filtro acrescentada logo antes de uma função que filtra passava
+ * verde. Pego pela mutação B (armadilha nº4 do CLAUDE.md: delimitar pelo fim do elemento, nunca
+ * por contagem de caracteres).
+ *
+ * Anda a cadeia contando parênteses: continua enquanto estiver dentro de um argumento, ou enquanto
+ * o próximo caractere significativo for um `.` (chamada encadeada). Para no primeiro ponto em que
+ * a cadeia realmente termina.
+ */
+function fimDaCadeia(codigo: string, inicio: number): number {
+  let i = inicio
+  let profundidade = 0
+
+  while (i < codigo.length) {
+    const c = codigo[i]!
+    if (c === '(' || c === '[') profundidade++
+    else if (c === ')' || c === ']') {
+      profundidade--
+      if (profundidade === 0) {
+        // Fechou um argumento: a cadeia só continua se o próximo significativo for `.`
+        let j = i + 1
+        while (j < codigo.length && /\s/.test(codigo[j]!)) j++
+        if (codigo[j] === '.') {
+          i = j
+          continue
+        }
+        return i + 1
+      }
+    }
+    i++
+  }
+  return codigo.length
+}
 
 function consultasSemFiltroDeTenant(): { arquivo: string; tabela: string; linha: number }[] {
   const arquivos = execSync('git ls-files "src/server/**/*.ts"', { encoding: 'utf8' }).split('\n').filter(Boolean)
@@ -139,11 +197,7 @@ function consultasSemFiltroDeTenant(): { arquivo: string; tabela: string; linha:
       const tabela = m[1]!
       if (SEM_COLUNA_TENANT.has(tabela)) continue
 
-      // Janela = a cadeia até o fim da statement. Delimitar pelo `;` real, nunca por N caracteres
-      // (armadilha nº4 da tabela do CLAUDE.md: o vizinho cai dentro da janela).
-      let trecho = codigo.slice(m.index, m.index + 900)
-      const fim = trecho.indexOf(';')
-      if (fim > 0) trecho = trecho.slice(0, fim)
+      const trecho = codigo.slice(m.index, fimDaCadeia(codigo, m.index))
 
       if (!trecho.includes('tenant_id')) {
         achados.push({ arquivo, tabela, linha: codigo.slice(0, m.index).split('\n').length })
@@ -165,6 +219,28 @@ describe('o leitor desta guarda', () => {
     // `.storage.from('vitrine')` não tem tenant_id — contá-lo encheria a lista de falso positivo,
     // e lista com ruído é lista que ninguém lê.
     expect(ACHADOS.some((a) => a.tabela === 'vitrine' || a.tabela === 'media')).toBe(false)
+  })
+
+  it('delimita pelo fim da cadeia, não por janela de caracteres', () => {
+    /*
+     * O teste do próprio leitor. Este projeto não usa `;`, então qualquer corte por "primeiro
+     * ponto e vírgula" nunca dispara e a janela vaza para o código vizinho — foi exatamente
+     * assim que a primeira versão desta guarda nasceu cega.
+     *
+     * Aqui a cadeia SEM filtro termina antes da função de baixo, que TEM `tenant_id`. Se o
+     * delimitador voltar a vazar, este caso passa a enxergar o `tenant_id` do vizinho e a
+     * asserção quebra.
+     */
+    const fonte = [
+      "const a = db.from('quotes').select('total_cents').eq('id', quoteId)",
+      "const b = db.from('quotes').select('x').eq('tenant_id', t)",
+    ].join('\n')
+
+    const inicio = fonte.indexOf(".from('quotes')")
+    const cadeia = fonte.slice(inicio, fimDaCadeia(fonte, inicio))
+
+    expect(cadeia, 'a cadeia vazou para a linha de baixo').not.toContain('tenant_id')
+    expect(cadeia, 'a cadeia foi cortada curta demais').toContain("eq('id', quoteId)")
   })
 })
 
