@@ -1,7 +1,8 @@
 import type { Papel } from '@/server/auth/rbac'
 import { AppError } from '@/server/http/errors'
 import { ferramentasPermitidas, hojeNoFuso, paraJsonSchema, type ContextoFerramenta, type Ferramenta } from '@/server/assistente/ferramentas'
-import { podeUsarModulo } from '@/core/billing/planos'
+import { CATALOGO, podeUsarModulo, type ModuloKey } from '@/core/billing/planos'
+import { frasesDeBloqueio, type Bloqueio } from '@/core/assistente/bloqueios'
 import { explicarArgumentosInvalidos } from '@/core/assistente/erro-de-argumento'
 import { extrairProposta } from '@/core/assistente/proposta'
 import { contextoDePlano } from '@/server/services/planos'
@@ -27,7 +28,8 @@ const MAX_CHAMADAS_DE_FERRAMENTA = 3
  * quem tem que inventar o número que preenche esse campo, o que é exatamente o que a regra
  * inegociável nº1 do docs/26 (`§0` item 1) proíbe.
  */
-function promptDeSistema(hojeIso: string): string {
+export function promptDeSistema(hojeIso: string, bloqueios: Bloqueio[] = []): string {
+  const avisoDeBloqueio = frasesDeBloqueio(bloqueios)
   return `Você é o assistente do CICLO, um painel de gestão para profissionais de beleza.
 Hoje é ${hojeIso} (formato AAAA-MM-DD). Use esta data para calcular "hoje", "amanhã", "essa semana" e datas parecidas — nunca invente ou chute uma data fora deste cálculo.
 Responda só com base no que as ferramentas devolverem — nunca invente número, nome ou dado que não veio de uma ferramenta.
@@ -39,7 +41,9 @@ Seja direto e curto. O dono do salão está sem tempo.
 Você também PREPARA ações, nunca executa: quando pedirem para marcar um horário, use preparar_agendamento e mostre o que vai acontecer em uma frase clara, com nome, dia, hora e preço. Quem marca é o dono, tocando em confirmar — nunca diga que já marcou.
 Se a ferramenta devolver "qual_delas", PERGUNTE qual, listando as opções. Nunca escolha por conta própria: marcar horário para a cliente errada é pior do que perguntar.
 Se devolver "nao_achei", diga o que não encontrou e ofereça o caminho (por exemplo, os serviços que existem).
-Se a cliente não estiver cadastrada ("podeCadastrar"), PEÇA o telefone dela e chame preparar_agendamento de novo com o telefone — assim o mesmo toque cadastra e marca. Nunca invente um telefone.`
+Se a cliente não estiver cadastrada ("podeCadastrar"), PEÇA o telefone dela e chame preparar_agendamento de novo com o telefone — assim o mesmo toque cadastra e marca. Nunca invente um telefone.${avisoDeBloqueio ? `
+
+${avisoDeBloqueio}` : ''}`
 }
 
 /**
@@ -70,9 +74,35 @@ export type ResultadoDoAssistente = {
  * e portanto nunca tenta chamar, uma ferramenta fora do alcance — a segunda camada (checar de novo
  * antes de executar, abaixo) é rede, não a única trava.
  */
-async function ferramentasDisponiveisAgora(db: Cliente, tenantId: string, papel: Papel): Promise<Ferramenta[]> {
+async function ferramentasDisponiveisAgora(
+  db: Cliente,
+  tenantId: string,
+  papel: Papel,
+): Promise<{ ferramentas: Ferramenta[]; bloqueios: Bloqueio[] }> {
   const ctxPlano = await contextoDePlano(db, tenantId)
-  return ferramentasPermitidas(papel).filter((f) => podeUsarModulo(ctxPlano, f.modulo).estado === 'liberado')
+  const doPapel = ferramentasPermitidas(papel)
+
+  const ferramentas: Ferramenta[] = []
+  const bloqueados = new Map<ModuloKey, Bloqueio>()
+
+  for (const f of doPapel) {
+    const veredito = podeUsarModulo(ctxPlano, f.modulo)
+    if (veredito.estado === 'liberado') {
+      ferramentas.push(f)
+      continue
+    }
+    // Só entra na lista de bloqueios o módulo que o PAPEL já podia usar: dizer "você não tem
+    // acesso a estoque" para quem nunca teria acesso por cargo mistura duas conversas diferentes.
+    if (bloqueados.has(f.modulo)) continue
+    const rotulo = CATALOGO.find((m) => m.key === f.modulo)?.label ?? f.modulo
+    bloqueados.set(f.modulo, {
+      modulo: f.modulo,
+      rotulo,
+      precisaDoPlano: veredito.estado === 'bloqueado_pelo_plano' ? veredito.precisaDo : undefined,
+    })
+  }
+
+  return { ferramentas, bloqueios: [...bloqueados.values()] }
 }
 
 /**
@@ -102,10 +132,10 @@ export async function perguntarAoAssistente(opcoes: {
 }): Promise<ResultadoDoAssistente> {
   const { provider, db, tenantId, timezone, papel, pergunta } = opcoes
 
-  const disponiveis = await ferramentasDisponiveisAgora(db, tenantId, papel)
+  const { ferramentas, bloqueios } = await ferramentasDisponiveisAgora(db, tenantId, papel)
   const ctxFerramenta: ContextoFerramenta = { db, tenantId, timezone }
 
-  return executarLaco({ provider, ferramentas: disponiveis, ctxFerramenta, pergunta })
+  return executarLaco({ provider, ferramentas, ctxFerramenta, pergunta, bloqueios })
 }
 
 /**
@@ -125,12 +155,14 @@ export async function executarLaco(opcoes: {
   ferramentas: Ferramenta[]
   ctxFerramenta: ContextoFerramenta
   pergunta: string
+  /** O que o plano/config esconde deste tenant — vai no prompt para o modelo não confabular. */
+  bloqueios?: Bloqueio[]
 }): Promise<ResultadoDoAssistente> {
   const { provider, ferramentas: disponiveis, ctxFerramenta, pergunta } = opcoes
   const descricoes = disponiveis.map((f) => ({ nome: f.nome, descricao: f.descricao, parametros: paraJsonSchema(f.schema) }))
 
   const mensagens: MensagemDoAssistente[] = [
-    { papel: 'sistema', texto: promptDeSistema(hojeNoFuso(ctxFerramenta.timezone)) },
+    { papel: 'sistema', texto: promptDeSistema(hojeNoFuso(ctxFerramenta.timezone), opcoes.bloqueios ?? []) },
     { papel: 'usuario', texto: pergunta },
   ]
 
