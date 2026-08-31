@@ -1,6 +1,7 @@
 'use client'
 
 import { Send } from 'lucide-react'
+import Link from 'next/link'
 import { useState } from 'react'
 
 import ActionBar from '@/components/ui/action-bar'
@@ -15,6 +16,8 @@ import Skeleton from '@/components/ui/skeleton'
 import StatTile from '@/components/ui/stat-tile'
 import { dinheiro } from '@/lib/formato'
 import { cn } from '@/lib/utils'
+
+import { vazioDeRecuperar } from '@/core/ciclo/vazio-de-recuperar'
 
 import type { ItemRecuperar, ListaRecuperar } from '@/server/services/recuperar-receita'
 
@@ -42,9 +45,15 @@ function chave(item: Pick<ItemRecuperar, 'clientId' | 'serviceId'>): string {
 export default function RecuperarReceita({
   inicial,
   podeEnviarEmLote,
+  temClientes,
+  temCiclos,
 }: {
   inicial: ListaRecuperar
   podeEnviarEmLote: boolean
+  /** Existe alguma ficha de cliente neste salão. */
+  temClientes: boolean
+  /** O Motor já calculou algum ciclo — precisa de atendimento CONCLUÍDO, não só de ficha. */
+  temCiclos: boolean
 }) {
   const [filtro, setFiltro] = useState<Estado | 'all'>('all')
   const [lista, setLista] = useState(inicial)
@@ -172,12 +181,14 @@ export default function RecuperarReceita({
         </div>
       ) : lista.items.length === 0 ? (
         <Card className="p-0">
-          <EmptyState
-            icone={<IconeAnel aria-hidden className="size-6" />}
-            titulo="Ninguém para recuperar agora"
-            descricao="Quando alguém atrasar para voltar, aparece aqui."
-            acao={<span className="text-secundario text-txt-3">Volte mais tarde</span>}
-          />
+          {/*
+            Três situações diferentes usavam a MESMA frase, e só uma delas é boa notícia. A ação
+            era `<span>Volte mais tarde</span>` — texto vestido de saída, que satisfazia o tipo
+            obrigatório de `EmptyState` sem cumprir o que ele existe para garantir ("tela vazia sem
+            saída é beco sem saída"). Virou visível quando esta tela passou a ser o botão CENTRAL da
+            barra em 31/08: é a primeira coisa que um salão novo toca.
+          */}
+          <EmptyStateDeRecuperar temClientes={temClientes} temCiclos={temCiclos} />
         </Card>
       ) : (
         <ul className="flex flex-col gap-2">
@@ -269,5 +280,22 @@ export default function RecuperarReceita({
         )}
       </ActionBar>
     </div>
+  )
+}
+
+/** So a marcacao: qual frase mostrar e decisao pura em `core/ciclo/vazio-de-recuperar.ts`. */
+function EmptyStateDeRecuperar({ temClientes, temCiclos }: { temClientes: boolean; temCiclos: boolean }) {
+  const v = vazioDeRecuperar(temClientes, temCiclos)
+  return (
+    <EmptyState
+      icone={<IconeAnel aria-hidden className="size-6" />}
+      titulo={v.titulo}
+      descricao={v.descricao}
+      acao={
+        <Link href={v.acaoHref} className="text-corpo font-semibold text-acc-2">
+          {v.acaoRotulo}
+        </Link>
+      }
+    />
   )
 }

@@ -265,6 +265,10 @@ Hoje, Agenda, [FAB central: novo agendamento], Clientes, Recuperar · são os qu
 essencial do MVP se tudo mais for cortado (`00-BRIEFING §1`: agenda sem conflito, Motor de Ciclo
 + Recuperar receita) mais o cadastro de clientes de que os dois dependem. Caixa e configurações
 ficam a um toque de "Hoje", fora da barra — são consultados bem menos que os quatro escolhidos.
+> **SUPERADA em 2026-08-31** (entrada no fim deste arquivo): os cinco continuam os mesmos, mas o
+> CENTRO trocou. O botão central é o Motor de Ciclo (`/admin/recuperar`) e marcar horário passou a
+> ser a quarta aba. Quem ler só esta linha põe a ação mais comum no único slot que o polegar
+> alcança sem reposicionar a mão — que era exatamente o defeito.
 
 2026-08-18 · TICKET-014 não pede telas — só o shell (`(app)/layout.tsx` + `TabBar`) · não criei
 `page.tsx` em `hoje/agenda/clientes/recuperar` · essas rotas nascem nos tickets que as pedem

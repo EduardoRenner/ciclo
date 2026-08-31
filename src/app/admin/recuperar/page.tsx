@@ -27,10 +27,22 @@ export default async function PaginaRecuperar() {
   const desde = mesAtual.toPlainDate({ day: 1 }).toString()
   const ate = mesAtual.toPlainDate({ day: mesAtual.daysInMonth }).toString()
 
-  const [lista, atribuicao, plano] = await Promise.all([
+  /*
+   * As duas contagens existem para o ESTADO VAZIO saber o que dizer, e entraram quando esta tela
+   * virou o botão central da barra (31/08): antes ela era um destino de canto, agora é a primeira
+   * coisa que um salão novo toca. "Ninguém para recuperar" sem mais nada é a mesma frase para três
+   * situações completamente diferentes — sem cliente cadastrada, sem atendimento concluído, e tudo
+   * em dia — e só a terceira é boa notícia.
+   *
+   * São `head: true` com `count: 'exact'`: não trazem linha nenhuma, só o número, e vão no mesmo
+   * `Promise.all` que já existia — custo de latência zero contra o que a tela já pagava.
+   */
+  const [lista, atribuicao, plano, clientes, ciclos] = await Promise.all([
     listarParaRecuperar(db, ctx.tenantId),
     receitaAtribuidaAoCiclo(db, ctx.tenantId, timezone, desde, ate),
     contextoDePlano(db, ctx.tenantId),
+    db.from('clients').select('id', { count: 'exact', head: true }).eq('tenant_id', ctx.tenantId).is('deleted_at', null),
+    db.from('client_cycles').select('client_id', { count: 'exact', head: true }).eq('tenant_id', ctx.tenantId),
   ])
 
   // A tela precisa saber para desenhar o caminho certo; quem RECUSA é a rota (§L.1). Aqui é
@@ -67,7 +79,12 @@ export default async function PaginaRecuperar() {
         </AlertBanner>
       ) : null}
 
-      <RecuperarReceita inicial={lista} podeEnviarEmLote={podeEnviarEmLote} />
+      <RecuperarReceita
+        inicial={lista}
+        podeEnviarEmLote={podeEnviarEmLote}
+        temClientes={(clientes.count ?? 0) > 0}
+        temCiclos={(ciclos.count ?? 0) > 0}
+      />
     </>
   )
 }
