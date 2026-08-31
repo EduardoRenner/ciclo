@@ -4973,3 +4973,41 @@ Nota de escala, registrada sem conserto: `recompute-cycles` e `segments` também
 tenants sem lote e sem `maxDuration`. Passam hoje porque são 7 tenants. Vira problema em algum
 número de clientes, não hoje — e mexer nas duas rotas que estão rodando bem, de madrugada, seria
 trocar risco conhecido por risco novo.
+
+---
+
+### 2026-08-31 · Auto-revisão, parte 3: as views recriadas sob RLS de usuário de verdade
+
+Rodada de verificação, sem conserto — e ela fecha a pergunta que ficou em aberto nas migrations
+0048/0049.
+
+Ao trocar `create or replace` por **`drop` + `create`** nas duas views, eu havia conferido o
+resultado com `service_role`, que **passa por cima da RLS**. Isso responde "a view calcula certo",
+não "o usuário enxerga". E o modo de falha aqui não é erro: um join que quebre a política devolve
+tela **vazia**, silenciosamente.
+
+Conferido agora com sessão de usuário real, número por número:
+
+| | banco | tela |
+|---|---|---|
+| carteira | 22 | "22 na carteira" |
+| ticket médio | 58,95 | "R$ 58,95" |
+| voltam de novo | 100% | "100%" |
+| aniversariantes | 10 | "10 fazem aniversário esse mês" |
+| linhas da lista | 22 | 22 |
+
+O `join tenants` não quebrou o isolamento — como o raciocínio previa (`tenants_select` usa
+`has_tenant(id)`), mas agora está medido em vez de deduzido.
+
+**O que NÃO foi possível reverificar:** o assistente de ponta a ponta. A cota diária do tenant de
+teste (60 perguntas) segue esgotada — janela FIXA, então ela volta de uma vez, não aos poucos.
+Mudei quatro coisas naquele caminho hoje (limpeza de schema, mensagem de erro de argumento,
+renderização do cartão, e as ferramentas), e todas têm teste de unidade e guarda, mas a passagem
+completa pelo Gemini não foi refeita depois da última mudança. Fica dito.
+
+**Uma coisa que decidi NÃO mudar:** "Ticket médio" na tela de clientes sai de `ltv_total /
+visitas_total`, ou seja preço de tabela — a mesma origem de "Faturado hoje" e "Já gastou", que
+corrigi hoje. Não entra na regra do vocabulário porque "ticket médio" é termo de mercado com
+definição própria, e renomeá-lo confundiria mais do que esclarece. A guarda mira quem afirma
+dinheiro RECEBIDO ("faturado", "gastou"); esta é uma média de valor atendido, e o nome não promete
+outra coisa.
