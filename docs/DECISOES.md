@@ -4586,3 +4586,43 @@ atendido, faltas e última visita. Nenhuma depende mais de coluna derivada.
 As colunas continuam existindo e continuam sendo escritas pelo cron, porque a view
 `v_client_segments` as usa para segmentar — mas nenhuma tela lê mais o número derivado quando pode
 ler o fato.
+
+---
+
+### 2026-08-31 · A tela de campanhas dizia que toda campanha valeu R$ 0,00
+
+Varri o schema inteiro atrás de outras colunas da classe "lida por todo mundo, escrita por
+ninguém". Das 44 candidatas, os falsos positivos caíram (defaults do banco, escrita inline,
+variáveis locais de função SQL) e sobrou uma: **`campaigns.booked_count`** — e com ela
+`revenue_cents`.
+
+`registrarCampanha` as deixa em zero **de propósito**, com um comentário que envelheceu virando
+profecia: *"quem preenche é a atribuição, não o usuário: número de conversão digitado à mão não é
+medição, é opinião"* — e *"sem elas, `booked_count`/`revenue_cents` ficariam zerados para sempre e
+o funil da tela seria decorativo"*. Não existe um único `update` em `campaigns` no repositório. A
+atribuição nunca escreveu de volta.
+
+**E o efeito era pior que decorativo.** Cada campanha aparecia com receita **R$ 0,00**, funil
+"Marcaram horário: **0**", e a frase **"Cada mensagem valeu R$ 0,00 em média"**. O topo somava tudo
+e mostrava "Receita gerada: R$ 0,00" e "Viraram horário: 0%". A tela informava ao salão que toda
+campanha que ele já rodou não valeu nada — estruturalmente, para sempre, no recurso que a
+descrição da própria página promete medir.
+
+**A causa raiz não é código, é modelo de dados:** `messages` não guarda de qual campanha a linha
+saiu. Só tem `client_id`, `kind`, `status`, `sent_at`. Sem esse vínculo, a quebra por campanha não
+existe no banco — não dá para calcular ao vivo, como fiz com a ficha da cliente.
+
+**O que existe e é verdade:** `receitaAtribuidaAoCiclo` casa mensagem de campanha enviada com
+atendimento concluído na janela, e é a mesma função em que a tela "Hoje" confia. Ela mede por
+SALÃO, não por campanha. O topo passou a mostrar esse número; cada cartão passou a mostrar só o que
+é verdade sobre aquela campanha (nome, data, quantas mensagens saíram). As colunas mortas saíram
+até do `select` — buscar dado que ninguém escreve era trazer zero para a tela.
+
+**Não construí a medição por campanha, e é decisão consciente.** O conserto de verdade é
+`messages.campaign_id` (migration aditiva) + gravar na criação + calcular por campanha. É pequeno,
+mas é atribuição de dinheiro, e atribuição meio-construída é pior que ausente — ela volta a
+produzir número que ninguém conferiu. Fica registrado como o próximo passo, com o caminho inteiro
+escrito acima.
+
+A guarda tem um caso de DIREÇÃO, não de proibição: no dia em que aparecer um `update` em
+`campaigns`, ela reprova e quem estiver mexendo lê que a tela pode voltar a medir por campanha.
