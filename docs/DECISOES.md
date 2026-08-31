@@ -4158,3 +4158,54 @@ por outra.
 A guarda tem um caso para a costura, não só para a função: `AppError.limiteDeTaxa(86_400)` tem que
 carregar a frase certa. Sem ele, o teste aprovaria uma função que ninguém chama — e a primeira
 mutação (tirar `message:` do `AppError`) foi exatamente esse caso, reprovando só ali.
+
+---
+
+### 2026-08-31 · A proteção que se desligava sozinha no escuro: "não sei" virava "não tem nada"
+
+Sair da conta APAGA a fila offline do aparelho. A tela já tinha a proteção certa e o argumento
+certo, escrito em 25/08: contar o que não subiu e avisar, porque *"descartar trabalho de alguém em
+silêncio é o tipo de coisa que a pessoa só descobre no dia seguinte, quando o cliente aparece para
+um horário que não existe"*.
+
+Só que a contagem vinha de `listarMutacoes().catch(() => [])`. Esse `catch` transforma **"não
+consegui LER a fila"** em **"a fila está VAZIA"** — e aí o portão é pulado exatamente na hora em que
+mais importa. IndexedDB falha de verdade: janela anônima, armazenamento cheio, base corrompida,
+navegador com dados de site bloqueados. A proteção existia, estava testada, e se desligava sozinha
+no escuro sem nada reprovar.
+
+É a armadilha do "catch que descarta" da tabela do CLAUDE.md, e a mesma família das três frases de
+ontem: **a tela afirma um fato que ninguém verificou** — aqui, a afirmação implícita "não há nada
+pendente".
+
+Agora "não sei" é um estado próprio (`core/offline/aviso-de-saida.ts`), com texto próprio: não
+inventa número e também não finge que está tudo certo, porque as duas coisas seriam inventar.
+Diante da dúvida, avisa — o custo de avisar à toa é um toque; o de não avisar é perder doze
+agendamentos.
+
+**Duas coisas que a rodada ensinou sobre guardas, e as duas por reprovação:**
+
+1. **A guarda que já existia me pegou.** `tests/unit/shell/sair-da-conta.test.ts` reprovou minha
+   refatoração porque casava com os nomes antigos. Reescrevi para verificar a INTENÇÃO (o portão
+   consulta a regra; o aviso mostra a quantidade; existe o caso "não sei") e depois **mutei a
+   própria reescrita** — portão removido e aviso do "não sei" removido — para provar que não
+   enfraqueci ao atualizar. Atualizar guarda que reprova é o momento mais fácil de afrouxá-la sem
+   perceber.
+2. **Minha guarda nova caiu na armadilha nº1 da tabela do CLAUDE.md**, na primeira tentativa:
+   ancorei em `drenarFilaPendente`, cuja primeira ocorrência é a linha de `import`, e o recorte
+   pegou o arquivo inteiro. O mesmo erro que o comentário do teste vizinho já registrava. Corrigido
+   ancorando em `await drenarFilaPendente(`.
+
+**Correção de algo que EU escrevi ontem:** o comentário em `core/http/espera.ts` afirmava que a
+janela do limitador é deslizante e "o crédito volta aos poucos". É **fixa** — `expiraEm` é gravado
+na primeira requisição e a contagem zera de uma vez. Afirmei um mecanismo sem conferir, que é o
+defeito que venho catando nos outros. A frase genérica continua certa por outro motivo, agora
+escrito: `limiteDeTaxa()` recebe o TAMANHO da janela, não quanto falta dela.
+
+Fica registrado, sem conserto: por isso o `Retry-After` também superestima a espera. Consertar exige
+devolver o instante de reset nos três backends (memória, Upstash e a RPC `consumir_rate_limit`, que
+é migração), e fazer só num deles deixaria o cabeçalho certo às vezes — pior do que errado sempre.
+
+Verificado em produção nesta rodada: a mensagem do TICKET-054 está no ar ("Você atingiu o limite de
+uso de hoje"). O caminho feliz do assistente segue **não** reverificado — a cota do tenant de teste
+ainda não voltou, e a janela é fixa, então volta de uma vez.
