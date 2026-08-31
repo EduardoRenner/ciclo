@@ -49,6 +49,8 @@ const SLUGS_DE_DEMONSTRACAO: readonly string[] = [
   'teste-essencial',
   'teste-equipe',
   'teste-avancado',
+  'lang-barber',
+  'lang-unhas',
 ]
 
 /** O tenant deste slug é uma demonstração, e não um negócio de verdade. */
