@@ -71,6 +71,13 @@ describe('erro de argumento volta explicado', () => {
     expect(r.ferramentasUsadas).toContain('ocupacao_do_dia')
   })
 
+  /*
+   * O que a mutação ensinou sobre ESTA guarda: vazar pelas `issues` do Zod é impossível — elas não
+   * carregam o valor recebido. Duas tentativas de mutação passaram verdes por isso, e uma guarda
+   * que nada consegue reprovar é decoração. O que ela protege de verdade é a assinatura: alguém
+   * "melhorando" a função para receber os argumentos crus "e dar mais contexto ao modelo" põe o
+   * telefone da cliente no histórico da conversa e no log do provedor. Essa mutação reprova.
+   */
   it('não devolve o valor recebido — pode ser dado de cliente que o dono ditou', async () => {
     const ferramenta: Ferramenta = {
       nome: 'buscar', descricao: 'x', schema: z.object({ telefone: z.string().min(20, 'curto') }),

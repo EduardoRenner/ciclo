@@ -3947,3 +3947,35 @@ enfraquece nada de verdade — quem valida é o Zod no servidor, que roda depois
 A guarda percorre o schema de **toda** ferramenta e reprova em palavra fora da lista. Vista
 reprovando com a limpeza desligada, e ela pegou de saída que `pattern` e `minLength` já viajavam
 para a API antes — o Gemini tolerava esses dois, e era só questão de qual palavra chegaria primeiro.
+
+---
+
+### 2026-08-30 · O erro de argumento precisa dizer QUAL campo, e é consequência direta da limpeza de schema
+
+Quando os argumentos do modelo não passam no Zod, o laço devolvia a frase fixa "Argumentos
+inválidos para esta ferramenta." — e frase fixa é beco sem saída: sem saber qual campo nem por quê,
+a correção mais provável do modelo é repetir o mesmo erro. Com `MAX_CHAMADAS_DE_FERRAMENTA = 3`, as
+voltas queimam às cegas e o dono recebe "não consegui terminar de responder" numa pergunta que
+falhou por um traço no lugar errado.
+
+Isso ficou mais provável **hoje**, pela limpeza de schema para o Gemini: `pattern` e `minLength` não
+viajam mais, então o formato que antes ia no schema agora só existe na descrição, e o Zod virou a
+única checagem de verdade. Uma checagem que não explica o que quer é uma checagem que o modelo não
+consegue obedecer. Medido em produção antes de mexer: `AAAA-MM` e `AAAA-MM-DD` continuam saindo
+certos só com a descrição — o conserto é para quando não saírem, não para um defeito ativo.
+
+Nunca inclui o valor recebido, só caminho e mensagem: o valor pode ser nome ou telefone que o dono
+ditou, e ele entraria no histórico da conversa e no log do provedor sem nenhum ganho.
+
+**E a mutação ensinou algo sobre a própria guarda de vazamento.** Duas tentativas de fazê-la
+reprovar passaram verdes: as `issues` do Zod simplesmente não carregam o valor recebido, então
+vazar por ali é impossível e a guarda não tinha o que pegar. Guarda que nada consegue reprovar é
+decoração. O que ela protege de verdade é a **assinatura** — alguém "melhorando" a função para
+receber os argumentos crus e "dar mais contexto ao modelo". Essa mutação reprova, e é ela que
+justifica a guarda existir.
+
+Registro também dois falsos positivos descartados nesta rodada, porque descartar contou como
+trabalho: o painel do assistente "não abrir" era leitura errada da árvore de acessibilidade (ele
+abre — `role="dialog"`, `data-state=open`, textarea presente), e o overlay com `opacity: 0`
+bloqueando clique era a aba oculta congelando a animação em `currentTime: 0`. Nenhum dos dois é
+defeito.
