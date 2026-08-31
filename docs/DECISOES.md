@@ -4941,3 +4941,35 @@ que coincidiam no valor; agora o lote se chama `TAMANHO_DO_LOTE` e mora com quem
 **Uma guarda minha de duas rodadas atrás precisou de ajuste**, e é o caso honesto do gênero: ela
 casava com `concluidosBruto.data`, que deixou de existir quando a leitura virou paginada. A
 asserção seguiu a mudança; a intenção não mudou — e ganhou uma linha a mais, exigindo a paginação.
+
+---
+
+### 2026-08-31 · Auto-revisão, parte 2: o job de retenção não caberia no tempo da função
+
+Segunda passada sobre o trabalho da madrugada.
+
+**A troca da barra está correta no desktop também** — só tinha medido a 375 px. Na coluna lateral,
+"Recuperar receita" fica no TOPO (y=24), acima de Hoje/Agenda/Clientes/Marcar, porque o
+`lg:order-first` do botão central o promove ali. Todos os cinco com 207×48 px, sem sobreposição, e
+o `aria-current` que acrescentei acende só ele em `/admin/recuperar`. O ícone da marca herda
+`text-on-acc` sobre o fundo de acento, com contraste correto.
+
+**O defeito era meu, e de dimensionamento.** O job de retenção pegava **500 clientes por execução**.
+Cada `eliminarCliente` faz várias consultas, apaga arquivos no storage, atualiza colunas e redige a
+trilha de auditoria — 500 disso, sequencialmente, não cabe em `maxDuration` nenhum. O job morreria
+no meio toda vez que a fila fosse grande.
+
+Morrer no meio é **seguro** aqui, e isso foi desenhado: `eliminarCliente` recusa quem já tem
+`anonymized_at`, então a execução seguinte continua de onde parou em vez de repetir. Mas job que
+sempre estoura é job em que ninguém confia, e enche o log de timeout que não significa nada.
+
+Passou para **100 por execução**, com `maxDuration = 60` declarado (como `/api/v1/assistant`, a
+única outra rota que declara). A fila normal — ninguém apaga cliente todo dia — esvazia numa
+execução; uma fila grande esvazia em alguns dias, o que é aceitável porque a carência de 30 dias já
+disse que isto não é urgente. Quem precisa de eliminação imediata usa o botão da ficha, que é
+síncrono.
+
+Nota de escala, registrada sem conserto: `recompute-cycles` e `segments` também iteram todos os
+tenants sem lote e sem `maxDuration`. Passam hoje porque são 7 tenants. Vira problema em algum
+número de clientes, não hoje — e mexer nas duas rotas que estão rodando bem, de madrugada, seria
+trocar risco conhecido por risco novo.
