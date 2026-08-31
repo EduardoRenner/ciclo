@@ -2,6 +2,7 @@ import type { Papel } from '@/server/auth/rbac'
 import { AppError } from '@/server/http/errors'
 import { ferramentasPermitidas, hojeNoFuso, paraJsonSchema, type ContextoFerramenta, type Ferramenta } from '@/server/assistente/ferramentas'
 import { podeUsarModulo } from '@/core/billing/planos'
+import { explicarArgumentosInvalidos } from '@/core/assistente/erro-de-argumento'
 import { extrairProposta } from '@/core/assistente/proposta'
 import { contextoDePlano } from '@/server/services/planos'
 import type { AiProvider, MensagemDoAssistente } from '@/server/providers/ai/types'
@@ -182,7 +183,8 @@ export async function executarLaco(opcoes: {
     mensagens.push({ papel: 'assistente', texto: null, chamadaFerramenta: { nome: resposta.nome, argumentos: resposta.argumentos, assinatura: resposta.assinatura } })
 
     if (!validado.success) {
-      mensagens.push({ papel: 'ferramenta', nome: resposta.nome, conteudo: 'Argumentos inválidos para esta ferramenta.' })
+      // Diz QUAL campo e POR QUÊ: sem isso o modelo repete o mesmo erro até as voltas acabarem.
+      mensagens.push({ papel: 'ferramenta', nome: resposta.nome, conteudo: explicarArgumentosInvalidos(validado.error) })
       continue
     }
 
