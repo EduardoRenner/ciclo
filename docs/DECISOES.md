@@ -5116,3 +5116,10 @@ política são o padrão seguro (deny-by-default, nunca acessadas fora de servic
 `public` é estilo, não risco real, e mover exigiria recriar objetos dependentes sem necessidade
 clara; `auth_leaked_password_protection` é toggle do painel do Supabase, fora do que migration
 alcança.
+
+**2026-08-31 · índices de FK faltando em `portfolio_photos` (migration 0056)**: `get_advisors`
+(performance) apontou as duas FKs da tabela nova (TICKET-115, mesma tarde) sem índice cobrindo a
+coluna como líder — `portfolio_photos_tenant_idx`/`_client_idx` têm `tenant_id` na frente, o que
+não serve pra varredura por `client_id`/`source_media_id` sozinhos. Sem isso, apagar uma
+`clients`/`media` referenciada varreria `portfolio_photos` inteira — e é exatamente o tipo de
+consulta que `despublicarTudoDoCliente` (revogar consentimento) e `deletarMedia` fazem.
