@@ -4866,3 +4866,42 @@ exclusões após restauração, que depende do mesmo job inexistente. Corrigida 
 **A guarda liga as duas pontas nas DUAS direções:** enquanto não houver cron de LGPD, o FAQ não pode
 prometer um; e no dia em que houver, ela reprova e manda atualizar o FAQ. Prometer o que não existe
 e esquecer de anunciar o que passou a existir são o mesmo defeito.
+
+---
+
+### 2026-08-31 · O job `lgpd_retention` existe — e fica desligado, de propósito
+
+A pendência que a rodada anterior expôs virou código: `/api/cron/lgpd-retention` passa de
+`deleted_at` para eliminação depois de 30 dias de carência, chamando o `eliminarCliente` que já
+existia e já fazia o trabalho inteiro (cofre e mídia apagados, dado pessoal anonimizado coluna a
+coluna, trilha redigida).
+
+**Ela fica FORA do `on.schedule`, e isso é a decisão principal.** Mesmo padrão de `reminders` e
+`campaigns`: ligar destruição irreversível de dado pessoal é decisão do dono do produto, não efeito
+colateral de um deploy. O gap deixa de ser "código a escrever" e vira "chave a virar".
+
+Três coisas foram desenhadas em volta do fato de ser irreversível:
+
+- **`?simular=1`** não apaga nada: conta e devolve quantas pessoas entrariam. O primeiro disparo de
+  um job destrutivo não pode ser também a primeira vez que alguém descobre quantas linhas ele
+  alcança.
+- **Falha de uma pessoa não derruba a fila** — as outras têm o mesmo direito de serem eliminadas no
+  prazo. O erro é contado e registrado, nunca engolido.
+- **Carência de 30 dias** porque é o prazo que o FAQ já usava e coincide com a expiração de backup:
+  eliminar antes deixaria o dado voltar numa restauração, que é o pior dos dois mundos.
+
+**A mutação mais importante foi a que NÃO era pega.** Apagar a linha do filtro de carência deixa a
+rota anonimizar cliente excluída há segundos — e nenhum teste reprovava, com typecheck e lint
+limpos. Numa consulta destrutiva, o modo de falha não é "quebra", é "alcança gente demais, em
+silêncio". A guarda passou a travar os quatro filtros (`deleted_at` preenchido, passou da carência,
+ainda não anonimizada, carência ≥ 30 dias), cada um visto reprovando.
+
+**E a guarda da rodada anterior estava imprecisa.** Ela reprovou assim que a rota foi CRIADA, mesmo
+ficando fora do schedule — lia o arquivo inteiro em vez de `ROTAS_AGENDADAS`. Rota que ninguém
+dispara não anonimiza ninguém, então o FAQ continuava certo. Corrigida para olhar o agendamento:
+imprecisão de guarda cobra conserto onde não há defeito, e isso custa tanto quanto absolver o
+errado.
+
+**Para ligar, quando for a hora:** rodar com `?simular=1` primeiro e olhar o número, depois
+acrescentar `lgpd-retention` ao `on.schedule` do `cron.yml` e a `ROTAS_AGENDADAS`. A guarda vai
+reprovar pedindo que a G92 do FAQ seja atualizada junto — de propósito.
