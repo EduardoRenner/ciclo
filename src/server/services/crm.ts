@@ -11,6 +11,7 @@ import { contextoDePlano } from '@/server/services/planos'
 import { podeUsarModulo } from '@/core/billing/planos'
 import { limiarPertoDoPremio } from '@/core/loyalty/limiar'
 
+import { buscarTudoPaginado } from '@/server/db/paginar'
 import { AppError } from '@/server/http/errors'
 
 import type { Database } from '@/server/db/types.gen'
@@ -145,12 +146,25 @@ export async function fichaDoCliente(db: Cliente, tenantId: string, clientId: st
      * já indexada por `client_id`, entra no MESMO `Promise.all` (latência somada: zero) e o
      * volume é o de uma pessoa, não o do salão.
      */
-    db
-      .from('appointments')
-      .select('price_cents, starts_at, status')
-      .eq('tenant_id', tenantId)
-      .eq('client_id', clientId)
-      .in('status', ['done', 'no_show']),
+    /*
+     * Paginado, e nao um `.select()` solto. O PostgREST corta em `max_rows = 1000` e NAO erra:
+     * devolve as primeiras mil e cala. Uma cliente antiga o bastante (semanal por vinte anos)
+     * passaria disso e a ficha mostraria visitas e valor MENORES que os reais — errado com cara
+     * de exato, que e pior que o numero defasado que estava aqui antes.
+     *
+     * Hoje o maior historico por cliente nesta base e de 7 atendimentos, entao o risco e teorico —
+     * mas a troca que fiz foi "completo porem defasado" por "fresco", e nao valeria trocar por
+     * "fresco porem truncado em silencio".
+     */
+    buscarTudoPaginado(() =>
+      db
+        .from('appointments')
+        .select('price_cents, starts_at, status')
+        .eq('tenant_id', tenantId)
+        .eq('client_id', clientId)
+        .in('status', ['done', 'no_show'])
+        .order('id'),
+    ),
     db
       .from('client_cycles')
       .select('state, late_days, predicted_on, services(name)')
@@ -207,7 +221,7 @@ export async function fichaDoCliente(db: Cliente, tenantId: string, clientId: st
    * `visitas`, `ltvCents` e `ultimaVisita` vinham do cron `segments` (uma vez por dia, 5-6h de
    * atraso medido). Custam nada aqui: já são as mesmas linhas.
    */
-  const linhasDoCliente = concluidosBruto.data ?? []
+  const linhasDoCliente = concluidosBruto
   const concluidos = linhasDoCliente.filter((a) => a.status === 'done')
   const visitas = concluidos.length
   const ltvCents = concluidos.reduce((soma, a) => soma + a.price_cents, 0)

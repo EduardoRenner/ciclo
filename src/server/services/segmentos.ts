@@ -1,3 +1,4 @@
+import { buscarTudoPaginado } from '@/server/db/paginar'
 import { AppError } from '@/server/http/errors'
 
 import type { Database } from '@/server/db/types.gen'
@@ -6,21 +7,14 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 type Cliente = SupabaseClient<Database>
 type LinhaSegmento = Database['public']['Views']['v_client_segments']['Row']
 
-const TAMANHO_PAGINA = 1000
+/**
+ * Tamanho do LOTE DE ESCRITA do upsert. Coincidia com o tamanho de página da leitura porque as
+ * duas constantes eram a mesma — mas são decisões diferentes: uma é o teto do PostgREST, a outra é
+ * quantas linhas cabem num upsert sem estourar o corpo da requisição. Separadas em 31/08, quando a
+ * leitura virou `@/server/db/paginar`.
+ */
+const TAMANHO_DO_LOTE = 1000
 
-async function buscarTudoPaginado<T>(
-  consultaBase: () => { range(inicio: number, fim: number): PromiseLike<{ data: T[] | null; error: unknown }> },
-): Promise<T[]> {
-  const tudo: T[] = []
-  for (let pagina = 0; ; pagina++) {
-    const inicio = pagina * TAMANHO_PAGINA
-    const { data, error } = await consultaBase().range(inicio, inicio + TAMANHO_PAGINA - 1)
-    if (error) throw new AppError('INTERNAL', { cause: error })
-    tudo.push(...(data ?? []))
-    if (!data || data.length < TAMANHO_PAGINA) break
-  }
-  return tudo
-}
 
 /**
  * TICKET-040. `visits_count`/`ltv_cents`/`last_visit_at` existem em `clients` desde a 0001 mas
@@ -67,8 +61,8 @@ export async function recalcularSegmentosDoTenant(db: Cliente, tenantId: string)
     }
   })
 
-  for (let inicio = 0; inicio < linhas.length; inicio += TAMANHO_PAGINA) {
-    const lote = linhas.slice(inicio, inicio + TAMANHO_PAGINA)
+  for (let inicio = 0; inicio < linhas.length; inicio += TAMANHO_DO_LOTE) {
+    const lote = linhas.slice(inicio, inicio + TAMANHO_DO_LOTE)
     // upsert em vez de update: mantém `tenant_id`/demais colunas intactas via `onConflict` na PK
     // (`id`) — precisa do `tenant_id` só para satisfazer a RLS/`not null`, não muda de valor.
     const { error } = await db.from('clients').upsert(lote.map((l) => ({ ...l, tenant_id: tenantId })), { onConflict: 'id' })

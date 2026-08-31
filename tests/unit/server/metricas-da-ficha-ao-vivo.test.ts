@@ -29,7 +29,10 @@ describe('as metricas da ficha sao do agora, nao do cron de ontem', () => {
   })
 
   it('existe a consulta ao vivo dos concluidos', () => {
-    expect(CRM, 'sumiu a leitura das linhas de verdade').toContain('concluidosBruto.data')
+    // 31/08, segunda revisao: `concluidosBruto` deixou de ser o objeto do supabase-js e passou a
+    // ser o array que `buscarTudoPaginado` devolve — a asercao seguiu a mudanca, a intencao nao.
+    expect(CRM, 'sumiu a leitura das linhas de verdade').toContain('concluidosBruto')
+    expect(CRM, 'a leitura voltou a ser um select solto, truncavel em 1000').toContain('buscarTudoPaginado(')
     expect(CRM, 'as visitas voltaram a nao ser contadas das linhas').toContain('const visitas = concluidos.length')
   })
 

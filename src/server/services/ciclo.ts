@@ -1,6 +1,7 @@
 import { Temporal } from '@js-temporal/polyfill'
 
 import { computeCycle } from '@/core/cycle/compute'
+import { buscarTudoPaginado } from '@/server/db/paginar'
 import { AppError } from '@/server/http/errors'
 
 import type { Database } from '@/server/db/types.gen'
@@ -8,27 +9,9 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 type Cliente = SupabaseClient<Database>
 
-const TAMANHO_PAGINA = 1000
+/** Tamanho do LOTE DE ESCRITA do upsert — outra decisão que o teto de leitura do PostgREST. */
+const TAMANHO_DO_LOTE = 1000
 
-/**
- * O PostgREST devolve no máximo 1000 linhas por chamada, mesmo sem `.limit()`
- * — um tenant de 10 mil atendimentos concluídos silenciosamente perderia
- * 90% deles sem essa paginação (foi assim que o teste de performance do
- * TICKET-036 pegou o bug: "processados" deu 1000, não 10000).
- */
-async function buscarTudoPaginado<T>(
-  consultaBase: () => { range(inicio: number, fim: number): PromiseLike<{ data: T[] | null; error: unknown }> },
-): Promise<T[]> {
-  const tudo: T[] = []
-  for (let pagina = 0; ; pagina++) {
-    const inicio = pagina * TAMANHO_PAGINA
-    const { data, error } = await consultaBase().range(inicio, inicio + TAMANHO_PAGINA - 1)
-    if (error) throw new AppError('INTERNAL', { cause: error })
-    tudo.push(...(data ?? []))
-    if (!data || data.length < TAMANHO_PAGINA) break
-  }
-  return tudo
-}
 
 /**
  * Um `(client_id, service_id)` só entra no cálculo se tiver pelo menos um
@@ -143,8 +126,8 @@ export async function recomputarCiclosDoTenant(db: Cliente, tenantId: string, ti
   // é o que torna rodar o job duas vezes seguidas idêntico a rodar uma vez.
   // Em lotes de 1000: um único upsert com 10 mil linhas arrisca estourar
   // limite de corpo da requisição.
-  for (let inicio = 0; inicio < linhas.length; inicio += TAMANHO_PAGINA) {
-    const lote = linhas.slice(inicio, inicio + TAMANHO_PAGINA)
+  for (let inicio = 0; inicio < linhas.length; inicio += TAMANHO_DO_LOTE) {
+    const lote = linhas.slice(inicio, inicio + TAMANHO_DO_LOTE)
     const { error } = await db.from('client_cycles').upsert(lote, { onConflict: 'tenant_id,client_id,service_id' })
     if (error) throw new AppError('INTERNAL', { cause: error })
   }
