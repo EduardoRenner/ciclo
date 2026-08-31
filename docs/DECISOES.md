@@ -4557,3 +4557,32 @@ este projeto persegue no produto — aplicada à ferramenta que faz a perseguiç
 A mutação que prova a consolidação é a mais bonita da noite: quebrar o stripper compartilhado faz
 **15 testes gritarem "veio vazio"** em vez de passarem por não terem olhado nada. As guardas antigas
 já se protegiam contra o próprio detector — exatamente o passo 4 do procedimento do CLAUDE.md.
+
+---
+
+### 2026-08-31 · "Faltas: 0" para quem faltou cinco vezes
+
+O fim da varredura das colunas desnormalizadas de `clients`, e o pior caso da família — de outra
+natureza que os anteriores.
+
+`visits_count`, `ltv_cents` e `last_visit_at` são **defasadas**: o cron `segments` as reescreve uma
+vez por dia. `no_show_count` não é defasada, é **morta**: o único escritor dela no repositório
+inteiro é `scripts/seed-demo-barbearia.mjs`. Em uso real ela fica em **zero para sempre**.
+
+Conferido em produção, e o número engana: 11 faltas na coluna, 11 faltas reais, zero divergência —
+porque a semente escreveu as duas coisas de forma consistente. A sincronia perfeita era prova de
+que ninguém mexe, não de que funciona.
+
+É a mesma classe de `referred_by` e `fee_cents`, que este repositório já nomeou e já guardou:
+*coluna lida por todo mundo e escrita por ninguém*. Aqui dói mais que nas outras, porque
+"Faltas: 0" é o número com que uma dona de salão decide cobrar sinal ou confirmar com mais cuidado
+— e ele dizia que a cliente é confiável quando ela não é.
+
+**O conserto foi de graça**, porque a consulta certa já estava lá: a agregada que eu tinha
+adicionado há duas rodadas para tirar a defasagem de visitas e LTV. Ampliada de `status = 'done'`
+para `in ('done','no_show')`, ela passa a alimentar as **quatro** métricas da ficha — visitas, valor
+atendido, faltas e última visita. Nenhuma depende mais de coluna derivada.
+
+As colunas continuam existindo e continuam sendo escritas pelo cron, porque a view
+`v_client_segments` as usa para segmentar — mas nenhuma tela lê mais o número derivado quando pode
+ler o fato.
