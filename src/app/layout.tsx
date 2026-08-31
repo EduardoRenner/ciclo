@@ -29,6 +29,13 @@ export const metadata: Metadata = {
    * que saiu do lugar (WCAG 2.4.2). Instalado como PWA, é também o nome da
    * janela e do item no alternador de apps.
    */
+  /*
+   * `metadataBase` faltava, e sem ele TODO caminho relativo de imagem em `openGraph` fica
+   * relativo — o WhatsApp e o Instagram não resolvem, e o link colado aparece sem prévia
+   * nenhuma. Para um produto cujo canal de aquisição é justamente o link mandado no WhatsApp
+   * para outro profissional, isso é a vitrine fechada.
+   */
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://ciclo.app"),
   title: { default: "CICLO", template: "%s · CICLO" },
   description:
     "Gestão para profissionais da beleza: agenda, Motor de Ciclo e recuperação de receita.",

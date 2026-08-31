@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 
+import { dadosEstruturadosDoSalao } from '@/core/seo/dados-estruturados'
 import { ehDemonstracao } from '@/core/tenants/demonstracao'
 import { AppError } from '@/server/http/errors'
 import { perfilPublico } from '@/server/services/public-booking'
@@ -41,20 +42,6 @@ export async function generateViewport({ params }: { params: Promise<{ slug: str
   return { themeColor: perfil?.accentColor.acc ?? '#0d0c0c' }
 }
 
-/** LocalBusiness: o tipo genérico certo pra "profissional da beleza atende no endereço X". */
-function jsonLdNegocioLocal(perfil: PerfilPublico) {
-  const base = process.env.NEXT_PUBLIC_APP_URL
-  return {
-    '@context': 'https://schema.org',
-    '@type': 'LocalBusiness',
-    name: perfil.name,
-    ...(base ? { url: `${base}/${perfil.slug}` } : {}),
-    ...(perfil.phone ? { telephone: perfil.phone } : {}),
-    ...(perfil.address ? { address: perfil.address } : {}),
-    ...(perfil.tagline ?? perfil.about ? { description: perfil.tagline ?? perfil.about } : {}),
-  }
-}
-
 export default async function PaginaPublica({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
 
@@ -66,7 +53,28 @@ export default async function PaginaPublica({ params }: { params: Promise<{ slug
 
   // `JSON.stringify` não escapa `</script>` — nome/endereço do tenant são texto livre
   // no cadastro, então sem isso um valor malicioso fecharia a tag e injetaria HTML.
-  const jsonLd = JSON.stringify(jsonLdNegocioLocal(perfil)).replace(/</g, '\\u003c')
+  /*
+    O tenant de DEMONSTRAÇÃO não recebe marcação: ele já é `noindex`, e entregar telefone,
+    endereço e faixa de preço de um negócio que não existe é exatamente o que a regra do
+    `sitemap.ts` e do `robots` da página evitam pelos outros caminhos.
+  */
+  const dados = ehDemonstracao(perfil.slug)
+    ? null
+    : dadosEstruturadosDoSalao({
+        nome: perfil.name,
+        url: `${process.env.NEXT_PUBLIC_APP_URL ?? ''}/${perfil.slug}`,
+        vertical: perfil.vertical,
+        descricao: perfil.tagline ?? perfil.about,
+        telefone: perfil.phone,
+        endereco: perfil.address,
+        instagram: perfil.instagram,
+        servicos: perfil.services.map((x) => ({ name: x.name, priceCents: x.priceCents, pricingModel: x.pricingModel })),
+        avaliacoes: perfil.reviews,
+      })
+
+  // `JSON.stringify` não escapa `</script>` — nome/endereço do tenant são texto livre
+  // no cadastro, então sem isso um valor malicioso fecharia a tag e injetaria HTML.
+  const jsonLd = dados ? JSON.stringify(dados).replace(/</g, '\\u003c') : null
 
   return (
     <main className="mx-auto min-h-dvh max-w-[560px] px-[18px]">
@@ -79,7 +87,7 @@ export default async function PaginaPublica({ params }: { params: Promise<{ slug
         depois: com o atributo, erro de hidratação em toda visita; sem ele, zero
         erro e zero violação de CSP.
       */}
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
+      {jsonLd ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} /> : null}
       {/*
         O aviso é o que protege quem chega DIRETO pela URL — por um link no WhatsApp, um print,
         um resultado antigo de busca. O `sitemap` e o `noindex` só cuidam do buscador; nenhum dos
