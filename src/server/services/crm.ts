@@ -15,6 +15,8 @@ import { AppError } from '@/server/http/errors'
 
 import type { Database } from '@/server/db/types.gen'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import type { EstadoCiclo } from '@/core/cycle/compute'
+import type { EstadoAgendamento } from '@/core/scheduling/state'
 
 type Cliente = SupabaseClient<Database>
 
@@ -49,11 +51,11 @@ export type FichaCliente = {
     ticketMedioCents: number
     ultimaVisita: string | null
   }
-  ciclo: { state: string; lateDays: number; predictedOn: string | null; serviceName: string } | null
+  ciclo: { state: EstadoCiclo; lateDays: number; predictedOn: string | null; serviceName: string } | null
   historico: {
     id: string
     startsAt: string
-    status: string
+    status: EstadoAgendamento
     priceCents: number
     serviceName: string
     professionalName: string

@@ -31,6 +31,8 @@ import { dinheiro, formatarTelefone } from '@/lib/formato'
 import { camposDePreferencia } from '@/lib/preferencias'
 import { aplicarVariaveis, linkWhatsApp, precisaDeAgendamento } from '@/lib/mensagens'
 
+import type { EstadoCiclo } from '@/core/cycle/compute'
+import type { EstadoAgendamento } from '@/core/scheduling/state'
 import type { FichaCliente } from '@/server/services/crm'
 import type { ConfigFidelidade } from '@/server/services/fidelidade'
 
@@ -44,7 +46,7 @@ type Modelo = { id: string; title: string; body: string }
 type Plano = { id: string; name: string; price_cents: number; sessions_per_month: number | null }
 type ProfissionalOpcao = { id: string; name: string }
 
-const ROTULO_CICLO: Record<string, { texto: string; estado: 'ok' | 'warn' | 'risk' | 'bad' }> = {
+const ROTULO_CICLO: Record<EstadoCiclo, { texto: string; estado: 'ok' | 'warn' | 'risk' | 'bad' }> = {
   on_track: { texto: 'Em dia', estado: 'ok' },
   due: { texto: 'Está na hora de voltar', estado: 'warn' },
   late: { texto: 'Atrasada', estado: 'warn' },
@@ -52,13 +54,24 @@ const ROTULO_CICLO: Record<string, { texto: string; estado: 'ok' | 'warn' | 'ris
   lost: { texto: 'Perdida', estado: 'bad' },
 }
 
-const ROTULO_STATUS: Record<string, string> = {
+/*
+ * Tipado por `EstadoAgendamento`, e não por `string`, de propósito: com `Record<string, string>`
+ * este mapa ficou SEIS meses sem `expired` e ninguém soube. `expired` é estado alcançável
+ * (`pending → expired` está na máquina de estados), e o `?? h.status` do fim fazia a tela mostrar
+ * a palavra inglesa crua "expired" no histórico da cliente. Agora acrescentar um estado ao tipo
+ * quebra o build aqui — que é onde tem que quebrar.
+ *
+ * Os rótulos são no feminino, diferentes dos de `appointment-row.tsx` ("Concluído", "Cancelado"),
+ * e isso não é duplicação a corrigir: lá o sujeito é o agendamento, aqui é a cliente.
+ */
+const ROTULO_STATUS: Record<EstadoAgendamento, string> = {
   done: 'Atendida',
   no_show: 'Faltou',
   canceled: 'Cancelada',
   pending: 'Aguardando',
   confirmed: 'Confirmada',
   arrived: 'Chegou',
+  expired: 'Venceu',
 }
 
 /** `kind` é enum do banco; sem tradução a tela mostrava "campaign"/"no_show" cru para o dono. */
