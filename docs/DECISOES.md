@@ -5132,3 +5132,14 @@ num tenant descartável: criar série semanal plantou 13 ocorrências, a tela li
 (cliente, serviço, profissional, "Terça-feira, toda semana", contagem), cancelar pede
 confirmação e, no banco, as 13 ocorrências viraram `canceled` de verdade — não só a linha da
 série. Nada a corrigir; registrado pra não reabrir essa pendência por engano no futuro.
+
+**2026-08-31 · duas pendências antigas da P8 (orçamentos) também já fechadas** — memória
+registrava "tela de gestão de orçamentos (só criar tem UI, consultar é só pelo link/SQL)" e
+"converter orçamento aprovado em agendamento (fluxo termina em approved; virar agendamento é
+manual)" como pendências conscientes do TICKET-068. Um processo paralelo construiu
+`/admin/orcamentos` (lista com selo de status, link público, botão "Marcar horário" quando
+aprovado) e o fio completo `/admin/agenda/novo?orcamento=<id>` → `converterOrcamentoEmAgendamento`.
+Verificado ao vivo, ponta a ponta: criar → aprovar pelo link público → converter em agendamento →
+`quotes.status` vira `converted` com `converted_appointment_id` certo → tela mostra "Virou
+agendamento" e some o botão → tentar converter de novo é recusado (`INVALID_TRANSITION`). Nada a
+corrigir; registrado pra não reabrir essas pendências por engano.
