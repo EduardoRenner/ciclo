@@ -1,11 +1,37 @@
+import { createHash } from 'node:crypto'
+
 import { EsquemaLogin } from '@/server/auth/schemas'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { lerCorpo } from '@/server/http/body'
 import { AppError } from '@/server/http/errors'
 import { rota } from '@/server/http/handler'
+import { limitarRotaPublica } from '@/server/http/limite-publico'
+import { limitador } from '@/server/services/rate-limit'
+
+/**
+ * Auditoria de segurança de 31/08/2026. A decisão registrada em `ip.ts` era "quem limita tentativa
+ * de senha é o próprio Supabase Auth, do lado dele" — e limita mesmo, **só que por projeto**,
+ * como o achado do `password/forgot` desta mesma rodada mostrou. Não é por IP nem por conta.
+ *
+ * Dois baldes, porque são dois ataques diferentes e nenhum cobre o outro:
+ * - por **conta** (e-mail em hash): credential stuffing mirando uma pessoa. Sobrevive a trocar de
+ *   IP, que é o que o atacante faz de graça;
+ * - por **IP**: spray de uma senha comum contra muitas contas — cada conta leva poucas tentativas,
+ *   então o balde por conta nunca dispara, mas o volume vindo do mesmo lugar é gritante.
+ *
+ * Só a resposta 429 muda; a mensagem de credencial errada continua idêntica para "e-mail não
+ * existe" e "senha errada", pelo motivo já escrito abaixo.
+ */
+const LIMITE_POR_CONTA = { limite: 10, janelaSegundos: 900 }
 
 export const POST = rota(async (req) => {
+  await limitarRotaPublica(req, 'login', { limite: 30, janelaSegundos: 300 })
+
   const { email, password } = await lerCorpo(req, EsquemaLogin)
+
+  const chaveConta = createHash('sha256').update(email.toLowerCase()).digest('hex')
+  const porConta = await limitador(`login:conta:${chaveConta}`, LIMITE_POR_CONTA)
+  if (!porConta.permitido) throw AppError.limiteDeTaxa(LIMITE_POR_CONTA.janelaSegundos)
 
   const db = await criarClienteDoUsuario()
   const { data, error } = await db.auth.signInWithPassword({ email, password })

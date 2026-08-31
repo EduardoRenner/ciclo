@@ -77,6 +77,46 @@ describe('toda rota pública tem limite por IP', () => {
   })
 })
 
+/**
+ * Segunda rodada da mesma auditoria: as rotas de credencial tinham a decisão registrada de
+ * "quem limita é o Supabase Auth" — e ele limita, **por projeto**, não por IP nem por conta.
+ *
+ * A pior era `mfa/verify`: código de **6 dígitos**, e quem chega lá **já passou pela senha**
+ * (`exigirSessao` aceita `aal1`, o nível que `signInWithPassword` devolve antes do segundo fator).
+ * Sem teto, quem tinha a senha vazada martelava 1.000.000 de combinações até acertar — o 2FA
+ * virava decoração exatamente no caso para o qual ele existe.
+ */
+const ROTAS_DE_CREDENCIAL: { arquivo: string; porque: string }[] = [
+  {
+    arquivo: 'src/app/api/v1/auth/mfa/verify/route.ts',
+    porque: 'código de 6 dígitos, alcançável por quem já tem a senha — sem teto o 2FA é decoração',
+  },
+  { arquivo: 'src/app/api/v1/auth/login/route.ts', porque: 'força bruta e credential stuffing' },
+  { arquivo: 'src/app/api/v1/auth/signup/route.ts', porque: 'queima a cota de e-mail do projeto inteiro' },
+  { arquivo: 'src/app/api/v1/auth/password/forgot/route.ts', porque: 'queima a cota de e-mail do projeto inteiro' },
+]
+
+describe('rota de credencial não confia só no limite do Supabase', () => {
+  it.each(ROTAS_DE_CREDENCIAL)('$arquivo tem limite de app', ({ arquivo, porque }) => {
+    const fonte = semComentarios(readFileSync(arquivo, 'utf8'))
+    expect(
+      CHAMA_LIMITE.test(fonte),
+      `${arquivo} sem limite de app (${porque}). O limite do Supabase Auth existe, mas é do ` +
+        'PROJETO — não por IP nem por conta, então não segura ataque mirado.',
+    ).toBe(true)
+  })
+
+  it('o balde do MFA é por USUÁRIO, não por IP — o IP é o que o atacante troca de graça', () => {
+    const fonte = semComentarios(readFileSync('src/app/api/v1/auth/mfa/verify/route.ts', 'utf8'))
+    // O que muda quando o defeito volta: a chave deixar de levar o dono da sessão.
+    expect(
+      /limitador\(\s*`[^`]*\$\{sessao\.userId\}/.test(fonte),
+      'a chave do limitador do MFA parou de usar `sessao.userId` — por IP, o atacante troca de ' +
+        'proxy e recomeça o balde do zero',
+    ).toBe(true)
+  })
+})
+
 describe('o corpo tem teto antes de virar objeto', () => {
   /*
    * `req.json()` carrega o corpo INTEIRO na memória antes do Zod ver o primeiro campo — o `max()`
