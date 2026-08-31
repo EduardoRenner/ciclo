@@ -323,18 +323,26 @@ apagados de verdade, `anonymized_at` é preenchido, e a trilha de auditoria é r
 (`redigir_trilha_do_cliente`, migration 0046). Registros financeiros permanecem sem vínculo
 pessoal, porque a lei fiscal exige guarda.
 
-O que **NÃO existe**: a passagem automática de `deleted_at` para anonimização após 30 dias. O job
-`lgpd_retention` diário está registrado como pendência no próprio `lgpd.ts` ("ainda não existe nesta
-base") e não há rota de cron para ele. Um cliente apenas soft-deletado permanece soft-deletado.
+**Atualizado — a rota existe desde 31/08/2026, o automatismo ainda não.** `GET
+/api/cron/lgpd-retention` (`route.ts`) já implementa o estágio inteiro: acha clientes com
+`deleted_at` há mais de 30 dias e `anonymized_at` nulo, chama `eliminarCliente` em lote (100 por
+execução, uma falha não derruba a fila), e tem modo `?simular=1` que só conta sem apagar — pensado
+pra medir o alcance antes do primeiro disparo de verdade. O que **NÃO existe** é o gatilho
+automático: a rota está DE PROPÓSITO fora do `.github/workflows/cron.yml` (nem `vercel.json`) —
+ligar destruição irreversível de dado pessoal é decisão do dono do produto, registrada no
+cabeçalho do próprio arquivo, não efeito colateral de um deploy. Hoje ela só roda se alguém a
+chamar na mão (com o `CRON_SECRET`).
 
-**Não diga ao titular que a anonimização acontece sozinha em 30 dias.** Diga que a eliminação
-acontece quando pedida, e peça-a. A política pública (`/privacidade`) já está correta: ela descreve
-o botão, não um prazo automático.
+**Não diga ao titular que a anonimização acontece sozinha em 30 dias — ainda não acontece.** Diga
+que a eliminação acontece quando pedida, e peça-a. A política pública (`/privacidade`) já está
+correta: ela descreve o botão, não um prazo automático.
 
 **G93. E os backups?**
 Backup expira em 30 dias. **A reaplicação automática após restauração ainda não existe** — depende
-do mesmo `lgpd_retention` da G92, que é pendência. Hoje, restauração dentro da janela exige
-reexecutar as eliminações à mão. Não documente no aviso de privacidade um automatismo que não roda.
+do mesmo `lgpd_retention` da G92, que existe em código mas não está agendado (mesma pendência de
+decisão de negócio). Hoje, restauração dentro da janela exige reexecutar as eliminações à mão, ou
+esperar o Eduardo autorizar ligar o `schedule`. Não documente no aviso de privacidade um
+automatismo que não roda ainda.
 
 **G94. Foto: quanto tempo guardo?**
 Padrão 24 meses ou até revogação do consentimento de imagem, o que vier primeiro. Configurável por tenant, com mínimo de 12 meses (para prova) e máximo de 60.
