@@ -4084,3 +4084,51 @@ são legítimos — ali o endereço realmente não existe. Nenhuma outra ocorrê
 Sem guarda nova de propósito: o que restaria seria varrer o arquivo atrás de `notFound(`, que é
 exatamente o padrão brittle que o CLAUDE.md registra como fonte de guarda cega. A verificação aqui
 é a tela no ar.
+
+---
+
+### 2026-08-30 · O assistente inventava que "está tudo certo" sobre o que o plano esconde
+
+**O achado mais sério do dia, e ele veio de uma pergunta banal.** Num tenant sem o módulo `stock`:
+
+> **pergunta:** "quais produtos estão acabando no meu estoque?"
+> **resposta:** "Não há alertas de estoque no momento. Todos os itens estão com níveis adequados."
+> **ferramentasUsadas:** `["resumo_de_hoje"]` ← nada a ver com estoque
+
+A ferramenta de estoque está escondida por plano, e isso está **certo**. O errado é o que acontece
+depois: o modelo não percebe a AUSÊNCIA dela, pega uma ferramenta qualquer e preenche o vazio com
+a resposta mais simpática. O dono é informado de que o estoque está bem quando o sistema
+literalmente não pode saber — e descobre a falta com a cliente na cadeira. Reproduzido duas vezes,
+com perguntas diferentes.
+
+É a mesma armadilha que o `catch` do laço já registra em código — *"resposta vazia parece 'você não
+tem nada atrasado', que é mentira"* — agora uma camada acima, no modelo. O CLAUDE.md chama isso de
+falso verde; aqui é falso "está tudo bem", que é a versão que chega ao dono.
+
+**O prompt JÁ mandava** *"se a pergunta exigir um dado que nenhuma ferramenta traz, diga que não
+consegue responder isso"*. Não bastou, e o motivo é o que interessa: a instrução é **passiva**. O
+modelo não enxerga o que não está na lista — ele vê o que TEM e assume que cobre a pergunta. Vazio
+não é um sinal; só vira informação quando alguém diz o nome dele.
+
+Então o prompt passou a nomear o que falta e por quê, com uma frase que é o coração do conserto e
+não detalhe de redação: *"NUNCA responda que está tudo certo... você não tem como saber, e dizer
+que está tudo bem é pior do que não responder."*
+
+Dizer o **motivo** também é a regra 5.2 do plano de monetização: bloqueio mostra o motivo e o
+caminho. Sumir em silêncio esconde do dono o que ele poderia comprar — e o plano grátis tem
+`assistant` mas não tem `register` nem `stock`, então este é o caminho do funil de entrada inteiro,
+não um canto raro.
+
+Guarda vista reprovando em duas mutações: o aviso não chegando ao prompt (4 casos) e a frase
+anti-confabulação removida sozinha (1 caso).
+
+**Negativos desta rodada, que também são entrega:** o módulo de comanda foi auditado e está
+saudável — `cost_cents` já multiplica pela quantidade (hipótese de lucro inflado descartada),
+`fecharComanda` e `cancelarComandaFechada` travam a corrida no próprio UPDATE, o estorno gera
+movimento `return` em vez de apagar o `out`, o caixa soma de uma fonte só (sem dupla contagem) e o
+núcleo tem 18 testes, incluindo propriedade. Também conferida a paridade de MÓDULO entre ferramenta
+e rota (bate), e o filtro por módulo roda antes de montar o pedido (correto).
+
+Registrado como lacuna de produto, sem conserto: **não existe comanda avulsa**. O único caminho é
+concluir um agendamento, então um cliente de passagem que só leva um produto não tem por onde ser
+lançado — e o caminho do dinheiro não é exercitável de ponta a ponta sem uma ação irreversível.

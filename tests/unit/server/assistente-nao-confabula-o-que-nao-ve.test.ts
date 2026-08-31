@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { executarLaco, promptDeSistema } from '@/server/services/assistente'
 
 import type { ContextoFerramenta, Ferramenta } from '@/server/assistente/ferramentas'
-import type { AiProvider, MensagemDoAssistente } from '@/server/providers/ai/types'
+import type { AiProvider, MensagemDoAssistente, RespostaDoModelo } from '@/server/providers/ai/types'
 
 /**
  * Medido em produção em 2026-08-30, num tenant sem o módulo `stock`:
@@ -57,7 +57,7 @@ describe('o aviso chega ao modelo de verdade', () => {
     const provider: AiProvider = {
       perguntar: vi.fn(async ({ mensagens }) => {
         vistas = mensagens
-        return { tipo: 'texto', texto: 'Não consigo ver seu estoque neste plano.' }
+        return { tipo: 'texto', texto: 'Não consigo ver seu estoque neste plano.' } as RespostaDoModelo
       }),
     }
     const ferramenta: Ferramenta = {
