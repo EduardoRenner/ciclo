@@ -4831,3 +4831,38 @@ apagar o erro sem dizer que houve erro é o mesmo tipo de silêncio.
 passou verde com a recusa REMOVIDA, porque a palavra continuava na prosa que explica por que ela
 existe. Corrigida com o `semComentarios` compartilhado — o mesmo utilitário que consolidei mais
 cedo justamente por isso.
+
+---
+
+### 2026-08-31 · O FAQ prometia anonimização automática que não roda — e a política pública estava certa
+
+Depois do `db:reset`, varri as outras afirmações de mecanismo do FAQ. **Quatro conferidas contra o
+banco de produção, todas verdadeiras**: índice único `(tenant_id, phone_e164)`, a constraint de
+exclusão `appointments_no_overlap`, a PK composta de `client_cycles` e `consents.text_hash`.
+
+A regra de lint que confina `service_role` também existe **e funciona** — testei criando um arquivo
+que a viola e ela reprovou com mensagem clara ("só pode aparecer em `with-tenant.ts`"). Declarada é
+diferente de funcionando, e aqui as duas coisas batem.
+
+**O achado foi na G92**, a resposta sobre exclusão por LGPD. Ela descrevia três estágios, sendo o
+segundo *"após 30 dias, **anonimização**"* — automático — e terminava com *"Explique isso ao titular
+na resposta."*
+
+Esse estágio não roda. O job `lgpd_retention` está registrado como pendência dentro do próprio
+`lgpd.ts` (*"ainda não existe nesta base"*), não há rota de cron para ele, e `eliminarCliente` só é
+chamado pelo endpoint manual de apagar. Um cliente soft-deletado permanece soft-deletado.
+
+**A boa notícia, e ela importa:** a política pública (`/privacidade`) sempre esteve **correta**. Ela
+descreve o botão de apagar — que funciona de verdade, incluindo redigir a trilha de auditoria — e
+não promete prazo automático nenhum. A promessa falsa estava confinada ao documento interno, que
+orienta o dev a repassá-la ao titular.
+
+O que existe funciona bem, e isso também ficou registrado: o botão apaga nome, telefone, e-mail,
+cofre, mídia e trilha, e mantém o financeiro sem vínculo pessoal.
+
+A G93 (backups) tinha o mesmo problema pelo mesmo motivo — prometia reaplicação automática das
+exclusões após restauração, que depende do mesmo job inexistente. Corrigida junto.
+
+**A guarda liga as duas pontas nas DUAS direções:** enquanto não houver cron de LGPD, o FAQ não pode
+prometer um; e no dia em que houver, ela reprova e manda atualizar o FAQ. Prometer o que não existe
+e esquecer de anunciar o que passou a existir são o mesmo defeito.
