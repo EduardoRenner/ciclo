@@ -4626,3 +4626,56 @@ escrito acima.
 
 A guarda tem um caso de DIREÇÃO, não de proibição: no dia em que aparecer um `update` em
 `campaigns`, ela reprova e quem estiver mexendo lê que a tela pode voltar a medir por campanha.
+
+---
+
+### 2026-08-31 · Duas views cortavam o mês no fuso do servidor (0048, 0049)
+
+Varri as quatro views do banco com a mesma pergunta das colunas. Duas estavam erradas, as duas em
+uso, e as duas pelo mesmo motivo: **data de view roda no fuso da SESSÃO, e a sessão do PostgREST é
+UTC** — medido em produção (`current_setting('TimeZone')` = `'UTC'`).
+
+Demonstrado com números antes de mexer:
+
+| hora no salão | mês que a view usava | mês do salão | |
+|---|---|---|---|
+| 31/08 20:00 | 8 | 8 | ok |
+| 31/08 21:00 | **9** | 8 | **erra** |
+| 31/08 23:30 | **9** | 8 | **erra** |
+
+**`v_client_segments.is_aniversariante` (0048).** Das 21h à meia-noite do último dia de todo mês, o
+segmento "Aniversariantes do mês" lista as pessoas do mês SEGUINTE. Quem disparar a campanha nessa
+janela — que é justamente o fim de expediente, quando dá tempo de mexer no sistema — manda "feliz
+aniversário" para quem não faz, e não manda para quem faz.
+
+**`v_carteira_resumo.novos_mes` (0049).** Uma cliente cadastrada às 22h do dia 31 sai da contagem
+de "novos" do mês que o salão acabou de fechar. Some do número exatamente quando a dona olha para
+saber como foi o mês.
+
+É a **quarta** aparição da classe: `v_daily_cash` foi abandonada por causa dela (o comentário no
+topo de `caixa.ts` conta a história), `receitaAtribuidaAoCiclo` foi corrigida em 28/08, e estas
+duas ficaram de fora das duas rodadas anteriores.
+
+**Duas armadilhas no próprio conserto, as duas pegas medindo antes de aplicar:**
+
+1. **`create or replace view` foi recusado pelo Postgres** — ele exige a mesma lista de colunas na
+   mesma ordem, e `c.*` passou a expandir uma coluna a mais desde que a 0047 adicionou
+   `clients.name_busca`. A view em produção nem expunha essa coluna. Virou `drop` + `create` na
+   mesma transação; de brinde, a view voltou a acompanhar a tabela.
+
+2. **O primeiro conserto do `novos_mes` estava errado.** `date_trunc('month', now() at time zone
+   tz)` devolve um `timestamp` SEM fuso — relógio de parede. Comparado com `created_at`, que é
+   `timestamptz`, o Postgres reinterpreta esse relógio no fuso da sessão e o defeito volta pela
+   porta dos fundos. Medido: com o segundo `at time zone`, o corte cai em `2026-08-01 03:00+00` =
+   1º/08 00h no salão; sem ele, em 31/07 21h. O segundo `at time zone` não é redundância, é o
+   conserto.
+
+Aplicadas em produção pelo MCP e conferidas contra a linha de base: `v_client_segments` manteve 114
+linhas e 52 aniversariantes; `v_carteira_resumo` manteve os seis tenants coluna por coluna. As duas
+mantiveram `security_invoker=true` — sem ele a view furaria a RLS.
+
+A guarda varre a ÚLTIMA declaração de cada view (migration é histórico append-only: a primeira
+versão dela reprovava as versões antigas de 0010/0018, acusando defeito já consertado) e aceita
+qualquer forma de corte de data, não só `now()` — `v_daily_cash` usa `date_trunc('day',
+t.closed_at)` sobre `timestamptz`, e a primeira versão não a pegava. Ela fica como exceção
+declarada, com o motivo escrito: ninguém a consulta.
