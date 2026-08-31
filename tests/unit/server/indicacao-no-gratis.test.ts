@@ -114,7 +114,13 @@ describe('a AUTOMAÇÃO é paga — os pontos continuam atrás do módulo loyalt
   it('o bônus dos dois lados está dentro do trecho protegido pelo módulo', () => {
     const fonte = semComentarios(FIDELIDADE)
     const checagem = fonte.indexOf("podeUsarModulo(plano, 'loyalty')")
-    const bonus = fonte.indexOf("'Indicou um novo cliente'")
+    /*
+     * 31/08: o texto do motivo virou constante (`MOTIVO_INDICOU`), porque deixou de ser rótulo e
+     * passou a ser CHAVE de idempotência do bônus. A declaração da constante mora no topo do
+     * arquivo, ANTES da trava de módulo — ancorar no literal fazia esta guarda medir a declaração
+     * em vez do lançamento, e reprovar por engano. Ancora no USO, dentro do push.
+     */
+    const bonus = fonte.indexOf('reason: MOTIVO_INDICOU')
     expect(bonus, 'o lançamento "Indicou um novo cliente" sumiu').toBeGreaterThan(-1)
     expect(bonus, 'o bônus de indicação saiu de trás da trava de módulo').toBeGreaterThan(checagem)
   })

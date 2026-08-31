@@ -181,8 +181,19 @@ describe('as leituras de referred_by continuam de pé — sem elas o escritor n�
   })
 
   it('a fidelidade continua creditando os dois lados na primeira visita', () => {
+    /*
+     * 31/08: a condição era `cliente?.referred_by && cliente.visits_count === 0`. O segundo termo
+     * saiu porque estava ERRADO — `visits_count` só muda no cron diário, então continuava `0` na
+     * segunda conclusão da mesma cliente e pagava o bônus de novo (TICKET-063).
+     *
+     * O que esta guarda protege continua igual: a fidelidade ainda LÊ `referred_by` e ainda decide
+     * creditar a partir dele. Só o segundo termo virou uma pergunta ao livro-razão.
+     */
     const fonte = semComentarios(FIDELIDADE)
-    expect(fonte).toMatch(/cliente\?\.referred_by\s*&&\s*cliente\.visits_count === 0/)
+    expect(fonte, 'a fidelidade parou de ler referred_by — o escritor perde o leitor').toMatch(
+      /cliente\?\.referred_by/,
+    )
+    expect(fonte, 'a decisão de creditar indicação sumiu').toContain('deveCreditarIndicacao(')
   })
 })
 
