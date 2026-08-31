@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarPlus, CheckCircle2 } from "lucide-react";
+import { CalendarPlus, CheckCircle2, ChevronDown } from "lucide-react";
 import { useEffect, useMemo, useState, useTransition } from "react";
 
 import Button from "@/components/ui/button";
@@ -80,6 +80,9 @@ function horaLocal(iso: string, timezone: string): string {
     timeZone: timezone,
   });
 }
+
+/** Sentinela de "a pessoa fechou a faixa que estava aberta" — distinto de `null`, que é "ainda não mexeu". */
+const NENHUM_PERIODO = "";
 
 function periodo(iso: string, timezone: string): "Manhã" | "Tarde" | "Noite" {
   const hora = Number(
@@ -192,6 +195,12 @@ export default function Agendar({
   const [dia, setDia] = useState(primeiroDiaUtil);
   const [slots, setSlots] = useState<Slot[] | null>(null);
   const [slotEscolhido, setSlotEscolhido] = useState<Slot | null>(null);
+  /*
+    Qual faixa de horário aparece aberta. Medido em 31/08: uma terça na Dom Rocha listava 42
+    horários de uma vez, de 15 em 15 minutos, todos com o mesmo peso visual — escolher entre eles
+    é a decisão mais cara da tela, e a última antes da reserva.
+  */
+  const [periodoAberto, setPeriodoAberto] = useState<string | null>(null);
   const [nome, setNome] = useState("");
   const [telefone, setTelefone] = useState("");
   // docs/09-PLATAFORMA.md G3+G13 (P2.5): opcional pra qualquer negócio, não só
@@ -443,6 +452,21 @@ export default function Agendar({
         }))
       : [];
 
+  const periodosComVaga = slotsPorPeriodo.filter((g) => g.itens.length > 0);
+
+  /*
+   * Qual período aparece aberto. `null` = ainda não escolheram, e vale o primeiro com vaga —
+   * medido em 31/08: uma terça na Dom Rocha listava 42 horários de uma vez, de 15 em 15 minutos,
+   * todos com o mesmo peso visual. Escolher entre 42 chips iguais é a decisão mais cara da tela,
+   * e é a última antes da reserva.
+   *
+   * Um período JÁ vem aberto de propósito: colapsar tudo trocaria uma tela cheia por uma tela
+   * vazia, e custaria um toque a mais no caso comum, que é aceitar o próximo horário livre.
+   */
+  /* `null` = ninguém mexeu ainda (vale o primeiro com vaga); `NENHUM_PERIODO` = a pessoa fechou a
+     que estava aberta, e aí nenhuma faixa casa — os dois casos precisam ser distinguíveis. */
+  const periodoVisivel = periodoAberto ?? periodosComVaga[0]?.periodo ?? null;
+
   return (
     <div className="flex flex-col gap-5">
       {/*
@@ -628,27 +652,54 @@ export default function Agendar({
               : "Sem horários livres nesse dia. Tente outra data."}
           </p>
         ) : (
-          <section className="flex flex-col gap-4">
-            {slotsPorPeriodo
-              .filter((grupo) => grupo.itens.length > 0)
-              .map((grupo) => (
-                <div key={grupo.periodo}>
-                  <h3 className="mb-2 text-label font-semibold text-txt-3">
-                    {grupo.periodo}
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {grupo.itens.map((s) => (
-                      <Chip
-                        key={`${s.startsAt}-${s.professionalId}`}
-                        ligado={slotEscolhido?.startsAt === s.startsAt}
-                        onClick={() => setSlotEscolhido(s)}
-                      >
-                        {horaLocal(s.startsAt, timezone)}
-                      </Chip>
-                    ))}
-                  </div>
+          /*
+            Uma faixa por período, e só a aberta lista os horários. O período fechado continua
+            dizendo o que a pessoa precisa para escolher — quantos horários tem e a partir de que
+            hora —, então fechar não esconde informação, só adia a lista.
+          */
+          <section className="flex flex-col gap-2">
+            {periodosComVaga.map((grupo) => {
+              const aberto = grupo.periodo === periodoVisivel;
+              const primeiro = horaLocal(grupo.itens[0]!.startsAt, timezone);
+              const temEscolhido = grupo.itens.some((s) => s.startsAt === slotEscolhido?.startsAt);
+              return (
+                <div key={grupo.periodo} className="overflow-hidden rounded-[var(--radius-sm)] border border-line-2">
+                  <button
+                    type="button"
+                    onClick={() => setPeriodoAberto(aberto ? NENHUM_PERIODO : grupo.periodo)}
+                    aria-expanded={aberto}
+                    className="flex min-h-12 w-full items-center gap-3 bg-surface-2 px-4 py-2 text-left transition hover:bg-surface-3"
+                  >
+                    <span className="flex-1 text-corpo font-semibold text-txt">{grupo.periodo}</span>
+                    {/*
+                      O ponto marca o período que contém o horário já escolhido — sem ele, fechar
+                      a faixa faria a escolha sumir de vista sem deixar rastro.
+                    */}
+                    {temEscolhido && !aberto ? <span aria-hidden className="size-2 rounded-full bg-acc" /> : null}
+                    <span className="text-secundario text-txt-3">
+                      {grupo.itens.length} {grupo.itens.length === 1 ? "horário" : "horários"} · a partir de {primeiro}
+                    </span>
+                    <ChevronDown
+                      aria-hidden
+                      className={`size-4 shrink-0 text-txt-3 transition-transform duration-[var(--dur-1)] ${aberto ? "rotate-180" : ""}`}
+                    />
+                  </button>
+                  {aberto ? (
+                    <div className="flex flex-wrap gap-2 p-3">
+                      {grupo.itens.map((s) => (
+                        <Chip
+                          key={`${s.startsAt}-${s.professionalId}`}
+                          ligado={slotEscolhido?.startsAt === s.startsAt}
+                          onClick={() => setSlotEscolhido(s)}
+                        >
+                          {horaLocal(s.startsAt, timezone)}
+                        </Chip>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
-              ))}
+              );
+            })}
           </section>
         )
       ) : pendente ? (
