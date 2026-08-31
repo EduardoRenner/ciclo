@@ -39,6 +39,7 @@ export const ROTA_DO_HEARTBEAT = {
   send_reminders: 'reminders',
   send_campaigns: 'campaigns',
   recompute_cycles: 'recompute-cycles',
+  recompute_segments: 'segments',
 } as const satisfies Record<string, RotaDeCron>
 
 export type KindDeHeartbeat = keyof typeof ROTA_DO_HEARTBEAT

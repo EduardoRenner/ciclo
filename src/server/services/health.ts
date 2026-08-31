@@ -41,6 +41,7 @@ export type RelatorioSaude = {
     sendReminders: ChecagemSaude
     sendCampaigns: ChecagemSaude
     recomputeCycles: ChecagemSaude
+    recomputeSegments: ChecagemSaude
     errorTracking: ChecagemSaude
   }
 }
@@ -64,11 +65,21 @@ export async function verificarSaude(db: Cliente, agora: Date = new Date()): Pro
    * do produto e era o único job de cron sem vigilância nenhuma.
    */
   const recomputeCycles = await checarHeartbeat(db, 'recompute_cycles', agora, LIMIAR_HEARTBEAT_CICLO_MIN)
+  /*
+   * `segments` entrou em 31/08 pelo mesmo motivo que o Motor de Ciclo entrou em 26/08, e é
+   * desconfortável que tenha levado cinco dias: ela é a OUTRA rota do `on.schedule` e rodava seis
+   * vezes por dia sem vigilância nenhuma. O conserto de 26/08 olhou o job que tinha falhado, não a
+   * pergunta que o defeito fazia — "quais jobs agendados ninguém observa?". Agora há guarda para a
+   * pergunta, não só para o caso: `tests/unit/server/todo-cron-agendado-tem-heartbeat.test.ts`.
+   */
+  const recomputeSegments = await checarHeartbeat(db, 'recompute_segments', agora, LIMIAR_HEARTBEAT_CICLO_MIN)
   const errorTracking = checarRastreioDeErro()
 
   return {
-    ok: database.ok && jobQueue.ok && messages.ok && sendReminders.ok && sendCampaigns.ok && recomputeCycles.ok && errorTracking.ok,
-    checks: { database, jobQueue, messages, sendReminders, sendCampaigns, recomputeCycles, errorTracking },
+    ok:
+      database.ok && jobQueue.ok && messages.ok && sendReminders.ok && sendCampaigns.ok &&
+      recomputeCycles.ok && recomputeSegments.ok && errorTracking.ok,
+    checks: { database, jobQueue, messages, sendReminders, sendCampaigns, recomputeCycles, recomputeSegments, errorTracking },
   }
 }
 
