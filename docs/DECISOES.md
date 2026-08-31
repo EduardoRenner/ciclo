@@ -4381,3 +4381,39 @@ Foi uma troca, não uma remoção: "Marcar" ocupou a quarta aba, e continua tamb
 
 Quatro mutações, quatro reprovações: Motor de volta ao canto; desempate removido; regra de voltar
 baseada na lista de novo; e a checagem de que as abas de topo de verdade continuam sem voltar.
+
+---
+
+### 2026-08-31 · Promover a tela expôs o estado vazio dela: uma frase para três situações
+
+Consequência direta de pôr o Motor de Ciclo no botão central. A tela era um destino de canto e
+passou a ser a primeira coisa que um salão novo toca — e o que ela dizia quando a lista está vazia
+era: *"Ninguém para recuperar agora / Volte mais tarde"*, com o "Volte mais tarde" passado como a
+prop `acao` do `EmptyState`.
+
+Duas coisas erradas aí, e a segunda é a que interessa:
+
+1. **A mesma frase para três situações**, das quais só uma é boa notícia: salão sem cliente
+   cadastrada, salão com cliente mas sem atendimento concluído (o ciclo nasce do atendimento, não
+   da ficha), e salão com tudo em dia. As duas primeiras têm o que fazer; a terceira é vitória e
+   precisa soar como tal.
+
+2. **A "ação" era texto.** `EmptyState` exige a prop `acao` com um comentário explícito — *"estado
+   vazio nunca é só 'nenhum resultado'. Tela vazia sem saída é beco sem saída"* — mas o tipo é
+   `React.ReactNode`, então um `<span>` satisfaz a obrigação sem cumprir nada. A regra existia e
+   era contornável sem ninguém notar.
+
+**A varredura da mesma classe, e um falso positivo que quase virei relatório.** A primeira medição
+acusou 17 telas quebradas. Era o extrator: `icone={<X ... />}` também contém `/>`, e parar no
+primeiro recortava o bloco antes da prop `acao`. Medindo direito: **16 dos 17 usos já davam saída
+de verdade** — o código estava certo e eu quase reportei o contrário.
+
+O único outro caso de texto é a trilha do cofre, e fica como está **por decisão declarada**: é log
+de conformidade alcançado de propósito pelas Configurações, com voltar no topo; vazio ali é boa
+notícia (ninguém abriu ficha de saúde) e não há ação a oferecer. A guarda nova exige saída
+interativa em todo `EmptyState` e obriga qualquer exceção a trazer o motivo escrito — a exceção
+passa a ser visível em vez de acidental.
+
+A escolha da frase virou função pura em `core/ciclo/vazio-de-recuperar.ts`: o que precisa de guarda
+é a decisão, não a marcação. Três mutações, três reprovações — o "Volte mais tarde" de volta, as
+três situações dizendo a mesma coisa, e o extrator cego (que grita em vez de passar vazio).
