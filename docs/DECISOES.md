@@ -4797,3 +4797,37 @@ com 3.590 linhas.
 A guarda é a regra, não o caso: **nenhum script do `package.json` pode redirecionar (`>`) para
 dentro de `src/`, `supabase/` ou `tests/`**. E confere que a escrita do gerador vem DEPOIS das
 checagens — a segunda mutação inverte a ordem e ela reprova, que é o que de fato protege.
+
+---
+
+### 2026-08-31 · O FAQ prometia uma trava no `db:reset` que não existia
+
+Fechando a conferência dos comandos, o pior dos três.
+
+`docs/05-FAQ-DEV.md` B23 — *"Posso rodar `supabase db reset` em produção?"* — respondia: *"Nunca. O
+comando é bloqueado por guard no `package.json` quando `NODE_ENV=production`."*
+
+O `package.json` tinha `"db:reset": "supabase db reset"`. **Não havia guard nenhum.**
+
+Promessa de segurança falsa é pior que a ausência dela: quem lê o FAQ age com a confiança de quem
+tem rede. E o comando apaga e recria o banco inteiro.
+
+**A trava prometida também seria a errada.** Ninguém define `NODE_ENV=production` na máquina de
+desenvolvimento, então ela nunca dispararia no caso real. O caminho perigoso é `--linked` — e
+linkar é passo normal para `db push` e para gerar tipos.
+
+A trava real olha o que de fato indica perigo, reusando a MESMA regra de
+`tests/setup/so-banco-local.ts`, que já provou valor: recusa `--linked`/`--db-url`, e recusa quando
+`NEXT_PUBLIC_SUPABASE_URL` não é local. Escape consciente por `PERMITIR_BANCO_REMOTO=1`.
+
+**O que a trava revelou ao ser testada:** o `.env.local` desta máquina aponta para **produção**.
+Rodando `pnpm db:reset` agora, ela recusa dizendo isso com todas as letras. Antes, com o projeto
+linkado, o comando seguiria em frente — com o FAQ garantindo que não seguiria.
+
+O FAQ passou a descrever a trava que existe, e a registrar que a resposta anterior estava errada —
+apagar o erro sem dizer que houve erro é o mesmo tipo de silêncio.
+
+**Quarta vez no dia que a guarda casou com o próprio comentário:** a asserção "recusa `--linked`"
+passou verde com a recusa REMOVIDA, porque a palavra continuava na prosa que explica por que ela
+existe. Corrigida com o `semComentarios` compartilhado — o mesmo utilitário que consolidei mais
+cedo justamente por isso.

@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs'
 
 import { describe, expect, it } from 'vitest'
 
+import { semComentarios } from '../../helpers/fonte'
+
 /**
  * Nenhum script do `package.json` pode redirecionar (`>`) para dentro de um arquivo versionado.
  *
@@ -83,7 +85,12 @@ describe('db:reset tem a trava que o FAQ promete', () => {
   })
 
   it('a trava recusa banco remoto e --linked', () => {
-    const trava = readFileSync('scripts/db-reset.mjs', 'utf8')
+    /*
+     * Sem os comentarios: a primeira versao desta asercao passou verde com a recusa de `--linked`
+     * REMOVIDA, porque a palavra continuava no comentario que explica por que ela existe. Quarta
+     * vez que essa armadilha me pega hoje — por isso o utilitario e compartilhado.
+     */
+    const trava = semComentarios(readFileSync('scripts/db-reset.mjs', 'utf8'))
     expect(trava, 'sumiu a recusa de --linked').toContain('--linked')
     // `localhost`, e nao `127.0.0.1`: no fonte o IP aparece escapado dentro do regex
     // (`127BARRA.0BARRA.0BARRA.1`), entao casar com a forma sem escape reprovava um script correto.
