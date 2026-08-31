@@ -5123,3 +5123,12 @@ coluna como líder — `portfolio_photos_tenant_idx`/`_client_idx` têm `tenant_
 não serve pra varredura por `client_id`/`source_media_id` sozinhos. Sem isso, apagar uma
 `clients`/`media` referenciada varreria `portfolio_photos` inteira — e é exatamente o tipo de
 consulta que `despublicarTudoDoCliente` (revogar consentimento) e `deletarMedia` fazem.
+
+**2026-08-31 · pendência antiga da P7 fechada: tela de gestão de séries funciona de ponta a
+ponta** — memória registrava "tela de gestão de séries (só dá pra cancelar via API/SQL por
+enquanto)" como pendência consciente do TICKET-067. Um processo paralelo já tinha construído
+`/admin/series` (link em Config, atrás do módulo `recurrence`) desde então; verifiquei ao vivo
+num tenant descartável: criar série semanal plantou 13 ocorrências, a tela lista corretamente
+(cliente, serviço, profissional, "Terça-feira, toda semana", contagem), cancelar pede
+confirmação e, no banco, as 13 ocorrências viraram `canceled` de verdade — não só a linha da
+série. Nada a corrigir; registrado pra não reabrir essa pendência por engano no futuro.
