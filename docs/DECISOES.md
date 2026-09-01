@@ -5399,3 +5399,50 @@ vale registrar: valor de outro eixo (`'orcamento'` em `inicio`) → **o `tsc` re
 enum certo; valor legítimo removido da constante → **as duas reprovam**; valor a mais na constante →
 **só a guarda reprova**, o `tsc` passa liso porque a mutação apenas alarga o tipo. Ou seja: nenhuma
 das duas cobre sozinha, e a guarda não é redundante com o tipo como parecia à primeira vista.
+
+2026-09-01 · Lixo real de teste de integração em produção, achado sem querer · Rodei
+`npx vitest run tests/integration/lgpd.test.ts` direto (sem `--config vitest.banco.config.ts`),
+o que **pula o `setupFiles`** que carrega `so-banco-local.ts` — a guarda contra escrever em
+produção não roda fora daquele config. O teste conectou direto no banco de produção com
+`service_role` e criou usuário/tenant de verdade antes de um `it` falhar em
+`anon.auth.signInWithPassword` com `captcha protection: request disallowed`.
+
+**Alarme inicial, corrigido ao medir:** a primeira leitura foi "o login real quebrou" — errada.
+Testei ao vivo, com credencial inválida (sem efeito colateral): `POST /api/v1/auth/login` em
+`ciclo-umber.vercel.app` devolve o erro normal (`E-mail ou senha não conferem`), **não** captcha.
+Testei também o endpoint do Supabase Auth direto (mesmo `anon key`, sem passar pela rota do app):
+**esse sim** pede captcha. A diferença é a origem da chamada — o hCaptcha do Supabase parece ser
+adaptativo por reputação de rede/IP, e o datacenter da Vercel (de onde a rota real do app chama)
+passa; minha máquina de teste (e provavelmente qualquer chamada direta fora dali) não passa.
+**Login de cliente de verdade está confirmado intacto.** O único efeito real é em quem chama o
+Supabase Auth diretamente de fora da Vercel — os próprios testes de integração que fazem login
+real (`lgpd.test.ts`, possivelmente outros). Não afeta a CI: ela roda contra Supabase **local**
+(`127.0.0.1:54321`, sem esse Attack Protection), só afeta quem rodar esses testes manualmente
+contra produção — o que já era um caminho fora do normal (`PERMITIR_BANCO_REMOTO=1` ou, como
+aconteceu aqui, um comando `vitest` sem o `--config` certo).
+
+**Minha própria execução não deixou rastro** — o `afterAll` do arquivo rodou e limpou o que criei
+(conferido ao vivo: nenhum tenant/usuário com timestamp da minha rodada). Mas ao conferir isso
+achei que **outras execuções não tiveram a mesma sorte**: 11 usuários `@ciclo.test` em
+`auth.users`, datados de 23 a 31/08, nenhum limpo — sobra de rodadas que travaram no meio (o
+próprio comentário de `so-banco-local.ts` já previa esse risco: "suíte que estoura no meio,
+Ctrl+C, ou queda de rede deixa o lixo lá"). Um deles (`verify-series-526807@ciclo.test`, 31/08)
+ainda carrega um tenant (`Salão Verificação Séries`) e uma `membership` vinculados.
+
+**Não apaguei nada.** É dado de teste, não de negócio (regra 11 do CLAUDE.md é sobre agendamento/
+estoque/auditoria — não cobre isto), mas ainda é `DELETE` em produção, e não foi o que o Eduardo
+pediu nesta rodada. Fica registrado com a consulta pronta para quando ele autorizar:
+
+```sql
+-- confirma antes de rodar: refazer a consulta e olhar se a lista ainda bate
+delete from public.tenants where slug in (
+  'verify-series-526807' -- e os outros 3 "teste-*" de 30/08, SE forem confirmados como lixo de teste
+);
+-- auth.users precisa ir pela Admin API (supabase.auth.admin.deleteUser), não por SQL direto
+```
+
+**Achado à parte, sem ação:** também existem 3 tenants `teste-avancado`/`teste-equipe`/
+`teste-essencial` (30/08) que **podem não ser lixo** — o nome sugere fixture manual de QA dos três
+planos pagos, não sobra de teste automatizado travado. Não incluí na exclusão sugerida acima sem
+confirmação: apagar fixture que alguém ainda usa para testar manualmente seria pior que deixar
+lixo real parado.
