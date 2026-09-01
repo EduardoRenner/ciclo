@@ -4,6 +4,7 @@ import Selo from '@/components/shell/selo'
 import TelaPublica from '@/components/shell/tela-publica'
 import { sessaoAtual } from '@/server/auth/session'
 
+import LoginSocial from '../login-social'
 import FormularioEntrar from './formulario'
 
 export const metadata = { title: "Entrar" }
@@ -23,6 +24,7 @@ export default async function PaginaEntrar() {
         <h1 className="text-titulo font-bold">Bem-vindo de volta</h1>
         <p className="mt-1 text-secundario text-txt-2">Entre para ver o resumo do seu dia.</p>
       </div>
+      <LoginSocial />
       <FormularioEntrar />
     </TelaPublica>
   )
