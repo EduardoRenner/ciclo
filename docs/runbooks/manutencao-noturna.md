@@ -627,3 +627,30 @@ A dívida técnica encontrável por leitura está bem baixa — os 3 achados rea
 teste, comentário de cron.yml, bloco de teste morto) foram todos "documentação que envelheceu",
 não bug. Próximas rodadas: guardas restantes + rastrear cada migration 0026–0043 por comentário
 de código que ela tornou obsoleto.
+
+---
+
+## 2026-09-01 · Domínio do produto consolidado
+
+Decisão de domínio fechada com o Eduardo: **`seuciclo.com.br`** (prefixo "seu" — "o ciclo do
+*seu* cliente"; `.com.br` pelo sinal de confiança no link de agendamento, que o consumidor final
+vê cru na bio do Instagram). `ciclo.app` — o fallback que estava no código em 6 lugares — **nunca
+foi registrado**: era um link morto esperando alguém digitar de memória.
+
+- Novo `src/lib/app-url.ts`: `APP_URL` (com protocolo) e `APP_HOST` (sem), fallback em
+  `seuciclo.com.br`. Mesma regra de `NOME_DO_PLANO`/`ROTAS_AGENDADAS`.
+- 6 pontos migrados: `metadataBase` (layout), `robots.ts`, `sitemap.ts`, `llms.txt`, e os 2
+  campos de tela (`onboarding/formulario`, `admin/config/negocio/formulario`) que mostravam
+  `ciclo.app/` pro usuário.
+- `onboarding`: `pl-[92px]` → `pl-[148px]` — o padding do prefixo sobreposto era medido pros 10
+  caracteres de `ciclo.app/`; o host novo tem 16 e o slug encostava.
+- Guarda nova `tests/unit/design/dominio-em-um-lugar-so.test.ts` — 5 asserts, **verificada por
+  mutação** (string morta reaparecendo / `?? 'https://…'` inline novo / tela deixando de usar
+  `APP_HOST`, cada uma pega pelo assert certo, restaurada verde).
+- `pnpm typecheck` + `eslint` + `pnpm test:unit` (1306) verdes. Commit `fc5b014`, merge `2805e18`,
+  pushado.
+
+**Pendente com o Eduardo (fora do código):** registrar `seuciclo.com.br` no registro.br, apontar
+DNS pra Vercel, criar `NEXT_PUBLIC_APP_URL=https://seuciclo.com.br` no escopo Production, ajustar
+Site URL / Redirect URLs no Supabase Auth, e `vercel --prod`. Enquanto isso o fallback já aponta
+pro domínio certo.
