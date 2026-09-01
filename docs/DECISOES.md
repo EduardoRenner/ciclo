@@ -5287,3 +5287,30 @@ esconde do auditor o que ele foi procurar.**
 Terceira aparição da armadilha nº4 da tabela do CLAUDE.md ("delimite pelo fim real do elemento,
 nunca por contagem de caracteres"), agora com uma causa que vale escrever: **num projeto sem `;`,
 qualquer heurística de "fim de statement" baseada em `;` é no-op silenciosa.**
+2026-09-01 · Login social (Google e Apple) via Supabase Auth · Reusa `/auth/callback` sem
+nenhuma mudança na troca de código — a mesma rota que já processa confirmação de e-mail e
+redefinição de senha faz `exchangeCodeForSession` para o `code` de PKCE que o OAuth também manda.
+`/onboarding` já se autorredireciona para `/admin/hoje` quando a pessoa já tem negócio, então não
+precisei de lógica nova de "é conta nova ou não" — o mesmo destino padrão serve os dois casos.
+
+Criado `src/server/db/browser-client.ts` em vez de reusar `exigirEnv` de `server-client.ts`:
+aquele arquivo importa `next/headers` no topo, e um componente cliente que o importasse
+quebraria o build (erro de bundle, não de execução). Duplicar uma função de 4 linhas foi mais
+barato que reestruturar um arquivo usado por 5+ chamadores.
+
+Achado no caminho, corrigido junto: `/auth/callback?erro=link_invalido` já existia (e-mail
+vencido/já usado) mas **nada na tela lia esse parâmetro** — a pessoa via o formulário de login
+em branco sem entender por que voltou para lá. Como o cancelamento de OAuth usa o mesmo
+mecanismo (`?erro=login_cancelado`), corrigi os dois juntos: `entrar/formulario.tsx` agora mapeia
+`erro` para mensagem, com um mapa fechado (`MENSAGEM_DE_ERRO`) em vez de string solta.
+
+Também achado: quem cancela o consentimento no Google/Apple chega com `?error=access_denied` e
+SEM `code`. A rota de callback, escrita pensando só em e-mail, cairia no `else` e tentaria
+`/onboarding` sem sessão — dois saltos silenciosos até `/entrar`, sem dizer o motivo. Adicionada
+checagem explícita de `error` antes da de `code`.
+
+Bloqueado, e é ação de conta, não de código: os provedores Google e Apple precisam ser
+habilitados no painel do Supabase (Authentication → Providers), com Client ID/Secret do Google
+Cloud Console e Services ID/Key do Apple Developer. Sem isso, o botão aparece e funciona
+(dispara `signInWithOAuth`), mas o Supabase recusa com "provider is not enabled" — que cai no
+mesmo tratamento de erro já escrito, só que com mensagem genérica.

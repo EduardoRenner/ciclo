@@ -7,11 +7,25 @@ import { useState } from 'react'
 import Button from '@/components/ui/button'
 import Input from '@/components/ui/input'
 
+/**
+ * `/auth/callback` manda pessoas para cá com `?erro=` em dois casos: link de e-mail vencido ou
+ * já usado (`link_invalido`) e login por Google/Apple cancelado ou negado (`login_cancelado`).
+ * Os dois valores existiam antes deste mapa — o parâmetro chegava e nada na tela o lia, então a
+ * pessoa via um formulário de login em branco sem entender por que voltou para cá.
+ */
+const MENSAGEM_DE_ERRO: Record<string, string> = {
+  link_invalido: 'Esse link não é mais válido. Peça um novo.',
+  login_cancelado: 'O login foi cancelado. Tente de novo quando quiser.',
+}
+
 export default function FormularioEntrar() {
   const router = useRouter()
   const params = useSearchParams()
   const [pendente, setPendente] = useState(false)
-  const [erro, setErro] = useState<string | null>(null)
+  const [erro, setErro] = useState<string | null>(() => {
+    const codigo = params.get('erro')
+    return codigo ? (MENSAGEM_DE_ERRO[codigo] ?? null) : null
+  })
 
   async function enviar(formData: FormData) {
     setPendente(true)
