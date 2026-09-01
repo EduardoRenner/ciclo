@@ -110,9 +110,24 @@ function checarRastreioDeErro(): ChecagemSaude {
       }
 }
 
+/**
+ * `/api/health` responde a **qualquer um**, sem autenticação — é o contrato dele (monitor externo
+ * bate de fora). Então o texto que sai daqui é texto público, e `error.message` do Postgres não é:
+ * ele carrega nome de tabela, de coluna, de constraint, e num erro de unicidade carrega o **valor**
+ * que colidiu ("Key (phone_e164)=(+55...) already exists"). Era o telefone de uma cliente saindo
+ * por um endpoint anônimo no dia em que o banco tossisse.
+ *
+ * O detalhe real vai para o log do servidor, que é onde quem opera consegue ler. Para fora sai só
+ * qual checagem falhou — que é a única coisa que um monitor de uptime precisa saber.
+ */
+function falhaSemVazar(onde: string, erro: { message: string }): ChecagemSaude {
+  console.error(JSON.stringify({ level: 'error', event: 'health_check_falhou', onde }), erro.message)
+  return { ok: false, detail: `a checagem "${onde}" falhou — veja o log do servidor` }
+}
+
 async function checarBanco(db: Cliente): Promise<ChecagemSaude> {
   const { error } = await db.from('tenants').select('id', { head: true, count: 'exact' }).limit(1)
-  return error ? { ok: false, detail: error.message } : { ok: true }
+  return error ? falhaSemVazar('banco', error) : { ok: true }
 }
 
 /**
@@ -144,8 +159,8 @@ async function checarFila(db: Cliente, agora: Date): Promise<ChecagemSaude> {
     db.from('job_queue').select('kind, last_error').in('status', ['queued', 'failed']).lt('run_after', limite),
     db.from('job_queue').select('kind, last_error').eq('status', 'running').lt('locked_at', limite),
   ])
-  if (aguardando.error) return { ok: false, detail: aguardando.error.message }
-  if (travados.error) return { ok: false, detail: travados.error.message }
+  if (aguardando.error) return falhaSemVazar('fila (aguardando)', aguardando.error)
+  if (travados.error) return falhaSemVazar('fila (travados)', travados.error)
 
   const processaveis = (linhas: { last_error: string | null }[] | null) =>
     (linhas ?? []).filter((j) => !semHandlerRegistrado(j.last_error)).length
@@ -176,7 +191,7 @@ async function checarFila(db: Cliente, agora: Date): Promise<ChecagemSaude> {
 async function checarMensagens(db: Cliente, agora: Date): Promise<ChecagemSaude> {
   const umaHoraAtras = new Date(agora.getTime() - 3_600_000).toISOString()
   const { data, error } = await db.from('messages').select('status').gte('created_at', umaHoraAtras)
-  if (error) return { ok: false, detail: error.message }
+  if (error) return falhaSemVazar('mensagens', error)
   if (!data || data.length === 0) return { ok: true }
 
   const falhas = data.filter((m) => m.status === 'failed').length
@@ -199,7 +214,7 @@ async function checarHeartbeat(db: Cliente, kind: string, agora: Date, limiarMin
   }
 
   const { data, error } = await db.from('cron_heartbeats').select('last_run_at').eq('kind', kind).maybeSingle()
-  if (error) return { ok: false, detail: error.message }
+  if (error) return falhaSemVazar(`heartbeat "${kind}"`, error)
   if (!data) return { ok: false, detail: `job "${kind}" nunca rodou` }
 
   const minutosDesdeUltimoRun = (agora.getTime() - new Date(data.last_run_at).getTime()) / 60_000
