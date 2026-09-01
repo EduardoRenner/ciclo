@@ -92,16 +92,15 @@ o motivo.
 Ordenado por **risco ÷ esforço**, não por gosto. Os três primeiros dependem de você; os demais eu
 faço sozinho.
 
-### P1 · Ligar proteção de senha vazada · **5 minutos, sem código, seu**
+### P1 · Ligar proteção de senha vazada · ✅ **feito em 01/09/2026**
 
-Supabase → Authentication → Password → *Leaked password protection*. Confere a senha contra o
-HaveIBeenPwned no cadastro e na troca. Hoje está **desligado** (apontado pelo `get_advisors`).
+Supabase → Authentication → Sign In / Providers → Email → *Prevent use of leaked passwords*.
+Confirmado ao vivo via `get_advisors`: o achado `auth_leaked_password_protection` saiu da lista.
 
-Por que primeiro: é o melhor retorno por esforço do plano inteiro. Senha reusada de vazamento é o
-vetor nº 1 de tomada de conta, e o limite de login que criei (S4) reduz a velocidade do ataque, não
-a existência da senha fraca.
-
-**Risco de não fazer:** alto. **Esforço:** um clique.
+Nota para quem ler depois: o hCaptcha que aparece em "Attack Protection" no mesmo painel é do
+**login do Supabase** (proteção do próprio cadastro/entrada) — sistema diferente do
+`HCAPTCHA_SECRET` que o P2 abaixo pede, que protege o **agendamento público** do CICLO. Configurar
+um não configura o outro.
 
 ### P2 · Provisionar hCaptcha · **~30 minutos, seu**
 
