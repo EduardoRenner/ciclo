@@ -5405,10 +5405,21 @@ das duas cobre sozinha, e a guarda não é redundante com o tipo como parecia à
 o que **pula o `setupFiles`** que carrega `so-banco-local.ts` — a guarda contra escrever em
 produção não roda fora daquele config. O teste conectou direto no banco de produção com
 `service_role` e criou usuário/tenant de verdade antes de um `it` falhar em
-`anon.auth.signInWithPassword` com `captcha protection: request disallowed` — efeito colateral
-imediato de você ter ligado o Captcha no Supabase agora há pouco: o SDK de auth passou a exigir
-`captchaToken` também no login por senha, não só no cadastro, e o teste de sessão real não manda
-esse token.
+`anon.auth.signInWithPassword` com `captcha protection: request disallowed`.
+
+**Alarme inicial, corrigido ao medir:** a primeira leitura foi "o login real quebrou" — errada.
+Testei ao vivo, com credencial inválida (sem efeito colateral): `POST /api/v1/auth/login` em
+`ciclo-umber.vercel.app` devolve o erro normal (`E-mail ou senha não conferem`), **não** captcha.
+Testei também o endpoint do Supabase Auth direto (mesmo `anon key`, sem passar pela rota do app):
+**esse sim** pede captcha. A diferença é a origem da chamada — o hCaptcha do Supabase parece ser
+adaptativo por reputação de rede/IP, e o datacenter da Vercel (de onde a rota real do app chama)
+passa; minha máquina de teste (e provavelmente qualquer chamada direta fora dali) não passa.
+**Login de cliente de verdade está confirmado intacto.** O único efeito real é em quem chama o
+Supabase Auth diretamente de fora da Vercel — os próprios testes de integração que fazem login
+real (`lgpd.test.ts`, possivelmente outros). Não afeta a CI: ela roda contra Supabase **local**
+(`127.0.0.1:54321`, sem esse Attack Protection), só afeta quem rodar esses testes manualmente
+contra produção — o que já era um caminho fora do normal (`PERMITIR_BANCO_REMOTO=1` ou, como
+aconteceu aqui, um comando `vitest` sem o `--config` certo).
 
 **Minha própria execução não deixou rastro** — o `afterAll` do arquivo rodou e limpou o que criei
 (conferido ao vivo: nenhum tenant/usuário com timestamp da minha rodada). Mas ao conferir isso
