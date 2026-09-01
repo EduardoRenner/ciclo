@@ -1,4 +1,5 @@
 import { CATALOGO, NOME_DO_PLANO, ORDEM_DOS_PLANOS, precoDoPlanoPorMes } from '@/core/billing/planos'
+import { APP_URL } from '@/lib/app-url'
 
 /**
  * `/llms.txt` — a convenção emergente para dizer a um modelo de linguagem o que este site é, em
@@ -16,7 +17,7 @@ import { CATALOGO, NOME_DO_PLANO, ORDEM_DOS_PLANOS, precoDoPlanoPorMes } from '@
 export const revalidate = 3600
 
 export function GET(): Response {
-  const base = process.env.NEXT_PUBLIC_APP_URL ?? 'https://ciclo.app'
+  const base = APP_URL
 
   /*
    * `NOME_DO_PLANO`, não o identificador do degrau: este arquivo existe para ser lido por

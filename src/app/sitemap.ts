@@ -1,4 +1,5 @@
 import { ehDemonstracao } from '@/core/tenants/demonstracao'
+import { APP_URL } from '@/lib/app-url'
 import { withNovoTenant } from '@/server/db/with-tenant'
 
 import type { MetadataRoute } from 'next'
@@ -32,7 +33,7 @@ export const revalidate = 3600
  * nunca bloqueia por causa de config ausente".
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const base = process.env.NEXT_PUBLIC_APP_URL ?? 'https://ciclo.app'
+  const base = APP_URL
 
   const tenants = await withNovoTenant(async (db) => {
     const { data } = await db.from('tenants').select('slug, created_at').is('deleted_at', null)

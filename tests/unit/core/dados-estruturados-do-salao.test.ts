@@ -9,7 +9,7 @@ import { dadosEstruturadosDoSalao, type EntradaSeoDoSalao } from '@/core/seo/dad
  */
 const BASE: EntradaSeoDoSalao = {
   nome: 'Barbearia do Zé',
-  url: 'https://ciclo.app/barbearia-do-ze',
+  url: 'https://seuciclo.com.br/barbearia-do-ze',
   vertical: 'barber',
   descricao: 'Corte e barba no centro',
   telefone: '+5551999998888',

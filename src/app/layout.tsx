@@ -3,6 +3,7 @@ import { Archivo } from "next/font/google";
 import "./globals.css";
 
 import RegistrarServiceWorker from "@/components/shell/registrar-service-worker";
+import { APP_URL } from "@/lib/app-url";
 
 /**
  * Inter é a fonte de "nenhuma decisão foi tomada" — é o default de praticamente
@@ -35,7 +36,7 @@ export const metadata: Metadata = {
    * nenhuma. Para um produto cujo canal de aquisição é justamente o link mandado no WhatsApp
    * para outro profissional, isso é a vitrine fechada.
    */
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://ciclo.app"),
+  metadataBase: new URL(APP_URL),
   title: { default: "CICLO", template: "%s · CICLO" },
   description:
     "Gestão para profissionais da beleza: agenda, Motor de Ciclo e recuperação de receita.",

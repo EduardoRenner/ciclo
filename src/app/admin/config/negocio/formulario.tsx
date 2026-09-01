@@ -7,6 +7,7 @@ import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import { useToast } from '@/components/ui/toast'
 import { PALETA_PRESET } from '@/core/text/cor'
+import { APP_HOST } from '@/lib/app-url'
 
 type Tenant = {
   name: string
@@ -121,7 +122,7 @@ export default function FormularioNegocio({ tenant, urlSite }: { tenant: Tenant;
         <label className="flex flex-col gap-1">
           <span className="text-label font-semibold text-txt-2">Endereço da página</span>
           <input
-            value={`ciclo.app/${tenant.slug}`}
+            value={`${APP_HOST}/${tenant.slug}`}
             disabled
             className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-3 px-3 text-corpo tabular text-txt-3"
           />
