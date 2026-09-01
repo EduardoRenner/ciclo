@@ -6,6 +6,7 @@ import { useMemo, useState } from 'react'
 import Button from '@/components/ui/button'
 import Input from '@/components/ui/input'
 import { semAcento } from '@/core/text/normalizar'
+import { APP_HOST } from '@/lib/app-url'
 
 export type Profissao = { id: string; nome: string; grupo: string; sinonimos: string[] }
 
@@ -135,7 +136,7 @@ export default function FormularioOnboarding({ profissoes }: { profissoes: Profi
 
       <Input
         rotulo="Endereço da sua página"
-        prefixo="ciclo.app/"
+        prefixo={`${APP_HOST}/`}
         value={slug}
         onChange={(e) => {
           setSlugTocado(true)
@@ -143,7 +144,9 @@ export default function FormularioOnboarding({ profissoes }: { profissoes: Profi
         }}
         required
         minLength={5}
-        classNameCampo="tabular pl-[92px]"
+        // `pl-*` abre espaço pro prefixo sobreposto (`APP_HOST` + barra). Medido pro host atual
+        // (16 caracteres em `tabular`); com o host antigo, de 10, o slug encostava no prefixo.
+        classNameCampo="tabular pl-[148px]"
         ajuda="É o link que você manda para agendar."
       />
 
