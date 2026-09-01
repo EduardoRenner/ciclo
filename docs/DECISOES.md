@@ -5368,3 +5368,34 @@ de produto que não é minha: `solicitacao` e `orcamento_antes` são jornadas di
 confirmação, a outra pede preço antes) e hoje não existe tabela de "pedido do cliente" — `quotes`
 nasce sempre do salão, pelo `criarOrcamento`. Construir isso é desenhar um fluxo novo, não ligar um
 que já existe.
+
+2026-09-01 · Os eixos passam a ter tipo que o `tsc` confere — e a causa raiz do defeito de hoje ·
+Depois de consertar `inicio === 'orcamento'`, fui procurar outros casos da mesma classe na base e
+**não achei nenhum** — mas a varredura genérica que escrevi deu 57 falsos positivos, todos por casar
+`tipo`/`status`/`kind` por NOME (uniões locais do TypeScript, não colunas). É a armadilha nº2 da
+tabela do CLAUDE.md de novo, agora cometida por mim numa ferramenta de auditoria. Descartei o
+resultado em vez de reportá-lo.
+
+O que a varredura entregou de útil foi a causa raiz, e ela explica por que o defeito só podia
+existir ali: **os quatro eixos são as únicas colunas "enum" desta base feitas como `text` +
+`check (col in (...))` em vez de enum do Postgres.** Enum de verdade vira união no `types.gen.ts`
+sozinho, e o `tsc` recusa comparação impossível sem ninguém pedir — `appointment_status === 'foo'`
+nunca compilaria. `text` vira `string`, e toda comparação passa. Não era falta de atenção de quem
+escreveu; era o único ponto da base sem a rede que protege todos os outros.
+
+Conserto: `VALORES_POR_EIXO` como fonte única, com `ValorDoEixo` **derivado** dela (tipo e runtime
+não têm como divergir), `CONDICAO_DE_EIXO` como união discriminada pelo eixo, e `normalizarEixo` na
+borda do banco. Não virou enum do Postgres de propósito: exigiria migration em coluna viva de 7
+tenants para ganhar o que o tipo em `core/` já dá, e a guarda cobre a divergência.
+
+`normalizarEixo` erra para o lado **oposto** do `normalizarPlano`, e isso é decisão, não descuido:
+lá, valor desconhecido cai para `gratis` porque errar para menos bloqueia uma ação recuperável e
+errar para mais entrega o que não foi pago. Aqui, valor desconhecido vira `null` — e `null` não
+esconde módulo nenhum — porque errar para menos **some com a funcionalidade da tela sem dizer por
+quê**, que é exatamente o defeito que esta rodada consertou.
+
+Mutação em três direções, e o resultado dividiu o trabalho entre as duas defesas de um jeito que
+vale registrar: valor de outro eixo (`'orcamento'` em `inicio`) → **o `tsc` reprova**, nomeando o
+enum certo; valor legítimo removido da constante → **as duas reprovam**; valor a mais na constante →
+**só a guarda reprova**, o `tsc` passa liso porque a mutação apenas alarga o tipo. Ou seja: nenhuma
+das duas cobre sozinha, e a guarda não é redundante com o tipo como parecia à primeira vista.

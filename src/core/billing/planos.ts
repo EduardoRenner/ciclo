@@ -12,7 +12,29 @@
 
 export type PlanoTier = 'gratis' | 'essencial' | 'equipe' | 'avancado'
 
-export type Eixo = 'onde' | 'cobranca' | 'inicio' | 'ritmo'
+/**
+ * Os valores que cada eixo da migration 0023 aceita, como união — não como `string`.
+ *
+ * Existe porque os quatro eixos são as ÚNICAS colunas "enum" desta base feitas como `text` +
+ * `check (col in (...))` em vez de enum do Postgres. Enum de verdade vira união no `types.gen.ts`
+ * sozinho, e aí o `tsc` recusa comparação impossível sem ninguém pedir; `text` vira `string`, e
+ * toda comparação passa. Foi exatamente por isso que `inicio === 'orcamento'` (valor de `cobranca`,
+ * não de `inicio`) sobreviveu — era o único lugar da base onde esse defeito PODIA existir.
+ *
+ * `tests/unit/core/eixo-so-compara-valor-que-existe.test.ts` amarra estes valores ao `check` da
+ * migration: o tipo impede o erro de digitação hoje, a guarda impede a divergência amanhã.
+ */
+export const VALORES_POR_EIXO = {
+  onde: ['no_local', 'vai_ate', 'remoto', 'hibrido'],
+  cobranca: ['fixo', 'hora', 'visita_hora', 'diaria', 'orcamento', 'pacote', 'recorrente'],
+  inicio: ['direto', 'solicitacao', 'orcamento_antes'],
+  ritmo: ['avulso', 'recorrente', 'sazonal', 'sob_demanda'],
+} as const
+
+export type Eixo = keyof typeof VALORES_POR_EIXO
+
+/** Derivado da lista acima, não escrito à mão: tipo e runtime não têm como divergir. */
+export type ValorDoEixo = { [E in Eixo]: (typeof VALORES_POR_EIXO)[E][number] }
 
 export type ModuloKey =
   | 'agenda'
@@ -218,8 +240,15 @@ export type Veredito =
 
 export type ContextoDoTenant = {
   plano: PlanoTier
-  /** Os quatro eixos da migration 0023. `null` = o tenant ainda não respondeu o onboarding. */
-  eixos: Partial<Record<Eixo, string | null>>
+  /**
+   * Os quatro eixos da migration 0023. `null` = o tenant ainda não respondeu o onboarding.
+   *
+   * Tipado por eixo (`ValorDoEixo[E]`), não como `string`: é o que faz o `tsc` recusar comparação
+   * com valor que a coluna não aceita. Quem lê do banco recebe `string` e precisa passar por
+   * `normalizarEixo` (`server/services/planos.ts`) antes de chegar aqui — a validação na borda da
+   * regra 7, aplicada a um valor que vem do banco em vez de vir da requisição.
+   */
+  eixos: { [E in Eixo]?: ValorDoEixo[E] | null }
   /** `tenant_modules` com origem 'dono'. Ausente = o dono não mexeu, vale o padrão. */
   desligadosPeloDono?: readonly ModuloKey[]
 }
@@ -238,8 +267,16 @@ export type ContextoDoTenant = {
  * ninguém viu porque nenhum tenant em produção tem esse valor ainda. Uma closure não é
  * inspecionável — nenhum teste conseguia perguntar "esse valor existe no banco?". Uma lista é, e
  * `tests/unit/core/eixo-so-compara-valor-que-existe.test.ts` pergunta isso para todas as entradas.
+ *
+ * `CondicaoDeEixo` é união discriminada pelo `eixo`, e isso fecha a porta antes do teste: declarar
+ * `{ eixo: 'inicio', valores: ['orcamento'] }` **não compila**, mesmo `'orcamento'` sendo valor
+ * legítimo de outro eixo. Medido antes de escrever — o `tsc` estreita pelo discriminante e nomeia
+ * o enum certo na mensagem. O tipo pega o erro de digitação hoje; a guarda pega a divergência com
+ * a migration amanhã.
  */
-const CONDICAO_DE_EIXO: Partial<Record<ModuloKey, { eixo: Eixo; valores: readonly string[] }>> = {
+type CondicaoDeEixo = { [E in Eixo]: { eixo: E; valores: readonly ValorDoEixo[E][] } }[Eixo]
+
+const CONDICAO_DE_EIXO: Partial<Record<ModuloKey, CondicaoDeEixo>> = {
   routing: { eixo: 'onde', valores: ['vai_ate', 'hibrido'] },
   recurrence: { eixo: 'ritmo', valores: ['recorrente', 'sazonal'] },
   quotes: { eixo: 'inicio', valores: ['orcamento_antes'] },
@@ -253,9 +290,14 @@ export function podeUsarModulo(ctx: ContextoDoTenant, modulo: ModuloKey): Veredi
   const condicao = CONDICAO_DE_EIXO[modulo]
   if (condicao) {
     const valor = ctx.eixos[condicao.eixo]
+    // Alargado para `string[]` só AQUI, na comparação. `condicao` é união e o TypeScript não
+    // correlaciona `valores` com `valor` do mesmo ramo — `includes` acaba pedindo `never`. A
+    // rigidez que importa é a do local onde o valor é DECLARADO (o `CONDICAO_DE_EIXO` acima, que
+    // não compila com valor de outro eixo); aqui só falta perguntar se pertence à lista.
+    const aceitos: readonly string[] = condicao.valores
     // Eixo não respondido ainda não esconde nada: onboarding incompleto não é motivo para sumir
     // com funcionalidade. Só um valor CONHECIDO e incompatível esconde.
-    if (valor != null && !condicao.valores.includes(valor)) {
+    if (valor != null && !aceitos.includes(valor)) {
       return { estado: 'fora_do_eixo', eixo: condicao.eixo }
     }
   }

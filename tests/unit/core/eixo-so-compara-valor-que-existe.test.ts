@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 
 import { describe, expect, it } from 'vitest'
 
-import { CONDICAO_DE_EIXO_PARA_GUARDA } from '@/core/billing/planos'
+import { CONDICAO_DE_EIXO_PARA_GUARDA, VALORES_POR_EIXO } from '@/core/billing/planos'
 
 /**
  * `CONDICAO_DE_EIXO` esconde módulo da interface comparando o eixo do tenant com uma lista de
@@ -47,6 +47,20 @@ describe('condição de eixo só compara com valor que a coluna aceita', () => {
     // Os quatro eixos da 0023. Se a regex parar de casar, isto grita em vez de aprovar tudo.
     expect([...mapa.keys()].sort()).toEqual(['cobranca', 'inicio', 'onde', 'ritmo'])
     expect(mapa.get('inicio')).toEqual(new Set(['direto', 'solicitacao', 'orcamento_antes']))
+  })
+
+  it('VALORES_POR_EIXO é exatamente o que a coluna aceita — nem a mais, nem a menos', () => {
+    // Esta é a âncora de tudo: `ValorDoEixo` (o tipo que faz o `tsc` recusar valor impossível) é
+    // DERIVADO de `VALORES_POR_EIXO`. Se a constante divergir da migration, o tipo diverge junto e
+    // em silêncio — o compilador passaria a aprovar exatamente o que deveria recusar.
+    //
+    // Igualdade exata, não `subset`: valor que existe na coluna e falta na constante faz
+    // `normalizarEixo` devolver `null` para um valor legítimo. Erra para o lado seguro (null não
+    // esconde módulo), mas ainda assim ignora a resposta real do tenant.
+    const aceitos = valoresAceitosPorEixo()
+    for (const [eixo, valores] of Object.entries(VALORES_POR_EIXO)) {
+      expect(new Set<string>(valores), `eixo "${eixo}" divergiu da migration 0023`).toEqual(aceitos.get(eixo))
+    }
   })
 
   it('há condição de eixo declarada para conferir', () => {
