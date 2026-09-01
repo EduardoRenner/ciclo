@@ -225,17 +225,29 @@ export type ContextoDoTenant = {
 }
 
 /**
- * `exigeEixo` diz qual eixo condiciona o módulo (espelha `modules.eixo` da migration 0041), e
- * `satisfaz` decide se o valor daquele eixo justifica o módulo existir.
+ * `eixo` diz qual eixo condiciona o módulo (espelha `modules.eixo` da migration 0041), e `valores`
+ * lista quais valores daquele eixo justificam o módulo existir.
  *
  * Mantido como dado, e não como `if` espalhado, porque o catálogo de profissões cresce e a
  * pergunta "este módulo faz sentido aqui?" tem que ter uma resposta só.
+ *
+ * **`valores` é lista, e não predicado, de propósito.** Era `satisfaz: (v) => v === 'orcamento'` —
+ * e `'orcamento'` NÃO é valor de `inicio` (é de `cobranca`); a coluna só aceita
+ * `direto | solicitacao | orcamento_antes` desde a migration 0023. O efeito era o inverso exato da
+ * intenção: quem começa por orçamento era justamente quem tinha o módulo Orçamento escondido, e
+ * ninguém viu porque nenhum tenant em produção tem esse valor ainda. Uma closure não é
+ * inspecionável — nenhum teste conseguia perguntar "esse valor existe no banco?". Uma lista é, e
+ * `tests/unit/core/eixo-so-compara-valor-que-existe.test.ts` pergunta isso para todas as entradas.
  */
-const CONDICAO_DE_EIXO: Partial<Record<ModuloKey, { eixo: Eixo; satisfaz: (valor: string) => boolean }>> = {
-  routing: { eixo: 'onde', satisfaz: (v) => v === 'vai_ate' || v === 'hibrido' },
-  recurrence: { eixo: 'ritmo', satisfaz: (v) => v === 'recorrente' || v === 'sazonal' },
-  quotes: { eixo: 'inicio', satisfaz: (v) => v === 'orcamento' },
+const CONDICAO_DE_EIXO: Partial<Record<ModuloKey, { eixo: Eixo; valores: readonly string[] }>> = {
+  routing: { eixo: 'onde', valores: ['vai_ate', 'hibrido'] },
+  recurrence: { eixo: 'ritmo', valores: ['recorrente', 'sazonal'] },
+  quotes: { eixo: 'inicio', valores: ['orcamento_antes'] },
 }
+
+/** Exposto só para a guarda que confere estes valores contra o `check` da migration 0023. */
+export const CONDICAO_DE_EIXO_PARA_GUARDA: Readonly<Record<string, { eixo: Eixo; valores: readonly string[] }>> =
+  CONDICAO_DE_EIXO as Record<string, { eixo: Eixo; valores: readonly string[] }>
 
 export function podeUsarModulo(ctx: ContextoDoTenant, modulo: ModuloKey): Veredito {
   const condicao = CONDICAO_DE_EIXO[modulo]
@@ -243,7 +255,7 @@ export function podeUsarModulo(ctx: ContextoDoTenant, modulo: ModuloKey): Veredi
     const valor = ctx.eixos[condicao.eixo]
     // Eixo não respondido ainda não esconde nada: onboarding incompleto não é motivo para sumir
     // com funcionalidade. Só um valor CONHECIDO e incompatível esconde.
-    if (valor != null && !condicao.satisfaz(valor)) {
+    if (valor != null && !condicao.valores.includes(valor)) {
       return { estado: 'fora_do_eixo', eixo: condicao.eixo }
     }
   }

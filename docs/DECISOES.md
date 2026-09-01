@@ -5334,3 +5334,37 @@ mesma rodada) e rodei `consulta-filtra-tenant.test.ts`: reprovou, apontando exat
 a tabela certos. Revertido com `git checkout --`, suíte verde de novo. Não fiz o mesmo para
 `lista-espera.ts`/`portfolio-upload.ts` — é o mesmo detector genérico (varre todo `src/server`), a
 prova em um arquivo já mostra que ele enxerga os três.
+
+2026-09-01 · O módulo Orçamento sumia justamente de quem começa por orçamento · Fui implementar a
+Fase 3 do `docs/34` (caminho de solicitação/orçamento na página pública) e, medindo antes de
+construir, achei um defeito que muda a ordem do trabalho. `CONDICAO_DE_EIXO` em
+`core/billing/planos.ts` comparava `inicio === 'orcamento'` — e **`'orcamento'` não é valor de
+`inicio`**, é de `cobranca`. A coluna só aceita `direto | solicitacao | orcamento_antes` desde a
+migration 0023, e a 0041 confirma que o eixo do módulo `quotes` é mesmo `inicio`: o eixo estava
+certo, o valor é que não existia. A condição nunca dava verdadeira, então o módulo Orçamento ficava
+`fora_do_eixo` — sumia da interface — para o único público que ele serve.
+
+Por que ninguém viu: dos 7 tenants em produção, 5 têm os eixos nulos (e eixo nulo não esconde nada,
+por desenho) e os 2 preenchidos são ambos `direto`, para quem esconder orçamento parece correto. O
+defeito só apareceria no primeiro tenant de uma profissão que começa por orçamento — que é
+exatamente o público da Fase 3 que eu ia construir. Teria construído a tela pública em cima de um
+módulo que o painel escondia.
+
+Duas coisas mudaram além do valor. A primeira: `satisfaz: (v) => v === '...'` virou
+`valores: ['...']`. **Uma closure não é inspecionável** — nenhum teste consegue perguntar a uma
+função quais valores ela aceita sem enumerar o universo, e é por isso que a classe inteira passou
+batida. Uma lista responde direto, e é a única razão da guarda nova conseguir existir: ela lê o
+`check` da 0023 e reprova qualquer valor que o banco recusaria. A segunda: o fixture de
+`planos.test.ts` tinha o **mesmo** valor impossível (`inicio: 'orcamento'`), ou seja, o teste
+concordava com o defeito em vez de pegá-lo — mais um caso da armadilha de "guarda que casa com o
+que o código faz, não com o que deveria acontecer".
+
+Mutação conferida nas duas direções (procedimento do CLAUDE.md): valor impossível de volta →
+reprova nomeando o módulo e o enum aceito; lista vazia (o outro caminho para o mesmo estrago, que a
+primeira checagem não pega) → reprova com mensagem própria. Revertidas, suíte verde.
+
+**A Fase 3 do `docs/34` continua aberta e não é mais o próximo passo óbvio.** Ela depende de decisão
+de produto que não é minha: `solicitacao` e `orcamento_antes` são jornadas diferentes (uma pede
+confirmação, a outra pede preço antes) e hoje não existe tabela de "pedido do cliente" — `quotes`
+nasce sempre do salão, pelo `criarOrcamento`. Construir isso é desenhar um fluxo novo, não ligar um
+que já existe.

@@ -15,9 +15,12 @@ const BARBEARIA_GRATIS: ContextoDoTenant = {
   eixos: { onde: 'no_local', cobranca: 'fixo', ritmo: 'avulso' },
 }
 
+// `inicio: 'orcamento_antes'`, não `'orcamento'` — este fixture nasceu com o mesmo valor impossível
+// que o código tinha, e por isso concordava com o defeito em vez de pegá-lo. `'orcamento'` é valor
+// de `cobranca`; `inicio` só aceita `direto | solicitacao | orcamento_antes` (migration 0023).
 const ELETRICISTA_GRATIS: ContextoDoTenant = {
   plano: 'gratis',
-  eixos: { onde: 'vai_ate', cobranca: 'orcamento', inicio: 'orcamento', ritmo: 'sob_demanda' },
+  eixos: { onde: 'vai_ate', cobranca: 'orcamento', inicio: 'orcamento_antes', ritmo: 'sob_demanda' },
 }
 
 describe('herança entre degraus', () => {
@@ -51,6 +54,18 @@ describe('precedência: eixo vem antes de plano (§D.5)', () => {
   it('eixo ainda não respondido não esconde nada — onboarding incompleto não é veredito', () => {
     const v = podeUsarModulo({ plano: 'avancado', eixos: {} }, 'routing')
     expect(v.estado).toBe('liberado')
+  })
+
+  it('quem começa por orçamento VÊ o módulo Orçamento — era o inverso disto', () => {
+    // O defeito: comparava `inicio === 'orcamento'`, valor que a coluna não aceita, então a
+    // condição nunca dava verdadeira e o módulo sumia para o único público que ele serve.
+    const v = podeUsarModulo({ ...ELETRICISTA_GRATIS, plano: 'avancado' }, 'quotes')
+    expect(v.estado).not.toBe('fora_do_eixo')
+  })
+
+  it('e quem agenda direto continua sem ele — a condição ainda condiciona', () => {
+    const v = podeUsarModulo({ plano: 'avancado', eixos: { inicio: 'direto' } }, 'quotes')
+    expect(v).toEqual({ estado: 'fora_do_eixo', eixo: 'inicio' })
   })
 
   it('linha perdida no banco NÃO consegue desligar a agenda nem o Motor de Ciclo', () => {

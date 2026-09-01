@@ -48,7 +48,24 @@ referência de fase/prioridade; o estado de cada item é atualizado aqui conform
       `inicio = orcamento_antes`/`solicitacao` (migration 0023, 4 eixos), a página pública ainda
       só sabe fazer o caminho `direto` (grade de horário). 5 de 7 tenants têm os 4 eixos nulos;
       os 2 preenchidos são ambos `no_local/fixo/direto/avulso` — caminho nunca exercitado.
-      Depende também do onboarding passar a perguntar os eixos.
+
+      **Duas correções ao texto acima, medidas em 01/09/2026 ao tentar executar esta fase:**
+
+      1. *"Depende do onboarding passar a perguntar os eixos"* — **não depende.** O onboarding já
+         **escreve** os quatro eixos (`onboarding.ts`, copiados da profissão escolhida). Ele não
+         *pergunta*, mas grava; tenant novo já nasce com eixo preenchido. Os 5 nulos são anteriores
+         a esse caminho.
+      2. Ao medir, achei que o módulo `quotes` estava **escondido** de quem tem
+         `inicio = orcamento_antes` — a condição de eixo comparava com um valor que a coluna não
+         aceita. Corrigido antes desta fase (ver `docs/DECISOES.md`, 01/09). Sem isso, a tela
+         pública seria construída em cima de um módulo que o painel escondia.
+
+      **O que ainda trava, e é decisão de produto:** `solicitacao` e `orcamento_antes` são jornadas
+      diferentes (uma pede confirmação, a outra pede preço antes) e **não existe tabela de "pedido
+      do cliente"** — `quotes` nasce sempre do salão, via `criarOrcamento`, e a cliente só aprova ou
+      recusa por link assinado. Ligar a página pública a isso é **desenhar um fluxo novo**
+      (quem cria, em que estado nasce, como o salão é avisado, o que a cliente vê enquanto espera),
+      não expor um que já existe. Precisa de decisão antes de código.
 
 ## Ideias registradas, não uma fase numerada
 
