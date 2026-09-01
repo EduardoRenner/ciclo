@@ -158,7 +158,7 @@ export default function Home() {
         */}
         <Image src={wordmark} alt="CICLO" priority className="mb-6 h-11 w-auto sm:h-12" />
         <h1 className="text-numero font-bold sm:text-[2.75rem] sm:leading-[1.05] sm:tracking-[-0.02em]">
-          A agenda que sabe quando cada cliente volta — e traz de volta quem sumiu.
+          A lista de quem devia ter voltado e não voltou.
         </h1>
         <p className="mt-4 max-w-[52ch] text-corpo text-txt-2">
           Para quem atende com hora marcada: barbearia, unhas, cílios, sobrancelha, depilação, estética. Em português,

@@ -5314,3 +5314,15 @@ habilitados no painel do Supabase (Authentication → Providers), com Client ID/
 Cloud Console e Services ID/Key do Apple Developer. Sem isso, o botão aparece e funciona
 (dispara `signInWithOAuth`), mas o Supabase recusa com "provider is not enabled" — que cai no
 mesmo tratamento de erro já escrito, só que com mensagem genérica.
+
+2026-09-01 · H1 da home trocado de "A agenda que sabe quando cada cliente volta — e traz de volta
+quem sumiu." para "A lista de quem devia ter voltado e não voltou." (C-zero, `docs/20-COPY-PLANO.md`
+§D.2) · Aplicado sem a forma com cadência ("Toda semana…") de propósito: o §D.2 e a tabela
+consolidada (§D.11) condicionam a cadência só ao cron rodando — que já está confirmado
+(`recompute-cycles` no `schedule` do `cron.yml`) —, mas o §S.2 (Sequenciamento) acrescenta uma
+condição extra que os outros dois pontos do documento não repetem: "se a previsão 1 aprovar", que é
+um teste com 5 pessoas de fora do ramo lendo a primeira dobra por 5 segundos (§G.4). Ninguém rodou
+esse teste. Na dúvida entre duas leituras do próprio plano, fiquei com a mais conservadora: C-zero
+tem o mesmo ganho de especificidade (sai de "sabe quando" para "a lista de quem"), sem a promessa de
+cadência que ainda não foi validada com gente de verdade. **Pendência que fica aberta:** rodar a
+previsão 1 do §G.4 destrava a forma com cadência.
