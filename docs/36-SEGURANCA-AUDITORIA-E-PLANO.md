@@ -178,3 +178,86 @@ Dito para o limite ficar no papel, não na memória de quem leu:
 - **DoS na camada de rede** — é a borda da Vercel que responde por isso, não o app.
 - **O caminho negativo do gate de módulo em conta Grátis** — segue sem tenant seguro para testar,
   pendência antiga registrada em 30/08.
+
+---
+
+## Parte IV — Segunda rodada: todos os endpoints e a proteção dos dados (01/09/2026)
+
+Pedida como "verifica a segurança de todos os endpoints e a proteção dos dados". Cobertura: as
+**98 rotas** de `src/app/api`, mais RLS, views, buckets, tokens e o que sai para quem não está
+autenticado. Medido contra o banco de produção e contra o código, não contra a documentação.
+
+### O que estava certo, e é a maior parte
+
+| Área | Como foi medido | Resultado |
+|---|---|---|
+| Cobertura do `rota()` | varredura das 98 rotas | 97 passam; a exceção (`/health`) virou achado abaixo |
+| Autenticação | `contextoAtual` / `exigirSessao` / `exigirAal2` por rota | toda rota de painel autentica |
+| `tenant_id` da requisição | leitura de `contextoAtual` | **nunca é confiado**: validado contra `vinculosAtivos(userId)`, e "não existe" e "não é seu" devolvem o MESMO erro — sem oráculo de enumeração |
+| RLS | `pg_class` em produção | **zero** tabela sem RLS e **zero** sem `force` |
+| Views | `reloptions` em produção | as 4 com `security_invoker=true` |
+| Buckets | `storage.buckets` | `media` privado, `vitrine` público **por desenho** (TICKET-115) |
+| Token de convite | `convites.ts` | `randomBytes(24)` = 192 bits, guardado como **hash**, e o e-mail do convite trava com o da sessão — link encaminhado não vira acesso |
+| Links públicos | `token-assinado.ts` | HMAC-SHA256 com `timingSafeEqual` |
+| Agendamento público | `public/[slug]/book` | **três** baldes (IP/min, IP/dia, telefone/dia com o telefone em hash), honeypot e captcha |
+| Rotas sem `exigirPermissao` | 5 rotas | todas legítimas: `/me` devolve o próprio usuário; `/onboarding` e `/memberships/accept` rodam **antes** de existir papel; assistente valida por ferramenta; push escopa por `sessao.userId` |
+
+Sobre as 5 tabelas que o advisor da Supabase marca como "RLS sem política": `idempotency_keys`,
+`job_queue`, `rate_limits`, `webhook_events` e `cron_heartbeats`. **Não é lacuna.** RLS ligada com
+`force` e zero políticas significa "ninguém", não "todo mundo" — é a configuração correta para
+tabela de infraestrutura que só o servidor escreve.
+
+### S8 · `/api/health` ecoava erro cru do Postgres, sem teto de taxa · **corrigido**
+
+A única rota que não passa pelo `rota()` — logo, a única fora do teto global de 120/min. Duas
+consequências que a primeira rodada não cobriu:
+
+**Cinco checagens devolviam `error.message` cru.** Mensagem de erro do Postgres carrega nome de
+tabela, de coluna e de constraint — e num erro de unicidade carrega **o valor que colidiu**
+(`Key (phone_e164)=(+55...) already exists`). Era o telefone de uma cliente saindo por um endpoint
+anônimo no dia em que o banco tossisse. Agora o detalhe vai para o log do servidor e para fora sai
+só qual checagem falhou.
+
+**Sem limite nenhum**, um endpoint anônimo que custa **sete idas sequenciais ao banco** com
+`service_role` fica aberto para qualquer um marretar. Não vaza dado, mas consome a conexão que o
+app pagante precisa. 30/min por IP: folgado para monitor de uptime (o normal é 1/min), apertado
+para script. O contrato 200/503 não mudou, então monitor externo continua funcionando.
+
+Guarda com mutação nas duas direções: eco de volta → reprova; log removido (o conserto virando
+silêncio) → reprova.
+
+### S9 · Funções `SECURITY DEFINER` expostas ao `anon` · **achado, e o conserto óbvio é PERIGOSO**
+
+`has_tenant`, `tenant_role`, `my_professional_id` e `can_see_appointment` são chamáveis via
+`/rest/v1/rpc/` sem login. O advisor da Supabase manda revogar `EXECUTE`.
+
+**Medido antes de agir, e é bom que sim:**
+
+- **Não vazam nada.** As quatro são escopadas por `auth.uid()`, que é nulo para anônimo — só sabem
+  responder sobre quem chama. Para `anon`, sempre `false`/`null`.
+- **Revogar quebraria o app inteiro.** Política de RLS é avaliada com os privilégios de quem
+  consulta: sem `EXECUTE`, toda consulta a tabela protegida falha. Medi: **55 políticas em 43
+  tabelas** dependem de `has_tenant`. E o ACL mostra `=X/postgres`, ou seja, **PUBLIC** tem o
+  grant — revogar só de `anon` nem teria efeito.
+
+**Decisão: não mexer**, e registrar por quê. Fica aqui para o dia em que alguém abrir o painel de
+advisors e quiser "consertar" — o conserto derruba os 43.
+
+### Os três falsos positivos que eu produzi, e por que ficam escritos
+
+Nesta rodada eu escrevi três detectores e **todos os três acusaram defeito que não existe**:
+
+1. Varredura de comparação com valor de enum impossível: **57 falsos positivos**, todos por casar
+   `tipo`/`status`/`kind` por **nome** — uniões locais do TypeScript, não colunas.
+2. "Rota pública sem limite de taxa": acusou `book` e `availability`. As duas têm limite; meu regex
+   procurava `limitarRotaPublica|limitar(` e elas usam `limitador(`.
+3. **O mais perigoso:** "view sem `security_invoker`" acusou as quatro views — as de dinheiro e de
+   carteira de clientes. Eu procurava a string `security_invoker=on`; o Postgres guarda
+   `security_invoker=true`. **Eu teria reportado vazamento entre tenants nas views financeiras que
+   não existe.**
+
+Os três são a mesma armadilha da tabela do CLAUDE.md — casar com o nome em vez do que muda — agora
+cometida dentro da ferramenta de auditoria, onde ela é pior: uma guarda cega deixa passar defeito,
+um auditor cego **inventa** defeito. O que salvou os três foi a regra de conferir cada achado
+lendo a fonte antes de escrever. Fica registrado porque o próximo a auditar esta base vai escrever
+detectores parecidos.
