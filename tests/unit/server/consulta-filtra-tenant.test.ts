@@ -15,14 +15,22 @@ import { semComentarios } from '../../helpers/fonte'
  * `.eq('tenant_id', ...)`. Uma consulta esquecida não dá erro, não quebra teste e não aparece no
  * `pnpm verify` — ela devolve dado de outro salão em silêncio.
  *
- * **O que foi medido:** 15 consultas sem filtro de tenant. Auditei as 15 uma por uma e **nenhuma é
- * explorável hoje** — cada id vem de uma consulta que JÁ filtrou por tenant, de um token HMAC que
- * carrega o tenant no payload, ou de um job de cron que roda para todos os tenants de propósito.
+ * **O que foi medido:** 19 consultas sem filtro de tenant (15 pontos distintos de código).
+ * Auditei as 19 uma por uma e **nenhuma era explorável** — cada id vinha de uma consulta que JÁ
+ * filtrou por tenant, de um token HMAC que carrega o tenant no payload, ou de um job de cron que
+ * roda para todos os tenants de propósito.
  *
  * **Então por que a guarda existe:** porque essa segurança está inteira **fora da consulta**, e a
  * lista acima é o mapa de quantas vezes ela depende de o próximo desenvolvedor entender o
  * contexto. É a mesma fragilidade do filtro `.or()` com interpolação crua desta mesma auditoria:
  * não estava quebrado, estava apoiado em disciplina. A guarda transforma disciplina em trava.
+ *
+ * **P5 (`docs/36` Parte III) fechou 7 das 19**, nos 3 arquivos onde o custo era mais baixo — o
+ * `tenantId` já estava em escopo, bastava repetir no `update`/`delete` (`orcamentos.ts` ×4,
+ * `lista-espera.ts` ×2, `portfolio-upload.ts` ×1). As 12 que restam continuam justificadas por
+ * outro motivo: token HMAC que É a autorização, ou cron que varre todos os tenants por desenho —
+ * casos em que "repetir o tenantId" não faz sentido porque não há um tenantId de contexto para
+ * repetir.
  *
  * **Como funciona:** consulta nova sem `tenant_id` reprova. Se for legítima (cron global, id já
  * validado), entra nesta lista **com o motivo escrito** — o custo de justificar é o ponto, porque
@@ -95,12 +103,6 @@ const JUSTIFICADAS: { arquivo: string; tabela: string; quantas: number; porque: 
     porque: 'cron: mesma varredura global, para não mandar o mesmo lembrete duas vezes',
   },
   {
-    arquivo: 'src/server/services/lista-espera.ts',
-    tabela: 'waitlist',
-    quantas: 2,
-    porque: 'update por id de linha já lida com .eq(tenant_id) logo acima (uma delas do token, que carrega o tenant)',
-  },
-  {
     arquivo: 'src/server/services/mensageria.ts',
     tabela: 'clients',
     quantas: 1,
@@ -111,19 +113,6 @@ const JUSTIFICADAS: { arquivo: string; tabela: string; quantas: number; porque: 
     tabela: 'quote_items',
     quantas: 1,
     porque: 'itens do orçamento cujo quoteId já foi conferido contra o tenant',
-  },
-  {
-    arquivo: 'src/server/services/orcamentos.ts',
-    tabela: 'quotes',
-    quantas: 4,
-    porque:
-      'ação pública por token HMAC (o token É a autorização, e o tenant sai da própria linha) mais updates por id de linha já lida logo acima',
-  },
-  {
-    arquivo: 'src/server/services/portfolio-upload.ts',
-    tabela: 'portfolio_photos',
-    quantas: 1,
-    porque: 'delete da cópia anterior, cujo id saiu de um select com .eq(tenant_id)',
   },
   {
     arquivo: 'src/server/services/recuperar-receita.ts',
