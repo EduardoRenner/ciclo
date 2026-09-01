@@ -127,6 +127,26 @@ describe('revogarConsentimento', () => {
   )
 
   it(
+    'duas concessões ativas do mesmo tipo — revogar fecha as duas de uma vez',
+    async () => {
+      // `registrarConsentimento` só faz INSERT: reconfirmar deixa duas linhas ativas. Revogar
+      // precisa fechar todas — antes, `maybeSingle` estourava `INTERNAL` com múltiplas linhas e a
+      // revogação não acontecia.
+      const cliente = await svc.from('clients').insert({ tenant_id: tenantId, name: 'Consentiu Duas Vezes' }).select('id').single()
+      const id = cliente.data!.id
+
+      await registrarConsentimento(svc, tenantId, id, { kind: 'image_use', version: '1.0', text: 'a', granted: true }, { ip: null, userAgent: null })
+      await registrarConsentimento(svc, tenantId, id, { kind: 'image_use', version: '1.0', text: 'b', granted: true }, { ip: null, userAgent: null })
+
+      await revogarConsentimento(svc, tenantId, id, 'image_use')
+
+      const ativas = await svc.from('consents').select('id').eq('client_id', id).eq('kind', 'image_use').is('revoked_at', null)
+      expect(ativas.data ?? []).toHaveLength(0)
+    },
+    30_000,
+  )
+
+  it(
     'revogar quando não há consentimento ativo daquele tipo dá erro claro',
     async () => {
       const outroCliente = await svc.from('clients').insert({ tenant_id: tenantId, name: 'Nunca Consentiu' }).select('id').single()

@@ -75,6 +75,11 @@ export async function registrarConsentimento(
  * sozinha só porque o consentimento mudou de estado — por isso a cascata explícita abaixo.
  */
 export async function revogarConsentimento(db: Cliente, tenantId: string, clientId: string, kind: TipoConsentimentoCliente) {
+  // Uma cliente pode ter concedido o mesmo tipo mais de uma vez (re-confirmação numa segunda
+  // visita, formulário reenviado) — `registrarConsentimento` só faz INSERT, nunca fecha a
+  // anterior. Então aqui pode haver mais de uma linha ativa: revoga TODAS de uma vez. `maybeSingle`
+  // dava erro `INTERNAL` (múltiplas linhas) exatamente nesse caso, e a foto do portfólio continuava
+  // no ar depois de a cliente pedir para tirar.
   const { data, error } = await db
     .from('consents')
     .update({ revoked_at: new Date().toISOString() })
@@ -84,13 +89,14 @@ export async function revogarConsentimento(db: Cliente, tenantId: string, client
     .eq('granted', true)
     .is('revoked_at', null)
     .select('*')
-    .maybeSingle()
   if (error) throw new AppError('INTERNAL', { cause: error })
-  if (!data) throw new AppError('NOT_FOUND', { message: 'Não há consentimento ativo desse tipo para revogar.' })
+  if (!data || data.length === 0) throw new AppError('NOT_FOUND', { message: 'Não há consentimento ativo desse tipo para revogar.' })
 
   if (kind === 'image_use') await despublicarTudoDoCliente(tenantId, clientId)
 
-  return data
+  // A mais recente como representante — mesma linha que `statusConsentimentos` mostraria.
+  // `reduce` sem valor inicial: seguro porque o guard acima já garantiu `data.length >= 1`.
+  return data.reduce((maisRecente, linha) => (linha.granted_at >= maisRecente.granted_at ? linha : maisRecente))
 }
 
 /**

@@ -87,7 +87,7 @@ async function clienteCompleto(nome: string) {
   const clientId = cliente.data!.id
 
   await salvarRespostas(svc, tenantId, clientId, { formKey: 'lashes_v1', answers: { pregnant: false } })
-  await registrarConsentimento(
+  const consentimento = await registrarConsentimento(
     svc,
     tenantId,
     clientId,
@@ -96,7 +96,13 @@ async function clienteCompleto(nome: string) {
     // o rastro de quem clicou não.
     { ip: '203.0.113.7', userAgent: 'Mozilla/5.0 (iPhone)' },
   )
-  const media = await fazerUploadMedia(tenantId, { clientId, appointmentId: null, phase: 'before' }, { buffer: await imagemPequena(), createdBy: null })
+  // `consentId` liga a foto ao consentimento — `publicarNoPortfolio` recusa mídia sem ele
+  // (o teste do bucket `vitrine` publica esta foto).
+  const media = await fazerUploadMedia(
+    tenantId,
+    { clientId, appointmentId: null, phase: 'before', consentId: consentimento.id },
+    { buffer: await imagemPequena(), createdBy: null },
+  )
 
   const nota = await svc.from('client_notes').insert({ tenant_id: tenantId, client_id: clientId, body: 'Gostou do volume russo.' }).select('id').single()
   if (nota.error) throw nota.error
