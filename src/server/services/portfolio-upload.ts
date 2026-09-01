@@ -79,7 +79,10 @@ export async function publicarNoPortfolio(tenantId: string, mediaId: string): Pr
     if (erroInsert) throw new AppError('INTERNAL', { cause: erroInsert })
 
     if (anterior) {
-      await db.from('portfolio_photos').delete().eq('id', anterior.id)
+      // §S7/P5 da auditoria de segurança (`docs/36`): `tenantId` é o parâmetro da função, o
+      // mesmo já usado para filtrar `anterior` acima — repetir aqui fecha a janela entre a
+      // checagem e esta escrita, mesmo `anterior.id` já sendo seguro hoje.
+      await db.from('portfolio_photos').delete().eq('id', anterior.id).eq('tenant_id', tenantId)
       const { error: erroRemocao } = await db.storage.from(BUCKET_DESTINO).remove([anterior.storage_key])
       if (erroRemocao) {
         console.warn(JSON.stringify({ level: 'warn', event: 'portfolio_orfao_nao_removido', tenantId, chave: anterior.storage_key }))

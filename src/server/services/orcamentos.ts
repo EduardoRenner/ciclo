@@ -128,7 +128,12 @@ export async function orcamentoPublico(db: Cliente, token: string): Promise<Orca
   let status = quote.status
   if (status === 'sent' && orcamentoExpirado(quote.valid_until, tenant.timezone)) {
     status = 'expired'
-    const { error: erroExpirar } = await db.from('quotes').update({ status: 'expired' }).eq('id', quote.id)
+    // §S7/P5 da auditoria de segurança (`docs/36`): `withNovoTenant` empresta `service_role`, que
+    // ignora a RLS por completo — o isolamento aqui depende só de repetir o filtro. `quote.id` já
+    // é único por linha, então `.eq('tenant_id', ...)` não muda o alcance de HOJE; fecha a janela
+    // que um refactor futuro (um join que troque `quote`, por exemplo) poderia abrir sem ninguém
+    // perceber, e é o próprio `tenant_id` da linha, não um valor externo — não é lógica nova.
+    const { error: erroExpirar } = await db.from('quotes').update({ status: 'expired' }).eq('id', quote.id).eq('tenant_id', quote.tenant_id)
     if (erroExpirar) throw new AppError('INTERNAL', { cause: erroExpirar })
   }
 
@@ -169,7 +174,16 @@ async function transicaoPublica(
     throw new AppError('INVALID_TRANSITION', { message: 'Esse orçamento não está mais esperando resposta.' })
   }
 
-  const { data: atualizado, error: erroUpdate } = await db.from('quotes').update(camposExtra).eq('id', quote.id).select('*').single()
+  // Mesmo motivo da linha acima (§S7/P5, `docs/36`): `quote.tenant_id` é o da própria linha, só
+  // torna explícito o que já era verdade — e sobrevive se um refactor futuro trocar como `quote`
+  // é buscado.
+  const { data: atualizado, error: erroUpdate } = await db
+    .from('quotes')
+    .update(camposExtra)
+    .eq('id', quote.id)
+    .eq('tenant_id', quote.tenant_id)
+    .select('*')
+    .single()
   if (erroUpdate) throw new AppError('INTERNAL', { cause: erroUpdate })
 
   await notificarEquipe(db, quote.tenant_id, notificacao).catch(() => {
@@ -252,8 +266,15 @@ export async function listarOrcamentos(db: Cliente, tenantId: string): Promise<O
   })
 
   if (idsVencidos.length > 0) {
-    const { error: erroExpirarLote } = await db.from('quotes').update({ status: 'expired' }).in('id', idsVencidos)
-  if (erroExpirarLote) throw new AppError('INTERNAL', { cause: erroExpirarLote })
+    // §S7/P5 (`docs/36`): aqui `tenantId` é o parâmetro da função, não algo lido da própria
+    // linha — fecha de verdade a janela entre o `.eq('tenant_id', tenantId)` do select acima e
+    // este update em lote.
+    const { error: erroExpirarLote } = await db
+      .from('quotes')
+      .update({ status: 'expired' })
+      .in('id', idsVencidos)
+      .eq('tenant_id', tenantId)
+    if (erroExpirarLote) throw new AppError('INTERNAL', { cause: erroExpirarLote })
   }
 
   return lista
@@ -285,10 +306,13 @@ export async function converterOrcamentoEmAgendamento(db: Cliente, tenantId: str
   if (erroAgendamento) throw new AppError('INTERNAL', { cause: erroAgendamento })
   if (!agendamento) throw new AppError('NOT_FOUND', { message: 'Esse agendamento não existe mais.' })
 
+  // §S7/P5 (`docs/36`): `tenantId` é o parâmetro da função, já usado para conferir `quote` e
+  // `agendamento` acima — repetir aqui fecha a janela entre a checagem e esta escrita.
   const { data: atualizado, error: erroUpdate } = await db
     .from('quotes')
     .update({ status: 'converted', converted_appointment_id: appointmentId })
     .eq('id', quoteId)
+    .eq('tenant_id', tenantId)
     .select('*')
     .single()
   if (erroUpdate) throw new AppError('INTERNAL', { cause: erroUpdate })

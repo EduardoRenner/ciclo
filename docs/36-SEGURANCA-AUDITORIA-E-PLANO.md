@@ -133,17 +133,21 @@ Desenho: contar falhas por conta; abaixo do limiar, nada muda; acima, a rota pas
 
 **Bloqueado por:** P2. **Risco de não fazer:** baixo (o lockout se cura).
 
-### P5 · `.eq('tenant_id')` nos updates de check-then-act · **~1h, minhas**
+### P5 · `.eq('tenant_id')` nos updates de check-then-act · ✅ **feito em 2026-09-01**
 
-Quatro updates fazem "confere e depois escreve" sem repetir o filtro de tenant no `update`
-(`orcamentos.ts`, `lista-espera.ts`, `portfolio-upload.ts`). Não é explorável — a checagem imediata
-acima já provou o tenant — mas repetir o filtro no `update` custa uma linha e fecha a janela
-teórica entre a checagem e a escrita.
+Achado ao implementar: eram **sete** updates/deletes fazendo "confere e depois escreve" sem
+repetir o filtro, não quatro — a contagem original era o resumo de prosa; a lista `JUSTIFICADAS`
+da guarda do S7 (a fonte de verdade linha a linha) já mostrava `orcamentos.ts::quotes` ×4,
+`lista-espera.ts::waitlist` ×2, `portfolio-upload.ts::portfolio_photos` ×1. Corrigidos os sete.
+Não era explorável — a checagem imediata acima já provava o tenant — mas repetir o filtro no
+`update`/`delete` custa uma linha e fecha a janela teórica entre a checagem e a escrita, inclusive
+contra um refactor futuro que troque como a linha checada é buscada.
 
-Faria junto: encolher a lista de `JUSTIFICADAS` da guarda do S7, que é a medida de quanto o
-isolamento ainda depende de contexto.
-
-**Risco de não fazer:** baixo. **Esforço:** baixo. Bom candidato à próxima rodada ociosa.
+A lista de `JUSTIFICADAS` encolheu de 19 para 12 consultas sem filtro (15 → 12 pontos distintos de
+código) — a medida de quanto o isolamento ainda depende de contexto, não de banco. As 12 que
+restam ficam assim de propósito: token HMAC que É a autorização, ou cron que varre todos os
+tenants por desenho. Verificado por mutação: removida uma das quatro correções de `orcamentos.ts`
+e confirmado que `tests/unit/server/consulta-filtra-tenant.test.ts` reprova.
 
 ### P6 · Rotacionar `CRON_SECRET` para fora da assinatura de link · **~30 min, minhas**
 
