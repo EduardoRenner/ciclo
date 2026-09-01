@@ -1,5 +1,5 @@
 import { execSync } from 'node:child_process'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 
 import { describe, expect, it } from 'vitest'
 
@@ -36,12 +36,20 @@ const FORA_DO_ROTA: { arquivo: string; porque: string }[] = [
   },
 ]
 
-/** `git ls-files` em vez de varrer o disco: pega só o que está versionado, sem `node_modules`. */
+/**
+ * `git ls-files` em vez de varrer o disco: pega só o que está versionado, sem `node_modules`.
+ *
+ * O `existsSync` no fim não é zelo — o `git ls-files` lista arquivo que já **saiu do disco** mas
+ * segue no índice, o que acontece no meio de merge, rebase e `git rm --cached`. Sem o filtro, o
+ * `readFileSync` abaixo estoura `ENOENT` e a guarda reprova com uma mensagem sobre arquivo faltando
+ * em vez da que ela existe para dar. Achado mutando a própria guarda.
+ */
 function rotasVersionadas(): string[] {
   return execSync('git ls-files "src/app/api/**/route.ts"', { encoding: 'utf8' })
     .split('\n')
     .map((l) => l.trim())
     .filter(Boolean)
+    .filter((caminho) => existsSync(caminho))
 }
 
 /**
