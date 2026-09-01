@@ -311,6 +311,10 @@ async function semear(f: Fixture, sufixo: string): Promise<void> {
       },
     ],
     ['media', { tenant_id: t, client_id: f.clientId, storage_key: `${t}/foto.webp`, consent_id: f.consentId }],
+    // Mesma exigência de sempre: `portfolio_photos` (TICKET-115, migration 0053) precisa de linha
+    // aqui, ou a descoberta por introspecção acha a tabela e o teste genérico de "sobrou linha do
+    // outro tenant" falha por não ter o que sobrar.
+    ['portfolio_photos', { tenant_id: t, client_id: f.clientId, storage_key: `${t}/vitrine.webp` }],
     [
       'messages',
       { tenant_id: t, client_id: f.clientId, appointment_id: f.appointmentId, channel: 'whatsapp', kind: 'reminder' },
