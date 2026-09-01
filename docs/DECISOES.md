@@ -5326,3 +5326,11 @@ esse teste. Na dúvida entre duas leituras do próprio plano, fiquei com a mais 
 tem o mesmo ganho de especificidade (sai de "sabe quando" para "a lista de quem"), sem a promessa de
 cadência que ainda não foi validada com gente de verdade. **Pendência que fica aberta:** rodar a
 previsão 1 do §G.4 destrava a forma com cadência.
+
+2026-09-01 · Mutação da guarda do S7 depois do encolhimento do P5 · O CLAUDE.md exige ver a guarda
+REPROVANDO depois de mexer nela, não só ver ela passar. Reintroduzi o defeito que o P5 corrigiu
+(tirei o `.eq('tenant_id', quote.tenant_id)` de `orcamentos.ts:136`, removido de `JUSTIFICADAS` na
+mesma rodada) e rodei `consulta-filtra-tenant.test.ts`: reprovou, apontando exatamente o arquivo e
+a tabela certos. Revertido com `git checkout --`, suíte verde de novo. Não fiz o mesmo para
+`lista-espera.ts`/`portfolio-upload.ts` — é o mesmo detector genérico (varre todo `src/server`), a
+prova em um arquivo já mostra que ele enxerga os três.
