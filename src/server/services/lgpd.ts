@@ -133,7 +133,7 @@ export const TRATAMENTO_NA_ELIMINACAO: Record<string, Record<string, string>> = 
     address: 'redige', // endereço de atendimento em domicílio — é a casa da cliente
     cancel_reason: 'redige', // texto livre; "estava no hospital" é dado de saúde
     risk_features: 'redige',
-    canceled_by: 'preserva', // 'client' | 'salon' — quem, não quem em nome próprio
+    canceled_by: 'preserva', // 'client' | 'professional' | 'system' — quem, não quem em nome próprio
   },
   appointment_series: {
     note: 'redige',
