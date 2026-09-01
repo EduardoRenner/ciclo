@@ -1,6 +1,7 @@
 import {
   NOME_DO_PLANO,
   PLANOS,
+  VALORES_POR_EIXO,
   podeUsarCapacidade,
   podeUsarModulo,
   verificarLimite,
@@ -10,6 +11,7 @@ import {
   type ModuloKey,
   type PlanoTier,
   type Recurso,
+  type ValorDoEixo,
 } from '@/core/billing/planos'
 import { AppError } from '@/server/http/errors'
 
@@ -54,6 +56,23 @@ export function normalizarPlano(valor: string): PlanoTier {
 }
 
 /**
+ * Os quatro eixos são `text` com `check` no banco, não enum do Postgres — então `types.gen.ts` os
+ * entrega como `string` e o `tsc` não confere nada sozinho (foi assim que `inicio === 'orcamento'`
+ * sobreviveu). Esta função é a borda: o valor entra `string` e sai como a união do eixo.
+ *
+ * Valor desconhecido vira `null`, e `null` não esconde módulo nenhum. É de propósito, pelo mesmo
+ * raciocínio invertido do `normalizarPlano`: ali errar para menos bloqueia uma ação recuperável;
+ * aqui errar para menos **some com a funcionalidade da tela** sem dizer por quê — que é justamente
+ * o defeito que esta rodada consertou. Diante de um valor que não reconheço, não escondo.
+ */
+export function normalizarEixo<E extends Eixo>(eixo: E, valor: string | null): ValorDoEixo[E] | null {
+  if (valor == null) return null
+  if ((VALORES_POR_EIXO[eixo] as readonly string[]).includes(valor)) return valor as ValorDoEixo[E]
+  console.warn(JSON.stringify({ level: 'warn', event: 'eixo_desconhecido', eixo, valor }))
+  return null
+}
+
+/**
  * Lê plano, eixos e o que o dono desligou. Uma consulta para o tenant e outra para os módulos —
  * as duas por id, com índice, e o resultado é pequeno.
  */
@@ -73,11 +92,11 @@ export async function contextoDePlano(db: Cliente, tenantId: string): Promise<Co
     .eq('ligado', false)
   if (erroModulos) throw new AppError('INTERNAL', { cause: erroModulos })
 
-  const eixos: Partial<Record<Eixo, string | null>> = {
-    onde: tenant.onde,
-    cobranca: tenant.cobranca,
-    inicio: tenant.inicio,
-    ritmo: tenant.ritmo,
+  const eixos: ContextoDoTenant['eixos'] = {
+    onde: normalizarEixo('onde', tenant.onde),
+    cobranca: normalizarEixo('cobranca', tenant.cobranca),
+    inicio: normalizarEixo('inicio', tenant.inicio),
+    ritmo: normalizarEixo('ritmo', tenant.ritmo),
   }
 
   return {
