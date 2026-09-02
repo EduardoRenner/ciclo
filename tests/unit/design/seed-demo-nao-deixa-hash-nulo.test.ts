@@ -103,10 +103,33 @@ describe('o seed da carteira de demonstração', () => {
     expect(lucro, 'a gorjeta não pode entrar no lucro do salão').not.toMatch(/tip_cents/)
   })
 
-  it('confere o dinheiro e o estoque ao terminar', () => {
+  it('confere o dinheiro, o estoque e a agenda ao terminar', () => {
     const conferencia = sql().slice(sql().lastIndexOf('commit;'))
     expect(conferencia, 'nada guarda "sobrou mais que entrou"').toMatch(/sobrou_mais_que_entrou/)
     expect(conferencia, 'nada guarda estoque negativo').toMatch(/estoque_negativo/)
+    // A tela "Hoje" é a inicial do app. Abrir vazia já aconteceu duas vezes.
+    expect(conferencia, 'nada guarda a agenda de hoje').toMatch(/agenda_de_hoje/)
+    expect(conferencia, 'nada guarda horário fora do expediente').toMatch(/fora_do_horario/)
+  })
+
+  it('nenhuma mensagem nasce na fila de envio', () => {
+    /*
+     * `queued` é o único status de `messages` que um disparador pega. Mensagem de demonstração com
+     * esse status vira mensagem de VERDADE para um telefone brasileiro plausível — e os 310
+     * telefones desta carteira são gerados, não são de ninguém que pediu para receber nada.
+     *
+     * Os tenants de demonstração já são pulados em `lembretes.ts` e no cron de campanha. Esta é a
+     * segunda trava, e existe porque a primeira depende de alguém lembrar de manter uma lista.
+     */
+    const src = sql()
+    const inserts = src.split('insert into messages').slice(1)
+    expect(inserts.length, 'o seed não insere mais mensagem').toBeGreaterThan(0)
+    for (const bloco of inserts) {
+      const corpo = bloco.slice(0, bloco.indexOf(';'))
+      expect(corpo, 'mensagem de demonstração não pode nascer em `queued`').not.toMatch(/'queued'/)
+    }
+    // E a conferência final tem que olhar o banco de verdade, não só o texto do script.
+    expect(src.slice(src.lastIndexOf('commit;'))).toMatch(/mensagem_na_fila_de_envio/)
   })
 
   it('o saldo de estoque sai do extrato, não de número digitado', () => {

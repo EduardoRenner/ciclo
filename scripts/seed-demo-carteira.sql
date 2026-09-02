@@ -232,7 +232,10 @@ cross join lateral (
   select (seed.dia_passado((now() at time zone 'America/Sao_Paulo')::date
             - (p.desde_ultima + v * (p.cadencia - 4 + floor(seed.rnd(p.sem,'gap'||v) * 10)::int)))
     -- 09h–17h no relógio do salão, em passos de 15min como a agenda real.
-    + make_time(9 + floor(seed.rnd(p.sem,'h'||v) * 8)::int, floor(seed.rnd(p.sem,'m'||v) * 4)::int * 15, 0)
+    -- O último início possível depende da DURAÇÃO: sortear entre 9h e 17h sem olhar isso fazia
+    -- progressiva de 3h começar 16h45 e terminar 19h45, com o salão fechado.
+    + make_time(9 + floor(seed.rnd(p.sem,'h'||v) * greatest(1, 10 - ceil(s.duration_min / 60.0)))::int,
+                floor(seed.rnd(p.sem,'m'||v) * 4)::int * 15, 0)
   ) at time zone 'America/Sao_Paulo' as inicio) q
 cross join lateral (
   -- Enviesado para o começo do catálogo: os primeiros serviços são os populares. Uniforme faria
@@ -618,6 +621,238 @@ from (select product_id, sum(case kind when 'in' then qty when 'return' then qty
       from stock_moves where tenant_id in (select tenant_id from seed.cfg) group by product_id) x
 where p.id = x.product_id;
 
+-- ═══════════════════════════════════════════════════════════════════════════════════════════
+-- AGENDA DE HOJE E DOS PRÓXIMOS DIAS, ASSINATURA, FILA DE ESPERA E CAMPANHA.
+--
+-- Duas medições que mudaram esta seção:
+--
+-- 1. **HOJE nascia vazio nas seis contas.** O histórico era gerado a partir de "1 dia atrás", e a
+--    agenda futura a partir de "amanhã" — ninguém era atendido hoje. A tela "Hoje" é a inicial do
+--    app e o botão central da barra: abrir com "nada marcado para hoje" é a demonstração começar
+--    dizendo o contrário do que ela existe para mostrar. Já tinha acontecido antes (PR #47) e eu
+--    reintroduzi.
+--
+-- 2. **A agenda futura tinha 2,7 atendimentos por dia por conta.** Salão de três cadeiras com três
+--    clientes no dia inteiro parece fechado, não movimentado.
+-- ═══════════════════════════════════════════════════════════════════════════════════════════
+
+-- ── Hoje: o dia que já passou, mais quem ainda está na cadeira ──────────────────────────────
+with prof as (
+  select p.id as prof_id, p.tenant_id from professionals p
+  where p.tenant_id in (select tenant_id from seed.cfg) and p.active
+),
+vagas as (select pr.*, g as ordem from prof pr, generate_series(0, 7) g),
+comservico as (
+  select v.*, s.id as service_id, s.duration_min, s.price_cents,
+    -- Intervalo de 0 a 30min entre atendimentos: agenda 100% colada não existe em salão de verdade.
+    (floor(seed.rnd_id(v.prof_id, 'gap' || v.ordem) * 3) * 15)::int as folga
+  from vagas v
+  cross join lateral (
+    select sv.* from services sv where sv.tenant_id = v.tenant_id and sv.active
+    order by seed.rnd_id(v.prof_id, 'sv' || v.ordem || sv.id::text) limit 1
+  ) s
+),
+encadeado as (
+  select c.*, coalesce(sum(c.duration_min + c.folga) over (
+    partition by c.prof_id order by c.ordem rows between unbounded preceding and 1 preceding), 0) as offset_min
+  from comservico c
+),
+comcliente as (
+  select e.*, cl.id as client_id,
+    ((now() at time zone 'America/Sao_Paulo')::date + make_time(9,0,0) + (e.offset_min || ' min')::interval)
+      at time zone 'America/Sao_Paulo' as inicio
+  from encadeado e
+  cross join lateral (
+    select c2.id from clients c2 where c2.tenant_id = e.tenant_id
+    order by seed.rnd_id(c2.id, 'hoje' || e.prof_id::text || e.ordem) limit 1
+  ) cl
+)
+insert into appointments (tenant_id, client_id, professional_id, service_id, starts_at, ends_at,
+                          status, origin, price_cents, completed_at, confirmed_at, created_at)
+select k.tenant_id, k.client_id, k.prof_id, k.service_id, k.inicio,
+  k.inicio + (k.duration_min || ' min')::interval,
+  -- Terminou antes de agora: concluído. Começou e ainda não terminou: está na cadeira. O que não
+  -- cabe antes das 19h simplesmente não entra — melhor fim de expediente honesto do que horário
+  -- impossível.
+  (case when k.inicio + (k.duration_min || ' min')::interval <= now() then 'done' else 'confirmed' end)::appointment_status,
+  (case when seed.rnd_id(k.client_id,'ho'||k.ordem) < 0.45 then 'public_page' else 'app' end)::appointment_origin,
+  k.price_cents,
+  case when k.inicio + (k.duration_min || ' min')::interval <= now() then k.inicio + (k.duration_min || ' min')::interval end,
+  k.inicio - interval '1 day',
+  k.inicio - interval '4 days'
+from comcliente k
+where (k.inicio + (k.duration_min || ' min')::interval) at time zone 'America/Sao_Paulo'
+      <= (now() at time zone 'America/Sao_Paulo')::date + make_time(19,0,0);
+
+-- ── Próximos 21 dias ────────────────────────────────────────────────────────────────────────
+delete from appointments
+where tenant_id in (select tenant_id from seed.cfg) and status in ('pending','confirmed') and starts_at > now();
+
+with dias as (
+  select d::date as dia, row_number() over (order by d) as nd
+  from generate_series((now() at time zone 'America/Sao_Paulo')::date + 1,
+                       (now() at time zone 'America/Sao_Paulo')::date + 21, interval '1 day') d
+  where extract(dow from d) not in (0,1)
+),
+prof as (
+  select p.id as prof_id, p.tenant_id from professionals p
+  where p.tenant_id in (select tenant_id from seed.cfg) and p.active
+),
+vagas as (
+  -- Cheia perto de hoje, mais vazia lá na frente — como toda agenda de verdade.
+  select pr.*, d.dia, d.nd, g as ordem
+  from prof pr cross join dias d cross join lateral generate_series(0, greatest(1, 7 - (d.nd / 3))) g
+),
+comservico as (
+  select v.*, s.id as service_id, s.duration_min, s.price_cents,
+    (floor(seed.rnd_id(v.prof_id, 'fg' || v.nd || v.ordem) * 3) * 15)::int as folga
+  from vagas v
+  cross join lateral (
+    select sv.* from services sv where sv.tenant_id = v.tenant_id and sv.active
+    order by seed.rnd_id(v.prof_id, 'fs' || v.nd || v.ordem || sv.id::text) limit 1
+  ) s
+),
+encadeado as (
+  select c.*, coalesce(sum(c.duration_min + c.folga) over (
+    partition by c.prof_id, c.dia order by c.ordem rows between unbounded preceding and 1 preceding), 0) as offset_min
+  from comservico c
+),
+comcliente as (
+  select e.*, cl.id as client_id,
+    (e.dia + make_time(9,0,0) + (e.offset_min || ' min')::interval) at time zone 'America/Sao_Paulo' as inicio
+  from encadeado e
+  cross join lateral (
+    select c2.id from clients c2 where c2.tenant_id = e.tenant_id
+    order by seed.rnd_id(c2.id, 'fut' || e.prof_id::text || e.nd || e.ordem) limit 1
+  ) cl
+  -- 540min = 9h de expediente. O que não cabe não é agendado.
+  where e.offset_min + e.duration_min <= 540
+)
+insert into appointments (tenant_id, client_id, professional_id, service_id, starts_at, ends_at,
+                          status, origin, price_cents, confirmed_at, created_at)
+select k.tenant_id, k.client_id, k.prof_id, k.service_id, k.inicio,
+  k.inicio + (k.duration_min || ' min')::interval,
+  -- Quanto mais longe, mais chance de ainda estar só pendente de confirmação.
+  (case when seed.rnd_id(k.client_id, 'st'||k.nd||k.ordem) < 0.75 - (k.nd * 0.015) then 'confirmed' else 'pending' end)::appointment_status,
+  (case when seed.rnd_id(k.client_id,'fo'||k.nd||k.ordem) < 0.5 then 'public_page' else 'app' end)::appointment_origin,
+  k.price_cents,
+  case when seed.rnd_id(k.client_id, 'st'||k.nd||k.ordem) < 0.75 - (k.nd * 0.015) then now() - interval '2 days' end,
+  now() - ((1 + floor(seed.rnd_id(k.client_id,'fc'||k.nd) * 9)) || ' days')::interval
+from comcliente k;
+
+-- ── Assinatura: a receita recorrente, o argumento mais forte de retenção ────────────────────
+insert into subscription_plans (tenant_id, name, price_cents, sessions_per_month, benefits, active)
+select c.tenant_id, v.nome, v.preco, v.sessoes, v.beneficio, true
+from seed.cfg c
+cross join lateral (
+  select * from (values
+    ('m','Clube do Corte',      12900::bigint, 2, 'Dois cortes por mês + 10% em produtos'),
+    ('m','Clube Barba & Corte', 19900::bigint, 3, 'Corte quinzenal + barba semanal'),
+    ('f','Clube da Unha',       16900::bigint, 2, 'Duas manutenções por mês + esmaltação'),
+    ('f','Clube Completo',      29900::bigint, 4, 'Unha, cabelo e 15% em qualquer serviço extra')
+  ) as x(publico, nome, preco, sessoes, beneficio)
+  where x.publico = c.publico
+) v;
+
+insert into client_subscriptions (tenant_id, client_id, plan_id, billing_day, status, started_on, canceled_on)
+select cl.tenant_id, cl.id, p.id, 1 + floor(seed.rnd_id(cl.id,'dia') * 28)::int,
+  -- ~12% cancelou: cancelar muda estado e data, nunca apaga (regra 11). Sem cancelada nenhuma, a
+  -- tela de retenção não teria churn para mostrar.
+  case when seed.rnd_id(cl.id,'canc') < 0.12 then 'canceled' else 'active' end,
+  (now() - ((60 + floor(seed.rnd_id(cl.id,'ini') * 300)) || ' days')::interval)::date,
+  case when seed.rnd_id(cl.id,'canc') < 0.12 then (now() - ((5 + floor(seed.rnd_id(cl.id,'cd') * 50)) || ' days')::interval)::date end
+from clients cl
+join lateral (
+  select sp.* from subscription_plans sp where sp.tenant_id = cl.tenant_id
+  order by seed.rnd_id(cl.id, 'plano' || sp.id::text) limit 1
+) p on true
+where cl.tenant_id in (select tenant_id from seed.cfg) and seed.rnd_id(cl.id,'assina') < 0.07;
+
+-- ── Fila de espera ─────────────────────────────────────────────────────────────────────────
+insert into waitlist (tenant_id, client_id, service_id, professional_id, earliest_at, latest_at, period_of_day, created_at)
+select cl.tenant_id, cl.id, s.id,
+  case when seed.rnd_id(cl.id,'wprof') < 0.5 then cl.preferred_professional_id end,
+  now() + interval '1 day', now() + interval '20 days',
+  (array['manha','tarde','noite'])[1 + floor(seed.rnd_id(cl.id,'wper') * 3)::int],
+  now() - ((1 + floor(seed.rnd_id(cl.id,'wc') * 9)) || ' days')::interval
+from clients cl
+join lateral (
+  select sv.* from services sv where sv.tenant_id = cl.tenant_id and sv.active
+  order by seed.rnd_id(cl.id, 'wsv' || sv.id::text) limit 1
+) s on true
+where cl.tenant_id in (select tenant_id from seed.cfg) and seed.rnd_id(cl.id,'wait') < 0.035;
+
+-- ── Campanha de reativação ─────────────────────────────────────────────────────────────────
+insert into campaigns (id, tenant_id, name, segment, template, status, created_at)
+select md5(c.tenant_id::text || 'camp1')::uuid, c.tenant_id, 'Quem sumiu — setembro',
+  jsonb_build_object('estado', array['late','at_risk'], 'origem', 'motor-de-ciclo'),
+  'Oi {nome}! Faz um tempinho que você não aparece por aqui. Separei um horário pra você esta semana — é só responder que eu confirmo.',
+  'sent', now() - interval '26 days'
+from seed.cfg c;
+
+/*
+ * Duas metades, e a segunda é o que impede o número de mentir.
+ *
+ * `atribuicao.ts` liga campanha e retorno assim: mensagem com `kind='campaign'` e `status='sent'`,
+ * seguida de um atendimento CONCLUÍDO do mesmo cliente dentro de 30 dias.
+ *
+ * A primeira versão mandava a campanha só para quem já tinha voltado — e produzia **100% de
+ * conversão em todas as contas**, número que nenhuma campanha do mundo real tem e que denuncia
+ * dado inventado na primeira olhada de quem entende do assunto. Uma campanha de reativação vai
+ * para todo mundo que sumiu, e a maioria não responde. Com as duas metades, a conversão fica em
+ * 23-33%, que é a faixa de uma campanha boa de verdade.
+ *
+ * `status` nunca é `queued`: é o único que um disparador pega, e mensagem de demonstração não
+ * pode virar mensagem de verdade. (Os tenants de demonstração já são pulados em `lembretes.ts` e
+ * no cron de campanha — isto é a segunda trava.)
+ */
+insert into messages (tenant_id, client_id, campaign_id, channel, kind, template, body, status, sent_at, created_at)
+select v.tenant_id, v.client_id, md5(v.tenant_id::text || 'camp1')::uuid,
+  'whatsapp'::message_channel, 'campaign'::message_kind, 'campanha.retorno',
+  'Oi ' || split_part(v.nome,' ',1) || '! Faz um tempinho que você não aparece por aqui. Separei um horário pra você esta semana — é só responder que eu confirmo.',
+  'sent'::message_status,
+  v.voltou_em - ((3 + floor(seed.rnd_id(v.client_id,'antes') * 8)) || ' days')::interval,
+  v.voltou_em - interval '10 days'
+from (
+  select c.tenant_id, c.id as client_id, c.name as nome, max(a.starts_at) as voltou_em
+  from clients c join appointments a on a.client_id = c.id and a.status = 'done'
+  where c.tenant_id in (select tenant_id from seed.cfg)
+  group by c.tenant_id, c.id, c.name
+  having max(a.starts_at) between now() - interval '25 days' and now()
+) v
+where seed.rnd_id(v.client_id,'recebeu') < 0.55;
+
+insert into messages (tenant_id, client_id, campaign_id, channel, kind, template, body, status, sent_at, created_at)
+select c.tenant_id, c.id, md5(c.tenant_id::text || 'camp1')::uuid,
+  'whatsapp'::message_channel, 'campaign'::message_kind, 'campanha.retorno',
+  'Oi ' || split_part(c.name,' ',1) || '! Faz um tempinho que você não aparece por aqui. Separei um horário pra você esta semana — é só responder que eu confirmo.',
+  -- Entregue e não respondeu é o caso mais comum; leu e não veio também existe, e é o que dá
+  -- textura ao funil em vez de duas colunas secas.
+  (case when seed.rnd_id(c.id,'entrega') < 0.12 then 'read' else 'delivered' end)::message_status,
+  now() - ((20 + floor(seed.rnd_id(c.id,'quando') * 5)) || ' days')::interval,
+  now() - interval '26 days'
+from clients c
+where c.tenant_id in (select tenant_id from seed.cfg)
+  and c.last_visit_at < now() - interval '26 days'
+  and not exists (select 1 from messages m where m.client_id = c.id and m.kind = 'campaign');
+
+-- Contadores da campanha derivados das mensagens e dos retornos, nunca digitados.
+update campaigns k set sent_count = x.total, booked_count = x.voltaram, revenue_cents = x.receita
+from (
+  select m.campaign_id, count(*) as total,
+    count(*) filter (where r.retorno is not null) as voltaram,
+    coalesce(sum(r.valor) filter (where r.retorno is not null), 0) as receita
+  from messages m
+  left join lateral (
+    select a.starts_at as retorno, a.price_cents as valor from appointments a
+    where a.client_id = m.client_id and a.status = 'done'
+      and a.starts_at > m.sent_at and a.starts_at < m.sent_at + interval '30 days'
+    order by a.starts_at limit 1
+  ) r on true
+  where m.kind = 'campaign' group by m.campaign_id
+) x
+where k.id = x.campaign_id;
+
 commit;
 
 -- ── Conferência (o seed não termina sem provar o que fez) ──────────────────────────────────
@@ -630,5 +865,14 @@ select t.slug,
   (select round(avg(r.rating),2) from client_reviews r where r.tenant_id = t.id) as nota_media,
   -- "Sobrou" nunca pode ser maior que "Entrou": foi assim que o bug do desconto ignorado apareceu.
   (select count(*) from tickets k where k.tenant_id = t.id and k.profit_cents > k.total_cents) as sobrou_mais_que_entrou,
-  (select count(*) from products p where p.tenant_id = t.id and p.stock_qty < 0) as estoque_negativo
+  (select count(*) from products p where p.tenant_id = t.id and p.stock_qty < 0) as estoque_negativo,
+  -- A tela "Hoje" é a inicial do app: abrir vazia é a demonstração começar dizendo o contrário do
+  -- que ela existe para mostrar. Já aconteceu duas vezes.
+  (select count(*) from appointments a where a.tenant_id = t.id
+     and (a.starts_at at time zone 'America/Sao_Paulo')::date = (now() at time zone 'America/Sao_Paulo')::date) as agenda_de_hoje,
+  (select count(*) from appointments a where a.tenant_id = t.id
+     and ((a.starts_at at time zone 'America/Sao_Paulo')::time < '09:00'
+       or (a.ends_at at time zone 'America/Sao_Paulo')::time > '19:00')) as fora_do_horario,
+  -- `queued` é o único status que um disparador pega: mensagem de demonstração não pode sair.
+  (select count(*) from messages m where m.tenant_id = t.id and m.status = 'queued') as mensagem_na_fila_de_envio
 from tenants t where t.slug in (select slug from seed.cfg) order by t.slug;
