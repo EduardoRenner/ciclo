@@ -2146,7 +2146,7 @@ create table professionals (
   tenant_id         uuid not null references tenants(id) on delete cascade,
   user_id           uuid references profiles(id) on delete set null,
   display_name      text not null,
-  avatar_url        text,
+  photo_key         text,                                   -- chave no bucket `vitrine` (0052); era avatar_url
   bio               text,
   color             text,                                   -- cor na agenda
   comp_model        comp_model not null default 'owner',
@@ -2208,6 +2208,7 @@ create table services (
   bookable_online     boolean not null default true,
   active              boolean not null default true,
   position            int not null default 0,
+  image_key           text,                                   -- chave no bucket público `vitrine` (0052)
   created_at          timestamptz not null default now(),
   deleted_at          timestamptz
 );
@@ -2571,6 +2572,22 @@ create table media (
 );
 create index on media (tenant_id, client_id, created_at desc);
 
+-- Cópia pública de uma foto de `media`, publicada na vitrine do salão (bucket `vitrine`,
+-- público) — nunca a linha original (bucket `media`, privado, URL assinada de 5 min). `client_id`
+-- fica aqui só para a revogação de consentimento achar e apagar toda foto publicada da cliente.
+create table portfolio_photos (
+  id               uuid primary key default gen_random_uuid(),
+  tenant_id        uuid not null references tenants(id) on delete cascade,
+  client_id        uuid not null references clients(id) on delete cascade,
+  source_media_id  uuid references media(id) on delete set null,
+  storage_key      text not null,
+  created_at       timestamptz not null default now()
+);
+create index on portfolio_photos (tenant_id, created_at desc);
+create index on portfolio_photos (tenant_id, client_id);
+create index on portfolio_photos (client_id);
+create index on portfolio_photos (source_media_id) where source_media_id is not null;
+
 -- ---------------------------------------------------------------------
 -- 10. MENSAGERIA E CAMPANHAS
 -- ---------------------------------------------------------------------
@@ -2589,10 +2606,12 @@ create table messages (
   error          text,
   scheduled_for  timestamptz,
   sent_at        timestamptz,
+  campaign_id    uuid references campaigns(id) on delete set null,  -- atribuição fina de receita (0054)
   created_at     timestamptz not null default now()
 );
 create index on messages (tenant_id, client_id, created_at desc);
 create index on messages (status, scheduled_for) where status = 'queued';
+create index on messages (campaign_id) where campaign_id is not null;
 -- evita mandar o mesmo lembrete duas vezes
 create unique index messages_dedupe
   on messages (appointment_id, kind, template)
