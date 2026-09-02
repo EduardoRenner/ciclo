@@ -1,6 +1,7 @@
 'use client'
 
-import { useId } from 'react'
+import { Eye, EyeOff } from 'lucide-react'
+import { useId, useState } from 'react'
 
 import { cn } from '@/lib/utils'
 
@@ -27,9 +28,22 @@ type Props = Omit<React.ComponentPropsWithoutRef<'input'>, 'id'> & {
  * placeholder some quando a pessoa começa a digitar — justo quando ela mais
  * precisa saber o que aquele campo era.
  */
-export default function Input({ rotulo, ajuda, erro, prefixo, className, classNameCampo, ...props }: Props) {
+export default function Input({ rotulo, ajuda, erro, prefixo, className, classNameCampo, type, ...props }: Props) {
   const id = useId()
   const idAjuda = `${id}-ajuda`
+
+  /*
+   * Campo de senha nasce escondido e ganha um olho para revelar. Digitar 10 caracteres às cegas
+   * (o mínimo do cadastro) no teclado do celular é a causa mais comum de "minha senha não
+   * funciona" — a pessoa erra, não vê que errou, e culpa o login. O olho é o conserto padrão.
+   *
+   * O tipo vira `text` ao revelar; o gerenciador de senhas do navegador continua entendendo o
+   * campo porque quem o identifica é o `autoComplete` (`current-password`/`new-password`), que
+   * segue intacto.
+   */
+  const ehSenha = type === 'password'
+  const [revelada, setRevelada] = useState(false)
+  const tipoEfetivo = ehSenha && revelada ? 'text' : type
 
   return (
     <div className={cn('flex flex-col gap-1.5', className)}>
@@ -45,6 +59,7 @@ export default function Input({ rotulo, ajuda, erro, prefixo, className, classNa
         ) : null}
         <input
           id={id}
+          type={tipoEfetivo}
           aria-invalid={erro ? true : undefined}
           aria-describedby={erro || ajuda ? idAjuda : undefined}
           className={cn(
@@ -54,10 +69,26 @@ export default function Input({ rotulo, ajuda, erro, prefixo, className, classNa
             'transition-colors duration-[var(--dur-1)] placeholder:text-txt-3 focus:border-acc',
             erro ? 'border-bad' : 'border-line-2',
             prefixo && 'pl-10',
+            // Espaço para o olho não cobrir o fim do que se digita.
+            ehSenha && 'pr-12',
             classNameCampo,
           )}
           {...props}
         />
+        {ehSenha ? (
+          <button
+            // `type="button"` (e não o `submit` implícito) é o que impede o Enter no campo de
+            // senha de revelar a senha em vez de enviar o formulário. O botão continua alcançável
+            // por Tab de propósito: quem digita a senha no teclado é quem mais precisa conferir.
+            type="button"
+            onClick={() => setRevelada((v) => !v)}
+            aria-label={revelada ? 'Ocultar senha' : 'Mostrar senha'}
+            aria-pressed={revelada}
+            className="absolute right-0 grid h-12 w-12 place-items-center text-txt-3 transition-colors hover:text-txt-2"
+          >
+            {revelada ? <EyeOff aria-hidden className="size-5" /> : <Eye aria-hidden className="size-5" />}
+          </button>
+        ) : null}
       </div>
 
       {erro ? (

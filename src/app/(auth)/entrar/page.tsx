@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 
 import Selo from '@/components/shell/selo'
 import TelaPublica from '@/components/shell/tela-publica'
+import { provedoresSociaisAtivos } from '@/server/auth/provedores-sociais'
 import { sessaoAtual } from '@/server/auth/session'
 
 import LoginSocial from '../login-social'
@@ -12,6 +13,8 @@ export const metadata = { title: "Entrar" }
 export default async function PaginaEntrar() {
   const sessao = await sessaoAtual()
   if (sessao) redirect('/admin/hoje')
+
+  const provedores = await provedoresSociaisAtivos()
 
   return (
     <TelaPublica>
@@ -24,7 +27,7 @@ export default async function PaginaEntrar() {
         <h1 className="text-titulo font-bold">Bem-vindo de volta</h1>
         <p className="mt-1 text-secundario text-txt-2">Entre para ver o resumo do seu dia.</p>
       </div>
-      <LoginSocial />
+      <LoginSocial provedores={provedores} />
       <FormularioEntrar />
     </TelaPublica>
   )
