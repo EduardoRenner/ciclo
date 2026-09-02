@@ -73,7 +73,14 @@ export default function AppointmentRow({
           horas é a próxima" — ganha peso próprio e a linha de estado embaixo,
           em vez de o estado ficar solto na ponta direita competindo com o valor.
         */}
-        <div className="w-[52px] shrink-0">
+        {/*
+          72px, não 52: a largura tinha sido dimensionada para o horário ("10:00" mede 32px) e o
+          rótulo de estado embaixo não cabia. Medido em Archivo: "Aguardando" 69px, "Confirmado"
+          66, "Cancelado" 60, "Concluído" 57 — quatro dos sete estados vazavam a coluna e
+          encostavam no nome do serviço ao lado, e os dois piores são justamente o de todo
+          agendamento novo e o de todo agendamento aceito ("AguardandoCorte").
+        */}
+        <div className="w-[72px] shrink-0">
           <p className={cn('tabular text-corpo font-bold', concluido ? 'text-txt-3' : 'text-txt')}>{horario}</p>
           <p className={cn('text-label font-semibold', COR_ROTULO[status])}>{ROTULO_ESTADO[status]}</p>
         </div>

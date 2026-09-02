@@ -72,6 +72,25 @@ export default function Hoje({
   const faltam = resumo.restOfDay.length
   const mostrarHeroiDoMotor = deveMostrarHeroiDoMotor(resumo.revenueTodayCents, !!resumo.nextClient, atribuicao.count)
 
+  /*
+   * As três seções desta tela mostram fatias da MESMA lista, e antes disto elas se sobrepunham:
+   * um único agendamento pendente das 16:00 aparecia em "A seguir", em "Precisa confirmar" e de
+   * novo em "Resto do dia" — três cartões idênticos, que se leem como três clientes no mesmo
+   * horário. Aqui cada agendamento cai em exatamente uma seção, na ordem de prioridade da tela.
+   *
+   * `resumo.restOfDay` continua sendo o dia inteiro que ainda vem, de propósito: é dele que saem
+   * o contador "falta N atendimento hoje" aqui em cima e a resposta do assistente sobre
+   * pendentes. Quem precisa da fatia é só o desenho, então a fatia se faz aqui.
+   *
+   * "A seguir" ganha a prioridade porque é a pergunta que a tela existe para responder. O próximo
+   * cliente que também precisa de confirmação não perde o aviso: o próprio cartão carrega o
+   * rótulo "Aguardando" em cor de alerta.
+   */
+  const idProximo = resumo.nextClient?.id
+  const alertasSemOProximo = resumo.alerts.filter((a) => a.id !== idProximo)
+  const jaMostrados = new Set([idProximo, ...alertasSemOProximo.map((a) => a.id)].filter(Boolean))
+  const restanteNaoMostrado = resumo.restOfDay.filter((a) => !jaMostrados.has(a.id))
+
   return (
     <div>
       {/*
@@ -111,9 +130,12 @@ export default function Hoje({
             valor={dinheiro.format(resumo.revenueTodayCents / 100)}
             apoio={
               <span className="flex items-center justify-between gap-2">
+                {/* O verbo concorda junto com o substantivo: era "Faltam 1 atendimento hoje". */}
                 {faltam === 0
                   ? 'Nada mais marcado para hoje'
-                  : `Faltam ${faltam} ${faltam === 1 ? 'atendimento' : 'atendimentos'} hoje`}
+                  : faltam === 1
+                    ? 'Falta 1 atendimento hoje'
+                    : `Faltam ${faltam} atendimentos hoje`}
                 <span className="flex shrink-0 items-center gap-0.5 font-semibold text-acc-2">
                   Ver o caixa
                   <ChevronRight aria-hidden className="size-4" />
@@ -175,13 +197,13 @@ export default function Hoje({
         </>
       )}
 
-      {resumo.alerts.length > 0 ? (
+      {alertasSemOProximo.length > 0 ? (
         <section className="mb-6">
           <SectionHeader tom="alerta" icone={<TriangleAlert aria-hidden className="size-4" />}>
             Precisa confirmar
           </SectionHeader>
           <ul className="flex flex-col gap-2">
-            {resumo.alerts.map((a) => (
+            {alertasSemOProximo.map((a) => (
               <li key={a.id}>
                 <button type="button" onClick={() => setSelecionado(a)} className="block w-full text-left">
                   <AppointmentRow
@@ -232,27 +254,34 @@ export default function Hoje({
         </section>
       ) : null}
 
-      <section>
-        <SectionHeader>Resto do dia</SectionHeader>
-        {resumo.restOfDay.length === 0 ? (
-          <p className="text-secundario text-txt-2">Sem mais nada agendado.</p>
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {resumo.restOfDay.map((a) => (
-              <li key={a.id}>
-                <button type="button" onClick={() => setSelecionado(a)} className="block w-full text-left">
-                  <AppointmentRow
-                    horario={horaLocal(a.starts_at)}
-                    clienteNome={a.clients?.name ?? 'Cliente'}
-                    servicoNome={a.services?.name ?? 'Serviço'}
-                    status={a.status as EstadoAgendamento}
-                  />
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      {/*
+        A seção some quando tudo que ainda vem já está desenhado acima. Mostrar "Resto do dia ·
+        Sem mais nada agendado" logo abaixo de um cartão das 17:00 seria a tela se contradizendo:
+        o vazio aqui só pode significar dia encerrado, e é isso que `restOfDay.length === 0` diz.
+      */}
+      {resumo.restOfDay.length === 0 || restanteNaoMostrado.length > 0 ? (
+        <section>
+          <SectionHeader>Resto do dia</SectionHeader>
+          {resumo.restOfDay.length === 0 ? (
+            <p className="text-secundario text-txt-2">Sem mais nada agendado.</p>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {restanteNaoMostrado.map((a) => (
+                <li key={a.id}>
+                  <button type="button" onClick={() => setSelecionado(a)} className="block w-full text-left">
+                    <AppointmentRow
+                      horario={horaLocal(a.starts_at)}
+                      clienteNome={a.clients?.name ?? 'Cliente'}
+                      servicoNome={a.services?.name ?? 'Serviço'}
+                      status={a.status as EstadoAgendamento}
+                    />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      ) : null}
 
       <Sheet aberto={!!selecionado} aoFechar={(aberto) => !aberto && setSelecionado(null)} titulo="Agendamento">
         {selecionado ? (
