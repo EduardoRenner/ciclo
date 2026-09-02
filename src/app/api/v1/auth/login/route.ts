@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto'
 
+import { motivoDaRecusa } from '@/core/auth/motivo-da-recusa'
 import { EsquemaLogin } from '@/server/auth/schemas'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { lerCorpo } from '@/server/http/body'
@@ -38,6 +39,21 @@ export const POST = rota(async (req) => {
 
   if (error || !data.session) {
     if (error?.status === 429) throw AppError.limiteDeTaxa(60)
+
+    /*
+     * Nem toda recusa do Auth é senha errada. Dizer que é tranca a pessoa num laço — ela retipa,
+     * troca a senha, retipa de novo — e o motivo real nunca aparece. A regra de QUAL recusa é
+     * sobre credencial mora em `core/auth/motivo-da-recusa.ts`, com o porquê de cada código.
+     */
+    if (motivoDaRecusa(error?.code) === 'outro') {
+      // O motivo real fica no log do servidor: é o que torna a falha diagnosticável sem contar
+      // nada a quem está do outro lado.
+      console.warn(JSON.stringify({ level: 'warn', event: 'login_recusado_sem_ser_credencial', codigo: error?.code }))
+      throw new AppError('UNAUTHENTICATED', {
+        message: 'Não consegui verificar seu acesso agora. Não é problema com a sua senha — tente de novo em instantes.',
+      })
+    }
+
     // Uma única mensagem para "e-mail não existe" e "senha errada": separar as
     // duas entrega a lista de quem tem conta.
     throw new AppError('UNAUTHENTICATED', { message: 'E-mail ou senha não conferem.' })
