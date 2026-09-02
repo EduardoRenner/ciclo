@@ -39,10 +39,14 @@ export default async function PaginaAgendar({
   params: Promise<{ slug: string }>
   // I-1, `docs/30-INDICACAO-PLANO.md`: `?ind=<token>` é o convite de indicação. Só string bruta
   // aqui — a verificação inteira (escopo, expiração, existência) é do servidor, no `POST book`.
-  searchParams: Promise<{ ind?: string }>
+  //
+  // `?servico=<id>` é o toque na lista de serviços da página do salão. Só id viaja em URL (nunca
+  // nome nem preço), e é conferido contra o catálogo do próprio perfil antes de virar estado: id
+  // de outro salão, ou serviço já desativado, cai no comportamento padrão em vez de escolher nada.
+  searchParams: Promise<{ ind?: string; servico?: string }>
 }) {
   const { slug } = await params
-  const { ind } = await searchParams
+  const { ind, servico } = await searchParams
 
   const perfil = await perfilPublico(slug).catch((erro: unknown) => {
     if (erro instanceof AppError && erro.code === 'NOT_FOUND') return null
@@ -52,6 +56,8 @@ export default async function PaginaAgendar({
 
   // I-4: a moldura de chegada. Nunca derruba a página — sem o nome, a tela é a de sempre.
   const indicadaPor = await quemIndicou(slug, ind).catch(() => null)
+
+  const servicoInicial = perfil.services.some((s) => s.id === servico) ? servico! : null
 
   return (
     <main className="mx-auto min-h-dvh max-w-[560px] px-[18px] py-8">
@@ -67,6 +73,7 @@ export default async function PaginaAgendar({
         hours={perfil.hours}
         services={perfil.services}
         professionals={perfil.professionals}
+        servicoInicial={servicoInicial}
         ind={ind ?? null}
         indicadaPor={indicadaPor}
       />

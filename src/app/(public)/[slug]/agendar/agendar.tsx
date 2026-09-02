@@ -149,6 +149,7 @@ export default function Agendar({
   hours,
   services,
   professionals,
+  servicoInicial,
   ind,
   indicadaPor,
 }: {
@@ -160,6 +161,8 @@ export default function Agendar({
   hours: { weekday: number; opensAt: string; closesAt: string }[];
   services: Servico[];
   professionals: Profissional[];
+  /** Serviço tocado na página do salão (`?servico=`), já conferido contra o catálogo pelo servidor. */
+  servicoInicial: string | null;
   /** Token de `?ind=` (I-1) — repassado cru ao `POST book`, que confere e resolve sozinho. */
   ind: string | null;
   /** I-4: primeiro nome de quem indicou, já resolvido no servidor. `null` = sem convite válido. */
@@ -201,7 +204,13 @@ export default function Agendar({
     return candidatos.find((d) => !diasFechados.has(d)) ?? dias[0] ?? "";
   }, [dias, diasFechados, hours, timezone]);
 
-  const [serviceId, setServiceId] = useState(services[0]?.id ?? "");
+  /*
+   * Quem tocou num serviço na página do salão já escolheu — abrir no primeiro do catálogo
+   * desfaria a escolha em silêncio. O servidor já conferiu que o id pertence a este perfil.
+   */
+  const [serviceId, setServiceId] = useState(
+    servicoInicial ?? services[0]?.id ?? "",
+  );
   const [professionalId, setProfessionalId] = useState<string | null>(null);
   const [dia, setDia] = useState(primeiroDiaUtil);
   const [slots, setSlots] = useState<Slot[] | null>(null);
@@ -839,11 +848,13 @@ export default function Agendar({
               às {horaLocal(slotEscolhido.startsAt, timezone)} ·{" "}
               {duracao(servicoEscolhido.durationMin)}
             </p>
-            {servicoEscolhido.priceCents > 0 ? (
-              <p className="tabular mt-2 text-stat font-bold text-acc-2">
-                {dinheiro.format(servicoEscolhido.priceCents / 100)}
-              </p>
-            ) : null}
+            {/*
+              O preço NÃO se repete aqui. Ele já está na linha do serviço escolhido, uma rolagem
+              acima e visivelmente marcada — repetir em corpo grande fazia o mesmo número aparecer
+              duas vezes na mesma tela e transformava o último passo numa vitrine de preço, quando
+              o que falta ali é só nome, telefone e confirmar. Fresha e Booksy repetem o valor
+              porque o resumo deles é OUTRA tela; aqui é a mesma rolagem contínua.
+            */}
             {/*
               O sinal aparece no RESUMO, não na lista de serviços: aqui é o último instante antes
               de confirmar, e é onde a expectativa precisa estar posta para valer alguma coisa.
