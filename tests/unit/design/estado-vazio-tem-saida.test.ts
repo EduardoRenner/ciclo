@@ -140,10 +140,18 @@ describe('o vazio de Recuperar receita fala a verdade das QUATRO situacoes', () 
   })
 
   it('toda situacao oferece uma saida de verdade', () => {
-    for (const args of [[false, false, false], [true, false, false], [true, false, true], [true, true, true]] as const) {
-      const v = vazioDeRecuperar(...args)
-      expect(v.acaoHref, `sem saida em ${JSON.stringify(args)}`).toMatch(/^\/admin\//)
-      expect(v.acaoRotulo.length, `rotulo vazio em ${JSON.stringify(args)}`).toBeGreaterThan(0)
+    // Tipado como tupla nomeada em vez de `as const` + spread: o terceiro parametro tem valor
+    // padrao, e o spread de tupla `readonly` para parametro opcional nao passa no `tsc`.
+    const casos: { clientes: boolean; ciclos: boolean; concluidos: boolean }[] = [
+      { clientes: false, ciclos: false, concluidos: false },
+      { clientes: true, ciclos: false, concluidos: false },
+      { clientes: true, ciclos: false, concluidos: true },
+      { clientes: true, ciclos: true, concluidos: true },
+    ]
+    for (const c of casos) {
+      const v = vazioDeRecuperar(c.clientes, c.ciclos, c.concluidos)
+      expect(v.acaoHref, `sem saida em ${JSON.stringify(c)}`).toMatch(/^\/admin\//)
+      expect(v.acaoRotulo.length, `rotulo vazio em ${JSON.stringify(c)}`).toBeGreaterThan(0)
     }
   })
 })
