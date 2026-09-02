@@ -1,0 +1,16 @@
+{
+ "status": "done",
+ "backed_up_at": "2026-09-01",
+ "tables_dumped": 36,
+ "auth_users": 20,
+ "migrations": 60,
+ "functions": 286,
+ "note": "KEEPER - SaaS multi-tenant. DADO REAL: 837 appointments, 138 clients, 135 client_cycles, 47 products, 49 services, 8 tenants, 20 auth users, 117 audit_log, 1034 vault_access_log (maioria ruido de teste - ver memoria teste-polui-trilha-lgpd). Schema em 60 migrations no git + catalog.json.",
+ "errors": [],
+ "storage_objects": {
+  "total": 626,
+  "downloaded": 626,
+  "skipped": 0,
+  "note": "buckets media(622)+vitrine(4) baixados com service_role key 2026-09-01"
+ }
+}
