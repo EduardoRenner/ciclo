@@ -43,6 +43,12 @@
  * Eles são exatamente o caso que a lista cobre: slug conhecido e permanente. Os órfãos de slug
  * aleatório continuam fora do alcance dela, pelo motivo já escrito acima.
  */
+/*
+ * 02/09: os seis de `scripts/seed-demo-6-negocios.mjs` (3 barbearias + 3 salões, um por degrau de
+ * plano). Nascem já com o prefixo `demo-` justamente para que a origem seja legível no slug — mas
+ * o prefixo é convenção, não regra: quem decide é esta lista, e é ela que o sitemap, o robots, o
+ * aviso da página e as rotas de lembrete/campanha leem.
+ */
 const SLUGS_DE_DEMONSTRACAO: readonly string[] = [
   'dom-rocha',
   'ruivo-barber',
@@ -51,6 +57,12 @@ const SLUGS_DE_DEMONSTRACAO: readonly string[] = [
   'teste-avancado',
   'lang-barber',
   'lang-unhas',
+  'demo-navalha-de-ouro',
+  'demo-corte-fino',
+  'demo-dom-estilo',
+  'demo-studio-bella',
+  'demo-salao-encanto',
+  'demo-espaco-vitoria',
 ]
 
 /** O tenant deste slug é uma demonstração, e não um negócio de verdade. */
