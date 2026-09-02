@@ -32,16 +32,31 @@ function sql(): string {
 
 describe('o seed da carteira de demonstração', () => {
   it('grava phone_hash junto com phone_e164', () => {
+    /*
+     * Delimitado pelo FIM REAL da lista de colunas, nunca pelo resto do arquivo.
+     *
+     * A primeira versão desta guarda casava `/phone_hash/` no trecho que ia do `insert into
+     * clients` até o fim do arquivo — e passou com a coluna removida da lista, porque
+     * `p.phone_hash` continuava logo abaixo, no SELECT. Ou seja: casava com algo que o arquivo
+     * contém por outro motivo, que é a armadilha nº 1 da tabela do CLAUDE.md. Só apareceu porque
+     * a mutação foi mesmo aplicada e o resultado, lido.
+     */
     const src = sql()
-    const insert = src.slice(src.indexOf('insert into clients'))
+    const abre = src.indexOf('insert into clients')
+    expect(abre, `${SEED} não tem mais o insert de clients`).toBeGreaterThan(-1)
 
-    expect(insert.length, `${SEED} não tem mais o insert de clients`).toBeGreaterThan(0)
+    const inicioLista = src.indexOf('(', abre)
+    const fimLista = src.indexOf(')', inicioLista)
+    const colunas = src.slice(inicioLista + 1, fimLista)
+
     expect(
-      insert,
-      'o insert de clients precisa listar phone_hash — sem ele o reconhecimento e o agendamento de cliente existente quebram em silêncio',
-    ).toMatch(/phone_hash/)
-    // A coluna na lista não basta: tem que receber valor. `p.phone_hash` é o que o plano calculou.
-    expect(insert).toMatch(/p\.phone_hash/)
+      colunas,
+      'a LISTA DE COLUNAS do insert de clients precisa incluir phone_hash — sem ela o reconhecimento e o agendamento de cliente existente quebram em silêncio',
+    ).toMatch(/\bphone_hash\b/)
+    expect(colunas, 'phone_e164 sem phone_hash é exatamente o defeito').toMatch(/\bphone_e164\b/)
+
+    // A coluna na lista não basta: tem que receber valor no SELECT.
+    expect(src.slice(fimLista), 'phone_hash listado mas sem valor no select').toMatch(/p\.phone_hash/)
   })
 
   it('calcula o hash com sha256 e um salt vindo de fora do arquivo', () => {
@@ -70,11 +85,19 @@ describe('o seed da carteira de demonstração', () => {
   it('deriva visitas e LTV dos agendamentos, em vez de somar por fora', () => {
     // Número que a tela mostra e número que o histórico prova precisam sair da MESMA fonte,
     // senão a demonstração se contradiz sozinha — é o defeito de `livro-caixa-fonte-unica`.
+    /*
+     * Delimitado pelo `;` do próprio comando, nunca até o fim do arquivo — mesma cegueira do
+     * teste de cima, encontrada pela mesma mutação: com a fatia indo até EOF, trocar a tabela
+     * DESTE update passava, porque o insert de `loyalty_entries` lá embaixo também diz
+     * `from appointments a`. Duas guardas cegas no mesmo arquivo, as duas pela mesma causa.
+     */
     const src = sql()
-    const update = src.slice(src.indexOf('update clients c set visits_count'))
+    const inicio = src.indexOf('update clients c set visits_count')
+    expect(inicio, 'o seed não deriva mais visits_count dos agendamentos').toBeGreaterThan(-1)
 
-    expect(update.length, 'o seed não deriva mais visits_count dos agendamentos').toBeGreaterThan(0)
-    expect(update).toMatch(/from appointments a/)
-    expect(update).toMatch(/filter \(where a\.status = 'done'\)/)
+    const update = src.slice(inicio, src.indexOf(';', inicio))
+
+    expect(update, 'as visitas têm que vir da tabela de agendamentos').toMatch(/from appointments a\b/)
+    expect(update, 'e contar só o que foi concluído de verdade').toMatch(/filter \(where a\.status = 'done'\)/)
   })
 })
