@@ -333,25 +333,42 @@ async function semear(cfg, indiceNegocio) {
     }
   })
 
-  // Hoje e amanhã, pra tela "Hoje" não nascer vazia. Um pendente e um confirmado: são estados
-  // diferentes na tela, e o pendente é o que exercita a seção "Precisa confirmar".
-  ;[0, 1].forEach((emDias, i) => {
+  /*
+   * Agenda de hoje e de amanhã, pra tela "Hoje" não nascer vazia.
+   *
+   * O horário de HOJE é contado a partir de AGORA, não encadeado a partir das 09:00 como o
+   * histórico: um agendamento às 09:00 semeado às 15h já nasceu no passado, e a tela "Hoje" só
+   * mostra o que ainda vem — a demonstração abria dizendo "Nada mais marcado para hoje", que é o
+   * oposto do que ela existe para mostrar. Medido em produção antes de corrigir.
+   *
+   * Se já for tarde demais para caber antes das 19:00, hoje é pulado e sobra o de amanhã: melhor
+   * uma tela honesta de fim de expediente do que um horário impossível.
+   */
+  const agora = new Date()
+  const horaLocalAgora = agora.getUTCHours() - OFFSET
+  const proximos = []
+  if (horaLocalAgora >= 8 && horaLocalAgora < 17) {
+    const hora = Math.min(horaLocalAgora + 2, 18)
+    proximos.push({ emDias: 0, hora, status: 'pending' })
+  }
+  proximos.push({ emDias: 1, hora: 10, status: 'confirmed' })
+
+  proximos.forEach((p, i) => {
     const data = new Date()
-    data.setUTCDate(data.getUTCDate() + emDias)
+    data.setUTCDate(data.getUTCDate() + p.emDias)
     const servico = servicos[i % servicos.length]
-    const slot = reservar(i % profissionais.length, data, servico.duration_min)
-    if (!slot) return
+    const inicio = emSaoPaulo(data.getUTCFullYear(), data.getUTCMonth() + 1, data.getUTCDate(), p.hora, 0)
     agendamentos.push({
       tenant_id: tenantId,
       client_id: idPorNome[nomes[i]],
-      professional_id: profissionais[slot.profIdx],
+      professional_id: profissionais[i % profissionais.length],
       service_id: servico.id,
-      starts_at: slot.inicio.toISOString(),
-      ends_at: slot.fim.toISOString(),
-      status: i === 0 ? 'pending' : 'confirmed',
+      starts_at: inicio.toISOString(),
+      ends_at: new Date(inicio.getTime() + servico.duration_min * 60_000).toISOString(),
+      status: p.status,
       origin: 'app',
       price_cents: servico.price_cents,
-      ...(i === 1 ? { confirmed_at: new Date().toISOString() } : {}),
+      ...(p.status === 'confirmed' ? { confirmed_at: new Date().toISOString() } : {}),
     })
   })
 
