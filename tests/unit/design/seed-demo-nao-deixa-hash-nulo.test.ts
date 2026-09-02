@@ -82,6 +82,42 @@ describe('o seed da carteira de demonstração', () => {
     expect(conferencia, 'e que nada caiu em dia de salão fechado').toMatch(/em_dia_fechado/)
   })
 
+  it('usa a fórmula de lucro do core, não uma reinvenção', () => {
+    /*
+     * `calcularSobraDaComanda`: max(0, subtotal − desconto) − material − taxa − comissão.
+     *
+     * O desconto na conta não é detalhe: numa comanda de R$ 100 com R$ 20 de desconto, a versão
+     * que o ignorava mostrava "Entrou R$ 80" e "Sobrou R$ 100" — sobrava mais do que entrou. Um
+     * seed que reinventa a fórmula ensina a demonstração a mentir de um jeito que o produto já
+     * não mente.
+     */
+    const src = sql()
+    const lucro = src.slice(src.indexOf('update tickets t set profit_cents'))
+
+    expect(lucro.length, 'o seed não calcula mais o lucro da comanda').toBeGreaterThan(0)
+    expect(lucro, 'o desconto tem que entrar na conta').toMatch(/greatest\(0,\s*t\.subtotal_cents\s*-\s*t\.discount_cents\)/)
+    for (const parcela of ['material_cost_cents', 'fee_cents', 'commission_cents']) {
+      expect(lucro, `${parcela} não está sendo descontado do lucro`).toMatch(new RegExp(`-\\s*t\\.${parcela}`))
+    }
+    // A gorjeta é 100% do profissional: se entrar aqui, vira lucro que o salão nunca viu.
+    expect(lucro, 'a gorjeta não pode entrar no lucro do salão').not.toMatch(/tip_cents/)
+  })
+
+  it('confere o dinheiro e o estoque ao terminar', () => {
+    const conferencia = sql().slice(sql().lastIndexOf('commit;'))
+    expect(conferencia, 'nada guarda "sobrou mais que entrou"').toMatch(/sobrou_mais_que_entrou/)
+    expect(conferencia, 'nada guarda estoque negativo').toMatch(/estoque_negativo/)
+  })
+
+  it('o saldo de estoque sai do extrato, não de número digitado', () => {
+    // Saldo digitado e extrato discordando é estoque que "some" sem nenhum lançamento que
+    // justifique — o mesmo defeito de fonte dupla do livro-caixa.
+    const src = sql()
+    const saldo = src.slice(src.lastIndexOf('update products p set stock_qty'))
+    expect(saldo.length, 'o seed não deriva mais o saldo dos movimentos').toBeGreaterThan(0)
+    expect(saldo).toMatch(/from stock_moves/)
+  })
+
   it('deriva visitas e LTV dos agendamentos, em vez de somar por fora', () => {
     // Número que a tela mostra e número que o histórico prova precisam sair da MESMA fonte,
     // senão a demonstração se contradiz sozinha — é o defeito de `livro-caixa-fonte-unica`.

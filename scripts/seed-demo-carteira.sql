@@ -428,6 +428,196 @@ from (values
 ) as v(slug, site)
 where t.slug = v.slug;
 
+-- ═══════════════════════════════════════════════════════════════════════════════════════════
+-- CAMADA DE DINHEIRO: comanda, item, pagamento, comissão e estoque.
+--
+-- Medido em 02/09 antes de escrever isto: das 17 tabelas que as telas do admin leem, **15
+-- estavam vazias** nas seis contas. Caixa, comanda, comissão, estoque, campanha, orçamento,
+-- recorrência, fila de espera, pacote e assinatura — nada aparecia. A demonstração mostrava
+-- cliente e agenda, e o resto do produto era invisível.
+--
+-- Tudo aqui deriva do que já existe (atendimento concluído → comanda → item → pagamento), nunca
+-- de número digitado: é o que impede a tela e o histórico que a explica de discordarem.
+-- ═══════════════════════════════════════════════════════════════════════════════════════════
+
+create or replace function seed.rnd_id(id uuid, chave text)
+returns double precision language sql immutable as $$
+  select ((('x' || substr(md5(id::text || '|' || chave), 1, 8))::bit(32)::bigint & 2147483647) % 100000)::double precision / 100000.0
+$$;
+
+-- O dono que atende é o primeiro profissional da conta. Ele NÃO recebe comissão — fica com o
+-- resultado do salão. Comissão é para quem trabalha para o salão.
+create or replace view seed.dono_que_atende as
+  select distinct on (tenant_id) tenant_id, id as professional_id
+  from professionals where active order by tenant_id, created_at;
+
+-- ── Produto de REVENDA ─────────────────────────────────────────────────────────────────────
+-- `apply_vertical_pack` semeia só INSUMO (ficha de consumo): sem `price_cents` e com
+-- `is_retail = false`. A camada de revenda nasce invisível em TODA conta nova, não só na
+-- demonstração — a tela de estoque abre sem nada para vender e o caixa nunca mostra balcão.
+delete from products where tenant_id in (select tenant_id from seed.cfg) and is_retail;
+
+insert into products (tenant_id, name, unit, avg_cost_cents, price_cents, stock_qty, reorder_point, is_retail)
+select c.tenant_id, v.nome, 'un', v.custo, v.preco, 0, v.minimo, true
+from seed.cfg c
+cross join lateral (
+  select * from (values
+    ('m', 'Pomada modeladora 50g', 2200::bigint, 4500::bigint, 5::numeric),
+    ('m', 'Óleo para barba 30ml',  2700::bigint, 5500::bigint, 4::numeric),
+    ('m', 'Shampoo anticaspa',     1900::bigint, 3800::bigint, 4::numeric),
+    ('m', 'Balm pós-barba',        2100::bigint, 4200::bigint, 4::numeric),
+    ('f', 'Óleo de cutícula',      1300::bigint, 2800::bigint, 6::numeric),
+    ('f', 'Creme para mãos 60g',   1700::bigint, 3600::bigint, 5::numeric),
+    ('f', 'Esmalte vegano',        1500::bigint, 3200::bigint, 8::numeric),
+    ('f', 'Protetor solar FPS 50', 4600::bigint, 8900::bigint, 5::numeric),
+    ('f', 'Sérum de vitamina C',   6200::bigint, 12000::bigint, 3::numeric)
+  ) as x(publico, nome, custo, preco, minimo)
+  where x.publico = c.publico
+) v;
+
+-- ── Comanda por atendimento concluído ──────────────────────────────────────────────────────
+delete from tickets where tenant_id in (select tenant_id from seed.cfg);
+
+insert into tickets (tenant_id, client_id, appointment_id, professional_id, status,
+                     discount_cents, tip_cents, closed_at, created_at)
+select a.tenant_id, a.client_id, a.id, a.professional_id, 'paid'::ticket_status,
+  -- ~12% ganha 10% de desconto: é o que testa de verdade a coluna "Sobrou" contra o bug de lucro
+  -- maior que entrada, que já aconteceu nesta base.
+  case when seed.rnd_id(a.id,'desc') < 0.12 then (a.price_cents * 0.1)::bigint else 0 end,
+  -- ~18% deixa gorjeta. Entra no total (a cliente paga) e sai do lucro (é 100% do profissional).
+  case when seed.rnd_id(a.id,'gor') < 0.18 then (round(a.price_cents * (0.05 + seed.rnd_id(a.id,'gv') * 0.05) / 100) * 100)::bigint else 0 end,
+  a.completed_at, a.completed_at
+from appointments a
+where a.tenant_id in (select tenant_id from seed.cfg) and a.status = 'done' and a.client_id is not null;
+
+-- ── Itens: serviço sempre, produto em ~22% ─────────────────────────────────────────────────
+insert into ticket_items (tenant_id, ticket_id, service_id, professional_id, description,
+                          qty, unit_price_cents, discount_cents, total_cents,
+                          commission_bps, commission_cents, cost_cents)
+select t.tenant_id, t.id, a.service_id, t.professional_id, s.name,
+  1, a.price_cents, 0, a.price_cents,
+  case when t.professional_id = d.professional_id then 0 else 4000 end,
+  case when t.professional_id = d.professional_id then 0 else (a.price_cents * 0.4)::bigint end,
+  -- Custo de material: 12% a 22% do preço. Sem ele a coluna "Sobrou" nasce igual ao faturamento,
+  -- que é o quadro zerado de sempre — coluna de custo que ninguém escreve.
+  (a.price_cents * (0.12 + seed.rnd_id(a.id,'mat') * 0.10))::bigint
+from tickets t
+join appointments a on a.id = t.appointment_id
+join services s on s.id = a.service_id
+left join seed.dono_que_atende d on d.tenant_id = t.tenant_id
+where t.tenant_id in (select tenant_id from seed.cfg);
+
+insert into ticket_items (tenant_id, ticket_id, product_id, professional_id, description,
+                          qty, unit_price_cents, discount_cents, total_cents,
+                          commission_bps, commission_cents, cost_cents)
+select t.tenant_id, t.id, p.id, t.professional_id, p.name,
+  1, p.price_cents, 0, p.price_cents, 0, 0, p.avg_cost_cents
+from tickets t
+join lateral (
+  select pr.* from products pr
+  where pr.tenant_id = t.tenant_id and pr.active and pr.is_retail and pr.price_cents > 0
+  order by seed.rnd_id(t.id, 'prod' || pr.id::text) limit 1
+) p on true
+where t.tenant_id in (select tenant_id from seed.cfg) and seed.rnd_id(t.id, 'temprod') < 0.22;
+
+-- ── Totais derivados DOS ITENS ─────────────────────────────────────────────────────────────
+update tickets t set
+  subtotal_cents = x.subtotal,
+  material_cost_cents = x.material,
+  commission_cents = x.comissao,
+  total_cents = greatest(0, x.subtotal - t.discount_cents) + t.tip_cents,
+  -- Taxa de maquininha: só cartão paga. O MESMO sorteio define o método do pagamento abaixo —
+  -- senão apareceria comanda no débito com taxa de crédito, e o caixa se contradiria sozinho.
+  fee_cents = case
+    when seed.rnd_id(t.id,'metodo') < 0.45 then 0
+    when seed.rnd_id(t.id,'metodo') < 0.70 then ((greatest(0, x.subtotal - t.discount_cents) + t.tip_cents) * 0.0329)::bigint
+    when seed.rnd_id(t.id,'metodo') < 0.85 then ((greatest(0, x.subtotal - t.discount_cents) + t.tip_cents) * 0.0189)::bigint
+    else 0 end
+from (
+  select ticket_id, sum(total_cents) as subtotal, sum(cost_cents) as material, sum(commission_cents) as comissao
+  from ticket_items where tenant_id in (select tenant_id from seed.cfg) group by ticket_id
+) x
+where t.id = x.ticket_id;
+
+-- `calcularSobraDaComanda` de `core/comanda/totals.ts`, palavra por palavra. A gorjeta entra no
+-- total (a cliente paga) e NÃO entra aqui: é 100% do profissional, senão vira lucro que o salão
+-- nunca viu.
+update tickets t set profit_cents =
+  greatest(0, t.subtotal_cents - t.discount_cents) - t.material_cost_cents - t.fee_cents - t.commission_cents
+where t.tenant_id in (select tenant_id from seed.cfg);
+
+-- ── Pagamento e comissão ───────────────────────────────────────────────────────────────────
+insert into payments (tenant_id, ticket_id, appointment_id, client_id, kind, method, status,
+                      amount_cents, fee_cents, net_cents, installments, paid_at, created_at)
+select t.tenant_id, t.id, t.appointment_id, t.client_id, 'service'::payment_kind,
+  (case when seed.rnd_id(t.id,'metodo') < 0.45 then 'pix'
+        when seed.rnd_id(t.id,'metodo') < 0.70 then 'credit'
+        when seed.rnd_id(t.id,'metodo') < 0.85 then 'debit'
+        else 'cash' end)::payment_method,
+  'paid'::payment_status,
+  t.total_cents, t.fee_cents, t.total_cents - t.fee_cents,
+  case when seed.rnd_id(t.id,'metodo') between 0.45 and 0.70 and seed.rnd_id(t.id,'parc') < 0.25 then 2 else 1 end,
+  t.closed_at, t.closed_at
+from tickets t where t.tenant_id in (select tenant_id from seed.cfg);
+
+insert into commissions (tenant_id, professional_id, ticket_item_id, period_start, period_end,
+                         base_cents, bps, amount_cents, settled_at, created_at)
+select i.tenant_id, i.professional_id, i.id,
+  date_trunc('month', t.closed_at at time zone 'America/Sao_Paulo')::date,
+  (date_trunc('month', t.closed_at at time zone 'America/Sao_Paulo') + interval '1 month - 1 day')::date,
+  i.total_cents, i.commission_bps, i.commission_cents,
+  -- Mês fechado está pago; o corrente ainda não. É o que dá as duas situações na mesma tela.
+  case when date_trunc('month', t.closed_at at time zone 'America/Sao_Paulo')
+          < date_trunc('month', now() at time zone 'America/Sao_Paulo')
+       then (date_trunc('month', t.closed_at at time zone 'America/Sao_Paulo') + interval '1 month 5 days') end,
+  t.closed_at
+from ticket_items i join tickets t on t.id = i.ticket_id
+where i.tenant_id in (select tenant_id from seed.cfg) and i.commission_cents > 0;
+
+-- ── Estoque ────────────────────────────────────────────────────────────────────────────────
+-- Saída por venda de balcão, apontando para a comanda que originou: sem `source_id` a tela mostra
+-- movimento sem dizer de onde veio.
+insert into stock_moves (tenant_id, product_id, kind, qty, unit_cost_cents, source, source_id, created_at)
+select i.tenant_id, i.product_id, 'out'::stock_move_type, 1, i.cost_cents, 'ticket', i.ticket_id, t.closed_at
+from ticket_items i join tickets t on t.id = i.ticket_id
+where i.tenant_id in (select tenant_id from seed.cfg) and i.product_id is not null;
+
+-- Uma perda por conta: é o lançamento que explica diferença de inventário sem apagar histórico
+-- (regra 11 — nunca deletar movimento de estoque).
+insert into stock_moves (tenant_id, product_id, kind, qty, unit_cost_cents, source, note, created_at)
+select distinct on (p.tenant_id) p.tenant_id, p.id, 'loss'::stock_move_type, 1, p.avg_cost_cents,
+  'adjust', 'Frasco quebrou na prateleira', now() - interval '23 days'
+from products p where p.tenant_id in (select tenant_id from seed.cfg) and p.is_retail
+order by p.tenant_id, seed.rnd_id(p.id, 'perda');
+
+-- A ENTRADA é dimensionada A PARTIR do que saiu, para o saldo final ser uma decisão e não um
+-- resto: alvo = ponto de pedido + (-3 a +12). Assim parte dos produtos fica de fato abaixo do
+-- mínimo e a tela tem o que alertar — com alerta que o salão CONSEGUE resolver comprando, ao
+-- contrário do alarme permanente dos insumos (que nascem com estoque 0 e ponto de pedido > 0).
+with saidas as (
+  select p.id, p.tenant_id, p.avg_cost_cents, p.reorder_point,
+    coalesce((select sum(m.qty) from stock_moves m where m.product_id = p.id and m.kind in ('out','loss')), 0) as saiu
+  from products p where p.tenant_id in (select tenant_id from seed.cfg) and p.is_retail
+),
+alvo as (
+  select s.*, greatest(1, s.saiu + s.reorder_point + (floor(seed.rnd_id(s.id,'alvo') * 16) - 3)::numeric) as entrar
+  from saidas s
+)
+insert into stock_moves (tenant_id, product_id, kind, qty, unit_cost_cents, source, note, created_at)
+select a.tenant_id, a.id, 'in'::stock_move_type,
+  case when g = 0 then ceil(a.entrar * 0.6) else a.entrar - ceil(a.entrar * 0.6) end,
+  a.avg_cost_cents, 'entry', 'Compra do fornecedor',
+  now() - ((case when g = 0 then 150 else 62 end + floor(seed.rnd_id(a.id,'d'||g) * 18)) || ' days')::interval
+from alvo a, generate_series(0,1) g
+where (case when g = 0 then ceil(a.entrar * 0.6) else a.entrar - ceil(a.entrar * 0.6) end) > 0;
+
+-- Saldo derivado do extrato, nunca digitado: o número da tela e o histórico que o explica saem
+-- da mesma fonte, senão o estoque "some" sem lançamento que justifique.
+update products p set stock_qty = coalesce(x.saldo, 0)
+from (select product_id, sum(case kind when 'in' then qty when 'return' then qty else -qty end) as saldo
+      from stock_moves where tenant_id in (select tenant_id from seed.cfg) group by product_id) x
+where p.id = x.product_id;
+
 commit;
 
 -- ── Conferência (o seed não termina sem provar o que fez) ──────────────────────────────────
@@ -437,5 +627,8 @@ select t.slug,
   (select count(*) from appointments a where a.tenant_id = t.id and a.status = 'done' and a.starts_at > now()) as concluido_no_futuro,
   (select count(*) from appointments a where a.tenant_id = t.id
      and extract(dow from a.starts_at at time zone 'America/Sao_Paulo') in (0,1)) as em_dia_fechado,
-  (select round(avg(r.rating),2) from client_reviews r where r.tenant_id = t.id) as nota_media
+  (select round(avg(r.rating),2) from client_reviews r where r.tenant_id = t.id) as nota_media,
+  -- "Sobrou" nunca pode ser maior que "Entrou": foi assim que o bug do desconto ignorado apareceu.
+  (select count(*) from tickets k where k.tenant_id = t.id and k.profit_cents > k.total_cents) as sobrou_mais_que_entrou,
+  (select count(*) from products p where p.tenant_id = t.id and p.stock_qty < 0) as estoque_negativo
 from tenants t where t.slug in (select slug from seed.cfg) order by t.slug;
