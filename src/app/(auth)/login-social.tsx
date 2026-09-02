@@ -3,6 +3,7 @@
 import { useState } from 'react'
 
 import Button from '@/components/ui/button'
+import type { ProvedorSocial } from '@/server/auth/provedores-sociais'
 import { criarClienteDoNavegador } from '@/server/db/browser-client'
 
 /**
@@ -18,12 +19,18 @@ import { criarClienteDoNavegador } from '@/server/db/browser-client'
  * `window.location.origin` e não `NEXT_PUBLIC_APP_URL`: o valor certo é o domínio de onde a pessoa
  * está clicando agora (produção, preview da Vercel, ou `localhost` em desenvolvimento) — usar a
  * env var fixa quebraria o login em qualquer ambiente que não seja a produção.
+ *
+ * `provedores` vem do servidor (`provedoresSociaisAtivos`) e lista só o que está ligado no painel
+ * do Supabase. Vazio, esta seção inteira some — inclusive o "ou", que sozinho acima do formulário
+ * seria um separador separando uma coisa só.
  */
-export default function LoginSocial() {
-  const [carregando, setCarregando] = useState<'google' | 'apple' | null>(null)
+export default function LoginSocial({ provedores }: { provedores: ProvedorSocial[] }) {
+  const [carregando, setCarregando] = useState<ProvedorSocial | null>(null)
   const [erro, setErro] = useState<string | null>(null)
 
-  async function entrarCom(provider: 'google' | 'apple') {
+  if (provedores.length === 0) return null
+
+  async function entrarCom(provider: ProvedorSocial) {
     setErro(null)
     setCarregando(provider)
     try {
@@ -46,30 +53,24 @@ export default function LoginSocial() {
 
   return (
     <div className="flex w-full max-w-sm flex-col gap-3">
-      <Button
-        type="button"
-        variante="secondary"
-        largura="cheia"
-        carregando={carregando === 'google'}
-        disabled={carregando !== null && carregando !== 'google'}
-        motivoDesabilitado="Aguarde o login com Apple terminar."
-        onClick={() => entrarCom('google')}
-      >
-        <GoogleG aria-hidden className="size-5" />
-        Continuar com Google
-      </Button>
-      <Button
-        type="button"
-        variante="secondary"
-        largura="cheia"
-        carregando={carregando === 'apple'}
-        disabled={carregando !== null && carregando !== 'apple'}
-        motivoDesabilitado="Aguarde o login com Google terminar."
-        onClick={() => entrarCom('apple')}
-      >
-        <AppleLogo aria-hidden className="size-5" />
-        Continuar com Apple
-      </Button>
+      {provedores.map((provedor) => {
+        const { rotulo, Icone } = APARENCIA[provedor]
+        return (
+          <Button
+            key={provedor}
+            type="button"
+            variante="secondary"
+            largura="cheia"
+            carregando={carregando === provedor}
+            disabled={carregando !== null && carregando !== provedor}
+            motivoDesabilitado="Aguarde o login que já começou terminar."
+            onClick={() => entrarCom(provedor)}
+          >
+            <Icone aria-hidden className="size-5" />
+            {rotulo}
+          </Button>
+        )
+      })}
       {erro ? (
         <p role="alert" className="text-secundario text-bad">
           {erro}
@@ -83,6 +84,11 @@ export default function LoginSocial() {
       </div>
     </div>
   )
+}
+
+const APARENCIA: Record<ProvedorSocial, { rotulo: string; Icone: (p: React.SVGProps<SVGSVGElement>) => React.ReactElement }> = {
+  google: { rotulo: 'Continuar com Google', Icone: GoogleG },
+  apple: { rotulo: 'Continuar com Apple', Icone: AppleLogo },
 }
 
 /** Marca oficial do Google — as quatro cores são parte da identidade, não decoração trocável. */
