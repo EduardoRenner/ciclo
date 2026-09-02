@@ -2276,6 +2276,7 @@ create table clients (
   id                uuid primary key default gen_random_uuid(),
   tenant_id         uuid not null references tenants(id) on delete cascade,
   name              text not null,
+  name_busca        text generated always as (imutavel_sem_acento(name)) stored,  -- busca sem acento (0047)
   phone_e164        text,                                  -- +5511999999999
   phone_hash        text,                                  -- sha256(phone + salt do tenant) para busca sem expor
   email             citext,
@@ -2536,7 +2537,8 @@ create table vault_access_log (
   action      text not null,                                 -- read | write | export
   ip          inet,
   user_agent  text,
-  created_at  timestamptz not null default now()
+  created_at  timestamptz not null default now(),
+  orphaned_at timestamptz                                    -- marca (nunca apaga) linha de tenant que não existe mais (0050)
 );
 create index on vault_access_log (tenant_id, client_id, created_at desc);
 
@@ -2646,7 +2648,8 @@ create table audit_log (
   ip          inet,
   user_agent  text,
   request_id  text,
-  created_at  timestamptz not null default now()
+  created_at  timestamptz not null default now(),
+  orphaned_at timestamptz                                    -- marca (nunca apaga) linha de tenant que não existe mais (0050)
 );
 create index on audit_log (tenant_id, created_at desc);
 create index on audit_log (tenant_id, entity, entity_id);
