@@ -5446,3 +5446,51 @@ delete from public.tenants where slug in (
 planos pagos, não sobra de teste automatizado travado. Não incluí na exclusão sugerida acima sem
 confirmação: apagar fixture que alguém ainda usa para testar manualmente seria pior que deixar
 lixo real parado.
+
+2026-09-01 · CRÍTICO · O site inteiro estava sem JavaScript em produção — achado partindo de um
+relato do Eduardo · "entro no domínio próprio e fica bugado, tem a copy do site normal mas sem
+interface nenhuma". Medi ao vivo (`read_console_messages`, navegador de verdade, `seuciclo.com.br`)
+e achei: `script-src` com nonce bloqueando **todo** `<script>` — `webpack.js`, `main-app.js`, o
+script de hidratação, tudo. Não era o domínio; testei `ciclo-umber.vercel.app` e o mesmo erro
+aparecia lá.
+
+Causa raiz: `middleware.ts` (TICKET-057) manda um nonce **novo por requisição** no header
+`Content-Security-Policy` — padrão oficial do Next.js. Mas isso só funciona se toda rota for
+genuinamente dinâmica. Página cacheada (estática, ISR, ou o Full Route Cache **interno** do
+Next.js) grava o nonce no HTML na primeira renderização e não atualiza mais; o header muda a cada
+chamada; os dois nunca voltam a bater. `/` virou estática num commit de performance de 27/08
+(`cbe4d31`, "tira a landing do caminho dinamico") — dois meses depois do nonce já existir — e
+ninguém testou com o console do navegador aberto depois. `/precos`, `/privacidade`, `/termos`
+tinham o mesmo problema por nunca terem forçado dinâmico. E o mais traiçoeiro: `/entrar`, que o
+`X-Vercel-Cache: MISS` mostrava como "dinâmica", também quebrava — o nonce embutido no HTML ficava
+idêntico em três chamadas seguidas medidas por `curl`, provando que o cache que importa aqui não é
+o do CDN da Vercel (que o header denuncia), é o Full Route Cache do próprio runtime do Next.js, que
+não aparece em nenhum header.
+
+Efeito real, em produção, por dias: agendamento público, login e cadastro — as três telas que
+convertem visitante em dinheiro — sem nenhuma interatividade. Botão que não clica, formulário que
+não submete, service worker que nunca registra.
+
+**Como achei a URL certa para testar:** o domínio próprio não estava em lugar nenhum registrado
+(não em código, não em docs, não em memória) — perguntei ao Eduardo e ele respondeu
+`seuciclo.com.br`. No meio da investigação o site caiu de vez (`404 DEPLOYMENT_NOT_FOUND` em toda
+rota) — bateu com o aviso "Outstanding invoices" que eu tinha visto numa tela mais cedo na sessão;
+o Eduardo resolveu (provavelmente pagou a fatura) e o site voltou, mas o defeito do nonce
+continuava lá, independente disso.
+
+**Conserto:** `export const dynamic = 'force-dynamic'` em `src/app/layout.tsx`, herdado por toda
+rota — nenhuma página HTML do produto fica mais estática (só `sitemap.xml`/`robots.txt`/`llms.txt`
+e assets, que não carregam CSP nem script, continuam). Custo aceito conscientemente: perde o
+ganho de CDN que `/`, `/precos` etc. tinham. Irrelevante perto de ter o site funcionando.
+
+`tests/unit/design/landing-e-estatica.test.ts` renomeado para
+`landing-nao-resolve-sessao-no-componente.test.ts` e reescrito — o nome e o comentário antigos
+afirmavam que a landing era estática "de propósito", o que deixou de ser verdade e virava
+documentação mentirosa se eu só corrigisse o código. Guarda nova,
+`csp-nonce-exige-rota-dinamica.test.ts`, trava as duas metades juntas (o `force-dynamic` do layout
++ o nonce por requisição do middleware) — mutação conferida: tirar o `force-dynamic` reprova
+nomeando exatamente o arquivo e a consequência.
+
+**O que não investiguei ainda, registrado para não esquecer:** se esse mesmo Full Route Cache
+afeta alguma resposta de `/api/v1` (que já é `no-store` por outro motivo — `naoCacheavel` no
+middleware — então provavelmente a salvo, mas não medi ao vivo como medi as páginas HTML).
