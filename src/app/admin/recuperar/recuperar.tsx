@@ -1,8 +1,9 @@
 'use client'
 
-import { Send } from 'lucide-react'
+import { RefreshCw, Send } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { useState, useTransition } from 'react'
 
 import ActionBar from '@/components/ui/action-bar'
 import BloqueioPlano from '@/components/ui/bloqueio-plano'
@@ -14,6 +15,7 @@ import FilterRow from '@/components/ui/filter-row'
 import IconeAnel from '@/components/ui/icone-anel'
 import Skeleton from '@/components/ui/skeleton'
 import StatTile from '@/components/ui/stat-tile'
+import { useToast } from '@/components/ui/toast'
 import { dinheiro } from '@/lib/formato'
 import { cn } from '@/lib/utils'
 
@@ -307,10 +309,79 @@ function EmptyStateDeRecuperar({
       titulo={v.titulo}
       descricao={v.descricao}
       acao={
-        <Link href={v.acaoHref} className="text-corpo font-semibold text-acc-2">
-          {v.acaoRotulo}
-        </Link>
+        /*
+          Quando ha atendimento concluido e nao ha ciclo, quem nao rodou foi o JOB. Mandar a pessoa
+          para outra tela seria oferecer distracao, nao saida — a saida de verdade e disparar o
+          recalculo. Nas outras tres situacoes o link continua sendo a acao certa.
+        */
+        temAtendimentosConcluidos && !temCiclos ? (
+          <BotaoRecalcular rotuloAlternativo={v.acaoRotulo} hrefAlternativo={v.acaoHref} />
+        ) : (
+          <Link href={v.acaoHref} className="text-corpo font-semibold text-acc-2">
+            {v.acaoRotulo}
+          </Link>
+        )
       }
     />
+  )
+}
+
+/**
+ * A escapatoria para quando o agendador cai.
+ *
+ * `fetch` cru e nao `apiFetch`: aquele ENFILEIRA quando a rede falha, e um recalculo que roda tres
+ * horas depois, sozinho, nao e o que a pessoa pediu — ela quer ver a tela mudar agora. Aqui, falha
+ * de rede vira aviso e a pessoa decide se tenta de novo.
+ *
+ * O `try` em volta do `await` nao e zelo: no React 19 uma Action que rejeita e RE-LANCADA para o
+ * error boundary, entao uma piscada de 4G derrubaria a tela inteira em vez de mostrar um toast.
+ * Ha linha de base em `tests/unit/design/rede-nao-derruba-tela.test.ts`.
+ */
+function BotaoRecalcular({ rotuloAlternativo, hrefAlternativo }: { rotuloAlternativo: string; hrefAlternativo: string }) {
+  const [pendente, iniciar] = useTransition()
+  const [falhou, setFalhou] = useState(false)
+  const router = useRouter()
+  const toast = useToast()
+
+  function recalcular() {
+    iniciar(async () => {
+      try {
+        const r = await fetch('/api/v1/cycles/recompute', { method: 'POST' })
+        const corpo = (await r.json().catch(() => null)) as { data?: { ciclos?: number }; error?: { message?: string } } | null
+
+        if (!r.ok) {
+          setFalhou(true)
+          toast({ tom: 'erro', titulo: 'Não consegui recalcular agora', descricao: corpo?.error?.message })
+          return
+        }
+
+        const ciclos = corpo?.data?.ciclos ?? 0
+        toast({
+          tom: ciclos > 0 ? 'ok' : 'aviso',
+          titulo: ciclos > 0 ? 'Motor atualizado' : 'Nada para calcular ainda',
+          // Nunca "pronto!" seco: o numero e a prova de que aconteceu alguma coisa.
+          descricao: ciclos > 0 ? `${ciclos} ${ciclos === 1 ? 'previsão recalculada' : 'previsões recalculadas'}.` : undefined,
+        })
+        router.refresh()
+      } catch {
+        setFalhou(true)
+        toast({ tom: 'erro', titulo: 'Sem conexão', descricao: 'Tente de novo quando a internet voltar.' })
+      }
+    })
+  }
+
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <Button onClick={recalcular} carregando={pendente} tamanho="md">
+        <RefreshCw aria-hidden className={cn('size-4', pendente && 'animate-spin')} />
+        Recalcular agora
+      </Button>
+      {/* Depois de falhar, a tela deixa de ser beco: a saida antiga volta como plano B. */}
+      {falhou ? (
+        <Link href={hrefAlternativo} className="text-label font-semibold text-txt-2">
+          {rotuloAlternativo}
+        </Link>
+      ) : null}
+    </div>
   )
 }
