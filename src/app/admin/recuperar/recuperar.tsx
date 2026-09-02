@@ -47,6 +47,7 @@ export default function RecuperarReceita({
   podeEnviarEmLote,
   temClientes,
   temCiclos,
+  temAtendimentosConcluidos,
 }: {
   inicial: ListaRecuperar
   podeEnviarEmLote: boolean
@@ -54,6 +55,8 @@ export default function RecuperarReceita({
   temClientes: boolean
   /** O Motor já calculou algum ciclo — precisa de atendimento CONCLUÍDO, não só de ficha. */
   temCiclos: boolean
+  /** Separa "ainda nao atendeu ninguem" de "atendeu e o Motor nao processou". */
+  temAtendimentosConcluidos: boolean
 }) {
   const [filtro, setFiltro] = useState<Estado | 'all'>('all')
   const [lista, setLista] = useState(inicial)
@@ -188,7 +191,11 @@ export default function RecuperarReceita({
             saída é beco sem saída"). Virou visível quando esta tela passou a ser o botão CENTRAL da
             barra em 31/08: é a primeira coisa que um salão novo toca.
           */}
-          <EmptyStateDeRecuperar temClientes={temClientes} temCiclos={temCiclos} />
+          <EmptyStateDeRecuperar
+            temClientes={temClientes}
+            temCiclos={temCiclos}
+            temAtendimentosConcluidos={temAtendimentosConcluidos}
+          />
         </Card>
       ) : (
         <ul className="flex flex-col gap-2">
@@ -284,8 +291,16 @@ export default function RecuperarReceita({
 }
 
 /** So a marcacao: qual frase mostrar e decisao pura em `core/ciclo/vazio-de-recuperar.ts`. */
-function EmptyStateDeRecuperar({ temClientes, temCiclos }: { temClientes: boolean; temCiclos: boolean }) {
-  const v = vazioDeRecuperar(temClientes, temCiclos)
+function EmptyStateDeRecuperar({
+  temClientes,
+  temCiclos,
+  temAtendimentosConcluidos,
+}: {
+  temClientes: boolean
+  temCiclos: boolean
+  temAtendimentosConcluidos: boolean
+}) {
+  const v = vazioDeRecuperar(temClientes, temCiclos, temAtendimentosConcluidos)
   return (
     <EmptyState
       icone={<IconeAnel aria-hidden className="size-6" />}
