@@ -28,21 +28,33 @@ export default async function PaginaRecuperar() {
   const ate = mesAtual.toPlainDate({ day: mesAtual.daysInMonth }).toString()
 
   /*
-   * As duas contagens existem para o ESTADO VAZIO saber o que dizer, e entraram quando esta tela
-   * virou o botão central da barra (31/08): antes ela era um destino de canto, agora é a primeira
-   * coisa que um salão novo toca. "Ninguém para recuperar" sem mais nada é a mesma frase para três
-   * situações completamente diferentes — sem cliente cadastrada, sem atendimento concluído, e tudo
-   * em dia — e só a terceira é boa notícia.
+   * As TRÊS contagens existem para o ESTADO VAZIO saber o que dizer, e a primeira dupla entrou
+   * quando esta tela virou o botão central da barra (31/08): antes ela era um destino de canto,
+   * agora é a primeira coisa que um salão novo toca. "Ninguém para recuperar" sem mais nada é a
+   * mesma frase para QUATRO situações completamente diferentes — sem cliente cadastrada, sem
+   * atendimento concluído, com atendimento mas o Motor ainda não processou, e tudo em dia — e só a
+   * última é boa notícia.
    *
    * São `head: true` com `count: 'exact'`: não trazem linha nenhuma, só o número, e vão no mesmo
    * `Promise.all` que já existia — custo de latência zero contra o que a tela já pagava.
    */
-  const [lista, atribuicao, plano, clientes, ciclos] = await Promise.all([
+  const [lista, atribuicao, plano, clientes, ciclos, concluidos] = await Promise.all([
     listarParaRecuperar(db, ctx.tenantId),
     receitaAtribuidaAoCiclo(db, ctx.tenantId, timezone, desde, ate),
     contextoDePlano(db, ctx.tenantId),
     db.from('clients').select('id', { count: 'exact', head: true }).eq('tenant_id', ctx.tenantId).is('deleted_at', null),
     db.from('client_cycles').select('client_id', { count: 'exact', head: true }).eq('tenant_id', ctx.tenantId),
+    /*
+     * A quarta contagem separa "ainda não atendeu ninguém" de "atendeu e o Motor não processou".
+     * Sem ela, quem já concluiu centenas de atendimentos lia "assim que você concluir um
+     * atendimento" — o produto pedindo de volta um trabalho já feito e escondendo que o job é que
+     * estava parado. Aconteceu de verdade: cron apontando para uma URL que deixou de existir.
+     */
+    db
+      .from('appointments')
+      .select('id', { count: 'exact', head: true })
+      .eq('tenant_id', ctx.tenantId)
+      .eq('status', 'done'),
   ])
 
   // A tela precisa saber para desenhar o caminho certo; quem RECUSA é a rota (§L.1). Aqui é
@@ -84,6 +96,7 @@ export default async function PaginaRecuperar() {
         podeEnviarEmLote={podeEnviarEmLote}
         temClientes={(clientes.count ?? 0) > 0}
         temCiclos={(ciclos.count ?? 0) > 0}
+        temAtendimentosConcluidos={(concluidos.count ?? 0) > 0}
       />
     </>
   )

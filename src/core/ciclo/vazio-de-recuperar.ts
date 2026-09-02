@@ -18,7 +18,11 @@ export type VazioDeRecuperar = {
   acaoHref: string
 }
 
-export function vazioDeRecuperar(temClientes: boolean, temCiclos: boolean): VazioDeRecuperar {
+export function vazioDeRecuperar(
+  temClientes: boolean,
+  temCiclos: boolean,
+  temAtendimentosConcluidos = false,
+): VazioDeRecuperar {
   if (!temClientes) {
     return {
       titulo: 'Cadastre suas clientes para o Motor começar',
@@ -28,7 +32,7 @@ export function vazioDeRecuperar(temClientes: boolean, temCiclos: boolean): Vazi
     }
   }
 
-  if (!temCiclos) {
+  if (!temCiclos && !temAtendimentosConcluidos) {
     /*
      * Ter ficha nao basta: o ciclo nasce do primeiro atendimento CONCLUIDO. Dizer "cadastre
      * clientes" aqui mandaria a pessoa refazer o que ela ja fez — e o produto pareceria nao ter
@@ -39,6 +43,31 @@ export function vazioDeRecuperar(temClientes: boolean, temCiclos: boolean): Vazi
       descricao: 'Assim que você concluir um atendimento, ele passa a prever quando aquela cliente volta.',
       acaoRotulo: 'Ver a agenda',
       acaoHref: '/admin/agenda',
+    }
+  }
+
+  if (!temCiclos) {
+    /*
+     * Atendimento concluido EXISTE e ciclo nao: quem nao rodou foi o Motor, nao a pessoa.
+     *
+     * Sem esta quarta situacao, a frase acima ("assim que voce concluir um atendimento") era
+     * mostrada para quem ja concluiu centenas — o produto pedindo de volta um trabalho que a
+     * pessoa ja fez, e escondendo que o job e que estava parado. Medido em 02/09 nas seis contas
+     * de demonstracao: 1876 atendimentos concluidos, ZERO linhas em `client_cycles`, porque o
+     * agendador do cron apontava para uma URL que deixou de existir. Falhou por dias, em silencio,
+     * com a tela dizendo a frase errada.
+     *
+     * A frase nao promete prazo ("ate amanha") de proposito: a periodicidade do recalculo depende
+     * de um agendador externo, e prometer relogio que nao controlamos e a mesma classe de promessa
+     * vazia que a regra do canal de mensagem proibe. Diz o que e verdade — ja recebemos, ainda nao
+     * processamos — e oferece a saida que existe: a lista de clientes, que nao depende do Motor.
+     */
+    return {
+      titulo: 'O Motor ainda não processou seus atendimentos',
+      descricao:
+        'Seus atendimentos concluídos já estão aqui, mas a previsão de retorno é recalculada de tempos em tempos e ainda não rodou. Se continuar assim por vários dias, fale com o suporte.',
+      acaoRotulo: 'Ver clientes',
+      acaoHref: '/admin/clientes',
     }
   }
 

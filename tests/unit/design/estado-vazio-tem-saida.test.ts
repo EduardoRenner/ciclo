@@ -84,7 +84,7 @@ describe('todo estado vazio oferece uma saida de verdade', () => {
   }
 })
 
-describe('o vazio de Recuperar receita fala a verdade das TRES situacoes', () => {
+describe('o vazio de Recuperar receita fala a verdade das QUATRO situacoes', () => {
   it('sem cliente: manda cadastrar', () => {
     expect(vazioDeRecuperar(false, false).titulo).toMatch(/[Cc]adastre/)
   })
@@ -101,8 +101,57 @@ describe('o vazio de Recuperar receita fala a verdade das TRES situacoes', () =>
     expect(vazioDeRecuperar(true, true).titulo).toBe('Todo mundo em dia')
   })
 
-  it('as tres dizem coisas diferentes', () => {
-    const t = [vazioDeRecuperar(false, false), vazioDeRecuperar(true, false), vazioDeRecuperar(true, true)].map((v) => v.titulo)
-    expect(new Set(t).size, 'duas situacoes diferentes com a mesma frase').toBe(3)
+  /*
+   * A quarta situacao, achada MEDINDO em 02/09: as seis contas de demonstracao tinham 1876
+   * atendimentos CONCLUIDOS e ZERO linhas em `client_cycles`, porque o agendador do cron apontava
+   * para uma URL que deixou de existir. A tela mostrava "assim que voce concluir um atendimento"
+   * para quem ja tinha concluido centenas — o produto pedindo de volta um trabalho ja feito, e
+   * escondendo que o job e que estava parado.
+   */
+  it('com atendimento concluido e sem ciclo: nao pede o atendimento de novo', () => {
+    const v = vazioDeRecuperar(true, false, true)
+    expect(
+      v.titulo,
+      'pediu um atendimento a quem ja concluiu — o job e que nao rodou, nao a pessoa',
+    ).not.toMatch(/começa no primeiro atendimento/i)
+    expect(v.titulo, 'precisa dizer que quem nao rodou foi o Motor').toMatch(/Motor/i)
+  })
+
+  it('sem atendimento concluido: continua pedindo o primeiro atendimento', () => {
+    // O contrario do de cima. Sem os dois lados, trocar a condicao por `true` fixo passaria.
+    expect(vazioDeRecuperar(true, false, false).titulo).toMatch(/atendimento/i)
+  })
+
+  it('nao promete prazo que depende de agendador externo', () => {
+    // Mesma regra da promessa de canal: so prometer o que este codigo controla. A periodicidade do
+    // recalculo depende de um cron que ja falhou por dias sem ninguem ver.
+    const v = vazioDeRecuperar(true, false, true)
+    expect(`${v.titulo} ${v.descricao}`).not.toMatch(/amanhã|em minutos|em instantes|em algumas horas/i)
+  })
+
+  it('as quatro dizem coisas diferentes', () => {
+    const t = [
+      vazioDeRecuperar(false, false, false),
+      vazioDeRecuperar(true, false, false),
+      vazioDeRecuperar(true, false, true),
+      vazioDeRecuperar(true, true, true),
+    ].map((v) => v.titulo)
+    expect(new Set(t).size, 'duas situacoes diferentes com a mesma frase').toBe(4)
+  })
+
+  it('toda situacao oferece uma saida de verdade', () => {
+    // Tipado como tupla nomeada em vez de `as const` + spread: o terceiro parametro tem valor
+    // padrao, e o spread de tupla `readonly` para parametro opcional nao passa no `tsc`.
+    const casos: { clientes: boolean; ciclos: boolean; concluidos: boolean }[] = [
+      { clientes: false, ciclos: false, concluidos: false },
+      { clientes: true, ciclos: false, concluidos: false },
+      { clientes: true, ciclos: false, concluidos: true },
+      { clientes: true, ciclos: true, concluidos: true },
+    ]
+    for (const c of casos) {
+      const v = vazioDeRecuperar(c.clientes, c.ciclos, c.concluidos)
+      expect(v.acaoHref, `sem saida em ${JSON.stringify(c)}`).toMatch(/^\/admin\//)
+      expect(v.acaoRotulo.length, `rotulo vazio em ${JSON.stringify(c)}`).toBeGreaterThan(0)
+    }
   })
 })
