@@ -1,4 +1,4 @@
-import { AtSign, CalendarPlus, Clock, MapPin, MessageCircle, Phone, Star } from 'lucide-react'
+import { AtSign, CalendarPlus, ChevronRight, Clock, MapPin, MessageCircle, Phone, Star } from 'lucide-react'
 import Link from 'next/link'
 
 import Badge from '@/components/ui/badge'
@@ -162,8 +162,16 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
         <section className="py-6">
           <h2 className="mb-3 text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">Serviços</h2>
           <div className="flex flex-col gap-2">
+            {/*
+              O card já nascia `pressionavel` — retorno de toque, `hover`, tudo — dentro de uma
+              `div` inerte: apertava e não acontecia nada. Quem chega aqui pelo Instagram lê a
+              lista de serviços como um cardápio e toca no que quer; o caminho até o agendamento
+              não pode ser "role até o fim e ache o botão". Agora o toque leva direto para o
+              agendamento com o serviço já escolhido, que é o atalho que Fresha e Booksy usam.
+            */}
             {perfil.services.map((s) => (
-              <Card key={s.id} pressionavel>
+              <Link key={s.id} href={`/${perfil.slug}/agendar?servico=${s.id}`} className="block">
+                <Card pressionavel>
                 <div className="flex items-start justify-between gap-3">
                   {/*
                     A foto entra ANTES do nome, em miniatura: escolher "Platinado" por um retângulo
@@ -187,16 +195,20 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
                     {s.description ? <p className="mt-0.5 text-secundario text-txt-2">{s.description}</p> : null}
                     <p className="tabular mt-1 text-secundario text-txt-3">{duracao(s.durationMin)}</p>
                   </div>
-                  <p className="tabular shrink-0 text-corpo font-semibold text-acc-2">
-                    {formatarPreco({
-                      pricingModel: s.pricingModel,
-                      priceCents: s.priceCents,
-                      hourlyRateCents: s.hourlyRateCents,
-                      halfDayPriceCents: s.halfDayPriceCents,
-                    })}
-                  </p>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    <p className="tabular text-corpo font-semibold text-acc-2">
+                      {formatarPreco({
+                        pricingModel: s.pricingModel,
+                        priceCents: s.priceCents,
+                        hourlyRateCents: s.hourlyRateCents,
+                        halfDayPriceCents: s.halfDayPriceCents,
+                      })}
+                    </p>
+                    <ChevronRight aria-hidden className="size-4 text-txt-3" />
+                  </div>
                 </div>
-              </Card>
+                </Card>
+              </Link>
             ))}
           </div>
         </section>
