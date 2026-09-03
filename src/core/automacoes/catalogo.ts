@@ -63,7 +63,7 @@ export const AUTOMACOES: readonly Automacao[] = [
     nivelMaximo: 1,
     rota: 'recompute-cycles',
     sempreLigada: true,
-    motivoDoTeto: 'Só calcula e mostra — nunca fala com a cliente.',
+    motivoDoTeto: 'Só calcula e mostra, e nunca fala com a cliente.',
   },
   {
     chave: 'resumo_proativo',
@@ -72,7 +72,7 @@ export const AUTOMACOES: readonly Automacao[] = [
     nivelMaximo: 1,
     rota: null,
     sempreLigada: true,
-    motivoDoTeto: 'Só mostra na sua tela — nada sai daqui.',
+    motivoDoTeto: 'Só mostra na sua tela: nada sai daqui.',
   },
   {
     chave: 'fidelidade_automatica',
@@ -88,7 +88,7 @@ export const AUTOMACOES: readonly Automacao[] = [
     descricao: 'Avisa quando um produto bate o ponto de recompra.',
     nivelMaximo: 1,
     rota: 'stock-alerts',
-    motivoDoTeto: 'comprar é decisão sua, e o CICLO nunca gasta dinheiro por você.',
+    motivoDoTeto: 'Comprar é decisão sua, e o CICLO nunca gasta dinheiro por você.',
   },
   {
     chave: 'lembrete_de_agendamento',
@@ -106,7 +106,7 @@ export const AUTOMACOES: readonly Automacao[] = [
     // Um erro que atinge 1 cliente é constrangimento; que atinge 46 é a reputação do salão.
     nivelMaximo: 2,
     rota: 'campaigns',
-    motivoDoTeto: 'alcança várias clientes de uma vez, então esta sempre espera seu toque.',
+    motivoDoTeto: 'Alcança várias clientes de uma vez, então esta sempre espera seu toque.',
   },
 ]
 
