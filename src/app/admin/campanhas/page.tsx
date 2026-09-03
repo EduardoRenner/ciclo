@@ -3,16 +3,19 @@ import { Megaphone, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
 import { headers } from 'next/headers'
 
+import BloqueioPlano from '@/components/ui/bloqueio-plano'
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import EmptyState from '@/components/ui/empty-state'
 import SectionHeader from '@/components/ui/section-header'
 import StatTile from '@/components/ui/stat-tile'
 import PageHeader from '@/components/ui/page-header'
+import { podeUsarModulo } from '@/core/billing/planos'
 import { dinheiro } from '@/lib/formato'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { receitaAtribuidaAoCiclo, receitaPorCampanha } from '@/server/services/atribuicao'
+import { contextoDePlano } from '@/server/services/planos'
 
 export const dynamic = 'force-dynamic'
 
@@ -65,6 +68,23 @@ export default async function PaginaCampanhas() {
    */
   const porCampanha = await receitaPorCampanha(db, ctx.tenantId).catch(() => new Map())
 
+  /*
+   * `campaigns` é do Essencial, e o hub de Configurações manda todo mundo para cá de propósito
+   * ("sumir com o item seria esconder o que dá para comprar"). Até 2026-09-03 quem chegava no
+   * Grátis via um "Nova campanha" habilitado, escolhia o grupo, escrevia a mensagem, tocava em
+   * enviar — e SÓ ALI a rota recusava. É o defeito que `recurso-pago-avisa-antes` descreve, na
+   * tela que vende o degrau mais barato: a hora em que ela mais quer o Essencial é a hora em que
+   * o produto joga fora o trabalho dela.
+   *
+   * A contagem da base é a evidência com o dado DELA que o §M.1 exige — e é o argumento real:
+   * o que o Essencial libera aqui é alcançar essas pessoas de uma vez.
+   */
+  const plano = await contextoDePlano(db, ctx.tenantId)
+  const bloqueado = podeUsarModulo(plano, 'campaigns').estado !== 'liberado'
+  const { count: totalClientes } = bloqueado
+    ? await db.from('clients').select('id', { count: 'exact', head: true }).eq('tenant_id', ctx.tenantId).is('deleted_at', null)
+    : { count: 0 }
+
   return (
     <div className="pb-8">
       <PageHeader titulo="Campanhas" descricao="Quem voltou depois de receber mensagem, e quanto isso trouxe." />
@@ -83,12 +103,24 @@ export default async function PaginaCampanhas() {
         />
       </div>
 
-      <Link href="/admin/campanhas/nova" className="mt-4 block">
-        <Button largura="cheia">
-          <Megaphone aria-hidden className="size-4" />
-          Nova campanha
-        </Button>
-      </Link>
+      {bloqueado ? (
+        <BloqueioPlano
+          className="mt-4"
+          precisaDo="essencial"
+          acao="mandar a mesma mensagem para todas de uma vez"
+          {...(totalClientes && totalClientes > 0
+            ? { evidencia: { quantidade: totalClientes, substantivo: totalClientes === 1 ? 'cliente na sua base' : 'clientes na sua base' } }
+            : {})}
+          alternativa={<Link href="/admin/recuperar">Avisar uma de cada vez, de graça</Link>}
+        />
+      ) : (
+        <Link href="/admin/campanhas/nova" className="mt-4 block">
+          <Button largura="cheia">
+            <Megaphone aria-hidden className="size-4" />
+            Nova campanha
+          </Button>
+        </Link>
+      )}
 
       <section className="mt-7">
         <SectionHeader icone={<TrendingUp className="size-3.5" />}>Resultados</SectionHeader>
@@ -99,7 +131,18 @@ export default async function PaginaCampanhas() {
               icone={<Megaphone aria-hidden className="size-6" />}
               titulo="Nenhuma campanha ainda"
               descricao="Escolha um grupo de clientes, mande a mesma mensagem para todos e veja quantos voltaram."
-              acao={<Link href="/admin/campanhas/nova">Criar a primeira</Link>}
+              /*
+                A saída muda com o plano, e continua existindo — `estado-vazio-tem-saida` exige uma
+                e está certa. O que não pode é a saída levar ao formulário que a rota vai recusar:
+                no Grátis, o caminho útil é avisar uma a uma, que funciona hoje e é de graça.
+              */
+              acao={
+                bloqueado ? (
+                  <Link href="/admin/recuperar">Avisar uma de cada vez</Link>
+                ) : (
+                  <Link href="/admin/campanhas/nova">Criar a primeira</Link>
+                )
+              }
             />
           </Card>
         ) : (
