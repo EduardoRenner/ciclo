@@ -21,7 +21,7 @@ function slugsNoScript(): string[] {
   const src = readFileSync(SCRIPT, 'utf8')
   const bloco = src.match(/const SLUGS_DE_DEMONSTRACAO = \[([\s\S]*?)\]/)
   if (!bloco) throw new Error('não achei `const SLUGS_DE_DEMONSTRACAO = [...]` em seed-demo-imagens.mjs — a guarda perdeu o alvo')
-  return [...bloco[1].matchAll(/'([^']+)'/g)].map((m) => m[1])
+  return [...bloco[1]!.matchAll(/'([^']+)'/g)].map((m) => m[1]!)
 }
 
 describe('seed-demo-imagens cobre toda a lista de demonstração', () => {
