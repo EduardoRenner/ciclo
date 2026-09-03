@@ -2,6 +2,7 @@ import { enviarEmailDeFallback } from '@/server/providers/messaging/email'
 import { enviarPush, type PayloadPush } from '@/server/providers/messaging/push'
 import { ErroDeEnvio, type MessagingProvider } from '@/server/providers/messaging/types'
 import { WhatsAppCloudProvider } from '@/server/providers/messaging/whatsapp'
+import { ehDemonstracao } from '@/core/tenants/demonstracao'
 import { AppError } from '@/server/http/errors'
 import { inscricoesPushDoCliente, inscricoesPushDoTenant, removerInscricaoPorEndpoint } from '@/server/services/push'
 import { limitador } from '@/server/services/rate-limit'
@@ -28,6 +29,24 @@ export type EnviarMensagemEntrada = {
 }
 
 const TENTATIVAS_WHATSAPP = 3
+
+// Tenant de demonstração nunca dispara transporte real. `lembretes.ts` e `campaigns/route.ts`
+// já pulam demo no laço deles — mas `notificarProximoDaLista` (cancelar → avisar a lista de
+// espera) e `/cycle/recover/send` (botão "avisar" um a um) caem aqui direto. Se o WhatsApp Cloud
+// for configurado um dia, um clique numa conta de exemplo mandaria mensagem real para um dos
+// telefones inventados do seed. A trava fica no ponto por onde TODO envio passa, não em cada
+// chamador — é o mesmo raciocínio de `consertar-a-pergunta-nao-o-caso`. Grava `messages` como
+// enviada (a demo mostra histórico de mensagem e precisa parecer viva), só não chama provider.
+const slugPorTenant = new Map<string, string>()
+async function tenantEhDemonstracao(db: Cliente, tenantId: string): Promise<boolean> {
+  let slug = slugPorTenant.get(tenantId)
+  if (slug === undefined) {
+    const { data } = await db.from('tenants').select('slug').eq('id', tenantId).maybeSingle()
+    slug = data?.slug ?? ''
+    if (slug) slugPorTenant.set(tenantId, slug)
+  }
+  return slug !== '' && ehDemonstracao(slug)
+}
 
 // Freio antes do acelerador (F0/item B, `docs/25-ESTRATEGIA-E-EXECUCAO.md`): teto duro de envio
 // por tenant por dia. Valor estimado [S] — sem uso real ainda para calibrar; registrado em
@@ -66,6 +85,10 @@ export async function enviarComFallback(
   /** Só para teste medir o teto/janela sem esperar 100+ envios reais ou 24h de verdade. */
   tetoDiarioOverride?: OpcoesTetoDiario,
 ): Promise<{ channel: Canal; status: 'sent' | 'failed' | 'blocked'; providerId: string | null }> {
+  if (await tenantEhDemonstracao(db, entrada.tenantId)) {
+    return registrar(db, entrada, 'whatsapp', 'sent', 'demo-simulado', null)
+  }
+
   // H110: opt-out bloqueia só marketing. Lembrete/confirmação (transacional)
   // segue até a cliente pedir para parar tudo, não só campanha.
   if (entrada.kind === 'campaign') {

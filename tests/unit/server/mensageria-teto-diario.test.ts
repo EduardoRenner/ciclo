@@ -39,14 +39,16 @@ function entradaBase(tenantId: string, overrides: Partial<Parameters<typeof envi
 /**
  * Fake mínimo do client Supabase: serve tanto `db.from('clients').select().eq().single()`
  * (checagem de opt-out para `kind: 'campaign'`, antes do teto) quanto `db.from('messages').insert()`
- * (`registrar()`, quando a mensagem passa do teto). Uma única cadeia genérica serve os dois,
- * porque nenhum teste aqui precisa que os dados voltem diferentes por tabela.
+ * (`registrar()`, quando a mensagem passa do teto) quanto `db.from('tenants').select('slug')` (guarda
+ * de demonstração). Uma cadeia genérica serve os três: sem `.slug` no retorno, o tenant nunca
+ * é demo e o fluxo segue igual.
  */
 function fakeDb(): Parameters<typeof enviarComFallback>[0] {
   const cadeia = {
     select: () => cadeia,
     eq: () => cadeia,
     single: async () => ({ data: { whatsapp_opt_out: false }, error: null }),
+    maybeSingle: async () => ({ data: { whatsapp_opt_out: false }, error: null }),
     insert: async () => ({ error: null }),
   }
   return { from: () => cadeia } as unknown as Parameters<typeof enviarComFallback>[0]

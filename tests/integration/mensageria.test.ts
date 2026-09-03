@@ -22,6 +22,8 @@ const svc = createClient<Database>(SUPABASE_URL, SERVICE_KEY, { auth: { persistS
 
 let tenantId: string
 let clientId: string
+let tenantDemoId: string
+let clientDemoId: string
 const tenants: string[] = []
 const usuarios: string[] = []
 
@@ -52,6 +54,23 @@ beforeAll(async () => {
     .select('id')
     .single()
   clientId = cliente.data!.id
+  // Conta de demonstração: `enviarComFallback` tem de barrar transporte real aqui, porque
+  // `notificarProximoDaLista` e `/cycle/recover/send` chegam nele sem laço de tenant onde pular.
+  const { tenant: td } = await executarOnboarding(svc, {
+    userId: usuarios[0]!,
+    businessName: 'Navalha de Ouro (exemplo)',
+    vertical: 'hair',
+    slug: 'demo-navalha-de-ouro',
+    timezone: 'America/Sao_Paulo',
+  })
+  tenantDemoId = td.id
+  tenants.push(tenantDemoId)
+  const clienteDemo = await svc
+    .from('clients')
+    .insert({ tenant_id: tenantDemoId, name: 'Cliente da Demo', phone_e164: '+5511988990002' })
+    .select('id')
+    .single()
+  clientDemoId = clienteDemo.data!.id
 }, 60_000)
 
 afterAll(async () => {
@@ -301,6 +320,32 @@ describe('enviarComFallback — canal push (TICKET-056)', () => {
 
       const sobrou = await svc.from('push_subscriptions').select('id').eq('id', inscricao.data!.id).maybeSingle()
       expect(sobrou.data).toBeNull()
+    },
+    30_000,
+  )
+
+
+  it(
+    'tenant de demonstração: não chama o provider e grava messages como demo-simulado',
+    async () => {
+      const provider = providerQueSempreFunciona()
+      const resultado = await enviarComFallback(
+        svc,
+        entradaBase({ tenantId: tenantDemoId, clientId: clientDemoId, whatsappTo: '+5511988990002' }),
+        provider,
+      )
+
+      expect(provider.sendTemplate).not.toHaveBeenCalled()
+      expect(resultado).toMatchObject({ channel: 'whatsapp', status: 'sent', providerId: 'demo-simulado' })
+
+      const linha = await svc
+        .from('messages')
+        .select('status, provider_id')
+        .eq('client_id', clientDemoId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
+      expect(linha.data).toMatchObject({ status: 'sent', provider_id: 'demo-simulado' })
     },
     30_000,
   )

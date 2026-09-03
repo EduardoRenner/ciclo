@@ -21,6 +21,10 @@
  * mandar WhatsApp/e-mail de verdade para um tenant que não tem cliente de verdade do outro lado
  * do telefone. Se eles divergirem, volta a existir um caminho que indexa — ou mensageia — o que
  * o outro esconde.
+ *
+ * 03/09: somou-se um sexto leitor, `enviarComFallback` (`server/services/mensageria.ts`) — o
+ * ponto único por onde todo envio passa. `notificarProximoDaLista` e `/cycle/recover/send` não
+ * têm laço de tenant onde pular a demo, então a trava tinha de descer para o transporte.
  */
 
 /**
