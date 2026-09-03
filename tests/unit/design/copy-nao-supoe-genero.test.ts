@@ -112,6 +112,21 @@ describe('o leitor deste teste', () => {
     expect(TELAS.length).toBeGreaterThan(80)
   })
 
+  it('o alcance inclui os arquivos onde o defeito JÁ apareceu', () => {
+    /*
+     * Guarda contra a cegueira de RAIZ, que é diferente da cegueira de padrão e não é pega por
+     * nenhuma asserção acima: tirar `src/lib` da lista deixa `TELAS.length` bem acima de 80 e a
+     * suíte inteira verde, com "Você atende sozinho" de volta na copy que a pessoa lê antes de
+     * pagar. Medido em 2026-09-03 — a mutação passou verde antes desta asserção existir.
+     *
+     * Os dois arquivos nomeados aqui não são exemplo: são os dois onde o defeito foi encontrado de
+     * verdade. Arquivo que já falhou uma vez é o que precisa estar no alcance por escrito.
+     */
+    for (const ondeJaFalhou of ['src/lib/planos-cartoes.ts', 'src/app/(auth)/entrar/page.tsx']) {
+      expect(TELAS, `${ondeJaFalhou} saiu do alcance da guarda`).toContain(ondeJaFalhou)
+    }
+  })
+
   it('os padrões pegam as construções que motivaram a guarda', () => {
     // Guarda contra o próprio detector: se um regex parar de casar, tudo passa vazio.
     expect(SUPOE_HOMEM[0]!.padrao.test('Bem-vindo de volta')).toBe(true)
