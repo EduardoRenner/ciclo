@@ -179,7 +179,15 @@ describe('o seed da carteira de demonstração', () => {
      * produto, nascia praticamente vazio.
      */
     const src = sql()
-    expect(src, 'o seed não cria mais quem veio uma vez só').toMatch(/'veio uma vez'/)
+    /*
+     * Delimitado ao INSERT que cria a tag, não ao arquivo. A primeira versão casava
+     * `/'veio uma vez'/` solto e passou com o defeito de volta: a mesma string aparece no
+     * `where` do insert de agendamentos, que a usa para achar esses clientes. Provar que a tag
+     * é LIDA não prova que ela é ESCRITA.
+     */
+    const criacao = src.slice(src.lastIndexOf('insert into clients'))
+    const ateOPontoEVirgula = criacao.slice(0, criacao.indexOf(';'))
+    expect(ateOPontoEVirgula, 'o seed não cria mais quem veio uma vez só').toMatch(/'veio uma vez'/)
 
     // A quantidade tem que ser CALCULADA a partir da taxa de retorno, não um número fixo: com
     // número fixo a proporção muda sozinha quando o resto da carteira muda de tamanho.
