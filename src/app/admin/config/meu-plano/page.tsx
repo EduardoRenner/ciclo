@@ -1,8 +1,11 @@
-import { ArrowRight, Check, Lock, Minus } from 'lucide-react'
+import { ArrowRight, Check, Lock, Minus, Share2 } from 'lucide-react'
 import Link from 'next/link'
 import { headers } from 'next/headers'
 
+import { textoDeParaQueIndicar, textoDoConviteDoCiclo } from '@/core/billing/convite-do-ciclo'
 import { NOME_DO_PLANO, ORDEM_DOS_PLANOS, precoDoPlanoPorMes, verificarLimite } from '@/core/billing/planos'
+import { APP_URL } from '@/lib/app-url'
+import { linkWhatsAppCompartilhar } from '@/lib/mensagens'
 import Card from '@/components/ui/card'
 import PageHeader from '@/components/ui/page-header'
 import SectionHeader from '@/components/ui/section-header'
@@ -197,6 +200,32 @@ export default async function PaginaMeuPlano() {
           </p>
         </Card>
       )}
+
+      {/*
+        `docs/30-INDICACAO-PLANO.md` §3: o laço B2C (a cliente do salão indica outra cliente) está
+        de ponta a ponta desde 30/08. O B2B — o dono indicar outro dono — não tinha NADA, e a trava
+        de "≥ 20 pagantes" do `docs/18` Fase H nunca justificou isso: ela protege a RECOMPENSA
+        (crédito, proração, antifraude), não o convite. Ver `core/billing/convite-do-ciclo.ts`.
+
+        Mora nesta tela, e não no Hoje, porque aqui é "Sua conta no CICLO" — o único lugar do
+        produto que fala do CICLO como fornecedor dele. No Hoje disputaria espaço com o herói do
+        Motor de Ciclo, que é o trabalho dele, não o nosso.
+      */}
+      <SectionHeader>Indicar o CICLO</SectionHeader>
+      <Card className="mb-6">
+        <p className="text-secundario text-txt-2">{textoDeParaQueIndicar()}</p>
+        <a
+          href={linkWhatsAppCompartilhar(
+            textoDoConviteDoCiclo({ nomeDoNegocio: ctx.tenant.name ?? '', url: APP_URL }),
+          )}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-4 inline-flex h-12 w-full items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-5 text-corpo font-semibold text-txt transition duration-[var(--dur-1)] hover:bg-surface-3 active:scale-[.97]"
+        >
+          <Share2 aria-hidden className="size-4" />
+          Mandar para um colega
+        </a>
+      </Card>
 
       <p className="py-8 text-center text-label text-txt-3">
         <Link href="/precos" className="toque-48 font-semibold text-acc-2 underline underline-offset-2">

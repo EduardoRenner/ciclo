@@ -5494,3 +5494,72 @@ nomeando exatamente o arquivo e a consequência.
 **O que não investiguei ainda, registrado para não esquecer:** se esse mesmo Full Route Cache
 afeta alguma resposta de `/api/v1` (que já é `no-store` por outro motivo — `naoCacheavel` no
 middleware — então provavelmente a salvo, mas não medi ao vivo como medi as páginas HTML).
+
+---
+
+## 2026-09-03 · Polimento de produto e conversão
+
+### "Fale com a gente" em quatro telas, e a gente não tinha endereço
+
+**Achado.** Num produto sem cobrança automática, toda mudança de plano é uma conversa. Quatro
+telas mandavam o assinante começá-la e nenhuma dizia com quem: `/precos` ("Como eu pago hoje?" →
+*"Falando com a gente"*), `/admin/config/meu-plano` (nos dois ramos de plano), `/termos` §10 e
+`/privacidade` §7. As duas últimas mandavam usar *"o mesmo canal em que você contratou"* — canal
+que não existe, porque todo mundo entra sozinho pelo cadastro do Grátis.
+
+A de `/privacidade` foi a **guarda que achou, não eu**: eu tinha encontrado três lendo o código, e
+a varredura apontou a quarta. É a mais cara das quatro — a LGPD exige contato publicado para o
+titular exercer os direitos que aquele parágrafo acabou de listar.
+
+**Decisão.** `src/lib/contato.ts`, no padrão de `core/messaging/promessa.ts`: a copy vira função e
+conhece os dois estados. Com canal, a frase convida e a tela desenha o botão; sem canal, a frase
+não convida.
+
+**Pendência do Eduardo, e é pré-requisito de lançamento:** criar
+`NEXT_PUBLIC_CONTATO_WHATSAPP` (E.164 só com dígitos) na Vercel. Sem ela o produto continua sem
+como ser vendido — as telas ficam honestas, mas mudas.
+
+### Seis telas deixavam a pessoa trabalhar para recusar no envio
+
+**Achado.** `recurso-pago-avisa-antes` (31/08) enumerava UMA tela; o projeto tem nove módulos com
+rota de escrita travada. Seis estavam com o defeito no ar. O pior é `/admin/agenda/novo`: "Repetir
+este horário" desviava o envio inteiro para `POST /appointments/series` (módulo `recurrence`,
+Avançado), e o agendamento simples — que é **grátis** — não era criado junto. O recurso pago
+bloqueando a ação gratuita que a pessoa tinha vindo fazer.
+
+O hub de Configurações mantém item bloqueado à vista de propósito ("sumir seria esconder o que dá
+para comprar") e desenhava esses itens **iguais** aos liberados. Ele mandava comprar e o destino
+não vendia.
+
+**Decisão.** Selo com o nome do degrau no hub, nascido do `veredito` que `listarModulos` já
+devolvia (um lugar só, módulo novo ganha sozinho); `BloqueioPlano` ou `motivoDesabilitado` nas seis
+telas. Guarda nova `toda-rota-travada-tem-tela-que-avisa` **não enumera casos**: lê toda chamada de
+`exigirModulo` das rotas e exige decisão declarada por módulo. Cinco mutações conferidas, incluindo
+quebrar o próprio regex.
+
+### Expediente mudava na tela e não voltava quando o servidor recusava
+
+Independente de plano. `editor-expediente` fazia `setBlocos(novos)` **antes** do `PUT` e, na
+falha, só disparava um toast. Quem trocasse "terça abre 10:00" e lesse o erro de passagem fechava a
+tela acreditando que salvou, com a agenda ainda abrindo às 09:00. Vale para rede caída também.
+Agora desfaz e diz que desfez.
+
+### Indicação entre profissionais (B2B): o convite entra, a recompensa não
+
+**Achado.** `docs/30` §3 separa os dois laços. O B2C está de ponta a ponta desde 30/08; o B2B não
+tinha **nada**, e a trava de "≥ 20 pagantes" do `docs/18` Fase H nunca justificou isso — ela
+protege a RECOMPENSA (crédito, proração, antifraude por CPF/instrumento de pagamento), não o
+convite.
+
+**Decisão.** `core/billing/convite-do-ciclo.ts` + cartão "Indicar o CICLO" em `meu-plano`: texto
+pronto na voz do profissional (§H.4, "com a cara dele, não da marca") e `wa.me`. Sem banco, sem
+token, sem cobrança.
+
+**A recompensa fica desligada, e é decisão do Eduardo ligar.** O `docs/18` §13.1 já decidiu o
+prêmio (um mês para cada lado); o que não existe é como conceder. `temRecompensa` é o interruptor,
+a frase verdadeira já está escrita, e `tests/unit/core/convite-do-ciclo.test.ts` reprova qualquer
+tela que o ligue enquanto `billing_credits` não existir. Quando a cobrança existir, muda-se um
+valor e aquele teste — não se caça string.
+
+**O que NÃO entrou, de propósito:** atribuição de quem indicou quem (precisa de coluna e não
+paga sozinha antes de haver prêmio) e qualquer frase que mencione desconto.
