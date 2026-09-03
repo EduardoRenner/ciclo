@@ -5647,3 +5647,39 @@ outras três ficaram. A guarda passou a DERIVAR a lista das telas com `setEstado
 3. **Revisar e mesclar `polimento/produto-e-conversao`** (branch tirado de `main`, não da branch de
    demo; 11 commits, `pnpm typecheck` + `eslint` + `test:unit` limpos, cada guarda vista reprovando
    por mutação).
+
+## 2026-09-03 · Duas perguntas que ficaram para o Eduardo, e duas que a medição respondeu
+
+### Pergunta aberta: o "Falar no WhatsApp" da página pública compete com o produto
+
+Na página do salão, "Agendar horário" e "Falar no WhatsApp" são dois botões de peso parecido, na
+primeira dobra. O argumento que o CICLO vende, escrito na landing, é *"quem for marcar escolhe
+serviço, profissional e horário **sem precisar falar com você**"* — e cada conversa de WhatsApp é
+exatamente o tempo que o produto promete devolver ao salão.
+
+O contra-argumento é real: parte das clientes quer perguntar antes, e tirar a saída empurra essas
+para o silêncio. Não mexi porque é decisão de produto, não defeito. **Se for para testar,** o
+caminho barato é o mesmo que a floricultura usou: manter o WhatsApp, mas com peso visual menor que
+o do agendamento (secundário de verdade, não secundário do mesmo tamanho).
+
+### Pergunta aberta: o CTA dos cartões pagos ocupa duas linhas
+
+"Começar no grátis e subir para o Essencial" quebra em duas linhas dentro de um botão de 48 px.
+**Medido: não estoura** (`scrollHeight === clientHeight === 48`, 40 px de texto na caixa), então
+não é defeito — é aperto. A frase é longa porque é honesta: o botão leva ao cadastro do Grátis, e
+"Quero o Essencial" prometeria um caminho que não existe ainda.
+
+A alternativa que preserva as duas coisas seria botão curto ("Quero o Essencial") com a explicação
+como linha de apoio embaixo. Não fiz porque troca copy deliberada das Fases D/E/M por preferência
+estética minha, e essa troca é sua.
+
+### Medição que desmentiu duas hipóteses minhas
+
+Registro porque o padrão se repete (ver `docs/21` e a auditoria de 30/08):
+
+- **"O CTA está sendo cortado."** Falso: eu contei três retângulos de texto e um deles era o ícone
+  `ArrowRight`, que é irmão flex, não linha de texto.
+- **"O `h1` de `/precos` tem entrelinha frouxa em cinco linhas."** Falso: 178 px / 5 linhas = 35,6
+  px por linha a 34 px de fonte, ou seja 1,05 — já apertado.
+
+As duas teriam virado commit se eu tivesse confiado na leitura da tela em vez de medir.
