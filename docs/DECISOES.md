@@ -5683,3 +5683,71 @@ Registro porque o padrão se repete (ver `docs/21` e a auditoria de 30/08):
   px por linha a 34 px de fonte, ou seja 1,05 — já apertado.
 
 As duas teriam virado commit se eu tivesse confiado na leitura da tela em vez de medir.
+
+---
+
+## 2026-09-03 (segunda rodada) · Home de conversão e prêmio de indicação
+
+### `tenants.trial_ends_at` existe desde a 0001 e nunca teve leitor nem escritor
+
+**A sexta ocorrência da classe.** Varredura em `src/`, `tests/`, `supabase/`, `scripts/`: a única
+menção no repositório inteiro é a linha da migration que cria a coluna. As anteriores foram
+`fee_cents`, `media.consent_id`, `tenants.plan`, `clients.referred_by` e a frase "fale com a gente"
+sem canal.
+
+E ela é exatamente o veículo que o prêmio de indicação B2B precisa: "um mês do Essencial" é, em
+mecânica, `plan` + uma data de validade. Sem migration, sem PSP, sem `billing_credits`. Registrado
+em `docs/37`, que é o documento de decisão.
+
+### O plano de copy da home estava escrito e não implementado
+
+`docs/20` Fase D recomendou dez peças em 24/08; **seis nunca foram implementadas** — subtítulo,
+Card 1, "Feito para", fecho, H1 e subtítulo da `/precos`, e as seis mudanças da FAQ. Nesta rodada
+as seis entraram, e `docs/38` registra a comparação item a item.
+
+Duas coisas mudaram em relação ao que o `docs/20` recomendava, e as duas por medição:
+
+- **Card 1:** o §D.5 manda abrir com "23 pessoas passaram do ponto". A figura nova da dobra já
+  mostra o 23 com legenda de exemplo; repetir em prosa sem a legenda viraria afirmação, que é o que
+  o próprio §D.5 proíbe. O cartão passou a dizer o que a figura não diz.
+- **FAQ:** o §D.10 supôs que a importação de planilha traz "nome, telefone, e-mail e etiquetas;
+  histórico não". O importador aceita também a coluna de **última visita**, e ela chega até
+  `calcularPrevisao`, que roda `computeCycle` em cada data. Com essa coluna a lista de quem sumiu
+  **nasce cheia no primeiro dia**. É o argumento mais forte que o produto tem para quem já tem base,
+  e não estava escrito em lugar nenhum.
+
+### A peça que o plano de copy não tinha: prova de produto na dobra
+
+Pesquisa nova: quase toda página de SaaS de alta conversão mostra o produto dentro do primeiro
+scroll. A home descrevia o Motor de Ciclo e nunca o mostrava. Entrou uma figura em HTML/CSS (sem
+imagem, por latência) com 293 px dos 308 acima da dobra a 375 px, medido.
+
+Não é prova social: o §D.4.1 já cravou a distinção — demonstração mostra o que o software FAZ,
+prova social afirma que outra pessoa COMPROU. Nomes e valores de exemplo, com a legenda dizendo
+isso em texto.
+
+### "Preços" saiu do header da home, e só da home
+
+Pedido do Eduardo, e o motivo é de conversão: dois links no header competiam com o CTA primário, e
+um deles aponta para o que a própria dobra já resume com o número na tela. Em `/termos` e
+`/privacidade` fica — ali a pessoa lê contrato, não decide compra.
+
+### Três guardas cegas minhas, e a terceira é a que dói
+
+1. A guarda de gênero varria só `src/app` e `src/components`. O cartão do Grátis, em `src/lib`,
+   dizia "Você atende sozinho" e ela passava verde.
+2. Ela lia só `.tsx`. `planos-cartoes.ts` é copy de produto sem uma linha de JSX.
+3. **O padrão estava escrito `\b(quem|voc[êe])\b`, e o `\b` depois da alternativa acentuada NUNCA
+   casa** — em JS sem a flag `u`, `ê` é não-palavra, e entre "ê" e o espaço não há fronteira. É a
+   mesma pegadinha que `promessa-de-canal` já documentou, e eu a repeti sabendo dela. Só apareceu na
+   mutação.
+
+E uma quarta, de outro tipo: **cegueira de RAIZ não era pega por asserção nenhuma.** Tirar
+`src/lib` da lista deixava a contagem de arquivos acima do piso e a suíte verde. Agora a guarda
+afirma que os dois arquivos onde o defeito já apareceu de verdade estão no alcance.
+
+### Erro meu revertido pela decisão da casa
+
+Reescrevi a FAQ de "quem trabalha por conta" para "quem atende sozinho". A tabela do `docs/20` §C.4
+diz, com estas palavras, que *"quem atende sozinho" não resolve → "quem trabalha por conta"*, porque
+escolher um gênero é o mesmo erro que trocar de gênero. Revertido.
