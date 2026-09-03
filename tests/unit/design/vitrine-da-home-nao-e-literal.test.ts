@@ -80,7 +80,12 @@ describe('vitrine e demonstração são listas diferentes, e a diferença import
      * entrega o pior candidato (uma conta `teste-*` de degrau de plano), não o melhor. Se as duas
      * listas voltarem a ter o mesmo tamanho, é porque alguém as colapsou.
      */
-    expect(SLUGS_DE_VITRINE.length).toBeLessThan(SLUGS_DE_DEMONSTRACAO_PARA_TESTE.length)
+    expect(
+      SLUGS_DE_VITRINE.length,
+      'as duas listas têm o mesmo tamanho, ou seja alguém as colapsou. A de exclusão responde "o ' +
+        'que esconder do buscador" e inclui contas internas de teste de plano; usá-la como lista ' +
+        'de exibição faz a home mostrar `/teste-essencial` como exemplo do produto.',
+    ).toBeLessThan(SLUGS_DE_DEMONSTRACAO_PARA_TESTE.length)
     for (const interna of ['teste-essencial', 'teste-equipe', 'teste-avancado']) {
       expect(SLUGS_DE_VITRINE, `${interna} é conta de teste de plano e não pode ser vitrine`).not.toContain(interna)
     }
