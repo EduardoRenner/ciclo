@@ -19,6 +19,24 @@ export default function ConfirmarAgendamento({ token }: { token: string }) {
   const [estado, setEstado] = useState<Estado>('escolhendo')
   const [mensagem, setMensagem] = useState('')
   const [slugParaReagendar, setSlugParaReagendar] = useState<string | null>(null)
+  /**
+   * A falha foi da REDE (dá para tentar de novo) ou do SERVIDOR recusando o link (não dá)?
+   *
+   * A tela de erro tratava as duas igual e não oferecia nada: uma piscada de 4G no meio do toque
+   * deixava a cliente do salão num beco com "Não consegui falar com o servidor" e nenhum botão —
+   * a única saída era ela saber recarregar a página. Quem paga esse atrito é o salão, que fica
+   * com um horário sem confirmação achando que a pessoa ignorou a mensagem.
+   *
+   * Link recusado é outra coisa e não tem retentativa que resolva: ali o caminho é falar com quem
+   * vai atender, e a tela passa a dizer isso em vez de só mostrar a mensagem da rota.
+   */
+  const [podeTentarDeNovo, setPodeTentarDeNovo] = useState(false)
+
+  function falhou(msg: string, transitoria: boolean) {
+    setEstado('erro')
+    setMensagem(msg)
+    setPodeTentarDeNovo(transitoria)
+  }
 
   function confirmar() {
     setEstado('confirmando')
@@ -26,16 +44,14 @@ export default function ConfirmarAgendamento({ token }: { token: string }) {
       .then(async (r) => {
         const json = (await r.json()) as { data?: { status: string }; error?: { message: string } }
         if (!r.ok) {
-          setEstado('erro')
-          setMensagem(json.error?.message ?? 'Não consegui confirmar esse agendamento.')
+          // 5xx é problema nosso e passa: tentar de novo daqui a pouco pode funcionar. 4xx é o
+          // link recusado, e insistir só repete a recusa.
+          falhou(json.error?.message ?? 'Não consegui confirmar esse agendamento.', r.status >= 500)
           return
         }
         setEstado('confirmado')
       })
-      .catch(() => {
-        setEstado('erro')
-        setMensagem('Não consegui falar com o servidor. Tente de novo em instantes.')
-      })
+      .catch(() => falhou('Não consegui falar com o servidor.', true))
   }
 
   function cancelar() {
@@ -44,17 +60,13 @@ export default function ConfirmarAgendamento({ token }: { token: string }) {
       .then(async (r) => {
         const json = (await r.json()) as { data?: { status: string; slug: string | null }; error?: { message: string } }
         if (!r.ok) {
-          setEstado('erro')
-          setMensagem(json.error?.message ?? 'Não consegui desmarcar esse agendamento.')
+          falhou(json.error?.message ?? 'Não consegui desmarcar esse agendamento.', r.status >= 500)
           return
         }
         setSlugParaReagendar(json.data?.slug ?? null)
         setEstado('cancelado')
       })
-      .catch(() => {
-        setEstado('erro')
-        setMensagem('Não consegui falar com o servidor. Tente de novo em instantes.')
-      })
+      .catch(() => falhou('Não consegui falar com o servidor.', true))
   }
 
   if (estado === 'escolhendo' || estado === 'confirmando' || estado === 'cancelando') {
@@ -125,6 +137,30 @@ export default function ConfirmarAgendamento({ token }: { token: string }) {
       <XCircle aria-hidden className="mb-4 size-14 text-bad" />
       <p className="text-titulo font-bold">Não deu certo</p>
       <p className="mt-2 text-corpo text-txt-2">{mensagem}</p>
+      {/*
+        A tela terminava aqui, e terminar aqui é um beco. A regra do CLAUDE.md ("erro explica o que
+        fazer") não estava sendo cumprida: a mensagem diz o que houve, e não o que fazer agora.
+
+        Quem chega neste estado é a CLIENTE DO SALÃO, com a mensagem do WhatsApp aberta e um horário
+        marcado esperando resposta. Sem saída daqui ela some, o horário fica sem confirmação, e o
+        salão conclui que ela ignorou.
+      */}
+      {podeTentarDeNovo ? (
+        <Button
+          largura="cheia"
+          className="mt-6"
+          onClick={() => {
+            setEstado('escolhendo')
+            setPodeTentarDeNovo(false)
+          }}
+        >
+          Tentar de novo
+        </Button>
+      ) : (
+        <p className="mt-4 text-secundario text-txt-3">
+          Chame quem vai te atender pelo WhatsApp para confirmar ou desmarcar seu horário.
+        </p>
+      )}
     </>
   )
 }
