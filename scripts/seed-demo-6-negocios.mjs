@@ -17,6 +17,7 @@
  * como se fossem estabelecimento de verdade — alguém acha no Google e marca horário num lugar que
  * não existe. Ver o cabeçalho daquele arquivo.
  */
+import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 
 import { createClient } from '@supabase/supabase-js'
@@ -30,6 +31,16 @@ const env = Object.fromEntries(
       return [l.slice(0, i).trim(), l.slice(i + 1).trim()]
     }),
 )
+
+/**
+ * `phone_hash` NÃO é opcional: toda busca de cliente por telefone no produto passa por ele.
+ * Gravar `phone_e164` sem o hash deixa o reconhecimento morto e faz `agendamentos.ts` tomar 500
+ * ao remarcar alguém que JÁ é cliente — falha que só aparece na hora de demonstrar.
+ * Idêntico a `hashTelefone` em `src/server/services/telefone.ts`; o sal nunca é impresso.
+ */
+const SAL_TELEFONE = process.env.PHONE_HASH_SALT ?? env.PHONE_HASH_SALT
+if (!SAL_TELEFONE) throw new Error('PHONE_HASH_SALT ausente — sem ele o hash sairia diferente do que o app calcula.')
+const hashTelefone = (e164) => createHash('sha256').update(e164 + SAL_TELEFONE, 'utf8').digest('hex')
 
 const svc = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
@@ -261,6 +272,7 @@ async function semear(cfg, indiceNegocio) {
       name: nome,
       created_at: diasAtras(ultimaHa + 4 * cadencia + 3).toISOString(),
       phone_e164: `+5511${String(93000000 + indiceNegocio * 1000 + i)}`,
+      phone_hash: hashTelefone(`+5511${String(93000000 + indiceNegocio * 1000 + i)}`),
       birth_date: `19${85 + (i % 12)}-${String((i % 12) + 1).padStart(2, '0')}-15`,
       tags: i % 4 === 0 ? ['sumido'] : i % 3 === 0 ? ['fiel'] : [],
       source: ['instagram', 'google', 'indicacao'][i % 3],
@@ -271,7 +283,7 @@ async function semear(cfg, indiceNegocio) {
     }
   })
 
-  const COLUNAS = ['tenant_id', 'name', 'created_at', 'phone_e164', 'birth_date', 'tags', 'source', 'marketing_opt_in']
+  const COLUNAS = ['tenant_id', 'name', 'created_at', 'phone_e164', 'phone_hash', 'birth_date', 'tags', 'source', 'marketing_opt_in']
   const { data: criados, error: erroClientes } = await svc
     .from('clients')
     .insert(linhas.map((l) => Object.fromEntries(COLUNAS.map((c) => [c, l[c]]))))

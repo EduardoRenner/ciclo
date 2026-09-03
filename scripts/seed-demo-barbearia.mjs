@@ -17,7 +17,7 @@
  *   2. `npx vitest run tests/integration/_ciclos.test.ts`;
  *   3. apague o arquivo.
  */
-import { createCipheriv, randomBytes } from 'node:crypto'
+import { createCipheriv, createHash, randomBytes } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 
 import { createClient } from '@supabase/supabase-js'
@@ -31,6 +31,16 @@ const env = Object.fromEntries(
       return [l.slice(0, i).trim(), l.slice(i + 1).trim()]
     }),
 )
+
+/**
+ * `phone_hash` NÃO é opcional: toda busca de cliente por telefone no produto passa por ele.
+ * Gravar `phone_e164` sem o hash deixa o reconhecimento morto e faz `agendamentos.ts` tomar 500
+ * ao remarcar alguém que JÁ é cliente — falha que só aparece na hora de demonstrar.
+ * Idêntico a `hashTelefone` em `src/server/services/telefone.ts`; o sal nunca é impresso.
+ */
+const SAL_TELEFONE = process.env.PHONE_HASH_SALT ?? env.PHONE_HASH_SALT
+if (!SAL_TELEFONE) throw new Error('PHONE_HASH_SALT ausente — sem ele o hash sairia diferente do que o app calcula.')
+const hashTelefone = (e164) => createHash('sha256').update(e164 + SAL_TELEFONE, 'utf8').digest('hex')
 
 const svc = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
@@ -237,6 +247,7 @@ const linhasClientes = CLIENTES.map(([nome, tel, servico, cadencia, ultimaHa, ta
     name: nome,
     created_at: cadastro.toISOString(),
     phone_e164: `+55${tel}`,
+    phone_hash: hashTelefone(`+55${tel}`),
     // Dia travado em 28 para nenhum mês curto (fevereiro) estourar a data.
     birth_date: `19${70 + (diaAniv % 25)}-${String(mesAniv).padStart(2, '0')}-${String(Math.min(diaAniv, 28)).padStart(2, '0')}`,
     tags,
@@ -258,6 +269,7 @@ const COLUNAS_CLIENTE = [
   'name',
   'created_at',
   'phone_e164',
+  'phone_hash',
   'birth_date',
   'tags',
   'preferences',

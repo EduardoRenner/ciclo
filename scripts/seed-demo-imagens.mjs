@@ -1,5 +1,5 @@
 /**
- * Gera e sobe as imagens de vitrine das SEIS contas de demonstração.
+ * Gera e sobe as imagens de vitrine das contas de demonstração (SLUGS_DE_DEMONSTRACAO).
  *
  *   SUPABASE_SERVICE_ROLE_KEY=... node scripts/seed-demo-imagens.mjs
  *
@@ -137,12 +137,32 @@ const PALETA_PROF = ['#3f6f5b', '#8c5a3c', '#4a5d8a', '#7d5aa6', '#a8556b', '#2f
  */
 console.log(`escrevendo em ${new URL(URL_SUPABASE).host}`)
 
+// Alvo: `SLUGS_DE_DEMONSTRACAO` de `src/core/tenants/demonstracao.ts` (mantido em sincronia pela
+// guarda `tests/unit/design/seed-imagens-cobre-demos.test.ts`). Aceita slugs por argumento para
+// rodar só um: `node scripts/seed-demo-imagens.mjs dom-rocha`.
+const SLUGS_DE_DEMONSTRACAO = [
+  'dom-rocha',
+  'ruivo-barber',
+  'teste-essencial',
+  'teste-equipe',
+  'teste-avancado',
+  'lang-barber',
+  'lang-unhas',
+  'demo-navalha-de-ouro',
+  'demo-corte-fino',
+  'demo-dom-estilo',
+  'demo-studio-bella',
+  'demo-salao-encanto',
+  'demo-espaco-vitoria',
+]
+const alvo = process.argv.slice(2).length > 0 ? process.argv.slice(2) : SLUGS_DE_DEMONSTRACAO
 const { data: tenants, error: erroTenants } = await svc
   .from('tenants')
   .select('id, name, slug, settings')
-  .like('slug', 'demo-%')
+  .in('slug', alvo)
   .order('created_at')
 if (erroTenants) throw erroTenants
+if (!tenants.length) throw new Error(`nenhum tenant de demonstração encontrado para: ${alvo.join(', ')}`)
 
 for (const t of tenants) {
   const cor = t.settings?.site?.accent ?? '#8a7a5c'
