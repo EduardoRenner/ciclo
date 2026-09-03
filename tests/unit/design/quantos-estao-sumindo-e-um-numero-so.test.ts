@@ -61,9 +61,19 @@ describe('quantas clientes estão sumindo', () => {
     ).not.toMatch(/count:\s*'exact'/)
   })
 
-  it('o alarme fala de quem JÁ atrasou, não de quem vence hoje', () => {
-    // `due` é "vence hoje" — ainda não sumiu. Chamar isso de "está sumindo" assusta à toa, e o
-    // alarme que assusta à toa é o que ensina a ignorar todos os outros.
-    expect(fonte()).toMatch(/eq\('ja_atrasado',\s*true\)/)
+  it('os DOIS contadores filtram por quem já atrasou', () => {
+    /*
+     * Conta as ocorrências em vez de perguntar "existe alguma?".
+     *
+     * A primeira versão desta guarda usava `toMatch`, e passou com a mutação aplicada: tirar o
+     * filtro de UM dos dois contadores deixava o outro intacto, e o `toMatch` achava esse outro.
+     * Guarda que pergunta "existe em algum lugar?" nunca pega "sumiu de um lugar" — e o defeito
+     * que ela existe para pegar é justamente os dois números divergirem.
+     *
+     * `due` é "vence hoje", ainda não sumiu. Chamar isso de "está sumindo" assusta à toa, e o
+     * alarme que assusta à toa é o que ensina a ignorar todos os outros.
+     */
+    const filtros = fonte().match(/eq\('ja_atrasado',\s*true\)/g) ?? []
+    expect(filtros.length, 'os dois contadores precisam do mesmo filtro').toBe(2)
   })
 })
