@@ -126,4 +126,21 @@ describe('o detector reconhece as duas formas', () => {
     // `action` também é atributo válido em outros contextos; a guarda é sobre `<form>`.
     expect(/<form\s[^>]*\baction=/.test('<Button action="salvar">')).toBe(false)
   })
+
+  it('nenhum byte de controle sobrou nos padrões deste arquivo', () => {
+    /*
+     * Guarda contra a armadilha que JÁ cegou a asserção do expediente neste mesmo arquivo: um `\b`
+     * escrito através de um heredoc de Python vira **backspace (0x08)**, porque em Python `'\b'` é
+     * um escape válido. O padrão para de casar com qualquer coisa e o byte é invisível em qualquer
+     * listagem, `git diff` ou revisão — a mutação passou verde e só a instrumentação revelou.
+     *
+     * `\b`, `\a`, `\f`, `\v` e `\0` mudam de significado ao atravessar Python. Aqui o byte é
+     * procurado diretamente, que é a única leitura que não se deixa enganar.
+     */
+    const bruto = readFileSync('tests/unit/design/formulario-nao-apaga-o-que-foi-digitado.test.ts', 'utf8')
+    const deControle = [...bruto]
+      .map((c, i) => ({ codigo: c.charCodeAt(0), posicao: i }))
+      .filter(({ codigo }) => codigo < 32 && codigo !== 9 && codigo !== 10 && codigo !== 13)
+    expect(deControle, 'byte de controle no fonte do teste: um regex foi corrompido ao ser escrito').toEqual([])
+  })
 })
