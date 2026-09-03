@@ -70,7 +70,14 @@ describe('o leitor deste teste', () => {
 
 describe('o número que o onboarding promete é o número de campos que ele tem', () => {
   it('a copy e o formulário concordam', () => {
-    const n = numeroAfirmadoNoH1()!
+    const n = numeroAfirmadoNoH1()
+    /*
+     * Sai limpo quando o H1 perde o número, em vez de estourar num `!`. A primeira versão usava
+     * asserção de não-nulo e a mutação que trocava o H1 reprovava com "Cannot read properties of
+     * null" pendurado atrás da mensagem certa — falha ilegível é falha que alguém marca como flake.
+     * A ausência do número já é reprovada com nome próprio no bloco do leitor, acima.
+     */
+    if (!n) return
     expect(
       camposDoFormulario(),
       `o H1 promete "${n.palavra} respostas" e o formulário tem ${camposDoFormulario()} campos. ` +
