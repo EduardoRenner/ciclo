@@ -113,6 +113,14 @@ describe('o seed da carteira de demonstração', () => {
     // Timeline impossível: cliente com visita antes do próprio cadastro. Aconteceu com ~6% da
     // carteira porque o `created_at` inicial era estimativa e o jitter da cadência o furava.
     expect(conferencia, 'nada guarda visita antes do cadastro').toMatch(/visita_antes_do_cadastro/)
+
+    // E o conserto em si: o `created_at` recuado para antes de `min(starts_at)`. A conferência
+    // acima é a segunda camada (mede o resultado); esta é a primeira (o clamp existe).
+    const src2 = sql()
+    const clamp = src2.slice(src2.indexOf('update clients c set created_at'))
+    expect(clamp.length, 'o seed não tem mais o clamp de created_at').toBeGreaterThan(0)
+    expect(clamp, 'o clamp tem que sair de min(starts_at) dos agendamentos').toMatch(/min\(a\.starts_at\)/)
+    expect(clamp, 'e só recuar quem está errado (created_at depois da 1ª visita)').toMatch(/c\.created_at\s*>\s*x\.primeira/)
   })
 
   it('nenhuma mensagem nasce na fila de envio', () => {
