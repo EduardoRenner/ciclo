@@ -131,7 +131,7 @@ export default function ListaClientes({ iniciais }: { iniciais: ClienteLinha[] }
 
       {falhou ? (
         <p role="alert" className="mb-3 text-secundario text-bad">
-          Não consegui buscar agora. Confira a conexão e tente de novo — a lista abaixo é a de antes.
+          Não consegui buscar agora. Confira a conexão e tente de novo. A lista abaixo é a de antes.
         </p>
       ) : null}
 
@@ -152,7 +152,7 @@ export default function ListaClientes({ iniciais }: { iniciais: ClienteLinha[] }
               titulo={segmento ? 'Ninguém nesse grupo agora' : termo ? 'Nenhum resultado' : 'Sem clientes ainda'}
               descricao={
                 segmento
-                  ? 'Esse filtro atualiza todo dia — volte mais tarde.'
+                  ? 'Esse filtro atualiza todo dia, volte mais tarde.'
                   : termo
                     ? 'Confira a grafia do nome ou o telefone digitado.'
                     : 'Cadastre a primeira cliente para começar a marcar horários.'

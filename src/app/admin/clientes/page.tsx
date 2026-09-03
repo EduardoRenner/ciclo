@@ -106,7 +106,7 @@ export default async function PaginaClientes() {
             {acimaDoTeto ? (
               <>
                 Você tem <span className="font-semibold">{painel.total}</span> clientes, acima dos{' '}
-                {limiteClientes.limite} do plano atual. <span className="font-semibold">Nada foi bloqueado</span> —
+                {limiteClientes.limite} do plano atual. <span className="font-semibold">Nada foi bloqueado</span>:
                 cadastrar continua funcionando e nenhuma ficha some.
               </>
             ) : (

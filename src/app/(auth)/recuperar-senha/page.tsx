@@ -36,7 +36,7 @@ export default async function PaginaRecuperarSenha({
       </div>
       {linkExpirado ? (
         <p role="alert" className="max-w-sm text-center text-secundario text-warn">
-          Esse link não vale mais — eles expiram e só funcionam no aparelho em que você pediu. Peça outro abaixo.
+          Esse link não vale mais: eles expiram e só funcionam no aparelho em que você pediu. Peça outro abaixo.
         </p>
       ) : null}
       <FormularioRecuperar />

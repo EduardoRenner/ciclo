@@ -211,7 +211,7 @@ export default function FormularioAgendamento({
             titulo: 'Série criada',
             descricao:
               puladas > 0
-                ? `${total - puladas} de ${total} horários marcados — ${puladas} pulados por folga ou conflito.`
+                ? `${total - puladas} de ${total} horários marcados, ${puladas} pulados por folga ou conflito.`
                 : `${total} horários marcados.`,
           })
           router.push('/admin/agenda')

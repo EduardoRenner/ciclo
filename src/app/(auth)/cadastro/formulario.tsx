@@ -44,7 +44,7 @@ export default function FormularioCadastro() {
   if (enviado) {
     return (
       <p className="max-w-sm text-center text-corpo text-txt">
-        Quase lá — mandamos um link de confirmação para o seu e-mail. Abra a mensagem e clique nele para continuar.
+        Quase lá! Mandamos um link de confirmação para o seu e-mail. Abra a mensagem e clique nele para continuar.
       </p>
     )
   }

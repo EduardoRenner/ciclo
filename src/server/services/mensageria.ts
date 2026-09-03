@@ -126,7 +126,7 @@ export async function enviarComFallback(
   }
 
   try {
-    if (!entrada.emailTo) throw new Error('Cliente sem e-mail cadastrado — nenhum canal de fallback disponível.')
+    if (!entrada.emailTo) throw new Error('Cliente sem e-mail cadastrado, nenhum canal de fallback disponível.')
     const { providerId } = await enviarEmailDeFallback({ to: entrada.emailTo, subject: entrada.fallbackSubject, body: entrada.fallbackBody })
     return registrar(db, entrada, 'email', 'sent', providerId, null)
   } catch (erroFallback) {

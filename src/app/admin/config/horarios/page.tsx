@@ -26,7 +26,7 @@ export default async function PaginaHorarios() {
 
   return (
     <>
-      <PageHeader titulo="Horário de funcionamento" descricao="O padrão do negócio — vale para quem não tem horário próprio cadastrado." />
+      <PageHeader titulo="Horário de funcionamento" descricao="O padrão do negócio. Vale para quem não tem horário próprio cadastrado." />
 
       <EditorExpediente professionalId={null} expedienteInicial={expediente} folgasIniciais={folgas} />
     </>

@@ -167,7 +167,7 @@ export default function Privacidade() {
           <h2>6. Por quanto tempo</h2>
           <p>
             Enquanto sua conta existir. Quando você apaga um cliente, os dados pessoais dele são
-            eliminados —{' '}
+            eliminados,{' '}
             <strong className="font-semibold text-txt">inclusive de dentro dos registros internos</strong>{' '}
             de auditoria, e não só da ficha visível.
           </p>

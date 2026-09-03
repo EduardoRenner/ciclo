@@ -119,7 +119,7 @@ export default function EditorModelos({ iniciais, nomeDoNegocio }: { iniciais: M
           <EmptyState
             icone={<MessageSquare aria-hidden className="size-6" />}
             titulo="Nenhum modelo salvo"
-            descricao="Modelos são mensagens prontas com o nome e a data já no lugar — você só revisa e envia."
+            descricao="Modelos são mensagens prontas com o nome e a data já no lugar. Você só revisa e envia."
             acao={<Button onClick={() => abrir('novo')}>Criar modelo</Button>}
           />
         </Card>

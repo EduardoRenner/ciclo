@@ -240,7 +240,7 @@ export default function Ficha({
    */
   const textoIndicacao = linkIndicacao
     ? aplicarVariaveis(
-        '{{nome}}, adoro te atender! Que tal indicar uma amiga? Ela agenda o primeiro horário por aqui, sem esperar resposta — {{link}}',
+        '{{nome}}, adoro te atender! Que tal indicar uma amiga? Ela agenda o primeiro horário por aqui, sem esperar resposta: {{link}}',
         variaveis,
       )
     : ''
@@ -789,7 +789,7 @@ export default function Ficha({
             <span className="text-corpo text-txt">
               Bloquear agendamento online
               <span className="block text-secundario text-txt-3">
-                Continua sendo atendido normalmente — só não marca sozinho pelo site.
+                Continua sendo atendido normalmente, só não marca sozinho pelo site.
               </span>
             </span>
           </label>

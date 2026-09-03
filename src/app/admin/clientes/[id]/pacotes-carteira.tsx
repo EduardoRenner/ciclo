@@ -211,7 +211,7 @@ function LancarCredito({ clientId, aoFechar }: { clientId: string; aoFechar: () 
       return
     }
     if (!motivo.trim()) {
-      setErro('Escreva o motivo — é o que você vai ler daqui a três meses.')
+      setErro('Escreva o motivo: é o que você vai ler daqui a três meses.')
       return
     }
     setErro(null)

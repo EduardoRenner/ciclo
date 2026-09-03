@@ -479,7 +479,7 @@ export default function Agendar({
                 baixarIcs({
                   inicio: slotEscolhido.startsAt,
                   fim: slotEscolhido.endsAt,
-                  titulo: `${servicoEscolhido.name} — ${nomeDoSalao}`,
+                  titulo: `${servicoEscolhido.name} · ${nomeDoSalao}`,
                   local: enderecoDoSalao,
                   slug,
                 })
@@ -702,7 +702,7 @@ export default function Agendar({
                 // Todo dia do trilho parecia igualmente disponível; nos fechados a
                 // pessoa tocava e batia numa mensagem vazia. O rótulo é o mesmo que
                 // o leitor de tela ouve.
-                aria-label={`${nomeDoDia}, dia ${data.getUTCDate()}${fechado ? " — fechado" : ""}`}
+                aria-label={`${nomeDoDia}, dia ${data.getUTCDate()}${fechado ? ", fechado" : ""}`}
                 className={
                   "flex h-16 w-14 shrink-0 flex-col items-center justify-center gap-0.5 rounded-[var(--radius-sm)] text-label font-semibold transition duration-[var(--dur-1)] ease-[var(--ease-ios)] active:scale-[.95] " +
                   (d === dia

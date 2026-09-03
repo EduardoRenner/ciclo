@@ -63,7 +63,7 @@ export default function EditorFidelidade({
     <Card>
       <p className="text-corpo font-semibold">Como pontuar automaticamente</p>
       <p className="mt-1 text-secundario text-txt-2">
-        A cada atendimento concluído, o cliente ganha pontos sozinho — sem ninguém precisar lançar na mão.
+        A cada atendimento concluído, o cliente ganha pontos sozinho, sem ninguém precisar lançar na mão.
       </p>
 
       <div className="mt-3 grid grid-cols-2 gap-3">

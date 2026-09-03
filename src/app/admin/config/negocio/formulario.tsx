@@ -126,7 +126,7 @@ export default function FormularioNegocio({ tenant, urlSite }: { tenant: Tenant;
             disabled
             className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-3 px-3 text-corpo tabular text-txt-3"
           />
-          <span className="text-label text-txt-3">Não dá pra trocar depois de criado — links já enviados quebrariam.</span>
+          <span className="text-label text-txt-3">Não dá pra trocar depois de criado: links já enviados quebrariam.</span>
         </label>
 
         <label className="flex flex-col gap-1">

@@ -157,7 +157,7 @@ export default function FormularioServico({ aberto, aoFechar, servico, aoSalvar 
           rotulo="Como cobra"
           value={modeloDePreco}
           onChange={(e) => setModeloDePreco(e.target.value as ModeloDePreco)}
-          ajuda="Muda só como o preço aparece pro cliente — o valor que entra no caixa continua ajustável na hora de fechar."
+          ajuda="Muda só como o preço aparece pro cliente. O valor que entra no caixa continua ajustável na hora de fechar."
         >
           <option value="fixed">Preço fechado</option>
           <option value="hourly">Por hora</option>

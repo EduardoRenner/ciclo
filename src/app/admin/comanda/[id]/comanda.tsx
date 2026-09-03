@@ -171,7 +171,7 @@ export default function Comanda({
             >
               {servicos.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {s.name} — {dinheiro.format(s.price_cents / 100)}
+                  {s.name} · {dinheiro.format(s.price_cents / 100)}
                 </option>
               ))}
             </select>
@@ -254,7 +254,7 @@ export default function Comanda({
           Fechar comanda
         </Button>
       ) : (
-        <p className="text-center text-secundario text-txt-2">Comanda fechada — nada mais pode mudar aqui.</p>
+        <p className="text-center text-secundario text-txt-2">Comanda fechada. Nada mais pode mudar aqui.</p>
       )}
     </div>
   )

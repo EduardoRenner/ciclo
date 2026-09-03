@@ -237,11 +237,11 @@ export default function Hoje({
                       <p className="truncate text-corpo font-semibold">{a.name}</p>
                       <p className="text-secundario text-txt-2">
                         {a.validade === 'bloqueado'
-                          ? 'Vencido — uso bloqueado'
+                          ? 'Vencido: uso bloqueado'
                           : a.validade === 'alerta'
                             ? 'Perto de vencer'
                             : a.precisaRecomprar
-                              ? `${a.stockQty} em estoque — hora de recomprar`
+                              ? `${a.stockQty} em estoque, hora de recomprar`
                               : ''}
                       </p>
                     </div>

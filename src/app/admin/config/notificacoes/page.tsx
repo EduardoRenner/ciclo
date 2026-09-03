@@ -16,7 +16,7 @@ export const metadata = { title: "Notificações" }
 export default function PaginaNotificacoes() {
   return (
     <>
-      <PageHeader titulo="Notificações" descricao="Web Push — funciona com o app instalado, mesmo em segundo plano." />
+      <PageHeader titulo="Notificações" descricao="Web Push: funciona com o app instalado, mesmo em segundo plano." />
 
       <AtivarPush />
     </>

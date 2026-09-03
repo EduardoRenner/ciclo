@@ -160,7 +160,7 @@ export default function FormularioSeguranca({ fatoresIniciais }: { fatoresInicia
   return (
     <Card className="flex flex-col gap-3">
       <p className="text-corpo text-txt-2">
-        Sem a autenticação em duas etapas, exportar dados, apagar cliente e abrir o cofre de saúde continuam bloqueados por segurança —
+        Sem a autenticação em duas etapas, exportar dados, apagar cliente e abrir o cofre de saúde continuam bloqueados por segurança;
         ative pra liberar esses recursos.
       </p>
       {erro ? (

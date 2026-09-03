@@ -92,7 +92,7 @@ export default function Automacoes({ automacoes, config }: { automacoes: Automac
 
             {!roda ? (
               <p className="text-secundario text-txt-3">
-                Está pronta, mas ainda não roda sozinha — falta ligar o envio no WhatsApp. Enquanto isso, ela aparece
+                Está pronta, mas ainda não roda sozinha: falta ligar o envio no WhatsApp. Enquanto isso, ela aparece
                 para você resolver na mão.
               </p>
             ) : null}
@@ -100,7 +100,7 @@ export default function Automacoes({ automacoes, config }: { automacoes: Automac
             {a.sempreLigada ? (
               <p className="flex items-center gap-1.5 text-secundario text-txt-3">
                 <Lock aria-hidden className="size-3.5 shrink-0" />
-                Faz parte do produto — {a.motivoDoTeto}
+                Faz parte do produto: {a.motivoDoTeto}
               </p>
             ) : (
               <>

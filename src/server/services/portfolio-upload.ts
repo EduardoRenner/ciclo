@@ -35,7 +35,7 @@ export async function publicarNoPortfolio(tenantId: string, mediaId: string): Pr
     if (erroFoto) throw new AppError('INTERNAL', { cause: erroFoto })
     if (!foto || foto.deleted_at || foto.kind !== 'photo' || !foto.client_id) throw new AppError('NOT_FOUND', { message: 'Essa foto não existe mais.' })
     if (!foto.consent_id) {
-      throw AppError.validacao({ consentId: 'Esta foto não tem autorização de uso de imagem — conceda antes de publicar.' })
+      throw AppError.validacao({ consentId: 'Esta foto não tem autorização de uso de imagem. Conceda antes de publicar.' })
     }
 
     const { data: consentimento, error: erroConsentimento } = await db
