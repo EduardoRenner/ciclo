@@ -3,6 +3,7 @@ import { z } from 'zod'
 
 import type { MessagingProvider } from '@/server/providers/messaging/types'
 import { WhatsAppCloudProvider } from '@/server/providers/messaging/whatsapp'
+import { quemRecuperar } from '@/core/ciclo/quem-recuperar'
 import { enviarComFallback } from '@/server/services/mensageria'
 import { AppError } from '@/server/http/errors'
 
@@ -47,14 +48,34 @@ export async function listarParaRecuperar(
   let consulta = db.from('v_recover_revenue').select('*').eq('tenant_id', tenantId)
   if (opcoes.state) consulta = consulta.eq('state', opcoes.state)
 
-  const { data, error } = await consulta
+  /*
+   * A segunda consulta existe porque `v_recover_revenue` filtra `on_track` FORA — de dentro dela
+   * é impossível saber se a cliente tem algum ciclo saudável. Sem essa informação, quem vem todo
+   * mês cortar o cabelo entrava na lista de "atrasadas para voltar" por causa de uma progressiva
+   * que fez uma vez em março. Ver `core/ciclo/quem-recuperar.ts` para os números medidos.
+   */
+  const [{ data, error }, { data: saudaveis, error: erroSaudaveis }] = await Promise.all([
+    consulta,
+    db.from('client_cycles').select('client_id').eq('tenant_id', tenantId).eq('state', 'on_track'),
+  ])
   if (error) throw new AppError('INTERNAL', { cause: error })
+  if (erroSaudaveis) throw new AppError('INTERNAL', { cause: erroSaudaveis })
 
   // A view não declara FK nem `not null` para o PostgREST/gerador de tipos,
   // mas toda coluna aqui vem de `join`s obrigatórios sobre colunas `not null`
   // (0001) — o `!` é seguro, não uma aposta.
-  const linhas = data ?? []
-  const totalValueCents = linhas.reduce((soma, l) => soma + l.value_at_risk_cents!, 0)
+  const comCicloEmDia = new Set((saudaveis ?? []).map((l) => l.client_id))
+  const linhas = quemRecuperar(
+    (data ?? []).map((l) => ({ ...l, clientId: l.client_id!, valueCents: l.value_at_risk_cents! })),
+    comCicloEmDia,
+  )
+
+  /*
+   * `count` e `totalValueCents` saem das linhas JÁ reduzidas a uma por cliente. Antes contavam
+   * linhas cruas e o cartão rotulado "Clientes" chegou a mostrar 149 num salão com 55 — e a soma
+   * de dinheiro contava a mesma pessoa uma vez por serviço atrasado.
+   */
+  const totalValueCents = linhas.reduce((soma, l) => soma + l.valueCents, 0)
   const limite = opcoes.limit ?? LIMITE_PADRAO
 
   return {
@@ -119,7 +140,24 @@ export async function enviarParaRecuperar(
   const skipped: ResultadoEnviarRecuperar['skipped'] = []
   let queued = 0
 
+  /*
+   * Uma mensagem por PESSOA no lote, nunca uma por (cliente × serviço).
+   *
+   * A trava de 7 dias abaixo lê `last_campaign_at` da linha de `client_cycles`, que é por serviço:
+   * duas linhas da mesma cliente têm as duas `last_campaign_at` nulas, as duas passam, e a pessoa
+   * recebe dois WhatsApp ao mesmo tempo. Com a lista antiga (uma linha por serviço) e o botão de
+   * marcar todas, uma cliente atrasada em três serviços recebia TRÊS mensagens no mesmo segundo.
+   *
+   * A lista agora já vem com uma linha por cliente, então na prática isto não deveria acontecer —
+   * e é exatamente por isso que a trava fica aqui também: proteção que depende de o chamador
+   * mandar a lista certa não é proteção. O corpo da requisição vem de fora.
+   */
+  const jaEnviado = new Set<string>()
+
   for (const item of entrada.items) {
+    if (jaEnviado.has(item.clientId)) continue
+    jaEnviado.add(item.clientId)
+
     const { data: linha, error: erroCiclo } = await db
       .from('client_cycles')
       .select('last_campaign_at, state, value_at_risk_cents')
