@@ -10,6 +10,7 @@
  *
  * Rodar de novo apaga e recria (o tenant cai por slug, o resto vai no cascade).
  */
+import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 
 import { createClient } from '@supabase/supabase-js'
@@ -23,6 +24,16 @@ const env = Object.fromEntries(
       return [l.slice(0, i).trim(), l.slice(i + 1).trim()]
     }),
 )
+
+/**
+ * `phone_hash` NÃO é opcional: toda busca de cliente por telefone no produto passa por ele.
+ * Gravar `phone_e164` sem o hash deixa o reconhecimento morto e faz `agendamentos.ts` tomar 500
+ * ao remarcar alguém que JÁ é cliente — falha que só aparece na hora de demonstrar.
+ * Idêntico a `hashTelefone` em `src/server/services/telefone.ts`; o sal nunca é impresso.
+ */
+const SAL_TELEFONE = process.env.PHONE_HASH_SALT ?? env.PHONE_HASH_SALT
+if (!SAL_TELEFONE) throw new Error('PHONE_HASH_SALT ausente — sem ele o hash sairia diferente do que o app calcula.')
+const hashTelefone = (e164) => createHash('sha256').update(e164 + SAL_TELEFONE, 'utf8').digest('hex')
 
 const svc = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
@@ -154,6 +165,7 @@ const linhasClientes = NOMES.map((nome, i) => {
     name: nome,
     created_at: diasAtras(primeiraVisitaHa + 3).toISOString(),
     phone_e164: `+5511992${String(200000 + i).padStart(6, '0')}`,
+    phone_hash: hashTelefone(`+5511992${String(200000 + i).padStart(6, '0')}`),
     birth_date: `1985-${String(((i % 12) + 1)).padStart(2, '0')}-15`,
     tags,
     source: ['instagram', 'google', 'indicacao'][i % 3],
@@ -164,7 +176,7 @@ const linhasClientes = NOMES.map((nome, i) => {
   }
 })
 
-const COLUNAS_CLIENTE = ['tenant_id', 'name', 'created_at', 'phone_e164', 'birth_date', 'tags', 'source', 'marketing_opt_in']
+const COLUNAS_CLIENTE = ['tenant_id', 'name', 'created_at', 'phone_e164', 'phone_hash', 'birth_date', 'tags', 'source', 'marketing_opt_in']
 const { data: clientesCriados, error: erroClientes } = await svc
   .from('clients')
   .insert(linhasClientes.map((l) => Object.fromEntries(COLUNAS_CLIENTE.map((c) => [c, l[c]]))))
