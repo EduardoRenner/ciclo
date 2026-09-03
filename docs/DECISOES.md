@@ -5563,3 +5563,34 @@ valor e aquele teste — não se caça string.
 
 **O que NÃO entrou, de propósito:** atribuição de quem indicou quem (precisa de coluna e não
 paga sozinha antes de haver prêmio) e qualquer frase que mencione desconto.
+
+### O cadastro não dizia que ali se assina um contrato
+
+**Achado.** `/cadastro` é onde o contrato se forma, e a tela não mencionava nem linkava Termos ou
+Política de Privacidade. Os dois existem desde 30/08 e só eram alcançáveis pela landing e por
+`/precos`, que ninguém precisa visitar para chegar ao botão (o `/entrar` e um link direto levam
+até lá). O produto processa dado de saúde; o momento do aceite é este.
+
+Junto: a tela do funil que mais converte era a única sem argumento nenhum. A landing prometia
+grátis e sem cartão, e o formulário de quatro campos não repetia isso. E o `h1` dizia "Criar conta
+no CICLO" com o logotipo logo acima dizendo CICLO — a marca duas vezes em 60 px, o mesmo defeito
+da dobra da landing.
+
+**Decisão.** Aviso de aceite abaixo do botão (sem caixa de marcar: a lei aceita o aceite pelo ato
+de contratar quando os termos estão à vista, e uma caixa a mais é atrito que não protege ninguém),
+linha de risco no subtítulo derivada de `NOME_DO_PLANO`, e `h1` sem a marca.
+
+### `toque-48` em dois links do mesmo parágrafo deixa um deles intocável
+
+**Medido, não deduzido, e o conserto era pior que o defeito.** Ao aplicar `toque-48` nos dois links
+legais dentro da frase, a sondagem ponto a ponto deu: "Termos de uso" com 49 px efetivos e
+"Política de Privacidade" com **zero**. Os dois começam na mesma linha, e o `::after` absoluto de
+48 px do primeiro cobre o segundo inteiro.
+
+A classe só é segura onde os elementos não dividem linha de texto corrida. Os rodapés da landing e
+de `/precos` funcionam porque são `flex` com `gap` — desenho agora adotado aqui, com 49 px medidos
+nos dois links.
+
+`alvo-de-toque-tem-48` não pega esta classe de defeito por desenho: ela confere se a classe está no
+`className`, não se o alvo resultante é alcançável. Registrado na tabela de armadilhas do
+`CLAUDE.md`, que é onde alguém vai tropeçar nisso de novo.
