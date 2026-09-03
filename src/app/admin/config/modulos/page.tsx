@@ -35,7 +35,7 @@ export default async function PaginaModulos() {
     <>
       <PageHeader
         titulo="Módulos"
-        descricao="Ligue só o que você usa. Desligar esconde da interface — nunca apaga nada."
+        descricao="Ligue só o que você usa. Desligar esconde da interface, e nunca apaga nada."
       />
       <Modulos iniciais={modulos} />
     </>

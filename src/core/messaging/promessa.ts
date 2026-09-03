@@ -61,11 +61,11 @@ export function textoDoEnvioAutomatico(
   // com a mentira que ela existe para pegar. Dá para ensinar a regex a entender "nada"/"não",
   // mas negação em português tem forma demais para uma lista fechada (é a lição registrada logo
   // acima). Mais barato e mais firme: a copy verdadeira não encosta na construção proibida.
-  if (pausado) return 'Pausado — nenhuma mensagem para cliente parte do CICLO enquanto estiver assim.'
+  if (pausado) return 'Pausado. Nenhuma mensagem para cliente parte do CICLO enquanto estiver assim.'
   return remindersAgendada
-    ? 'Ligado — lembrete de agendamento e campanha de recuperação saem sozinhos, no horário certo.'
+    ? 'Ligado. Lembrete de agendamento e campanha de recuperação saem sozinhos, no horário certo.'
     : // Sem afirmar disparo automático, e sem virar silêncio: o dono precisa saber que a mensagem
       // depende dele hoje, ou vai esperar por um envio que não vem. O caminho real é tocar em
       // "Avisar" (tela Recuperar) ou "Mensagem" (ficha da cliente), que abrem o WhatsApp.
-      'Liberado — mas o disparo é seu: a mensagem vai quando você toca em "Avisar", pelo WhatsApp.'
+      'Liberado, mas o disparo é seu: a mensagem vai quando você toca em "Avisar", pelo WhatsApp.'
 }

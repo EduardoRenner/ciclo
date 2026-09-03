@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 
+import { ehDemonstracao } from '@/core/tenants/demonstracao'
 import { AppError } from '@/server/http/errors'
 import { perfilPublico, quemIndicou } from '@/server/services/public-booking'
 
@@ -64,6 +65,29 @@ export default async function PaginaAgendar({
       <header className="mb-6">
         <h1 className="text-titulo font-bold">Agendar em {perfil.name}</h1>
       </header>
+
+      {/*
+        O aviso de demonstração existia só em `/{slug}` — e o comentário que o acompanha lá descreve
+        o defeito com estas palavras: *"sem ele, dá para escolher serviço e horário numa barbearia
+        que não existe e ficar esperando um atendimento que nunca vai acontecer"*.
+
+        **Escolher serviço e horário acontece AQUI.** O conserto de 2026-08 foi aplicado na página
+        de perfil e esta ficou de fora, que é a mesma armadilha de `recurso-pago-avisa-antes`
+        (consertar o caso em vez da pergunta): o `/{slug}` tem um CTA "Agendar horário" apontando
+        para cá, e quem chega por um print ou por um link direto nunca passa pelo aviso.
+
+        Fica ANTES dos passos, pelo mesmo motivo de lá: aviso depois do formulário chega tarde.
+      */}
+      {ehDemonstracao(slug) ? (
+        <p
+          role="status"
+          className="mb-6 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-4 py-3 text-secundario text-txt-2"
+        >
+          <span className="font-semibold text-txt">Página de exemplo do CICLO.</span> Este
+          estabelecimento não existe: dá para percorrer o agendamento inteiro aqui, mas nenhum
+          horário marcado será atendido.
+        </p>
+      ) : null}
 
       <Agendar
         slug={slug}

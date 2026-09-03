@@ -74,7 +74,7 @@ export default function Modulos({ iniciais }: { iniciais: ModuloNaTela[] }) {
                   </Link>
                 </p>
               ) : m.sempreLigado ? (
-                <p className="mt-0.5 text-secundario text-txt-3">Sempre ligado — é a base do produto</p>
+                <p className="mt-0.5 text-secundario text-txt-3">Sempre ligado: é a base do produto</p>
               ) : null}
             </div>
 

@@ -42,7 +42,16 @@ export const CARTOES: Plano[] = [
   {
     tier: 'gratis',
     chamada: 'Para sempre, sem cartão.',
-    paraQuem: 'Você atende sozinho e quer sair do caderno.',
+    /*
+      Era "Você atende sozinho e quer sair do caderno." — o defeito que a tabela do
+      `docs/20-COPY-PLANO.md` §C.4 nomeia: *"quem atende sozinho" não resolve*, porque escolher um
+      gênero é o mesmo erro que trocar de gênero. A saída é reescrever sem, e "por conta" é
+      exatamente a substituição que aquela tabela recomenda.
+
+      Ficou fora da guarda de gênero até 2026-09-03 porque ela varria só `src/app` e
+      `src/components`, e este arquivo é `src/lib` — copy de produto mora nos três.
+    */
+    paraQuem: 'Você atende por conta e quer sair do caderno.',
     inclui: [
       { texto: 'Agenda sem risco de marcar dois no mesmo horário', modulo: 'agenda' },
       { texto: 'Sua página de agendamento com link para a bio', modulo: 'public_page' },
@@ -64,11 +73,11 @@ export const CARTOES: Plano[] = [
         `src/core/cron/agendadas.ts` é a lista que o código usa.
       */
     ],
-    naoInclui: ['Mandar mensagem para vários de uma vez — no grátis você manda um a um'],
+    naoInclui: ['Mandar mensagem para vários de uma vez: no grátis você manda um a um'],
   },
   {
     tier: 'essencial',
-    porDia: 'menos de R$ 1,70 por dia — o preço de um corte, uma vez por mês',
+    porDia: 'menos de R$ 1,70 por dia, o preço de um corte uma vez por mês',
     chamada: 'Por mês, um profissional.',
     paraQuem: 'Você já viu quem sumiu e cansou de mandar mensagem um por um.',
     inclui: [

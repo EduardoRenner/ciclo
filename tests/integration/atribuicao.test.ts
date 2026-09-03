@@ -159,7 +159,9 @@ describe('receitaAtribuidaAoCiclo', () => {
     'mês sem nenhum agendamento atribuível devolve zero, não erro',
     async () => {
       const resultado = await receitaAtribuidaAoCiclo(svc, tenantId, TZ, '2026-01-01', '2026-01-31')
-      expect(resultado).toEqual({ totalCents: 0, count: 0, items: [] })
+      // `mensagensNaJanela` é o denominador da mesma janela de busca — 0 aqui porque nenhuma
+      // campanha foi enviada em janeiro nem nos 30 dias antes.
+      expect(resultado).toEqual({ totalCents: 0, count: 0, items: [], mensagensNaJanela: 0 })
     },
     30_000,
   )

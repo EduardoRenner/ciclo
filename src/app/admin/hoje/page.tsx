@@ -42,7 +42,7 @@ export default async function PaginaHoje() {
     centralDeAcoes(db, ctx.tenantId).catch(() => ({ titulo: '', acoes: [] })),
     // F1 (docs/25-ESTRATEGIA-E-EXECUCAO.md): em dia sem movimento, o herói mostra o que o Motor
     // de Ciclo já trouxe este mês em vez de R$ 0,00. Mesmo cálculo de `/admin/recuperar`.
-    receitaAtribuidaAoCiclo(db, ctx.tenantId, timezone, desde, ate).catch(() => ({ totalCents: 0, count: 0, items: [] })),
+    receitaAtribuidaAoCiclo(db, ctx.tenantId, timezone, desde, ate).catch(() => ({ totalCents: 0, count: 0, items: [], mensagensNaJanela: 0 })),
   ])
 
   const data = new Intl.DateTimeFormat('pt-BR', {

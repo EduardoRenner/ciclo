@@ -69,7 +69,7 @@ export async function definirModulo(db: Cliente, tenantId: string, entrada: Entr
 
   if (doCatalogo.sempreLigado) {
     throw new AppError('VALIDATION_ERROR', {
-      message: `"${doCatalogo.label}" não pode ser desligado — é a base do produto.`,
+      message: `"${doCatalogo.label}" não pode ser desligado: é a base do produto.`,
     })
   }
 

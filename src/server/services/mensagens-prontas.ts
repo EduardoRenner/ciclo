@@ -37,14 +37,14 @@ type EntradaParcial = z.infer<typeof EsquemaModeloParcial>
 export const MODELOS_PADRAO: { slug: string; title: string; body: string }[] = [
   { slug: 'confirmacao', title: 'Confirmar horário', body: 'Oi {{nome}}! Confirmando: {{servico}} no dia {{data}} às {{hora}}. Posso confirmar?' },
   { slug: 'lembrete', title: 'Lembrete de amanhã', body: 'Oi {{nome}}! Passando pra lembrar do seu horário amanhã, {{data}} às {{hora}}. Até lá!' },
-  { slug: 'sentimos_falta', title: 'Sumiu — chamar de volta', body: 'Oi {{nome}}, quanto tempo! Faz um tempinho que a gente não se fala. Bora marcar um horário? Me chama que eu encaixo.' },
-  { slug: 'aniversario', title: 'Feliz aniversário', body: 'Parabéns, {{nome}}! 🎉 Te desejo tudo de bom. Esse mês tem um mimo te esperando — me chama pra combinar.' },
-  { slug: 'pos_atendimento', title: 'Depois do atendimento', body: 'Obrigado pela confiança, {{nome}}! Qualquer dúvida sobre o que foi feito, é só chamar.' },
-  { slug: 'reagendar', title: 'Preciso remarcar', body: 'Oi {{nome}}, tudo bem? Preciso remarcar seu horário do dia {{data}}. Tenho outros horários livres — qual fica melhor pra você?' },
+  { slug: 'sentimos_falta', title: 'Sumiu, chamar de volta', body: 'Oi {{nome}}, quanto tempo! Faz um tempinho que a gente não se fala. Bora marcar um horário? Me chama que eu encaixo.' },
+  { slug: 'aniversario', title: 'Feliz aniversário', body: 'Parabéns, {{nome}}! 🎉 Te desejo tudo de bom. Esse mês tem um mimo te esperando, me chama pra combinar.' },
+  { slug: 'pos_atendimento', title: 'Depois do atendimento', body: 'Que bom te atender, {{nome}}! Qualquer dúvida sobre o que foi feito, é só chamar.' },
+  { slug: 'reagendar', title: 'Preciso remarcar', body: 'Oi {{nome}}, tudo bem? Preciso remarcar seu horário do dia {{data}}. Tenho outros horários livres. Qual fica melhor pra você?' },
   { slug: 'promocao', title: 'Promoção da semana', body: 'Oi {{nome}}! Essa semana o {{servico}} está saindo por {{valor}}. Quer que eu separe um horário?' },
-  { slug: 'indicacao', title: 'Pedir indicação', body: '{{nome}}, obrigado por confiar no meu trabalho! 🙏 Dê um desconto pra uma amiga: ela agenda o primeiro horário por aqui, sem esperar resposta — {{link}}' },
+  { slug: 'indicacao', title: 'Pedir indicação', body: '{{nome}}, que bom que você confia no meu trabalho! 🙏 Dê um desconto pra uma amiga: ela agenda o primeiro horário por aqui, sem esperar resposta: {{link}}' },
   { slug: 'falta', title: 'Cliente faltou', body: 'Oi {{nome}}, senti sua falta no horário das {{hora}}. Aconteceu alguma coisa? Se quiser eu já remarco.' },
-  { slug: 'agradecimento', title: 'Agradecer cliente fiel', body: '{{nome}}, obrigado por confiar em mim esse tempo todo! Cliente como você é o que faz diferença.' },
+  { slug: 'agradecimento', title: 'Agradecer cliente fiel', body: '{{nome}}, que bom te ter por perto esse tempo todo! Cliente como você é o que faz diferença.' },
 ]
 
 /**

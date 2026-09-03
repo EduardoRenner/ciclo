@@ -44,7 +44,7 @@ export default function FormularioCadastro() {
   if (enviado) {
     return (
       <p className="max-w-sm text-center text-corpo text-txt">
-        Quase lá — mandamos um link de confirmação para o seu e-mail. Abra a mensagem e clique nele para continuar.
+        Quase lá! Mandamos um link de confirmação para o seu e-mail. Abra a mensagem e clique nele para continuar.
       </p>
     )
   }
@@ -71,6 +71,44 @@ export default function FormularioCadastro() {
       <Button type="submit" largura="cheia" carregando={pendente}>
         Criar conta
       </Button>
+      {/*
+        O contrato se forma AQUI, e esta tela não dizia isso nem linkava para lugar nenhum. Os
+        termos afirmam "ao criar uma conta, você concorda com estes termos" e a política de
+        privacidade descreve tratamento de dado sensível de saúde — os dois existem desde 30/08 e
+        só eram alcançáveis pela landing e pela página de preço, que ninguém precisa visitar para
+        chegar até este botão (o link de convite e o `/entrar` levam direto).
+
+        Fica ABAIXO do botão, não acima, e sem caixa de marcar: a lei brasileira aceita o aceite
+        pelo próprio ato de contratar quando os termos estão à vista, e uma caixa a mais num
+        formulário de quatro campos é atrito que não protege ninguém.
+      */}
+      {/*
+        Os links ficam numa LINHA PRÓPRIA, e não dentro da frase, por um motivo medido.
+
+        A primeira versão punha os dois no meio do texto com `toque-48` em cada. Sondando ponto a
+        ponto (a receita do docstring de `alvo-de-toque-tem-48`), o resultado foi: "Termos de uso"
+        com 49 px efetivos e **"Política de Privacidade" com ZERO**. Os dois começam na mesma linha,
+        e o `::after` absoluto de 48 px do primeiro cobre o segundo inteiro — o link ficou
+        intocável, o que é muito pior que o alvo de 14 px que eu estava consertando.
+
+        `toque-48` só é seguro quando os elementos não dividem linha de texto corrida. É por isso
+        que os rodapés da landing e de `/precos` funcionam: lá é uma `flex` com `gap`, que é o
+        mesmo desenho adotado aqui. A guarda do fonte não pega isto (ela confere se a classe está
+        lá, não se o alvo resultante é alcançável), então fica registrado no lugar onde o erro
+        aconteceu.
+      */}
+      <div className="text-center text-label text-txt-3">
+        <p>Ao criar a conta você aceita:</p>
+        <p className="mt-0.5 flex flex-wrap items-center justify-center gap-x-2">
+          <Link href="/termos" className="toque-48 font-semibold text-txt-2 underline underline-offset-2">
+            Termos de uso
+          </Link>
+          <span aria-hidden>·</span>
+          <Link href="/privacidade" className="toque-48 font-semibold text-txt-2 underline underline-offset-2">
+            Política de Privacidade
+          </Link>
+        </p>
+      </div>
       <Link href="/entrar" className="grid h-12 place-items-center text-secundario text-txt-2 transition hover:text-txt">
         Já tem conta? <span className="ml-1 font-semibold text-acc-2">Entrar</span>
       </Link>

@@ -4,6 +4,7 @@ import Link from 'next/link'
 
 import { NOME_DO_PLANO, PLANOS, precoDoPlano } from '@/core/billing/planos'
 
+import { canalDeContato } from '@/lib/contato'
 import { CARTOES } from '@/lib/planos-cartoes'
 
 import wordmark from '../../../../public/marca/ciclo-wordmark-aqua.png'
@@ -39,18 +40,25 @@ export const metadata = {
   description:
     `Comece de graça, para sempre. Planos a partir de ${precoDoPlano('essencial')} por mês para quem quer mandar mensagem para toda a base de uma vez, controlar caixa e trabalhar com equipe.`,
   openGraph: {
-    title: 'Preços — CICLO',
+    title: 'Preços · CICLO',
     description: `Comece de graça. Planos a partir de ${precoDoPlano('essencial')} por mês, com preço na tela e sem letra miúda.`,
     type: 'website',
     locale: 'pt_BR',
   },
 } satisfies Metadata
 
+/*
+  A conversa é o único caminho de pagamento que existe hoje, e até 2026-09-03 esta página mandava
+  "falar com a gente" sem dizer com quem. `lib/contato.ts` guarda o porquê e os dois estados.
+*/
+const CANAL = canalDeContato('Oi! Vi os planos do CICLO e quero falar sobre assinar.')
+
 const PERGUNTAS = [
   {
     pergunta: 'Como eu pago hoje?',
-    resposta:
-      'Falando com a gente. A cobrança automática ainda não está no ar — preferimos dizer isso a montar um botão que não funciona. Você cria a conta no grátis, usa, e se quiser subir de plano a gente combina direto e ajusta na hora.',
+    resposta: CANAL
+      ? 'Conversando. A cobrança automática ainda não está no ar, e preferimos dizer isso a montar um botão que não funciona. Você cria a conta no grátis, usa, e quando quiser subir de plano a gente combina direto e ajusta na hora. O botão no fim desta página abre a conversa.'
+      : 'A cobrança automática ainda não está no ar, e preferimos dizer isso a montar um botão que não funciona. Você cria a conta no grátis e usa sem pagar nada; a mudança de degrau é combinada caso a caso.',
   },
   {
     pergunta: 'O grátis expira?',
@@ -65,17 +73,17 @@ const PERGUNTAS = [
     */
     pergunta: `E se eu passar de ${PLANOS.gratis.maxClientes} clientes?`,
     resposta:
-      'Você continua cadastrando. O CICLO avisa quando você chega perto, mas não trava o cadastro no meio de um atendimento — e nenhuma ficha some. O limite que vale de verdade no Grátis é o de um profissional.',
+      'Você continua cadastrando. O CICLO avisa quando você chega perto, mas não trava o cadastro no meio de um atendimento, e nenhuma ficha some. O limite que vale de verdade no Grátis é o de um profissional.',
   },
   {
     pergunta: 'Se eu parar de pagar, perco meus clientes?',
     resposta:
-      'Nunca. Sua base, seu histórico e sua agenda continuam inteiros e à vista — você volta para o grátis e o que trava é criar mais, não ver o que já existe. Essa regra não tem exceção.',
+      'Nunca. Sua base, seu histórico e sua agenda continuam inteiros e à vista. Você volta para o grátis, e o que trava é criar mais, não ver o que já existe. Essa regra não tem exceção.',
   },
   {
     pergunta: 'Tenho três profissionais e quero o Grátis. Dá?',
     resposta:
-      'O Grátis vale para um profissional. Os outros dois aparecem para você normalmente se já estiverem cadastrados — nada some —, mas para cadastrar mais é preciso o Equipe.',
+      'O Grátis vale para um profissional. Os outros dois continuam aparecendo normalmente se já estiverem cadastrados, porque nada some. Para cadastrar mais é preciso o Equipe.',
   },
   {
     pergunta: 'Posso cancelar quando quiser?',
@@ -112,12 +120,25 @@ export default function Precos() {
       </header>
 
       <section className="py-8 sm:py-12">
+        {/*
+          `docs/20-COPY-PLANO.md` §D.8, variante A — recomendada em 24/08 e não implementada.
+
+          O H1 antigo ("Pague quando o CICLO já estiver te dando trabalho a menos") é uma boa frase
+          e responde a pergunta errada. A pergunta que a pessoa REALMENTE tem ao abrir a página de
+          preço de um produto que ela não conhece é: *o grátis serve para alguma coisa?* — e a
+          resposta é verificável no código, porque `cycle_engine` está nos módulos do Grátis.
+
+          Isto também é a única coisa em que o CICLO é literalmente único entre os cinco
+          concorrentes diretos pesquisados: nenhum deles tem plano gratuito, e na Belasis "recuperar
+          cliente inativo" mora a partir do Pro, R$ 189/mês (§B.2.1 do 20). Dizer que o grátis já
+          mostra quem parou de voltar é a frase que nenhum deles pode colar.
+        */}
         <h1 className="text-numero font-bold sm:text-[2.25rem] sm:leading-[1.1]">
-          Comece de graça. Pague quando o CICLO já estiver te dando trabalho a menos.
+          Comece de graça. O grátis já mostra quem parou de voltar.
         </h1>
         <p className="mt-4 max-w-[52ch] text-corpo text-txt-2">
           Preço na tela, sem cadastro e sem &ldquo;fale com um consultor&rdquo;. O Motor de Ciclo está em todos os planos,
-          inclusive no grátis — o que o pago libera é chamar todo mundo de uma vez, em vez de um por um.
+          inclusive no grátis. O que o pago libera é chamar todo mundo de uma vez, em vez de um por um.
         </p>
       </section>
 
@@ -130,6 +151,21 @@ export default function Precos() {
               (p.destaque ? 'border-acc-2 ring-1 ring-acc-2' : 'border-line')
             }
           >
+            {/*
+              O destaque do Equipe era só um anel de cor. Quem enxerga via um cartão diferente e
+              não sabia por quê; quem usa leitor de tela não via nada — `ring` não tem semântica, e
+              a única diferença entre este cartão e os outros ficava invisível.
+
+              O rótulo é em primeira pessoa de propósito. "Mais escolhido" e "N profissionais já
+              usam" continuam proibidos (§5.10: prova social inventada é mentira que este público
+              descobre conversando entre si); "nossa recomendação" é uma opinião de quem faz o
+              produto, e opinião assumida é verdade verificável.
+            */}
+            {p.destaque ? (
+              <p className="mb-3 inline-flex rounded-[var(--radius-pill)] bg-acc-soft px-2.5 py-1 text-label font-semibold text-acc-2">
+                Nossa recomendação
+              </p>
+            ) : null}
             <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
               <h2 className="text-corpo font-semibold text-txt">{NOME_DO_PLANO[p.tier]}</h2>
               <p className="tabular text-numero font-bold text-txt">{precoDoPlano(p.tier)}</p>
@@ -179,7 +215,29 @@ export default function Precos() {
         </dl>
       </section>
 
-      <p className="text-center text-label text-txt-3">Preços em reais, por mês.</p>
+      {/*
+        Depois das perguntas de dinheiro, e não antes: quem chegou até aqui já leu o que queria
+        saber, e é neste ponto que a dúvida vira "com quem eu falo". O botão fica secundário de
+        propósito — o CTA da página continua sendo criar a conta grátis, nos cartões acima.
+      */}
+      {CANAL ? (
+        <section className="rounded-[var(--radius)] border border-line bg-surface p-6 text-center shadow-elevado">
+          <h2 className="text-titulo font-bold">Ficou alguma dúvida de dinheiro?</h2>
+          <p className="mx-auto mt-2 max-w-[42ch] text-secundario text-txt-2">
+            Fala com a gente antes de decidir. Quem responde é quem faz o CICLO, e não tem script.
+          </p>
+          <a
+            href={CANAL.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`mx-auto mt-5 max-w-[20rem] ${botaoSecundario}`}
+          >
+            {CANAL.rotulo}
+          </a>
+        </section>
+      ) : null}
+
+      <p className="mt-8 text-center text-label text-txt-3">Preços em reais, por mês.</p>
 
       {/* L-7 (`docs/31`): quem está lendo preço é quem vai assinar — os termos e a política têm
           que estar a um toque daqui, não escondidos só na porta de entrada. */}

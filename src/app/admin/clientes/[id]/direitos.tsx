@@ -107,7 +107,7 @@ export default function DireitosDaCliente({
 
         {precisaMfa ? (
           <p role="alert" className="text-secundario text-warn">
-            Antes disso, ligue a verificação em duas etapas na sua conta —{' '}
+            Antes disso, ligue a verificação em duas etapas na sua conta:{' '}
             <Link href="/admin/config/seguranca" className="font-semibold text-acc-2">
               Configurações · Segurança
             </Link>
@@ -138,7 +138,7 @@ export default function DireitosDaCliente({
         <div className="flex flex-col gap-3">
           <p className="text-corpo text-txt-2">
             O nome, o telefone e as anotações somem. Os atendimentos e os valores continuam no histórico do negócio sem
-            identificação — é o que a lei manda guardar, e é o que mantém seu caixa fechando.
+            identificação: é o que a lei manda guardar, e é o que mantém seu caixa fechando.
           </p>
           <Button variante="danger" largura="cheia" carregando={pendente} onClick={apagar}>
             Apagar mesmo assim

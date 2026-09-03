@@ -105,7 +105,7 @@ export default function ListaProfissionais({
         // Sem WhatsApp/e-mail automático ainda (Sprint 2): o link vai para a
         // área de transferência para o dono colar onde quiser mandar.
         await navigator.clipboard.writeText(resultado.link).catch(() => {})
-        mostrarToast({ tom: 'ok', titulo: 'Convite criado', descricao: 'Link copiado — é só colar e mandar.' })
+        mostrarToast({ tom: 'ok', titulo: 'Convite criado', descricao: 'Link copiado. É só colar e mandar.' })
       } catch (erro) {
         mostrarToast({ tom: 'erro', titulo: 'Não consegui convidar', descricao: (erro as Error).message })
       }

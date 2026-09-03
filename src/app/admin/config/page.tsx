@@ -6,6 +6,7 @@ import { headers } from 'next/headers'
 import Card from '@/components/ui/card'
 import PageHeader from '@/components/ui/page-header'
 import SectionHeader from '@/components/ui/section-header'
+import { NOME_DO_PLANO, type PlanoTier } from '@/core/billing/planos'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { listarModulos } from '@/server/services/modulos'
@@ -87,6 +88,16 @@ export const metadata = { title: "Configurações" }
  * Bloqueado pelo PLANO continua aparecendo, e isso é de propósito — a regra 5.2 manda mostrar o
  * motivo e o caminho, e sumir com o item seria esconder o que dá para comprar. Quem some é só o
  * que não faz sentido (eixo) ou o que a pessoa escolheu não ver (dono).
+ *
+ * **O selo do degrau, acrescentado em 2026-09-03, é o que faltava para essa intenção se cumprir.**
+ * O item ficava aqui para ser comprado e era desenhado IGUAL a um item liberado: mesmo cartão,
+ * mesma cor, nenhuma marca. Quem está no Grátis tocava em "Campanhas", montava a campanha inteira
+ * e só descobria que é paga quando a rota recusou o envio — o mesmo defeito que
+ * `recurso-pago-avisa-antes` pegou no estoque, replicado em cinco itens deste hub.
+ *
+ * O selo vive AQUI, e não em cada tela de destino, porque nasce do `veredito` que `listarModulos`
+ * já devolve: item de módulo novo ganha o selo sozinho, sem ninguém lembrar. É a diferença entre
+ * consertar os cinco casos e consertar a pergunta.
  */
 export default async function PaginaConfig() {
   const ctx = await contextoAtual(new Request('https://interno/config', { headers: await headers() }))
@@ -99,6 +110,13 @@ export default async function PaginaConfig() {
     // Ausente da lista = fora do eixo (listarModulos já filtrou). Não faz sentido, então some.
     if (!m) return false
     return m.veredito.estado !== 'desligado_pelo_dono'
+  }
+
+  /** O degrau que libera este item, quando o plano de hoje não libera. */
+  const degrauQueFalta = (chave?: string): PlanoTier | null => {
+    if (!chave) return null
+    const v = modulos.find((x) => x.key === chave)?.veredito
+    return v?.estado === 'bloqueado_pelo_plano' ? v.precisaDo : null
   }
 
   const grupos = GRUPOS.map((g) => ({ ...g, itens: g.itens.filter((i) => visivel('modulo' in i ? i.modulo : undefined)) }))
@@ -115,6 +133,7 @@ export default async function PaginaConfig() {
             <div className="flex flex-col gap-2">
               {grupo.itens.map((item) => {
                 const Icone = item.icone
+                const falta = degrauQueFalta('modulo' in item ? item.modulo : undefined)
                 return (
                   <Link key={item.href} href={item.href} className="block">
                     <Card pressionavel className="flex items-center gap-3">
@@ -125,6 +144,20 @@ export default async function PaginaConfig() {
                         <p className="text-corpo font-semibold">{item.titulo}</p>
                         <p className="truncate text-secundario text-txt-2">{item.descricao}</p>
                       </div>
+                      {/*
+                        Selo, não cadeado sozinho: o nome do degrau responde "quanto custa isso?"
+                        num toque a menos. Cor de destaque em vez de cinza porque isto é uma oferta,
+                        e o §5.10 proíbe punir quem não pagou — o item continua abrindo.
+
+                        O texto do leitor de tela diz a frase inteira; o selo visual mostra só o
+                        nome do plano, que é o que cabe em 390 px sem espremer o título do item.
+                      */}
+                      {falta ? (
+                        <span className="shrink-0 rounded-[var(--radius-pill)] bg-acc-soft px-2.5 py-1 text-label font-semibold text-acc-2">
+                          <span className="sr-only">Recurso do plano </span>
+                          {NOME_DO_PLANO[falta]}
+                        </span>
+                      ) : null}
                     </Card>
                   </Link>
                 )

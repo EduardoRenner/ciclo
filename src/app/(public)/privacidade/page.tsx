@@ -1,7 +1,11 @@
 import Image from 'next/image'
 import Link from 'next/link'
 
+import { canalDeContato } from '@/lib/contato'
+
 import wordmark from '../../../../public/marca/ciclo-wordmark-aqua.png'
+
+const CANAL = canalDeContato('Oi! É sobre os meus dados no CICLO.')
 
 /**
  * L-7, `docs/31-LANCAMENTO-AUDITORIA-E-PLANO.md` — o CICLO processa **dado de saúde** (anamnese,
@@ -34,7 +38,7 @@ export default function Privacidade() {
   return (
     <main className="mx-auto min-h-dvh max-w-[720px] px-[var(--gutter)] pb-16">
       <header className="flex items-center justify-between py-5">
-        <Link href="/" aria-label="CICLO — início">
+        <Link href="/" aria-label="CICLO, início">
           <Image src={wordmark} alt="CICLO" className="h-7 w-auto" />
         </Link>
         <Link
@@ -70,7 +74,7 @@ export default function Privacidade() {
             </li>
             <li>
               <strong className="font-semibold text-txt">Sobre os seus clientes:</strong> quem
-              decide o que guardar é você. Você é o controlador, e o CICLO é apenas o operador —
+              decide o que guardar é você. Você é o controlador, e o CICLO é apenas o operador:
               a gente só processa o que você mandou guardar, do jeito que você mandou.
             </li>
           </ul>
@@ -90,13 +94,13 @@ export default function Privacidade() {
             </li>
             <li>
               <strong className="font-semibold text-txt">Dos seus clientes:</strong> o que você
-              cadastrar — em geral nome, telefone, aniversário, histórico de atendimento,
+              cadastrar: em geral nome, telefone, aniversário, histórico de atendimento,
               preferências e observações.
             </li>
             <li>
               <strong className="font-semibold text-txt">Dado de saúde, quando você usa a ficha de anamnese:</strong>{' '}
               alergia, condição de saúde e o que mais você anotar ali. É dado sensível pela LGPD e
-              recebe tratamento diferente — ver o item 4.
+              recebe tratamento diferente, e o item 4 explica como.
             </li>
             <li>
               <strong className="font-semibold text-txt">De uso:</strong> registros técnicos de
@@ -134,7 +138,7 @@ export default function Privacidade() {
             <li>
               <strong className="font-semibold text-txt">Dado de saúde fica cifrado</strong>, com a
               chave guardada separada do banco. Só quem tem permissão abre, e{' '}
-              <strong className="font-semibold text-txt">todo acesso fica registrado</strong> — dá
+              <strong className="font-semibold text-txt">todo acesso fica registrado</strong>, e dá
               para saber quem abriu a ficha de quem, e quando.
             </li>
             <li>
@@ -150,8 +154,8 @@ export default function Privacidade() {
           <h2>5. Com quem a gente compartilha</h2>
           <p>
             Só com quem é necessário para o serviço existir, e cada um vê apenas o que precisa:
-            a empresa que hospeda o sistema, a que hospeda o banco de dados, e — quando você usa
-            envio de mensagem ou e-mail — o serviço que entrega essa mensagem.
+            a empresa que hospeda o sistema, a que hospeda o banco de dados e, quando você usa
+            envio de mensagem ou e-mail, o serviço que entrega essa mensagem.
           </p>
           <p>
             Podemos compartilhar também se a lei ou uma ordem judicial exigir. Fora isso, ninguém
@@ -163,13 +167,13 @@ export default function Privacidade() {
           <h2>6. Por quanto tempo</h2>
           <p>
             Enquanto sua conta existir. Quando você apaga um cliente, os dados pessoais dele são
-            eliminados —{' '}
+            eliminados,{' '}
             <strong className="font-semibold text-txt">inclusive de dentro dos registros internos</strong>{' '}
             de auditoria, e não só da ficha visível.
           </p>
           <p>
             Alguns registros de movimentação (agendamento, caixa, estoque) não são apagados, porque
-            são o histórico do seu negócio — mas passam a não identificar mais a pessoa.
+            são o histórico do seu negócio, mas passam a não identificar mais a pessoa.
           </p>
         </section>
 
@@ -179,14 +183,29 @@ export default function Privacidade() {
           <ul className="mt-2 list-disc pl-5">
             <li>saber quais dados a gente tem;</li>
             <li>corrigir o que estiver errado;</li>
-            <li>pedir uma cópia — cada ficha de cliente tem exportação dentro do sistema;</li>
-            <li>pedir a eliminação — cada ficha tem o botão de apagar, e ele apaga de verdade;</li>
+            <li>pedir uma cópia: cada ficha de cliente tem exportação dentro do sistema;</li>
+            <li>pedir a eliminação: cada ficha tem o botão de apagar, e ele apaga de verdade;</li>
             <li>revogar uma autorização que tenha dado;</li>
             <li>saber com quem a gente compartilhou.</li>
           </ul>
+          {/*
+            Dizia "pelo canal em que você contratou", e esse canal não existe: todo mundo entra
+            sozinho pelo cadastro do Grátis. Numa política de privacidade isso é pior que na página
+            de preço — a LGPD exige um contato publicado para o titular exercer os direitos que este
+            parágrafo acabou de listar, e um contato que não existe torna a lista decorativa.
+            `lib/contato.ts` decide se há canal; sem ele, a frase não inventa um.
+          */}
           <p>
             Para os seus próprios dados de cadastro, ou para qualquer pedido que a tela não
-            resolva, fale com a gente pelo canal em que você contratou. A gente responde e cumpre.
+            resolva,{' '}
+            {CANAL ? (
+              <a href={CANAL.href} target="_blank" rel="noopener noreferrer">
+                fale com a gente por aqui
+              </a>
+            ) : (
+              'responda o e-mail que você recebeu ao criar a conta'
+            )}
+            . A gente responde e cumpre.
           </p>
         </section>
 

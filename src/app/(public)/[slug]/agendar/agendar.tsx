@@ -403,7 +403,7 @@ export default function Agendar({
         setConfirmado(true);
       } catch {
         setErro(
-          "Não consegui falar com o servidor. Confira a conexão e tente de novo — se o horário já tiver sido marcado, ele aparece ao escolher o dia outra vez.",
+          "Não consegui falar com o servidor. Confira a conexão e tente de novo. Se o horário já tiver sido marcado, ele aparece ao escolher o dia outra vez.",
         );
       }
     });
@@ -479,7 +479,7 @@ export default function Agendar({
                 baixarIcs({
                   inicio: slotEscolhido.startsAt,
                   fim: slotEscolhido.endsAt,
-                  titulo: `${servicoEscolhido.name} — ${nomeDoSalao}`,
+                  titulo: `${servicoEscolhido.name} · ${nomeDoSalao}`,
                   local: enderecoDoSalao,
                   slug,
                 })
@@ -559,7 +559,7 @@ export default function Agendar({
             {indicadaPor} indicou este lugar pra você
           </p>
           <p className="mt-1 text-secundario text-txt-2">
-            Marque seu primeiro horário abaixo — {nomeDoSalao} vai saber que foi {indicadaPor} quem
+            Marque seu primeiro horário abaixo, e {nomeDoSalao} vai saber que foi {indicadaPor} quem
             te trouxe.
           </p>
         </Card>
@@ -648,7 +648,12 @@ export default function Agendar({
                 buscarDisponibilidade(dia);
               }}
             >
-              Qualquer um
+              {/*
+                Era "Qualquer um". Num salão de unhas ou cílios, a equipe inteira costuma ser de
+                mulheres, e o produto oferecia à cliente uma opção no masculino para escolher entre
+                elas. "Tanto faz" resolve sem precisar de gênero nenhum e é como a pessoa fala.
+              */}
+              Tanto faz
             </Chip>
             {professionals.map((p) => (
               <Chip
@@ -702,7 +707,7 @@ export default function Agendar({
                 // Todo dia do trilho parecia igualmente disponível; nos fechados a
                 // pessoa tocava e batia numa mensagem vazia. O rótulo é o mesmo que
                 // o leitor de tela ouve.
-                aria-label={`${nomeDoDia}, dia ${data.getUTCDate()}${fechado ? " — fechado" : ""}`}
+                aria-label={`${nomeDoDia}, dia ${data.getUTCDate()}${fechado ? ", fechado" : ""}`}
                 className={
                   "flex h-16 w-14 shrink-0 flex-col items-center justify-center gap-0.5 rounded-[var(--radius-sm)] text-label font-semibold transition duration-[var(--dur-1)] ease-[var(--ease-ios)] active:scale-[.95] " +
                   (d === dia

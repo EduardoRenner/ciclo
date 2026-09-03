@@ -54,7 +54,7 @@ export default function NovaCampanha({
           method: 'POST',
           headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
           body: JSON.stringify({
-            name: `${modelo.title} — ${segmento.rotulo}`,
+            name: `${modelo.title} · ${segmento.rotulo}`,
             segment: segmento.valor,
             template: modelo.title,
             clientIds: [...enviados],
@@ -132,7 +132,7 @@ export default function NovaCampanha({
               <Card>
                 <p className="text-corpo">Nenhum modelo serve para disparo em lote.</p>
                 <p className="mt-1 text-secundario text-txt-2">
-                  Todos os seus modelos falam de data, hora ou serviço — isso só existe quando há um horário marcado.
+                  Todos os seus modelos falam de data, hora ou serviço, e isso só existe quando há um horário marcado.
                 </p>
                 <Link href="/admin/config/mensagens" className="mt-2 inline-block text-secundario font-semibold text-acc-2">
                   Criar um modelo sem data

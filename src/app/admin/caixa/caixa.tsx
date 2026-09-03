@@ -102,7 +102,7 @@ export default function Caixa({ dia, hoje, diario, mensal, comissoes, atendidoCe
             titulo="Nenhuma comanda fechada nesse dia"
             descricao={
               atendidoCents > 0
-                ? `Você concluiu ${dinheiro.format(atendidoCents / 100)} em atendimentos, mas o caixa só conta o que passou pela comanda — é ela que sabe material e comissão.`
+                ? `Você concluiu ${dinheiro.format(atendidoCents / 100)} em atendimentos, mas o caixa só conta o que passou pela comanda: é ela que sabe material e comissão.`
                 : 'O caixa soma o que foi cobrado nas comandas. Feche a comanda do atendimento e o valor aparece aqui.'
             }
             acao={<Link href="/admin/agenda">Ver a agenda</Link>}

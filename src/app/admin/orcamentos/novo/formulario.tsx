@@ -121,7 +121,7 @@ export default function FormularioOrcamento({
   if (linkPronto) {
     return (
       <Card className="flex flex-col gap-3">
-        <p className="text-corpo font-semibold text-txt">Orçamento pronto — {dinheiro.format(totalCents / 100)}</p>
+        <p className="text-corpo font-semibold text-txt">Orçamento pronto · {dinheiro.format(totalCents / 100)}</p>
         <a
           href={linkPronto.whatsapp}
           target="_blank"

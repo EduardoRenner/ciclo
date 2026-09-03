@@ -142,7 +142,7 @@ export default function RecuperarReceita({
 
       <p className="mb-4 text-secundario text-txt-3">
         Estimativa, não promessa: o preço do serviço de cada uma, multiplicado pela chance de ela voltar. Quanto mais
-        tempo sem aparecer, menor a chance — por isso quem sumiu há mais tempo vale menos aqui.
+        tempo sem aparecer, menor a chance, e por isso quem sumiu há mais tempo vale menos aqui.
       </p>
 
       <FilterRow rotulo="Filtrar por estado do ciclo" className="mb-4">

@@ -2,7 +2,7 @@ import { ArrowRight, CalendarCheck, Link2, Wallet } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 
-import { NOME_DO_PLANO, precoDoPlano } from '@/core/billing/planos'
+import { NOME_DO_PLANO, PLANOS, precoDoPlano } from '@/core/billing/planos'
 import IconeAnel from '@/components/ui/icone-anel'
 
 import wordmark from '../../public/marca/ciclo-wordmark-aqua.png'
@@ -41,11 +41,11 @@ import type { Metadata } from 'next'
  * `redirect()` aqui sem mover a checagem de volta para o middleware junto.
  */
 export const metadata: Metadata = {
-  title: 'CICLO — a agenda que avisa quem parou de voltar',
+  title: 'CICLO · a agenda que avisa quem parou de voltar',
   description:
     'Agenda, site de agendamento e caixa para quem atende com hora marcada. O CICLO calcula de quanto em quanto tempo cada cliente volta, mostra quem atrasou e te dá a mensagem pronta para chamar.',
   openGraph: {
-    title: 'CICLO — a agenda que avisa quem parou de voltar',
+    title: 'CICLO · a agenda que avisa quem parou de voltar',
     description: 'Para barbearia, unhas, cílios, sobrancelha, depilação e estética. Feito para o celular, em português.',
     type: 'website',
     locale: 'pt_BR',
@@ -56,8 +56,19 @@ const RECURSOS = [
   {
     icone: IconeAnel,
     titulo: 'Quem sumiu tem nome',
+    /*
+      `docs/20-COPY-PLANO.md` §D.5 recomendou a variante C, que abre com "23 pessoas passaram do
+      ponto de voltar" — o número COM a origem. **Desvio deliberado, e o motivo é a figura nova da
+      dobra:** ela já mostra o 23, com a legenda que o declara como exemplo. Repetir o número aqui,
+      em prosa e sem a legenda, transformaria uma ilustração de layout em afirmação sobre o
+      produto, que é exatamente o que o §D.5 proíbe ao recomendar C ("ilustração, não afirmação").
+
+      O que sobra para o cartão é o que a figura NÃO consegue dizer: como o ritmo é calculado por
+      pessoa, e por que a lista vem naquela ordem. Ordenação é a decisão de produto que a tela toma
+      e que nenhum print explica.
+    */
     texto:
-      'O CICLO calcula o ritmo de cada pessoa — quem volta a cada 21 dias, quem volta a cada dois meses — e mostra quem passou do ponto. Com uma estimativa de quanto vale chamar cada uma (o preço do serviço vezes a chance de ela voltar) e o texto pronto para chamar no WhatsApp.',
+      'O ritmo é de cada pessoa, não uma média do salão: quem volta a cada 21 dias e quem volta a cada dois meses aparecem em dias diferentes. A lista vem ordenada por quanto vale chamar cada uma, que é o preço do serviço vezes a chance de ela voltar, e cada linha já traz o texto pronto para o WhatsApp.',
   },
   {
     icone: Link2,
@@ -84,39 +95,88 @@ const PASSOS = [
   },
   {
     titulo: 'Atenda. O resto o CICLO acompanha',
-    texto: 'Cada atendimento concluído alimenta o ciclo daquela pessoa — e é assim que o sistema sabe quem está para voltar.',
+    texto: 'Cada atendimento concluído alimenta o ciclo daquela pessoa, e é assim que o sistema sabe quem está para voltar.',
   },
 ]
 
-const PROFISSOES = [
-  'Barbearia',
-  'Unhas',
-  'Cílios',
-  'Sobrancelha',
-  'Depilação',
-  'Estética',
-  'Cabelo',
-  'Tatuagem',
+/**
+ * `docs/20-COPY-PLANO.md` §D.6 — as 17 do catálogo, agrupadas, com beleza primeiro. Recomendado em
+ * 24/08 e até hoje não implementado: a página listava 8 soltas.
+ *
+ * **O problema que isso conserta (§6 do sumário do 20):** das 8 que a copy nomeava, **nenhuma** tem
+ * ritmo recorrente no catálogo; das 9 que ficavam de fora, **cinco** têm. A página era muda
+ * justamente para quem vive de cliente que volta, que é o público do Motor de Ciclo.
+ *
+ * **Beleza primeiro não é ordem alfabética nem acaso:** é onde o esforço de venda está (`docs/18`
+ * §B.2, Decidido), e o olho lê o primeiro grupo como "é disto que ele é". O agrupamento faz o
+ * trabalho que 17 chips soltos não fariam — chip solto em fila de 17 lê como "serve para tudo", que
+ * é o que o barbeiro do painel de leitores rejeitou (§7.4).
+ *
+ * Os nomes saem de `supabase/migrations/0022_professions_catalog.sql` e `0026_catalogo_profundo.sql`
+ * (17 linhas em `professions`), conferidos no arquivo. Não é lista inventada para a página.
+ */
+const GRUPOS_DE_PROFISSAO: readonly { grupo: string; itens: readonly string[] }[] = [
+  { grupo: 'Beleza', itens: ['Barbearia', 'Cabelo', 'Unhas', 'Cílios', 'Sobrancelhas', 'Depilação', 'Estética', 'Tatuagem'] },
+  { grupo: 'Casa', itens: ['Faxina e diarista', 'Eletricista', 'Encanador', 'Jardineiro'] },
+  { grupo: 'Saúde, aula e treino', itens: ['Psicólogo', 'Professor particular', 'Personal trainer'] },
+  { grupo: 'Pet e eventos', itens: ['Banho e tosa', 'Fotógrafo'] },
 ]
 
+/**
+ * `docs/20-COPY-PLANO.md` §D.10 — a FAQ tem trabalho de conversão, não de suporte: cada linha aqui
+ * é uma objeção que impede o cadastro, e a ordem é a da força da objeção.
+ *
+ * "Funciona para quem trabalha por conta?" SUBIU para primeira: o §D.10 a chama de "a melhor
+ * aplicação de identidade do produto", e identidade responde antes de detalhe técnico.
+ *
+ * Duas perguntas NOVAS, e as duas saíram do painel de leitores:
+ *   - "já uso outro sistema" foi a objeção nº 1 de quem já paga por algo (§7.3, dona de salão), e a
+ *     copy inteira era muda sobre isso;
+ *   - "em quanto tempo a lista fica útil" é a expectativa que ninguém estava gerenciando (§D.7 B),
+ *     e a falta dela é causa provável de churn precoce (§R.1).
+ */
 const PERGUNTAS = [
   {
-    pergunta: 'Preciso instalar alguma coisa?',
+    /*
+      A frase é a do §C.4 do `docs/20`, e a tabela dele é explícita sobre por que ela é assim:
+      *"quem atende sozinho" não resolve → "quem trabalha por conta"* — porque escolher um gênero
+      não é melhor que trocar de gênero, é o mesmo erro virado para o outro lado. Eu tinha
+      reescrito para "sozinho" nesta rodada e a decisão da casa me desmentiu.
+    */
+    pergunta: 'Funciona para quem trabalha por conta?',
     resposta:
-      'Não. Abre no navegador do celular e funciona. Se quiser, dá para adicionar à tela de início e ele passa a abrir como aplicativo, em tela cheia.',
+      'Funciona, e é para quem trabalha por conta que ele mais serve: você não tem alguém olhando a agenda por você para lembrar de quem sumiu.',
   },
   {
-    pergunta: 'E se eu já tiver minha lista de clientes?',
-    resposta: 'Dá para importar de uma planilha. Nome e telefone bastam; o histórico vai sendo construído a partir dos atendimentos.',
+    /*
+      A resposta mudou depois de eu MEDIR o importador, e o achado é melhor que o registrado no
+      §D.10. O documento supôs "nome, telefone, e-mail e etiquetas; histórico não". O importador
+      aceita também a coluna de ÚLTIMA VISITA (`importacao-clientes.ts`: `lastVisit` chega até
+      `calcularPrevisao`, que roda `computeCycle` em cada data e devolve quantas pessoas já estão
+      devendo voltar). Ou seja: com a data na planilha, a lista nasce cheia no primeiro dia, em vez
+      de esperar duas ou três voltas.
+
+      Isso é o argumento mais forte que o produto tem para quem já tem base, e não estava escrito
+      em lugar nenhum da página.
+    */
+    pergunta: 'Eu já tenho minha lista de clientes. Dá para trazer?',
+    resposta:
+      'Dá, de uma planilha: nome, telefone, e-mail e etiquetas. E se a sua planilha tiver a data da última visita, traga essa coluna também: é ela que faz a lista de quem sumiu nascer cheia no primeiro dia, em vez de você esperar as pessoas voltarem para o CICLO ter o que calcular.',
+  },
+  {
+    pergunta: 'Em quanto tempo a lista de quem sumiu fica útil?',
+    resposta:
+      'Se você importar a data da última visita, já na primeira tela. Sem essa data, o CICLO precisa ver cada pessoa voltar duas ou três vezes para saber o ritmo dela — então a lista começa vazia e vai enchendo conforme você atende.',
   },
   {
     pergunta: 'Quem vai marcar precisa baixar app ou criar conta?',
     resposta: 'Não. A pessoa abre seu link, escolhe o serviço e o horário, e o agendamento entra na sua agenda esperando você confirmar.',
   },
   {
-    pergunta: 'Funciona para quem trabalha por conta?',
+    /* Absorve o "sem treinamento" e o "feito para o celular" que saíram do subtítulo pelo §D.3. */
+    pergunta: 'Preciso instalar alguma coisa?',
     resposta:
-      'Funciona, e é para quem trabalha por conta que ele mais serve: você não tem alguém olhando a agenda por você para lembrar de quem sumiu.',
+      'Não. Abre no navegador do celular e funciona, sem treinamento e sem manual. Se quiser, dá para adicionar à tela de início e ele passa a abrir como aplicativo, em tela cheia.',
   },
 ]
 
@@ -131,14 +191,20 @@ export default function Home() {
   return (
     <main className="mx-auto min-h-dvh max-w-[720px] px-[var(--gutter)] pb-16">
       <header className="flex items-center justify-between gap-3 py-5">
-        <Image src={wordmark} alt="CICLO" className="h-7 w-auto" />
-        <nav className="flex items-center gap-1">
-          <Link
-            href="/precos"
-            className="flex h-12 items-center px-2 text-corpo font-semibold text-txt-2 transition active:scale-[.97]"
-          >
-            Preços
-          </Link>
+        {/* `priority` herdado do lockup do herói, que saiu: agora esta é a única marca da dobra. */}
+        <Image src={wordmark} alt="CICLO" priority className="h-7 w-auto" />
+        {/*
+          O header desta página tem UM link, e a razão é de conversão, não de gosto (`docs/38` §3).
+          Havia dois competindo com o CTA primário na dobra, e um deles ("Preços") aponta para uma
+          página que esta mesma dobra já resume, com o número na tela. Todo link de header é uma
+          saída, e na única página cujo trabalho é converter, saída é vazamento.
+
+          `/precos` continua a um toque: na linha de preço da dobra, no fecho e no rodapé. A
+          informação não saiu; o vazamento saiu. Nas outras telas públicas o header fica como está
+          — em `/termos` e `/privacidade` a pessoa lê contrato, não decide compra, e ali o link de
+          preço é serviço (L-7 do `docs/31` colocou os dois de propósito).
+        */}
+        <nav className="flex items-center">
           <Link
             href="/entrar"
             className="flex h-12 items-center px-1 text-corpo font-semibold text-acc-2 transition active:scale-[.97]"
@@ -150,19 +216,34 @@ export default function Home() {
 
       <section className="animate-in py-10 fade-in slide-in-from-bottom-4 duration-500 sm:py-16">
         {/*
-          O lockup completo (símbolo + "Ciclo" escrito) abre a página — é o único
-          momento da landing em que a marca aparece sozinha, sem navegação nem
-          rótulo ao redor, então ganha destaque cheio. O logo pequeno do
-          `<header>` acima continua sendo a referência utilitária de navegação;
-          este é a declaração de marca que abre o argumento da página.
+          Aqui havia um segundo lockup da marca, justificado como "a declaração de marca que abre o
+          argumento da página". Medido a 375 px em 2026-09-03, o resultado era outro: os dois
+          logotipos ficavam a **70 px um do outro** (o do header em y=30, este em y=128), ambos na
+          primeira dobra, mesmo desenho e mesma cor, um pouco maior que o outro. Não lia como
+          ênfase, lia como repetição acidental — e empurrava o argumento da página para baixo.
+
+          Quem abre a página agora é a manchete, que é o que produto maduro faz: a marca fica na
+          navegação, o argumento fica no `h1`. O logo do `<header>` continua sendo a âncora de
+          marca, igual em todas as telas.
         */}
-        <Image src={wordmark} alt="CICLO" priority className="mb-6 h-11 w-auto sm:h-12" />
         <h1 className="text-numero font-bold sm:text-[2.75rem] sm:leading-[1.05] sm:tracking-[-0.02em]">
           A lista de quem devia ter voltado e não voltou.
         </h1>
-        <p className="mt-4 max-w-[52ch] text-corpo text-txt-2">
-          Para quem atende com hora marcada: barbearia, unhas, cílios, sobrancelha, depilação, estética. Em português,
-          feito para o celular, sem treinamento.
+        {/*
+          `docs/20-COPY-PLANO.md` §D.3, variante C — recomendada e até agora não implementada. Não
+          é escrita nova: é a PROMOÇÃO da melhor linha que a página já tinha, enterrada no rodapé da
+          seção "Feito para". Resolve o alcance (§4.1: a copy nomeava 8 profissões das 17 do
+          catálogo, e nenhuma das 8 tem ritmo recorrente) na posição de maior atenção, sem listar
+          profissão — que é o que o painel de leitores vetou no §7.4: 17 chips na dobra leem como
+          "serve para tudo", e o barbeiro do painel rejeita isso.
+
+          O tricolon que estava aqui ("Em português, feito para o celular, sem treinamento") saiu
+          inteiro pelo §D.3: as três informações são verdadeiras e irrelevantes — nenhuma é motivo
+          para escolher o CICLO em vez de outro. Migraram para a FAQ, onde são objeção respondida
+          em vez de argumento de venda.
+        */}
+        <p className="mt-4 max-w-[46ch] text-corpo text-txt-2">
+          Para qualquer trabalho que dependa de cliente que volta.
         </p>
         <div className="mt-7 flex flex-wrap gap-3">
           <Link href="/cadastro" className={botaoPrimario}>
@@ -189,12 +270,89 @@ export default function Home() {
         {/*
           O preço aparece já na primeira dobra, em texto, sem precisar de clique. É o oposto do
           que quatro dos treze concorrentes pesquisados fazem, e é de graça fazer diferente.
+
+          Era um link só, sublinhado, ocupando a linha inteira: medido a 375 px, a frase quebrava
+          em QUATRO pedaços de 13,5 px, sublinhados, logo abaixo de dois botões de 48 px. A
+          informação comercial mais importante da página estava no tratamento tipográfico menos
+          importante dela, e sublinhado de duas linhas lê como nota de rodapé, não como preço.
+
+          Agora a frase é texto e só "Ver os planos" é link. O preço ganha o peso da fonte em vez
+          de ganhar sublinhado, que é como se destaca número, e o alvo de toque fica no que é
+          clicável de fato.
         */}
-        <div className="mt-4">
-          <Link href="/precos" className="toque-48 inline-block text-secundario font-semibold text-acc-2 underline underline-offset-4">
-            Grátis para começar, {precoDoPlano('essencial')} por mês para ir além — ver os planos
+        <p className="mt-4 text-secundario text-txt-2">
+          Grátis para começar. <span className="font-semibold text-txt">{precoDoPlano('essencial')} por mês</span> para
+          ir além.{' '}
+          <Link href="/precos" className="toque-48 inline-flex font-semibold text-acc-2 underline-offset-4 hover:underline">
+            Ver os planos
           </Link>
-        </div>
+        </p>
+
+        {/*
+          A PEÇA QUE FALTAVA NA PÁGINA, e a única deste redesenho que o `docs/20` não tinha
+          previsto. Pesquisa de 2026-09-03 (`docs/38` §2.1): quase toda página de SaaS de alta
+          conversão mostra o produto, ou o resultado dele, dentro do primeiro scroll — um print
+          real do painel converte melhor que ilustração, porque a pessoa quer ver o que vai assinar
+          antes de ler lista de recurso.
+
+          A home descrevia o Motor de Ciclo em prosa e nunca o mostrava. Era o maior buraco de
+          conversão da página.
+
+          **Por que isto NÃO viola o §5.10, e a distinção não é semântica.** O `docs/20` §D.4.1 já
+          a cravou: demonstração mostra o que o software FAZ; prova social afirma que outra pessoa
+          COMPROU. Isto é o primeiro. Os nomes são de exemplo, os números são de exemplo, e a
+          legenda diz isso em texto — não em letra miúda. O §D.5 var C exige exatamente esse
+          enquadramento para o número: *"ilustração de layout, não afirmação"*.
+
+          Feito em HTML e CSS, sem imagem, de propósito: público 100% celular, e a pesquisa que
+          recomenda vídeo/GIF na dobra não paga o custo de latência num produto cujo plano de
+          performance (`docs/28`) existe porque o clique já demorava.
+
+          O que a tela mostra é o que `/admin/recuperar` mostra de verdade: quem passou do ponto,
+          há quantos dias, e a estimativa de quanto vale chamar. A ordem das colunas é a mesma.
+        */}
+        <figure className="mt-8 rounded-[var(--radius)] border border-line bg-surface p-4 shadow-elevado sm:p-5">
+          <div className="flex items-baseline justify-between gap-3">
+            <p className="text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">
+              Passaram do ponto de voltar
+            </p>
+          </div>
+
+          <div className="mt-3 flex items-end gap-5">
+            <div>
+              <p className="tabular text-numero font-bold leading-none text-txt">23</p>
+              <p className="mt-1 text-label text-txt-3">pessoas</p>
+            </div>
+            <div>
+              <p className="tabular text-titulo font-bold leading-none text-acc-2">R$ 1.840</p>
+              {/*
+                "Estimativa" fica no rótulo, não num asterisco: é a mesma palavra que a tela
+                interna usa ("Estimativa, não promessa"), e o §D.5 var C manda mostrar a origem do
+                número junto com ele.
+              */}
+              <p className="mt-1 text-label text-txt-3">estimativa de retorno</p>
+            </div>
+          </div>
+
+          <ul className="mt-4 flex flex-col gap-px overflow-hidden rounded-[var(--radius-sm)] bg-line">
+            {[
+              { nome: 'Fernanda M.', atraso: '24 dias', valor: 'R$ 90' },
+              { nome: 'Juliana R.', atraso: '18 dias', valor: 'R$ 45' },
+              { nome: 'Camila S.', atraso: '15 dias', valor: 'R$ 70' },
+            ].map((p) => (
+              <li key={p.nome} className="flex items-center gap-3 bg-surface-2 px-3 py-2.5">
+                <span className="min-w-0 flex-1 truncate text-secundario font-semibold text-txt">{p.nome}</span>
+                <span className="tabular shrink-0 text-label text-txt-3">{p.atraso}</span>
+                <span className="tabular shrink-0 text-secundario font-semibold text-txt-2">{p.valor}</span>
+              </li>
+            ))}
+          </ul>
+
+          <figcaption className="mt-3 text-label text-txt-3">
+            Exemplo de como a tela fica. Os nomes e os valores são inventados; a conta é a que o
+            CICLO faz com os seus atendimentos.
+          </figcaption>
+        </figure>
       </section>
 
       <section className="py-8">
@@ -237,17 +395,30 @@ export default function Home() {
 
       <section className="py-8">
         <h2 className="mb-4 text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">Feito para</h2>
-        <ul className="flex flex-wrap gap-2">
-          {PROFISSOES.map((p) => (
-            <li
-              key={p}
-              className="rounded-[var(--radius-pill)] border border-line-2 bg-surface-2 px-3 py-1.5 text-secundario text-txt-2"
-            >
-              {p}
-            </li>
+        <div className="flex flex-col gap-4">
+          {GRUPOS_DE_PROFISSAO.map((g) => (
+            <div key={g.grupo}>
+              <p className="mb-2 text-label font-semibold text-txt-2">{g.grupo}</p>
+              <ul className="flex flex-wrap gap-2">
+                {g.itens.map((p) => (
+                  <li
+                    key={p}
+                    className="rounded-[var(--radius-pill)] border border-line-2 bg-surface-2 px-3 py-1.5 text-secundario text-txt-2"
+                  >
+                    {p}
+                  </li>
+                ))}
+              </ul>
+            </div>
           ))}
-        </ul>
-        <p className="mt-3 text-secundario text-txt-3">E qualquer trabalho que dependa de hora marcada e de cliente que volta.</p>
+        </div>
+        {/*
+          O fecho desta seção SUBIU para o subtítulo da dobra (§D.3), que é onde ele resolve o
+          alcance na posição de maior atenção. Fica sem substituto de propósito: a linha tentadora
+          era "Não achou a sua? O catálogo cresce com quem pede", e o §D.6 a cortou por não ser
+          verdade — o onboarding não tem campo "Outro"; quem procura profissão que não existe vê
+          "Nenhuma profissão encontrada" e o produto não registra nada.
+        */}
       </section>
 
       <section className="py-8">
@@ -269,10 +440,25 @@ export default function Home() {
       </section>
 
       <section className="rounded-[var(--radius)] border border-line bg-surface p-6 text-center shadow-elevado">
+        {/*
+          `docs/20-COPY-PLANO.md` §D.7, variante C — recomendada e não implementada. O motivo veio
+          do painel de leitores: a objeção "e se eu não puder pagar depois?" apareceu em DUAS
+          personas de margem apertada, e a melhor resposta do produto estava enterrada na `/precos`.
+          Trazê-la para o fecho é, nas palavras do §D.7, "a maior movimentação de conversão barata
+          que este documento encontrou".
+
+          Mecanismo: aversão à perda invertida. Em vez de ameaçar com o que ela perde se não agir,
+          remove o risco de agir — que é a única forma honesta de usar aversão à perda aqui, e
+          passa no teste do §5.10 (continua funcionando mesmo se a pessoa souber como funciona).
+
+          O número do teto vem de `PLANOS.gratis`, nunca datilografado: é a regra do
+          `preco-em-um-lugar-so` aplicada a limite em vez de a preço.
+        */}
         <CalendarCheck aria-hidden className="mx-auto mb-3 size-8 text-acc-2" />
-        <h2 className="text-titulo font-bold">Comece pela sua agenda de amanhã</h2>
-        <p className="mx-auto mt-2 max-w-[42ch] text-secundario text-txt-2">
-          Criar a conta é de graça, e o catálogo da sua profissão já vem preenchido.
+        <h2 className="text-titulo font-bold">Comece de graça, e sem cartão</h2>
+        <p className="mx-auto mt-2 max-w-[44ch] text-secundario text-txt-2">
+          Grátis para sempre com {PLANOS.gratis.maxProfissionais} profissional. A base é sua: se um dia você parar de
+          pagar, nada some.
         </p>
         <div className="mt-5 flex flex-wrap justify-center gap-3">
           <Link href="/cadastro" className={botaoPrimario}>

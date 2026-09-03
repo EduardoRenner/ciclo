@@ -72,7 +72,13 @@ export default function FormularioOnboarding({ profissoes }: { profissoes: Profi
       const json = (await resposta.json()) as { error?: { message: string; details?: { fields?: Record<string, string> } } }
       if (!resposta.ok) {
         const primeiroCampo = json.error?.details?.fields ? Object.values(json.error.details.fields)[0] : undefined
-        setErro(primeiroCampo ?? json.error?.message ?? 'Não consegui criar seu negócio.')
+        /*
+          `docs/20` §D.9: era "Não consegui criar seu negócio." — errado pelo mesmo motivo que o H1
+          antigo (o negócio dela já existe) e, pior, sem dizer o que fazer. O endereço da página é o
+          único dos três campos que pode colidir com o de outra pessoa, então é o único que a pessoa
+          consegue consertar sozinha — a regra do CLAUDE.md é que o erro diga isso.
+        */
+        setErro(primeiroCampo ?? json.error?.message ?? 'Não consegui criar sua conta. Confira o endereço da página e tente de novo.')
         return
       }
       router.push('/admin/hoje')

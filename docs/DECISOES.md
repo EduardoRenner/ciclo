@@ -5494,3 +5494,260 @@ nomeando exatamente o arquivo e a consequência.
 **O que não investiguei ainda, registrado para não esquecer:** se esse mesmo Full Route Cache
 afeta alguma resposta de `/api/v1` (que já é `no-store` por outro motivo — `naoCacheavel` no
 middleware — então provavelmente a salvo, mas não medi ao vivo como medi as páginas HTML).
+
+---
+
+## 2026-09-03 · Polimento de produto e conversão
+
+### "Fale com a gente" em quatro telas, e a gente não tinha endereço
+
+**Achado.** Num produto sem cobrança automática, toda mudança de plano é uma conversa. Quatro
+telas mandavam o assinante começá-la e nenhuma dizia com quem: `/precos` ("Como eu pago hoje?" →
+*"Falando com a gente"*), `/admin/config/meu-plano` (nos dois ramos de plano), `/termos` §10 e
+`/privacidade` §7. As duas últimas mandavam usar *"o mesmo canal em que você contratou"* — canal
+que não existe, porque todo mundo entra sozinho pelo cadastro do Grátis.
+
+A de `/privacidade` foi a **guarda que achou, não eu**: eu tinha encontrado três lendo o código, e
+a varredura apontou a quarta. É a mais cara das quatro — a LGPD exige contato publicado para o
+titular exercer os direitos que aquele parágrafo acabou de listar.
+
+**Decisão.** `src/lib/contato.ts`, no padrão de `core/messaging/promessa.ts`: a copy vira função e
+conhece os dois estados. Com canal, a frase convida e a tela desenha o botão; sem canal, a frase
+não convida.
+
+**Pendência do Eduardo, e é pré-requisito de lançamento:** criar
+`NEXT_PUBLIC_CONTATO_WHATSAPP` (E.164 só com dígitos) na Vercel. Sem ela o produto continua sem
+como ser vendido — as telas ficam honestas, mas mudas.
+
+### Seis telas deixavam a pessoa trabalhar para recusar no envio
+
+**Achado.** `recurso-pago-avisa-antes` (31/08) enumerava UMA tela; o projeto tem nove módulos com
+rota de escrita travada. Seis estavam com o defeito no ar. O pior é `/admin/agenda/novo`: "Repetir
+este horário" desviava o envio inteiro para `POST /appointments/series` (módulo `recurrence`,
+Avançado), e o agendamento simples — que é **grátis** — não era criado junto. O recurso pago
+bloqueando a ação gratuita que a pessoa tinha vindo fazer.
+
+O hub de Configurações mantém item bloqueado à vista de propósito ("sumir seria esconder o que dá
+para comprar") e desenhava esses itens **iguais** aos liberados. Ele mandava comprar e o destino
+não vendia.
+
+**Decisão.** Selo com o nome do degrau no hub, nascido do `veredito` que `listarModulos` já
+devolvia (um lugar só, módulo novo ganha sozinho); `BloqueioPlano` ou `motivoDesabilitado` nas seis
+telas. Guarda nova `toda-rota-travada-tem-tela-que-avisa` **não enumera casos**: lê toda chamada de
+`exigirModulo` das rotas e exige decisão declarada por módulo. Cinco mutações conferidas, incluindo
+quebrar o próprio regex.
+
+### Expediente mudava na tela e não voltava quando o servidor recusava
+
+Independente de plano. `editor-expediente` fazia `setBlocos(novos)` **antes** do `PUT` e, na
+falha, só disparava um toast. Quem trocasse "terça abre 10:00" e lesse o erro de passagem fechava a
+tela acreditando que salvou, com a agenda ainda abrindo às 09:00. Vale para rede caída também.
+Agora desfaz e diz que desfez.
+
+### Indicação entre profissionais (B2B): o convite entra, a recompensa não
+
+**Achado.** `docs/30` §3 separa os dois laços. O B2C está de ponta a ponta desde 30/08; o B2B não
+tinha **nada**, e a trava de "≥ 20 pagantes" do `docs/18` Fase H nunca justificou isso — ela
+protege a RECOMPENSA (crédito, proração, antifraude por CPF/instrumento de pagamento), não o
+convite.
+
+**Decisão.** `core/billing/convite-do-ciclo.ts` + cartão "Indicar o CICLO" em `meu-plano`: texto
+pronto na voz do profissional (§H.4, "com a cara dele, não da marca") e `wa.me`. Sem banco, sem
+token, sem cobrança.
+
+**A recompensa fica desligada, e é decisão do Eduardo ligar.** O `docs/18` §13.1 já decidiu o
+prêmio (um mês para cada lado); o que não existe é como conceder. `temRecompensa` é o interruptor,
+a frase verdadeira já está escrita, e `tests/unit/core/convite-do-ciclo.test.ts` reprova qualquer
+tela que o ligue enquanto `billing_credits` não existir. Quando a cobrança existir, muda-se um
+valor e aquele teste — não se caça string.
+
+**O que NÃO entrou, de propósito:** atribuição de quem indicou quem (precisa de coluna e não
+paga sozinha antes de haver prêmio) e qualquer frase que mencione desconto.
+
+### O cadastro não dizia que ali se assina um contrato
+
+**Achado.** `/cadastro` é onde o contrato se forma, e a tela não mencionava nem linkava Termos ou
+Política de Privacidade. Os dois existem desde 30/08 e só eram alcançáveis pela landing e por
+`/precos`, que ninguém precisa visitar para chegar ao botão (o `/entrar` e um link direto levam
+até lá). O produto processa dado de saúde; o momento do aceite é este.
+
+Junto: a tela do funil que mais converte era a única sem argumento nenhum. A landing prometia
+grátis e sem cartão, e o formulário de quatro campos não repetia isso. E o `h1` dizia "Criar conta
+no CICLO" com o logotipo logo acima dizendo CICLO — a marca duas vezes em 60 px, o mesmo defeito
+da dobra da landing.
+
+**Decisão.** Aviso de aceite abaixo do botão (sem caixa de marcar: a lei aceita o aceite pelo ato
+de contratar quando os termos estão à vista, e uma caixa a mais é atrito que não protege ninguém),
+linha de risco no subtítulo derivada de `NOME_DO_PLANO`, e `h1` sem a marca.
+
+### `toque-48` em dois links do mesmo parágrafo deixa um deles intocável
+
+**Medido, não deduzido, e o conserto era pior que o defeito.** Ao aplicar `toque-48` nos dois links
+legais dentro da frase, a sondagem ponto a ponto deu: "Termos de uso" com 49 px efetivos e
+"Política de Privacidade" com **zero**. Os dois começam na mesma linha, e o `::after` absoluto de
+48 px do primeiro cobre o segundo inteiro.
+
+A classe só é segura onde os elementos não dividem linha de texto corrida. Os rodapés da landing e
+de `/precos` funcionam porque são `flex` com `gap` — desenho agora adotado aqui, com 49 px medidos
+nos dois links.
+
+`alvo-de-toque-tem-48` não pega esta classe de defeito por desenho: ela confere se a classe está no
+`className`, não se o alvo resultante é alcançável. Registrado na tabela de armadilhas do
+`CLAUDE.md`, que é onde alguém vai tropeçar nisso de novo.
+
+### A copy supunha que quem paga é homem
+
+**Achado.** Barbearia é uma das nove profissões do catálogo; as outras oito têm base
+majoritariamente feminina. `/entrar` abria com "Bem-vindo de volta", o seletor de profissional do
+agendamento público oferecia "Qualquer um" (para escolher entre pessoas que costumam ser todas
+mulheres, na tela de maior volume do produto), e **três modelos de mensagem pronta escreviam
+"obrigado" em primeira pessoa** — texto que a profissional manda para a cliente dela, com o produto
+conjugando por ela no gênero errado. Neste último, quem passa vergonha é o salão.
+
+**Decisão.** Copy neutra nas três superfícies, mais uma linha no prompt do assistente (a única que
+escreve texto novo em tempo de resposta). A guarda declara a exceção que a torna útil em vez de
+ruidosa: concordância com COISA está certa ("nenhum serviço cadastrado"), e "qualquer um DELES" é
+pronome de coisa. O regex da exceção não funcionava na primeira versão (`d[eo]s?` não casa
+"deles"), o que teria feito a guarda acusar copy correta.
+
+### Dava para marcar horário na barbearia que não existe
+
+O aviso de demonstração vivia só em `/{slug}`, e o comentário que o acompanha descreve o defeito:
+*"sem ele, dá para escolher serviço e horário numa barbearia que não existe"*. Escolher serviço e
+horário acontece em `/{slug}/agendar`, que não tinha aviso. O CTA "Agendar horário" do próprio
+perfil leva para lá. A página entrou como SEXTO leitor da lista de `demonstracao-fora-do-indice`,
+não como asserção avulsa.
+
+### As quatro telas do cliente terminavam o erro num beco
+
+**Achado, medido no navegador.** Confirmar, avaliar, encaixe e orçamento: ícone, título, mensagem
+da rota, nada mais. Link recusado deixava a cliente sem saber o que fazer (e o salão concluindo que
+ela ignorou a mensagem); rede caída caía no mesmo beco num caso em que repetir resolveria — e em
+três das quatro a chamada dispara ao ABRIR, então bastava a piscada no toque do link.
+
+**Decisão.** `components/ui/erro-publico.tsx` como resposta única à regra "erro explica o que
+fazer". Transitório (5xx e rede) oferece repetir; recusa diz o que fazer, porque o produto não sabe
+o slug do salão nesse estado e link para lugar nenhum é pior que uma frase útil. Retentativa
+recarrega em vez de repetir a ação: decidir entre aprovar e recusar por ela seria pior que
+perguntar.
+
+**Registro honesto do processo:** consertei `/confirmar` primeiro, com teste só para ela, e as
+outras três ficaram. A guarda passou a DERIVAR a lista das telas com `setEstado('erro')` em
+`app/(public)`, que é o que impede a próxima de nascer sem saída.
+
+---
+
+## Pendências do Eduardo desta rodada
+
+1. **`NEXT_PUBLIC_CONTATO_WHATSAPP` na Vercel.** Pré-requisito de lançamento: sem ela o produto
+   continua sem porta de upgrade. As telas ficam honestas, mas mudas.
+2. **Ligar ou não a recompensa da indicação B2B.** O prêmio já foi decidido (docs/18 §13.1: um mês
+   para cada lado) e não há como conceder sem `billing_credits`. `temRecompensa` é o interruptor, a
+   frase verdadeira já está escrita, e a guarda reprova quem ligar antes de existir cobrança.
+3. **Revisar e mesclar `polimento/produto-e-conversao`** (branch tirado de `main`, não da branch de
+   demo; 11 commits, `pnpm typecheck` + `eslint` + `test:unit` limpos, cada guarda vista reprovando
+   por mutação).
+
+## 2026-09-03 · Duas perguntas que ficaram para o Eduardo, e duas que a medição respondeu
+
+### Pergunta aberta: o "Falar no WhatsApp" da página pública compete com o produto
+
+Na página do salão, "Agendar horário" e "Falar no WhatsApp" são dois botões de peso parecido, na
+primeira dobra. O argumento que o CICLO vende, escrito na landing, é *"quem for marcar escolhe
+serviço, profissional e horário **sem precisar falar com você**"* — e cada conversa de WhatsApp é
+exatamente o tempo que o produto promete devolver ao salão.
+
+O contra-argumento é real: parte das clientes quer perguntar antes, e tirar a saída empurra essas
+para o silêncio. Não mexi porque é decisão de produto, não defeito. **Se for para testar,** o
+caminho barato é o mesmo que a floricultura usou: manter o WhatsApp, mas com peso visual menor que
+o do agendamento (secundário de verdade, não secundário do mesmo tamanho).
+
+### Pergunta aberta: o CTA dos cartões pagos ocupa duas linhas
+
+"Começar no grátis e subir para o Essencial" quebra em duas linhas dentro de um botão de 48 px.
+**Medido: não estoura** (`scrollHeight === clientHeight === 48`, 40 px de texto na caixa), então
+não é defeito — é aperto. A frase é longa porque é honesta: o botão leva ao cadastro do Grátis, e
+"Quero o Essencial" prometeria um caminho que não existe ainda.
+
+A alternativa que preserva as duas coisas seria botão curto ("Quero o Essencial") com a explicação
+como linha de apoio embaixo. Não fiz porque troca copy deliberada das Fases D/E/M por preferência
+estética minha, e essa troca é sua.
+
+### Medição que desmentiu duas hipóteses minhas
+
+Registro porque o padrão se repete (ver `docs/21` e a auditoria de 30/08):
+
+- **"O CTA está sendo cortado."** Falso: eu contei três retângulos de texto e um deles era o ícone
+  `ArrowRight`, que é irmão flex, não linha de texto.
+- **"O `h1` de `/precos` tem entrelinha frouxa em cinco linhas."** Falso: 178 px / 5 linhas = 35,6
+  px por linha a 34 px de fonte, ou seja 1,05 — já apertado.
+
+As duas teriam virado commit se eu tivesse confiado na leitura da tela em vez de medir.
+
+---
+
+## 2026-09-03 (segunda rodada) · Home de conversão e prêmio de indicação
+
+### `tenants.trial_ends_at` existe desde a 0001 e nunca teve leitor nem escritor
+
+**A sexta ocorrência da classe.** Varredura em `src/`, `tests/`, `supabase/`, `scripts/`: a única
+menção no repositório inteiro é a linha da migration que cria a coluna. As anteriores foram
+`fee_cents`, `media.consent_id`, `tenants.plan`, `clients.referred_by` e a frase "fale com a gente"
+sem canal.
+
+E ela é exatamente o veículo que o prêmio de indicação B2B precisa: "um mês do Essencial" é, em
+mecânica, `plan` + uma data de validade. Sem migration, sem PSP, sem `billing_credits`. Registrado
+em `docs/37`, que é o documento de decisão.
+
+### O plano de copy da home estava escrito e não implementado
+
+`docs/20` Fase D recomendou dez peças em 24/08; **seis nunca foram implementadas** — subtítulo,
+Card 1, "Feito para", fecho, H1 e subtítulo da `/precos`, e as seis mudanças da FAQ. Nesta rodada
+as seis entraram, e `docs/38` registra a comparação item a item.
+
+Duas coisas mudaram em relação ao que o `docs/20` recomendava, e as duas por medição:
+
+- **Card 1:** o §D.5 manda abrir com "23 pessoas passaram do ponto". A figura nova da dobra já
+  mostra o 23 com legenda de exemplo; repetir em prosa sem a legenda viraria afirmação, que é o que
+  o próprio §D.5 proíbe. O cartão passou a dizer o que a figura não diz.
+- **FAQ:** o §D.10 supôs que a importação de planilha traz "nome, telefone, e-mail e etiquetas;
+  histórico não". O importador aceita também a coluna de **última visita**, e ela chega até
+  `calcularPrevisao`, que roda `computeCycle` em cada data. Com essa coluna a lista de quem sumiu
+  **nasce cheia no primeiro dia**. É o argumento mais forte que o produto tem para quem já tem base,
+  e não estava escrito em lugar nenhum.
+
+### A peça que o plano de copy não tinha: prova de produto na dobra
+
+Pesquisa nova: quase toda página de SaaS de alta conversão mostra o produto dentro do primeiro
+scroll. A home descrevia o Motor de Ciclo e nunca o mostrava. Entrou uma figura em HTML/CSS (sem
+imagem, por latência) com 293 px dos 308 acima da dobra a 375 px, medido.
+
+Não é prova social: o §D.4.1 já cravou a distinção — demonstração mostra o que o software FAZ,
+prova social afirma que outra pessoa COMPROU. Nomes e valores de exemplo, com a legenda dizendo
+isso em texto.
+
+### "Preços" saiu do header da home, e só da home
+
+Pedido do Eduardo, e o motivo é de conversão: dois links no header competiam com o CTA primário, e
+um deles aponta para o que a própria dobra já resume com o número na tela. Em `/termos` e
+`/privacidade` fica — ali a pessoa lê contrato, não decide compra.
+
+### Três guardas cegas minhas, e a terceira é a que dói
+
+1. A guarda de gênero varria só `src/app` e `src/components`. O cartão do Grátis, em `src/lib`,
+   dizia "Você atende sozinho" e ela passava verde.
+2. Ela lia só `.tsx`. `planos-cartoes.ts` é copy de produto sem uma linha de JSX.
+3. **O padrão estava escrito `\b(quem|voc[êe])\b`, e o `\b` depois da alternativa acentuada NUNCA
+   casa** — em JS sem a flag `u`, `ê` é não-palavra, e entre "ê" e o espaço não há fronteira. É a
+   mesma pegadinha que `promessa-de-canal` já documentou, e eu a repeti sabendo dela. Só apareceu na
+   mutação.
+
+E uma quarta, de outro tipo: **cegueira de RAIZ não era pega por asserção nenhuma.** Tirar
+`src/lib` da lista deixava a contagem de arquivos acima do piso e a suíte verde. Agora a guarda
+afirma que os dois arquivos onde o defeito já apareceu de verdade estão no alcance.
+
+### Erro meu revertido pela decisão da casa
+
+Reescrevi a FAQ de "quem trabalha por conta" para "quem atende sozinho". A tabela do `docs/20` §C.4
+diz, com estas palavras, que *"quem atende sozinho" não resolve → "quem trabalha por conta"*, porque
+escolher um gênero é o mesmo erro que trocar de gênero. Revertido.

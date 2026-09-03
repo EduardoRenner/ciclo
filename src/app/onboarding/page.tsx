@@ -25,9 +25,26 @@ export default async function PaginaOnboarding() {
   return (
     <TelaPublica>
       <Selo />
+      {/*
+        `docs/20-COPY-PLANO.md` §D.9, variante A — recomendada em 24/08 e não implementada.
+
+        **"Vamos criar seu negócio" saiu por ser factualmente errado**, e é o tipo de frase que quem
+        TEM o negócio nota na hora: o negócio dela existe há anos; o que está sendo criado é uma
+        conta. Errar isso na terceira tela do funil, depois de a pessoa já ter dado nome, e-mail,
+        telefone e senha, é caro por um motivo específico — ela acabou de decidir confiar, e a
+        primeira coisa que o produto faz é mostrar que não entendeu o que ela é.
+
+        **"Três respostas" é contável e verificável**, e é a razão de a variante A ganhar: o
+        formulário tem exatamente três campos (nome do negócio, profissão e endereço da página,
+        conferidos em `formulario.tsx`). Se um quarto campo aparecer um dia, a copy fica falsa —
+        o que é bom, porque ela passa a ser um freio contra o formulário crescer.
+
+        E ela promete a ENTREGA ("sua página está no ar"), não o trabalho ("vamos configurar"), que
+        é a diferença entre redução de atrito e descrição de tarefa.
+      */}
       <div className="text-center">
-        <h1 className="text-titulo font-bold">Vamos criar seu negócio</h1>
-        <p className="mt-1 text-secundario text-txt-2">Você poderá ajustar tudo isso depois.</p>
+        <h1 className="text-titulo font-bold">Três respostas e sua página está no ar</h1>
+        <p className="mt-1 text-secundario text-txt-2">Você pode ajustar tudo isso depois.</p>
       </div>
       <FormularioOnboarding profissoes={profissoes ?? []} />
     </TelaPublica>

@@ -74,6 +74,19 @@ returns date language sql stable as $$
               else seed.dia_util_local(d) end
 $$;
 
+-- `search_path` fixo em todas as funções acima. Sem isso, quem chama pode sombrear o que a
+-- função referencia — e o `get_advisors` acusa uma linha por função. Foram SETE avisos novos no
+-- banco de produção quando este seed rodou pela primeira vez; o projeto já tinha resolvido a
+-- mesma coisa antes (migration 0055).
+--
+-- `pg_catalog, seed, pg_temp` onde a função chama outra do schema; só `pg_catalog, pg_temp` no
+-- resto. Função com search_path errado não falha ao ser criada: falha ao ser CHAMADA.
+alter function seed.rnd(bigint, text)               set search_path = pg_catalog, pg_temp;
+alter function seed.pick(bigint, text, text[])      set search_path = pg_catalog, seed, pg_temp;
+alter function seed.pick_uuid(bigint, text, uuid[]) set search_path = pg_catalog, seed, pg_temp;
+alter function seed.dia_util_local(date)            set search_path = pg_catalog, pg_temp;
+alter function seed.dia_passado(date)               set search_path = pg_catalog, seed, pg_temp;
+
 -- ── Configuração ───────────────────────────────────────────────────────────────────────────
 create table if not exists seed.cfg (slug text primary key, tenant_id uuid, qtd int, publico text, ordem int);
 create table if not exists seed.arq (nome text primary key, ini int, fim int, vmin int, vmax int,
@@ -322,6 +335,19 @@ from (
   group by a.client_id
 ) x where c.id = x.client_id;
 
+-- `created_at` do cliente RECUADO para antes da primeira visita real. O valor inicial era uma
+-- ESTIMATIVA (`desde_ultima + visitas * cadencia + folga`), e o jitter da cadência às vezes
+-- fazia o span real passar do previsto — resultado: ~6% dos clientes com visita ANTES do
+-- próprio cadastro, timeline impossível. Derivar de `min(starts_at)` é o mesmo princípio das
+-- linhas acima: o número sai da realidade, não de uma conta paralela.
+update clients c set created_at = x.primeira - ((3 + floor(seed.rnd_id(c.id,'cad_fix')*7)) || ' days')::interval
+from (
+  select a.client_id, min(a.starts_at) as primeira
+  from appointments a where a.tenant_id in (select tenant_id from seed.cfg)
+  group by a.client_id
+) x
+where c.id = x.client_id and c.created_at > x.primeira;
+
 -- Indicação: ~26% aponta para outro cliente da MESMA carteira. Alimenta o bônus dos dois lados.
 update clients c set referred_by = p.padrinho, source = 'indicacao'
 from (
@@ -432,6 +458,170 @@ from (values
 where t.slug = v.slug;
 
 -- ═══════════════════════════════════════════════════════════════════════════════════════════
+-- "EXPERIMENTOU E NÃO VOLTOU" — o arquétipo que faltava
+--
+-- Sem ele a carteira mostrava 91% a 96% de retorno, com 2 a 5 pessoas em toda a base que vieram
+-- uma vez e sumiram. Salão nenhum tem isso: metade dos estreantes não volta, e um livro onde
+-- quase todo mundo voltou denuncia dado fabricado para qualquer pessoa do ramo — o mesmo erro de
+-- agregado da campanha que convertia 100%.
+--
+-- E o filtro "Primeira visita sem volta" da lista de clientes, que é um recurso REAL do produto,
+-- nascia praticamente vazio.
+--
+-- A quantidade é calculada para a taxa de retorno cair para ~72%, respeitando o teto DURO de 50
+-- clientes do plano grátis (`src/core/billing/planos.ts`). A conta grátis fica EXATAMENTE no
+-- teto de propósito: é o que faz a demonstração mostrar o aviso de limite, que é o gatilho de
+-- upgrade do produto.
+-- ═══════════════════════════════════════════════════════════════════════════════════════════
+
+create temp table seed_exp on commit drop as
+with hoje as (
+  select c.tenant_id, cfg.slug, cfg.ordem, cfg.publico,
+    count(*) as clientes, count(*) filter (where c.visits_count >= 2) as voltaram
+  from clients c join seed.cfg cfg on cfg.tenant_id = c.tenant_id
+  group by c.tenant_id, cfg.slug, cfg.ordem, cfg.publico
+)
+select h.*, least(
+  greatest(0, ceil(h.voltaram / 0.72) - h.clientes)::int,
+  case when h.slug = 'demo-navalha-de-ouro' then 50 - h.clientes else 999 end
+) as adicionar
+from hoje h;
+
+insert into clients (tenant_id, name, phone_e164, phone_hash, birth_date, tags, source, gender,
+                     marketing_opt_in, created_at)
+select e.tenant_id,
+  seed.pick(sem.v,'nome',(select itens from seed.voc where chave = e.publico)) || ' ' ||
+  seed.pick(sem.v,'sobre',(select itens from seed.voc where chave='sobre')),
+  tel.v,
+  encode(extensions.digest(tel.v || :'salt', 'sha256'), 'hex'),
+  make_date(1962 + floor(seed.rnd(sem.v,'ano')*44)::int, 1 + floor(seed.rnd(sem.v,'mes')*12)::int,
+            1 + floor(seed.rnd(sem.v,'dia')*28)::int),
+  array['veio uma vez']::text[],
+  seed.pick(sem.v,'org',(select itens from seed.voc where chave='origem')),
+  case when e.publico = 'f' then 'feminino' else 'masculino' end,
+  false,
+  now() - ((70 + floor(seed.rnd(sem.v,'cad')*260)) || ' days')::interval
+from seed_exp e
+cross join lateral generate_series(1, e.adicionar) i
+cross join lateral (select (e.ordem::bigint * 100000 + 900 + i) as v) sem
+cross join lateral (
+  select '+55' || (select itens from seed.voc where chave='ddd')
+       [1 + (('x'||substr(md5(sem.v::text||'|ddd'),1,8))::bit(32)::bigint & 2147483647) % 23]
+     || '9'
+     || lpad(((('x'||substr(md5(sem.v::text||'|tel'),1,8))::bit(32)::bigint & 2147483647) % 9000 + 1000)::text,4,'0')
+     || lpad((900 + i)::text,4,'0') as v
+) tel;
+
+-- A visita única: poucos dias depois do cadastro, e nunca mais. Serviço de entrada — sorteado
+-- entre os três mais baratos, que é o que alguém testa numa primeira vez.
+insert into appointments (tenant_id, client_id, professional_id, service_id, starts_at, ends_at,
+                          status, origin, price_cents, completed_at, confirmed_at, created_at)
+select c.tenant_id, c.id, p.id, s.id, q.inicio, q.inicio + (s.duration_min || ' min')::interval,
+  'done'::appointment_status,
+  -- Quem experimenta e some quase sempre chegou pelo site, não indicado por alguém.
+  (case when seed.rnd_id(c.id,'org') < 0.7 then 'public_page' else 'app' end)::appointment_origin,
+  s.price_cents, q.inicio + (s.duration_min || ' min')::interval, q.inicio - interval '1 day', c.created_at
+from clients c
+join lateral (
+  select pr.id from professionals pr where pr.tenant_id = c.tenant_id and pr.active
+  order by seed.rnd_id(c.id,'prof'||pr.id::text) limit 1
+) p on true
+join lateral (
+  select sv.* from (select * from services where tenant_id = c.tenant_id and active order by price_cents limit 3) sv
+  order by seed.rnd_id(c.id,'sv'||sv.id::text) limit 1
+) s on true
+cross join lateral (
+  select (seed.dia_passado((c.created_at at time zone 'America/Sao_Paulo')::date
+            + (1 + floor(seed.rnd_id(c.id,'dia')*9))::int)
+          + make_time(9 + floor(seed.rnd_id(c.id,'h') * greatest(1, 10 - ceil(s.duration_min/60.0)))::int,
+                      floor(seed.rnd_id(c.id,'m')*4)::int * 15, 0)
+         ) at time zone 'America/Sao_Paulo' as inicio
+) q
+where 'veio uma vez' = any(c.tags)
+  and not exists (select 1 from appointments a where a.client_id = c.id);
+-- ═════════════════════════════════════════════════════════════════════════════════════════
+-- CLIENTES NOVOS — para a manchete "N novos este mês" não ser um 0 plano
+--
+-- `v_carteira_resumo.novos_mes` conta quem cadastrou desde o dia 1º no fuso do salão. Toda a
+-- carteira nasce com `created_at` de meses atrás, então em qualquer dia do mês esse número era
+-- ZERO nas seis contas — manchete parecendo tela quebrada, não negócio parado.
+--
+-- Foi o mesmo erro de calendário da campanha "este mês": olhar o número sem pensar na data.
+--
+-- A quantidade: 3 a 6 por conta, com MAIS DA METADE cadastrada nos ÚLTIMOS 2 DIAS — isso garante
+-- que `novos_mes` seja > 0 em qualquer dia em que o seed rode, sem inventar um pico irreal de
+-- cadastros no começo do mês. O resto se espalha pelas últimas 3 semanas (recente, mas mês
+-- passado se o seed rodar cedo).
+--
+-- Metade tem UMA visita já concluída; a outra "cadastrou e ainda não veio" — estado realista de
+-- quem assinou ontem. `demo-navalha-de-ouro` fica de fora: está EXATAMENTE no teto de 50 do
+-- plano grátis, e conta no limite não cresce (é o gatilho de upgrade).
+-- ═══════════════════════════════════════════════════════════════════════════════════════════
+
+create temp table seed_novos on commit drop as
+select cfg.tenant_id, cfg.slug, cfg.ordem, cfg.publico,
+  case when cfg.slug = 'demo-navalha-de-ouro' then 0 else 3 + (cfg.ordem % 4) end as quantos
+from seed.cfg cfg;
+
+insert into clients (tenant_id, name, phone_e164, phone_hash, birth_date, tags, source, gender,
+                     marketing_opt_in, created_at)
+select n.tenant_id,
+  seed.pick(sem.v,'nome',(select itens from seed.voc where chave=n.publico)) || ' ' ||
+  seed.pick(sem.v,'sobre',(select itens from seed.voc where chave='sobre')),
+  tel.v,
+  encode(extensions.digest(tel.v || :'salt', 'sha256'), 'hex'),
+  make_date(1970 + floor(seed.rnd(sem.v,'ano')*36)::int, 1 + floor(seed.rnd(sem.v,'mes')*12)::int,
+            1 + floor(seed.rnd(sem.v,'dia')*28)::int),
+  array['novo']::text[],
+  -- Cliente novo quase sempre chega pelo Instagram ou pela busca.
+  (array['instagram','google','instagram','indicacao'])[1 + floor(seed.rnd(sem.v,'org')*4)::int],
+  case when n.publico = 'f' then 'feminino' else 'masculino' end,
+  seed.rnd(sem.v,'mkt') < 0.8,
+  -- >55%: últimos 2 dias (conta como deste mês). resto: últimas 3 semanas.
+  case when seed.rnd(sem.v,'quando') < 0.55
+       then now() - (floor(seed.rnd(sem.v,'r')*2) || ' days')::interval - (floor(seed.rnd(sem.v,'h')*18) || ' hours')::interval
+       else now() - ((3 + floor(seed.rnd(sem.v,'r2')*18)) || ' days')::interval end
+from seed_novos n
+cross join lateral generate_series(1, n.quantos) i
+cross join lateral (select (n.ordem::bigint * 100000 + 850 + i) as v) sem
+cross join lateral (
+  select '+55' || (select itens from seed.voc where chave='ddd')
+       [1 + (('x'||substr(md5(sem.v::text||'|ddd'),1,8))::bit(32)::bigint & 2147483647) % 23]
+     || '9' || lpad(((('x'||substr(md5(sem.v::text||'|tel'),1,8))::bit(32)::bigint & 2147483647) % 9000 + 1000)::text,4,'0')
+     || lpad((850 + i)::text,4,'0') as v
+) tel;
+
+-- A primeira visita: só para quem cadastrou há tempo de vir (>2 dias), encadeada na primeira
+-- folga do profissional no dia, para não colidir com a agenda que já existe.
+with pend as (
+  select c.id as client_id, c.tenant_id, c.created_at, p.id as prof_id, s.id as service_id,
+         s.duration_min, s.price_cents,
+         seed.dia_passado((c.created_at at time zone 'America/Sao_Paulo')::date + 1) as dia
+  from clients c
+  join lateral (select pr.id from professionals pr where pr.tenant_id=c.tenant_id and pr.active
+                order by seed.rnd_id(c.id,'p'||pr.id::text) limit 1) p on true
+  join lateral (select sv.* from (select * from services where tenant_id=c.tenant_id and active order by price_cents limit 3) sv
+                order by seed.rnd_id(c.id,'s'||sv.id::text) limit 1) s on true
+  where 'novo' = any(c.tags)
+    and c.created_at < now() - interval '2 days'
+    and not exists (select 1 from appointments a where a.client_id = c.id)
+),
+livre as (
+  select p.*,
+    (select coalesce(max(a.ends_at), (p.dia + time '09:00') at time zone 'America/Sao_Paulo')
+     from appointments a
+     where a.professional_id = p.prof_id and (a.starts_at at time zone 'America/Sao_Paulo')::date = p.dia) as inicio
+  from pend p
+)
+insert into appointments (tenant_id, client_id, professional_id, service_id, starts_at, ends_at,
+                          status, origin, price_cents, completed_at, confirmed_at, created_at)
+select l.tenant_id, l.client_id, l.prof_id, l.service_id, l.inicio, l.inicio + (l.duration_min||' min')::interval,
+  'done'::appointment_status, 'public_page'::appointment_origin, l.price_cents,
+  l.inicio + (l.duration_min||' min')::interval, l.inicio - interval '1 day', l.created_at
+from livre l
+where (l.inicio at time zone 'America/Sao_Paulo')::time < time '18:30' and l.inicio < now();
+
+-- ═══════════════════════════════════════════════════════════════════════════════════════════
 -- CAMADA DE DINHEIRO: comanda, item, pagamento, comissão e estoque.
 --
 -- Medido em 02/09 antes de escrever isto: das 17 tabelas que as telas do admin leem, **15
@@ -450,6 +640,8 @@ $$;
 
 -- O dono que atende é o primeiro profissional da conta. Ele NÃO recebe comissão — fica com o
 -- resultado do salão. Comissão é para quem trabalha para o salão.
+alter function seed.rnd_id(uuid, text) set search_path = pg_catalog, pg_temp;
+
 create or replace view seed.dono_que_atende as
   select distinct on (tenant_id) tenant_id, id as professional_id
   from professionals where active order by tenant_id, created_at;
@@ -950,6 +1142,7 @@ select t.slug,
   -- "Sobrou" nunca pode ser maior que "Entrou": foi assim que o bug do desconto ignorado apareceu.
   (select count(*) from tickets k where k.tenant_id = t.id and k.profit_cents > k.total_cents) as sobrou_mais_que_entrou,
   (select count(*) from products p where p.tenant_id = t.id and p.stock_qty < 0) as estoque_negativo,
+  (select count(*) from appointments a join clients cc on cc.id = a.client_id where a.tenant_id = t.id and a.starts_at < cc.created_at) as visita_antes_do_cadastro,
   -- A tela "Hoje" é a inicial do app: abrir vazia é a demonstração começar dizendo o contrário do
   -- que ela existe para mostrar. Já aconteceu duas vezes.
   (select count(*) from appointments a where a.tenant_id = t.id

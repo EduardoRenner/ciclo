@@ -110,6 +110,17 @@ describe('o seed da carteira de demonstração', () => {
     // A tela "Hoje" é a inicial do app. Abrir vazia já aconteceu duas vezes.
     expect(conferencia, 'nada guarda a agenda de hoje').toMatch(/agenda_de_hoje/)
     expect(conferencia, 'nada guarda horário fora do expediente').toMatch(/fora_do_horario/)
+    // Timeline impossível: cliente com visita antes do próprio cadastro. Aconteceu com ~6% da
+    // carteira porque o `created_at` inicial era estimativa e o jitter da cadência o furava.
+    expect(conferencia, 'nada guarda visita antes do cadastro').toMatch(/visita_antes_do_cadastro/)
+
+    // E o conserto em si: o `created_at` recuado para antes de `min(starts_at)`. A conferência
+    // acima é a segunda camada (mede o resultado); esta é a primeira (o clamp existe).
+    const src2 = sql()
+    const clamp = src2.slice(src2.indexOf('update clients c set created_at'))
+    expect(clamp.length, 'o seed não tem mais o clamp de created_at').toBeGreaterThan(0)
+    expect(clamp, 'o clamp tem que sair de min(starts_at) dos agendamentos').toMatch(/min\(a\.starts_at\)/)
+    expect(clamp, 'e só recuar quem está errado (created_at depois da 1ª visita)').toMatch(/c\.created_at\s*>\s*x\.primeira/)
   })
 
   it('nenhuma mensagem nasce na fila de envio', () => {
@@ -168,6 +179,66 @@ describe('o seed da carteira de demonstração', () => {
     expect(src, 'e a ausência precisa estar explicada, não ser esquecimento').toMatch(/quotes/)
   })
 
+  it('a carteira tem quem experimentou e não voltou', () => {
+    /*
+     * Sem esse arquétipo a demonstração mostrava 91% a 96% de retorno, com 2 a 5 pessoas em toda
+     * a base que vieram uma vez e sumiram. Salão nenhum tem isso — metade dos estreantes não
+     * volta —, e um livro onde quase todo mundo voltou denuncia dado fabricado para qualquer
+     * pessoa do ramo. É o mesmo erro de agregado da campanha que convertia 100%.
+     *
+     * E o filtro "Primeira visita sem volta" da lista de clientes, que é recurso REAL do
+     * produto, nascia praticamente vazio.
+     */
+    const src = sql()
+    /*
+     * Ancorado na string `'veio uma vez'` e recuando ao `insert into clients` que a contém.
+     * `lastIndexOf('insert into clients')` pegaria o insert da seção CLIENTES NOVOS, que vem
+     * depois desta — e a mesma string ainda aparece no `where` do insert de agendamentos. Casar
+     * solto ou no insert errado é a armadilha nº 1 da tabela do CLAUDE.md.
+     */
+    const marca = src.indexOf("array['veio uma vez']")
+    expect(marca, 'o seed não cria mais quem veio uma vez só').toBeGreaterThan(-1)
+    const abre = src.lastIndexOf('insert into clients', marca)
+    const ateOPontoEVirgula = src.slice(abre, src.indexOf(';', marca))
+    expect(ateOPontoEVirgula, 'a tag veio uma vez tem que ser ESCRITA nesse insert').toMatch(/array\['veio uma vez'\]/)
+
+    // A quantidade tem que ser CALCULADA a partir da taxa de retorno, não um número fixo: com
+    // número fixo a proporção muda sozinha quando o resto da carteira muda de tamanho.
+    expect(src, 'a quantidade precisa sair da taxa de retorno alvo').toMatch(/voltaram\s*\/\s*0\.72/)
+
+    // E o teto do plano grátis não pode ser estourado por dado de demonstração.
+    expect(src, 'o teto de 50 clientes do plano grátis precisa ser respeitado').toMatch(/50\s*-\s*h\.clientes/)
+  })
+
+  it('tem clientes cadastrados nos últimos 2 dias, para novos_mes não ser 0 plano', () => {
+    /*
+     * `v_carteira_resumo.novos_mes` conta quem cadastrou desde o dia 1º. Toda a carteira nascia
+     * com `created_at` de meses atrás → 0 em qualquer dia do mês, nas seis contas. Manchete
+     * parecendo tela quebrada. Mesmo erro de calendário da campanha "este mês".
+     *
+     * A defesa durável: parte dos novos cadastrada nos ÚLTIMOS 2 DIAS, o que garante
+     * `novos_mes > 0` em qualquer dia em que o seed rode — sem inventar pico de cadastro no
+     * começo do mês.
+     */
+    const src = sql()
+
+    // Chave `'quando'` só existe nesta seção. Recorto do `insert into clients` que a contém
+    // até o `;` — não o arquivo inteiro. Casar solto pegaria a mesma string noutro lugar
+    // (a lição da 6ª cegueira desta sessão).
+    const marca = src.indexOf("'quando'")
+    expect(marca, 'o seed não tem mais a seção de clientes novos deste mês').toBeGreaterThan(-1)
+    const abre = src.lastIndexOf('insert into clients', marca)
+    expect(abre, 'a chave quando não está dentro de um insert de clients').toBeGreaterThan(-1)
+    const criacaoNovos = src.slice(abre, src.indexOf(';', marca))
+
+    // >55% cadastrados nos últimos 2 dias, para `novos_mes > 0` em qualquer dia em que o seed
+    // rode. Fração e janela explícitas — não um `rnd * 30` que às vezes cai perto do dia 1º.
+    expect(criacaoNovos, 'a fração dos recém-cadastrados precisa ser explícita').toMatch(/'quando'\)\s*<\s*0\.55/)
+    expect(
+      criacaoNovos,
+      'a janela curta tem que ser rnd*2 em days — 0 a 2 dias, não 0 a 20',
+    ).toMatch(/'r'\)\s*\*\s*2\)\s*\|\|\s*' days'/)
+  })
   it('deriva visitas e LTV dos agendamentos, em vez de somar por fora', () => {
     // Número que a tela mostra e número que o histórico prova precisam sair da MESMA fonte,
     // senão a demonstração se contradiz sozinha — é o defeito de `livro-caixa-fonte-unica`.

@@ -3304,6 +3304,31 @@ export type Database = {
           },
         ]
       }
+      v_clientes_a_recuperar: {
+        Row: {
+          client_id: string | null
+          ja_atrasado: boolean | null
+          maior_atraso_dias: number | null
+          maior_valor_cents: number | null
+          tenant_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_cycles_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_cycles_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_recover_revenue: {
         Row: {
           client_id: string | null

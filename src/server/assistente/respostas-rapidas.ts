@@ -114,7 +114,7 @@ async function hojeHorarioVagoAmanha(ctx: ContextoRapido): Promise<RespostaRapid
   // falso. Mesma correção da tela da Agenda (docs/DECISOES.md, mesma data).
   if (!resumo.temExpediente) {
     return {
-      resposta: `Sim, amanhã (${dataFmt}) você tem horário vago — ${resumo.appointments.length} agendamento(s) marcado(s). Não há expediente cadastrado para esse dia.`,
+      resposta: `Sim, amanhã (${dataFmt}) você tem horário vago: ${resumo.appointments.length} agendamento(s) marcado(s). Não há expediente cadastrado para esse dia.`,
       ferramentasUsadas: ['ocupacao_do_dia'],
     }
   }
@@ -122,7 +122,7 @@ async function hojeHorarioVagoAmanha(ctx: ContextoRapido): Promise<RespostaRapid
     return { resposta: `Não, amanhã (${dataFmt}) sua agenda já está cheia (100% ocupada).`, ferramentasUsadas: ['ocupacao_do_dia'] }
   }
   return {
-    resposta: `Sim, amanhã (${dataFmt}) você tem horário vago — ${resumo.appointments.length} agendamento(s) marcado(s), ${ocupacaoPct}% de ocupação.`,
+    resposta: `Sim, amanhã (${dataFmt}) você tem horário vago: ${resumo.appointments.length} agendamento(s) marcado(s), ${ocupacaoPct}% de ocupação.`,
     ferramentasUsadas: ['ocupacao_do_dia'],
   }
 }
@@ -131,10 +131,10 @@ async function recuperarQuemPrimeiro(ctx: ContextoRapido): Promise<RespostaRapid
   const lista = await listarParaRecuperar(ctx.db, ctx.tenantId, { limit: 1 })
   const primeiro = lista.items[0]
   if (!primeiro) {
-    return { resposta: 'Ninguém precisa ser chamado agora — a base inteira está em dia.', ferramentasUsadas: ['clientes_para_recuperar'] }
+    return { resposta: 'Ninguém precisa ser chamado agora, a base inteira está em dia.', ferramentasUsadas: ['clientes_para_recuperar'] }
   }
   return {
-    resposta: `Chame primeiro ${primeiro.name} — ${dinheiro.format(primeiro.valueCents / 100)} em risco, ${primeiro.lateDays} dia(s) sem voltar.`,
+    resposta: `Chame primeiro ${primeiro.name}: ${dinheiro.format(primeiro.valueCents / 100)} em risco, ${primeiro.lateDays} dia(s) sem voltar.`,
     ferramentasUsadas: ['clientes_para_recuperar'],
   }
 }
@@ -142,7 +142,7 @@ async function recuperarQuemPrimeiro(ctx: ContextoRapido): Promise<RespostaRapid
 async function recuperarTotalParado(ctx: ContextoRapido): Promise<RespostaRapida> {
   const lista = await listarParaRecuperar(ctx.db, ctx.tenantId, { limit: 1 })
   if (lista.count === 0) {
-    return { resposta: 'Nada parado agora — toda a base está em dia.', ferramentasUsadas: ['clientes_para_recuperar'] }
+    return { resposta: 'Nada parado agora, toda a base está em dia.', ferramentasUsadas: ['clientes_para_recuperar'] }
   }
   return {
     resposta: `Você tem ${dinheiro.format(lista.totalValueCents / 100)} parado, esperando ${lista.count} cliente(s) voltar.`,
@@ -173,7 +173,7 @@ async function caixaFaturamentoMes(ctx: ContextoRapido): Promise<RespostaRapida>
 async function caixaLucroMes(ctx: ContextoRapido): Promise<RespostaRapida> {
   const resumo = await resumoMensal(ctx.db, ctx.tenantId, ctx.timezone, mesCorrente(ctx.timezone))
   return {
-    resposta: `Seu lucro neste mês foi de ${dinheiro.format(resumo.profitCents / 100)} — já descontado material, taxa e comissão.`,
+    resposta: `Seu lucro neste mês foi de ${dinheiro.format(resumo.profitCents / 100)}, já descontado material, taxa e comissão.`,
     ferramentasUsadas: ['faturamento_do_periodo'],
   }
 }
@@ -182,7 +182,7 @@ async function orcamentosSemResposta(ctx: ContextoRapido): Promise<RespostaRapid
   const todos = await listarOrcamentos(ctx.db, ctx.tenantId)
   const parados = todos.filter((o) => o.status === 'sent')
   if (parados.length === 0) {
-    return { resposta: 'Nenhum orçamento parado — todos já tiveram resposta.', ferramentasUsadas: ['orcamentos_parados'] }
+    return { resposta: 'Nenhum orçamento parado, todos já tiveram resposta.', ferramentasUsadas: ['orcamentos_parados'] }
   }
   const nomes = truncarLista(parados.map((o) => o.clientName))
   return {

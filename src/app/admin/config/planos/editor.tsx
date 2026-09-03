@@ -72,7 +72,7 @@ export default function EditorPlanos({ iniciais }: { iniciais: Plano[] }) {
           <EmptyState
             icone={<Repeat aria-hidden className="size-6" />}
             titulo="Nenhum plano ainda"
-            descricao="Crie um plano mensal — ele aparece na ficha de cada cliente para assinar."
+            descricao="Crie um plano mensal. Ele aparece na ficha de cada cliente para assinar."
             acao={<Button onClick={() => setCriando(true)}>Criar o primeiro</Button>}
           />
         </Card>

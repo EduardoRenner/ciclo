@@ -29,10 +29,13 @@ export default function Comanda({
   ticketInicial,
   itensIniciais,
   servicos,
+  podeLancarItem = true,
 }: {
   ticketInicial: Ticket
   itensIniciais: TicketItem[]
   servicos: Servico[]
+  /** `register` liberado neste degrau. Ver o comentário em `page.tsx`. */
+  podeLancarItem?: boolean
 }) {
   const [ticket, setTicket] = useState(ticketInicial)
   const [itens, setItens] = useState(itensIniciais)
@@ -168,7 +171,7 @@ export default function Comanda({
             >
               {servicos.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {s.name} — {dinheiro.format(s.price_cents / 100)}
+                  {s.name} · {dinheiro.format(s.price_cents / 100)}
                 </option>
               ))}
             </select>
@@ -185,7 +188,13 @@ export default function Comanda({
               className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo tabular text-txt"
             />
           </label>
-          <Button largura="cheia" carregando={pendente} onClick={adicionarItem}>
+          <Button
+            largura="cheia"
+            carregando={pendente}
+            disabled={!podeLancarItem}
+            motivoDesabilitado="Lançar item na comanda é do plano Essencial. Veja os planos em Configurações, Meu plano."
+            onClick={adicionarItem}
+          >
             Adicionar
           </Button>
         </Card>
@@ -245,7 +254,7 @@ export default function Comanda({
           Fechar comanda
         </Button>
       ) : (
-        <p className="text-center text-secundario text-txt-2">Comanda fechada — nada mais pode mudar aqui.</p>
+        <p className="text-center text-secundario text-txt-2">Comanda fechada. Nada mais pode mudar aqui.</p>
       )}
     </div>
   )

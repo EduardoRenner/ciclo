@@ -93,14 +93,32 @@ function LinhaOrcamento({ orcamento }: { orcamento: OrcamentoDaLista }) {
   )
 }
 
-export default function ListaOrcamentos({ orcamentos }: { orcamentos: OrcamentoDaLista[] }) {
+export default function ListaOrcamentos({
+  orcamentos,
+  bloqueado = false,
+}: {
+  orcamentos: OrcamentoDaLista[]
+  /** `quotes` fora do degrau. O bloqueio com o caminho já está na página; aqui só some o convite. */
+  bloqueado?: boolean
+}) {
   if (orcamentos.length === 0) {
     return (
       <EmptyState
         icone={<FileText aria-hidden className="size-6" />}
         titulo="Nenhum orçamento ainda"
         descricao="Monte um orçamento, mande o link e acompanhe a resposta por aqui."
-        acao={<Link href="/admin/orcamentos/novo">Criar orçamento</Link>}
+        /*
+          A saída continua existindo (`estado-vazio-tem-saida`), mas não pode ser o formulário que
+          a rota vai recusar. No degrau sem o módulo, o caminho honesto é a tabela de preço — que é
+          para onde o bloqueio logo acima também aponta.
+        */
+        acao={
+          bloqueado ? (
+            <Link href="/precos">Ver os planos</Link>
+          ) : (
+            <Link href="/admin/orcamentos/novo">Criar orçamento</Link>
+          )
+        }
       />
     )
   }

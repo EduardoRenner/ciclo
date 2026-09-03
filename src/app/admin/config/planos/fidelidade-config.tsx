@@ -13,7 +13,14 @@ import type { ConfigFidelidade } from '@/server/services/fidelidade'
  * essa config decide quantos pontos cada real vira, sozinho, quando o atendimento é concluído
  * (`pontuarAtendimentoConcluido`, chamada de dentro de `concluirAgendamento`).
  */
-export default function EditorFidelidade({ inicial }: { inicial: ConfigFidelidade }) {
+export default function EditorFidelidade({
+  inicial,
+  bloqueado = false,
+}: {
+  inicial: ConfigFidelidade
+  /** `loyalty` fora do degrau. A oferta completa está na página; aqui trava o Salvar. */
+  bloqueado?: boolean
+}) {
   const mostrarToast = useToast()
   const [pendente, iniciarTransicao] = useTransition()
 
@@ -56,7 +63,7 @@ export default function EditorFidelidade({ inicial }: { inicial: ConfigFidelidad
     <Card>
       <p className="text-corpo font-semibold">Como pontuar automaticamente</p>
       <p className="mt-1 text-secundario text-txt-2">
-        A cada atendimento concluído, o cliente ganha pontos sozinho — sem ninguém precisar lançar na mão.
+        A cada atendimento concluído, o cliente ganha pontos sozinho, sem ninguém precisar lançar na mão.
       </p>
 
       <div className="mt-3 grid grid-cols-2 gap-3">
@@ -117,7 +124,14 @@ export default function EditorFidelidade({ inicial }: { inicial: ConfigFidelidad
         </p>
       ) : null}
 
-      <Button largura="cheia" carregando={pendente} onClick={salvar} className="mt-3">
+      <Button
+        largura="cheia"
+        carregando={pendente}
+        disabled={bloqueado}
+        motivoDesabilitado="Pontos automáticos são do plano Equipe. Veja o caminho no aviso acima desta tela."
+        onClick={salvar}
+        className="mt-3"
+      >
         Salvar
       </Button>
     </Card>

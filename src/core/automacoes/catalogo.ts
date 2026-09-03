@@ -88,7 +88,7 @@ export const AUTOMACOES: readonly Automacao[] = [
     descricao: 'Avisa quando um produto bate o ponto de recompra.',
     nivelMaximo: 1,
     rota: 'stock-alerts',
-    motivoDoTeto: 'Comprar é decisão sua — o CICLO nunca gasta dinheiro por você.',
+    motivoDoTeto: 'comprar é decisão sua, e o CICLO nunca gasta dinheiro por você.',
   },
   {
     chave: 'lembrete_de_agendamento',
@@ -106,7 +106,7 @@ export const AUTOMACOES: readonly Automacao[] = [
     // Um erro que atinge 1 cliente é constrangimento; que atinge 46 é a reputação do salão.
     nivelMaximo: 2,
     rota: 'campaigns',
-    motivoDoTeto: 'Alcança várias clientes de uma vez — esta sempre espera seu toque.',
+    motivoDoTeto: 'alcança várias clientes de uma vez, então esta sempre espera seu toque.',
   },
 ]
 

@@ -125,6 +125,7 @@ export default function Ficha({
   servicos,
   linkIndicacao,
   mostrarPaywallFidelidade,
+  podeOrcamento,
 }: {
   ficha: FichaCliente
   /** Fuso do salao: a data de inicio da assinatura e de calendario, e calendario e do salao. */
@@ -145,6 +146,8 @@ export default function Ficha({
   linkIndicacao: string | null
   /** I-9, `docs/30-INDICACAO-PLANO.md` §5.3 gatilho 2: o degrau atual não tem `loyalty`. */
   mostrarPaywallFidelidade: boolean
+  /** `quotes` liberado neste degrau. Ver o comentário em `page.tsx`. */
+  podeOrcamento: boolean
 }) {
   const router = useRouter()
   const parametros = useSearchParams()
@@ -237,7 +240,7 @@ export default function Ficha({
    */
   const textoIndicacao = linkIndicacao
     ? aplicarVariaveis(
-        '{{nome}}, adoro te atender! Que tal indicar uma amiga? Ela agenda o primeiro horário por aqui, sem esperar resposta — {{link}}',
+        '{{nome}}, adoro te atender! Que tal indicar uma amiga? Ela agenda o primeiro horário por aqui, sem esperar resposta: {{link}}',
         variaveis,
       )
     : ''
@@ -406,6 +409,8 @@ export default function Ficha({
             variante="secondary"
             largura="cheia"
             className="mt-3"
+            disabled={!podeOrcamento}
+            motivoDesabilitado="Orçamento é do plano Essencial. Veja os planos em Configurações, Meu plano."
             onClick={() => router.push(`/admin/orcamentos/novo?cliente=${cliente.id}`)}
           >
             <FileText className="size-4" />
@@ -784,7 +789,7 @@ export default function Ficha({
             <span className="text-corpo text-txt">
               Bloquear agendamento online
               <span className="block text-secundario text-txt-3">
-                Continua sendo atendido normalmente — só não marca sozinho pelo site.
+                Continua sendo atendido normalmente, só não marca sozinho pelo site.
               </span>
             </span>
           </label>

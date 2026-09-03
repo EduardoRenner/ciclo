@@ -520,7 +520,14 @@ export async function centralDeAcoes(db: Cliente, tenantId: string): Promise<Cen
   const [clientes, agendamentos, emRisco, aniversariantes, resgataveis, orcamentos, ctxPlano, tenantSettings] = await Promise.all([
     db.from('clients').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId).is('deleted_at', null),
     db.from('appointments').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId),
-    db.from('client_cycles').select('client_id', { count: 'exact', head: true }).eq('tenant_id', tenantId).in('state', ['late', 'at_risk', 'lost']),
+    // `v_clientes_a_recuperar` (0058) conta CLIENTE, não linha de (cliente × serviço). Antes
+    // este alarme dizia "147 clientes estão sumindo" num salão com 55 — e levava para uma lista
+    // que mostrava outro número. `ja_atrasado` exclui quem só está vencendo hoje: ainda não sumiu.
+    db
+      .from('v_clientes_a_recuperar')
+      .select('client_id', { count: 'exact', head: true })
+      .eq('tenant_id', tenantId)
+      .eq('ja_atrasado', true),
     db.from('v_client_segments').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId).eq('is_aniversariante', true),
     db.from('loyalty_entries').select('client_id, points').eq('tenant_id', tenantId),
     listarOrcamentos(db, tenantId),
@@ -637,11 +644,14 @@ export async function painelDaCarteira(db: Cliente, tenantId: string): Promise<P
       .select('id', { count: 'exact', head: true })
       .eq('tenant_id', tenantId)
       .eq('is_aniversariante', true),
+    // Mesma view da Central de Ações (0058): o topo da lista de clientes e o alarme da tela
+    // inicial precisam dizer o MESMO número, senão o produto se contradiz de uma tela para a
+    // outra sobre quantas clientes estão sumindo.
     db
-      .from('client_cycles')
+      .from('v_clientes_a_recuperar')
       .select('client_id', { count: 'exact', head: true })
       .eq('tenant_id', tenantId)
-      .in('state', ['late', 'at_risk', 'lost']),
+      .eq('ja_atrasado', true),
   ])
 
   // Tenant sem cliente nenhum não aparece na view (o `group by` não gera linha) — zero em tudo.
