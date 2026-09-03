@@ -74,6 +74,19 @@ returns date language sql stable as $$
               else seed.dia_util_local(d) end
 $$;
 
+-- `search_path` fixo em todas as funções acima. Sem isso, quem chama pode sombrear o que a
+-- função referencia — e o `get_advisors` acusa uma linha por função. Foram SETE avisos novos no
+-- banco de produção quando este seed rodou pela primeira vez; o projeto já tinha resolvido a
+-- mesma coisa antes (migration 0055).
+--
+-- `pg_catalog, seed, pg_temp` onde a função chama outra do schema; só `pg_catalog, pg_temp` no
+-- resto. Função com search_path errado não falha ao ser criada: falha ao ser CHAMADA.
+alter function seed.rnd(bigint, text)               set search_path = pg_catalog, pg_temp;
+alter function seed.pick(bigint, text, text[])      set search_path = pg_catalog, seed, pg_temp;
+alter function seed.pick_uuid(bigint, text, uuid[]) set search_path = pg_catalog, seed, pg_temp;
+alter function seed.dia_util_local(date)            set search_path = pg_catalog, pg_temp;
+alter function seed.dia_passado(date)               set search_path = pg_catalog, seed, pg_temp;
+
 -- ── Configuração ───────────────────────────────────────────────────────────────────────────
 create table if not exists seed.cfg (slug text primary key, tenant_id uuid, qtd int, publico text, ordem int);
 create table if not exists seed.arq (nome text primary key, ini int, fim int, vmin int, vmax int,
@@ -533,6 +546,8 @@ $$;
 
 -- O dono que atende é o primeiro profissional da conta. Ele NÃO recebe comissão — fica com o
 -- resultado do salão. Comissão é para quem trabalha para o salão.
+alter function seed.rnd_id(uuid, text) set search_path = pg_catalog, pg_temp;
+
 create or replace view seed.dono_que_atende as
   select distinct on (tenant_id) tenant_id, id as professional_id
   from professionals where active order by tenant_id, created_at;
