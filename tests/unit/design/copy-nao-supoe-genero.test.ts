@@ -64,11 +64,21 @@ const SUPOE_HOMEM: { padrao: RegExp; porque: string }[] = [
     o CICLO, que é coisa — não há gênero de pessoa nenhum na frase. Guarda que acusa o certo custa
     o mesmo que guarda que absolve o errado: manda alguém "consertar" código bom.
 
-    O padrão exige agora um marcador de PESSOA antes ("quem", "você"), que é o que distingue "quem
-    atende sozinho" (erro) de "o CICLO faz sozinho" (certo). Os dois casos reais estão no autoteste.
+    O padrão exige um marcador de PESSOA antes ("quem", "você"), que é o que distingue "quem atende
+    sozinho" (erro) de "o CICLO faz sozinho" (certo). Os dois casos reais estão no autoteste.
+
+    **E a segunda versão dele era CEGA, pela armadilha de regex em português desta casa.** Estava
+    escrita `\b(quem|voc[êe])\b` — e o `\b` depois da alternativa acentuada NUNCA casa: em JS sem a
+    flag `u`, `\w` é `[A-Za-z0-9_]`, então `ê` é não-palavra, e entre "ê" e o espaço não existe
+    fronteira. A mutação passou verde com "Você atende sozinho" de volta no cartão do Grátis, e só
+    apareceu porque a mutação é obrigatória.
+
+    É a MESMA pegadinha já registrada em `promessa-de-canal` (onde `confirma\w*\s+chega` não casava
+    "confirmação chega"), e eu a repeti sabendo dela. Delimitar por `\s` em vez de `\b` resolve, e o
+    autoteste abaixo cobre as duas grafias para que não volte.
   */
   {
-    padrao: /\b(quem|voc[êe])\b[^.!?]{0,40}?\b(atende|trabalha|cuida)\s+sozinh[oa]\b/i,
+    padrao: /(?:\bquem|voc[êe])\s[^.!?]{0,40}?\b(atende|trabalha|cuida)\s+sozinh[oa]\b/i,
     porque: '"sozinho/sozinha" escolhe um gênero; o §C.4 manda reescrever sem ("quem trabalha por conta")',
   },
 ]
@@ -135,6 +145,15 @@ describe('o leitor deste teste', () => {
      */
     expect(SUPOE_HOMEM.some((r) => r.padrao.test('quem atende sozinho')), 'masculino').toBe(true)
     expect(SUPOE_HOMEM.some((r) => r.padrao.test('quem atende sozinha')), 'feminino também erra').toBe(true)
+    /*
+     * Com "Você" ACENTUADO, que é a forma que a copy real usa — e a que a versão anterior deste
+     * padrão deixava passar, porque `\b` depois de `ê` nunca casa em JS. Sem esta linha, a guarda
+     * volta a ser cega no dia em que alguém "arrumar" o regex de volta para `\b`.
+     */
+    expect(
+      SUPOE_HOMEM.some((r) => r.padrao.test("paraQuem: 'Você atende sozinho e quer sair do caderno.',")),
+      'a frase real do cartão do Grátis, com acento',
+    ).toBe(true)
     /*
      * E o que está CERTO. As duas primeiras não são exemplo inventado: são a copy real de
      * `/admin/config/automacoes` e do hub, que a primeira versão deste padrão reprovou. Ficam aqui
