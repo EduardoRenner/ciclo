@@ -1,7 +1,11 @@
 import Image from 'next/image'
 import Link from 'next/link'
 
+import { canalDeContato } from '@/lib/contato'
+
 import wordmark from '../../../../public/marca/ciclo-wordmark-aqua.png'
+
+const CANAL = canalDeContato('Oi! É sobre os meus dados no CICLO.')
 
 /**
  * L-7, `docs/31-LANCAMENTO-AUDITORIA-E-PLANO.md` — o CICLO processa **dado de saúde** (anamnese,
@@ -179,14 +183,29 @@ export default function Privacidade() {
           <ul className="mt-2 list-disc pl-5">
             <li>saber quais dados a gente tem;</li>
             <li>corrigir o que estiver errado;</li>
-            <li>pedir uma cópia — cada ficha de cliente tem exportação dentro do sistema;</li>
-            <li>pedir a eliminação — cada ficha tem o botão de apagar, e ele apaga de verdade;</li>
+            <li>pedir uma cópia: cada ficha de cliente tem exportação dentro do sistema;</li>
+            <li>pedir a eliminação: cada ficha tem o botão de apagar, e ele apaga de verdade;</li>
             <li>revogar uma autorização que tenha dado;</li>
             <li>saber com quem a gente compartilhou.</li>
           </ul>
+          {/*
+            Dizia "pelo canal em que você contratou", e esse canal não existe: todo mundo entra
+            sozinho pelo cadastro do Grátis. Numa política de privacidade isso é pior que na página
+            de preço — a LGPD exige um contato publicado para o titular exercer os direitos que este
+            parágrafo acabou de listar, e um contato que não existe torna a lista decorativa.
+            `lib/contato.ts` decide se há canal; sem ele, a frase não inventa um.
+          */}
           <p>
             Para os seus próprios dados de cadastro, ou para qualquer pedido que a tela não
-            resolva, fale com a gente pelo canal em que você contratou. A gente responde e cumpre.
+            resolva,{' '}
+            {CANAL ? (
+              <a href={CANAL.href} target="_blank" rel="noopener noreferrer">
+                fale com a gente por aqui
+              </a>
+            ) : (
+              'responda o e-mail que você recebeu ao criar a conta'
+            )}
+            . A gente responde e cumpre.
           </p>
         </section>
 

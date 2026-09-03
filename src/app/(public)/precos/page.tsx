@@ -4,6 +4,7 @@ import Link from 'next/link'
 
 import { NOME_DO_PLANO, PLANOS, precoDoPlano } from '@/core/billing/planos'
 
+import { canalDeContato } from '@/lib/contato'
 import { CARTOES } from '@/lib/planos-cartoes'
 
 import wordmark from '../../../../public/marca/ciclo-wordmark-aqua.png'
@@ -46,11 +47,18 @@ export const metadata = {
   },
 } satisfies Metadata
 
+/*
+  A conversa é o único caminho de pagamento que existe hoje, e até 2026-09-03 esta página mandava
+  "falar com a gente" sem dizer com quem. `lib/contato.ts` guarda o porquê e os dois estados.
+*/
+const CANAL = canalDeContato('Oi! Vi os planos do CICLO e quero falar sobre assinar.')
+
 const PERGUNTAS = [
   {
     pergunta: 'Como eu pago hoje?',
-    resposta:
-      'Falando com a gente. A cobrança automática ainda não está no ar — preferimos dizer isso a montar um botão que não funciona. Você cria a conta no grátis, usa, e se quiser subir de plano a gente combina direto e ajusta na hora.',
+    resposta: CANAL
+      ? 'Conversando. A cobrança automática ainda não está no ar, e preferimos dizer isso a montar um botão que não funciona. Você cria a conta no grátis, usa, e quando quiser subir de plano a gente combina direto e ajusta na hora. O botão no fim desta página abre a conversa.'
+      : 'A cobrança automática ainda não está no ar, e preferimos dizer isso a montar um botão que não funciona. Você cria a conta no grátis e usa sem pagar nada; a mudança de degrau é combinada caso a caso.',
   },
   {
     pergunta: 'O grátis expira?',
@@ -65,17 +73,17 @@ const PERGUNTAS = [
     */
     pergunta: `E se eu passar de ${PLANOS.gratis.maxClientes} clientes?`,
     resposta:
-      'Você continua cadastrando. O CICLO avisa quando você chega perto, mas não trava o cadastro no meio de um atendimento — e nenhuma ficha some. O limite que vale de verdade no Grátis é o de um profissional.',
+      'Você continua cadastrando. O CICLO avisa quando você chega perto, mas não trava o cadastro no meio de um atendimento, e nenhuma ficha some. O limite que vale de verdade no Grátis é o de um profissional.',
   },
   {
     pergunta: 'Se eu parar de pagar, perco meus clientes?',
     resposta:
-      'Nunca. Sua base, seu histórico e sua agenda continuam inteiros e à vista — você volta para o grátis e o que trava é criar mais, não ver o que já existe. Essa regra não tem exceção.',
+      'Nunca. Sua base, seu histórico e sua agenda continuam inteiros e à vista. Você volta para o grátis, e o que trava é criar mais, não ver o que já existe. Essa regra não tem exceção.',
   },
   {
     pergunta: 'Tenho três profissionais e quero o Grátis. Dá?',
     resposta:
-      'O Grátis vale para um profissional. Os outros dois aparecem para você normalmente se já estiverem cadastrados — nada some —, mas para cadastrar mais é preciso o Equipe.',
+      'O Grátis vale para um profissional. Os outros dois continuam aparecendo normalmente se já estiverem cadastrados, porque nada some. Para cadastrar mais é preciso o Equipe.',
   },
   {
     pergunta: 'Posso cancelar quando quiser?',
@@ -117,7 +125,7 @@ export default function Precos() {
         </h1>
         <p className="mt-4 max-w-[52ch] text-corpo text-txt-2">
           Preço na tela, sem cadastro e sem &ldquo;fale com um consultor&rdquo;. O Motor de Ciclo está em todos os planos,
-          inclusive no grátis — o que o pago libera é chamar todo mundo de uma vez, em vez de um por um.
+          inclusive no grátis. O que o pago libera é chamar todo mundo de uma vez, em vez de um por um.
         </p>
       </section>
 
@@ -179,7 +187,29 @@ export default function Precos() {
         </dl>
       </section>
 
-      <p className="text-center text-label text-txt-3">Preços em reais, por mês.</p>
+      {/*
+        Depois das perguntas de dinheiro, e não antes: quem chegou até aqui já leu o que queria
+        saber, e é neste ponto que a dúvida vira "com quem eu falo". O botão fica secundário de
+        propósito — o CTA da página continua sendo criar a conta grátis, nos cartões acima.
+      */}
+      {CANAL ? (
+        <section className="rounded-[var(--radius)] border border-line bg-surface p-6 text-center shadow-elevado">
+          <h2 className="text-titulo font-bold">Ficou alguma dúvida de dinheiro?</h2>
+          <p className="mx-auto mt-2 max-w-[42ch] text-secundario text-txt-2">
+            Fala com a gente antes de decidir. Quem responde é quem faz o CICLO, e não tem script.
+          </p>
+          <a
+            href={CANAL.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`mx-auto mt-5 max-w-[20rem] ${botaoSecundario}`}
+          >
+            {CANAL.rotulo}
+          </a>
+        </section>
+      ) : null}
+
+      <p className="mt-8 text-center text-label text-txt-3">Preços em reais, por mês.</p>
 
       {/* L-7 (`docs/31`): quem está lendo preço é quem vai assinar — os termos e a política têm
           que estar a um toque daqui, não escondidos só na porta de entrada. */}
