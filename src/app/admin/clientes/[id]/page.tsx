@@ -67,6 +67,10 @@ export default async function PaginaFicha({ params }: { params: Promise<{ id: st
       // quem ela trouxe já apareceu), a automação oferecida depois. Só faz sentido se o degrau
       // atual não tem `loyalty` — quem já tem não precisa ver a mesma frase de novo.
       mostrarPaywallFidelidade={podeUsarModulo(plano, 'loyalty').estado !== 'liberado'}
+      // "Criar orçamento" mandava para um formulário que `POST /api/v1/quotes` recusa sem o módulo
+      // `quotes` (Essencial). Aqui a trava é no botão, e não um `BloqueioPlano`: a ficha é uma tela
+      // de trabalho com muita coisa acontecendo, e a oferta cheia é a da tela de Orçamentos.
+      podeOrcamento={podeUsarModulo(plano, 'quotes').estado === 'liberado'}
     />
   )
 }

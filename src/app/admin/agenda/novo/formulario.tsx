@@ -37,9 +37,15 @@ function formatarAlternativa(iso: string): string {
 export default function FormularioAgendamento({
   servicos,
   profissionais,
+  podeRepetir = true,
+  planoDaRepeticao,
 }: {
   servicos: Servico[]
   profissionais: Profissional[]
+  /** `recurrence` liberado neste degrau. Ver o comentário em `page.tsx`. */
+  podeRepetir?: boolean
+  /** O nome do degrau que libera a repetição, para a frase poder dizer qual é. */
+  planoDaRepeticao?: string
 }) {
   const router = useRouter()
   const mostrarToast = useToast()
@@ -219,10 +225,17 @@ export default function FormularioAgendamento({
     })
   }
 
+  /*
+   * Uma verdade só para o desvio, o rótulo do botão e a caixa. `repetir` sozinho decidia o envio,
+   * e é ele que mandava o formulário inteiro para a rota de série — se um dia a caixa voltar a
+   * marcar sem o módulo, o agendamento simples volta a ser engolido junto.
+   */
+  const repetirAtivo = repetir && podeRepetir
+
   function aoEnviarFormulario(e: React.FormEvent) {
     e.preventDefault()
     if (!dataHora) return
-    if (repetir) {
+    if (repetirAtivo) {
       enviarSerie()
       return
     }
@@ -286,17 +299,32 @@ export default function FormularioAgendamento({
         classNameCampo="tabular"
       />
 
-      <label className="flex min-h-12 items-center gap-3 py-1">
+      {/*
+        Travado, e dizendo por quê no mesmo lugar. A alternativa seria mandar a pessoa para
+        `/precos`, e isso levaria junto o nome, o telefone e o horário que ela acabou de digitar —
+        um upsell que apaga o trabalho de quem ainda nem quis comprar. O agendamento simples
+        continua funcionando com a caixa travada, que é o ponto: só a repetição é paga.
+      */}
+      <label className={`flex min-h-12 items-center gap-3 py-1 ${podeRepetir ? '' : 'items-start'}`}>
         <input
           type="checkbox"
-          checked={repetir}
+          checked={repetirAtivo}
+          disabled={!podeRepetir}
           onChange={(e) => setRepetir(e.target.checked)}
-          className="size-5 shrink-0 accent-[var(--acc-2)]"
+          className={`size-5 shrink-0 accent-[var(--acc-2)] ${podeRepetir ? '' : 'mt-0.5 cursor-not-allowed opacity-50'}`}
         />
-        <span className="text-corpo text-txt">Repetir este horário</span>
+        <span className={podeRepetir ? 'text-corpo text-txt' : 'text-corpo text-txt-3'}>
+          Repetir este horário
+          {podeRepetir ? null : (
+            <span className="mt-0.5 block text-secundario text-txt-3">
+              Repetir é do {planoDaRepeticao ?? 'plano de cima'}. Marcar este horário continua
+              funcionando normalmente.
+            </span>
+          )}
+        </span>
       </label>
 
-      {repetir ? (
+      {repetirAtivo ? (
         <Card className="flex flex-col gap-3">
           <Select rotulo="Repete" value={tipoRecorrencia} onChange={(e) => setTipoRecorrencia(e.target.value as typeof tipoRecorrencia)}>
             <option value="semanal">Toda semana (no dia escolhido acima)</option>
@@ -384,7 +412,7 @@ export default function FormularioAgendamento({
             : 'Cadastre pelo menos um profissional em Configurações para poder agendar.'
         }
       >
-        {repetir ? 'Criar série' : 'Confirmar agendamento'}
+        {repetirAtivo ? 'Criar série' : 'Confirmar agendamento'}
       </Button>
     </form>
   )

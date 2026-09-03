@@ -53,19 +53,50 @@ export default function EditorExpediente({
 
   const segmentoUrl = professionalId ?? 'default'
 
+  /**
+   * A tela mudava ANTES da resposta e não voltava atrás quando o servidor recusava: só saía um
+   * toast, e os blocos continuavam mostrando o horário novo. Quem trocasse "terça abre 10:00" e
+   * lesse o erro de passagem fechava a tela acreditando que estava salvo — e a agenda continuava
+   * abrindo às 09:00, sem nada na interface para desmentir.
+   *
+   * É a armadilha do `catch` que descarta, do `CLAUDE.md`: o erro era CONTADO (o toast) mas o
+   * efeito dele não era desfeito. Um `PUT` que falha por módulo de plano, por rede caída ou por
+   * conflito termina igual — a tela precisa voltar ao que o banco tem.
+   *
+   * O estado anterior é capturado antes do `set`, e não lido de `blocos` dentro da transição:
+   * dois toques rápidos deixariam o segundo restaurando o valor que o primeiro já tinha trocado.
+   */
   function salvarExpediente(novos: Bloco[]) {
+    const anterior = blocos
     setBlocos(novos)
     iniciarTransicao(async () => {
-      const r = await fetch(`/api/v1/professionals/${segmentoUrl}/business-hours`, {
-        method: 'PUT',
-        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
-        body: JSON.stringify({
-          professionalId,
-          blocos: novos.map((b) => ({ weekday: b.weekday, opensAt: b.opens_at.slice(0, 5), closesAt: b.closes_at.slice(0, 5) })),
-        }),
-      })
-      if (!r.ok) {
-        mostrarToast({ tom: 'erro', titulo: 'Não consegui salvar o expediente', descricao: 'Tente de novo.' })
+      try {
+        const r = await fetch(`/api/v1/professionals/${segmentoUrl}/business-hours`, {
+          method: 'PUT',
+          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          body: JSON.stringify({
+            professionalId,
+            blocos: novos.map((b) => ({ weekday: b.weekday, opensAt: b.opens_at.slice(0, 5), closesAt: b.closes_at.slice(0, 5) })),
+          }),
+        })
+        if (!r.ok) {
+          const json = (await r.json().catch(() => ({}))) as { error?: { message?: string } }
+          setBlocos(anterior)
+          mostrarToast({
+            tom: 'erro',
+            titulo: 'Não consegui salvar o expediente',
+            descricao: json.error?.message ?? 'Voltei o horário para o que estava salvo. Tente de novo.',
+          })
+        }
+      } catch {
+        // Rede caiu no meio: sem o `try`, o React 19 relança a Action para o error boundary da
+        // raiz e a tela inteira some (armadilha do `CLAUDE.md`).
+        setBlocos(anterior)
+        mostrarToast({
+          tom: 'erro',
+          titulo: 'Não consegui falar com o servidor',
+          descricao: 'Voltei o horário para o que estava salvo. Confira a conexão e tente de novo.',
+        })
       }
     })
   }
