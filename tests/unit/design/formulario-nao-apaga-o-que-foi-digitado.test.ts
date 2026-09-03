@@ -90,7 +90,7 @@ describe('fora de (auth), limpar no sucesso é permitido; na falha, não', () =>
   const fonte = semComentarios(readFileSync(EXPEDIENTE, 'utf8'))
 
   it('a folga não é enviada por `action`, que limparia também na falha', () => {
-    expect(/<form\s[^>]*action=/.test(fonte), `${EXPEDIENTE} voltou a limpar os campos mesmo quando falha`).toBe(false)
+    expect(/<form\s[^>]*\baction=/.test(fonte), `${EXPEDIENTE} voltou a limpar os campos mesmo quando falha`).toBe(false)
   })
 
   it('o reset virou explícito, e depois de a folga entrar na lista', () => {
