@@ -1,10 +1,11 @@
 'use client'
 
-import { CheckCircle2, Gift, Star, XCircle } from 'lucide-react'
+import { CheckCircle2, Gift, Star } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
+import ErroPublico from '@/components/ui/erro-publico'
 import { linkWhatsAppCompartilhar } from '@/lib/mensagens'
 
 type Estado = 'carregando' | 'pronto' | 'enviando' | 'enviado' | 'erro'
@@ -19,6 +20,13 @@ export default function Avaliar({ token }: { token: string }) {
   const [mensagem, setMensagem] = useState('')
   // I-3, `docs/30-INDICACAO-PLANO.md` §2.5/§4.4: só existe quando a nota foi 4 ou 5 — é o pico.
   const [linkIndicacao, setLinkIndicacao] = useState<string | null>(null)
+  /**
+   * A avaliação é carregada ao ABRIR o link do WhatsApp. Uma piscada de rede ali derrubava a tela
+   * num erro sem saída, e o pico da experiência (o momento em que a pesquisa do `docs/30` §2.5
+   * diz para pedir a indicação) se perde inteiro — junto com a avaliação, que o salão nunca recebe.
+   */
+  const [podeTentarDeNovo, setPodeTentarDeNovo] = useState(false)
+  const [tentativa, setTentativa] = useState(0)
 
   useEffect(() => {
     let cancelado = false
@@ -29,6 +37,7 @@ export default function Avaliar({ token }: { token: string }) {
         if (!r.ok || !json.data) {
           setEstado('erro')
           setMensagem(json.error?.message ?? 'Esse link de avaliação não é mais válido.')
+          setPodeTentarDeNovo(r.status >= 500)
           return
         }
         setDados(json.data)
@@ -37,13 +46,14 @@ export default function Avaliar({ token }: { token: string }) {
       .catch(() => {
         if (!cancelado) {
           setEstado('erro')
-          setMensagem('Não consegui falar com o servidor. Tente de novo em instantes.')
+          setMensagem('Não consegui falar com o servidor.')
+          setPodeTentarDeNovo(true)
         }
       })
     return () => {
       cancelado = true
     }
-  }, [token])
+  }, [token, tentativa])
 
   function enviar() {
     if (nota === 0) return
@@ -58,6 +68,7 @@ export default function Avaliar({ token }: { token: string }) {
         if (!r.ok) {
           setEstado('erro')
           setMensagem(json.error?.message ?? 'Não consegui registrar sua avaliação.')
+          setPodeTentarDeNovo(r.status >= 500)
           return
         }
         setLinkIndicacao(json.data?.referralLink ?? null)
@@ -65,8 +76,20 @@ export default function Avaliar({ token }: { token: string }) {
       })
       .catch(() => {
         setEstado('erro')
-        setMensagem('Não consegui falar com o servidor. Tente de novo em instantes.')
+        setMensagem('Não consegui falar com o servidor.')
+        setPodeTentarDeNovo(true)
       })
+  }
+
+  /*
+   * Recarrega a avaliação em vez de reenviar a nota: se a falha foi no envio, a pessoa volta para
+   * a tela com as estrelas e decide de novo. Reenviar sozinho por ela é o mesmo erro que o retry
+   * de `/confirmar` evita.
+   */
+  function tentarDeNovo() {
+    setEstado('carregando')
+    setPodeTentarDeNovo(false)
+    setTentativa((n) => n + 1)
   }
 
   if (estado === 'carregando') {
@@ -75,11 +98,11 @@ export default function Avaliar({ token }: { token: string }) {
 
   if (estado === 'erro') {
     return (
-      <>
-        <XCircle aria-hidden className="mb-4 size-14 text-bad" />
-        <p className="text-titulo font-bold">Não consegui abrir</p>
-        <p className="mt-2 text-corpo text-txt-2">{mensagem}</p>
-      </>
+      <ErroPublico
+        titulo="Não consegui abrir"
+        mensagem={mensagem}
+        {...(podeTentarDeNovo ? { aoTentarDeNovo: tentarDeNovo } : {})}
+      />
     )
   }
 

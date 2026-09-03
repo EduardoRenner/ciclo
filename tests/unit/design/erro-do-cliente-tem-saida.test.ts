@@ -1,82 +1,141 @@
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
+import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
 import { semComentarios } from '../../helpers/fonte'
 
 /**
- * `estado-vazio-tem-saida` cobre o estado VAZIO. Este cobre o estado de ERRO, e nas telas onde
+ * `estado-vazio-tem-saida` cobre o estado VAZIO. Este cobre o de ERRO, nas quatro telas em que
  * quem cai nele não é o dono do salão: é a **cliente dele**, que abriu um link do WhatsApp.
  *
- * `/confirmar/[token]` terminava a tela de erro na mensagem e nada mais. Duas consequências
- * diferentes, e as duas medidas no navegador em 2026-09-03:
+ * As quatro tinham o mesmo desenho e o mesmo defeito, medido no navegador em 2026-09-03: ícone,
+ * título, a mensagem da rota, e nada mais. Duas consequências, e as duas caem no salão:
  *
- *   - **link recusado** (4xx): a mensagem diz "esse link não é mais válido" e a pessoa não tem
- *     ideia do que fazer. Some, o horário fica sem confirmação, e o salão conclui que ela ignorou
- *     a mensagem. Quem paga é o salão.
- *   - **rede caída** (`TypeError: Failed to fetch`): uma piscada de 4G no meio do toque levava ao
- *     MESMO beco, sem botão nenhum — e ali tentar de novo funcionaria. A única saída era ela saber
- *     recarregar a página.
+ *   - **link recusado** (4xx): ela lê "esse link não é mais válido", não sabe o que fazer, some.
+ *     O horário fica sem confirmação, a avaliação não é deixada, o encaixe vai para outra pessoa,
+ *     o orçamento não é respondido — e o salão conclui que ela ignorou a mensagem.
+ *   - **rede caída**: uma piscada de 4G levava ao MESMO beco, sem botão nenhum, num caso em que
+ *     tentar de novo resolveria. A única saída era ela saber recarregar a página. Em três das
+ *     quatro telas a chamada dispara ao ABRIR, então bastava a piscada acontecer no toque do link.
  *
- * A regra do `CLAUDE.md` é que erro explique **o que fazer**, e a mensagem sozinha explica só o
- * que houve. A guarda amarra as duas metades: existe a distinção entre falha transitória e recusa,
- * e cada uma leva a uma saída própria.
+ * **A guarda ITERA a lista, e é esse o ponto.** Eu consertei `/confirmar` primeiro e escrevi um
+ * teste só para ela; as outras três continuavam com o defeito. É a armadilha registrada em
+ * `recurso-pago-avisa-antes` e no aviso de demonstração — consertar o caso em vez da pergunta.
+ * Tela pública nova com estado de erro nasce reprovando aqui até ter saída.
  */
 
-const TELA = 'src/app/(public)/confirmar/[token]/confirmar.tsx'
-const FONTE = semComentarios(readFileSync(TELA, 'utf8'))
+const RAIZ = join('src', 'app', '(public)')
 
-describe('a tela de confirmação distingue rede caída de link recusado', () => {
-  it('o `catch` de rede marca a falha como transitória', () => {
-    // Casa com a CHAMADA e o argumento, não com o nome da função solto: `falhou` aparece na
-    // declaração, e casar com o nome deixaria a guarda verde com os dois ramos colapsados.
-    expect(/\.catch\(\(\)\s*=>\s*falhou\([^)]*,\s*true\)\)/.test(FONTE), 'a queda de rede não é mais transitória').toBe(true)
+/** Toda tela pública com estado de erro precisa oferecer saída. A lista é DERIVADA, não escrita. */
+function telasComEstadoDeErro(): string[] {
+  const achadas: string[] = []
+  const andar = (dir: string) => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      const caminho = join(dir, e.name)
+      if (e.isDirectory()) andar(caminho)
+      else if (/[.]tsx$/.test(e.name)) {
+        const fonte = semComentarios(readFileSync(caminho, 'utf8'))
+        // Casa com a ESCRITA do estado (`setEstado('erro')`), não com a palavra "erro" solta —
+        // que aparece em `mensagemErro`, em `setErro` de formulário e em comentário.
+        if (/setEstado\(\s*'erro'\s*\)/.test(fonte)) achadas.push(caminho.split(String.fromCharCode(92)).join('/'))
+      }
+    }
+  }
+  andar(RAIZ)
+  return achadas
+}
+
+const TELAS = telasComEstadoDeErro()
+
+/**
+ * "Existe um caminho em que a falha é marcada como transitória" — o CONCEITO, em duas grafias.
+ *
+ * A primeira versão casava só `setPodeTentarDeNovo(true)` e reprovou `/confirmar`, que expressa a
+ * mesma coisa por um auxiliar (`falhou(msg, true)`). Guarda que exige uma grafia obriga quatro
+ * telas a escreverem igual para sempre, e a próxima que refatorar fica vermelha sem ter defeito —
+ * o custo simétrico da guarda cega, e o mesmo erro que criou `alvo-de-toque-tem-48`.
+ *
+ * As duas grafias têm autoteste logo abaixo: se uma delas parar de casar, o teste grita em vez de
+ * absolver a tela.
+ */
+const MARCA_TRANSITORIA = /setPodeTentarDeNovo\(\s*true\s*\)|falhou\([^)]*,\s*true\s*\)/
+
+describe('o leitor deste teste', () => {
+  it('acha as telas públicas com estado de erro — não passa por não ter olhado nada', () => {
+    // Se o padrão parar de casar, a lista fica vazia e TODAS as asserções abaixo passam sozinhas.
+    expect(TELAS.length, 'nenhuma tela pública com estado de erro encontrada').toBeGreaterThanOrEqual(4)
+    for (const esperada of ['confirmar', 'avaliar', 'lista-espera', 'orcamento']) {
+      expect(TELAS.some((t) => t.includes(`/${esperada}/`)), `${esperada} sumiu da varredura`).toBe(true)
+    }
   })
 
-  it('a recusa do servidor NÃO é transitória, e 5xx é', () => {
-    /*
-     * O critério tem que ser o STATUS, não "deu erro". Se tudo virar transitório, a tela oferece
-     * "tentar de novo" para um link que o servidor já recusou — botão que só repete a recusa, que
-     * é a forma mais irritante de dizer não. Se nada virar, volta o beco da rede.
-     */
-    expect(/falhou\([^)]*,\s*r\.status\s*>=\s*500\)/.test(FONTE), 'o ramo do servidor não olha o status').toBe(true)
-    expect(/falhou\([^)]*,\s*true\s*\)/.test(FONTE), 'nenhum ramo é transitório').toBe(true)
+  it('não confunde `mensagemErro` com o estado de erro', () => {
+    expect(/setEstado\(\s*'erro'\s*\)/.test("const [mensagemErro, setMensagemErro] = useState('')")).toBe(false)
+    expect(/setEstado\(\s*'erro'\s*\)/.test("setEstado('erro')")).toBe(true)
   })
 
-  it('as duas ações da tela tratam a falha do mesmo jeito', () => {
-    // Confirmar e desmarcar são caminhos irmãos; consertar um só é como o defeito nasce de novo.
-    expect((FONTE.match(/falhou\(/g) ?? []).length, 'algum ramo de falha ficou sem passar por `falhou`').toBeGreaterThanOrEqual(4)
+  it('reconhece as DUAS grafias de "esta falha é transitória", e nenhuma outra', () => {
+    // Autoteste do padrão. Sem isto, uma das duas alternativas podia apodrecer em silêncio e
+    // absolver a tela que a usa.
+    expect(MARCA_TRANSITORIA.test('setPodeTentarDeNovo(true)'), 'grafia direta').toBe(true)
+    expect(MARCA_TRANSITORIA.test("falhou('Não consegui falar com o servidor.', true)"), 'grafia por auxiliar').toBe(true)
+    // E o que NÃO pode passar: marcar tudo como definitivo é o defeito original.
+    expect(MARCA_TRANSITORIA.test('setPodeTentarDeNovo(false)')).toBe(false)
+    expect(MARCA_TRANSITORIA.test("falhou('erro', false)")).toBe(false)
   })
 })
 
-describe('o estado de erro tem saída para a cliente do salão', () => {
-  const iErro = FONTE.lastIndexOf('Não deu certo')
-  const bloco = FONTE.slice(iErro)
-
-  it('encontrou o bloco de erro — não passa por não ter olhado nada', () => {
-    expect(iErro, 'sumiu a tela de erro').toBeGreaterThan(-1)
-    expect(bloco.length).toBeGreaterThan(100)
-  })
-
-  it('falha transitória oferece tentar de novo', () => {
-    expect(/podeTentarDeNovo\s*\?/.test(bloco), 'o erro não distingue o caso que dá para repetir').toBe(true)
-    expect(/Tentar de novo/.test(bloco), 'sumiu o botão de repetir').toBe(true)
-  })
-
-  it('recusa definitiva diz o que fazer, e não só o que houve', () => {
+describe('toda tela pública com erro oferece saída para a cliente do salão', () => {
+  it.each(TELAS)('%s usa o ErroPublico em vez de terminar na mensagem', (tela) => {
+    const fonte = semComentarios(readFileSync(tela, 'utf8'))
     /*
-     * O conceito, não a redação: a saída precisa apontar para uma PESSOA, porque o produto não
-     * sabe o slug do salão neste estado (o token foi recusado, então não há de onde tirar). Um
-     * link para lugar nenhum seria pior que a orientação em texto.
+     * Casa com o USO (`<ErroPublico`), nunca com o import: importar e não renderizar é exatamente
+     * o estado em que a tela fica se alguém "simplificar" o JSX, e a guarda passaria verde.
      */
-    const semRetentativa = bloco.slice(bloco.indexOf(') : ('))
-    expect(/whatsapp|chame|fale/i.test(semRetentativa), 'o ramo sem retentativa não diz o que fazer').toBe(true)
+    expect(
+      /<ErroPublico[\s/>]/.test(fonte),
+      `${tela} termina o erro na mensagem. Use \`ErroPublico\`, que dá retentativa ou diz o que fazer.`,
+    ).toBe(true)
   })
 
-  it('o botão de repetir volta para a escolha, em vez de repetir a chamada sozinho', () => {
-    // Voltar ao estado 'escolhendo' é o certo: a pessoa pode ter mudado de ideia entre confirmar e
-    // desmarcar enquanto a rede estava fora, e refazer a ação anterior por conta própria decidiria
-    // por ela.
-    expect(/setEstado\('escolhendo'\)/.test(bloco), 'o retry não devolve a escolha para a pessoa').toBe(true)
+  it.each(TELAS)('%s distingue falha transitória de recusa pelo STATUS', (tela) => {
+    const fonte = semComentarios(readFileSync(tela, 'utf8'))
+    /*
+     * O critério tem que ser o status, não "deu erro". Se tudo virar transitório, a tela oferece
+     * "tentar de novo" para um link que o servidor já recusou — botão que só repete o não. Se nada
+     * virar, volta o beco da rede, que é o defeito original.
+     */
+    expect(/r\.status\s*>=\s*500/.test(fonte), `${tela} não olha o status para decidir se dá para repetir`).toBe(true)
+    expect(
+      MARCA_TRANSITORIA.test(fonte),
+      `${tela} nunca marca nenhuma falha como transitória — a queda de rede volta a ser um beco`,
+    ).toBe(true)
+  })
+})
+
+describe('o ErroPublico faz as duas metades', () => {
+  const COMPONENTE = 'src/components/ui/erro-publico.tsx'
+  const fonte = semComentarios(readFileSync(COMPONENTE, 'utf8'))
+
+  it('com retentativa, mostra o botão', () => {
+    expect(/aoTentarDeNovo\s*\?/.test(fonte), 'o componente não ramifica pela retentativa').toBe(true)
+    expect(/Tentar de novo/.test(fonte)).toBe(true)
+  })
+
+  it('sem retentativa, diz o que fazer em vez de só o que houve', () => {
+    /*
+     * O conceito, não a redação: a saída aponta para uma PESSOA porque o produto não sabe o slug
+     * do salão neste estado (o token foi recusado, não há de onde tirar). Link para lugar nenhum
+     * seria pior que uma frase útil.
+     */
+    const ramoSemBotao = fonte.slice(fonte.indexOf(') : ('))
+    expect(/whatsapp|chame|fale/i.test(ramoSemBotao), 'o ramo sem retentativa não diz o que fazer').toBe(true)
+  })
+
+  it('os dois ramos são diferentes de verdade', () => {
+    // Guarda contra o próprio detector: com os ramos colapsados, as duas asserções acima podem
+    // continuar passando e o componente vira decoração.
+    expect(fonte.includes(') : (')).toBe(true)
   })
 })

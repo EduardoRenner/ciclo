@@ -1,10 +1,11 @@
 'use client'
 
-import { CheckCircle2, Clock, FileX, XCircle } from 'lucide-react'
+import { CheckCircle2, Clock, FileX } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
+import ErroPublico from '@/components/ui/erro-publico'
 import Textarea from '@/components/ui/textarea'
 import { dinheiro } from '@/lib/formato'
 
@@ -50,6 +51,20 @@ export default function Orcamento({ token }: { token: string }) {
   const [dados, setDados] = useState<Dados | null>(null)
   const [mensagemErro, setMensagemErro] = useState('')
   const [motivoRecusa, setMotivoRecusa] = useState('')
+  /**
+   * A falha foi transitória (5xx, rede) ou o servidor recusou o token? A tela tratava as duas
+   * igual e não oferecia saída nenhuma — e aqui o custo é o mais alto das quatro telas públicas:
+   * quem cai neste estado estava aprovando um orçamento, ou seja, fechando negócio.
+   */
+  const [podeTentarDeNovo, setPodeTentarDeNovo] = useState(false)
+  const [tentativa, setTentativa] = useState(0)
+
+  /** Recarrega o orçamento em vez de repetir aprovar/recusar: a decisão volta para ela. */
+  function tentarDeNovo() {
+    setEstado('carregando')
+    setPodeTentarDeNovo(false)
+    setTentativa((n) => n + 1)
+  }
 
   useEffect(() => {
     fetch(`/api/v1/public/quotes/${token}`)
@@ -57,6 +72,7 @@ export default function Orcamento({ token }: { token: string }) {
         const json = (await r.json()) as { data?: Dados; error?: { message: string } }
         if (!r.ok || !json.data) {
           setMensagemErro(json.error?.message ?? 'Não encontramos esse orçamento.')
+          setPodeTentarDeNovo(r.status >= 500)
           setEstado('erro')
           return
         }
@@ -64,10 +80,11 @@ export default function Orcamento({ token }: { token: string }) {
         setEstado(json.data.status === 'approved' ? 'aprovado' : json.data.status === 'rejected' ? 'recusado' : 'pronto')
       })
       .catch(() => {
-        setMensagemErro('Não consegui falar com o servidor. Tente de novo em instantes.')
+        setMensagemErro('Não consegui falar com o servidor.')
+        setPodeTentarDeNovo(true)
         setEstado('erro')
       })
-  }, [token])
+  }, [token, tentativa])
 
   function aprovar() {
     setEstado('carregando')
@@ -76,13 +93,15 @@ export default function Orcamento({ token }: { token: string }) {
         const json = (await r.json()) as { error?: { message: string } }
         if (!r.ok) {
           setMensagemErro(json.error?.message ?? 'Não consegui aprovar esse orçamento.')
+          setPodeTentarDeNovo(r.status >= 500)
           setEstado('erro')
           return
         }
         setEstado('aprovado')
       })
       .catch(() => {
-        setMensagemErro('Não consegui falar com o servidor. Tente de novo em instantes.')
+        setMensagemErro('Não consegui falar com o servidor.')
+        setPodeTentarDeNovo(true)
         setEstado('erro')
       })
   }
@@ -98,13 +117,15 @@ export default function Orcamento({ token }: { token: string }) {
         const json = (await r.json()) as { error?: { message: string } }
         if (!r.ok) {
           setMensagemErro(json.error?.message ?? 'Não consegui recusar esse orçamento.')
+          setPodeTentarDeNovo(r.status >= 500)
           setEstado('erro')
           return
         }
         setEstado('recusado')
       })
       .catch(() => {
-        setMensagemErro('Não consegui falar com o servidor. Tente de novo em instantes.')
+        setMensagemErro('Não consegui falar com o servidor.')
+        setPodeTentarDeNovo(true)
         setEstado('erro')
       })
   }
@@ -116,11 +137,11 @@ export default function Orcamento({ token }: { token: string }) {
   // "Carregando…" para sempre com token inválido.
   if (tela === 'erro') {
     return (
-      <>
-        <XCircle aria-hidden className="mb-4 size-14 text-bad" />
-        <p className="text-titulo font-bold">Não deu certo</p>
-        <p className="mt-2 text-corpo text-txt-2">{mensagemErro}</p>
-      </>
+      <ErroPublico
+        titulo="Não deu certo"
+        mensagem={mensagemErro}
+        {...(podeTentarDeNovo ? { aoTentarDeNovo: tentarDeNovo } : {})}
+      />
     )
   }
 

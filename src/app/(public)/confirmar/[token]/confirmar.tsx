@@ -1,10 +1,11 @@
 'use client'
 
-import { CalendarX2, CheckCircle2, XCircle } from 'lucide-react'
+import { CalendarX2, CheckCircle2 } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 
 import Button from '@/components/ui/button'
+import ErroPublico from '@/components/ui/erro-publico'
 
 type Estado = 'escolhendo' | 'confirmando' | 'confirmado' | 'cancelando' | 'cancelado' | 'erro'
 
@@ -133,34 +134,19 @@ export default function ConfirmarAgendamento({ token }: { token: string }) {
   }
 
   return (
-    <>
-      <XCircle aria-hidden className="mb-4 size-14 text-bad" />
-      <p className="text-titulo font-bold">Não deu certo</p>
-      <p className="mt-2 text-corpo text-txt-2">{mensagem}</p>
-      {/*
-        A tela terminava aqui, e terminar aqui é um beco. A regra do CLAUDE.md ("erro explica o que
-        fazer") não estava sendo cumprida: a mensagem diz o que houve, e não o que fazer agora.
-
-        Quem chega neste estado é a CLIENTE DO SALÃO, com a mensagem do WhatsApp aberta e um horário
-        marcado esperando resposta. Sem saída daqui ela some, o horário fica sem confirmação, e o
-        salão conclui que ela ignorou.
-      */}
-      {podeTentarDeNovo ? (
-        <Button
-          largura="cheia"
-          className="mt-6"
-          onClick={() => {
-            setEstado('escolhendo')
-            setPodeTentarDeNovo(false)
-          }}
-        >
-          Tentar de novo
-        </Button>
-      ) : (
-        <p className="mt-4 text-secundario text-txt-3">
-          Chame quem vai te atender pelo WhatsApp para confirmar ou desmarcar seu horário.
-        </p>
-      )}
-    </>
+    <ErroPublico
+      titulo="Não deu certo"
+      mensagem={mensagem}
+      {...(podeTentarDeNovo
+        ? {
+            aoTentarDeNovo: () => {
+              // Volta para a ESCOLHA, e não refaz a ação: entre confirmar e desmarcar, decidir
+              // por ela enquanto a rede estava fora seria pior que perguntar de novo.
+              setEstado('escolhendo')
+              setPodeTentarDeNovo(false)
+            },
+          }
+        : {})}
+    />
   )
 }
