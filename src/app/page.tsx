@@ -133,13 +133,18 @@ export default function Home() {
       <header className="flex items-center justify-between gap-3 py-5">
         {/* `priority` herdado do lockup do herói, que saiu: agora esta é a única marca da dobra. */}
         <Image src={wordmark} alt="CICLO" priority className="h-7 w-auto" />
-        <nav className="flex items-center gap-1">
-          <Link
-            href="/precos"
-            className="flex h-12 items-center px-2 text-corpo font-semibold text-txt-2 transition active:scale-[.97]"
-          >
-            Preços
-          </Link>
+        {/*
+          O header desta página tem UM link, e a razão é de conversão, não de gosto (`docs/38` §3).
+          Havia dois competindo com o CTA primário na dobra, e um deles ("Preços") aponta para uma
+          página que esta mesma dobra já resume, com o número na tela. Todo link de header é uma
+          saída, e na única página cujo trabalho é converter, saída é vazamento.
+
+          `/precos` continua a um toque: na linha de preço da dobra, no fecho e no rodapé. A
+          informação não saiu; o vazamento saiu. Nas outras telas públicas o header fica como está
+          — em `/termos` e `/privacidade` a pessoa lê contrato, não decide compra, e ali o link de
+          preço é serviço (L-7 do `docs/31` colocou os dois de propósito).
+        */}
+        <nav className="flex items-center">
           <Link
             href="/entrar"
             className="flex h-12 items-center px-1 text-corpo font-semibold text-acc-2 transition active:scale-[.97]"
@@ -164,9 +169,21 @@ export default function Home() {
         <h1 className="text-numero font-bold sm:text-[2.75rem] sm:leading-[1.05] sm:tracking-[-0.02em]">
           A lista de quem devia ter voltado e não voltou.
         </h1>
-        <p className="mt-4 max-w-[52ch] text-corpo text-txt-2">
-          Para quem atende com hora marcada: barbearia, unhas, cílios, sobrancelha, depilação, estética. Em português,
-          feito para o celular, sem treinamento.
+        {/*
+          `docs/20-COPY-PLANO.md` §D.3, variante C — recomendada e até agora não implementada. Não
+          é escrita nova: é a PROMOÇÃO da melhor linha que a página já tinha, enterrada no rodapé da
+          seção "Feito para". Resolve o alcance (§4.1: a copy nomeava 8 profissões das 17 do
+          catálogo, e nenhuma das 8 tem ritmo recorrente) na posição de maior atenção, sem listar
+          profissão — que é o que o painel de leitores vetou no §7.4: 17 chips na dobra leem como
+          "serve para tudo", e o barbeiro do painel rejeita isso.
+
+          O tricolon que estava aqui ("Em português, feito para o celular, sem treinamento") saiu
+          inteiro pelo §D.3: as três informações são verdadeiras e irrelevantes — nenhuma é motivo
+          para escolher o CICLO em vez de outro. Migraram para a FAQ, onde são objeção respondida
+          em vez de argumento de venda.
+        */}
+        <p className="mt-4 max-w-[46ch] text-corpo text-txt-2">
+          Para qualquer trabalho que dependa de cliente que volta.
         </p>
         <div className="mt-7 flex flex-wrap gap-3">
           <Link href="/cadastro" className={botaoPrimario}>
@@ -210,6 +227,72 @@ export default function Home() {
             Ver os planos
           </Link>
         </p>
+
+        {/*
+          A PEÇA QUE FALTAVA NA PÁGINA, e a única deste redesenho que o `docs/20` não tinha
+          previsto. Pesquisa de 2026-09-03 (`docs/38` §2.1): quase toda página de SaaS de alta
+          conversão mostra o produto, ou o resultado dele, dentro do primeiro scroll — um print
+          real do painel converte melhor que ilustração, porque a pessoa quer ver o que vai assinar
+          antes de ler lista de recurso.
+
+          A home descrevia o Motor de Ciclo em prosa e nunca o mostrava. Era o maior buraco de
+          conversão da página.
+
+          **Por que isto NÃO viola o §5.10, e a distinção não é semântica.** O `docs/20` §D.4.1 já
+          a cravou: demonstração mostra o que o software FAZ; prova social afirma que outra pessoa
+          COMPROU. Isto é o primeiro. Os nomes são de exemplo, os números são de exemplo, e a
+          legenda diz isso em texto — não em letra miúda. O §D.5 var C exige exatamente esse
+          enquadramento para o número: *"ilustração de layout, não afirmação"*.
+
+          Feito em HTML e CSS, sem imagem, de propósito: público 100% celular, e a pesquisa que
+          recomenda vídeo/GIF na dobra não paga o custo de latência num produto cujo plano de
+          performance (`docs/28`) existe porque o clique já demorava.
+
+          O que a tela mostra é o que `/admin/recuperar` mostra de verdade: quem passou do ponto,
+          há quantos dias, e a estimativa de quanto vale chamar. A ordem das colunas é a mesma.
+        */}
+        <figure className="mt-8 rounded-[var(--radius)] border border-line bg-surface p-4 shadow-elevado sm:p-5">
+          <div className="flex items-baseline justify-between gap-3">
+            <p className="text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">
+              Passaram do ponto de voltar
+            </p>
+          </div>
+
+          <div className="mt-3 flex items-end gap-5">
+            <div>
+              <p className="tabular text-numero font-bold leading-none text-txt">23</p>
+              <p className="mt-1 text-label text-txt-3">pessoas</p>
+            </div>
+            <div>
+              <p className="tabular text-titulo font-bold leading-none text-acc-2">R$ 1.840</p>
+              {/*
+                "Estimativa" fica no rótulo, não num asterisco: é a mesma palavra que a tela
+                interna usa ("Estimativa, não promessa"), e o §D.5 var C manda mostrar a origem do
+                número junto com ele.
+              */}
+              <p className="mt-1 text-label text-txt-3">estimativa de retorno</p>
+            </div>
+          </div>
+
+          <ul className="mt-4 flex flex-col gap-px overflow-hidden rounded-[var(--radius-sm)] bg-line">
+            {[
+              { nome: 'Fernanda M.', atraso: '24 dias', valor: 'R$ 90' },
+              { nome: 'Juliana R.', atraso: '18 dias', valor: 'R$ 45' },
+              { nome: 'Camila S.', atraso: '15 dias', valor: 'R$ 70' },
+            ].map((p) => (
+              <li key={p.nome} className="flex items-center gap-3 bg-surface-2 px-3 py-2.5">
+                <span className="min-w-0 flex-1 truncate text-secundario font-semibold text-txt">{p.nome}</span>
+                <span className="tabular shrink-0 text-label text-txt-3">{p.atraso}</span>
+                <span className="tabular shrink-0 text-secundario font-semibold text-txt-2">{p.valor}</span>
+              </li>
+            ))}
+          </ul>
+
+          <figcaption className="mt-3 text-label text-txt-3">
+            Exemplo de como a tela fica. Os nomes e os valores são inventados; a conta é a que o
+            CICLO faz com os seus atendimentos.
+          </figcaption>
+        </figure>
       </section>
 
       <section className="py-8">
