@@ -2,6 +2,7 @@ import { ouDoProfissionalOuGeral } from '@/server/db/filtro'
 import { Temporal } from '@js-temporal/polyfill'
 import { z } from 'zod'
 
+import { sinalEmCentavos } from '@/core/pricing/sinal'
 import { availableSlots, type IntervaloExpediente, type IntervaloOcupado } from '@/core/scheduling/available-slots'
 import { transicaoValida, type EstadoAgendamento } from '@/core/scheduling/state'
 import { recomputarCicloDeUmAtendimento } from '@/server/services/ciclo'
@@ -17,7 +18,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 type Cliente = SupabaseClient<Database>
 
 const COLUNAS =
-  'id, tenant_id, client_id, professional_id, service_id, starts_at, ends_at, status, origin, price_cents, confirmed_at, arrived_at, completed_at, canceled_at, canceled_by, cancel_reason, client_note, address, no_show_score'
+  'id, tenant_id, client_id, professional_id, service_id, starts_at, ends_at, status, origin, price_cents, confirmed_at, arrived_at, completed_at, canceled_at, canceled_by, cancel_reason, client_note, address, no_show_score, deposit_cents'
 
 export const EsquemaCriarAgendamento = z
   .object({
@@ -138,12 +139,14 @@ type ServicoAgendavel = {
   parallel_capacity: number
   buffer_before_min: number
   buffer_after_min: number
+  deposit_bps: number
+  deposit_min_cents: number
 }
 
 async function servicoDoTenant(db: Cliente, tenantId: string, serviceId: string): Promise<ServicoAgendavel> {
   const { data, error } = await db
     .from('services')
-    .select('duration_min, price_cents, parallel_capacity, buffer_before_min, buffer_after_min')
+    .select('duration_min, price_cents, parallel_capacity, buffer_before_min, buffer_after_min, deposit_bps, deposit_min_cents')
     .eq('id', serviceId)
     .eq('tenant_id', tenantId)
     .eq('active', true)
@@ -333,6 +336,33 @@ export async function criarAgendamento(
       ends_at: endsAt.toString(),
       origin: entrada.origin,
       price_cents: servico.price_cents,
+      /*
+       * `appointments.deposit_cents` existe desde a migration 0001 e **nunca foi escrito** — achado
+       * em 2026-09-03 varrendo colunas sem leitor nem escritor, a mesma classe de `fee_cents`,
+       * `media.consent_id`, `tenants.plan`, `clients.referred_by`, `trial_ends_at` e
+       * `vault_access_log.actor_label`.
+       *
+       * **O que a ausência dela custava.** A página pública mostra "este horário pede um sinal de
+       * R$ 21" no último instante antes de confirmar — e o agendamento nascia sem nenhum registro
+       * disso. Quem atende abria a agenda e via só o preço: não sabia que um sinal tinha sido
+       * pedido, então não cobrava. O sinal existe para derrubar falta, e o efeito morria na tela
+       * que o exibia, porque a informação nunca chegava ao outro lado do balcão.
+       *
+       * É **instantâneo**, não derivação, pela mesma razão que `price_cents` logo acima: o dono
+       * mexe em `deposit_bps` e no preço do serviço quando quiser, e o que foi combinado com
+       * aquela cliente não pode mudar depois. É literalmente a armadilha "guarde o valor em
+       * centavos; preço muda, histórico não pode mudar" do `CLAUDE.md` — a casa já tinha decidido
+       * isso para preço e o sinal tinha ficado do lado errado da decisão.
+       *
+       * `?? 0` porque a coluna é `not null default 0`, e `null` do `sinalEmCentavos` significa
+       * "este serviço não pede sinal" — que é exatamente zero, não ausência de informação.
+       */
+      deposit_cents:
+        sinalEmCentavos({
+          precoCents: servico.price_cents,
+          depositBps: servico.deposit_bps,
+          depositMinCents: servico.deposit_min_cents,
+        }) ?? 0,
       client_note: entrada.note ?? null,
       address: entrada.address ?? null,
       created_by: createdBy,
@@ -363,7 +393,7 @@ export async function criarAgendamento(
 const ESTADOS_VALIDOS = new Set<EstadoAgendamento>(['pending', 'confirmed', 'arrived', 'done', 'no_show', 'canceled', 'expired'])
 
 const COLUNAS_AGENDA_DIA =
-  'id, starts_at, ends_at, status, price_cents, client_note, address, professional_id, no_show_score, clients ( name ), services ( name ), professionals ( display_name )'
+  'id, starts_at, ends_at, status, price_cents, deposit_cents, origin, client_note, address, professional_id, no_show_score, clients ( name ), services ( name ), professionals ( display_name )'
 
 export type LinhaAgendaDia = {
   id: string
@@ -371,6 +401,10 @@ export type LinhaAgendaDia = {
   ends_at: string
   status: string
   price_cents: number
+  /** Instantâneo do sinal pedido na criação. `0` = este serviço não pede sinal. */
+  deposit_cents: number
+  /** Só `public_page` significa que a cliente viu o sinal na tela antes de confirmar. */
+  origin: string
   client_note: string | null
   /** docs/09-PLATAFORMA.md G3+G13 (P2.5) — endereço do atendimento, não do cliente. */
   address: string | null
