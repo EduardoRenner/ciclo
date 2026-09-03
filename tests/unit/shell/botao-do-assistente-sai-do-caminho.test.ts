@@ -55,10 +55,23 @@ describe('o botão não pode escapar da tela nem do dedo', () => {
     expect(/touch-none/.test(FONTE), 'sem `touch-action: none`, o arrasto vira rolagem e o botão foge do dedo').toBe(true)
   })
 
-  it('a posição é limitada aos limites da tela', () => {
-    // Sem limitar, uma posição guardada em tela grande deixa o botão fora do alcance na tela
-    // pequena — e não há como trazê-lo de volta, porque o que traz de volta é o próprio botão.
-    expect(/Math\.min\(Math\.max\(/.test(FONTE), 'sumiu o travamento dentro dos limites da tela').toBe(true)
+  it('a posição DO BOTÃO é limitada aos limites da tela', () => {
+    /*
+     * Sem limitar, uma posição guardada em tela grande deixa o botão fora do alcance na tela
+     * pequena — e não há como trazê-lo de volta, porque o que traria de volta é o próprio botão.
+     *
+     * **A primeira versão desta asserção era `/Math\.min\(Math\.max\(/` e estava CEGA.** Esse
+     * padrão também casa o travamento da JANELA do desktop, nas linhas 241-242 do mesmo arquivo:
+     * apaguei o do botão, o do vizinho segurou o teste, e a mutação passou verde. É a armadilha
+     * nº 4 da tabela do `CLAUDE.md` — delimitar pelo elemento real, nunca por um padrão que o
+     * vizinho também satisfaz.
+     *
+     * `TAMANHO_BOTAO` é o que existe só no travamento do botão, e é por isso que ele ancora aqui.
+     */
+    expect(
+      /Math\.min\(Math\.max\([^)]*\),\s*window\.inner(Width|Height) - TAMANHO_BOTAO/.test(FONTE),
+      'sumiu o travamento do BOTÃO dentro dos limites da tela',
+    ).toBe(true)
   })
 
   it('girar o aparelho recalcula a posição', () => {
