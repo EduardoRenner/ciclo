@@ -124,6 +124,100 @@ function useEhDesktop(): boolean {
 
 type Posicao = { x: number; y: number }
 
+/** Diâmetro do botão flutuante. 56px, acima do piso de 48 da casa. */
+const TAMANHO_BOTAO = 56
+/** Movimento mínimo para virar arrasto em vez de toque. Abaixo disso, o dedo tremeu. */
+const LIMIAR_DE_ARRASTO_PX = 8
+const CHAVE_POSICAO_BOTAO = 'ciclo:assistente:posicao-do-botao'
+
+/**
+ * O botão que ABRE o assistente pode ser arrastado, e encaixa na lateral mais próxima ao soltar.
+ *
+ * **Por que, e a pesquisa concorda com o relato.** O botão vive fixo no canto inferior direito,
+ * acima da tab bar — e num painel que é lista (Hoje, Clientes, Agenda) ele cobre justamente o
+ * canto onde ficam ação e conteúdo. A recomendação de UX para assistente flutuante é direta: *o
+ * botão precisa ser movível quando cobre um botão importante*. Antes disso a única saída era rolar
+ * a página para tirar o conteúdo de baixo dele.
+ *
+ * **Encaixa na lateral em vez de parar onde soltou**, que é o padrão consolidado de FAB móvel:
+ * botão parado no meio da tela fica pior que no canto, e encaixar devolve previsibilidade sem
+ * tirar o controle. O eixo vertical fica onde a pessoa deixou; só o horizontal encaixa.
+ *
+ * **Arrasto e toque não podem competir.** Só passa a ser arrasto depois de 8px de movimento —
+ * abaixo disso é toque e abre o assistente. Sem esse limiar, o tremor natural do dedo abriria e
+ * moveria ao mesmo tempo, e o botão viraria um alvo que às vezes não responde.
+ *
+ * A posição é por dispositivo (`localStorage`), nunca por conta: é preferência de mão e de tela,
+ * não configuração de negócio — e um `try/catch` porque navegador em aba anônima recusa gravar.
+ */
+function usePosicaoDoBotao(ativo: boolean) {
+  const [posicao, setPosicao] = useState<Posicao | null>(null)
+  const arrastoRef = useRef<{ x0: number; y0: number; offsetX: number; offsetY: number; virouArrasto: boolean } | null>(null)
+
+  /** Mantém o botão inteiro dentro da tela, com margem — inclusive depois de girar o aparelho. */
+  const limitar = (p: Posicao): Posicao => ({
+    x: Math.min(Math.max(p.x, MARGEM_TELA), window.innerWidth - TAMANHO_BOTAO - MARGEM_TELA),
+    y: Math.min(Math.max(p.y, MARGEM_TELA), window.innerHeight - TAMANHO_BOTAO - MARGEM_TELA),
+  })
+
+  useEffect(() => {
+    if (!ativo) return
+    try {
+      const bruto = localStorage.getItem(CHAVE_POSICAO_BOTAO)
+      if (bruto) {
+        const lido = JSON.parse(bruto) as Posicao
+        if (Number.isFinite(lido?.x) && Number.isFinite(lido?.y)) setPosicao(limitar(lido))
+      }
+    } catch {
+      // Aba anônima ou armazenamento bloqueado: o botão fica no canto padrão. Não é erro.
+    }
+
+    // Girar o aparelho pode jogar a posição guardada para fora da tela nova.
+    const aoRedimensionar = () => setPosicao((atual) => (atual ? limitar(atual) : null))
+    window.addEventListener('resize', aoRedimensionar)
+    return () => window.removeEventListener('resize', aoRedimensionar)
+     
+  }, [ativo])
+
+  function aoApontar(e: React.PointerEvent<HTMLButtonElement>) {
+    const r = e.currentTarget.getBoundingClientRect()
+    arrastoRef.current = { x0: e.clientX, y0: e.clientY, offsetX: e.clientX - r.left, offsetY: e.clientY - r.top, virouArrasto: false }
+    e.currentTarget.setPointerCapture(e.pointerId)
+  }
+
+  function aoMover(e: React.PointerEvent<HTMLButtonElement>) {
+    const a = arrastoRef.current
+    if (!a) return
+    if (!a.virouArrasto && Math.hypot(e.clientX - a.x0, e.clientY - a.y0) < LIMIAR_DE_ARRASTO_PX) return
+    a.virouArrasto = true
+    setPosicao(limitar({ x: e.clientX - a.offsetX, y: e.clientY - a.offsetY }))
+  }
+
+  /** @returns `true` se foi arrasto — quem chama usa isso para NÃO abrir o assistente. */
+  function aoSoltar(e: React.PointerEvent<HTMLButtonElement>): boolean {
+    const a = arrastoRef.current
+    arrastoRef.current = null
+    if (!a?.virouArrasto) return false
+
+    // Encaixe: a lateral mais próxima do centro do botão. Só o eixo X.
+    const centroX = e.clientX - a.offsetX + TAMANHO_BOTAO / 2
+    const naEsquerda = centroX < window.innerWidth / 2
+    const encaixada = limitar({
+      x: naEsquerda ? MARGEM_TELA : window.innerWidth - TAMANHO_BOTAO - MARGEM_TELA,
+      y: e.clientY - a.offsetY,
+    })
+    setPosicao(encaixada)
+    try {
+      localStorage.setItem(CHAVE_POSICAO_BOTAO, JSON.stringify(encaixada))
+    } catch {
+      // Sem armazenamento, a posição vale só nesta sessão. Melhor que não deixar mover.
+    }
+    return true
+  }
+
+  return { posicao, aoApontar, aoMover, aoSoltar }
+}
+
 /** Canto inferior direito, perto do botão que abre a janela — mesma lógica de ancoragem do botão flutuante. */
 function posicaoPadrao(): Posicao {
   return {
@@ -255,6 +349,7 @@ export default function AssistenteFlutuante({ disponivel }: { disponivel: boolea
   /** O `requestId` da chamada que falhou, para achar a linha de log correspondente. */
   const [codigoDaFalha, setCodigoDaFalha] = useState<string | null>(null)
   const [posicao, setPosicao] = useState<Posicao | null>(null)
+  const { posicao: posicaoDoBotao, aoApontar, aoMover, aoSoltar } = usePosicaoDoBotao(disponivel)
   const arrastandoRef = useRef<{ offsetX: number; offsetY: number } | null>(null)
   const janelaRef = useRef<HTMLDivElement>(null)
   const campoRef = useRef<HTMLTextAreaElement>(null)
@@ -595,13 +690,35 @@ export default function AssistenteFlutuante({ disponivel }: { disponivel: boolea
 
   return (
     <>
+      {/*
+        O botão pode ser ARRASTADO desde 2026-09-03, e encaixa na lateral mais próxima ao soltar.
+        O porquê está no docstring de `usePosicaoDoBotao`: fixo no canto inferior direito, ele cobre
+        exatamente onde as telas de lista (Hoje, Clientes, Agenda) põem conteúdo e ação, e a única
+        saída era rolar a página para tirar o que estava embaixo dele.
+
+        Enquanto ninguém arrastou, `posicaoDoBotao` é `null` e valem as classes de sempre — a
+        ancoragem por `calc()` que respeita a tab bar e a safe area, e que um `style` com pixels não
+        saberia reproduzir. Só depois do primeiro arrasto o posicionamento passa a ser explícito.
+
+        `touch-none` é obrigatório: sem ele o navegador interpreta o arrasto como rolagem da página
+        e o botão escapa do dedo.
+      */}
       <button
         type="button"
         onClick={abrir}
-        aria-label="Abrir assistente"
+        onPointerDown={aoApontar}
+        onPointerMove={aoMover}
+        onPointerUp={(e) => {
+          // Se foi arrasto, engole o clique: soltar o botão em outro canto não pode abrir o painel.
+          if (aoSoltar(e)) e.preventDefault()
+        }}
+        aria-label="Abrir assistente (arraste para mudar de lugar)"
+        style={posicaoDoBotao ? { left: posicaoDoBotao.x, top: posicaoDoBotao.y, right: 'auto', bottom: 'auto' } : undefined}
         className={
-          'fixed bottom-[calc(var(--tabbar-h)+env(safe-area-inset-bottom)+16px)] right-[max(16px,calc((100vw-560px)/2+16px))] ' +
-          'lg:bottom-6 lg:right-6 ' +
+          'fixed touch-none ' +
+          (posicaoDoBotao
+            ? ''
+            : 'bottom-[calc(var(--tabbar-h)+env(safe-area-inset-bottom)+16px)] right-[max(16px,calc((100vw-560px)/2+16px))] lg:bottom-6 lg:right-6 ') +
           'z-30 grid size-14 place-items-center rounded-[var(--radius-pill)] bg-acc text-on-acc shadow-flutuante ' +
           'transition active:scale-[.94]'
         }
