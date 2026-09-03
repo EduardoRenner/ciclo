@@ -110,6 +110,9 @@ describe('o seed da carteira de demonstração', () => {
     // A tela "Hoje" é a inicial do app. Abrir vazia já aconteceu duas vezes.
     expect(conferencia, 'nada guarda a agenda de hoje').toMatch(/agenda_de_hoje/)
     expect(conferencia, 'nada guarda horário fora do expediente').toMatch(/fora_do_horario/)
+    // Timeline impossível: cliente com visita antes do próprio cadastro. Aconteceu com ~6% da
+    // carteira porque o `created_at` inicial era estimativa e o jitter da cadência o furava.
+    expect(conferencia, 'nada guarda visita antes do cadastro').toMatch(/visita_antes_do_cadastro/)
   })
 
   it('nenhuma mensagem nasce na fila de envio', () => {

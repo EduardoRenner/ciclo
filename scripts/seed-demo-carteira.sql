@@ -335,6 +335,19 @@ from (
   group by a.client_id
 ) x where c.id = x.client_id;
 
+-- `created_at` do cliente RECUADO para antes da primeira visita real. O valor inicial era uma
+-- ESTIMATIVA (`desde_ultima + visitas * cadencia + folga`), e o jitter da cadência às vezes
+-- fazia o span real passar do previsto — resultado: ~6% dos clientes com visita ANTES do
+-- próprio cadastro, timeline impossível. Derivar de `min(starts_at)` é o mesmo princípio das
+-- linhas acima: o número sai da realidade, não de uma conta paralela.
+update clients c set created_at = x.primeira - ((3 + floor(seed.rnd_id(c.id,'cad_fix')*7)) || ' days')::interval
+from (
+  select a.client_id, min(a.starts_at) as primeira
+  from appointments a where a.tenant_id in (select tenant_id from seed.cfg)
+  group by a.client_id
+) x
+where c.id = x.client_id and c.created_at > x.primeira;
+
 -- Indicação: ~26% aponta para outro cliente da MESMA carteira. Alimenta o bônus dos dois lados.
 update clients c set referred_by = p.padrinho, source = 'indicacao'
 from (
@@ -1129,6 +1142,7 @@ select t.slug,
   -- "Sobrou" nunca pode ser maior que "Entrou": foi assim que o bug do desconto ignorado apareceu.
   (select count(*) from tickets k where k.tenant_id = t.id and k.profit_cents > k.total_cents) as sobrou_mais_que_entrou,
   (select count(*) from products p where p.tenant_id = t.id and p.stock_qty < 0) as estoque_negativo,
+  (select count(*) from appointments a join clients cc on cc.id = a.client_id where a.tenant_id = t.id and a.starts_at < cc.created_at) as visita_antes_do_cadastro,
   -- A tela "Hoje" é a inicial do app: abrir vazia é a demonstração começar dizendo o contrário do
   -- que ela existe para mostrar. Já aconteceu duas vezes.
   (select count(*) from appointments a where a.tenant_id = t.id
