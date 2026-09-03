@@ -5594,3 +5594,56 @@ nos dois links.
 `alvo-de-toque-tem-48` não pega esta classe de defeito por desenho: ela confere se a classe está no
 `className`, não se o alvo resultante é alcançável. Registrado na tabela de armadilhas do
 `CLAUDE.md`, que é onde alguém vai tropeçar nisso de novo.
+
+### A copy supunha que quem paga é homem
+
+**Achado.** Barbearia é uma das nove profissões do catálogo; as outras oito têm base
+majoritariamente feminina. `/entrar` abria com "Bem-vindo de volta", o seletor de profissional do
+agendamento público oferecia "Qualquer um" (para escolher entre pessoas que costumam ser todas
+mulheres, na tela de maior volume do produto), e **três modelos de mensagem pronta escreviam
+"obrigado" em primeira pessoa** — texto que a profissional manda para a cliente dela, com o produto
+conjugando por ela no gênero errado. Neste último, quem passa vergonha é o salão.
+
+**Decisão.** Copy neutra nas três superfícies, mais uma linha no prompt do assistente (a única que
+escreve texto novo em tempo de resposta). A guarda declara a exceção que a torna útil em vez de
+ruidosa: concordância com COISA está certa ("nenhum serviço cadastrado"), e "qualquer um DELES" é
+pronome de coisa. O regex da exceção não funcionava na primeira versão (`d[eo]s?` não casa
+"deles"), o que teria feito a guarda acusar copy correta.
+
+### Dava para marcar horário na barbearia que não existe
+
+O aviso de demonstração vivia só em `/{slug}`, e o comentário que o acompanha descreve o defeito:
+*"sem ele, dá para escolher serviço e horário numa barbearia que não existe"*. Escolher serviço e
+horário acontece em `/{slug}/agendar`, que não tinha aviso. O CTA "Agendar horário" do próprio
+perfil leva para lá. A página entrou como SEXTO leitor da lista de `demonstracao-fora-do-indice`,
+não como asserção avulsa.
+
+### As quatro telas do cliente terminavam o erro num beco
+
+**Achado, medido no navegador.** Confirmar, avaliar, encaixe e orçamento: ícone, título, mensagem
+da rota, nada mais. Link recusado deixava a cliente sem saber o que fazer (e o salão concluindo que
+ela ignorou a mensagem); rede caída caía no mesmo beco num caso em que repetir resolveria — e em
+três das quatro a chamada dispara ao ABRIR, então bastava a piscada no toque do link.
+
+**Decisão.** `components/ui/erro-publico.tsx` como resposta única à regra "erro explica o que
+fazer". Transitório (5xx e rede) oferece repetir; recusa diz o que fazer, porque o produto não sabe
+o slug do salão nesse estado e link para lugar nenhum é pior que uma frase útil. Retentativa
+recarrega em vez de repetir a ação: decidir entre aprovar e recusar por ela seria pior que
+perguntar.
+
+**Registro honesto do processo:** consertei `/confirmar` primeiro, com teste só para ela, e as
+outras três ficaram. A guarda passou a DERIVAR a lista das telas com `setEstado('erro')` em
+`app/(public)`, que é o que impede a próxima de nascer sem saída.
+
+---
+
+## Pendências do Eduardo desta rodada
+
+1. **`NEXT_PUBLIC_CONTATO_WHATSAPP` na Vercel.** Pré-requisito de lançamento: sem ela o produto
+   continua sem porta de upgrade. As telas ficam honestas, mas mudas.
+2. **Ligar ou não a recompensa da indicação B2B.** O prêmio já foi decidido (docs/18 §13.1: um mês
+   para cada lado) e não há como conceder sem `billing_credits`. `temRecompensa` é o interruptor, a
+   frase verdadeira já está escrita, e a guarda reprova quem ligar antes de existir cobrança.
+3. **Revisar e mesclar `polimento/produto-e-conversao`** (branch tirado de `main`, não da branch de
+   demo; 11 commits, `pnpm typecheck` + `eslint` + `test:unit` limpos, cada guarda vista reprovando
+   por mutação).
