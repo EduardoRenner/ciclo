@@ -208,13 +208,23 @@ describe('o seed da carteira de demonstração', () => {
      * começo do mês.
      */
     const src = sql()
-    const insert = src.slice(src.lastIndexOf('insert into clients'))
-    const criacao = insert.slice(0, insert.indexOf(';'))
-    // A janela de 2 dias tem que ser explícita no SQL — não um `rnd * 30` que às vezes cai perto.
+
+    // Chave `'quando'` só existe nesta seção. Recorto do `insert into clients` que a contém
+    // até o `;` — não o arquivo inteiro. Casar solto pegaria a mesma string noutro lugar
+    // (a lição da 6ª cegueira desta sessão).
+    const marca = src.indexOf("'quando'")
+    expect(marca, 'o seed não tem mais a seção de clientes novos deste mês').toBeGreaterThan(-1)
+    const abre = src.lastIndexOf('insert into clients', marca)
+    expect(abre, 'a chave quando não está dentro de um insert de clients').toBeGreaterThan(-1)
+    const criacaoNovos = src.slice(abre, src.indexOf(';', marca))
+
+    // >55% cadastrados nos últimos 2 dias, para `novos_mes > 0` em qualquer dia em que o seed
+    // rode. Fração e janela explícitas — não um `rnd * 30` que às vezes cai perto do dia 1º.
+    expect(criacaoNovos, 'a fração dos recém-cadastrados precisa ser explícita').toMatch(/'quando'\)\s*<\s*0\.55/)
     expect(
-      src,
-      'a criação de clientes novos precisa ter uma janela de 2 dias explícita',
-    ).toMatch(/seed\.rnd\([^)]*'quando'[^)]*\)\s*<\s*0\.55/)
+      criacaoNovos,
+      'a janela curta tem que ser rnd*2 em days — 0 a 2 dias, não 0 a 20',
+    ).toMatch(/'r'\)\s*\*\s*2\)\s*\|\|\s*' days'/)
   })
   it('deriva visitas e LTV dos agendamentos, em vez de somar por fora', () => {
     // Número que a tela mostra e número que o histórico prova precisam sair da MESMA fonte,
