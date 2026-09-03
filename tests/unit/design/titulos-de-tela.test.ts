@@ -65,4 +65,28 @@ describe('título próprio por tela', () => {
     const layout = readFileSync('src/app/layout.tsx', 'utf8')
     expect(layout).toMatch(/template:\s*['"]%s · CICLO['"]/)
   })
+
+  /*
+   * As RAIZES acima procuram `page.tsx` dentro de quatro pastas, e por isso deixavam de fora a
+   * tela que TODO link quebrado do produto entrega — inclusive os que circulam no WhatsApp de
+   * cliente de salão. Medido no navegador em 2026-09-03: o `<title>` do 404 era só "CICLO",
+   * herdado do `default` do layout, exatamente o defeito que este arquivo existe para pegar.
+   */
+  it('o 404 declara título próprio — é a tela de todo link quebrado', () => {
+    const src = readFileSync('src/app/not-found.tsx', 'utf8')
+    const titulo = /export const metadata\s*=\s*\{[^}]*?title:\s*['"]([^'"]+)['"]/.exec(src)
+    expect(titulo?.[1]?.trim(), 'src/app/not-found.tsx não declara metadata.title').toBeTruthy()
+    // Mesma regra das outras: repetir a marca cancelaria o `template` do layout raiz.
+    expect(titulo![1]!.toLowerCase()).not.toContain('ciclo')
+  })
+
+  it('`error.tsx` fica de fora, e o motivo é técnico', () => {
+    /*
+     * Guarda contra alguém "completar" a regra acrescentando `error.tsx` aqui: ele é `'use
+     * client'` por exigência do Next, e Client Component não exporta `metadata`. Exigir título
+     * dali seria uma guarda impossível de satisfazer — e a saída seria removê-la, levando junto a
+     * asserção do 404 que É satisfazível.
+     */
+    expect(readFileSync('src/app/error.tsx', 'utf8')).toMatch(/^'use client'/)
+  })
 })
