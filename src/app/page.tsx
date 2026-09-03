@@ -3,6 +3,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 
 import { NOME_DO_PLANO, PLANOS, precoDoPlano } from '@/core/billing/planos'
+import { slugDeDemonstracaoNoAr } from '@/server/services/demonstracao'
 import IconeAnel from '@/components/ui/icone-anel'
 
 import wordmark from '../../public/marca/ciclo-wordmark-aqua.png'
@@ -33,12 +34,18 @@ import type { Metadata } from 'next'
  * `tests/unit/design/home-nao-promete-demais.test.ts` — que existe porque estas
  * quatro promessas entraram aqui uma por rodada, cada uma soando bem, e ficaram.
  *
- * Página **estática** de propósito: nenhuma leitura de `cookies()`/sessão aqui. Quem já está
- * logado é redirecionado para `/admin/hoje` pelo `middleware.ts`, que já resolve a sessão em
- * toda requisição de qualquer forma — perguntar de novo aqui dentro é o que marcava esta rota
- * como dinâmica (`ƒ`) e tirava do CDN a única página cujo trabalho é convencer um visitante
- * anônimo (`docs/21-AUDITORIA-FALHA-SILENCIOSA.md` §5.2). Não reintroduza `sessaoAtual()`/
+ * **Nenhuma leitura de sessão aqui, e a regra continua valendo.** Quem já está logado é
+ * redirecionado para `/admin/hoje` pelo `middleware.ts`, que resolve a sessão em toda requisição de
+ * qualquer forma — perguntar de novo aqui dentro é o que marcava esta rota como dinâmica por
+ * USUÁRIO (`docs/21-AUDITORIA-FALHA-SILENCIOSA.md` §5.2). Não reintroduza `sessaoAtual()`/
  * `redirect()` aqui sem mover a checagem de volta para o middleware junto.
+ *
+ * O que esta página faz desde 2026-09-03, e que o parágrafo acima NÃO proíbe: uma consulta sem dado
+ * de ninguém, igual para todo visitante, para descobrir qual página de demonstração está no ar. A
+ * distinção é a que importa — o §5.2 ataca leitura por usuário, não leitura por requisição. E o
+ * layout raiz já é `force-dynamic` desde o conserto do nonce do CSP, então não há estaticidade a
+ * perder: a linha antiga deste comentário dizia "página estática de propósito" e tinha deixado de
+ * ser verdade antes desta mudança.
  */
 export const metadata: Metadata = {
   title: 'CICLO · a agenda que avisa quem parou de voltar',
@@ -180,7 +187,19 @@ const PERGUNTAS = [
   },
 ]
 
-export default function Home() {
+export default async function Home() {
+  /*
+    A única leitura de banco desta página, e ela é barata de propósito: um `in` numa lista fechada
+    de slugs, com índice, devolvendo uma coluna. Ver `server/services/demonstracao.ts` para o
+    defeito de produção que a motivou.
+
+    Isto NÃO reintroduz a leitura de sessão que o `docs/21` §5.2 mandou tirar daqui — aquela era
+    `cookies()`, que marca a rota como dinâmica por requisição de USUÁRIO. Esta é uma consulta sem
+    dado de ninguém, igual para todo visitante. E o layout raiz já é `force-dynamic` desde o
+    conserto do nonce do CSP, então a rota não perde estaticidade que ainda tivesse.
+  */
+  const slugDeExemplo = await slugDeDemonstracaoNoAr()
+
   const botaoPrimario =
     'inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-sm)] bg-acc px-5 text-corpo ' +
     'font-semibold text-on-acc shadow-elevado transition duration-[var(--dur-1)] hover:brightness-110 active:scale-[.97]'
@@ -262,10 +281,23 @@ export default function Home() {
             fictício" — apresentá-lo como cliente de exemplo seria exatamente a
             prova social inventada que o 17 §5.10 proíbe. "De exemplo" é o que
             mantém a frase honesta.
+
+            **O destino deixou de ser literal em 2026-09-03, e o motivo foi medido em produção:**
+            `href="/dom-rocha"` respondia **404** no ar. A demonstração migrou para os seis tenants
+            `demo-*` e este link ficou apontando para o antigo — ou seja, a prova de produto da
+            landing levava a "Página não encontrada", que é a leitura oposta da que o botão existe
+            para produzir. Trocar um literal por outro consertaria hoje e repetiria a fragilidade:
+            nenhuma varredura de código pega isso, porque o defeito mora na distância entre o código
+            e o banco. Quem responde é o servidor, a cada requisição.
+
+            Sem nenhuma demonstração no ar, o botão SOME. Um argumento a menos é pior que um
+            argumento; um link para 404 é pior que os dois.
           */}
-          <Link href="/dom-rocha" className={botaoSecundario}>
-            Ver uma página de exemplo
-          </Link>
+          {slugDeExemplo ? (
+            <Link href={`/${slugDeExemplo}`} className={botaoSecundario}>
+              Ver uma página de exemplo
+            </Link>
+          ) : null}
         </div>
         {/*
           O preço aparece já na primeira dobra, em texto, sem precisar de clique. É o oposto do

@@ -48,8 +48,43 @@ describe('a landing (agora dinâmica por causa do CSP) não resolve sessão dent
     expect(fonte).not.toMatch(/sessaoAtual/)
   })
 
-  it('o componente Home não é async — não há await para justificar', () => {
-    expect(fonte).not.toMatch(/async function Home/)
+  /*
+   * **Aqui havia `expect(fonte).not.toMatch(/async function Home/)`, e ele foi trocado em
+   * 2026-09-03. O registro é obrigatório porque afrouxar guarda que reprovou é onde a proteção
+   * some sem ninguém ver.**
+   *
+   * "Não é async" nunca foi o defeito: era um PROXY para "não lê dado de usuário aqui dentro",
+   * escolhido quando a única razão concebível para um `await` na landing era a sessão. Deixou de
+   * valer quando a página passou a resolver, no servidor, qual demonstração está no ar — uma
+   * consulta sem dado de ninguém, igual para todo visitante, que existe porque o link "Ver uma
+   * página de exemplo" apontava para um 404 em produção.
+   *
+   * O substituto é MAIS estreito que o proxy, não menos: em vez de proibir a forma (`async`),
+   * proíbe as APIs que de fato tornam a rota dependente de quem está pedindo. Um `await` legítimo
+   * passa; qualquer caminho de volta para dado por usuário reprova, inclusive os que a versão
+   * anterior deixaria passar caso alguém os usasse de forma síncrona.
+   */
+  const POR_USUARIO: readonly { padrao: RegExp; porque: string }[] = [
+    { padrao: /\bcookies\s*\(/, porque: 'cookies() liga a resposta ao navegador de quem pediu' },
+    { padrao: /\bheaders\s*\(/, porque: 'headers() idem' },
+    { padrao: /\bsessaoAtual\b/, porque: 'resolve a sessão que o middleware já resolveu' },
+    { padrao: /\bcontextoAtual\b/, porque: 'exige tenant, e a landing é de visitante anônimo' },
+    { padrao: /criarClienteDoUsuario/, porque: 'cliente autenticado do Supabase, ou seja dado por usuário' },
+  ]
+
+  it.each(POR_USUARIO)('a landing não lê dado por usuário: $porque', ({ padrao, porque }) => {
+    expect(padrao.test(fonte), `${PAGINA} voltou a depender de quem está pedindo — ${porque}`).toBe(false)
+  })
+
+  it('os detectores reconhecem o defeito que substituíram', () => {
+    // Guarda contra o próprio detector: se os padrões pararem de casar, tudo acima passa vazio.
+    const comSessao = "export default async function Home() {\n  const s = await sessaoAtual()\n"
+    expect(POR_USUARIO.some((r) => r.padrao.test(comSessao)), 'o defeito original passaria').toBe(true)
+    const comCookies = "const c = await cookies()"
+    expect(POR_USUARIO.some((r) => r.padrao.test(comCookies))).toBe(true)
+    // E o que PRECISA passar: o await legítimo que motivou a troca.
+    const legitimo = "export default async function Home() {\n  const slug = await slugDeDemonstracaoNoAr()\n"
+    expect(POR_USUARIO.some((r) => r.padrao.test(legitimo)), 'o await legítimo foi reprovado').toBe(false)
   })
 })
 
