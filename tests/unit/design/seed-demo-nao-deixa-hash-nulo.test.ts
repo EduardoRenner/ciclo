@@ -168,6 +168,26 @@ describe('o seed da carteira de demonstração', () => {
     expect(src, 'e a ausência precisa estar explicada, não ser esquecimento').toMatch(/quotes/)
   })
 
+  it('a carteira tem quem experimentou e não voltou', () => {
+    /*
+     * Sem esse arquétipo a demonstração mostrava 91% a 96% de retorno, com 2 a 5 pessoas em toda
+     * a base que vieram uma vez e sumiram. Salão nenhum tem isso — metade dos estreantes não
+     * volta —, e um livro onde quase todo mundo voltou denuncia dado fabricado para qualquer
+     * pessoa do ramo. É o mesmo erro de agregado da campanha que convertia 100%.
+     *
+     * E o filtro "Primeira visita sem volta" da lista de clientes, que é recurso REAL do
+     * produto, nascia praticamente vazio.
+     */
+    const src = sql()
+    expect(src, 'o seed não cria mais quem veio uma vez só').toMatch(/'veio uma vez'/)
+
+    // A quantidade tem que ser CALCULADA a partir da taxa de retorno, não um número fixo: com
+    // número fixo a proporção muda sozinha quando o resto da carteira muda de tamanho.
+    expect(src, 'a quantidade precisa sair da taxa de retorno alvo').toMatch(/voltaram\s*\/\s*0\.72/)
+
+    // E o teto do plano grátis não pode ser estourado por dado de demonstração.
+    expect(src, 'o teto de 50 clientes do plano grátis precisa ser respeitado').toMatch(/50\s*-\s*h\.clientes/)
+  })
   it('deriva visitas e LTV dos agendamentos, em vez de somar por fora', () => {
     // Número que a tela mostra e número que o histórico prova precisam sair da MESMA fonte,
     // senão a demonstração se contradiz sozinha — é o defeito de `livro-caixa-fonte-unica`.

@@ -432,6 +432,89 @@ from (values
 where t.slug = v.slug;
 
 -- ═══════════════════════════════════════════════════════════════════════════════════════════
+-- "EXPERIMENTOU E NÃO VOLTOU" — o arquétipo que faltava
+--
+-- Sem ele a carteira mostrava 91% a 96% de retorno, com 2 a 5 pessoas em toda a base que vieram
+-- uma vez e sumiram. Salão nenhum tem isso: metade dos estreantes não volta, e um livro onde
+-- quase todo mundo voltou denuncia dado fabricado para qualquer pessoa do ramo — o mesmo erro de
+-- agregado da campanha que convertia 100%.
+--
+-- E o filtro "Primeira visita sem volta" da lista de clientes, que é um recurso REAL do produto,
+-- nascia praticamente vazio.
+--
+-- A quantidade é calculada para a taxa de retorno cair para ~72%, respeitando o teto DURO de 50
+-- clientes do plano grátis (`src/core/billing/planos.ts`). A conta grátis fica EXATAMENTE no
+-- teto de propósito: é o que faz a demonstração mostrar o aviso de limite, que é o gatilho de
+-- upgrade do produto.
+-- ═══════════════════════════════════════════════════════════════════════════════════════════
+
+create temp table seed_exp on commit drop as
+with hoje as (
+  select c.tenant_id, cfg.slug, cfg.ordem, cfg.publico,
+    count(*) as clientes, count(*) filter (where c.visits_count >= 2) as voltaram
+  from clients c join seed.cfg cfg on cfg.tenant_id = c.tenant_id
+  group by c.tenant_id, cfg.slug, cfg.ordem, cfg.publico
+)
+select h.*, least(
+  greatest(0, ceil(h.voltaram / 0.72) - h.clientes)::int,
+  case when h.slug = 'demo-navalha-de-ouro' then 50 - h.clientes else 999 end
+) as adicionar
+from hoje h;
+
+insert into clients (tenant_id, name, phone_e164, phone_hash, birth_date, tags, source, gender,
+                     marketing_opt_in, created_at)
+select e.tenant_id,
+  seed.pick(sem.v,'nome',(select itens from seed.voc where chave = e.publico)) || ' ' ||
+  seed.pick(sem.v,'sobre',(select itens from seed.voc where chave='sobre')),
+  tel.v,
+  encode(extensions.digest(tel.v || :'salt', 'sha256'), 'hex'),
+  make_date(1962 + floor(seed.rnd(sem.v,'ano')*44)::int, 1 + floor(seed.rnd(sem.v,'mes')*12)::int,
+            1 + floor(seed.rnd(sem.v,'dia')*28)::int),
+  array['veio uma vez']::text[],
+  seed.pick(sem.v,'org',(select itens from seed.voc where chave='origem')),
+  case when e.publico = 'f' then 'feminino' else 'masculino' end,
+  false,
+  now() - ((70 + floor(seed.rnd(sem.v,'cad')*260)) || ' days')::interval
+from seed_exp e
+cross join lateral generate_series(1, e.adicionar) i
+cross join lateral (select (e.ordem::bigint * 100000 + 900 + i) as v) sem
+cross join lateral (
+  select '+55' || (select itens from seed.voc where chave='ddd')
+       [1 + (('x'||substr(md5(sem.v::text||'|ddd'),1,8))::bit(32)::bigint & 2147483647) % 23]
+     || '9'
+     || lpad(((('x'||substr(md5(sem.v::text||'|tel'),1,8))::bit(32)::bigint & 2147483647) % 9000 + 1000)::text,4,'0')
+     || lpad((900 + i)::text,4,'0') as v
+) tel;
+
+-- A visita única: poucos dias depois do cadastro, e nunca mais. Serviço de entrada — sorteado
+-- entre os três mais baratos, que é o que alguém testa numa primeira vez.
+insert into appointments (tenant_id, client_id, professional_id, service_id, starts_at, ends_at,
+                          status, origin, price_cents, completed_at, confirmed_at, created_at)
+select c.tenant_id, c.id, p.id, s.id, q.inicio, q.inicio + (s.duration_min || ' min')::interval,
+  'done'::appointment_status,
+  -- Quem experimenta e some quase sempre chegou pelo site, não indicado por alguém.
+  (case when seed.rnd_id(c.id,'org') < 0.7 then 'public_page' else 'app' end)::appointment_origin,
+  s.price_cents, q.inicio + (s.duration_min || ' min')::interval, q.inicio - interval '1 day', c.created_at
+from clients c
+join lateral (
+  select pr.id from professionals pr where pr.tenant_id = c.tenant_id and pr.active
+  order by seed.rnd_id(c.id,'prof'||pr.id::text) limit 1
+) p on true
+join lateral (
+  select sv.* from (select * from services where tenant_id = c.tenant_id and active order by price_cents limit 3) sv
+  order by seed.rnd_id(c.id,'sv'||sv.id::text) limit 1
+) s on true
+cross join lateral (
+  select (seed.dia_passado((c.created_at at time zone 'America/Sao_Paulo')::date
+            + (1 + floor(seed.rnd_id(c.id,'dia')*9))::int)
+          + make_time(9 + floor(seed.rnd_id(c.id,'h') * greatest(1, 10 - ceil(s.duration_min/60.0)))::int,
+                      floor(seed.rnd_id(c.id,'m')*4)::int * 15, 0)
+         ) at time zone 'America/Sao_Paulo' as inicio
+) q
+where 'veio uma vez' = any(c.tags)
+  and not exists (select 1 from appointments a where a.client_id = c.id);
+
+-- ═══════════════════════════════════════════════════════════════════════════════════════════
 -- CAMADA DE DINHEIRO: comanda, item, pagamento, comissão e estoque.
 --
 -- Medido em 02/09 antes de escrever isto: das 17 tabelas que as telas do admin leem, **15
