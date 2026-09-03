@@ -43,6 +43,7 @@ export type RelatorioSaude = {
     recomputeCycles: ChecagemSaude
     recomputeSegments: ChecagemSaude
     errorTracking: ChecagemSaude
+    assistente: ChecagemSaude
   }
 }
 
@@ -74,13 +75,44 @@ export async function verificarSaude(db: Cliente, agora: Date = new Date()): Pro
    */
   const recomputeSegments = await checarHeartbeat(db, 'recompute_segments', agora, LIMIAR_HEARTBEAT_CICLO_MIN)
   const errorTracking = checarRastreioDeErro()
+  const assistente = checarAssistente()
 
   return {
     ok:
       database.ok && jobQueue.ok && messages.ok && sendReminders.ok && sendCampaigns.ok &&
-      recomputeCycles.ok && recomputeSegments.ok && errorTracking.ok,
-    checks: { database, jobQueue, messages, sendReminders, sendCampaigns, recomputeCycles, recomputeSegments, errorTracking },
+      recomputeCycles.ok && recomputeSegments.ok && errorTracking.ok && assistente.ok,
+    checks: { database, jobQueue, messages, sendReminders, sendCampaigns, recomputeCycles, recomputeSegments, errorTracking, assistente },
   }
+}
+
+/**
+ * O assistente tem credencial? — acrescentado em 2026-09-03, e o motivo é o custo de NÃO ter.
+ *
+ * O Eduardo relatou "O assistente está indisponível agora" em produção, e a primeira hipótese
+ * (chave ausente) levou tempo para ser descartada. Ela era descartável em um segundo: o botão
+ * flutuante só renderiza com `GEMINI_API_KEY` presente (`admin/layout.tsx`), então o botão estar
+ * na tela já provava que a chave existe — e portanto que a falha é de execução, não de
+ * configuração. Nada expunha isso; a conclusão exigiu ler três arquivos.
+ *
+ * Aqui a resposta fica a uma requisição de distância, e o valor não é diagnosticar a falha de hoje:
+ * é **separar as duas causas** que produzem exatamente a mesma tela para quem usa.
+ *
+ * `ok: true` nos dois casos, de propósito, pela mesma razão do rastreio de erro logo abaixo:
+ * assistente sem chave é degradação conhecida e conviável, e alarme que toca todo dia esconde o dia
+ * em que algo quebra de verdade. O estado vai escrito no corpo, para quem opera poder ler.
+ *
+ * **Não chama o Gemini.** Uma checagem de saúde que gasta cota do provedor a cada batida do monitor
+ * é um jeito caro de transformar observabilidade em conta no fim do mês.
+ */
+function checarAssistente(): ChecagemSaude {
+  return process.env.GEMINI_API_KEY
+    ? { ok: true, detail: 'assistente com credencial configurada (não verifica o provedor, para não gastar cota)' }
+    : {
+        ok: true,
+        detail:
+          'assistente SEM credencial (falta GEMINI_API_KEY) — o botão flutuante não aparece no painel. ' +
+          'Se ele aparece e mesmo assim falha, a causa é o provedor, não a configuração.',
+      }
 }
 
 /**

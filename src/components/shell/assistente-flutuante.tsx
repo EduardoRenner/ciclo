@@ -252,6 +252,8 @@ export default function AssistenteFlutuante({ disponivel }: { disponivel: boolea
   const [pergunta, setPergunta] = useState('')
   const [turnos, setTurnos] = useState<Turno[]>([])
   const [indisponivel, setIndisponivel] = useState(false)
+  /** O `requestId` da chamada que falhou, para achar a linha de log correspondente. */
+  const [codigoDaFalha, setCodigoDaFalha] = useState<string | null>(null)
   const [posicao, setPosicao] = useState<Posicao | null>(null)
   const arrastandoRef = useRef<{ offsetX: number; offsetY: number } | null>(null)
   const janelaRef = useRef<HTMLDivElement>(null)
@@ -353,8 +355,22 @@ export default function AssistenteFlutuante({ disponivel }: { disponivel: boolea
           })
 
       if (r.status === 403 || r.status === 503) {
-        // Módulo desligado pelo dono, ou provedor fora do ar depois do botão já ter aparecido —
-        // aqui sim é degradação visível, não silenciosa: some o resto do painel, avisa por quê.
+        /*
+          Módulo desligado pelo dono, ou provedor fora do ar depois do botão já ter aparecido —
+          aqui sim é degradação visível, não silenciosa: some o resto do painel, avisa por quê.
+
+          **O código do pedido passou a ser guardado em 2026-09-03, e o motivo é concreto.** O
+          Eduardo relatou "assistente indisponível" em produção, e a investigação esbarrou num muro:
+          a tela dizia só que falhou. O `requestId` já existia no corpo da resposta, no header
+          `x-request-id` e na linha de log do servidor (`registrar()` grava `request_id`) — o
+          widget era o único elo que o jogava fora. Sem ele, achar a causa exige adivinhar qual das
+          linhas de log é a da pessoa que reclamou.
+
+          Ele não some se a resposta não trouxer: um código ausente vira nada na tela, nunca
+          "undefined".
+        */
+        const corpoDoErro = (await r.json().catch(() => null)) as { meta?: { requestId?: string } } | null
+        setCodigoDaFalha(corpoDoErro?.meta?.requestId ?? r.headers.get('x-request-id'))
         setIndisponivel(true)
         setTurnos((atual) => atual.slice(0, -1))
         return
@@ -432,7 +448,17 @@ export default function AssistenteFlutuante({ disponivel }: { disponivel: boolea
   const conteudo = (
     <div className="flex flex-col gap-4">
       {indisponivel ? (
-        <Card className="border-warn/40 text-secundario text-txt-2">O assistente está indisponível agora. Tente de novo mais tarde.</Card>
+        <Card className="border-warn/40 text-secundario text-txt-2">
+          O assistente está indisponível agora. Tente de novo mais tarde.
+          {codigoDaFalha ? (
+            <>
+              {' '}
+              <span className="text-label text-txt-3">
+                Se continuar, mande este código para o suporte: <span className="tabular">{codigoDaFalha}</span>
+              </span>
+            </>
+          ) : null}
+        </Card>
       ) : (
         <>
           {turnos.length === 0 ? (
