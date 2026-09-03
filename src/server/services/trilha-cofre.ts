@@ -29,7 +29,10 @@ export async function listarTrilhaDoCofre(
 ): Promise<LinhaTrilhaCofre[]> {
   const limite = Math.min(opcoes.limite ?? 50, 200)
 
-  let consulta = db.from('vault_access_log').select('id, client_id, actor_id, action, ip, user_agent, created_at').eq('tenant_id', tenantId)
+  let consulta = db
+    .from('vault_access_log')
+    .select('id, client_id, actor_id, actor_label, action, ip, user_agent, created_at')
+    .eq('tenant_id', tenantId)
   if (opcoes.clientId) consulta = consulta.eq('client_id', opcoes.clientId)
   if (opcoes.cursor) consulta = consulta.lt('id', opcoes.cursor)
 
@@ -53,7 +56,17 @@ export async function listarTrilhaDoCofre(
     clientId: l.client_id,
     clientName: nomeDoCliente.get(l.client_id) ?? 'Cliente removida',
     actorId: l.actor_id,
-    actorName: l.actor_id ? (nomeDoAtor.get(l.actor_id) ?? 'Usuário removido') : 'Sistema',
+    /*
+      Ordem: nome VIVO, depois o instantâneo, e só então a desistência.
+
+      O vivo vem primeiro porque identidade é a mesma pessoa — quem mudou de nome deve aparecer
+      pelo nome de hoje. `actor_label` entra quando o perfil não existe mais, que era exatamente o
+      caso em que a trilha perdia o ator: profissional que saiu do salão levava consigo o registro
+      de todos os acessos que já tinha feito a dado de saúde.
+
+      Acesso sem `actor_id` continua sendo 'Sistema' — é job, não pessoa.
+    */
+    actorName: l.actor_id ? (nomeDoAtor.get(l.actor_id) ?? l.actor_label ?? 'Usuário removido') : 'Sistema',
     action: l.action,
     ip: l.ip === null || l.ip === undefined ? null : String(l.ip),
     userAgent: l.user_agent,
