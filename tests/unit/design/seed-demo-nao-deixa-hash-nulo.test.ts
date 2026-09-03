@@ -196,6 +196,26 @@ describe('o seed da carteira de demonstração', () => {
     // E o teto do plano grátis não pode ser estourado por dado de demonstração.
     expect(src, 'o teto de 50 clientes do plano grátis precisa ser respeitado').toMatch(/50\s*-\s*h\.clientes/)
   })
+
+  it('tem clientes cadastrados nos últimos 2 dias, para novos_mes não ser 0 plano', () => {
+    /*
+     * `v_carteira_resumo.novos_mes` conta quem cadastrou desde o dia 1º. Toda a carteira nascia
+     * com `created_at` de meses atrás → 0 em qualquer dia do mês, nas seis contas. Manchete
+     * parecendo tela quebrada. Mesmo erro de calendário da campanha "este mês".
+     *
+     * A defesa durável: parte dos novos cadastrada nos ÚLTIMOS 2 DIAS, o que garante
+     * `novos_mes > 0` em qualquer dia em que o seed rode — sem inventar pico de cadastro no
+     * começo do mês.
+     */
+    const src = sql()
+    const insert = src.slice(src.lastIndexOf('insert into clients'))
+    const criacao = insert.slice(0, insert.indexOf(';'))
+    // A janela de 2 dias tem que ser explícita no SQL — não um `rnd * 30` que às vezes cai perto.
+    expect(
+      src,
+      'a criação de clientes novos precisa ter uma janela de 2 dias explícita',
+    ).toMatch(/seed\.rnd\([^)]*'quando'[^)]*\)\s*<\s*0\.55/)
+  })
   it('deriva visitas e LTV dos agendamentos, em vez de somar por fora', () => {
     // Número que a tela mostra e número que o histórico prova precisam sair da MESMA fonte,
     // senão a demonstração se contradiz sozinha — é o defeito de `livro-caixa-fonte-unica`.

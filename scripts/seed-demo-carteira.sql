@@ -526,6 +526,87 @@ cross join lateral (
 ) q
 where 'veio uma vez' = any(c.tags)
   and not exists (select 1 from appointments a where a.client_id = c.id);
+-- ═════════════════════════════════════════════════════════════════════════════════════════
+-- CLIENTES NOVOS — para a manchete "N novos este mês" não ser um 0 plano
+--
+-- `v_carteira_resumo.novos_mes` conta quem cadastrou desde o dia 1º no fuso do salão. Toda a
+-- carteira nasce com `created_at` de meses atrás, então em qualquer dia do mês esse número era
+-- ZERO nas seis contas — manchete parecendo tela quebrada, não negócio parado.
+--
+-- Foi o mesmo erro de calendário da campanha "este mês": olhar o número sem pensar na data.
+--
+-- A quantidade: 3 a 6 por conta, com MAIS DA METADE cadastrada nos ÚLTIMOS 2 DIAS — isso garante
+-- que `novos_mes` seja > 0 em qualquer dia em que o seed rode, sem inventar um pico irreal de
+-- cadastros no começo do mês. O resto se espalha pelas últimas 3 semanas (recente, mas mês
+-- passado se o seed rodar cedo).
+--
+-- Metade tem UMA visita já concluída; a outra "cadastrou e ainda não veio" — estado realista de
+-- quem assinou ontem. `demo-navalha-de-ouro` fica de fora: está EXATAMENTE no teto de 50 do
+-- plano grátis, e conta no limite não cresce (é o gatilho de upgrade).
+-- ═══════════════════════════════════════════════════════════════════════════════════════════
+
+create temp table seed_novos on commit drop as
+select cfg.tenant_id, cfg.slug, cfg.ordem, cfg.publico,
+  case when cfg.slug = 'demo-navalha-de-ouro' then 0 else 3 + (cfg.ordem % 4) end as quantos
+from seed.cfg cfg;
+
+insert into clients (tenant_id, name, phone_e164, phone_hash, birth_date, tags, source, gender,
+                     marketing_opt_in, created_at)
+select n.tenant_id,
+  seed.pick(sem.v,'nome',(select itens from seed.voc where chave=n.publico)) || ' ' ||
+  seed.pick(sem.v,'sobre',(select itens from seed.voc where chave='sobre')),
+  tel.v,
+  encode(extensions.digest(tel.v || :'salt', 'sha256'), 'hex'),
+  make_date(1970 + floor(seed.rnd(sem.v,'ano')*36)::int, 1 + floor(seed.rnd(sem.v,'mes')*12)::int,
+            1 + floor(seed.rnd(sem.v,'dia')*28)::int),
+  array['novo']::text[],
+  -- Cliente novo quase sempre chega pelo Instagram ou pela busca.
+  (array['instagram','google','instagram','indicacao'])[1 + floor(seed.rnd(sem.v,'org')*4)::int],
+  case when n.publico = 'f' then 'feminino' else 'masculino' end,
+  seed.rnd(sem.v,'mkt') < 0.8,
+  -- >55%: últimos 2 dias (conta como deste mês). resto: últimas 3 semanas.
+  case when seed.rnd(sem.v,'quando') < 0.55
+       then now() - (floor(seed.rnd(sem.v,'r')*2) || ' days')::interval - (floor(seed.rnd(sem.v,'h')*18) || ' hours')::interval
+       else now() - ((3 + floor(seed.rnd(sem.v,'r2')*18)) || ' days')::interval end
+from seed_novos n
+cross join lateral generate_series(1, n.quantos) i
+cross join lateral (select (n.ordem::bigint * 100000 + 850 + i) as v) sem
+cross join lateral (
+  select '+55' || (select itens from seed.voc where chave='ddd')
+       [1 + (('x'||substr(md5(sem.v::text||'|ddd'),1,8))::bit(32)::bigint & 2147483647) % 23]
+     || '9' || lpad(((('x'||substr(md5(sem.v::text||'|tel'),1,8))::bit(32)::bigint & 2147483647) % 9000 + 1000)::text,4,'0')
+     || lpad((850 + i)::text,4,'0') as v
+) tel;
+
+-- A primeira visita: só para quem cadastrou há tempo de vir (>2 dias), encadeada na primeira
+-- folga do profissional no dia, para não colidir com a agenda que já existe.
+with pend as (
+  select c.id as client_id, c.tenant_id, c.created_at, p.id as prof_id, s.id as service_id,
+         s.duration_min, s.price_cents,
+         seed.dia_passado((c.created_at at time zone 'America/Sao_Paulo')::date + 1) as dia
+  from clients c
+  join lateral (select pr.id from professionals pr where pr.tenant_id=c.tenant_id and pr.active
+                order by seed.rnd_id(c.id,'p'||pr.id::text) limit 1) p on true
+  join lateral (select sv.* from (select * from services where tenant_id=c.tenant_id and active order by price_cents limit 3) sv
+                order by seed.rnd_id(c.id,'s'||sv.id::text) limit 1) s on true
+  where 'novo' = any(c.tags)
+    and c.created_at < now() - interval '2 days'
+    and not exists (select 1 from appointments a where a.client_id = c.id)
+),
+livre as (
+  select p.*,
+    (select coalesce(max(a.ends_at), (p.dia + time '09:00') at time zone 'America/Sao_Paulo')
+     from appointments a
+     where a.professional_id = p.prof_id and (a.starts_at at time zone 'America/Sao_Paulo')::date = p.dia) as inicio
+  from pend p
+)
+insert into appointments (tenant_id, client_id, professional_id, service_id, starts_at, ends_at,
+                          status, origin, price_cents, completed_at, confirmed_at, created_at)
+select l.tenant_id, l.client_id, l.prof_id, l.service_id, l.inicio, l.inicio + (l.duration_min||' min')::interval,
+  'done'::appointment_status, 'public_page'::appointment_origin, l.price_cents,
+  l.inicio + (l.duration_min||' min')::interval, l.inicio - interval '1 day', l.created_at
+from livre l
+where (l.inicio at time zone 'America/Sao_Paulo')::time < time '18:30' and l.inicio < now();
 
 -- ═══════════════════════════════════════════════════════════════════════════════════════════
 -- CAMADA DE DINHEIRO: comanda, item, pagamento, comissão e estoque.
