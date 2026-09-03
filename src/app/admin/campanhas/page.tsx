@@ -31,7 +31,6 @@ export default async function PaginaCampanhas() {
     .order('created_at', { ascending: false })
 
   const lista = campanhas ?? []
-  const enviadas = lista.reduce((s, c) => s + c.sent_count, 0)
 
   /*
    * Os números do topo saíam de `campaigns.booked_count` e `campaigns.revenue_cents` — colunas que
@@ -57,7 +56,7 @@ export default async function PaginaCampanhas() {
     ctx.tenant.timezone,
     mesAtual.toPlainDate({ day: 1 }).toString(),
     mesAtual.toPlainDate({ day: mesAtual.daysInMonth }).toString(),
-  ).catch(() => ({ totalCents: 0, count: 0, items: [] }))
+  ).catch(() => ({ totalCents: 0, count: 0, items: [], mensagensNaJanela: 0 }))
 
   /*
    * Migration 0054: agora existe o vínculo mensagem→campanha, então cada cartão pode mostrar o
@@ -75,7 +74,12 @@ export default async function PaginaCampanhas() {
         <StatTile
           rotulo="Atendimentos"
           valor={String(atribuicao.count)}
-          apoio={<span>de {enviadas} {enviadas === 1 ? 'mensagem' : 'mensagens'} já enviadas</span>}
+          apoio={
+            <span>
+              de {atribuicao.mensagensNaJanela}{' '}
+              {atribuicao.mensagensNaJanela === 1 ? 'mensagem enviada' : 'mensagens enviadas'} no período
+            </span>
+          }
         />
       </div>
 

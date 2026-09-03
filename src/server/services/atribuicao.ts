@@ -23,6 +23,18 @@ export type ReceitaAtribuida = {
   totalCents: number
   count: number
   items: ItemReceitaAtribuida[]
+  /**
+   * Quantas mensagens de campanha PODERIAM ter produzido os retornos contados em `count` — as
+   * enviadas dentro da mesma janela de busca (o período pedido, mais a folga de 30 dias antes).
+   *
+   * Existe porque a tela de campanhas comparava `count` (do mês) com a soma de
+   * `campaigns.sent_count` de TODAS as campanhas de sempre, e escrevia "N de M mensagens já
+   * enviadas". Numerador de um mês sobre denominador de toda a história: numa conta com 47
+   * mensagens acumuladas e 3 retornos no mês, o salão lia que campanha converte 6% — quando a
+   * campanha que produziu aqueles retornos pode ter convertido 30%. O produto depreciando a si
+   * mesmo por comparar duas janelas diferentes como se fossem uma.
+   */
+  mensagensNaJanela: number
 }
 
 /**
@@ -108,6 +120,7 @@ export async function receitaAtribuidaAoCiclo(
   return {
     totalCents: atribuicoes.reduce((soma, a) => soma + a.valueCents, 0),
     count: atribuicoes.length,
+    mensagensNaJanela: campanhas.length,
     items: atribuicoes.map((a) => ({
       appointmentId: a.appointmentId,
       clientId: a.clientId,
