@@ -853,6 +853,90 @@ from (
 ) x
 where k.id = x.campaign_id;
 
+-- ═══════════════════════════════════════════════════════════════════════════════════════════
+-- HORÁRIO FIXO E PACOTE PRÉ-PAGO
+--
+-- Orçamento (`quotes`) fica DE PROPÓSITO vazio: barbearia e salão não mandam orçamento. A tabela
+-- existe para as verticais de serviço (eletricista, faxina) do `docs/09-PLATAFORMA.md`. Encher
+-- uma tabela só para ela não ficar vazia é fabricar um caso de uso que o nicho não tem — e a
+-- demonstração passa a ensinar errado.
+-- ═══════════════════════════════════════════════════════════════════════════════════════════
+
+-- Série de horário fixo: "a mesma quinta, 15h, toda quinzena". O CHECK da tabela exige coerência
+-- entre `tipo` e as colunas de regra — `semanal` usa weekday + intervalo_semanas, e as outras
+-- duas colunas precisam ser NULAS.
+insert into appointment_series (tenant_id, client_id, professional_id, service_id, tipo,
+                                weekday, intervalo_semanas, horario, starts_on, max_ocorrencias,
+                                ocorrencias_geradas, status, note, created_at)
+select cl.tenant_id, cl.id, coalesce(cl.preferred_professional_id, d.professional_id), s.id, 'semanal',
+  (2 + floor(seed.rnd_id(cl.id,'sw') * 5))::smallint,
+  -- Quinzenal é o padrão real de manutenção; semanal existe mas é minoria.
+  (case when seed.rnd_id(cl.id,'sq') < 0.65 then 2 else 1 end)::smallint,
+  make_time(9 + floor(seed.rnd_id(cl.id,'sh') * 8)::int, (floor(seed.rnd_id(cl.id,'sm') * 2) * 30)::int, 0),
+  (now() - ((30 + floor(seed.rnd_id(cl.id,'ss') * 120)) || ' days')::interval)::date,
+  26::smallint, (4 + floor(seed.rnd_id(cl.id,'sg') * 9))::smallint,
+  -- ~15% cancelada: cancelar muda estado e data, nunca apaga (regra 11).
+  case when seed.rnd_id(cl.id,'sc') < 0.15 then 'canceled' else 'active' end,
+  'Horário fixo combinado com a cliente',
+  now() - ((30 + floor(seed.rnd_id(cl.id,'ss') * 120)) || ' days')::interval
+from clients cl
+join seed.dono_que_atende d on d.tenant_id = cl.tenant_id
+join lateral (
+  select sv.* from services sv where sv.tenant_id = cl.tenant_id and sv.active
+  order by seed.rnd_id(cl.id, 'ssv' || sv.id::text) limit 1
+) s on true
+where cl.tenant_id in (select tenant_id from seed.cfg)
+  and cl.visits_count >= 6 and seed.rnd_id(cl.id,'serie') < 0.10;
+
+/*
+ * Pacote pré-pago: a cliente compra 5 ou 10 sessões com 15% de desconto. Receita que entra ANTES
+ * do atendimento — por isso `paid_cents` fica no pacote e a receita é reconhecida por sessão
+ * consumida, nunca na venda (armadilha da tabela do CLAUDE.md).
+ *
+ * O serviço é o que a cliente MAIS FAZ, não um sorteio. Sortear produziu 9 de 13 pacotes comprados
+ * e NUNCA usados — ninguém compra 10 sessões de algo que nunca fez, e o extrato do pacote nascia
+ * vazio. A data da compra é logo antes da 3ª visita mais recente daquele serviço, o que garante
+ * consumo real para o extrato mostrar.
+ */
+with por_servico as (
+  -- Sem filtro de duração: barbearia vende "5 cortes" tanto quanto estética vende "10 limpezas".
+  -- Um filtro de `duration_min >= 45` parecia razoável e deixou UM pacote nas seis contas.
+  select a.tenant_id, a.client_id, a.service_id, count(*) as quantas,
+         max(s.price_cents) as preco,
+         (array_agg(a.completed_at order by a.completed_at desc))[3] as terceira_mais_recente
+  from appointments a join services s on s.id = a.service_id
+  where a.tenant_id in (select tenant_id from seed.cfg) and a.status = 'done'
+  group by a.tenant_id, a.client_id, a.service_id
+  having count(*) >= 3
+),
+favorito as (
+  select distinct on (client_id) * from por_servico order by client_id, quantas desc, service_id
+)
+insert into packages (tenant_id, client_id, service_id, total_sessions, used_sessions, paid_cents, expires_on, created_at)
+select f.tenant_id, f.client_id, f.service_id,
+  (case when f.quantas >= 8 then 10 else 5 end)::int, 0,
+  (f.preco * (case when f.quantas >= 8 then 10 else 5 end) * 0.85)::bigint,
+  (now() + ((60 + floor(seed.rnd_id(f.client_id,'pe') * 150)) || ' days')::interval)::date,
+  f.terceira_mais_recente - interval '1 day'
+from favorito f
+where f.terceira_mais_recente is not null and seed.rnd_id(f.client_id,'pacote2') < 0.12;
+
+-- O consumo aponta para atendimentos REAIS. Sem isso a tela diz "3 de 5 usadas" sem conseguir
+-- dizer QUANDO, e o contador vira número que ninguém explica.
+insert into package_uses (tenant_id, package_id, appointment_id, used_at)
+select p.tenant_id, p.id, a.id, a.completed_at
+from packages p
+join lateral (
+  select a2.id, a2.completed_at from appointments a2
+  where a2.client_id = p.client_id and a2.service_id = p.service_id and a2.status = 'done'
+    and a2.completed_at >= p.created_at
+  order by a2.completed_at limit p.total_sessions
+) a on true
+where p.tenant_id in (select tenant_id from seed.cfg);
+
+update packages p set used_sessions =
+  coalesce((select count(*) from package_uses u where u.package_id = p.id), 0)
+where p.tenant_id in (select tenant_id from seed.cfg);
 commit;
 
 -- ── Conferência (o seed não termina sem provar o que fez) ──────────────────────────────────
@@ -874,5 +958,6 @@ select t.slug,
      and ((a.starts_at at time zone 'America/Sao_Paulo')::time < '09:00'
        or (a.ends_at at time zone 'America/Sao_Paulo')::time > '19:00')) as fora_do_horario,
   -- `queued` é o único status que um disparador pega: mensagem de demonstração não pode sair.
-  (select count(*) from messages m where m.tenant_id = t.id and m.status = 'queued') as mensagem_na_fila_de_envio
+  (select count(*) from messages m where m.tenant_id = t.id and m.status = 'queued') as mensagem_na_fila_de_envio,
+  (select count(*) from packages k2 where k2.tenant_id = t.id and k2.used_sessions = 0) as pacote_nunca_usado
 from tenants t where t.slug in (select slug from seed.cfg) order by t.slug;

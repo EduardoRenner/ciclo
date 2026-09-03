@@ -141,6 +141,33 @@ describe('o seed da carteira de demonstração', () => {
     expect(saldo).toMatch(/from stock_moves/)
   })
 
+
+  it('o pacote é comprado para o serviço que a cliente já faz', () => {
+    /*
+     * A primeira versão sorteava o serviço do pacote e produziu 9 de 13 pacotes comprados e NUNCA
+     * usados: ninguém compra 10 sessões de algo que nunca fez, e o extrato do pacote nascia vazio.
+     * O `distinct on ... order by quantas desc` é o que escolhe o serviço mais consumido.
+     */
+    const src = sql()
+    const i = src.indexOf('insert into packages')
+    expect(i, 'o seed não cria mais pacote').toBeGreaterThan(-1)
+
+    const antes = src.slice(0, i)
+    expect(antes, 'o pacote precisa sair do serviço mais consumido, não de sorteio').toMatch(
+      /order by client_id, quantas desc/,
+    )
+    // E a conferência final tem que olhar o banco, não só o texto do script.
+    expect(src.slice(src.lastIndexOf('commit;'))).toMatch(/pacote_nunca_usado/)
+  })
+
+  it('orçamento fica vazio de propósito, e o script diz por quê', () => {
+    // Barbearia e salão não mandam orçamento. Encher a tabela só para ela não ficar vazia é
+    // fabricar um caso de uso que o nicho não tem — a demonstração passa a ensinar errado.
+    const src = sql()
+    expect(src, 'o seed não pode semear orçamento para beleza').not.toMatch(/insert into quotes/)
+    expect(src, 'e a ausência precisa estar explicada, não ser esquecimento').toMatch(/quotes/)
+  })
+
   it('deriva visitas e LTV dos agendamentos, em vez de somar por fora', () => {
     // Número que a tela mostra e número que o histórico prova precisam sair da MESMA fonte,
     // senão a demonstração se contradiz sozinha — é o defeito de `livro-caixa-fonte-unica`.
