@@ -25,8 +25,18 @@ import { semComentarios } from '../../helpers/fonte'
 const ESCRITA = 'src/server/services/agendamentos.ts'
 const TELA = 'src/app/admin/agenda/detalhe.tsx'
 
-const fonteEscrita = semComentarios(readFileSync(ESCRITA, 'utf8'))
-const fonteTela = semComentarios(readFileSync(TELA, 'utf8'))
+/**
+ * Retorno de carro fora antes de qualquer coisa. Este checkout é Windows e o `git checkout --` de uma limpeza
+ * de mutação devolve o arquivo em CRLF — os âncoras multilinha abaixo pararam de casar e a suíte
+ * reprovou código correto. Foi a auto-guarda "achou o insert" que denunciou; sem ela o recorte
+ * viria vazio e as asserções passariam sem ter olhado nada.
+ */
+function fonte(caminho: string): string {
+  return semComentarios(readFileSync(caminho, 'utf8').split(String.fromCharCode(13)).join(''))
+}
+
+const fonteEscrita = fonte(ESCRITA)
+const fonteTela = fonte(TELA)
 
 /**
  * O `insert` de `appointments`, delimitado pelo FIM REAL do elemento (`.select(COLUNAS)`) e não por
@@ -37,6 +47,24 @@ const fonteTela = semComentarios(readFileSync(TELA, 'utf8'))
 const inicio = fonteEscrita.indexOf(".from('appointments')\n    .insert({")
 const fim = fonteEscrita.indexOf('.select(COLUNAS)', inicio)
 const insert = inicio > -1 && fim > inicio ? fonteEscrita.slice(inicio, fim) : ''
+
+/**
+ * O conteúdo de uma constante de select, delimitado pelas ASPAS que o fecham.
+ *
+ * A primeira versão pegava `slice(indexOf(nome), 400)` e a janela alcançava a declaração do tipo
+ * logo abaixo — `deposit_cents: number` e `origin: string` em `LinhaAgendaDia` satisfaziam o
+ * padrão sozinhos. **Medido:** apagar as duas colunas do select deixava a guarda VERDE. É a
+ * armadilha nº 4 do `CLAUDE.md` ("o vizinho cai dentro da janela") de braço com a nº 1 (casar com
+ * a declaração do tipo em vez do uso), o mesmo par que já cegou a guarda da trilha do cofre nesta
+ * mesma rodada.
+ */
+function literalDoSelect(nome: string): string {
+  const i = fonteEscrita.indexOf(`${nome} =`)
+  if (i < 0) return ''
+  const abre = fonteEscrita.indexOf("'", i)
+  const fecha = fonteEscrita.indexOf("'", abre + 1)
+  return abre > -1 && fecha > abre ? fonteEscrita.slice(abre + 1, fecha) : ''
+}
 
 describe('o leitor deste teste', () => {
   it('achou o insert do agendamento — não passa por não ter olhado nada', () => {
@@ -75,10 +103,12 @@ describe('o sinal pedido à cliente fica registrado no agendamento', () => {
   it('o serviço é consultado com os campos que o cálculo precisa', () => {
     // Sem isto o `sinalEmCentavos` receberia `undefined` e o typecheck é a única rede — que some
     // no dia em que alguém tipar o retorno do select como `any`.
-    const select = fonteEscrita.slice(fonteEscrita.indexOf("from('services')"))
-    expect(/deposit_bps, deposit_min_cents/.test(select.slice(0, 300)), 'o select do serviço perdeu os campos do sinal').toBe(
-      true,
-    )
+    const depois = fonteEscrita.indexOf("from('services')")
+    const abre = fonteEscrita.indexOf(".select('", depois) + ".select('".length
+    const colunas = fonteEscrita.slice(abre, fonteEscrita.indexOf("'", abre))
+    expect(colunas, 'não achei o select do serviço agendável').toContain('duration_min')
+    expect(colunas, 'o select do serviço perdeu o percentual do sinal').toContain('deposit_bps')
+    expect(colunas, 'o select do serviço perdeu o piso do sinal').toContain('deposit_min_cents')
   })
 })
 
@@ -98,9 +128,13 @@ describe('o sinal chega em quem atende', () => {
   })
 
   it('a coluna viaja no select que alimenta a tela', () => {
-    const colunas = fonteEscrita.slice(fonteEscrita.indexOf('COLUNAS_AGENDA_DIA ='))
-    expect(/deposit_cents/.test(colunas.slice(0, 400)), 'o sinal saiu do select da agenda do dia').toBe(true)
-    expect(/origin/.test(colunas.slice(0, 400)), 'a origem saiu do select da agenda do dia').toBe(true)
+    const colunas = literalDoSelect('COLUNAS_AGENDA_DIA')
+    // Guarda contra o próprio recorte: sem isto, um recorte vazio faria as duas asserções abaixo
+    // reprovarem por motivo errado — ou, se fossem `toBe(false)`, passarem sem ter olhado nada.
+    expect(colunas, 'não achei o literal de COLUNAS_AGENDA_DIA').toContain('starts_at')
+    expect(colunas, 'o recorte pegou mais que o literal do select').not.toContain('LinhaAgendaDia')
+    expect(colunas, 'o sinal saiu do select da agenda do dia').toContain('deposit_cents')
+    expect(colunas, 'a origem saiu do select da agenda do dia').toContain('origin')
   })
 })
 
