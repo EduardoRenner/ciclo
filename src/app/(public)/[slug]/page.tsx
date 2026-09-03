@@ -101,7 +101,7 @@ export default async function PaginaPublica({ params }: { params: Promise<{ slug
           className="mt-4 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-4 py-3 text-secundario text-txt-2"
         >
           <span className="font-semibold text-txt">Página de exemplo do CICLO.</span> Este
-          estabelecimento não existe e nenhum horário marcado aqui será atendido — ela está no ar
+          estabelecimento não existe e nenhum horário marcado aqui será atendido, e ela está no ar
           para mostrar como fica a página de quem usa o sistema.
         </p>
       ) : null}

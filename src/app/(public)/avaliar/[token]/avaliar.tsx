@@ -112,7 +112,7 @@ export default function Avaliar({ token }: { token: string }) {
               <div className="flex-1">
                 <p className="text-corpo font-semibold text-txt">Indique uma amiga</p>
                 <p className="mt-1 text-secundario text-txt-2">
-                  Ela agenda o primeiro horário sem esperar resposta — e {dados?.negocioNome ?? 'o salão'} fica sabendo que foi você.
+                  Ela agenda o primeiro horário sem esperar resposta, e {dados?.negocioNome ?? 'o salão'} fica sabendo que foi você.
                 </p>
               </div>
             </div>

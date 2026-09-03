@@ -155,7 +155,7 @@ export default function Orcamento({ token }: { token: string }) {
       <>
         <FileX aria-hidden className="mb-4 size-14 text-txt-3" />
         <p className="text-titulo font-bold">Orçamento recusado</p>
-        <p className="mt-2 text-corpo text-txt-2">Tudo bem — {dados.businessName} foi avisado.</p>
+        <p className="mt-2 text-corpo text-txt-2">Tudo bem, {dados.businessName} foi avisado.</p>
       </>
     )
   }

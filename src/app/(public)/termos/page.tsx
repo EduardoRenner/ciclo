@@ -32,7 +32,7 @@ export default function Termos() {
   return (
     <main className="mx-auto min-h-dvh max-w-[720px] px-[var(--gutter)] pb-16">
       <header className="flex items-center justify-between py-5">
-        <Link href="/" aria-label="CICLO — início">
+        <Link href="/" aria-label="CICLO, início">
           <Image src={wordmark} alt="CICLO" className="h-7 w-auto" />
         </Link>
         <Link
@@ -50,7 +50,7 @@ export default function Termos() {
         <section>
           <h2>1. Quem somos e o que é o CICLO</h2>
           <p>
-            O CICLO é um sistema de agenda e gestão para quem atende com hora marcada — barbearia,
+            O CICLO é um sistema de agenda e gestão para quem atende com hora marcada: barbearia,
             unhas, cílios, estética e profissões parecidas. Ele é oferecido pela internet, por
             assinatura, e você acessa pelo navegador do celular ou do computador.
           </p>
@@ -75,7 +75,7 @@ export default function Termos() {
         <section>
           <h2>3. Os dados dos seus clientes são seus</h2>
           <p>
-            Tudo que você cadastra no CICLO — clientes, agendamentos, histórico, valores — continua
+            Tudo que você cadastra no CICLO (clientes, agendamentos, histórico, valores) continua
             sendo seu. A gente guarda e processa esses dados para fazer o sistema funcionar para
             você, e não usamos a sua base para nada mais: não vendemos, não cedemos e não usamos
             para anunciar nada a ninguém.
@@ -129,12 +129,12 @@ export default function Termos() {
           <h2>6. Cancelar</h2>
           <p>
             Você pode parar de usar quando quiser, sem multa e sem fidelidade. Se estiver num plano
-            pago, é só avisar — você continua com o acesso até o fim do período já pago e depois a
+            pago, é só avisar. Você continua com o acesso até o fim do período já pago e depois a
             conta volta para o Grátis.
           </p>
           <p>
             <strong className="font-semibold text-txt">Cair de plano nunca apaga nem esconde seus dados.</strong>{' '}
-            Se você tiver mais clientes do que o limite do Grátis, todos continuam lá e visíveis —
+            Se você tiver mais clientes do que o limite do Grátis, todos continuam lá e visíveis;
             o que o plano pago libera é criar mais e usar os recursos de cada degrau.
           </p>
           <p>
@@ -147,7 +147,7 @@ export default function Termos() {
           <h2>7. Disponibilidade e limites</h2>
           <p>
             A gente cuida para o CICLO ficar no ar, mas não promete funcionamento sem nenhuma
-            interrupção — atualização, manutenção e problema de serviço de terceiros acontecem.
+            interrupção: atualização, manutenção e problema de serviço de terceiros acontecem.
           </p>
           <p>
             O CICLO é uma ferramenta de apoio: as decisões do seu negócio continuam sendo suas. A

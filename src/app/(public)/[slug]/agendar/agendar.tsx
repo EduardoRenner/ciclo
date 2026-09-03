@@ -403,7 +403,7 @@ export default function Agendar({
         setConfirmado(true);
       } catch {
         setErro(
-          "Não consegui falar com o servidor. Confira a conexão e tente de novo — se o horário já tiver sido marcado, ele aparece ao escolher o dia outra vez.",
+          "Não consegui falar com o servidor. Confira a conexão e tente de novo. Se o horário já tiver sido marcado, ele aparece ao escolher o dia outra vez.",
         );
       }
     });
@@ -559,7 +559,7 @@ export default function Agendar({
             {indicadaPor} indicou este lugar pra você
           </p>
           <p className="mt-1 text-secundario text-txt-2">
-            Marque seu primeiro horário abaixo — {nomeDoSalao} vai saber que foi {indicadaPor} quem
+            Marque seu primeiro horário abaixo, e {nomeDoSalao} vai saber que foi {indicadaPor} quem
             te trouxe.
           </p>
         </Card>

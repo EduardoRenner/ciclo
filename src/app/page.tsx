@@ -41,11 +41,11 @@ import type { Metadata } from 'next'
  * `redirect()` aqui sem mover a checagem de volta para o middleware junto.
  */
 export const metadata: Metadata = {
-  title: 'CICLO — a agenda que avisa quem parou de voltar',
+  title: 'CICLO · a agenda que avisa quem parou de voltar',
   description:
     'Agenda, site de agendamento e caixa para quem atende com hora marcada. O CICLO calcula de quanto em quanto tempo cada cliente volta, mostra quem atrasou e te dá a mensagem pronta para chamar.',
   openGraph: {
-    title: 'CICLO — a agenda que avisa quem parou de voltar',
+    title: 'CICLO · a agenda que avisa quem parou de voltar',
     description: 'Para barbearia, unhas, cílios, sobrancelha, depilação e estética. Feito para o celular, em português.',
     type: 'website',
     locale: 'pt_BR',
@@ -57,7 +57,7 @@ const RECURSOS = [
     icone: IconeAnel,
     titulo: 'Quem sumiu tem nome',
     texto:
-      'O CICLO calcula o ritmo de cada pessoa — quem volta a cada 21 dias, quem volta a cada dois meses — e mostra quem passou do ponto. Com uma estimativa de quanto vale chamar cada uma (o preço do serviço vezes a chance de ela voltar) e o texto pronto para chamar no WhatsApp.',
+      'O CICLO calcula o ritmo de cada pessoa (quem volta a cada 21 dias, quem volta a cada dois meses) e mostra quem passou do ponto. Com uma estimativa de quanto vale chamar cada uma (o preço do serviço vezes a chance de ela voltar) e o texto pronto para chamar no WhatsApp.',
   },
   {
     icone: Link2,
@@ -84,7 +84,7 @@ const PASSOS = [
   },
   {
     titulo: 'Atenda. O resto o CICLO acompanha',
-    texto: 'Cada atendimento concluído alimenta o ciclo daquela pessoa — e é assim que o sistema sabe quem está para voltar.',
+    texto: 'Cada atendimento concluído alimenta o ciclo daquela pessoa, e é assim que o sistema sabe quem está para voltar.',
   },
 ]
 
@@ -131,7 +131,8 @@ export default function Home() {
   return (
     <main className="mx-auto min-h-dvh max-w-[720px] px-[var(--gutter)] pb-16">
       <header className="flex items-center justify-between gap-3 py-5">
-        <Image src={wordmark} alt="CICLO" className="h-7 w-auto" />
+        {/* `priority` herdado do lockup do herói, que saiu: agora esta é a única marca da dobra. */}
+        <Image src={wordmark} alt="CICLO" priority className="h-7 w-auto" />
         <nav className="flex items-center gap-1">
           <Link
             href="/precos"
@@ -150,13 +151,16 @@ export default function Home() {
 
       <section className="animate-in py-10 fade-in slide-in-from-bottom-4 duration-500 sm:py-16">
         {/*
-          O lockup completo (símbolo + "Ciclo" escrito) abre a página — é o único
-          momento da landing em que a marca aparece sozinha, sem navegação nem
-          rótulo ao redor, então ganha destaque cheio. O logo pequeno do
-          `<header>` acima continua sendo a referência utilitária de navegação;
-          este é a declaração de marca que abre o argumento da página.
+          Aqui havia um segundo lockup da marca, justificado como "a declaração de marca que abre o
+          argumento da página". Medido a 375 px em 2026-09-03, o resultado era outro: os dois
+          logotipos ficavam a **70 px um do outro** (o do header em y=30, este em y=128), ambos na
+          primeira dobra, mesmo desenho e mesma cor, um pouco maior que o outro. Não lia como
+          ênfase, lia como repetição acidental — e empurrava o argumento da página para baixo.
+
+          Quem abre a página agora é a manchete, que é o que produto maduro faz: a marca fica na
+          navegação, o argumento fica no `h1`. O logo do `<header>` continua sendo a âncora de
+          marca, igual em todas as telas.
         */}
-        <Image src={wordmark} alt="CICLO" priority className="mb-6 h-11 w-auto sm:h-12" />
         <h1 className="text-numero font-bold sm:text-[2.75rem] sm:leading-[1.05] sm:tracking-[-0.02em]">
           A lista de quem devia ter voltado e não voltou.
         </h1>
@@ -189,12 +193,23 @@ export default function Home() {
         {/*
           O preço aparece já na primeira dobra, em texto, sem precisar de clique. É o oposto do
           que quatro dos treze concorrentes pesquisados fazem, e é de graça fazer diferente.
+
+          Era um link só, sublinhado, ocupando a linha inteira: medido a 375 px, a frase quebrava
+          em QUATRO pedaços de 13,5 px, sublinhados, logo abaixo de dois botões de 48 px. A
+          informação comercial mais importante da página estava no tratamento tipográfico menos
+          importante dela, e sublinhado de duas linhas lê como nota de rodapé, não como preço.
+
+          Agora a frase é texto e só "Ver os planos" é link. O preço ganha o peso da fonte em vez
+          de ganhar sublinhado, que é como se destaca número, e o alvo de toque fica no que é
+          clicável de fato.
         */}
-        <div className="mt-4">
-          <Link href="/precos" className="toque-48 inline-block text-secundario font-semibold text-acc-2 underline underline-offset-4">
-            Grátis para começar, {precoDoPlano('essencial')} por mês para ir além — ver os planos
+        <p className="mt-4 text-secundario text-txt-2">
+          Grátis para começar. <span className="font-semibold text-txt">{precoDoPlano('essencial')} por mês</span> para
+          ir além.{' '}
+          <Link href="/precos" className="toque-48 inline-flex font-semibold text-acc-2 underline-offset-4 hover:underline">
+            Ver os planos
           </Link>
-        </div>
+        </p>
       </section>
 
       <section className="py-8">

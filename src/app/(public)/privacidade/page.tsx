@@ -38,7 +38,7 @@ export default function Privacidade() {
   return (
     <main className="mx-auto min-h-dvh max-w-[720px] px-[var(--gutter)] pb-16">
       <header className="flex items-center justify-between py-5">
-        <Link href="/" aria-label="CICLO — início">
+        <Link href="/" aria-label="CICLO, início">
           <Image src={wordmark} alt="CICLO" className="h-7 w-auto" />
         </Link>
         <Link
@@ -74,7 +74,7 @@ export default function Privacidade() {
             </li>
             <li>
               <strong className="font-semibold text-txt">Sobre os seus clientes:</strong> quem
-              decide o que guardar é você. Você é o controlador, e o CICLO é apenas o operador —
+              decide o que guardar é você. Você é o controlador, e o CICLO é apenas o operador:
               a gente só processa o que você mandou guardar, do jeito que você mandou.
             </li>
           </ul>
@@ -94,13 +94,13 @@ export default function Privacidade() {
             </li>
             <li>
               <strong className="font-semibold text-txt">Dos seus clientes:</strong> o que você
-              cadastrar — em geral nome, telefone, aniversário, histórico de atendimento,
+              cadastrar: em geral nome, telefone, aniversário, histórico de atendimento,
               preferências e observações.
             </li>
             <li>
               <strong className="font-semibold text-txt">Dado de saúde, quando você usa a ficha de anamnese:</strong>{' '}
               alergia, condição de saúde e o que mais você anotar ali. É dado sensível pela LGPD e
-              recebe tratamento diferente — ver o item 4.
+              recebe tratamento diferente, e o item 4 explica como.
             </li>
             <li>
               <strong className="font-semibold text-txt">De uso:</strong> registros técnicos de
@@ -138,7 +138,7 @@ export default function Privacidade() {
             <li>
               <strong className="font-semibold text-txt">Dado de saúde fica cifrado</strong>, com a
               chave guardada separada do banco. Só quem tem permissão abre, e{' '}
-              <strong className="font-semibold text-txt">todo acesso fica registrado</strong> — dá
+              <strong className="font-semibold text-txt">todo acesso fica registrado</strong>, e dá
               para saber quem abriu a ficha de quem, e quando.
             </li>
             <li>
@@ -154,8 +154,8 @@ export default function Privacidade() {
           <h2>5. Com quem a gente compartilha</h2>
           <p>
             Só com quem é necessário para o serviço existir, e cada um vê apenas o que precisa:
-            a empresa que hospeda o sistema, a que hospeda o banco de dados, e — quando você usa
-            envio de mensagem ou e-mail — o serviço que entrega essa mensagem.
+            a empresa que hospeda o sistema, a que hospeda o banco de dados e, quando você usa
+            envio de mensagem ou e-mail, o serviço que entrega essa mensagem.
           </p>
           <p>
             Podemos compartilhar também se a lei ou uma ordem judicial exigir. Fora isso, ninguém
@@ -173,7 +173,7 @@ export default function Privacidade() {
           </p>
           <p>
             Alguns registros de movimentação (agendamento, caixa, estoque) não são apagados, porque
-            são o histórico do seu negócio — mas passam a não identificar mais a pessoa.
+            são o histórico do seu negócio, mas passam a não identificar mais a pessoa.
           </p>
         </section>
 

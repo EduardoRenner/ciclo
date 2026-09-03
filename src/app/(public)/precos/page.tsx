@@ -40,7 +40,7 @@ export const metadata = {
   description:
     `Comece de graça, para sempre. Planos a partir de ${precoDoPlano('essencial')} por mês para quem quer mandar mensagem para toda a base de uma vez, controlar caixa e trabalhar com equipe.`,
   openGraph: {
-    title: 'Preços — CICLO',
+    title: 'Preços · CICLO',
     description: `Comece de graça. Planos a partir de ${precoDoPlano('essencial')} por mês, com preço na tela e sem letra miúda.`,
     type: 'website',
     locale: 'pt_BR',
@@ -138,6 +138,21 @@ export default function Precos() {
               (p.destaque ? 'border-acc-2 ring-1 ring-acc-2' : 'border-line')
             }
           >
+            {/*
+              O destaque do Equipe era só um anel de cor. Quem enxerga via um cartão diferente e
+              não sabia por quê; quem usa leitor de tela não via nada — `ring` não tem semântica, e
+              a única diferença entre este cartão e os outros ficava invisível.
+
+              O rótulo é em primeira pessoa de propósito. "Mais escolhido" e "N profissionais já
+              usam" continuam proibidos (§5.10: prova social inventada é mentira que este público
+              descobre conversando entre si); "nossa recomendação" é uma opinião de quem faz o
+              produto, e opinião assumida é verdade verificável.
+            */}
+            {p.destaque ? (
+              <p className="mb-3 inline-flex rounded-[var(--radius-pill)] bg-acc-soft px-2.5 py-1 text-label font-semibold text-acc-2">
+                Nossa recomendação
+              </p>
+            ) : null}
             <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
               <h2 className="text-corpo font-semibold text-txt">{NOME_DO_PLANO[p.tier]}</h2>
               <p className="tabular text-numero font-bold text-txt">{precoDoPlano(p.tier)}</p>

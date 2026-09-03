@@ -64,11 +64,11 @@ export const CARTOES: Plano[] = [
         `src/core/cron/agendadas.ts` é a lista que o código usa.
       */
     ],
-    naoInclui: ['Mandar mensagem para vários de uma vez — no grátis você manda um a um'],
+    naoInclui: ['Mandar mensagem para vários de uma vez: no grátis você manda um a um'],
   },
   {
     tier: 'essencial',
-    porDia: 'menos de R$ 1,70 por dia — o preço de um corte, uma vez por mês',
+    porDia: 'menos de R$ 1,70 por dia, o preço de um corte uma vez por mês',
     chamada: 'Por mês, um profissional.',
     paraQuem: 'Você já viu quem sumiu e cansou de mandar mensagem um por um.',
     inclui: [
