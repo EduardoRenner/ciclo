@@ -2,7 +2,7 @@ import { ArrowRight, CalendarCheck, Link2, Wallet } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 
-import { NOME_DO_PLANO, precoDoPlano } from '@/core/billing/planos'
+import { NOME_DO_PLANO, PLANOS, precoDoPlano } from '@/core/billing/planos'
 import IconeAnel from '@/components/ui/icone-anel'
 
 import wordmark from '../../public/marca/ciclo-wordmark-aqua.png'
@@ -56,8 +56,19 @@ const RECURSOS = [
   {
     icone: IconeAnel,
     titulo: 'Quem sumiu tem nome',
+    /*
+      `docs/20-COPY-PLANO.md` §D.5 recomendou a variante C, que abre com "23 pessoas passaram do
+      ponto de voltar" — o número COM a origem. **Desvio deliberado, e o motivo é a figura nova da
+      dobra:** ela já mostra o 23, com a legenda que o declara como exemplo. Repetir o número aqui,
+      em prosa e sem a legenda, transformaria uma ilustração de layout em afirmação sobre o
+      produto, que é exatamente o que o §D.5 proíbe ao recomendar C ("ilustração, não afirmação").
+
+      O que sobra para o cartão é o que a figura NÃO consegue dizer: como o ritmo é calculado por
+      pessoa, e por que a lista vem naquela ordem. Ordenação é a decisão de produto que a tela toma
+      e que nenhum print explica.
+    */
     texto:
-      'O CICLO calcula o ritmo de cada pessoa (quem volta a cada 21 dias, quem volta a cada dois meses) e mostra quem passou do ponto. Com uma estimativa de quanto vale chamar cada uma (o preço do serviço vezes a chance de ela voltar) e o texto pronto para chamar no WhatsApp.',
+      'O ritmo é de cada pessoa, não uma média do salão: quem volta a cada 21 dias e quem volta a cada dois meses aparecem em dias diferentes. A lista vem ordenada por quanto vale chamar cada uma, que é o preço do serviço vezes a chance de ela voltar, e cada linha já traz o texto pronto para o WhatsApp.',
   },
   {
     icone: Link2,
@@ -88,35 +99,84 @@ const PASSOS = [
   },
 ]
 
-const PROFISSOES = [
-  'Barbearia',
-  'Unhas',
-  'Cílios',
-  'Sobrancelha',
-  'Depilação',
-  'Estética',
-  'Cabelo',
-  'Tatuagem',
+/**
+ * `docs/20-COPY-PLANO.md` §D.6 — as 17 do catálogo, agrupadas, com beleza primeiro. Recomendado em
+ * 24/08 e até hoje não implementado: a página listava 8 soltas.
+ *
+ * **O problema que isso conserta (§6 do sumário do 20):** das 8 que a copy nomeava, **nenhuma** tem
+ * ritmo recorrente no catálogo; das 9 que ficavam de fora, **cinco** têm. A página era muda
+ * justamente para quem vive de cliente que volta, que é o público do Motor de Ciclo.
+ *
+ * **Beleza primeiro não é ordem alfabética nem acaso:** é onde o esforço de venda está (`docs/18`
+ * §B.2, Decidido), e o olho lê o primeiro grupo como "é disto que ele é". O agrupamento faz o
+ * trabalho que 17 chips soltos não fariam — chip solto em fila de 17 lê como "serve para tudo", que
+ * é o que o barbeiro do painel de leitores rejeitou (§7.4).
+ *
+ * Os nomes saem de `supabase/migrations/0022_professions_catalog.sql` e `0026_catalogo_profundo.sql`
+ * (17 linhas em `professions`), conferidos no arquivo. Não é lista inventada para a página.
+ */
+const GRUPOS_DE_PROFISSAO: readonly { grupo: string; itens: readonly string[] }[] = [
+  { grupo: 'Beleza', itens: ['Barbearia', 'Cabelo', 'Unhas', 'Cílios', 'Sobrancelhas', 'Depilação', 'Estética', 'Tatuagem'] },
+  { grupo: 'Casa', itens: ['Faxina e diarista', 'Eletricista', 'Encanador', 'Jardineiro'] },
+  { grupo: 'Saúde, aula e treino', itens: ['Psicólogo', 'Professor particular', 'Personal trainer'] },
+  { grupo: 'Pet e eventos', itens: ['Banho e tosa', 'Fotógrafo'] },
 ]
 
+/**
+ * `docs/20-COPY-PLANO.md` §D.10 — a FAQ tem trabalho de conversão, não de suporte: cada linha aqui
+ * é uma objeção que impede o cadastro, e a ordem é a da força da objeção.
+ *
+ * "Funciona para quem trabalha por conta?" SUBIU para primeira: o §D.10 a chama de "a melhor
+ * aplicação de identidade do produto", e identidade responde antes de detalhe técnico.
+ *
+ * Duas perguntas NOVAS, e as duas saíram do painel de leitores:
+ *   - "já uso outro sistema" foi a objeção nº 1 de quem já paga por algo (§7.3, dona de salão), e a
+ *     copy inteira era muda sobre isso;
+ *   - "em quanto tempo a lista fica útil" é a expectativa que ninguém estava gerenciando (§D.7 B),
+ *     e a falta dela é causa provável de churn precoce (§R.1).
+ */
 const PERGUNTAS = [
   {
-    pergunta: 'Preciso instalar alguma coisa?',
+    /*
+      A frase é a do §C.4 do `docs/20`, e a tabela dele é explícita sobre por que ela é assim:
+      *"quem atende sozinho" não resolve → "quem trabalha por conta"* — porque escolher um gênero
+      não é melhor que trocar de gênero, é o mesmo erro virado para o outro lado. Eu tinha
+      reescrito para "sozinho" nesta rodada e a decisão da casa me desmentiu.
+    */
+    pergunta: 'Funciona para quem trabalha por conta?',
     resposta:
-      'Não. Abre no navegador do celular e funciona. Se quiser, dá para adicionar à tela de início e ele passa a abrir como aplicativo, em tela cheia.',
+      'Funciona, e é para quem trabalha por conta que ele mais serve: você não tem alguém olhando a agenda por você para lembrar de quem sumiu.',
   },
   {
-    pergunta: 'E se eu já tiver minha lista de clientes?',
-    resposta: 'Dá para importar de uma planilha. Nome e telefone bastam; o histórico vai sendo construído a partir dos atendimentos.',
+    /*
+      A resposta mudou depois de eu MEDIR o importador, e o achado é melhor que o registrado no
+      §D.10. O documento supôs "nome, telefone, e-mail e etiquetas; histórico não". O importador
+      aceita também a coluna de ÚLTIMA VISITA (`importacao-clientes.ts`: `lastVisit` chega até
+      `calcularPrevisao`, que roda `computeCycle` em cada data e devolve quantas pessoas já estão
+      devendo voltar). Ou seja: com a data na planilha, a lista nasce cheia no primeiro dia, em vez
+      de esperar duas ou três voltas.
+
+      Isso é o argumento mais forte que o produto tem para quem já tem base, e não estava escrito
+      em lugar nenhum da página.
+    */
+    pergunta: 'Eu já tenho minha lista de clientes. Dá para trazer?',
+    resposta:
+      'Dá, de uma planilha: nome, telefone, e-mail e etiquetas. E se a sua planilha tiver a data da última visita, traga essa coluna também: é ela que faz a lista de quem sumiu nascer cheia no primeiro dia, em vez de você esperar as pessoas voltarem para o CICLO ter o que calcular.',
+  },
+  {
+    pergunta: 'Em quanto tempo a lista de quem sumiu fica útil?',
+    resposta:
+      'Se você importar a data da última visita, já na primeira tela. Sem essa data, o CICLO precisa ver cada pessoa voltar duas ou três vezes para saber o ritmo dela — então a lista começa vazia e vai enchendo conforme você atende.',
   },
   {
     pergunta: 'Quem vai marcar precisa baixar app ou criar conta?',
     resposta: 'Não. A pessoa abre seu link, escolhe o serviço e o horário, e o agendamento entra na sua agenda esperando você confirmar.',
   },
   {
-    pergunta: 'Funciona para quem trabalha por conta?',
+    /* Absorve o "sem treinamento" e o "feito para o celular" que saíram do subtítulo pelo §D.3. */
+    pergunta: 'Preciso instalar alguma coisa?',
     resposta:
-      'Funciona, e é para quem trabalha por conta que ele mais serve: você não tem alguém olhando a agenda por você para lembrar de quem sumiu.',
+      'Não. Abre no navegador do celular e funciona, sem treinamento e sem manual. Se quiser, dá para adicionar à tela de início e ele passa a abrir como aplicativo, em tela cheia.',
   },
 ]
 
@@ -335,17 +395,30 @@ export default function Home() {
 
       <section className="py-8">
         <h2 className="mb-4 text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">Feito para</h2>
-        <ul className="flex flex-wrap gap-2">
-          {PROFISSOES.map((p) => (
-            <li
-              key={p}
-              className="rounded-[var(--radius-pill)] border border-line-2 bg-surface-2 px-3 py-1.5 text-secundario text-txt-2"
-            >
-              {p}
-            </li>
+        <div className="flex flex-col gap-4">
+          {GRUPOS_DE_PROFISSAO.map((g) => (
+            <div key={g.grupo}>
+              <p className="mb-2 text-label font-semibold text-txt-2">{g.grupo}</p>
+              <ul className="flex flex-wrap gap-2">
+                {g.itens.map((p) => (
+                  <li
+                    key={p}
+                    className="rounded-[var(--radius-pill)] border border-line-2 bg-surface-2 px-3 py-1.5 text-secundario text-txt-2"
+                  >
+                    {p}
+                  </li>
+                ))}
+              </ul>
+            </div>
           ))}
-        </ul>
-        <p className="mt-3 text-secundario text-txt-3">E qualquer trabalho que dependa de hora marcada e de cliente que volta.</p>
+        </div>
+        {/*
+          O fecho desta seção SUBIU para o subtítulo da dobra (§D.3), que é onde ele resolve o
+          alcance na posição de maior atenção. Fica sem substituto de propósito: a linha tentadora
+          era "Não achou a sua? O catálogo cresce com quem pede", e o §D.6 a cortou por não ser
+          verdade — o onboarding não tem campo "Outro"; quem procura profissão que não existe vê
+          "Nenhuma profissão encontrada" e o produto não registra nada.
+        */}
       </section>
 
       <section className="py-8">
@@ -367,10 +440,25 @@ export default function Home() {
       </section>
 
       <section className="rounded-[var(--radius)] border border-line bg-surface p-6 text-center shadow-elevado">
+        {/*
+          `docs/20-COPY-PLANO.md` §D.7, variante C — recomendada e não implementada. O motivo veio
+          do painel de leitores: a objeção "e se eu não puder pagar depois?" apareceu em DUAS
+          personas de margem apertada, e a melhor resposta do produto estava enterrada na `/precos`.
+          Trazê-la para o fecho é, nas palavras do §D.7, "a maior movimentação de conversão barata
+          que este documento encontrou".
+
+          Mecanismo: aversão à perda invertida. Em vez de ameaçar com o que ela perde se não agir,
+          remove o risco de agir — que é a única forma honesta de usar aversão à perda aqui, e
+          passa no teste do §5.10 (continua funcionando mesmo se a pessoa souber como funciona).
+
+          O número do teto vem de `PLANOS.gratis`, nunca datilografado: é a regra do
+          `preco-em-um-lugar-so` aplicada a limite em vez de a preço.
+        */}
         <CalendarCheck aria-hidden className="mx-auto mb-3 size-8 text-acc-2" />
-        <h2 className="text-titulo font-bold">Comece pela sua agenda de amanhã</h2>
-        <p className="mx-auto mt-2 max-w-[42ch] text-secundario text-txt-2">
-          Criar a conta é de graça, e o catálogo da sua profissão já vem preenchido.
+        <h2 className="text-titulo font-bold">Comece de graça, e sem cartão</h2>
+        <p className="mx-auto mt-2 max-w-[44ch] text-secundario text-txt-2">
+          Grátis para sempre com {PLANOS.gratis.maxProfissionais} profissional. A base é sua: se um dia você parar de
+          pagar, nada some.
         </p>
         <div className="mt-5 flex flex-wrap justify-center gap-3">
           <Link href="/cadastro" className={botaoPrimario}>

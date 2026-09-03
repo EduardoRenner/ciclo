@@ -50,6 +50,27 @@ const SUPOE_HOMEM: { padrao: RegExp; porque: string }[] = [
     porque: '"qualquer um" escolhendo entre pessoas; use "tanto faz"',
   },
   { padrao: /\btodos (est[ãa]o|ficaram) (prontos|preparados)\b/i, porque: 'plural no masculino falando de pessoas' },
+  /*
+    Entrou em 2026-09-03 porque EU quebrei a decisão da casa nesta rodada: reescrevi a FAQ da home
+    de "quem trabalha por conta" para "quem atende sozinho", e a tabela do `docs/20` §C.4 diz, com
+    estas palavras, que *"quem atende sozinho" não resolve → "quem trabalha por conta"*.
+
+    O padrão pega as DUAS formas de propósito. Escolher o feminino não é melhor que escolher o
+    masculino — é o mesmo erro virado para o outro lado, e o §C.4 é explícito: "evita escolher um
+    gênero em vez de trocar de gênero". A saída é reescrever sem gênero, não alternar.
+
+    **A primeira versão deste padrão era `(atende|trabalha|cuida|faz)\s+sozinh[oa]` e reprovou copy
+    CORRETA:** "O que o CICLO faz sozinho por você" (tela de automações). Ali "sozinho" concorda com
+    o CICLO, que é coisa — não há gênero de pessoa nenhum na frase. Guarda que acusa o certo custa
+    o mesmo que guarda que absolve o errado: manda alguém "consertar" código bom.
+
+    O padrão exige agora um marcador de PESSOA antes ("quem", "você"), que é o que distingue "quem
+    atende sozinho" (erro) de "o CICLO faz sozinho" (certo). Os dois casos reais estão no autoteste.
+  */
+  {
+    padrao: /\b(quem|voc[êe])\b[^.!?]{0,40}?\b(atende|trabalha|cuida)\s+sozinh[oa]\b/i,
+    porque: '"sozinho/sozinha" escolhe um gênero; o §C.4 manda reescrever sem ("quem trabalha por conta")',
+  },
 ]
 
 const RAIZES = ['src/app', 'src/components']
@@ -93,6 +114,28 @@ describe('o leitor deste teste', () => {
      * O que erra é "qualquer um" escolhendo entre PESSOAS, sem complemento.
      */
     for (const certo of ['um erro em qualquer um deles', 'qualquer um dos dois já alerta', 'sobre qualquer um deles']) {
+      expect(SUPOE_HOMEM.some((r) => r.padrao.test(certo)), `acusou "${certo}", que está certo`).toBe(false)
+    }
+  })
+
+  it('pega "sozinho" E "sozinha" falando de pessoa, e poupa "sozinho" de coisa', () => {
+    /*
+     * O §C.4 do `docs/20`: escolher o feminino não é melhor que escolher o masculino. As duas
+     * formas reprovam, e a saída é reescrever sem gênero.
+     */
+    expect(SUPOE_HOMEM.some((r) => r.padrao.test('quem atende sozinho')), 'masculino').toBe(true)
+    expect(SUPOE_HOMEM.some((r) => r.padrao.test('quem atende sozinha')), 'feminino também erra').toBe(true)
+    /*
+     * E o que está CERTO. As duas primeiras não são exemplo inventado: são a copy real de
+     * `/admin/config/automacoes` e do hub, que a primeira versão deste padrão reprovou. Ficam aqui
+     * para que a exceção seja protegida — se alguém alargar o regex de novo, o teste grita.
+     */
+    for (const certo of [
+      'O que o CICLO faz sozinho por você, e o quanto de rédea você dá para cada coisa.',
+      'O que o CICLO faz sozinho, e quanta rédea você dá',
+      'o lembrete sai sozinho',
+      'o job roda sozinho',
+    ]) {
       expect(SUPOE_HOMEM.some((r) => r.padrao.test(certo)), `acusou "${certo}", que está certo`).toBe(false)
     }
   })
