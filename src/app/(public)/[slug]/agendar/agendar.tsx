@@ -648,7 +648,12 @@ export default function Agendar({
                 buscarDisponibilidade(dia);
               }}
             >
-              Qualquer um
+              {/*
+                Era "Qualquer um". Num salão de unhas ou cílios, a equipe inteira costuma ser de
+                mulheres, e o produto oferecia à cliente uma opção no masculino para escolher entre
+                elas. "Tanto faz" resolve sem precisar de gênero nenhum e é como a pessoa fala.
+              */}
+              Tanto faz
             </Chip>
             {professionals.map((p) => (
               <Chip

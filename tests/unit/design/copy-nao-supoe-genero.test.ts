@@ -33,6 +33,23 @@ const SUPOE_HOMEM: { padrao: RegExp; porque: string }[] = [
   { padrao: /\bobrigado\b/i, porque: '"obrigado" na voz de quem usa o produto; use "valeu" ou "que bom"' },
   { padrao: /voc[êe] (est[áa]|ficou|seria) (preparado|pronto|cadastrado|bem-?vindo)\b/i, porque: 'particípio no masculino falando com a pessoa' },
   { padrao: /\bcaro (usu[áa]rio|cliente|profissional)\b/i, porque: 'vocativo no masculino' },
+  /*
+    Entrou depois, e por medição: a lista original não pegou "Qualquer um" no seletor de
+    profissional do agendamento público. Num salão de unhas ou cílios a equipe inteira costuma ser
+    de mulheres, e o produto oferecia à cliente uma opção no masculino para escolher entre elas —
+    na tela de maior volume que existe. Achado abrindo a página, não lendo o código.
+  */
+  /*
+    A lista de complementos é explícita, e não `d[eo]s?`, porque a primeira versão era esse padrão
+    e ele NÃO bloqueava "deles": `d`+`[eo]`+`s?` casa "de" e aí o `\b` falha diante do "l". A
+    exceção passou a acusar copy legítima, que é o custo simétrico da guarda cega — detector que
+    reprova o que está certo manda alguém "consertar" código bom.
+  */
+  {
+    padrao: /\bqualquer um\b(?!\s+(dos|das|deles|delas|de|do|da)\b)/i,
+    porque: '"qualquer um" escolhendo entre pessoas; use "tanto faz"',
+  },
+  { padrao: /\btodos (est[ãa]o|ficaram) (prontos|preparados)\b/i, porque: 'plural no masculino falando de pessoas' },
 ]
 
 const RAIZES = ['src/app', 'src/components']
@@ -59,11 +76,23 @@ describe('o leitor deste teste', () => {
     expect(SUPOE_HOMEM[0]!.padrao.test('Bem-vindo de volta')).toBe(true)
     expect(SUPOE_HOMEM[1]!.padrao.test('{{nome}}, obrigado por confiar no meu trabalho!')).toBe(true)
     expect(SUPOE_HOMEM[2]!.padrao.test('você está preparado para começar')).toBe(true)
+    expect(SUPOE_HOMEM[4]!.padrao.test('Qualquer um'), '"Qualquer um" do seletor de profissional').toBe(true)
   })
 
   it('não acusa concordância com coisa, que está certa', () => {
     // O falso positivo que tornaria esta guarda ruído: "cadastrado" concordando com "serviço".
     for (const certo of ['Nenhum serviço cadastrado', 'horário marcado', 'orçamento aprovado', 'Nada foi bloqueado']) {
+      expect(SUPOE_HOMEM.some((r) => r.padrao.test(certo)), `acusou "${certo}", que está certo`).toBe(false)
+    }
+  })
+
+  it('não acusa "qualquer um DELES", que é pronome de coisa e está certo', () => {
+    /*
+     * A exceção que o padrão precisa fazer, e ela é real: "um erro em qualquer um deles", "se
+     * perguntarem sobre qualquer um deles" aparecem em comentário e em copy legítima do produto.
+     * O que erra é "qualquer um" escolhendo entre PESSOAS, sem complemento.
+     */
+    for (const certo of ['um erro em qualquer um deles', 'qualquer um dos dois já alerta', 'sobre qualquer um deles']) {
       expect(SUPOE_HOMEM.some((r) => r.padrao.test(certo)), `acusou "${certo}", que está certo`).toBe(false)
     }
   })

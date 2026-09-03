@@ -29,6 +29,20 @@ import { SLUGS_DE_DEMONSTRACAO_PARA_TESTE, ehDemonstracao } from '@/core/tenants
 
 const SITEMAP = 'src/app/sitemap.ts'
 const PAGINA = 'src/app/(public)/[slug]/page.tsx'
+/**
+ * O sexto caminho, e o que faltava — achado em 2026-09-03 abrindo a página, não lendo o código.
+ *
+ * O aviso visível existia só em `/{slug}`, e o comentário que o acompanha lá descreve o defeito
+ * com estas palavras: *"sem ele, dá para escolher serviço e horário numa barbearia que não existe
+ * e ficar esperando um atendimento que nunca vai acontecer"*. **Escolher serviço e horário
+ * acontece em `/{slug}/agendar`**, que não tinha aviso nenhum — e é para onde o CTA "Agendar
+ * horário" do próprio perfil aponta.
+ *
+ * O conserto original foi aplicado num caso e a pergunta ficou sem resposta, que é a mesma
+ * armadilha de `recurso-pago-avisa-antes`. Por isso a página de agendar entra na LISTA, e não
+ * ganha uma asserção própria: lista é o que faz o próximo leitor ser conferido sem ninguém lembrar.
+ */
+const AGENDAR = 'src/app/(public)/[slug]/agendar/page.tsx'
 const LEMBRETES = 'src/server/services/lembretes.ts'
 const CAMPAIGNS_ROUTE = 'src/app/api/cron/campaigns/route.ts'
 
@@ -40,6 +54,7 @@ const CAMPAIGNS_ROUTE = 'src/app/api/cron/campaigns/route.ts'
 const TODOS_OS_LEITORES: ReadonlyArray<[string, string]> = [
   ['o sitemap', SITEMAP],
   ['a página pública', PAGINA],
+  ['a página de agendar', AGENDAR],
   ['os lembretes', LEMBRETES],
   ['a rota de campanhas', CAMPAIGNS_ROUTE],
 ]
@@ -63,7 +78,7 @@ describe('a regra de demonstração', () => {
   })
 })
 
-describe('os cinco caminhos para o mundo usam a mesma regra', () => {
+describe('os seis caminhos para o mundo usam a mesma regra', () => {
   it.each(TODOS_OS_LEITORES)('%s importa a regra do core em vez de repetir a lista', (_nome, arquivo) => {
     const src = readFileSync(arquivo, 'utf8')
     expect(
@@ -91,6 +106,21 @@ describe('os cinco caminhos para o mundo usam a mesma regra', () => {
     const src = readFileSync(PAGINA, 'utf8')
     expect(/robots:\s*ehDemonstracao\(/.test(src), 'falta o noindex condicional no generateMetadata').toBe(true)
     expect(/\{ehDemonstracao\([^)]*\)\s*\?/.test(src), 'falta o aviso visível condicional no corpo da página').toBe(true)
+  })
+
+  it('AS DUAS telas do fluxo público mostram o aviso, e não só a de perfil', () => {
+    /*
+     * Casa com o AVISO RENDERIZADO (`{ehDemonstracao(...) ?`), não com o import: importar e nunca
+     * usar é exatamente o estado em que a página de agendar ficaria se alguém "limpasse" o JSX.
+     * E as duas juntas na mesma asserção porque o defeito foi ter consertado uma só.
+     */
+    for (const tela of [PAGINA, AGENDAR]) {
+      const src = readFileSync(tela, 'utf8')
+      expect(
+        /\{ehDemonstracao\([^)]*\)\s*\?/.test(src),
+        `${tela} não mostra o aviso de demonstração — dá para percorrer o agendamento num negócio que não existe`,
+      ).toBe(true)
+    }
   })
 
   it('o sitemap filtra antes de montar a lista de URLs', () => {
