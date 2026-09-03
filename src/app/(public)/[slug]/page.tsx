@@ -28,10 +28,19 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     */
     robots: ehDemonstracao(perfil.slug) ? { index: false, follow: false } : undefined,
     alternates: url ? { canonical: url } : undefined,
-    // Sem foto/logo cadastrada ainda (nenhum tenant tem esse campo hoje) — título e
-    // descrição já melhoram o card do WhatsApp/Facebook mesmo sem imagem própria.
-    openGraph: { title: perfil.name, description: descricao, url, type: 'website', locale: 'pt_BR' },
-    twitter: { card: 'summary', title: perfil.name, description: descricao },
+    // A capa (1600x600, boa proporção de OG) ou, na falta dela, o logo: o card que o salão manda
+    // no WhatsApp e cola na bio do Instagram passa a mostrar a marca dele, não só texto. Ambos já
+    // são URL absoluta (`urlDaVitrine` monta a partir do host do Supabase). Sem nenhum dos dois,
+    // `images` sai `undefined` e o card volta a ser só título + descrição.
+    openGraph: {
+      title: perfil.name,
+      description: descricao,
+      url,
+      type: 'website',
+      locale: 'pt_BR',
+      images: perfil.coverUrl ?? perfil.logoUrl ?? undefined,
+    },
+    twitter: { card: perfil.coverUrl ? 'summary_large_image' : 'summary', title: perfil.name, description: descricao },
   }
 }
 
