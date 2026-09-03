@@ -120,8 +120,21 @@ export default function Precos() {
       </header>
 
       <section className="py-8 sm:py-12">
+        {/*
+          `docs/20-COPY-PLANO.md` §D.8, variante A — recomendada em 24/08 e não implementada.
+
+          O H1 antigo ("Pague quando o CICLO já estiver te dando trabalho a menos") é uma boa frase
+          e responde a pergunta errada. A pergunta que a pessoa REALMENTE tem ao abrir a página de
+          preço de um produto que ela não conhece é: *o grátis serve para alguma coisa?* — e a
+          resposta é verificável no código, porque `cycle_engine` está nos módulos do Grátis.
+
+          Isto também é a única coisa em que o CICLO é literalmente único entre os cinco
+          concorrentes diretos pesquisados: nenhum deles tem plano gratuito, e na Belasis "recuperar
+          cliente inativo" mora a partir do Pro, R$ 189/mês (§B.2.1 do 20). Dizer que o grátis já
+          mostra quem parou de voltar é a frase que nenhum deles pode colar.
+        */}
         <h1 className="text-numero font-bold sm:text-[2.25rem] sm:leading-[1.1]">
-          Comece de graça. Pague quando o CICLO já estiver te dando trabalho a menos.
+          Comece de graça. O grátis já mostra quem parou de voltar.
         </h1>
         <p className="mt-4 max-w-[52ch] text-corpo text-txt-2">
           Preço na tela, sem cadastro e sem &ldquo;fale com um consultor&rdquo;. O Motor de Ciclo está em todos os planos,

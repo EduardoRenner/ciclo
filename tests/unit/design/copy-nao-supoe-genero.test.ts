@@ -73,14 +73,24 @@ const SUPOE_HOMEM: { padrao: RegExp; porque: string }[] = [
   },
 ]
 
-const RAIZES = ['src/app', 'src/components']
+/**
+ * `src/lib` entrou em 2026-09-03, e não por simetria: o cartão do Grátis em `planos-cartoes.ts`
+ * dizia "Você atende sozinho e quer sair do caderno" e a guarda passava verde, porque copy de
+ * produto não mora só em `app/` e `components/`. `planos-cartoes.ts` é lido pela página pública de
+ * preço E pela tela "Meu plano" — é a copy que a pessoa lê antes de pagar.
+ *
+ * `src/server` fica de fora aqui de propósito: a copy dele que interessa (`mensagens-prontas.ts`)
+ * tem asserção própria mais abaixo, sobre o array tipado em vez de sobre o texto do arquivo.
+ */
+const RAIZES = ['src/app', 'src/components', 'src/lib']
 
 function arquivos(dir: string): string[] {
   const achados: string[] = []
   for (const entrada of readdirSync(dir, { withFileTypes: true })) {
     const caminho = join(dir, entrada.name)
     if (entrada.isDirectory()) achados.push(...arquivos(caminho))
-    else if (/[.]tsx$/.test(entrada.name)) achados.push(caminho)
+    // `.ts` também, e não só `.tsx`: `planos-cartoes.ts` é copy de produto sem uma linha de JSX.
+    else if (/[.]tsx?$/.test(entrada.name)) achados.push(caminho)
   }
   return achados
 }
