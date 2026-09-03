@@ -100,7 +100,7 @@ export default function Avaliar({ token }: { token: string }) {
     return (
       <>
         <CheckCircle2 aria-hidden className="mb-4 size-14 text-ok" />
-        <p className="text-titulo font-bold">Obrigado pela avaliação!</p>
+        <p className="text-titulo font-bold">Pronto, avaliação enviada!</p>
         <p className="mt-2 text-corpo text-txt-2">
           {dados?.negocioNome ? `A equipe da ${dados.negocioNome} agradece.` : 'Sua opinião ajuda o negócio a melhorar.'}
         </p>
