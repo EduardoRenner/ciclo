@@ -191,14 +191,16 @@ describe('o seed da carteira de demonstração', () => {
      */
     const src = sql()
     /*
-     * Delimitado ao INSERT que cria a tag, não ao arquivo. A primeira versão casava
-     * `/'veio uma vez'/` solto e passou com o defeito de volta: a mesma string aparece no
-     * `where` do insert de agendamentos, que a usa para achar esses clientes. Provar que a tag
-     * é LIDA não prova que ela é ESCRITA.
+     * Ancorado na string `'veio uma vez'` e recuando ao `insert into clients` que a contém.
+     * `lastIndexOf('insert into clients')` pegaria o insert da seção CLIENTES NOVOS, que vem
+     * depois desta — e a mesma string ainda aparece no `where` do insert de agendamentos. Casar
+     * solto ou no insert errado é a armadilha nº 1 da tabela do CLAUDE.md.
      */
-    const criacao = src.slice(src.lastIndexOf('insert into clients'))
-    const ateOPontoEVirgula = criacao.slice(0, criacao.indexOf(';'))
-    expect(ateOPontoEVirgula, 'o seed não cria mais quem veio uma vez só').toMatch(/'veio uma vez'/)
+    const marca = src.indexOf("array['veio uma vez']")
+    expect(marca, 'o seed não cria mais quem veio uma vez só').toBeGreaterThan(-1)
+    const abre = src.lastIndexOf('insert into clients', marca)
+    const ateOPontoEVirgula = src.slice(abre, src.indexOf(';', marca))
+    expect(ateOPontoEVirgula, 'a tag veio uma vez tem que ser ESCRITA nesse insert').toMatch(/array\['veio uma vez'\]/)
 
     // A quantidade tem que ser CALCULADA a partir da taxa de retorno, não um número fixo: com
     // número fixo a proporção muda sozinha quando o resto da carteira muda de tamanho.
