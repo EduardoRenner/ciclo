@@ -76,6 +76,45 @@ describe('errar não pode custar o que a pessoa digitou', () => {
   })
 })
 
+/**
+ * Fora de `(auth)` a regra é a mesma, mas a decisão do sucesso muda: em formulário de CRIAR, limpar
+ * depois que deu certo é desejável. O que continua proibido é limpar quando FALHOU.
+ *
+ * Os três formulários com `action` fora de `(auth)` foram medidos em 2026-09-03 pela única coisa
+ * que decide: **campo controlado não é apagado pelo reset.** `negocio` (9 controlados) e `servicos`
+ * (8) estavam a salvo; `editor-expediente` tinha três campos NÃO controlados — duas datas com
+ * `defaultValue` e o motivo — e perdia os três quando a folga falhava ao salvar.
+ */
+describe('fora de (auth), limpar no sucesso é permitido; na falha, não', () => {
+  const EXPEDIENTE = 'src/components/config/editor-expediente.tsx'
+  const fonte = semComentarios(readFileSync(EXPEDIENTE, 'utf8'))
+
+  it('a folga não é enviada por `action`, que limparia também na falha', () => {
+    expect(/<form\s[^>]*action=/.test(fonte), `${EXPEDIENTE} voltou a limpar os campos mesmo quando falha`).toBe(false)
+  })
+
+  it('o reset virou explícito, e depois de a folga entrar na lista', () => {
+    /*
+     * Casa com a ORDEM, não só com a presença: `reset()` antes do `setFolgas` limparia o
+     * formulário mesmo num caminho que ainda pode falhar. É a diferença entre limpar porque deu
+     * certo e limpar porque terminou.
+     */
+    const iSet = fonte.indexOf('setFolgas((atual) => [...atual, json.data!])')
+    const iReset = fonte.indexOf('formulario.reset()')
+    expect(iSet, 'sumiu a inserção da folga na lista').toBeGreaterThan(-1)
+    expect(iReset, 'sumiu o reset explícito — o formulário nunca mais limpa').toBeGreaterThan(-1)
+    expect(iReset, 'o reset acontece antes de a folga entrar na lista').toBeGreaterThan(iSet)
+  })
+
+  it('o caminho de falha sai antes de chegar no reset', () => {
+    // O `return` depois do toast é o que garante que falhar não limpa nada.
+    const iErro = fonte.indexOf("mostrarToast({ tom: 'erro', titulo: 'Não consegui salvar a folga'")
+    const iReset = fonte.indexOf('formulario.reset()')
+    expect(iErro).toBeGreaterThan(-1)
+    expect(fonte.slice(iErro, iReset), 'o ramo de erro não retorna antes do reset').toContain('return')
+  })
+})
+
 describe('o detector reconhece as duas formas', () => {
   it('acusa `action` e absolve `onSubmit`', () => {
     // Guarda contra o próprio detector: se o padrão parar de casar, tudo acima passa vazio.
