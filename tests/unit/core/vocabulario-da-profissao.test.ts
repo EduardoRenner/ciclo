@@ -288,6 +288,15 @@ describe('o painel também fala a língua da profissão', () => {
     expect(COLADO.test('rotulo={`Foto do ${'), 'o detector cegou para o caso que ele existe para pegar').toBe(true)
     expect(COLADO.test('rotulo={`Direitos da ${comMaiuscula('), 'o detector não alcança a chamada aninhada').toBe(true)
     expect(COLADO.test('descricao="a ordem que a cliente vê" titulo={'), 'o detector acusa atributo vizinho').toBe(false)
+    /*
+     * As CONTRAÇÕES afirmadas por nome, e não só presentes na lista. Medido por mutação: apagá-las
+     * do padrão passava VERDE, porque nenhum rótulo de hoje injeta vocabulário depois de "pro". A
+     * largura do detector precisa ser asserção, senão ela encolhe sem ninguém ver — e foi
+     * exatamente assim que "aparece pro cliente" quase entrou como seguro.
+     */
+    for (const contracao of ['pro', 'pra', 'no', 'na', 'num', 'pela']) {
+      expect(COLADO.test(`ajuda={\`aparece ${contracao} \${`), `o detector deixou de conhecer "${contracao}"`).toBe(true)
+    }
 
     expect(
       achados,
@@ -295,6 +304,24 @@ describe('o painel também fala a língua da profissão', () => {
         'cliente" vira "Direitos da paciente" e depois "Direitos da estudante" — o artigo não ' +
         'acompanha. Reescreva a frase para não depender de gênero, como foi feito em "Onde vai ser".',
     ).toEqual([])
+  })
+
+  it('o layout provê o vocabulário do tenant, não o padrão fixo', () => {
+    /*
+     * Medido por mutação: trocar `ctx?.tenant.vocabulario ?? PADRAO` por `PADRAO` passava VERDE. O
+     * painel inteiro voltaria a dizer "Cliente" e "Serviço" para todo mundo, em silêncio, e as
+     * asserções de tela continuariam passando porque elas conferem que a TELA consome o hook — não
+     * que alguém entrega o valor certo a ele. É a costura entre as duas pontas, que é onde este
+     * projeto já perdeu recurso inteiro (`tenants.cobranca`, `vocab_override`) sem ninguém ver.
+     */
+    const fonte = semComentarios(readFileSync('src/app/admin/layout.tsx', 'utf8'))
+    expect(/<VocabularioProvider/.test(fonte), 'o layout parou de prover o vocabulário').toBe(true)
+    expect(
+      /valor=\{ctx\?\.tenant\.vocabulario \?\? PADRAO\}/.test(fonte),
+      'o layout provê um valor fixo: toda tela do painel cai no padrão da casa em silêncio',
+    ).toBe(true)
+    // O `catch` é o que impede o layout de derrubar o painel de quem ainda não tem estabelecimento.
+    expect(/contextoAtual\([\s\S]{0,120}catch\(\(\) => null\)/.test(fonte), 'o layout estoura para conta sem tenant').toBe(true)
   })
 
   it('o leitor do painel achou os arquivos — não passa por ter varrido lista vazia', () => {
