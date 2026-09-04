@@ -1,4 +1,4 @@
-import { ArrowRight, Check, Minus } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 
@@ -97,6 +97,10 @@ const PERGUNTAS = [
   },
 ]
 
+/** Ids dos dois `<symbol>` da lista de planos — a definição e cada `<use>` leem daqui. */
+const ID_INCLUI = 'precos-inclui'
+const ID_NAO_INCLUI = 'precos-nao-inclui'
+
 export default function Precos() {
   const botaoPrimario =
     'inline-flex h-12 w-full items-center justify-center gap-2 rounded-[var(--radius-sm)] bg-acc px-5 text-corpo ' +
@@ -143,6 +147,25 @@ export default function Precos() {
       </section>
 
       <section className="flex flex-col gap-4">
+        {/*
+          Os dois ícones desta lista aparecem 24 vezes somadas — 19 `Check` e 5 `Minus` —, e o
+          lucide inlina o SVG inteiro em cada uma. Medido no HTML de produção de `/precos`:
+          7.161 B de 52.197, **14% da página só de ícone repetido**. Mesmo conserto das estrelas
+          da página do salão: um `<symbol>` e 24 `<use>`.
+
+          `fill="none"` fica em cada `<svg>` que usa, nunca no `<symbol>` — dentro do símbolo o
+          atributo ganha da classe do elemento externo na cascata, e foi assim que a primeira
+          versão daquele conserto renderizou 25 estrelas vazadas.
+        */}
+        <svg aria-hidden focusable="false" className="absolute size-0" width="0" height="0">
+          <symbol id={ID_INCLUI} viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20 6 9 17l-5-5" />
+          </symbol>
+          <symbol id={ID_NAO_INCLUI} viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5 12h14" />
+          </symbol>
+        </svg>
+
         {CARTOES.map((p) => (
           <article
             key={p.tier}
@@ -181,13 +204,17 @@ export default function Precos() {
             <ul className="mt-4 flex flex-col gap-2">
               {p.inclui.map((item) => (
                 <li key={item.texto} className="flex gap-2 text-secundario text-txt-2">
-                  <Check aria-hidden className="mt-0.5 size-4 shrink-0 text-ok" />
+                  <svg aria-hidden viewBox="0 0 24 24" fill="none" className="mt-0.5 size-4 shrink-0 text-ok">
+                    <use href={`#${ID_INCLUI}`} />
+                  </svg>
                   <span>{item.texto}</span>
                 </li>
               ))}
               {p.naoInclui?.map((item) => (
                 <li key={item} className="flex gap-2 text-secundario text-txt-3">
-                  <Minus aria-hidden className="mt-0.5 size-4 shrink-0" />
+                  <svg aria-hidden viewBox="0 0 24 24" fill="none" className="mt-0.5 size-4 shrink-0">
+                    <use href={`#${ID_NAO_INCLUI}`} />
+                  </svg>
                   <span>{item}</span>
                 </li>
               ))}
