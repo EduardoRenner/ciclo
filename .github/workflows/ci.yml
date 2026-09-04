@@ -77,9 +77,42 @@ jobs:
         # `high` e acima reprovam; `moderate` aparece no log sem quebrar o build,
         # senão um aviso novo em dependência transitiva trava o merge de todo
         # mundo num dia em que ninguém mexeu em dependência.
+        #
+        # TIMEOUT DE REDE NÃO É VULNERABILIDADE. `pnpm audit` consulta o registro do npm, e em
+        # 03 e 04/09 ele reprovou TRÊS PRs com `ERR_SOCKET_TIMEOUT` depois de já ter impresso
+        # "No known vulnerabilities found" na chamada anterior. Vermelho por rede instável ensina
+        # a ignorar a CI, que é o mesmo estrago do alarme permanentemente aceso descrito em
+        # `src/core/cron/agendadas.ts` — no dia da vulnerabilidade de verdade ninguém olha.
+        #
+        # Então o passo separa as duas coisas: a saída do audit decide, não o código de saída.
+        # Vulnerabilidade encontrada reprova; registro inalcançável avisa e segue.
         run: |
+          set -uo pipefail
           pnpm audit --audit-level moderate || true
-          pnpm audit --audit-level high
+
+          saida=$(pnpm audit --audit-level high 2>&1) && codigo=0 || codigo=$?
+          echo "$saida"
+
+          if [ "$codigo" -eq 0 ]; then exit 0; fi
+
+          # A ORDEM aqui é o conserto, e ela veio de um teste que reprovou a primeira versão.
+          #
+          # Começando pelo erro de transporte, uma vulnerabilidade num pacote cujo NOME contenha
+          # "network" era engolida como problema de rede — lista de permitidos frouxa casando com
+          # o dado errado. Perguntar primeiro "achou vulnerabilidade?" faz o achado sempre vencer,
+          # e nenhum texto de erro de rede consegue se disfarçar de relatório.
+          if echo "$saida" | grep -qiE 'vulnerabilit|severity[[:space:]]*:|[0-9]+[[:space:]]+(high|critical)'; then
+            echo "::error::pnpm audit encontrou vulnerabilidade de severidade alta ou acima."
+            exit "$codigo"
+          fi
+
+          if echo "$saida" | grep -qiE 'ERR_SOCKET_TIMEOUT|ETIMEDOUT|ECONNRESET|ENOTFOUND|EAI_AGAIN|socket timeout|ERR_PNPM_FETCH|502 Bad Gateway|503 Service'; then
+            echo "::warning::pnpm audit não conseguiu falar com o registro do npm — auditoria PULADA nesta execução. Isto NÃO é sinal de dependência limpa."
+            exit 0
+          fi
+
+          echo "::error::pnpm audit falhou por um motivo que este passo não sabe classificar — reprovando por precaução."
+          exit "$codigo"
 
   # ---------------------------------------------------------------------------
   # Typecheck, lint, unit e build. Não toca no banco, então roda em paralelo com
