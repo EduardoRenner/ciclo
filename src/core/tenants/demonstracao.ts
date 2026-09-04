@@ -76,3 +76,43 @@ export function ehDemonstracao(slug: string): boolean {
 
 /** Para o teste-guarda conferir que os três leitores enxergam a mesma lista. */
 export const SLUGS_DE_DEMONSTRACAO_PARA_TESTE = SLUGS_DE_DEMONSTRACAO
+
+/**
+ * Quais demonstrações servem de VITRINE — e por que esta lista não é a de cima.
+ *
+ * A lista acima responde *"o que esconder do buscador e da mensageria"*. Esta responde *"o que
+ * mostrar para quem nunca ouviu falar do produto"*, e são perguntas diferentes com respostas
+ * diferentes. Confundi as duas em 2026-09-03: fiz a landing escolher o primeiro item da lista de
+ * exclusão e o botão "Ver uma página de exemplo" passou a apontar para `/teste-essencial` — uma
+ * conta de teste de DEGRAU DE PLANO, sem conteúdo de vitrine, com nome que denuncia que é interna.
+ * Lista de exclusão usada como lista de exibição entrega o pior candidato, não o melhor.
+ *
+ * Só entram aqui os seis de `scripts/seed-demo-6-negocios.mjs`: são os que nascem com serviço,
+ * profissional, histórico, logo, capa e avatar — ou seja, os únicos que mostram o produto cheio.
+ * Ficam de fora `teste-*` (degrau de plano), e os legados `dom-rocha`/`ruivo-barber`/`lang-*`, que
+ * não existem mais em produção (conferido por requisição: respondem 404).
+ *
+ * **A ORDEM é a preferência**, e é decisão de produto: barbearia primeiro, porque é onde o esforço
+ * de venda está (`docs/18` §B.2), e dentro dela a de conteúdo mais cheio primeiro — uma vitrine com
+ * três profissionais demonstra mais que uma com um. Quem resolve pega o primeiro que existir de
+ * fato no banco (`server/services/demonstracao.ts`), então a ordem é o que decide na prática.
+ */
+export const SLUGS_DE_VITRINE: readonly string[] = [
+  'demo-dom-estilo',
+  'demo-corte-fino',
+  'demo-navalha-de-ouro',
+  'demo-studio-bella',
+  'demo-salao-encanto',
+  'demo-espaco-vitoria',
+  /*
+    Último recurso, e não engano: `dom-rocha` não existe mais em PRODUÇÃO (404, conferido por
+    requisição), mas existe no banco de desenvolvimento — que é outro projeto Supabase, medido em
+    2026-09-03. Sem ele nesta lista, quem roda o projeto localmente vê a home sem o botão de
+    exemplo e conclui que quebrou.
+
+    Fica por último de propósito: a ordem garante que produção nunca o escolha enquanto houver um
+    `demo-*`. E ele é vitrine legítima — o `seed-demo-barbearia.mjs` o semeia com seis meses de
+    histórico, que é justamente o que uma vitrine precisa ter.
+  */
+  'dom-rocha',
+]

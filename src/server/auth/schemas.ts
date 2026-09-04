@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import { SLUGS_RESERVADOS } from '@/core/tenants/slugs-reservados'
+
 /**
  * Telefone brasileiro em E.164 (`+5511999999999`). Aceita como a pessoa digita —
  * com parêntese, traço, espaço, com ou sem +55 — e devolve normalizado, porque é
@@ -43,27 +45,11 @@ export const EsquemaNovaSenha = z.object({
 const SlugFormatado = /^[a-z0-9][a-z0-9-]{2,38}[a-z0-9]$/
 
 /**
- * Toda pasta real de `src/app/` (e as que moram dentro de um grupo de rota
- * sem virar segmento próprio: `(auth)/entrar`, `(public)/confirmar`...) ganha
- * de `[slug]` na hora de rotear — um salão com um desses nomes ficaria
- * inacessível pra sempre, sem erro nenhum avisando. `lista-espera` e
- * `nova-senha` entram mesmo sem pasta ainda: são rotas planejadas.
+ * A lista mora em `core/tenants/slugs-reservados.ts` desde 2026-09-03, e não aqui, por duas razões:
+ * ela ganhou um SEGUNDO leitor (o boundary de erro da raiz, que é componente de cliente e não pode
+ * importar este módulo), e estava incompleta — faltavam seis segmentos que existem como pasta.
+ * A guarda que compara a lista com as rotas de verdade também vive junto dela.
  */
-const SLUGS_RESERVADOS = new Set([
-  'admin',
-  'api',
-  'auth',
-  'dev',
-  'onboarding',
-  'entrar',
-  'cadastro',
-  'confirmar',
-  'minha-conta',
-  'lista-espera',
-  'nova-senha',
-  'convite',
-  'verificar',
-])
 
 /** TOTP: sempre 6 dígitos, o app autenticador não gera outra coisa. */
 export const EsquemaCodigoMfa = z.object({

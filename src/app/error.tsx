@@ -1,8 +1,9 @@
 'use client'
 
 import { RotateCcw } from 'lucide-react'
-import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+
+import { ehRotaDoProduto } from '@/core/tenants/slugs-reservados'
 
 import Button from '@/components/ui/button'
 import Selo from '@/components/shell/selo'
@@ -31,7 +32,15 @@ export default function Erro({ reset }: { error: Error & { digest?: string }; re
   const caminho = usePathname() ?? '/'
   const noPainel = caminho.startsWith('/admin')
   /* `/dom-rocha/agendar` → `dom-rocha`. Vazio na home e nas rotas por token. */
-  const slug = !noPainel ? (caminho.split('/')[1] ?? '') : ''
+  const primeiroSegmento = !noPainel ? (caminho.split('/')[1] ?? '') : ''
+  /*
+    `ehRotaDoProduto` entrou em 2026-09-03, e conserta um defeito medido no navegador: o código
+    tratava QUALQUER primeiro segmento como slug de salão. Num erro em `/precos`, isso produzia o
+    rótulo "Voltar para a página do estabelecimento" — que é falso, não existe estabelecimento
+    nenhum ali — apontando para `/precos`, ou seja, **de volta para a tela que acabou de falhar**.
+    O botão de escape era um botão de repetir o erro, com o nome errado.
+  */
+  const slug = primeiroSegmento && !ehRotaDoProduto(primeiroSegmento) ? primeiroSegmento : ''
   const voltarPara = noPainel ? '/admin/hoje' : slug ? `/${slug}` : '/'
   const rotuloDoVoltar = noPainel ? 'Ir para Hoje' : slug ? 'Voltar para a página do estabelecimento' : 'Ir para o início'
 
@@ -51,12 +60,21 @@ export default function Erro({ reset }: { error: Error & { digest?: string }; re
           <RotateCcw aria-hidden className="size-4" />
           Tentar de novo
         </Button>
-        <Link
+        {/*
+          `<a>` e não `<Link>`, mudado em 2026-09-03 pelo mesmo motivo do boundary do `/admin`:
+          `Link` faz navegação de CLIENTE e reaproveita o runtime que acabou de quebrar. Quando o
+          erro não é transitório, o botão de saída leva a pessoa para o mesmo erro — e ela conclui
+          que o app travou, que foi exatamente o relato que originou este conserto.
+
+          Navegação de página inteira é mais lenta, e aqui a lentidão é o recurso: é o que descarta
+          o estado quebrado. `reset()` continua sendo o caminho rápido para a falha transitória.
+        */}
+        <a
           href={voltarPara}
           className="inline-flex h-12 items-center justify-center rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-5 text-corpo font-semibold text-txt transition hover:bg-surface-3 active:scale-[.97]"
         >
           {rotuloDoVoltar}
-        </Link>
+        </a>
       </div>
     </TelaPublica>
   )

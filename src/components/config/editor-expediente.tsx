@@ -113,7 +113,20 @@ export default function EditorExpediente({
     salvarExpediente(blocos.map((b, i) => (i === indice ? { ...b, [campo]: valor } : b)))
   }
 
-  function criarFolga(formData: FormData) {
+  /**
+   * `formulario` chega para poder ser limpo NO SUCESSO, e só nele — a distinção é o conserto
+   * inteiro.
+   *
+   * Este formulário usava `<form action={criarFolga}>`, e no React 19 isso reseta os campos quando
+   * a ação termina, **inclusive quando ela falhou**. Aqui os três campos são não controlados (duas
+   * datas com `defaultValue` e o motivo), então uma falha apagava as datas escolhidas e o motivo
+   * digitado, e a pessoa recomeçava.
+   *
+   * Diferente das telas de autenticação, aqui limpar depois do SUCESSO é desejável: quem acabou de
+   * cadastrar uma folga costuma cadastrar a próxima. Por isso o reset passou a ser explícito, no
+   * caminho feliz, em vez de automático nos dois.
+   */
+  function criarFolga(formData: FormData, formulario: HTMLFormElement) {
     const inicio = String(formData.get('inicio') ?? '')
     const fim = String(formData.get('fim') ?? '')
     const motivo = String(formData.get('motivo') ?? '').trim() || undefined
@@ -130,6 +143,8 @@ export default function EditorExpediente({
         return
       }
       setFolgas((atual) => [...atual, json.data!])
+      // Só aqui: a folga entrou na lista, o formulário fica pronto para a próxima.
+      formulario.reset()
     })
   }
 
@@ -251,7 +266,13 @@ export default function EditorExpediente({
         ) : null}
 
         <Card>
-          <form action={criarFolga} className="flex flex-col gap-3">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              criarFolga(new FormData(e.currentTarget), e.currentTarget)
+            }}
+            className="flex flex-col gap-3"
+          >
             <label className="flex flex-col gap-1">
               <span className="text-label font-semibold text-txt-2">Início</span>
               <input

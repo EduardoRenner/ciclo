@@ -50,7 +50,26 @@ export default function FormularioCadastro() {
   }
 
   return (
-    <form action={enviar} className="flex w-full max-w-sm flex-col gap-3">
+    <form
+      /*
+        `onSubmit` e não `action`, e a diferença é medida: no React 19 um `<form action={fn}>`
+        RESETA o formulário quando a ação termina, inclusive quando ela FALHOU. Conferido no
+        navegador em 2026-09-03 na tela de entrar: errar a senha limpava e-mail E senha, e a
+        pessoa tinha que redigitar o e-mail a cada tentativa.
+
+        É um dos problemas de maior impacto em UX de login, e explica o "a etapa de login está
+        muito ruim" que originou este conserto: cada erro custava o formulário inteiro.
+
+        Nas quatro telas de autenticação o sucesso sempre navega para fora, então não existe
+        caso em que limpar seja desejado: o reset era puro efeito colateral. `enviar` continua
+        recebendo `FormData`, igual.
+      */
+      onSubmit={(e) => {
+        e.preventDefault()
+        void enviar(new FormData(e.currentTarget))
+      }}
+      className="flex w-full max-w-sm flex-col gap-3"
+    >
       <Input rotulo="Nome completo" name="fullName" autoComplete="name" required />
       <Input rotulo="E-mail" name="email" type="email" autoComplete="email" required />
       <PhoneInput rotulo="Telefone com DDD" name="phone" valor={telefone} aoMudar={setTelefone} required />

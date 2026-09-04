@@ -6,12 +6,29 @@ const T = '11111111-1111-4111-8111-111111111111'
 const C = '22222222-2222-4222-8222-222222222222'
 const QUEM = { actorId: 'u-1', ip: '203.0.113.9', userAgent: 'Safari' }
 
-function bancoFalso(erro: { message: string } | null = null) {
+/**
+ * O banco falso passou a distinguir a TABELA em 2026-09-03, porque `registrarAcessoAoCofre` deixou
+ * de fazer só um `insert`: ela agora busca o nome de quem acessou em `profiles`, para gravar em
+ * `vault_access_log.actor_label` — o instantâneo que faz a trilha sobreviver à saída do
+ * profissional do salão.
+ *
+ * `nomeDoAtor: null` simula o perfil que não existe (ou a consulta que falhou), que é o caminho em
+ * que o rótulo fica vazio e o registro entra assim mesmo.
+ */
+function bancoFalso(
+  erro: { message: string } | null = null,
+  nomeDoAtor: string | null = 'Renata Lopes',
+) {
   const linhas: Record<string, unknown>[] = []
   const db = {
-    from: () => ({
+    from: (tabela: string) => ({
+      select: () => ({
+        eq: () => ({
+          maybeSingle: async () => ({ data: nomeDoAtor === null ? null : { full_name: nomeDoAtor }, error: null }),
+        }),
+      }),
       insert: async (linha: Record<string, unknown>) => {
-        linhas.push(linha)
+        if (tabela === 'vault_access_log') linhas.push(linha)
         return { error: erro }
       },
     }),
@@ -29,10 +46,36 @@ describe('registrarAcessoAoCofre', () => {
       tenant_id: T,
       client_id: C,
       actor_id: 'u-1',
+      // O instantâneo do nome. Sem ele, quando este profissional sair do salão, TODOS os acessos
+      // dele à ficha de saúde viram "Usuário removido" — de uma vez e para sempre.
+      actor_label: 'Renata Lopes',
       action: 'read',
       ip: '203.0.113.9',
       user_agent: 'Safari',
     })
+  })
+
+  it('perfil que não existe mais não impede o registro — o rótulo é que fica vazio', async () => {
+    /*
+     * O contrato desta função é que acesso ao cofre NUNCA fique sem trilha. A busca do nome é
+     * melhor esforço: se o perfil sumiu entre o acesso e a gravação, ou se a consulta falhar, o
+     * registro entra sem rótulo. Trocar a peça de LGPD por um nome bonito seria o pior negócio
+     * possível — e é exatamente o tipo de regressão que um `throw` mal colocado ali produziria.
+     */
+    const { db, linhas } = bancoFalso(null, null)
+    await registrarAcessoAoCofre(db, T, C, 'read', QUEM)
+    expect(linhas).toHaveLength(1)
+    expect(linhas[0]?.actor_label).toBeNull()
+    expect(linhas[0]?.actor_id).toBe('u-1')
+  })
+
+  it('acesso de sistema (sem ator) não inventa rótulo nem vai buscar perfil', async () => {
+    // `actor_id: null` é job, não pessoa. Buscar `profiles` por null traria a linha errada ou
+    // nenhuma, e gastaria uma consulta para nada.
+    const { db, linhas } = bancoFalso()
+    await registrarAcessoAoCofre(db, T, C, 'read', { actorId: null, ip: null, userAgent: null })
+    expect(linhas[0]?.actor_id).toBeNull()
+    expect(linhas[0]?.actor_label).toBeNull()
   })
 
   it('exportação de dados é uma ação distinta de leitura', async () => {
