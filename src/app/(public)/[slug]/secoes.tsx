@@ -3,6 +3,7 @@ import Link from 'next/link'
 
 import Badge from '@/components/ui/badge'
 import Card from '@/components/ui/card'
+import { comMaiuscula, plural } from '@/core/text/vocabulario'
 import { formatarPreco } from '@/core/pricing/formatar'
 import { apelidoDoInstagram, urlDoInstagram } from '@/core/text/instagram'
 import { duracao, formatarTelefone } from '@/lib/formato'
@@ -174,7 +175,18 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
 
       {perfil.services.length > 0 ? (
         <section className="py-6">
-          <h2 className="mb-3 text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">Serviços</h2>
+          {/*
+            O primeiro rótulo do produto a falar a língua da profissão: um psicólogo anuncia
+            "Sessões" e um personal anuncia "Treinos" onde a barbearia anuncia "Serviços".
+
+            O plural vem do `core` e não de um `+ 's'` aqui: "sessão" vira "sessões", e essa é a
+            única irregular do conjunto. Um pluralizador genérico de português erraria calado em
+            palavra terminada em -l, -r, -m ou -z, então o conjunto é fechado e há guarda conferindo
+            que toda palavra do seed cai nas duas regras conhecidas.
+          */}
+          <h2 className="mb-3 text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">
+            {comMaiuscula(plural(perfil.vocabulario.servico))}
+          </h2>
           <div className="flex flex-col gap-2">
             {/*
               O card já nascia `pressionavel` — retorno de toque, `hover`, tudo — dentro de uma

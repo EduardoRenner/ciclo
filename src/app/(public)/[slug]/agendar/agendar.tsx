@@ -3,6 +3,7 @@
 import { CalendarPlus, CheckCircle2, ChevronDown } from "lucide-react";
 import { useEffect, useMemo, useState, useTransition } from "react";
 
+import { comMaiuscula, type Vocabulario } from "@/core/text/vocabulario";
 import { formatarPreco, type ModeloDePreco } from "@/core/pricing/formatar";
 import Button from "@/components/ui/button";
 import Card from "@/components/ui/card";
@@ -154,6 +155,7 @@ function Passo({ numero, titulo }: { numero: number; titulo: string }) {
 
 export default function Agendar({
   slug,
+  vocabulario,
   nomeDoSalao,
   enderecoDoSalao,
   timezone,
@@ -166,6 +168,8 @@ export default function Agendar({
   indicadaPor,
 }: {
   slug: string;
+  /** As palavras da profissão, já resolvidas no servidor. Ver docs/DECISOES.md 2026-09-04. */
+  vocabulario: Vocabulario;
   nomeDoSalao: string;
   /** Vira o `LOCATION` do arquivo de calendário — sem ele o evento não diz onde é. */
   enderecoDoSalao: string | null;
@@ -616,7 +620,7 @@ export default function Agendar({
       ) : null}
 
       <section>
-        <Passo numero={1} titulo="Serviço" />
+        <Passo numero={1} titulo={comMaiuscula(vocabulario.servico)} />
         <div className="flex flex-col gap-2">
           {services.map((s) => (
             <button
@@ -658,7 +662,7 @@ export default function Agendar({
 
       {professionals.length > 1 ? (
         <section>
-          <Passo numero={2} titulo="Profissional" />
+          <Passo numero={2} titulo={comMaiuscula(vocabulario.profissional)} />
           <div className="flex flex-wrap gap-2">
             <Chip
               ligado={professionalId === null}
@@ -920,8 +924,17 @@ export default function Agendar({
           {/* Opcional: pedir endereço sempre (não só de quem "vai até o cliente")
               evita ramificar a tela por eixo de profissão só pra isto — o campo
               some sozinho da conversa se ninguém preencher. */}
+          {/*
+            "Endereço do atendimento" virou "Onde vai ser" porque a versão antiga **não sobrevive
+            ao vocabulário da profissão**: o artigo concorda com a palavra, e "do atendimento" vira
+            "da sessão" no psicólogo e "da aula" no professor. Injetar a palavra aqui exigiria
+            guardar o gênero de cada uma, e um `do/da` errado é pior que a palavra genérica.
+
+            Reescrever para não depender de gênero é a saída que o `docs/20` §403 já indica ao vetar
+            barra e parênteses. E o rótulo ficou melhor: mais curto e mais direto que o anterior.
+          */}
           <Input
-            rotulo="Endereço do atendimento (opcional)"
+            rotulo="Onde vai ser (opcional)"
             value={endereco}
             onChange={(e) => setEndereco(e.target.value)}
             ajuda="Só preencha se não for no nosso endereço."
