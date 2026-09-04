@@ -1,4 +1,4 @@
-import { AtSign, CalendarPlus, ChevronRight, Clock, MapPin, MessageCircle, Phone, Star } from 'lucide-react'
+import { AtSign, CalendarPlus, ChevronRight, Clock, MapPin, MessageCircle, Phone, Star, Users } from 'lucide-react'
 import Link from 'next/link'
 
 import Badge from '@/components/ui/badge'
@@ -232,6 +232,61 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
         <section className="py-6">
           <h2 className="mb-3 text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">Sobre</h2>
           <p className="whitespace-pre-line text-corpo text-txt-2">{perfil.about}</p>
+        </section>
+      ) : null}
+
+      {/*
+        QUEM ATENDE. As fotos da equipe já subiam pelo painel (`vitrine/entidade`), já vinham no
+        `perfilPublico` e apareciam nos chips do passo 2 do agendamento — mas a página do salão,
+        que é onde a pessoa decide se confia antes de clicar em qualquer coisa, não mostrava
+        ninguém. Medido no ar em 04/09: `professionals` chegava com três pessoas e três fotos, e a
+        página renderizava duas imagens no total (logo e capa).
+
+        Cada pessoa leva para o agendamento JÁ escolhida (`?profissional=`), no mesmo desenho do
+        `?servico=` dos cards de serviço: quem tocou num rosto escolheu, e abrir em "Tanto faz"
+        desfaria a escolha em silêncio.
+
+        Sem foto o cartão continua existindo, só com o nome — moldura vazia denuncia a ausência,
+        que é o oposto do que esta seção existe para fazer. Mesmo critério dos chips do passo 2.
+      */}
+      {perfil.professionals.length > 0 ? (
+        <section className="py-6">
+          <h2 className="mb-3 flex items-center gap-1.5 text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">
+            <Users aria-hidden className="size-3.5" />
+            Quem atende
+          </h2>
+          {/*
+            Rola na horizontal em vez de quebrar em grade: equipe de três cabe na tela, e a de dez
+            não empurra o horário e as avaliações para fora do primeiro scroll. `-mx`/`px` casados
+            deixam o primeiro e o último cartão encostarem na margem do texto sem sangrar a página.
+          */}
+          <div className="-mx-[var(--gutter)] flex snap-x gap-3 overflow-x-auto px-[var(--gutter)] pb-1">
+            {perfil.professionals.map((p) => (
+              <Link
+                key={p.id}
+                href={`/${perfil.slug}/agendar?profissional=${p.id}`}
+                className="flex w-20 shrink-0 snap-start flex-col items-center gap-1.5 text-center"
+              >
+                {p.photoUrl ? (
+                  /* Já é WebP dimensionado no upload — mesmo padrão de logo/capa. */
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={p.photoUrl}
+                    alt=""
+                    width={512}
+                    height={512}
+                    loading="lazy"
+                    className="size-16 rounded-full border border-line-2 bg-surface-2 object-cover"
+                  />
+                ) : (
+                  <span aria-hidden className="grid size-16 place-items-center rounded-full bg-surface-2 text-corpo font-semibold text-txt-3">
+                    {p.displayName.trim().charAt(0).toUpperCase()}
+                  </span>
+                )}
+                <span className="line-clamp-2 text-secundario text-txt-2">{p.displayName}</span>
+              </Link>
+            ))}
+          </div>
         </section>
       ) : null}
 

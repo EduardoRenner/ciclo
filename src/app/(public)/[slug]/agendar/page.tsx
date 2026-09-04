@@ -44,10 +44,10 @@ export default async function PaginaAgendar({
   // `?servico=<id>` é o toque na lista de serviços da página do salão. Só id viaja em URL (nunca
   // nome nem preço), e é conferido contra o catálogo do próprio perfil antes de virar estado: id
   // de outro salão, ou serviço já desativado, cai no comportamento padrão em vez de escolher nada.
-  searchParams: Promise<{ ind?: string; servico?: string }>
+  searchParams: Promise<{ ind?: string; servico?: string; profissional?: string }>
 }) {
   const { slug } = await params
-  const { ind, servico } = await searchParams
+  const { ind, servico, profissional } = await searchParams
 
   const perfil = await perfilPublico(slug).catch((erro: unknown) => {
     if (erro instanceof AppError && erro.code === 'NOT_FOUND') return null
@@ -59,6 +59,10 @@ export default async function PaginaAgendar({
   const indicadaPor = await quemIndicou(slug, ind).catch(() => null)
 
   const servicoInicial = perfil.services.some((s) => s.id === servico) ? servico! : null
+  // `?profissional=` é o toque num rosto da seção "Quem atende", e passa pela mesma conferência
+  // do `?servico=`: id de outro salão, ou de quem saiu da equipe, cai no comportamento padrão
+  // ("Tanto faz") em vez de pré-selecionar alguém que não existe.
+  const profissionalInicial = perfil.professionals.some((p) => p.id === profissional) ? profissional! : null
 
   return (
     <main className="mx-auto min-h-dvh max-w-[560px] px-[18px] py-8">
@@ -98,6 +102,7 @@ export default async function PaginaAgendar({
         services={perfil.services}
         professionals={perfil.professionals}
         servicoInicial={servicoInicial}
+        profissionalInicial={profissionalInicial}
         ind={ind ?? null}
         indicadaPor={indicadaPor}
       />
