@@ -155,9 +155,15 @@ export async function registrarEntradaEstoque(db: Cliente, tenantId: string, ent
 }
 
 /**
- * Produtos ativos, para quem precisa RESOLVER um nome em id — o assistente lançando item na
- * comanda. Devolve o preço junto só para o cartão de confirmação mostrar; quem decide o preço
- * cobrado continua sendo `adicionarItemComanda`, lendo o catálogo na hora.
+ * Produtos DE REVENDA ativos, para quem precisa RESOLVER um nome em id — o assistente lançando
+ * item na comanda. Devolve o preço junto só para o cartão de confirmação mostrar; quem decide o
+ * preço cobrado continua sendo `adicionarItemComanda`, lendo o catálogo na hora.
+ *
+ * `is_retail` filtra porque `products` guarda duas naturezas na mesma tabela: revenda (shampoo,
+ * óleo de barba) e INSUMO (água oxigenada, luva, navalha descartável), que o serviço consome pela
+ * ficha de `service_products` e já entra em `material_cost_cents`. Sem o filtro, o assistente
+ * oferecia os 37 insumos da produção como se fossem vendáveis — e todos com `price_cents` nulo,
+ * então lançar um deles cobrava R$ 0,00 e ainda tirava a peça do estoque uma segunda vez.
  */
 export async function listarProdutosAtivos(db: Cliente, tenantId: string) {
   const { data, error } = await db
@@ -165,6 +171,7 @@ export async function listarProdutosAtivos(db: Cliente, tenantId: string) {
     .select('id, name, price_cents, stock_qty')
     .eq('tenant_id', tenantId)
     .eq('active', true)
+    .eq('is_retail', true)
     .is('deleted_at', null)
     .order('name')
   if (error) throw new AppError('INTERNAL', { cause: error })
