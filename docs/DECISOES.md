@@ -5790,3 +5790,15 @@ migrations, para o dado nascer certo em vez de ser filtrado para sempre.
 `agenda`, `local`) já são seguras — sessão, treino, aula, faxina, ensaio, trabalho, estúdio. O
 problema é só nas que nomeiam PESSOA. Separar as duas entrega o valor da metade que está pronta
 sem esperar por uma revisão de copy de 17 profissões.
+
+### 2026-09-04 · O peso no celular é o HTML, não o bundle · medido, registrado · auditoria
+
+A hipótese de trabalho era "bundle grande demais para celular fraco". Medido na produção: o JS
+compartilhado é 104 kB e **101 deles são React e Next** — piso de framework. Total Blocking Time de
+**33 ms**: a CPU do aparelho antigo não é o gargalo. Quem pesa é o documento HTML.
+
+O padrão que sobra é **ícone dentro de `.map()`**: o `lucide-react` inlina o `<path>` e todos os
+atributos em cada ocorrência. Três casos, 22%, 14% e 5% das respectivas páginas. Conserto é
+`<symbol>` + `<use>`, com a regra de que `fill="none"` fica no elemento que USA e nunca no símbolo
+— dentro dele o atributo ganha da classe na cascata e o ícone sai vazado, sem nenhum teste
+reclamar. Ver `docs/42`.
