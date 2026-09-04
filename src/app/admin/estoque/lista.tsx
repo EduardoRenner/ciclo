@@ -134,9 +134,11 @@ export default function ListaEstoque({
         <FormularioEntrada
           produto={entrando}
           aoFechar={() => setEntrando(null)}
-          aoSalvar={(id, estoque, custoMedioCents) => {
+          aoSalvar={(id, estoque, custoMedioCents, pontoDePedido) => {
             setLista((atual) =>
-              atual.map((p) => (p.id === id ? { ...p, estoque, custoMedioCents, emAlerta: estoque <= p.pontoDePedido } : p)),
+              // `pontoDePedido` vem da RESPOSTA, não do estado antigo da linha: quem acabou de
+              // definir o aviso precisa ver o selo "Repor" recalculado com o valor que gravou.
+              atual.map((p) => (p.id === id ? { ...p, estoque, custoMedioCents, pontoDePedido, emAlerta: estoque <= pontoDePedido } : p)),
             )
             mostrarToast({ tom: 'ok', titulo: 'Entrada registrada', descricao: 'O estoque e o custo médio já estão atualizados.' })
           }}
@@ -153,17 +155,20 @@ function FormularioEntrada({
 }: {
   produto: ProdutoEstoque
   aoFechar: () => void
-  aoSalvar: (id: string, estoque: number, custoMedioCents: number) => void
+  aoSalvar: (id: string, estoque: number, custoMedioCents: number, pontoDePedido: number) => void
 }) {
   const [qtd, setQtd] = useState('')
   // Começa no custo médio que já existe: repor pelo mesmo preço é o caso comum,
   // e digitar de novo o que o sistema já sabe é atrito à toa.
   const [custoCents, setCustoCents] = useState(produto.custoMedioCents)
   const [nota, setNota] = useState('')
+  const [pontoDePedido, setPontoDePedido] = useState(produto.pontoDePedido > 0 ? String(produto.pontoDePedido) : '')
   const [erro, setErro] = useState<string | null>(null)
   const [salvando, iniciarSalvamento] = useTransition()
 
   const quantidadeValida = Number(qtd.replace(',', '.')) > 0
+  const pontoDigitado = Number(pontoDePedido.replace(',', '.'))
+  const pontoValido = pontoDePedido.trim() !== '' && Number.isFinite(pontoDigitado) && pontoDigitado >= 0
 
   function salvar() {
     const valor = Number(qtd.replace(',', '.'))
@@ -183,14 +188,24 @@ function FormularioEntrada({
             qty: valor,
             unitCostCents: custoCents,
             note: nota.trim() || undefined,
+            // Campo vazio = "não mexi nisso": manda `undefined` e o serviço preserva o valor
+            // atual. Zero digitado é escolha válida ("não me avise por quantidade") e precisa
+            // chegar como zero, por isso o teste é em string vazia e não em falsy.
+            //
+            // `pontoValido` também barra `NaN`: `JSON.stringify(NaN)` vira `null`, e `null` num
+            // campo opcional é rejeitado pelo Zod com uma mensagem que não diz o que fazer.
+            reorderPoint: pontoValido ? Number(pontoDePedido.replace(',', '.')) : undefined,
           }),
         })
-        const json = (await r.json()) as { data?: { stock_qty: number; avg_cost_cents: number }; error?: { message: string } }
+        const json = (await r.json()) as {
+          data?: { stock_qty: number; avg_cost_cents: number; reorder_point: number }
+          error?: { message: string }
+        }
         if (!r.ok || !json.data) {
           setErro(json.error?.message ?? 'Não consegui registrar a entrada. Tente de novo.')
           return
         }
-        aoSalvar(produto.id, json.data.stock_qty, json.data.avg_cost_cents)
+        aoSalvar(produto.id, json.data.stock_qty, json.data.avg_cost_cents, json.data.reorder_point)
         aoFechar()
       } catch {
         // Rede caiu antes de chegar resposta — sem isto, o React 19 relança para o error
@@ -222,7 +237,33 @@ function FormularioEntrada({
           aoMudar={setCustoCents}
           ajuda="É este valor que faz o custo do atendimento sair do zero."
         />
+        {/*
+          `reorder_point` era lida em três lugares e escrita em nenhum — não havia onde definir.
+          O efeito não era o alerta sumir, era chegar tarde: a regra é "estoque ≤ ponto **ou**
+          cobertura < 7 dias", e com o ponto sempre em 0 a primeira metade só disparava com o
+          produto já acabado.
+
+          Fica aqui, e não numa tela de edição de produto, porque quem registra a compra é quem
+          acabou de decidir quanto precisa ter em mãos — é a mesma decisão, no mesmo instante.
+        */}
+        <Input
+          rotulo="Me avise quando sobrar menos que (opcional)"
+          value={pontoDePedido}
+          onChange={(e) => setPontoDePedido(e.target.value)}
+          inputMode="decimal"
+          ajuda={
+            produto.pontoDePedido > 0
+              ? `Hoje o aviso é em ${quantidade(produto.pontoDePedido)} ${produto.unidade}.`
+              : 'Sem isso, o aviso só chega quando o produto acaba.'
+          }
+        />
         <Input rotulo="Observação (opcional)" value={nota} onChange={(e) => setNota(e.target.value)} maxLength={500} />
+
+        {pontoDePedido.trim() !== '' && !pontoValido ? (
+          <p role="alert" className="text-secundario text-bad">
+            O aviso precisa ser um número de {produto.unidade} — deixe em branco para não mudar.
+          </p>
+        ) : null}
 
         {erro ? (
           <p role="alert" className="text-secundario text-bad">
@@ -233,8 +274,8 @@ function FormularioEntrada({
         <Button
           largura="cheia"
           carregando={salvando}
-          disabled={!quantidadeValida}
-          motivoDesabilitado="Preencha a quantidade que entrou."
+          disabled={!quantidadeValida || (pontoDePedido.trim() !== '' && !pontoValido)}
+          motivoDesabilitado={quantidadeValida ? 'Corrija o aviso de estoque baixo.' : 'Preencha a quantidade que entrou.'}
           onClick={salvar}
         >
           <PackagePlus aria-hidden className="size-4" />
