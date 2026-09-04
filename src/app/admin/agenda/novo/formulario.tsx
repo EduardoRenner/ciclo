@@ -10,6 +10,7 @@ import Input from '@/components/ui/input'
 import PhoneInput from '@/components/ui/phone-input'
 import Select from '@/components/ui/select'
 import { useToast } from '@/components/ui/toast'
+import { comMaiuscula, type Vocabulario } from '@/core/text/vocabulario'
 import { formatarPreco, type ModeloDePreco } from '@/core/pricing/formatar'
 import { formatarTelefone } from '@/lib/formato'
 import { apiFetch } from '@/lib/offline/api-client'
@@ -35,11 +36,14 @@ function formatarAlternativa(iso: string): string {
 }
 
 export default function FormularioAgendamento({
+  vocabulario,
   servicos,
   profissionais,
   podeRepetir = true,
   planoDaRepeticao,
 }: {
+  /** As palavras da profissao, resolvidas no servidor (docs/DECISOES.md 2026-09-04). */
+  vocabulario: Vocabulario
   servicos: Servico[]
   profissionais: Profissional[]
   /** `recurrence` liberado neste degrau. Ver o comentário em `page.tsx`. */
@@ -244,7 +248,7 @@ export default function FormularioAgendamento({
 
   return (
     <form onSubmit={aoEnviarFormulario} className="flex flex-col gap-4">
-      <Select rotulo="Serviço" value={serviceId} onChange={(e) => setServiceId(e.target.value)} required>
+      <Select rotulo={comMaiuscula(vocabulario.servico)} value={serviceId} onChange={(e) => setServiceId(e.target.value)} required>
         {servicos.map((s) => (
           <option key={s.id} value={s.id}>
             {s.name} ·{' '}
@@ -266,7 +270,7 @@ export default function FormularioAgendamento({
       */}
       {profissionais.length > 1 ? (
         <Select
-          rotulo="Profissional"
+          rotulo={comMaiuscula(vocabulario.profissional)}
           value={professionalId}
           onChange={(e) => setProfessionalId(e.target.value)}
           required
@@ -280,7 +284,7 @@ export default function FormularioAgendamento({
       ) : null}
 
       <Input
-        rotulo="Cliente"
+        rotulo={comMaiuscula(vocabulario.cliente)}
         value={clienteNome}
         onChange={(e) => setClienteNome(e.target.value)}
         placeholder="Nome"

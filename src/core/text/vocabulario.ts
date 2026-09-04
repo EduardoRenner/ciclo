@@ -63,12 +63,35 @@ export function resolverVocabulario(pacote: unknown, override: unknown): Vocabul
  */
 export function plural(palavra: string): string {
   if (palavra.endsWith('ão')) return `${palavra.slice(0, -2)}ões`
+  // Terminada em -l, e a regra do `-vel` vem antes porque é mais específica que a do `-al`.
+  if (palavra.endsWith('vel')) return `${palavra.slice(0, -3)}veis`
+  if (palavra.endsWith('al')) return `${palavra.slice(0, -2)}ais`
   return `${palavra}s`
 }
 
-/** `true` quando `plural()` sabe tratar a palavra. A guarda do seed usa isto. */
+/**
+ * `true` quando `plural()` sabe tratar a palavra. A guarda do seed usa isto.
+ *
+ * As três regras acima cobrem tudo que existe hoje, e a lista foi conferida **medindo**, não
+ * deduzindo: a primeira versão só tinha `-ão` mais `+s`, e devolvia "responsávels" para o pet shop
+ * e **"profissionals" para o padrão da casa** — ou seja, errava na palavra que serve toda profissão
+ * sem vocabulário próprio. Apareceu ao pluralizar a chave `cliente`, que a guarda original não
+ * cobria porque só olhava `servico` e `atendimento`.
+ *
+ * O que continua de fora, e de propósito: `-el`, `-il`, `-ol`, `-ul`, `-m`, `-r`, `-z`. Cada um tem
+ * regra própria e nenhum aparece no vocabulário. Palavra nova terminada assim reprova aqui em vez
+ * de sair errada em silêncio.
+ */
 export function temPluralConhecido(palavra: string): boolean {
-  return palavra.endsWith('ão') || /[aeiouçãéíóú]$/i.test(palavra)
+  if (palavra.endsWith('ão') || palavra.endsWith('vel') || palavra.endsWith('al')) return true
+  /*
+   * Lista do que TEM regra própria, não do que é permitido. A primeira versão exigia terminação em
+   * vogal e por isso reprovava "pet shop" — estrangeirismo que leva `+s` normalmente e que o
+   * `plural()` já acerta. Uma lista de permitidos precisa prever toda palavra futura; uma lista de
+   * proibidos só precisa prever as terminações que o português trata de outro jeito, e essas são
+   * fechadas. Mesma escolha que o `docs/` registra para o schema do assistente.
+   */
+  return !/(el|il|ol|ul|l|r|z|m|s)$/i.test(palavra)
 }
 
 /**

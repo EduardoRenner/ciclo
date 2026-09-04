@@ -42,6 +42,7 @@ export default async function PaginaNovoAgendamento() {
       <PageHeader titulo="Novo agendamento" />
 
       <FormularioAgendamento
+        vocabulario={ctx.tenant.vocabulario}
         podeRepetir={podeRepetir}
         {...(planoDaRepeticao ? { planoDaRepeticao: NOME_DO_PLANO[planoDaRepeticao] } : {})}
         servicos={servicos.map((s) => ({
