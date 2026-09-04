@@ -10,6 +10,9 @@ import { duracao, formatarTelefone } from '@/lib/formato'
 
 import type { PerfilPublico } from '@/server/services/public-booking'
 
+/** Um id só para o `<symbol>` da estrela — usado pela definição e por cada `<use>`. */
+const ID_ESTRELA = 'estrela-da-avaliacao'
+
 const DIAS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
 
 /** Dia da semana e hora atuais **no fuso do salão** — a Vercel roda em UTC. */
@@ -381,6 +384,18 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
       {perfil.reviews.count > 0 ? (
         <section className="py-6">
           <h2 className="mb-3 text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">Avaliações</h2>
+          {/*
+            O `<symbol>` mora aqui, dentro da própria seção, e não num layout: é o único lugar
+            que usa a estrela, e definir sprite global obrigaria toda página a carregá-lo.
+            `size-0` em vez de `display:none` porque Safari não resolve `<use>` que aponta para
+            dentro de um ancestral escondido.
+          */}
+          <svg aria-hidden focusable="false" className="absolute size-0" width="0" height="0">
+            <symbol id={ID_ESTRELA} viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z" />
+            </symbol>
+          </svg>
+
           <div className="mb-3 flex items-center gap-2">
             <Star aria-hidden className="size-5 shrink-0 fill-acc-2 text-acc-2" />
             <span className="tabular text-titulo font-bold">{perfil.reviews.average.toFixed(1)}</span>
@@ -392,13 +407,37 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
             <div className="flex flex-col gap-2">
               {perfil.reviews.recentes.map((r, i) => (
                 <Card key={i}>
+                  {/*
+                    `<use>` em vez de 25 cópias do mesmo `<path>`. Medido no HTML da produção:
+                    26 estrelas ocupavam 16.978 B de uma página de 75.660 B — **22% do
+                    documento era o mesmo ícone repetido**, e num 3G de celular antigo o HTML é o
+                    custo dominante (o JS é 104 kB de framework, que não dá para cortar, e o
+                    Total Blocking Time medido foi 33 ms — a CPU não é o gargalo aqui, o
+                    documento é).
+
+                    A nota também passa a existir em TEXTO para leitor de tela. Antes as cinco
+                    estrelas eram `aria-hidden` e não havia alternativa nenhuma: quem não
+                    enxerga lia o comentário sem saber se veio de uma nota 5 ou 2.
+                  */}
                   <div className="mb-1.5 flex gap-0.5">
+                    <span className="sr-only">{r.rating} de 5 estrelas</span>
                     {Array.from({ length: 5 }).map((_, estrela) => (
-                      <Star
+                      <svg
                         key={estrela}
                         aria-hidden
+                        viewBox="0 0 24 24"
+                        /*
+                          `fill="none"` fica AQUI, no elemento que usa, e não no `<symbol>` — foi
+                          o erro da primeira versão e ele só apareceu olhando a tela: o atributo
+                          no símbolo fica mais perto do `<path>` do que a classe do `<svg>`
+                          externo, ganha da cascata, e as 25 estrelas saíram vazadas. É onde o
+                          próprio lucide põe, e por isso `fill-acc-2` consegue sobrepor.
+                        */
+                        fill="none"
                         className={`size-3.5 shrink-0 ${estrela < r.rating ? 'fill-acc-2 text-acc-2' : 'text-line-2'}`}
-                      />
+                      >
+                        <use href={`#${ID_ESTRELA}`} />
+                      </svg>
                     ))}
                   </div>
                   <p className="text-corpo text-txt">{r.comment}</p>
