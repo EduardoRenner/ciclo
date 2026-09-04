@@ -150,6 +150,7 @@ export default function Agendar({
   services,
   professionals,
   servicoInicial,
+  profissionalInicial,
   ind,
   indicadaPor,
 }: {
@@ -163,6 +164,7 @@ export default function Agendar({
   professionals: Profissional[];
   /** Serviço tocado na página do salão (`?servico=`), já conferido contra o catálogo pelo servidor. */
   servicoInicial: string | null;
+  profissionalInicial: string | null;
   /** Token de `?ind=` (I-1) — repassado cru ao `POST book`, que confere e resolve sozinho. */
   ind: string | null;
   /** I-4: primeiro nome de quem indicou, já resolvido no servidor. `null` = sem convite válido. */
@@ -211,7 +213,10 @@ export default function Agendar({
   const [serviceId, setServiceId] = useState(
     servicoInicial ?? services[0]?.id ?? "",
   );
-  const [professionalId, setProfessionalId] = useState<string | null>(null);
+  // Mesmo motivo do `servicoInicial` acima: quem tocou num rosto na página do salão já
+  // escolheu, e abrir em "Tanto faz" desfaria a escolha em silêncio. O servidor já conferiu
+  // que o id pertence à equipe deste perfil.
+  const [professionalId, setProfessionalId] = useState<string | null>(profissionalInicial);
   const [dia, setDia] = useState(primeiroDiaUtil);
   const [slots, setSlots] = useState<Slot[] | null>(null);
   const [slotEscolhido, setSlotEscolhido] = useState<Slot | null>(null);
