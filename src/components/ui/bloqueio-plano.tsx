@@ -109,7 +109,7 @@ export default function BloqueioPlano({ precisaDo, acao, evidencia, alternativa,
             'hover:brightness-110 active:scale-[.97]'
           }
         >
-          Ver o {nome} — {precoDoPlanoPorMes(precisaDo)}
+          Ver o {nome} por {precoDoPlanoPorMes(precisaDo)}
         </Link>
 
         {/*

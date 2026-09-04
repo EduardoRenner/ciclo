@@ -96,7 +96,7 @@ export default function ResolucaoDeFila() {
             <div className="min-w-0 flex-1">
               <p className="text-secundario font-semibold text-txt">{d.descricao} não foi enviado</p>
               <p className="mt-0.5 text-label text-txt-2">
-                O servidor recusou em definitivo — reenviar daria o mesmo resultado. Refaça pela tela normal para ver o motivo.
+                O servidor recusou em definitivo. Reenviar daria o mesmo resultado. Refaça pela tela normal para ver o motivo.
               </p>
               <div className="mt-2 flex gap-3">
                 <button

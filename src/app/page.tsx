@@ -173,7 +173,7 @@ const PERGUNTAS = [
   {
     pergunta: 'Em quanto tempo a lista de quem sumiu fica útil?',
     resposta:
-      'Se você importar a data da última visita, já na primeira tela. Sem essa data, o CICLO precisa ver cada pessoa voltar duas ou três vezes para saber o ritmo dela — então a lista começa vazia e vai enchendo conforme você atende.',
+      'Se você importar a data da última visita, já na primeira tela. Sem essa data, o CICLO precisa ver cada pessoa voltar duas ou três vezes para saber o ritmo dela. Até lá a lista começa vazia e vai enchendo conforme você atende.',
   },
   {
     pergunta: 'Quem vai marcar precisa baixar app ou criar conta?',
