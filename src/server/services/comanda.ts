@@ -83,11 +83,49 @@ export async function adicionarItemComanda(db: Cliente, tenantId: string, ticket
     unitPriceCents = entrada.unitPriceCents ?? servico.price_cents
     costCents = servico.cost_cents
   } else {
-    const { data: produto, error } = await db.from('products').select('name, price_cents, avg_cost_cents').eq('tenant_id', tenantId).eq('id', entrada.productId!).maybeSingle()
+    const { data: produto, error } = await db
+      .from('products')
+      .select('name, price_cents, avg_cost_cents, is_retail')
+      .eq('tenant_id', tenantId)
+      .eq('id', entrada.productId!)
+      .maybeSingle()
     if (error) throw new AppError('INTERNAL', { cause: error })
     if (!produto) throw new AppError('NOT_FOUND')
     description = produto.name
-    unitPriceCents = entrada.unitPriceCents ?? produto.price_cents ?? 0
+
+    /*
+     * O `?? 0` que estava aqui cobrava ZERO por insumo, e ainda dava baixa no estoque.
+     *
+     * `products` tem duas naturezas e a coluna `is_retail` (migration 0001) as separa: revenda —
+     * shampoo, óleo de barba, protetor solar — que a cliente leva pra casa; e insumo — água
+     * oxigenada, luva, navalha descartável — que o serviço consome. Medido na produção em
+     * 2026-09-03: os 27 de revenda têm preço, os 37 de insumo têm `price_cents` nulo. A separação
+     * está certa no dado; faltava alguém lê-la (`is_retail` era mais uma coluna sem leitor, a
+     * mesma classe de `fee_cents`, `actor_label` e `deposit_cents`).
+     *
+     * O estrago do `?? 0` era duplo. O insumo entrava na comanda a R$ 0,00 — item de graça na
+     * conta de quem atende — e `baixarEstoqueDaComanda` descontava o estoque dele. Só que a ficha
+     * de consumo do serviço (`service_products`) JÁ desconta o mesmo insumo: uma navalha usada uma
+     * vez saía duas vezes do estoque, e o custo dela já estava em `material_cost_cents`.
+     *
+     * Falha fechado com mensagem que diz o que fazer, em vez de inventar um preço. Preço zero é
+     * uma decisão de quem atende (cortesia), e continua possível — basta mandar `unitPriceCents`.
+     */
+    const precoDoCatalogo = produto.is_retail ? produto.price_cents : null
+    if (entrada.unitPriceCents === undefined && precoDoCatalogo === null) {
+      /*
+       * O texto vai TAMBÉM como `message`, e não só em `details.fields`. O padrão da casa é deixar
+       * a mensagem genérica ("Confira os campos destacados") e destacar o campo — o que funciona
+       * num formulário, onde existe campo para destacar. Aqui quem chama é o ASSISTENTE, que
+       * conversa em texto: ele mostraria "confira os campos destacados" sem ter campo nenhum na
+       * tela, e a pessoa ficaria sem saber o que fazer.
+       */
+      const explicacao = produto.is_retail
+        ? `"${produto.name}" não tem preço cadastrado. Defina o preço no estoque antes de vender.`
+        : `"${produto.name}" é insumo de uso interno, não produto de revenda — ele já entra no custo do serviço. Para vender assim mesmo, informe o preço.`
+      throw AppError.validacao({ productId: explicacao }, explicacao)
+    }
+    unitPriceCents = entrada.unitPriceCents ?? precoDoCatalogo!
     costCents = produto.avg_cost_cents
   }
 

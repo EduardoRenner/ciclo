@@ -1,3 +1,4 @@
+import { aindaContaComoReceita } from '@/core/agenda/ainda-conta-como-receita'
 import { ouDoProfissionalOuGeral } from '@/server/db/filtro'
 import { Temporal } from '@js-temporal/polyfill'
 import { z } from 'zod'
@@ -456,8 +457,14 @@ export async function listarAgendaDoDia(
     .filter((a) => CONTAM_COMO_RECEITA.includes(a.status as EstadoAgendamento))
     .reduce((soma, a) => soma + Temporal.Instant.from(a.starts_at).until(Temporal.Instant.from(a.ends_at)).total('minutes'), 0)
 
+  /*
+   * Ocupacao acima usa a lista crua de propósito: a cadeira ESTEVE ocupada por aquele pedido, e
+   * mudar isso reescreveria o passado. Ja o previsto e dinheiro que ainda vai entrar — e um
+   * `pending` cuja hora passou nao vai. Ver `core/agenda/ainda-conta-como-receita.ts`.
+   */
+  const agora = new Date()
   const forecastCents = linhas
-    .filter((a) => CONTAM_COMO_RECEITA.includes(a.status as EstadoAgendamento))
+    .filter((a) => aindaContaComoReceita({ status: a.status, endsAt: a.ends_at }, agora))
     .reduce((soma, a) => soma + a.price_cents, 0)
 
   return {

@@ -83,8 +83,28 @@ afterAll(async () => {
   for (const u of usuarios) await svc.auth.admin.deleteUser(u)
 }, 60_000)
 
-async function criarProduto(nome: string, estoqueInicial: number) {
-  const produto = await svc.from('products').insert({ tenant_id: tenantId, name: nome, stock_qty: estoqueInicial, avg_cost_cents: 1_000 }).select('*').single()
+/**
+ * `is_retail` decide se o produto pode ser LANÇADO na comanda, e o padrão aqui é `false` — insumo,
+ * que é o que a maioria destes testes usa (ficha de consumo, média móvel, estorno).
+ *
+ * O caso de REVENDA pede `{ revenda: true }` e um preço, porque `adicionarItemComanda` passou a
+ * recusar produto sem preço em vez de cobrar zero. A fixture antiga criava tudo sem preço e sem
+ * `is_retail`, então o teste do "produto vendido direto" na verdade vendia um insumo a R$ 0,00 —
+ * o defeito estava dentro do teste que deveria guardá-lo.
+ */
+async function criarProduto(nome: string, estoqueInicial: number, opcoes: { revenda?: boolean; precoCents?: number } = {}) {
+  const produto = await svc
+    .from('products')
+    .insert({
+      tenant_id: tenantId,
+      name: nome,
+      stock_qty: estoqueInicial,
+      avg_cost_cents: 1_000,
+      is_retail: opcoes.revenda ?? false,
+      price_cents: opcoes.precoCents ?? (opcoes.revenda ? 5_000 : null),
+    })
+    .select('*')
+    .single()
   if (produto.error) throw produto.error
   return produto.data
 }
@@ -118,7 +138,7 @@ describe('estoque — baixa no fechamento, estorno, média móvel', () => {
   it(
     'item de produto vendido direto consome a si mesmo, sem ficha de consumo',
     async () => {
-      const produto = await criarProduto('Esmaltinho de Revenda', 20)
+      const produto = await criarProduto('Esmaltinho de Revenda', 20, { revenda: true, precoCents: 3_000 })
 
       const ticketId = await abrirTicketVazio()
       await adicionarItemComanda(svc, tenantId, ticketId, { productId: produto.id, professionalId, qty: 3, discountCents: 0 })
@@ -126,6 +146,59 @@ describe('estoque — baixa no fechamento, estorno, média móvel', () => {
 
       const { data: produtoDepois } = await svc.from('products').select('stock_qty').eq('id', produto.id).single()
       expect(produtoDepois?.stock_qty).toBe(17) // 20 - 3
+    },
+    30_000,
+  )
+
+  it(
+    'produto de revenda entra pelo preço do catálogo, não por zero',
+    async () => {
+      const produto = await criarProduto('Óleo de Barba 30ml', 10, { revenda: true, precoCents: 4_500 })
+      const ticketId = await abrirTicketVazio()
+      await adicionarItemComanda(svc, tenantId, ticketId, { productId: produto.id, professionalId, qty: 2, discountCents: 0 })
+
+      const { data: item } = await svc.from('ticket_items').select('unit_price_cents, total_cents').eq('ticket_id', ticketId).eq('product_id', produto.id).single()
+      expect(item).toMatchObject({ unit_price_cents: 4_500, total_cents: 9_000 })
+    },
+    30_000,
+  )
+
+  it(
+    'insumo NÃO entra na comanda a preço zero — recusa e diz o que fazer',
+    async () => {
+      /*
+        O defeito que este caso guarda: `unitPriceCents ?? produto.price_cents ?? 0` lançava água
+        oxigenada, luva e navalha descartável a R$ 0,00 — item de graça na conta — e ainda dava
+        baixa no estoque. Como o insumo TAMBÉM sai pela ficha de consumo do serviço
+        (`service_products`), a mesma peça saía duas vezes por um uso só.
+      */
+      const insumo = await criarProduto('Água Oxigenada 900ml', 30)
+      const ticketId = await abrirTicketVazio()
+
+      await expect(adicionarItemComanda(svc, tenantId, ticketId, { productId: insumo.id, professionalId, qty: 1, discountCents: 0 })).rejects.toThrow(
+        /insumo de uso interno/i,
+      )
+
+      const { data: itens } = await svc.from('ticket_items').select('id').eq('ticket_id', ticketId)
+      expect(itens ?? []).toHaveLength(0)
+
+      const { data: depois } = await svc.from('products').select('stock_qty').eq('id', insumo.id).single()
+      expect(depois?.stock_qty).toBe(30) // nada saiu do estoque
+    },
+    30_000,
+  )
+
+  it(
+    'insumo COM preço informado na hora continua podendo ser vendido',
+    async () => {
+      // A recusa acima é sobre inventar preço, não sobre proibir a venda: quem atende pode vender
+      // uma navalha avulsa, desde que diga por quanto. Sem isto a correção viraria uma parede.
+      const insumo = await criarProduto('Navalha Descartável', 50)
+      const ticketId = await abrirTicketVazio()
+      await adicionarItemComanda(svc, tenantId, ticketId, { productId: insumo.id, professionalId, qty: 1, discountCents: 0, unitPriceCents: 900 })
+
+      const { data: item } = await svc.from('ticket_items').select('unit_price_cents').eq('ticket_id', ticketId).eq('product_id', insumo.id).single()
+      expect(item?.unit_price_cents).toBe(900)
     },
     30_000,
   )
