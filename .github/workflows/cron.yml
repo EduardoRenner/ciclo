@@ -113,6 +113,45 @@ jobs:
           # 2xx passa; qualquer outra coisa falha o job para aparecer no e-mail do Actions.
           case "$codigo" in 2*) exit 0 ;; *) echo "::error::${{ matrix.rota }} devolveu ${codigo}"; exit 1 ;; esac
 
+  vigia:
+    # HTTP 200 não é prova de que o trabalho aconteceu.
+    #
+    # Esta base já pagou por essa diferença duas vezes: em 25 e 26/08 o Motor de Ciclo devolveu
+    # `200` com `tenantsProcessados: 0` por dois dias e meio, e o job ficou VERDE o tempo todo —
+    # `docs/24` §6.5. O `case "$codigo" in 2*)` do job acima só sabe que a rota respondeu; quem
+    # sabe se ela GRAVOU alguma coisa é o heartbeat em `cron_heartbeats`, e quem lê o heartbeat é
+    # `/api/health` (limiar de 26h, `src/server/services/health.ts`).
+    #
+    # `needs: seguros` de propósito, e é o que impede esta vigia de virar o alarme permanente que
+    # `src/core/cron/agendadas.ts` proíbe: quando a rota não responde (secret errado, deploy caído),
+    # quem fica vermelho é o job de cima, uma vez só, pela causa certa. Esta só opina quando já
+    # existe um 2xx — ou seja, ela responde exatamente a pergunta que faltava: *"respondeu, mas
+    # fez?"*
+    #
+    # `/api/health` é público (não pede `CRON_SECRET`): ele não expõe dado de tenant nenhum, só o
+    # estado dos jobs. Conferido no ar.
+    name: o trabalho aconteceu mesmo
+    runs-on: ubuntu-latest
+    needs: seguros
+    if: github.event_name == 'schedule'
+    steps:
+      - name: conferir heartbeat em /api/health
+        env:
+          BASE: ${{ secrets.CRON_BASE_URL }}
+        run: |
+          set -euo pipefail
+          corpo=$(curl -sS --max-time 60 --retry 2 --retry-delay 10 "${BASE}/api/health")
+          echo "$corpo"
+          # `//false` para chave ausente não virar "passou": se o formato do endpoint mudar, o
+          # valor cai para false e este passo reprova, em vez de aprovar vazio.
+          ciclos=$(printf '%s' "$corpo" | jq -r '.checks.recomputeCycles.ok // false')
+          segmentos=$(printf '%s' "$corpo" | jq -r '.checks.recomputeSegments.ok // false')
+          if [ "$ciclos" != "true" ] || [ "$segmentos" != "true" ]; then
+            echo "::error::a rota respondeu 2xx mas o heartbeat não confirma execução recente — ciclos=${ciclos} segmentos=${segmentos}"
+            exit 1
+          fi
+          echo "heartbeat confirmado para recompute_cycles e recompute_segments"
+
   sob_demanda:
     # Disparo manual, um de cada vez. Serve para `stock-alerts` e `jobs`, que ainda não foram
     # auditados quanto a efeito externo (`jobs` processa a fila, e a fila pode conter envio).
