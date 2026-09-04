@@ -68,7 +68,6 @@ const SOBRENOMES = [
   'Carvalho', 'Araújo', 'Ribeiro', 'Gomes', 'Martins', 'Rocha', 'Barbosa', 'Cardoso', 'Teixeira', 'Moreira',
   'Correia', 'Dias', 'Cavalcante', 'Freitas', 'Vieira', 'Monteiro', 'Melo', 'Pinto', 'Moura', 'Cunha',
 ]
-const FONTES = ['instagram', 'indicacao', 'google', 'passou_na_frente', 'indicacao', 'instagram']
 
 // perfil: [peso, cadênciaDias(min,max), visitasAlvo(min,max), últimaVisitaHáDias(min,max), tag]
 const PERFIS = {
@@ -80,7 +79,6 @@ const PERFIS = {
   novo: [16, [0, 0], [1, 1], [2, 22], 'novo'],
 }
 
-const T_ID = '47762865-e93f-4fa8-a2ea-58795fa8cf32'
 const { data: tenant } = await svc.from('tenants').select('id').eq('slug', 'dom-rocha').single()
 const T = tenant.id
 const OFFSET_H = 3

@@ -95,6 +95,7 @@ export default async function PaginaAgendar({
 
       <Agendar
         slug={slug}
+        vocabulario={perfil.vocabulario}
         nomeDoSalao={perfil.name}
         enderecoDoSalao={perfil.address}
         timezone={perfil.timezone}

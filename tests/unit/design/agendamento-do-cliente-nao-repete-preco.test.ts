@@ -30,7 +30,17 @@ function fonte(caminho: string): string {
 describe('a tela de agendamento da cliente', () => {
   it('formata o preço do serviço uma vez só', () => {
     const src = fonte(AGENDAR)
-    const ocorrencias = src.match(/priceCents\s*\/\s*100/g) ?? []
+    /*
+     * Casa com QUALQUER renderização do preço do serviço, não com uma função específica. A versão
+     * anterior contava só `priceCents / 100`, e reprovou quando a tela passou a usar o
+     * `formatarPreco` do core — que era um CONSERTO: a tela formatava sozinha e mostrava "R$ 50"
+     * para um serviço que a vitrine do mesmo salão anuncia como "R$ 50/hora".
+     *
+     * A regra protegida nunca foi "use esta função". É "o preço do serviço aparece uma vez só
+     * nesta rolagem". Ancorar na implementação fazia a guarda reprovar quem melhorava a tela e
+     * passar em quem a piorasse por outro caminho.
+     */
+    const ocorrencias = [...(src.match(/priceCents\s*\/\s*100/g) ?? []), ...(src.match(/formatarPreco\(\{/g) ?? [])]
 
     /*
      * Exatamente 1, nunca "no máximo 1": se alguém renomear o campo e o padrão parar de casar,

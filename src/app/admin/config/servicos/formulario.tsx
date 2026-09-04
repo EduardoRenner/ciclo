@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 
+import type { ModeloDePreco } from '@/core/pricing/formatar'
 import { urlDaVitrine } from '@/core/text/vitrine'
 import { dinheiro } from '@/lib/formato'
 import UploadDeFoto from '@/components/config/upload-de-foto'
@@ -32,7 +33,6 @@ export type ServicoEditavel = {
   image_key: string | null
 }
 
-type ModeloDePreco = 'fixed' | 'hourly' | 'visit_hourly' | 'daily'
 
 type Props = {
   aberto: boolean
@@ -133,7 +133,7 @@ export default function FormularioServico({ aberto, aoFechar, servico, aoSalvar 
           rows={2}
         />
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className={modeloDePreco === 'quote' ? 'grid grid-cols-1 gap-3' : 'grid grid-cols-2 gap-3'}>
           <Input
             rotulo="Duração (min)"
             type="number"
@@ -145,12 +145,20 @@ export default function FormularioServico({ aberto, aoFechar, servico, aoSalvar 
             required
             classNameCampo="tabular"
           />
-          <MoneyInput
-            rotulo={modeloDePreco === 'hourly' ? 'Preço por hora' : modeloDePreco === 'visit_hourly' ? 'Taxa de visita' : modeloDePreco === 'daily' ? 'Diária' : 'Preço'}
-            centavos={precoCentavos}
-            aoMudar={setPrecoCentavos}
-            required
-          />
+          {/*
+            Sob orçamento não tem campo de preço, e o motivo é o `required`: deixar o campo na tela
+            faria a pessoa preencher um número inventado para o formulário aceitar. É a mesma classe
+            de "a tela deixa trabalhar para recusar no envio" já corrigida em outras telas daqui.
+            A duração continua, porque ela reserva o horário mesmo sem valor fechado.
+          */}
+          {modeloDePreco === 'quote' ? null : (
+            <MoneyInput
+              rotulo={modeloDePreco === 'hourly' ? 'Preço por hora' : modeloDePreco === 'visit_hourly' ? 'Taxa de visita' : modeloDePreco === 'daily' ? 'Diária' : 'Preço'}
+              centavos={precoCentavos}
+              aoMudar={setPrecoCentavos}
+              required
+            />
+          )}
         </div>
 
         <Select
@@ -163,6 +171,7 @@ export default function FormularioServico({ aberto, aoFechar, servico, aoSalvar 
           <option value="hourly">Por hora</option>
           <option value="visit_hourly">Taxa de visita + hora</option>
           <option value="daily">Diária</option>
+          <option value="quote">Sob orçamento</option>
         </Select>
 
         {modeloDePreco === 'visit_hourly' ? (

@@ -487,3 +487,25 @@ Quando todos estes forem verdadeiros: os 5 fluxos E2E passam; `test:rls` verde; 
 
 ---
 
+
+### `commissions` e `payments` estão vazias — isso é bug?
+
+**Não. São recurso desenhado na `0001` e nunca construído.** Confirmado por varredura em
+2026-09-04: nenhuma das duas tabelas tem uma única leitura ou escrita em `src/`. `payments` só
+aparece no mapa de eliminação da LGPD.
+
+**Não escreva nelas para "consertar".** A comissão já funciona, e funciona do jeito certo: o valor é
+calculado em `core/comanda/totals.ts` e **congelado** em `ticket_items.commission_bps` e
+`ticket_items.commission_cents` no fechamento da comanda — a `0001` marca essas colunas com o
+comentário *"congelado no momento"*. É a armadilha *"guarde o valor em centavos; preço muda,
+histórico não pode mudar"* do `CLAUDE.md` já resolvida. Passar a gravar em `commissions` duplicaria
+a verdade e criaria a chance de os dois números discordarem.
+
+O que `commissions` foi desenhada para ser, e ainda não é: **fechamento por período**. As colunas
+contam a história sozinhas (`period_start`, `period_end`, `settled_at`). O dia em que existir uma
+tela de "fechar o mês do profissional", ela agrega o que `ticket_items` já congelou — ela não
+recalcula, e não vira uma segunda fonte.
+
+O mesmo vale para `payments`: o livro-caixa de hoje não passa por ela. Se alguém ligar pagamentos
+depois, conferir antes o que o relatório de eliminação da LGPD promete sobre essa tabela — hoje ele
+lista uma tabela que nunca recebe linha, o que é inofensivo agora e vira falso naquele dia.

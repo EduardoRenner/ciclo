@@ -5,6 +5,8 @@ import { z } from 'zod'
 
 import { podeUsarCapacidade } from '@/core/billing/planos'
 import { availableSlots, type IntervaloExpediente, type IntervaloOcupado } from '@/core/scheduling/available-slots'
+import type { ModeloDePreco } from '@/core/pricing/formatar'
+import { resolverVocabulario, type Vocabulario } from '@/core/text/vocabulario'
 import { sinalEmCentavos } from '@/core/pricing/sinal'
 import { primeiroNome } from '@/core/text/nome'
 import { urlDaVitrine } from '@/core/text/vitrine'
@@ -40,7 +42,12 @@ const ACENTO_PADRAO = { acc: '#f0ebe3', acc2: '#fffcf7' }
 async function tenantPeloSlug(svc: Cliente, slug: string) {
   const { data, error } = await svc
     .from('tenants')
-    .select('id, name, slug, vertical, timezone, phone, address, settings, plan')
+    /*
+     * `vocab_override` e o `vocab` da profissão entram aqui, e não numa segunda consulta, porque
+     * esta é a página de maior volume do produto e uma ida a mais ao banco por visita não se paga
+     * por seis palavras. A junção usa a FK `tenants_profession_id_fkey`, que já existe.
+     */
+    .select('id, name, slug, vertical, timezone, phone, address, settings, plan, vocab_override, professions ( vocab )')
     .eq('slug', slug)
     .is('deleted_at', null)
     .maybeSingle()
@@ -87,7 +94,7 @@ export type PerfilPublico = {
     description: string | null
     durationMin: number
     priceCents: number
-    pricingModel: 'fixed' | 'hourly' | 'visit_hourly' | 'daily'
+    pricingModel: ModeloDePreco
     hourlyRateCents: number | null
     halfDayPriceCents: number | null
     /** Quanto a cliente adianta para segurar o horário. `null` = este serviço não pede sinal. */
@@ -113,6 +120,13 @@ export type PerfilPublico = {
    * `vitrine`, nunca o `media` privado. Vazio é o caso comum: ninguém é obrigado a publicar nada.
    */
   portfolio: string[]
+  /**
+   * As palavras que esta profissão usa, já resolvidas (`docs/DECISOES.md`, 2026-09-04). Um
+   * psicólogo anuncia "Sessões" onde uma barbearia anuncia "Serviços". Vem resolvido do servidor
+   * porque a precedência é regra de negócio, e deixar a tela decidir espalharia a mesma decisão
+   * por todo componente que precisar de uma palavra.
+   */
+  vocabulario: Vocabulario
 }
 
 /**
@@ -170,9 +184,18 @@ export const perfilPublico = cache(async (slug: string): Promise<PerfilPublico> 
     // de hex válido virar `style` inline.
     const acc = site.accent ?? ACENTO_PADRAO.acc
 
+    /*
+     * O `professions` da junção vem objeto quando há profissão e `null` quando não há — tenant
+     * antigo, ou cadastro que pulou a escolha. `resolverVocabulario` já trata os dois como
+     * ausência e cai no padrão da casa, então não há caminho em que a tela fique sem palavra.
+     */
+    const profissao = tenant.professions as { vocab: unknown } | null
+    const vocabulario = resolverVocabulario(profissao?.vocab, tenant.vocab_override)
+
     return {
       name: tenant.name,
       slug: tenant.slug,
+      vocabulario,
       vertical: tenant.vertical,
       timezone: tenant.timezone,
       phone: tenant.phone,
@@ -200,7 +223,7 @@ export const perfilPublico = cache(async (slug: string): Promise<PerfilPublico> 
         description: s.description,
         durationMin: s.duration_min,
         priceCents: s.price_cents,
-        pricingModel: s.pricing_model as 'fixed' | 'hourly' | 'visit_hourly' | 'daily',
+        pricingModel: s.pricing_model as ModeloDePreco,
         hourlyRateCents: s.hourly_rate_cents,
         halfDayPriceCents: s.half_day_price_cents,
         /*

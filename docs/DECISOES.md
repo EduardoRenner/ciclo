@@ -5766,3 +5766,27 @@ Como conferir de fora, sem painel: `curl -sD- <dominio>/api/health` e ler o `con
 Consequência operacional: as 6 contas `demo-*` são a demonstração real; `dom-rocha` & cia. existem
 só em dev. O `slugDeDemonstracaoNoAr()` do PR #58 já resolve isso em runtime — a landing pega a
 primeira vitrine que existir no banco em que estiver rodando.
+---
+
+2026-09-04 · **O vocabulário por profissão pode ser aplicado como está guardado?** · **Não. Só o
+valor que for neutro em gênero.** · As 17 profissões guardam `vocab` desde a `0022`, e a chave
+`profissional` — que nomeia *quem usa o produto* — vem no masculino em 7 delas: barbeiro,
+professor, fotógrafo, jardineiro, técnico, tatuador, psicólogo. Em `cliente` há mais duas: aluno e
+tutor. Aplicar como está faria o produto chamar a barbeira de "barbeiro" e a aluna de "aluno",
+que é exatamente o T8 do `docs/20` e o defeito que `copy-nao-supoe-genero` existe para impedir.
+
+**E a guarda não pegaria.** Ela varre `src/app`, `src/components`, `src/lib`, os modelos de
+mensagem e o prompt do assistente — tudo TypeScript. O vocabulário mora em seed SQL das migrations,
+então a palavra nunca aparece no fonte e o teste segue verde enquanto a tela erra. É a mesma classe
+da guarda cega de raiz: a varredura não olha onde o defeito mora.
+
+**Decisão:** (a) precedência é `professions.vocab` como padrão do pacote e `tenants.vocab_override`
+vencendo por chave, que é o formato que as duas colunas já implicam e o que o Jane App faz com a
+área de "Terminology" sobre um padrão; (b) o produto só aplica um valor de vocabulário se ele for
+neutro, caindo na palavra padrão quando não for; (c) a guarda de gênero passa a varrer o seed das
+migrations, para o dado nascer certo em vez de ser filtrado para sempre.
+
+**Por que não neutralizar tudo agora:** as chaves que nomeiam COISA (`atendimento`, `servico`,
+`agenda`, `local`) já são seguras — sessão, treino, aula, faxina, ensaio, trabalho, estúdio. O
+problema é só nas que nomeiam PESSOA. Separar as duas entrega o valor da metade que está pronta
+sem esperar por uma revisão de copy de 17 profissões.

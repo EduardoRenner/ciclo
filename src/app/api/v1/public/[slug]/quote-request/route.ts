@@ -1,0 +1,47 @@
+import { createHash } from 'node:crypto'
+
+import { criarPedidoDeOrcamento, EsquemaPedidoDeOrcamento } from '@/server/services/pedido-de-orcamento'
+import { limitador } from '@/server/services/rate-limit'
+import { normalizarTelefoneBR } from '@/server/services/telefone'
+import { lerCorpo } from '@/server/http/body'
+import { AppError } from '@/server/http/errors'
+import { rota } from '@/server/http/handler'
+import { ipDe } from '@/server/http/ip'
+
+type Ctx = { params: Promise<{ slug: string }> }
+
+/** Honeypot: resposta com a mesma forma de sucesso, para não ensinar o script a se adaptar. */
+const RESPOSTA_HONEYPOT = { ok: true as const }
+
+export const POST = rota(async (req, ctx) => {
+  const { slug } = await (ctx as Ctx).params
+  const entrada = await lerCorpo(req, EsquemaPedidoDeOrcamento)
+
+  // Mesmo contrato do `book`: campo que só script preenche, resposta idêntica à de sucesso, e
+  // nada é gravado. Dizer "bloqueado" ensinaria o próprio script a se adaptar.
+  if (entrada.website) return RESPOSTA_HONEYPOT
+
+  const ip = ipDe(req)
+
+  /*
+   * Os mesmos limites do agendamento público, e pelo mesmo motivo: formulário aberto sem
+   * autenticação não pode depender só do honeypot. Os números são deliberadamente os do `book` —
+   * um pedido de orçamento custa ao salão o mesmo tanto de atenção que um agendamento falso.
+   */
+  const porIpMinuto = await limitador(`quote:ip:${ip}:min`, { limite: 5, janelaSegundos: 60 })
+  if (!porIpMinuto.permitido) throw AppError.limiteDeTaxa(60)
+
+  const porIpDia = await limitador(`quote:ip:${ip}:dia`, { limite: 20, janelaSegundos: 86_400 })
+  if (!porIpDia.permitido) throw AppError.limiteDeTaxa(3600)
+
+  const telefoneNormalizado = normalizarTelefoneBR(entrada.phone)
+  if (telefoneNormalizado) {
+    // Hash na chave do limitador, nunca o número em claro: a regra 9/10 do CLAUDE.md vale também
+    // para dado que só passa pela memória do limitador.
+    const chaveTelefone = createHash('sha256').update(telefoneNormalizado).digest('hex')
+    const porTelefoneDia = await limitador(`quote:tel:${chaveTelefone}:dia`, { limite: 3, janelaSegundos: 86_400 })
+    if (!porTelefoneDia.permitido) throw AppError.limiteDeTaxa(3600)
+  }
+
+  return criarPedidoDeOrcamento(slug, entrada)
+})

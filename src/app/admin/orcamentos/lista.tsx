@@ -22,6 +22,13 @@ const SELO: Record<string, { estado: Estado; texto: string }> = {
   expired: { estado: 'risk', texto: 'Vencido' },
   converted: { estado: 'ciclo', texto: 'Virou agendamento' },
   draft: { estado: 'info', texto: 'Rascunho' },
+  /*
+   * Selo proprio, e nao 'Rascunho': 'requested' quer dizer que a CLIENTE pediu pela pagina do
+   * salao e ninguem pegou ainda, enquanto 'draft' quer dizer que alguem do salao comecou a
+   * escrever. Empilhar os dois no mesmo rotulo apagaria justamente a distincao que faz o
+   * painel saber o que exige resposta de alguem. Ver docs/40, fase 2.
+   */
+  requested: { estado: 'risk', texto: 'Pedido novo' },
 }
 const SELO_PADRAO: { estado: Estado; texto: string } = { estado: 'info', texto: 'Aguardando resposta' }
 

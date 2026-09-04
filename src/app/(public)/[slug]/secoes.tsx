@@ -1,8 +1,9 @@
-import { AtSign, CalendarPlus, ChevronRight, Clock, MapPin, MessageCircle, Phone, Star, Users } from 'lucide-react'
+import { AtSign, CalendarPlus, ChevronRight, Clock, FileText, MapPin, MessageCircle, Phone, Star, Users } from 'lucide-react'
 import Link from 'next/link'
 
 import Badge from '@/components/ui/badge'
 import Card from '@/components/ui/card'
+import { comMaiuscula, plural } from '@/core/text/vocabulario'
 import { formatarPreco } from '@/core/pricing/formatar'
 import { apelidoDoInstagram, urlDoInstagram } from '@/core/text/instagram'
 import { duracao, formatarTelefone } from '@/lib/formato'
@@ -158,6 +159,21 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
             <CalendarPlus aria-hidden className="size-4" />
             Agendar horário
           </Link>
+          {/*
+            Só aparece quando existe serviço sob orçamento, e essa é a regra inteira: uma barbearia
+            de tabela fechada não deve ter esta porta, e oferecer uma que o dono nunca vai atender é
+            a mesma classe de promessa vazia que a regra do canal de mensagem proíbe. A rota também
+            responde 404 nesse caso, então o botão e o destino concordam.
+          */}
+          {perfil.services.some((s) => s.pricingModel === 'quote') ? (
+            <Link
+              href={`/${perfil.slug}/orcamento`}
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-5 text-corpo font-semibold text-txt transition duration-[var(--dur-1)] hover:bg-surface-3 active:scale-[.97]"
+            >
+              <FileText aria-hidden className="size-4" />
+              Pedir orçamento
+            </Link>
+          ) : null}
           {perfil.whatsapp ? (
             <a
               href={linkWhatsapp(perfil.whatsapp, `Oi! Vim pelo site da ${perfil.name}.`)}
@@ -174,7 +190,18 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
 
       {perfil.services.length > 0 ? (
         <section className="py-6">
-          <h2 className="mb-3 text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">Serviços</h2>
+          {/*
+            O primeiro rótulo do produto a falar a língua da profissão: um psicólogo anuncia
+            "Sessões" e um personal anuncia "Treinos" onde a barbearia anuncia "Serviços".
+
+            O plural vem do `core` e não de um `+ 's'` aqui: "sessão" vira "sessões", e essa é a
+            única irregular do conjunto. Um pluralizador genérico de português erraria calado em
+            palavra terminada em -l, -r, -m ou -z, então o conjunto é fechado e há guarda conferindo
+            que toda palavra do seed cai nas duas regras conhecidas.
+          */}
+          <h2 className="mb-3 text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">
+            {comMaiuscula(plural(perfil.vocabulario.servico))}
+          </h2>
           <div className="flex flex-col gap-2">
             {/*
               O card já nascia `pressionavel` — retorno de toque, `hover`, tudo — dentro de uma
@@ -209,8 +236,8 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
                     {s.description ? <p className="mt-0.5 text-secundario text-txt-2">{s.description}</p> : null}
                     <p className="tabular mt-1 text-secundario text-txt-3">{duracao(s.durationMin)}</p>
                   </div>
-                  <div className="flex shrink-0 items-center gap-1.5">
-                    <p className="tabular text-corpo font-semibold text-acc-2">
+                  <div className="flex min-w-0 max-w-[52%] shrink items-center gap-1.5">
+                    <p className="tabular text-balance text-right text-corpo font-semibold text-acc-2">
                       {formatarPreco({
                         pricingModel: s.pricingModel,
                         priceCents: s.priceCents,

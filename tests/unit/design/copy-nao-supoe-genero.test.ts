@@ -216,3 +216,98 @@ describe('a copy não supõe que quem usa o produto é homem', () => {
     expect(/sem supor o g[êe]nero|neutr/i.test(prompt), 'o prompt não diz nada sobre gênero').toBe(true)
   })
 })
+
+/**
+ * A QUARTA superfície, e a que a guarda acima não alcança por construção.
+ *
+ * As 17 profissões da `0022` guardam um `vocab` (cliente, atendimento, profissional, servico,
+ * agenda, local) para o produto falar a língua de cada uma: psicólogo lê "paciente", personal lê
+ * "treino". A chave `profissional` nomeia **quem usa o produto**, e vem no masculino em sete
+ * profissões: barbeiro, professor, fotógrafo, jardineiro, técnico, tatuador, psicólogo. Em
+ * `cliente` há mais duas: aluno e tutor.
+ *
+ * **Por que isto precisa de guarda própria:** as asserções acima varrem `src/`, os modelos de
+ * mensagem e o prompt — tudo TypeScript. Este vocabulário mora em **seed SQL**, então a palavra
+ * nunca aparece no fonte e a suíte segue verde enquanto a tela chama a barbeira de "barbeiro". É a
+ * guarda cega de raiz: a varredura não olha onde o defeito mora.
+ *
+ * As chaves que nomeiam COISA ficam de fora de propósito — sessão, treino, aula, faxina, ensaio,
+ * trabalho, salão, estúdio não têm o problema, e proibi-las seria ruído sem defeito.
+ */
+describe('o vocabulário das profissões não supõe o gênero de quem usa o produto', () => {
+  /** As duas chaves que nomeiam PESSOA. As outras nomeiam coisa e não entram. */
+  const CHAVES_DE_PESSOA = ['profissional', 'cliente']
+  const SEPARADOR = ' '
+
+  /**
+   * Neutro = serve para qualquer pessoa sem trocar de forma. A lista é explícita porque a regra
+   * morfológica não existe: "cliente", "paciente" e "personal" terminam diferente e são neutros;
+   * "aluno" e "técnico" seguem o padrão do masculino. Palavra nova entra aqui só depois de alguém
+   * olhar, que é o ponto.
+   */
+  const NEUTRAS = new Set(['cliente', 'paciente', 'profissional', 'personal', 'estudante', 'pessoa', 'artista', 'terapeuta', 'docente', 'responsável'])
+
+  /**
+   * O vocabulário EFETIVO, e não o literal do `insert`.
+   *
+   * A correção de gênero veio como migration de `update` (a `0060`), porque migration já aplicada
+   * não se edita. Uma guarda que lesse só o literal do seed continuaria acusando "barbeiro" para
+   * sempre, e a saída fácil seria afrouxar a asserção — que é onde a proteção morre. Aqui ela lê
+   * os `insert` e depois aplica os `jsonb_set` na ordem dos arquivos, que é o que o banco faz.
+   */
+  function vocabulariosEfetivos(): { chave: string; valor: string }[] {
+    const arquivos = readdirSync('supabase/migrations').filter((a) => a.endsWith('.sql')).sort()
+    const vocabs: Record<string, string>[] = []
+    const correcoes: { chave: string; para: string; de: string[] }[] = []
+
+    for (const arquivo of arquivos) {
+      const sql = readFileSync(join('supabase', 'migrations', arquivo), 'utf8')
+      for (const bruto of sql.match(/\{"cliente":[^}]*\}/g) ?? []) vocabs.push(JSON.parse(bruto) as Record<string, string>)
+      /*
+       * O SQL e achatado antes de casar: um `update` de migration ocupa varias linhas, e padrao
+       * multilinha escrito a mao ja quebrou tres vezes nesta sessao por escape que nao sobrevive
+       * ao caminho ate o arquivo. Achatar troca o problema por um mais simples.
+       */
+      const plano = sql.split(new RegExp(String.raw`\s+`, 'g')).join(SEPARADOR)
+      const reUpdate = new RegExp(
+        String.raw`jsonb_set\(vocab, '\{(\w+)\}', '"([^"]+)"'\) where vocab->>'\w+' (?:=|in) \(?([^;]+?)\)?;`,
+        'g',
+      )
+      for (const m of plano.matchAll(reUpdate)) {
+        const [, chave, para, alvos] = m
+        // Os três grupos são obrigatórios no padrão; o `continue` é para o typecheck, e se ele
+        // disparar é porque o padrão mudou — caso em que ignorar a correção é o certo.
+        if (!chave || !para || !alvos) continue
+        correcoes.push({ chave, para, de: [...alvos.matchAll(/'([^']+)'/g)].map((x) => x[1] ?? '') })
+      }
+    }
+    for (const c of correcoes)
+      for (const v of vocabs) {
+        const atual = v[c.chave]
+        if (atual !== undefined && c.de.includes(atual)) v[c.chave] = c.para
+      }
+
+    const saida: { chave: string; valor: string }[] = []
+    for (const v of vocabs) for (const chave of CHAVES_DE_PESSOA) if (v[chave]) saida.push({ chave, valor: v[chave] })
+    return saida
+  }
+
+  const DO_SEED = vocabulariosEfetivos()
+
+  it('o leitor achou os vocabulários — não passa por ter varrido lista vazia', () => {
+    // Piso por CONTAGEM e por CONTEÚDO: um regex que para de casar devolveria zero, e zero
+    // violação sobre zero linha é o falso verde que este projeto persegue.
+    expect(DO_SEED.length, 'nenhum vocabulário lido das migrations').toBeGreaterThanOrEqual(20)
+    expect(DO_SEED.some((v) => v.valor === 'paciente'), 'não achei o vocabulário do psicólogo').toBe(true)
+  })
+
+  it('nenhuma palavra que nomeia pessoa vem só no masculino', () => {
+    const errados = DO_SEED.filter((v) => !NEUTRAS.has(v.valor)).map((v) => `${v.chave}="${v.valor}"`)
+    expect(
+      [...new Set(errados)],
+      'o vocabulário da profissão nomeia a pessoa no masculino. Quem usa o produto leria o ' +
+        'próprio papel no gênero errado, e nenhuma outra guarda pega isto: o valor mora em seed ' +
+        'SQL e nunca aparece no fonte. Use a palavra neutra, ou deixe a chave com o padrão.',
+    ).toEqual([])
+  })
+})

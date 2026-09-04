@@ -6,6 +6,7 @@ import { ChevronRight, Search, Users } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import Avatar from '@/components/ui/avatar'
+import { useVocabulario } from '@/components/shell/vocabulario'
 import Card from '@/components/ui/card'
 import Chip from '@/components/ui/chip'
 import EmptyState from '@/components/ui/empty-state'
@@ -31,6 +32,7 @@ const SEGMENTOS: { valor: Segmento; rotulo: string }[] = [
 ]
 
 export default function ListaClientes({ iniciais }: { iniciais: ClienteLinha[] }) {
+  const vocabulario = useVocabulario()
   const [termo, setTermo] = useState('')
   const [segmento, setSegmento] = useState<Segmento | null>(null)
   const [clientes, setClientes] = useState(iniciais)
@@ -157,7 +159,7 @@ export default function ListaClientes({ iniciais }: { iniciais: ClienteLinha[] }
                     ? 'Confira a grafia do nome ou o telefone digitado.'
                     : 'Cadastre a primeira cliente para começar a marcar horários.'
               }
-              acao={<Link href="/admin/clientes/nova">Cadastrar cliente</Link>}
+              acao={<Link href="/admin/clientes/nova">Cadastrar {vocabulario.cliente}</Link>}
             />
           </Card>
           {/*
