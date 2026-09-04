@@ -1,4 +1,4 @@
-import { AtSign, CalendarPlus, ChevronRight, Clock, FileText, MapPin, MessageCircle, Phone, Star, Users } from 'lucide-react'
+import { AtSign, CalendarPlus, Clock, FileText, MapPin, MessageCircle, Phone, Star, Users } from 'lucide-react'
 import Link from 'next/link'
 
 import Badge from '@/components/ui/badge'
@@ -12,6 +12,7 @@ import type { PerfilPublico } from '@/server/services/public-booking'
 
 /** Um id só para o `<symbol>` da estrela — usado pela definição e por cada `<use>`. */
 const ID_ESTRELA = 'estrela-da-avaliacao'
+const ID_SETA = 'seta-do-servico'
 
 const DIAS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
 
@@ -213,6 +214,18 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
               não pode ser "role até o fim e ache o botão". Agora o toque leva direto para o
               agendamento com o serviço já escolhido, que é o atalho que Fresha e Booksy usam.
             */}
+            {/*
+              Um `<use>` por serviço em vez de um `<ChevronRight>` inteiro. A seta aparece uma vez
+              por linha da lista, e o lucide inlina o path e todos os atributos em cada uma:
+              medido em `/demo-studio-bella`, que tem 10 serviços, deu 10 cópias do mesmo SVG.
+              Mesmo conserto (e mesma armadilha de cascata) das estrelas logo abaixo.
+            */}
+            <svg aria-hidden focusable="false" className="absolute size-0" width="0" height="0">
+              <symbol id={ID_SETA} viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m9 18 6-6-6-6" />
+              </symbol>
+            </svg>
+
             {perfil.services.map((s) => (
               <Link key={s.id} href={`/${perfil.slug}/agendar?servico=${s.id}`} className="block">
                 <Card pressionavel>
@@ -248,7 +261,9 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
                         halfDayPriceCents: s.halfDayPriceCents,
                       })}
                     </p>
-                    <ChevronRight aria-hidden className="size-4 text-txt-3" />
+                    <svg aria-hidden viewBox="0 0 24 24" fill="none" className="size-4 text-txt-3">
+                      <use href={`#${ID_SETA}`} />
+                    </svg>
                   </div>
                 </div>
                 </Card>
