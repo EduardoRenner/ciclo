@@ -106,7 +106,21 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
         </div>
       ) : null}
 
-      <section className="relative -mx-[var(--gutter)] flex flex-col items-center gap-4 overflow-hidden px-[var(--gutter)] pb-8 text-center"
+      {/*
+        SEM `overflow-hidden` aqui, e isso é o conserto: o logo abaixo sobe 56 px (`-mt-14`) para
+        sobrepor a capa, e 56 px de um elemento de 80 px ficavam FORA da caixa desta section —
+        cortados. Medido na produção em 04/09 com `getBoundingClientRect`: logo em y=197,2, section
+        em y=253,2. **70% do logo invisível**, sobrando um risco de meia-lua no lugar da marca.
+
+        O `overflow-hidden` é mais antigo que o logo: já estava aqui antes do TICKET-062, e quem
+        acrescentou a margem negativa não tinha como ver o corte, porque nenhum tenant tinha logo
+        cadastrada. O defeito só nasceu quando as contas de demonstração ganharam marca.
+
+        Tirar não devolve rolagem horizontal: `-mx-[var(--gutter)]` é cancelado pelo
+        `px-[var(--gutter)]` do mesmo elemento, e a capa tem `overflow-hidden` próprio (ela é quem
+        precisa recortar a imagem). Conferido nas duas larguras com `scrollWidth === clientWidth`.
+      */}
+      <section className="relative -mx-[var(--gutter)] flex flex-col items-center gap-4 px-[var(--gutter)] pb-8 text-center"
         style={{ paddingTop: perfil.coverUrl ? undefined : '3rem' }}
       >
         {/*
