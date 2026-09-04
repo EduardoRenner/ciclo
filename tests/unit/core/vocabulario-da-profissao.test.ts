@@ -122,15 +122,24 @@ describe('o plural, que é onde português quebra', () => {
      * asserção, que é onde a proteção morre. Mesma leitura que `copy-nao-supoe-genero` faz.
      */
     const vocabs: Record<string, string>[] = []
-    const correcoes: { chave: string; para: string }[] = []
+    const correcoes: { para: string; de: string[] }[] = []
     for (const arquivo of readdirSync('supabase/migrations').sort()) {
       if (!arquivo.endsWith('.sql')) continue
       const sql = readFileSync(join('supabase', 'migrations', arquivo), 'utf8')
       for (const bruto of sql.match(/\{"cliente":[^}]*\}/g) ?? []) vocabs.push(JSON.parse(bruto) as Record<string, string>)
-      for (const m of sql.matchAll(/jsonb_set\(vocab, '\{(\w+)\}', '"([^"]+)"'\)/g))
-        correcoes.push({ chave: m[1] ?? '', para: m[2] ?? '' })
+      /*
+       * O `where` importa, e a primeira versão o ignorava: ela marcava como substituído o valor
+       * ATUAL de toda chave que tivesse alguma correção. Como a 0060 corrige `cliente`, "paciente"
+       * (que ela não toca) sumia da varredura — a guarda ficava cega justamente na chave que o
+       * painel passou a pluralizar. O SQL é achatado porque o `update` ocupa várias linhas.
+       */
+      const plano = sql.split(new RegExp(String.raw`\s+`, 'g')).join(' ')
+      const re = new RegExp(String.raw`jsonb_set\(vocab, '\{\w+\}', '"([^"]+)"'\) where vocab->>'\w+' (?:=|in) \(?([^;]+?)\)?;`, 'g')
+      for (const m of plano.matchAll(re)) {
+        correcoes.push({ para: m[1] ?? '', de: [...(m[2] ?? '').matchAll(/'([^']+)'/g)].map((x) => x[1] ?? '') })
+      }
     }
-    const substituidas = new Set(vocabs.flatMap((v) => correcoes.map((c) => v[c.chave]).filter(Boolean)))
+    const substituidas = new Set(correcoes.flatMap((c) => c.de))
     const valores = [
       ...Object.values(PADRAO),
       ...correcoes.map((c) => c.para),
