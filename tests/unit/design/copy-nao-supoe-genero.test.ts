@@ -274,7 +274,11 @@ describe('o vocabulário das profissões não supõe o gênero de quem usa o pro
         'g',
       )
       for (const m of plano.matchAll(reUpdate)) {
-        correcoes.push({ chave: m[1], para: m[2], de: [...m[3].matchAll(/'([^']+)'/g)].map((x) => x[1]) })
+        const [, chave, para, alvos] = m
+        // Os três grupos são obrigatórios no padrão; o `continue` é para o typecheck, e se ele
+        // disparar é porque o padrão mudou — caso em que ignorar a correção é o certo.
+        if (!chave || !para || !alvos) continue
+        correcoes.push({ chave, para, de: [...alvos.matchAll(/'([^']+)'/g)].map((x) => x[1] ?? '') })
       }
     }
     for (const c of correcoes)
