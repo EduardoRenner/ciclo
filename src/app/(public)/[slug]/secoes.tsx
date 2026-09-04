@@ -209,8 +209,8 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
                     {s.description ? <p className="mt-0.5 text-secundario text-txt-2">{s.description}</p> : null}
                     <p className="tabular mt-1 text-secundario text-txt-3">{duracao(s.durationMin)}</p>
                   </div>
-                  <div className="flex shrink-0 items-center gap-1.5">
-                    <p className="tabular text-corpo font-semibold text-acc-2">
+                  <div className="flex min-w-0 max-w-[52%] shrink items-center gap-1.5">
+                    <p className="tabular text-balance text-right text-corpo font-semibold text-acc-2">
                       {formatarPreco({
                         pricingModel: s.pricingModel,
                         priceCents: s.priceCents,

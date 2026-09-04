@@ -147,3 +147,36 @@ describe('o SEO não inventa preço para quem não tem', () => {
     ).toBe(true)
   })
 })
+
+describe('a linha do serviço não deixa o preço engolir o nome', () => {
+  const VITRINE = 'src/app/(public)/[slug]/secoes.tsx'
+
+  /**
+   * **Medido no navegador a 390px em 2026-09-04, e o número é o argumento:** com o preço
+   * `shrink-0`, um serviço `visit_hourly` ("R$ 120,00 (visita) + R$ 90,00/hora") deixava a coluna
+   * do nome com **14,65px** de largura. "Chamado técnico" quebrava letra a letra e o preço passava
+   * por cima. Depois do conserto, a mesma linha mede **130px** de nome, sem sobreposição.
+   *
+   * A causa é `flex-1` contra conteúdo largo: `flex-1` é `flex: 1 1 0%`, base ZERO, então na
+   * disputa por espaço ele perde para um irmão cuja base é o conteúdo. Tirar o `shrink-0` sozinho
+   * NÃO resolveu (medido: continuou 14px) — o que resolve é limitar a fatia do preço.
+   *
+   * O defeito é anterior a este trabalho e vale para os quatro modelos com rótulo longo; só
+   * apareceu porque o serviço sob orçamento levou a medição para essa linha.
+   */
+  it('o preço tem teto de largura e não é `shrink-0`', () => {
+    const fonte = semComentarios(readFileSync(VITRINE, 'utf8'))
+    /*
+     * `<div` no filtro, e não só a classe: o mesmo arquivo tem um `<h2 className="... items-center
+     * gap-1.5 ...">` mais abaixo, e um `.find` pela classe sozinha pegaria o cabeçalho se a ordem
+     * dos elementos mudasse. As asserções passariam a falar de outro elemento sem avisar — é a
+     * armadilha do vizinho, a mesma que já cegou duas guardas nesta base.
+     */
+    const linha = fonte
+      .split(String.fromCharCode(10))
+      .find((l) => l.includes('items-center gap-1.5') && l.includes('<div'))
+    expect(linha, 'sumiu a coluna de preço da linha do serviço').toBeTruthy()
+    expect(linha!, 'o preço voltou a recusar encolher e engole o nome do serviço').not.toContain('shrink-0')
+    expect(linha!, 'o preço perdeu o teto de largura; com rótulo longo ele achata o nome').toMatch(/max-w-\[/)
+  })
+})
