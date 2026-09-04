@@ -3,6 +3,7 @@
 import { CalendarPlus, CheckCircle2, ChevronDown } from "lucide-react";
 import { useEffect, useMemo, useState, useTransition } from "react";
 
+import { formatarPreco, type ModeloDePreco } from "@/core/pricing/formatar";
 import Button from "@/components/ui/button";
 import Card from "@/components/ui/card";
 import Chip from "@/components/ui/chip";
@@ -22,6 +23,16 @@ type Servico = {
   name: string;
   durationMin: number;
   priceCents: number;
+  /*
+   * Os três campos que decidem COMO o preço se lê. Eles já viajavam de `public-booking.ts` até
+   * aqui; o que faltava era esta declaração, e sem ela a tela caiu na própria formatação: mostrava
+   * `dinheiro.format(priceCents)` cru, ou seja, "R$ 50" para um serviço que a vitrine do mesmo
+   * salão anuncia como "R$ 50/hora". Duas fontes da mesma verdade, e a errada era justamente a do
+   * último passo antes de confirmar.
+   */
+  pricingModel: ModeloDePreco;
+  hourlyRateCents: number | null;
+  halfDayPriceCents: number | null;
   /** Quanto a cliente adianta para segurar o horário. `null` = este serviço não pede sinal. */
   depositCents: number | null;
 };
@@ -631,9 +642,12 @@ export default function Agendar({
                     </p>
                   </div>
                   <p className="tabular shrink-0 text-corpo font-semibold text-acc-2">
-                    {s.priceCents > 0
-                      ? dinheiro.format(s.priceCents / 100)
-                      : "Consultar"}
+                    {formatarPreco({
+                      pricingModel: s.pricingModel,
+                      priceCents: s.priceCents,
+                      hourlyRateCents: s.hourlyRateCents,
+                      halfDayPriceCents: s.halfDayPriceCents,
+                    })}
                   </p>
                 </div>
               </Card>

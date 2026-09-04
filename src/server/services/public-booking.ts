@@ -5,6 +5,7 @@ import { z } from 'zod'
 
 import { podeUsarCapacidade } from '@/core/billing/planos'
 import { availableSlots, type IntervaloExpediente, type IntervaloOcupado } from '@/core/scheduling/available-slots'
+import type { ModeloDePreco } from '@/core/pricing/formatar'
 import { sinalEmCentavos } from '@/core/pricing/sinal'
 import { primeiroNome } from '@/core/text/nome'
 import { urlDaVitrine } from '@/core/text/vitrine'
@@ -87,7 +88,7 @@ export type PerfilPublico = {
     description: string | null
     durationMin: number
     priceCents: number
-    pricingModel: 'fixed' | 'hourly' | 'visit_hourly' | 'daily'
+    pricingModel: ModeloDePreco
     hourlyRateCents: number | null
     halfDayPriceCents: number | null
     /** Quanto a cliente adianta para segurar o horário. `null` = este serviço não pede sinal. */
@@ -200,7 +201,7 @@ export const perfilPublico = cache(async (slug: string): Promise<PerfilPublico> 
         description: s.description,
         durationMin: s.duration_min,
         priceCents: s.price_cents,
-        pricingModel: s.pricing_model as 'fixed' | 'hourly' | 'visit_hourly' | 'daily',
+        pricingModel: s.pricing_model as ModeloDePreco,
         hourlyRateCents: s.hourly_rate_cents,
         halfDayPriceCents: s.half_day_price_cents,
         /*

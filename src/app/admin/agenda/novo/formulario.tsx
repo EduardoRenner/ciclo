@@ -10,7 +10,7 @@ import Input from '@/components/ui/input'
 import PhoneInput from '@/components/ui/phone-input'
 import Select from '@/components/ui/select'
 import { useToast } from '@/components/ui/toast'
-import { formatarPreco } from '@/core/pricing/formatar'
+import { formatarPreco, type ModeloDePreco } from '@/core/pricing/formatar'
 import { formatarTelefone } from '@/lib/formato'
 import { apiFetch } from '@/lib/offline/api-client'
 
@@ -249,7 +249,7 @@ export default function FormularioAgendamento({
           <option key={s.id} value={s.id}>
             {s.name} ·{' '}
             {formatarPreco({
-              pricingModel: s.pricing_model as 'fixed' | 'hourly' | 'visit_hourly' | 'daily',
+              pricingModel: s.pricing_model as ModeloDePreco,
               priceCents: s.price_cents,
               hourlyRateCents: s.hourly_rate_cents,
               halfDayPriceCents: s.half_day_price_cents,

@@ -5,7 +5,7 @@
  * qty × preço unitário livre desde sempre); o que faltava era o CATÁLOGO conseguir anunciar o
  * preço do jeito certo — "R$ 50/hora" em vez de fingir "R$ 50" fechado.
  */
-export type ModeloDePreco = 'fixed' | 'hourly' | 'visit_hourly' | 'daily'
+export type ModeloDePreco = 'fixed' | 'hourly' | 'visit_hourly' | 'daily' | 'quote'
 
 export type ServicoComPreco = {
   pricingModel: ModeloDePreco
@@ -23,6 +23,19 @@ function formatarCentavos(cents: number): string {
 /** Texto pronto pra exibir no catálogo (admin) e na página pública — nunca esconde a unidade. */
 export function formatarPreco(servico: ServicoComPreco): string {
   switch (servico.pricingModel) {
+    /*
+     * O quinto modelo, e o único que não anuncia número. Os outros quatro exigem um valor, então
+     * quem não tem preço de tabela (eletricista, faxineira, quem faz obra) só conseguia cadastrar
+     * mentindo. O eixo é o SERVIÇO e não a conta de propósito: negócio híbrido é o caso comum, e a
+     * mesma pessoa que tem tabela de corte orça a obra. Ver docs/40.
+     *
+     * "Sob orçamento" e não "Consultar": consultar é o que a pessoa faz, sob orçamento é o que o
+     * serviço é. O `'Consultar'` do `fixed` com preço zero logo abaixo continua existindo como rede
+     * para cadastro antigo, mas deixou de ser o único jeito de dizer isto.
+     */
+    case 'quote':
+      return 'Sob orçamento'
+
     case 'fixed':
       return servico.priceCents > 0 ? formatarCentavos(servico.priceCents) : 'Consultar'
 
@@ -49,6 +62,9 @@ export function formatarPreco(servico: ServicoComPreco): string {
  * slot na agenda hoje.
  */
 export function estimativaParaDuracao(servico: ServicoComPreco, duracaoMin: number): number {
+  // Sob orçamento não tem o que estimar: `price_cents` é ignorado neste modelo, e devolver o
+  // conteúdo dele daria um número que ninguém escreveu como preço.
+  if (servico.pricingModel === 'quote') return 0
   if (servico.pricingModel === 'hourly') return Math.ceil((duracaoMin / 60) * servico.priceCents)
   if (servico.pricingModel === 'visit_hourly') return servico.priceCents + Math.ceil((duracaoMin / 60) * (servico.hourlyRateCents ?? 0))
   return servico.priceCents

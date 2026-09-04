@@ -26,7 +26,10 @@ const EsquemaServicoBase = z.object({
   // G5 (docs/09-PLATAFORMA.md): price_cents sempre foi tratado como preço fechado — pricingModel
   // diz o que ele significa (fixed = total; hourly = por hora; visit_hourly = taxa de visita,
   // com hourlyRateCents à parte; daily = diária, com halfDayPriceCents opcional).
-  pricingModel: z.enum(['fixed', 'hourly', 'visit_hourly', 'daily']).default('fixed'),
+  // 'quote' é o único que não anuncia número: o serviço existe no catálogo, aparece na vitrine e
+  // diz "Sob orçamento". Sem ele, quem não tem preço de tabela só cadastrava mentindo um valor.
+  // A granularidade é o SERVIÇO e não a conta porque negócio híbrido é o caso comum (docs/40).
+  pricingModel: z.enum(['fixed', 'hourly', 'visit_hourly', 'daily', 'quote']).default('fixed'),
   hourlyRateCents: z.int().min(0, 'O valor da hora não pode ser negativo.').nullish(),
   halfDayPriceCents: z.int().min(0, 'A meia diária não pode ser negativa.').nullish(),
   cycleDays: z
