@@ -83,3 +83,81 @@ só com texto.
 | **`dom-rocha` ainda magro** — 46 clientes, ~10 cortes/semana num salão de 3 cadeiras, visitas achatadas em 5–7 | Engordar de verdade exige refazer o histórico, e `seed-demo-barbearia.mjs` **deleta o tenant + o usuário dono** ao rodar. Risco alto de fazer autônomo. |
 | **`lang-unhas`** — sem camada de dinheiro | Vertical de unhas, vocabulário de serviço diferente do `seed-demo-dinheiro` (feito para barbearia). |
 | **6 contas `demo-*`** do `seed-demo-carteira.sql` (PR #53) | Não existem neste banco — aquele SQL de 78 KB é inerte. Só rodaria com as contas criadas antes, ou apontando o `.env.local` para o projeto certo. |
+
+---
+
+# Parte 2 · a produção é outra (mesma noite)
+
+A Parte 1 auditou `sukloaoodpxjukngyojo` achando que era produção. **Não é.** Medido pelo header
+CSP da resposta ao vivo de `seuciclo.com.br` (`connect-src ... eqzlvthzdjnsbogymcsw.supabase.co`):
+
+| | projeto Supabase | tenants |
+|---|---|---|
+| **Produção** | `eqzlvthzdjnsbogymcsw` | os 6 `demo-*` (navalha-de-ouro, corte-fino, dom-estilo, studio-bella, salão-encanto, espaço-vitória) |
+| **Dev / `.env.local`** | `sukloaoodpxjukngyojo` | `dom-rocha`, `ruivo-barber`, `lang-*`, `teste-*` |
+
+O domínio real é **`seuciclo.com.br`** — `ciclo-umber.vercel.app` (citado no `docs/DECISOES` de
+22/08) está morto.
+
+## Estado da produção — as 6 contas `demo-*`
+
+Todas saudáveis: 50–78 clientes, 276–408 comandas, logo/capa/avatares, `phone_hash` 100%
+preenchido, agenda futura cobrindo 14 dias, avaliações e pacotes populados. Duas ressalvas de
+realismo, não bugs: 8–11 atendimentos/semana (real é 30–60) e ciclos perdidos em 45–55% nos três
+salões.
+
+## Bugs encontrados na Parte 2
+
+### 4. O agendador nunca rodou em produção 🔴
+
+8 de 8 execuções do workflow `cron` falharam com `DEPLOYMENT_NOT_FOUND` — `CRON_BASE_URL` aponta
+para o alias morto. `/api/health` devolve 503 com `recompute_cycles: "nunca rodou"`. O Motor de
+Ciclo, o diferencial que sustenta o preço, só rodou por recomputação manual.
+
+- **Conserto do secret:** ação do Eduardo (`CRON_BASE_URL = https://seuciclo.com.br`).
+- **PR #59:** job `vigia` no `cron.yml` — depois de um 2xx, confere o heartbeat em `/api/health` e
+  reprova se o trabalho não aconteceu. HTTP 200 nunca foi prova (o Motor devolveu `200` com
+  `tenantsProcessados: 0` por dois dias e meio, verde o tempo todo).
+
+### 5. `is_retail` sem leitor — insumo entrava a R$ 0,00 e saía 2× do estoque (PR #60)
+
+`adicionarItemComanda` resolvia preço com `... ?? produto.price_cents ?? 0`. Na produção, os 37
+insumos (água oxigenada, luva, navalha) têm `price_cents` nulo — então lançar um cobrava zero e
+`baixarEstoqueDaComanda` descontava o estoque, que a ficha de `service_products` **já** descontava.
+`listarProdutosAtivos` passa a filtrar `is_retail`; a comanda recusa produto sem preço em vez de
+inventar zero.
+
+### 6. O "previsto do dia" contava pedido vencido (PR #61)
+
+`forecastCents` dizia excluir "vencidos", mas o estado `expired` nunca foi alcançado por nada —
+zero linhas na história do banco. 19 agendamentos `pending` com hora passada inflavam o previsto.
+Regra em `core/agenda/ainda-conta-como-receita.ts`: `pending` decai ao fim do horário; `confirmed`
+e `arrived` não (houve decisão humana). Não muda estado — CLAUDE.md: no-show quem marca é o
+profissional.
+
+## Colunas órfãs — o veredito
+
+| coluna | veredito |
+|---|---|
+| `deposit_cents` | era bug → PR #58 (grava o sinal instantâneo na criação do agendamento) |
+| `is_retail` | era bug → PR #60 |
+| `hold_expires_at` | **feature não construída** (modo "solicitação"/reserva temporária) — deixar |
+| `trial_ends_at` | **feature não construída** (teste grátis de 30 dias, `docs/18` §E.2.2) — deixar |
+| `expired` (estado) | nunca alcançado → PR #61 trata como leitura |
+
+## Rotas de cron mortas
+
+- `stock-alerts` — recalcula o que `/admin/estoque` já mostra e termina em `console.log`. Não
+  notifica ninguém. Agendar seria cerimônia sem consequência.
+- `lgpd-retention` — fora do `schedule` de propósito (o docstring dela diz que ligar destruição
+  irreversível é decisão do dono). Fila em produção zerada: 0 clientes apagados.
+
+## Pendências que exigem decisão do Eduardo
+
+1. `CRON_BASE_URL = https://seuciclo.com.br` no GitHub Secrets — liga o Motor de Ciclo.
+2. `SENTRY_DSN` na Vercel (lido no build) — hoje erro de usuário não chega em ninguém. Ou criar, ou
+   tirar a promessa da tela.
+3. `auth_leaked_password_protection` — **é recurso Pro do Supabase**, não dá no free. Aceitar ou
+   fazer upgrade (necessário de qualquer forma para não pausar o banco por inatividade).
+4. Adensar o seed de produção (SQL na produção) — para o volume semanal e a taxa de ciclos
+   perdidos ficarem realistas.

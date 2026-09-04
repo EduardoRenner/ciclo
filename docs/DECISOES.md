@@ -5751,3 +5751,18 @@ afirma que os dois arquivos onde o defeito já apareceu de verdade estão no alc
 Reescrevi a FAQ de "quem trabalha por conta" para "quem atende sozinho". A tabela do `docs/20` §C.4
 diz, com estas palavras, que *"quem atende sozinho" não resolve → "quem trabalha por conta"*, porque
 escolher um gênero é o mesmo erro que trocar de gênero. Revertido.
+
+
+### 2026-09-03 · A produção não é o banco que o `.env.local` aponta · descoberto, registrado · auditoria
+
+Auditando o "banco novo" (pedido do Eduardo), descobri que `.env.local` aponta para
+`sukloaoodpxjukngyojo` — que é DEV. A produção de `seuciclo.com.br` usa `eqzlvthzdjnsbogymcsw`,
+confirmado pelo `connect-src` do CSP na resposta ao vivo. Uma sessão inteira de seed foi para o
+banco errado antes disso aparecer.
+
+Como conferir de fora, sem painel: `curl -sD- <dominio>/api/health` e ler o `content-security-policy`
+— o host do Supabase de produção está no `connect-src`. Ver `docs/39` Parte 2.
+
+Consequência operacional: as 6 contas `demo-*` são a demonstração real; `dom-rocha` & cia. existem
+só em dev. O `slugDeDemonstracaoNoAr()` do PR #58 já resolve isso em runtime — a landing pega a
+primeira vitrine que existir no banco em que estiver rodando.
