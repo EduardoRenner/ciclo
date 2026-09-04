@@ -248,16 +248,47 @@ describe('o painel também fala a língua da profissão', () => {
    * com artigo continua livre, porque a palavra dele não muda.
    */
   it('nenhum rótulo do painel injeta vocabulário onde o artigo concorda', () => {
-    const PALAVRAS = /(atendimentos?|servi[çc]os?|clientes?|profissiona(?:l|is))/i
-    const ARTIGO = new RegExp(String.raw`\b(o|a|os|as|do|da|dos|das|ao|aos|pelo|pela|nosso|nossa|esse|essa|cada)\s+` + PALAVRAS.source, 'i')
+    /*
+     * As CONTRAÇÕES entram na lista, e faltavam: medindo o painel em 2026-09-04, a ajuda
+     * "Muda só como o preço aparece **pro** cliente" foi classificada como segura, porque `pro` é
+     * "para o" contraído e não estava aqui. Um rótulo assim, ligado ao vocabulário, viraria "pro
+     * sessão". `no`, `na`, `num` e `pela` têm o mesmo problema.
+     */
+    /**
+     * Artigo colado no fim do trecho: o que vem logo ANTES da palavra injetada. `$` no fim é o que
+     * torna isto "colado" — sem ele, qualquer artigo em qualquer ponto da linha acusaria.
+     */
+    const COLADO = new RegExp(
+      String.raw`\b(o|a|os|as|do|da|dos|das|ao|aos|pelo|pela|pelos|pelas|pro|pra|pros|pras|no|na|nos|nas|num|numa|nosso|nossa|esse|essa|este|esta|cada|seu|sua|aquele|aquela)\s+(\$\{[\w.(]*)?$`,
+      'i',
+    )
+    /*
+     * A vizinhança da INJEÇÃO, não a linha inteira — e a diferença apareceu medindo. A primeira
+     * versão olhava a linha, e reprovou
+     * `<PageHeader titulo={...vocabulario.servico} descricao="...a ordem que a cliente vê" />`:
+     * o `titulo` recebe vocabulário, a `descricao` é texto fixo com artigo, e as duas coisas não
+     * têm relação nenhuma. Uma linha pode legitimamente ter as duas.
+     *
+     * O que realmente quebra é o artigo colado NA palavra trocada — `Foto do ${vocabulario.servico}`
+     * vira "Foto do sessão". Por isso a janela é curta e olha só para trás da ocorrência.
+     */
     const achados: string[] = []
     for (const arquivo of arquivosTsx('src/app/admin')) {
       const fonte = semComentarios(readFileSync(arquivo, 'utf8'))
       for (const linha of fonte.split(String.fromCharCode(10))) {
-        if (!/vocabulario\./.test(linha)) continue
-        if (ARTIGO.test(linha)) achados.push(`${arquivo}: ${linha.trim().slice(0, 80)}`)
+        for (const m of linha.matchAll(/vocabulario\.\w+/g)) {
+          // 24 caracteres cobrem `do ${`, `da ${comMaiuscula(` e afins, sem alcançar outro atributo.
+          const antes = linha.slice(Math.max(0, m.index - 24), m.index)
+          if (COLADO.test(antes)) achados.push(`${arquivo}: ${linha.trim().slice(0, 80)}`)
+        }
       }
     }
+    // Guarda contra o próprio detector, e ela é obrigatória aqui porque a asserção acima ficou mais
+    // ESTREITA nesta rodada: detector que parou de casar deixa `achados` vazio e passa por engano.
+    expect(COLADO.test('rotulo={`Foto do ${'), 'o detector cegou para o caso que ele existe para pegar').toBe(true)
+    expect(COLADO.test('rotulo={`Direitos da ${comMaiuscula('), 'o detector não alcança a chamada aninhada').toBe(true)
+    expect(COLADO.test('descricao="a ordem que a cliente vê" titulo={'), 'o detector acusa atributo vizinho').toBe(false)
+
     expect(
       achados,
       'rótulo do painel com artigo concordando com a palavra que o vocabulário troca. "Direitos da ' +

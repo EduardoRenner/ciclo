@@ -1,5 +1,10 @@
+import { headers } from 'next/headers'
+
+import { PADRAO } from '@/core/text/vocabulario'
+import { contextoAtual } from '@/server/auth/tenant'
 import ToastProvider from '@/components/ui/toast'
 import AssistenteFlutuante from '@/components/shell/assistente-flutuante'
+import { VocabularioProvider } from '@/components/shell/vocabulario'
 import ResolucaoDeFila from '@/components/shell/resolucao-de-fila'
 import TabBar from '@/components/shell/tab-bar'
 import TransicaoDeTela from '@/components/shell/transicao-de-tela'
@@ -22,9 +27,21 @@ export const metadata: Metadata = {
  * estoura ali; telas dinâmicas escondiam o mesmo bug até alguém clicar o botão
  * de toast em produção.
  */
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+/*
+ * `contextoAtual` com `catch`, e o `catch` é a decisão: o layout renderiza em TODA rota de
+ * `/admin`, inclusive nas que uma conta sem estabelecimento alcança antes de terminar o cadastro.
+ * `contextoAtual` estoura `FORBIDDEN` nesse caso, e deixar isso subir aqui derrubaria o painel
+ * inteiro para quem está no meio do onboarding. Sem contexto, o vocabulário é o padrão da casa.
+ *
+ * Não custa uma ida a mais ao banco: `vinculosAtivos` é `cache()` do React, então a página filha
+ * que também chama `contextoAtual` reaproveita a mesma consulta na mesma requisição.
+ */
+export default async function AppLayout({ children }: { children: React.ReactNode }) {
+  const ctx = await contextoAtual(new Request('https://interno/admin', { headers: await headers() })).catch(() => null)
+
   return (
     <ToastProvider>
+      <VocabularioProvider valor={ctx?.tenant.vocabulario ?? PADRAO}>
       {/*
         No monitor, o app é uma coluna de 560px sobre um fundo preto infinito —
         parecia inacabado justamente na tela em que o produto é demonstrado. A
@@ -67,6 +84,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         */}
         <AssistenteFlutuante disponivel={Boolean(process.env.GEMINI_API_KEY)} />
       </div>
+    </VocabularioProvider>
     </ToastProvider>
   )
 }

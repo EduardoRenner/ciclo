@@ -7,6 +7,8 @@ import { useState, useTransition } from 'react'
 
 import ActionBar from '@/components/ui/action-bar'
 import BloqueioPlano from '@/components/ui/bloqueio-plano'
+import { useVocabulario } from '@/components/shell/vocabulario'
+import { comMaiuscula, plural } from '@/core/text/vocabulario'
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import Chip from '@/components/ui/chip'
@@ -60,6 +62,7 @@ export default function RecuperarReceita({
   /** Separa "ainda nao atendeu ninguem" de "atendeu e o Motor nao processou". */
   temAtendimentosConcluidos: boolean
 }) {
+  const vocabulario = useVocabulario()
   const [filtro, setFiltro] = useState<Estado | 'all'>('all')
   const [lista, setLista] = useState(inicial)
   const [carregando, setCarregando] = useState(false)
@@ -137,7 +140,7 @@ export default function RecuperarReceita({
       */}
       <div className="mb-5 grid grid-cols-2 gap-3">
         <StatTile rotulo="Dá para recuperar" valor={dinheiro.format(lista.totalValueCents / 100)} />
-        <StatTile rotulo="Clientes" valor={String(lista.count)} />
+        <StatTile rotulo={comMaiuscula(plural(vocabulario.cliente))} valor={String(lista.count)} />
       </div>
 
       <p className="mb-4 text-secundario text-txt-3">

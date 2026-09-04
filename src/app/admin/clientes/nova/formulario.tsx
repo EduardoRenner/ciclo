@@ -3,6 +3,8 @@
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
 
+import { useVocabulario } from '@/components/shell/vocabulario'
+import { comMaiuscula } from '@/core/text/vocabulario'
 import Button from '@/components/ui/button'
 import Input from '@/components/ui/input'
 import PageHeader from '@/components/ui/page-header'
@@ -19,6 +21,7 @@ import { camposDePreferencia } from '@/lib/preferencias'
  * importando planilha ou de raspão, ao marcar um horário.
  */
 export default function FormularioCliente({ vertical }: { vertical: string }) {
+  const vocabulario = useVocabulario()
   const router = useRouter()
   const mostrarToast = useToast()
   const [salvando, iniciarSalvamento] = useTransition()
@@ -78,7 +81,7 @@ export default function FormularioCliente({ vertical }: { vertical: string }) {
   return (
     <div className="pb-8">
       {/* O voltar mora na Topbar desde o redesenho — dois numa tela só confundem. */}
-      <PageHeader titulo="Novo cliente" />
+      <PageHeader titulo={`${comMaiuscula(vocabulario.cliente)} novo`} />
 
       <div className="flex flex-col gap-3">
         <Input rotulo="Nome" value={nome} onChange={(e) => setNome(e.target.value)} autoFocus autoComplete="name" />

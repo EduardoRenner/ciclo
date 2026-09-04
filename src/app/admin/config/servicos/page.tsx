@@ -1,3 +1,4 @@
+import { comMaiuscula, plural } from '@/core/text/vocabulario'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { listarServicos } from '@/server/services/servicos'
@@ -19,7 +20,7 @@ export default async function PaginaServicos() {
 
   return (
     <>
-      <PageHeader titulo="Serviços" descricao="O que você oferece, quanto dura e quanto custa. Arraste para mudar a ordem que a cliente vê." />
+      <PageHeader titulo={comMaiuscula(plural(ctx.tenant.vocabulario.servico))} descricao="O que você oferece, quanto dura e quanto custa. Arraste para mudar a ordem que a cliente vê." />
 
       <ListaServicos iniciais={servicos} />
     </>
