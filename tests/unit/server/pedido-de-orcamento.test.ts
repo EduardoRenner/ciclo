@@ -135,9 +135,18 @@ describe('a porta só existe onde alguém atende do outro lado', () => {
      * Oferecer um formulário que o dono nunca vai atender é a mesma classe de promessa vazia que a
      * regra do canal de mensagem proíbe. `notFound()`, não formulário vazio.
      */
+    /*
+     * A asserção casa com a LINHA inteira, e não com `notFound()` solto: o arquivo já tem um
+     * `notFound()` para perfil inexistente, e casar com ele deixava a guarda cega — medido por
+     * mutação, apagar a checagem do catálogo passava VERDE. Armadilha nº 1 da tabela do
+     * `CLAUDE.md`: casar com algo que o arquivo contém por outro motivo.
+     */
     const src = fonte(PAGINA)
     expect(/pricingModel === 'quote'/.test(src), 'a página não confere se existe serviço sob orçamento').toBe(true)
-    expect(/notFound\(\)/.test(src), 'a página abre formulário mesmo sem ninguém para responder').toBe(true)
+    expect(
+      /sobOrcamento\.length === 0\) notFound\(\)/.test(src),
+      'a página abre formulário mesmo sem ninguém para responder do outro lado',
+    ).toBe(true)
   })
 
   it('o botão da vitrine obedece à mesma condição', () => {
