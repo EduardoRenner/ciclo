@@ -165,7 +165,15 @@ export const perfilPublico = cache(async (slug: string): Promise<PerfilPublico> 
         .select('rating, comment, created_at')
         .eq('tenant_id', tenant.id)
         .not('comment', 'is', null)
+        /*
+         * `id` como desempate, e não enfeite: com `limit(5)`, empate em `created_at` muda QUAIS
+         * cinco comentários aparecem a cada carregamento. Medido em 04/09 no `dom-rocha` — duas
+         * avaliações que eu tinha acabado de editar não apareciam, e a lista trocava sozinha
+         * entre dois `curl` seguidos. Acontece sempre que várias linhas nascem no mesmo instante,
+         * que é o caso de qualquer importação ou seed.
+         */
         .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
         .limit(5),
       svc.from('portfolio_photos').select('storage_key').eq('tenant_id', tenant.id).order('created_at', { ascending: false }),
     ])
