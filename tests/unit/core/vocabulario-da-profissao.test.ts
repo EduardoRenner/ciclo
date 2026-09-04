@@ -140,6 +140,16 @@ describe('o plural, que é onde português quebra', () => {
     expect(vocabs.length, 'nenhum vocabulário lido do seed — a varredura olhou o lugar errado').toBeGreaterThanOrEqual(15)
     expect(valores, 'a varredura não alcançou as correções da 0060').toContain('responsável')
     expect(valores, 'a varredura ainda vê o valor que a 0060 substituiu').not.toContain('tutor')
+    /*
+     * A LARGURA afirmada, e não só a profundidade. Medindo por mutação, estreitar a varredura de
+     * volta para `servico` e `atendimento` **passava verde**: as palavras perigosas de hoje
+     * (`responsável`, `profissional`) chegam por `PADRAO` e pelas correções, então o estreitamento
+     * não tinha contraexemplo nos dados. Sem estas duas linhas a guarda voltaria a ser estreita sem
+     * ninguém ver — e o próximo valor sem plural cairia justamente numa chave descoberta, que foi
+     * exatamente como "responsávels" nasceu.
+     */
+    expect(valores, 'a varredura deixou de olhar a chave `cliente`').toContain('paciente')
+    expect(valores, 'a varredura deixou de olhar a chave `local`').toContain('salão')
     expect([...new Set(valores.filter((v) => v && !temPluralConhecido(v)))], 'palavra sem regra de plural conhecida').toEqual([])
   })
 })
