@@ -81,7 +81,9 @@ export async function listarListaEspera(db: Cliente, tenantId: string, serviceId
     .is('fulfilled_at', null)
   if (serviceId) consulta = consulta.eq('service_id', serviceId)
 
-  const { data, error } = await consulta.order('created_at')
+  // Mesmo desempate da consulta de baixo, e pelo mesmo motivo: esta é a fila que o salão VÊ, e
+  // sem critério estável a ordem de quem está esperando embaralha entre dois carregamentos.
+  const { data, error } = await consulta.order('created_at').order('id')
   if (error) throw new AppError('INTERNAL', { cause: error })
   return data ?? []
 }
@@ -175,7 +177,21 @@ export async function notificarProximoDaLista(
     .eq('tenant_id', tenantId)
     .eq('service_id', slot.serviceId)
     .is('fulfilled_at', null)
+    /*
+     * `id` desempata, e aqui isso decide QUEM leva o horário que abriu.
+     *
+     * `ordenarCandidatos` termina com `return 0` e o comentário dele diz, com estas palavras, que
+     * "ordem de entrada já vem do `order('created_at')` da consulta — sort estável preserva". O
+     * `sort` do JS é estável de verdade, então a promessa depende inteiramente de esta consulta
+     * devolver uma ordem estável — e sem desempate ela NÃO devolve: com dois pedidos gravados no
+     * mesmo instante, o Postgres pode trocar a ordem entre duas execuções, e a vaga vai para
+     * qualquer um dos dois.
+     *
+     * Empate é improvável entre pessoas de verdade e garantido em importação e seed. Um critério
+     * estável custa nada e faz a fila cumprir o que ela promete.
+     */
     .order('created_at')
+    .order('id')
   if (error) throw new AppError('INTERNAL', { cause: error })
 
   // `waitlist` não tem FK para `client_cycles` (é tabela derivada, sem
