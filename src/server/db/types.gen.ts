@@ -2195,7 +2195,7 @@ export type Database = {
           created_by: string | null
           id: string
           message: string | null
-          professional_id: string
+          professional_id: string | null
           rejected_at: string | null
           rejected_reason: string | null
           sent_at: string | null
@@ -2212,7 +2212,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           message?: string | null
-          professional_id: string
+          professional_id?: string | null
           rejected_at?: string | null
           rejected_reason?: string | null
           sent_at?: string | null
@@ -2229,7 +2229,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           message?: string | null
-          professional_id?: string
+          professional_id?: string | null
           rejected_at?: string | null
           rejected_reason?: string | null
           sent_at?: string | null

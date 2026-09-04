@@ -1,4 +1,4 @@
-import { AtSign, CalendarPlus, ChevronRight, Clock, MapPin, MessageCircle, Phone, Star, Users } from 'lucide-react'
+import { AtSign, CalendarPlus, ChevronRight, Clock, FileText, MapPin, MessageCircle, Phone, Star, Users } from 'lucide-react'
 import Link from 'next/link'
 
 import Badge from '@/components/ui/badge'
@@ -159,6 +159,21 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
             <CalendarPlus aria-hidden className="size-4" />
             Agendar horário
           </Link>
+          {/*
+            Só aparece quando existe serviço sob orçamento, e essa é a regra inteira: uma barbearia
+            de tabela fechada não deve ter esta porta, e oferecer uma que o dono nunca vai atender é
+            a mesma classe de promessa vazia que a regra do canal de mensagem proíbe. A rota também
+            responde 404 nesse caso, então o botão e o destino concordam.
+          */}
+          {perfil.services.some((s) => s.pricingModel === 'quote') ? (
+            <Link
+              href={`/${perfil.slug}/orcamento`}
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-5 text-corpo font-semibold text-txt transition duration-[var(--dur-1)] hover:bg-surface-3 active:scale-[.97]"
+            >
+              <FileText aria-hidden className="size-4" />
+              Pedir orçamento
+            </Link>
+          ) : null}
           {perfil.whatsapp ? (
             <a
               href={linkWhatsapp(perfil.whatsapp, `Oi! Vim pelo site da ${perfil.name}.`)}

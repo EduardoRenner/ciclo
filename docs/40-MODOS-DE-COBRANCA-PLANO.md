@@ -80,3 +80,78 @@ Fica fora da fase 1 de propósito, porque envolve decidir campo de entrada, anti
 público sem autenticação) e como o profissional é avisado — e **avisar depende de canal que o cron
 não agenda hoje**, que é a regra vigente contra prometer canal. Enquanto a entrada não existir, o
 botão do serviço sob orçamento leva ao contato que já existe, sem prometer retorno automático.
+
+---
+
+# Fase 2 · A cliente pede o orçamento
+
+**Data:** 2026-09-04
+
+## O buraco
+
+A fase 1 deixou o serviço dizer "Sob orçamento" na vitrine. E aí a pessoa toca no card e **não
+acontece nada de útil**: o `/orcamento/[token]` só exibe um orçamento que já existe, e quem cria é
+sempre o profissional, pelo painel. Ou seja, o produto anuncia "sob orçamento" e não tem por onde
+pedir um.
+
+Para a barbearia isso é indiferente. Para o eletricista e a faxineira — que é quem o `docs/09`
+coloca no alvo e quem a fase 1 existe para atender — é o caminho inteiro.
+
+## O que a tabela não comportava
+
+`quotes` nasceu na `0001` para o fluxo do profissional, e duas colunas provam isso:
+
+- `professional_id` é **`not null`**. Um pedido que acabou de chegar não tem profissional: ninguém
+  pegou ainda. Atribuir um arbitrariamente cria dono falso, e obrigar a cliente a escolher no
+  formulário é fricção sobre alguém que ainda nem sabe o que precisa.
+- `status` começa em `'draft'`, que quer dizer *"o profissional começou a escrever"*. Empilhar
+  pedido da cliente ali apaga a distinção que faz o painel saber o que exige resposta.
+
+Por isso a migration `0061` acrescenta o status `'requested'` e torna `professional_id` opcional.
+Nenhuma linha existente muda de sentido.
+
+## O formulário
+
+Quatro campos, e a ordem é a do agendamento público porque é o mesmo par de mãos preenchendo:
+
+| Campo | Obrigatório | Por quê |
+|---|---|---|
+| O que você precisa | sim | é o pedido. Textarea, porque descrever obra em uma linha não dá. |
+| Nome | sim | mesma resolução de cliente do agendamento (`resolverCliente`). |
+| Telefone | sim | é por onde a resposta volta. |
+| Serviço | não | só os `quote` do catálogo. Ajuda quem já sabe, não trava quem não sabe. |
+| Endereço | não | eletricista e faxineira orçam no local. Mesmo campo do agendamento. |
+
+**Sem escolha de profissional**, de propósito: a pergunta não faz sentido antes de existir orçamento,
+e a coluna agora aceita vazio.
+
+## Anti-abuso: reaproveitar, não inventar
+
+O agendamento público já resolve o mesmo problema, e a solução dele vale igual aqui:
+
+- **Honeypot** (`website`): campo real no DOM, invisível por posição. Preenchimento automatizado
+  não pula; gente nunca vê. Quando vem preenchido, a rota responde sucesso e **não grava nada** —
+  quem automatiza não descobre que foi barrado.
+- **Limitador por IP em duas janelas** (`limitador`), os mesmos números do `book`: 5 por minuto e
+  o teto por hora. Formulário público sem autenticação não pode depender só do honeypot.
+
+## O que a tela promete depois de enviar
+
+Ela **não promete canal**. Não existe rota agendada que mande WhatsApp ou e-mail de pedido novo, e
+prometer isso é a armadilha mais cara do `CLAUDE.md` — quem fica mal é o salão, não o CICLO.
+
+O que ela diz é o que é verdade: o pedido chegou e está na lista de quem atende. E oferece o atalho
+que já existe — o botão de WhatsApp do salão — para a pessoa poder cutucar por conta própria, que é
+o mesmo "dois caminhos" que a floricultura adotou quando o checkout não convertia.
+
+## No painel
+
+O pedido entra na lista de orçamentos com selo próprio (**"Pedido novo"**), que é o que separa
+"alguém está esperando" de "eu comecei a escrever". O profissional abre, preenche os itens e segue
+pelo fluxo que já existe: envia, a cliente aprova, vira agendamento.
+
+## O que fica de fora desta fase
+
+Aviso automático de pedido novo. Depende de rota agendada e de credencial de mensageria
+(TICKET-043), e a regra vigente é não prometer canal que o cron não agenda. Enquanto isso, o pedido
+aparece no painel como qualquer outro trabalho do dia.
