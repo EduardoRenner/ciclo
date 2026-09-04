@@ -53,7 +53,7 @@ que não existe — inofensivo hoje, mas vira falso se alguém ligar pagamentos 
 
 ## Plano de execução, em ordem
 
-**1. Vocabulário por profissão (item B, o de maior valor).**
+**1. Vocabulário por profissão (item B, o de maior valor).** FEITO em 2026-09-04: público e painel.
 Antes de escrever código: pesquisar como produtos multi-vertical resolvem rótulo por segmento
 (Jobber, Housecall Pro, ServiceTitan, e SaaS horizontal que faz isso via terminologia
 configurável), e decidir se o vocabulário é (a) por profissão, vindo do pacote, (b) editável pelo
@@ -62,12 +62,12 @@ dono, via `vocab_override`, ou (c) os dois com precedência. As duas colunas exi
 indireção em toda a UI. **Medir primeiro quantos rótulos realmente mudariam**: se forem três
 palavras, isso é um `Record` pequeno; se forem cem, é arquitetura.
 
-**2. Fase 2 do sob orçamento.**
+**2. Fase 2 do sob orçamento.** FEITO em 2026-09-04, ver `docs/40` fase 2.
 Entrada pública de pedido de orçamento. Bloqueada por decisão de anti-abuso (formulário público
 sem autenticação) e pela regra de não prometer canal que o cron não agenda. Desenhar primeiro,
 implementar só a parte que não promete aviso automático.
 
-**3. Documentar A no lugar certo.**
+**3. Documentar A no lugar certo.** FEITO em 2026-09-04, ver `docs/05-FAQ-DEV.md`.
 `commissions` e `payments` viram nota em `docs/05-FAQ-DEV.md`: existem, estão vazias, e o motivo.
 Sem isso, a próxima pessoa que abrir o schema vai achar que é bug e "consertar" escrevendo nelas,
 duplicando o que `ticket_items` já congela corretamente.
