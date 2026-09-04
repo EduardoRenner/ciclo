@@ -174,7 +174,7 @@ export default function DetalheAgendamento({
         {agendamento.deposit_cents > 0 ? (
           <p className="mt-1 text-secundario text-txt-2">
             Sinal de <strong className="tabular font-semibold text-txt">{dinheiro.format(agendamento.deposit_cents / 100)}</strong>
-            {agendamento.origin === 'public_page' ? ' — a cliente viu esse valor ao agendar.' : ' — a cliente ainda não foi avisada.'}
+            {agendamento.origin === 'public_page' ? '. A cliente viu esse valor ao agendar.' : '. A cliente ainda não foi avisada.'}
           </p>
         ) : null}
       </div>
