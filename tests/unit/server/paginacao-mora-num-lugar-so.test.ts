@@ -51,19 +51,17 @@ describe('a paginação mora num lugar só', () => {
     expect(forasteiros).toEqual([])
   })
 
-  it('o dono continua tendo teto — sem ele, centralizar não resolveu nada', () => {
-    const fonte = semComentarios(readFileSync(DONO, 'utf8'))
-    expect(fonte).toMatch(/pagina < MAXIMO_DE_PAGINAS/)
-    /*
-     * Ao estourar o teto tem que ERRAR, não devolver o que já juntou: total parcial é redondo,
-     * plausível e não denuncia nada.
-     *
-     * A primeira versão desta linha era `/throw new AppError/` e passou na mutação que trocava o
-     * throw do teto por `return tudo` — porque o arquivo tem OUTRO `throw new AppError`, o do
-     * `if (error)` dentro do laço. Casar com o nome do erro é casar com algo que o arquivo contém
-     * por outro motivo; casar com a MENSAGEM do teto amarra a asserção ao comportamento que ela
-     * existe para proteger.
-     */
-    expect(fonte).toMatch(/passou de \$\{MAXIMO_DE_PAGINAS/)
-  })
+  /*
+   * NÃO há aqui uma asserção de "o dono tem teto". Havia, e ela era CEGA — duas vezes.
+   *
+   * A primeira versão casava com `/throw new AppError/` e passava com o throw do teto trocado por
+   * `return tudo`, porque o arquivo tem outro throw igual no `if (error)`. Amarrei então à
+   * MENSAGEM do teto — e ela também passou, com uma mutação que mantinha a string e não lançava.
+   * É o limite do método: varrer fonte prova que um TEXTO existe, nunca que um caminho EXECUTA.
+   *
+   * Quem prova é `tests/unit/server/paginar.test.ts`, caso "página sempre cheia ERRA no teto":
+   * chama a função com uma consulta que devolve página cheia para sempre e exige que estoure.
+   * Conferido reprovando com o teto removido. Deixar aqui uma asserção de fonte que não sabe
+   * falhar seria pior que não ter nenhuma — lê-se como proteção.
+   */
 })
