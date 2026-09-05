@@ -25,9 +25,26 @@ export async function verificarCaptcha(token: string | undefined): Promise<boole
     })
     const { success } = (await r.json()) as { success: boolean }
     return success
-  } catch {
-    // Indisponibilidade da hCaptcha não pode travar o booking público —
-    // as outras camadas (honeypot, rate limit) seguram sozinhas por um tempo.
+  } catch (erro) {
+    /*
+     * Indisponibilidade da hCaptcha não pode travar o booking público — as outras camadas
+     * (honeypot, rate limit) seguram sozinhas por um tempo. A decisão de deixar passar está certa;
+     * o que estava errado era o SILÊNCIO.
+     *
+     * Este `catch` engolia timeout, DNS, 5xx e segredo inválido sem deixar rastro. O ramo de cima
+     * (`!secret`) registra `hcaptcha_nao_configurado`; este não registrava nada — então uma
+     * indisponibilidade prolongada, ou um segredo trocado por engano, viraria "captcha aprovando
+     * 100% das tentativas" sem nenhum sinal em lugar nenhum. E "por um tempo", que é a condição
+     * que o comentário acima assume, é justamente o que ninguém tinha como medir.
+     *
+     * É a regra do `CLAUDE.md` aplicada a ela mesma: o `catch` descarta alguma coisa, então tem
+     * que contar e avisar.
+     */
+    console.warn(JSON.stringify({
+      level: 'warn',
+      event: 'hcaptcha_indisponivel',
+      erro: erro instanceof Error ? erro.name : 'desconhecido',
+    }))
     return true
   }
 }

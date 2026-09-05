@@ -6356,3 +6356,46 @@ Efeito prático imediato: três itens saíram da lista de trabalho do `docs/42` 
 trabalho** — ícones que sobraram na landing (~200 B comprimidos), imagens (32,7 kB no total, com o
 pipeline de upload já resolvendo na origem) e fontes (`swap`, `unicode-range`, fallback com
 `size-adjust`, preload via payload RSC). Nenhum dos três era defeito.
+
+## 2026-09-05 · `catch` que descarta: varredura fechada, um achado
+
+O `CLAUDE.md` lista "catch que devolve um padrão e segue" como armadilha conhecida, com dois casos
+históricos (fila offline apagada no logout, lista antiga na tela como se fosse resultado de busca).
+Nunca tinha sido varrido inteiro. Varridos os **457 arquivos** de `src/`: **111 blocos `catch`**,
+dos quais **98 não relançam** e **90 não registram nada**.
+
+Os 90 assustam e não são defeito: a esmagadora maioria é tratamento de UI que **mostra alguma
+coisa** — `setErro(...)` ou `mostrarToast(...)` com a frase certa. Descartar o objeto de erro
+depois de contar para a pessoa é o comportamento correto; o critério do `CLAUDE.md` é *"o catch
+descarta alguma coisa?"*, e ali nada se perde.
+
+Conferidos um a um os que decidem em silêncio no servidor:
+
+| Onde | O que faz | Veredito |
+|---|---|---|
+| `handler.ts` `origemValida` | `Origin` impossível de parsear → `false` | falha FECHADO, que é o certo para CSRF |
+| `assistente.ts` (args do modelo) | JSON inválido → `{}` e cai no Zod | certo: o `explicarArgumentosInvalidos` manda o modelo corrigir |
+| `assistente.ts` (ferramenta falhou) | texto honesto + `console.error` | **é o exemplar da casa** — o comentário dele cita a própria armadilha |
+| `assistente-flutuante.tsx` ×2 vazios | `localStorage` em aba anônima | correto, e documentado |
+| `middleware.ts` | URL do Supabase inválida → origem some da CSP | sintoma, não raiz: URL torta quebra o app em lugares mais barulhentos antes |
+| **`captcha.ts`** | provedor fora do ar → **`return true` sem rastro** | **o achado** |
+
+### O achado, e por que ele é do tipo mais difícil de ver
+
+O captcha **falha aberto de propósito**, e a decisão está certa: derrubar o agendamento público de
+todo salão porque a hCaptcha teve um soluço é pior que ficar sem essa camada por um tempo — o
+honeypot e o rate limit não dependem de credencial nenhuma.
+
+O defeito não era a decisão. Era o **silêncio**. O ramo de cima (`!secret`) registra
+`hcaptcha_nao_configurado`; o `catch` não registrava nada. Ou seja: **a única forma de falha
+observável era a que não é falha.** Timeout, DNS, 5xx e segredo trocado por engano viravam "captcha
+aprovando 100% das tentativas" sem sinal em lugar nenhum — e "por um tempo", que é a condição que o
+próprio comentário assume, era exatamente o que ninguém tinha como medir.
+
+Este é o parente do `cofre` e do `freio do envio automático` desta mesma semana: **decisão certa
+com metade que ninguém cumpre**. E, como naqueles, o comentário estava correto e completo — o que
+faltava era o código fazer o que ele dizia.
+
+O teste cobre as quatro direções, e a terceira é a que impede o conserto de virar outro defeito:
+reprovação normal do provedor **não** loga, senão a camada vira ruído diário e ninguém lê o alarme
+que importa.
