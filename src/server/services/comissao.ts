@@ -1,6 +1,6 @@
 import { Temporal } from '@js-temporal/polyfill'
 
-import { AppError } from '@/server/http/errors'
+import { buscarTudoPaginado } from '@/server/db/paginar'
 
 import type { Database } from '@/server/db/types.gen'
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -24,9 +24,6 @@ export type ExtratoComissao = {
   totalCents: number
   items: ItemExtratoComissao[]
 }
-
-/** Mesmo teto do `caixa.ts`, e pelo mesmo motivo: o PostgREST corta em 1000 e não avisa. */
-const TAMANHO_PAGINA = 1000
 
 /**
  * TICKET-046: "extrato por período fecha" — a soma das linhas listadas AQUI é exatamente
@@ -66,11 +63,16 @@ export async function extratoDeComissao(
   // SEGUINTE. Meia-noite do dia seguinte no fuso do salão, não `23:59:59` em UTC.
   const fim = Temporal.PlainDate.from(ate).add({ days: 1 }).toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant().toString()
 
-  const items: ItemExtratoComissao[] = []
-
-  for (let pagina = 0; ; pagina++) {
-    const de = pagina * TAMANHO_PAGINA
-    const { data, error } = await db
+  /*
+    `buscarTudoPaginado` em vez do laço à mão: era a quinta cópia da mesma paginação nesta base, e
+    a única diferença que importava era o que a cópia NÃO tinha — teto. O laço era `for (;;)` com
+    saída só na página curta; consulta que devolvesse sempre página cheia rodaria para sempre,
+    prendendo a requisição. Num extrato de COMISSÃO, que é o que o profissional confere para saber
+    quanto recebe, a alternativa de "devolver o que já juntou" seria pior que travar: um total
+    redondo, plausível e menor que o devido.
+  */
+  const linhas = await buscarTudoPaginado(() =>
+    db
       .from('ticket_items')
       .select('id, ticket_id, description, total_cents, commission_bps, commission_cents, tickets!inner(status, closed_at)')
       .eq('tenant_id', tenantId)
@@ -78,24 +80,18 @@ export async function extratoDeComissao(
       .in('tickets.status', ['closed', 'paid'])
       .gte('tickets.closed_at', inicio)
       .lt('tickets.closed_at', fim)
-      .order('id')
-      .range(de, de + TAMANHO_PAGINA - 1)
-    if (error) throw new AppError('INTERNAL', { cause: error })
+      .order('id'),
+  )
 
-    for (const i of data ?? []) {
-      items.push({
-        ticketId: i.ticket_id,
-        itemId: i.id,
-        description: i.description,
-        totalCents: i.total_cents,
-        commissionBps: i.commission_bps,
-        commissionCents: i.commission_cents,
-        closedAt: (i.tickets as unknown as { closed_at: string }).closed_at,
-      })
-    }
-
-    if (!data || data.length < TAMANHO_PAGINA) break
-  }
+  const items: ItemExtratoComissao[] = linhas.map((i) => ({
+    ticketId: i.ticket_id,
+    itemId: i.id,
+    description: i.description,
+    totalCents: i.total_cents,
+    commissionBps: i.commission_bps,
+    commissionCents: i.commission_cents,
+    closedAt: (i.tickets as unknown as { closed_at: string }).closed_at,
+  }))
 
   return {
     professionalId,
