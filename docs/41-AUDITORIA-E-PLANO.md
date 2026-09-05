@@ -72,4 +72,17 @@ implementar só a parte que não promete aviso automático.
 Sem isso, a próxima pessoa que abrir o schema vai achar que é bug e "consertar" escrevendo nelas,
 duplicando o que `ticket_items` já congela corretamente.
 
-**4. Item C**, só depois, e só o que tiver dono claro.
+**4. Item C**, só depois, e só o que tiver dono claro. FECHADO em 2026-09-04, ver
+`docs/05-FAQ-DEV.md` §"As oito colunas do item C".
+
+Medidas uma a uma, com piso conferido (450 arquivos em `src/`, 61 migrations) e `grep` de string
+fixa. **As oito têm zero referência em `src/` e nenhuma tem dono claro, então nenhuma foi ligada** —
+que é o que esta linha mandava fazer. Duas merecem nota:
+
+- `orphaned_at` **não** é falta de leitor: a `0050` a criou como coluna administrativa, e a
+  afirmação dela ("nenhum tenant real enxerga estas linhas") foi conferida, não assumida —
+  `trilha-cofre.ts:35` filtra por `tenant_id`, e `audit_log` não é lido por tela nenhuma.
+- Os dois agregados de `v_clientes_a_recuperar` são **regra duplicada**: o mesmo `max` por cliente
+  já é calculado, de propósito e com motivo registrado, em `core/ciclo/quem-recuperar.ts`, a partir
+  de outra view. O comentário da `0058` afirma um leitor que não existe — o FAQ registra isso para
+  ninguém "consertar" a ausência.

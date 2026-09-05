@@ -5802,3 +5802,23 @@ atributos em cada ocorrência. Três casos, 22%, 14% e 5% das respectivas págin
 `<symbol>` + `<use>`, com a regra de que `fill="none"` fica no elemento que USA e nunca no símbolo
 — dentro dele o atributo ganha da classe na cascata e o ícone sai vazado, sem nenhum teste
 reclamar. Ver `docs/42`.
+
+### 2026-09-04 · Ligar ou documentar as oito colunas do item C? · documentar as oito · auditoria
+
+Nenhuma das oito tem consumidor em `src/` e nenhuma tem dono claro. O `docs/41` já mandava fazer
+"só o que tiver dono claro", e a alternativa — inventar uma tela para justificar a coluna — é como
+nasce a segunda fonte de verdade que o `docs/05-FAQ-DEV.md` passa a vida desfazendo.
+
+Duas decisões dentro da decisão:
+
+**`orphaned_at` fica sem leitor de propósito.** A `0050` a criou como compensação administrativa
+(regra 11: nunca apagar registro de auditoria). Conferi a afirmação dela em vez de aceitá-la:
+`trilha-cofre.ts:35` filtra por `tenant_id`, e órfã é exatamente a linha cujo tenant não existe
+mais, então nenhum tenant vivo alcança uma. `audit_log` sequer é lido por tela.
+
+**Os dois agregados de `v_clientes_a_recuperar` ficam onde estão, sem leitor.** Tirá-los exige
+`drop view` mais recriação (o `create or replace` do Postgres não remove coluna) por uma economia
+desprezível de `max()` sobre conjunto já agrupado. O que precisava mudar era o entendimento, não o
+schema: o comentário da `0058` afirma que aquele valor é "o que a tela mostra na linha da cliente",
+e quem mostra é `quem-recuperar.ts`, lendo outra view, por decisão registrada de não depender de
+ordem de view. Registrado no FAQ para ninguém tratar a ausência de leitor como defeito.
