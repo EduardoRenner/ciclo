@@ -188,3 +188,81 @@ Construir **D + E**, nesta ordem, com a versão do algoritmo registrada desde a 
 O que isto **não** é: não é um fosso que impede o líder de entrar. É um fosso que torna caro o
 cliente **sair** — e é o único dos cinco candidatos que funciona com o CICLO no tamanho que ele tem
 hoje, que é zero.
+
+---
+
+## Fase 5 · Prova de defensabilidade
+
+Construído nesta rodada, e é código com dado fluindo, não texto:
+
+| Peça | Onde |
+|---|---|
+| Tabela append-only da previsão, com versão do algoritmo | `0064_registro_de_previsao.sql` |
+| Registro (uma linha por visita) e resolução (fecha quando a pessoa volta) | `server/services/previsao.ts` |
+| Calibração: mediana das voltas reais, com três freios | `core/cycle/calibracao.ts` |
+| A régua medida ao lado da configurada, nunca por cima | `0065_ciclo_observado.sql` |
+| O recálculo passando a usar a régua efetiva | `server/services/ciclo.ts` |
+| A tela onde o dono vê o número e a procedência | `admin/config/servicos/lista.tsx` |
+| Isolamento entre tenants | `tests/rls/isolation.test.ts` |
+
+### O que um concorrente precisaria TER — não fazer — para replicar em menos de 6 meses
+
+O código não é o obstáculo: `computeCycle` são ~80 linhas determinísticas, descritas em
+`docs/01`, e `calibrarCiclo` é uma mediana com três guardas. Um time competente escreve os dois
+numa semana.
+
+O que ele precisaria **ter**, e não pode comprar:
+
+1. **Uma série de previsões feitas antes do resultado, por salão.** Não é derivável de histórico de
+   agendamento, por mais antigo que seja. Previsão registrada depois do fato não é previsão — é
+   ajuste de curva sobre o gabarito. Um concorrente que comece hoje tem essa série a partir de
+   hoje, para os salões dele, e nunca para trás.
+2. **Tempo de operação naquele salão específico.** A cadência é por pessoa dentro de um
+   estabelecimento. Saber que a clientela do Salão X volta a cada 30 dias não ajuda em nada no
+   Salão Y — e é por isso que os 12 anos e 1M+ de instalações do líder **[P]** não são
+   transferíveis para este eixo.
+
+**Prazo estimado [E]:** um concorrente com time e dinheiro tem o mecanismo funcionando em **4 a 6
+semanas**. O que ele não tem em prazo nenhum é a série do salão que já usa o CICLO — essa só se
+constrói vivendo.
+
+### O teste do Christensen sobrevive à revisão final?
+
+**Não, e a honestidade aqui vale mais que a alegação.** Nada prende o AppBarber. Não há cliente
+dele que puna a mudança, não há receita dele que dependa da régua fixa. Isto **não é**
+counter-positioning, e chamar de counter-positioning seria repetir o erro do `docs/43`: tratar
+"somos diferentes" como se fosse sempre o mesmo tipo de vantagem.
+
+O poder aqui é **custo de troca** (7 Powers #3), com **recurso cativo** (#5) como matéria-prima. É
+um fosso que não impede o líder de entrar — impede o cliente de sair.
+
+### Volume mínimo para deixar de ser demonstração
+
+| Marco | O que exige |
+|---|---|
+| Primeira previsão registrada | 1 atendimento concluído |
+| Primeira previsão resolvida | a pessoa voltar uma vez |
+| Primeira régua calibrada num serviço | **8 voltas** naquele serviço (`MINIMO_DE_AMOSTRA`) |
+| Vira argumento de venda | um salão com número **medido** que ele reconheça como verdadeiro |
+
+Para uma barbearia de ciclo curto (~21 dias) com movimento normal, 8 voltas num serviço popular
+sai em **2 a 3 meses** de uso **[E]**. Estética de ciclo longo demora mais. **É aposta em tempo de
+uso, e isso está sendo decidido conscientemente** — não descoberto em produção.
+
+### Como se degrada
+
+- **Se ninguém adotar:** sobra uma tabela pequena e append-only, e a régua continua sendo a
+  configurada. Nada quebra, nada mente. O custo de estar errado aqui é baixo, o que é uma
+  propriedade e não um consolo.
+- **Se todos adotarem:** cada salão fica com a régua dele mais certa, independentemente dos outros.
+  Não melhora por agregação — melhora por permanência. Isso é menos empolgante que efeito de rede e
+  é justamente o motivo de funcionar com o CICLO no tamanho que ele tem hoje, que é zero.
+
+### A frase, em dez segundos
+
+> **"O sistema aprende de quanto em quanto tempo os SEUS clientes voltam, e corrige sozinho quando
+> erra. Os outros usam 45 dias para todo mundo."**
+
+Nenhum dos cinco concorrentes pode dizer isso sem mentir hoje — e o material deles admite que a
+régua fixa está errada **[P]**. Se um deles construir, a frase deixa de ser exclusiva; o que não
+deixa de ser exclusivo é o histórico do salão que já está com o CICLO.
