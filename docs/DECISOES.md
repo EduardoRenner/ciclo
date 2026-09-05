@@ -5884,3 +5884,30 @@ sinal explícito — coluna que diga "isto é fixture", ou limpeza garantida no 
 de produção só contém negócio de verdade. Hoje a conferência é trivial (duas URLs) e continuará
 trivial enquanto houver poucos clientes — é o momento barato de acertar, e o único em que dá para
 inspecionar a lista inteira a olho.
+
+**2026-09-05 · varrer as guardas atrás de cegueira por comentário, segunda tentativa · nenhuma
+cega hoje, mas a consolidação em `helpers/fonte` fica pendente — e ela é o detector.**
+
+A primeira tentativa (registrada acima) descartou um meta-teste por falso positivo. Esta é outra
+pergunta, mais estreita e respondida: **entre as guardas que NÃO limpam comentário, alguma afirma
+presença de algo que só existe em comentário do alvo?** Detector validado com isca plantada
+(`toContain('catch { return }')` contra `src/core/share/cancelamento.ts`, onde a frase só aparece
+no docstring): ele acusa a isca. Resultado real: **zero**. As duas acusações são as mesmas de
+sempre, `saude-nao-alarma-por-lixo`, e são falso positivo — afirmam sobre valor de execução
+(`r.checks.jobQueue.detail`), não sobre texto de arquivo.
+
+**O risco não está nas guardas velhas; está nas novas.** A prova é desta sessão: a asserção "tem um
+h1" de `titulos-de-tela` ficou cega **duas horas depois de nascer**, quando o `erro-publico.tsx`
+passou a usar `<TituloDeEstado>` — e continuou verde porque o comentário que eu tinha escrito lá
+dentro citava `<h1 className="text-titulo font-bold">` ao explicar o padrão do `(auth)`.
+
+**Medido, e é o que fica como trabalho:** `tests/helpers/fonte.ts` existe desde 31/08 para acabar
+com isso, e o docstring dele diz que nasceu porque havia CINCO cópias da mesma limpeza. Hoje há
+**doze** cópias locais que não o usam, e elas não são equivalentes — várias não removem `//` e
+várias não removem comentário JSX (`{/* */}`), cujas linhas internas não começam com `*`. A
+décima segunda fui eu, horas depois de o helper existir; já consolidada.
+
+**A consolidação é o próprio detector, e é por isso que vale fazer:** trocar a limpeza local pela
+do helper remove MAIS comentário. Guarda que passar a reprovar depois da troca estava casando com
+comentário — ou seja, era cega. Rodar a suíte depois de consolidar as onze restantes responde a
+pergunta inteira sem escrever meta-teste nenhum, que é o que a primeira tentativa não conseguiu.

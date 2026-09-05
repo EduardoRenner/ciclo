@@ -3,6 +3,8 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
+import { semComentarios } from '../../helpers/fonte'
+
 /**
  * As 29 telas de `/admin` herdavam o mesmo `<title>` ("CICLO") porque nenhuma
  * exportava `metadata` — medido em 2026-08-23 (`docs/15-AUDITORIA-DESIGN-UX.md`
@@ -123,12 +125,15 @@ const TELAS_DE_TOKEN = [
  *
  * É a linha nº 1 da tabela do `CLAUDE.md`: casar com algo que o arquivo contém por outro motivo.
  * Varrer comentário é o que faz a documentação de uma decisão satisfazer a guarda dessa decisão.
+ *
+ * **Delega para `helpers/fonte`, e isso também foi aprendido na marra.** A primeira versão daqui
+ * era uma limpeza escrita à mão — a SEXTA cópia da mesma regra nesta suíte, feita horas depois de
+ * o helper existir, e exatamente o que o docstring dele descreve como o problema que ele veio
+ * resolver ("cinco cópias divergentes de uma regra"). As cópias não são equivalentes: várias não
+ * tratam `//` nem comentário JSX, cujas linhas internas não começam com `*`.
  */
 function marcacao(arquivo: string): string {
-  return readFileSync(arquivo, 'utf8')
-    .replace(/\/\*[\s\S]*?\*\//g, ' ')
-    .replace(/\{\/\*[\s\S]*?\*\/\}/g, ' ')
-    .replace(/^\s*\/\/.*$/gm, ' ')
+  return semComentarios(readFileSync(arquivo, 'utf8'))
 }
 
 describe('a tela que a cliente abre pelo WhatsApp tem heading', () => {
