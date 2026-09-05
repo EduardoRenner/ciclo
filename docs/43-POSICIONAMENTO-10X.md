@@ -130,11 +130,30 @@ O que este documento acrescenta é uma classe de trabalho que não existia na li
 dizível o que já é verdade**. Custa pouco, não constrói regra de negócio nova, e é o único
 trabalho que mexe no eixo 4 (marca).
 
-| # | Trabalho | Eixo | Origem |
-|---|---|---|---|
-| A | "Seu cliente é seu" sai do FAQ e vira argumento de primeira dobra na landing | 4 · marca | §4 |
-| B | Nomear a segunda metade — o cliente não vê a concorrência — em algum lugar do produto | 4 · marca | §4 |
-| C | Comparação honesta de custo com modelo de comissão, na `/precos` | 3 · escala | §5.3 |
-| D | **Veto documentado: nunca construir vitrine/diretório de tenants para o cliente final** | 2 · rede | §5.2 |
+| # | Trabalho | Eixo | Origem | Estado |
+|---|---|---|---|---|
+| A | "Seu cliente é seu" sai do FAQ e vira argumento de primeira dobra na landing | 4 · marca | §4 | **feito** — subtítulo da dobra + a resposta do FAQ deixou de ser só "Não." |
+| B | Nomear a segunda metade — o cliente não vê a concorrência — em algum lugar do produto | 4 · marca | §4 | **feito** — cartão "Sua página, sua clientela" (`f18e3bf`) |
+| C | Comparação honesta de custo com modelo de comissão, na `/precos` | 3 · escala | §5.3 | **feito** — seção "O preço não sobe quando você cresce" |
+| D | **Veto documentado: nunca construir vitrine/diretório de tenants para o cliente final** | 2 · rede | §5.2 | **feito** — `DECISOES` + `pagina-do-negocio-e-so-dele.test.ts` |
 
 O item D é o mais importante da tabela e é o único que não produz tela nenhuma.
+
+---
+
+## 7. O que o item A ensinou, e que o §4 não previa (2026-09-05)
+
+A frase de marca do §5.4 é **"Seu cliente é seu"**, e ela **não entrou assim em lugar nenhum**. O
+motivo importa mais que a decisão: para quem nunca usou app de marketplace, ela não quer dizer
+nada — é resumo de um argumento que a pessoa ainda não ouviu. O que entrou foi o fato verificável
+("quem for marcar abre no navegador: sem baixar app e sem ver seus concorrentes"), e o slogan fica
+sendo o que ele é de verdade: o resumo, para quem já entendeu.
+
+Isso não é desvio do §5.4, é a aplicação do §D.3 do `docs/20`, que já tinha matado o tricolon
+abstrato da dobra pelo mesmo raciocínio. **Registrado aqui porque a próxima rodada vai reler o
+§5.4, não achar a frase no produto e concluir que o item A não foi feito.**
+
+E o `h1` continua sendo o Motor de Ciclo, de propósito: ele é o eixo 1 (tecnologia 10x). Trocar um
+diferencial por outro na posição de maior atenção não é ganho — a dobra comporta os dois, e isso foi
+medido (375 px: o subtítulo vai de 46 px para 70 px, o bloco de preço de y=503 para y=526, com a
+dobra em 812).
