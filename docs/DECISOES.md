@@ -6223,3 +6223,53 @@ fixture não sabe adoecer. E tentar incluir `sendReminders`/`sendCampaigns` nos 
 coisa que eu ia supor errado: envelhecer o heartbeat delas **não** as adoece, porque
 `heartbeatVigiado` as dispensa enquanto estiverem fora do `schedule`. O teste reprovou dizendo que
 a fixture não conseguiu adoecê-las — que é a resposta certa, não uma limitação da fixture.
+
+## 2026-09-05 · A lente do cliente final: um achado, três não-achados
+
+Auditoria do funil público (`/{slug}` → `/agendar` → confirmação) medida no navegador a 375 px,
+não lida no código. Quatro suspeitas, e a proporção é o que vale registrar: **três eram artefato de
+medição ingênua e uma era real**. É a mesma proporção do `docs/42` §5, e por isso a regra de medir
+antes de consertar não é zelo — é o que separa conserto de invenção.
+
+### O achado: a saída que existia só na prosa
+
+Depois de confirmar, a tela diz *"Se não tiver retorno em algumas horas, é só chamar por telefone"*
+— e não dá telefone nenhum. Os únicos elementos clicáveis eram "Adicionar à minha agenda" e "Voltar
+para {salão}". Para seguir o conselho da própria tela: voltar, rolar até o rodapé, achar o número.
+
+O que torna isto instrutivo é que **a intenção estava escrita e correta**. O comentário do conserto
+de 25/08, que tirou a promessa falsa de "confirmação por WhatsApp", diz: *"mantendo o caminho de
+saída (telefone), porque tirar a promessa falsa não pode virar silêncio sobre o que fazer"*. O
+raciocínio estava certo e parou na frase. **Comentário que declara a intenção é onde é mais fácil
+acreditar que ela foi cumprida** — e é irmão do achado do `cacheDek` (a resposta boa numa metade
+esconde a metade que falta).
+
+E havia prova ao lado: `orcamento/pedido.tsx`, a tela de sucesso do pedido de orçamento, escrita
+depois, termina com *"Se quiser adiantar, fale direto"* e o botão do WhatsApp. Mesma dúvida, mesmo
+momento do funil, duas respostas diferentes — e a que faltava era a do funil principal. **Quando
+duas telas irmãs discordam, a mais nova costuma estar certa e ninguém voltou para a antiga.**
+
+### Os três não-achados, e por que cada um parecia defeito
+
+| Suspeita | Medida ingênua | Medida certa | Veredito |
+|---|---|---|---|
+| 13 alvos de toque abaixo de 48 px | `getBoundingClientRect` → 40 px | sonda com `elementFromPoint` → 47 a 64 px alcançáveis | o `::after` do `toque-48` funciona |
+| tela de sucesso troca conteúdo sem avisar leitor de tela | não há `aria-live` no bloco | `document.activeElement` → o `h2` com `tabIndex={-1}` recebe foco | padrão correto, e melhor que `aria-live` |
+| campo sem rótulo no formulário (honeypot) | `input` sem `aria-hidden` | o `label` PAI tem `aria-hidden` e o input tem `tabIndex={-1}` | fora da árvore de acessibilidade, correto |
+
+O do foco quase virou conserto: eu tinha a suspeita, o padrão da casa (`aria-live`) e a linha do
+`CLAUDE.md` sobre trocar conteúdo sem avisar. Faltava perguntar ao navegador **onde o foco está** —
+uma linha. As três suspeitas custaram três medições e teriam custado três consertos errados.
+
+### Fontes: item 5 do `docs/42` fechado sem trabalho
+
+O `42` deixou "34 kB numa requisição; formato e `font-display` não auditados". Auditado em
+produção, o resultado é que não há o que fazer: `font-display: swap`; três `@font-face` com
+`unicode-range`, e só o bloco latino (`u+00??`) é baixado; `font-stretch: 100%` fixo, ou seja o
+arquivo variável carrega só o eixo de peso; `Archivo Fallback` com `local("Arial")` e
+`size-adjust`, que é o que segura o CLS; e o preload existe — vem pelo `:HL[...]` do payload RSC,
+não como `<link>` no `head`, que foi o que fez parecer ausente na primeira olhada.
+
+Trocar o variável por três estáticos (400/600/700, os únicos pesos que o código usa) daria **três**
+requisições somando mais que os 34,9 kB de uma. **Registrado como conferido, não como pendente** —
+para ninguém gastar outra rodada aqui.
