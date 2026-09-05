@@ -6334,12 +6334,23 @@ O `docs/42` inteiro mediu **bytes crus**. Medido com `Accept-Encoding`, a págin
 frase *"é aqui que o 3G sofre"*, escrita sobre 85,3 kB, era sobre ~11 kB reais.
 
 Reconstruí o HTML desfazendo o conserto dos ícones (cada `<use>` de volta no `<symbol>` inteiro) e
-comprimi os dois: a economia dos PRs #68/#70/#71 é **1.150 B gzip** contra **12.465 B crus**. A
-proporção sobreviveu (~11% do que trafega); o absoluto encolheu **11×**.
+comprimi os dois lados: a economia real dos PRs #68/#70/#71 é de **28 a 48 bytes** (medido em toda
+qualidade de brotli entre 4 e 11), contra os **12.465 B crus** que a conta anunciava. Uma diferença
+de **400×**.
 
-Isto refina `byte-cru-e-a-regua-errada`, que registrava "não economiza nada": **economiza, e dez
-vezes menos do que a conta crua promete.** As duas metades importam — a primeira impede de tratar
-compressão como se não existisse, a segunda impede de tratar o conserto como inútil.
+**E a primeira versão desta entrada dizia 1.150 B, porque saiu com gzip.** O script tinha
+`try: import brotli / except: tem_brotli = False` e se chamava `brotli.py` — sombreava o módulo que
+tentava importar, e o fallback transformou uma falha de ferramenta em resultado. Ficou commitado
+por alguns minutos afirmando "~11% do que trafega", errado por 40×.
+
+Duas lições, e a segunda é a que se repete:
+
+1. Marcação repetida é o caso de uso do LZ77. Trinta cópias de um `<path>` custam, comprimidas,
+   quase o mesmo que uma — e trocar cópias idênticas por N `<use>` DIFERENTES introduz conteúdo
+   menos comprimível, que é por que a economia chega a ser menor na qualidade mais alta.
+2. **Ferramenta de medição não pode ter plano B silencioso.** Um número da grandeza errada é pior
+   que nenhum número, porque ele vira decisão. É o `falha-silenciosa-onde-procurar` aplicado ao
+   instrumento em vez de ao produto.
 
 Efeito prático imediato: três itens saíram da lista de trabalho do `docs/42` **por medição, não por
 trabalho** — ícones que sobraram na landing (~200 B comprimidos), imagens (32,7 kB no total, com o

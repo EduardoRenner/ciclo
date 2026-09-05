@@ -208,29 +208,45 @@ a diferença não é um detalhe de porcentagem — é uma ordem de grandeza. Med
 **A página do salão não pesa 74 kB no 3G. Pesa 9,3 kB.** A frase do §1 — *"é aqui que o 3G
 sofre"* — foi escrita sobre 85,3 kB crus, que na época eram ~11 kB reais.
 
-### E os PRs de ícone, valeram?
+### E os PRs de ícone, valeram? Não — 30 bytes
 
-Valeram, e menos do que pareciam. Reconstruí o HTML de hoje desfazendo o conserto (cada `<use>`
-expandido de volta no `<symbol>` inteiro) e comprimi os dois:
+Reconstruí o HTML de hoje desfazendo o conserto (cada `<use>` expandido de volta no `<symbol>`
+inteiro) e comprimi os dois lados a partir do **mesmo HTML de produção**:
 
-| | cru | gzip |
-|---|--:|--:|
-| com `<use>` (hoje) | 74.223 | 10.071 |
-| com o SVG repetido (antes) | 86.688 | 11.221 |
-| **economia real** | 12.465 B | **1.150 B** |
+| | cru | gzip | **brotli q4** | brotli q11 |
+|---|--:|--:|--:|--:|
+| com `<use>` (hoje) | 74.223 | 10.071 | 8.875 | 7.552 |
+| com o SVG repetido (antes) | 86.688 | 11.221 | 8.904 | 7.580 |
+| **economia real** | 12.465 B | 1.150 B | **29 B** | 28 B |
 
-Os 22% de "22% do HTML era o mesmo ícone" viram **~11% do que trafega** — a proporção sobreviveu
-melhor do que eu esperava, mas o número absoluto encolheu **11×**: de 12,5 kB para 1,15 kB. Numa
-página de 10 kB, 1,15 kB continua sendo trabalho que valeu; o que não sobrevive é a justificativa
-de "22% da página".
+Medido em toda qualidade de brotli entre 4 e 11: a economia fica entre **28 e 48 bytes**. A
+produção transfere 9.291 B, que é a vizinhança da qualidade 4 — ou seja, **os três PRs de ícone
+economizaram cerca de 30 bytes na rede**, contra os 12.465 que a conta crua anunciava. Uma
+diferença de 400×.
 
-**A regra que fica:** marcação repetida é o que um compressor faz de melhor — ela é literalmente o
-caso de uso do algoritmo. Antes de cortar repetição por peso, meça comprimido; e antes de estimar,
-lembre que a estimativa em bytes crus superestima esse tipo de ganho por volta de uma ordem de
-grandeza. (Isto é o irmão medido de `byte-cru-e-a-regua-errada`, que dizia "não economiza nada" —
-economiza, mas dez vezes menos do que a conta crua promete.)
+Os 22% de "22% do HTML era o mesmo ícone" são verdade sobre o arquivo e **falsos sobre a rede**.
+Marcação repetida é literalmente o caso de uso do LZ77: trinta cópias idênticas de um `<path>`
+custam, comprimidas, quase o mesmo que uma. E trocar N cópias idênticas por um símbolo mais N
+`<use>` diferentes ainda **introduz** conteúdo novo, que é menos comprimível — por isso a economia
+chega a ser MENOR na qualidade mais alta.
+
+**A regra que fica:** antes de cortar repetição de marcação por peso, comprima os dois lados a
+partir do mesmo HTML servido. A estimativa em bytes crus não erra por uma margem — erra por duas
+ordens de grandeza, e sempre para o lado de fazer o trabalho parecer valer a pena.
+
+### E uma armadilha de ferramenta, que quase repetiu o erro
+
+A primeira medição desta seção saiu com `gzip` porque o script tinha
+`try: import brotli / except: tem_brotli = False` — e o arquivo se chamava `brotli.py`, então ele
+sombreava o próprio módulo que tentava importar. **O fallback transformou uma falha de ferramenta
+em um resultado**, e a primeira versão deste documento foi commitada afirmando "1,15 kB, ~11% do
+que trafega", que está errado por 40×.
+
+Ferramenta de medição não pode ter plano B silencioso. Se o compressor que a produção usa não está
+disponível, o certo é parar — um número da grandeza errada é pior que nenhum número, porque ele
+vira decisão.
 
 **O que isso muda no que sobrou:** o item 4 do §4 (os ~2,2 kB de ícone que restam na landing) sai
-da lista. Comprimido, é ~200 B de uma página de 8,7 kB. E o próximo alvo de peso, se houver, não é
-HTML: é o payload RSC, que sozinho é 58% dos bytes crus desta página — e que não é marcação
-repetida, é dado.
+da lista, e sai com folga: se 12,4 kB crus valeram 30 bytes, 2,2 kB crus valem menos de dez. E o
+próximo alvo de peso, se houver, não é marcação: é o payload RSC, que sozinho é 58% dos bytes crus
+desta página — e que não é repetição, é dado, que é justamente o que não comprime de graça.
