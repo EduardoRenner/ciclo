@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { deveCreditarIndicacao } from '@/core/loyalty/indicacao'
 import { diaNoFuso } from '@/core/tempo/dia'
 import { podeUsarModulo } from '@/core/billing/planos'
+import { buscarTudoPaginado } from '@/server/db/paginar'
 import { AppError } from '@/server/http/errors'
 import { contextoDePlano } from '@/server/services/planos'
 
@@ -216,8 +217,6 @@ export async function pontuarAtendimentoConcluido(
  * tem resposta na tela, em vez de um número que mudou sozinho.
  */
 const LANCAMENTOS_NA_TELA = 50
-const PAGINA_DO_SALDO = 1000
-const MAXIMO_DE_PAGINAS = 100
 
 /**
  * O saldo sai de TODOS os lançamentos, e essa é a correção — ele saía dos 50 que a tela mostra.
@@ -230,17 +229,14 @@ const MAXIMO_DE_PAGINAS = 100
  * saldo. Nas duas direções: se os antigos que caíram fora fossem resgates, o saldo inflava e a
  * trava deixava passar mais do que existia.
  *
- * A ironia mora na docstring de cima: a função existe para que ninguém veja "um número que mudou
- * sozinho" — e a barra de progresso da tela ANDAVA PARA TRÁS sozinha, quando um lançamento novo
- * empurrava um crédito velho para fora da janela de 50.
+ * A ironia mora na docstring de `extratoDePontos`: ela existe para que ninguém veja "um número que
+ * mudou sozinho" — e a barra de progresso da ficha ANDAVA PARA TRÁS sozinha, quando um lançamento
+ * novo empurrava um crédito velho para fora da janela de 50.
  *
- * ## Por que paginar, e não só tirar o `.limit()`
- *
- * Tirar o limite trocaria um corte silencioso de 50 por outro: o PostgREST tem teto próprio de
- * linhas por resposta, então o mesmo defeito voltaria mais tarde e mais difícil de achar. Aqui a
- * página é explícita, o laço só termina quando vem página curta, e o teto tem ERRO em vez de
- * resposta torta — 100 mil lançamentos num cliente é defeito de dado, e nesse caso o certo é
- * gritar, não devolver um saldo plausível.
+ * Usa `buscarTudoPaginado` em vez de tirar o `.limit()`: sem paginar, o corte silencioso de 50
+ * viraria o teto de linhas do PostgREST, o mesmo defeito mais tarde e mais difícil de achar. E usa
+ * o helper compartilhado em vez de um laço próprio porque a docstring dele já avisa que a cópia
+ * que envelhece é sempre a que ninguém lembra que existe — este arquivo quase virou a quinta.
  *
  * Soma em JS, e não `sum()` no banco, pelo mesmo motivo que `ehDemonstracao` é lista em código e
  * não coluna: migration neste projeto não sobe por deploy automático, então uma função nova ficaria
@@ -248,25 +244,10 @@ const MAXIMO_DE_PAGINAS = 100
  * problema original. A view continua sendo o alvo durável.
  */
 async function saldoDeTodosOsLancamentos(db: Cliente, tenantId: string, clientId: string): Promise<number> {
-  let saldo = 0
-  for (let pagina = 0; pagina < MAXIMO_DE_PAGINAS; pagina++) {
-    const de = pagina * PAGINA_DO_SALDO
-    const { data, error } = await db
-      .from('loyalty_entries')
-      .select('points')
-      .eq('tenant_id', tenantId)
-      .eq('client_id', clientId)
-      .order('id', { ascending: true })
-      .range(de, de + PAGINA_DO_SALDO - 1)
-    if (error) throw new AppError('INTERNAL', { cause: error })
-
-    const linhas = data ?? []
-    saldo += linhas.reduce((s, l) => s + l.points, 0)
-    if (linhas.length < PAGINA_DO_SALDO) return saldo
-  }
-  throw new AppError('INTERNAL', {
-    cause: new Error(`Cliente ${clientId} passou de ${MAXIMO_DE_PAGINAS * PAGINA_DO_SALDO} lançamentos de fidelidade.`),
-  })
+  const linhas = await buscarTudoPaginado<{ points: number }>(() =>
+    db.from('loyalty_entries').select('points').eq('tenant_id', tenantId).eq('client_id', clientId).order('id', { ascending: true }),
+  )
+  return linhas.reduce((s, l) => s + l.points, 0)
 }
 
 export async function extratoDePontos(db: Cliente, tenantId: string, clientId: string): Promise<ExtratoPontos> {
