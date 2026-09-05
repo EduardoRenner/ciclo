@@ -2,6 +2,7 @@ import { Temporal } from '@js-temporal/polyfill'
 import { z } from 'zod'
 
 import { deveCreditarIndicacao } from '@/core/loyalty/indicacao'
+import { pontosPorGasto } from '@/core/loyalty/pontos'
 import { diaNoFuso } from '@/core/tempo/dia'
 import { podeUsarModulo } from '@/core/billing/planos'
 import { buscarTudoPaginado } from '@/server/db/paginar'
@@ -156,7 +157,7 @@ export async function pontuarAtendimentoConcluido(
   const lancamentos: Database['public']['Tables']['loyalty_entries']['Insert'][] = []
 
   if (config.pointsPerReal > 0) {
-    const pontos = Math.floor((entrada.priceCents / 100) * config.pointsPerReal)
+    const pontos = pontosPorGasto(entrada.priceCents, config.pointsPerReal)
     if (pontos > 0) {
       lancamentos.push({
         tenant_id: tenantId,
