@@ -45,11 +45,33 @@ que não existe — inofensivo hoje, mas vira falso se alguém ligar pagamentos 
 | `professions.campos_ficha`, `modulos_padrao`, `ciclo_padrao_dias`, `duracao_padrao_min` | Mesma família: o pacote de profissão guarda padrões que nada aplica em TS (parte é consumida por `apply_profession_pack` no SQL — **verificar quais**, para não repetir o falso positivo de `profession_services.*`). |
 | Serviço sob orçamento, fase 2 | O cliente final **não tem como pedir orçamento**. `/orcamento/[token]` só exibe um que já existe; quem cria é sempre o profissional. Ver `docs/40`. |
 
-### C. Sobra pequena (baixa prioridade)
+### C. Sobra pequena (baixa prioridade) — reconferida em 2026-09-05
 
-`v_clientes_a_recuperar.maior_atraso_dias` e `maior_valor_cents` (agregados que a view expõe e o
-`crm.ts` não lê), `products.sku`, `package_uses.used_at`, `messages.scheduled_for`,
-`tenant_keys.rotated_at`, `webhook_events.processed_at`, `audit_log.orphaned_at`.
+A lista original tinha **oito** itens. Reconferida contra `supabase/migrations/`, `scripts/` e
+`tests/` — e não só contra `src/`, que é o que a varredura de 04/09 olhou —, **três não são
+órfãs**. O erro é o mesmo do §"o varredor estava cego": a varredura não olhou onde o consumidor
+mora.
+
+| Coluna | Veredito 05/09 | Onde está o consumidor |
+|---|---|---|
+| `tenant_keys.rotated_at` | **não é órfã** | escrita por `scripts/rotacionar-kek.mjs`, com asserção em `tests/unit/server/vault.test.ts` |
+| `audit_log.orphaned_at` | **não é órfã** | escrita pela migration `0050_marcar_orfaos_de_teste_na_trilha` |
+| `package_uses.used_at` | **não é defeito** | tem `default now()`; o insert de `pacotes.ts` omite de propósito e o banco preenche. Coluna com default não precisa de escritor em TS |
+| `products.sku` | órfã de verdade | nenhum escritor, nenhum leitor, nenhuma tela |
+| `messages.scheduled_for` | órfã, com resto | nada escreve, e existe um índice parcial `(status, scheduled_for) where status='queued'` para o envio agendado que não foi construído |
+| `webhook_events.processed_at` | órfã de verdade | webhook não está ligado |
+| `v_clientes_a_recuperar.maior_valor_cents` e `maior_atraso_dias` | órfãs, e o comentário mentia | o comentário da view diz "é o que a tela mostra na linha da cliente" — não é: a lista sai de `v_recover_revenue`. A 0058 **não foi editada** (migration aplicada não se edita); a correção está no `crm.ts`, ao lado das duas consultas, que é onde quem duvida do número vai ler |
+
+**Decisão: nenhuma remoção.** Cada `drop column` custa duas releases (B25 do FAQ) e o benefício é
+zero — nenhuma delas confunde consulta, infla linha ou aparece em tela. O que custava era a
+lista: três itens falsos em oito faziam a próxima pessoa gastar rodada com colunas em uso.
+
+**Medido de passagem, e este era o risco de verdade:** `v_clientes_a_recuperar` (o alarme da tela
+inicial) e `listarParaRecuperar` (a lista) chegam ao mesmo número por caminhos DIFERENTES — SQL de
+um lado, `v_recover_revenue` + `quemRecuperar()` do outro. Nas seis contas de produção os dois
+batem, e a única diferença (`demo-salao-encanto`, 28 contra 29) é o cliente em `due`, que o alarme
+exclui de propósito. Duas fontes da mesma verdade continuam sendo duas — mas hoje elas concordam,
+e agora existe medição para comparar da próxima vez.
 
 ## Plano de execução, em ordem
 

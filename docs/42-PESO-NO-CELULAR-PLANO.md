@@ -112,7 +112,13 @@ Corrigido com `.order('id')` secundário.
 4. **Varrer o resto do padrão do §2.** Os três maiores já foram. Restam ~2,2 kB de ícone repetido
    na landing e o que aparecer nas telas do `/admin`, que não foram medidas (ver P2).
 
-5. **Fontes.** 34 kB numa requisição; formato e `font-display` não auditados.
+5. ~~**Fontes**~~ — **auditado em 05/09, nada a fazer.** `font-display: swap`; três `@font-face`
+   com `unicode-range` e só o bloco latino baixa; `font-stretch: 100%` fixo (o arquivo variável
+   carrega só o eixo de peso); `Archivo Fallback` com `local("Arial")` e `size-adjust`, que é o que
+   segura o CLS; e o preload existe — vem pelo `:HL[...]` do payload RSC, não como `<link>` no
+   `head`, que foi o que fez parecer ausente. Trocar o variável por três estáticos (400/600/700,
+   os únicos pesos usados) daria TRÊS requisições somando mais que os 34,9 kB de uma. Ver
+   `DECISOES` 05/09.
 
 6. **Imagens.** Conferir tamanho servido contra o necessário a 390 px (piso de design do projeto)
    nas telas com foto: vitrine, portfólio, avatares.
@@ -136,11 +142,11 @@ Corrigido com `.order('id')` secundário.
    código: é boot de contêiner, e quem resolve é manter a instância quente (Fluid Compute),
    configuração de projeto na Vercel.
 
-10. **Item C do `docs/41`** — 8 colunas sem consumidor em TS (`products.sku`,
-    `package_uses.used_at`, `messages.scheduled_for`, `tenant_keys.rotated_at`,
-    `webhook_events.processed_at`, `audit_log.orphaned_at`, e dois agregados de
-    `v_clientes_a_recuperar`). Confirmadas órfãs em varredura de 04/09. O próprio `docs/41` manda
-    fazer "só o que tiver dono claro": decidir, por coluna, entre documentar ou remover.
+10. ~~**Item C do `docs/41`**~~ — **fechado em 05/09, e três das oito não eram órfãs.**
+    `tenant_keys.rotated_at` é escrita por `scripts/rotacionar-kek.mjs`, `audit_log.orphaned_at`
+    pela migration 0050, e `package_uses.used_at` tem `default now()`. A varredura de 04/09 só
+    olhou `src/`. Nenhuma remoção: `drop column` custa duas releases e nenhuma delas atrapalha
+    consulta ou tela. Ver `docs/41` §C.
 
 11. **Realismo do seed de produção.** As 6 contas demo fazem 8 a 11 atendimentos por semana (real
     seria 30 a 60) e têm 45 a 55% de ciclos perdidos nos três salões. Não é bug, subvende. Exige
