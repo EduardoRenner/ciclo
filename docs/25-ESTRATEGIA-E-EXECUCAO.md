@@ -197,6 +197,25 @@ a R$ 49 tem `envio_em_lote` como capacidade paga **[M]** — e envio em lote dep
 `campaigns`, que não roda. Ligar o motor não é só produto; é pré-requisito de honestidade
 comercial.
 
+> **Correção de 2026-09-05 — a conclusão está certa, a razão não, e isso muda a fila.**
+>
+> `envio_em_lote` **não depende de `campaigns`**. Conferido no código, não deduzido: a capacidade
+> é exigida em `app/api/v1/cycle/recover/send/route.ts:25` (`items.length > 1`), uma rota síncrona
+> disparada pelo botão da tela `/admin/recuperar`. Ela chama `enviarParaRecuperar` na hora, sem
+> fila e sem cron. O botão de lote existe e está ligado de ponta a ponta
+> (`recuperar.tsx` → `podeEnviarEmLote`). `campaigns` de fato não roda (está comentada fora do
+> `on.schedule` do `cron.yml`, esperando confirmação humana), mas ela é o envio **automático** —
+> outra capacidade, outro item da fila.
+>
+> O que realmente falta para o lote entregar é a **credencial da Meta**
+> (`WHATSAPP_PHONE_NUMBER_ID`/`ACCESS_TOKEN`/`APP_SECRET`): sem ela o provider estoura na
+> construção, o fallback tenta push e e-mail, e a mensagem termina gravada como `failed`.
+>
+> Por que a distinção importa e não é preciosismo: as duas leituras dão ordens de trabalho
+> diferentes. Pela versão antiga, destravar receita passaria por ligar um cron — que é decisão de
+> risco (mensagem automática para cliente final) e não resolveria nada. Pela medida, passa por uma
+> conta de terceiro. Razão errada põe a coisa errada no caminho crítico.
+
 ### F5 · Aquisição
 
 Um achado que já está construído e não está sendo contado como canal: **`remover_selo` é

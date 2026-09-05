@@ -21,6 +21,7 @@ import { useToast } from '@/components/ui/toast'
 import { dinheiro } from '@/lib/formato'
 import { cn } from '@/lib/utils'
 
+import { resumoDoEnvio } from '@/core/ciclo/resumo-do-envio'
 import { vazioDeRecuperar } from '@/core/ciclo/vazio-de-recuperar'
 
 import type { ItemRecuperar, ListaRecuperar } from '@/server/services/recuperar-receita'
@@ -108,13 +109,7 @@ export default function RecuperarReceita({
         }),
       })
       const json = (await r.json()) as { data?: { queued: number; skipped: { clientId: string; reason: string }[] } }
-      const queued = json.data?.queued ?? 0
-      const puladas = json.data?.skipped.length ?? 0
-      setAviso(
-        puladas === 0
-          ? `Mensagem enviada para ${queued} ${queued === 1 ? 'cliente' : 'clientes'}.`
-          : `${queued} enviada(s), ${puladas} não puderam ser avisadas agora (opt-out ou limite de mensagens).`,
-      )
+      setAviso(resumoDoEnvio(json.data?.queued ?? 0, (json.data?.skipped ?? []).map((s) => s.reason)))
       setSelecionados(new Set())
       await trocarFiltro(filtro)
     } finally {

@@ -102,7 +102,24 @@ export const EsquemaEnviarRecuperar = z.object({
 })
 export type EntradaEnviarRecuperar = z.infer<typeof EsquemaEnviarRecuperar>
 
-type MotivoPulado = 'opt_out' | 'rate_limited'
+/**
+ * Quatro motivos, e antes eram dois — porque a tela precisa dizer a VERDADE sobre por que não foi.
+ *
+ * `rate_limited` estava carregando três coisas sem relação: fora do horário permitido, dentro dos
+ * 7 dias da última campanha, e falha de entrega de verdade. A tela então nomeava as duas causas
+ * que ela achava que existiam ("opt-out ou limite de mensagens") — e nenhuma das duas era a certa
+ * nos casos mais comuns:
+ *
+ * - o dono clica às 21h30, depois de fechar. TODOS caem fora da janela 8h–21h, e ele lê que seus
+ *   40 clientes pediram para não receber. A ação certa era "tente amanhã de manhã";
+ * - sem credencial da Meta (o estado de hoje), TODOS falham na entrega e ele lê a mesma frase.
+ *   Ele nunca abriria chamado sobre a causa real, porque a tela lhe deu outra.
+ *
+ * Motivo que a tela não sabe nomear é pior que motivo nenhum: manda a pessoa consertar o que não
+ * está quebrado. Esta é a mesma família do `cartao-de-confirmacao-em-branco` — a origem ganha um
+ * caso, a apresentação continua lendo a lista velha e afirma com confiança.
+ */
+type MotivoPulado = 'opt_out' | 'rate_limited' | 'fora_de_janela' | 'falha_de_envio'
 
 export type ResultadoEnviarRecuperar = {
   queued: number
@@ -168,11 +185,14 @@ export async function enviarParaRecuperar(
     if (erroCiclo) throw new AppError('INTERNAL', { cause: erroCiclo })
     if (!linha) continue // já não está mais em risco (concluiu, cancelou) — nada a enviar
 
-    const emJanelaDeDedupe =
-      !dentroDaJanela ||
-      (linha.last_campaign_at !== null &&
-        agora.since(Temporal.Instant.from(linha.last_campaign_at)).total('days') < DIAS_ENTRE_CAMPANHAS)
-    if (emJanelaDeDedupe) {
+    if (!dentroDaJanela) {
+      skipped.push({ clientId: item.clientId, reason: 'fora_de_janela' })
+      continue
+    }
+    const dentroDosSeteDias =
+      linha.last_campaign_at !== null &&
+      agora.since(Temporal.Instant.from(linha.last_campaign_at)).total('days') < DIAS_ENTRE_CAMPANHAS
+    if (dentroDosSeteDias) {
       skipped.push({ clientId: item.clientId, reason: 'rate_limited' })
       continue
     }
@@ -213,11 +233,12 @@ export async function enviarParaRecuperar(
       if (erroUpdate) throw new AppError('INTERNAL', { cause: erroUpdate })
       queued++
     } else {
-      // Falha de entrega de verdade (WhatsApp e e-mail indisponíveis) não é
-      // nem opt-out nem limite de taxa, mas §2.4 só define esses dois
-      // motivos — `rate_limited` é o mais próximo: a UI já sabe reoferecer
-      // "tentar de novo" para esse motivo, o que é a ação certa aqui.
-      skipped.push({ clientId: item.clientId, reason: 'rate_limited' })
+      // Falha de entrega de verdade (WhatsApp, push e e-mail indisponíveis). §2.4 só definia dois
+      // motivos e este caía em `rate_limited` "por ser o mais próximo" — mas próximo não é igual:
+      // "tentar de novo" é a ação certa para um limite de taxa e é a ação ERRADA aqui, onde
+      // tentar de novo falha de novo até alguém configurar o transporte. A linha correspondente
+      // em `messages` já nasce `failed` com o erro dos três canais.
+      skipped.push({ clientId: item.clientId, reason: 'falha_de_envio' })
     }
   }
 
