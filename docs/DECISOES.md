@@ -6135,3 +6135,91 @@ e na faixa de preço real os afetados são 12 valores — 15, 25, 30, 45, 50, 55
 amostra escolhida por plausibilidade tem exatamente o viés de quem a escolheu, e o defeito estava
 no complemento dela. Isto é o irmão de `medicao-ingenua-da-falso-positivo`: lá a medição estreita
 inventou defeito, aqui escondeu um.
+
+## 2026-09-05 · O banco de produção estava três migrations atrás, e nada podia ver
+
+Primeiro alvo da rodada de continuidade, e ele não veio de procurar defeito: veio de **reconferir o
+que o documento afirmava**. O `docs/42` §4 listava três itens P0. Medidos:
+
+| Item do `42` | Estado real em 05/09 |
+|---|---|
+| `CRON_BASE_URL` aponta para deploy morto, 8/8 execuções falhando | **falso há um dia** — secret trocado em 04/09 01:07, dez execuções verdes, `/api/health` 200 |
+| migrations 0059-0061 não aplicadas | **verdadeiro**, e pior do que o texto dizia |
+| `SENTRY_DSN` ausente | verdadeiro, segue aberto (decisão do dono) |
+
+Um em três já estava resolvido e o documento tinha **um dia de idade**. Vale como calibragem: a
+regra de reconferir não é sobre documento velho, é sobre documento nenhum.
+
+### O que as três migrations custavam
+
+O `42` dizia "estão no código e inertes no ar". Não estavam inertes. `pedido-de-orcamento.ts`
+insere em `quotes` com `professional_id = null` e `status = 'requested'`, e as duas coisas violavam
+a coluna `not null` e o CHECK antigo: **quem pedisse orçamento pela página pública levava erro**. E
+10 profissões seguiam com o `vocab` só no masculino — o T8 do `docs/20`, em produção, chamando a
+barbeira de "barbeiro". (De passagem: a tabela nunca foi `quote_requests` como o `42` dizia; é
+`quotes` com colunas novas. Nome errado no documento não muda o veredito, mas muda quem consegue
+conferir.)
+
+### A causa a montante, que vale mais que as três
+
+O `docs/05-FAQ-DEV.md` B24 respondia: *"Migration roda por GitHub Action com `supabase db push`,
+antes do deploy do app."* **Essa Action nunca existiu.** Há dois workflows no repositório e nenhum
+aplica migration. É o mesmo defeito do B23 — que prometia um guard no `package.json` que não estava
+lá — e a mesma frase serve para os dois: promessa de processo falsa é pior que a ausência dela,
+porque quem lê age com a confiança de quem tem rede.
+
+**E nenhuma guarda podia pegar, por desenho.** `typecheck`, `lint`, os 1.761 testes e o CI inteiro
+rodam contra um Supabase **local**, que aplica as migrations do disco em toda execução. O ambiente
+que julga estava sempre em dia; o único ambiente que podia estar errado era o único que ninguém
+media. Isto é um parente novo de `teste-de-integracao-aponta-producao`: lá o teste tocava produção
+sem querer, aqui ele nunca toca — e é a mesma raiz, o teste e o alvo em ambientes que ninguém
+compara.
+
+Construir a Action exige credencial nova, que é decisão do dono. O que não exige: o app **já** tem
+`service_role` em produção, e o `/api/health` **já** é batido seis vezes por dia. O alarme que
+faltava já tinha quem tocasse e quem ouvisse.
+
+- `0062` cria `migracoes_aplicadas()`, `security definer` (o `service_role` não tem `usage` em
+  `supabase_migrations` — medido), executável só por `service_role`.
+- `core/schema/versao.ts` compara. **Banco atrás é vermelho; banco à frente é verde com o motivo
+  escrito** — migration aditiva antes do deploy é a ordem SEGURA, e marcá-la como falha ensinaria a
+  fazer na ordem perigosa e transformaria toda publicação em alarme.
+- A contagem existe **ao lado** do nome porque "confere só a mais recente" não veria o buraco no
+  meio, que é o que acontece quando se aplica à mão — o processo real desta base.
+
+### O achado que quase deixou o conserto mudo
+
+Escrita a checagem, fui conferir quem a leria. O job `vigia` do `cron.yml` lia **duas chaves fixas**
+(`recomputeCycles`, `recomputeSegments`) de um relatório de **dez**. As outras oito não tinham
+leitor em lugar nenhum: podiam ficar vermelhas seis vezes por dia, todo dia, com o job verde. A
+checagem de schema teria nascido calada — um alarme novo ligado a um fio cortado.
+
+É o `cartao-de-confirmacao-em-branco` do lado de quem lê, e o `consertar-a-pergunta-nao-o-caso` de
+novo: a correção não foi acrescentar a chave nova à lista, foi **ler o veredito**. Dos dois lados:
+
+- o `vigia` passa a ler o `ok` da raiz;
+- o `ok` do relatório passa a sair de `every` sobre o próprio objeto, e não de um `&&` com uma
+  parcela por checagem — essa lista à mão é a segunda cópia do enunciado, e o TypeScript não
+  reclama quando ela fica curta.
+
+E a guarda antiga do `vigia` reprovou na hora certa, pelo motivo certo: ela contava
+`toHaveLength(2)` ocorrências de `// false`, e a leitura nova fez três. **Trocar o 2 por 3 seria
+onde a proteção afrouxa sem ninguém ver** (`atualizar-guarda-que-reprova`), então o enunciado virou
+a pergunta: *toda* variável que sai de um `jq -r` tem a rede do `// false`?
+
+### A guarda que eu escrevi cega, e a mutação que contou
+
+Oito mutações, uma por vez. Sete reprovaram como deviam. **A oitava passou**: devolver o `&&` à mão
+sem a parcela do `schema` deixava `saude-ok-cobre-toda-checagem` inteiramente verde.
+
+O motivo é fino e vale guardar: o teste iterava as chaves e aplicava `every` **sobre um objeto
+montado dentro do próprio teste**. Ele exercitava a regra, nunca a decisão — `verificarSaude`
+podia devolver qualquer coisa no `ok` que aquele laço não olhava. Um teste que reimplementa o
+enunciado passa a testar a si mesmo, e a mutação é a única coisa que percebe.
+
+A versão de hoje tem dois enunciados porque nenhum sozinho basta: casos que adoecem uma checagem
+pela fixture e conferem o veredito **real**, mais uma asserção de forma para as checagens que a
+fixture não sabe adoecer. E tentar incluir `sendReminders`/`sendCampaigns` nos casos ensinou uma
+coisa que eu ia supor errado: envelhecer o heartbeat delas **não** as adoece, porque
+`heartbeatVigiado` as dispensa enquanto estiverem fora do `schedule`. O teste reprovou dizendo que
+a fixture não conseguiu adoecê-las — que é a resposta certa, não uma limitação da fixture.

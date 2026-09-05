@@ -87,15 +87,21 @@ Corrigido com `.order('id')` secundário.
 
 ### P0 — Não é código, e destrava mais que qualquer conserto
 
-1. **`CRON_BASE_URL = https://seuciclo.com.br`** no GitHub Secrets. Hoje aponta para
-   `ciclo-umber.vercel.app`, que está morto: **8 de 8 execuções do cron falharam** com
-   `DEPLOYMENT_NOT_FOUND`, e `/api/health` devolve 503 com `recompute_cycles: "nunca rodou"`. O
-   Motor de Ciclo nunca rodou sozinho em produção. Ver `docs/39` Parte 2.
+1. ~~**`CRON_BASE_URL`**~~ — **RESOLVIDO, e o documento envelheceu em um dia.** Conferido em
+   05/09: o secret foi atualizado em 04/09 01:07 UTC, as dez últimas execuções do `cron` estão
+   verdes, e `/api/health` devolve `200` com `recomputeCycles: ok`. **O Motor de Ciclo roda sozinho
+   em produção desde 04/09.** Nada a fazer aqui.
 
-2. **Aplicar as migrations 0059, 0060 e 0061.** Estão no repo e **não estão em nenhum dos dois
-   bancos** — conferido: `quote_requests` não existe em produção, e `pricing_model='quote'` viola
-   CHECK no dev. Enquanto isso, serviço sob orçamento, vocabulário por profissão e pedido de
-   orçamento estão no código e inertes no ar.
+2. ~~**Aplicar as migrations 0059, 0060 e 0061**~~ — **FEITO em 05/09, e não eram inertes: eram
+   um erro na cara da cliente.** `pedido-de-orcamento.ts` insere em `quotes` com `professional_id
+   = null` e `status = 'requested'`, e as duas coisas violavam a coluna `not null` e o CHECK antigo
+   — quem pedisse orçamento pela página pública levava erro. Mais 10 profissões com o `vocab` só no
+   masculino. (Detalhe: a tabela nunca foi `quote_requests`; é `quotes`, com colunas novas.)
+
+   A causa a montante foi consertada junto e vale mais que as três: o `docs/05-FAQ-DEV.md` B24
+   prometia uma GitHub Action rodando `supabase db push` antes do deploy, e ela **nunca existiu**.
+   Hoje o `/api/health` compara o ledger do banco com `src/core/schema/versao.ts` e o job `vigia`
+   do cron avisa. Ver `DECISOES` 05/09.
 
 3. **`SENTRY_DSN` na Vercel** — ou criar, ou tirar a promessa da tela. Hoje erro de usuário não
    chega em ninguém. A variável é lida em tempo de BUILD: criar no painel não basta, precisa de
