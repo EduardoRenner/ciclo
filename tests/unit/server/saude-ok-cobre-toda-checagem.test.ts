@@ -1,6 +1,9 @@
+import { readFileSync } from 'node:fs'
+
 import { describe, expect, it } from 'vitest'
 
 import { bancoSaudavel } from '../../helpers/saude'
+import { semComentarios } from '../../helpers/fonte'
 
 import { verificarSaude } from '@/server/services/health'
 
@@ -12,38 +15,57 @@ import { verificarSaude } from '@/server/services/health'
  * Até 05/09/2026 esse veredito era um `&&` escrito à mão, com uma parcela por checagem. Isso é uma
  * SEGUNDA lista das checagens, e o TypeScript não percebe quando ela fica curta: acrescentar uma
  * chave em `checks` e esquecer a parcela compila, passa em tudo, e produz um relatório que mostra
- * a checagem vermelha com `ok: true` no topo. Hoje o veredito sai de `Object.values(...).every`,
- * e esta guarda é o que impede alguém de reescrever a mão achando que dá na mesma.
+ * a checagem vermelha com `ok: true` no topo.
+ *
+ * **A primeira versão desta guarda estava CEGA, e a mutação foi quem contou.** Ela iterava as
+ * chaves e aplicava `every` sobre um objeto montado ali dentro — ou seja, testava o `every` do
+ * próprio teste, nunca o veredito que `verificarSaude` devolve. Com o `&&` à mão de volta, sem a
+ * parcela do `schema`, a suíte passava inteira. As duas asserções abaixo existem porque nenhuma
+ * das duas sozinha pega o caso: uma exercita a decisão de verdade, a outra impede que ela volte a
+ * ser escrita como lista.
  */
 describe('o veredito do /api/health cobre TODAS as checagens', () => {
-  it('uma checagem falsa, qualquer uma, derruba o `ok` — conferido chave a chave', async () => {
-    const relatorio = await verificarSaude(bancoSaudavel(), new Date())
-    expect(relatorio.ok, 'a fixture não representa um banco saudável — o cenário não foi montado').toBe(true)
-
-    const chaves = Object.keys(relatorio.checks) as (keyof typeof relatorio.checks)[]
-    expect(chaves.length, 'o relatório não tem checagem nenhuma — a fixture parou de casar?').toBeGreaterThan(5)
+  it('cada checagem que dá para derrubar pela fixture derruba o veredito DE VERDADE', async () => {
+    const saudavel = await verificarSaude(bancoSaudavel(), new Date())
+    expect(saudavel.ok, 'a fixture não representa um banco saudável — o cenário não foi montado').toBe(true)
 
     /*
-     * Itera a lista REAL em vez de repetir os nomes aqui. Uma lista escrita à mão neste teste seria
-     * a terceira cópia do mesmo enunciado, e envelheceria junto com a segunda — que é exatamente o
-     * defeito sob julgamento. Por isso o caminho é `verificarSaude` de verdade, com uma checagem
-     * derrubada de cada vez pela fixture, e não um objeto montado à mão.
+     * Uma entrada por checagem que a fixture consegue adoecer sem inventar um dublê novo. Não são
+     * as dez, e é por isso que a segunda asserção existe — mas cada uma destas é uma parcela do
+     * `&&` antigo, e a do `schema` é justamente a que a mutação mostrou faltando.
+     *
+     * `sendReminders` e `sendCampaigns` ficaram DE FORA e não por descuido: envelhecer o heartbeat
+     * delas não as adoece, porque `heartbeatVigiado` as dispensa enquanto estiverem fora do
+     * `schedule` do `cron.yml` — é o alarme permanente que `core/cron/agendadas.ts` proíbe.
+     * Tentar incluí-las foi o que mostrou isso: o teste reprovou dizendo que a fixture não
+     * conseguiu adoecê-las, que é a resposta certa.
      */
-    for (const chave of chaves) {
-      const relatorioComFalha = { ...relatorio, checks: { ...relatorio.checks, [chave]: { ok: false, detail: 'forçado pelo teste' } } }
-      const veredito = Object.values(relatorioComFalha.checks).every((c) => c.ok)
-      expect(veredito, `\`${chave}\` falsa não derrubou o veredito`).toBe(false)
+    const casos = [
+      { chave: 'recomputeCycles', banco: bancoSaudavel({ recompute_cycles: 60 * 40 }) },
+      { chave: 'recomputeSegments', banco: bancoSaudavel({ recompute_segments: 60 * 40 }) },
+      { chave: 'schema', banco: bancoSaudavel({}, [{ name: '0001_initial' }]) },
+    ] as const
+
+    for (const { chave, banco } of casos) {
+      const relatorio = await verificarSaude(banco, new Date())
+      expect(relatorio.checks[chave].ok, `a fixture não conseguiu adoecer \`${chave}\``).toBe(false)
+      expect(relatorio.ok, `\`${chave}\` vermelha com veredito verde — o topo mente para quem lê`).toBe(false)
     }
   })
 
   /*
-   * A metade que a iteração acima não prova: ela confere a REGRA, e este caso confere que
-   * `verificarSaude` de fato a aplica. Sem ele, trocar o corpo da função por `ok: true` fixo
-   * passaria — o laço lá em cima só exercita `every` sobre um objeto local.
+   * A metade que nenhum caso de comportamento alcança: as checagens que a fixture não sabe
+   * adoecer. Enquanto o veredito sair de `every` sobre o próprio objeto, esquecer uma é
+   * impossível; no dia em que virar `&&` outra vez, volta a ser questão de memória de quem edita.
+   * Por isso a asserção é sobre a FORMA, e não sobre mais um caso.
    */
-  it('e `verificarSaude` aplica a regra: heartbeat velho derruba o veredito de verdade', async () => {
-    const relatorio = await verificarSaude(bancoSaudavel({ recompute_cycles: 60 * 40 }), new Date())
-    expect(relatorio.checks.recomputeCycles.ok).toBe(false)
-    expect(relatorio.ok, 'checagem vermelha com veredito verde é o defeito que este arquivo guarda').toBe(false)
+  it('e o veredito sai do próprio objeto, não de uma lista escrita à mão', () => {
+    const fonte = semComentarios(readFileSync('src/server/services/health.ts', 'utf8'))
+    const retorno = fonte.slice(fonte.indexOf('const checks = {'))
+    expect(
+      /ok:\s*Object\.values\(checks\)\.every\(/.test(retorno),
+      'o `ok` voltou a ser uma lista à mão. Cada parcela é uma chance de esquecer a checagem nova, ' +
+        'e ela nasce muda: vermelha no relatório, verde no topo que o `vigia` lê.',
+    ).toBe(true)
   })
 })
