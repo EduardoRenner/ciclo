@@ -3,6 +3,7 @@ import { Temporal } from '@js-temporal/polyfill'
 import { computeCycle } from '@/core/cycle/compute'
 import { valorEmRiscoCents } from '@/core/cycle/valor-em-risco'
 import { buscarTudoPaginado } from '@/server/db/paginar'
+import { registrarPrevisoes, resolverPrevisoes, type PrevisaoParaRegistrar } from '@/server/services/previsao'
 import { AppError } from '@/server/http/errors'
 
 import type { Database } from '@/server/db/types.gen'
@@ -78,6 +79,14 @@ export async function recomputarCiclosDoTenant(db: Cliente, tenantId: string, ti
   const hoje = Temporal.PlainDate.from(today)
   const linhas: Database['public']['Tables']['client_cycles']['Insert'][] = []
 
+  /*
+    O registro de previsão (`docs/46`) anda de carona neste laço de propósito: as datas de visita
+    já estão carregadas e ordenadas aqui, e buscá-las de novo num job à parte seria repetir a
+    consulta mais cara do produto para chegar no mesmo dado.
+  */
+  const previsoes: PrevisaoParaRegistrar[] = []
+  const datasPorCombinacao = new Map<string, string[]>()
+
   for (const [chave, datas] of historicoPorCombinacao) {
     const [clientId, serviceId] = chave.split(':') as [string, string]
     const defaultCycleDays = cycleDaysPorServico.get(serviceId)
@@ -93,6 +102,19 @@ export async function recomputarCiclosDoTenant(db: Cliente, tenantId: string, ti
       defaultCycleDays,
       today: hoje,
       hasFutureAppointment: temFuturoPorCombinacao.has(chave),
+    })
+
+    const ultimaVisita = history[history.length - 1]!.date.toString()
+    datasPorCombinacao.set(chave, history.map((h) => h.date.toString()))
+    previsoes.push({
+      clientId,
+      serviceId,
+      lastVisitOn: ultimaVisita,
+      predictedOn: resultado.predictedDate.toString(),
+      // A tabela exige > 0, e o piso do ciclo pessoal é 0.5 do padrão: sem o `max`, um serviço de
+      // ciclo 1 produziria 0 e derrubaria o cron inteiro por violação de constraint.
+      personalCycleDays: Math.max(1, Math.round(resultado.personalCycleDays)),
+      defaultCycleDays,
     })
 
     linhas.push({
@@ -120,6 +142,16 @@ export async function recomputarCiclosDoTenant(db: Cliente, tenantId: string, ti
     const { error } = await db.from('client_cycles').upsert(lote, { onConflict: 'tenant_id,client_id,service_id' })
     if (error) throw new AppError('INTERNAL', { cause: error })
   }
+
+  /*
+    Registrar DEPOIS de gravar `client_cycles`, e resolver DEPOIS de registrar.
+
+    A ordem importa: se o registro falhasse antes do upsert, o produto ficaria sem o recálculo (o
+    que a tela mostra) por causa da trilha (o que ninguém vê hoje). E resolver antes de registrar
+    perderia o caso do cliente que voltou no mesmo dia em que a previsão anterior seria escrita.
+  */
+  await registrarPrevisoes(db, tenantId, previsoes)
+  await resolverPrevisoes(db, tenantId, datasPorCombinacao)
 
   return linhas.length
 }

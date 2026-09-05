@@ -483,6 +483,73 @@ export type Database = {
           },
         ]
       }
+      cycle_predictions: {
+        Row: {
+          actual_return_on: string | null
+          algo_version: number
+          client_id: string
+          default_cycle_days: number
+          id: string
+          last_visit_on: string
+          personal_cycle_days: number
+          predicted_at: string
+          predicted_on: string
+          resolved_at: string | null
+          service_id: string
+          tenant_id: string
+        }
+        Insert: {
+          actual_return_on?: string | null
+          algo_version: number
+          client_id: string
+          default_cycle_days: number
+          id?: string
+          last_visit_on: string
+          personal_cycle_days: number
+          predicted_at?: string
+          predicted_on: string
+          resolved_at?: string | null
+          service_id: string
+          tenant_id: string
+        }
+        Update: {
+          actual_return_on?: string | null
+          algo_version?: number
+          client_id?: string
+          default_cycle_days?: number
+          id?: string
+          last_visit_on?: string
+          personal_cycle_days?: number
+          predicted_at?: string
+          predicted_on?: string
+          resolved_at?: string | null
+          service_id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cycle_predictions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cycle_predictions_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cycle_predictions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_notes: {
         Row: {
           appointment_id: string | null

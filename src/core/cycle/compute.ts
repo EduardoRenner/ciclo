@@ -3,6 +3,20 @@ import { Temporal } from '@js-temporal/polyfill'
 /** `§5.3`, literal. */
 export type EstadoCiclo = 'on_track' | 'due' | 'late' | 'at_risk' | 'lost'
 
+/**
+ * Versão do algoritmo de previsão, gravada em cada linha de `cycle_predictions`.
+ *
+ * **Suba isto sempre que mudar qualquer coisa que altere o resultado de `computeCycle`** — os
+ * pesos da mistura, o corte de intervalos anômalos, as faixas de `estadoPorAtraso`, o teto e o
+ * piso do ciclo pessoal.
+ *
+ * Sem a versão, a série histórica de previsões mistura eras do algoritmo em silêncio: a
+ * calibração passaria a comparar o que o Motor de hoje previu com o que o Motor de seis meses
+ * atrás previa, concluiria que o erro mudou, e atribuiria à clientela uma mudança que foi nossa.
+ * É a versão que permite separar "o salão mudou" de "nós mudamos".
+ */
+export const VERSAO_DO_MOTOR = 1
+
 export type EntradaComputeCycle = {
   /** Atendimentos concluídos daquele cliente naquele serviço, em ordem cronológica. */
   history: { date: Temporal.PlainDate }[]
