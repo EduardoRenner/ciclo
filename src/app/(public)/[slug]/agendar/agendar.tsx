@@ -1,7 +1,7 @@
 "use client";
 
 import { CalendarPlus, CheckCircle2, ChevronDown } from "lucide-react";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 
 import { comMaiuscula, type Vocabulario } from "@/core/text/vocabulario";
 import { formatarPreco, type ModeloDePreco } from "@/core/pricing/formatar";
@@ -254,6 +254,28 @@ export default function Agendar({
   const [pendente, iniciarTransicao] = useTransition();
 
   /*
+    Confirmar troca a página INTEIRA sem trocar de rota — o formulário some e entra a tela de
+    "Agendamento enviado!". Medido no navegador antes deste conserto: o foco ficava no `body`, a
+    região viva do formulário ia embora junto com ele, e a única `role="status"` que sobrava na
+    página era o aviso de demonstração, que não mudou. Ou seja, quem usa leitor de tela tocava em
+    "Confirmar agendamento" e não ouvia NADA — sem saber se marcou, se falhou, ou se ainda está
+    carregando, no momento mais importante do fluxo.
+
+    É a mesma WCAG 4.1.3 que `agendamento-anuncia-mudanca.test.ts` já guardava para a troca de dia;
+    a guarda simplesmente nunca cobriu o último passo.
+
+    **Foco, e não `role="status"`, e o motivo está escrito naquele mesmo teste:** a região que
+    NASCE junto com o conteúdo costuma não ser anunciada — o leitor precisa estar observando o nó
+    antes de o texto mudar. Aqui a tela inteira é montada de uma vez, então não há nó preexistente
+    para observar. Mover o foco para o título novo anuncia o texto E deixa a pessoa no começo do
+    conteúdo novo, que é o que ela precisa para ler o resumo do que marcou.
+  */
+  const tituloDoSucesso = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    if (confirmado) tituloDoSucesso.current?.focus();
+  }, [confirmado]);
+
+  /*
     docs/34-PAGINA-PUBLICA-PLANO.md, Fase 2 — "reconhecer quem já é cliente". `reconhecimento`
     só existe quando o navegador guarda um token de um agendamento anterior NESTE tenant
     (`reconhecimento-local.ts`); nunca vem de telefone digitado agora, então não há como um
@@ -443,7 +465,18 @@ export default function Agendar({
     return (
       <Card className="flex flex-col items-center py-10 text-center">
         <CheckCircle2 aria-hidden className="mb-4 size-14 text-ok" />
-        <p className="text-titulo font-bold">Agendamento enviado!</p>
+        {/*
+          `h2` e não `p`: além de ser o alvo do foco, é o que faz a tela de sucesso existir para
+          quem navega por títulos. Antes, o único título da página era o `h1` "Agendar em
+          {salão}", que continua o mesmo depois de confirmar — pular de título em título não
+          revelava nenhuma mudança.
+
+          `tabIndex={-1}` deixa o elemento focável por código sem entrar na ordem do Tab: quem
+          navega por teclado não ganha uma parada extra, e o foco programático funciona.
+        */}
+        <h2 ref={tituloDoSucesso} tabIndex={-1} className="text-titulo font-bold">
+          Agendamento enviado!
+        </h2>
 
         {slotEscolhido && servicoEscolhido ? (
           <div className="mt-4 w-full max-w-xs rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 p-4 text-left">

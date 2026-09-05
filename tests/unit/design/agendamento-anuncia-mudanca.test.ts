@@ -104,6 +104,47 @@ describe('o agendamento anuncia o que mudou sem trocar de rota', () => {
     ).toBeLessThan(fechado)
   })
 
+  it('confirmar move o foco para o título da tela de sucesso', () => {
+    /*
+     * O passo que faltava a esta guarda: ela cobria a troca de DIA e parava ali. Confirmar troca a
+     * página inteira sem trocar de rota, e medido no navegador antes do conserto o foco continuava
+     * no `body`, a região viva do formulário sumia junto com ele, e a única `role="status"`
+     * restante era o aviso de demonstração — que não muda. Quem usa leitor de tela tocava em
+     * "Confirmar agendamento" e não ouvia nada, no momento em que mais precisa de resposta.
+     *
+     * A asserção casa com a CHAMADA de foco condicionada a `confirmado`, não com o nome da ref
+     * solto — o nome também aparece na declaração e no JSX, e casar com ele passaria verde com o
+     * efeito apagado.
+     */
+    const src = fonte()
+    expect(
+      /if \(confirmado\)\s*\w+\.current\?\.focus\(\)/.test(src),
+      'nada move o foco quando `confirmado` vira true — a tela de sucesso troca em silêncio',
+    ).toBe(true)
+  })
+
+  it('o título da tela de sucesso é um heading focável por código', () => {
+    /*
+     * Duas coisas numa: `h2` faz a tela de sucesso existir para quem navega por títulos (o `h1`
+     * continua sendo "Agendar em {salão}" depois de confirmar, então saltar de título em título
+     * não revelava mudança nenhuma), e `tabIndex={-1}` é o que permite o foco programático sem
+     * criar uma parada extra no Tab.
+     *
+     * Confere os atributos DENTRO da tag de abertura do heading, não no arquivo inteiro: procurar
+     * `tabIndex={-1}` solto casaria com o honeypot, que também o usa.
+     */
+    const src = fonte()
+    const i = src.indexOf('Agendamento enviado!')
+    expect(i, 'não achei a tela de sucesso').toBeGreaterThan(-1)
+
+    const abertura = src.lastIndexOf('<', src.lastIndexOf('>', i))
+    const tag = src.slice(abertura, src.indexOf('>', abertura) + 1)
+
+    expect(/^<h[1-6]\b/.test(tag), `o título da tela de sucesso não é um heading: ${tag.slice(0, 60)}`).toBe(true)
+    expect(/ref=\{/.test(tag), 'o heading não carrega a ref que recebe o foco').toBe(true)
+    expect(/tabIndex=\{-1\}/.test(tag), 'sem tabIndex={-1} o foco programático não pousa no heading').toBe(true)
+  })
+
   it('não atrapalha a tela de quem enxerga', () => {
     const src = fonte()
     const bloco = src.slice(src.indexOf('aria-live="polite"'), src.indexOf('{slots ?'))
