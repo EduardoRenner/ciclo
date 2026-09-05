@@ -6,6 +6,7 @@ import { useState } from 'react'
 
 import Button from '@/components/ui/button'
 import ErroPublico from '@/components/ui/erro-publico'
+import TituloDeEstado from '@/components/ui/titulo-de-estado'
 
 type Estado = 'escolhendo' | 'confirmando' | 'confirmado' | 'cancelando' | 'cancelado' | 'erro'
 
@@ -109,7 +110,7 @@ export default function ConfirmarAgendamento({ token }: { token: string }) {
     return (
       <>
         <CheckCircle2 aria-hidden className="mb-4 size-14 text-ok" />
-        <h1 className="text-titulo font-bold">Prontinho!</h1>
+        <TituloDeEstado>Prontinho!</TituloDeEstado>
         <p className="mt-2 text-corpo text-txt-2">Seu horário está confirmado. Te esperamos lá.</p>
       </>
     )
@@ -119,7 +120,7 @@ export default function ConfirmarAgendamento({ token }: { token: string }) {
     return (
       <>
         <CalendarX2 aria-hidden className="mb-4 size-14 text-txt-3" />
-        <h1 className="text-titulo font-bold">Desmarcado</h1>
+        <TituloDeEstado>Desmarcado</TituloDeEstado>
         <p className="mt-2 text-corpo text-txt-2">Sentimos falta! Quando quiser, é só marcar de novo.</p>
         {slugParaReagendar ? (
           <Link

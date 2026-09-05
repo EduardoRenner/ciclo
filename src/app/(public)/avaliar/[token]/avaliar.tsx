@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import ErroPublico from '@/components/ui/erro-publico'
+import TituloDeEstado from '@/components/ui/titulo-de-estado'
 import { linkWhatsAppCompartilhar } from '@/lib/mensagens'
 
 type Estado = 'carregando' | 'pronto' | 'enviando' | 'enviado' | 'erro'
@@ -123,7 +124,7 @@ export default function Avaliar({ token }: { token: string }) {
     return (
       <>
         <CheckCircle2 aria-hidden className="mb-4 size-14 text-ok" />
-        <h1 className="text-titulo font-bold">Pronto, avaliação enviada!</h1>
+        <TituloDeEstado>Pronto, avaliação enviada!</TituloDeEstado>
         <p className="mt-2 text-corpo text-txt-2">
           {dados?.negocioNome ? `A equipe da ${dados.negocioNome} agradece.` : 'Sua opinião ajuda o negócio a melhorar.'}
         </p>

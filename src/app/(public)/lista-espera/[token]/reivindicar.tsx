@@ -4,6 +4,7 @@ import { CheckCircle2 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 
 import ErroPublico from '@/components/ui/erro-publico'
+import TituloDeEstado from '@/components/ui/titulo-de-estado'
 
 type Estado = 'reivindicando' | 'reivindicado' | 'erro'
 
@@ -60,7 +61,7 @@ export default function ReivindicarEncaixe({ token }: { token: string }) {
     return (
       <>
         <CheckCircle2 aria-hidden className="mb-4 size-14 text-ok" />
-        <h1 className="text-titulo font-bold">Encaixe garantido!</h1>
+        <TituloDeEstado>Encaixe garantido!</TituloDeEstado>
         <p className="mt-2 text-corpo text-txt-2">Seu horário está reservado. Te esperamos lá.</p>
       </>
     )

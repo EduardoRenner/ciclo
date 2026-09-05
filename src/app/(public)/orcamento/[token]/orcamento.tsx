@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import ErroPublico from '@/components/ui/erro-publico'
+import TituloDeEstado from '@/components/ui/titulo-de-estado'
 import Textarea from '@/components/ui/textarea'
 import { dinheiro } from '@/lib/formato'
 
@@ -155,7 +156,7 @@ export default function Orcamento({ token }: { token: string }) {
     return (
       <>
         <Clock aria-hidden className="mb-4 size-14 text-txt-3" />
-        <h1 className="text-titulo font-bold">Orçamento vencido</h1>
+        <TituloDeEstado>Orçamento vencido</TituloDeEstado>
         <p className="mt-2 text-corpo text-txt-2">Esse orçamento não vale mais. Fale com {dados.businessName} pra pedir um novo.</p>
       </>
     )
@@ -165,7 +166,7 @@ export default function Orcamento({ token }: { token: string }) {
     return (
       <>
         <CheckCircle2 aria-hidden className="mb-4 size-14 text-ok" />
-        <h1 className="text-titulo font-bold">Orçamento aprovado</h1>
+        <TituloDeEstado>Orçamento aprovado</TituloDeEstado>
         <p className="mt-2 text-corpo text-txt-2">{dados.businessName} já foi avisado. Combine o horário por lá.</p>
       </>
     )
@@ -175,7 +176,7 @@ export default function Orcamento({ token }: { token: string }) {
     return (
       <>
         <FileX aria-hidden className="mb-4 size-14 text-txt-3" />
-        <h1 className="text-titulo font-bold">Orçamento recusado</h1>
+        <TituloDeEstado>Orçamento recusado</TituloDeEstado>
         <p className="mt-2 text-corpo text-txt-2">Tudo bem, {dados.businessName} foi avisado.</p>
       </>
     )

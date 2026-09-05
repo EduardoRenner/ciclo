@@ -115,12 +115,34 @@ const TELAS_DE_TOKEN = [
   'src/app/(public)/orcamento/[token]/orcamento.tsx',
 ]
 
+/**
+ * Sem comentário, e a razão é uma guarda cega que esta própria asserção produziu horas depois de
+ * nascer: o `erro-publico.tsx` passou a renderizar `<TituloDeEstado>` em vez de `<h1>` e o teste
+ * continuou verde — porque o comentário que EU escrevi lá dentro cita
+ * `<h1 className="text-titulo font-bold">` ao explicar o padrão das páginas de `(auth)`.
+ *
+ * É a linha nº 1 da tabela do `CLAUDE.md`: casar com algo que o arquivo contém por outro motivo.
+ * Varrer comentário é o que faz a documentação de uma decisão satisfazer a guarda dessa decisão.
+ */
+function marcacao(arquivo: string): string {
+  return readFileSync(arquivo, 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, ' ')
+    .replace(/^\s*\/\/.*$/gm, ' ')
+}
+
 describe('a tela que a cliente abre pelo WhatsApp tem heading', () => {
-  it.each(TELAS_DE_TOKEN)('%s tem pelo menos um h1', (arquivo) => {
-    const src = readFileSync(arquivo, 'utf8')
-    expect(/<h1[\s>]/.test(src), `${arquivo} não tem nenhum h1 — a tela fica sem estrutura para quem navega por títulos`).toBe(
-      true,
-    )
+  it.each(TELAS_DE_TOKEN)('%s tem pelo menos um heading', (arquivo) => {
+    /*
+     * `<TituloDeEstado>` conta: ele É um `h1` (e ainda move o foco para si ao aparecer). Aceitar os
+     * dois mantém o invariante — "esta tela tem título" — sem obrigar a desfazer o componente
+     * compartilhado, que existe justamente para o conserto não voltar a ser um por tela.
+     */
+    const src = marcacao(arquivo)
+    expect(
+      /<h1[\s>]/.test(src) || /<TituloDeEstado[\s>]/.test(src),
+      `${arquivo} não tem heading nenhum — a tela fica sem estrutura para quem navega por títulos`,
+    ).toBe(true)
   })
 
   it.each(TELAS_DE_TOKEN)('%s não usa <p> como pseudo-título', (arquivo) => {
@@ -132,11 +154,16 @@ describe('a tela que a cliente abre pelo WhatsApp tem heading', () => {
      * `text-titulo font-bold` é o token visual de título de tela deste design system. Num `<p>`,
      * ele produz uma coisa que parece título e não é.
      */
-    const src = readFileSync(arquivo, 'utf8')
+    /*
+     * `marcacao()` aqui pelo mesmo motivo da asserção acima, virado para o outro lado: casar
+     * comentário numa asserção de AUSÊNCIA não cega o teste, faz ele acusar a própria explicação
+     * do defeito. Ruído em vez de silêncio, mas ruído que treina a ignorar alarme.
+     */
+    const src = marcacao(arquivo)
     const falsos = [...src.matchAll(/<p className="[^"]*text-titulo font-bold[^"]*"/g)].map((m) => m[0])
     expect(
       falsos,
-      `${arquivo} desenha título de tela com <p>: ${falsos.join(', ')}. Use <h1>, como as páginas de (auth).`,
+      `${arquivo} desenha título de tela com <p>: ${falsos.join(', ')}. Use <h1> ou <TituloDeEstado>, como as outras.`,
     ).toEqual([])
   })
 })

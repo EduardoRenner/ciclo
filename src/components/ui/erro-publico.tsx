@@ -1,6 +1,9 @@
+'use client'
+
 import { XCircle } from 'lucide-react'
 
 import Button from '@/components/ui/button'
+import TituloDeEstado from '@/components/ui/titulo-de-estado'
 
 /**
  * A tela de erro das quatro páginas que a CLIENTE DO SALÃO abre pelo link do WhatsApp:
@@ -59,7 +62,7 @@ export default function ErroPublico({
         `h1` e não `h2` porque cada uma destas páginas mostra UM estado por vez, com `return`
         antecipado, e não existe outro heading acima na árvore.
       */}
-      <h1 className="text-titulo font-bold">{titulo}</h1>
+      <TituloDeEstado>{titulo}</TituloDeEstado>
       <p className="mt-2 text-corpo text-txt-2">{mensagem}</p>
       {aoTentarDeNovo ? (
         <Button largura="cheia" className="mt-6" onClick={aoTentarDeNovo}>
