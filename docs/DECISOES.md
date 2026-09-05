@@ -5821,3 +5821,34 @@ rede no CICLO" vai propor um diretório de estabelecimentos, e ele parece gráti
 cliente do salão A vê o salão B numa tela do CICLO é o momento em que o CICLO vira um AppBarber
 pior — sem os 12 anos e sem o 1M de instalações. O efeito de rede admissível aqui é **do lado do
 dono** (indicação B2B, `docs/18` Fase H e `docs/37`), nunca do lado do cliente final.
+
+**2026-09-05 · criar um meta-teste que varre as guardas atrás de cegueira ("casa com o próprio
+comentário")? · NÃO · a heurística que cobre muitas guardas erra em 100% dos casos, e a que acerta
+cobre 9 asserções.** A classe é real e cara — o `CLAUDE.md` registra que numa auditoria de 5
+guardas, 3 estavam cegas, e eu produzi uma cega nesta mesma sessão (a primeira versão de
+`pagina-do-negocio-e-so-dele`). Construí o detector e mutei-o: com uma isca plantada
+(`expect(PAGINA).toContain('splash')`, palavra que só existe no docstring de `src/app/page.tsx`)
+ele acusa; sem ela, não acusa nada.
+
+**O resultado medido, nas duas formas:**
+
+- **Preciso** (liga `const VAR = readFileSync('caminho')` à asserção `expect(VAR).toContain('X')`):
+  9 pares em 5 arquivos, **zero cegas**.
+- **Amplo** (qualquer literal afirmado contra qualquer alvo lido pelo teste): 33 literais, 4
+  acusações, **4 falsos positivos**. Os quatro têm a mesma causa e ela é estrutural: o detector não
+  distingue asserção sobre o TEXTO do arquivo de asserção sobre VALOR EM EXECUÇÃO.
+  `saude-nao-alarma-por-lixo` afirma `.toContain('sem handler')` sobre
+  `r.checks.jobQueue.detail` (um retorno de função, com banco falso), e `vocabulario-da-profissao`
+  afirma `.toContain('salão')` sobre um array. Nenhum dos dois lê fonte ali — são testes de
+  comportamento, os melhores do repositório.
+
+Separar os dois casos exige análise de tipo, não regex. Um meta-teste com essa taxa de falso
+positivo não protege: treina quem mantém a suíte a ignorar o alarme, que é o mesmo mecanismo do
+503 permanente que o `saude-nao-alarma-por-lixo` existe para impedir.
+
+**O que ficou no lugar do teste, e que é a resposta de verdade:** medido que **64 das 101 guardas
+que leem fonte já limpam comentário antes de casar**. O padrão correto está difundido e
+documentado (`copyDaHome()` em `home-nao-promete-demais` explica por que varrer comentário faria o
+teste reprovar a própria documentação). O risco restante está nas 37 que não limpam — e nelas o
+critério continua sendo o do `CLAUDE.md`: casar com o que MUDA quando o defeito volta, e ver a
+guarda reprovar por mutação antes de confiar nela.
