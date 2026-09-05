@@ -113,7 +113,7 @@ export default function Precos() {
     <main className="mx-auto min-h-dvh max-w-[720px] px-[var(--gutter)] pb-16">
       <header className="flex items-center justify-between gap-3 py-5">
         <Link href="/" className="toque-48 flex items-center">
-          <Image src={wordmark} alt="CICLO" className="h-7 w-auto" />
+          <Image src={wordmark} alt="CICLO" sizes="70px" className="h-7 w-auto" />
         </Link>
         <Link
           href="/entrar"
