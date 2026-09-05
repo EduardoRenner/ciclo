@@ -187,6 +187,9 @@ const PERGUNTAS = [
   },
 ]
 
+/** Um id so para o `<symbol>` da seta das perguntas — a definicao e cada `<use>` leem daqui. */
+const ID_SETA_PERGUNTA = 'seta-da-pergunta'
+
 export default async function Home() {
   /*
     A única leitura de banco desta página, e ela é barata de propósito: um `in` numa lista fechada
@@ -456,14 +459,31 @@ export default async function Home() {
       <section className="py-8">
         <h2 className="mb-5 text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">Perguntas</h2>
         <div className="flex flex-col gap-2">
+          {/*
+            Icone dentro de `.map()`: o lucide inlina o path e todos os atributos em cada volta, e
+            aqui a volta e por PERGUNTA — cresce a cada uma que entrar. Medido no HTML de producao:
+            seis setas somavam 2.254 B. Mesmo conserto das estrelas e dos icones de `/precos`, com
+            a mesma regra de cascata: `fill="none"` no `<svg>` que usa, nunca no `<symbol>`.
+          */}
+          <svg aria-hidden focusable="false" className="absolute size-0" width="0" height="0">
+            <symbol id={ID_SETA_PERGUNTA} viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 12h14" />
+              <path d="m12 5 7 7-7 7" />
+            </symbol>
+          </svg>
+
           {PERGUNTAS.map((p) => (
             <details key={p.pergunta} className="group rounded-[var(--radius)] border border-line bg-surface px-4">
               <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 py-3 text-corpo font-semibold text-txt">
                 {p.pergunta}
-                <ArrowRight
+                <svg
                   aria-hidden
+                  viewBox="0 0 24 24"
+                  fill="none"
                   className="size-4 shrink-0 text-txt-3 transition-transform duration-[var(--dur-1)] group-open:rotate-90"
-                />
+                >
+                  <use href={`#${ID_SETA_PERGUNTA}`} />
+                </svg>
               </summary>
               <p className="pb-4 text-secundario text-txt-2">{p.resposta}</p>
             </details>
