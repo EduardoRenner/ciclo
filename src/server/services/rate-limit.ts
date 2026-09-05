@@ -38,8 +38,41 @@ type Opcoes = {
 type Janela = { contagem: number; expiraEm: number }
 const memoria = new Map<string, Janela>()
 
+/**
+ * A partir de quantas chaves vale varrer as expiradas.
+ *
+ * **O `Map` nunca removia nada**, e a chave do teto global é `global:ip:<ip>` — ou seja, toda IP
+ * que algum dia bateu na API deixava uma entrada permanente na instância. A entrada só era
+ * sobrescrita se aquela MESMA IP voltasse depois da janela; quem passou uma vez ficava para
+ * sempre. Numa instância morna da Vercel, que vive horas, isso é crescimento sem teto.
+ *
+ * A documentação extensa deste arquivo discute a contagem entre instâncias (achado S4) e o
+ * trade-off do `somenteMemoria`, mas nunca o tempo de vida do `Map` — foi por onde passou.
+ */
+const CHAVES_ANTES_DE_VARRER = 10_000
+
+/**
+ * Varre só o que EXPIROU, e isso é deliberado.
+ *
+ * Despejar entrada viva para caber num teto zeraria a contagem daquela IP — que é exatamente o
+ * que alguém batendo forte iria querer. Se as 10 mil estiverem todas vivas dentro da janela, é
+ * enxurrada de verdade, e aí a memória é o menor dos problemas: melhor crescer e continuar
+ * contando certo do que encolher abrindo a porta.
+ */
+function varrerExpiradas(agora: number): void {
+  for (const [chave, janela] of memoria) {
+    if (janela.expiraEm <= agora) memoria.delete(chave)
+  }
+}
+
+/** Só para teste: o `Map` é de módulo, e não dá para observar o crescimento de fora sem isto. */
+export function chavesEmMemoriaParaTeste(): number {
+  return memoria.size
+}
+
 function limitarEmMemoria(chave: string, limite: number, janelaSegundos: number): Resultado {
   const agora = Date.now()
+  if (memoria.size >= CHAVES_ANTES_DE_VARRER) varrerExpiradas(agora)
   const atual = memoria.get(chave)
 
   if (!atual || atual.expiraEm <= agora) {
