@@ -3,7 +3,7 @@ import { Temporal } from '@js-temporal/polyfill'
 import { computeCycle } from '@/core/cycle/compute'
 import { valorEmRiscoCents } from '@/core/cycle/valor-em-risco'
 import { buscarTudoPaginado } from '@/server/db/paginar'
-import { registrarPrevisoes, resolverPrevisoes, type PrevisaoParaRegistrar } from '@/server/services/previsao'
+import { calibrarServicos, registrarPrevisoes, resolverPrevisoes, type PrevisaoParaRegistrar } from '@/server/services/previsao'
 import { AppError } from '@/server/http/errors'
 
 import type { Database } from '@/server/db/types.gen'
@@ -59,10 +59,21 @@ export async function recomputarCiclosDoTenant(db: Cliente, tenantId: string, ti
         .in('status', ['pending', 'confirmed', 'arrived'])
         .order('id'),
     ),
-    buscarTudoPaginado(() => db.from('services').select('id, cycle_days, price_cents').eq('tenant_id', tenantId).order('id')),
+    buscarTudoPaginado(() =>
+      db.from('services').select('id, cycle_days, cycle_days_observado, price_cents').eq('tenant_id', tenantId).order('id'),
+    ),
   ])
 
-  const cycleDaysPorServico = new Map(servicos.map((s) => [s.id, s.cycle_days]))
+  /*
+    A régua EFETIVA: a medida quando existe, a configurada quando não.
+
+    `cycle_days` é palpite de catálogo (21 da coluna, ou o do pack da profissão) aplicado a todo
+    salão do país; `cycle_days_observado` é a cadência que a clientela DESTE salão de fato tem,
+    medida a partir das voltas que aconteceram (`core/cycle/calibracao.ts`). Preferir a medida é o
+    ponto inteiro do mecanismo — e a configurada continua intacta na outra coluna, para o dono
+    poder comparar e para a correção ser reversível.
+  */
+  const cycleDaysPorServico = new Map(servicos.map((s) => [s.id, s.cycle_days_observado ?? s.cycle_days]))
   const precoPorServico = new Map(servicos.map((s) => [s.id, s.price_cents]))
 
   const temFuturoPorCombinacao = new Set(futuros.filter((a) => a.client_id).map((a) => `${a.client_id}:${a.service_id}`))
@@ -152,6 +163,7 @@ export async function recomputarCiclosDoTenant(db: Cliente, tenantId: string, ti
   */
   await registrarPrevisoes(db, tenantId, previsoes)
   await resolverPrevisoes(db, tenantId, datasPorCombinacao)
+  await calibrarServicos(db, tenantId, cycleDaysPorServico)
 
   return linhas.length
 }

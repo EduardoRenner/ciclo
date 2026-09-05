@@ -1,3 +1,4 @@
+import { calibrarCiclo, type PrevisaoResolvida } from '@/core/cycle/calibracao'
 import { VERSAO_DO_MOTOR } from '@/core/cycle/compute'
 import { buscarTudoPaginado } from '@/server/db/paginar'
 import { AppError } from '@/server/http/errors'
@@ -130,4 +131,59 @@ export async function resolverPrevisoes(
   }
 
   return fechadas
+}
+
+/**
+ * Mede a cadência real de cada serviço e guarda o resultado AO LADO da régua configurada.
+ *
+ * Roda depois de `resolverPrevisoes`, no mesmo recálculo, e o efeito aparece na passada SEGUINTE —
+ * o `computeCycle` desta execução já leu os ciclos antes. Um dia de atraso num número que descreve
+ * um comportamento de semanas não muda decisão nenhuma, e evitar isso exigiria carregar as
+ * previsões antes de tudo, encarecendo o caminho quente do job para nada.
+ *
+ * `cycleDaysPorServico` é a régua EFETIVA de cada serviço hoje (observada, se houver; configurada,
+ * se não) — é contra ela que o desvio mínimo é medido, senão a calibração recalcularia a mesma
+ * correção todo dia e reescreveria a linha para sempre.
+ */
+export async function calibrarServicos(db: Cliente, tenantId: string, cicloEfetivoPorServico: Map<string, number>): Promise<number> {
+  const resolvidas = await buscarTudoPaginado(() =>
+    db
+      .from('cycle_predictions')
+      .select('service_id, last_visit_on, actual_return_on')
+      .eq('tenant_id', tenantId)
+      .not('resolved_at', 'is', null)
+      .order('id'),
+  )
+  if (resolvidas.length === 0) return 0
+
+  const porServico = new Map<string, PrevisaoResolvida[]>()
+  for (const linha of resolvidas) {
+    // `actual_return_on` é nulo enquanto a previsão está em aberto; o filtro acima já as tira, e
+    // esta guarda é o que faz o tipo bater sem `as`.
+    if (!linha.actual_return_on) continue
+    const lista = porServico.get(linha.service_id) ?? []
+    lista.push({ lastVisitOn: linha.last_visit_on, actualReturnOn: linha.actual_return_on })
+    porServico.set(linha.service_id, lista)
+  }
+
+  const agora = new Date().toISOString()
+  let calibrados = 0
+
+  for (const [serviceId, voltas] of porServico) {
+    const efetivo = cicloEfetivoPorServico.get(serviceId)
+    if (efetivo === undefined) continue // serviço apagado entre a leitura e agora
+
+    const { diasMedidos, amostra } = calibrarCiclo(voltas, efetivo)
+    if (diasMedidos === null) continue
+
+    const { error } = await db
+      .from('services')
+      .update({ cycle_days_observado: diasMedidos, cycle_days_observado_amostra: amostra, cycle_days_observado_em: agora })
+      .eq('tenant_id', tenantId)
+      .eq('id', serviceId)
+    if (error) throw new AppError('INTERNAL', { cause: error })
+    calibrados++
+  }
+
+  return calibrados
 }
