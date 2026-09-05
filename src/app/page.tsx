@@ -79,9 +79,29 @@ const RECURSOS = [
   },
   {
     icone: Link2,
-    titulo: 'Sua página de agendamento',
+    titulo: 'Sua página, sua clientela',
+    /*
+      Este cartão descrevia só a mecânica do link, e a mecânica é a parte que todo concorrente
+      também tem. O que ele calava é a única diferença ESTRUTURAL do CICLO, medida em
+      `docs/43-POSICIONAMENTO-10X.md` §2: as duas queixas recorrentes de donos sobre o líder do
+      nicho são o atrito do "baixe nosso app" (cliente novo não baixa e marca em outro lugar) e o
+      app mostrar a lista de concorrentes para a clientela dele. Os dois maiores do nicho têm a
+      mesma limitação, e não podem consertar — o app do cliente só tem valor porque agrega várias
+      barbearias, então a queixa do dono é o modelo de negócio deles.
+
+      **Isto não contradiz o §D.3 do `docs/20-COPY-PLANO.md`,** que tirou "feito para o celular,
+      sem treinamento" do subtítulo por serem "verdadeiras e irrelevantes — nenhuma é motivo para
+      escolher o CICLO em vez de outro". Era o julgamento certo com os dados de então; o §D.3 não
+      tinha a pesquisa competitiva. "Sem baixar aplicativo" é exatamente um motivo para escolher o
+      CICLO em vez de outro, e é o único item da página do qual isso se pode dizer com evidência.
+      Antes de remover daqui de novo citando o §D.3, ler o `43` §2.
+
+      As duas afirmações são conferíveis no repositório, não promessa: não existe nenhuma rota que
+      liste tenants para o público, e `sitemap.ts` entrega a página do negócio ao buscador. O
+      teste `pagina-do-negocio-e-so-dele.test.ts` trava as duas.
+    */
     texto:
-      'Um link para colar na bio do Instagram. Quem for marcar escolhe serviço, profissional e horário sem precisar falar com você, e o horário já entra na sua agenda sem risco de marcar dois no mesmo lugar.',
+      'Um link para colar na bio do Instagram. Quem for marcar abre no navegador e escolhe serviço, profissional e horário — sem baixar aplicativo, sem criar conta e sem esbarrar em nenhum concorrente pelo caminho. A página é do seu negócio e só dele, e o horário já entra na sua agenda sem risco de marcar dois no mesmo lugar.',
   },
   {
     icone: Wallet,

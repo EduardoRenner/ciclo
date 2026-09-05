@@ -5802,3 +5802,22 @@ atributos em cada ocorrência. Três casos, 22%, 14% e 5% das respectivas págin
 `<symbol>` + `<use>`, com a regra de que `fill="none"` fica no elemento que USA e nunca no símbolo
 — dentro dele o atributo ganha da classe na cascata e o ícone sai vazado, sem nenhum teste
 reclamar. Ver `docs/42`.
+
+**2026-09-05 · construir vitrine/diretório de tenants para o cliente final, para ganhar efeito de
+rede? · NÃO, e o veto é permanente · é o ativo dos concorrentes e seria o fim do único diferencial
+estrutural do CICLO.** A pesquisa de mercado de `docs/43-POSICIONAMENTO-10X.md` mediu a queixa nº 1
+dos donos sobre o líder do nicho (AppBarber, 1M+ instalações): o app do cliente **mostra a lista de
+concorrentes** para a clientela dele, e o "baixe nosso app" faz cliente novo marcar em outro lugar.
+O BestBarbers tem a mesma limitação. Eles não podem consertar — o app do cliente só tem valor de
+rede porque agrega várias barbearias, então a queixa do dono *é* o modelo de negócio deles.
+
+O CICLO já está do lado certo por arquitetura, não por marketing: não existe rota que liste tenants
+para o público, `/[slug]` é a página daquele negócio, "vitrine" aqui são as imagens do próprio
+estabelecimento (`src/core/text/vitrine.ts`), e o `sitemap.ts` entrega **a página do negócio** ao
+buscador em vez de uma vitrine central que ficaria com o tráfego.
+
+A decisão registrada é sobre a tentação futura, não sobre hoje: toda análise de "faltam efeitos de
+rede no CICLO" vai propor um diretório de estabelecimentos, e ele parece grátis. O momento em que o
+cliente do salão A vê o salão B numa tela do CICLO é o momento em que o CICLO vira um AppBarber
+pior — sem os 12 anos e sem o 1M de instalações. O efeito de rede admissível aqui é **do lado do
+dono** (indicação B2B, `docs/18` Fase H e `docs/37`), nunca do lado do cliente final.
