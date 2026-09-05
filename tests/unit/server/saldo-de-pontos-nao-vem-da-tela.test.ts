@@ -98,4 +98,30 @@ describe('o saldo de pontos não sai da janela que a tela mostra', () => {
     const { db } = fakeDb([], [])
     await expect(extratoDePontos(db, 'tenant', 'cliente')).resolves.toMatchObject({ saldo: 0, lancamentos: [] })
   })
+
+  it('no teto de páginas ERRA, em vez de devolver um saldo plausível', async () => {
+    /*
+     * Este caso nasceu de uma mutação que passou: trocar o `throw` do teto por `return saldo`
+     * deixava a suíte inteira verde. Um cliente que nunca acaba de paginar é defeito de dado, e a
+     * resposta errada aqui seria a mais perigosa que existe — um número redondo, plausível, que
+     * nada denuncia. Melhor a ficha não abrir do que abrir com o saldo errado.
+     */
+    let paginas = 0
+    const cadeia = {
+      select: () => cadeia,
+      eq: () => cadeia,
+      order: () => cadeia,
+      limit: () => Promise.resolve({ data: [], error: null }),
+      range: () => {
+        paginas++
+        // Página SEMPRE cheia: o laço nunca encontra a condição de parada.
+        return Promise.resolve({ data: Array.from({ length: 1000 }, () => ({ points: 1 })), error: null })
+      },
+    }
+    const db = { from: () => cadeia } as unknown as Parameters<typeof extratoDePontos>[0]
+
+    await expect(extratoDePontos(db, 'tenant', 'cliente')).rejects.toThrow()
+    // E o laço é limitado: sem teto, este teste rodaria para sempre em vez de falhar.
+    expect(paginas).toBe(100)
+  })
 })
