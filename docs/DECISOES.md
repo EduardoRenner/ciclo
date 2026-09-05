@@ -6068,3 +6068,42 @@ Dois registros de método:
   agora do lado de quem procura, não de quem guarda.
 - **A guarda daquela frase foi conferida, não suposta:** reintroduzi a promessa em `agendar.tsx` e
   `agendamento-publico-nao-promete-demais` reprovou em dois casos. Ela funciona.
+
+## 2026-09-05 · Corte de consulta virando conta: varredura dos 11 casos
+
+Eixo novo, e o de maior retorno da rodada: **onde um limite de APRESENTAÇÃO está servindo de base
+para uma SOMA.** Varridos os 95 arquivos de `src/server` procurando `.limit(`/`.range(` com
+agregação (`reduce`, `length`, `count`, `total`) nas 25 linhas seguintes. Onze casos, um defeito
+grave.
+
+**O achado — `extratoDePontos` (`fidelidade.ts`).** `saldo` era `lancamentos.reduce(...)` sobre as
+50 linhas que a tela mostra. Não é cosmético: `lancarPontos` guarda o resgate com esse mesmo saldo,
+então acima de 50 lançamentos o produto **recusava resgate a que a pessoa tem direito** — e quem
+passa de 50 é, por definição, o cliente mais fiel. Nas duas direções: se o que caiu fora fosse um
+resgate, o saldo inflava e a trava deixava tirar mais do que existe.
+
+O detalhe que mais ensina está na docstring da própria função: ela existe para que ninguém veja
+*"um número que mudou sozinho"* — e a barra de progresso da ficha **andava para trás sozinha**
+quando um lançamento novo empurrava um crédito velho para fora da janela. O texto descrevia o
+defeito que o código tinha.
+
+**Já corretos (3), e vale saber por quê:** `caixa` e `comissao` paginam com `range` e param em
+página curta; `alertas-estoque` faz melhor ainda — detecta que bateu no teto e confere um a um só
+os duvidosos, com o custo explicado no comentário. Foi um destes que revelou que
+`buscarTudoPaginado` já existia, depois de eu ter escrito a quinta cópia dele à mão.
+
+**Sem consumidor que minta (1):** `listarOrcamentos` corta em 100 e a expiração preguiçosa só
+alcança esses 100 — mas nenhuma tela agrega `quotes.status`, e a lista não exibe total ao lado, então
+não há número contraditório para ninguém ler. Fica registrado como conferido, não como limpo.
+
+**O resto (6)** são `.limit(1)`, `head: true` ou mapeamento linha a linha — nada somado.
+
+### Duas lições que passam deste eixo para os próximos
+
+**Consertar sem varrer teria deixado o helper escondido.** Achei `buscarTudoPaginado` procurando
+*outros* casos do mesmo defeito, não procurando um helper. A docstring dele já avisava que "a cópia
+que envelhece é sempre a que ninguém lembra que existe" — e eu era a cópia.
+
+**Toda guarda nova nasceu cega de novo, e a mutação foi quem contou.** A suíte do saldo passou
+inteira com o teto de páginas trocado por `return saldo`. O teto é o caso raro, e o caso raro é
+onde a resposta errada é mais perigosa: um total redondo e plausível não denuncia nada.
