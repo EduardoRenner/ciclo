@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   PLANOS,
+  custoPorAtendimento,
   menorPlanoCom,
   podeCriar,
   podeUsarCapacidade,
@@ -9,6 +10,14 @@ import {
   verificarLimite,
   type ContextoDoTenant,
 } from '@/core/billing/planos'
+
+/**
+ * O separador entre "R$" e o número, no `Intl.NumberFormat('pt-BR')`, é espaço NÃO-QUEBRÁVEL.
+ * Por código de caractere e nunca literal: NBSP no fonte é invisível na revisão e some sem aviso
+ * se alguém rodar um formatador que normaliza espaço em branco — mesma decisão de
+ * `preco-em-um-lugar-so`.
+ */
+const NBSP = String.fromCharCode(0xa0)
 
 const BARBEARIA_GRATIS: ContextoDoTenant = {
   plano: 'gratis',
@@ -175,5 +184,35 @@ describe('limite duro × limite suave (§L.1)', () => {
     expect(r.dentro).toBe(false) // está acima do teto...
     expect(podeCriar(rebaixado, 'profissionais', 3)).toBe(false) // ...e não pode criar o 4º
     // ...mas nada nesta camada apaga ou esconde os 3 que existem: não há função para isso.
+  })
+})
+
+/**
+ * `custoPorAtendimento` — item C do `docs/43`, eixo 3 (economia de escala).
+ *
+ * A função existe para uma afirmação PÚBLICA na `/precos`, então o que importa não é só o número:
+ * é a direção do erro. Arredondar para baixo faria a própria página anunciar um custo menor que o
+ * real, que é o tipo de meio centavo a favor de si mesmo que ninguém confere.
+ */
+describe('custoPorAtendimento', () => {
+  it('cai conforme o volume sobe — é a frase inteira que a seção defende', () => {
+    const valores = [60, 150, 300].map((n) => custoPorAtendimento('essencial', n))
+    expect(valores).toEqual([`R$${NBSP}0,82`, `R$${NBSP}0,33`, `R$${NBSP}0,17`])
+  })
+
+  it('arredonda para CIMA, nunca deixando o CICLO parecer mais barato do que é', () => {
+    // 4900/300 = 16,33 centavos. Para baixo daria R$ 0,16 — meio centavo de propaganda.
+    expect(custoPorAtendimento('essencial', 300)).toBe(`R$${NBSP}0,17`)
+    // 9900/7 = 1414,28 centavos. Para baixo daria R$ 14,14.
+    expect(custoPorAtendimento('equipe', 7)).toBe(`R$${NBSP}14,15`)
+  })
+
+  it('mês sem atendimento não tem custo por atendimento — grita em vez de devolver Infinity', () => {
+    expect(() => custoPorAtendimento('essencial', 0)).toThrow()
+    expect(() => custoPorAtendimento('essencial', -1)).toThrow()
+  })
+
+  it('no grátis é zero, e não uma divisão que quebra', () => {
+    expect(custoPorAtendimento('gratis', 100)).toBe(`R$${NBSP}0,00`)
   })
 })
