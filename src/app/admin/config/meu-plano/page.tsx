@@ -4,6 +4,7 @@ import { headers } from 'next/headers'
 
 import { textoDeParaQueIndicar, textoDoConviteDoCiclo } from '@/core/billing/convite-do-ciclo'
 import { NOME_DO_PLANO, ORDEM_DOS_PLANOS, precoDoPlanoPorMes, verificarLimite } from '@/core/billing/planos'
+import { comMaiuscula, plural } from '@/core/text/vocabulario'
 import { APP_URL } from '@/lib/app-url'
 import { linkWhatsAppCompartilhar } from '@/lib/mensagens'
 import Card from '@/components/ui/card'
@@ -118,7 +119,7 @@ export default async function PaginaMeuPlano() {
           }
         />
         <StatTile
-          rotulo="Clientes"
+          rotulo={comMaiuscula(plural(ctx.tenant.vocabulario.cliente))}
           valor={textoDeTeto(limCli.limite, usoCli)}
           {...(limCli.limite !== null ? { progresso: usoCli / limCli.limite } : {})}
           apoio={

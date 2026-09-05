@@ -231,6 +231,11 @@ describe('o painel também fala a língua da profissão', () => {
       ['src/app/admin/clientes/page.tsx', /plural\(ctx\.tenant\.vocabulario\.cliente\)/],
       ['src/app/admin/agenda/novo/formulario.tsx', /comMaiuscula\(vocabulario\.servico\)/],
       ['src/app/admin/agenda/novo/formulario.tsx', /comMaiuscula\(vocabulario\.cliente\)/],
+      // Ligados em 2026-09-04. Os três são rótulo solto, sem artigo colado — a única forma segura
+      // enquanto a palavra trocada muda de gênero entre profissões (sessão, aula, treino).
+      ['src/app/admin/campanhas/page.tsx', /plural\(ctx\.tenant\.vocabulario\.atendimento\)/],
+      ['src/app/admin/config/meu-plano/page.tsx', /plural\(ctx\.tenant\.vocabulario\.cliente\)/],
+      ['src/app/admin/clientes/[id]/pacotes-carteira.tsx', /comMaiuscula\(vocabulario\.servico\)/],
     ]
     for (const [arquivo, padrao] of casos) {
       const fonte = semComentarios(readFileSync(arquivo, 'utf8'))

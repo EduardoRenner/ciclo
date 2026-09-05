@@ -11,6 +11,7 @@ import SectionHeader from '@/components/ui/section-header'
 import StatTile from '@/components/ui/stat-tile'
 import PageHeader from '@/components/ui/page-header'
 import { podeUsarModulo } from '@/core/billing/planos'
+import { comMaiuscula, plural } from '@/core/text/vocabulario'
 import { dinheiro } from '@/lib/formato'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
@@ -92,7 +93,7 @@ export default async function PaginaCampanhas() {
       <div className="grid grid-cols-2 gap-3">
         <StatTile rotulo="Voltaram este mês" valor={dinheiro.format(atribuicao.totalCents / 100)} />
         <StatTile
-          rotulo="Atendimentos"
+          rotulo={comMaiuscula(plural(ctx.tenant.vocabulario.atendimento))}
           valor={String(atribuicao.count)}
           apoio={
             <span>
