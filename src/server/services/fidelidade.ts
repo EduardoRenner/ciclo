@@ -52,11 +52,49 @@ const CONFIG_PADRAO: ConfigFidelidade = {
   rewardLabel: null,
 }
 
-/** Nunca lança — tenant antigo pode não ter `settings.loyalty` nenhum; vira o padrão. */
+/** Um campo válido do namespace sobrevive mesmo se o vizinho estiver torto. */
+function campo<T>(esquema: z.ZodType<T>, valor: unknown, padrao: T): T {
+  const r = esquema.safeParse(valor)
+  return r.success ? r.data : padrao
+}
+
+/**
+ * Nunca lança — tenant antigo pode não ter `settings.loyalty` nenhum; vira o padrão.
+ *
+ * **O resgate é campo a campo, e isso não é preciosismo.** A versão anterior fazia
+ * `safeParse` do objeto inteiro e caía em `CONFIG_PADRAO` na primeira inválida. Medido: um tenant
+ * com `pointsPerReal: 0` — fidelidade DESLIGADA de propósito, o que o próprio comentário do
+ * esquema chama de escolha legítima ("nem todo negócio quer fidelidade ligada") — voltava para
+ * `pointsPerReal: 1` se qualquer OUTRO campo do namespace ficasse inválido: um `rewardLabel`
+ * longo demais, um `rewardThreshold` fora da faixa, um campo faltando.
+ *
+ * Religar sozinho custa mais que os outros erros desta família, porque não é só um número na
+ * tela: `pontuarAtendimentoConcluido` grava em `loyalty_entries`, que é livro-razão — resgate é
+ * lançamento negativo, nunca `UPDATE` (regra 11). Ponto creditado por engano vira obrigação com a
+ * cliente, e desfazer é tirar da frente dela algo que ela já viu.
+ *
+ * Escolher o lado oposto (cair para "desligado" quando o objeto está torto) teria o defeito
+ * espelhado: um tenant com fidelidade LIGADA e um rótulo inválido pararia de pontuar em silêncio.
+ * Por isso o conserto não escolhe lado nenhum — preserva o que dá para ler e só troca pelo padrão
+ * o campo que de fato não dá. É a mesma forma de `lerConfiguracoesAgenda`.
+ *
+ * O caminho realista até aqui não é edição manual: é apertar o esquema. Diminuir o máximo de
+ * `rewardLabel`, ou acrescentar campo obrigatório, invalidaria de uma vez o namespace inteiro de
+ * quem já tinha valor gravado.
+ */
 export function lerConfigFidelidade(settings: unknown): ConfigFidelidade {
   const bruto = settings && typeof settings === 'object' ? (settings as Record<string, unknown>).loyalty : null
-  const resultado = EsquemaConfigFidelidade.safeParse(bruto ?? {})
-  return resultado.success ? resultado.data : CONFIG_PADRAO
+  const completo = EsquemaConfigFidelidade.safeParse(bruto ?? {})
+  if (completo.success) return completo.data
+
+  const obj = bruto && typeof bruto === 'object' ? (bruto as Record<string, unknown>) : {}
+  const forma = EsquemaConfigFidelidade.shape
+  return {
+    pointsPerReal: campo(forma.pointsPerReal, obj.pointsPerReal, CONFIG_PADRAO.pointsPerReal),
+    referralBonusPoints: campo(forma.referralBonusPoints, obj.referralBonusPoints, CONFIG_PADRAO.referralBonusPoints),
+    rewardThreshold: campo(forma.rewardThreshold, obj.rewardThreshold, CONFIG_PADRAO.rewardThreshold),
+    rewardLabel: campo(forma.rewardLabel, obj.rewardLabel, CONFIG_PADRAO.rewardLabel),
+  }
 }
 
 /** Mesmo padrão de merge de `site.ts`: lê `settings` inteiro, troca só a chave `loyalty`. */
