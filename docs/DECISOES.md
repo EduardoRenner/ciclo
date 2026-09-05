@@ -5911,3 +5911,18 @@ décima segunda fui eu, horas depois de o helper existir; já consolidada.
 do helper remove MAIS comentário. Guarda que passar a reprovar depois da troca estava casando com
 comentário — ou seja, era cega. Rodar a suíte depois de consolidar as onze restantes responde a
 pergunta inteira sem escrever meta-teste nenhum, que é o que a primeira tentativa não conseguiu.
+
+**2026-09-05 · correção do número: eram DEZOITO cópias da limpeza, não doze — e o erro foi do
+detector, não da contagem.** A entrada acima disse "doze cópias locais". Ao consolidar, sobraram
+seis que o varredor não tinha visto: elas escrevem os delimitadores como **classe de caractere**
+(`/[{][/][*][\s\S]*?[*][/][}]/`) em vez de escape (`/\{\/\*[\s\S]*?\*\/\}/`), e o padrão do
+detector procurava só a segunda forma. Duas maneiras idiomáticas de escrever a mesma regex, e o
+instrumento enxergava uma.
+
+Fica como lição do mesmo tipo que a sessão inteira vinha colecionando, agora aplicada à ferramenta:
+**um "achei N" é tão frágil quanto um "achei zero"** — os dois dependem de o padrão cobrir todas as
+formas de escrever a coisa procurada. O jeito de descobrir foi tentar consolidar e ver o que
+sobrava, não olhar o número com mais atenção.
+
+Consolidadas as dezoito. A suíte inteira (1677 asserções) segue verde com a limpeza mais forte do
+helper — ou seja, **nenhuma das dezoito estava cega por comentário**, que era a pergunta.

@@ -3,6 +3,8 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
+import { semComentarios } from '../../helpers/fonte'
+
 import { PLANOS } from '@/core/billing/planos'
 
 /**
@@ -34,11 +36,8 @@ const BOOK_ROUTE = 'src/app/api/v1/public/[slug]/book/route.ts'
 const AGENDAMENTOS = 'src/server/services/agendamentos.ts'
 const FIDELIDADE = 'src/server/services/fidelidade.ts'
 
-function semComentarios(caminho: string): string {
-  return readFileSync(caminho, 'utf8')
-    .replace(/[{][/][*][\s\S]*?[*][/][}]/g, ' ')
-    .replace(/[/][*][\s\S]*?[*][/]/g, ' ')
-    .replace(/^\s*[/][/].*$/gm, ' ')
+function marcacaoDe(caminho: string): string {
+  return semComentarios(readFileSync(caminho, 'utf8'))
 }
 
 function arquivos(dir: string): string[] {
@@ -54,7 +53,7 @@ function arquivos(dir: string): string[] {
 describe('a leitura deste teste', () => {
   it('enxerga os quatro arquivos do caminho', () => {
     for (const arquivo of [PUBLIC_BOOKING, BOOK_ROUTE, AGENDAMENTOS, FIDELIDADE]) {
-      expect(semComentarios(arquivo).length, `${arquivo} veio vazio`).toBeGreaterThan(300)
+      expect(marcacaoDe(arquivo).length, `${arquivo} veio vazio`).toBeGreaterThan(300)
     }
   })
 
@@ -69,7 +68,7 @@ describe('a leitura deste teste', () => {
 describe('o LAÇO é de graça — nada trava a indicação por plano', () => {
   it('o caminho do agendamento público não exige módulo nenhum', () => {
     for (const arquivo of [PUBLIC_BOOKING, BOOK_ROUTE]) {
-      const fonte = semComentarios(arquivo)
+      const fonte = marcacaoDe(arquivo)
       expect(
         /exigirModulo\s*\(/.test(fonte),
         `${arquivo} passou a exigir módulo. O agendamento público é como a cliente indicada ENTRA: ` +
@@ -83,7 +82,7 @@ describe('o LAÇO é de graça — nada trava a indicação por plano', () => {
   it('a gravação de referred_by não é condicionada a módulo nem a plano', () => {
     // Casa com o bloco da validação até o insert — se um `podeUsarModulo`/`exigirModulo` aparecer
     // no meio do caminho que grava a coluna, a indicação vira recurso pago por dentro.
-    const fonte = semComentarios(AGENDAMENTOS)
+    const fonte = marcacaoDe(AGENDAMENTOS)
     const inicio = fonte.indexOf('let referenciaValida')
     const fim = fonte.indexOf('.select(\'id\')', inicio)
     expect(inicio, 'não achei o bloco que resolve o referenciador').toBeGreaterThan(-1)
@@ -99,7 +98,7 @@ describe('o LAÇO é de graça — nada trava a indicação por plano', () => {
 
 describe('a AUTOMAÇÃO é paga — os pontos continuam atrás do módulo loyalty', () => {
   it('pontuarAtendimentoConcluido confere o módulo ANTES de montar qualquer lançamento', () => {
-    const fonte = semComentarios(FIDELIDADE)
+    const fonte = marcacaoDe(FIDELIDADE)
     const checagem = fonte.indexOf("podeUsarModulo(plano, 'loyalty')")
     const primeiroLancamento = fonte.indexOf('lancamentos.push')
     expect(
@@ -112,7 +111,7 @@ describe('a AUTOMAÇÃO é paga — os pontos continuam atrás do módulo loyalt
   })
 
   it('o bônus dos dois lados está dentro do trecho protegido pelo módulo', () => {
-    const fonte = semComentarios(FIDELIDADE)
+    const fonte = marcacaoDe(FIDELIDADE)
     const checagem = fonte.indexOf("podeUsarModulo(plano, 'loyalty')")
     /*
      * 31/08: o texto do motivo virou constante (`MOTIVO_INDICOU`), porque deixou de ser rótulo e
@@ -130,11 +129,11 @@ describe('a AUTOMAÇÃO é paga — os pontos continuam atrás do módulo loyalt
     // checagem em `fidelidade.ts` continua lá e este arquivo passaria verde protegendo metade.
     const escritores = arquivos('src')
       .filter((f) => !f.endsWith('types.gen.ts'))
-      .filter((f) => /from\('loyalty_entries'\)[\s\S]{0,200}?\.insert\(/.test(semComentarios(f)))
+      .filter((f) => /from\('loyalty_entries'\)[\s\S]{0,200}?\.insert\(/.test(marcacaoDe(f)))
       .map((f) => f.split(String.fromCharCode(92)).join('/'))
 
     const semTrava = escritores.filter((f) => {
-      const fonte = semComentarios(f)
+      const fonte = marcacaoDe(f)
       return !/podeUsarModulo|exigirModulo/.test(fonte)
     })
 

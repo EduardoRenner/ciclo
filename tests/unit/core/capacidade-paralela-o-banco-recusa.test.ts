@@ -3,6 +3,8 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
+import { semComentarios } from '../../helpers/fonte'
+
 import { availableSlots } from '@/core/scheduling/available-slots'
 
 /**
@@ -71,10 +73,7 @@ describe('capacidade paralela: o app não promete o que o banco recusa', () => {
 
   it('enquanto o banco não contar capacidade, o formulário de serviço não oferece o campo', () => {
     if (BANCO_SABE_CAPACIDADE) return
-    const form = readFileSync(FORM_SERVICO, 'utf8')
-      .replace(/[{][/][*][\s\S]*?[*][/][}]/g, ' ')
-      .replace(/[/][*][\s\S]*?[*][/]/g, ' ')
-      .replace(/^\s*[/][/].*$/gm, ' ')
+    const form = semComentarios(readFileSync(FORM_SERVICO, 'utf8'))
     expect(
       /parallelCapacity/.test(form),
       'o formulário passou a oferecer capacidade paralela, e `appointments_no_overlap` continua ' +

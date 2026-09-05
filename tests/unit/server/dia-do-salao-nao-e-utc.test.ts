@@ -3,6 +3,8 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
+import { semComentarios } from '../../helpers/fonte'
+
 /**
  * O dia do salão não é o dia em UTC — e esta base já pagou três vezes para aprender isso.
  *
@@ -49,15 +51,12 @@ function arquivos(dir: string): string[] {
   return achados
 }
 
-function semComentarios(caminho: string): string {
-  return readFileSync(caminho, 'utf8')
-    .replace(/[{][/][*][\s\S]*?[*][/][}]/g, ' ')
-    .replace(/[/][*][\s\S]*?[*][/]/g, ' ')
-    .replace(/^\s*[/][/].*$/gm, ' ')
+function marcacaoDe(caminho: string): string {
+  return semComentarios(readFileSync(caminho, 'utf8'))
 }
 
 const TODOS = RAIZES.flatMap(arquivos).map((f) => f.split(String.fromCharCode(92)).join('/'))
-const CULPADOS = TODOS.filter((f) => INSTANTE_UTC_LITERAL.test(semComentarios(f)))
+const CULPADOS = TODOS.filter((f) => INSTANTE_UTC_LITERAL.test(marcacaoDe(f)))
 
 describe('o dia do salão nunca é montado em UTC', () => {
   it('o leitor enxerga o servidor e as telas', () => {
@@ -98,7 +97,7 @@ describe('o dia do salão nunca é montado em UTC', () => {
     // O outro lado da regra: "ninguém usa string de data" passaria com as três funções quebradas
     // de outro jeito. Aqui a exigência é positiva.
     for (const arquivo of ['src/server/services/caixa.ts', 'src/server/services/comissao.ts', 'src/server/services/atribuicao.ts']) {
-      const src = semComentarios(arquivo)
+      const src = marcacaoDe(arquivo)
       expect(src, `${arquivo} não converte mais o dia pelo fuso do tenant`).toMatch(/timeZone: timezone/)
     }
   })

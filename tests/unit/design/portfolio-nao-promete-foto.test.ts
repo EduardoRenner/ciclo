@@ -3,6 +3,8 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
+import { semComentarios } from '../../helpers/fonte'
+
 /**
  * Achado da auditoria de 2026-08-28, mesma família do quadro "Taxa" do caixa: código que parece
  * entregue e não pode funcionar.
@@ -40,10 +42,8 @@ function arquivos(dir: string): string[] {
   return achados
 }
 
-function semComentarios(caminho: string): string {
-  return readFileSync(caminho, 'utf8')
-    .replace(/[/][*][\s\S]*?[*][/]/g, ' ')
-    .replace(/^\s*[/][/].*$/gm, ' ')
+function marcacaoDe(caminho: string): string {
+  return semComentarios(readFileSync(caminho, 'utf8'))
 }
 
 // `types.gen.ts` fica de fora: ele declara `consent_id` para TODA tabela e faria o leitor de
@@ -67,7 +67,7 @@ describe('o portfólio não é ligado antes de existir consentimento gravado', (
   it('a leitura enxerga o projeto — a guarda não passa por não ter olhado nada', () => {
     expect(TODOS.length, 'nenhum arquivo lido de src/').toBeGreaterThan(100)
     expect(TODOS, `${MEDIA} sumiu — este teste precisa ser revisto junto`).toContain(MEDIA)
-    expect(semComentarios(MEDIA), `${FUNCAO} sumiu de ${MEDIA}`).toMatch(new RegExp(FUNCAO))
+    expect(marcacaoDe(MEDIA), `${FUNCAO} sumiu de ${MEDIA}`).toMatch(new RegExp(FUNCAO))
     // Guarda contra o próprio detector: hoje ninguém grava `consent_id`, e é essa lista vazia que
     // liga o ramo principal. Se ela deixar de ser vazia por engano (um arquivo gerado entrando na
     // varredura, por exemplo), o teste abaixo passaria por desistir, não por estar tudo certo.
@@ -89,7 +89,7 @@ describe('o portfólio não é ligado antes de existir consentimento gravado', (
 
   it('quando alguém gravar consent_id, a revogação precisa continuar sendo respeitada', () => {
     if (ESCREVEM_CONSENT_ID.length === 0) return
-    const portfolio = semComentarios(MEDIA)
+    const portfolio = marcacaoDe(MEDIA)
     expect(
       /revoked_at/.test(portfolio),
       'o portfólio parou de cruzar com `consents.revoked_at` — revogar o uso de imagem deixaria ' +
