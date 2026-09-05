@@ -20,6 +20,24 @@ export type EntradaSeoDoSalao = {
   instagram: string | null
   servicos: ServicoParaSeo[]
   avaliacoes: { average: number; count: number }
+  /** URL absoluta da capa ou do logo. `urlDaVitrine` já devolve absoluta ou `null`. */
+  imagem: string | null
+  /** Horário padrão do salão — 0 = domingo, mesma convenção de `business_hours.weekday`. */
+  horarios: { weekday: number; opensAt: string; closesAt: string }[]
+}
+
+/**
+ * `business_hours.weekday` (0 = domingo) → o nome que o schema.org espera.
+ *
+ * Índice fora de 0-6 não vira entrada nenhuma: a coluna tem `check (weekday between 0 and 6)`,
+ * então isto é só a régua deste arquivo aplicada mais uma vez — marcação inválida custa mais que
+ * campo ausente, e um `dayOfWeek: undefined` desqualifica o bloco inteiro.
+ */
+const DIA_DA_SEMANA = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as const
+
+/** `time` do Postgres chega como "09:00:00"; o schema.org quer HH:MM. Já em HH:MM, passa igual. */
+function hhmm(hora: string): string {
+  return hora.slice(0, 5)
 }
 
 /**
@@ -60,6 +78,29 @@ export function dadosEstruturadosDoSalao(e: EntradaSeoDoSalao): Record<string, u
    */
   const instagramUrl = urlDoInstagram(e.instagram)
   if (instagramUrl) dados.sameAs = [instagramUrl]
+
+  /*
+   * `image` e `openingHoursSpecification` são os dois sinais que faltavam, e os dois vinham de
+   * graça: `perfilPublico` já carrega capa, logo e horário padrão para DESENHAR a página — não há
+   * consulta nova aqui, só marcação para o dado que já estava na mão.
+   *
+   * Por que importam mais que os outros campos deste arquivo: o docstring do topo diz que o único
+   * SEO que interessa aqui é o local, "barbearia perto de mim". Horário de funcionamento é o que
+   * decide o "aberto agora" no resultado, e imagem é o que separa uma linha de texto de um cartão.
+   * Sem eles a página do salão competia só pelo nome — que é exatamente o que o `docs/43` diz que
+   * não pode acontecer, porque este canal é o que substitui a vitrine dos concorrentes.
+   */
+  if (e.imagem) dados.image = e.imagem
+
+  const horariosValidos = e.horarios.filter((h) => DIA_DA_SEMANA[h.weekday] !== undefined)
+  if (horariosValidos.length > 0) {
+    dados.openingHoursSpecification = horariosValidos.map((h) => ({
+      '@type': 'OpeningHoursSpecification',
+      dayOfWeek: `https://schema.org/${DIA_DA_SEMANA[h.weekday]}`,
+      opens: hhmm(h.opensAt),
+      closes: hhmm(h.closesAt),
+    }))
+  }
 
   /*
    * `aggregateRating` só entra quando existe avaliação DE VERDADE. Com `ratingCount: 0` o Google

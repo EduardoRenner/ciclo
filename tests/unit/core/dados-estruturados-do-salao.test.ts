@@ -20,6 +20,11 @@ const BASE: EntradaSeoDoSalao = {
     { name: 'Barba', priceCents: 3000, pricingModel: 'fixed' },
   ],
   avaliacoes: { average: 4.8, count: 23 },
+  imagem: 'https://cdn.exemplo.com/vitrine/capa.webp',
+  horarios: [
+    { weekday: 1, opensAt: '09:00:00', closesAt: '18:00:00' },
+    { weekday: 6, opensAt: '09:00:00', closesAt: '13:00:00' },
+  ],
 }
 
 describe('dadosEstruturadosDoSalao', () => {
@@ -66,12 +71,78 @@ describe('dadosEstruturadosDoSalao', () => {
   it('campo ausente não vira chave vazia', () => {
     const magro = dadosEstruturadosDoSalao({
       ...BASE, telefone: null, endereco: null, instagram: null, descricao: null, servicos: [],
-      avaliacoes: { average: 0, count: 0 },
+      avaliacoes: { average: 0, count: 0 }, imagem: null, horarios: [],
     })
-    for (const chave of ['telephone', 'address', 'sameAs', 'description', 'hasOfferCatalog']) {
+    for (const chave of ['telephone', 'address', 'sameAs', 'description', 'hasOfferCatalog', 'image', 'openingHoursSpecification']) {
       expect(Object.keys(magro), `${chave} apareceu vazio`).not.toContain(chave)
     }
     // Mas o essencial continua: nome, url e tipo sempre saem.
     expect(magro).toMatchObject({ name: 'Barbearia do Zé', url: BASE.url, '@type': 'HairSalon' })
+  })
+})
+
+describe('horário de funcionamento e imagem — os dois sinais de SEO local', () => {
+  /*
+   * Os dois campos vinham de graça e não estavam sendo marcados: `perfilPublico` já carrega capa,
+   * logo e horário padrão para DESENHAR a página. Sem eles a página do salão competia só pelo
+   * nome — e este canal é o que o `docs/43-POSICIONAMENTO-10X.md` define como substituto da
+   * vitrine central dos concorrentes, então perder o cartão rico custa exatamente onde dói.
+   */
+  it('cada linha de horário vira uma OpeningHoursSpecification com o dia certo', () => {
+    const d = dadosEstruturadosDoSalao(BASE) as { openingHoursSpecification?: Record<string, string>[] }
+    expect(d.openingHoursSpecification).toEqual([
+      { '@type': 'OpeningHoursSpecification', dayOfWeek: 'https://schema.org/Monday', opens: '09:00', closes: '18:00' },
+      { '@type': 'OpeningHoursSpecification', dayOfWeek: 'https://schema.org/Saturday', opens: '09:00', closes: '13:00' },
+    ])
+  })
+
+  it('0 é domingo, não segunda — a convenção é a de `business_hours.weekday`', () => {
+    /*
+     * O erro clássico deste mapeamento, e ele não dá erro nenhum: `Temporal.dayOfWeek` é
+     * 1=segunda…7=domingo, e o banco é 0=domingo…6=sábado. Trocar a régua desloca o salão inteiro
+     * em um dia e anuncia horário errado no Google — marcação válida e mentirosa, que é pior que
+     * marcação ausente.
+     */
+    const d = dadosEstruturadosDoSalao({
+      ...BASE, horarios: [{ weekday: 0, opensAt: '10:00:00', closesAt: '14:00:00' }],
+    }) as { openingHoursSpecification?: Record<string, string>[] }
+    expect(d.openingHoursSpecification?.[0]?.dayOfWeek).toBe('https://schema.org/Sunday')
+  })
+
+  it('segundo turno no mesmo dia vira uma segunda entrada, não sobrescreve a primeira', () => {
+    // Salão que fecha para o almoço tem duas linhas para o mesmo weekday — o schema.org aceita, e
+    // colapsar em uma faria a tarde sumir ou o intervalo aparecer como se fosse expediente.
+    const d = dadosEstruturadosDoSalao({
+      ...BASE,
+      horarios: [
+        { weekday: 2, opensAt: '09:00:00', closesAt: '12:00:00' },
+        { weekday: 2, opensAt: '14:00:00', closesAt: '19:00:00' },
+      ],
+    }) as { openingHoursSpecification?: Record<string, string>[] }
+    expect(d.openingHoursSpecification).toHaveLength(2)
+    expect(d.openingHoursSpecification?.map((h) => h.opens)).toEqual(['09:00', '14:00'])
+  })
+
+  it('weekday fora de 0-6 não vira entrada — marcação inválida custa mais que campo ausente', () => {
+    const d = dadosEstruturadosDoSalao({
+      ...BASE,
+      horarios: [
+        { weekday: 7, opensAt: '09:00:00', closesAt: '18:00:00' },
+        { weekday: 3, opensAt: '09:00:00', closesAt: '18:00:00' },
+      ],
+    }) as { openingHoursSpecification?: Record<string, string>[] }
+    expect(d.openingHoursSpecification).toHaveLength(1)
+    expect(d.openingHoursSpecification?.[0]?.dayOfWeek).toBe('https://schema.org/Wednesday')
+  })
+
+  it('horário já em HH:MM passa igual — o corte não pode comer o minuto', () => {
+    const d = dadosEstruturadosDoSalao({
+      ...BASE, horarios: [{ weekday: 5, opensAt: '08:30', closesAt: '17:45' }],
+    }) as { openingHoursSpecification?: Record<string, string>[] }
+    expect(d.openingHoursSpecification?.[0]).toMatchObject({ opens: '08:30', closes: '17:45' })
+  })
+
+  it('a imagem entra como URL absoluta', () => {
+    expect(dadosEstruturadosDoSalao(BASE).image).toBe('https://cdn.exemplo.com/vitrine/capa.webp')
   })
 })

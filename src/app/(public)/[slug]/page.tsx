@@ -78,6 +78,10 @@ export default async function PaginaPublica({ params }: { params: Promise<{ slug
         instagram: perfil.instagram,
         servicos: perfil.services.map((x) => ({ name: x.name, priceCents: x.priceCents, pricingModel: x.pricingModel })),
         avaliacoes: perfil.reviews,
+        // A capa representa o negócio melhor que o logo no cartão do buscador; o logo é a reserva
+        // de quem só subiu marca. Os dois já vêm de `perfilPublico`, montados por `urlDaVitrine`.
+        imagem: perfil.coverUrl ?? perfil.logoUrl,
+        horarios: perfil.hours,
       })
 
   // `JSON.stringify` não escapa `</script>` — nome/endereço do tenant são texto livre
