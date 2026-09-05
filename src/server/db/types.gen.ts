@@ -2450,6 +2450,9 @@ export type Database = {
           cost_cents: number
           created_at: string
           cycle_days: number
+          cycle_days_observado: number | null
+          cycle_days_observado_amostra: number | null
+          cycle_days_observado_em: string | null
           deleted_at: string | null
           deposit_bps: number
           deposit_min_cents: number
@@ -2476,6 +2479,9 @@ export type Database = {
           cost_cents?: number
           created_at?: string
           cycle_days?: number
+          cycle_days_observado?: number | null
+          cycle_days_observado_amostra?: number | null
+          cycle_days_observado_em?: string | null
           deleted_at?: string | null
           deposit_bps?: number
           deposit_min_cents?: number
@@ -2502,6 +2508,9 @@ export type Database = {
           cost_cents?: number
           created_at?: string
           cycle_days?: number
+          cycle_days_observado?: number | null
+          cycle_days_observado_amostra?: number | null
+          cycle_days_observado_em?: string | null
           deleted_at?: string | null
           deposit_bps?: number
           deposit_min_cents?: number
