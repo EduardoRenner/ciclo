@@ -6496,3 +6496,40 @@ Quatro mutações. E uma delas me deu um susto que vale registrar: `grep -c` sob
 devolveu `1` e eu li como "mutação não aplicada" — havia **duas** ocorrências do padrão no arquivo,
 e a mutação tinha entrado. Contar linha que contém o padrão não é contar o padrão; a conferência
 certa é comparar antes e depois, que foi o que desfez o mal-entendido.
+
+---
+
+## 2026-09-05 · Guardas que não sabem falhar: o que dá para detectar, e o que não dá
+
+Depois de escrever uma guarda cega DUAS vezes seguidas no mesmo alvo (`paginacao-mora-num-lugar-so`,
+sobre o teto de `buscarTudoPaginado`), varri a suíte inteira procurando o mesmo defeito nas outras.
+
+**O que a varredura cobre, e o resultado:** 206 arquivos de teste, dos quais **14** leem um arquivo
+de código inteiro para uma variável. Entre eles há **6** asserções positivas sobre o arquivo
+inteiro. Para cada uma, comparei o padrão contra a fonte crua e contra a fonte sem comentários.
+**Nenhuma passa só por comentário.** O detector foi validado contra um caso conhecido antes de eu
+acreditar no zero — ele acha o `/registrarHeartbeat/` de `motor-de-ciclo-observavel`, que é
+justamente um piso solto e deliberado.
+
+O número baixo não é descuido de cobertura, é a prática certa já instalada: quase toda guarda daqui
+casa com um **trecho** (`bloco`, `trecho`, `m![1]`, `cadeiaApos`), não com o arquivo. Guarda que casa
+com trecho não tem como passar por causa de um comentário lá longe.
+
+**Três falsos positivos meus no caminho, todos por medição ingênua:**
+
+- `/faturad/` apareceu como "cega" e é `.not.toMatch` sobre um **trecho capturado** — comparar
+  contra o arquivo inteiro é o modelo errado para asserção negativa;
+- `/registrarHeartbeat/`, `/referred_by/` e `/quotes/` pareciam nomes soltos e são **pisos
+  deliberados**, dentro de testes titulados como tal ("a leitura não voltou vazia", "o seed
+  continua existindo"). Um deles é melhor que parece: exige a palavra `quotes` justamente para
+  provar que a ausência de orçamento no seed foi **explicada**, não esquecida.
+
+**E o limite que nenhum detector alcança.** O defeito que me pegou não era casar com comentário: era
+casar com um TEXTO que sobrevive à remoção do comportamento. Primeiro `/throw new AppError/`, que o
+arquivo tem duas vezes; depois a mensagem do teto, que continua no arquivo mesmo quando o `throw`
+vira `return`. Varrer fonte prova que um texto existe, nunca que um caminho executa.
+
+Daí a regra que fica: **quando o que importa é comportamento, escreva teste de comportamento e
+APAGUE a asserção de fonte.** A que não sabe falhar é pior que nenhuma, porque lê-se como proteção.
+Varredura de fonte serve para o que só ela vê — onde uma coisa MORA (`.range(` num arquivo só),
+quantas cópias existem, se um texto proibido voltou à copy.
