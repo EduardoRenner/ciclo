@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs'
 
 import { describe, expect, it } from 'vitest'
 
+import { semComentarios } from '../../helpers/fonte'
+
 import { rotaDeCronAgendada } from '../../helpers/cron'
 
 /**
@@ -24,10 +26,7 @@ import { rotaDeCronAgendada } from '../../helpers/cron'
 const AGENDAR = 'src/app/(public)/[slug]/agendar/agendar.tsx'
 
 function copyDaPagina(): string {
-  return readFileSync(AGENDAR, 'utf8')
-    .replace(/\/\*[\s\S]*?\*\//g, ' ')
-    .replace(/\{\/\*[\s\S]*?\*\/\}/g, ' ')
-    .replace(/^\s*\/\/.*$/gm, ' ')
+  return semComentarios(readFileSync(AGENDAR, 'utf8'))
 }
 
 describe('o agendamento público não promete canal que não entrega', () => {

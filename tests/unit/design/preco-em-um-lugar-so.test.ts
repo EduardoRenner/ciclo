@@ -3,6 +3,8 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
+import { semComentarios } from '../../helpers/fonte'
+
 import {
   NOME_DO_PLANO,
   ORDEM_DOS_PLANOS,
@@ -71,8 +73,8 @@ describe('nome e preço de plano existem num lugar só', () => {
     const culpados = TODOS.filter((f) => {
       const src = readFileSync(f, 'utf8')
       // Comentário citando o preço é documentação, não duplicação — só o código conta.
-      const semComentarios = normalizar(src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, ''))
-      return proibidos.some((preco) => semComentarios.includes(preco))
+      const marcacao = normalizar(semComentarios(src))
+      return proibidos.some((preco) => marcacao.includes(preco))
     })
 
     expect(culpados, `preço de plano escrito à mão em: ${culpados.join(', ')}`).toEqual([])

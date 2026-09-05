@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs'
 
 import { describe, expect, it } from 'vitest'
 
+import { semComentarios } from '../../helpers/fonte'
+
 /**
  * A página de agendamento muda inteira sem trocar de rota: escolher o dia carrega os horários,
  * escolher o horário monta o resumo. Medido no navegador em 2026-08-25, antes desta guarda: clicar
@@ -24,10 +26,7 @@ const CLIENTES = 'src/app/admin/clientes/lista.tsx'
  * família de testes (`docs/21-AUDITORIA-FALHA-SILENCIOSA.md` §3).
  */
 function fonte(arquivo: string = AGENDAR): string {
-  return readFileSync(arquivo, 'utf8')
-    .replace(/\/\*[\s\S]*?\*\//g, ' ')
-    .replace(/\{\/\*[\s\S]*?\*\/\}/g, ' ')
-    .replace(/^\s*\/\/.*$/gm, ' ')
+  return semComentarios(readFileSync(arquivo, 'utf8'))
 }
 
 describe('o agendamento anuncia o que mudou sem trocar de rota', () => {

@@ -3,6 +3,8 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
+import { semComentarios } from '../../helpers/fonte'
+
 /**
  * L-12, `docs/31-LANCAMENTO-AUDITORIA-E-PLANO.md` — a guarda nasceu de um **erro meu de medição**,
  * e vale registrar isso porque a lição é maior que a regra.
@@ -63,7 +65,7 @@ export type Interativo = { arquivo: string; tag: string; classes: string }
  * "verificado".
  */
 function className(elemento: string): string {
-  const semComentario = elemento.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/.*$/gm, ' ')
+  const semComentario = semComentarios(elemento)
   return [...semComentario.matchAll(/className\s*=\s*(?:"([^"]*)"|\{`([^`]*)`\}|\{"([^"]*)"\})/g)]
     .map((m) => m[1] ?? m[2] ?? m[3] ?? '')
     .join(' ')
