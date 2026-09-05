@@ -5926,3 +5926,35 @@ sobrava, não olhar o número com mais atenção.
 
 Consolidadas as dezoito. A suíte inteira (1677 asserções) segue verde com a limpeza mais forte do
 helper — ou seja, **nenhuma das dezoito estava cega por comentário**, que era a pergunta.
+
+**2026-09-05 · a atribuição de receita passa a usar `tickets.total_cents`, agora que a comanda
+existe? · NÃO · trocar a fonte zeraria o número exatamente para o plano Grátis.**
+
+O docstring de `receitaAtribuidaAoCiclo` mandava revisar "quando o TICKET-042 (comanda com itens de
+verdade) existir". Ele existe — `comanda.ts` e `ticket_items` estão no ar — então a condição
+chegou e a revisão foi feita. O resultado é o oposto da instrução.
+
+**O que foi medido:**
+
+1. `concluirAgendamento` cria a comanda com `status = 'open'` e `total_cents = 0` (default da
+   migration `0001`). O total só existe depois que alguém FECHA a comanda.
+2. Fechar comanda é o módulo `register`, que começa no **Essencial** (`core/billing/planos.ts`).
+   O plano **Grátis** tem `cycle_engine` e não tem `register`.
+
+Somando os dois: trocar `price_cents` por `total_cents` faria "o Motor trouxe R$ X" virar **R$ 0**
+para todo tenant do Grátis — que é exatamente o público que esse número precisa convencer a
+assinar. Seria trocar um número imperfeito por um número zero, na tela que sustenta o preço.
+
+**O custo de ficar como está, para não virar promessa:** `price_cents` é preço de tabela e não
+enxerga desconto dado na comanda, item extra nem gorjeta. É a mesma distinção que
+`numero-de-hoje-nao-e-faturamento` já guarda na tela Hoje ("Atendido hoje" ≠ "Entrou no dia").
+
+**O caminho que existe, se um dia valer:** usar `tickets.total_cents` onde a comanda foi fechada e
+cair para `price_cents` onde não foi. É possível, mas mistura duas réguas no mesmo somatório — e
+isso é decisão de produto sobre o que o número significa, não troca de coluna. Fica registrado
+como opção, não como pendência.
+
+**A lição de método, que vale além deste caso:** instrução do tipo "revisar quando X existir"
+apodrece em silêncio nos dois sentidos. Ou X nunca chega e a dívida fica parada para sempre (foi o
+caso do "refinar se DST virar problema", num país sem DST desde 2019 — `ef66b10`), ou X chega,
+ninguém percebe, e a instrução vira uma armadilha: quem a executar mecanicamente causa o dano.
