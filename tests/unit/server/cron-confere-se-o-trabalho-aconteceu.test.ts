@@ -17,8 +17,11 @@ import { describe, expect, it } from 'vitest'
  *   2. **`needs: seguros`** — sem isso a vigia opina mesmo quando a rota nem respondeu, e vira o
  *      alarme permanentemente vermelho que `src/core/cron/agendadas.ts` proíbe com todas as
  *      letras. Vermelho constante é o mesmo que apagado: no dia do defeito real, nada muda de cor;
- *   3. **ele assere as DUAS chaves e reprova** — um passo que só faz `curl` e ignora o corpo passa
- *      verde para sempre, que é o defeito original com outro disfarce.
+ *   3. **ele assere o corpo e reprova** — um passo que só faz `curl` e ignora o corpo passa verde
+ *      para sempre, que é o defeito original com outro disfarce;
+ *   4. **ele lê o VEREDITO, não uma lista de chaves** — acrescentado em 05/09/2026, quando se
+ *      mediu que o passo lia duas das dez checagens de `verificarSaude`. As outras oito não tinham
+ *      leitor nenhum: podiam ficar vermelhas seis vezes por dia com o job verde.
  *
  * Casa com o CONTEÚDO do passo, nunca com o nome do job nem com o comentário que o descreve.
  */
@@ -80,14 +83,26 @@ describe('a vigia do cron confere se o trabalho aconteceu', () => {
     expect(bloco).toMatch(/::error::/)
   })
 
-  it('trata chave ausente como falha nas DUAS leituras, não como aprovação', () => {
+  it('trata chave ausente como falha em TODA leitura, não como aprovação', () => {
     // `jq -r '.x.ok'` devolve a string "null" quando a chave não existe, e `"null" != "true"`
     // já reprovaria — mas isso é acidente de shell, não decisão. O `// false` torna explícito
     // que formato inesperado do endpoint reprova, e sobrevive a alguém trocar o parser.
     //
-    // CONTA as ocorrências em vez de perguntar se existe: são duas leituras (ciclos e segmentos),
-    // e "existe pelo menos uma" aprovava com metade do padrão apagada — medido na mutação.
-    const quantas = blocoDoVigia().match(/\/\/\s*false/g) ?? []
-    expect(quantas).toHaveLength(2)
+    // Esta asserção contava `2` até 05/09/2026, e a terceira leitura (o `ok` geral) a fez reprovar
+    // — corretamente, porque a guarda não sabia se a leitura nova tinha o padrão. Trocar o número
+    // por `3` deixaria a quarta na mesma situação. Então o enunciado passou a ser a PERGUNTA:
+    // *toda* variável que sai de um `jq -r` cai para `false` quando a chave falta.
+    const leituras = [...blocoDoVigia().matchAll(/(\w+)=\$\([^)]*jq -r '([^']+)'/g)]
+    expect(leituras.length, 'nenhuma leitura de jq encontrada — o passo mudou de forma?').toBeGreaterThanOrEqual(3)
+    const semRede = leituras.filter(([, , programa]) => !/\/\/\s*false/.test(programa!)).map(([, nome]) => nome)
+    expect(semRede, 'estas leituras aprovam quando a chave não existe').toEqual([])
+  })
+
+  it('lê o veredito geral, não só as duas chaves que alguém lembrou de listar', () => {
+    // A metade que faltava, e a mais cara: `verificarSaude` calcula um `ok` sobre DEZ checagens, e
+    // até 05/09 este passo lia duas. As outras oito podiam ficar falsas seis vezes por dia com o
+    // job verde — inclusive a de schema, criada no mesmo dia para gritar quando o banco está atrás
+    // do código. Ler o veredito em vez de listar chaves é o que impede a próxima de nascer muda.
+    expect(blocoDoVigia()).toMatch(/jq -r '\.ok \/\/ false'/)
   })
 })

@@ -1,3 +1,5 @@
+import { readdirSync } from 'node:fs'
+
 /**
  * Banco encenado para `verificarSaude` — só a superfície que ela toca, nada de rede.
  *
@@ -6,8 +8,21 @@
  * `cron.yml` já tinha errado uma vez de arquivo (ver `tests/helpers/cron.ts`).
  */
 
+/**
+ * A lista que `migracoes_aplicadas` devolveria num banco em dia: o proprio disco.
+ *
+ * Fixar aqui um array escrito a mao seria uma terceira copia da lista de migrations (o disco e
+ * `core/schema/versao.ts` ja sao duas), e ela ficaria velha na primeira migration nova — deixando
+ * o dublê vermelho por um defeito que nao existe.
+ */
+function migracoesDoDisco(): { name: string }[] {
+  return readdirSync('supabase/migrations')
+    .filter((nome) => nome.endsWith('.sql'))
+    .map((nome) => ({ name: nome.replace(/\.sql$/, '') }))
+}
+
 /** `heartbeats` mapeia kind → minutos atrás. `null` = a linha não existe (job nunca rodou). */
-export function bancoDeSaudeFalso(heartbeats: Record<string, number | null>) {
+export function bancoDeSaudeFalso(heartbeats: Record<string, number | null>, migracoes: { name: string }[] = migracoesDoDisco()) {
   const construtor = (tabela: string) => {
     let kindPedido = ''
     const encadeavel: Record<string, unknown> = {
@@ -30,10 +45,13 @@ export function bancoDeSaudeFalso(heartbeats: Record<string, number | null>) {
     }
     return encadeavel
   }
-  return { from: (tabela: string) => construtor(tabela) } as never
+  return {
+    from: (tabela: string) => construtor(tabela),
+    rpc: async (nome: string) => (nome === 'migracoes_aplicadas' ? { data: migracoes, error: null } : { data: null, error: { code: 'PGRST202' } }),
+  } as never
 }
 
 /** Todos os heartbeats recentes, menos os que o caso quiser envelhecer ou apagar. */
-export function bancoSaudavel(sobrescreve: Record<string, number | null> = {}) {
-  return bancoDeSaudeFalso({ send_reminders: 5, send_campaigns: 60, recompute_cycles: 60, recompute_segments: 60, ...sobrescreve })
+export function bancoSaudavel(sobrescreve: Record<string, number | null> = {}, migracoes?: { name: string }[]) {
+  return bancoDeSaudeFalso({ send_reminders: 5, send_campaigns: 60, recompute_cycles: 60, recompute_segments: 60, ...sobrescreve }, migracoes)
 }
