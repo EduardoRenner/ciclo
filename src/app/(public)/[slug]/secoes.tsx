@@ -7,6 +7,7 @@ import { comMaiuscula, plural } from '@/core/text/vocabulario'
 import { formatarPreco } from '@/core/pricing/formatar'
 import { apelidoDoInstagram, urlDoInstagram } from '@/core/text/instagram'
 import { duracao, formatarTelefone } from '@/lib/formato'
+import { linkWhatsApp } from '@/lib/mensagens'
 
 import type { PerfilPublico } from '@/server/services/public-booking'
 
@@ -38,11 +39,6 @@ function paraMinutos(hhmm: string): number {
   return Number(h) * 60 + Number(m)
 }
 
-function linkWhatsapp(numero: string, mensagem: string): string {
-  const digitos = numero.replace(/\D/g, '')
-  return `https://wa.me/${digitos}?text=${encodeURIComponent(mensagem)}`
-}
-
 /**
  * Toda seção se esconde sozinha quando não tem dado — a maioria dos tenants
  * existentes tem `settings = '{}'` (nunca preencheram "sobre o negócio"
@@ -53,6 +49,7 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
   // Pelo apelido normalizado, não pelo campo cru: um valor que não vira apelido não desenha
   // linha nenhuma, e contá-lo aqui abriria o cartão de contato vazio.
   const instagram = apelidoDoInstagram(perfil.instagram)
+  const linkDoWhatsapp = linkWhatsApp(perfil.whatsapp, `Oi! Vim pelo site da ${perfil.name}.`)
   const temContato = perfil.phone || perfil.whatsapp || perfil.address || instagram
   const temHorario = perfil.hours.length > 0
 
@@ -178,9 +175,16 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
               Pedir orçamento
             </Link>
           ) : null}
-          {perfil.whatsapp ? (
+          {/*
+            `linkWhatsApp` recusa número com menos de 10 dígitos e devolve `null` — e o botão some
+            junto, em vez de virar um `wa.me/11` que abre "número inválido" no celular de quem
+            queria falar com o salão. A cópia local que existia aqui não tinha essa checagem.
+            Conferido em produção: nenhum tenant tem número curto hoje (o `TelefoneBR` do
+            `site.ts` já barra na gravação), então isto é rede, não conserto de defeito no ar.
+          */}
+          {linkDoWhatsapp ? (
             <a
-              href={linkWhatsapp(perfil.whatsapp, `Oi! Vim pelo site da ${perfil.name}.`)}
+              href={linkDoWhatsapp}
               target="_blank"
               rel="noreferrer"
               className="inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-5 text-corpo font-semibold text-txt transition duration-[var(--dur-1)] hover:bg-surface-3 active:scale-[.97]"

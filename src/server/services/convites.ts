@@ -31,9 +31,22 @@ function hashToken(token: string): string {
  * o banco guarda o hash, o mesmo cuidado de senha, porque um vazamento da
  * tabela `invites` não pode virar convite utilizável.
  *
- * O envio por WhatsApp/e-mail é do Sprint 2 (nenhum `MessagingProvider`
- * existe ainda): por ora o link volta na resposta para o dono copiar e
- * mandar manualmente. Decisão registrada em `docs/DECISOES.md`.
+ * **O link volta na resposta para o dono copiar e mandar — e continua assim por decisão, não por
+ * falta de peça.** A redação anterior dizia "nenhum `MessagingProvider` existe ainda", e isso
+ * deixou de ser verdade: `src/server/providers/messaging/` tem `whatsapp.ts`, `email.ts`,
+ * `push.ts` e `types.ts`, usados por cinco serviços. Conferido em 2026-09-05.
+ *
+ * O que de fato impede o envio automático hoje é outra coisa, e são duas:
+ *
+ *   1. **credencial** — `WHATSAPP_ACCESS_TOKEN` e `RESEND_API_KEY` estão vazios, o mesmo bloqueio
+ *      que mantém `reminders` fora do `schedule` do `cron.yml`;
+ *   2. **decisão de produto** — ligar envio automático é o portão que o `docs/25` F0 descreve
+ *      passo a passo, e ele existe para o produto não começar a falar com gente de verdade por
+ *      acidente.
+ *
+ * O caminho que NÃO depende de nenhum dos dois, se um dia valer: link `wa.me` com o texto pronto,
+ * que é como o resto do produto já resolve mensagem sem credencial da Meta (ficha da cliente, tela
+ * Recuperar). Fica como opção registrada, não como pendência.
  */
 export async function criarConvite(db: Cliente, tenantId: string, invitedBy: string, entrada: EntradaConvite) {
   const token = randomBytes(24).toString('base64url')

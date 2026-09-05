@@ -1,6 +1,9 @@
+'use client'
+
 import { XCircle } from 'lucide-react'
 
 import Button from '@/components/ui/button'
+import TituloDeEstado from '@/components/ui/titulo-de-estado'
 
 /**
  * A tela de erro das quatro páginas que a CLIENTE DO SALÃO abre pelo link do WhatsApp:
@@ -41,7 +44,25 @@ export default function ErroPublico({
   return (
     <>
       <XCircle aria-hidden className="mb-4 size-14 text-bad" />
-      <p className="text-titulo font-bold">{titulo}</p>
+      {/*
+        `h1`, não `p`. Medido no navegador em 2026-09-05, com token inválido nas quatro rotas:
+        `/confirmar`, `/avaliar`, `/lista-espera` e `/orcamento` renderizavam a tela de erro com
+        **zero headings** — `document.querySelectorAll('h1,h2,h3')` vazio nas quatro.
+
+        Isso importa mais aqui do que numa tela de dentro do app. Estas páginas são abertas por um
+        link do WhatsApp, sem navegação nenhuma em volta: quem usa leitor de tela chega numa página
+        desconhecida e a primeira coisa que faz é saltar por títulos para descobrir onde está. Sem
+        nenhum, a página é um bloco plano — e o texto que responde "onde estou" ("Não deu certo",
+        "Esse link não é mais válido") é justamente o que não dava para alcançar.
+
+        O padrão certo já existia na casa e as telas públicas é que tinham divergido: as cinco
+        páginas de `(auth)` usam `<h1 className="text-titulo font-bold">` com este mesmo token
+        visual. Aqui era `<p>` com a mesma classe — mesma aparência, estrutura nenhuma.
+
+        `h1` e não `h2` porque cada uma destas páginas mostra UM estado por vez, com `return`
+        antecipado, e não existe outro heading acima na árvore.
+      */}
+      <TituloDeEstado>{titulo}</TituloDeEstado>
       <p className="mt-2 text-corpo text-txt-2">{mensagem}</p>
       {aoTentarDeNovo ? (
         <Button largura="cheia" className="mt-6" onClick={aoTentarDeNovo}>

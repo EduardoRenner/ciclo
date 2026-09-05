@@ -57,6 +57,29 @@ describe('lembretesDevidos', () => {
     expect(devidos.map((d) => d.kind).sort()).toEqual(['confirmation', 'reminder'])
   })
 
+  it('marcar hoje para daqui a pouco também devolve os dois — é o mesmo mecanismo, não um caso à parte', () => {
+    /*
+     * O irmão do caso acima, e ele existe porque o comentário da função dizia o OPOSTO: que para
+     * agendamento de última hora "a lista pode vir vazia, e está certo: não existe lembrete a
+     * mandar para quem marcou faltando 1h". Vem cheia — D-1 18h é ontem, então já passou, e T-3h
+     * também. Quem ler aquela frase e for "consertar" vai suprimir a confirmação depois que o dia
+     * do atendimento chega, e nisso perde duas coisas de uma vez: o pedido de confirmação é quem
+     * carrega o LINK de confirmar, e o caso do job parado (teste acima) depende exatamente de a
+     * véspera atrasada ainda valer.
+     *
+     * Por que a redundância não é defeito: o texto das duas mensagens leva a data por extenso
+     * (`lembretes.ts` — *"no dia 10/09 14:00. Responda para confirmar"*), então nenhuma afirma
+     * "amanhã" para um atendimento de hoje.
+     *
+     * Se um dia isto DEVER mudar, o lugar é o texto ou o dedupe de `messages`, não a função de
+     * horário — e aí este teste é o que obriga a decisão a ser consciente.
+     */
+    const startsAt = '2026-09-10T18:00:00-03:00'
+    const marcadoUmaHoraAntes = lembretesDevidos(startsAt, TZ, '2026-09-10T17:00:00-03:00')
+
+    expect(marcadoUmaHoraAntes.map((d) => d.kind).sort()).toEqual(['confirmation', 'reminder'])
+  })
+
   it('agendamento que já começou não tem lembrete nenhum — evita mensagem fora de hora', () => {
     const startsAt = '2026-09-10T14:00:00-03:00'
     expect(lembretesDevidos(startsAt, TZ, '2026-09-10T14:00:00-03:00')).toEqual([])

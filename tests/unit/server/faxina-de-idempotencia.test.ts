@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs'
 
 import { describe, expect, it } from 'vitest'
 
+import { semComentarios } from '../../helpers/fonte'
+
 import { limparChavesDeIdempotencia } from '@/server/http/idempotency'
 
 /**
@@ -114,9 +116,7 @@ describe('limparChavesDeIdempotencia', () => {
 
 describe('a faxina roda de verdade — está pendurada na única rota que roda sozinha', () => {
   const ROTA = 'src/app/api/cron/recompute-cycles/route.ts'
-  const fonte = readFileSync(ROTA, 'utf8')
-    .replace(/[/][*][\s\S]*?[*][/]/g, ' ')
-    .replace(/^\s*[/][/].*$/gm, ' ')
+  const fonte = semComentarios(readFileSync(ROTA, 'utf8'))
 
   it('a leitura não voltou vazia', () => {
     expect(fonte.length, `${ROTA} veio vazio`).toBeGreaterThan(400)

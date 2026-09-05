@@ -91,7 +91,35 @@ aparecem, ou quando `NEXT_PUBLIC_SUPABASE_URL` não é local — a mesma regra d
 `tests/setup/so-banco-local.ts`. Escape consciente: `PERMITIR_BANCO_REMOTO=1`.
 
 **B24. Como faço deploy?**
-Push na `main` → Vercel prod. PR → preview. Migration roda por GitHub Action com `supabase db push`, antes do deploy do app.
+Push na `main` → Vercel prod. PR → preview. **Migration é passo à mão, e este é o passo mais fácil
+de esquecer da casa.**
+
+**Até 05/09/2026 esta resposta estava errada**, do mesmo jeito que a B23 esteve: ela dizia que
+"migration roda por GitHub Action com `supabase db push`, antes do deploy do app". Essa Action nunca
+existiu — há dois workflows no repositório (`ci.yml` e `cron.yml`) e nenhum aplica migration em
+lugar nenhum. E, de novo, promessa de processo falsa é pior que a ausência dela: as migrations
+`0059`, `0060` e `0061` ficaram dias no `main`, com o código que depende delas no ar, sem estar no
+banco. Quem pedisse orçamento pela página pública levava erro, e o `vocab` de 10 profissões seguia
+só no masculino.
+
+Nada podia ver: `typecheck`, `lint`, os testes e o CI inteiro rodam contra um Supabase **local**,
+que aplica as migrations do disco em toda execução. O local está sempre em dia.
+
+Então, na ordem — **migration primeiro, deploy depois** (aditiva antes do código que a usa nunca
+quebra; o contrário quebra):
+
+1. `supabase db push` apontando para produção, ou aplicar o SQL pelo painel;
+2. conferir: `select count(*) from supabase_migrations.schema_migrations` bate com a contagem de
+   arquivos em `supabase/migrations/`;
+3. atualizar `MIGRATIONS_ESPERADAS` e `ULTIMA_MIGRATION` em `src/core/schema/versao.ts` — o teste
+   `schema-esperado-bate-com-o-disco` reprova se você esquecer;
+4. aí sim o merge na `main`.
+
+Se pular o passo 1, o `/api/health` fica vermelho com `banco ATRÁS do código` e o job `vigia` do
+`cron.yml` avisa por e-mail no disparo seguinte. É rede, não substituto do passo.
+
+Construir a Action de verdade depende de credencial nova (access token da Supabase + senha do
+banco), que é decisão do dono do produto.
 
 **B25. Migration destrutiva (drop column)?**
 Duas etapas, em releases diferentes: (1) para de usar a coluna, deploy; (2) drop na release seguinte. Nunca junte.

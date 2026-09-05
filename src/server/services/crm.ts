@@ -523,6 +523,15 @@ export async function centralDeAcoes(db: Cliente, tenantId: string): Promise<Cen
     // `v_clientes_a_recuperar` (0058) conta CLIENTE, não linha de (cliente × serviço). Antes
     // este alarme dizia "147 clientes estão sumindo" num salão com 55 — e levava para uma lista
     // que mostrava outro número. `ja_atrasado` exclui quem só está vencendo hoje: ainda não sumiu.
+    //
+    // Só o CONTADOR sai daqui. O comentário da própria 0058 diz que `maior_valor_cents` "é o que a
+    // tela mostra na linha da cliente" e isso é falso: o valor e o atraso da lista de
+    // `/admin/recuperar` vêm de `v_recover_revenue`, por SERVIÇO. Os dois agregados da view não têm
+    // leitor nenhum — conferido em 05/09/2026, as duas consultas a ela neste arquivo são as únicas,
+    // e as duas são `head: true`. Não foram removidos porque servem à ordenação por cliente que a
+    // lista ainda não tem, e recalculá-los fora daqui recriaria a segunda definição que a view
+    // existe para eliminar. A nota mora aqui, e não na migration, porque migration aplicada não se
+    // edita — quem lê o `crm.ts` é quem vai duvidar do número. Ver `docs/41` §C.
     db
       .from('v_clientes_a_recuperar')
       .select('client_id', { count: 'exact', head: true })

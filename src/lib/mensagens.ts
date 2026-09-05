@@ -71,3 +71,36 @@ export function linkWhatsApp(telefoneE164: string | null, texto: string): string
 export function linkWhatsAppCompartilhar(texto: string): string {
   return `https://wa.me/?text=${encodeURIComponent(texto)}`
 }
+
+export type SaidaDeContato = {
+  canal: 'whatsapp' | 'telefone'
+  href: string
+  rotulo: string
+}
+
+/**
+ * Por onde a cliente fala com o salão quando quer cutucar — a saída das telas de sucesso.
+ *
+ * Existe como função, e não como dois ternários dentro do JSX, porque **dois dos três estados não
+ * aparecem com os dados de hoje**: os seis tenants em produção têm WhatsApp preenchido, então o
+ * caminho do `tel:` e o do "nenhum canal" nunca renderizam sem alguém forçá-los. É a mesma
+ * armadilha das estrelas do `docs/42` §2 — a primeira versão daquele conserto quebrou justamente o
+ * estado que os dados não produziam, com typecheck, lint e a suíte inteira verdes.
+ *
+ * **WhatsApp na frente do telefone, e não é preferência:** o formulário público pede "Seu telefone
+ * (WhatsApp)", ou seja, a pessoa acabou de declarar que é por lá que ela fala. Oferecer ligação a
+ * quem escreveu o número como WhatsApp é ignorar a resposta que ela deu duas telas atrás.
+ *
+ * Nada aqui é promessa de canal: quem manda a mensagem é a pessoa, no aplicativo dela.
+ */
+export function saidaDeContato(
+  whatsapp: string | null,
+  telefone: string | null,
+  nomeDoSalao: string,
+  texto: string,
+): SaidaDeContato | null {
+  const zap = linkWhatsApp(whatsapp, texto)
+  if (zap) return { canal: 'whatsapp', href: zap, rotulo: 'Falar no WhatsApp' }
+  if (telefone) return { canal: 'telefone', href: `tel:${telefone}`, rotulo: `Ligar para ${nomeDoSalao}` }
+  return null
+}

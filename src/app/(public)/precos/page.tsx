@@ -2,7 +2,7 @@ import { ArrowRight } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 
-import { NOME_DO_PLANO, PLANOS, precoDoPlano } from '@/core/billing/planos'
+import { NOME_DO_PLANO, PLANOS, custoPorAtendimento, precoDoPlano } from '@/core/billing/planos'
 
 import { canalDeContato } from '@/lib/contato'
 import { CARTOES } from '@/lib/planos-cartoes'
@@ -228,6 +228,72 @@ export default function Precos() {
             </Link>
           </article>
         ))}
+      </section>
+
+      {/*
+        Item C do `docs/43-POSICIONAMENTO-10X.md` — eixo 3, economia de escala.
+
+        A tabela de planos responde "quanto custa". Ela não responde a pergunta que separa o CICLO
+        do modelo dominante do nicho: **quanto custa quando eu crescer.** No preço fixo o custo por
+        atendimento cai sozinho; numa comissão ele é constante por definição, então a conta do salão
+        cresce junto com o sucesso dele. Esse argumento fica mais forte com o tempo sem ninguém
+        escrever nada novo, e é o único eixo da pesquisa em que a vantagem é aritmética, não opinião.
+
+        **Sem citar concorrente e sem número de terceiro.** A pesquisa do `43` tem as taxas
+        medidas, mas publicar preço alheio numa página nossa é afirmação que envelhece na mão deles
+        e que ninguém aqui pode reconferir depois. A conta abaixo usa só o nosso próprio preço, que
+        sai de `core/billing/planos` — e a comparação é de ESTRUTURA, que não envelhece.
+
+        O parágrafo final é o que faz a comparação ser honesta em vez de propaganda: quem cobra
+        comissão entrega uma coisa que o CICLO não entrega. Dizer isso na nossa própria página de
+        preço custa pouco e é a diferença entre argumento e omissão — e ainda deixa o veto do §5.2
+        (nunca construir vitrine de tenants) visível para quem compra, não só para quem programa.
+      */}
+      <section className="py-10">
+        <h2 className="text-titulo font-bold">O preço não sobe quando você cresce</h2>
+        <p className="mt-3 max-w-[52ch] text-corpo text-txt-2">
+          Existe plataforma de agendamento que fica com uma porcentagem do cliente novo que ela te manda. Faz
+          sentido para quem cobra, e tem um efeito que só aparece depois: <strong className="font-semibold text-txt">quanto
+          melhor o seu mês, maior a conta</strong>.
+        </p>
+        <p className="mt-3 max-w-[52ch] text-corpo text-txt-2">
+          No CICLO o plano é fixo e não existe taxa por agendamento. Então o custo de cada atendimento cai sozinho
+          conforme você atende mais:
+        </p>
+
+        <table className="mt-5 w-full border-collapse text-corpo">
+          <caption className="sr-only">
+            Custo por atendimento no plano {NOME_DO_PLANO.essencial}, conforme o número de atendimentos no mês
+          </caption>
+          <thead>
+            <tr className="border-b border-line">
+              <th scope="col" className="py-2 text-left text-label font-semibold uppercase tracking-[0.08em] text-txt-3">
+                Atendimentos no mês
+              </th>
+              <th scope="col" className="py-2 text-right text-label font-semibold uppercase tracking-[0.08em] text-txt-3">
+                Custo de cada um
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {[60, 150, 300].map((quantos) => (
+              <tr key={quantos} className="border-b border-line">
+                <th scope="row" className="py-3 text-left font-normal text-txt-2">{quantos}</th>
+                <td className="py-3 text-right font-semibold tabular-nums text-txt">{custoPorAtendimento('essencial', quantos)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <p className="mt-3 text-label text-txt-3">
+          {NOME_DO_PLANO.essencial}, {precoDoPlano('essencial')} por mês, dividido pelos atendimentos do mês. Nada mais entra na conta.
+        </p>
+
+        <p className="mt-5 max-w-[52ch] text-secundario text-txt-2">
+          A parte honesta: quem cobra comissão costuma cobrar sobre o cliente que a <em>própria plataforma</em> trouxe,
+          de uma vitrine onde a sua clientela também vê os seus concorrentes. O CICLO não tem vitrine e não traz cliente
+          de lugar nenhum &mdash; sua página é do seu negócio e só dele, e quem chega nela chegou por você. Se o que você
+          procura é alugar a clientela de um marketplace, o CICLO não é isso.
+        </p>
       </section>
 
       <section className="py-10">

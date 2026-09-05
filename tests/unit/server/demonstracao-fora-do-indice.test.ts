@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs'
 
 import { describe, expect, it } from 'vitest'
 
+import { semComentarios } from '../../helpers/fonte'
+
 import { SLUGS_DE_DEMONSTRACAO_PARA_TESTE, ehDemonstracao } from '@/core/tenants/demonstracao'
 
 /**
@@ -93,12 +95,9 @@ describe('os seis caminhos para o mundo usam a mesma regra', () => {
      * some na próxima demonstração que alguém semear. Comentário citando o slug é documentação —
      * o que não pode é o CÓDIGO conhecer o nome.
      */
-    const semComentarios = readFileSync(arquivo, 'utf8')
-      .replace(/\/\*[\s\S]*?\*\//g, ' ')
-      .replace(/\{\/\*[\s\S]*?\*\/\}/g, ' ')
-      .replace(/^\s*\/\/.*$/gm, ' ')
+    const marcacao = semComentarios(readFileSync(arquivo, 'utf8'))
 
-    const culpados = SLUGS_DE_DEMONSTRACAO_PARA_TESTE.filter((slug) => semComentarios.includes(slug))
+    const culpados = SLUGS_DE_DEMONSTRACAO_PARA_TESTE.filter((slug) => marcacao.includes(slug))
     expect(culpados, `${arquivo} tem slug de demonstração escrito à mão: ${culpados.join(', ')}`).toEqual([])
   })
 

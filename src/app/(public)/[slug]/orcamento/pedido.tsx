@@ -11,12 +11,9 @@ import Select from '@/components/ui/select'
 import Textarea from '@/components/ui/textarea'
 
 import { comMaiuscula, type Vocabulario } from '@/core/text/vocabulario'
+import { linkWhatsApp } from '@/lib/mensagens'
 
 type Servico = { id: string; name: string }
-
-function linkWhatsapp(numero: string, mensagem: string): string {
-  return `https://wa.me/${numero.replace(/\D/g, '')}?text=${encodeURIComponent(mensagem)}`
-}
 
 export default function PedidoDeOrcamento({
   slug,
@@ -31,6 +28,7 @@ export default function PedidoDeOrcamento({
   servicos: Servico[]
   vocabulario: Vocabulario
 }) {
+  const linkDoWhatsapp = linkWhatsApp(whatsapp, `Oi! Acabei de pedir um orçamento pelo site da ${nomeDoSalao}.`)
   const [mensagem, setMensagem] = useState('')
   const [nome, setNome] = useState('')
   const [telefone, setTelefone] = useState('')
@@ -92,9 +90,9 @@ export default function PedidoDeOrcamento({
             Ele está na lista de {nomeDoSalao}. Se quiser adiantar, fale direto.
           </p>
         </div>
-        {whatsapp ? (
+        {linkDoWhatsapp ? (
           <a
-            href={linkWhatsapp(whatsapp, `Oi! Acabei de pedir um orçamento pelo site da ${nomeDoSalao}.`)}
+            href={linkDoWhatsapp}
             target="_blank"
             rel="noreferrer"
             className="toque-48 inline-flex items-center gap-2 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-5 py-3 text-corpo font-semibold text-txt transition duration-[var(--dur-1)] hover:bg-surface-3"

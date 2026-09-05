@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs'
 
 import { describe, expect, it } from 'vitest'
 
+import { semComentarios } from '../../helpers/fonte'
+
 import { rotaDeCronAgendada } from '../../helpers/cron'
 
 import { NOME_DO_PLANO, PLANOS, menorPlanoCom, type ModuloKey } from '@/core/billing/planos'
@@ -28,7 +30,7 @@ const HOME = 'src/app/page.tsx'
  */
 function copyDaHome(): string {
   const bruto = readFileSync(HOME, 'utf8')
-  return bruto.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^\s*\/\/.*$/gm, ' ')
+  return semComentarios(bruto)
 }
 
 /**

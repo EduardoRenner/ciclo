@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { aplicarVariaveis, linkWhatsApp, precisaDeAgendamento } from '@/lib/mensagens'
+import { aplicarVariaveis, linkWhatsApp, precisaDeAgendamento, saidaDeContato } from '@/lib/mensagens'
 
 describe('aplicarVariaveis', () => {
   it('troca as variáveis pelo valor', () => {
@@ -60,5 +60,45 @@ describe('linkWhatsApp', () => {
     const link = linkWhatsApp('+5511991110001', 'Bora?\n💈')
     expect(link).toContain('%0A')
     expect(decodeURIComponent(link!)).toContain('💈')
+  })
+})
+
+/**
+ * A saída de contato das telas de sucesso — e o motivo de ela ser função e não ternário no JSX.
+ *
+ * Medido em 05/09/2026: os seis tenants em produção têm WhatsApp preenchido, então **dois dos três
+ * estados nunca renderizam** com os dados reais. É a armadilha das estrelas do `docs/42` §2, onde
+ * a primeira versão do conserto quebrou exatamente o estado que os dados não produziam, com
+ * typecheck, lint e 1.624 testes verdes. Aqui os três estados são exercitados de graça.
+ */
+describe('saidaDeContato', () => {
+  const TEXTO = 'Oi! Acabei de marcar um horário.'
+
+  it('WhatsApp ganha do telefone — a pessoa acabou de dizer que fala por lá', () => {
+    const saida = saidaDeContato('+5511987654321', '+5511333334444', 'Dom Rocha', TEXTO)
+    expect(saida?.canal).toBe('whatsapp')
+    expect(saida?.href).toContain('wa.me/5511987654321')
+    expect(saida?.href).toContain(encodeURIComponent(TEXTO))
+    expect(saida?.rotulo).toBe('Falar no WhatsApp')
+  })
+
+  it('sem WhatsApp, o telefone assume — e o rótulo diz para quem se liga', () => {
+    const saida = saidaDeContato(null, '+5511333334444', 'Dom Rocha', TEXTO)
+    expect(saida).toEqual({ canal: 'telefone', href: 'tel:+5511333334444', rotulo: 'Ligar para Dom Rocha' })
+  })
+
+  /*
+   * O caso que a cópia local de `linkWhatsapp` não tinha: ela montaria `wa.me/11`, que abre
+   * "número inválido" no celular de quem queria falar com o salão. Cair no telefone é melhor
+   * que oferecer um link quebrado.
+   */
+  it('número curto demais não vira link quebrado — cai no telefone', () => {
+    const saida = saidaDeContato('11', '+5511333334444', 'Dom Rocha', TEXTO)
+    expect(saida?.canal).toBe('telefone')
+  })
+
+  it('sem nenhum dos dois, não inventa botão', () => {
+    expect(saidaDeContato(null, null, 'Dom Rocha', TEXTO)).toBeNull()
+    expect(saidaDeContato('11', null, 'Dom Rocha', TEXTO)).toBeNull()
   })
 })

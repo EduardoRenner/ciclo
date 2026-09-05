@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs'
 
 import { describe, expect, it } from 'vitest'
 
+import { semComentarios } from '../../helpers/fonte'
+
 /**
  * `src/app/error.tsx` é o boundary da RAIZ: ele pega toda rota, inclusive as públicas.
  *
@@ -20,10 +22,7 @@ import { describe, expect, it } from 'vitest'
 const ERRO = 'src/app/error.tsx'
 
 function fonte(): string {
-  return readFileSync(ERRO, 'utf8')
-    .replace(/\/\*[\s\S]*?\*\//g, ' ')
-    .replace(/\{\/\*[\s\S]*?\*\/\}/g, ' ')
-    .replace(/^\s*\/\/.*$/gm, ' ')
+  return semComentarios(readFileSync(ERRO, 'utf8'))
 }
 
 describe('a tela de erro não manda o cliente do salão para o painel', () => {

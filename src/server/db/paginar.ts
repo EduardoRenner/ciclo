@@ -20,17 +20,33 @@ import { AppError } from '@/server/http/errors'
  */
 const TAMANHO_PAGINA = 1000
 
+/**
+ * Teto de páginas: 100 mil linhas numa consulta só deste produto é defeito de dado, não volume.
+ *
+ * O laço era `for (;;)` sem saída a não ser a página curta. Se a consulta devolvesse sempre página
+ * cheia — um filtro que não filtra, uma view que multiplica linhas, um `range` que o servidor
+ * ignora — ele rodaria para sempre, prendendo a requisição e a conexão. É uma inversão do defeito
+ * que esta função existe para consertar: lá o risco era **calar**, aqui é **não parar**.
+ *
+ * Erra de propósito, em vez de devolver o que já juntou. Um total somado sobre 100 mil das 300 mil
+ * linhas é redondo, plausível e não denuncia nada — exatamente a "pior forma do defeito" que o
+ * texto acima descreve, só que com outro número. Melhor a tela não abrir.
+ */
+const MAXIMO_DE_PAGINAS = 100
+
 export async function buscarTudoPaginado<T>(
   consultaBase: () => { range(inicio: number, fim: number): PromiseLike<{ data: T[] | null; error: unknown }> },
 ): Promise<T[]> {
   const tudo: T[] = []
-  for (let pagina = 0; ; pagina++) {
+  for (let pagina = 0; pagina < MAXIMO_DE_PAGINAS; pagina++) {
     const inicio = pagina * TAMANHO_PAGINA
     const { data, error } = await consultaBase().range(inicio, inicio + TAMANHO_PAGINA - 1)
     if (error) throw new AppError('INTERNAL', { cause: error })
     tudo.push(...(data ?? []))
     // Pagina incompleta = acabou. Pagina cheia pode ter mais atras dela.
-    if (!data || data.length < TAMANHO_PAGINA) break
+    if (!data || data.length < TAMANHO_PAGINA) return tudo
   }
-  return tudo
+  throw new AppError('INTERNAL', {
+    cause: new Error(`buscarTudoPaginado passou de ${MAXIMO_DE_PAGINAS * TAMANHO_PAGINA} linhas — consulta sem filtro ou dado corrompido.`),
+  })
 }

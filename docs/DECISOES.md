@@ -5802,3 +5802,697 @@ atributos em cada ocorrência. Três casos, 22%, 14% e 5% das respectivas págin
 `<symbol>` + `<use>`, com a regra de que `fill="none"` fica no elemento que USA e nunca no símbolo
 — dentro dele o atributo ganha da classe na cascata e o ícone sai vazado, sem nenhum teste
 reclamar. Ver `docs/42`.
+
+**2026-09-05 · construir vitrine/diretório de tenants para o cliente final, para ganhar efeito de
+rede? · NÃO, e o veto é permanente · é o ativo dos concorrentes e seria o fim do único diferencial
+estrutural do CICLO.** A pesquisa de mercado de `docs/43-POSICIONAMENTO-10X.md` mediu a queixa nº 1
+dos donos sobre o líder do nicho (AppBarber, 1M+ instalações): o app do cliente **mostra a lista de
+concorrentes** para a clientela dele, e o "baixe nosso app" faz cliente novo marcar em outro lugar.
+O BestBarbers tem a mesma limitação. Eles não podem consertar — o app do cliente só tem valor de
+rede porque agrega várias barbearias, então a queixa do dono *é* o modelo de negócio deles.
+
+O CICLO já está do lado certo por arquitetura, não por marketing: não existe rota que liste tenants
+para o público, `/[slug]` é a página daquele negócio, "vitrine" aqui são as imagens do próprio
+estabelecimento (`src/core/text/vitrine.ts`), e o `sitemap.ts` entrega **a página do negócio** ao
+buscador em vez de uma vitrine central que ficaria com o tráfego.
+
+A decisão registrada é sobre a tentação futura, não sobre hoje: toda análise de "faltam efeitos de
+rede no CICLO" vai propor um diretório de estabelecimentos, e ele parece grátis. O momento em que o
+cliente do salão A vê o salão B numa tela do CICLO é o momento em que o CICLO vira um AppBarber
+pior — sem os 12 anos e sem o 1M de instalações. O efeito de rede admissível aqui é **do lado do
+dono** (indicação B2B, `docs/18` Fase H e `docs/37`), nunca do lado do cliente final.
+
+**2026-09-05 · criar um meta-teste que varre as guardas atrás de cegueira ("casa com o próprio
+comentário")? · NÃO · a heurística que cobre muitas guardas erra em 100% dos casos, e a que acerta
+cobre 9 asserções.** A classe é real e cara — o `CLAUDE.md` registra que numa auditoria de 5
+guardas, 3 estavam cegas, e eu produzi uma cega nesta mesma sessão (a primeira versão de
+`pagina-do-negocio-e-so-dele`). Construí o detector e mutei-o: com uma isca plantada
+(`expect(PAGINA).toContain('splash')`, palavra que só existe no docstring de `src/app/page.tsx`)
+ele acusa; sem ela, não acusa nada.
+
+**O resultado medido, nas duas formas:**
+
+- **Preciso** (liga `const VAR = readFileSync('caminho')` à asserção `expect(VAR).toContain('X')`):
+  9 pares em 5 arquivos, **zero cegas**.
+- **Amplo** (qualquer literal afirmado contra qualquer alvo lido pelo teste): 33 literais, 4
+  acusações, **4 falsos positivos**. Os quatro têm a mesma causa e ela é estrutural: o detector não
+  distingue asserção sobre o TEXTO do arquivo de asserção sobre VALOR EM EXECUÇÃO.
+  `saude-nao-alarma-por-lixo` afirma `.toContain('sem handler')` sobre
+  `r.checks.jobQueue.detail` (um retorno de função, com banco falso), e `vocabulario-da-profissao`
+  afirma `.toContain('salão')` sobre um array. Nenhum dos dois lê fonte ali — são testes de
+  comportamento, os melhores do repositório.
+
+Separar os dois casos exige análise de tipo, não regex. Um meta-teste com essa taxa de falso
+positivo não protege: treina quem mantém a suíte a ignorar o alarme, que é o mesmo mecanismo do
+503 permanente que o `saude-nao-alarma-por-lixo` existe para impedir.
+
+**O que ficou no lugar do teste, e que é a resposta de verdade:** medido que **64 das 101 guardas
+que leem fonte já limpam comentário antes de casar**. O padrão correto está difundido e
+documentado (`copyDaHome()` em `home-nao-promete-demais` explica por que varrer comentário faria o
+teste reprovar a própria documentação). O risco restante está nas 37 que não limpam — e nelas o
+critério continua sendo o do `CLAUDE.md`: casar com o que MUDA quando o defeito volta, e ver a
+guarda reprovar por mutação antes de confiar nela.
+
+**2026-09-05 · filtrar fixture de teste do sitemap agora? · NÃO, mas vira portão de lançamento ·
+não existe discriminador confiável, e excluir um salão real do Google é pior que o defeito.**
+
+**O que foi medido.** No banco de DEV, o `/sitemap.xml` entrega três URLs, e uma delas é
+`verify-series-526807` — tenant de fixture que uma suíte de teste criou e não limpou. A página
+responde 200, **não tem `noindex`**, e emite JSON-LD `"@type": "HairSalon"` com serviços. Ou seja:
+uma fixture apresentada ao buscador como salão de cabelo de verdade, com marcação de dado
+estruturado.
+
+**Isto não está em produção.** Conferido no `https://seuciclo.com.br/sitemap.xml`: duas URLs, a
+home e `/precos`. Nenhum tenant. Não é incidente — é armadilha armada.
+
+**Por que importa mais aqui do que pareceria.** O `docs/43` estabelece que o CICLO troca o
+marketplace dos concorrentes por SEO da página do próprio negócio: é o `sitemap.ts` entregando
+`/{slug}` ao buscador que substitui a vitrine central. Poluir esse domínio com negócios que não
+existem degrada exatamente o canal de aquisição que o posicionamento inteiro depende — e marcar
+com `schema.org` uma coisa que não é a coisa é o tipo de coisa que o Google penaliza.
+
+**Por que não construí o filtro.** O único filtro hoje é `ehDemonstracao(slug)`, e fixture não tem
+prefixo comum: os slugs de teste são `agenda-${marca}`, `caixa-${marca}`, `crm-${marca}`,
+`verify-${marca}`… — o padrão varia por arquivo de teste. Filtrar por "termina em dígitos" ou por
+lista de prefixos exclui um salão real que escolher um slug parecido, e **tirar um cliente pagante
+do Google é um dano maior e mais silencioso do que o que se está consertando**
+(`docs/DECISOES.md`, a lição do `toque-48` em links inline). Um discriminador honesto precisa de
+sinal explícito — coluna que diga "isto é fixture", ou limpeza garantida no encerramento do teste
+—, e as duas são decisão de quem cuida da suíte, não conserto de varredura.
+
+**O portão, então:** antes do primeiro tenant real entrar no sitemap, conferir que `/sitemap.xml`
+de produção só contém negócio de verdade. Hoje a conferência é trivial (duas URLs) e continuará
+trivial enquanto houver poucos clientes — é o momento barato de acertar, e o único em que dá para
+inspecionar a lista inteira a olho.
+
+**2026-09-05 · varrer as guardas atrás de cegueira por comentário, segunda tentativa · nenhuma
+cega hoje, mas a consolidação em `helpers/fonte` fica pendente — e ela é o detector.**
+
+A primeira tentativa (registrada acima) descartou um meta-teste por falso positivo. Esta é outra
+pergunta, mais estreita e respondida: **entre as guardas que NÃO limpam comentário, alguma afirma
+presença de algo que só existe em comentário do alvo?** Detector validado com isca plantada
+(`toContain('catch { return }')` contra `src/core/share/cancelamento.ts`, onde a frase só aparece
+no docstring): ele acusa a isca. Resultado real: **zero**. As duas acusações são as mesmas de
+sempre, `saude-nao-alarma-por-lixo`, e são falso positivo — afirmam sobre valor de execução
+(`r.checks.jobQueue.detail`), não sobre texto de arquivo.
+
+**O risco não está nas guardas velhas; está nas novas.** A prova é desta sessão: a asserção "tem um
+h1" de `titulos-de-tela` ficou cega **duas horas depois de nascer**, quando o `erro-publico.tsx`
+passou a usar `<TituloDeEstado>` — e continuou verde porque o comentário que eu tinha escrito lá
+dentro citava `<h1 className="text-titulo font-bold">` ao explicar o padrão do `(auth)`.
+
+**Medido, e é o que fica como trabalho:** `tests/helpers/fonte.ts` existe desde 31/08 para acabar
+com isso, e o docstring dele diz que nasceu porque havia CINCO cópias da mesma limpeza. Hoje há
+**doze** cópias locais que não o usam, e elas não são equivalentes — várias não removem `//` e
+várias não removem comentário JSX (`{/* */}`), cujas linhas internas não começam com `*`. A
+décima segunda fui eu, horas depois de o helper existir; já consolidada.
+
+**A consolidação é o próprio detector, e é por isso que vale fazer:** trocar a limpeza local pela
+do helper remove MAIS comentário. Guarda que passar a reprovar depois da troca estava casando com
+comentário — ou seja, era cega. Rodar a suíte depois de consolidar as onze restantes responde a
+pergunta inteira sem escrever meta-teste nenhum, que é o que a primeira tentativa não conseguiu.
+
+**2026-09-05 · correção do número: eram DEZOITO cópias da limpeza, não doze — e o erro foi do
+detector, não da contagem.** A entrada acima disse "doze cópias locais". Ao consolidar, sobraram
+seis que o varredor não tinha visto: elas escrevem os delimitadores como **classe de caractere**
+(`/[{][/][*][\s\S]*?[*][/][}]/`) em vez de escape (`/\{\/\*[\s\S]*?\*\/\}/`), e o padrão do
+detector procurava só a segunda forma. Duas maneiras idiomáticas de escrever a mesma regex, e o
+instrumento enxergava uma.
+
+Fica como lição do mesmo tipo que a sessão inteira vinha colecionando, agora aplicada à ferramenta:
+**um "achei N" é tão frágil quanto um "achei zero"** — os dois dependem de o padrão cobrir todas as
+formas de escrever a coisa procurada. O jeito de descobrir foi tentar consolidar e ver o que
+sobrava, não olhar o número com mais atenção.
+
+Consolidadas as dezoito. A suíte inteira (1677 asserções) segue verde com a limpeza mais forte do
+helper — ou seja, **nenhuma das dezoito estava cega por comentário**, que era a pergunta.
+
+**2026-09-05 · a atribuição de receita passa a usar `tickets.total_cents`, agora que a comanda
+existe? · NÃO · trocar a fonte zeraria o número exatamente para o plano Grátis.**
+
+O docstring de `receitaAtribuidaAoCiclo` mandava revisar "quando o TICKET-042 (comanda com itens de
+verdade) existir". Ele existe — `comanda.ts` e `ticket_items` estão no ar — então a condição
+chegou e a revisão foi feita. O resultado é o oposto da instrução.
+
+**O que foi medido:**
+
+1. `concluirAgendamento` cria a comanda com `status = 'open'` e `total_cents = 0` (default da
+   migration `0001`). O total só existe depois que alguém FECHA a comanda.
+2. Fechar comanda é o módulo `register`, que começa no **Essencial** (`core/billing/planos.ts`).
+   O plano **Grátis** tem `cycle_engine` e não tem `register`.
+
+Somando os dois: trocar `price_cents` por `total_cents` faria "o Motor trouxe R$ X" virar **R$ 0**
+para todo tenant do Grátis — que é exatamente o público que esse número precisa convencer a
+assinar. Seria trocar um número imperfeito por um número zero, na tela que sustenta o preço.
+
+**O custo de ficar como está, para não virar promessa:** `price_cents` é preço de tabela e não
+enxerga desconto dado na comanda, item extra nem gorjeta. É a mesma distinção que
+`numero-de-hoje-nao-e-faturamento` já guarda na tela Hoje ("Atendido hoje" ≠ "Entrou no dia").
+
+**O caminho que existe, se um dia valer:** usar `tickets.total_cents` onde a comanda foi fechada e
+cair para `price_cents` onde não foi. É possível, mas mistura duas réguas no mesmo somatório — e
+isso é decisão de produto sobre o que o número significa, não troca de coluna. Fica registrado
+como opção, não como pendência.
+
+**A lição de método, que vale além deste caso:** instrução do tipo "revisar quando X existir"
+apodrece em silêncio nos dois sentidos. Ou X nunca chega e a dívida fica parada para sempre (foi o
+caso do "refinar se DST virar problema", num país sem DST desde 2019 — `ef66b10`), ou X chega,
+ninguém percebe, e a instrução vira uma armadilha: quem a executar mecanicamente causa o dano.
+
+**2026-09-05 · varredura dos doze comentários que adiam para condição futura · três premissas
+falsas, dois consertos, nenhuma mudança de comportamento.**
+
+Continuação do método que rendeu `ef66b10` e `574cced`. Os doze foram triados um a um, medindo se
+a condição citada já chegou:
+
+**Premissa falsa, corrigida:** `convites.ts` e a rota `memberships/invite` justificavam devolver o
+link na resposta com "nenhum `MessagingProvider` existe ainda". Existe desde então —
+`server/providers/messaging/` tem `whatsapp.ts`, `email.ts`, `push.ts` e `types.ts`, usados por
+cinco serviços. O que de fato impede o envio automático é outra coisa, e agora está escrito:
+credencial vazia (`WHATSAPP_ACCESS_TOKEN`/`RESEND_API_KEY`, o mesmo bloqueio de `reminders`) mais o
+portão do `docs/25` F0. O comportamento não muda; o que muda é a justificativa deixar de ser falsa.
+
+**Condição não chegou, sem ação:** `recompute-cycles` ("se a base passar de ~500 tenants" — são
+poucos), `captcha.ts` ("sem conta hCaptcha real"), `fotos.tsx`, `importacao-clientes.ts`.
+
+**Condição irrelevante, sem ação:** `planos.ts` mantém `NOMES_ANTIGOS` (`pro`/`profissional`) para
+a janela entre deploy e `db push`. Não é dívida de schema antigo, é proteção de uma corrida que
+acontece em todo deploy — removê-la é risco sem ganho.
+
+**Verificado e correto:** `jobs/route.ts` diz "por ora o registro fica vazio". Confirmado que
+NINGUÉM em `src/` enfileira em `job_queue` — a máquina inteira está dormente, produtor e consumidor,
+e o comentário descreve isso com precisão. A guarda `saude-nao-alarma-por-lixo` já cobre o risco de
+divergência quando um handler chegar.
+
+**A regra que fecha o método:** instrução do tipo "quando X existir" tem que ser lida como pergunta,
+nunca como ordem. Das três premissas que já haviam chegado nesta sessão, executar a instrução ao pé
+da letra teria sido errado em duas (a atribuição zeraria o ROI do Grátis; o convite ligaria envio
+sem credencial e sem o portão do F0) e certo em uma (o fuso da fila de espera).
+
+**2026-09-05 · varredura das funções puras em `server/services` — encerrada, com veredito por
+função.** Onze candidatas (regra de negócio sem I/O morando na camada de serviço). A pergunta
+aplicada a todas foi a mesma: *quando o dado está torto ou o recurso acaba, qual valor sai — e as
+duas saídas custam igual?*
+
+**Consertadas (5):**
+- `valorEmRiscoCents` → movida para `core/cycle/`; só tinha cobertura de integração.
+- `venceEmBreve` (era `comSaldo`) → faltava piso inferior; "vencendo em breve" ficava verdadeiro
+  para sempre depois de vencer.
+- `lerMensageria` → falhava aberto: valor torto no `paused` religava o envio.
+- `lerConfiguracoesAgenda` → `Number()` coagia `null`/`''` para 0, e granularidade 0 trava o laço
+  de `available-slots`.
+- `lerConfigFidelidade` → campo inválido derrubava o namespace inteiro e religava a pontuação de
+  quem tinha desligado. Resgate campo a campo, porque aqui não havia lado seguro.
+
+**Sem assimetria, nada a fazer (3), e o motivo de cada uma:**
+- `lerSite` → falha para site vazio. Errar para os dois lados custa o mesmo (um campo de vitrine
+  não aparece); inverter não melhora nada.
+- `misturarComBranco` → valida o hex e devolve a cor original se não casar. Cosmético: o pior caso
+  é um tom de acento levemente errado.
+- `slugDoTitulo` → sufixo aleatório medido em 100 mil amostras, sempre 5 caracteres base-36
+  (~60 milhões de combinações), e a tabela tem `unique (tenant_id, slug)`. Colisão daria `23505`
+  visível na hora, não corrupção silenciosa.
+
+**Fora do escopo, e por quê:** `gerarTokenAssinado` é cripto e depende de segredo — `server/` é o
+lugar certo. `limitarEmMemoria` foi tratada por outro eixo (vazamento do `Map`, não valor de
+retorno).
+
+Fica registrado para a próxima sessão não refazer a triagem: a lista está fechada.
+
+---
+
+## 2026-09-05 · Estado de módulo mutável: os três `Map` do processo, fechados
+
+Eixo "o que o texto NÃO discute", aplicado às coleções de nível de módulo. O detector inicial
+devolveu **zero** e isso era falso: ele não casava `new Map<string, Janela>()`, porque o genérico
+fica entre `Map` e `(`. Corrigido, achou três — o já conhecido e dois que ninguém tinha visto.
+
+| Onde | O que o texto discutia | O que não discutia | Veredito |
+|---|---|---|---|
+| `rate-limit.ts` `memoria` | a cadeia de fallback (achado S4) e o `somenteMemoria` | o tempo de vida do `Map`, chave por **IP** | vazava; corrigido antes (`a06af9f`) |
+| `vault.ts` `cacheDek` | o **tamanho** ("chave por tenant, o serverless recicla") | o tempo de **vida** — a expiração só impedia o USO | DEK em claro residente; corrigido |
+| `mensageria.ts` `slugPorTenant` | onde a trava de demo mora e por quê | envelhecimento e falha de leitura | cache OK (medido); o `error` era descartado |
+
+Duas coisas que valem mais que os consertos:
+
+**A resposta boa numa metade esconde a metade que falta.** O `cacheDek` respondia bem "por que sem
+limite de tamanho?" — e a resposta é *correta*. Justamente por isso ninguém percebeu que a frase
+que ela usa ("vive só em memória, por tenant, **com expiração**") tinha outra metade sem cumprir.
+Documentação boa é onde este defeito se esconde melhor, não pior.
+
+**Cache que não expira nem sempre é defeito, e a diferença é medível.** O `slugPorTenant` parece o
+mesmo problema e não é: `tenants.slug` não tem escritor nenhum depois do onboarding — conferido
+lendo `atualizarSite` (monta as colunas uma a uma, slug não está entre elas), as migrations e os
+scripts. Chave por tenant + valor imutável = sem envelhecimento e sem crescimento. Ficou escrito
+no código, junto com a condição que o invalidaria: se o slug virar editável, o cache passa a
+mentir.
+
+## 2026-09-05 · Promessa de canal: varredura fechada, sem achado
+
+O `CLAUDE.md` chama a promessa de canal de o defeito mais caro da base, e hoje `reminders` e
+`campaigns` estão fora do `schedule` e não há credencial da Meta — ou seja, qualquer promessa de
+mensagem é falsa **agora**. Varridos os 330 arquivos de `src/app`, `src/components`, `src/lib`,
+`src/server` e `src/core`, com dois conjuntos de padrões (canal explícito e aviso futuro), sempre
+com os comentários removidos.
+
+**Nada a consertar.** As 16 linhas que casaram são todas legítimas: botões que *abrem* o WhatsApp
+(ação de quem clica, não promessa), o e-mail de cadastro que de fato sai pelo Supabase Auth, os
+compromissos de `termos`/`privacidade` — que dizem "a gente avisa **dentro do sistema**", cuidado
+de redação que vale registrar — e a tela de automações, que já diz "ainda não roda sozinha".
+
+Dois registros de método:
+
+- **A primeira varredura, com comentário, deu um falso positivo assustador:** casou com
+  `"você vai receber a confirmação por WhatsApp"` na página pública de agendamento. Era o
+  comentário que descreve o defeito **já consertado**. É a armadilha nº1 do `CLAUDE.md` outra vez,
+  agora do lado de quem procura, não de quem guarda.
+- **A guarda daquela frase foi conferida, não suposta:** reintroduzi a promessa em `agendar.tsx` e
+  `agendamento-publico-nao-promete-demais` reprovou em dois casos. Ela funciona.
+
+## 2026-09-05 · Corte de consulta virando conta: varredura dos 11 casos
+
+Eixo novo, e o de maior retorno da rodada: **onde um limite de APRESENTAÇÃO está servindo de base
+para uma SOMA.** Varridos os 95 arquivos de `src/server` procurando `.limit(`/`.range(` com
+agregação (`reduce`, `length`, `count`, `total`) nas 25 linhas seguintes. Onze casos, um defeito
+grave.
+
+**O achado — `extratoDePontos` (`fidelidade.ts`).** `saldo` era `lancamentos.reduce(...)` sobre as
+50 linhas que a tela mostra. Não é cosmético: `lancarPontos` guarda o resgate com esse mesmo saldo,
+então acima de 50 lançamentos o produto **recusava resgate a que a pessoa tem direito** — e quem
+passa de 50 é, por definição, o cliente mais fiel. Nas duas direções: se o que caiu fora fosse um
+resgate, o saldo inflava e a trava deixava tirar mais do que existe.
+
+O detalhe que mais ensina está na docstring da própria função: ela existe para que ninguém veja
+*"um número que mudou sozinho"* — e a barra de progresso da ficha **andava para trás sozinha**
+quando um lançamento novo empurrava um crédito velho para fora da janela. O texto descrevia o
+defeito que o código tinha.
+
+**Já corretos (3), e vale saber por quê:** `caixa` e `comissao` paginam com `range` e param em
+página curta; `alertas-estoque` faz melhor ainda — detecta que bateu no teto e confere um a um só
+os duvidosos, com o custo explicado no comentário. Foi um destes que revelou que
+`buscarTudoPaginado` já existia, depois de eu ter escrito a quinta cópia dele à mão.
+
+**Sem consumidor que minta (1):** `listarOrcamentos` corta em 100 e a expiração preguiçosa só
+alcança esses 100 — mas nenhuma tela agrega `quotes.status`, e a lista não exibe total ao lado, então
+não há número contraditório para ninguém ler. Fica registrado como conferido, não como limpo.
+
+**O resto (6)** são `.limit(1)`, `head: true` ou mapeamento linha a linha — nada somado.
+
+### Duas lições que passam deste eixo para os próximos
+
+**Consertar sem varrer teria deixado o helper escondido.** Achei `buscarTudoPaginado` procurando
+*outros* casos do mesmo defeito, não procurando um helper. A docstring dele já avisava que "a cópia
+que envelhece é sempre a que ninguém lembra que existe" — e eu era a cópia.
+
+**Toda guarda nova nasceu cega de novo, e a mutação foi quem contou.** A suíte do saldo passou
+inteira com o teto de páginas trocado por `return saldo`. O teto é o caso raro, e o caso raro é
+onde a resposta errada é mais perigosa: um total redondo e plausível não denuncia nada.
+
+## 2026-09-05 · Dividir antes de multiplicar: dois casos, os dois contra o cliente
+
+Varrida a base inteira pela forma `(a / constante) * b` em contas de dinheiro e ponto. **Dois
+casos, os dois consertados**; o resto do que casou é comentário e mistura de cor.
+
+| Onde | Conta | Erro | Direção |
+|---|---|---|---|
+| `fidelidade` | `floor((priceCents / 100) * pointsPerReal)` | 1 ponto | **a menos** para o cliente |
+| `pricing/formatar` | `ceil((duracaoMin / 60) * centsPorHora)` | 1 centavo | **a mais** para o cliente |
+
+`core/pricing/sinal.ts` já fazia `(precoCents * depositBps) / 10_000`. A ordem certa existia na
+casa; eram estas duas que estavam fora do padrão — o que é uma pista útil por si: quando um arquivo
+faz diferente dos irmãos numa conta de dinheiro, vale medir antes de assumir que é equivalente.
+
+### A medição que quase virou um "não achei nada"
+
+Na fidelidade, a primeira varredura usou `pointsPerReal ∈ {1, 2, 3, 5, 10}` — os valores que me
+pareceram plausíveis — e deu **zero divergências**. Eu tinha o veredito "sem defeito" pronto.
+
+O esquema aceita `int` de 0 a 100. Varrendo a faixa que o produto de fato permite: **48.088** casos,
+e na faixa de preço real os afetados são 12 valores — 15, 25, 30, 45, 50, 55, 60, 75, 85, 90, 95,
+100. Justamente os números redondos que uma pessoa escolhe ao montar um programa generoso.
+
+**A lição não é "meça": é medir a faixa que o VALIDADOR aceita, não a que a intuição sugere.** Uma
+amostra escolhida por plausibilidade tem exatamente o viés de quem a escolheu, e o defeito estava
+no complemento dela. Isto é o irmão de `medicao-ingenua-da-falso-positivo`: lá a medição estreita
+inventou defeito, aqui escondeu um.
+
+## 2026-09-05 · O banco de produção estava três migrations atrás, e nada podia ver
+
+Primeiro alvo da rodada de continuidade, e ele não veio de procurar defeito: veio de **reconferir o
+que o documento afirmava**. O `docs/42` §4 listava três itens P0. Medidos:
+
+| Item do `42` | Estado real em 05/09 |
+|---|---|
+| `CRON_BASE_URL` aponta para deploy morto, 8/8 execuções falhando | **falso há um dia** — secret trocado em 04/09 01:07, dez execuções verdes, `/api/health` 200 |
+| migrations 0059-0061 não aplicadas | **verdadeiro**, e pior do que o texto dizia |
+| `SENTRY_DSN` ausente | verdadeiro, segue aberto (decisão do dono) |
+
+Um em três já estava resolvido e o documento tinha **um dia de idade**. Vale como calibragem: a
+regra de reconferir não é sobre documento velho, é sobre documento nenhum.
+
+### O que as três migrations custavam
+
+O `42` dizia "estão no código e inertes no ar". Não estavam inertes. `pedido-de-orcamento.ts`
+insere em `quotes` com `professional_id = null` e `status = 'requested'`, e as duas coisas violavam
+a coluna `not null` e o CHECK antigo: **quem pedisse orçamento pela página pública levava erro**. E
+10 profissões seguiam com o `vocab` só no masculino — o T8 do `docs/20`, em produção, chamando a
+barbeira de "barbeiro". (De passagem: a tabela nunca foi `quote_requests` como o `42` dizia; é
+`quotes` com colunas novas. Nome errado no documento não muda o veredito, mas muda quem consegue
+conferir.)
+
+### A causa a montante, que vale mais que as três
+
+O `docs/05-FAQ-DEV.md` B24 respondia: *"Migration roda por GitHub Action com `supabase db push`,
+antes do deploy do app."* **Essa Action nunca existiu.** Há dois workflows no repositório e nenhum
+aplica migration. É o mesmo defeito do B23 — que prometia um guard no `package.json` que não estava
+lá — e a mesma frase serve para os dois: promessa de processo falsa é pior que a ausência dela,
+porque quem lê age com a confiança de quem tem rede.
+
+**E nenhuma guarda podia pegar, por desenho.** `typecheck`, `lint`, os 1.761 testes e o CI inteiro
+rodam contra um Supabase **local**, que aplica as migrations do disco em toda execução. O ambiente
+que julga estava sempre em dia; o único ambiente que podia estar errado era o único que ninguém
+media. Isto é um parente novo de `teste-de-integracao-aponta-producao`: lá o teste tocava produção
+sem querer, aqui ele nunca toca — e é a mesma raiz, o teste e o alvo em ambientes que ninguém
+compara.
+
+Construir a Action exige credencial nova, que é decisão do dono. O que não exige: o app **já** tem
+`service_role` em produção, e o `/api/health` **já** é batido seis vezes por dia. O alarme que
+faltava já tinha quem tocasse e quem ouvisse.
+
+- `0062` cria `migracoes_aplicadas()`, `security definer` (o `service_role` não tem `usage` em
+  `supabase_migrations` — medido), executável só por `service_role`.
+- `core/schema/versao.ts` compara. **Banco atrás é vermelho; banco à frente é verde com o motivo
+  escrito** — migration aditiva antes do deploy é a ordem SEGURA, e marcá-la como falha ensinaria a
+  fazer na ordem perigosa e transformaria toda publicação em alarme.
+- A contagem existe **ao lado** do nome porque "confere só a mais recente" não veria o buraco no
+  meio, que é o que acontece quando se aplica à mão — o processo real desta base.
+
+### O achado que quase deixou o conserto mudo
+
+Escrita a checagem, fui conferir quem a leria. O job `vigia` do `cron.yml` lia **duas chaves fixas**
+(`recomputeCycles`, `recomputeSegments`) de um relatório de **dez**. As outras oito não tinham
+leitor em lugar nenhum: podiam ficar vermelhas seis vezes por dia, todo dia, com o job verde. A
+checagem de schema teria nascido calada — um alarme novo ligado a um fio cortado.
+
+É o `cartao-de-confirmacao-em-branco` do lado de quem lê, e o `consertar-a-pergunta-nao-o-caso` de
+novo: a correção não foi acrescentar a chave nova à lista, foi **ler o veredito**. Dos dois lados:
+
+- o `vigia` passa a ler o `ok` da raiz;
+- o `ok` do relatório passa a sair de `every` sobre o próprio objeto, e não de um `&&` com uma
+  parcela por checagem — essa lista à mão é a segunda cópia do enunciado, e o TypeScript não
+  reclama quando ela fica curta.
+
+E a guarda antiga do `vigia` reprovou na hora certa, pelo motivo certo: ela contava
+`toHaveLength(2)` ocorrências de `// false`, e a leitura nova fez três. **Trocar o 2 por 3 seria
+onde a proteção afrouxa sem ninguém ver** (`atualizar-guarda-que-reprova`), então o enunciado virou
+a pergunta: *toda* variável que sai de um `jq -r` tem a rede do `// false`?
+
+### A guarda que eu escrevi cega, e a mutação que contou
+
+Oito mutações, uma por vez. Sete reprovaram como deviam. **A oitava passou**: devolver o `&&` à mão
+sem a parcela do `schema` deixava `saude-ok-cobre-toda-checagem` inteiramente verde.
+
+O motivo é fino e vale guardar: o teste iterava as chaves e aplicava `every` **sobre um objeto
+montado dentro do próprio teste**. Ele exercitava a regra, nunca a decisão — `verificarSaude`
+podia devolver qualquer coisa no `ok` que aquele laço não olhava. Um teste que reimplementa o
+enunciado passa a testar a si mesmo, e a mutação é a única coisa que percebe.
+
+A versão de hoje tem dois enunciados porque nenhum sozinho basta: casos que adoecem uma checagem
+pela fixture e conferem o veredito **real**, mais uma asserção de forma para as checagens que a
+fixture não sabe adoecer. E tentar incluir `sendReminders`/`sendCampaigns` nos casos ensinou uma
+coisa que eu ia supor errado: envelhecer o heartbeat delas **não** as adoece, porque
+`heartbeatVigiado` as dispensa enquanto estiverem fora do `schedule`. O teste reprovou dizendo que
+a fixture não conseguiu adoecê-las — que é a resposta certa, não uma limitação da fixture.
+
+## 2026-09-05 · A lente do cliente final: um achado, três não-achados
+
+Auditoria do funil público (`/{slug}` → `/agendar` → confirmação) medida no navegador a 375 px,
+não lida no código. Quatro suspeitas, e a proporção é o que vale registrar: **três eram artefato de
+medição ingênua e uma era real**. É a mesma proporção do `docs/42` §5, e por isso a regra de medir
+antes de consertar não é zelo — é o que separa conserto de invenção.
+
+### O achado: a saída que existia só na prosa
+
+Depois de confirmar, a tela diz *"Se não tiver retorno em algumas horas, é só chamar por telefone"*
+— e não dá telefone nenhum. Os únicos elementos clicáveis eram "Adicionar à minha agenda" e "Voltar
+para {salão}". Para seguir o conselho da própria tela: voltar, rolar até o rodapé, achar o número.
+
+O que torna isto instrutivo é que **a intenção estava escrita e correta**. O comentário do conserto
+de 25/08, que tirou a promessa falsa de "confirmação por WhatsApp", diz: *"mantendo o caminho de
+saída (telefone), porque tirar a promessa falsa não pode virar silêncio sobre o que fazer"*. O
+raciocínio estava certo e parou na frase. **Comentário que declara a intenção é onde é mais fácil
+acreditar que ela foi cumprida** — e é irmão do achado do `cacheDek` (a resposta boa numa metade
+esconde a metade que falta).
+
+E havia prova ao lado: `orcamento/pedido.tsx`, a tela de sucesso do pedido de orçamento, escrita
+depois, termina com *"Se quiser adiantar, fale direto"* e o botão do WhatsApp. Mesma dúvida, mesmo
+momento do funil, duas respostas diferentes — e a que faltava era a do funil principal. **Quando
+duas telas irmãs discordam, a mais nova costuma estar certa e ninguém voltou para a antiga.**
+
+### Os três não-achados, e por que cada um parecia defeito
+
+| Suspeita | Medida ingênua | Medida certa | Veredito |
+|---|---|---|---|
+| 13 alvos de toque abaixo de 48 px | `getBoundingClientRect` → 40 px | sonda com `elementFromPoint` → 47 a 64 px alcançáveis | o `::after` do `toque-48` funciona |
+| tela de sucesso troca conteúdo sem avisar leitor de tela | não há `aria-live` no bloco | `document.activeElement` → o `h2` com `tabIndex={-1}` recebe foco | padrão correto, e melhor que `aria-live` |
+| campo sem rótulo no formulário (honeypot) | `input` sem `aria-hidden` | o `label` PAI tem `aria-hidden` e o input tem `tabIndex={-1}` | fora da árvore de acessibilidade, correto |
+
+O do foco quase virou conserto: eu tinha a suspeita, o padrão da casa (`aria-live`) e a linha do
+`CLAUDE.md` sobre trocar conteúdo sem avisar. Faltava perguntar ao navegador **onde o foco está** —
+uma linha. As três suspeitas custaram três medições e teriam custado três consertos errados.
+
+### Fontes: item 5 do `docs/42` fechado sem trabalho
+
+O `42` deixou "34 kB numa requisição; formato e `font-display` não auditados". Auditado em
+produção, o resultado é que não há o que fazer: `font-display: swap`; três `@font-face` com
+`unicode-range`, e só o bloco latino (`u+00??`) é baixado; `font-stretch: 100%` fixo, ou seja o
+arquivo variável carrega só o eixo de peso; `Archivo Fallback` com `local("Arial")` e
+`size-adjust`, que é o que segura o CLS; e o preload existe — vem pelo `:HL[...]` do payload RSC,
+não como `<link>` no `head`, que foi o que fez parecer ausente na primeira olhada.
+
+Trocar o variável por três estáticos (400/600/700, os únicos pesos que o código usa) daria **três**
+requisições somando mais que os 34,9 kB de uma. **Registrado como conferido, não como pendente** —
+para ninguém gastar outra rodada aqui.
+
+## 2026-09-05 · Cobertura em `src/core`: 94 funções, uma lacuna de verdade
+
+Lente do desenvolvedor (`Fase 1` item 3 do prompt): *"cobertura de teste nos pontos que já
+quebraram antes — pricing, recorrência, lembretes"*. Varridas as **94 funções exportadas** de
+`src/core` contra as chamadas em `tests/`.
+
+`pricing`, `recurrence`, `reminders`, `ciclo`, `cycle` e `loyalty`: **todas exercitadas**. As três
+áreas que o prompt pedia estão cobertas, e as funções que já produziram defeito de dinheiro
+(`formatarPreco`, `pontosPorGasto`, `sinalEmCentavos`, `valorEmRiscoCents`) têm teste direto.
+
+Quatro funções apareceram como "sem teste". **Três eram falso positivo do meu varredor**, e o
+motivo é o mesmo de sempre: ele procurava a chamada PELO NOME dentro de `tests/`, e cobertura
+indireta não tem o nome escrito lá.
+
+| Função | Veredito | Onde estava a cobertura |
+|---|---|---|
+| `frasesDeBloqueio` | coberta | `assistente-nao-confabula-o-que-nao-ve` exercita via `promptDeSistema`, inclusive a frase que proíbe o "está tudo certo" |
+| `explicarArgumentosInvalidos` | coberta | tem arquivo próprio, `assistente-explica-o-erro` |
+| `menorPlanoComCapacidade` | coberta | chamada dentro de `podeUsarCapacidade`, no mesmo arquivo, e é essa que os testes exercitam |
+| `limparParaGemini` | **lacuna real** | ver abaixo |
+
+**Chamada direta pelo nome não é a medida de cobertura** — e o varredor errou para o lado barato
+(acusa demais, e conferir custa uma leitura). O lado caro seria o oposto.
+
+### A lacuna, e por que a guarda que já existia não bastava
+
+`limparParaGemini` é a função que segurou o assistente depois do incidente de 30/08 — um
+`exclusiveMinimum` vindo de `z.number().int().positive()` fez o Gemini responder 400 e derrubar
+**todas** as ferramentas, porque viajam no mesmo `tools[0]`.
+
+Já existia `schema-que-o-gemini-aceita`, que roda o schema de toda ferramenta real e reprova
+palavra fora do subconjunto. É a guarda certa para aquele incidente. O que ela não vê é o que só
+aparece quando a REGRA da limpeza muda — ela observa o que o Zod emite HOJE. Três mutações, uma por
+vez:
+
+| mutação em `limparParaGemini` | `schema-que-o-gemini-aceita` | guarda nova |
+|---|---|---|
+| tirar a checagem de `format` (deixando `uuid`, `email` passarem) | **passou** | reprovou |
+| trocar a lista de permitidos por uma de proibidos | reprovou | reprovou |
+| limpar também os NOMES dentro de `properties` | **passou** | reprovou |
+
+As duas que ela deixa passar têm o formato exato do defeito original. `format: "uuid"` é 400 igual
+a `exclusiveMinimum` — e `z.uuid()` está em uso hoje, em `EsquemaClienteId`. E filtrar os nomes de
+`properties` apaga um PARÂMETRO da ferramenta em silêncio: o Gemini aceita o schema, chama a
+ferramenta sem o campo, e o erro só aparece no Zod do servidor, depois de a pessoa já ter pedido.
+
+**A lição de método:** uma guarda que roda sobre os dados reais (todas as ferramentas) prova que
+hoje está certo; ela não prova que a REGRA continua sendo a regra. As duas são necessárias, e a
+segunda só se escreve à mão, com casos que os dados de hoje não produzem.
+
+## 2026-09-05 · Peso no celular: a régua era bytes crus, e isso vale uma ordem de grandeza
+
+Registro curto porque o desenvolvimento está no `docs/42` §7, mas a lição é geral demais para
+ficar só lá.
+
+O `docs/42` inteiro mediu **bytes crus**. Medido com `Accept-Encoding`, a página do salão trafega
+**9,3 kB** com brotli, não os 74 kB do arquivo — e o `/` e a `/precos` ficam em 9,3 e 8,4 kB. A
+frase *"é aqui que o 3G sofre"*, escrita sobre 85,3 kB, era sobre ~11 kB reais.
+
+Reconstruí o HTML desfazendo o conserto dos ícones (cada `<use>` de volta no `<symbol>` inteiro) e
+comprimi os dois lados: a economia real dos PRs #68/#70/#71 é de **28 a 48 bytes** (medido em toda
+qualidade de brotli entre 4 e 11), contra os **12.465 B crus** que a conta anunciava. Uma diferença
+de **400×**.
+
+**E a primeira versão desta entrada dizia 1.150 B, porque saiu com gzip.** O script tinha
+`try: import brotli / except: tem_brotli = False` e se chamava `brotli.py` — sombreava o módulo que
+tentava importar, e o fallback transformou uma falha de ferramenta em resultado. Ficou commitado
+por alguns minutos afirmando "~11% do que trafega", errado por 40×.
+
+Duas lições, e a segunda é a que se repete:
+
+1. Marcação repetida é o caso de uso do LZ77. Trinta cópias de um `<path>` custam, comprimidas,
+   quase o mesmo que uma — e trocar cópias idênticas por N `<use>` DIFERENTES introduz conteúdo
+   menos comprimível, que é por que a economia chega a ser menor na qualidade mais alta.
+2. **Ferramenta de medição não pode ter plano B silencioso.** Um número da grandeza errada é pior
+   que nenhum número, porque ele vira decisão. É o `falha-silenciosa-onde-procurar` aplicado ao
+   instrumento em vez de ao produto.
+
+Efeito prático imediato: três itens saíram da lista de trabalho do `docs/42` **por medição, não por
+trabalho** — ícones que sobraram na landing (~200 B comprimidos), imagens (32,7 kB no total, com o
+pipeline de upload já resolvendo na origem) e fontes (`swap`, `unicode-range`, fallback com
+`size-adjust`, preload via payload RSC). Nenhum dos três era defeito.
+
+## 2026-09-05 · `catch` que descarta: varredura fechada, um achado
+
+O `CLAUDE.md` lista "catch que devolve um padrão e segue" como armadilha conhecida, com dois casos
+históricos (fila offline apagada no logout, lista antiga na tela como se fosse resultado de busca).
+Nunca tinha sido varrido inteiro. Varridos os **457 arquivos** de `src/`: **111 blocos `catch`**,
+dos quais **98 não relançam** e **90 não registram nada**.
+
+Os 90 assustam e não são defeito: a esmagadora maioria é tratamento de UI que **mostra alguma
+coisa** — `setErro(...)` ou `mostrarToast(...)` com a frase certa. Descartar o objeto de erro
+depois de contar para a pessoa é o comportamento correto; o critério do `CLAUDE.md` é *"o catch
+descarta alguma coisa?"*, e ali nada se perde.
+
+Conferidos um a um os que decidem em silêncio no servidor:
+
+| Onde | O que faz | Veredito |
+|---|---|---|
+| `handler.ts` `origemValida` | `Origin` impossível de parsear → `false` | falha FECHADO, que é o certo para CSRF |
+| `assistente.ts` (args do modelo) | JSON inválido → `{}` e cai no Zod | certo: o `explicarArgumentosInvalidos` manda o modelo corrigir |
+| `assistente.ts` (ferramenta falhou) | texto honesto + `console.error` | **é o exemplar da casa** — o comentário dele cita a própria armadilha |
+| `assistente-flutuante.tsx` ×2 vazios | `localStorage` em aba anônima | correto, e documentado |
+| `middleware.ts` | URL do Supabase inválida → origem some da CSP | sintoma, não raiz: URL torta quebra o app em lugares mais barulhentos antes |
+| **`captcha.ts`** | provedor fora do ar → **`return true` sem rastro** | **o achado** |
+
+### O achado, e por que ele é do tipo mais difícil de ver
+
+O captcha **falha aberto de propósito**, e a decisão está certa: derrubar o agendamento público de
+todo salão porque a hCaptcha teve um soluço é pior que ficar sem essa camada por um tempo — o
+honeypot e o rate limit não dependem de credencial nenhuma.
+
+O defeito não era a decisão. Era o **silêncio**. O ramo de cima (`!secret`) registra
+`hcaptcha_nao_configurado`; o `catch` não registrava nada. Ou seja: **a única forma de falha
+observável era a que não é falha.** Timeout, DNS, 5xx e segredo trocado por engano viravam "captcha
+aprovando 100% das tentativas" sem sinal em lugar nenhum — e "por um tempo", que é a condição que o
+próprio comentário assume, era exatamente o que ninguém tinha como medir.
+
+Este é o parente do `cofre` e do `freio do envio automático` desta mesma semana: **decisão certa
+com metade que ninguém cumpre**. E, como naqueles, o comentário estava correto e completo — o que
+faltava era o código fazer o que ele dizia.
+
+O teste cobre as quatro direções, e a terceira é a que impede o conserto de virar outro defeito:
+reprovação normal do provedor **não** loga, senão a camada vira ruído diário e ninguém lê o alarme
+que importa.
+
+## 2026-09-05 · Guarda que varre e passa VAZIA: duas de quarenta e três
+
+A regra 4 do procedimento de guarda do `CLAUDE.md` — *"guarde contra o próprio detector: se o
+padrão parar de casar, o teste tem que GRITAR, não passar vazio"* — nunca tinha sido conferida na
+suíte inteira. Varridos os **252 arquivos de teste**: **43 montam uma coleção a partir do disco**, e
+**41 já têm piso**. Duas não tinham, e as duas passam verdes com a varredura devolvendo zero:
+
+| Guarda | O que ela protege | Medido |
+|---|---|---|
+| `preco-em-um-lugar-so` | preço de plano existir num lugar só | trocando `arquivos(RAIZ)` por `[]`: **5 de 5 verdes** |
+| `pagina-do-negocio-e-so-dele` | o veto de nunca listar estabelecimentos | zerando as duas coleções: **3 de 3 verdes** |
+
+São justamente as duas que guardam as coisas mais caras da lista: **dinheiro** e o **único
+diferencial estrutural do produto**. Não é coincidência estatística — é a forma da armadilha: a
+guarda mais importante é a que ninguém quer ver reprovar, então ela é escrita, vista passar, e
+nunca mais olhada.
+
+### O piso escolhido não é contagem — é o positivo conhecido
+
+Contar arquivos pega o caso "a varredura parou de achar", e só ele. O caso irmão é pior: **a
+varredura acha tudo e o DETECTOR parou de casar** — regex ajustado, acento normalizado, formato de
+preço mudado. A contagem continua alta e o resultado continua vazio.
+
+Então o piso de cada uma afirma que o detector ainda encontra o positivo que ele **deve** encontrar:
+
+- em `preco-em-um-lugar-so`, que os dois detectores casam com `core/billing/planos.ts`, que é a
+  fonte única e por definição o único arquivo que legitimamente contém as duas coisas;
+- em `pagina-do-negocio-e-so-dele`, que a varredura acha `[slug]/page.tsx` e que
+  `consultasATenants` ainda reconhece uma consulta a `tenants`.
+
+Quatro mutações, uma por vez, e as quatro fazem o piso gritar — inclusive as duas de "detector
+parou de casar", que a contagem sozinha não pegaria.
+
+**E uma mutação não foi aplicada na primeira tentativa** (o `sed` com escape de regex não casou), e
+o resultado saiu como "guarda cega". É a regra 3 do mesmo procedimento, e ela custou um veredito
+errado por dois minutos: **confirme que a mutação entrou antes de ler o resultado.**
+
+### Por que isto não contradiz o "não vale a pena" do meta-teste
+
+O registro de hoje mais cedo descartou um meta-teste que varre guardas atrás de cegueira por
+comentário — com medição: a heurística ampla dava 4 falsos positivos em 4 acusações. Esta classe é
+outra e é exata: *"a coleção que você percorre tem pelo menos um elemento?"* não tem falso positivo,
+porque não é heurística sobre intenção. O que ficou não foi um meta-teste, e sim o piso dentro de
+cada uma das duas — que é o que o `CLAUDE.md` já mandava fazer.
+
+## 2026-09-05 · `update` com guarda no `where`: 64 varridos, 1 defeito
+
+Eixo importado de outro projeto da casa (`update-zero-linhas-nao-e-erro`, achado 4× lá): **no
+supabase-js um `update` que não casa linha nenhuma devolve `error: null`.** Sucesso, zero linhas.
+Quem só olha o `error` não distingue "gravei" de "não havia o que gravar".
+
+Isso só é perigoso quando o `where` carrega uma **guarda** além da identidade. Com `tenant_id` +
+`id`, zero linhas quer dizer "não existe", e o chamador em geral já trata. Varridos os 199 arquivos
+de `src/server` e `src/app`: **64 chamadas `.update(`**, **22 com guarda de verdade**, e **3 sem
+conferir linhas afetadas**.
+
+| Onde | Guarda | Veredito |
+|---|---|---|
+| `media.ts` | `.is('deleted_at', null)` | correto, e o próprio código explica: apagar de novo uma foto já apagada não pode virar 404, e `despublicarDoPortfolio` roda depois de qualquer jeito |
+| `idempotency.ts` | `.eq('key', ...)` | a linha nasceu nesta mesma requisição, segundos antes; só a faxina de retenção a remove, e ela só alcança chave velha |
+| **`recuperar-receita.ts`** | `client_id` + `service_id` | **o defeito** |
+
+### O defeito, e por que ele é do tipo mais caro
+
+`last_campaign_at` é gravado **depois** de a mensagem ter saído. Zero linhas ali — corrida com o
+`recompute_cycles`, que reescreve `client_cycles` seis vezes por dia — significa que a trava de 7
+dias fica sem o que ler, e a mesma cliente recebe *"sentimos sua falta"* outra vez no lote
+seguinte. Sem erro, sem log, sem nada na tela.
+
+É o irmão exato do `captcha` desta mesma rodada: **o efeito colateral já aconteceu e a escrita que
+o registra falha em silêncio.** A diferença é o preço — aqui quem paga é o salão, na conversa com a
+cliente, e o produto inteiro se vende como "não incomoda seu cliente".
+
+### O conserto que quase foi pior que o defeito
+
+A primeira versão marcava o item como `falha_de_envio` quando o carimbo não gravava. **Está
+errado, e na direção mais cara:** a mensagem SAIU. Dizer "não foi" para a dona é o convite exato
+para ela reenviar — e o reenvio é o dano que a trava existe para impedir. O conserto viraria o
+defeito, com uma volta a mais.
+
+Conta como enviada (que é a verdade sobre a cliente) e o carimbo perdido vira `console.error`, que
+é problema operacional. Registrado no lugar em que a decisão fica visível, porque o comentário da
+primeira versão dizia o contrário do que o código passou a fazer — e comentário que contradiz o
+código é o defeito que este repositório mais persegue.
+
+### A guarda, e o que ela guarda de verdade
+
+Segue a mecânica de `consulta-filtra-tenant`: `update` novo com guarda no `where` e sem conferir
+linhas reprova; dispensa entra em lista **com o motivo escrito**, e o custo de justificar é o
+ponto. Tem piso nos dois sentidos que importam — a varredura acha arquivos, e o detector de
+*guarda* ainda casa (sem isso, a lista de ofensores ficaria vazia para sempre).
+
+Quatro mutações. E uma delas me deu um susto que vale registrar: `grep -c` sobre o arquivo mutado
+devolveu `1` e eu li como "mutação não aplicada" — havia **duas** ocorrências do padrão no arquivo,
+e a mutação tinha entrado. Contar linha que contém o padrão não é contar o padrão; a conferência
+certa é comparar antes e depois, que foi o que desfez o mal-entendido.
