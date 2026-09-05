@@ -224,13 +224,51 @@ export async function enviarParaRecuperar(
     }, provider)
 
     if (resultado.status === 'sent') {
-      const { error: erroUpdate } = await db
+      /*
+       * `select()` no fim do `update` não é enfeite: é o que transforma "não gravou" em algo que
+       * alguém pode ver.
+       *
+       * No supabase-js, um `update` que não casa linha nenhuma devolve `error: null` — sucesso,
+       * zero linhas. E aqui isso é o pior momento possível para um sucesso falso: **a mensagem já
+       * saiu**. Sem `last_campaign_at`, a trava de 7 dias lá em cima não tem o que ler, e a mesma
+       * cliente entra de novo no próximo lote, recebendo "sentimos sua falta" outra vez.
+       *
+       * A linha existe (foi lida com o mesmo trio de chaves algumas linhas acima), então zero é
+       * corrida com o `recompute_cycles`, que reescreve `client_cycles` seis vezes por dia. É raro
+       * — e é exatamente o tipo de raro que ninguém descobre olhando, porque não há erro para
+       * olhar. Quem paga é o salão, na conversa com a cliente.
+       *
+       * Não dá para desfazer o envio, e inventar a linha seria criar um ciclo que o Motor não
+       * calculou. O que dá é deixar rastro — ver a decisão de contagem logo abaixo do `if`.
+       */
+      const { data: carimbadas, error: erroUpdate } = await db
         .from('client_cycles')
         .update({ last_campaign_at: new Date().toISOString() })
         .eq('tenant_id', tenantId)
         .eq('client_id', item.clientId)
         .eq('service_id', item.serviceId)
+        .select('client_id')
       if (erroUpdate) throw new AppError('INTERNAL', { cause: erroUpdate })
+
+      if ((carimbadas?.length ?? 0) === 0) {
+        console.error(JSON.stringify({
+          level: 'error',
+          event: 'recuperar_carimbo_nao_gravou',
+          detalhe: 'mensagem enviada e last_campaign_at NAO gravado — a trava de 7 dias fica cega para esta cliente',
+          tenantId,
+          clientId: item.clientId,
+          serviceId: item.serviceId,
+        }))
+      }
+      /*
+       * Conta como enviada mesmo quando o carimbo falhou, e isto é decisão, não descuido: a
+       * mensagem SAIU. Dizer "falha de envio" para a dona seria mentir na direção mais cara —
+       * ela reenviaria, e o reenvio é justamente o dano que a trava de 7 dias existe para
+       * impedir. O conserto viraria o defeito, com uma volta a mais.
+       *
+       * A tela mostra o que aconteceu com a cliente; o carimbo perdido é problema operacional, e
+       * o lugar dele é o log acima.
+       */
       queued++
     } else {
       // Falha de entrega de verdade (WhatsApp, push e e-mail indisponíveis). §2.4 só definia dois

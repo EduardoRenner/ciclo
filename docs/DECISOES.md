@@ -6444,3 +6444,55 @@ comentário — com medição: a heurística ampla dava 4 falsos positivos em 4 
 outra e é exata: *"a coleção que você percorre tem pelo menos um elemento?"* não tem falso positivo,
 porque não é heurística sobre intenção. O que ficou não foi um meta-teste, e sim o piso dentro de
 cada uma das duas — que é o que o `CLAUDE.md` já mandava fazer.
+
+## 2026-09-05 · `update` com guarda no `where`: 64 varridos, 1 defeito
+
+Eixo importado de outro projeto da casa (`update-zero-linhas-nao-e-erro`, achado 4× lá): **no
+supabase-js um `update` que não casa linha nenhuma devolve `error: null`.** Sucesso, zero linhas.
+Quem só olha o `error` não distingue "gravei" de "não havia o que gravar".
+
+Isso só é perigoso quando o `where` carrega uma **guarda** além da identidade. Com `tenant_id` +
+`id`, zero linhas quer dizer "não existe", e o chamador em geral já trata. Varridos os 199 arquivos
+de `src/server` e `src/app`: **64 chamadas `.update(`**, **22 com guarda de verdade**, e **3 sem
+conferir linhas afetadas**.
+
+| Onde | Guarda | Veredito |
+|---|---|---|
+| `media.ts` | `.is('deleted_at', null)` | correto, e o próprio código explica: apagar de novo uma foto já apagada não pode virar 404, e `despublicarDoPortfolio` roda depois de qualquer jeito |
+| `idempotency.ts` | `.eq('key', ...)` | a linha nasceu nesta mesma requisição, segundos antes; só a faxina de retenção a remove, e ela só alcança chave velha |
+| **`recuperar-receita.ts`** | `client_id` + `service_id` | **o defeito** |
+
+### O defeito, e por que ele é do tipo mais caro
+
+`last_campaign_at` é gravado **depois** de a mensagem ter saído. Zero linhas ali — corrida com o
+`recompute_cycles`, que reescreve `client_cycles` seis vezes por dia — significa que a trava de 7
+dias fica sem o que ler, e a mesma cliente recebe *"sentimos sua falta"* outra vez no lote
+seguinte. Sem erro, sem log, sem nada na tela.
+
+É o irmão exato do `captcha` desta mesma rodada: **o efeito colateral já aconteceu e a escrita que
+o registra falha em silêncio.** A diferença é o preço — aqui quem paga é o salão, na conversa com a
+cliente, e o produto inteiro se vende como "não incomoda seu cliente".
+
+### O conserto que quase foi pior que o defeito
+
+A primeira versão marcava o item como `falha_de_envio` quando o carimbo não gravava. **Está
+errado, e na direção mais cara:** a mensagem SAIU. Dizer "não foi" para a dona é o convite exato
+para ela reenviar — e o reenvio é o dano que a trava existe para impedir. O conserto viraria o
+defeito, com uma volta a mais.
+
+Conta como enviada (que é a verdade sobre a cliente) e o carimbo perdido vira `console.error`, que
+é problema operacional. Registrado no lugar em que a decisão fica visível, porque o comentário da
+primeira versão dizia o contrário do que o código passou a fazer — e comentário que contradiz o
+código é o defeito que este repositório mais persegue.
+
+### A guarda, e o que ela guarda de verdade
+
+Segue a mecânica de `consulta-filtra-tenant`: `update` novo com guarda no `where` e sem conferir
+linhas reprova; dispensa entra em lista **com o motivo escrito**, e o custo de justificar é o
+ponto. Tem piso nos dois sentidos que importam — a varredura acha arquivos, e o detector de
+*guarda* ainda casa (sem isso, a lista de ofensores ficaria vazia para sempre).
+
+Quatro mutações. E uma delas me deu um susto que vale registrar: `grep -c` sobre o arquivo mutado
+devolveu `1` e eu li como "mutação não aplicada" — havia **duas** ocorrências do padrão no arquivo,
+e a mutação tinha entrado. Contar linha que contém o padrão não é contar o padrão; a conferência
+certa é comparar antes e depois, que foi o que desfez o mal-entendido.
