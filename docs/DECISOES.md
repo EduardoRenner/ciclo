@@ -6323,3 +6323,25 @@ ferramenta sem o campo, e o erro só aparece no Zod do servidor, depois de a pes
 **A lição de método:** uma guarda que roda sobre os dados reais (todas as ferramentas) prova que
 hoje está certo; ela não prova que a REGRA continua sendo a regra. As duas são necessárias, e a
 segunda só se escreve à mão, com casos que os dados de hoje não produzem.
+
+## 2026-09-05 · Peso no celular: a régua era bytes crus, e isso vale uma ordem de grandeza
+
+Registro curto porque o desenvolvimento está no `docs/42` §7, mas a lição é geral demais para
+ficar só lá.
+
+O `docs/42` inteiro mediu **bytes crus**. Medido com `Accept-Encoding`, a página do salão trafega
+**9,3 kB** com brotli, não os 74 kB do arquivo — e o `/` e a `/precos` ficam em 9,3 e 8,4 kB. A
+frase *"é aqui que o 3G sofre"*, escrita sobre 85,3 kB, era sobre ~11 kB reais.
+
+Reconstruí o HTML desfazendo o conserto dos ícones (cada `<use>` de volta no `<symbol>` inteiro) e
+comprimi os dois: a economia dos PRs #68/#70/#71 é **1.150 B gzip** contra **12.465 B crus**. A
+proporção sobreviveu (~11% do que trafega); o absoluto encolheu **11×**.
+
+Isto refina `byte-cru-e-a-regua-errada`, que registrava "não economiza nada": **economiza, e dez
+vezes menos do que a conta crua promete.** As duas metades importam — a primeira impede de tratar
+compressão como se não existisse, a segunda impede de tratar o conserto como inútil.
+
+Efeito prático imediato: três itens saíram da lista de trabalho do `docs/42` **por medição, não por
+trabalho** — ícones que sobraram na landing (~200 B comprimidos), imagens (32,7 kB no total, com o
+pipeline de upload já resolvendo na origem) e fontes (`swap`, `unicode-range`, fallback com
+`size-adjust`, preload via payload RSC). Nenhum dos três era defeito.
