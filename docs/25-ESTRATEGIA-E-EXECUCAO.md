@@ -168,6 +168,18 @@ CICLO deixa de ser uma agenda e vira outra coisa. Hoje esse momento não acontec
 Não verificado em navegador ao vivo (mesma ressalva da F1): typecheck, lint, suíte unitária e de
 integração completas, RLS e build de produção passam.
 
+> **Conferência de 2026-09-05 — os dois ✅ são honestos.** Lidos no código, não deduzidos do
+> status: o 12 está em `admin/clientes/lista.tsx:175`, e corretamente restrito ao vazio DE VERDADE
+> (`!segmento && !termo`) — busca sem resultado não convida a importar planilha, que seria a
+> resposta errada para a pergunta que a pessoa fez. O 13 está em
+> `server/services/importacao-clientes.ts:341`, chamando `computeCycle` de verdade, o mesmo
+> algoritmo do Motor, e não uma contagem paralela que poderia divergir dele.
+>
+> Fica um limite registrado, não um veredito: nenhuma das duas telas é medível ao vivo nesta
+> sessão — `/admin/*` exige login, e digitar senha em formulário está fora do combinado. O alvo de
+> toque do link inline do 12 é justamente o tipo de coisa que só a sondagem ponto a ponto decide
+> (ver a armadilha do `toque-48` no `CLAUDE.md`), então ele segue **não medido**.
+
 ### F3 · Piloto de 10 — a única fase sem código
 
 Não é marketing; é a fase que decide se o resto vale. Três verticais, para descobrir qual morde:
