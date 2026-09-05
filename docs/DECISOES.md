@@ -6107,3 +6107,31 @@ que envelhece é sempre a que ninguém lembra que existe" — e eu era a cópia.
 **Toda guarda nova nasceu cega de novo, e a mutação foi quem contou.** A suíte do saldo passou
 inteira com o teto de páginas trocado por `return saldo`. O teto é o caso raro, e o caso raro é
 onde a resposta errada é mais perigosa: um total redondo e plausível não denuncia nada.
+
+## 2026-09-05 · Dividir antes de multiplicar: dois casos, os dois contra o cliente
+
+Varrida a base inteira pela forma `(a / constante) * b` em contas de dinheiro e ponto. **Dois
+casos, os dois consertados**; o resto do que casou é comentário e mistura de cor.
+
+| Onde | Conta | Erro | Direção |
+|---|---|---|---|
+| `fidelidade` | `floor((priceCents / 100) * pointsPerReal)` | 1 ponto | **a menos** para o cliente |
+| `pricing/formatar` | `ceil((duracaoMin / 60) * centsPorHora)` | 1 centavo | **a mais** para o cliente |
+
+`core/pricing/sinal.ts` já fazia `(precoCents * depositBps) / 10_000`. A ordem certa existia na
+casa; eram estas duas que estavam fora do padrão — o que é uma pista útil por si: quando um arquivo
+faz diferente dos irmãos numa conta de dinheiro, vale medir antes de assumir que é equivalente.
+
+### A medição que quase virou um "não achei nada"
+
+Na fidelidade, a primeira varredura usou `pointsPerReal ∈ {1, 2, 3, 5, 10}` — os valores que me
+pareceram plausíveis — e deu **zero divergências**. Eu tinha o veredito "sem defeito" pronto.
+
+O esquema aceita `int` de 0 a 100. Varrendo a faixa que o produto de fato permite: **48.088** casos,
+e na faixa de preço real os afetados são 12 valores — 15, 25, 30, 45, 50, 55, 60, 75, 85, 90, 95,
+100. Justamente os números redondos que uma pessoa escolhe ao montar um programa generoso.
+
+**A lição não é "meça": é medir a faixa que o VALIDADOR aceita, não a que a intuição sugere.** Uma
+amostra escolhida por plausibilidade tem exatamente o viés de quem a escolheu, e o defeito estava
+no complemento dela. Isto é o irmão de `medicao-ingenua-da-falso-positivo`: lá a medição estreita
+inventou defeito, aqui escondeu um.
