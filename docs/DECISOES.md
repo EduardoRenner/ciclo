@@ -6273,3 +6273,53 @@ não como `<link>` no `head`, que foi o que fez parecer ausente na primeira olha
 Trocar o variável por três estáticos (400/600/700, os únicos pesos que o código usa) daria **três**
 requisições somando mais que os 34,9 kB de uma. **Registrado como conferido, não como pendente** —
 para ninguém gastar outra rodada aqui.
+
+## 2026-09-05 · Cobertura em `src/core`: 94 funções, uma lacuna de verdade
+
+Lente do desenvolvedor (`Fase 1` item 3 do prompt): *"cobertura de teste nos pontos que já
+quebraram antes — pricing, recorrência, lembretes"*. Varridas as **94 funções exportadas** de
+`src/core` contra as chamadas em `tests/`.
+
+`pricing`, `recurrence`, `reminders`, `ciclo`, `cycle` e `loyalty`: **todas exercitadas**. As três
+áreas que o prompt pedia estão cobertas, e as funções que já produziram defeito de dinheiro
+(`formatarPreco`, `pontosPorGasto`, `sinalEmCentavos`, `valorEmRiscoCents`) têm teste direto.
+
+Quatro funções apareceram como "sem teste". **Três eram falso positivo do meu varredor**, e o
+motivo é o mesmo de sempre: ele procurava a chamada PELO NOME dentro de `tests/`, e cobertura
+indireta não tem o nome escrito lá.
+
+| Função | Veredito | Onde estava a cobertura |
+|---|---|---|
+| `frasesDeBloqueio` | coberta | `assistente-nao-confabula-o-que-nao-ve` exercita via `promptDeSistema`, inclusive a frase que proíbe o "está tudo certo" |
+| `explicarArgumentosInvalidos` | coberta | tem arquivo próprio, `assistente-explica-o-erro` |
+| `menorPlanoComCapacidade` | coberta | chamada dentro de `podeUsarCapacidade`, no mesmo arquivo, e é essa que os testes exercitam |
+| `limparParaGemini` | **lacuna real** | ver abaixo |
+
+**Chamada direta pelo nome não é a medida de cobertura** — e o varredor errou para o lado barato
+(acusa demais, e conferir custa uma leitura). O lado caro seria o oposto.
+
+### A lacuna, e por que a guarda que já existia não bastava
+
+`limparParaGemini` é a função que segurou o assistente depois do incidente de 30/08 — um
+`exclusiveMinimum` vindo de `z.number().int().positive()` fez o Gemini responder 400 e derrubar
+**todas** as ferramentas, porque viajam no mesmo `tools[0]`.
+
+Já existia `schema-que-o-gemini-aceita`, que roda o schema de toda ferramenta real e reprova
+palavra fora do subconjunto. É a guarda certa para aquele incidente. O que ela não vê é o que só
+aparece quando a REGRA da limpeza muda — ela observa o que o Zod emite HOJE. Três mutações, uma por
+vez:
+
+| mutação em `limparParaGemini` | `schema-que-o-gemini-aceita` | guarda nova |
+|---|---|---|
+| tirar a checagem de `format` (deixando `uuid`, `email` passarem) | **passou** | reprovou |
+| trocar a lista de permitidos por uma de proibidos | reprovou | reprovou |
+| limpar também os NOMES dentro de `properties` | **passou** | reprovou |
+
+As duas que ela deixa passar têm o formato exato do defeito original. `format: "uuid"` é 400 igual
+a `exclusiveMinimum` — e `z.uuid()` está em uso hoje, em `EsquemaClienteId`. E filtrar os nomes de
+`properties` apaga um PARÂMETRO da ferramenta em silêncio: o Gemini aceita o schema, chama a
+ferramenta sem o campo, e o erro só aparece no Zod do servidor, depois de a pessoa já ter pedido.
+
+**A lição de método:** uma guarda que roda sobre os dados reais (todas as ferramentas) prova que
+hoje está certo; ela não prova que a REGRA continua sendo a regra. As duas são necessárias, e a
+segunda só se escreve à mão, com casos que os dados de hoje não produzem.
