@@ -5958,3 +5958,33 @@ como opção, não como pendência.
 apodrece em silêncio nos dois sentidos. Ou X nunca chega e a dívida fica parada para sempre (foi o
 caso do "refinar se DST virar problema", num país sem DST desde 2019 — `ef66b10`), ou X chega,
 ninguém percebe, e a instrução vira uma armadilha: quem a executar mecanicamente causa o dano.
+
+**2026-09-05 · varredura dos doze comentários que adiam para condição futura · três premissas
+falsas, dois consertos, nenhuma mudança de comportamento.**
+
+Continuação do método que rendeu `ef66b10` e `574cced`. Os doze foram triados um a um, medindo se
+a condição citada já chegou:
+
+**Premissa falsa, corrigida:** `convites.ts` e a rota `memberships/invite` justificavam devolver o
+link na resposta com "nenhum `MessagingProvider` existe ainda". Existe desde então —
+`server/providers/messaging/` tem `whatsapp.ts`, `email.ts`, `push.ts` e `types.ts`, usados por
+cinco serviços. O que de fato impede o envio automático é outra coisa, e agora está escrito:
+credencial vazia (`WHATSAPP_ACCESS_TOKEN`/`RESEND_API_KEY`, o mesmo bloqueio de `reminders`) mais o
+portão do `docs/25` F0. O comportamento não muda; o que muda é a justificativa deixar de ser falsa.
+
+**Condição não chegou, sem ação:** `recompute-cycles` ("se a base passar de ~500 tenants" — são
+poucos), `captcha.ts` ("sem conta hCaptcha real"), `fotos.tsx`, `importacao-clientes.ts`.
+
+**Condição irrelevante, sem ação:** `planos.ts` mantém `NOMES_ANTIGOS` (`pro`/`profissional`) para
+a janela entre deploy e `db push`. Não é dívida de schema antigo, é proteção de uma corrida que
+acontece em todo deploy — removê-la é risco sem ganho.
+
+**Verificado e correto:** `jobs/route.ts` diz "por ora o registro fica vazio". Confirmado que
+NINGUÉM em `src/` enfileira em `job_queue` — a máquina inteira está dormente, produtor e consumidor,
+e o comentário descreve isso com precisão. A guarda `saude-nao-alarma-por-lixo` já cobre o risco de
+divergência quando um handler chegar.
+
+**A regra que fecha o método:** instrução do tipo "quando X existir" tem que ser lida como pergunta,
+nunca como ordem. Das três premissas que já haviam chegado nesta sessão, executar a instrução ao pé
+da letra teria sido errado em duas (a atribuição zeraria o ROI do Grátis; o convite ligaria envio
+sem credencial e sem o portão do F0) e certo em uma (o fuso da fila de espera).
