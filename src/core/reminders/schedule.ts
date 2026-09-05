@@ -31,10 +31,24 @@ function horarioNaturalLembrete(inicioAgendamento: Temporal.ZonedDateTime): Temp
 
 /**
  * Devolve os lembretes cujo horário de disparo já chegou (`now >= horário`),
- * para o job (rodando a cada 15min, §7) decidir quais mandar agora. Um
- * agendamento criado em cima da hora (menos de 3h de antecedência) nunca
- * teve D-1 18h nem, às vezes, nem D-0 T-3h — a lista pode vir vazia, e está
- * certo: não existe lembrete a mandar para quem marcou faltando 1h.
+ * para o job (rodando a cada 15min, §7) decidir quais mandar agora.
+ *
+ * **Agendamento marcado em cima da hora devolve os DOIS de uma vez, e isso é
+ * deliberado.** O horário natural da confirmação (D-1 18h) está no passado
+ * quando alguém marca hoje para hoje, então ele conta como "já chegou" — e o
+ * de T-3h também. O texto das duas mensagens carrega a data por extenso
+ * (`lembretes.ts`: *"...no dia 10/09 14:00. Responda para confirmar"*), então
+ * nenhuma delas fala do dia errado: a primeira é o pedido de confirmação, que
+ * é quem leva o link de confirmar, e a segunda é o lembrete. Redundante, não
+ * incorreto.
+ *
+ * A versão anterior deste comentário dizia o contrário — que nesses casos "a
+ * lista pode vir vazia". Vinha cheia, e a frase custou um conserto errado que
+ * chegou a ser escrito antes de ser medido: suprimir a confirmação depois que
+ * o dia chega parece certo até você notar que ela é a mensagem que pede
+ * confirmação, e que o caso do job parado (o teste "as duas datas podem estar
+ * devidas ao mesmo tempo") existe exatamente para não perdê-la. Está fixado
+ * por teste agora — não conserte sem ler `reminders-schedule.test.ts`.
  */
 export function lembretesDevidos(
   startsAt: string,
@@ -45,9 +59,10 @@ export function lembretesDevidos(
   const agora = Temporal.Instant.from(now)
   const dia = inicio.toPlainDate()
 
-  // Agendamento que já começou (ou passou) não tem lembrete a mandar — evita
-  // "confirme seu horário de amanhã" reaparecendo para um job que ficou
-  // parado alguns dias e só voltou a rodar depois do fato.
+  // Agendamento que já começou (ou passou) não tem lembrete a mandar — evita pedido de
+  // confirmação e lembrete reaparecendo para um job que ficou parado alguns dias e só voltou a
+  // rodar depois do fato. (A redação antiga citava "confirme seu horário de amanhã" como se fosse
+  // o texto enviado; não é — `lembretes.ts` manda a data por extenso, nunca a palavra "amanhã".)
   if (Temporal.Instant.compare(agora, inicio.toInstant()) >= 0) return []
 
   const devidos: LembreteDevido[] = []
