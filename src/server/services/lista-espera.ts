@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { diaDaSemanaNoFuso } from '@/core/tempo/dia'
 import { criarAgendamento } from '@/server/services/agendamentos'
 import { enviarComFallback } from '@/server/services/mensageria'
 import { gerarTokenAssinado, verificarTokenAssinado } from '@/server/services/token-assinado'
@@ -146,7 +147,16 @@ function elegivel(linha: LinhaWaitlist, slot: SlotLiberado): boolean {
   if (linha.earliest_at && slot.startsAt < linha.earliest_at) return false
   if (linha.latest_at && slot.startsAt > linha.latest_at) return false
   if (linha.weekdays && linha.weekdays.length > 0) {
-    const weekdayDoSlot = new Date(slot.startsAt).getUTCDay() // aproximação; refinar no TICKET-057 se DST virar problema aqui
+    /*
+      Era `getUTCDay()`, com o comentário "aproximação; refinar se DST virar problema". Medido: em
+      Brasília, das 21h à meia-noite o dia em UTC já é o SEGUINTE — vaga de segunda 21:00 lida como
+      terça, sábado 22:00 como domingo. E o problema nunca foi horário de verão (o Brasil não tem
+      desde 2019, então a condição do comentário nunca chegaria): é o deslocamento fixo de -3, que
+      vale todo dia do ano.
+
+      `periodoDoHorario`, duas funções acima, já convertia certo com `timeZone`. Era só esta regra.
+    */
+    const weekdayDoSlot = diaDaSemanaNoFuso(slot.timezone, new Date(slot.startsAt))
     if (!linha.weekdays.includes(weekdayDoSlot)) return false
   }
   // Ainda dentro da exclusividade de outra pessoa? Não oferece para mais ninguém.
