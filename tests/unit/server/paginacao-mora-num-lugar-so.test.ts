@@ -54,8 +54,16 @@ describe('a paginação mora num lugar só', () => {
   it('o dono continua tendo teto — sem ele, centralizar não resolveu nada', () => {
     const fonte = semComentarios(readFileSync(DONO, 'utf8'))
     expect(fonte).toMatch(/pagina < MAXIMO_DE_PAGINAS/)
-    // Ao estourar o teto tem que ERRAR, não devolver o que já juntou: total parcial é redondo,
-    // plausível e não denuncia nada.
-    expect(fonte).toMatch(/throw new AppError/)
+    /*
+     * Ao estourar o teto tem que ERRAR, não devolver o que já juntou: total parcial é redondo,
+     * plausível e não denuncia nada.
+     *
+     * A primeira versão desta linha era `/throw new AppError/` e passou na mutação que trocava o
+     * throw do teto por `return tudo` — porque o arquivo tem OUTRO `throw new AppError`, o do
+     * `if (error)` dentro do laço. Casar com o nome do erro é casar com algo que o arquivo contém
+     * por outro motivo; casar com a MENSAGEM do teto amarra a asserção ao comportamento que ela
+     * existe para proteger.
+     */
+    expect(fonte).toMatch(/passou de \$\{MAXIMO_DE_PAGINAS/)
   })
 })
