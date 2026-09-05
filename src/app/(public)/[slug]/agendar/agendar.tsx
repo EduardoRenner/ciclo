@@ -1,10 +1,11 @@
 "use client";
 
-import { CalendarPlus, CheckCircle2, ChevronDown } from "lucide-react";
+import { CalendarPlus, CheckCircle2, ChevronDown, MessageCircle, Phone } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 
 import { comMaiuscula, type Vocabulario } from "@/core/text/vocabulario";
 import { formatarPreco, type ModeloDePreco } from "@/core/pricing/formatar";
+import { saidaDeContato } from "@/lib/mensagens";
 import Button from "@/components/ui/button";
 import Card from "@/components/ui/card";
 import Chip from "@/components/ui/chip";
@@ -158,6 +159,8 @@ export default function Agendar({
   vocabulario,
   nomeDoSalao,
   enderecoDoSalao,
+  whatsappDoSalao,
+  telefoneDoSalao,
   timezone,
   hours,
   services,
@@ -173,6 +176,8 @@ export default function Agendar({
   nomeDoSalao: string;
   /** Vira o `LOCATION` do arquivo de calendário — sem ele o evento não diz onde é. */
   enderecoDoSalao: string | null;
+  whatsappDoSalao: string | null;
+  telefoneDoSalao: string | null;
   timezone: string;
   hours: { weekday: number; opensAt: string; closesAt: string }[];
   services: Servico[];
@@ -462,6 +467,18 @@ export default function Agendar({
       (p) => p.id === slotEscolhido?.professionalId,
     )?.displayName;
 
+    /*
+      A decisão de POR ONDE falar mora em `lib/mensagens`, testada lá: dois dos três estados não
+      aparecem com os dados de hoje (todo tenant em produção tem WhatsApp), e estado que os dados
+      não produzem é onde o conserto quebra sem ninguém ver — `docs/42` §2.
+    */
+    const saidaDoSucesso = saidaDeContato(
+      whatsappDoSalao,
+      telefoneDoSalao,
+      nomeDoSalao,
+      `Oi! Acabei de marcar um horário pelo site da ${nomeDoSalao} e queria confirmar.`,
+    );
+
     return (
       <Card className="flex flex-col items-center py-10 text-center">
         <CheckCircle2 aria-hidden className="mb-4 size-14 text-ok" />
@@ -520,9 +537,41 @@ export default function Agendar({
         */}
         <p className="mt-4 max-w-xs text-corpo text-txt-2">
           Seu pedido chegou e já apareceu para a equipe. A confirmação vem de
-          quem vai te atender, e pode não ser na hora. Se não tiver retorno em
-          algumas horas, é só chamar por telefone.
+          quem vai te atender, e pode não ser na hora.
+          {saidaDoSucesso ? (
+            <> Se não tiver retorno em algumas horas, fale direto:</>
+          ) : (
+            <> Se não tiver retorno em algumas horas, é só chamar por telefone.</>
+          )}
         </p>
+
+        {/*
+          A saída que a frase acima prometia em prosa e a tela não dava.
+          
+          Medido no navegador em 05/09/2026: a tela dizia "é só chamar por telefone" e a única
+          coisa clicável era "Adicionar à minha agenda" e "Voltar para {salão}". Quem quisesse
+          seguir o próprio conselho da tela tinha que voltar, rolar até o rodapé e achar o
+          telefone — três toques e uma rolagem, no exato momento de ansiedade em que a pessoa
+          quer saber se o horário dela vale.
+          
+          E o irmão desta tela já fazia certo: `orcamento/pedido.tsx`, escrito depois, termina com
+          "Se quiser adiantar, fale direto" e o botão do WhatsApp ao lado. Mesma dúvida, mesmo
+          momento, duas respostas diferentes — e a que faltava era a do funil principal.
+          
+          Isto NÃO é promessa de canal: quem manda a mensagem é a pessoa, no aplicativo dela. É a
+          mesma distinção que o `DECISOES` de 05/09 registrou ao varrer as 16 linhas de canal —
+          botão que ABRE o WhatsApp é ação de quem clica, não compromisso de envio.
+        */}
+        {saidaDoSucesso ? (
+          <a
+            href={saidaDoSucesso.href}
+            {...(saidaDoSucesso.canal === "whatsapp" ? { target: "_blank", rel: "noreferrer" } : {})}
+            className="mt-3 inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-5 text-corpo font-semibold text-txt transition duration-[var(--dur-1)] hover:bg-surface-3 active:scale-[.97]"
+          >
+            {saidaDoSucesso.canal === "whatsapp" ? <MessageCircle aria-hidden className="size-4" /> : <Phone aria-hidden className="size-4" />}
+            {saidaDoSucesso.rotulo}
+          </a>
+        ) : null}
 
         <div className="mt-5 flex flex-wrap justify-center gap-3">
           {slotEscolhido && servicoEscolhido ? (

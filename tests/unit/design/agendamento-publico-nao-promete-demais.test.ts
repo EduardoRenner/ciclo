@@ -87,3 +87,35 @@ describe('o agendamento público não promete canal que não entrega', () => {
     ).toBe(true)
   })
 })
+
+/**
+ * O outro lado da mesma moeda, e ele chegou depois: **tirar a promessa falsa não pode virar
+ * silêncio sobre o que fazer.**
+ *
+ * O comentário do conserto de 25/08 dizia isso com todas as letras — "mantendo o caminho de saída
+ * (telefone)". Medido no navegador em 05/09/2026, a tela dizia "é só chamar por telefone" e não
+ * dava nenhum: os únicos elementos clicáveis eram "Adicionar à minha agenda" e "Voltar para
+ * {salão}". Quem quisesse seguir o conselho da própria tela precisava voltar, rolar até o rodapé e
+ * achar o número — no exato momento de ansiedade em que a pessoa quer saber se o horário vale.
+ *
+ * O irmão desta tela (`orcamento/pedido.tsx`, escrito depois) já terminava com "fale direto" e o
+ * botão ao lado. Mesma dúvida, mesmo momento, duas respostas — e a que faltava era a do funil
+ * principal.
+ */
+describe('a tela de sucesso dá a saída que a frase promete', () => {
+  it('a saída existe e vem da decisão compartilhada, não de um link solto na tela', () => {
+    const copy = copyDaPagina()
+    expect(
+      /saidaDeContato\(/.test(copy),
+      'a tela de sucesso voltou a mandar "chamar por telefone" sem dar nenhum jeito de chamar — ' +
+        'ou montou o link à mão, e aí os estados sem WhatsApp deixam de ser testados em lib/mensagens',
+    ).toBe(true)
+  })
+
+  it('e o link renderiza de fato, em vez de só ser calculado', () => {
+    const copy = copyDaPagina()
+    const trecho = copy.slice(copy.indexOf('saidaDoSucesso'))
+    expect(trecho).toMatch(/href=\{saidaDoSucesso\.href\}/)
+    expect(trecho).toMatch(/saidaDoSucesso\.rotulo/)
+  })
+})

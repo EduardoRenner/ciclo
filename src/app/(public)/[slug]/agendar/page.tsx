@@ -98,6 +98,8 @@ export default async function PaginaAgendar({
         vocabulario={perfil.vocabulario}
         nomeDoSalao={perfil.name}
         enderecoDoSalao={perfil.address}
+        whatsappDoSalao={perfil.whatsapp}
+        telefoneDoSalao={perfil.phone}
         timezone={perfil.timezone}
         hours={perfil.hours}
         services={perfil.services}
