@@ -6018,3 +6018,53 @@ lugar certo. `limitarEmMemoria` foi tratada por outro eixo (vazamento do `Map`, 
 retorno).
 
 Fica registrado para a próxima sessão não refazer a triagem: a lista está fechada.
+
+---
+
+## 2026-09-05 · Estado de módulo mutável: os três `Map` do processo, fechados
+
+Eixo "o que o texto NÃO discute", aplicado às coleções de nível de módulo. O detector inicial
+devolveu **zero** e isso era falso: ele não casava `new Map<string, Janela>()`, porque o genérico
+fica entre `Map` e `(`. Corrigido, achou três — o já conhecido e dois que ninguém tinha visto.
+
+| Onde | O que o texto discutia | O que não discutia | Veredito |
+|---|---|---|---|
+| `rate-limit.ts` `memoria` | a cadeia de fallback (achado S4) e o `somenteMemoria` | o tempo de vida do `Map`, chave por **IP** | vazava; corrigido antes (`a06af9f`) |
+| `vault.ts` `cacheDek` | o **tamanho** ("chave por tenant, o serverless recicla") | o tempo de **vida** — a expiração só impedia o USO | DEK em claro residente; corrigido |
+| `mensageria.ts` `slugPorTenant` | onde a trava de demo mora e por quê | envelhecimento e falha de leitura | cache OK (medido); o `error` era descartado |
+
+Duas coisas que valem mais que os consertos:
+
+**A resposta boa numa metade esconde a metade que falta.** O `cacheDek` respondia bem "por que sem
+limite de tamanho?" — e a resposta é *correta*. Justamente por isso ninguém percebeu que a frase
+que ela usa ("vive só em memória, por tenant, **com expiração**") tinha outra metade sem cumprir.
+Documentação boa é onde este defeito se esconde melhor, não pior.
+
+**Cache que não expira nem sempre é defeito, e a diferença é medível.** O `slugPorTenant` parece o
+mesmo problema e não é: `tenants.slug` não tem escritor nenhum depois do onboarding — conferido
+lendo `atualizarSite` (monta as colunas uma a uma, slug não está entre elas), as migrations e os
+scripts. Chave por tenant + valor imutável = sem envelhecimento e sem crescimento. Ficou escrito
+no código, junto com a condição que o invalidaria: se o slug virar editável, o cache passa a
+mentir.
+
+## 2026-09-05 · Promessa de canal: varredura fechada, sem achado
+
+O `CLAUDE.md` chama a promessa de canal de o defeito mais caro da base, e hoje `reminders` e
+`campaigns` estão fora do `schedule` e não há credencial da Meta — ou seja, qualquer promessa de
+mensagem é falsa **agora**. Varridos os 330 arquivos de `src/app`, `src/components`, `src/lib`,
+`src/server` e `src/core`, com dois conjuntos de padrões (canal explícito e aviso futuro), sempre
+com os comentários removidos.
+
+**Nada a consertar.** As 16 linhas que casaram são todas legítimas: botões que *abrem* o WhatsApp
+(ação de quem clica, não promessa), o e-mail de cadastro que de fato sai pelo Supabase Auth, os
+compromissos de `termos`/`privacidade` — que dizem "a gente avisa **dentro do sistema**", cuidado
+de redação que vale registrar — e a tela de automações, que já diz "ainda não roda sozinha".
+
+Dois registros de método:
+
+- **A primeira varredura, com comentário, deu um falso positivo assustador:** casou com
+  `"você vai receber a confirmação por WhatsApp"` na página pública de agendamento. Era o
+  comentário que descreve o defeito **já consertado**. É a armadilha nº1 do `CLAUDE.md` outra vez,
+  agora do lado de quem procura, não de quem guarda.
+- **A guarda daquela frase foi conferida, não suposta:** reintroduzi a promessa em `agendar.tsx` e
+  `agendamento-publico-nao-promete-demais` reprovou em dois casos. Ela funciona.
