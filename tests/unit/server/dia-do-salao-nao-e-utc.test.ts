@@ -93,6 +93,33 @@ describe('o dia do salão nunca é montado em UTC', () => {
     ).toEqual([])
   })
 
+  it('ninguém lê dia/hora de um INSTANTE com getUTC*', () => {
+    /*
+     * A TERCEIRA forma do mesmo defeito, e a que este arquivo não enxergava. `INSTANTE_UTC_LITERAL`
+     * casa a concatenação de limite de dia (`T00:00:00Z`); `lista-espera.ts` errava de outro jeito
+     * — `new Date(slot.startsAt).getUTCDay()` para casar a preferência de dia da semana da pessoa.
+     * Medido: vaga de segunda 21:00 em São Paulo lida como TERÇA, sábado 22:00 como DOMINGO. Quem
+     * pediu "só segundas" não recebia a vaga de segunda à noite; quem pediu "só terças" recebia.
+     *
+     * **O padrão é estreito de propósito, e isso foi medido, não estimado.** `getUTC*` sozinho
+     * daria NOVE falsos positivos: `agendar.tsx`, `agenda.tsx` e `caixa.tsx` constroem o `Date` a
+     * partir de `AAAA-MM-DD` com `Date.UTC(...)` e fazem aritmética de calendário num espaço sem
+     * fuso — o idioma CERTO, e os comentários deles dizem isso. O defeito não é "usa getUTC*", é
+     * "usa getUTC* sobre um INSTANTE", e é o `new Date(<expr>)` inline que denuncia: quem monta
+     * data de calendário passa por `Date.UTC` ou por uma variável já resolvida.
+     *
+     * Validado contra o defeito real, não contra isca sintética: este padrão devolve zero na
+     * árvore de hoje e casa exatamente a linha de `lista-espera.ts` em `ef66b10^`.
+     */
+    const comInstante = TODOS.filter((f) => /new Date\([^)]*\)\.getUTC/.test(marcacaoDe(f)))
+    expect(
+      comInstante,
+      'estes arquivos leem dia ou hora de um INSTANTE em UTC. Em Brasília isso desloca em três ' +
+        'horas: das 21h à meia-noite o dia já é o seguinte. Use `diaDaSemanaNoFuso`/`diaNoFuso` de ' +
+        '`@/core/tempo/dia`, que recebem o fuso do salão.',
+    ).toEqual([])
+  })
+
   it('quem já conta certo continua contando — o caixa e os dois consertos desta rodada', () => {
     // O outro lado da regra: "ninguém usa string de data" passaria com as três funções quebradas
     // de outro jeito. Aqui a exigência é positiva.
