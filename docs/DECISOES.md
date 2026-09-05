@@ -6399,3 +6399,48 @@ faltava era o código fazer o que ele dizia.
 O teste cobre as quatro direções, e a terceira é a que impede o conserto de virar outro defeito:
 reprovação normal do provedor **não** loga, senão a camada vira ruído diário e ninguém lê o alarme
 que importa.
+
+## 2026-09-05 · Guarda que varre e passa VAZIA: duas de quarenta e três
+
+A regra 4 do procedimento de guarda do `CLAUDE.md` — *"guarde contra o próprio detector: se o
+padrão parar de casar, o teste tem que GRITAR, não passar vazio"* — nunca tinha sido conferida na
+suíte inteira. Varridos os **252 arquivos de teste**: **43 montam uma coleção a partir do disco**, e
+**41 já têm piso**. Duas não tinham, e as duas passam verdes com a varredura devolvendo zero:
+
+| Guarda | O que ela protege | Medido |
+|---|---|---|
+| `preco-em-um-lugar-so` | preço de plano existir num lugar só | trocando `arquivos(RAIZ)` por `[]`: **5 de 5 verdes** |
+| `pagina-do-negocio-e-so-dele` | o veto de nunca listar estabelecimentos | zerando as duas coleções: **3 de 3 verdes** |
+
+São justamente as duas que guardam as coisas mais caras da lista: **dinheiro** e o **único
+diferencial estrutural do produto**. Não é coincidência estatística — é a forma da armadilha: a
+guarda mais importante é a que ninguém quer ver reprovar, então ela é escrita, vista passar, e
+nunca mais olhada.
+
+### O piso escolhido não é contagem — é o positivo conhecido
+
+Contar arquivos pega o caso "a varredura parou de achar", e só ele. O caso irmão é pior: **a
+varredura acha tudo e o DETECTOR parou de casar** — regex ajustado, acento normalizado, formato de
+preço mudado. A contagem continua alta e o resultado continua vazio.
+
+Então o piso de cada uma afirma que o detector ainda encontra o positivo que ele **deve** encontrar:
+
+- em `preco-em-um-lugar-so`, que os dois detectores casam com `core/billing/planos.ts`, que é a
+  fonte única e por definição o único arquivo que legitimamente contém as duas coisas;
+- em `pagina-do-negocio-e-so-dele`, que a varredura acha `[slug]/page.tsx` e que
+  `consultasATenants` ainda reconhece uma consulta a `tenants`.
+
+Quatro mutações, uma por vez, e as quatro fazem o piso gritar — inclusive as duas de "detector
+parou de casar", que a contagem sozinha não pegaria.
+
+**E uma mutação não foi aplicada na primeira tentativa** (o `sed` com escape de regex não casou), e
+o resultado saiu como "guarda cega". É a regra 3 do mesmo procedimento, e ela custou um veredito
+errado por dois minutos: **confirme que a mutação entrou antes de ler o resultado.**
+
+### Por que isto não contradiz o "não vale a pena" do meta-teste
+
+O registro de hoje mais cedo descartou um meta-teste que varre guardas atrás de cegueira por
+comentário — com medição: a heurística ampla dava 4 falsos positivos em 4 acusações. Esta classe é
+outra e é exata: *"a coleção que você percorre tem pelo menos um elemento?"* não tem falso positivo,
+porque não é heurística sobre intenção. O que ficou não foi um meta-teste, e sim o piso dentro de
+cada uma das duas — que é o que o `CLAUDE.md` já mandava fazer.

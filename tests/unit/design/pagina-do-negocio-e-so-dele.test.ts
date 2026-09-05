@@ -87,6 +87,34 @@ function arquivosDe(dir: string): string[] {
   return saida
 }
 
+/**
+ * O piso, e ele foi medido: **as três asserções deste arquivo passavam verdes com a varredura
+ * devolvendo zero.** Trocando `arquivosDe(PUBLICO)` e a leitura de segmentos por listas vazias, em
+ * 05/09/2026, os três casos ficaram verdes — inclusive o que guarda o veto de nunca listar
+ * estabelecimentos, que é o único diferencial estrutural do produto.
+ *
+ * O piso não é uma contagem: é o detector achando o positivo que ele DEVE achar. `[slug]` é a
+ * página de um negócio e existe desde o primeiro dia; se ela sumir da varredura, sumiu tudo.
+ */
+describe('a varredura enxerga alguma coisa', () => {
+  it('acha os segmentos e os arquivos que sabidamente existem sob (public)', () => {
+    const segmentos = readdirSync(PUBLICO).filter((n) => statSync(join(PUBLICO, n)).isDirectory())
+    expect(segmentos, `nenhum segmento em ${PUBLICO} — o caminho mudou?`).toContain('[slug]')
+
+    const arquivos = arquivosDe(PUBLICO)
+    expect(arquivos.length, `varredura de ${PUBLICO} devolveu ${arquivos.length} arquivos`).toBeGreaterThan(5)
+    expect(
+      arquivos.some((f) => f.includes('[slug]') && f.endsWith('page.tsx')),
+      'a página do negócio não apareceu na varredura — as asserções abaixo passariam vazias',
+    ).toBe(true)
+  })
+
+  it('e o detector de consulta a `tenants` ainda reconhece uma consulta', () => {
+    // Se `consultasATenants` parar de casar, os ofensores serão sempre zero e o veto fica sem guarda.
+    expect(consultasATenants(`db.from('tenants').select('id')`).length).toBeGreaterThan(0)
+  })
+})
+
 describe('nenhuma rota pública lista estabelecimentos', () => {
   it('não existe segmento público fora da lista conferida', () => {
     const segmentos = readdirSync(PUBLICO).filter((n) => statSync(join(PUBLICO, n)).isDirectory())
