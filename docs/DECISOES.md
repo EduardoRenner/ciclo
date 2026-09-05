@@ -5988,3 +5988,33 @@ divergência quando um handler chegar.
 nunca como ordem. Das três premissas que já haviam chegado nesta sessão, executar a instrução ao pé
 da letra teria sido errado em duas (a atribuição zeraria o ROI do Grátis; o convite ligaria envio
 sem credencial e sem o portão do F0) e certo em uma (o fuso da fila de espera).
+
+**2026-09-05 · varredura das funções puras em `server/services` — encerrada, com veredito por
+função.** Onze candidatas (regra de negócio sem I/O morando na camada de serviço). A pergunta
+aplicada a todas foi a mesma: *quando o dado está torto ou o recurso acaba, qual valor sai — e as
+duas saídas custam igual?*
+
+**Consertadas (5):**
+- `valorEmRiscoCents` → movida para `core/cycle/`; só tinha cobertura de integração.
+- `venceEmBreve` (era `comSaldo`) → faltava piso inferior; "vencendo em breve" ficava verdadeiro
+  para sempre depois de vencer.
+- `lerMensageria` → falhava aberto: valor torto no `paused` religava o envio.
+- `lerConfiguracoesAgenda` → `Number()` coagia `null`/`''` para 0, e granularidade 0 trava o laço
+  de `available-slots`.
+- `lerConfigFidelidade` → campo inválido derrubava o namespace inteiro e religava a pontuação de
+  quem tinha desligado. Resgate campo a campo, porque aqui não havia lado seguro.
+
+**Sem assimetria, nada a fazer (3), e o motivo de cada uma:**
+- `lerSite` → falha para site vazio. Errar para os dois lados custa o mesmo (um campo de vitrine
+  não aparece); inverter não melhora nada.
+- `misturarComBranco` → valida o hex e devolve a cor original se não casar. Cosmético: o pior caso
+  é um tom de acento levemente errado.
+- `slugDoTitulo` → sufixo aleatório medido em 100 mil amostras, sempre 5 caracteres base-36
+  (~60 milhões de combinações), e a tabela tem `unique (tenant_id, slug)`. Colisão daria `23505`
+  visível na hora, não corrupção silenciosa.
+
+**Fora do escopo, e por quê:** `gerarTokenAssinado` é cripto e depende de segredo — `server/` é o
+lugar certo. `limitarEmMemoria` foi tratada por outro eixo (vazamento do `Map`, não valor de
+retorno).
+
+Fica registrado para a próxima sessão não refazer a triagem: a lista está fechada.
