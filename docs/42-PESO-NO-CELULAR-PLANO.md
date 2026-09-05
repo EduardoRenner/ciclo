@@ -132,13 +132,29 @@ Corrigido com `.order('id')` secundário.
 
 ### P2 — Bloqueado por acesso
 
-8. **O painel do dono (`/admin/*`) nunca foi auditado visualmente.** Duas sessões tentaram e
-   pararam no mesmo lugar: criar conta de autenticação é ação bloqueada, e a senha do seed é
-   sorteada e não fica no repositório (regra 10, corretamente). É onde mora a maior parte do
-   produto e onde vários consertos foram feitos sem ninguém ter visto a tela.
-   **Precisa de uma credencial de teste fornecida pelo Eduardo.** Procurar lá os mesmos padrões que
-   já renderam bug: coluna que a tela nunca escreve, número que sempre dá zero, texto cortado a
-   375 px, promessa de canal sem cron agendado, `catch` que descarta em silêncio.
+8. **O painel do dono (`/admin/*`) nunca foi auditado visualmente** — e em 05/09 o motivo do
+   bloqueio foi identificado, porque **o que estava escrito aqui era o motivo errado**.
+
+   Não é senha. A senha do seed **não** é sorteada: `scripts/seed-tenant-teste.mjs` tem
+   `const SENHA = process.env.SEED_SENHA ?? 'teste-ciclo-2026'`, e o dono
+   `dono-lang-barber@ciclo.app` já existe no banco de DEV. Nenhuma conta nova precisa ser criada.
+
+   **O bloqueio é `captcha_failed` no Auth do projeto de DEV.** Medido: o `signInWithPassword`
+   contra `sukloaoodpxjukngyojo` responde *"captcha protection: request disallowed (no
+   captcha_token found)"*, e a mesma chamada contra a produção (`eqzlvthzdjnsbogymcsw`) responde
+   `invalid_credentials` — ou seja, **a proteção está ligada só no DEV**, e o app não manda token
+   em nenhum dos dois. É a divergência que `core/auth/motivo-da-recusa.ts` já documenta de
+   02/09/2026 ("configuração de projeto não vem em migration"), e que continua de pé no DEV.
+
+   Login local está impossível para qualquer pessoa, não só para uma auditoria.
+
+   **O destravamento é de 30 segundos e é do Eduardo:** painel do Supabase → projeto de DEV →
+   Authentication → Attack Protection → desligar o captcha. (Rodar contra um Supabase local seria
+   a outra saída, e exige Docker, que não está instalado nesta máquina.)
+
+   Feito isso, procurar no painel os mesmos padrões que já renderam bug: coluna que a tela nunca
+   escreve, número que sempre dá zero, texto cortado a 375 px, promessa de canal sem cron
+   agendado, `catch` que descarta em silêncio.
 
 ### P3 — Sobras conhecidas
 
