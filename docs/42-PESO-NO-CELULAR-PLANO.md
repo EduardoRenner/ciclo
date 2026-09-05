@@ -21,7 +21,7 @@ para ninguém gastar rodada nisso de novo. Tudo medido na produção (`seuciclo.
 | dos quais os dois maiores chunks | **101 kB** | React + Next: **piso de framework**, não gordura |
 | Total Blocking Time | **33 ms** | **a CPU do celular antigo NÃO é o gargalo** |
 | Lucide (todos os ícones) | 10 kB | já bem tree-shaken |
-| HTML de `/demo-studio-bella` | 85,3 kB | **é aqui que o 3G sofre** |
+| HTML de `/demo-studio-bella` | 85,3 kB | ~~**é aqui que o 3G sofre**~~ — **medido em bytes crus, que é a régua errada. Ver §7.** |
 
 Também foi testada e **descartada** a hipótese de o payload RSC duplicar os SVGs: ele não contém
 nenhum (`0` ocorrências).
@@ -109,8 +109,9 @@ Corrigido com `.order('id')` secundário.
 
 ### P1 — Continuação direta desta auditoria
 
-4. **Varrer o resto do padrão do §2.** Os três maiores já foram. Restam ~2,2 kB de ícone repetido
-   na landing e o que aparecer nas telas do `/admin`, que não foram medidas (ver P2).
+4. ~~**Varrer o resto do padrão do §2**~~ — **encerrado em 05/09 por medição, não por trabalho.**
+   O que resta na landing é `M5 12h14` seis vezes (48 B de `d` somados) e a seta seis vezes (78 B).
+   Comprimido, isso é ~200 B numa página que vai a **8,7 kB pelo fio**. Não paga um PR. Ver §7.
 
 5. ~~**Fontes**~~ — **auditado em 05/09, nada a fazer.** `font-display: swap`; três `@font-face`
    com `unicode-range` e só o bloco latino baixa; `font-stretch: 100%` fixo (o arquivo variável
@@ -120,8 +121,11 @@ Corrigido com `.order('id')` secundário.
    os únicos pesos usados) daria TRÊS requisições somando mais que os 34,9 kB de uma. Ver
    `DECISOES` 05/09.
 
-6. **Imagens.** Conferir tamanho servido contra o necessário a 390 px (piso de design do projeto)
-   nas telas com foto: vitrine, portfólio, avatares.
+6. ~~**Imagens**~~ — **medido em 05/09, nada a fazer.** As cinco imagens de
+   `/demo-studio-bella` somam **32,7 kB**: capa 1600×600 em 14,5 kB e avatares 512×512 em 2,9 a
+   3,5 kB cada. Sim, o avatar é servido a 512 px para exibir a 64 px — e a 3 kB o redimensionamento
+   custaria mais em requisição e complexidade do que economiza. O pipeline de upload
+   (HEIC→WebP + `sharp`) já resolve o problema na origem.
 
 7. **INP nas ações, não só na navegação.** Confirmar, cancelar, abrir ficha de cliente. O `docs/28`
    mediu TTFB de rota; ninguém mediu a latência da INTERAÇÃO.
@@ -186,3 +190,47 @@ qual linha a substituição caiu.
 | #71 | seta da lista de serviços |
 
 Todos no `main`. `typecheck`, `lint` e `test:unit` (1.631) verdes.
+
+---
+
+## 7. A régua estava errada, e a conclusão muda de tamanho (2026-09-05)
+
+Tudo neste documento até aqui foi medido em **bytes crus**. O que chega ao celular é comprimido, e
+a diferença não é um detalhe de porcentagem — é uma ordem de grandeza. Medido na produção com
+`Accept-Encoding`:
+
+| Página | cru | gzip | **brotli (o que o celular recebe)** |
+|---|--:|--:|--:|
+| `/demo-studio-bella` | 74.223 B | 10.071 B | **9.291 B** |
+| `/` | 55.169 B | 8.668 B | **9.320 B** |
+| `/precos` | 50.330 B | — | **8.363 B** |
+
+**A página do salão não pesa 74 kB no 3G. Pesa 9,3 kB.** A frase do §1 — *"é aqui que o 3G
+sofre"* — foi escrita sobre 85,3 kB crus, que na época eram ~11 kB reais.
+
+### E os PRs de ícone, valeram?
+
+Valeram, e menos do que pareciam. Reconstruí o HTML de hoje desfazendo o conserto (cada `<use>`
+expandido de volta no `<symbol>` inteiro) e comprimi os dois:
+
+| | cru | gzip |
+|---|--:|--:|
+| com `<use>` (hoje) | 74.223 | 10.071 |
+| com o SVG repetido (antes) | 86.688 | 11.221 |
+| **economia real** | 12.465 B | **1.150 B** |
+
+Os 22% de "22% do HTML era o mesmo ícone" viram **~11% do que trafega** — a proporção sobreviveu
+melhor do que eu esperava, mas o número absoluto encolheu **11×**: de 12,5 kB para 1,15 kB. Numa
+página de 10 kB, 1,15 kB continua sendo trabalho que valeu; o que não sobrevive é a justificativa
+de "22% da página".
+
+**A regra que fica:** marcação repetida é o que um compressor faz de melhor — ela é literalmente o
+caso de uso do algoritmo. Antes de cortar repetição por peso, meça comprimido; e antes de estimar,
+lembre que a estimativa em bytes crus superestima esse tipo de ganho por volta de uma ordem de
+grandeza. (Isto é o irmão medido de `byte-cru-e-a-regua-errada`, que dizia "não economiza nada" —
+economiza, mas dez vezes menos do que a conta crua promete.)
+
+**O que isso muda no que sobrou:** o item 4 do §4 (os ~2,2 kB de ícone que restam na landing) sai
+da lista. Comprimido, é ~200 B de uma página de 8,7 kB. E o próximo alvo de peso, se houver, não é
+HTML: é o payload RSC, que sozinho é 58% dos bytes crus desta página — e que não é marcação
+repetida, é dado.
