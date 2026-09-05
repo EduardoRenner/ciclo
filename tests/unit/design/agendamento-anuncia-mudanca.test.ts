@@ -69,6 +69,41 @@ describe('o agendamento anuncia o que mudou sem trocar de rota', () => {
     expect(/slotsUnicos|slots\.length/.test(bloco), 'o anúncio precisa dizer a quantidade que a tela mostra').toBe(true)
   })
 
+  it('o dia fechado só é anunciado DENTRO do caso sem horários, como no texto visível', () => {
+    /*
+     * A parte que faltava a esta guarda, e o defeito que ela deixou passar por casar com token em
+     * vez de com o que muda: as três asserções acima conferem que o bloco MENCIONA `slots === null`,
+     * `slots.length === 0` e a contagem — nenhuma confere a ORDEM em que os ramos são testados.
+     *
+     * Com `diasFechados.has(dia)` antes de `slots.length === 0`, o bloco continha os três tokens e
+     * a guarda passava verde, enquanto a região viva contradizia a tela. `diasFechados` é o
+     * expediente padrão do SALÃO e a agenda de um profissional pode fugir dele — o dia fechado
+     * segue clicável no trilho de propósito —, então "fechado no padrão E com horários na tela" é
+     * estado previsto, não corrompido.
+     *
+     * Medido no navegador a 375px antes do conserto: 12 horários na tela e a região anunciando
+     * "Nesse dia o atendimento não abre".
+     *
+     * O texto VISÍVEL só consulta `diasFechados` dentro de `slots.length === 0`. Esta asserção
+     * obriga o anúncio a ter a mesma forma, que é o que a frase "sai do mesmo estado que desenha a
+     * tela" sempre quis dizer.
+     */
+    const src = fonte()
+    const inicio = src.indexOf('aria-live="polite"')
+    const bloco = src.slice(inicio, src.indexOf('</p>', inicio))
+
+    const semHorarios = bloco.indexOf('slots.length === 0')
+    const fechado = bloco.indexOf('diasFechados')
+
+    expect(semHorarios, 'não achei o ramo de "sem horários" no anúncio').toBeGreaterThan(-1)
+    expect(fechado, 'não achei o ramo de dia fechado no anúncio').toBeGreaterThan(-1)
+    expect(
+      semHorarios,
+      'o anúncio testa "dia fechado" ANTES de "sem horários": com horários na tela num dia fora do ' +
+        'expediente padrão, o leitor de tela ouve que o salão não abre enquanto a agenda está cheia',
+    ).toBeLessThan(fechado)
+  })
+
   it('não atrapalha a tela de quem enxerga', () => {
     const src = fonte()
     const bloco = src.slice(src.indexOf('aria-live="polite"'), src.indexOf('{slots ?'))

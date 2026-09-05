@@ -787,15 +787,35 @@ export default function Agendar({
           região de status calar é melhor que repetir — e muito melhor que afirmar um resultado
           que não existe.
         */}
+        {/*
+          A ORDEM dos ramos importa tanto quanto o conteúdo, e é onde isto estava errado: o teste
+          de `diasFechados` vinha ANTES do de `slots.length`, enquanto o texto visível (logo
+          abaixo) só consulta `diasFechados` DENTRO do caso "zero horários".
+
+          `diasFechados` é o expediente padrão do SALÃO, e a agenda de um profissional pode fugir
+          dele — o comentário de `primeiroDiaUtil` diz isso com todas as letras, e é por isso que
+          o dia fechado continua clicável no trilho. Ou seja, "dia fechado no padrão E com
+          horários na tela" não é estado corrompido: é o caso que o produto foi desenhado para
+          permitir.
+
+          Medido no navegador a 375px, antes deste conserto: segunda-feira com **12 horários
+          visíveis** e a região viva anunciando "Nesse dia o atendimento não abre". Quem usa leitor
+          de tela ouvia que o salão está fechado, com a agenda cheia na tela, e ia embora.
+
+          O comentário acima desta região afirmava que "o texto sai do MESMO estado que desenha a
+          tela (`slots`), então os dois nunca divergem". Divergiam — porque este ramo lia outra
+          coisa além de `slots`. Agora a estrutura espelha a do texto visível, e a afirmação passa
+          a ser verdade.
+        */}
         {erro
           ? ""
           : slots === null
             ? "Buscando horários."
-            : diasFechados.has(dia)
-              ? "Nesse dia o atendimento não abre."
-              : slots.length === 0
-                ? "Sem horários livres nesse dia."
-                : `${slotsUnicos?.length ?? slots.length} ${(slotsUnicos?.length ?? slots.length) === 1 ? "horário livre" : "horários livres"} em ${paraData(dia).toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", timeZone: "UTC" })}.`}
+            : slots.length === 0
+              ? diasFechados.has(dia)
+                ? "Nesse dia o atendimento não abre."
+                : "Sem horários livres nesse dia."
+              : `${slotsUnicos?.length ?? slots.length} ${(slotsUnicos?.length ?? slots.length) === 1 ? "horário livre" : "horários livres"} em ${paraData(dia).toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", timeZone: "UTC" })}.`}
       </p>
 
       {slots ? (
