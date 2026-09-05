@@ -5852,3 +5852,35 @@ documentado (`copyDaHome()` em `home-nao-promete-demais` explica por que varrer 
 teste reprovar a própria documentação). O risco restante está nas 37 que não limpam — e nelas o
 critério continua sendo o do `CLAUDE.md`: casar com o que MUDA quando o defeito volta, e ver a
 guarda reprovar por mutação antes de confiar nela.
+
+**2026-09-05 · filtrar fixture de teste do sitemap agora? · NÃO, mas vira portão de lançamento ·
+não existe discriminador confiável, e excluir um salão real do Google é pior que o defeito.**
+
+**O que foi medido.** No banco de DEV, o `/sitemap.xml` entrega três URLs, e uma delas é
+`verify-series-526807` — tenant de fixture que uma suíte de teste criou e não limpou. A página
+responde 200, **não tem `noindex`**, e emite JSON-LD `"@type": "HairSalon"` com serviços. Ou seja:
+uma fixture apresentada ao buscador como salão de cabelo de verdade, com marcação de dado
+estruturado.
+
+**Isto não está em produção.** Conferido no `https://seuciclo.com.br/sitemap.xml`: duas URLs, a
+home e `/precos`. Nenhum tenant. Não é incidente — é armadilha armada.
+
+**Por que importa mais aqui do que pareceria.** O `docs/43` estabelece que o CICLO troca o
+marketplace dos concorrentes por SEO da página do próprio negócio: é o `sitemap.ts` entregando
+`/{slug}` ao buscador que substitui a vitrine central. Poluir esse domínio com negócios que não
+existem degrada exatamente o canal de aquisição que o posicionamento inteiro depende — e marcar
+com `schema.org` uma coisa que não é a coisa é o tipo de coisa que o Google penaliza.
+
+**Por que não construí o filtro.** O único filtro hoje é `ehDemonstracao(slug)`, e fixture não tem
+prefixo comum: os slugs de teste são `agenda-${marca}`, `caixa-${marca}`, `crm-${marca}`,
+`verify-${marca}`… — o padrão varia por arquivo de teste. Filtrar por "termina em dígitos" ou por
+lista de prefixos exclui um salão real que escolher um slug parecido, e **tirar um cliente pagante
+do Google é um dano maior e mais silencioso do que o que se está consertando**
+(`docs/DECISOES.md`, a lição do `toque-48` em links inline). Um discriminador honesto precisa de
+sinal explícito — coluna que diga "isto é fixture", ou limpeza garantida no encerramento do teste
+—, e as duas são decisão de quem cuida da suíte, não conserto de varredura.
+
+**O portão, então:** antes do primeiro tenant real entrar no sitemap, conferir que `/sitemap.xml`
+de produção só contém negócio de verdade. Hoje a conferência é trivial (duas URLs) e continuará
+trivial enquanto houver poucos clientes — é o momento barato de acertar, e o único em que dá para
+inspecionar a lista inteira a olho.
