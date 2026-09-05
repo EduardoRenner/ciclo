@@ -90,3 +90,53 @@ describe('título próprio por tela', () => {
     expect(readFileSync('src/app/error.tsx', 'utf8')).toMatch(/^'use client'/)
   })
 })
+
+/**
+ * O irmão estrutural do bloco acima, e ele nasce de uma medição diferente.
+ *
+ * `<title>` responde "que página é esta" quando a rota troca. Um HEADING responde "onde estou
+ * dentro dela" — e é o que quem usa leitor de tela procura primeiro ao cair numa página
+ * desconhecida, saltando de título em título.
+ *
+ * Medido no navegador em 2026-09-05, com token inválido nas quatro rotas que a cliente do salão
+ * abre pelo link do WhatsApp: `document.querySelectorAll('h1,h2,h3')` voltou **vazio nas quatro**.
+ * A copy do erro é boa e tem saída ("Chame quem vai te atender pelo WhatsApp"), mas era
+ * inalcançável por navegação de títulos — a página inteira era um bloco plano.
+ *
+ * O padrão certo já existia na casa: as cinco páginas de `(auth)` usam
+ * `<h1 className="text-titulo font-bold">`. As públicas usavam `<p>` com a MESMA classe — mesma
+ * aparência na tela, estrutura nenhuma na árvore. Foi por isso que ninguém viu.
+ */
+const TELAS_DE_TOKEN = [
+  'src/components/ui/erro-publico.tsx',
+  'src/app/(public)/avaliar/[token]/avaliar.tsx',
+  'src/app/(public)/confirmar/[token]/confirmar.tsx',
+  'src/app/(public)/lista-espera/[token]/reivindicar.tsx',
+  'src/app/(public)/orcamento/[token]/orcamento.tsx',
+]
+
+describe('a tela que a cliente abre pelo WhatsApp tem heading', () => {
+  it.each(TELAS_DE_TOKEN)('%s tem pelo menos um h1', (arquivo) => {
+    const src = readFileSync(arquivo, 'utf8')
+    expect(/<h1[\s>]/.test(src), `${arquivo} não tem nenhum h1 — a tela fica sem estrutura para quem navega por títulos`).toBe(
+      true,
+    )
+  })
+
+  it.each(TELAS_DE_TOKEN)('%s não usa <p> como pseudo-título', (arquivo) => {
+    /*
+     * A asserção que pega a REGRESSÃO, e não só o estado atual: exigir "tem um h1" passaria verde
+     * numa tela que ganhasse um h1 e continuasse com três estados desenhados como `<p>` — que é
+     * exatamente a forma do defeito original (o `confirmar.tsx` tinha TRÊS).
+     *
+     * `text-titulo font-bold` é o token visual de título de tela deste design system. Num `<p>`,
+     * ele produz uma coisa que parece título e não é.
+     */
+    const src = readFileSync(arquivo, 'utf8')
+    const falsos = [...src.matchAll(/<p className="[^"]*text-titulo font-bold[^"]*"/g)].map((m) => m[0])
+    expect(
+      falsos,
+      `${arquivo} desenha título de tela com <p>: ${falsos.join(', ')}. Use <h1>, como as páginas de (auth).`,
+    ).toEqual([])
+  })
+})

@@ -73,7 +73,7 @@ export default function ConfirmarAgendamento({ token }: { token: string }) {
   if (estado === 'escolhendo' || estado === 'confirmando' || estado === 'cancelando') {
     return (
       <>
-        <p className="text-titulo font-bold">Confirma seu horário?</p>
+        <h1 className="text-titulo font-bold">Confirma seu horário?</h1>
         <p className="mt-2 mb-6 text-corpo text-txt-2">Toque numa opção abaixo.</p>
         <div className="flex w-full flex-col gap-2.5">
           {/*
@@ -109,7 +109,7 @@ export default function ConfirmarAgendamento({ token }: { token: string }) {
     return (
       <>
         <CheckCircle2 aria-hidden className="mb-4 size-14 text-ok" />
-        <p className="text-titulo font-bold">Prontinho!</p>
+        <h1 className="text-titulo font-bold">Prontinho!</h1>
         <p className="mt-2 text-corpo text-txt-2">Seu horário está confirmado. Te esperamos lá.</p>
       </>
     )
@@ -119,7 +119,7 @@ export default function ConfirmarAgendamento({ token }: { token: string }) {
     return (
       <>
         <CalendarX2 aria-hidden className="mb-4 size-14 text-txt-3" />
-        <p className="text-titulo font-bold">Desmarcado</p>
+        <h1 className="text-titulo font-bold">Desmarcado</h1>
         <p className="mt-2 text-corpo text-txt-2">Sentimos falta! Quando quiser, é só marcar de novo.</p>
         {slugParaReagendar ? (
           <Link

@@ -60,7 +60,7 @@ export default function ReivindicarEncaixe({ token }: { token: string }) {
     return (
       <>
         <CheckCircle2 aria-hidden className="mb-4 size-14 text-ok" />
-        <p className="text-titulo font-bold">Encaixe garantido!</p>
+        <h1 className="text-titulo font-bold">Encaixe garantido!</h1>
         <p className="mt-2 text-corpo text-txt-2">Seu horário está reservado. Te esperamos lá.</p>
       </>
     )
