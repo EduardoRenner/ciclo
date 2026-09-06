@@ -1,4 +1,4 @@
-import { BadgeDollarSign, Bell, Bot, Clock, CreditCard, FileText, MessageSquareText, Megaphone, Repeat, Repeat2, ScrollText, Scissors, ShieldCheck, Package, Store, ToggleRight, Users, Wallet } from 'lucide-react'
+import { BadgeDollarSign, Bell, Bot, CalendarRange, Clock, CreditCard, FileText, Megaphone, MessageSquareText, Package, Repeat, Repeat2, Scissors, ScrollText, ShieldCheck, Store, ToggleRight, Users, Wallet } from 'lucide-react'
 import Link from 'next/link'
 
 import { headers } from 'next/headers'
@@ -45,6 +45,7 @@ const GRUPOS = [
     titulo: 'Dinheiro',
     itens: [
       { href: '/admin/caixa', titulo: 'Caixa', descricao: 'Fechamento do dia, do mês e a comissão de cada um', icone: Wallet, modulo: 'register' },
+      { href: '/admin/mes', titulo: 'O mês', descricao: 'Os cinco números do mês numa página só, para mostrar a alguém', icone: CalendarRange, modulo: 'register' },
       { href: '/admin/estoque', titulo: 'Estoque', descricao: 'Quanto tem de cada produto e registrar compra', icone: Package, modulo: 'stock' },
       { href: '/admin/config/taxas', titulo: 'Taxa da maquininha', descricao: 'Quanto a máquina fica de cada forma de pagamento', icone: CreditCard, modulo: 'register' },
     ],
