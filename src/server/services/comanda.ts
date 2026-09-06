@@ -1,3 +1,4 @@
+import { Temporal } from '@js-temporal/polyfill'
 import { z } from 'zod'
 
 import { calcularComissaoItem, calcularSobraDaComanda, calcularTotalItem, calcularTotaisComanda, type BaseComissao } from '@/core/comanda/totals'
@@ -5,6 +6,7 @@ import { custoDoServico } from '@/core/comanda/custo-do-servico'
 import { custoFixoDoAtendimento, lerCustoFixo } from '@/core/comanda/custo-fixo'
 import { calcularTaxaDaMaquininha, FORMAS_DE_PAGAMENTO, lerTaxasDePagamento, type FormaDePagamento } from '@/core/comanda/taxa-de-pagamento'
 import { AppError } from '@/server/http/errors'
+import { congelarMesesFechados } from '@/server/services/caixa'
 import { baixarEstoqueDaComanda, estornarBaixaDaComanda } from '@/server/services/estoque'
 
 import type { Database } from '@/server/db/types.gen'
@@ -246,7 +248,7 @@ type Settings = { commission_base?: BaseComissao; product_commission_bps?: numbe
  */
 async function resolverCommissionBps(db: Cliente, tenantId: string, item: { service_id: string | null; product_id: string | null; professional_id: string | null }): Promise<number> {
   if (item.product_id) {
-    const { data: tenant } = await db.from('tenants').select('settings').eq('id', tenantId).maybeSingle()
+    const { data: tenant } = await db.from('tenants').select('settings, timezone').eq('id', tenantId).maybeSingle()
     const settings = (tenant?.settings ?? {}) as Settings
     return settings.product_commission_bps ?? PRODUCT_COMMISSION_BPS_PADRAO
   }
@@ -275,7 +277,7 @@ export async function fecharComanda(db: Cliente, tenantId: string, ticketId: str
   if (ticket.status !== 'open') throw new AppError('INVALID_TRANSITION', { message: 'Essa comanda já foi fechada.' })
   if (items.length === 0) throw AppError.validacao({ items: 'Adicione pelo menos um item antes de fechar.' })
 
-  const { data: tenant } = await db.from('tenants').select('settings').eq('id', tenantId).maybeSingle()
+  const { data: tenant } = await db.from('tenants').select('settings, timezone').eq('id', tenantId).maybeSingle()
   const commissionBase = ((tenant?.settings as Settings | null)?.commission_base ?? 'gross') as BaseComissao
   const feeBps = lerTaxasDePagamento(tenant?.settings)[formaDePagamento]
 
@@ -362,6 +364,24 @@ export async function fecharComanda(db: Cliente, tenantId: string, ticketId: str
   // §5.6/TICKET-044: baixa DEPOIS de fechar, nunca ao abrir — uma comanda aberta pode ganhar e
   // perder item várias vezes antes de fechar, e nada disso deveria mexer em estoque de verdade.
   await baixarEstoqueDaComanda(db, tenantId, ticketId)
+
+  /*
+   * O congelamento do mês fechado (`0071`) pega carona aqui, e o motivo é a regra 6 do `CLAUDE.md`:
+   * escrita passa por `/api/v1`. A primeira versão gravava na LEITURA da tela do mês — um GET que
+   * escreve, fora do caminho que tem idempotência e auditoria. Um cron seria pior: os desta casa
+   * atrasam em horas, e o Motor de Ciclo já passou um período inteiro sem rodar sozinho.
+   *
+   * A primeira comanda fechada em outubro congela setembro. Em regime, é uma consulta por PK que
+   * devolve tudo e sai.
+   *
+   * **Nunca derruba o fechamento.** O dinheiro do dia depende desta função; a série mensal é
+   * registro histórico que espera o próximo fechamento sem prejuízo. O `catch` descarta algo, então
+   * ele conta e avisa — tabela de armadilhas do `CLAUDE.md`.
+   */
+  const timezone = tenant?.timezone ?? 'America/Sao_Paulo'
+  await congelarMesesFechados(db, tenantId, timezone, Temporal.Now.zonedDateTimeISO(timezone).toPlainDate().toString()).catch((erro: unknown) => {
+    console.warn(JSON.stringify({ level: 'warn', event: 'congelamento_mensal_falhou', tenantId }), erro)
+  })
 
   return fechado
 }

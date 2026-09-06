@@ -2,7 +2,7 @@ import { Temporal } from '@js-temporal/polyfill'
 
 import { concentracaoDeLucro, ratearLucroDaComanda, type Concentracao } from '@/core/caixa/concentracao'
 import { margemPorServico, type ItemFechado, type MargemDoServico } from '@/core/caixa/margem-do-servico'
-import { mesesJaEncerrados, serieMensal, type MesFechado, type SerieMensal } from '@/core/caixa/serie-mensal'
+import { mesesJaEncerrados, serieMensal, type SerieMensal } from '@/core/caixa/serie-mensal'
 import { buscarTudoPaginado } from '@/server/db/paginar'
 import { AppError } from '@/server/http/errors'
 
@@ -243,73 +243,55 @@ export async function margemDosServicos(db: Cliente, tenantId: string, timezone:
 /** Quantos meses fechados a série guarda e mostra. Dois anos: o bastante para ver sazonalidade. */
 const MESES_DA_SERIE = 24
 
-/**
- * A série mensal congelada — `docs/50` L-09.
- *
- * ## Onde este desenho diverge do plano, e por quê
- *
- * O `L-09` pede "job mensal idempotente". Aqui a linha nasce na primeira leitura DEPOIS que o mês
- * fechou, e não num horário. A troca é deliberada: cron desta casa atrasa em horas, o
- * `/api/health` devolveu 503 por meses sem ninguém olhar, e o Motor de Ciclo passou um período
- * inteiro sem rodar sozinho. Um fosso que depende de um disparo que ninguém confere não é um
- * fosso. A propriedade que importa — a linha nasce uma vez e nunca é reescrita — está de pé, e sem
- * herdar o único componente desta base que já falhou em silêncio.
- *
- * ## O que é congelado, e o que não é
- *
- * Só mês ENCERRADO. O mês corrente ainda vai mudar, e gravá-lo seria gravar um número errado — ele
- * continua sendo somado ao vivo pelo `resumoMensal`, que é quem a tela do caixa já usa.
- *
- * O `on conflict do nothing` é o que faz a segunda leitura não reescrever a primeira. Vale para o
- * caso banal (duas abas abertas no mesmo segundo) e para o que interessa: uma comanda de agosto
- * reaberta e refechada em outubro **não** muda o agosto que o dono já viu.
- */
-export async function serieMensalDeLucro(db: Cliente, tenantId: string, timezone: string, hoje: string): Promise<SerieMensal> {
-  const mesCorrente = Temporal.PlainDate.from(hoje).with({ day: 1 })
-  const maisAntigo = mesCorrente.subtract({ months: MESES_DA_SERIE })
+/** Quantos meses um único fechamento de comanda congela. O backfill anda ao longo dos próximos. */
+const MESES_POR_FECHAMENTO = 3
 
-  const { data: congelados, error } = await db
+async function mesesJaCongelados(db: Cliente, tenantId: string, deste: string, ateAntesDe: string) {
+  const { data, error } = await db
     .from('monthly_profit')
     .select('month, revenue_cents, profit_cents, tickets_count')
     .eq('tenant_id', tenantId)
-    .gte('month', maisAntigo.toString())
-    .lt('month', mesCorrente.toString())
+    .gte('month', deste)
+    .lt('month', ateAntesDe)
     .order('month')
   if (error) throw new AppError('INTERNAL', { cause: error })
+  return data ?? []
+}
 
-  const jaCongelados = new Set((congelados ?? []).map((m) => m.month))
+/**
+ * Congela os meses já encerrados que ainda não têm linha — `docs/50` L-09.
+ *
+ * ## Quem chama, e por que não é a tela nem um cron
+ *
+ * Chamado por `fecharComanda`. A primeira versão escrevia na LEITURA da tela do mês, e isso feria a
+ * regra 6 do `CLAUDE.md` (*"escrita sempre por `/api/v1`"*): um GET que grava é escrita fora do
+ * caminho que tem idempotência, auditoria e fila offline. Sair dali para um cron seria trocar por
+ * um problema pior — cron desta casa atrasa em horas, o `/api/health` devolveu 503 por meses sem
+ * ninguém olhar, e o Motor de Ciclo passou um período inteiro sem rodar sozinho.
+ *
+ * O fechamento de comanda resolve os dois: já é mutação, já passa por `/api/v1`, e acontece em todo
+ * salão ativo. A primeira comanda fechada em outubro congela setembro; em regime é uma consulta que
+ * devolve tudo e sai.
+ */
+export async function congelarMesesFechados(db: Cliente, tenantId: string, timezone: string, hoje: string): Promise<void> {
+  const mesCorrente = Temporal.PlainDate.from(hoje).with({ day: 1 })
+  const janela = mesesJaEncerrados(mesCorrente.toString(), MESES_POR_FECHAMENTO)
+  if (janela.length === 0) return
 
-  /*
-   * Os meses fechados que ainda não têm linha. Uma conta que só abre esta tela em dezembro congela
-   * março, abril e maio no mesmo instante — daí `frozen_at` existir separado de `month`.
-   *
-   * O limite não é zelo: sem ele, uma conta antiga abrindo a tela pela primeira vez dispararia 24
-   * resumos em série. Congelar do mais recente para trás faz a tela ficar certa já na primeira
-   * abertura e o resto vir nas próximas.
-   */
-  const faltando = mesesJaEncerrados(mesCorrente.toString(), MESES_DA_SERIE).filter((m) => !jaCongelados.has(m))
+  const jaTem = new Set((await mesesJaCongelados(db, tenantId, janela[janela.length - 1]!, mesCorrente.toString())).map((m) => m.month))
+  const faltando = janela.filter((m) => !jaTem.has(m))
+  if (faltando.length === 0) return
 
-  /*
-   * Os resumos dos meses faltantes saem JUNTOS, e não um depois do outro. Em série, a primeira
-   * abertura da tela de uma conta antiga pagaria seis idas de rede enfileiradas — e esta base já
-   * mediu que latência de clique quase sempre é função esperando banco, não código lento.
-   *
-   * O teto de seis é o que impede o outro extremo: uma conta com dois anos de histórico dispararia
-   * 24 resumos de uma vez. Congelar do mais recente para trás deixa a tela certa já na primeira
-   * abertura, e o resto vem nas próximas.
-   */
-  const aCongelar = faltando.slice(0, 6)
   const resumos = await Promise.all(
-    aCongelar.map(async (mes) => ({ mes, resumo: await resumoMensal(db, tenantId, timezone, mes.slice(0, 7)) })),
+    faltando.map(async (mes) => ({ mes, resumo: await resumoMensal(db, tenantId, timezone, mes.slice(0, 7)) })),
   )
 
-  const novos: MesFechado[] = []
   for (const { mes, resumo } of resumos) {
     /*
-     * Mês sem comanda fechada é congelado com zeros de propósito. Pular gravaria a mesma consulta
-     * vazia em toda abertura da tela, para sempre — e o zero daquele mês é a verdade sobre ele.
+     * Mês sem comanda fechada é congelado com zeros de propósito. Pular faria a mesma consulta
+     * vazia rodar em todo fechamento, para sempre — e o zero daquele mês é a verdade sobre ele.
      */
-    const { error: erroInsert } = await db.from('monthly_profit').insert({
+    const { error } = await db.from('monthly_profit').insert({
       tenant_id: tenantId,
       month: mes,
       revenue_cents: resumo.revenueCents,
@@ -326,22 +308,45 @@ export async function serieMensalDeLucro(db: Cliente, tenantId: string, timezone
      * alguém trocar a opção para `false` — uma palavra — e a tabela append-only passa a reescrever
      * o passado, que é o ponto inteiro dela. O verbo importa quando ele é a documentação.
      *
-     * `23505` (chave duplicada) é sucesso aqui: outra aba congelou o mês primeiro. Qualquer outro
-     * código sobe, porque falha de escrita silenciosa numa tabela que é o registro contábil do
-     * salão é a pior classe de defeito desta base.
+     * `23505` (chave duplicada) é sucesso aqui: dois fechamentos simultâneos, e o segundo perde.
      */
-    if (erroInsert && erroInsert.code !== '23505') throw new AppError('INTERNAL', { cause: erroInsert })
-
-    novos.push({ month: mes, revenueCents: resumo.revenueCents, profitCents: resumo.profitCents, ticketsCount: resumo.ticketsCount })
+    if (error && error.code !== '23505') throw new AppError('INTERNAL', { cause: error })
   }
+}
+
+/**
+ * A série mensal — `docs/50` L-09. **Só lê.**
+ *
+ * Meses congelados vêm de `monthly_profit` e são o registro: o que o número ERA na época, mesmo que
+ * uma comanda daquele mês seja reaberta depois. Meses encerrados ainda não congelados são somados
+ * ao vivo, para a tela não ficar com buracos enquanto o backfill anda — eles congelam no próximo
+ * fechamento de comanda. O mês corrente nunca entra: ele ainda vai mudar.
+ */
+export async function serieMensalDeLucro(db: Cliente, tenantId: string, timezone: string, hoje: string): Promise<SerieMensal> {
+  const mesCorrente = Temporal.PlainDate.from(hoje).with({ day: 1 })
+  const janela = mesesJaEncerrados(mesCorrente.toString(), MESES_DA_SERIE)
+  if (janela.length === 0) return serieMensal([])
+
+  const congelados = await mesesJaCongelados(db, tenantId, janela[janela.length - 1]!, mesCorrente.toString())
+  const jaTem = new Set(congelados.map((m) => m.month))
+
+  /*
+   * Teto de seis nos ao-vivo: sem ele, uma conta com dois anos de histórico e nada congelado
+   * dispararia 24 resumos numa abertura de tela. Os mais recentes são os que a tela mostra
+   * primeiro, e o resto aparece conforme o backfill do fechamento anda.
+   */
+  const aoVivo = await Promise.all(
+    janela
+      .filter((m) => !jaTem.has(m))
+      .slice(0, 6)
+      .map(async (mes) => {
+        const resumo = await resumoMensal(db, tenantId, timezone, mes.slice(0, 7))
+        return { month: mes, revenueCents: resumo.revenueCents, profitCents: resumo.profitCents, ticketsCount: resumo.ticketsCount }
+      }),
+  )
 
   return serieMensal([
-    ...(congelados ?? []).map((m) => ({
-      month: m.month,
-      revenueCents: m.revenue_cents,
-      profitCents: m.profit_cents,
-      ticketsCount: m.tickets_count,
-    })),
-    ...novos,
+    ...congelados.map((m) => ({ month: m.month, revenueCents: m.revenue_cents, profitCents: m.profit_cents, ticketsCount: m.tickets_count })),
+    ...aoVivo,
   ])
 }

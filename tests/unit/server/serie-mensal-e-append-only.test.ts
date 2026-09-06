@@ -82,4 +82,26 @@ describe('monthly_profit é append-only', () => {
     const servico = semComentarios(readFileSync(SERVICO, 'utf8'))
     expect(/mesesJaEncerrados\s*\(/.test(servico), 'o serviço voltou a montar a lista de meses por conta própria').toBe(true)
   })
+
+  /**
+   * A regra 6 do `CLAUDE.md`: escrita passa por `/api/v1`. A primeira versão desta série gravava na
+   * LEITURA da tela do mês — um GET que escreve, fora do caminho que tem idempotência e auditoria.
+   * O congelamento mudou para `fecharComanda`, que já é mutação; a leitura só lê.
+   */
+  it('a leitura da série não escreve — quem congela é o fechamento de comanda', () => {
+    const servico = semComentarios(readFileSync(SERVICO, 'utf8'))
+
+    const leitura = /export async function serieMensalDeLucro[\s\S]*?\n\}/.exec(servico)
+    expect(leitura?.[0], 'serieMensalDeLucro mudou de forma — esta guarda precisa ser revista').toBeDefined()
+    expect(
+      /\.insert\(|\.update\(|\.upsert\(|\.delete\(/.test(leitura![0]),
+      'a leitura da série voltou a escrever: GET que grava é escrita fora do caminho que tem idempotência e auditoria',
+    ).toBe(false)
+
+    const fechamento = semComentarios(readFileSync(join('src', 'server', 'services', 'comanda.ts'), 'utf8'))
+    expect(
+      /congelarMesesFechados\s*\(/.test(fechamento),
+      'o fechamento parou de congelar o mês — nenhum caminho grava mais a série, e ela some sem erro nenhum',
+    ).toBe(true)
+  })
 })
