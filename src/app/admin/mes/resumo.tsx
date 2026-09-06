@@ -1,6 +1,7 @@
 import Link from 'next/link'
 
 import StatTile from '@/components/ui/stat-tile'
+import { SEM_AMOSTRA, percentualOuTraco } from '@/core/text/sem-amostra'
 
 import type { ConcentracaoDoMes } from '@/server/services/caixa'
 import type { PrestacaoDeContas } from '@/core/cycle/prestacao-de-contas'
@@ -85,7 +86,7 @@ export default function ResumoDoMes({
         <StatTile
           pressionavel
           rotulo="De quem depende"
-          valor={concentracao.vaiADizerAlgo && maior ? `${Math.round(maior.participacaoBps / 100)}%` : '—'}
+          valor={concentracao.vaiADizerAlgo && maior ? percentualOuTraco(maior.participacaoBps) : SEM_AMOSTRA}
           apoio={
             concentracao.vaiADizerAlgo && nomeDoMaior
               ? `do lucro do mês veio de ${nomeDoMaior}`
@@ -116,7 +117,7 @@ export default function ResumoDoMes({
         <StatTile
           pressionavel
           rotulo="O Motor acertou"
-          valor={motor.acertoBps === null ? '—' : `${Math.round(motor.acertoBps / 100)}%`}
+          valor={percentualOuTraco(motor.acertoBps)}
           apoio={
             motor.acertoBps === null
               ? `ainda sem previsão conferida${motor.emAberto > 0 ? ` — ${motor.emAberto} em aberto` : ''}`
