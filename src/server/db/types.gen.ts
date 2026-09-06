@@ -1559,6 +1559,50 @@ export type Database = {
           },
         ]
       }
+      monthly_profit: {
+        Row: {
+          commission_cents: number
+          fee_cents: number
+          frozen_at: string
+          material_cents: number
+          month: string
+          profit_cents: number
+          revenue_cents: number
+          tenant_id: string
+          tickets_count: number
+        }
+        Insert: {
+          commission_cents: number
+          fee_cents: number
+          frozen_at?: string
+          material_cents: number
+          month: string
+          profit_cents: number
+          revenue_cents: number
+          tenant_id: string
+          tickets_count: number
+        }
+        Update: {
+          commission_cents?: number
+          fee_cents?: number
+          frozen_at?: string
+          material_cents?: number
+          month?: string
+          profit_cents?: number
+          revenue_cents?: number
+          tenant_id?: string
+          tickets_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "monthly_profit_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       modules: {
         Row: {
           eixo: string | null
