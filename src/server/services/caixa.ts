@@ -1,5 +1,6 @@
 import { Temporal } from '@js-temporal/polyfill'
 
+import { concentracaoDeLucro, ratearLucroDaComanda, type Concentracao } from '@/core/caixa/concentracao'
 import { buscarTudoPaginado } from '@/server/db/paginar'
 import { AppError } from '@/server/http/errors'
 
@@ -90,4 +91,78 @@ export async function resumoMensal(db: Cliente, tenantId: string, timezone: stri
 
   const resumo = await somarTickets(db, tenantId, inicio, fim)
   return { month, ...resumo }
+}
+
+export type ConcentracaoDoMes = Concentracao & {
+  /** Nome de cada profissional, para a tela não precisar de uma segunda consulta. */
+  nomes: Record<string, string>
+}
+
+/**
+ * `docs/48` C7 — de quem depende o que sobra.
+ *
+ * `docs/47` P07: *"um barbeiro bom pede as contas — e leva metade da clientela junto"*. A pesquisa
+ * não achou sistema nenhum do setor que meça isso; o dono descobre o tamanho da dependência no dia
+ * da demissão.
+ *
+ * O número sai do lucro **congelado** de cada comanda, rateado entre os profissionais dos itens
+ * dela — nunca de um segundo cálculo. Somar as fatias tem que dar exatamente o "Sobrou no mês" que
+ * aparece na mesma tela; duas somas diferentes do mesmo dinheiro é a armadilha de livro-caixa que
+ * esta base já pagou uma vez.
+ */
+export async function concentracaoDoMes(db: Cliente, tenantId: string, timezone: string, month: string): Promise<ConcentracaoDoMes> {
+  const [ano, mes] = month.split('-').map(Number)
+  if (!ano || !mes) throw AppError.validacao({ month: 'Use o formato AAAA-MM.' })
+
+  const anoMes = Temporal.PlainYearMonth.from({ year: ano, month: mes })
+  const inicio = anoMes.toPlainDate({ day: 1 }).toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant().toString()
+  const fim = anoMes.toPlainDate({ day: 1 }).add({ months: 1 }).toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant().toString()
+
+  const comandas = await buscarTudoPaginado(() =>
+    db
+      .from('tickets')
+      .select('id, profit_cents')
+      .eq('tenant_id', tenantId)
+      .in('status', ['closed', 'paid'])
+      .gte('closed_at', inicio)
+      .lt('closed_at', fim)
+      .order('id'),
+  )
+  if (comandas.length === 0) return { ...concentracaoDeLucro([]), nomes: {} }
+
+  const lucroPorComanda = new Map(comandas.map((t) => [t.id, t.profit_cents]))
+
+  /*
+    Filtrar por `ticket_id in (...)` e não repetir o recorte de data: o recorte já foi feito acima,
+    e refazê-lo aqui por `tickets!inner` abriria a porta para as duas consultas discordarem na
+    fronteira do mês — que é exatamente onde o `comissao.ts` já se queimou uma vez.
+  */
+  const itens = await buscarTudoPaginado(() =>
+    db
+      .from('ticket_items')
+      .select('ticket_id, professional_id, total_cents')
+      .eq('tenant_id', tenantId)
+      .in('ticket_id', [...lucroPorComanda.keys()])
+      .order('id'),
+  )
+
+  const itensPorComanda = new Map<string, { professionalId: string | null; totalCents: number }[]>()
+  for (const item of itens) {
+    const lista = itensPorComanda.get(item.ticket_id) ?? []
+    lista.push({ professionalId: item.professional_id, totalCents: item.total_cents })
+    itensPorComanda.set(item.ticket_id, lista)
+  }
+
+  const rateios = [...lucroPorComanda].map(([ticketId, lucro]) => ratearLucroDaComanda(lucro, itensPorComanda.get(ticketId) ?? []))
+  const concentracao = concentracaoDeLucro(rateios)
+
+  const ids = concentracao.fatias.map((f) => f.professionalId).filter((id): id is string => Boolean(id))
+  const nomes: Record<string, string> = {}
+  if (ids.length > 0) {
+    const { data, error } = await db.from('professionals').select('id, display_name').eq('tenant_id', tenantId).in('id', ids)
+    if (error) throw new AppError('INTERNAL', { cause: error })
+    for (const p of data ?? []) nomes[p.id] = p.display_name
+  }
+
+  return { ...concentracao, nomes }
 }
