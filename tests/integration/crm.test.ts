@@ -519,3 +519,50 @@ describe('margem do clube de assinatura', () => {
     60_000,
   )
 })
+
+/**
+ * `docs/48` C2. Só o banco prova as duas metades: o lucro vem das comandas fechadas (congelado, o
+ * mesmo número do caixa) e a cobertura vem da diferença entre visitas concluídas e comandas —
+ * duas tabelas, sem uma segunda conta em lugar nenhum.
+ */
+describe('lucro por cliente na ficha', () => {
+  it(
+    'soma o lucro congelado das comandas e diz de quantas visitas está falando',
+    async () => {
+      const marca = randomUUID().slice(0, 6)
+      const cliente = await criarCliente(svc, tenantId, { name: `Lucrativo ${marca}`, phone: null, tags: [], marketingOptIn: false })
+
+      // Duas visitas concluídas; só uma virou comanda fechada.
+      const agora = new Date()
+      for (let i = 0; i < 2; i++) {
+        const quando = new Date(agora.getTime() - (i + 1) * 24 * 3_600_000)
+        const { error } = await svc.from('appointments').insert({
+          tenant_id: tenantId,
+          client_id: cliente.id,
+          service_id: servicoId,
+          professional_id: profissionalId,
+          starts_at: quando.toISOString(),
+          ends_at: new Date(quando.getTime() + 1_800_000).toISOString(),
+          price_cents: 5_000,
+          status: 'done',
+        })
+        if (error) throw error
+      }
+
+      const { error: erroTicket } = await svc
+        .from('tickets')
+        .insert({ tenant_id: tenantId, client_id: cliente.id, status: 'closed', total_cents: 5_000, profit_cents: 3_200, closed_at: agora.toISOString() })
+      if (erroTicket) throw erroTicket
+
+      const semPermissao = await fichaDoCliente(svc, tenantId, cliente.id, 'America/Sao_Paulo')
+      expect(semPermissao.metricas.lucro, 'sem `podeVerLucro` a consulta nem deveria acontecer').toBeNull()
+
+      const ficha = await fichaDoCliente(svc, tenantId, cliente.id, 'America/Sao_Paulo', { podeVerLucro: true })
+      expect(ficha.metricas.ltvCents, 'o faturamento continua sendo a soma dos preços').toBe(10_000)
+      expect(ficha.metricas.lucro!.lucroCents).toBe(3_200)
+      expect(ficha.metricas.lucro!.cobertura, 'uma visita ficou sem comanda').toBe('parcial')
+      expect(ficha.metricas.lucro!.visitasSemComanda).toBe(1)
+    },
+    90_000,
+  )
+})

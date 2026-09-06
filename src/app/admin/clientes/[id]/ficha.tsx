@@ -422,9 +422,38 @@ export default function Ficha({
               "atendido" é preço de tabela e "entrou" é dinheiro no caixa.
             */}
             <StatTile rotulo="Valor atendido" valor={dinheiro.format(metricas.ltvCents / 100)} />
+            {/*
+              `docs/48` C2. "Valor atendido" é a soma dos preços — o mesmo número que o `docs/47`
+              P01 acusa o setor inteiro de confundir com ganho. Ao lado dele, o que de fato SOBROU.
+
+              A frase de apoio não é enfeite: o lucro sai das comandas fechadas, e nem toda visita
+              passa por uma. Sem dizer de quantas está falando, três comandas de doze visitas
+              apareceriam como o valor da pessoa inteira.
+            */}
+            {metricas.lucro ? (
+              <StatTile
+                rotulo="Sobrou"
+                valor={dinheiro.format(metricas.lucro.lucroCents / 100)}
+                apoio={
+                  metricas.lucro.cobertura === 'nenhuma'
+                    ? 'nenhuma comanda fechada ainda'
+                    : metricas.lucro.cobertura === 'parcial'
+                      ? `de ${metricas.visitas - metricas.lucro.visitasSemComanda} de ${metricas.visitas} visitas`
+                      : 'de todas as visitas'
+                }
+              />
+            ) : null}
             <StatTile rotulo="Visitas" valor={String(metricas.visitas)} />
             <StatTile rotulo="Ticket médio" valor={dinheiro.format(metricas.ticketMedioCents / 100)} />
             <StatTile rotulo="Faltas" valor={String(metricas.faltas)} />
+            {/*
+              O anual é o C2 completo: lucro por visita × cadência daquela pessoa. É o número que
+              muda a decisão de quem chamar de volta primeiro — e some quando não há cadência
+              medida, porque projetar o que não se mediu é inventar.
+            */}
+            {metricas.lucro?.lucroAnualCents !== null && metricas.lucro?.lucroAnualCents !== undefined ? (
+              <StatTile rotulo="Lucro por ano" valor={dinheiro.format(metricas.lucro.lucroAnualCents / 100)} apoio="no ritmo de hoje" />
+            ) : null}
           </div>
 
           <Button
