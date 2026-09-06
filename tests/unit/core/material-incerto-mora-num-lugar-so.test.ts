@@ -88,4 +88,31 @@ describe('a pergunta "o material é confiável?" tem um dono só', () => {
         'Use o `materialIncerto` que `custoDoServico` já devolve.',
     ).toEqual([])
   })
+
+  /**
+   * Calcular e não gravar é a forma mais cara deste defeito, e ela já aconteceu nesta base com
+   * `fee_cents`: a coluna existia, três lugares a liam, e NADA a escrevia — por meses. A guarda
+   * `caixa-nao-promete-taxa` cobra o par (calcula + grava) desde então, e esta é a mesma cobrança
+   * para `material_incerto`.
+   *
+   * Foi escrita depois de uma mutação passar verde: trocar `material_incerto: materialIncerto` por
+   * `material_incerto: false` no INSERT do item não quebrava teste nenhum, e o resultado seria uma
+   * coluna sempre falsa — todo atendimento anunciado como material conferido.
+   */
+  it('o valor calculado é GRAVADO no item, senão a coluna nasce sempre falsa', () => {
+    const fonte = semComentarios(readFileSync(join('src', 'server', 'services', 'comanda.ts'), 'utf8'))
+
+    const insert = /\.from\('ticket_items'\)[\s\S]*?\.insert\(\{[\s\S]*?\}\)/.exec(fonte)
+    expect(insert?.[0], 'o INSERT de ticket_items mudou de forma — esta guarda precisa ser revista junto').toBeDefined()
+    expect(
+      /material_incerto:\s*materialIncerto\b/.test(insert![0]),
+      'o item é lançado sem gravar a ressalva calculada. Com `false` fixo (ou sem a coluna) toda ' +
+        'comanda passa a anunciar material conferido, que é o defeito de `fee_cents` de volta.',
+    ).toBe(true)
+
+    expect(
+      /materialIncerto\s*=[^=]/.test(fonte),
+      'ninguém calcula mais `materialIncerto` — gravar uma constante é pior que não gravar',
+    ).toBe(true)
+  })
 })
