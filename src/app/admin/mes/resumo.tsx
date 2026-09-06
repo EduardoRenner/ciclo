@@ -1,14 +1,22 @@
 import Link from 'next/link'
 
+import Card from '@/components/ui/card'
 import StatTile from '@/components/ui/stat-tile'
+import { NOME_DA_FORMA } from '@/core/comanda/taxa-de-pagamento'
 import { SEM_AMOSTRA, percentualOuTraco } from '@/core/text/sem-amostra'
 import { MINIMO_DE_MESES } from '@/core/caixa/serie-mensal'
 
 import type { ConcentracaoDoMes } from '@/server/services/caixa'
 import type { PrestacaoDeContas } from '@/core/cycle/prestacao-de-contas'
 import type { SerieMensal } from '@/core/caixa/serie-mensal'
+import type { TaxaDoMes } from '@/core/caixa/taxa-por-forma'
 
 const dinheiro = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
+
+/** 349 → "3,49%". `toLocaleString` em vez de `Math.round(/100)` porque taxa de máquina se decide na casa decimal — 1,5% e 2% são planos diferentes. */
+function percentualDeBps(bps: number): string {
+  return `${(bps / 100).toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%`
+}
 
 /**
  * "2026-03-01" vira "março". O ano só entra quando não é o corrente, para a frase não pesar.
@@ -44,6 +52,7 @@ export default function ResumoDoMes({
   servicosSemMaterial,
   custoFixoRespondido,
   serie,
+  taxa,
 }: {
   mes: string
   entrouCents: number
@@ -59,6 +68,8 @@ export default function ResumoDoMes({
   custoFixoRespondido: boolean
   /** `docs/50` L-09 — os meses já congelados, e a variação do lucro por atendimento. */
   serie: SerieMensal
+  /** `docs/53` A-01 — o que a forma de pagamento custou, e o que as outras já usadas custariam. */
+  taxa: TaxaDoMes
 }) {
   const maior = concentracao?.maior ?? null
   const nomeDoMaior = concentracao && maior?.professionalId ? concentracao.nomes[maior.professionalId] : null
@@ -102,6 +113,49 @@ export default function ResumoDoMes({
           ].join('')}
         />
       </Link>
+
+      {/*
+        `docs/53` A-01. A única parcela do "Sobrou" que o dono muda na semana seguinte sem mexer em
+        preço nem em comissão — por isso fica logo abaixo do "Sobrou", não escondida no fim da
+        tela. Três estados: nunca respondeu (CTA), respondeu mas nenhuma comanda usou forma que
+        conta aqui (nada — não inventa linha vazia), respondeu e tem movimento (o número + a
+        contrafactual das formas que o salão já usa).
+      */}
+      {!taxa.respondida ? (
+        <Card>
+          <p className="text-corpo text-txt-2">
+            Você ainda não disse quanto a maquininha cobra — o &ldquo;Sobrou&rdquo; acima não desconta a taxa de pagamento.{' '}
+            <Link href="/admin/config/taxas" className="font-semibold text-acc-2">
+              Responder agora
+            </Link>
+          </p>
+        </Card>
+      ) : taxa.porForma.length > 0 ? (
+        <Card>
+          <p className="text-corpo font-semibold text-txt">O que a maquininha levou</p>
+          <p className="mt-1 text-secundario text-txt-2">
+            {dinheiro.format(taxa.totalFeeCents / 100)} em taxa este mês, sobre {dinheiro.format(taxa.volumeTotalCents / 100)} passados na
+            máquina.
+          </p>
+
+          {taxa.contrafactual.length > 1 ? (
+            <ul className="mt-3 flex flex-col gap-1.5">
+              {taxa.contrafactual.map((c) => (
+                <li key={c.forma} className="flex items-center justify-between gap-3 text-secundario text-txt-2">
+                  <span>
+                    Se tudo fosse {NOME_DA_FORMA[c.forma].toLowerCase()} ({percentualDeBps(c.feeBps)})
+                  </span>
+                  <span className="tabular font-semibold text-txt">{dinheiro.format(c.feeCentsSeTudoFosseAssim / 100)}</span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+
+          <Link href="/admin/config/taxas" className="mt-3 inline-block text-secundario font-semibold text-acc-2">
+            Ver ou mudar a taxa configurada
+          </Link>
+        </Card>
+      ) : null}
 
       {/*
         `vaiADizerAlgo` é falso quando o salão tem um profissional só: 100% do lucro vem do dono, e

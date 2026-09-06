@@ -9,7 +9,7 @@ import PageHeader from '@/components/ui/page-header'
 import { RELATORIO_DA_EQUIPE, avaliarPermissao } from '@/server/auth/rbac'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
-import { concentracaoDoMes, resumoMensal, serieMensalDeLucro } from '@/server/services/caixa'
+import { concentracaoDoMes, resumoMensal, serieMensalDeLucro, taxaPorFormaDoMes } from '@/server/services/caixa'
 import { lerCustoFixoDoTenant } from '@/server/services/custo-fixo'
 import { medirMaterialDoCatalogo } from '@/server/services/ficha-de-consumo'
 import { prestacaoDeContasDoMotor } from '@/server/services/previsao'
@@ -56,7 +56,7 @@ export default async function PaginaDoMes() {
   const hoje = Temporal.Now.instant().toZonedDateTimeISO(timezone).toPlainDate()
   const mes = `${hoje.year}-${String(hoje.month).padStart(2, '0')}`
 
-  const [mensal, concentracao, recuperar, motor, material, serie, custoFixo] = await Promise.all([
+  const [mensal, concentracao, recuperar, motor, material, serie, custoFixo, taxa] = await Promise.all([
     resumoMensal(db, ctx.tenantId, timezone, mes),
     // Mesma trava do caixa (`docs/50` L-10): sem `report:team` o número "de quem depende" não sai,
     // e a consulta nem acontece.
@@ -76,6 +76,9 @@ export default async function PaginaDoMes() {
      */
     serieMensalDeLucro(db, ctx.tenantId, timezone, hoje.toString()),
     lerCustoFixoDoTenant(db, ctx.tenantId),
+    // `docs/53` A-01 — o que a forma de pagamento custou, e o que as outras que o salão já usa
+    // teriam custado no mesmo volume. Sétimo, e não um dos cinco: é a razão por trás do "Sobrou".
+    taxaPorFormaDoMes(db, ctx.tenantId, timezone, mes),
   ])
 
   return (
@@ -97,6 +100,7 @@ export default async function PaginaDoMes() {
         servicosSemMaterial={material.semFicha + material.comProdutoSemCusto}
         custoFixoRespondido={custoFixo.respondido}
         serie={serie}
+        taxa={taxa}
       />
     </>
   )
