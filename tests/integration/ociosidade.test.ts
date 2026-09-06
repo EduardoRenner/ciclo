@@ -116,6 +116,23 @@ beforeAll(async () => {
   for (const data of ['2026-09-03', '2026-08-27', '2026-08-20', '2026-08-13', '2026-08-06', '2026-07-30', '2026-07-23', '2026-07-16']) {
     await marcar(data, 'confirmed')
   }
+
+  /*
+   * O expediente padrão do pack é seg-sáb (`0002_vertical_packs.sql`): segunda, quarta, sexta e
+   * sábado TAMBÉM entram na conta de `diaMaisOciosoDoTenant`, e sem nenhum agendamento eles
+   * ficariam 100% vazios — streak 8, maior que o da terça, e o teste apontaria o dia errado. A
+   * primeira versão deste teste caiu exatamente nisso, pego pela CI (`docs/DECISOES.md`): todo
+   * dia que o salão abre precisa de um controle "cheio" tão explícito quanto a quinta.
+   */
+  const CHEIOS: Record<number, string[]> = {
+    1: ['2026-09-07', '2026-08-31', '2026-08-24', '2026-08-17', '2026-08-10', '2026-08-03', '2026-07-27', '2026-07-20'],
+    3: ['2026-09-09', '2026-09-02', '2026-08-26', '2026-08-19', '2026-08-12', '2026-08-05', '2026-07-29', '2026-07-22'],
+    5: ['2026-09-04', '2026-08-28', '2026-08-21', '2026-08-14', '2026-08-07', '2026-07-31', '2026-07-24', '2026-07-17'],
+    6: ['2026-09-05', '2026-08-29', '2026-08-22', '2026-08-15', '2026-08-08', '2026-08-01', '2026-07-25', '2026-07-18'],
+  }
+  for (const datas of Object.values(CHEIOS)) {
+    for (const data of datas) await marcar(data, 'confirmed')
+  }
 }, 60_000)
 
 afterAll(async () => {
