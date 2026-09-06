@@ -63,8 +63,12 @@ function colunasAdicionadas(texto: string): { tabela: string; coluna: string; ti
 
 function colunasDoBloco(corpo: string): { coluna: string; tipo: string }[] {
   const achadas: { coluna: string; tipo: string }[] = []
-  for (const linha of corpo.split('\n')) {
-    const limpa = linha.replace(/--.*$/, '').trim()
+  // `\r` no split e `[^\r\n]` no lugar do `.`: as migrations estão em CRLF, e `.` não casa com
+  // `\r`, então `/--.*$/` sobre uma linha terminada em `\r` não cortava comentário nenhum. Aqui isso
+  // não mudava veredito (linha de comentário já morria no `^(\w+)` abaixo) — medido, zero casos em
+  // 2026-09-06 — mas o cortador inerte é a armadilha que a guarda irmã da 0069 pagou de verdade.
+  for (const linha of corpo.split(/\r?\n/)) {
+    const limpa = linha.replace(/--[^\r\n]*$/, '').trim()
     const m = /^(\w+)\s+([\w[\]]+)/.exec(limpa)
     if (!m) continue
     const coluna = m[1]!.toLowerCase()
