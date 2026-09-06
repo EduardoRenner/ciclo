@@ -75,7 +75,15 @@ afterAll(async () => {
 
 let contadorTelefone = 0
 
-async function criarClienteEmCiclo(nome: string, opcoes: { state: Database['public']['Enums']['cycle_state']; valueAtRiskCents: number; optOut?: boolean }) {
+/**
+ * `profitAtRiskCents` omitido cai no valor da receita, e isso é de propósito: a `0067` fez a fila
+ * ser ordenada pelo LUCRO, e sem esse padrão todos os casos antigos passariam a ordenar por zero —
+ * a suíte continuaria verde por empate, provando nada.
+ */
+async function criarClienteEmCiclo(
+  nome: string,
+  opcoes: { state: Database['public']['Enums']['cycle_state']; valueAtRiskCents: number; profitAtRiskCents?: number; optOut?: boolean },
+) {
   contadorTelefone++
   // Telefone único por cliente: `clients_unique_phone` (tenant_id, phone_e164) rejeitaria o
   // segundo insert com o mesmo número, e o teste original usava um número fixo para todos.
@@ -98,6 +106,7 @@ async function criarClienteEmCiclo(nome: string, opcoes: { state: Database['publ
     late_days: 15,
     state: opcoes.state,
     value_at_risk_cents: opcoes.valueAtRiskCents,
+    profit_at_risk_cents: opcoes.profitAtRiskCents ?? opcoes.valueAtRiskCents,
   })
 
   return clientId
@@ -242,5 +251,70 @@ describe('enviarParaRecuperar', () => {
       expect(cedo.queued).toBe(1)
     },
     30_000,
+  )
+})
+
+/**
+ * `docs/48` C3. A tela promete, com estas palavras, que a ordem é a do que vale a pena chamar — e
+ * "valer" passou a ser o LUCRO. Este caso existe porque a troca é invisível quando os dois números
+ * andam juntos: só separa quem ordena por um e quem ordena pelo outro quando eles discordam.
+ */
+describe('a fila de recuperação é ordenada por lucro, não por receita', () => {
+  it(
+    'o serviço caro que deixa pouco fica abaixo do barato que deixa mais',
+    async () => {
+      const marca = randomUUID().slice(0, 6)
+      const { data } = await svc.auth.admin.createUser({
+        email: `ordem-${marca}@ciclo.test`,
+        password: randomUUID(),
+        email_confirm: true,
+      })
+      const { tenant } = await executarOnboarding(svc, {
+        userId: data!.user!.id,
+        businessName: 'Ordem por Lucro',
+        vertical: 'barber',
+        slug: `ordem-${marca}`,
+        timezone: TZ,
+      })
+
+      const servico = await svc
+        .from('services')
+        .insert({ tenant_id: tenant.id, name: 'Serviço da Ordem', duration_min: 30, price_cents: 10_000 })
+        .select('id')
+        .single()
+      if (servico.error) throw servico.error
+
+      const criar = async (nome: string, receita: number, lucro: number) => {
+        const c = await svc.from('clients').insert({ tenant_id: tenant.id, name: nome, phone_e164: null }).select('id').single()
+        if (c.error) throw c.error
+        const { error } = await svc.from('client_cycles').insert({
+          tenant_id: tenant.id,
+          client_id: c.data.id,
+          service_id: servico.data.id,
+          personal_cycle_days: 21,
+          last_visit_on: '2026-07-01',
+          predicted_on: '2026-07-22',
+          late_days: 15,
+          state: 'late',
+          value_at_risk_cents: receita,
+          profit_at_risk_cents: lucro,
+        })
+        if (error) throw error
+        return c.data.id
+      }
+
+      // Platinado: R$ 200 de receita, R$ 50 de lucro. Corte: R$ 80 de receita, R$ 80 de lucro.
+      const platinado = await criar('Dona do Platinado', 20_000, 5_000)
+      const corte = await criar('Dono do Corte', 8_000, 8_000)
+
+      const lista = await listarParaRecuperar(svc, tenant.id)
+      expect(lista.items.map((i) => i.clientId), 'a fila voltou a ser ordenada por receita').toEqual([corte, platinado])
+      expect(lista.totalValueCents, 'a receita parada continua sendo a soma da receita').toBe(28_000)
+      expect(lista.totalProfitCents).toBe(13_000)
+
+      await svc.from('tenants').delete().eq('id', tenant.id)
+      await svc.auth.admin.deleteUser(data!.user!.id)
+    },
+    90_000,
   )
 })

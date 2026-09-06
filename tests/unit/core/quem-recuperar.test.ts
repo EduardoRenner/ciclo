@@ -15,7 +15,12 @@ import { quemRecuperar } from '@/core/ciclo/quem-recuperar'
  * listava 149 linhas, com o cartão rotulado "Clientes", num salão que tem 55 clientes — e apenas
  * CINCO tinham de fato parado de vir.
  */
-const linha = (clientId: string, valueCents: number, serviceId = 's') => ({ clientId, valueCents, serviceId })
+/**
+ * `ordemCents` era `valueCents`, e carregava a receita em risco. O `docs/48` C3 trocou o critério
+ * para o LUCRO em risco (`0067`) — e o nome mudou junto de propósito: com o nome antigo, a mesma
+ * chamada continuaria compilando com outro significado, e a troca de critério passaria batida.
+ */
+const linha = (clientId: string, ordemCents: number, serviceId = 's') => ({ clientId, ordemCents, serviceId })
 
 describe('quem entra na lista de recuperar', () => {
   it('uma linha por cliente, não uma por serviço', () => {
@@ -24,7 +29,7 @@ describe('quem entra na lista de recuperar', () => {
     expect(r[0]!.clientId).toBe('ana')
   })
 
-  it('fica o serviço de MAIOR valor, venha na ordem que vier', () => {
+  it('fica o serviço de MAIOR lucro em risco, venha na ordem que vier', () => {
     /*
      * Os dois sentidos de propósito. A `v_recover_revenue` até vem ordenada por valor, mas
      * depender disso é a aposta de "paginar sem `.order()` explícito" que já mordeu esta base:
@@ -50,7 +55,7 @@ describe('quem entra na lista de recuperar', () => {
     expect(r.map((x) => x.clientId).sort()).toEqual(['ana', 'bia'])
   })
 
-  it('devolve em ordem de valor, não na ordem em que chegou', () => {
+  it('devolve em ordem de lucro, não na ordem em que chegou', () => {
     const r = quemRecuperar([linha('ana', 4500), linha('bia', 22000), linha('cris', 9000)], new Set())
     expect(r.map((x) => x.clientId)).toEqual(['bia', 'cris', 'ana'])
   })

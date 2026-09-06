@@ -114,13 +114,20 @@ describe('recomputarCiclosDoTenant', () => {
 
       const linha = await svc
         .from('client_cycles')
-        .select('state, late_days, value_at_risk_cents')
+        .select('state, late_days, value_at_risk_cents, profit_at_risk_cents')
         .eq('tenant_id', tenantId)
         .eq('client_id', cliente)
         .single()
       expect(linha.data?.state).toBe('late')
       // §5.3: preço do serviço (6000 centavos) × probabilidade de 'late' (0,65), arredondado para baixo.
       expect(linha.data?.value_at_risk_cents).toBe(3900)
+      /*
+        `0067`: o lucro em risco sai da MESMA probabilidade, sobre o que sobra do serviço. Este
+        profissional é `owner` (comissão 0) e o serviço não tem ficha de consumo, então lucro
+        esperado = preço, e os dois números coincidem. Coincidirem AQUI é o que prova que a coluna
+        nova está sendo escrita — antes da 0067 ela não existia, e um default 0 passaria batido.
+      */
+      expect(linha.data?.profit_at_risk_cents).toBe(3900)
     },
     30_000,
   )

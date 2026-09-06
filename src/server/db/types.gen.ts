@@ -421,6 +421,7 @@ export type Database = {
           late_days: number
           personal_cycle_days: number
           predicted_on: string | null
+          profit_at_risk_cents: number
           service_id: string
           state: Database["public"]["Enums"]["cycle_state"]
           tenant_id: string
@@ -434,6 +435,7 @@ export type Database = {
           late_days?: number
           personal_cycle_days: number
           predicted_on?: string | null
+          profit_at_risk_cents?: number
           service_id: string
           state?: Database["public"]["Enums"]["cycle_state"]
           tenant_id: string
@@ -447,6 +449,7 @@ export type Database = {
           late_days?: number
           personal_cycle_days?: number
           predicted_on?: string | null
+          profit_at_risk_cents?: number
           service_id?: string
           state?: Database["public"]["Enums"]["cycle_state"]
           tenant_id?: string
@@ -3419,6 +3422,7 @@ export type Database = {
           late_days: number | null
           phone_e164: string | null
           predicted_on: string | null
+          profit_at_risk_cents: number | null
           service_id: string | null
           service_name: string | null
           state: Database["public"]["Enums"]["cycle_state"] | null
