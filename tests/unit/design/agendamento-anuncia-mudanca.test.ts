@@ -220,13 +220,23 @@ describe('a busca de clientes anuncia o resultado e não engole a falha', () => 
 
   it('toda busca trata a falha — nenhuma deixa a lista velha sem aviso', () => {
     /*
-     * Conta `.catch(` contra `/api/v1/clients` : são duas buscas (termo e segmento) e as duas
-     * precisam tratar. Contar em vez de procurar uma ocorrência é o que impede consertar metade.
+     * Conta `.catch(` contra as buscas de cliente — hoje TRÊS (termo, segmento e a próxima
+     * página), e as três precisam tratar. Contar em vez de procurar uma ocorrência é o que
+     * impede consertar metade.
+     *
+     * O padrão casa com a CHAMADA, não com a URL literal: quando `carregarMais` entrou, a URL
+     * saiu de dentro do `fetch` para o montador `urlDaLista`, e a versão antiga
+     * (`fetch(`/api/v1/clients`) parou de casar. Ela não passou vazia — o piso abaixo gritou, que
+     * é exatamente o trabalho dele. Casar com `fetch(urlDaLista(` sobrevive a mudança de URL,
+     * de query string e de rota; só não sobrevive a alguém criar um segundo montador, e aí o
+     * piso grita de novo.
      */
     const src = fonte(CLIENTES)
-    const buscas = (src.match(/fetch\(`\/api\/v1\/clients/g) ?? []).length
+    const buscas = (src.match(/fetch\(urlDaLista\(/g) ?? []).length
     const tratadas = (src.match(/\.catch\(/g) ?? []).length
-    expect(buscas, 'não achei as buscas').toBeGreaterThan(0)
+    // Piso pelo positivo CONHECIDO, não por `> 0`: são três buscas hoje, e menos que isso
+    // significa que o padrão cegou, não que o arquivo simplificou.
+    expect(buscas, 'não achei as buscas — o padrão cegou').toBeGreaterThanOrEqual(3)
     expect(
       tratadas,
       `${buscas} buscas e só ${tratadas} com catch — a que falhar deixa a lista anterior na tela como se fosse o resultado`,

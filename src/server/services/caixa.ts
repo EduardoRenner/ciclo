@@ -1,5 +1,6 @@
 import { Temporal } from '@js-temporal/polyfill'
 
+import { buscarTudoPaginado } from '@/server/db/paginar'
 import { AppError } from '@/server/http/errors'
 
 import type { Database } from '@/server/db/types.gen'
@@ -17,8 +18,6 @@ export type ResumoCaixa = {
   profitCents: number
 }
 
-const TAMANHO_PAGINA = 1000
-
 /**
  * TICKET-047. Soma direto de `tickets`, não da view `v_daily_cash` (0001):
  * a view agrupa por `date_trunc('day', closed_at)`, que trunca no fuso da
@@ -31,29 +30,35 @@ const TAMANHO_PAGINA = 1000
 async function somarTickets(db: Cliente, tenantId: string, inicio: string, fim: string): Promise<ResumoCaixa> {
   const resumo: ResumoCaixa = { ticketsCount: 0, revenueCents: 0, materialCents: 0, feeCents: 0, commissionCents: 0, profitCents: 0 }
 
-  for (let pagina = 0; ; pagina++) {
-    const de = pagina * TAMANHO_PAGINA
-    const { data, error } = await db
+  /*
+    `buscarTudoPaginado` em vez do laço à mão. A paginação estava certa — o que faltava era teto:
+    `for (;;)` só saía na página curta, então uma consulta que devolvesse sempre página cheia
+    rodaria para sempre e prenderia a função. O helper erra ao passar de 100 mil linhas, e errar é
+    a saída certa aqui: um fechamento de caixa somado sobre parte dos tickets é redondo, plausível
+    e não denuncia nada — que é justamente a "pior forma do defeito" que o `paginar.ts` descreve.
+
+    A troca custa juntar as linhas em memória em vez de somar página a página. São cinco números
+    por ticket, num recorte de um dia de um salão; o teto do helper limita o pior caso, e ele só é
+    alcançado num cenário que hoje travaria.
+  */
+  const tickets = await buscarTudoPaginado(() =>
+    db
       .from('tickets')
       .select('total_cents, material_cost_cents, fee_cents, commission_cents, profit_cents')
       .eq('tenant_id', tenantId)
       .in('status', ['closed', 'paid'])
       .gte('closed_at', inicio)
       .lt('closed_at', fim)
-      .order('id')
-      .range(de, de + TAMANHO_PAGINA - 1)
-    if (error) throw new AppError('INTERNAL', { cause: error })
+      .order('id'),
+  )
 
-    for (const t of data ?? []) {
-      resumo.ticketsCount++
-      resumo.revenueCents += t.total_cents
-      resumo.materialCents += t.material_cost_cents
-      resumo.feeCents += t.fee_cents
-      resumo.commissionCents += t.commission_cents
-      resumo.profitCents += t.profit_cents
-    }
-
-    if (!data || data.length < TAMANHO_PAGINA) break
+  for (const t of tickets) {
+    resumo.ticketsCount++
+    resumo.revenueCents += t.total_cents
+    resumo.materialCents += t.material_cost_cents
+    resumo.feeCents += t.fee_cents
+    resumo.commissionCents += t.commission_cents
+    resumo.profitCents += t.profit_cents
   }
 
   return resumo

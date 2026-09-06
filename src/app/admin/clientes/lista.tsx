@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import Avatar from '@/components/ui/avatar'
 import { useVocabulario } from '@/components/shell/vocabulario'
+import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import Chip from '@/components/ui/chip'
 import EmptyState from '@/components/ui/empty-state'
@@ -31,6 +32,23 @@ const SEGMENTOS: { valor: Segmento; rotulo: string }[] = [
   { valor: 'ticket_alto', rotulo: 'Ticket alto' },
 ]
 
+/**
+ * O MESMO tamanho de página que `listarClientes` usa por padrão (`clientes.ts`). É ele que permite
+ * saber se há mais: página cheia significa "provavelmente tem mais", página curta é fim. Se um dos
+ * dois mudar sozinho, o botão some cedo ou fica para sempre — e nenhum dos dois dá erro. Guardado
+ * por `tests/unit/design/lista-de-clientes-tem-como-chegar-no-resto.test.ts`.
+ */
+const PAGINA = 50
+
+function urlDaLista(termo: string, segmento: Segmento | null, cursor?: string): string {
+  const p = new URLSearchParams()
+  if (segmento) p.set('segment', segmento)
+  else if (termo.trim() !== '') p.set('q', termo)
+  if (cursor) p.set('cursor', cursor)
+  const qs = p.toString()
+  return qs === '' ? '/api/v1/clients' : `/api/v1/clients?${qs}`
+}
+
 export default function ListaClientes({ iniciais }: { iniciais: ClienteLinha[] }) {
   const vocabulario = useVocabulario()
   const [termo, setTermo] = useState('')
@@ -41,12 +59,28 @@ export default function ListaClientes({ iniciais }: { iniciais: ClienteLinha[] }
 
   const [falhou, setFalhou] = useState(false)
 
+  /*
+    A carteira inteira não cabia na tela e não havia como chegar no resto.
+
+    `listarClientes` tem cursor desde sempre (`.lt('id', cursor)`, ordem por `id` desc) e
+    `/api/v1/clients` já aceitava `cursor` — só a tela nunca ligou. Medido: o cabeçalho anunciava
+    "437 na carteira", a lista trazia 50, e as outras 387 só existiam para quem soubesse o nome de
+    cor. Pior: o cartão de limite de plano AO LADO mostrava o total verdadeiro, então os dois
+    números da MESMA tela se contradiziam sem uma palavra de explicação.
+  */
+  const [fim, setFim] = useState(iniciais.length < PAGINA)
+  const [carregandoMais, setCarregandoMais] = useState(false)
+
   const buscar = useCallback((valor: string) => {
     setCarregando(true)
     setFalhou(false)
-    fetch(`/api/v1/clients?q=${encodeURIComponent(valor)}`)
+    fetch(urlDaLista(valor, null))
       .then((r) => r.json() as Promise<{ data?: { clients: ClienteLinha[] } }>)
-      .then((json) => setClientes(json.data?.clients ?? []))
+      .then((json) => {
+        const lista = json.data?.clients ?? []
+        setClientes(lista)
+        setFim(lista.length < PAGINA)
+      })
       /*
         Sem este `catch`, a busca que falhasse deixava a lista ANTERIOR na tela, sem nenhum sinal:
         a pessoa digitava um nome, via os resultados de antes e concluía que aquele era o
@@ -61,12 +95,34 @@ export default function ListaClientes({ iniciais }: { iniciais: ClienteLinha[] }
     setSegmento((atual) => (atual === valor ? null : valor))
   }, [])
 
+  function carregarMais() {
+    const ultimo = clientes[clientes.length - 1]
+    if (!ultimo || carregandoMais) return
+    setCarregandoMais(true)
+    setFalhou(false)
+    // O cursor é o ÚLTIMO id da página atual porque a ordem é `id` desc e o serviço filtra
+    // `.lt('id', cursor)` — pedir a partir de outro item repetiria ou pularia linha.
+    fetch(urlDaLista(termo, segmento, ultimo.id))
+      .then((r) => r.json() as Promise<{ data?: { clients: ClienteLinha[] } }>)
+      .then((json) => {
+        const novas = json.data?.clients ?? []
+        setClientes((atual) => [...atual, ...novas])
+        setFim(novas.length < PAGINA)
+      })
+      .catch(() => setFalhou(true))
+      .finally(() => setCarregandoMais(false))
+  }
+
   useEffect(() => {
     if (segmento) {
       setCarregando(true)
-      fetch(`/api/v1/clients?segment=${segmento}`)
+      fetch(urlDaLista('', segmento))
         .then((r) => r.json() as Promise<{ data?: { clients: ClienteLinha[] } }>)
-        .then((json) => setClientes(json.data?.clients ?? []))
+        .then((json) => {
+          const lista = json.data?.clients ?? []
+          setClientes(lista)
+          setFim(lista.length < PAGINA)
+        })
         .catch(() => setFalhou(true))
         .finally(() => setCarregando(false))
       return
@@ -77,6 +133,7 @@ export default function ListaClientes({ iniciais }: { iniciais: ClienteLinha[] }
     clearTimeout(debounce.current)
     if (termo.trim() === '') {
       setClientes(iniciais)
+      setFim(iniciais.length < PAGINA)
       return
     }
     debounce.current = setTimeout(() => buscar(termo), 300)
@@ -128,7 +185,7 @@ export default function ListaClientes({ iniciais }: { iniciais: ClienteLinha[] }
           ? 'Buscando.'
           : falhou
             ? 'Não consegui buscar. A lista abaixo é a anterior.'
-            : `${clientes.length} ${clientes.length === 1 ? 'cliente encontrado' : 'clientes encontrados'}.`}
+            : `${clientes.length} ${clientes.length === 1 ? 'cliente encontrado' : 'clientes encontrados'}.${fim ? '' : ' Há mais para carregar.'}`}
       </p>
 
       {falhou ? (
@@ -223,6 +280,19 @@ export default function ListaClientes({ iniciais }: { iniciais: ClienteLinha[] }
           ))}
         </ul>
       )}
+
+      {/*
+        Só aparece quando a página veio CHEIA — página curta é fim de lista, e um botão que fica
+        para sempre é tão ruim quanto não ter botão: promete uma próxima página que não existe.
+        Fora do `<ul>` de propósito: não é um cliente, é um controle da lista.
+      */}
+      {!carregando && !fim && clientes.length > 0 ? (
+        <div className="mt-3 flex justify-center">
+          <Button variante="secondary" onClick={carregarMais} carregando={carregandoMais}>
+            {carregandoMais ? 'Carregando…' : 'Carregar mais'}
+          </Button>
+        </div>
+      ) : null}
     </div>
   )
 }
