@@ -2,6 +2,7 @@ import Link from 'next/link'
 
 import Card from '@/components/ui/card'
 import StatTile from '@/components/ui/stat-tile'
+import { NOME_DO_DIA, type DiaOcioso } from '@/core/agenda/ociosidade'
 import { NOME_DA_FORMA } from '@/core/comanda/taxa-de-pagamento'
 import { SEM_AMOSTRA, percentualOuTraco } from '@/core/text/sem-amostra'
 import { MINIMO_DE_MESES } from '@/core/caixa/serie-mensal'
@@ -53,6 +54,7 @@ export default function ResumoDoMes({
   custoFixoRespondido,
   serie,
   taxa,
+  diaOcioso,
 }: {
   mes: string
   entrouCents: number
@@ -70,6 +72,8 @@ export default function ResumoDoMes({
   serie: SerieMensal
   /** `docs/53` A-01 — o que a forma de pagamento custou, e o que as outras já usadas custariam. */
   taxa: TaxaDoMes
+  /** `docs/53` D-01 — o dia mais parado, ou `null` quando nenhum qualifica. Só o fato, nunca preço. */
+  diaOcioso: DiaOcioso | null
 }) {
   const maior = concentracao?.maior ?? null
   const nomeDoMaior = concentracao && maior?.professionalId ? concentracao.nomes[maior.professionalId] : null
@@ -230,6 +234,25 @@ export default function ResumoDoMes({
           }
         />
       </Link>
+
+      {/*
+        `docs/53` D-01. SÓ o fato — nunca o preço, nunca "desconte", nunca um número que pareça
+        sugestão. É a linha que separa isto de precificação automática, vedada pelo `CLAUDE.md`: a
+        tela nomeia o dia parado e leva para a Agenda, onde a pessoa decide o que fazer com aquela
+        informação. `diaOcioso` já vem `null` quando não há histórico suficiente ou nenhum dia
+        qualifica — nesse caso o bloco simplesmente não aparece, nunca um "tudo certo" forçado.
+      */}
+      {diaOcioso ? (
+        <Link href="/admin/agenda" className="block">
+          <Card pressionavel>
+            <p className="text-overline font-semibold uppercase text-txt-3">O dia mais parado</p>
+            <p className="tabular mt-1.5 text-stat font-bold capitalize text-txt">{NOME_DO_DIA[diaOcioso.weekday]}</p>
+            <p className="mt-1 text-secundario text-txt-2">
+              vazio nas últimas {diaOcioso.semanasSeguidasVazias} semanas, de {diaOcioso.semanasObservadas} observadas
+            </p>
+          </Card>
+        </Link>
+      ) : null}
     </div>
   )
 }
