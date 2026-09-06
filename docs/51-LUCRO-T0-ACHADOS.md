@@ -285,6 +285,44 @@ motivo que aquele foi para lá: eram duas cópias divergentes da mesma regra.
    **começar** a semear a ficha, e a realidade era que ela já vinha semeada com o custo junto. O
    critério que importava (*"nenhum custo é semeado"*, item 3, e a guarda do item 4) está de pé.
 
+
+---
+
+## 5.1 · Os quatro estados da tela do "Sobrou"
+
+O plano recebido pede que eles sejam descritos. O modelo do repositório não usa
+`full/partial/minimal` — usa uma lista de **lacunas**, o que dá mais estados e nomeia cada um. O
+mapa, num corte de R$ 100,00 com 40% de comissão:
+
+| Estado | O que a tela mostra |
+|---|---|
+| Completo (`lacunas: []`) | **Sobrou R$ 46,54** · Material R$ 10,00 · Taxa R$ 3,20 · Comissão R$ 40,00 · Aluguel e contas R$ 3,46. Sem frase de aviso — aviso que sempre aparece deixa de ser lido |
+| Falta uma (ex. taxa) | **Sobrou R$ 49,74** · *"Falta descontar a taxa da maquininha."* + *"você ainda não informou quanto a maquininha cobra"* + botão **Informar** |
+| Faltam duas | **Sobrou R$ 50,00** · *"Falta descontar o produto e a taxa da maquininha."* + um detalhe por linha, nunca empilhados numa oração só (ilegível em 390 px) |
+| Faltam as três | **Sobrou R$ 60,00** · *"Falta descontar o produto, a taxa da maquininha e o aluguel."* — vírgula antes do "e", senão a frase ganha dois "e" |
+| Sem permissão | A seção inteira não existe. `report:read` não alcança `professional` nem `reception`, e a consulta nem acontece |
+
+**Nunca há um estado que mostre R$ 0,00 como se fosse resultado.** Zero só aparece quando o dono
+respondeu zero — é o que `taxaEstaConfigurada` e `custoFixoEstaConfigurado` existem para separar.
+
+O destino do botão depende de quantos serviços estão incompletos: com um, a ficha DELE; com vários,
+o catálogo (`destinoDoMaterial`).
+
+---
+
+## 5.2 · O que depende do Eduardo, por quanto destrava
+
+| Ordem | O quê | Por que primeiro |
+|---|---|---|
+| 1 | **`supabase db push` das `0066` a `0072`** | Nada disto existe em produção. E é a única coisa aqui que, se sair na ordem errada (deploy antes da migration), **quebra o app**: o código novo lê colunas que o banco ainda não tem |
+| 2 | Responder a taxa da maquininha e as três do aluguel numa conta real | Dois minutos de digitação transformam sete telas de "falta informar" em números. É o gargalo de tudo que veio antes |
+| 3 | Registrar a compra de um insumo | Fecha a terceira lacuna. Sem isso o material continua zero e o "Sobrou" sai otimista |
+| 4 | As três conversas do `L-05` | Zero código, e é a única coisa que pode derrubar a tese cedo. Continua sendo a primeira coisa a testar |
+| 5 | Decidir sobre `L-04`/`L-08` | Só depois de 1–3, e só se as conversas do `L-05` confirmarem a tese |
+
+Os itens 1 a 3 são **quinze minutos** somados, e sem eles o trabalho desta rodada não existe para
+ninguém.
+
 ## 6 · O que este PR entregou, em uma linha
 
 Quatro defeitos de silêncio na conta do lucro — o custo inventado pelo pack, a lacuna que não
