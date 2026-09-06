@@ -12,18 +12,17 @@ import { semComentarios as semComentariosDe } from '../../helpers/fonte'
  * como o problema (a página não podia ser servida do CDN, `docs/21-AUDITORIA-FALHA-SILENCIOSA.md`
  * §5.2), então a checagem migrou para `src/middleware.ts` e a página virou estática.
  *
- * **Essa parte da história mudou em 01/09/2026, e por isso o arquivo perdeu "estatica" do nome.**
- * Medido ao vivo em produção: nonce por requisição (CSP, TICKET-057) e página estática não
- * convivem — o nonce gravado no HTML fica congelado na primeira renderização, o header muda a
- * cada chamada, os dois nunca voltam a bater, e o navegador bloqueia TODO `<script>`. Era o site
- * inteiro sem JavaScript, agendamento público incluído. `src/app/layout.tsx` agora tem
- * `export const dynamic = 'force-dynamic'`, herdado por toda rota — a landing voltou a ser
- * dinâmica, mas por um motivo diferente do de 26/08 (achado completo em `docs/DECISOES.md`,
- * 01/09/2026).
+ * Em 01/09/2026 a landing voltou a ser dinâmica de propósito: nonce por requisição (CSP,
+ * TICKET-057) e página estática não conviviam, e o conserto foi `force-dynamic` no layout raiz.
+ * **`perf/csp-duas-faixas` desfez isso**: `/` recebe do `middleware.ts` uma CSP SEM nonce
+ * (`rotaDeConteudoEstatico`) e voltou a ser estática/CDN — sem nonce não há valor para congelar.
+ * O `force-dynamic` mudou para `src/app/admin/layout.tsx`. Guardado em
+ * `tests/unit/design/csp-nonce-exige-rota-dinamica.test.ts`.
  *
- * O que este arquivo continua garantindo, e ainda vale: o `Home` **não precisa** voltar a chamar
- * `sessaoAtual()` — o middleware já resolve a sessão em toda requisição (para renovar o token), e
- * fazer a mesma pergunta de novo aqui dentro seria trabalho redundante, não uma garantia a mais.
+ * Justamente por `/` ser estática de novo, o que este arquivo garante voltou a ser crítico: o
+ * `Home` **não pode** ler `sessaoAtual()`/`cookies()`/`headers()` — qualquer uma marca a rota
+ * como dinâmica por usuário e tira `/` do CDN. O redirecionamento de quem já entrou mora no
+ * middleware, que roda em toda requisição de qualquer forma.
  *
  * Casa com o USO (chamada/import), não com o nome solto em comentário — este arquivo cita
  * `sessaoAtual()` e `redirect()` na própria explicação acima.
@@ -37,7 +36,7 @@ function semComentarios(caminho: string): string {
   return semComentariosDe(readFileSync(caminho, 'utf8'))
 }
 
-describe('a landing (agora dinâmica por causa do CSP) não resolve sessão dentro do Server Component', () => {
+describe('a landing (estática de novo — perf/csp-duas-faixas) não resolve sessão dentro do Server Component', () => {
   const fonte = semComentarios(PAGINA)
 
   it('a leitura não voltou vazia', () => {

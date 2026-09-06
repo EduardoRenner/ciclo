@@ -10,6 +10,25 @@ import { NextResponse, type NextRequest } from 'next/server'
 const PREFIXOS_PROTEGIDOS = ['/admin', '/onboarding']
 
 /**
+ * As telas de conteúdo cujo HTML é IGUAL para todo visitante e pode ser servido do CDN: a landing
+ * e as três páginas institucionais. Nada aqui lê `cookies()`/`headers()`/sessão — medido em
+ * `tests/unit/design/csp-nonce-exige-rota-dinamica.test.ts`.
+ *
+ * Elas recebem uma CSP **sem nonce** (`cabecalhosDeSeguranca(null)`): nonce por requisição só
+ * funciona em rota genuinamente dinâmica — o incidente de 01/09/2026 (`docs/DECISOES.md`) foi
+ * exatamente página estática + nonce, com o valor congelado no HTML e o header mudando a cada
+ * chamada, bloqueando todo `<script>`. Sem nonce não há descasamento: a CSP é byte a byte a mesma
+ * em toda resposta, e o Next.js volta a poder cachear o HTML. O resto do site (`/admin`,
+ * `/onboarding`, `(auth)`, `[slug]`, `/api`) continua na CSP com nonce + `force-dynamic`.
+ */
+const ROTAS_DE_CONTEUDO_ESTATICO = new Set(['/', '/precos', '/privacidade', '/termos'])
+
+/** Ver `ROTAS_DE_CONTEUDO_ESTATICO`. Exportada para a guarda. */
+export function rotaDeConteudoEstatico(pathname: string): boolean {
+  return ROTAS_DE_CONTEUDO_ESTATICO.has(pathname)
+}
+
+/**
  * Exige sessão: sem usuário, redireciona para `/entrar`. **Só telas.**
  *
  * `/api/*` não entra aqui de propósito — uma chamada de API sem sessão precisa de `401` no
@@ -80,7 +99,7 @@ export function precisaRenovarSessao(pathname: string): boolean {
  * caso: risco de XSS por CSS é ordens de grandeza menor que por script, e é
  * o `script-src` que carrega a defesa de verdade.
  */
-function cabecalhosDeSeguranca(nonce: string): string {
+export function cabecalhosDeSeguranca(nonce: string | null): string {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
   let origemSupabase = ''
   try {
@@ -95,9 +114,22 @@ function cabecalhosDeSeguranca(nonce: string): string {
   // produção não usa `eval`, então isso nunca sai daqui em produção.
   const permiteEval = process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : ''
 
+  /*
+   * Com nonce: `'strict-dynamic'` faz o navegador ignorar `'unsafe-inline'` (CSP 2+), então a
+   * defesa real é o nonce e `unsafe-inline` fica só de fallback pra navegador antigo. Sem nonce
+   * (rota de conteúdo estático, ver `ROTAS_DE_CONTEUDO_ESTATICO`): não dá pra ter `strict-dynamic`
+   * — o app cai pra `'self' 'unsafe-inline'`. É um afrouxamento REAL de `script-src`, aceito só
+   * onde não há dado de ninguém nem entrada de credencial: `/`, `/precos`, `/privacidade`,
+   * `/termos`. Toda página que recebe input (login, cadastro, agendamento) fica de fora e mantém
+   * o nonce.
+   */
+  const scriptSrc = nonce
+    ? `'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-inline'${permiteEval}`
+    : `'self' 'unsafe-inline'${permiteEval}`
+
   const csp = `
     default-src 'self';
-    script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-inline'${permiteEval};
+    script-src ${scriptSrc};
     style-src 'self' 'unsafe-inline';
     img-src 'self' blob: data: ${origemSupabase};
     font-src 'self' data:;
@@ -144,13 +176,18 @@ function aplicarCabecalhosDeSeguranca(resposta: NextResponse, csp: string, semCa
 }
 
 export async function middleware(req: NextRequest) {
-  const nonce = Buffer.from(crypto.randomUUID()).toString('base64')
+  // Rota de conteúdo estático não leva nonce — ver `ROTAS_DE_CONTEUDO_ESTATICO`.
+  const nonce = rotaDeConteudoEstatico(req.nextUrl.pathname)
+    ? null
+    : Buffer.from(crypto.randomUUID()).toString('base64')
   const csp = cabecalhosDeSeguranca(nonce)
   const protegida = exigeSessao(req.nextUrl.pathname)
   const semCache = naoCacheavel(req.nextUrl.pathname)
 
   const requestHeaders = new Headers(req.headers)
-  requestHeaders.set('x-nonce', nonce)
+  // `x-nonce` só quando há nonce: o layout raiz lê este header e, se achar, injeta o atributo
+  // `nonce=` nos <script> — o que numa rota cacheada congelaria o valor (o incidente de 01/09).
+  if (nonce) requestHeaders.set('x-nonce', nonce)
   requestHeaders.set('Content-Security-Policy', csp)
 
   let resposta = NextResponse.next({ request: { headers: requestHeaders } })

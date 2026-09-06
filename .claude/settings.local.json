@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh:*)",
+      "Bash(git:*)",
+      "Bash(supabase:*)",
+      "mcp__14d1d4bd-c62c-4d3f-ab7c-da028ae89176__apply_migration",
+      "mcp__14d1d4bd-c62c-4d3f-ab7c-da028ae89176__execute_sql"
+    ]
+  }
+}
