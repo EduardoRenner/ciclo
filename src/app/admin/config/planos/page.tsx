@@ -3,13 +3,16 @@ import Link from 'next/link'
 
 import BloqueioPlano from '@/components/ui/bloqueio-plano'
 import { podeUsarModulo } from '@/core/billing/planos'
+import { avaliarPermissao } from '@/server/auth/rbac'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
+import { margensDoClube } from '@/server/services/clube'
 import { lerConfigFidelidade, listarPlanos } from '@/server/services/fidelidade'
 import { contextoDePlano } from '@/server/services/planos'
 
 import EditorFidelidade from './fidelidade-config'
 import EditorPlanos from './editor'
+import MargemDoClube from './margem-do-clube'
 import PageHeader from '@/components/ui/page-header'
 
 export const dynamic = 'force-dynamic'
@@ -19,10 +22,18 @@ export const metadata = { title: "Fidelidade e assinatura" }
 export default async function PaginaPlanos() {
   const ctx = await contextoAtual(new Request('https://interno/config/planos', { headers: await headers() }))
   const db = await criarClienteDoUsuario()
-  const [planos, negocio, plano] = await Promise.all([
+  /*
+   * `docs/48` §4.6: margem por assinante é dinheiro do negócio, e a mesma regra do caixa vale
+   * aqui — `professional` e `reception` não têm `report:read`. O resto da tela (planos e pontos)
+   * continua aberto a quem administra o catálogo.
+   */
+  const podeVerMargem = avaliarPermissao(ctx.papel, 'report:read') !== null
+
+  const [planos, negocio, plano, margens] = await Promise.all([
     listarPlanos(db, ctx.tenantId),
     db.from('tenants').select('settings').eq('id', ctx.tenantId).single(),
     contextoDePlano(db, ctx.tenantId),
+    podeVerMargem ? margensDoClube(db, ctx.tenantId, ctx.tenant.timezone) : Promise.resolve([]),
   ])
 
   /*
@@ -53,6 +64,8 @@ export default async function PaginaPlanos() {
         <p className="mb-3 text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">Planos mensais</p>
         <EditorPlanos iniciais={planos} />
       </div>
+
+      <MargemDoClube margens={margens} />
     </>
   )
 }
