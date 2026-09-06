@@ -208,6 +208,35 @@ export function precoDoPlano(tier: PlanoTier): string {
   return REAIS.format(PRECO_MENSAL_CENTS[tier] / 100)
 }
 
+/**
+ * O mesmo formato, com centavos. Só para conta DERIVADA de preço, nunca para preço de tabela.
+ *
+ * `REAIS` corta os centavos de propósito (todo degrau é redondo, e "R$ 49,00" pesa à toa a 390px).
+ * Reusá-lo aqui foi o primeiro erro desta função, e ele só apareceu no teste: a `/precos` teria
+ * publicado "R$ 1 · R$ 0 · R$ 0" numa tabela que existe justamente para mostrar o número caindo.
+ * Absurdo no agregado, plausível linha a linha — o formato certo para um lado é o errado para o
+ * outro, e o defeito mora na diferença.
+ */
+const REAIS_COM_CENTAVOS = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
+
+/**
+ * Quanto o plano custa POR ATENDIMENTO, num mês de N atendimentos.
+ *
+ * Existe por causa do eixo 3 do `docs/43-POSICIONAMENTO-10X.md` (economia de escala), e é a conta
+ * que separa preço fixo de comissão sem precisar citar concorrente nenhum: **no preço fixo este
+ * número cai conforme o negócio cresce; numa comissão ele é constante, por definição.** Quanto
+ * melhor o salão vai, mais fundo fica a diferença — e esse argumento fica mais forte com o tempo
+ * sozinho, sem ninguém escrever nada novo.
+ *
+ * `ceil` e não `round`: arredondar para cima nunca faz o CICLO parecer mais barato do que é. Meio
+ * centavo a favor da própria página é a espécie de erro que ninguém confere e todo mundo
+ * perdoaria — e é exatamente por isso que ela não entra.
+ */
+export function custoPorAtendimento(tier: PlanoTier, atendimentosNoMes: number): string {
+  if (atendimentosNoMes <= 0) throw new Error('custoPorAtendimento: mês sem atendimento não tem custo por atendimento')
+  return REAIS_COM_CENTAVOS.format(Math.ceil(PRECO_MENSAL_CENTS[tier] / atendimentosNoMes) / 100)
+}
+
 /** "R$ 49/mês" — e "R$ 0" no grátis, porque "R$ 0/mês" sugere uma cobrança de zero. */
 export function precoDoPlanoPorMes(tier: PlanoTier): string {
   return tier === 'gratis' ? precoDoPlano(tier) : `${precoDoPlano(tier)}/mês`

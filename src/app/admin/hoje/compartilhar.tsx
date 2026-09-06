@@ -2,6 +2,7 @@
 
 import { Share2 } from 'lucide-react'
 
+import { ehCancelamentoDoUsuario } from '@/core/share/cancelamento'
 import { useToast } from '@/components/ui/toast'
 
 /**
@@ -25,9 +26,15 @@ export default function CompartilharSite({ slug, nome }: { slug: string; nome: s
       try {
         await navigator.share({ title: nome, text: texto, url })
         return
-      } catch {
-        // Cancelar a folha nativa chega aqui como erro; não é falha para avisar.
-        return
+      } catch (erro) {
+        /*
+         * Só o cancelamento encerra aqui. Antes este `catch` devolvia em qualquer caso, e com isso
+         * o botão morria em silêncio para quem caísse numa falha de verdade (contexto sem HTTPS,
+         * permissão negada, `share` presente e inoperante): apertava, nada acontecia, nenhum erro.
+         * Ver `ehCancelamentoDoUsuario`.
+         */
+        if (ehCancelamentoDoUsuario(erro)) return
+        // Falha real: segue para a área de transferência, que é o plano B que já existia.
       }
     }
 

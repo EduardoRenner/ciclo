@@ -79,9 +79,29 @@ const RECURSOS = [
   },
   {
     icone: Link2,
-    titulo: 'Sua página de agendamento',
+    titulo: 'Sua página, sua clientela',
+    /*
+      Este cartão descrevia só a mecânica do link, e a mecânica é a parte que todo concorrente
+      também tem. O que ele calava é a única diferença ESTRUTURAL do CICLO, medida em
+      `docs/43-POSICIONAMENTO-10X.md` §2: as duas queixas recorrentes de donos sobre o líder do
+      nicho são o atrito do "baixe nosso app" (cliente novo não baixa e marca em outro lugar) e o
+      app mostrar a lista de concorrentes para a clientela dele. Os dois maiores do nicho têm a
+      mesma limitação, e não podem consertar — o app do cliente só tem valor porque agrega várias
+      barbearias, então a queixa do dono é o modelo de negócio deles.
+
+      **Isto não contradiz o §D.3 do `docs/20-COPY-PLANO.md`,** que tirou "feito para o celular,
+      sem treinamento" do subtítulo por serem "verdadeiras e irrelevantes — nenhuma é motivo para
+      escolher o CICLO em vez de outro". Era o julgamento certo com os dados de então; o §D.3 não
+      tinha a pesquisa competitiva. "Sem baixar aplicativo" é exatamente um motivo para escolher o
+      CICLO em vez de outro, e é o único item da página do qual isso se pode dizer com evidência.
+      Antes de remover daqui de novo citando o §D.3, ler o `43` §2.
+
+      As duas afirmações são conferíveis no repositório, não promessa: não existe nenhuma rota que
+      liste tenants para o público, e `sitemap.ts` entrega a página do negócio ao buscador. O
+      teste `pagina-do-negocio-e-so-dele.test.ts` trava as duas.
+    */
     texto:
-      'Um link para colar na bio do Instagram. Quem for marcar escolhe serviço, profissional e horário sem precisar falar com você, e o horário já entra na sua agenda sem risco de marcar dois no mesmo lugar.',
+      'Um link para colar na bio do Instagram. Quem for marcar abre no navegador e escolhe serviço, profissional e horário — sem baixar aplicativo, sem criar conta e sem esbarrar em nenhum concorrente pelo caminho. A página é do seu negócio e só dele, e o horário já entra na sua agenda sem risco de marcar dois no mesmo lugar.',
   },
   {
     icone: Wallet,
@@ -176,8 +196,17 @@ const PERGUNTAS = [
       'Se você importar a data da última visita, já na primeira tela. Sem essa data, o CICLO precisa ver cada pessoa voltar duas ou três vezes para saber o ritmo dela — então a lista começa vazia e vai enchendo conforme você atende.',
   },
   {
+    /*
+      A resposta era "Não." e a mecânica do link. Estava certa e desperdiçava a pergunta: esta é a
+      queixa nº 1 dos donos sobre o líder do nicho (`docs/43` §2), e a resposta tratava como
+      objeção a neutralizar o que é a diferença estrutural do produto. A segunda frase é a metade
+      que não estava escrita em lugar nenhum — e é conferível no repositório, não promessa: não
+      existe rota que liste tenants para o público, e `pagina-do-negocio-e-so-dele.test.ts` reprova
+      se passar a existir.
+    */
     pergunta: 'Quem vai marcar precisa baixar app ou criar conta?',
-    resposta: 'Não. A pessoa abre seu link, escolhe o serviço e o horário, e o agendamento entra na sua agenda esperando você confirmar.',
+    resposta:
+      'Não. A pessoa abre seu link, escolhe o serviço e o horário, e o agendamento entra na sua agenda esperando você confirmar. E a página é do seu negócio e só dele: ninguém vai parar numa lista com os seus concorrentes no caminho de marcar com você.',
   },
   {
     /* Absorve o "sem treinamento" e o "feito para o celular" que saíram do subtítulo pelo §D.3. */
@@ -261,8 +290,29 @@ export default async function Home() {
           para escolher o CICLO em vez de outro. Migraram para a FAQ, onde são objeção respondida
           em vez de argumento de venda.
         */}
+        {/*
+          A segunda frase é o item A do `docs/43-POSICIONAMENTO-10X.md` — e ela chega aqui pelo
+          caminho longo de propósito.
+
+          O `43` §4 mediu que a resposta à queixa nº 1 do mercado inteiro estava na QUARTA de cinco
+          perguntas do FAQ, no rodapé, tratada como objeção a neutralizar ("Não. A pessoa abre seu
+          link..."). É a única diferença ESTRUTURAL entre o CICLO e os dois líderes do nicho, escrita
+          como nota de rodapé — e a metade mais forte dela, o cliente não ver a concorrência, não
+          estava escrita em lugar nenhum.
+
+          **Por que aqui e não no `h1`.** O `h1` é o Motor de Ciclo, que é o eixo 1 (tecnologia
+          10x). Trocar um diferencial por outro não é ganho. O subtítulo responde "para quem serve"
+          e sobrava linha: medido a 375 px, a frase nova leva o subtítulo de 46 px para 70 px e o
+          bloco de preço de y=503 para y=526, com a dobra em 812 — ninguém sai da primeira tela.
+
+          **Concreto, não slogan.** A frase de marca do `43` §5.4 é "Seu cliente é seu", e ela não
+          entrou assim: para quem nunca usou app de marketplace, ela não quer dizer nada. O §D.3 do
+          `docs/20` já tinha estabelecido esse princípio ao matar o tricolon abstrato da dobra. O
+          que entra é o fato verificável; o slogan é o resumo dele para quem já entendeu.
+        */}
         <p className="mt-4 max-w-[46ch] text-corpo text-txt-2">
-          Para qualquer trabalho que dependa de cliente que volta.
+          Para qualquer trabalho que dependa de cliente que volta. Quem for marcar abre no navegador: sem baixar app
+          e sem ver seus concorrentes.
         </p>
         <div className="mt-7 flex flex-wrap gap-3">
           <Link href="/cadastro" className={botaoPrimario}>

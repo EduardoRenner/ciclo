@@ -45,8 +45,27 @@ export type ReceitaAtribuida = {
  * exatamente em `desde`.
  *
  * Valor em centavos vem de `appointments.price_cents` (preço congelado na criação), não de
- * `tickets.total_cents` — o TICKET-042 (comanda com itens de verdade) ainda não existe nesta
- * base; quando existir, revisar para usar o total real da comanda fechada.
+ * `tickets.total_cents`.
+ *
+ * **A instrução que estava aqui dizia para revisar "quando o TICKET-042 existir". Ele existe —
+ * `comanda.ts` e `ticket_items` estão no ar — e a revisão, feita, concluiu o contrário: continua
+ * `price_cents`.** Medido em 2026-09-05:
+ *
+ *   1. `concluirAgendamento` cria a comanda com `status = 'open'` e `total_cents = 0` (default da
+ *      `0001`). O total só passa a existir quando alguém FECHA a comanda.
+ *   2. Fechar comanda é o módulo `register`, que começa no **Essencial** (`core/billing/planos.ts`).
+ *      O plano **Grátis** tem `cycle_engine` e não tem `register`.
+ *
+ * Ou seja: trocar a fonte zeraria "o Motor trouxe R$ X" **exatamente para o tenant do Grátis** —
+ * que é justamente quem esse número precisa convencer a assinar. Uma leitura mecânica da
+ * instrução antiga teria trocado um número imperfeito por um número zero, na tela que sustenta o
+ * preço do produto.
+ *
+ * O que `price_cents` custa, dito para não virar promessa: é preço de tabela, então não enxerga
+ * desconto dado na comanda, item extra nem gorjeta — a mesma distinção que
+ * `numero-de-hoje-nao-e-faturamento` guarda na tela Hoje. Usar o total real onde ele existe e cair
+ * para o preço de tabela onde não existe é possível, mas é decisão de produto (mistura duas
+ * réguas no mesmo somatório), não troca de coluna. Registrado em `docs/DECISOES.md`.
  */
 export async function receitaAtribuidaAoCiclo(
   db: Cliente,

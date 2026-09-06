@@ -168,6 +168,18 @@ CICLO deixa de ser uma agenda e vira outra coisa. Hoje esse momento não acontec
 Não verificado em navegador ao vivo (mesma ressalva da F1): typecheck, lint, suíte unitária e de
 integração completas, RLS e build de produção passam.
 
+> **Conferência de 2026-09-05 — os dois ✅ são honestos.** Lidos no código, não deduzidos do
+> status: o 12 está em `admin/clientes/lista.tsx:175`, e corretamente restrito ao vazio DE VERDADE
+> (`!segmento && !termo`) — busca sem resultado não convida a importar planilha, que seria a
+> resposta errada para a pergunta que a pessoa fez. O 13 está em
+> `server/services/importacao-clientes.ts:341`, chamando `computeCycle` de verdade, o mesmo
+> algoritmo do Motor, e não uma contagem paralela que poderia divergir dele.
+>
+> Fica um limite registrado, não um veredito: nenhuma das duas telas é medível ao vivo nesta
+> sessão — `/admin/*` exige login, e digitar senha em formulário está fora do combinado. O alvo de
+> toque do link inline do 12 é justamente o tipo de coisa que só a sondagem ponto a ponto decide
+> (ver a armadilha do `toque-48` no `CLAUDE.md`), então ele segue **não medido**.
+
 ### F3 · Piloto de 10 — a única fase sem código
 
 Não é marketing; é a fase que decide se o resto vale. Três verticais, para descobrir qual morde:
@@ -196,6 +208,25 @@ Uma observação de sequência: **cobrar antes da F0 é vender o que não está 
 a R$ 49 tem `envio_em_lote` como capacidade paga **[M]** — e envio em lote depende de
 `campaigns`, que não roda. Ligar o motor não é só produto; é pré-requisito de honestidade
 comercial.
+
+> **Correção de 2026-09-05 — a conclusão está certa, a razão não, e isso muda a fila.**
+>
+> `envio_em_lote` **não depende de `campaigns`**. Conferido no código, não deduzido: a capacidade
+> é exigida em `app/api/v1/cycle/recover/send/route.ts:25` (`items.length > 1`), uma rota síncrona
+> disparada pelo botão da tela `/admin/recuperar`. Ela chama `enviarParaRecuperar` na hora, sem
+> fila e sem cron. O botão de lote existe e está ligado de ponta a ponta
+> (`recuperar.tsx` → `podeEnviarEmLote`). `campaigns` de fato não roda (está comentada fora do
+> `on.schedule` do `cron.yml`, esperando confirmação humana), mas ela é o envio **automático** —
+> outra capacidade, outro item da fila.
+>
+> O que realmente falta para o lote entregar é a **credencial da Meta**
+> (`WHATSAPP_PHONE_NUMBER_ID`/`ACCESS_TOKEN`/`APP_SECRET`): sem ela o provider estoura na
+> construção, o fallback tenta push e e-mail, e a mensagem termina gravada como `failed`.
+>
+> Por que a distinção importa e não é preciosismo: as duas leituras dão ordens de trabalho
+> diferentes. Pela versão antiga, destravar receita passaria por ligar um cron — que é decisão de
+> risco (mensagem automática para cliente final) e não resolveria nada. Pela medida, passa por uma
+> conta de terceiro. Razão errada põe a coisa errada no caminho crítico.
 
 ### F5 · Aquisição
 

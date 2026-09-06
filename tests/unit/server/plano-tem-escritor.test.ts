@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs'
 
 import { describe, expect, it } from 'vitest'
 
+import { semComentarios } from '../../helpers/fonte'
+
 import { ORDEM_DOS_PLANOS, PLANOS } from '@/core/billing/planos'
 
 /**
@@ -30,11 +32,6 @@ const ESCRITOR = 'scripts/promover-tenant.mjs'
 
 function fonteDoEscritor(): string {
   return readFileSync(ESCRITOR, 'utf8')
-}
-
-/** Tira comentário de bloco e de linha — senão a própria documentação do arquivo faz a guarda passar. */
-function semComentarios(fonte: string): string {
-  return fonte.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^\s*\/\/.*$/gm, ' ')
 }
 
 describe('a leitura deste teste', () => {

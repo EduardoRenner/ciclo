@@ -37,12 +37,35 @@ export default async function PaginaHoje() {
 
   const [resumo, acoes, atribuicao] = await Promise.all([
     resumoDeHoje(db, ctx.tenantId, timezone),
-    // Nunca derruba "Hoje": um resumo de CRM que falhar vira lista vazia, não erro na tela mais
-    // importante do app.
-    centralDeAcoes(db, ctx.tenantId).catch(() => ({ titulo: '', acoes: [] })),
-    // F1 (docs/25-ESTRATEGIA-E-EXECUCAO.md): em dia sem movimento, o herói mostra o que o Motor
-    // de Ciclo já trouxe este mês em vez de R$ 0,00. Mesmo cálculo de `/admin/recuperar`.
-    receitaAtribuidaAoCiclo(db, ctx.tenantId, timezone, desde, ate).catch(() => ({ totalCents: 0, count: 0, items: [], mensagensNaJanela: 0 })),
+    /*
+      Nunca derruba "Hoje": um resumo de CRM que falhar vira lista vazia, não erro na tela mais
+      importante do app. **Mas registra**, e o `CLAUDE.md` é explícito sobre isso na tabela de
+      armadilhas: *"o `catch` descarta alguma coisa? Então tem que contar e avisar"*. Sem a linha
+      de log, a Central de Ações podia parar de aparecer para sempre — depois de uma mudança de
+      schema, por exemplo — e o sintoma seria só uma tela um pouco mais vazia, que ninguém
+      reporta.
+    */
+    centralDeAcoes(db, ctx.tenantId).catch((erro: unknown) => {
+      console.warn(JSON.stringify({ level: 'warn', event: 'central_de_acoes_indisponivel' }), erro)
+      return { titulo: '', acoes: [] }
+    }),
+    /*
+      F1 (docs/25-ESTRATEGIA-E-EXECUCAO.md): em dia sem movimento, o herói mostra o que o Motor
+      de Ciclo já trouxe este mês em vez de R$ 0,00. Mesmo cálculo de `/admin/recuperar`.
+
+      Este `catch` merece atenção maior que o de cima, e o motivo é o `count: 0` que ele devolve:
+      `deveMostrarHeroiDoMotor` só mostra o herói do Motor quando `atribuicaoCount > 0`. Ou seja,
+      uma falha transitória aqui não degrada um pedaço lateral da tela — ela reverte exatamente a
+      melhoria do F1 e faz a tela voltar a abrir com "R$ 0,00", que é o estado que o `docs/25`
+      §2.2 identificou como o pior primeiro contato possível com o produto.
+
+      Continua sem derrubar a tela, de propósito. O que muda é não ser mais silencioso: falha
+      medida vira linha de log em vez de um zero com cara de número apurado.
+    */
+    receitaAtribuidaAoCiclo(db, ctx.tenantId, timezone, desde, ate).catch((erro: unknown) => {
+      console.warn(JSON.stringify({ level: 'warn', event: 'atribuicao_do_ciclo_indisponivel' }), erro)
+      return { totalCents: 0, count: 0, items: [], mensagensNaJanela: 0 }
+    }),
   ])
 
   const data = new Intl.DateTimeFormat('pt-BR', {

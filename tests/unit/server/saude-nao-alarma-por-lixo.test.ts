@@ -61,7 +61,13 @@ function bancoFalso(jobs: { kind: string; status: string; last_error?: string | 
       }),
     }
   }
-  return { from: tabela } as never
+  /*
+   * `rpc` devolve erro de propósito: este teste é sobre a fila, e a checagem de schema tem que ser
+   * indiferente a ele. `checarSchema` trata falha de leitura como verde-com-motivo (é ela mesma que
+   * a migration 0062 cria, então todo banco que ainda não a aplicou cai aqui) — se algum dia isso
+   * virar vermelho, estes seis casos ficam vermelhos junto e denunciam a mudança.
+   */
+  return { from: tabela, rpc: async () => ({ data: null, error: { code: 'PGRST202' } }) } as never
 }
 
 describe('a leitura deste teste', () => {

@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import ErroPublico from '@/components/ui/erro-publico'
+import TituloDeEstado from '@/components/ui/titulo-de-estado'
 import Textarea from '@/components/ui/textarea'
 import { dinheiro } from '@/lib/formato'
 
@@ -155,7 +156,7 @@ export default function Orcamento({ token }: { token: string }) {
     return (
       <>
         <Clock aria-hidden className="mb-4 size-14 text-txt-3" />
-        <p className="text-titulo font-bold">Orçamento vencido</p>
+        <TituloDeEstado>Orçamento vencido</TituloDeEstado>
         <p className="mt-2 text-corpo text-txt-2">Esse orçamento não vale mais. Fale com {dados.businessName} pra pedir um novo.</p>
       </>
     )
@@ -165,7 +166,7 @@ export default function Orcamento({ token }: { token: string }) {
     return (
       <>
         <CheckCircle2 aria-hidden className="mb-4 size-14 text-ok" />
-        <p className="text-titulo font-bold">Orçamento aprovado</p>
+        <TituloDeEstado>Orçamento aprovado</TituloDeEstado>
         <p className="mt-2 text-corpo text-txt-2">{dados.businessName} já foi avisado. Combine o horário por lá.</p>
       </>
     )
@@ -175,7 +176,7 @@ export default function Orcamento({ token }: { token: string }) {
     return (
       <>
         <FileX aria-hidden className="mb-4 size-14 text-txt-3" />
-        <p className="text-titulo font-bold">Orçamento recusado</p>
+        <TituloDeEstado>Orçamento recusado</TituloDeEstado>
         <p className="mt-2 text-corpo text-txt-2">Tudo bem, {dados.businessName} foi avisado.</p>
       </>
     )
@@ -184,7 +185,7 @@ export default function Orcamento({ token }: { token: string }) {
   return (
     <div className="w-full text-left">
       <p className="text-center text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">{dados.businessName}</p>
-      <p className="mt-1 text-center text-titulo font-bold">Orçamento</p>
+      <h1 className="mt-1 text-center text-titulo font-bold">Orçamento</h1>
 
       <Card className="mt-5 flex flex-col gap-2">
         {dados.items.map((item, i) => (

@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 
 import { semComentarios } from '../../helpers/fonte'
 
-import { diaDaquiA, diaNoFuso } from '@/core/tempo/dia'
+import { diaDaquiA, diaDaSemanaNoFuso, diaNoFuso } from '@/core/tempo/dia'
 
 /**
  * `new Date().toISOString().slice(0, 10)` e "hoje em UTC", nao hoje no salao. Em Brasilia (UTC-3)
@@ -66,5 +66,52 @@ describe('quem grava data de calendario nao confia no fuso do servidor', () => {
     const fonte = semComentarios(readFileSync('src/app/admin/orcamentos/novo/formulario.tsx', 'utf8'))
     expect(fonte, 'a validade voltou a sair do fuso do aparelho/servidor').toContain('diaDaquiA(timezone,')
     expect(fonte, 'voltou o toISOString().slice para calcular data de calendario').not.toContain('toISOString().slice(0, 10)')
+  })
+})
+
+/**
+ * A mesma armadilha do bloco acima, encontrada num terceiro lugar: `lista-espera.ts` casava a
+ * preferência de dia da semana da pessoa com `new Date(startsAt).getUTCDay()`.
+ *
+ * Medido antes do conserto, com o fuso de São Paulo: uma vaga de **segunda 21:00** era lida como
+ * TERÇA, e uma de **sábado 22:00** como DOMINGO. Não é cosmético — é a decisão errando de pessoa:
+ * quem pediu "só segundas" não recebia a vaga de segunda à noite, e quem pediu "só terças"
+ * recebia.
+ *
+ * O comentário que estava lá dizia "aproximação; refinar no TICKET-057 se DST virar problema". O
+ * problema nunca foi horário de verão — o Brasil não tem desde 2019, então essa condição nunca
+ * chegaria. É o deslocamento fixo de -3, que vale todo dia do ano.
+ */
+describe('o dia da semana também é o do salão', () => {
+  it('segunda 21:00 em São Paulo é SEGUNDA, não terça', () => {
+    // Em UTC já é terça 00:00 — o caso exato do defeito.
+    expect(diaDaSemanaNoFuso(SP, new Date('2026-09-07T21:00:00-03:00'))).toBe(1)
+  })
+
+  it('sábado 22:00 em São Paulo é SÁBADO, não domingo', () => {
+    expect(diaDaSemanaNoFuso(SP, new Date('2026-09-12T22:00:00-03:00'))).toBe(6)
+  })
+
+  it('antes das 21h o dia já batia — o conserto não pode quebrar o que funcionava', () => {
+    expect(diaDaSemanaNoFuso(SP, new Date('2026-09-07T18:00:00-03:00'))).toBe(1)
+    expect(diaDaSemanaNoFuso(SP, new Date('2026-09-07T20:59:00-03:00'))).toBe(1)
+    expect(diaDaSemanaNoFuso(SP, new Date('2026-09-06T09:00:00-03:00'))).toBe(0)
+  })
+
+  it('respeita o fuso pedido, não o do processo', () => {
+    /*
+     * O mesmo instante em dois fusos do Brasil. Em Fernando de Noronha (UTC-2) já é terça quando
+     * em São Paulo (UTC-3) ainda é segunda — é o que prova que a função lê o fuso do salão, e não
+     * um deslocamento fixo escrito à mão.
+     */
+    const instante = new Date('2026-09-07T23:30:00-03:00')
+    expect(diaDaSemanaNoFuso(SP, instante)).toBe(1)
+    expect(diaDaSemanaNoFuso('America/Noronha', instante)).toBe(2)
+  })
+
+  it('a fila de espera usa o fuso do salão para casar o dia pedido', () => {
+    const fonte = semComentarios(readFileSync('src/server/services/lista-espera.ts', 'utf8'))
+    expect(fonte, 'a regra de dia da semana voltou a ler o dia em UTC').not.toContain('getUTCDay()')
+    expect(fonte, 'a fila deixou de converter o dia para o fuso do salão').toContain('diaDaSemanaNoFuso(slot.timezone')
   })
 })

@@ -1,6 +1,7 @@
 import { Temporal } from '@js-temporal/polyfill'
 import { z } from 'zod'
 
+import { DIAS_ALERTA_VENCIMENTO, venceEmBreve } from '@/core/pacotes/vencimento'
 import { AppError } from '@/server/http/errors'
 
 import type { Database } from '@/server/db/types.gen'
@@ -8,7 +9,6 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 type Cliente = SupabaseClient<Database>
 
-const DIAS_ALERTA_VENCIMENTO = 15
 
 export const EsquemaVenderPacote = z.object({
   clientId: z.uuid(),
@@ -64,9 +64,12 @@ function comSaldo(p: Database['public']['Tables']['packages']['Row'], hoje: Temp
     paidCents: p.paid_cents,
     expiresOn: p.expires_on,
     daysUntilExpiry: daysUntilExpiry === null ? null : Math.trunc(daysUntilExpiry),
-    // §criterio: "alerta em D-15 do vencimento" — só o que ainda tem sessão para gastar, um
-    // pacote já esgotado não precisa avisar que está vencendo.
-    expiringSoon: daysUntilExpiry !== null && daysUntilExpiry <= DIAS_ALERTA_VENCIMENTO && p.used_sessions < p.total_sessions,
+    // A regra vive em `core/pacotes/vencimento.ts` — inclusive o piso inferior, que faltava aqui e
+    // fazia "vencendo em breve" ficar verdadeiro para sempre depois do vencimento.
+    expiringSoon: venceEmBreve(
+      daysUntilExpiry === null ? null : Math.trunc(daysUntilExpiry),
+      p.total_sessions - p.used_sessions,
+    ),
   }
 }
 

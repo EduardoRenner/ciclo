@@ -69,6 +69,7 @@ describe('sameAs do JSON-LD', () => {
     return dadosEstruturadosDoSalao({
       nome: 'Salão', url: 'https://ex.com/salao', vertical: 'barber', descricao: null,
       telefone: null, endereco: null, instagram, servicos: [], avaliacoes: { average: 0, count: 0 },
+      imagem: null, horarios: [],
     }) as { sameAs?: string[] }
   }
 

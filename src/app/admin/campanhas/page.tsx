@@ -60,14 +60,30 @@ export default async function PaginaCampanhas() {
     ctx.tenant.timezone,
     mesAtual.toPlainDate({ day: 1 }).toString(),
     mesAtual.toPlainDate({ day: mesAtual.daysInMonth }).toString(),
-  ).catch(() => ({ totalCents: 0, count: 0, items: [], mensagensNaJanela: 0 }))
+  ).catch((erro: unknown) => {
+    /*
+      Mesmo `catch` da tela "Hoje" (`admin/hoje/page.tsx`), e aqui o silêncio custa mais: lá o zero
+      só desligava o herói do Motor; aqui ele vai DIRETO para um `StatTile` que afirma "Voltaram
+      este mês · R$ 0,00 · de 0 mensagens enviadas no período". Falha vira medição, com cara de
+      número apurado, na tela cujo trabalho é justamente reportar resultado de campanha.
+      Continua sem derrubar a tela — o que muda é deixar rastro.
+    */
+    console.warn(JSON.stringify({ level: 'warn', event: 'atribuicao_do_ciclo_indisponivel_em_campanhas' }), erro)
+    return { totalCents: 0, count: 0, items: [], mensagensNaJanela: 0 }
+  })
 
   /*
    * Migration 0054: agora existe o vínculo mensagem→campanha, então cada cartão pode mostrar o
    * que ele de fato trouxe — sem janela de mês, porque um cartão de campanha é registro
    * permanente, não relatório mensal (diferente do "Voltaram este mês" do topo, que É mensal).
    */
-  const porCampanha = await receitaPorCampanha(db, ctx.tenantId).catch(() => new Map())
+  const porCampanha = await receitaPorCampanha(db, ctx.tenantId).catch((erro: unknown) => {
+    // Falhar aqui zera o resultado de TODOS os cartões de uma vez, e cada cartão é registro
+    // permanente de uma campanha — "não trouxe ninguém" é uma afirmação forte para se fazer por
+    // engano. Mapa vazio continua sendo a degradação certa; o que faltava era o rastro.
+    console.warn(JSON.stringify({ level: 'warn', event: 'receita_por_campanha_indisponivel' }), erro)
+    return new Map()
+  })
 
   /*
    * `campaigns` é do Essencial, e o hub de Configurações manda todo mundo para cá de propósito

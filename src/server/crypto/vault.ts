@@ -26,7 +26,38 @@ export function limparCacheDek(): void {
   cacheDek.clear()
 }
 
+/** Só para teste: o `Map` é de módulo, e sem isto não dá para ver de fora a entrada que ficou residente. */
+export function deksEmMemoriaParaTeste(): number {
+  return cacheDek.size
+}
+
+/**
+ * Solta as entradas vencidas de TODOS os tenants, não só a do que está sendo lido.
+ *
+ * O comentário de `cacheDek` acima já respondia a pergunta do tamanho — e a resposta é boa, porque
+ * a chave é por TENANT (cardinalidade pequena), não por IP. O que ele não respondia é a outra
+ * metade da própria frase que ele usa: *"a DEK em claro vive só em memória, por tenant, com
+ * expiração"*. A expiração só impedia o USO. Sem varrer, a entrada de um tenant que parou de ser
+ * acessado ficava residente com a DEK **em claro** até o processo morrer — muito além dos 5
+ * minutos que o `§8` estipula, e este cofre guarda dado de saúde.
+ *
+ * Varrer no acesso, e não só trocar a entrada do tenant lido, é o que faz diferença: a entrada
+ * ociosa é justamente a que ninguém vai tocar de novo para expulsar.
+ *
+ * **Não zera o Buffer, de propósito.** `dekDoTenant` devolve a MESMA instância que está no cache;
+ * `encryptVault` a obtém dentro de um `Promise.all` e usa depois de outro `await`. Sobrescrever os
+ * bytes de um Buffer que uma operação em curso ainda segura corromperia a cifragem — trocaria um
+ * risco de exposição por um de corromper dado. Soltar a referência já entrega o que importa: a
+ * chave vira coletável dentro da janela prometida.
+ */
+function soltarDeksVencidas(agora: number): void {
+  for (const [tenant, entrada] of cacheDek) {
+    if (entrada.expiresAt <= agora) cacheDek.delete(tenant)
+  }
+}
+
 async function dekDoTenant(db: Cliente, tenantId: string): Promise<Buffer> {
+  soltarDeksVencidas(Date.now())
   const cache = cacheDek.get(tenantId)
   if (cache && cache.expiresAt > Date.now()) return cache.dek
 

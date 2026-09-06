@@ -102,7 +102,24 @@ export const EsquemaEnviarRecuperar = z.object({
 })
 export type EntradaEnviarRecuperar = z.infer<typeof EsquemaEnviarRecuperar>
 
-type MotivoPulado = 'opt_out' | 'rate_limited'
+/**
+ * Quatro motivos, e antes eram dois — porque a tela precisa dizer a VERDADE sobre por que não foi.
+ *
+ * `rate_limited` estava carregando três coisas sem relação: fora do horário permitido, dentro dos
+ * 7 dias da última campanha, e falha de entrega de verdade. A tela então nomeava as duas causas
+ * que ela achava que existiam ("opt-out ou limite de mensagens") — e nenhuma das duas era a certa
+ * nos casos mais comuns:
+ *
+ * - o dono clica às 21h30, depois de fechar. TODOS caem fora da janela 8h–21h, e ele lê que seus
+ *   40 clientes pediram para não receber. A ação certa era "tente amanhã de manhã";
+ * - sem credencial da Meta (o estado de hoje), TODOS falham na entrega e ele lê a mesma frase.
+ *   Ele nunca abriria chamado sobre a causa real, porque a tela lhe deu outra.
+ *
+ * Motivo que a tela não sabe nomear é pior que motivo nenhum: manda a pessoa consertar o que não
+ * está quebrado. Esta é a mesma família do `cartao-de-confirmacao-em-branco` — a origem ganha um
+ * caso, a apresentação continua lendo a lista velha e afirma com confiança.
+ */
+type MotivoPulado = 'opt_out' | 'rate_limited' | 'fora_de_janela' | 'falha_de_envio'
 
 export type ResultadoEnviarRecuperar = {
   queued: number
@@ -168,11 +185,14 @@ export async function enviarParaRecuperar(
     if (erroCiclo) throw new AppError('INTERNAL', { cause: erroCiclo })
     if (!linha) continue // já não está mais em risco (concluiu, cancelou) — nada a enviar
 
-    const emJanelaDeDedupe =
-      !dentroDaJanela ||
-      (linha.last_campaign_at !== null &&
-        agora.since(Temporal.Instant.from(linha.last_campaign_at)).total('days') < DIAS_ENTRE_CAMPANHAS)
-    if (emJanelaDeDedupe) {
+    if (!dentroDaJanela) {
+      skipped.push({ clientId: item.clientId, reason: 'fora_de_janela' })
+      continue
+    }
+    const dentroDosSeteDias =
+      linha.last_campaign_at !== null &&
+      agora.since(Temporal.Instant.from(linha.last_campaign_at)).total('days') < DIAS_ENTRE_CAMPANHAS
+    if (dentroDosSeteDias) {
       skipped.push({ clientId: item.clientId, reason: 'rate_limited' })
       continue
     }
@@ -204,20 +224,59 @@ export async function enviarParaRecuperar(
     }, provider)
 
     if (resultado.status === 'sent') {
-      const { error: erroUpdate } = await db
+      /*
+       * `select()` no fim do `update` não é enfeite: é o que transforma "não gravou" em algo que
+       * alguém pode ver.
+       *
+       * No supabase-js, um `update` que não casa linha nenhuma devolve `error: null` — sucesso,
+       * zero linhas. E aqui isso é o pior momento possível para um sucesso falso: **a mensagem já
+       * saiu**. Sem `last_campaign_at`, a trava de 7 dias lá em cima não tem o que ler, e a mesma
+       * cliente entra de novo no próximo lote, recebendo "sentimos sua falta" outra vez.
+       *
+       * A linha existe (foi lida com o mesmo trio de chaves algumas linhas acima), então zero é
+       * corrida com o `recompute_cycles`, que reescreve `client_cycles` seis vezes por dia. É raro
+       * — e é exatamente o tipo de raro que ninguém descobre olhando, porque não há erro para
+       * olhar. Quem paga é o salão, na conversa com a cliente.
+       *
+       * Não dá para desfazer o envio, e inventar a linha seria criar um ciclo que o Motor não
+       * calculou. O que dá é deixar rastro — ver a decisão de contagem logo abaixo do `if`.
+       */
+      const { data: carimbadas, error: erroUpdate } = await db
         .from('client_cycles')
         .update({ last_campaign_at: new Date().toISOString() })
         .eq('tenant_id', tenantId)
         .eq('client_id', item.clientId)
         .eq('service_id', item.serviceId)
+        .select('client_id')
       if (erroUpdate) throw new AppError('INTERNAL', { cause: erroUpdate })
+
+      if ((carimbadas?.length ?? 0) === 0) {
+        console.error(JSON.stringify({
+          level: 'error',
+          event: 'recuperar_carimbo_nao_gravou',
+          detalhe: 'mensagem enviada e last_campaign_at NAO gravado — a trava de 7 dias fica cega para esta cliente',
+          tenantId,
+          clientId: item.clientId,
+          serviceId: item.serviceId,
+        }))
+      }
+      /*
+       * Conta como enviada mesmo quando o carimbo falhou, e isto é decisão, não descuido: a
+       * mensagem SAIU. Dizer "falha de envio" para a dona seria mentir na direção mais cara —
+       * ela reenviaria, e o reenvio é justamente o dano que a trava de 7 dias existe para
+       * impedir. O conserto viraria o defeito, com uma volta a mais.
+       *
+       * A tela mostra o que aconteceu com a cliente; o carimbo perdido é problema operacional, e
+       * o lugar dele é o log acima.
+       */
       queued++
     } else {
-      // Falha de entrega de verdade (WhatsApp e e-mail indisponíveis) não é
-      // nem opt-out nem limite de taxa, mas §2.4 só define esses dois
-      // motivos — `rate_limited` é o mais próximo: a UI já sabe reoferecer
-      // "tentar de novo" para esse motivo, o que é a ação certa aqui.
-      skipped.push({ clientId: item.clientId, reason: 'rate_limited' })
+      // Falha de entrega de verdade (WhatsApp, push e e-mail indisponíveis). §2.4 só definia dois
+      // motivos e este caía em `rate_limited` "por ser o mais próximo" — mas próximo não é igual:
+      // "tentar de novo" é a ação certa para um limite de taxa e é a ação ERRADA aqui, onde
+      // tentar de novo falha de novo até alguém configurar o transporte. A linha correspondente
+      // em `messages` já nasce `failed` com o erro dos três canais.
+      skipped.push({ clientId: item.clientId, reason: 'falha_de_envio' })
     }
   }
 

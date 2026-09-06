@@ -3,6 +3,8 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
+import { semComentarios } from '../../helpers/fonte'
+
 import { redigirParaTrilha } from '@/server/audit/write'
 
 /**
@@ -31,10 +33,8 @@ const LGPD = 'src/server/services/lgpd.ts'
 const MIGRATIONS = 'supabase/migrations'
 const RPC = 'redigir_trilha_do_cliente'
 
-function semComentarios(caminho: string): string {
-  return readFileSync(caminho, 'utf8')
-    .replace(/\/\*[\s\S]*?\*\//g, ' ')
-    .replace(/^\s*\/\/.*$/gm, ' ')
+function marcacaoDe(caminho: string): string {
+  return semComentarios(readFileSync(caminho, 'utf8'))
 }
 
 describe('a trilha não guarda dado de saúde (regra 9)', () => {
@@ -72,7 +72,7 @@ describe('a trilha não guarda dado de saúde (regra 9)', () => {
 })
 
 describe('a eliminação alcança o que o jsonb esconde', () => {
-  const fonte = semComentarios(LGPD)
+  const fonte = marcacaoDe(LGPD)
 
   it('a leitura não voltou vazia', () => {
     expect(fonte.length, `${LGPD} veio vazio — o teste passaria por não achar nada`).toBeGreaterThan(2_000)

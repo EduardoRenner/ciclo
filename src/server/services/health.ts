@@ -1,4 +1,5 @@
 import { heartbeatVigiado } from '@/core/cron/agendadas'
+import { compararSchema } from '@/core/schema/versao'
 import { AppError } from '@/server/http/errors'
 import { semHandlerRegistrado } from '@/server/services/job-queue'
 
@@ -44,6 +45,7 @@ export type RelatorioSaude = {
     recomputeSegments: ChecagemSaude
     errorTracking: ChecagemSaude
     assistente: ChecagemSaude
+    schema: ChecagemSaude
   }
 }
 
@@ -76,13 +78,20 @@ export async function verificarSaude(db: Cliente, agora: Date = new Date()): Pro
   const recomputeSegments = await checarHeartbeat(db, 'recompute_segments', agora, LIMIAR_HEARTBEAT_CICLO_MIN)
   const errorTracking = checarRastreioDeErro()
   const assistente = checarAssistente()
+  const schema = await checarSchema(db)
 
-  return {
-    ok:
-      database.ok && jobQueue.ok && messages.ok && sendReminders.ok && sendCampaigns.ok &&
-      recomputeCycles.ok && recomputeSegments.ok && errorTracking.ok && assistente.ok,
-    checks: { database, jobQueue, messages, sendReminders, sendCampaigns, recomputeCycles, recomputeSegments, errorTracking, assistente },
-  }
+  const checks = { database, jobQueue, messages, sendReminders, sendCampaigns, recomputeCycles, recomputeSegments, errorTracking, assistente, schema }
+
+  /*
+   * O `ok` geral sai de `every`, e nao de um `&&` escrito a mao com uma parcela por checagem.
+   *
+   * O `&&` a mao e uma segunda lista das checagens, e o TypeScript nao percebe quando ela fica
+   * curta: acrescentar uma chave em `checks` e esquecer a parcela compila, passa nos testes e
+   * produz um relatorio que mostra a checagem vermelha com `ok: true` no topo. Como o job `vigia`
+   * do `cron.yml` le o topo, a checagem nova nasceria muda — que e o mesmo defeito de lista fixa
+   * que este arquivo acabou de pagar do outro lado.
+   */
+  return { ok: Object.values(checks).every((c) => c.ok), checks }
 }
 
 /**
@@ -155,6 +164,24 @@ function checarRastreioDeErro(): ChecagemSaude {
 function falhaSemVazar(onde: string, erro: { message: string }): ChecagemSaude {
   console.error(JSON.stringify({ level: 'error', event: 'health_check_falhou', onde }), erro.message)
   return { ok: false, detail: `a checagem "${onde}" falhou — veja o log do servidor` }
+}
+
+/**
+ * O banco aplicou as migrations que este código já assume? — ver `core/schema/versao.ts` para o
+ * caso de 05/09 que motivou a checagem.
+ *
+ * Falha de LEITURA não vira `ok: false`. Se a função `migracoes_aplicadas` ainda não existe no
+ * banco (é ela mesma que a 0062 cria, então esse é o estado de todo ambiente que ainda não a
+ * aplicou), um vermelho aqui seria o alarme permanente que `core/cron/agendadas.ts` proíbe — e
+ * pior: o alarme apontaria para a própria vigia, não para o defeito. Fica `ok: true` com o motivo
+ * escrito, igual ao `errorTracking`.
+ */
+async function checarSchema(db: Cliente): Promise<ChecagemSaude> {
+  const { data, error } = await db.rpc('migracoes_aplicadas')
+  if (error || !data) {
+    return { ok: true, detail: `não deu para ler a lista de migrations aplicadas (${error?.code ?? 'sem dados'}) — vigilância de schema desligada até a 0062 existir neste banco` }
+  }
+  return compararSchema(data.map((linha) => linha.name))
 }
 
 async function checarBanco(db: Cliente): Promise<ChecagemSaude> {
