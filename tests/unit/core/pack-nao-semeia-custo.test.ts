@@ -36,11 +36,19 @@ function semeaduras(sql: string): string[] {
   return sql.match(/"avg_cost_cents"\s*:\s*(?!0\s*[,}])\d+/g) ?? []
 }
 
-/** Comentário `--` sai antes de qualquer casamento: prosa que cita o defeito não é o defeito. */
+/**
+ * Comentário `--` sai antes de qualquer casamento: prosa que cita o defeito não é o defeito.
+ *
+ * O `\r` no `split` e o `[^\r\n]` no lugar do `.` não são zelo: as migrations estão em CRLF no
+ * disco, e em JavaScript `\r` é terminador de linha — `.` não casa com ele, e `$` sem `/m` só casa
+ * no fim absoluto da string. Com `split('\n')` puro TODA linha terminava em `\r`, `/--.*$/` não
+ * casava com nenhuma, e o cortador de comentário não cortava nada. Medido ao MUTAR esta guarda em
+ * 2026-09-06: ela reprovou a mutação pelo motivo errado, acusando o comentário como se fosse SQL.
+ */
 function semComentarios(sql: string): string {
   return sql
-    .split('\n')
-    .map((linha) => linha.replace(/--.*$/, ''))
+    .split(/\r?\n/)
+    .map((linha) => linha.replace(/--[^\r\n]*$/, ''))
     .join('\n')
 }
 
@@ -76,6 +84,21 @@ describe('nenhum pack semeia o custo do produto', () => {
     const sql = readFileSync(`${DIR}/${conserto}`, 'utf8')
     expect(sql, 'a 0069 precisa continuar zerando o custo já semeado').toMatch(/set\s+avg_cost_cents\s*=\s*0/)
     expect(semeaduras(semComentarios(sql)), 'o conserto está sendo lido como defeito').toEqual([])
+  })
+
+  /**
+   * O cortador de comentário testado contra ele mesmo, nas duas quebras de linha. Sem este caso a
+   * guarda volta a acusar prosa, e ninguém descobre até alguém escrever um comentário honesto
+   * explicando o defeito — que é exatamente o que a 0069 faz, em vinte linhas.
+   */
+  it('prosa que cita a semeadura não é semeadura, em LF e em CRLF', () => {
+    const prosa = '-- o pack semeava {"avg_cost_cents":2200} e a tela não avisava'
+    expect(semeaduras(semComentarios(prosa)), 'comentário em LF acusado como código').toEqual([])
+    expect(semeaduras(semComentarios(prosa + '\r\nselect 1;')), 'comentário em CRLF acusado como código').toEqual([])
+
+    // E o controle na outra direção: fora de comentário, a MESMA string tem que ser acusada.
+    const codigo = 'products = \'[{"avg_cost_cents":2200}]\'::jsonb'
+    expect(semeaduras(semComentarios(codigo)), 'a guarda parou de ver o defeito').toHaveLength(1)
   })
 
   it('nenhuma migration a partir da 0069 semeia custo em pack', () => {
