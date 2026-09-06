@@ -86,6 +86,7 @@ describe('calcularSobraDaComanda', () => {
       materialCents: 0,
       feeCents: 0,
       commissionCents: 0,
+      fixedCostCents: 0,
     })
     expect(sobra).toBe(8_000)
   })
@@ -99,6 +100,7 @@ describe('calcularSobraDaComanda', () => {
       materialCents: 0,
       feeCents: 0,
       commissionCents: 0,
+      fixedCostCents: 0,
     })
     expect(totalCents).toBe(13_000)
     expect(sobra).toBe(10_000)
@@ -112,6 +114,7 @@ describe('calcularSobraDaComanda', () => {
       materialCents: 1_500,
       feeCents: 300,
       commissionCents: 4_000,
+      fixedCostCents: 0,
     })
     expect(sobra).toBe(4_200)
   })
@@ -124,6 +127,7 @@ describe('calcularSobraDaComanda', () => {
       materialCents: 0,
       feeCents: 0,
       commissionCents: 0,
+      fixedCostCents: 0,
     })
     expect(sobra).toBe(0)
   })
@@ -136,6 +140,7 @@ describe('calcularSobraDaComanda', () => {
       materialCents: 12_000,
       feeCents: 0,
       commissionCents: 0,
+      fixedCostCents: 0,
     })
     expect(sobra).toBe(-2_000)
   })
@@ -155,6 +160,7 @@ describe('calcularSobraDaComanda', () => {
           materialCents: 0,
           feeCents: 0,
           commissionCents: 0,
+      fixedCostCents: 0,
         })
         expect(sobra, `desconto ${discountCents}, gorjeta ${tipCents}`).toBeLessThanOrEqual(totalCents)
       }

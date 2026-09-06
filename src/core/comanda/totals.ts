@@ -60,6 +60,15 @@ export type EntradaFechamento = {
   materialCents: number
   feeCents: number
   commissionCents: number
+  /**
+   * O custo da hora de cadeira que este atendimento ocupou (`0072`).
+   *
+   * Sem ele a conta era margem de contribuição com nome de lucro: um corte de R$ 45 com 40% de
+   * comissão "sobrava" R$ 24,00 para um dono que paga R$ 3.500 de aluguel. Zero quando o dono
+   * ainda não respondeu as três perguntas — e nesse caso quem avisa é a lacuna da tela, nunca o
+   * número.
+   */
+  fixedCostCents: number
 }
 
 /**
@@ -81,5 +90,5 @@ export type EntradaFechamento = {
  */
 export function calcularSobraDaComanda(entrada: EntradaFechamento): number {
   const receitaDoSalao = Math.max(0, entrada.subtotalCents - entrada.discountCents)
-  return receitaDoSalao - entrada.materialCents - entrada.feeCents - entrada.commissionCents
+  return receitaDoSalao - entrada.materialCents - entrada.feeCents - entrada.commissionCents - entrada.fixedCostCents
 }

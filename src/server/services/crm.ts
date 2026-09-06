@@ -13,6 +13,7 @@ import { contextoDePlano } from '@/server/services/planos'
 import { podeUsarModulo } from '@/core/billing/planos'
 import { limiarPertoDoPremio } from '@/core/loyalty/limiar'
 import { acoesDeCompletude } from '@/core/comanda/completude-do-lucro'
+import { custoFixoEstaConfigurado } from '@/core/comanda/custo-fixo'
 import { taxaEstaConfigurada } from '@/core/comanda/taxa-de-pagamento'
 import { avaliarPermissao } from '@/server/auth/rbac'
 
@@ -719,6 +720,7 @@ export async function centralDeAcoes(db: Cliente, tenantId: string, papel?: Pape
     ...acoesDeCompletude({
       podeVerLucro,
       taxaRespondida: taxaEstaConfigurada(tenantSettings.data?.settings),
+      custoFixoRespondido: custoFixoEstaConfigurado(tenantSettings.data?.settings),
       servicosSemFicha: material?.semFicha ?? 0,
       servicosComProdutoSemCusto: material?.comProdutoSemCusto ?? 0,
     }),

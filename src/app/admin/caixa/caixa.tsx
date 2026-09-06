@@ -23,6 +23,8 @@ type Props = {
   atendidoCents: number
   /** O dono já disse quanto a maquininha cobra? Ver `taxaEstaConfigurada` e `docs/49`. */
   taxaRespondida: boolean
+  /** O dono já respondeu as três perguntas do aluguel? Ver `custoFixoEstaConfigurado` (`0072`). */
+  custoFixoRespondido: boolean
   /**
    * Quantos serviços ativos ainda não têm material confiável — sem ficha, ou com produto da ficha
    * que nunca teve compra registrada (`medirMaterialDoCatalogo`).
@@ -64,7 +66,7 @@ function mesPorExtenso(mes: string): string {
   )
 }
 
-export default function Caixa({ dia, hoje, diario, mensal, comissoes, atendidoCents, taxaRespondida, servicosSemMaterial, concentracao }: Props) {
+export default function Caixa({ dia, hoje, diario, mensal, comissoes, atendidoCents, taxaRespondida, custoFixoRespondido, servicosSemMaterial, concentracao }: Props) {
   const ontem = somarDias(dia, -1)
   const amanha = somarDias(dia, 1)
   const ehHoje = dia === hoje
@@ -146,7 +148,8 @@ export default function Caixa({ dia, hoje, diario, mensal, comissoes, atendidoCe
               'O que entrou, menos a gorjeta do profissional, o material',
               servicosSemMaterial > 0 ? ' (ainda incompleto)' : '',
               taxaRespondida ? ', a taxa da maquininha' : '',
-              ' e a comissão.',
+              ', a comissão',
+              custoFixoRespondido ? ' e o aluguel.' : '. O aluguel ainda não entra.',
             ].join('')}
           />
 
@@ -173,6 +176,12 @@ export default function Caixa({ dia, hoje, diario, mensal, comissoes, atendidoCe
             />
             {taxaRespondida ? <StatTile rotulo="Taxa" valor={dinheiro.format(diario.feeCents / 100)} /> : null}
             <StatTile rotulo="Comissão" valor={dinheiro.format(diario.commissionCents / 100)} />
+            {/*
+              Mesma regra do quadro "Taxa": só aparece para quem respondeu. Quem nunca abriu a tela
+              tem `fixed_cost_cents` zero por falta de resposta, e um R$ 0,00 ao lado dos outros se
+              lê como "hoje não teve aluguel" — a frase que tirou o quadro "Taxa" daqui em 28/08.
+            */}
+            {custoFixoRespondido ? <StatTile rotulo="Aluguel" valor={dinheiro.format(diario.fixedCostCents / 100)} /> : null}
           </div>
 
           {taxaRespondida ? null : (

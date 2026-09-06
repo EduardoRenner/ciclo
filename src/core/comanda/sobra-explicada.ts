@@ -11,7 +11,7 @@
  * valor, e a lista do que não entrou nele.
  */
 
-export type LacunaDaSobra = 'taxa' | 'ficha'
+export type LacunaDaSobra = 'taxa' | 'ficha' | 'custo-fixo'
 
 export type EntradaDaSobra = {
   subtotalCents: number
@@ -20,6 +20,14 @@ export type EntradaDaSobra = {
   materialCents: number
   feeCents: number
   commissionCents: number
+  /** A hora de cadeira que este atendimento ocupou (`0072`). */
+  fixedCostCents: number
+  /**
+   * O dono já respondeu quanto sai por mês, quantas horas abre e quantas cadeiras tem? Ver
+   * `custoFixoEstaConfigurado` — e, como na taxa, "respondeu zero" não é "nunca respondeu": quem
+   * atende em casa responde zero de propósito e para ele a conta está completa.
+   */
+  custoFixoRespondido: boolean
   /** O dono já respondeu quanto a maquininha cobra? Ver `taxaEstaConfigurada`. */
   taxaRespondida: boolean
   /**
@@ -66,8 +74,15 @@ function frasePara(lacunas: readonly LacunaDaSobra[]): string | null {
   const nomes: string[] = []
   if (lacunas.includes('ficha')) nomes.push('o produto')
   if (lacunas.includes('taxa')) nomes.push('a taxa da maquininha')
+  if (lacunas.includes('custo-fixo')) nomes.push('o aluguel')
 
-  return `Falta descontar ${nomes.join(' e ')}.`
+  /*
+   * Com três, a vírgula antes do "e" — "o produto, a taxa da maquininha e o aluguel". Sem isso a
+   * frase vira uma enumeração com dois "e" e fica ilegível em 390 px, que é o mesmo motivo pelo
+   * qual frase e detalhe são separados aqui.
+   */
+  const ultimo = nomes.pop()!
+  return nomes.length === 0 ? `Falta descontar ${ultimo}.` : `Falta descontar ${nomes.join(', ')} e ${ultimo}.`
 }
 
 /**
@@ -86,12 +101,15 @@ function detalhesPara(lacunas: readonly LacunaDaSobra[], itens: number): string[
     )
   }
   if (lacunas.includes('taxa')) detalhes.push('você ainda não informou quanto a maquininha cobra')
+  if (lacunas.includes('custo-fixo')) {
+    detalhes.push('o aluguel e as contas não entram nesta conta: falta dizer quanto sai por mês, quantas horas você abre e quantas cadeiras tem')
+  }
   return detalhes
 }
 
 export function explicarSobra(entrada: EntradaDaSobra): SobraExplicada {
   const receitaCents = Math.max(0, entrada.subtotalCents - entrada.discountCents)
-  const sobraCents = receitaCents - entrada.materialCents - entrada.feeCents - entrada.commissionCents
+  const sobraCents = receitaCents - entrada.materialCents - entrada.feeCents - entrada.commissionCents - entrada.fixedCostCents
 
   const lacunas: LacunaDaSobra[] = []
   if (entrada.itensComMaterialIncerto > 0) lacunas.push('ficha')
@@ -101,6 +119,13 @@ export function explicarSobra(entrada: EntradaDaSobra): SobraExplicada {
    * transformaria o aviso em ruído, e aviso que sempre aparece deixa de ser lido.
    */
   if (!entrada.taxaRespondida) lacunas.push('taxa')
+  /*
+   * Sem esta lacuna o "Sobrou" era margem de contribuição com nome de lucro — um corte de R$ 45 com
+   * 40% de comissão "sobrava" R$ 24,00 para quem paga R$ 3.500 de aluguel. O `docs/47` P05 acusa o
+   * setor de mostrar faturamento com cara de lucro; era a mesma família, um degrau acima, dentro do
+   * produto que faz a acusação.
+   */
+  if (!entrada.custoFixoRespondido) lacunas.push('custo-fixo')
 
   return {
     sobraCents,
@@ -109,6 +134,7 @@ export function explicarSobra(entrada: EntradaDaSobra): SobraExplicada {
       { rotulo: 'Material', valorCents: entrada.materialCents },
       { rotulo: 'Taxa da maquininha', valorCents: entrada.feeCents },
       { rotulo: 'Comissão', valorCents: entrada.commissionCents },
+      { rotulo: 'Aluguel e contas', valorCents: entrada.fixedCostCents },
     ],
     lacunas,
     frase: frasePara(lacunas),

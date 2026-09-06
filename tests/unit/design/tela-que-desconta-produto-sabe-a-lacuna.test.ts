@@ -73,3 +73,32 @@ describe('tela que desconta o produto sabe quando não descontou', () => {
     ).toBe(true)
   })
 })
+
+/**
+ * A quarta parcela, de 2026-09-06. O "Sobrou" era `receita − material − taxa − comissão`: margem
+ * de contribuição com nome de lucro. Quem paga R$ 3.500 de aluguel lia "Sobrou R$ 24,00" num corte
+ * de R$ 45 como o dinheiro que ficou.
+ *
+ * Ela tem a mesma armadilha da taxa, e a `0066` já a documentou uma coluna ao lado: R$ 0,00 num
+ * quadro ao lado de outros números se lê como "hoje não teve", nunca como "ninguém respondeu".
+ */
+describe('tela que anuncia o "Sobrou" sabe quando o aluguel não entrou', () => {
+  const TELAS: { arquivo: string; oQuePromete: string }[] = [
+    { arquivo: 'src/app/admin/comanda/[id]/page.tsx', oQuePromete: 'o "Sobrou" daquele atendimento' },
+    { arquivo: 'src/app/admin/caixa/caixa.tsx', oQuePromete: 'o "Sobrou" do dia' },
+    { arquivo: 'src/app/admin/mes/resumo.tsx', oQuePromete: 'o "Sobrou" do mês' },
+  ]
+
+  it('as três telas continuam existindo', () => {
+    expect(TELAS).toHaveLength(3)
+  })
+
+  it.each(TELAS)('$arquivo carrega a resposta do custo fixo', ({ arquivo, oQuePromete }) => {
+    const fonte = semComentarios(readFileSync(arquivo, 'utf8'))
+    expect(
+      /custoFixoRespondido|custoFixoEstaConfigurado/.test(fonte),
+      `${arquivo} anuncia ${oQuePromete} sem saber se o aluguel entrou na conta. Zero sem rótulo ` +
+        'se lê como "hoje não teve aluguel" — o defeito que tirou o quadro "Taxa" do caixa em 28/08.',
+    ).toBe(true)
+  })
+})

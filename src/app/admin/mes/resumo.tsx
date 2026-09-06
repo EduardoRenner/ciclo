@@ -42,6 +42,7 @@ export default function ResumoDoMes({
   clientesParados,
   motor,
   servicosSemMaterial,
+  custoFixoRespondido,
   serie,
 }: {
   mes: string
@@ -54,6 +55,8 @@ export default function ResumoDoMes({
   clientesParados: number
   motor: PrestacaoDeContas
   servicosSemMaterial: number
+  /** O dono já respondeu as três perguntas do aluguel? (`0072`) */
+  custoFixoRespondido: boolean
   /** `docs/50` L-09 — os meses já congelados, e a variação do lucro por atendimento. */
   serie: SerieMensal
 }) {
@@ -89,11 +92,14 @@ export default function ResumoDoMes({
           pressionavel
           rotulo="Sobrou"
           valor={dinheiro.format(sobrouCents / 100)}
-          apoio={
+          apoio={[
+            'depois do produto, da maquininha, da comissão',
+            custoFixoRespondido ? ' e do aluguel' : '',
             servicosSemMaterial > 0
-              ? `depois do produto, da maquininha e da comissão — ainda sem o custo de ${servicosSemMaterial} ${servicosSemMaterial === 1 ? 'serviço' : 'serviços'}`
-              : 'depois do produto, da maquininha e da comissão'
-          }
+              ? ` — ainda sem o custo de ${servicosSemMaterial} ${servicosSemMaterial === 1 ? 'serviço' : 'serviços'}`
+              : '',
+            !custoFixoRespondido && servicosSemMaterial === 0 ? ' — o aluguel ainda não entra' : '',
+          ].join('')}
         />
       </Link>
 

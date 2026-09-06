@@ -10,6 +10,7 @@ import { RELATORIO_DA_EQUIPE, avaliarPermissao } from '@/server/auth/rbac'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { concentracaoDoMes, resumoMensal, serieMensalDeLucro } from '@/server/services/caixa'
+import { lerCustoFixoDoTenant } from '@/server/services/custo-fixo'
 import { medirMaterialDoCatalogo } from '@/server/services/ficha-de-consumo'
 import { prestacaoDeContasDoMotor } from '@/server/services/previsao'
 import { listarParaRecuperar } from '@/server/services/recuperar-receita'
@@ -55,7 +56,7 @@ export default async function PaginaDoMes() {
   const hoje = Temporal.Now.instant().toZonedDateTimeISO(timezone).toPlainDate()
   const mes = `${hoje.year}-${String(hoje.month).padStart(2, '0')}`
 
-  const [mensal, concentracao, recuperar, motor, material, serie] = await Promise.all([
+  const [mensal, concentracao, recuperar, motor, material, serie, custoFixo] = await Promise.all([
     resumoMensal(db, ctx.tenantId, timezone, mes),
     // Mesma trava do caixa (`docs/50` L-10): sem `report:team` o número "de quem depende" não sai,
     // e a consulta nem acontece.
@@ -74,6 +75,7 @@ export default async function PaginaDoMes() {
      * de `serieMensalDeLucro` para o porquê de não ser um cron.
      */
     serieMensalDeLucro(db, ctx.tenantId, timezone, hoje.toString()),
+    lerCustoFixoDoTenant(db, ctx.tenantId),
   ])
 
   return (
@@ -93,6 +95,7 @@ export default async function PaginaDoMes() {
         clientesParados={recuperar.count}
         motor={motor}
         servicosSemMaterial={material.semFicha + material.comProdutoSemCusto}
+        custoFixoRespondido={custoFixo.respondido}
         serie={serie}
       />
     </>

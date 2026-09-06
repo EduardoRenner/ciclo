@@ -454,3 +454,87 @@ describe('a ressalva do material é gravada no item, e é verdadeira', () => {
     60_000,
   )
 })
+
+/**
+ * A prova de que a `0072` desconta de verdade — e de que ela é congelada.
+ *
+ * O "Sobrou" era `receita − material − taxa − comissão`, ou seja margem de contribuição com nome
+ * de lucro. Este teste exercita o caminho inteiro: as três respostas em `tenants.settings`, a
+ * duração do catálogo, o desconto na sobra e o congelamento da coluna.
+ */
+describe('o aluguel entra no fechamento, e fica congelado', () => {
+  async function responderCustoFixo(mensalCents: number, horasPorMes: number, cadeiras: number) {
+    const { data } = await svc.from('tenants').select('settings').eq('id', tenantId).single()
+    const settings: Record<string, Json> = { ...((data?.settings ?? {}) as Record<string, Json>) }
+    settings.custo_fixo = { mensal_cents: mensalCents, horas_por_mes: horasPorMes, cadeiras }
+    await svc.from('tenants').update({ settings }).eq('id', tenantId)
+  }
+
+  async function esquecerCustoFixo() {
+    const { data } = await svc.from('tenants').select('settings').eq('id', tenantId).single()
+    const settings: Record<string, Json> = { ...((data?.settings ?? {}) as Record<string, Json>) }
+    delete settings.custo_fixo
+    await svc.from('tenants').update({ settings }).eq('id', tenantId)
+  }
+
+  it(
+    'sem as três respostas, o aluguel não é descontado e a coluna fica zero',
+    async () => {
+      await esquecerCustoFixo()
+      const ticketId = await abrirTicketVazio()
+      await adicionarItemComanda(svc, tenantId, ticketId, { serviceId: servicoId, professionalId, qty: 1, discountCents: 0 })
+
+      const fechado = await fecharComanda(svc, tenantId, ticketId, 'cash')
+      expect(fechado.fixed_cost_cents, 'sem resposta o CICLO não inventa um aluguel').toBe(0)
+    },
+    60_000,
+  )
+
+  it(
+    'com as três respostas, desconta o tempo de cadeira e congela o valor',
+    async () => {
+      // R$ 1.000 / 100h / 1 cadeira = R$ 10,00 a hora. O serviço dura 60 min.
+      await responderCustoFixo(100_000, 100, 1)
+      const ticketId = await abrirTicketVazio()
+      await adicionarItemComanda(svc, tenantId, ticketId, { serviceId: servicoId, professionalId, qty: 1, discountCents: 0 })
+
+      const fechado = await fecharComanda(svc, tenantId, ticketId, 'cash')
+      expect(fechado.fixed_cost_cents, 'uma hora de cadeira a R$ 10,00').toBe(1_000)
+
+      // Serviço R$ 100,00, comissão 40% = R$ 40,00, sem material e sem taxa (dinheiro).
+      expect(fechado.profit_cents, 'o aluguel saiu da sobra').toBe(10_000 - 4_000 - 1_000)
+    },
+    60_000,
+  )
+
+  it(
+    'renegociar o aluguel depois não mexe na comanda já fechada',
+    async () => {
+      await responderCustoFixo(100_000, 100, 1)
+      const ticketId = await abrirTicketVazio()
+      await adicionarItemComanda(svc, tenantId, ticketId, { serviceId: servicoId, professionalId, qty: 1, discountCents: 0 })
+      const fechado = await fecharComanda(svc, tenantId, ticketId, 'cash')
+
+      // O dono muda de sala e o aluguel dobra.
+      await responderCustoFixo(200_000, 100, 1)
+
+      const { data } = await svc.from('tickets').select('fixed_cost_cents, profit_cents').eq('id', ticketId).single()
+      expect(data?.fixed_cost_cents, 'o congelado mudou junto com a configuração').toBe(fechado.fixed_cost_cents)
+      expect(data?.profit_cents).toBe(fechado.profit_cents)
+    },
+    60_000,
+  )
+
+  it(
+    'duas cadeiras dividem o custo da hora pela metade',
+    async () => {
+      await responderCustoFixo(100_000, 100, 2)
+      const ticketId = await abrirTicketVazio()
+      await adicionarItemComanda(svc, tenantId, ticketId, { serviceId: servicoId, professionalId, qty: 1, discountCents: 0 })
+
+      const fechado = await fecharComanda(svc, tenantId, ticketId, 'cash')
+      expect(fechado.fixed_cost_cents).toBe(500)
+    },
+    60_000,
+  )
+})
