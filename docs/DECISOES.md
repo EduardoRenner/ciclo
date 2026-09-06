@@ -6700,3 +6700,28 @@ mudança, é o estado da tabela desde a `0001`. Consertar isso exige decidir, co
 `professional` deve mesmo operar comandas de colegas (parece intencional) e, se não, desenhar a
 política por operação (select vs. insert/update/delete) como `appointments_select` já faz com
 `can_see_appointment` — trabalho de escopo maior que um ticket, fica para auditoria dedicada.
+
+## 2026-09-06 · A RLS de `tickets`/`ticket_items` passou a esconder o financeiro entre profissionais (0073)
+
+**Contexto.** A entrada logo acima deixou isto "para auditoria dedicada": desde a `0001`,
+`tickets`/`ticket_items` tinham só `*_tenant_all` (`for all using has_tenant`), e um `professional`
+ou `reception` autenticado que chamasse a REST API do Supabase direto lia `commission_cents`,
+`cost_cents` e `total_cents` de qualquer colega. O `docs/55` Fase 2.1 e o `docs/48` §4.6 nomeiam
+isto como o dado mais delicado dentro de uma equipe.
+
+**Decisão.** Fechado agora, na migration `0073`. A dúvida que travou a sessão anterior — "isso
+quebra o fluxo de fechar a comanda de um colega?" — foi remedida: **não quebra**. Todas as rotas
+(`tickets/[id]/close`, `/cancel`, `/items`, `wallet/*`) passam por `withTenant` → `service_role`,
+que ignora a RLS. Nenhuma leitura de `tickets`/`ticket_items` no cliente usa a chave anônima
+(`grep -rn "from('tickets')" src` fora de `server/` só acha import de tipo). A política de banco só
+governa o acesso direto com JWT de usuário, e era só esse que estava aberto.
+
+**Forma.** `can_see_ticket(t, prof)` delega para `can_see_appointment` — mesmo interruptor
+(`tenants.settings.restrict_professional_view`), um modelo mental só. SELECT passa a exigir
+`has_tenant AND can_see_ticket`; INSERT/UPDATE/DELETE ficam em `has_tenant`, idênticos ao
+pré-`0073`, porque operar a comanda do colega é o desenho de equipe já em produção.
+
+**O que NÃO muda:** com `restrict_professional_view` desligado (o padrão), a visão continua
+liberada — a régua é a mesma de agenda, não um "sempre nega". Guardado em
+`tests/rls/ticket-por-profissional.test.ts`, que o CI (`job "Banco e RLS"`) roda contra um banco
+aplicado do zero; reintroduzir `for all ... has_tenant` deixa o caso da Bia vermelho.
