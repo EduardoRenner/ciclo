@@ -35,7 +35,7 @@ export default function PrestacaoDeContasDoMotor({ contas }: { contas: Prestacao
       </p>
 
       <p className="text-secundario text-txt-2">
-        Acerto é a pessoa ter voltado até {TOLERANCIA_DIAS} dias da data prevista. Quem passou de um mês sem voltar conta como erro — senão
+        Acerto é a pessoa ter voltado até {TOLERANCIA_DIAS} dias da data prevista. Quem passou de um mês sem voltar conta como erro. Senão
         a nota subiria justamente quando o Motor errasse mais.
       </p>
 
@@ -56,7 +56,7 @@ export default function PrestacaoDeContasDoMotor({ contas }: { contas: Prestacao
 
       {contas.emAberto > 0 ? (
         <p className="text-label text-txt-3">
-          {contas.emAberto} {contas.emAberto === 1 ? 'previsão ainda pode' : 'previsões ainda podem'} se confirmar — não entram na conta.
+          {contas.emAberto} {contas.emAberto === 1 ? 'previsão ainda pode' : 'previsões ainda podem'} se confirmar; não entram na conta.
         </p>
       ) : null}
     </Card>

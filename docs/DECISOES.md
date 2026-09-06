@@ -6608,3 +6608,71 @@ graça) · `POST /api/v1/billing/assinar` (owner-only, devolve `init_point`) · 
 não reconhece) · fiação da tela `/admin/config/meu-plano` · e as credenciais reais da conta MP do
 Eduardo (sandbox primeiro — `docs/18` §J.4 deixou o Pix Automático "bloqueado até confirmar no
 sandbox"). O `scripts/promover-tenant.mjs` segue sendo a ponte de cobrança à mão até isso fechar.
+
+---
+
+## 2026-09-06 · O pack semeava o custo, e a lacuna não sabia perguntar isso
+
+**Pergunta.** A missão "Lucro sem planilha" mandou construir o modelo de custo, o cálculo puro, a
+persistência congelada e as telas de lucro (T1–T9). Tudo isso já existia desde a rodada `47`/`48`/`49`.
+O que fazer com um plano cuja premissa caiu?
+
+**Decisão.** A Parte 4 do próprio plano manda: *"onde a realidade divergir, a realidade ganha"*. Em
+vez de reconstruir, medir o que já existe e procurar o que ninguém tinha olhado. Achado: as duas
+lacunas que o produto sabe levantar são "produto com custo ZERO" e "serviço SEM ficha", e o custo
+semeado pelo `apply_vertical_pack` não é nenhuma das duas — tem ficha e tem custo. A comanda
+fechada de um salão de cabelo mostrava "Sobrou" sem ressalva, com R$ 24,60 de material que ninguém
+comprou.
+
+**Motivo.** Um número inventado exibido com a cara de número completo é pior que um número
+faltando, e era o defeito que `sobra-explicada.ts` existe inteiro para impedir, passando por baixo
+dele. `docs/51-LUCRO-T0-ACHADOS.md` tem a medição.
+
+## 2026-09-06 · Zerar o custo semeado, e não marcá-lo com coluna de procedência
+
+**Pergunta.** Como separar "o dono registrou a compra" de "veio no pack e ninguém conferiu", sem
+apagar dado que alguém escreveu de propósito?
+
+**Decisão.** `update products set avg_cost_cents = 0` onde há custo e **nenhum** `stock_moves` de
+`source='purchase'`. Sem coluna nova.
+
+**Motivo.** `registrarEntradaEstoque` é o único escritor de `avg_cost_cents` no projeto inteiro, e
+ele sempre grava a compra junto — então o critério é objetivo e não adivinha intenção. Uma coluna
+de procedência guardaria para sempre um número que ninguém quer ler, e daria à tela a opção de
+exibir "estimativa do pack", que é a mesma promessa vazia com outra roupa.
+
+## 2026-09-06 · A guarda de varredura de SQL precisa cortar comentário em CRLF
+
+**Pergunta.** Ao mutar a guarda da `0069`, ela reprovou acusando o comentário que explicava o
+defeito. Reprovar era o esperado; acusar prosa não era.
+
+**Decisão.** `sqlSemComentarios` em `tests/helpers/fonte.ts`, com `split(/\r?\n/)` e `[^\r\n]*` no
+lugar do `.`. As duas cópias que existiam (guarda de pack, cobertura LGPD) passam a chamá-la.
+
+**Motivo.** As migrations estão em CRLF; `\r` é terminador de linha em JavaScript; `.` não casa com
+ele e `$` sem `/m` só casa no fim absoluto da string. `linha.replace(/--.*$/, '')` depois de
+`split('\n')` não corta comentário **nenhum** — e passa verde, porque nenhum caso exercita a prosa.
+Na cobertura LGPD isso não mudava veredito (medido: zero casos nas 69 migrations), mas cortador
+inerte é armadilha esperando o primeiro caso que dependa dele.
+
+## 2026-09-06 · O gerente não vê de quem o lucro depende
+
+**Pergunta.** O `docs/50` L-10 manda decidir e registrar se o papel `manager` alcança a
+concentração de lucro por profissional — *"62% do que sobrou veio do Rafa"*.
+
+**Decisão.** Não. A leitura passa a exigir `report:team`, que `owner` e `finance` alcançam e
+`manager` não. A tabela de `PERMISSIONS` já produzia esse resultado (`manager` tem `report:read`
+literal, não `report:*`); faltava alguém pedir a permissão certa no lugar certo. Guardado em
+`tests/unit/server/rbac.test.ts`.
+
+**Motivo.** O `docs/48` §4.6 nomeia o risco como social, não técnico, e esta é a informação mais
+delicada do conjunto dentro de uma equipe: ela muda conversa de comissão, de escala e de cadeira, e
+o `manager` costuma ser colega de quem a frase nomeia. O resto do relatório continua inteiro para
+ele — travar demais vira chamado de suporte, que é a armadilha oposta do mesmo ticket.
+
+**O que esta decisão NÃO é.** Não é trava de segurança, e dizer o contrário seria pior que não ter.
+O `manager` lê `tickets` e `ticket_items` pela RLS, legitimamente, e com isso monta a mesma conta à
+mão. A camada é de apresentação: o produto para de PUBLICAR o ranking para quem convive com ele. A
+regra de duas camadas do `CLAUDE.md` vale para tabela nova; esta é leitura derivada de dado que o
+papel já alcança por outro motivo legítimo, e restringir `tickets` para `manager` quebraria o caixa
+inteiro.

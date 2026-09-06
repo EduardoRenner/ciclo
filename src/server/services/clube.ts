@@ -103,12 +103,19 @@ export async function margensDoClube(db: Cliente, tenantId: string, timezone: st
 
       const custos = doAssinante.map((v) => {
         const ficha = fichaPorServico.get(v.service_id) ?? []
-        const material = custoDoServico(ficha, 1).custoCents
+        const custo = custoDoServico(ficha, 1)
+        const material = custo.custoCents
         const bps = v.professional_id
           ? (bpsDoVinculo.get(`${v.professional_id}:${v.service_id}`) ?? bpsDoProfissional.get(v.professional_id) ?? 0)
           : 0
         const comissao = calcularComissaoItem({ totalCents: v.price_cents, costCents: material, commissionBps: bps, commissionBase })
-        return { custoCents: material + comissao, semFicha: ficha.length === 0 }
+        /*
+         * A pergunta vem pronta de `custoDoServico`. Ela era remontada aqui como
+         * `ficha.length === 0` — e errava, porque a ficha semeada pelo pack responde "tem ficha"
+         * sem custo real nenhum por trás (`docs/51` §2). Remontar a pergunta onde já existe
+         * resposta é como este defeito nasceu; não repetir isso é o conserto.
+         */
+        return { custoCents: material + comissao, materialIncerto: custo.materialIncerto }
       })
 
       return {

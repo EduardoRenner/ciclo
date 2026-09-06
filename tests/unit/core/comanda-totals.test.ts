@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { calcularComissaoItem, calcularSobraDaComanda, calcularTotalItem, calcularTotaisComanda } from '@/core/comanda/totals'
+import { explicarSobra } from '@/core/comanda/sobra-explicada'
 
 describe('calcularTotalItem', () => {
   it('qty inteira × preço, sem desconto', () => {
@@ -86,6 +87,7 @@ describe('calcularSobraDaComanda', () => {
       materialCents: 0,
       feeCents: 0,
       commissionCents: 0,
+      fixedCostCents: 0,
     })
     expect(sobra).toBe(8_000)
   })
@@ -99,6 +101,7 @@ describe('calcularSobraDaComanda', () => {
       materialCents: 0,
       feeCents: 0,
       commissionCents: 0,
+      fixedCostCents: 0,
     })
     expect(totalCents).toBe(13_000)
     expect(sobra).toBe(10_000)
@@ -112,6 +115,7 @@ describe('calcularSobraDaComanda', () => {
       materialCents: 1_500,
       feeCents: 300,
       commissionCents: 4_000,
+      fixedCostCents: 0,
     })
     expect(sobra).toBe(4_200)
   })
@@ -124,6 +128,7 @@ describe('calcularSobraDaComanda', () => {
       materialCents: 0,
       feeCents: 0,
       commissionCents: 0,
+      fixedCostCents: 0,
     })
     expect(sobra).toBe(0)
   })
@@ -136,6 +141,7 @@ describe('calcularSobraDaComanda', () => {
       materialCents: 12_000,
       feeCents: 0,
       commissionCents: 0,
+      fixedCostCents: 0,
     })
     expect(sobra).toBe(-2_000)
   })
@@ -155,9 +161,51 @@ describe('calcularSobraDaComanda', () => {
           materialCents: 0,
           feeCents: 0,
           commissionCents: 0,
+      fixedCostCents: 0,
         })
         expect(sobra, `desconto ${discountCents}, gorjeta ${tipCents}`).toBeLessThanOrEqual(totalCents)
       }
     }
+  })
+
+  /**
+   * A quarta parcela (`0072`). Sem ela a conta era margem de contribuição com nome de lucro: um
+   * corte de R$ 100 com 40% de comissão "sobrava" R$ 60,00 para um dono que paga aluguel.
+   *
+   * Este caso nasceu de uma mutação que passou VERDE: remover `- fixedCostCents` daqui não quebrou
+   * teste nenhum, porque todas as chamadas existentes passavam zero. Guarda que só exercita o
+   * valor neutro de uma parcela não guarda a parcela.
+   */
+  it('o aluguel sai da sobra, e não só ocupa lugar na assinatura', () => {
+    const base = {
+      subtotalCents: 10_000,
+      discountCents: 0,
+      tipCents: 0,
+      materialCents: 0,
+      feeCents: 0,
+      commissionCents: 4_000,
+    }
+    expect(calcularSobraDaComanda({ ...base, fixedCostCents: 0 })).toBe(6_000)
+    expect(calcularSobraDaComanda({ ...base, fixedCostCents: 1_000 })).toBe(5_000)
+  })
+
+  /**
+   * As duas pontas do mesmo número: `explicarSobra` desenha o "Sobrou" da tela do atendimento e
+   * `calcularSobraDaComanda` grava `tickets.profit_cents`. Se divergirem, a tela do atendimento
+   * discorda do caixa e nada reprova — foi por isso que a primeira delegou a conta à segunda.
+   */
+  it('a tela do atendimento e o valor gravado são o MESMO número', () => {
+    const parcelas = {
+      subtotalCents: 18_000,
+      discountCents: 1_500,
+      tipCents: 2_000,
+      materialCents: 2_460,
+      feeCents: 640,
+      commissionCents: 7_200,
+      fixedCostCents: 1_346,
+    }
+    const gravado = calcularSobraDaComanda(parcelas)
+    const naTela = explicarSobra({ ...parcelas, taxaRespondida: true, custoFixoRespondido: true, itensComMaterialIncerto: 0 }).sobraCents
+    expect(naTela, 'a tela do atendimento passou a mostrar um número diferente do que foi gravado').toBe(gravado)
   })
 })

@@ -356,3 +356,185 @@ describe('comanda — a taxa da maquininha', () => {
     60_000,
   )
 })
+
+/**
+ * A prova de que a `0070` ESCREVE, e não só compila.
+ *
+ * A suíte de unidade cobre a regra (`custoDoServico.materialIncerto`) e a guarda de fonte cobre a
+ * gravação, mas nenhuma das duas prova que a coluna chega ao banco com o valor certo — e "verde
+ * não é prova" é regra escrita neste repositório, com três casos medidos. Este teste fecha isso
+ * pelo único caminho que fecha: exercitando o lançamento contra Postgres de verdade.
+ *
+ * Os quatro casos são os quatro estados possíveis do material de um item.
+ */
+describe('a ressalva do material é gravada no item, e é verdadeira', () => {
+  async function produto(nome: string, avgCostCents: number, isRetail = false) {
+    const { data, error } = await svc
+      .from('products')
+      .insert({ tenant_id: tenantId, name: `${nome} ${randomUUID().slice(0, 6)}`, unit: 'un', avg_cost_cents: avgCostCents, is_retail: isRetail, price_cents: isRetail ? 5_000 : null })
+      .select('id')
+      .single()
+    if (error) throw error
+    return data.id
+  }
+
+  async function servicoNovo(nome: string) {
+    const s = await criarServico(svc, tenantId, {
+      name: `${nome} ${randomUUID().slice(0, 6)}`,
+      description: null,
+      durationMin: 30,
+      bufferBeforeMin: 0,
+      bufferAfterMin: 0,
+      priceCents: 8_000,
+      pricingModel: 'fixed',
+      cycleDays: 21,
+      depositBps: 0,
+      depositMinCents: 0,
+      parallelCapacity: 1,
+      requiresAnamnesis: false,
+      bookableOnline: true,
+      categoryId: null,
+    })
+    return s.id
+  }
+
+  it(
+    'serviço sem ficha nenhuma entra com o material marcado como incerto',
+    async () => {
+      const id = await servicoNovo('Sem ficha')
+      const item = await adicionarItemComanda(svc, tenantId, await abrirTicketVazio(), { serviceId: id, professionalId, qty: 1, discountCents: 0 })
+      expect(item.cost_cents).toBe(0)
+      expect(item.material_incerto, 'sem ficha, o custo é zero por falta de cadastro — e isso precisa ficar registrado').toBe(true)
+    },
+    60_000,
+  )
+
+  it(
+    'serviço com ficha cujo produto TEM compra registrada entra como material conferido',
+    async () => {
+      const id = await servicoNovo('Com custo real')
+      const prod = await produto('Esmalte comprado', 300)
+      await svc.from('service_products').insert({ tenant_id: tenantId, service_id: id, product_id: prod, qty: 2 })
+
+      const item = await adicionarItemComanda(svc, tenantId, await abrirTicketVazio(), { serviceId: id, professionalId, qty: 1, discountCents: 0 })
+      expect(item.cost_cents).toBe(600)
+      expect(item.material_incerto, 'este é o único estado em que o material é confiável').toBe(false)
+    },
+    60_000,
+  )
+
+  /**
+   * O caso da `0069`, e o que mais importa: a ficha EXISTE — foi semeada pelo pack da profissão —
+   * e o produto dela nunca teve compra. Perguntar "tem ficha?" respondia "tem", e o "Sobrou" saía
+   * sem ressalva nenhuma sobre um custo que ninguém registrou.
+   */
+  it(
+    'serviço com ficha semeada e produto sem compra registrada continua incerto',
+    async () => {
+      const id = await servicoNovo('Ficha sem custo')
+      const prod = await produto('Insumo nunca comprado', 0)
+      await svc.from('service_products').insert({ tenant_id: tenantId, service_id: id, product_id: prod, qty: 1 })
+
+      const item = await adicionarItemComanda(svc, tenantId, await abrirTicketVazio(), { serviceId: id, professionalId, qty: 1, discountCents: 0 })
+      expect(item.cost_cents, 'o material sai zero, e é justamente por isso que a ressalva precisa existir').toBe(0)
+      expect(item.material_incerto, 'ter ficha nunca foi a mesma coisa que ter custo real').toBe(true)
+    },
+    60_000,
+  )
+
+  /** O caminho que ninguém tinha olhado: revenda sem compra registrada infla o lucro igual. */
+  it(
+    'produto de revenda sem compra registrada também entra como incerto',
+    async () => {
+      const prod = await produto('Óleo de revenda', 0, true)
+      const item = await adicionarItemComanda(svc, tenantId, await abrirTicketVazio(), { productId: prod, professionalId, qty: 1, discountCents: 0 })
+      expect(item.cost_cents).toBe(0)
+      expect(item.material_incerto).toBe(true)
+    },
+    60_000,
+  )
+})
+
+/**
+ * A prova de que a `0072` desconta de verdade — e de que ela é congelada.
+ *
+ * O "Sobrou" era `receita − material − taxa − comissão`, ou seja margem de contribuição com nome
+ * de lucro. Este teste exercita o caminho inteiro: as três respostas em `tenants.settings`, a
+ * duração do catálogo, o desconto na sobra e o congelamento da coluna.
+ */
+describe('o aluguel entra no fechamento, e fica congelado', () => {
+  async function responderCustoFixo(mensalCents: number, horasPorMes: number, cadeiras: number) {
+    const { data } = await svc.from('tenants').select('settings').eq('id', tenantId).single()
+    const settings: Record<string, Json> = { ...((data?.settings ?? {}) as Record<string, Json>) }
+    settings.custo_fixo = { mensal_cents: mensalCents, horas_por_mes: horasPorMes, cadeiras }
+    await svc.from('tenants').update({ settings }).eq('id', tenantId)
+  }
+
+  async function esquecerCustoFixo() {
+    const { data } = await svc.from('tenants').select('settings').eq('id', tenantId).single()
+    const settings: Record<string, Json> = { ...((data?.settings ?? {}) as Record<string, Json>) }
+    delete settings.custo_fixo
+    await svc.from('tenants').update({ settings }).eq('id', tenantId)
+  }
+
+  it(
+    'sem as três respostas, o aluguel não é descontado e a coluna fica zero',
+    async () => {
+      await esquecerCustoFixo()
+      const ticketId = await abrirTicketVazio()
+      await adicionarItemComanda(svc, tenantId, ticketId, { serviceId: servicoId, professionalId, qty: 1, discountCents: 0 })
+
+      const fechado = await fecharComanda(svc, tenantId, ticketId, 'cash')
+      expect(fechado.fixed_cost_cents, 'sem resposta o CICLO não inventa um aluguel').toBe(0)
+    },
+    60_000,
+  )
+
+  it(
+    'com as três respostas, desconta o tempo de cadeira e congela o valor',
+    async () => {
+      // R$ 1.000 / 100h / 1 cadeira = R$ 10,00 a hora. O serviço dura 60 min.
+      await responderCustoFixo(100_000, 100, 1)
+      const ticketId = await abrirTicketVazio()
+      await adicionarItemComanda(svc, tenantId, ticketId, { serviceId: servicoId, professionalId, qty: 1, discountCents: 0 })
+
+      const fechado = await fecharComanda(svc, tenantId, ticketId, 'cash')
+      expect(fechado.fixed_cost_cents, 'uma hora de cadeira a R$ 10,00').toBe(1_000)
+
+      // Serviço R$ 100,00, comissão 40% = R$ 40,00, sem material e sem taxa (dinheiro).
+      expect(fechado.profit_cents, 'o aluguel saiu da sobra').toBe(10_000 - 4_000 - 1_000)
+    },
+    60_000,
+  )
+
+  it(
+    'renegociar o aluguel depois não mexe na comanda já fechada',
+    async () => {
+      await responderCustoFixo(100_000, 100, 1)
+      const ticketId = await abrirTicketVazio()
+      await adicionarItemComanda(svc, tenantId, ticketId, { serviceId: servicoId, professionalId, qty: 1, discountCents: 0 })
+      const fechado = await fecharComanda(svc, tenantId, ticketId, 'cash')
+
+      // O dono muda de sala e o aluguel dobra.
+      await responderCustoFixo(200_000, 100, 1)
+
+      const { data } = await svc.from('tickets').select('fixed_cost_cents, profit_cents').eq('id', ticketId).single()
+      expect(data?.fixed_cost_cents, 'o congelado mudou junto com a configuração').toBe(fechado.fixed_cost_cents)
+      expect(data?.profit_cents).toBe(fechado.profit_cents)
+    },
+    60_000,
+  )
+
+  it(
+    'duas cadeiras dividem o custo da hora pela metade',
+    async () => {
+      await responderCustoFixo(100_000, 100, 2)
+      const ticketId = await abrirTicketVazio()
+      await adicionarItemComanda(svc, tenantId, ticketId, { serviceId: servicoId, professionalId, qty: 1, discountCents: 0 })
+
+      const fechado = await fecharComanda(svc, tenantId, ticketId, 'cash')
+      expect(fechado.fixed_cost_cents).toBe(500)
+    },
+    60_000,
+  )
+})

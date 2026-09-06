@@ -11,6 +11,7 @@ import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { contextoDePlano } from '@/server/services/planos'
 import { prestacaoDeContasDoMotor } from '@/server/services/previsao'
+import { medirMaterialDoCatalogo } from '@/server/services/ficha-de-consumo'
 import { listarParaRecuperar } from '@/server/services/recuperar-receita'
 import { receitaAtribuidaAoCiclo } from '@/server/services/atribuicao'
 
@@ -40,7 +41,7 @@ export default async function PaginaRecuperar() {
    * São `head: true` com `count: 'exact'`: não trazem linha nenhuma, só o número, e vão no mesmo
    * `Promise.all` que já existia — custo de latência zero contra o que a tela já pagava.
    */
-  const [lista, atribuicao, plano, clientes, ciclos, concluidos, contasDoMotor] = await Promise.all([
+  const [lista, atribuicao, plano, clientes, ciclos, concluidos, contasDoMotor, material] = await Promise.all([
     listarParaRecuperar(db, ctx.tenantId),
     receitaAtribuidaAoCiclo(db, ctx.tenantId, timezone, desde, ate),
     contextoDePlano(db, ctx.tenantId),
@@ -63,6 +64,13 @@ export default async function PaginaRecuperar() {
       somada: zero.
     */
     prestacaoDeContasDoMotor(db, ctx.tenantId, Temporal.Now.zonedDateTimeISO(timezone).toPlainDate().toString()),
+    /*
+      A lacuna do material, no mesmo `Promise.all`. Ela não é enfeite nesta tela: o lucro é o que
+      ORDENA a fila, e sem custo de produto uma coloração parece tão lucrativa quanto um corte do
+      mesmo preço — o dono gastaria o WhatsApp do dia com quem vale menos, que é exatamente o que
+      a `0067` veio consertar.
+    */
+    medirMaterialDoCatalogo(db, ctx.tenantId),
   ])
 
   // A tela precisa saber para desenhar o caminho certo; quem RECUSA é a rota (§L.1). Aqui é
@@ -107,6 +115,7 @@ export default async function PaginaRecuperar() {
         temClientes={(clientes.count ?? 0) > 0}
         temCiclos={(ciclos.count ?? 0) > 0}
         temAtendimentosConcluidos={(concluidos.count ?? 0) > 0}
+        servicosSemMaterial={material.semFicha + material.comProdutoSemCusto}
       />
     </>
   )

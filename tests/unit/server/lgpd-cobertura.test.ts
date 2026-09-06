@@ -5,6 +5,8 @@ import { describe, expect, it } from 'vitest'
 
 import { TRATAMENTO_NA_ELIMINACAO } from '@/server/services/lgpd'
 
+import { sqlSemComentarios } from '../../helpers/fonte'
+
 /**
  * A eliminação do titular (LGPD art. 18, VI) precisa alcançar TODO dado pessoal — e a lista do
  * que ela alcança é escrita à mão, em `lgpd.ts`. Lista escrita à mão envelhece: a auditoria de
@@ -63,8 +65,12 @@ function colunasAdicionadas(texto: string): { tabela: string; coluna: string; ti
 
 function colunasDoBloco(corpo: string): { coluna: string; tipo: string }[] {
   const achadas: { coluna: string; tipo: string }[] = []
-  for (const linha of corpo.split('\n')) {
-    const limpa = linha.replace(/--.*$/, '').trim()
+  // O cortador mora em `helpers/fonte.ts` desde 2026-09-06: havia duas cópias divergentes desta
+  // regra, e a outra estava cega em CRLF. Aqui isso não mudava veredito — linha de comentário já
+  // morria no `^(\w+)` abaixo, medido em zero casos sobre as 69 migrations — mas cortador inerte
+  // é a armadilha esperando o primeiro caso que dependa dele.
+  for (const linha of sqlSemComentarios(corpo).split('\n')) {
+    const limpa = linha.trim()
     const m = /^(\w+)\s+([\w[\]]+)/.exec(limpa)
     if (!m) continue
     const coluna = m[1]!.toLowerCase()

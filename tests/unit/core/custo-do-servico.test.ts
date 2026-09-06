@@ -66,4 +66,35 @@ describe('custoDoServico — o insumo sai da ficha de consumo, não de um palpit
   it('custo negativo no banco não vira crédito de material', () => {
     expect(custoDoServico([{ qty: 1, avgCostCents: -500 }], 1).custoCents).toBe(0)
   })
+
+  /*
+   * `materialIncerto` nasceu em 2026-09-06 e a razão de ele morar AQUI é uma guarda cega pega em
+   * flagrante. O clube remontava a pergunta por conta própria (`ficha.length === 0`), e o teste do
+   * clube exercitava a função pura de margem, que recebe o booleano já pronto — então a mutação
+   * que devolvia o defeito ao `clube.ts` passou VERDE. A pergunta voltou para onde a conta é
+   * feita; quem já tem os dois números não consegue mais montá-la errado.
+   */
+  describe('materialIncerto — as duas razões, respondidas onde a conta é feita', () => {
+    it('ficha completa com todo produto comprado é o único caso em que o material é confiável', () => {
+      expect(custoDoServico([{ qty: 30, avgCostCents: 8 }, { qty: 1, avgCostCents: 45 }], 1).materialIncerto).toBe(false)
+    })
+
+    it('serviço sem ficha nenhuma é incerto', () => {
+      expect(custoDoServico([], 1).materialIncerto).toBe(true)
+    })
+
+    /*
+     * O caso do `apply_vertical_pack`: a ficha veio semeada e completa, e nenhum daqueles produtos
+     * teve compra registrada. "Tem ficha" era verdade, e era a pergunta errada.
+     */
+    it('ficha semeada pelo pack, sem nenhuma compra registrada, é incerta', () => {
+      const r = custoDoServico([{ qty: 1, avgCostCents: 0 }, { qty: 60, avgCostCents: 0 }], 1)
+      expect(r.produtosNaFicha, 'a ficha existe — é justamente por isso que a pergunta antiga falhava').toBe(2)
+      expect(r.materialIncerto).toBe(true)
+    })
+
+    it('um produto sem custo no meio de outros comprados já torna o material incerto', () => {
+      expect(custoDoServico([{ qty: 30, avgCostCents: 8 }, { qty: 1, avgCostCents: 0 }], 1).materialIncerto).toBe(true)
+    })
+  })
 })

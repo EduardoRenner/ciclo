@@ -295,6 +295,22 @@ async function semear(f: Fixture, sufixo: string): Promise<void> {
       },
     ],
     [
+      // A série mensal congelada (0071). O `docs/46` rejeitou comparar salões entre si com um
+      // argumento estrutural; esta é justamente a tabela que tornaria isso trivial, e o teste
+      // existe para que continue impossível.
+      'monthly_profit',
+      {
+        tenant_id: t,
+        month: '2026-08-01',
+        revenue_cents: 500000,
+        material_cents: 40000,
+        fee_cents: 12000,
+        commission_cents: 200000,
+        profit_cents: 248000,
+        tickets_count: 42,
+      },
+    ],
+    [
       'payments',
       { tenant_id: t, ticket_id: f.ticketId, client_id: f.clientId, kind: 'service', method: 'pix', amount_cents: 22000 },
     ],

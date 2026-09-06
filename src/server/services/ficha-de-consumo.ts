@@ -115,20 +115,82 @@ export async function listarProdutosParaFicha(db: Cliente, tenantId: string) {
   return data ?? []
 }
 
-/**
- * Quantos, dos serviços passados, ainda não têm ficha — ou seja, quantos entraram na comanda com
- * material zero por falta de cadastro, e não por não gastarem nada.
- *
- * É o insumo da lacuna `'ficha'` de `explicarSobra`. Sem ele a tela mostraria "Material R$ 0,00"
- * do mesmo jeito nos dois casos, que é a confusão que o `docs/48` §Fase 3 proíbe.
- */
-export async function contarServicosSemFicha(db: Cliente, tenantId: string, serviceIds: readonly string[]): Promise<number> {
-  const distintos = [...new Set(serviceIds)]
-  if (distintos.length === 0) return 0
+export type MaterialIncerto = {
+  /** Serviços que não têm ficha nenhuma: o material deles nem foi tentado. */
+  semFicha: number
+  /** Serviços com ficha cujo material saiu curto: algum produto dela nunca teve compra registrada. */
+  comProdutoSemCusto: number
+  /**
+   * Os ids dos serviços com material incerto, pelas duas razões juntas, na ordem em que vieram.
+   *
+   * Existe para a faixa da comanda levar à ficha DAQUELE serviço quando o problema é um só, em vez
+   * de despejar o dono na lista inteira do catálogo para procurar qual — `docs/50` L-02. Com mais
+   * de um, a lista continua sendo o destino honesto: escolher um dos três esconderia os outros.
+   */
+  servicos: string[]
+}
 
-  const { data, error } = await db.from('service_products').select('service_id').eq('tenant_id', tenantId).in('service_id', distintos)
+/**
+ * As duas razões pelas quais o "Material" de uma comanda pode não ser o material de verdade.
+ *
+ * Até 2026-09-06 esta função só respondia a primeira, e o nome dela (`contarServicosSemFicha`)
+ * dizia exatamente o que ela fazia — o defeito não estava na implementação, estava na pergunta.
+ * `apply_vertical_pack` (0002/0057) semeia a ficha de consumo JUNTO com um `avg_cost_cents` de
+ * catálogo: um salão de cabelo recém-criado tem ficha completa para "Coloração", e por isso
+ * "0 serviços sem ficha" — enquanto os R$ 24,60 de material daquele atendimento saíam de preços
+ * que o CICLO escreveu sozinho no cadastro. A tela mostrava o "Sobrou" sem uma ressalva sequer.
+ *
+ * Perguntar `avg_cost_cents <= 0` é o que separa "o dono registrou a compra" de "veio no pack e
+ * ninguém conferiu" — depois que a migration 0069 devolve o custo semeado a zero, que é onde ele
+ * deveria ter nascido.
+ */
+export async function medirMaterialIncerto(db: Cliente, tenantId: string, serviceIds: readonly string[]): Promise<MaterialIncerto> {
+  const distintos = [...new Set(serviceIds)]
+  if (distintos.length === 0) return { semFicha: 0, comProdutoSemCusto: 0, servicos: [] }
+
+  const { data, error } = await db
+    .from('service_products')
+    .select('service_id, products(avg_cost_cents)')
+    .eq('tenant_id', tenantId)
+    .in('service_id', distintos)
   if (error) throw new AppError('INTERNAL', { cause: error })
 
-  const comFicha = new Set((data ?? []).map((l) => l.service_id))
-  return distintos.filter((id) => !comFicha.has(id)).length
+  const comFicha = new Set<string>()
+  const comProdutoSemCusto = new Set<string>()
+  for (const linha of data ?? []) {
+    comFicha.add(linha.service_id)
+    // `?? 0` aqui é a leitura certa e não um padrão de conveniência: produto que sumiu da junção
+    // é produto sem custo conhecido, que é justamente o caso que esta função existe para contar.
+    if ((linha.products?.avg_cost_cents ?? 0) <= 0) comProdutoSemCusto.add(linha.service_id)
+  }
+
+  const semFicha = distintos.filter((id) => !comFicha.has(id))
+
+  return {
+    semFicha: semFicha.length,
+    comProdutoSemCusto: comProdutoSemCusto.size,
+    servicos: [...semFicha, ...comProdutoSemCusto],
+  }
+}
+
+/**
+ * O mesmo `medirMaterialIncerto`, mas sobre o catálogo ativo inteiro em vez de uma comanda — é o
+ * que a Central de Ações precisa para dizer ao dono o que falta ANTES de ele fechar a primeira
+ * comanda e descobrir a lacuna no pior momento possível.
+ *
+ * Duas idas de rede em série, e de propósito: a alternativa era um segundo `select` que
+ * respondesse "material incompleto" por conta própria, e regra de dinheiro escrita duas vezes é
+ * exatamente a segunda fonte que esta base já pagou uma vez no livro-caixa. A regra mora em
+ * `medirMaterialIncerto`; aqui só muda de quem se pergunta.
+ */
+export async function medirMaterialDoCatalogo(db: Cliente, tenantId: string): Promise<MaterialIncerto> {
+  const { data, error } = await db
+    .from('services')
+    .select('id')
+    .eq('tenant_id', tenantId)
+    .eq('active', true)
+    .is('deleted_at', null)
+  if (error) throw new AppError('INTERNAL', { cause: error })
+
+  return medirMaterialIncerto(db, tenantId, (data ?? []).map((s) => s.id))
 }

@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js'
 import dotenv from 'dotenv'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
-import { concentracaoDoMes, fechamentoDiario, resumoMensal } from '@/server/services/caixa'
+import { concentracaoDoMes, congelarMesesFechados, fechamentoDiario, resumoMensal, serieMensalDeLucro } from '@/server/services/caixa'
 import { executarOnboarding } from '@/server/services/onboarding'
 
 import type { Database } from '@/server/db/types.gen'
@@ -232,5 +232,73 @@ describe('concentracaoDoMes', () => {
       expect(c.nomes).toEqual({})
     },
     30_000,
+  )
+})
+
+/**
+ * A prova de que o fosso do `docs/46` de fato acumula — e de que ele não se desfaz.
+ *
+ * A propriedade que dá valor a `monthly_profit` é uma só: **a linha nasce uma vez e nunca é
+ * reescrita**. Guarda de fonte prova que ninguém escreveu `.update(`; só um teste contra Postgres
+ * prova que uma segunda leitura, com os `tickets` mudados por baixo, devolve o número de antes.
+ *
+ * É o mesmo tipo de lacuna que "verde não é prova" nomeia: o caminho compila, a varredura passa, e
+ * o comportamento que importa nunca foi exercitado.
+ */
+describe('serieMensalDeLucro — congela o passado e não o reescreve', () => {
+  /** Meses de referência sempre no passado, para o teste não depender do dia em que roda. */
+  const hoje = Temporal.PlainDate.from('2026-09-15')
+  const mesPassado = '2026-08'
+  const doisMesesAtras = '2026-07'
+
+  it(
+    'congela os meses encerrados na primeira leitura, e o mês CORRENTE não entra',
+    async () => {
+      await inserirTicketFechado(`${doisMesesAtras}-10T14:00:00Z`, { total: 20_000, material: 2_000, fee: 500, commission: 8_000, profit: 9_500 })
+      await inserirTicketFechado(`${mesPassado}-10T14:00:00Z`, { total: 30_000, material: 3_000, fee: 900, commission: 12_000, profit: 14_100 })
+      await inserirTicketFechado('2026-09-10T14:00:00Z', { total: 99_999, material: 0, fee: 0, commission: 0, profit: 99_999 })
+
+      // A LEITURA não escreve mais (regra 6 do CLAUDE.md: escrita passa por /api/v1). Quem congela
+      // é `congelarMesesFechados`, chamado pelo fechamento de comanda — aqui ele é chamado direto,
+      // que é o que o fechamento faz.
+      await congelarMesesFechados(svc, tenantId, TZ, hoje.toString())
+
+      const serie = await serieMensalDeLucro(svc, tenantId, TZ, hoje.toString())
+      const meses = serie.pontos.map((p) => p.month)
+
+      expect(meses, 'agosto não foi congelado').toContain('2026-08-01')
+      expect(meses, 'julho não foi congelado').toContain('2026-07-01')
+      expect(meses, 'o mês corrente ainda vai mudar — congelá-lo grava um número errado para sempre').not.toContain('2026-09-01')
+
+      const { data } = await svc.from('monthly_profit').select('month, profit_cents').eq('tenant_id', tenantId).eq('month', '2026-08-01').maybeSingle()
+      expect(data?.profit_cents, 'a linha de agosto não chegou ao banco').toBe(14_100)
+    },
+    120_000,
+  )
+
+  it(
+    'a segunda leitura não reescreve o mês, mesmo com os tickets mudados por baixo',
+    async () => {
+      // Uma comanda de agosto reaberta e refechada em outubro é o caso real: sem o congelamento, o
+      // agosto que o dono já viu passaria a responder diferente, sem explicação.
+      await inserirTicketFechado(`${mesPassado}-20T14:00:00Z`, { total: 500_000, material: 0, fee: 0, commission: 0, profit: 500_000 })
+
+      // Um segundo fechamento tenta congelar de novo: a chave primária recusa, e o mês fica como
+      // estava. É o caso da comanda reaberta e refechada.
+      await congelarMesesFechados(svc, tenantId, TZ, hoje.toString())
+
+      const serie = await serieMensalDeLucro(svc, tenantId, TZ, hoje.toString())
+      const agosto = serie.pontos.find((p) => p.month === '2026-08-01')
+
+      expect(agosto?.profitCents, 'a série passou a somar um ticket que chegou depois do congelamento').toBe(14_100)
+
+      const { count } = await svc
+        .from('monthly_profit')
+        .select('month', { count: 'exact', head: true })
+        .eq('tenant_id', tenantId)
+        .eq('month', '2026-08-01')
+      expect(count, 'o mês foi gravado duas vezes — a chave primária não está segurando').toBe(1)
+    },
+    120_000,
   )
 })

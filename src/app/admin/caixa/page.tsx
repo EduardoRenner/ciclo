@@ -6,11 +6,13 @@ import { Temporal } from '@js-temporal/polyfill'
 import EmptyState from '@/components/ui/empty-state'
 import Card from '@/components/ui/card'
 import PageHeader from '@/components/ui/page-header'
-import { avaliarPermissao } from '@/server/auth/rbac'
+import { RELATORIO_DA_EQUIPE, avaliarPermissao } from '@/server/auth/rbac'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { concentracaoDoMes, fechamentoDiario, resumoMensal } from '@/server/services/caixa'
 import { extratoDeComissao } from '@/server/services/comissao'
+import { medirMaterialDoCatalogo } from '@/server/services/ficha-de-consumo'
+import { lerCustoFixoDoTenant } from '@/server/services/custo-fixo'
 import { lerTaxasDoTenant } from '@/server/services/taxas-de-pagamento'
 
 import Caixa from './caixa'
@@ -81,7 +83,7 @@ export default async function PaginaCaixa({ searchParams }: { searchParams: Prom
   const inicioDoDia = dia.toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant().toString()
   const fimDoDia = dia.add({ days: 1 }).toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant().toString()
 
-  const [diario, mensal, profissionais, atendimentos, taxas, concentracao] = await Promise.all([
+  const [diario, mensal, profissionais, atendimentos, taxas, concentracao, material, custoFixo] = await Promise.all([
     fechamentoDiario(db, ctx.tenantId, timezone, dia.toString()),
     resumoMensal(db, ctx.tenantId, timezone, mes),
     db.from('professionals').select('id, display_name').eq('tenant_id', ctx.tenantId).eq('active', true).order('display_name'),
@@ -98,7 +100,15 @@ export default async function PaginaCaixa({ searchParams }: { searchParams: Prom
       exige `report:read`, que é a trava que o §4.6 pede: dizer que 62% do lucro depende de uma
       pessoa é dado sensível DENTRO do salão, e o profissional comissionado não o alcança.
     */
-    concentracaoDoMes(db, ctx.tenantId, timezone, mes),
+    /*
+     * `docs/50` L-10: a concentração por profissional é a informação mais delicada do conjunto
+     * dentro de uma equipe, e o `manager` não a alcança (decisão em `docs/DECISOES.md`). Sem a
+     * permissão a consulta nem acontece — não é trava de segurança (ele lê `tickets` e monta a
+     * conta à mão), é o produto parar de PUBLICAR o ranking para quem convive com ele.
+     */
+    avaliarPermissao(ctx.papel, RELATORIO_DA_EQUIPE) ? concentracaoDoMes(db, ctx.tenantId, timezone, mes) : null,
+    medirMaterialDoCatalogo(db, ctx.tenantId),
+    lerCustoFixoDoTenant(db, ctx.tenantId),
   ])
 
   const atendidoCents = (atendimentos.data ?? []).reduce((soma, a) => soma + a.price_cents, 0)
@@ -127,6 +137,8 @@ export default async function PaginaCaixa({ searchParams }: { searchParams: Prom
       comissoes={comissoes}
       atendidoCents={atendidoCents}
       taxaRespondida={taxas.respondida}
+      custoFixoRespondido={custoFixo.respondido}
+      servicosSemMaterial={material.semFicha + material.comProdutoSemCusto}
       concentracao={concentracao}
     />
   )

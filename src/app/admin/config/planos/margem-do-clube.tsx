@@ -28,7 +28,7 @@ export default function MargemDoClube({ margens }: { margens: MargemDoClube[] })
   if (margens.length === 0) return null
 
   const noVermelho = margens.filter((m) => m.noPrejuizo)
-  const semFicha = margens.reduce((soma, m) => soma + m.visitasSemFicha, 0)
+  const semMaterial = margens.reduce((soma, m) => soma + m.visitasSemMaterialConfiavel, 0)
 
   return (
     <section className="mt-7">
@@ -70,16 +70,21 @@ export default function MargemDoClube({ margens }: { margens: MargemDoClube[] })
       </Card>
 
       {/*
-        O mesmo "estado incompleto honesto" do `docs/48` §Fase 3: sem ficha de consumo, o material
-        entra como zero e a margem sai MAIOR do que é — que é o erro perigoso aqui, porque este
-        quadro existe justamente para achar quem está no vermelho.
+        O mesmo "estado incompleto honesto" do `docs/48` §Fase 3: sem material contado, ele entra
+        como zero e a margem sai MAIOR do que é — que é o erro perigoso aqui, porque este quadro
+        existe justamente para achar quem está no vermelho.
+
+        A frase parou de dizer "não tem ficha de consumo" em 2026-09-06 porque essa era só UMA das
+        duas razões, e a outra é a comum: a ficha semeada pelo pack existe e os produtos dela nunca
+        tiveram compra registrada (`docs/51` §2). Nomear só a primeira mandava o dono conferir uma
+        ficha que já estava lá, e ele voltaria achando que o sistema se enganou.
       */}
-      {semFicha > 0 ? (
+      {semMaterial > 0 ? (
         <p className="mt-2 text-label text-txt-3">
-          {semFicha === 1 ? '1 atendimento entrou' : `${semFicha} atendimentos entraram`} sem o custo de produto: o serviço ainda não tem ficha de
-          consumo, então a margem acima está mais otimista do que a real.{' '}
+          {semMaterial === 1 ? '1 atendimento entrou' : `${semMaterial} atendimentos entraram`} sem o custo de produto: falta a ficha de consumo do
+          serviço, ou falta registrar quanto você pagou no produto dela. A margem acima está mais otimista do que a real.{' '}
           <Link href="/admin/config/servicos" className="font-semibold text-acc-2">
-            Preencher a ficha
+            Completar o custo
           </Link>
         </p>
       ) : null}

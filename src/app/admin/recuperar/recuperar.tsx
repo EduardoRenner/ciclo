@@ -54,9 +54,22 @@ export default function RecuperarReceita({
   temClientes,
   temCiclos,
   temAtendimentosConcluidos,
+  servicosSemMaterial,
 }: {
   inicial: ListaRecuperar
   podeEnviarEmLote: boolean
+  /**
+   * Quantos serviços ativos ainda não têm material confiável. A frase abaixo promete que o lucro
+   * é "o que sobra depois da comissão e do produto" — e depois da 0069 o produto vale zero até o
+   * dono registrar a compra. Prometer um desconto que não acontece é a família
+   * `home-nao-promete-demais`, uma tela para dentro.
+   *
+   * Aqui a lacuna não é cosmética: ela distorce a ORDEM, que é a única coisa que este número
+   * existe para decidir. Sem material, uma coloração parece tão lucrativa quanto um corte do mesmo
+   * preço, e o dono gasta o WhatsApp do dia com quem vale menos — exatamente o que a 0067 veio
+   * consertar.
+   */
+  servicosSemMaterial: number
   /** Existe alguma ficha de cliente neste salão. */
   temClientes: boolean
   /** O Motor já calculou algum ciclo — precisa de atendimento CONCLUÍDO, não só de ficha. */
@@ -149,8 +162,19 @@ export default function RecuperarReceita({
       <p className="mb-4 text-secundario text-txt-3">
         Estimativa, não promessa: o preço do serviço de cada uma, multiplicado pela chance de ela voltar. Quanto mais
         tempo sem aparecer, menor a chance, e por isso quem sumiu há mais tempo vale menos aqui. A ordem da lista segue o
-        <strong> lucro</strong> — o que sobra depois da comissão e do produto —, não o preço.
+        <strong> lucro</strong>, o que sobra depois da comissão{servicosSemMaterial > 0 ? '' : ' e do produto'}, não o preço.
       </p>
+
+      {servicosSemMaterial > 0 ? (
+        <p className="mb-4 text-secundario text-txt-3">
+          O produto ainda não entra nesta conta: {servicosSemMaterial === 1 ? '1 serviço' : `${servicosSemMaterial} serviços`} sem o custo
+          registrado. Enquanto isso, um serviço que gasta material parece tão lucrativo quanto um que não gasta, e é a ordem desta lista que
+          fica errada.{' '}
+          <Link href="/admin/config/servicos" className="font-semibold text-acc-2">
+            Completar o custo
+          </Link>
+        </p>
+      ) : null}
 
       <FilterRow rotulo="Filtrar por estado do ciclo" className="mb-4">
         {FILTROS.map((f) => (

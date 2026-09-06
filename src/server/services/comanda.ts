@@ -1,9 +1,12 @@
+import { Temporal } from '@js-temporal/polyfill'
 import { z } from 'zod'
 
 import { calcularComissaoItem, calcularSobraDaComanda, calcularTotalItem, calcularTotaisComanda, type BaseComissao } from '@/core/comanda/totals'
 import { custoDoServico } from '@/core/comanda/custo-do-servico'
+import { custoFixoDoAtendimento, lerCustoFixo } from '@/core/comanda/custo-fixo'
 import { calcularTaxaDaMaquininha, FORMAS_DE_PAGAMENTO, lerTaxasDePagamento, type FormaDePagamento } from '@/core/comanda/taxa-de-pagamento'
 import { AppError } from '@/server/http/errors'
+import { congelarMesesFechados } from '@/server/services/caixa'
 import { baixarEstoqueDaComanda, estornarBaixaDaComanda } from '@/server/services/estoque'
 
 import type { Database } from '@/server/db/types.gen'
@@ -87,6 +90,8 @@ export async function adicionarItemComanda(db: Cliente, tenantId: string, ticket
   let unitPriceCents: number
   /** Já multiplicado pela `qty` do item — cada ramo resolve o próprio arredondamento. */
   let costTotalCents: number
+  /** Se `costTotalCents` é o custo de verdade. Congela junto dele, e pelo mesmo motivo (`0070`). */
+  let materialIncerto: boolean
 
   if (entrada.serviceId) {
     /*
@@ -114,7 +119,18 @@ export async function adicionarItemComanda(db: Cliente, tenantId: string, ticket
     unitPriceCents = entrada.unitPriceCents ?? servico.price_cents
 
     const linhas = (ficha ?? []).map((l) => ({ qty: l.qty, avgCostCents: l.products?.avg_cost_cents ?? 0 }))
-    costTotalCents = linhas.length > 0 ? custoDoServico(linhas, entrada.qty).custoCents : Math.round(entrada.qty * servico.cost_cents)
+    const custo = custoDoServico(linhas, entrada.qty)
+    costTotalCents = linhas.length > 0 ? custo.custoCents : Math.round(entrada.qty * servico.cost_cents)
+    /*
+     * A ressalva nasce JUNTO do custo, da mesma consulta, no mesmo instante — e fica congelada com
+     * ele. Recalculá-la depois, do estado de hoje, fazia a faixa da comanda de agosto sumir quando
+     * o dono registrasse a compra em outubro, enquanto `material_cost_cents` continuava zero: o
+     * número errado e o aviso apagado (`0070`).
+     *
+     * Serviço sem ficha cai no `services.cost_cents`, a sobrescrita manual de quem não usa estoque
+     * — quando ela também é zero, não há custo nenhum e a lacuna é real.
+     */
+    materialIncerto = linhas.length > 0 ? custo.materialIncerto : servico.cost_cents <= 0
   } else {
     const { data: produto, error } = await db
       .from('products')
@@ -160,6 +176,11 @@ export async function adicionarItemComanda(db: Cliente, tenantId: string, ticket
     }
     unitPriceCents = entrada.unitPriceCents ?? precoDoCatalogo!
     costTotalCents = Math.round(entrada.qty * produto.avg_cost_cents)
+    /*
+     * O caminho que ninguém tinha olhado: produto de revenda sem compra registrada entra com custo
+     * zero e infla o lucro igualzinho ao insumo. A ressalva vale para os dois.
+     */
+    materialIncerto = produto.avg_cost_cents <= 0
   }
 
   const totalCents = calcularTotalItem({ qty: entrada.qty, unitPriceCents, discountCents: entrada.discountCents })
@@ -178,6 +199,7 @@ export async function adicionarItemComanda(db: Cliente, tenantId: string, ticket
       discount_cents: entrada.discountCents,
       total_cents: totalCents,
       cost_cents: costTotalCents,
+      material_incerto: materialIncerto,
     })
     .select('*')
     .single()
@@ -226,7 +248,7 @@ type Settings = { commission_base?: BaseComissao; product_commission_bps?: numbe
  */
 async function resolverCommissionBps(db: Cliente, tenantId: string, item: { service_id: string | null; product_id: string | null; professional_id: string | null }): Promise<number> {
   if (item.product_id) {
-    const { data: tenant } = await db.from('tenants').select('settings').eq('id', tenantId).maybeSingle()
+    const { data: tenant } = await db.from('tenants').select('settings, timezone').eq('id', tenantId).maybeSingle()
     const settings = (tenant?.settings ?? {}) as Settings
     return settings.product_commission_bps ?? PRODUCT_COMMISSION_BPS_PADRAO
   }
@@ -255,7 +277,7 @@ export async function fecharComanda(db: Cliente, tenantId: string, ticketId: str
   if (ticket.status !== 'open') throw new AppError('INVALID_TRANSITION', { message: 'Essa comanda já foi fechada.' })
   if (items.length === 0) throw AppError.validacao({ items: 'Adicione pelo menos um item antes de fechar.' })
 
-  const { data: tenant } = await db.from('tenants').select('settings').eq('id', tenantId).maybeSingle()
+  const { data: tenant } = await db.from('tenants').select('settings, timezone').eq('id', tenantId).maybeSingle()
   const commissionBase = ((tenant?.settings as Settings | null)?.commission_base ?? 'gross') as BaseComissao
   const feeBps = lerTaxasDePagamento(tenant?.settings)[formaDePagamento]
 
@@ -271,6 +293,32 @@ export async function fecharComanda(db: Cliente, tenantId: string, ticketId: str
 
   const { subtotalCents, totalCents } = calcularTotaisComanda({ items: items.map((i) => ({ totalCents: i.total_cents })), discountCents: ticket.discount_cents, tipCents: ticket.tip_cents })
   const custoTotalCents = items.reduce((soma, item) => soma + item.cost_cents, 0)
+
+  /*
+   * O custo da hora de cadeira (`0072`). A duração vem do CATÁLOGO, e não do relógio: o tempo real
+   * do atendimento não é registrado em lugar nenhum, e inventar uma média seria pior que usar o
+   * que o próprio dono cadastrou como duração do serviço.
+   *
+   * Item de produto avulso não ocupa cadeira e não entra — vender um óleo no balcão não consome a
+   * hora que o aluguel paga.
+   */
+  const servicosDaComanda = items.map((i) => i.service_id).filter((id): id is string => Boolean(id))
+  let duracaoTotalMin = 0
+  if (servicosDaComanda.length > 0) {
+    const { data: duracoes, error: erroDuracao } = await db
+      .from('services')
+      .select('id, duration_min')
+      .eq('tenant_id', tenantId)
+      .in('id', [...new Set(servicosDaComanda)])
+    if (erroDuracao) throw new AppError('INTERNAL', { cause: erroDuracao })
+
+    const porServico = new Map((duracoes ?? []).map((s) => [s.id, s.duration_min]))
+    for (const item of items) {
+      if (!item.service_id) continue
+      duracaoTotalMin += (porServico.get(item.service_id) ?? 0) * item.qty
+    }
+  }
+  const fixedCostCents = custoFixoDoAtendimento(lerCustoFixo(tenant?.settings), duracaoTotalMin)
   // A base é o `total`, e não o subtotal: a maquininha cobra sobre o que foi passado nela, gorjeta
   // inclusa. Ver o docstring de `calcularTaxaDaMaquininha`.
   const feeCents = calcularTaxaDaMaquininha({ totalCents, feeBps })
@@ -281,6 +329,7 @@ export async function fecharComanda(db: Cliente, tenantId: string, ticketId: str
     materialCents: custoTotalCents,
     feeCents,
     commissionCents: commissaoTotalCents,
+    fixedCostCents,
   })
 
   // `.eq('status', 'open')` no próprio UPDATE, e não só na leitura acima: entre o
@@ -298,6 +347,7 @@ export async function fecharComanda(db: Cliente, tenantId: string, ticketId: str
       commission_cents: commissaoTotalCents,
       material_cost_cents: custoTotalCents,
       payment_method: formaDePagamento,
+      fixed_cost_cents: fixedCostCents,
       fee_bps: feeBps,
       fee_cents: feeCents,
       profit_cents: profitCents,
@@ -314,6 +364,24 @@ export async function fecharComanda(db: Cliente, tenantId: string, ticketId: str
   // §5.6/TICKET-044: baixa DEPOIS de fechar, nunca ao abrir — uma comanda aberta pode ganhar e
   // perder item várias vezes antes de fechar, e nada disso deveria mexer em estoque de verdade.
   await baixarEstoqueDaComanda(db, tenantId, ticketId)
+
+  /*
+   * O congelamento do mês fechado (`0071`) pega carona aqui, e o motivo é a regra 6 do `CLAUDE.md`:
+   * escrita passa por `/api/v1`. A primeira versão gravava na LEITURA da tela do mês — um GET que
+   * escreve, fora do caminho que tem idempotência e auditoria. Um cron seria pior: os desta casa
+   * atrasam em horas, e o Motor de Ciclo já passou um período inteiro sem rodar sozinho.
+   *
+   * A primeira comanda fechada em outubro congela setembro. Em regime, é uma consulta por PK que
+   * devolve tudo e sai.
+   *
+   * **Nunca derruba o fechamento.** O dinheiro do dia depende desta função; a série mensal é
+   * registro histórico que espera o próximo fechamento sem prejuízo. O `catch` descarta algo, então
+   * ele conta e avisa — tabela de armadilhas do `CLAUDE.md`.
+   */
+  const timezone = tenant?.timezone ?? 'America/Sao_Paulo'
+  await congelarMesesFechados(db, tenantId, timezone, Temporal.Now.zonedDateTimeISO(timezone).toPlainDate().toString()).catch((erro: unknown) => {
+    console.warn(JSON.stringify({ level: 'warn', event: 'congelamento_mensal_falhou', tenantId }), erro)
+  })
 
   return fechado
 }

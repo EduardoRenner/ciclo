@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 import { janelaDeCobranca, margemDoAssinante } from '@/core/loyalty/margem-do-clube'
 
-const visita = (custoCents: number, semFicha = false) => ({ custoCents, semFicha })
+const visita = (custoCents: number, materialIncerto = false) => ({ custoCents, materialIncerto })
 
 describe('margemDoAssinante', () => {
   it('assinante que veio pouco dá margem folgada', () => {
@@ -45,7 +45,22 @@ describe('margemDoAssinante', () => {
 
   it('conta quantas visitas entraram sem o material — o que falta continua faltando em voz alta', () => {
     const m = margemDoAssinante(12_000, null, [visita(3_000, true), visita(3_000), visita(3_000, true)])
-    expect(m.visitasSemFicha).toBe(2)
+    expect(m.visitasSemMaterialConfiavel).toBe(2)
+  })
+
+  /**
+   * O campo mudou de `semFicha` para `materialIncerto` em 2026-09-06, e a diferença é o ticket
+   * inteiro: `apply_vertical_pack` semeia a ficha JUNTO com um custo de catálogo, então "tem
+   * ficha" era verdade para todo salão de vertical legada e a margem saía sem ressalva nenhuma,
+   * apoiada num custo que o CICLO inventou (`docs/51` §2).
+   *
+   * Com a 0069 o custo semeado volta a zero. Se esta contagem voltasse a perguntar só pela ficha,
+   * a mesma tela passaria a mostrar margem ALTA DEMAIS por material zerado — o silêncio trocaria
+   * de direção sem trocar de natureza. Uma visita com ficha e sem custo real tem que contar.
+   */
+  it('visita com ficha completa e produto sem compra registrada conta como material incerto', () => {
+    const m = margemDoAssinante(12_000, null, [visita(3_000, true), visita(3_000)])
+    expect(m.visitasSemMaterialConfiavel, 'ficha semeada pelo pack não é material conferido').toBe(1)
   })
 
   it('margem exatamente zero ainda não é prejuízo', () => {

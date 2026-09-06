@@ -36,6 +36,7 @@ export default function Comanda({
   servicos,
   podeLancarItem = true,
   sobra,
+  destinoDoMaterial,
 }: {
   ticketInicial: Ticket
   itensIniciais: TicketItem[]
@@ -44,6 +45,11 @@ export default function Comanda({
   podeLancarItem?: boolean
   /** `null` quando a comanda está aberta ou quando o papel não alcança `report:read`. */
   sobra: SobraExplicada | null
+  /**
+   * Para onde a faixa leva quando falta o custo do produto — a ficha DAQUELE serviço quando é um
+   * só, a lista do catálogo quando são vários (`destinoDoMaterial`, `docs/50` L-02).
+   */
+  destinoDoMaterial: string
 }) {
   const [ticket, setTicket] = useState(ticketInicial)
   const [itens, setItens] = useState(itensIniciais)
@@ -311,10 +317,18 @@ export default function Comanda({
         <AlertBanner
           tom="warn"
           acao={
+            /*
+              Um destino por vez, e a taxa vem primeiro: ela é uma resposta só, para o salão
+              inteiro, e resolve a lacuna de TODAS as comandas de uma vez. A ficha é por serviço.
+
+              Um só link também é o que mantém o alvo de 48 px alcançável: dois links dividindo
+              linha de texto corrida deixam o segundo com zero área tocável, medido em `/cadastro`
+              (`CLAUDE.md`).
+            */
             sobra.lacunas.includes('taxa') ? (
               <Link href="/admin/config/taxas">Informar</Link>
             ) : (
-              <Link href="/admin/config/servicos">Ver serviços</Link>
+              <Link href={destinoDoMaterial}>Completar o custo</Link>
             )
           }
         >
@@ -361,7 +375,7 @@ export default function Comanda({
             motivoDesabilitado={
               itens.length === 0
                 ? 'Adicione pelo menos um item para poder fechar a comanda.'
-                : 'Escolha como a cliente pagou — é o que permite descontar a taxa da maquininha.'
+                : 'Escolha como a cliente pagou. É o que permite descontar a taxa da maquininha.'
             }
             onClick={fechar}
           >
@@ -370,7 +384,7 @@ export default function Comanda({
         </>
       ) : (
         <p className="text-center text-secundario text-txt-2">
-          Comanda fechada{formaFechada ? ` — paga em ${formaFechada}` : ''}. Nada mais pode mudar aqui.
+          Comanda fechada{formaFechada ? ` (paga em ${formaFechada})` : ''}. Nada mais pode mudar aqui.
         </p>
       )}
     </div>

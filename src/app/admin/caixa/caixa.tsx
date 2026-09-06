@@ -23,8 +23,25 @@ type Props = {
   atendidoCents: number
   /** O dono já disse quanto a maquininha cobra? Ver `taxaEstaConfigurada` e `docs/49`. */
   taxaRespondida: boolean
+  /** O dono já respondeu as três perguntas do aluguel? Ver `custoFixoEstaConfigurado` (`0072`). */
+  custoFixoRespondido: boolean
+  /**
+   * Quantos serviços ativos ainda não têm material confiável — sem ficha, ou com produto da ficha
+   * que nunca teve compra registrada (`medirMaterialDoCatalogo`).
+   *
+   * O quadro "Material" tem exatamente o problema que tirou o quadro "Taxa" desta tela em
+   * 2026-08-28: R$ 0,00 ao lado de Comissão não se lê como "não implementado", se lê como "hoje
+   * não teve". Até a 0069 o número vinha do custo que o pack semeou e parecia apurado; depois
+   * dela ele passa a ser zero honesto — e zero sem rótulo é a mesma mentira, só que para baixo.
+   */
+  servicosSemMaterial: number
   /** De quem depende o que sobrou no mês (`docs/48` C7). */
-  concentracao: ConcentracaoDoMes
+  /**
+   * `null` para quem não alcança `report:team` — `docs/50` L-10. Só o dono e quem cuida do
+   * financeiro veem de quem o lucro depende, nome por nome; o `manager` costuma ser colega de quem
+   * a frase nomeia.
+   */
+  concentracao: ConcentracaoDoMes | null
 }
 
 /** A data já vem resolvida no fuso do salão pelo servidor; aqui é só aritmética de calendário. */
@@ -49,7 +66,7 @@ function mesPorExtenso(mes: string): string {
   )
 }
 
-export default function Caixa({ dia, hoje, diario, mensal, comissoes, atendidoCents, taxaRespondida, concentracao }: Props) {
+export default function Caixa({ dia, hoje, diario, mensal, comissoes, atendidoCents, taxaRespondida, custoFixoRespondido, servicosSemMaterial, concentracao }: Props) {
   const ontem = somarDias(dia, -1)
   const amanha = somarDias(dia, 1)
   const ehHoje = dia === hoje
@@ -127,11 +144,13 @@ export default function Caixa({ dia, hoje, diario, mensal, comissoes, atendidoCe
             className="mb-3"
             rotulo="Sobrou"
             valor={dinheiro.format(diario.profitCents / 100)}
-            apoio={
-              taxaRespondida
-                ? 'O que entrou, menos a gorjeta do profissional, o material, a taxa da maquininha e a comissão.'
-                : 'O que entrou, menos a gorjeta do profissional, o material e a comissão.'
-            }
+            apoio={[
+              'O que entrou, menos a gorjeta do profissional, o material',
+              servicosSemMaterial > 0 ? ' (ainda incompleto)' : '',
+              taxaRespondida ? ', a taxa da maquininha' : '',
+              ', a comissão',
+              custoFixoRespondido ? ' e o aluguel.' : '. O aluguel ainda não entra.',
+            ].join('')}
           />
 
           {/*
@@ -146,9 +165,23 @@ export default function Caixa({ dia, hoje, diario, mensal, comissoes, atendidoCe
             mesma mentira de antes. Esse caso ganha a faixa, que diz o que falta e leva até lá.
           */}
           <div className="mb-6 grid grid-cols-2 gap-2">
-            <StatTile rotulo="Material" valor={dinheiro.format(diario.materialCents / 100)} />
+            <StatTile
+              rotulo="Material"
+              valor={dinheiro.format(diario.materialCents / 100)}
+              apoio={
+                servicosSemMaterial > 0
+                  ? `falta o custo de ${servicosSemMaterial} ${servicosSemMaterial === 1 ? 'serviço' : 'serviços'}`
+                  : undefined
+              }
+            />
             {taxaRespondida ? <StatTile rotulo="Taxa" valor={dinheiro.format(diario.feeCents / 100)} /> : null}
             <StatTile rotulo="Comissão" valor={dinheiro.format(diario.commissionCents / 100)} />
+            {/*
+              Mesma regra do quadro "Taxa": só aparece para quem respondeu. Quem nunca abriu a tela
+              tem `fixed_cost_cents` zero por falta de resposta, e um R$ 0,00 ao lado dos outros se
+              lê como "hoje não teve aluguel" — a frase que tirou o quadro "Taxa" daqui em 28/08.
+            */}
+            {custoFixoRespondido ? <StatTile rotulo="Aluguel" valor={dinheiro.format(diario.fixedCostCents / 100)} /> : null}
           </div>
 
           {taxaRespondida ? null : (
@@ -162,7 +195,7 @@ export default function Caixa({ dia, hoje, diario, mensal, comissoes, atendidoCe
               }
             >
               <p className="text-secundario">
-                O <strong>Sobrou</strong> ainda não desconta a maquininha — você não disse quanto ela cobra.
+                O <strong>Sobrou</strong> ainda não desconta a maquininha: você não disse quanto ela cobra.
               </p>
             </AlertBanner>
           )}
@@ -197,7 +230,7 @@ export default function Caixa({ dia, hoje, diario, mensal, comissoes, atendidoCe
         "300% do prejuízo é do Rafa" não ajuda a decidir nada. Nos dois casos a seção some, em vez
         de mostrar um número que se lê como alerta e não é.
       */}
-      {concentracao.vaiADizerAlgo && concentracao.maior ? (
+      {concentracao?.vaiADizerAlgo && concentracao.maior ? (
         <section className="mb-6">
           <SectionHeader>De quem depende o que sobra</SectionHeader>
           <Card className="flex flex-col gap-3">

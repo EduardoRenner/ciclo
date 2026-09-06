@@ -45,7 +45,7 @@ export default async function PaginaHoje() {
       schema, por exemplo — e o sintoma seria só uma tela um pouco mais vazia, que ninguém
       reporta.
     */
-    centralDeAcoes(db, ctx.tenantId).catch((erro: unknown) => {
+    centralDeAcoes(db, ctx.tenantId, ctx.papel).catch((erro: unknown) => {
       console.warn(JSON.stringify({ level: 'warn', event: 'central_de_acoes_indisponivel' }), erro)
       return { titulo: '', acoes: [] }
     }),

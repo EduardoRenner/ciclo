@@ -1559,6 +1559,50 @@ export type Database = {
           },
         ]
       }
+      monthly_profit: {
+        Row: {
+          commission_cents: number
+          fee_cents: number
+          frozen_at: string
+          material_cents: number
+          month: string
+          profit_cents: number
+          revenue_cents: number
+          tenant_id: string
+          tickets_count: number
+        }
+        Insert: {
+          commission_cents: number
+          fee_cents: number
+          frozen_at?: string
+          material_cents: number
+          month: string
+          profit_cents: number
+          revenue_cents: number
+          tenant_id: string
+          tickets_count: number
+        }
+        Update: {
+          commission_cents?: number
+          fee_cents?: number
+          frozen_at?: string
+          material_cents?: number
+          month?: string
+          profit_cents?: number
+          revenue_cents?: number
+          tenant_id?: string
+          tickets_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "monthly_profit_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       modules: {
         Row: {
           eixo: string | null
@@ -2806,6 +2850,7 @@ export type Database = {
           description: string
           discount_cents: number
           id: string
+          material_incerto: boolean
           product_id: string | null
           professional_id: string | null
           qty: number
@@ -2822,6 +2867,7 @@ export type Database = {
           description: string
           discount_cents?: number
           id?: string
+          material_incerto?: boolean
           product_id?: string | null
           professional_id?: string | null
           qty?: number
@@ -2838,6 +2884,7 @@ export type Database = {
           description?: string
           discount_cents?: number
           id?: string
+          material_incerto?: boolean
           product_id?: string | null
           professional_id?: string | null
           qty?: number
@@ -2896,6 +2943,7 @@ export type Database = {
           discount_cents: number
           fee_bps: number
           fee_cents: number
+          fixed_cost_cents: number
           id: string
           material_cost_cents: number
           payment_method: Database["public"]["Enums"]["payment_method"] | null
@@ -2917,6 +2965,7 @@ export type Database = {
           discount_cents?: number
           fee_bps?: number
           fee_cents?: number
+          fixed_cost_cents?: number
           id?: string
           material_cost_cents?: number
           payment_method?: Database["public"]["Enums"]["payment_method"] | null
@@ -2938,6 +2987,7 @@ export type Database = {
           discount_cents?: number
           fee_bps?: number
           fee_cents?: number
+          fixed_cost_cents?: number
           id?: string
           material_cost_cents?: number
           payment_method?: Database["public"]["Enums"]["payment_method"] | null
