@@ -132,17 +132,24 @@ export default function RecuperarReceita({
         valor em risco como `preço do serviço × chance de recuperação por
         estado`, então numa barbearia de corte a R$ 45 a linha de uma cliente
         aparecia como R$ 5,40 — nem o preço, nem o total, e sem explicação em
-        lugar nenhum da tela. O número continua o mesmo (é ele que ordena a
-        lista pela prioridade certa); o que muda é o rótulo dizer o que ele é.
+        lugar nenhum da tela. O número continua o mesmo; o que mudou é o rótulo
+        dizer o que ele é.
+
+        E, desde a `0067` (`docs/48` C3), ele deixou de ser o único: ao lado da
+        receita está o que SOBRA dela, e é o lucro que ORDENA a lista. Um
+        platinado de R$ 200 com 60% de comissão e R$ 30 de produto deixa menos
+        que um corte de R$ 80 sem comissão — ordenar por receita mandava o dono
+        gastar o WhatsApp do dia com quem vale menos.
       */}
       <div className="mb-5 grid grid-cols-2 gap-3">
-        <StatTile rotulo="Dá para recuperar" valor={dinheiro.format(lista.totalValueCents / 100)} />
+        <StatTile rotulo="Dá para recuperar" valor={dinheiro.format(lista.totalValueCents / 100)} apoio={`${dinheiro.format(lista.totalProfitCents / 100)} de lucro`} />
         <StatTile rotulo={comMaiuscula(plural(vocabulario.cliente))} valor={String(lista.count)} />
       </div>
 
       <p className="mb-4 text-secundario text-txt-3">
         Estimativa, não promessa: o preço do serviço de cada uma, multiplicado pela chance de ela voltar. Quanto mais
-        tempo sem aparecer, menor a chance, e por isso quem sumiu há mais tempo vale menos aqui.
+        tempo sem aparecer, menor a chance, e por isso quem sumiu há mais tempo vale menos aqui. A ordem da lista segue o
+        <strong> lucro</strong> — o que sobra depois da comissão e do produto —, não o preço.
       </p>
 
       <FilterRow rotulo="Filtrar por estado do ciclo" className="mb-4">
@@ -233,6 +240,7 @@ export default function RecuperarReceita({
                   </div>
                   <div className="shrink-0 text-right">
                     <p className="tabular text-corpo font-bold text-acc-2">{dinheiro.format(item.valueCents / 100)}</p>
+                    <p className="tabular text-label text-txt-3">{dinheiro.format(item.profitCents / 100)} de lucro</p>
                     <Button
                       variante="ghost"
                       tamanho="sm"

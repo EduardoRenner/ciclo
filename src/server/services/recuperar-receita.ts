@@ -22,11 +22,15 @@ export type ItemRecuperar = {
   state: EstadoCiclo
   lateDays: number
   valueCents: number
+  /** O que SOBRA daquele atendimento × a chance de a pessoa voltar. É o que ordena a lista. */
+  profitCents: number
   lastCampaignAt: string | null
 }
 
 export type ListaRecuperar = {
   totalValueCents: number
+  /** A soma do lucro em risco — o que de fato sobra se todo mundo dessa lista voltar. */
+  totalProfitCents: number
   count: number
   items: ItemRecuperar[]
 }
@@ -65,8 +69,13 @@ export async function listarParaRecuperar(
   // mas toda coluna aqui vem de `join`s obrigatórios sobre colunas `not null`
   // (0001) — o `!` é seguro, não uma aposta.
   const comCicloEmDia = new Set((saudaveis ?? []).map((l) => l.client_id))
+  /*
+    `docs/48` C3: quem ordena a fila é o LUCRO em risco, não a receita. As duas continuam existindo
+    lado a lado (`0067`) porque respondem perguntas diferentes — "quanto está parado" é o número
+    que a tela inicial anuncia; "quem vale a pena chamar primeiro" é este.
+  */
   const linhas = quemRecuperar(
-    (data ?? []).map((l) => ({ ...l, clientId: l.client_id!, valueCents: l.value_at_risk_cents! })),
+    (data ?? []).map((l) => ({ ...l, clientId: l.client_id!, ordemCents: l.profit_at_risk_cents ?? 0 })),
     comCicloEmDia,
   )
 
@@ -75,11 +84,13 @@ export async function listarParaRecuperar(
    * linhas cruas e o cartão rotulado "Clientes" chegou a mostrar 149 num salão com 55 — e a soma
    * de dinheiro contava a mesma pessoa uma vez por serviço atrasado.
    */
-  const totalValueCents = linhas.reduce((soma, l) => soma + l.valueCents, 0)
+  const totalValueCents = linhas.reduce((soma, l) => soma + (l.value_at_risk_cents ?? 0), 0)
+  const totalProfitCents = linhas.reduce((soma, l) => soma + l.ordemCents, 0)
   const limite = opcoes.limit ?? LIMITE_PADRAO
 
   return {
     totalValueCents,
+    totalProfitCents,
     count: linhas.length,
     items: linhas.slice(0, limite).map((l) => ({
       clientId: l.client_id!,
@@ -90,6 +101,7 @@ export async function listarParaRecuperar(
       state: l.state!,
       lateDays: l.late_days!,
       valueCents: l.value_at_risk_cents!,
+      profitCents: l.profit_at_risk_cents ?? 0,
       lastCampaignAt: l.last_campaign_at,
     })),
   }

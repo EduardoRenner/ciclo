@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { PROBABILIDADE_POR_ESTADO, valorEmRiscoCents } from '@/core/cycle/valor-em-risco'
+import { lucroEmRiscoCents, lucroEsperadoCents, PROBABILIDADE_POR_ESTADO, valorEmRiscoCents } from '@/core/cycle/valor-em-risco'
 
 /**
  * A tabela que ordena a tela "Recuperar receita".
@@ -66,5 +66,49 @@ describe('valor em risco = preço × chance de voltar', () => {
       expect(p, `${estado} tem probabilidade fora de 0..1`).toBeGreaterThanOrEqual(0)
       expect(p, `${estado} prometeria mais do que o serviço custa`).toBeLessThanOrEqual(1)
     }
+  })
+})
+
+/**
+ * `docs/48` C3. A fila de recuperação passa a ser ordenada por LUCRO, e a diferença entre as duas
+ * ordens é a coisa toda: um serviço caro com comissão alta pode valer menos que um barato sem
+ * comissão nenhuma.
+ */
+describe('lucroEsperadoCents', () => {
+  it('preço menos comissão menos material', () => {
+    expect(lucroEsperadoCents({ priceCents: 20_000, commissionBps: 6_000, materialCents: 3_000 })).toBe(5_000)
+  })
+
+  it('sem comissão e sem insumo, o lucro é o preço', () => {
+    expect(lucroEsperadoCents({ priceCents: 8_000, commissionBps: 0, materialCents: 0 })).toBe(8_000)
+  })
+
+  it('serviço que custa mais do que cobra não vira lucro negativo na fila', () => {
+    expect(lucroEsperadoCents({ priceCents: 5_000, commissionBps: 5_000, materialCents: 9_000 })).toBe(0)
+  })
+
+  it('o caro com comissão alta vale MENOS que o barato sem comissão — é o ponto inteiro', () => {
+    const caro = lucroEsperadoCents({ priceCents: 20_000, commissionBps: 6_000, materialCents: 3_000 })
+    const barato = lucroEsperadoCents({ priceCents: 8_000, commissionBps: 0, materialCents: 0 })
+    expect(barato).toBeGreaterThan(caro)
+  })
+})
+
+describe('lucroEmRiscoCents', () => {
+  it('aplica a mesma probabilidade por estado do valor em risco', () => {
+    expect(lucroEmRiscoCents(10_000, 'due')).toBe(8_500)
+    expect(lucroEmRiscoCents(10_000, 'lost')).toBe(1_200)
+  })
+
+  it('quem está em dia não tem lucro em risco', () => {
+    expect(lucroEmRiscoCents(10_000, 'on_track')).toBe(0)
+  })
+
+  it('arredonda para baixo — nunca prometer mais do que entrega', () => {
+    expect(lucroEmRiscoCents(999, 'late')).toBe(649) // 999 × 0,65 = 649,35
+  })
+
+  it('estado desconhecido não vira valor cheio', () => {
+    expect(lucroEmRiscoCents(10_000, 'inventado')).toBe(0)
   })
 })

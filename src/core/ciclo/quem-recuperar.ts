@@ -45,7 +45,19 @@
 
 export type LinhaDeCiclo = {
   clientId: string
-  valueCents: number
+  /**
+   * O valor que DECIDE a ordem — e o nome é genérico de propósito.
+   *
+   * Era `valueCents`, e o que ele carregava era a receita em risco (`preço × probabilidade`). O
+   * `docs/48` C3 mudou o critério para o LUCRO em risco: um corte de R$ 200 com 60% de comissão e
+   * R$ 30 de produto deixa menos que um de R$ 80 sem comissão, e ordenar por receita põe o
+   * primeiro no topo — o dono gasta o WhatsApp do dia com quem vale menos.
+   *
+   * Com o nome antigo, trocar o critério seria invisível: a mesma chamada continuaria compilando
+   * com outro significado. `ordemCents` obriga quem chama a dizer, no ponto da chamada, qual é o
+   * critério.
+   */
+  ordemCents: number
 }
 
 /**
@@ -61,10 +73,10 @@ export function quemRecuperar<T extends LinhaDeCiclo>(
   for (const linha of linhas) {
     if (comCicloEmDia.has(linha.clientId)) continue
     const atual = melhorPorCliente.get(linha.clientId)
-    if (!atual || linha.valueCents > atual.valueCents) melhorPorCliente.set(linha.clientId, linha)
+    if (!atual || linha.ordemCents > atual.ordemCents) melhorPorCliente.set(linha.clientId, linha)
   }
 
   // Ordem de saída explícita, pelo mesmo critério que a tela promete ("o que dá para recuperar"):
-  // maior valor primeiro. Devolver na ordem do `Map` amarraria o resultado à ordem de chegada.
-  return [...melhorPorCliente.values()].sort((a, b) => b.valueCents - a.valueCents)
+  // maior primeiro. Devolver na ordem do `Map` amarraria o resultado à ordem de chegada.
+  return [...melhorPorCliente.values()].sort((a, b) => b.ordemCents - a.ordemCents)
 }

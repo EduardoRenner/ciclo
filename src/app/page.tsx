@@ -73,9 +73,15 @@ const RECURSOS = [
       O que sobra para o cartão é o que a figura NÃO consegue dizer: como o ritmo é calculado por
       pessoa, e por que a lista vem naquela ordem. Ordenação é a decisão de produto que a tela toma
       e que nenhum print explica.
+
+      A frase diz "o que sai para quem atende" e não a palavra `comissão` de propósito, e não é
+      para driblar a guarda `home-nao-promete-demais`: gerir comissão é o módulo `team`, do plano
+      Equipe, e esta ordenação NÃO depende dele — num salão de uma pessoa só a comissão é zero e
+      a conta continua valendo. Usar a palavra aqui anunciaria um recurso pago dentro da seção do
+      grátis, que é exatamente o defeito que aquela guarda existe para pegar.
     */
     texto:
-      'O ritmo é de cada pessoa, não uma média do salão: quem volta a cada 21 dias e quem volta a cada dois meses aparecem em dias diferentes. A lista vem ordenada por quanto vale chamar cada uma, que é o preço do serviço vezes a chance de ela voltar, e cada linha já traz o texto pronto para o WhatsApp.',
+      'O ritmo é de cada pessoa, não uma média do salão: quem volta a cada 21 dias e quem volta a cada dois meses aparecem em dias diferentes. A lista vem ordenada por quanto vale chamar cada uma — e "valer" é o que SOBRA daquele serviço, não o preço cheio: o que sai para quem atende e o produto gasto entram na conta. Um serviço caro que deixa pouco fica abaixo de um mais barato que deixa mais, e é essa a ordem que a tela usa. Cada linha já traz o texto pronto para o WhatsApp.',
   },
   {
     icone: Link2,
