@@ -6533,3 +6533,37 @@ Daí a regra que fica: **quando o que importa é comportamento, escreva teste de
 APAGUE a asserção de fonte.** A que não sabe falhar é pior que nenhuma, porque lê-se como proteção.
 Varredura de fonte serve para o que só ela vê — onde uma coisa MORA (`.range(` num arquivo só),
 quantas cópias existem, se um texto proibido voltou à copy.
+
+---
+
+## 2026-09-06 · PSP escolhido: Mercado Pago — e a metade pura da integração de assinatura
+
+**Contexto.** `docs/55` Fase 1.1: "Integração de PSP... o item que mais importa". O esqueleto do
+`.env.example` era **Asaas** (com `WALLET_ID`/split, modelo marketplace). O Eduardo decidiu: **Mercado
+Pago**, que é a recomendação do `docs/18` §J com razão específica — Pix a **0,99% sem piso** (Asaas
+cobra R$ 1,99 fixo, desenhado para boleto de R$ 300, não para assinatura de R$ 49), Pix Automático
+como meio primário e cartão como alternativa, recorrência nativa (preapproval) com retentativa.
+
+**Feito nesta rodada (branch `feat/assinatura-mercado-pago`, PR a abrir):**
+
+- `.env.example`: `ASAAS_*` → `MERCADOPAGO_ACCESS_TOKEN` / `MERCADOPAGO_WEBHOOK_SECRET` / `MERCADOPAGO_BASE_URL`.
+- `src/core/billing/mercado-pago.ts` — a lógica **pura**, testável sem credencial: o formato de
+  `tenants.settings.assinatura`, o mapa `decidirPlano(status, contratado, vigente)` (`authorized`
+  entrega; `paused` mantém com `emGraca`; `pending` fica no vigente; `cancelled` → `gratis`),
+  `valorConfereComDegrau` (guarda contra checkout adulterado virar `avancado` por R$ 1), e
+  `lerNotificacaoMP` (aceita os dois formatos históricos do webhook).
+- `tests/unit/core/assinatura-mercado-pago.test.ts` (13 casos; a guarda de valor foi vista reprovando).
+
+**Por que `tenants.settings.assinatura` e não migration:** mesmo padrão de `payment_fees_bps` /
+`loyalty` / `custo_fixo` — poucos campos por tenant, jsonb já existe, e migration aqui é passo à mão
+que já virou incidente duas vezes (`docs/62`). Uma tabela `subscriptions` seria cerimônia enquanto a
+regra é "um preapproval por tenant".
+
+**O que FALTA (a metade com I/O, próxima rodada):** cliente da API do MP em `src/server/billing/`
+(criar preapproval, consultar status) · `src/server/services/assinatura.ts` (orquestra: iniciar,
+tratar webhook → `tenants.settings.assinatura` + `tenants.plan` + `audit_log`, com data-limite da
+graça) · `POST /api/v1/billing/assinar` (owner-only, devolve `init_point`) · `POST
+/api/v1/webhooks/mercado-pago` (público, valida `x-signature`, idempotente, responde 200 a evento que
+não reconhece) · fiação da tela `/admin/config/meu-plano` · e as credenciais reais da conta MP do
+Eduardo (sandbox primeiro — `docs/18` §J.4 deixou o Pix Automático "bloqueado até confirmar no
+sandbox"). O `scripts/promover-tenant.mjs` segue sendo a ponte de cobrança à mão até isso fechar.
