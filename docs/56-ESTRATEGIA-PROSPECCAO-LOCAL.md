@@ -158,7 +158,94 @@ mão por enquanto, formalizado quando o H.2 (`billing_credits`) for construído.
 
 ---
 
-# 7 · A métrica que decide se isto está funcionando
+# 7 · Conteúdo para Instagram — o que postar, e por quê
+
+O Instagram aqui não é para alcançar desconhecido longe. É para **aquecer o terreno antes de bater
+na porta**, e para o dono de salão que você já visitou ter algo para mostrar ao colega do bairro.
+Ele trabalha junto da prospecção presencial (§3), nunca sozinho — `docs/18` §13.1 já decidiu que
+anúncio pago não fecha CAC nessa categoria, e postar orgânico sem prospecção presencial tem o
+mesmo problema: ninguém compra software de gestão por causa de um post, mas todo mundo confia mais
+em quem já viu o rosto antes.
+
+## 7.1 · Os quatro pilares, com o porquê de cada um
+
+**Pilar 1 — A dor, com número real (não inventado).** O gancho que já tem pesquisa por trás,
+citada com fonte, então nunca precisa admitir que é opinião:
+
+> "73% dos donos de salão não sabem calcular quanto sobra de cada serviço, e 67% dos salões fecham
+> por causa disso — não por falta de cliente." — [Pandami, pesquisa em pandami.com.br](https://pandami.com.br/en/blog/gestao-de-salao-de-beleza)
+
+> "Pergunte a dez barbeiros quanto eles ganham por corte. Nove vão te dizer o **preço**. Quase
+> ninguém sabe o **lucro**." — parafraseado de [BestBarbers](https://www.bestbarbers.app/blog/gestao-financeira-barbearia)
+
+Formato: **Reel de 15-30s**, você falando direto pra câmera ou por cima de tela gravada do produto.
+Termina sempre com uma pergunta, nunca com "conheça o CICLO" — pergunta gera comentário, comentário
+alimenta o alcance do Instagram.
+
+**Pilar 2 — O produto em uso real, não protótipo.** Grava a tela do celular mostrando a lista de
+"quem sumiu" de um salão de verdade que você já visitou (com autorização, sem mostrar nome/telefone
+do cliente final — dado de terceiro, nunca exposto). É a prova de que existe e roda, não uma
+promessa.
+
+Formato: Reel curto, tela gravada + sua voz explicando o que está acontecendo. Ex.: "Esse salão
+tinha 12 clientes que sumiram há mais de 40 dias e ninguém tinha percebido. Olha a lista."
+
+**Pilar 3 — O diferencial, contra o que o mercado local já conhece.** Aqui é onde entra a
+pesquisa competitiva desta base (`docs/43`), em linguagem de cliente, nunca de documento técnico:
+
+| Diferencial | Frase pronta pra usar na legenda |
+|---|---|
+| Preço fixo, não sobe com a equipe | "Contratou mais um profissional? Sua mensalidade continua a mesma. Não é comissão, não é por cadeira." |
+| Sem vitrine/marketplace | "Seu cliente marca direto com VOCÊ. Nunca aparece uma lista de concorrentes na tela dele." |
+| Grátis mostra quem sumiu | "Isso que você acabou de ver funciona no plano grátis. Sem pegadinha, sem cartão." |
+| Sinal por Pix reduz falta | "Cliente que paga sinal falta muito menos. E o Pix cai na hora." |
+
+**Pilar 4 — Prova social local, assim que o primeiro lote fechar.** O post que mais converte
+depois que você tem 3-5 clientes reais: a própria dona do salão falando, com o rosto dela, o que
+mudou. Peça o depoimento na visita de retorno (§3.5), quando ela já tiver visto resultado — é o
+momento em que ela topa gravar de bom grado, porque acabou de ganhar algo, não porque você pediu
+favor.
+
+## 7.2 · Cadência prática, sem se afogar em conteúdo
+
+Você é uma pessoa prospectando de porta em porta — o Instagram não pode competir com isso pelo seu
+tempo. Um ritmo sustentável:
+
+- **2-3 posts por semana**, alternando os quatro pilares. Não precisa ser todo dia.
+- **Stories todo dia que você prospectar**, mesmo sem produção — uma foto da fachada do salão que
+  você acabou de visitar (com permissão), um "fechei mais um hoje", contagem regressiva do preço de
+  fundador. Story é o formato mais barato de manter presença sem virar trabalho.
+- **Marque a localização da cidade/bairro em todo post.** É como quem está procurando "sistema pra
+  salão" na sua região encontra você organicamente, sem pagar por isso.
+- **Marque o salão** (se ele tiver Instagram e topar) nos posts de prova social — isso põe o post na
+  frente dos SEGUIDORES DELE, que são exatamente outros donos de salão e clientes do bairro.
+
+## 7.3 · O texto de perfil e a bio
+
+A bio do Instagram é a única "página de vendas" que roda sozinha 24h. Uma frase, não um parágrafo:
+
+> Sistema pra salão e barbearia que mostra quem sumiu — e o preço não sobe quando você cresce.
+> 🔗 [link para /precos ou pro seu WhatsApp]
+
+## 7.4 · O que NÃO postar
+
+1. **Não poste print de conversa com cliente, nome de cliente final, telefone — nada que identifique
+   uma pessoa sem consentimento dela.** Dado de terceiro em rede social pública é o tipo de erro que
+   vira reclamação e, pior, é o oposto de tudo que este produto promete sobre cuidar de dado
+   sensível.
+2. **Não prometa recurso que não existe ainda.** Mesma regra do §2: se o post disser "manda
+   lembrete automático pelo WhatsApp" antes do F0 estar ligado, é mentira que alguém vai cobrar de
+   volta na hora de usar.
+3. **Não compare nomeando concorrente.** A régua que o próprio `/precos` já segue (nunca citar
+   concorrente por nome numa página pública) vale igual no Instagram — fale do modelo ("quem cobra
+   comissão..."), nunca da marca.
+4. **Não vire perfil de "dicas de gestão para salão" genérico.** Isso é conteúdo de agência de
+   marketing, não de quem está vendendo um produto específico — dilui o que faz alguém seguir você
+   de volta pra "converter".
+
+---
+
+# 8 · A métrica que decide se isto está funcionando
 
 Não é "quantos cadastrei". É: **de quem cadastrei, quantos mandaram pelo menos uma mensagem pelo
 wa.me na primeira semana, e quantos desses tiveram um cliente voltar em 30 dias.**
