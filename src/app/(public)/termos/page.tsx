@@ -33,7 +33,7 @@ export default function Termos() {
     <main className="mx-auto min-h-dvh max-w-[720px] px-[var(--gutter)] pb-16">
       <header className="flex items-center justify-between py-5">
         <Link href="/" aria-label="CICLO, início">
-          <Image src={wordmark} alt="CICLO" className="h-7 w-auto" />
+          <Image src={wordmark} alt="CICLO" sizes="70px" className="h-7 w-auto" />
         </Link>
         <Link
           href="/entrar"

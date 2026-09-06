@@ -10,6 +10,20 @@ import { semComentarios } from '../../helpers/fonte'
  * inteiro em cada uma. Medido no HTML de produção de `/demo-dom-estilo`: **26 estrelas ocupavam
  * 16.978 B de uma página de 75.660 B — 22% do documento era o mesmo ícone repetido.**
  *
+ * **Corrigido em 05/09/2026, e a correcao importa mais que o numero original:** aqueles 16.978 B
+ * sao HTML CRU, e a producao serve `Content-Encoding: br`. Medindo os dois lados a partir do mesmo
+ * HTML de producao, para comparar em build igual, a economia REAL desta pagina e:
+ *
+ * | cru | gzip | brotli |
+ * |--:|--:|--:|
+ * | +11.328 B | +1.050 B | **empate** |
+ *
+ * Marcacao repetida e exatamente o que o compressor elimina de graca, entao trocar repeticao por
+ * `<symbol>` + `<use>` nao economiza banda nenhuma. Este conserto FICA porque 11 kB a menos de
+ * HTML cru ainda e menos DOM para montar, mas ninguem deve citar o numero cru como economia de
+ * rede, e ninguem deve aplicar o padrao em lugar novo esperando ganho de transferencia: na landing
+ * o mesmo conserto CUSTOU 79 B em brotli e foi revertido.
+ *
  * Isso importa porque o gargalo do celular antigo aqui é o DOCUMENTO, não o JavaScript: o bundle
  * é 104 kB de framework (piso do Next, não dá para cortar) e o Total Blocking Time medido foi de
  * 33 ms — a CPU não sofre. Quem sofre é o 3G baixando HTML.

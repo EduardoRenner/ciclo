@@ -12,6 +12,8 @@ import Select from '@/components/ui/select'
 import SectionHeader from '@/components/ui/section-header'
 import Sheet from '@/components/ui/sheet'
 import { useToast } from '@/components/ui/toast'
+import { useVocabulario } from '@/components/shell/vocabulario'
+import { comMaiuscula } from '@/core/text/vocabulario'
 import { dinheiro } from '@/lib/formato'
 
 type Props = {
@@ -105,6 +107,7 @@ function VenderPacote({
 }) {
   const router = useRouter()
   const mostrarToast = useToast()
+  const vocabulario = useVocabulario()
   const [serviceId, setServiceId] = useState(servicos[0]?.id ?? '')
   const [sessoes, setSessoes] = useState('4')
   // Começa no preço cheio das sessões: quase todo pacote tem desconto, e é mais
@@ -172,7 +175,7 @@ function VenderPacote({
   return (
     <Sheet aberto aoFechar={(aberto) => !aberto && aoFechar()} titulo="Vender pacote" descricao="Sessões pagas na frente, consumidas na comanda.">
       <div className="flex flex-col gap-3">
-        <Select rotulo="Serviço" value={serviceId} onChange={(e) => trocarServico(e.target.value)}>
+        <Select rotulo={comMaiuscula(vocabulario.servico)} value={serviceId} onChange={(e) => trocarServico(e.target.value)}>
           {servicos.map((s) => (
             <option key={s.id} value={s.id}>
               {s.name}

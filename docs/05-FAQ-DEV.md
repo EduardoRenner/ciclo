@@ -537,3 +537,56 @@ recalcula, e não vira uma segunda fonte.
 O mesmo vale para `payments`: o livro-caixa de hoje não passa por ela. Se alguém ligar pagamentos
 depois, conferir antes o que o relatório de eliminação da LGPD promete sobre essa tabela — hoje ele
 lista uma tabela que nunca recebe linha, o que é inofensivo agora e vira falso naquele dia.
+
+### As oito colunas do item C do `docs/41` — todas sem leitor, e por quê
+
+**2026-09-04.** Fechamento do item C da auditoria das 58 tabelas. Varredura com piso conferido
+(450 arquivos `.ts`/`.tsx` em `src/`, 61 migrations) e `grep` de string fixa, sem regex em template
+literal — que já cegou esta mesma varredura duas vezes.
+
+**Resultado: as oito têm zero referência em `src/`, e nenhuma tem dono claro.** Nenhuma foi ligada.
+O `docs/41` manda fazer "só o que tiver dono claro", e inventar um consumidor para uma coluna é
+como se cria a segunda fonte de verdade que o resto deste arquivo passa a vida desfazendo.
+
+| Coluna | Quem escreve | Situação |
+|---|---|---|
+| `vault_access_log.orphaned_at`, `audit_log.orphaned_at` | migration `0050`, uma vez | **Administrativa por desenho** |
+| `package_uses.used_at` | `default now()` | Tela de histórico de consumo não existe |
+| `tenant_keys.rotated_at` | `default now()` | Rotação de chave não construída |
+| `messages.scheduled_for` | ninguém | Envio agendado não construído |
+| `webhook_events.processed_at` | ninguém | Webhook não construído (depende de PSP) |
+| `products.sku` | ninguém | Não existe CRUD de produto |
+| `v_clientes_a_recuperar.maior_valor_cents`, `maior_atraso_dias` | a própria view | **Regra duplicada** |
+
+#### `orphaned_at` não é bug, e a `0050` já explicava
+
+A migration afirma que *"nenhum tenant real enxerga estas linhas hoje"*. **Conferido, não assumido:**
+`trilha-cofre.ts:35` filtra `.eq('tenant_id', tenantId)`, e um tenant vivo nunca tem o id de um
+tenant apagado — que é a definição de órfã. E `audit_log` não é lido por tela nenhuma: a única
+referência em `src/` é o `insert` de `audit/write.ts`.
+
+A coluna existe para uma rotina de arquivamento futura poder excluir a linha do caminho quente sem
+apagá-la (regra 11 do `CLAUDE.md`). Ler não resolve problema nenhum hoje.
+
+#### Os dois agregados da view são regra duplicada, e o comentário da view engana
+
+O cabeçalho da `0058` diz, sobre `maior_valor_cents`: *"O serviço de maior valor em risco é o que a
+tela mostra na linha da cliente"*. **Essa frase descreve o comportamento certo e o lugar errado.**
+
+Quem monta aquela linha é `listarParaRecuperar`, que lê a `v_recover_revenue` — outra view — e
+escolhe o maior valor por cliente em `core/ciclo/quem-recuperar.ts`. E escolhe ali de propósito: o
+docstring daquela função explica que não vai depender da ordem da view, porque *"ordem que não está
+escrita é ordem que um dia muda sem aviso, e a troca seria silenciosa"*.
+
+Ou seja: a `v_clientes_a_recuperar` calcula um `max` por cliente que ninguém consome, enquanto o
+mesmo `max` é calculado em TypeScript, deliberadamente, a partir de outra view. Os dois agregados
+ficam onde estão — tirá-los exige `drop view` mais recriação por uma economia desprezível de
+`max()` sobre um conjunto já agrupado. **Mas ninguém deve "consertar" a ausência de leitor: o leitor
+correto já existe, noutro lugar, por decisão registrada.**
+
+#### `messages.scheduled_for` paga um índice por um recurso que não existe
+
+A `0001` cria `create index on messages (status, scheduled_for) where status = 'queued'`. O índice é
+parcial e a tabela de mensagens é pequena, então o custo é teórico hoje — mas vale saber que ele
+existe antes de alguém medir escrita em `messages` e estranhar. Quando o envio agendado for
+construído, o índice já está lá; até lá, é o único vestígio do recurso.

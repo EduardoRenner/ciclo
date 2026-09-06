@@ -323,10 +323,12 @@ export default function Agendar({
     setReconhecimentoDispensado(true);
     const { serviceId: sugerido, professionalId: profissionalSugerido } = reconhecimento.sugestao;
     setServiceId(sugerido);
-    if (profissionalSugerido && professionals.some((p) => p.id === profissionalSugerido)) {
-      setProfessionalId(profissionalSugerido);
-    }
-    buscarDisponibilidade(dia, sugerido);
+    const profissionalValido =
+      profissionalSugerido && professionals.some((p) => p.id === profissionalSugerido)
+        ? profissionalSugerido
+        : undefined;
+    if (profissionalValido) setProfessionalId(profissionalValido);
+    buscarDisponibilidade(dia, sugerido, profissionalValido);
   }
 
   const servicoEscolhido = services.find((s) => s.id === serviceId);
@@ -339,7 +341,21 @@ export default function Agendar({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function buscarDisponibilidade(novoDia: string, novoServico?: string) {
+  /*
+    `novoProfissional` existe pelo mesmo motivo que `novoServico`: quem chama logo depois de um
+    `setState` NAO pode ler o estado novo. O handler do profissional fazia
+    `setProfessionalId(p.id); buscarDisponibilidade(dia)`, e a busca lia o `professionalId` do
+    render corrente — sempre o ANTERIOR. Medido na rede em 05/09: o primeiro toque num
+    profissional consultava sem filtro nenhum, e o segundo consultava a agenda do primeiro.
+
+    `undefined` significa "mantem o que ja esta escolhido"; `null` significa "sem filtro"
+    (o "Tanto faz"). Sao coisas diferentes e por isso o parametro nao pode ser so `string`.
+  */
+  function buscarDisponibilidade(
+    novoDia: string,
+    novoServico?: string,
+    novoProfissional?: string | null,
+  ) {
     setDia(novoDia);
     setSlots(null);
     setSlotEscolhido(null);
@@ -360,7 +376,9 @@ export default function Agendar({
           serviceId: novoServico ?? serviceId,
           date: novoDia,
         });
-        if (professionalId) params.set("professionalId", professionalId);
+        const profissionalDoFiltro =
+          novoProfissional === undefined ? professionalId : novoProfissional;
+        if (profissionalDoFiltro) params.set("professionalId", profissionalDoFiltro);
         const r = await fetch(
           `/api/v1/public/${slug}/availability?${params.toString()}`,
         );
@@ -750,7 +768,7 @@ export default function Agendar({
               ligado={professionalId === null}
               onClick={() => {
                 setProfessionalId(null);
-                buscarDisponibilidade(dia);
+                buscarDisponibilidade(dia, undefined, null);
               }}
             >
               {/*
@@ -766,7 +784,7 @@ export default function Agendar({
                 ligado={professionalId === p.id}
                 onClick={() => {
                   setProfessionalId(p.id);
-                  buscarDisponibilidade(dia);
+                  buscarDisponibilidade(dia, undefined, p.id);
                 }}
               >
                 {/*

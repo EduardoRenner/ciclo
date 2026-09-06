@@ -10,6 +10,13 @@ import { semComentarios } from '../../helpers/fonte'
  * lucide inlina o SVG inteiro em cada ocorrência. Medido no HTML de produção de `/precos`:
  * **7.161 B de 52.197, 14% da página só de ícone repetido**, em 24 ocorrências somadas.
  *
+ * **Corrigido em 05/09/2026:** aqueles 7.161 B sao HTML CRU. A producao serve
+ * `Content-Encoding: br`, e medindo os dois lados a partir do mesmo HTML a economia real desta
+ * pagina e **-56 B em brotli** — ou seja, ficou marginalmente PIOR na rede, dentro do ruido.
+ * Marcacao repetida e o que o compressor ja elimina de graca. O conserto fica (1.669 B a menos de
+ * HTML cru para montar), mas o numero cru nao deve ser citado como economia de banda, e o padrao
+ * nao deve ser aplicado em lugar novo esperando ganho de transferencia.
+ *
  * Mesmo conserto das estrelas da página do salão, e com a mesma armadilha de cascata: o
  * `fill="none"` fica no `<svg>` que USA, nunca no `<symbol>`. Dentro do símbolo o atributo fica
  * mais perto do `<path>` do que a classe do elemento externo, ganha, e o ícone some ou inverte —

@@ -246,7 +246,7 @@ export default async function Home() {
     <main className="mx-auto min-h-dvh max-w-[720px] px-[var(--gutter)] pb-16">
       <header className="flex items-center justify-between gap-3 py-5">
         {/* `priority` herdado do lockup do herói, que saiu: agora esta é a única marca da dobra. */}
-        <Image src={wordmark} alt="CICLO" priority className="h-7 w-auto" />
+        <Image src={wordmark} alt="CICLO" sizes="70px" priority className="h-7 w-auto" />
         {/*
           O header desta página tem UM link, e a razão é de conversão, não de gosto (`docs/38` §3).
           Havia dois competindo com o CTA primário na dobra, e um deles ("Preços") aponta para uma

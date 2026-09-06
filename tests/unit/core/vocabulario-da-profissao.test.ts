@@ -231,6 +231,11 @@ describe('o painel também fala a língua da profissão', () => {
       ['src/app/admin/clientes/page.tsx', /plural\(ctx\.tenant\.vocabulario\.cliente\)/],
       ['src/app/admin/agenda/novo/formulario.tsx', /comMaiuscula\(vocabulario\.servico\)/],
       ['src/app/admin/agenda/novo/formulario.tsx', /comMaiuscula\(vocabulario\.cliente\)/],
+      // Ligados em 2026-09-04. Os três são rótulo solto, sem artigo colado — a única forma segura
+      // enquanto a palavra trocada muda de gênero entre profissões (sessão, aula, treino).
+      ['src/app/admin/campanhas/page.tsx', /plural\(ctx\.tenant\.vocabulario\.atendimento\)/],
+      ['src/app/admin/config/meu-plano/page.tsx', /plural\(ctx\.tenant\.vocabulario\.cliente\)/],
+      ['src/app/admin/clientes/[id]/pacotes-carteira.tsx', /comMaiuscula\(vocabulario\.servico\)/],
     ]
     for (const [arquivo, padrao] of casos) {
       const fonte = semComentarios(readFileSync(arquivo, 'utf8'))
@@ -259,7 +264,18 @@ describe('o painel também fala a língua da profissão', () => {
      * torna isto "colado" — sem ele, qualquer artigo em qualquer ponto da linha acusaria.
      */
     const COLADO = new RegExp(
-      String.raw`\b(o|a|os|as|do|da|dos|das|ao|aos|pelo|pela|pelos|pelas|pro|pra|pros|pras|no|na|nos|nas|num|numa|nosso|nossa|esse|essa|este|esta|cada|seu|sua|aquele|aquela)\s+(\$\{[\w.(]*)?$`,
+      /*
+       * A âncora da esquerda NÃO pode ser `\b`, e isto custou uma rodada. Em JavaScript sem a
+       * flag `u`, `à` é caractere de NÃO-palavra: entre o espaço e o `à` de "às" não existe
+       * fronteira nenhuma, então `\bàs` nunca casa. É a mesma armadilha que já cegou a guarda de
+       * gênero por `\b(quem|voc[êe])\b` — o `\b` colado numa alternativa acentuada não casa —,
+       * agora pela ponta esquerda.
+       *
+       * `(?:^|[^A-Za-zÀ-ÿ])` diz o que `\b` queria dizer: começo do trecho, ou algo que não é
+       * letra (com acento incluído). Consome um caractere, e isso é irrelevante porque só se usa
+       * `.test()`.
+       */
+      String.raw`(?:^|[^A-Za-zÀ-ÿ])(daquele|daquela|naquele|naquela|àquele|àquela|desta|deste|dessa|desse|nesta|neste|nessa|nesse|pelos|pelas|pelo|pela|nosso|nossa|aquele|aquela|numa|num|dos|das|nos|nas|aos|pros|pras|esse|essa|este|esta|cada|seu|sua|pro|pra|ao|do|da|no|na|os|as|às|à|o|a)\s+(\$\{[\w.(]*)?$`,
       'i',
     )
     /*
@@ -296,6 +312,20 @@ describe('o painel também fala a língua da profissão', () => {
      */
     for (const contracao of ['pro', 'pra', 'no', 'na', 'num', 'pela']) {
       expect(COLADO.test(`ajuda={\`aparece ${contracao} \${`), `o detector deixou de conhecer "${contracao}"`).toBe(true)
+    }
+    /*
+     * As contrações com DEMONSTRATIVO faltavam, e uma delas já está viva: `clientes/[id]/fotos.tsx`
+     * diz "Necessário antes da primeira foto **desta** cliente". O padrão anterior conhecia `esta`
+     * mas `\b` não casa dentro de "desta", então aquele rótulo era classificado como SEGURO — e
+     * ligá-lo ao vocabulário produziria "desta atendimento".
+     *
+     * Medido em 2026-09-04 varrendo o próprio detector, não o painel: onze formas passavam batido
+     * (`desta`, `deste`, `nesta`, `neste`, `dessa`, `desse`, `naquele`, `naquela`, `àquele`, `às`,
+     * `à`). É o mesmo modo de falha que já tinha deixado "aparece pro cliente" entrar como seguro:
+     * a lista do detector encolhe em silêncio quando ninguém afirma a largura dela por nome.
+     */
+    for (const forma of ['desta', 'deste', 'nesta', 'neste', 'dessa', 'desse', 'naquele', 'naquela', 'àquele', 'às', 'à']) {
+      expect(COLADO.test(`descricao={\`foto ${forma} \${`), `o detector deixou de conhecer "${forma}"`).toBe(true)
     }
 
     expect(
