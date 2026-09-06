@@ -59,8 +59,13 @@ select
   cc.late_days,
   cc.predicted_on,
   cc.value_at_risk_cents,
-  cc.profit_at_risk_cents,
-  cc.last_campaign_at
+  cc.last_campaign_at,
+  -- A coluna nova vai NO FIM, e isso não é gosto: `create or replace view` só aceita colunas
+  -- ACRESCENTADAS ao final. Inserir no meio (aqui, antes de `last_campaign_at`) devolve
+  -- `ERROR: cannot change name of view column "last_campaign_at" to "profit_at_risk_cents"
+  -- (SQLSTATE 42P16)` — o Postgres compara posição por posição e lê a inserção como renomeação.
+  -- A alternativa seria `drop view` + `create view`, que derruba quem depende dela.
+  cc.profit_at_risk_cents
 from client_cycles cc
 join clients  c on c.id = cc.client_id and c.deleted_at is null
 join services s on s.id = cc.service_id
