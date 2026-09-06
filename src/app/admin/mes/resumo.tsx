@@ -96,9 +96,9 @@ export default function ResumoDoMes({
             'depois do produto, da maquininha, da comissão',
             custoFixoRespondido ? ' e do aluguel' : '',
             servicosSemMaterial > 0
-              ? ` — ainda sem o custo de ${servicosSemMaterial} ${servicosSemMaterial === 1 ? 'serviço' : 'serviços'}`
+              ? `, ainda sem o custo de ${servicosSemMaterial} ${servicosSemMaterial === 1 ? 'serviço' : 'serviços'}`
               : '',
-            !custoFixoRespondido && servicosSemMaterial === 0 ? ' — o aluguel ainda não entra' : '',
+            !custoFixoRespondido && servicosSemMaterial === 0 ? ', o aluguel ainda não entra' : '',
           ].join('')}
         />
       </Link>
@@ -171,7 +171,7 @@ export default function ResumoDoMes({
           valor={percentualOuTraco(motor.acertoBps)}
           apoio={
             motor.acertoBps === null
-              ? `ainda sem previsão conferida${motor.emAberto > 0 ? ` — ${motor.emAberto} em aberto` : ''}`
+              ? `ainda sem previsão conferida${motor.emAberto > 0 ? `, ${motor.emAberto} em aberto` : ''}`
               : `de ${motor.conferidas} ${motor.conferidas === 1 ? 'previsão conferida' : 'previsões conferidas'}`
           }
         />

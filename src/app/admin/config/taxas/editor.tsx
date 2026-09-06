@@ -64,7 +64,7 @@ export default function EditorTaxas({ inicial, respondida }: { inicial: TaxasDeP
       {jaSalvou ? null : (
         <AlertBanner tom="warn" className="mb-3">
           <p className="text-secundario">
-            Enquanto você não disser quanto a máquina cobra, o CICLO calcula o que sobrou <strong>sem descontar a maquininha</strong> — e
+            Enquanto você não disser quanto a máquina cobra, o CICLO calcula o que sobrou <strong>sem descontar a maquininha</strong>, e
             o número fica maior do que a verdade. Se você só recebe em dinheiro e Pix, deixe tudo em zero e salve mesmo assim.
           </p>
         </AlertBanner>

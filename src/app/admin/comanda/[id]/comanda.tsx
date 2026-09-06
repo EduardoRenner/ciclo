@@ -375,7 +375,7 @@ export default function Comanda({
             motivoDesabilitado={
               itens.length === 0
                 ? 'Adicione pelo menos um item para poder fechar a comanda.'
-                : 'Escolha como a cliente pagou — é o que permite descontar a taxa da maquininha.'
+                : 'Escolha como a cliente pagou. É o que permite descontar a taxa da maquininha.'
             }
             onClick={fechar}
           >
@@ -384,7 +384,7 @@ export default function Comanda({
         </>
       ) : (
         <p className="text-center text-secundario text-txt-2">
-          Comanda fechada{formaFechada ? ` — paga em ${formaFechada}` : ''}. Nada mais pode mudar aqui.
+          Comanda fechada{formaFechada ? ` (paga em ${formaFechada})` : ''}. Nada mais pode mudar aqui.
         </p>
       )}
     </div>

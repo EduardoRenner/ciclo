@@ -102,7 +102,7 @@ export default function EditorDaFicha({
       <Card className="flex flex-col gap-3 p-0">
         {linhas.length === 0 ? (
           <p className="p-4 text-secundario text-txt-2">
-            Este serviço ainda não gasta produto nenhum. Enquanto for assim, o custo de material dele é zero — e o &quot;Sobrou&quot; do caixa
+            Este serviço ainda não gasta produto nenhum. Enquanto for assim, o custo de material dele é zero, e o &quot;Sobrou&quot; do caixa
             conta só a comissão e a taxa.
           </p>
         ) : (

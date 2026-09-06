@@ -80,7 +80,7 @@ export default function EditorCustoFixo({ inicial, respondido }: { inicial: Cust
       {jaSalvou ? null : (
         <AlertBanner tom="warn" className="mb-3">
           <p className="text-secundario">
-            Enquanto você não responder, o CICLO calcula o que sobrou <strong>sem descontar o aluguel</strong> — e o número fica maior do
+            Enquanto você não responder, o CICLO calcula o que sobrou <strong>sem descontar o aluguel</strong>, e o número fica maior do
             que a verdade. Se você atende em casa e não tem esse custo, deixe em zero e salve mesmo assim.
           </p>
         </AlertBanner>

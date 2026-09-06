@@ -162,13 +162,13 @@ export default function RecuperarReceita({
       <p className="mb-4 text-secundario text-txt-3">
         Estimativa, não promessa: o preço do serviço de cada uma, multiplicado pela chance de ela voltar. Quanto mais
         tempo sem aparecer, menor a chance, e por isso quem sumiu há mais tempo vale menos aqui. A ordem da lista segue o
-        <strong> lucro</strong> — o que sobra depois da comissão{servicosSemMaterial > 0 ? '' : ' e do produto'} —, não o preço.
+        <strong> lucro</strong>, o que sobra depois da comissão{servicosSemMaterial > 0 ? '' : ' e do produto'}, não o preço.
       </p>
 
       {servicosSemMaterial > 0 ? (
         <p className="mb-4 text-secundario text-txt-3">
           O produto ainda não entra nesta conta: {servicosSemMaterial === 1 ? '1 serviço' : `${servicosSemMaterial} serviços`} sem o custo
-          registrado. Enquanto isso, um serviço que gasta material parece tão lucrativo quanto um que não gasta — e é a ordem desta lista que
+          registrado. Enquanto isso, um serviço que gasta material parece tão lucrativo quanto um que não gasta, e é a ordem desta lista que
           fica errada.{' '}
           <Link href="/admin/config/servicos" className="font-semibold text-acc-2">
             Completar o custo

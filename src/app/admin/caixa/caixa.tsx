@@ -195,7 +195,7 @@ export default function Caixa({ dia, hoje, diario, mensal, comissoes, atendidoCe
               }
             >
               <p className="text-secundario">
-                O <strong>Sobrou</strong> ainda não desconta a maquininha — você não disse quanto ela cobra.
+                O <strong>Sobrou</strong> ainda não desconta a maquininha: você não disse quanto ela cobra.
               </p>
             </AlertBanner>
           )}
