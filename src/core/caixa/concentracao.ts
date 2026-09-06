@@ -22,8 +22,15 @@
  */
 
 export type ItemDoRateio = {
-  /** `ticket_items.professional_id`. Nulo existe: item lançado sem vínculo. */
-  professionalId: string | null
+  /**
+   * Por quem dividir. Era `professionalId` até 2026-09-06 e virou `chave` quando `margem-do-servico`
+   * precisou da MESMA divisão por serviço: o rateio nunca foi sobre profissionais, era sobre pesos
+   * de receita — o nome é que dizia menos do que a função fazia.
+   *
+   * Nulo existe e é significativo nos dois usos: item lançado sem profissional, e item de produto
+   * avulso, que não tem serviço.
+   */
+  chave: string | null
   totalCents: number
 }
 
@@ -35,12 +42,12 @@ export type ItemDoRateio = {
  * de cortesia não diz nada sobre dependência de ninguém.
  */
 export function ratearLucroDaComanda(profitCents: number, itens: readonly ItemDoRateio[]): Map<string | null, number> {
-  const porProfissional = new Map<string | null, number>()
+  const porChave = new Map<string | null, number>()
   for (const item of itens) {
-    porProfissional.set(item.professionalId, (porProfissional.get(item.professionalId) ?? 0) + item.totalCents)
+    porChave.set(item.chave, (porChave.get(item.chave) ?? 0) + item.totalCents)
   }
 
-  const receitaTotal = [...porProfissional.values()].reduce((soma, peso) => soma + peso, 0)
+  const receitaTotal = [...porChave.values()].reduce((soma, peso) => soma + peso, 0)
   if (receitaTotal <= 0) return new Map()
 
   const fatias = new Map<string | null, number>()
@@ -48,13 +55,13 @@ export function ratearLucroDaComanda(profitCents: number, itens: readonly ItemDo
   let maiorPeso = -Infinity
   let donoDaSobra: string | null = null
 
-  for (const [profissional, peso] of porProfissional) {
+  for (const [chave, peso] of porChave) {
     const fatia = Math.round((profitCents * peso) / receitaTotal)
-    fatias.set(profissional, fatia)
+    fatias.set(chave, fatia)
     distribuido += fatia
     if (peso > maiorPeso) {
       maiorPeso = peso
-      donoDaSobra = profissional
+      donoDaSobra = chave
     }
   }
 

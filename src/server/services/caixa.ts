@@ -1,6 +1,7 @@
 import { Temporal } from '@js-temporal/polyfill'
 
 import { concentracaoDeLucro, ratearLucroDaComanda, type Concentracao } from '@/core/caixa/concentracao'
+import { margemPorServico, type ItemFechado, type MargemDoServico } from '@/core/caixa/margem-do-servico'
 import { buscarTudoPaginado } from '@/server/db/paginar'
 import { AppError } from '@/server/http/errors'
 
@@ -155,10 +156,10 @@ export async function concentracaoDoMes(db: Cliente, tenantId: string, timezone:
       .order('id'),
   )
 
-  const itensPorComanda = new Map<string, { professionalId: string | null; totalCents: number }[]>()
+  const itensPorComanda = new Map<string, { chave: string | null; totalCents: number }[]>()
   for (const item of itens) {
     const lista = itensPorComanda.get(item.ticket_id) ?? []
-    lista.push({ professionalId: item.professional_id, totalCents: item.total_cents })
+    lista.push({ chave: item.professional_id, totalCents: item.total_cents })
     itensPorComanda.set(item.ticket_id, lista)
   }
 
@@ -174,4 +175,57 @@ export async function concentracaoDoMes(db: Cliente, tenantId: string, timezone:
   }
 
   return { ...concentracao, nomes }
+}
+
+/**
+ * `docs/50` L-06 — a margem de cada serviço nos últimos 90 dias, do pior para o melhor.
+ *
+ * A janela é a mesma da concentração por profissional, e por um motivo prático: as duas respondem
+ * "como o salão está indo", e janelas diferentes fariam duas telas discordarem sobre o mesmo
+ * período sem que ninguém entendesse por quê.
+ *
+ * A conta inteira mora em `margemPorServico`. Aqui só se busca o que ela precisa — e se busca do
+ * lugar congelado: `ticket_items.cost_cents` e `.commission_cents` são o material e a comissão
+ * daquele atendimento, não os de hoje.
+ */
+export async function margemDosServicos(db: Cliente, tenantId: string, timezone: string, ate: string): Promise<MargemDoServico[]> {
+  const fim = Temporal.PlainDate.from(ate).add({ days: 1 })
+  const inicio = fim.subtract({ days: 90 })
+
+  const tickets = await buscarTudoPaginado(() =>
+    db
+      .from('tickets')
+      .select('id, discount_cents, fee_cents')
+      .eq('tenant_id', tenantId)
+      .in('status', ['closed', 'paid'])
+      .gte('closed_at', inicio.toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant().toString())
+      .lt('closed_at', fim.toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant().toString())
+      .order('id'),
+  )
+  if (tickets.length === 0) return []
+
+  const itens = await buscarTudoPaginado(() =>
+    db
+      .from('ticket_items')
+      .select('ticket_id, service_id, total_cents, cost_cents, commission_cents')
+      .eq('tenant_id', tenantId)
+      .in(
+        'ticket_id',
+        tickets.map((t) => t.id),
+      )
+      .order('id'),
+  )
+
+  const porComanda = new Map<string, ItemFechado[]>()
+  for (const i of itens) {
+    const lista = porComanda.get(i.ticket_id) ?? []
+    lista.push({ serviceId: i.service_id, totalCents: i.total_cents, costCents: i.cost_cents, commissionCents: i.commission_cents })
+    porComanda.set(i.ticket_id, lista)
+  }
+
+  return margemPorServico(
+    tickets
+      .map((t) => ({ itens: porComanda.get(t.id) ?? [], discountCents: t.discount_cents, feeCents: t.fee_cents }))
+      .filter((c) => c.itens.length > 0),
+  )
 }
