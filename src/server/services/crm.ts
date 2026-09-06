@@ -224,10 +224,22 @@ export async function fichaDoCliente(
       carrega a cobertura em vez de apresentar uma soma parcial como se fosse a pessoa inteira.
 
       Só é buscado para quem pode ver: sem `report:read`, nem a consulta acontece.
+
+      Paginado pelo mesmo motivo da consulta de atendimentos logo acima: o PostgREST corta em
+      `max_rows = 1000` e NÃO erra. Uma cliente antiga o bastante passaria disso e o lucro dela
+      apareceria MENOR que o real — errado com cara de exato, que é o pior dos dois erros.
     */
     opcoes.podeVerLucro
-      ? db.from('tickets').select('profit_cents').eq('tenant_id', tenantId).eq('client_id', clientId).in('status', ['closed', 'paid'])
-      : Promise.resolve({ data: null }),
+      ? buscarTudoPaginado(() =>
+          db
+            .from('tickets')
+            .select('profit_cents')
+            .eq('tenant_id', tenantId)
+            .eq('client_id', clientId)
+            .in('status', ['closed', 'paid'])
+            .order('id'),
+        )
+      : Promise.resolve(null),
   ])
 
   const historico = (historicoBruto.data ?? []).map((a) => ({
@@ -294,10 +306,10 @@ export async function fichaDoCliente(
       // Ticket médio sobre visitas concluídas — dividir por 0 na cliente que nunca veio daria NaN na tela.
       ticketMedioCents: visitas > 0 ? Math.round(ltvCents / visitas) : 0,
       ultimaVisita,
-      lucro: comandasBruto.data
+      lucro: comandasBruto
         ? lucroDoCliente({
-            lucroCents: comandasBruto.data.reduce((soma, t) => soma + t.profit_cents, 0),
-            comandas: comandasBruto.data.length,
+            lucroCents: comandasBruto.reduce((soma, t) => soma + t.profit_cents, 0),
+            comandas: comandasBruto.length,
             visitas,
             cicloPessoalDias: cicloBruto?.personal_cycle_days ?? null,
           })

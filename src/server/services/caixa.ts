@@ -133,16 +133,25 @@ export async function concentracaoDoMes(db: Cliente, tenantId: string, timezone:
   const lucroPorComanda = new Map(comandas.map((t) => [t.id, t.profit_cents]))
 
   /*
-    Filtrar por `ticket_id in (...)` e não repetir o recorte de data: o recorte já foi feito acima,
-    e refazê-lo aqui por `tickets!inner` abriria a porta para as duas consultas discordarem na
-    fronteira do mês — que é exatamente onde o `comissao.ts` já se queimou uma vez.
+    O join, e não `in('ticket_id', [...])`.
+
+    A primeira versão passava a lista de ids: num mês de 800 comandas isso vira uma URL de ~30 KB,
+    e o PostgREST recusa muito antes disso — a paginação não ajuda, porque o problema é o tamanho
+    do FILTRO, não o da resposta. Falharia só no salão movimentado, que é o único onde este número
+    interessa.
+
+    O recorte de data é reescrito aqui de propósito, com as MESMAS variáveis `inicio`/`fim` da
+    consulta acima: é a mesma string, então não há a divergência de fronteira de mês em que o
+    `comissao.ts` já se queimou. Duas consultas com o mesmo recorte, não dois recortes.
   */
   const itens = await buscarTudoPaginado(() =>
     db
       .from('ticket_items')
-      .select('ticket_id, professional_id, total_cents')
+      .select('ticket_id, professional_id, total_cents, tickets!inner(status, closed_at)')
       .eq('tenant_id', tenantId)
-      .in('ticket_id', [...lucroPorComanda.keys()])
+      .in('tickets.status', ['closed', 'paid'])
+      .gte('tickets.closed_at', inicio)
+      .lt('tickets.closed_at', fim)
       .order('id'),
   )
 
