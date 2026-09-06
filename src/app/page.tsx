@@ -101,7 +101,7 @@ const RECURSOS = [
       teste `pagina-do-negocio-e-so-dele.test.ts` trava as duas.
     */
     texto:
-      'Um link para colar na bio do Instagram. Quem for marcar abre no navegador e escolhe serviço, profissional e horário — sem baixar aplicativo, sem criar conta e sem esbarrar em nenhum concorrente pelo caminho. A página é do seu negócio e só dele, e o horário já entra na sua agenda sem risco de marcar dois no mesmo lugar.',
+      'Um link para colar na bio do Instagram. Quem for marcar abre no navegador e escolhe serviço, profissional e horário, sem baixar aplicativo, sem criar conta e sem esbarrar em nenhum concorrente pelo caminho. A página é do seu negócio e só dele, e o horário já entra na sua agenda sem risco de marcar dois no mesmo lugar.',
   },
   {
     icone: Wallet,

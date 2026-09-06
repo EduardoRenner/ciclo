@@ -261,7 +261,7 @@ function FormularioEntrada({
 
         {pontoDePedido.trim() !== '' && !pontoValido ? (
           <p role="alert" className="text-secundario text-bad">
-            O aviso precisa ser um número de {produto.unidade} — deixe em branco para não mudar.
+            O aviso precisa ser um número de {produto.unidade}. Deixe em branco para não mudar.
           </p>
         ) : null}
 
