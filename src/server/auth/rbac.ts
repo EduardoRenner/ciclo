@@ -19,7 +19,11 @@ export const PERMISSIONS = {
     'report:read',
     'professional:read',
   ],
-  professional: ['appointment:own', 'client:own', 'vault:own', 'comanda:own'],
+  // `commission:own` — `docs/53` C-01: o profissional lê o PRÓPRIO extrato de comissão, nada além.
+  // O extrato já é congelado por item no fechamento (`server/services/comissao.ts`); quem resolve
+  // "qual é o próprio" é a rota, via `my_professional_id`, nunca um `professionalId` de query
+  // string — o mesmo cuidado que `rbac.ts` pede de todo alcance `own`.
+  professional: ['appointment:own', 'client:own', 'vault:own', 'comanda:own', 'commission:own'],
   reception: ['appointment:*', 'client:read', 'client:create', 'comanda:create'],
   finance: ['payment:*', 'commission:*', 'report:*'],
 } as const satisfies Record<Papel, readonly string[]>

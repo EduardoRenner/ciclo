@@ -28,6 +28,8 @@ const REGRAS: { prefixo: string; pai: Pai }[] = [
   { prefixo: '/admin/orcamentos/', pai: { href: '/admin/orcamentos', rotulo: 'Orçamentos' } },
   { prefixo: '/admin/orcamentos', pai: { href: '/admin/config', rotulo: 'Configurações' } },
   { prefixo: '/admin/series', pai: { href: '/admin/config', rotulo: 'Configurações' } },
+  // `docs/53` C-01 — chega pelo hub de Configurações, igual a Séries e Orçamentos.
+  { prefixo: '/admin/comissao', pai: { href: '/admin/config', rotulo: 'Configurações' } },
   // A comanda abre a partir do atendimento do dia, nunca de um menu.
   { prefixo: '/admin/comanda', pai: { href: '/admin/agenda', rotulo: 'Agenda' } },
   // O caixa se chega pelo número de "Faturado hoje" — o voltar tem que devolver para lá.

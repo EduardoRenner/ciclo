@@ -6676,3 +6676,27 @@ mão. A camada é de apresentação: o produto para de PUBLICAR o ranking para q
 regra de duas camadas do `CLAUDE.md` vale para tabela nova; esta é leitura derivada de dado que o
 papel já alcança por outro motivo legítimo, e restringir `tickets` para `manager` quebraria o caixa
 inteiro.
+
+2026-09-06 · `docs/53` C-01: o profissional agora alcança `commission:own`. A RLS de `tickets` e
+`ticket_items` continua `has_tenant(tenant_id)` sem restrição por profissional — não foi
+apertada, deixada exatamente como estava. Por quê: as duas tabelas hoje são operadas por
+`professional` e `reception` via `comanda:own`/`comanda:create` sem filtro de "só o meu" em
+NENHUMA rota existente (`tickets/[id]/close`, `/cancel`, `/items`, `wallet/*` — todas chamam só
+`exigirPermissao`, nunca comparam `professional_id`) — é o desenho já em produção para permitir
+que qualquer pessoa da equipe feche a comanda de um colega. Restringir a RLS de SELECT por
+profissional quebraria esse fluxo sem eu ter visibilidade completa de quem depende dele.
+
+A trava de "só o próprio extrato" para C-01 ficou inteira na ROTA
+(`resolverProfessionalIdDoExtrato` em `commissions/extract/route.ts`): com escopo `own`, o
+`professionalId` da query é ignorado por completo e substituído pelo id resolvido via
+`my_professional_id(tenant_id)` — a mesma função `security definer` que a RLS de `appointments`
+já usa em `can_see_appointment`. Portanto a garantia de isolamento aqui vem da rota nunca
+confiar em entrada externa para "quem sou eu", não de uma segunda política de banco.
+
+**O que isto deixa em aberto, registrado para quem for auditar depois:** um profissional que
+chamasse a REST API do Supabase DIRETAMENTE (fora do Next.js, com o próprio JWT) já conseguiria
+hoje ler `ticket_items`/`tickets` de QUALQUER profissional do tenant — não é uma regressão desta
+mudança, é o estado da tabela desde a `0001`. Consertar isso exige decidir, com o dono, se
+`professional` deve mesmo operar comandas de colegas (parece intencional) e, se não, desenhar a
+política por operação (select vs. insert/update/delete) como `appointments_select` já faz com
+`can_see_appointment` — trabalho de escopo maior que um ticket, fica para auditoria dedicada.

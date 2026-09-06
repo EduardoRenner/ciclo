@@ -1,4 +1,4 @@
-import { BadgeDollarSign, Bell, Bot, Building2, CalendarRange, Clock, CreditCard, FileText, Megaphone, MessageSquareText, Package, Repeat, Repeat2, Scissors, ScrollText, ShieldCheck, Store, ToggleRight, Users, Wallet } from 'lucide-react'
+import { BadgeDollarSign, Bell, Bot, Building2, CalendarRange, Clock, CreditCard, FileText, HandCoins, Megaphone, MessageSquareText, Package, Repeat, Repeat2, Scissors, ScrollText, ShieldCheck, Store, ToggleRight, Users, Wallet } from 'lucide-react'
 import Link from 'next/link'
 
 import { headers } from 'next/headers'
@@ -45,6 +45,12 @@ const GRUPOS = [
     titulo: 'Dinheiro',
     itens: [
       { href: '/admin/caixa', titulo: 'Caixa', descricao: 'Fechamento do dia, do mês e a comissão de cada um', icone: Wallet, modulo: 'register' },
+      /*
+        `docs/53` C-01. Sem `modulo`, de propósito: aparece para todo mundo, inclusive
+        `professional` e `reception`, que não têm `register` — o `commission:own` do profissional
+        não depende do módulo de caixa estar ligado. A tela de destino decide sozinha quem entra.
+      */
+      { href: '/admin/comissao', titulo: 'Minha comissão', descricao: 'O que você já ganhou este mês, item a item', icone: HandCoins },
       { href: '/admin/mes', titulo: 'O mês', descricao: 'Os cinco números do mês numa página só, para mostrar a alguém', icone: CalendarRange, modulo: 'register' },
       { href: '/admin/estoque', titulo: 'Estoque', descricao: 'Quanto tem de cada produto e registrar compra', icone: Package, modulo: 'stock' },
       { href: '/admin/config/taxas', titulo: 'Taxa da maquininha', descricao: 'Quanto a máquina fica de cada forma de pagamento', icone: CreditCard, modulo: 'register' },

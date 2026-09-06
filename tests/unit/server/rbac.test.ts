@@ -47,9 +47,20 @@ describe('avaliarPermissao', () => {
   })
 
   it('profissional não alcança recurso que não está na linha dele', () => {
-    for (const acao of ['payment:refund', 'commission:read', 'service:create', 'report:read'] as const) {
+    for (const acao of ['payment:refund', 'service:create', 'report:read'] as const) {
       expect(avaliarPermissao('professional', acao), acao).toBeNull()
     }
+  })
+
+  /**
+   * `docs/53` C-01 — o profissional passou a alcançar `commission:read`, mas só no alcance `own`:
+   * é a mesma leitura de `appointment:own`/`client:own`, nunca `all`. Quem transforma isso em "só
+   * o PRÓPRIO extrato, nunca o de um colega" é a rota (`commissions/extract/route.ts`), que nunca
+   * confia num `professionalId` de query string quando o alcance é `own`.
+   */
+  it('profissional alcança o PRÓPRIO extrato de comissão, nunca o de qualquer um', () => {
+    expect(avaliarPermissao('professional', 'commission:read')).toBe('own')
+    expect(avaliarPermissao('professional', 'commission:update')).toBe('own')
   })
 
   it('finance mexe em dinheiro e não mexe em agenda', () => {
@@ -75,7 +86,7 @@ describe('exigirPermissao', () => {
   it('profissional em rota de dono leva 403 FORBIDDEN', () => {
     const erro = (() => {
       try {
-        exigirPermissao('professional', 'commission:update')
+        exigirPermissao('professional', 'payment:refund')
       } catch (e) {
         return e
       }
