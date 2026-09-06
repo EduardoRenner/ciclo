@@ -289,10 +289,22 @@ export async function serieMensalDeLucro(db: Cliente, tenantId: string, timezone
    */
   const faltando = mesesJaEncerrados(mesCorrente.toString(), MESES_DA_SERIE).filter((m) => !jaCongelados.has(m))
 
-  const novos: MesFechado[] = []
-  for (const mes of faltando.slice(0, 6)) {
-    const resumo = await resumoMensal(db, tenantId, timezone, mes.slice(0, 7))
+  /*
+   * Os resumos dos meses faltantes saem JUNTOS, e não um depois do outro. Em série, a primeira
+   * abertura da tela de uma conta antiga pagaria seis idas de rede enfileiradas — e esta base já
+   * mediu que latência de clique quase sempre é função esperando banco, não código lento.
+   *
+   * O teto de seis é o que impede o outro extremo: uma conta com dois anos de histórico dispararia
+   * 24 resumos de uma vez. Congelar do mais recente para trás deixa a tela certa já na primeira
+   * abertura, e o resto vem nas próximas.
+   */
+  const aCongelar = faltando.slice(0, 6)
+  const resumos = await Promise.all(
+    aCongelar.map(async (mes) => ({ mes, resumo: await resumoMensal(db, tenantId, timezone, mes.slice(0, 7)) })),
+  )
 
+  const novos: MesFechado[] = []
+  for (const { mes, resumo } of resumos) {
     /*
      * Mês sem comanda fechada é congelado com zeros de propósito. Pular gravaria a mesma consulta
      * vazia em toda abertura da tela, para sempre — e o zero daquele mês é a verdade sobre ele.
@@ -320,12 +332,7 @@ export async function serieMensalDeLucro(db: Cliente, tenantId: string, timezone
      */
     if (erroInsert && erroInsert.code !== '23505') throw new AppError('INTERNAL', { cause: erroInsert })
 
-    novos.push({
-      month: mes,
-      revenueCents: resumo.revenueCents,
-      profitCents: resumo.profitCents,
-      ticketsCount: resumo.ticketsCount,
-    })
+    novos.push({ month: mes, revenueCents: resumo.revenueCents, profitCents: resumo.profitCents, ticketsCount: resumo.ticketsCount })
   }
 
   return serieMensal([
