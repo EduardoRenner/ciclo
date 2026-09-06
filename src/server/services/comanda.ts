@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 import { calcularComissaoItem, calcularSobraDaComanda, calcularTotalItem, calcularTotaisComanda, type BaseComissao } from '@/core/comanda/totals'
+import { calcularTaxaDaMaquininha, FORMAS_DE_PAGAMENTO, lerTaxasDePagamento, type FormaDePagamento } from '@/core/comanda/taxa-de-pagamento'
 import { AppError } from '@/server/http/errors'
 import { baixarEstoqueDaComanda, estornarBaixaDaComanda } from '@/server/services/estoque'
 
@@ -22,6 +23,16 @@ export const EsquemaItemComanda = z
   })
   .refine((v) => Boolean(v.serviceId) !== Boolean(v.productId), { message: 'Escolha um serviço OU um produto, nunca os dois.' })
 export type EntradaItemComanda = z.infer<typeof EsquemaItemComanda>
+
+/**
+ * Fechar sem dizer como a cliente pagou é o que mantinha `tickets.fee_cents` em zero para sempre
+ * (`docs/49`). O campo é obrigatório de propósito: sem ele não há taxa, e sem taxa o "Sobrou" da
+ * tela do caixa continua sendo um número inflado com cara de resultado.
+ */
+export const EsquemaFechamento = z.object({
+  paymentMethod: z.enum(FORMAS_DE_PAGAMENTO, { message: 'Diga como a cliente pagou para poder fechar.' }),
+})
+export type EntradaFechamentoComanda = z.infer<typeof EsquemaFechamento>
 
 export const EsquemaDescontoGorjeta = z.object({
   discountCents: z.number().int().nonnegative().optional(),
@@ -217,13 +228,14 @@ async function resolverCommissionBps(db: Cliente, tenantId: string, item: { serv
  * percentual de comissão do profissional ou o preço do serviço mudem depois. `payments`/webhook
  * (TICKET-043) é quem move `closed` pra `paid`; aqui só fecha o carrinho.
  */
-export async function fecharComanda(db: Cliente, tenantId: string, ticketId: string) {
+export async function fecharComanda(db: Cliente, tenantId: string, ticketId: string, formaDePagamento: FormaDePagamento) {
   const { ticket, items } = await buscarComanda(db, tenantId, ticketId)
   if (ticket.status !== 'open') throw new AppError('INVALID_TRANSITION', { message: 'Essa comanda já foi fechada.' })
   if (items.length === 0) throw AppError.validacao({ items: 'Adicione pelo menos um item antes de fechar.' })
 
   const { data: tenant } = await db.from('tenants').select('settings').eq('id', tenantId).maybeSingle()
   const commissionBase = ((tenant?.settings as Settings | null)?.commission_base ?? 'gross') as BaseComissao
+  const feeBps = lerTaxasDePagamento(tenant?.settings)[formaDePagamento]
 
   let commissaoTotalCents = 0
   for (const item of items) {
@@ -237,12 +249,15 @@ export async function fecharComanda(db: Cliente, tenantId: string, ticketId: str
 
   const { subtotalCents, totalCents } = calcularTotaisComanda({ items: items.map((i) => ({ totalCents: i.total_cents })), discountCents: ticket.discount_cents, tipCents: ticket.tip_cents })
   const custoTotalCents = items.reduce((soma, item) => soma + item.cost_cents, 0)
+  // A base é o `total`, e não o subtotal: a maquininha cobra sobre o que foi passado nela, gorjeta
+  // inclusa. Ver o docstring de `calcularTaxaDaMaquininha`.
+  const feeCents = calcularTaxaDaMaquininha({ totalCents, feeBps })
   const profitCents = calcularSobraDaComanda({
     subtotalCents,
     discountCents: ticket.discount_cents,
     tipCents: ticket.tip_cents,
     materialCents: custoTotalCents,
-    feeCents: ticket.fee_cents,
+    feeCents,
     commissionCents: commissaoTotalCents,
   })
 
@@ -260,6 +275,9 @@ export async function fecharComanda(db: Cliente, tenantId: string, ticketId: str
       total_cents: totalCents,
       commission_cents: commissaoTotalCents,
       material_cost_cents: custoTotalCents,
+      payment_method: formaDePagamento,
+      fee_bps: feeBps,
+      fee_cents: feeCents,
       profit_cents: profitCents,
       closed_at: new Date().toISOString(),
     })

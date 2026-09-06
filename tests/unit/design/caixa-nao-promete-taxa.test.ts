@@ -21,6 +21,11 @@ import { semComentarios as semComentariosDe } from '../../helpers/fonte'
  * A guarda é de mão dupla, de propósito: no dia em que alguém escrever `fee_cents` de verdade, ela
  * para de exigir o silêncio e passa a exigir o quadro de volta. Guarda que só sabe proibir vira
  * dívida — é a lição da guarda do `vercel.json` (`CLAUDE.md`).
+ *
+ * **Esse dia chegou em 2026-09-06, com a `0066`.** `fecharComanda` passou a calcular a taxa a
+ * partir da forma de pagamento escolhida no fechamento, e os dois últimos casos deste arquivo
+ * viraram o outro lado da mão dupla: agora eles cobram que a conta use o valor CALCULADO e que
+ * ele seja gravado. Ver `docs/49`.
  */
 
 const SEPARADOR = String.fromCharCode(92)
@@ -86,16 +91,42 @@ describe('o caixa não anuncia uma taxa que ninguém calcula', () => {
     ).toBe(true)
   })
 
-  it('a sobra desconta a taxa mesmo hoje, para o dia em que ela existir', () => {
-    // Não adianta a tela voltar se a conta não muda junto. `calcularSobraDaComanda` já subtrai
-    // `feeCents`; aqui a guarda é de que `fecharComanda` passe o valor da comanda, e não um zero.
+  /*
+   * Esta parte mudou com a `0066`, e o motivo de ela ter mudado é o ponto: até então a guarda
+   * pedia `feeCents: ticket.fee_cents` — a coluna do banco, que ninguém preenchia. Passar uma
+   * coluna sempre-zero satisfazia a letra da guarda e não descontava nada.
+   *
+   * Agora o valor é calculado no fechamento, e o que precisa ser guardado é o par: a taxa é
+   * CALCULADA e o resultado desse cálculo é o que entra na sobra e o que é gravado. Ler de volta
+   * `ticket.fee_cents` (o valor de antes de fechar) volta a ser exatamente o defeito antigo — por
+   * isso ele é proibido por nome.
+   */
+  it('a sobra desconta a taxa CALCULADA no fechamento, não uma coluna que ninguém preencheu', () => {
     const fechamento = semComentarios('src/server/services/comanda.ts')
+
+    expect(
+      /calcularTaxaDaMaquininha\(/.test(fechamento),
+      'fecharComanda não calcula mais a taxa — sem isso `fee_cents` volta a ser zero para sempre',
+    ).toBe(true)
+
     const chamada = /calcularSobraDaComanda\(\{[\s\S]*?\}\)/.exec(fechamento)
     expect(chamada?.[0], 'fecharComanda não chama mais calcularSobraDaComanda').toBeDefined()
     expect(
-      /feeCents:\s*ticket\.fee_cents/.test(chamada![0]),
-      'fecharComanda calcula a sobra sem passar o `fee_cents` da comanda — no dia em que a taxa ' +
-        'for preenchida, o lucro guardado continuaria ignorando ela',
+      /feeCents\s*(,|\}|:\s*feeCents\b)/.test(chamada![0]),
+      'a sobra é calculada sem a taxa do fechamento — o lucro guardado ignoraria a maquininha',
     ).toBe(true)
+    expect(
+      /feeCents:\s*(0\b|ticket\.fee_cents)/.test(chamada![0]),
+      'a sobra recebe zero fixo ou relê `ticket.fee_cents` (que vale zero antes de fechar) — ' +
+        'é o defeito de 2026-08-28 de volta, agora disfarçado de conta',
+    ).toBe(false)
+  })
+
+  it('o valor calculado é GRAVADO na comanda, senão o caixa soma zero de novo', () => {
+    const fechamento = semComentarios('src/server/services/comanda.ts')
+    const update = /\.update\(\{[\s\S]*?closed_at[\s\S]*?\}\)/.exec(fechamento)
+    expect(update?.[0], 'o UPDATE que fecha a comanda mudou de forma — esta guarda precisa ser revista').toBeDefined()
+    expect(/fee_cents:\s*feeCents\b/.test(update![0]), 'o fechamento não grava `fee_cents`').toBe(true)
+    expect(/fee_bps:\s*feeBps\b/.test(update![0]), 'o fechamento não congela `fee_bps` — a comanda de agosto muda quando o dono renegocia em novembro').toBe(true)
   })
 })

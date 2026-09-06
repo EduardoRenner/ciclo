@@ -2891,9 +2891,11 @@ export type Database = {
           created_at: string
           created_by: string | null
           discount_cents: number
+          fee_bps: number
           fee_cents: number
           id: string
           material_cost_cents: number
+          payment_method: Database["public"]["Enums"]["payment_method"] | null
           professional_id: string | null
           profit_cents: number
           status: Database["public"]["Enums"]["ticket_status"]
@@ -2910,9 +2912,11 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           discount_cents?: number
+          fee_bps?: number
           fee_cents?: number
           id?: string
           material_cost_cents?: number
+          payment_method?: Database["public"]["Enums"]["payment_method"] | null
           professional_id?: string | null
           profit_cents?: number
           status?: Database["public"]["Enums"]["ticket_status"]
@@ -2929,9 +2933,11 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           discount_cents?: number
+          fee_bps?: number
           fee_cents?: number
           id?: string
           material_cost_cents?: number
+          payment_method?: Database["public"]["Enums"]["payment_method"] | null
           professional_id?: string | null
           profit_cents?: number
           status?: Database["public"]["Enums"]["ticket_status"]

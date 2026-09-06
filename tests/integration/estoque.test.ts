@@ -124,7 +124,7 @@ describe('estoque — baixa no fechamento, estorno, média móvel', () => {
 
       const ticketId = await abrirTicketVazio()
       await adicionarItemComanda(svc, tenantId, ticketId, { serviceId: servicoId, professionalId, qty: 1, discountCents: 0 })
-      await fecharComanda(svc, tenantId, ticketId)
+      await fecharComanda(svc, tenantId, ticketId, 'cash')
 
       const { data: produtoDepois } = await svc.from('products').select('stock_qty').eq('id', produto.id).single()
       expect(produtoDepois?.stock_qty).toBe(98) // 100 - 2
@@ -142,7 +142,7 @@ describe('estoque — baixa no fechamento, estorno, média móvel', () => {
 
       const ticketId = await abrirTicketVazio()
       await adicionarItemComanda(svc, tenantId, ticketId, { productId: produto.id, professionalId, qty: 3, discountCents: 0 })
-      await fecharComanda(svc, tenantId, ticketId)
+      await fecharComanda(svc, tenantId, ticketId, 'cash')
 
       const { data: produtoDepois } = await svc.from('products').select('stock_qty').eq('id', produto.id).single()
       expect(produtoDepois?.stock_qty).toBe(17) // 20 - 3
@@ -211,7 +211,7 @@ describe('estoque — baixa no fechamento, estorno, média móvel', () => {
 
       const ticketId = await abrirTicketVazio()
       await adicionarItemComanda(svc, tenantId, ticketId, { serviceId: servicoId, professionalId, qty: 1, discountCents: 0 })
-      await fecharComanda(svc, tenantId, ticketId)
+      await fecharComanda(svc, tenantId, ticketId, 'cash')
 
       const { data: apósFechar } = await svc.from('products').select('stock_qty').eq('id', produto.id).single()
       expect(apósFechar?.stock_qty).toBe(45) // 50 - 5
