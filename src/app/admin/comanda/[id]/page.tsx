@@ -46,13 +46,17 @@ export default async function PaginaComanda({ params }: { params: Promise<{ id: 
   const podeVerLucro = avaliarPermissao(ctx.papel, 'report:read') !== null
 
   /*
-   * Só para comanda FECHADA, e isso não é economia de consulta: com a comanda aberta a comissão
-   * ainda vale zero (ela só congela no fechamento, §5.7), então o "Sobrou" apareceria inflado
-   * exatamente enquanto a pessoa ainda pode mudar o preço. Número provisório com cara de
-   * resultado é o defeito que esta série inteira persegue.
+   * Só para comanda FECHADA ou PAGA, e as duas exclusões importam por motivos diferentes:
+   *
+   * - **aberta**: a comissão ainda vale zero (ela só congela no fechamento, §5.7), então o
+   *   "Sobrou" apareceria inflado exatamente enquanto a pessoa ainda pode mudar o preço;
+   * - **cancelada / estornada**: os números continuam gravados na linha (a regra 11 do `CLAUDE.md`
+   *   proíbe apagar; o estorno compensa, não apaga), mas aquele dinheiro não entrou. O caixa já
+   *   soma só `closed`/`paid` — mostrar o "Sobrou" de uma comanda estornada faria a tela do
+   *   atendimento discordar do fechamento do dia.
    */
   const sobra =
-    podeVerLucro && ticket.status !== 'open'
+    podeVerLucro && (ticket.status === 'closed' || ticket.status === 'paid')
       ? await (async () => {
           const [taxas, servicosSemFicha] = await Promise.all([
             lerTaxasDoTenant(db, ctx.tenantId),

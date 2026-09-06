@@ -197,8 +197,27 @@ export async function calibrarServicos(db: Cliente, tenantId: string, cicloEfeti
  * `core/cycle/prestacao-de-contas.ts`.
  */
 export async function prestacaoDeContasDoMotor(db: Cliente, tenantId: string, hoje: string): Promise<PrestacaoDeContas> {
+  /*
+    Só os últimos 12 meses, e o corte tem dois motivos.
+
+    O prático: esta consulta roda em toda abertura de `/admin/recuperar`, e a tabela é append-only
+    — uma linha por visita, para sempre. Sem teto, a tela mais usada do produto ficaria mais lenta
+    a cada mês de uso, para sempre.
+
+    O honesto, que é o que decide: `algo_version` existe justamente porque comparar previsão de
+    eras diferentes do Motor mistura coisas diferentes. Uma janela móvel de um ano responde "o
+    Motor está acertando HOJE", que é a pergunta que o dono faz; a série inteira responderia "a
+    média de todas as versões que já rodaram aqui", que não ajuda ninguém a decidir nada.
+  */
+  const desde = new Date(Date.parse(`${hoje}T12:00:00Z`) - 365 * 86_400_000).toISOString().slice(0, 10)
+
   const linhas = await buscarTudoPaginado(() =>
-    db.from('cycle_predictions').select('predicted_on, actual_return_on').eq('tenant_id', tenantId).order('id'),
+    db
+      .from('cycle_predictions')
+      .select('predicted_on, actual_return_on')
+      .eq('tenant_id', tenantId)
+      .gte('predicted_on', desde)
+      .order('id'),
   )
   return prestacaoDeContas(
     linhas.map((l) => ({ predictedOn: l.predicted_on, actualReturnOn: l.actual_return_on })),

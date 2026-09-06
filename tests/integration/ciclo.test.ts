@@ -9,6 +9,7 @@ import { criarServico } from '@/server/services/servicos'
 import { executarOnboarding } from '@/server/services/onboarding'
 import { concluirAgendamento, confirmarAgendamento, criarAgendamento, marcarChegada } from '@/server/services/agendamentos'
 import { recomputarCiclosDoTenant } from '@/server/services/ciclo'
+import { prestacaoDeContasDoMotor } from '@/server/services/previsao'
 
 import type { Database } from '@/server/db/types.gen'
 
@@ -251,5 +252,40 @@ describe('recomputarCiclosDoTenant — performance', () => {
       expect(duracao).toBeLessThan(60_000)
     },
     120_000,
+  )
+})
+
+/**
+ * `docs/48` C5 (`I-09`). A guarda do fio inteiro: o recálculo grava em `cycle_predictions`, e a
+ * prestação de contas lê de lá. Um teste de unidade prova a aritmética; só o banco prova que a
+ * coluna que uma ponta escreve é a que a outra lê — que é exatamente a classe de defeito que a
+ * série inteira dos `docs/49` foi consertar.
+ */
+describe('prestação de contas do Motor', () => {
+  it(
+    'a previsão registrada pelo recálculo chega na prestação de contas',
+    async () => {
+      const cliente = await criarCliente('Vai Virar Previsão')
+      await inserirAtendimentoConcluido(cliente, 30)
+
+      const hoje = new Date().toISOString().slice(0, 10)
+      await recomputarCiclosDoTenant(svc, tenantId, TZ, hoje)
+
+      const { count } = await svc
+        .from('cycle_predictions')
+        .select('id', { count: 'exact', head: true })
+        .eq('tenant_id', tenantId)
+        .eq('client_id', cliente)
+      expect(count, 'o recálculo não registrou previsão nenhuma — não há o que prestar contas').toBeGreaterThan(0)
+
+      const contas = await prestacaoDeContasDoMotor(svc, tenantId, hoje)
+      /*
+        A pessoa não voltou e a previsão é recente: fica em ABERTO, não conta como erro. É o outro
+        lado do viés de sobrevivência — punir quem ainda pode aparecer amanhã seria o erro oposto.
+      */
+      expect(contas.emAberto).toBeGreaterThan(0)
+      expect(contas.acertoBps, 'com uma amostra dessas o produto não pode afirmar taxa nenhuma').toBeNull()
+    },
+    60_000,
   )
 })
