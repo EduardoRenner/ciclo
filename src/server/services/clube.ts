@@ -110,11 +110,12 @@ export async function margensDoClube(db: Cliente, tenantId: string, timezone: st
           : 0
         const comissao = calcularComissaoItem({ totalCents: v.price_cents, costCents: material, commissionBps: bps, commissionBase })
         /*
-         * `produtosSemCusto` vinha de `custoDoServico` desde sempre e era DESCARTADO aqui — a
-         * pergunta que sobrava era `ficha.length === 0`, que a ficha semeada pelo pack respondia
-         * com "tem ficha" mesmo sem custo real nenhum por trás. Ver `docs/51` §2.
+         * A pergunta vem pronta de `custoDoServico`. Ela era remontada aqui como
+         * `ficha.length === 0` — e errava, porque a ficha semeada pelo pack responde "tem ficha"
+         * sem custo real nenhum por trás (`docs/51` §2). Remontar a pergunta onde já existe
+         * resposta é como este defeito nasceu; não repetir isso é o conserto.
          */
-        return { custoCents: material + comissao, materialIncerto: ficha.length === 0 || custo.produtosSemCusto > 0 }
+        return { custoCents: material + comissao, materialIncerto: custo.materialIncerto }
       })
 
       return {
