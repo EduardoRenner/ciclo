@@ -43,6 +43,20 @@ export type CustoDoServico = {
   produtosSemCusto: number
   /** Quantos produtos a ficha tem. Zero = serviço sem ficha, que é outro estado. */
   produtosNaFicha: number
+  /**
+   * `custoCents` não é o material de verdade — pelas duas razões possíveis, e quem chama não
+   * precisa saber qual: não há ficha, ou há ficha e algum produto dela nunca teve compra.
+   *
+   * Nasceu em 2026-09-06 porque os três chamadores (`comanda.ts`, `clube.ts`, `ciclo.ts`) já
+   * recebiam `produtosSemCusto` e os três o DESCARTAVAM, cada um reconstruindo a pergunta por
+   * conta própria — e o clube reconstruiu errado, perguntando só `ficha.length === 0`. A ficha
+   * semeada pelo `apply_vertical_pack` respondia "tem ficha" sem custo real nenhum por trás, e a
+   * margem saía sem ressalva (`docs/51` §2).
+   *
+   * Aqui a resposta é uma só, calculada onde a conta é feita. Quem tem os dois números não
+   * consegue mais montar a pergunta errada.
+   */
+  materialIncerto: boolean
 }
 
 /**
@@ -63,5 +77,6 @@ export function custoDoServico(ficha: readonly LinhaDaFicha[], qtyDoItem: number
     custoCents: Math.max(0, Math.round(porUnidade * qtyDoItem)),
     produtosSemCusto,
     produtosNaFicha: ficha.length,
+    materialIncerto: ficha.length === 0 || produtosSemCusto > 0,
   }
 }
