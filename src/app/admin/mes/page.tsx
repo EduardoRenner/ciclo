@@ -6,7 +6,7 @@ import { Temporal } from '@js-temporal/polyfill'
 import EmptyState from '@/components/ui/empty-state'
 import Card from '@/components/ui/card'
 import PageHeader from '@/components/ui/page-header'
-import { avaliarPermissao } from '@/server/auth/rbac'
+import { RELATORIO_DA_EQUIPE, avaliarPermissao } from '@/server/auth/rbac'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { concentracaoDoMes, resumoMensal } from '@/server/services/caixa'
@@ -57,7 +57,9 @@ export default async function PaginaDoMes() {
 
   const [mensal, concentracao, recuperar, motor, material] = await Promise.all([
     resumoMensal(db, ctx.tenantId, timezone, mes),
-    concentracaoDoMes(db, ctx.tenantId, timezone, mes),
+    // Mesma trava do caixa (`docs/50` L-10): sem `report:team` o número "de quem depende" não sai,
+    // e a consulta nem acontece.
+    avaliarPermissao(ctx.papel, RELATORIO_DA_EQUIPE) ? concentracaoDoMes(db, ctx.tenantId, timezone, mes) : null,
     listarParaRecuperar(db, ctx.tenantId),
     prestacaoDeContasDoMotor(db, ctx.tenantId, hoje.toString()),
     /*

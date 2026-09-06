@@ -6,7 +6,7 @@ import { Temporal } from '@js-temporal/polyfill'
 import EmptyState from '@/components/ui/empty-state'
 import Card from '@/components/ui/card'
 import PageHeader from '@/components/ui/page-header'
-import { avaliarPermissao } from '@/server/auth/rbac'
+import { RELATORIO_DA_EQUIPE, avaliarPermissao } from '@/server/auth/rbac'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { concentracaoDoMes, fechamentoDiario, resumoMensal } from '@/server/services/caixa'
@@ -99,7 +99,13 @@ export default async function PaginaCaixa({ searchParams }: { searchParams: Prom
       exige `report:read`, que é a trava que o §4.6 pede: dizer que 62% do lucro depende de uma
       pessoa é dado sensível DENTRO do salão, e o profissional comissionado não o alcança.
     */
-    concentracaoDoMes(db, ctx.tenantId, timezone, mes),
+    /*
+     * `docs/50` L-10: a concentração por profissional é a informação mais delicada do conjunto
+     * dentro de uma equipe, e o `manager` não a alcança (decisão em `docs/DECISOES.md`). Sem a
+     * permissão a consulta nem acontece — não é trava de segurança (ele lê `tickets` e monta a
+     * conta à mão), é o produto parar de PUBLICAR o ranking para quem convive com ele.
+     */
+    avaliarPermissao(ctx.papel, RELATORIO_DA_EQUIPE) ? concentracaoDoMes(db, ctx.tenantId, timezone, mes) : null,
     medirMaterialDoCatalogo(db, ctx.tenantId),
   ])
 
