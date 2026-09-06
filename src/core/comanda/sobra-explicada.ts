@@ -22,19 +22,21 @@ export type EntradaDaSobra = {
   commissionCents: number
   /** O dono já respondeu quanto a maquininha cobra? Ver `taxaEstaConfigurada`. */
   taxaRespondida: boolean
-  /** Quantos serviços desta comanda não têm ficha de consumo — o material deles não foi contado. */
-  servicosSemFicha: number
   /**
-   * Quantos serviços TÊM ficha e ainda assim não têm material confiável, porque pelo menos um
-   * produto dela nunca teve compra registrada (`avg_cost_cents = 0`).
+   * Quantos ITENS desta comanda entraram com um custo de material que não era o custo de verdade —
+   * `ticket_items.material_incerto`, congelado no lançamento de cada item (`0070`).
    *
-   * Este campo existe por causa de um defeito medido em 2026-09-06: `contarServicosSemFicha`
-   * respondia "0 serviços sem ficha" para o salão de cabelo cujo pack semeou a ficha inteira, e a
-   * tela então mostrava o "Sobrou" SEM lacuna nenhuma — completo por fora, com o material saindo
-   * de um custo que o próprio CICLO tinha inventado no cadastro. Perguntar "tem ficha?" nunca foi
-   * a mesma coisa que perguntar "o material é real?", e só a segunda pergunta protege o número.
+   * Item, e não serviço, porque é o item que carrega o `cost_cents` congelado. E uma contagem só,
+   * sem separar as duas razões (serviço sem ficha × produto sem compra registrada), porque o
+   * registro não guarda qual delas era — e saber a razão de um estado que já passou não muda ação
+   * nenhuma do dono hoje. Quem precisa da razão é o catálogo, onde ela ainda é resolvível, e lá
+   * `medirMaterialIncerto` continua respondendo as duas.
+   *
+   * Até 2026-09-06 este número era MEDIDO na abertura da tela, sobre o catálogo de hoje. A comanda
+   * de agosto parava de avisar assim que o dono registrasse a compra em outubro, e o
+   * `material_cost_cents` dela continuava zero: o número errado ficava e o aviso sumia.
    */
-  servicosComProdutoSemCusto: number
+  itensComMaterialIncerto: number
 }
 
 export type LinhaDaSobra = { rotulo: string; valorCents: number }
@@ -74,23 +76,14 @@ function frasePara(lacunas: readonly LacunaDaSobra[]): string | null {
  * mão. Somá-las num contador só produziria "3 serviços com material incompleto" sem dizer o que
  * fazer com nenhum dos três.
  */
-function detalhesPara(lacunas: readonly LacunaDaSobra[], semFicha: number, semCusto: number): string[] {
+function detalhesPara(lacunas: readonly LacunaDaSobra[], itens: number): string[] {
   const detalhes: string[] = []
   if (lacunas.includes('ficha')) {
-    if (semFicha > 0) {
-      detalhes.push(
-        semFicha === 1
-          ? '1 serviço desta comanda ainda não tem ficha de consumo'
-          : `${semFicha} serviços desta comanda ainda não têm ficha de consumo`,
-      )
-    }
-    if (semCusto > 0) {
-      detalhes.push(
-        semCusto === 1
-          ? '1 serviço tem ficha, mas algum produto dela nunca teve compra registrada — ele entrou valendo zero'
-          : `${semCusto} serviços têm ficha, mas algum produto delas nunca teve compra registrada — eles entraram valendo zero`,
-      )
-    }
+    detalhes.push(
+      itens === 1
+        ? '1 item entrou sem o custo real do produto: falta a ficha do serviço, ou falta registrar a compra do insumo'
+        : `${itens} itens entraram sem o custo real do produto: falta a ficha do serviço, ou falta registrar a compra do insumo`,
+    )
   }
   if (lacunas.includes('taxa')) detalhes.push('você ainda não informou quanto a maquininha cobra')
   return detalhes
@@ -101,7 +94,7 @@ export function explicarSobra(entrada: EntradaDaSobra): SobraExplicada {
   const sobraCents = receitaCents - entrada.materialCents - entrada.feeCents - entrada.commissionCents
 
   const lacunas: LacunaDaSobra[] = []
-  if (entrada.servicosSemFicha > 0 || entrada.servicosComProdutoSemCusto > 0) lacunas.push('ficha')
+  if (entrada.itensComMaterialIncerto > 0) lacunas.push('ficha')
   /*
    * A lacuna é "não respondeu", não "vale zero". Um salão que só recebe em dinheiro e Pix responde
    * zero de propósito, e para ele a conta está completa — cobrar dele uma resposta que ele já deu
@@ -119,6 +112,6 @@ export function explicarSobra(entrada: EntradaDaSobra): SobraExplicada {
     ],
     lacunas,
     frase: frasePara(lacunas),
-    detalhes: detalhesPara(lacunas, entrada.servicosSemFicha, entrada.servicosComProdutoSemCusto),
+    detalhes: detalhesPara(lacunas, entrada.itensComMaterialIncerto),
   }
 }
