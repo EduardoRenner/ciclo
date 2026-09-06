@@ -1,5 +1,6 @@
 import { calibrarCiclo, type PrevisaoResolvida } from '@/core/cycle/calibracao'
 import { VERSAO_DO_MOTOR } from '@/core/cycle/compute'
+import { prestacaoDeContas, type PrestacaoDeContas } from '@/core/cycle/prestacao-de-contas'
 import { buscarTudoPaginado } from '@/server/db/paginar'
 import { AppError } from '@/server/http/errors'
 
@@ -186,4 +187,21 @@ export async function calibrarServicos(db: Cliente, tenantId: string, cicloEfeti
   }
 
   return calibrados
+}
+
+/**
+ * `docs/48` C5 — quanto o Motor acertou, medido contra o que ele mesmo disse antes de saber.
+ *
+ * Lê `cycle_predictions` inteiro do tenant, e não só as resolvidas: contar acerto apenas sobre
+ * quem voltou é viés de sobrevivência, e faria a nota subir quanto pior o Motor fosse. Ver
+ * `core/cycle/prestacao-de-contas.ts`.
+ */
+export async function prestacaoDeContasDoMotor(db: Cliente, tenantId: string, hoje: string): Promise<PrestacaoDeContas> {
+  const linhas = await buscarTudoPaginado(() =>
+    db.from('cycle_predictions').select('predicted_on, actual_return_on').eq('tenant_id', tenantId).order('id'),
+  )
+  return prestacaoDeContas(
+    linhas.map((l) => ({ predictedOn: l.predicted_on, actualReturnOn: l.actual_return_on })),
+    hoje,
+  )
 }
