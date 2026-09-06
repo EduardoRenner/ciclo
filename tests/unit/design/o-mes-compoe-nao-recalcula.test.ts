@@ -58,11 +58,17 @@ describe('a tela do mês compõe os números que já existem', () => {
   })
 
   /**
-   * `acertoBps` é `null` enquanto não há previsão conferida, e `null` não é zero: dizer "o Motor
-   * acertou 0%" de um salão que ainda não teve previsão fechada acusa o produto de um erro que ele
-   * não cometeu. É a mesma regra que fez `taxaEstaConfigurada` existir.
+   * A versão anterior desta asserção era CEGA e o registro fica: ela procurava `acertoBps === null`
+   * no arquivo, e a mesma comparação existia noutra linha, no texto de apoio. Ao trocar o `valor`
+   * do quadro por `(motor.acertoBps ?? 0)`, a guarda passou verde com o defeito de volta.
+   *
+   * A regra saiu do JSX e virou `percentualOuTraco` (`core/text/sem-amostra.ts`), com teste de
+   * comportamento próprio nos dois lados — sem amostra vira traço, zero medido continua 0%. O que
+   * sobra aqui é a única coisa que varredura de fonte prova bem: que a tela CHAMA a função em vez
+   * de montar o ternário por conta.
    */
-  it('sem amostra, o acerto do Motor não vira zero por cento', () => {
-    expect(/acertoBps\s*===\s*null/.test(tela), 'a tela deixou de separar "sem amostra" de "zero"').toBe(true)
+  it('o acerto do Motor passa pela função que separa "sem amostra" de zero', () => {
+    expect(/percentualOuTraco\s*\(\s*motor\.acertoBps/.test(tela), 'a tela voltou a formatar o acerto do Motor por conta própria').toBe(true)
+    expect(/Math\.round\s*\(\s*motor\.acertoBps/.test(tela), 'ternário no JSX de novo: é onde a guarda anterior ficou cega').toBe(false)
   })
 })
