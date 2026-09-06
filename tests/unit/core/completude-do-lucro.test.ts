@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { acoesDeCompletude } from '@/core/comanda/completude-do-lucro'
+import { CATALOGO_DE_SERVICOS, acoesDeCompletude, destinoDoMaterial } from '@/core/comanda/completude-do-lucro'
 
 /**
  * O card que pede o dado do lucro tem que SUMIR quando o dado é dado — inclusive quando a resposta
@@ -76,5 +76,30 @@ describe('acoesDeCompletude — a pergunta some quando é respondida', () => {
    */
   it('sem report:read não sai ação nenhuma, nem quando falta tudo', () => {
     expect(acoesDeCompletude({ ...TUDO_FALTANDO, podeVerLucro: false })).toEqual([])
+  })
+})
+
+/**
+ * `docs/50` L-02: a faixa da comanda já dizia o que falta desde a `I-01`. O que faltava era ela
+ * custar UM TOQUE — hoje ela despejava o dono na lista inteira do catálogo para ele procurar qual
+ * dos serviços daquela comanda estava sem custo.
+ */
+describe('destinoDoMaterial — a faixa leva à resposta, não ao catálogo', () => {
+  it('um serviço incerto leva à ficha DELE', () => {
+    expect(destinoDoMaterial(['abc-123'])).toBe('/admin/config/servicos/abc-123/ficha')
+  })
+
+  /**
+   * Com vários, a lista. Mandar para a ficha do primeiro esconderia os outros dois, e o dono
+   * voltaria da tela achando que resolveu — pior que a caçada, porque a caçada ao menos não mente.
+   */
+  it('vários serviços incertos levam ao catálogo, e não ao primeiro deles', () => {
+    const destino = destinoDoMaterial(['abc-123', 'def-456', 'ghi-789'])
+    expect(destino).toBe(CATALOGO_DE_SERVICOS)
+    expect(destino, 'levar ao primeiro esconde os outros').not.toContain('abc-123')
+  })
+
+  it('nenhum serviço incerto ainda devolve um destino válido, e não null', () => {
+    expect(destinoDoMaterial([])).toBe(CATALOGO_DE_SERVICOS)
   })
 })
