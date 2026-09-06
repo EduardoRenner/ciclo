@@ -6654,3 +6654,25 @@ ele e `$` sem `/m` só casa no fim absoluto da string. `linha.replace(/--.*$/, '
 `split('\n')` não corta comentário **nenhum** — e passa verde, porque nenhum caso exercita a prosa.
 Na cobertura LGPD isso não mudava veredito (medido: zero casos nas 69 migrations), mas cortador
 inerte é armadilha esperando o primeiro caso que dependa dele.
+
+## 2026-09-06 · O gerente não vê de quem o lucro depende
+
+**Pergunta.** O `docs/50` L-10 manda decidir e registrar se o papel `manager` alcança a
+concentração de lucro por profissional — *"62% do que sobrou veio do Rafa"*.
+
+**Decisão.** Não. A leitura passa a exigir `report:team`, que `owner` e `finance` alcançam e
+`manager` não. A tabela de `PERMISSIONS` já produzia esse resultado (`manager` tem `report:read`
+literal, não `report:*`); faltava alguém pedir a permissão certa no lugar certo. Guardado em
+`tests/unit/server/rbac.test.ts`.
+
+**Motivo.** O `docs/48` §4.6 nomeia o risco como social, não técnico, e esta é a informação mais
+delicada do conjunto dentro de uma equipe: ela muda conversa de comissão, de escala e de cadeira, e
+o `manager` costuma ser colega de quem a frase nomeia. O resto do relatório continua inteiro para
+ele — travar demais vira chamado de suporte, que é a armadilha oposta do mesmo ticket.
+
+**O que esta decisão NÃO é.** Não é trava de segurança, e dizer o contrário seria pior que não ter.
+O `manager` lê `tickets` e `ticket_items` pela RLS, legitimamente, e com isso monta a mesma conta à
+mão. A camada é de apresentação: o produto para de PUBLICAR o ranking para quem convive com ele. A
+regra de duas camadas do `CLAUDE.md` vale para tabela nova; esta é leitura derivada de dado que o
+papel já alcança por outro motivo legítimo, e restringir `tickets` para `manager` quebraria o caixa
+inteiro.

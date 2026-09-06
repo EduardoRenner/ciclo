@@ -34,7 +34,12 @@ type Props = {
    */
   servicosSemMaterial: number
   /** De quem depende o que sobrou no mês (`docs/48` C7). */
-  concentracao: ConcentracaoDoMes
+  /**
+   * `null` para quem não alcança `report:team` — `docs/50` L-10. Só o dono e quem cuida do
+   * financeiro veem de quem o lucro depende, nome por nome; o `manager` costuma ser colega de quem
+   * a frase nomeia.
+   */
+  concentracao: ConcentracaoDoMes | null
 }
 
 /** A data já vem resolvida no fuso do salão pelo servidor; aqui é só aritmética de calendário. */
@@ -216,7 +221,7 @@ export default function Caixa({ dia, hoje, diario, mensal, comissoes, atendidoCe
         "300% do prejuízo é do Rafa" não ajuda a decidir nada. Nos dois casos a seção some, em vez
         de mostrar um número que se lê como alerta e não é.
       */}
-      {concentracao.vaiADizerAlgo && concentracao.maior ? (
+      {concentracao?.vaiADizerAlgo && concentracao.maior ? (
         <section className="mb-6">
           <SectionHeader>De quem depende o que sobra</SectionHeader>
           <Card className="flex flex-col gap-3">

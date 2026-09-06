@@ -31,14 +31,15 @@ export default function ResumoDoMes({
   entrouCents: number
   sobrouCents: number
   comandas: number
-  concentracao: ConcentracaoDoMes
+  /** `null` para quem não alcança `report:team` — `docs/50` L-10. */
+  concentracao: ConcentracaoDoMes | null
   paradoCents: number
   clientesParados: number
   motor: PrestacaoDeContas
   servicosSemMaterial: number
 }) {
-  const maior = concentracao.maior
-  const nomeDoMaior = maior?.professionalId ? concentracao.nomes[maior.professionalId] : null
+  const maior = concentracao?.maior ?? null
+  const nomeDoMaior = concentracao && maior?.professionalId ? concentracao.nomes[maior.professionalId] : null
 
   if (comandas === 0) {
     return (
@@ -86,11 +87,13 @@ export default function ResumoDoMes({
         <StatTile
           pressionavel
           rotulo="De quem depende"
-          valor={concentracao.vaiADizerAlgo && maior ? percentualOuTraco(maior.participacaoBps) : SEM_AMOSTRA}
+          valor={concentracao?.vaiADizerAlgo && maior ? percentualOuTraco(maior.participacaoBps) : SEM_AMOSTRA}
           apoio={
-            concentracao.vaiADizerAlgo && nomeDoMaior
-              ? `do lucro do mês veio de ${nomeDoMaior}`
-              : 'ainda não há equipe suficiente para essa conta dizer algo'
+            concentracao === null
+              ? 'só o dono e quem cuida do financeiro veem esta linha'
+              : concentracao.vaiADizerAlgo && nomeDoMaior
+                ? `do lucro do mês veio de ${nomeDoMaior}`
+                : 'ainda não há equipe suficiente para essa conta dizer algo'
           }
         />
       </Link>

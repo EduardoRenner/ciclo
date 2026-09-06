@@ -33,6 +33,25 @@ export const PERMISSIONS = {
 export type Escopo = 'all' | 'own'
 
 /**
+ * `report:team` — quem o lucro do salão DEPENDE, nome por nome.
+ *
+ * `docs/50` L-10 manda decidir e registrar se o `manager` alcança a concentração por profissional,
+ * e a decisão está em `docs/DECISOES.md` (2026-09-06): **não**. Ela é a informação mais delicada
+ * do conjunto dentro de uma equipe — *"62% do lucro veio do Rafa"* muda a conversa de comissão, de
+ * escala e de cadeira, e o `manager` costuma ser colega de quem a frase nomeia. `owner` alcança
+ * pelo curinga, `finance` pelo `report:*` que já tem; `manager` tem `report:read` literal e por
+ * isso NÃO alcança — a tabela de `PERMISSIONS` já produzia esse resultado, faltava alguém pedir.
+ *
+ * **Isto não é uma trava de segurança, e dizer o contrário seria pior que não ter.** O `manager`
+ * lê `tickets` e `ticket_items` pela RLS, legitimamente, e com isso monta a mesma conta à mão. A
+ * camada aqui é de apresentação: o produto para de PUBLICAR o ranking para quem convive com ele.
+ * A trava de duas camadas do `CLAUDE.md` vale para tabela nova; esta é uma leitura derivada de
+ * dado que o papel já alcança por outro motivo legítimo, e restringir `tickets` para `manager`
+ * quebraria o caixa inteiro.
+ */
+export const RELATORIO_DA_EQUIPE = 'report:team' as const
+
+/**
  * Ações que a FAQ reserva ao dono, e que o curinga da tabela acima entregaria a
  * mais. `client:export` cai aqui por causa da C35 ("só owner, com MFA na hora,
  * no máximo 1×/mês"), que contradiz o `client:*` do manager em §3.3. Entre as

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { avaliarPermissao, exigirPermissao, PERMISSIONS, type Papel } from '@/server/auth/rbac'
+import { PERMISSIONS, RELATORIO_DA_EQUIPE, avaliarPermissao, exigirPermissao, type Papel } from '@/server/auth/rbac'
 import { AppError } from '@/server/http/errors'
 
 const PAPEIS: Papel[] = ['owner', 'manager', 'professional', 'reception', 'finance']
@@ -84,5 +84,34 @@ describe('exigirPermissao', () => {
     expect(erro).toBeInstanceOf(AppError)
     expect((erro as AppError).code).toBe('FORBIDDEN')
     expect((erro as AppError).status).toBe(403)
+  })
+})
+
+/**
+ * `docs/50` L-10 — a decisão de quem vê a concentração por profissional, guardada.
+ *
+ * A tabela de `PERMISSIONS` já produzia este resultado antes de alguém pedir: `manager` tem
+ * `report:read` LITERAL, não `report:*`. A guarda existe porque a distância entre os dois é uma
+ * tecla, e ampliá-la publicaria "62% do lucro veio do Rafa" para quem trabalha ao lado do Rafa.
+ */
+describe('report:team — de quem o lucro depende, nome por nome', () => {
+  it('o dono e quem cuida do financeiro alcançam', () => {
+    expect(avaliarPermissao('owner', RELATORIO_DA_EQUIPE)).toBe('all')
+    expect(avaliarPermissao('finance', RELATORIO_DA_EQUIPE)).toBe('all')
+  })
+
+  it('o gerente NÃO alcança, e continua alcançando o resto do relatório', () => {
+    expect(
+      avaliarPermissao('manager', RELATORIO_DA_EQUIPE),
+      'trocar `report:read` por `report:*` na tabela publica o ranking para quem convive com ele',
+    ).toBeNull()
+    expect(avaliarPermissao('manager', 'report:read'), 'o gerente perdeu o caixa junto').toBe('all')
+  })
+
+  it('quem atende e quem recebe não alcançam nenhum dos dois', () => {
+    for (const papel of ['professional', 'reception'] as const) {
+      expect(avaliarPermissao(papel, RELATORIO_DA_EQUIPE)).toBeNull()
+      expect(avaliarPermissao(papel, 'report:read')).toBeNull()
+    }
   })
 })
