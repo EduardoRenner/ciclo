@@ -304,3 +304,96 @@ describe('estoque — baixa no fechamento, estorno, média móvel', () => {
     30_000,
   )
 })
+
+/**
+ * `docs/49`: `services.cost_cents` é lida por `adicionarItemComanda`, vai para
+ * `ticket_items.cost_cents` e de lá para `tickets.material_cost_cents` — e **nenhuma tela ou rota
+ * do produto a escreve**. Valia zero para todo serviço de todo tenant, então o "Material" do caixa
+ * só contava produto de balcão e o "Sobrou" de um serviço saía sem insumo nenhum.
+ *
+ * A ficha de consumo já existia e já era usada para dar baixa. Estes casos provam que ela passou a
+ * responder também quanto aquilo custou — e que o custo é congelado no item, não relido depois.
+ *
+ * Serviço próprio em cada caso: os outros testes deste arquivo empilham fichas no `servicoId`
+ * compartilhado sem limpar, e o custo somaria as deles.
+ */
+describe('estoque — o custo do serviço sai da ficha de consumo', () => {
+  async function criarServicoProprio(nome: string) {
+    const servico = await criarServico(svc, tenantId, {
+      name: nome,
+      description: null,
+      durationMin: 60,
+      bufferBeforeMin: 0,
+      bufferAfterMin: 0,
+      priceCents: 10_000,
+      pricingModel: 'fixed',
+      cycleDays: 21,
+      depositBps: 0,
+      depositMinCents: 0,
+      parallelCapacity: 1,
+      requiresAnamnesis: false,
+      bookableOnline: true,
+      categoryId: null,
+    })
+    return servico.id
+  }
+
+  it(
+    'quanto × custo médio de cada produto da ficha vira o material da comanda',
+    async () => {
+      const proprio = await criarServicoProprio(`Coloração ${randomUUID().slice(0, 6)}`)
+      const tinta = await criarProduto('Tinta 60g', 100) // avg_cost_cents 1.000
+      const oxigenada = await criarProduto('Oxigenada 100ml', 100)
+      await svc.from('service_products').insert([
+        { tenant_id: tenantId, service_id: proprio, product_id: tinta.id, qty: 2 },
+        { tenant_id: tenantId, service_id: proprio, product_id: oxigenada.id, qty: 0.5 },
+      ])
+
+      const ticketId = await abrirTicketVazio()
+      await adicionarItemComanda(svc, tenantId, ticketId, { serviceId: proprio, professionalId, qty: 1, discountCents: 0 })
+
+      const { data: item } = await svc.from('ticket_items').select('cost_cents').eq('ticket_id', ticketId).single()
+      // 2 × R$ 10,00 + 0,5 × R$ 10,00 = R$ 25,00
+      expect(item?.cost_cents, 'o custo não veio da ficha — voltou a sair de services.cost_cents, que ninguém preenche').toBe(2_500)
+
+      const fechado = await fecharComanda(svc, tenantId, ticketId, 'cash')
+      expect(fechado.material_cost_cents).toBe(2_500)
+      expect(fechado.profit_cents).toBe(10_000 - 2_500) // profissional `owner`, sem comissão
+    },
+    60_000,
+  )
+
+  it(
+    'serviço sem ficha continua caindo na sobrescrita manual de services.cost_cents',
+    async () => {
+      const proprio = await criarServicoProprio(`Corte Simples ${randomUUID().slice(0, 6)}`)
+      await svc.from('services').update({ cost_cents: 700 }).eq('id', proprio)
+
+      const ticketId = await abrirTicketVazio()
+      await adicionarItemComanda(svc, tenantId, ticketId, { serviceId: proprio, professionalId, qty: 2, discountCents: 0 })
+
+      const { data: item } = await svc.from('ticket_items').select('cost_cents').eq('ticket_id', ticketId).single()
+      expect(item?.cost_cents).toBe(1_400) // 2 × 700
+    },
+    60_000,
+  )
+
+  it(
+    'comprar mais caro depois não muda o custo de uma comanda já lançada',
+    async () => {
+      const proprio = await criarServicoProprio(`Hidratação ${randomUUID().slice(0, 6)}`)
+      const mascara = await criarProduto('Máscara 500g', 100)
+      await svc.from('service_products').insert({ tenant_id: tenantId, service_id: proprio, product_id: mascara.id, qty: 1 })
+
+      const ticketId = await abrirTicketVazio()
+      await adicionarItemComanda(svc, tenantId, ticketId, { serviceId: proprio, professionalId, qty: 1, discountCents: 0 })
+
+      // Compra nova, muito mais cara: a média móvel sobe.
+      await registrarEntradaEstoque(svc, tenantId, { productId: mascara.id, qty: 100, unitCostCents: 5_000 })
+
+      const { data: item } = await svc.from('ticket_items').select('cost_cents').eq('ticket_id', ticketId).single()
+      expect(item?.cost_cents, 'o custo do item foi relido do produto — deixou de ser histórico').toBe(1_000)
+    },
+    60_000,
+  )
+})

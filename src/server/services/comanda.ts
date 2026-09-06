@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 import { calcularComissaoItem, calcularSobraDaComanda, calcularTotalItem, calcularTotaisComanda, type BaseComissao } from '@/core/comanda/totals'
+import { custoDoServico } from '@/core/comanda/custo-do-servico'
 import { calcularTaxaDaMaquininha, FORMAS_DE_PAGAMENTO, lerTaxasDePagamento, type FormaDePagamento } from '@/core/comanda/taxa-de-pagamento'
 import { AppError } from '@/server/http/errors'
 import { baixarEstoqueDaComanda, estornarBaixaDaComanda } from '@/server/services/estoque'
@@ -84,15 +85,36 @@ export async function adicionarItemComanda(db: Cliente, tenantId: string, ticket
 
   let description: string
   let unitPriceCents: number
-  let costCents: number
+  /** Já multiplicado pela `qty` do item — cada ramo resolve o próprio arredondamento. */
+  let costTotalCents: number
 
   if (entrada.serviceId) {
-    const { data: servico, error } = await db.from('services').select('name, price_cents, cost_cents').eq('tenant_id', tenantId).eq('id', entrada.serviceId).maybeSingle()
+    /*
+     * A ficha de consumo entra aqui, e as duas consultas vão juntas porque não dependem uma da
+     * outra (docs/28 §10: a comanda é a tela mais operacional do dia).
+     *
+     * Até 2026-09-06 o custo do serviço saía de `services.cost_cents`, uma coluna que NENHUMA
+     * tela e NENHUMA rota escreve — zero para todo serviço de todo tenant (`docs/49`). O
+     * `docs/48` §Fase 3 dá o motivo de não bastar criar um campo para o dono preencher: o
+     * `docs/47` P02 mede que 73% dos donos não sabem calcular o custo de um serviço. Mas eles
+     * cadastram a ficha de consumo e o custo do produto, porque o estoque depende disso — e daí
+     * o custo do serviço se deduz.
+     *
+     * `services.cost_cents` continua valendo como sobrescrita manual para quem não tem ficha:
+     * quem não usa estoque não fica sem caminho.
+     */
+    const [{ data: servico, error }, { data: ficha, error: erroFicha }] = await Promise.all([
+      db.from('services').select('name, price_cents, cost_cents').eq('tenant_id', tenantId).eq('id', entrada.serviceId).maybeSingle(),
+      db.from('service_products').select('qty, products(avg_cost_cents)').eq('tenant_id', tenantId).eq('service_id', entrada.serviceId),
+    ])
     if (error) throw new AppError('INTERNAL', { cause: error })
+    if (erroFicha) throw new AppError('INTERNAL', { cause: erroFicha })
     if (!servico) throw new AppError('NOT_FOUND')
     description = servico.name
     unitPriceCents = entrada.unitPriceCents ?? servico.price_cents
-    costCents = servico.cost_cents
+
+    const linhas = (ficha ?? []).map((l) => ({ qty: l.qty, avgCostCents: l.products?.avg_cost_cents ?? 0 }))
+    costTotalCents = linhas.length > 0 ? custoDoServico(linhas, entrada.qty).custoCents : Math.round(entrada.qty * servico.cost_cents)
   } else {
     const { data: produto, error } = await db
       .from('products')
@@ -137,7 +159,7 @@ export async function adicionarItemComanda(db: Cliente, tenantId: string, ticket
       throw AppError.validacao({ productId: explicacao }, explicacao)
     }
     unitPriceCents = entrada.unitPriceCents ?? precoDoCatalogo!
-    costCents = produto.avg_cost_cents
+    costTotalCents = Math.round(entrada.qty * produto.avg_cost_cents)
   }
 
   const totalCents = calcularTotalItem({ qty: entrada.qty, unitPriceCents, discountCents: entrada.discountCents })
@@ -155,7 +177,7 @@ export async function adicionarItemComanda(db: Cliente, tenantId: string, ticket
       unit_price_cents: unitPriceCents,
       discount_cents: entrada.discountCents,
       total_cents: totalCents,
-      cost_cents: Math.round(entrada.qty * costCents),
+      cost_cents: costTotalCents,
     })
     .select('*')
     .single()
