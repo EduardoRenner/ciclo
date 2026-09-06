@@ -120,12 +120,23 @@ com o custo junto, e o trabalho era o inverso: **tirar o custo e ensinar a tela 
 
 ## 3 · O que foi construído
 
-| Commit | O quê |
-|---|---|
-| `fix(lucro)` `0069` | Pack para de semear custo; custo já semeado em produto sem compra volta a zero; `medirMaterialIncerto` passa a responder as duas causas; `explicarSobra` ganha a lacuna que faltava |
-| `fix(guarda)` | O cortador de comentário `--` não cortava nada em arquivo CRLF — achado ao **mutar**, não ao escrever |
-| `fix(guarda)` | Mesmo cortador inerte na guarda de cobertura LGPD (zero mudanças de veredito, medido) |
-| `feat(lucro)` `L-01` | A completude entra em "Hoje" e **some quando respondida, inclusive com zero** |
+| # | Commit | O quê |
+|---|---|---|
+| 1 | `fix(lucro)` `0069` | Pack para de semear custo; custo já semeado em produto sem compra volta a zero; `explicarSobra` ganha a lacuna que faltava |
+| 2 | `fix(guarda)` | O cortador de comentário `--` não cortava nada em arquivo CRLF — achado ao **mutar**, não ao escrever |
+| 3 | `fix(guarda)` | Mesmo cortador inerte na guarda de cobertura LGPD (zero mudanças de veredito, medido) |
+| 4 | `feat(lucro)` `L-01` | A completude entra em "Hoje" e **some quando respondida, inclusive com zero** |
+| 5 | `fix(lucro)` | A lacuna chega ao **caixa** e ao **clube** — o vizinho que a `0069` deixou mentindo para baixo |
+| 6 | `fix(lucro)` | `materialIncerto` volta para dentro de `custoDoServico`: três chamadores remontavam a pergunta, e o do clube remontava errado |
+| 7 | `test(guarda)` | A pergunta do material tem um dono, e a varredura cobra isso |
+| 8 | `fix(lucro)` | A **fila de recuperação** prometia descontar um produto que não desconta — e é o lucro que ORDENA aquela fila |
+| 9 | `feat(lucro)` `L-02` | A faixa da comanda leva à ficha **daquele** serviço, não ao catálogo |
+| 10 | `fix(lucro)` `0070` | A lacuna era **refeita todo dia** e agora congela no item — ver §2.1 |
+| 11 | `test(guarda)` | Calcular a ressalva e não gravá-la é o defeito de `fee_cents` de volta |
+| 12 | `feat(lucro)` `L-06` | Margem por serviço na lista, com a parcela dominante — a razão ao lado do número |
+| 13 | `test(guarda)` | O veto de precificação vira **molde de permitidos**, não lista de proibidos |
+| 14 | `feat(lucro)` `L-07` | `/admin/mes` — os cinco números da tese numa página só |
+| 15 | `fix(mes)` | "não sei" e "zero" saem do JSX e viram regra guardada |
 
 **Decisões tomadas sozinho** `[D]`:
 
@@ -145,9 +156,62 @@ com o custo junto, e o trabalho era o inverso: **tirar o custo e ensinar a tela 
 5. **`papel` opcional em `centralDeAcoes`, com a ausência ESCONDENDO as ações.** Falhar fechado:
    um `undefined` distraído não pode virar porta aberta para dado de dinheiro.
 
+
+### 2.1 · O segundo achado, que só apareceu depois do primeiro
+
+**A lacuna era recalculada do catálogo de hoje, sobre um custo congelado ontem.**
+
+`ticket_items.cost_cents` é congelado no lançamento. A faixa que avisa "falta descontar o produto"
+era medida a cada abertura da tela, sobre o estado atual de `service_products` e
+`products.avg_cost_cents`. As duas divergem em silêncio:
+
+1. o dono fecha uma comanda em agosto sem ter registrado a compra → `cost_cents = 0`, a faixa avisa;
+2. em outubro ele registra a compra → `avg_cost_cents` deixa de ser zero;
+3. **a comanda de agosto para de exibir a faixa**, e o `material_cost_cents` dela continua zero.
+
+O número segue errado e o aviso sumiu. É a regra que a `0066` escreveu para a taxa, quebrada uma
+tela adiante: *o lucro é registro, não view* — e ela vale para o valor **e** para a ressalva sobre
+ele. Na direção oposta o estrago é igual: apagar uma linha da ficha faz comandas antigas, fechadas
+com material correto, passarem a acusar uma lacuna que nunca existiu.
+
+A `0070` põe a ressalva no ITEM, que é quem carrega o custo congelado, nascendo da mesma consulta e
+no mesmo instante. De passagem, o caminho que ninguém tinha olhado: **produto de revenda** sem
+compra registrada entra com custo zero e infla o lucro igual ao insumo.
+
+### 2.2 · A fila que o primeiro conserto abriu
+
+Consertar uma tela revelou a próxima, três vezes seguidas — o padrão de *"coluna sem escritor vem
+em fila"*. Todas eram a mesma pergunta errada em lugares diferentes:
+
+| Tela | O que dizia | O que era |
+|---|---|---|
+| Caixa | quadro "Material" com R$ 0,00 pelado | lido como *"hoje não teve material"* — a frase que tirou o quadro "Taxa" daqui em 28/08 |
+| Clube | *"o serviço ainda não tem ficha de consumo"* | a ficha do pack já estava lá; o dono voltaria achando que o sistema se enganou |
+| Fila de recuperação | *"o que sobra depois da comissão e do produto"* | sem material, uma coloração parece tão lucrativa quanto um corte — e o lucro é o que ORDENA aquela fila |
+
+A raiz era uma só: `custoDoServico` devolvia `produtosSemCusto` e os **três** chamadores o
+descartavam, cada um remontando a pergunta por conta própria. O do clube remontou errado. A
+resposta voltou para dentro da função, e uma guarda impede o próximo chamador de repetir a conta
+por fora.
+
 ---
 
-## 4 · A lição de guarda desta rodada
+## 4 · As lições de guarda desta rodada
+
+Foram **quatro** guardas cegas nesta rodada, todas pegas pelo procedimento de mutação e nenhuma
+pela leitura. Vale listar, porque as quatro têm caras diferentes:
+
+| Guarda | Como estava cega | O conserto |
+|---|---|---|
+| pack não semeia custo | cortador de comentário `--` inerte em CRLF (abaixo) | `sqlSemComentarios` em `helpers/fonte.ts` |
+| margem do clube | testava o NÚCLEO, e o defeito estava no SERVIDOR | a decisão voltou para `custoDoServico` |
+| a ressalva é gravada | ninguém cobrava a ESCRITA, só o cálculo | casa com o INSERT, como a guarda de `fee_cents` |
+| "sem amostra" ≠ zero | casava com `acertoBps === null` do texto VIZINHO | virou `percentualOuTraco`, com teste de comportamento |
+
+A terceira e a quarta são a mesma lição do `CLAUDE.md` em roupas novas: varrer fonte prova que um
+texto existe, nunca que um caminho executa — e o texto vizinho é o disfarce mais comum disso.
+
+### O cortador que não cortava
 
 O cortador de comentário quebrado **só apareceu ao mutar**. A guarda reprovou a mutação — resultado
 esperado do exercício — **pelo motivo errado**: acusou o comentário que explicava o defeito, e não
@@ -176,4 +240,16 @@ motivo que aquele foi para lá: eram duas cópias divergentes da mesma regra.
    que quem valida é a CI.
 3. `L-05` (as três conversas com donos de salão) continua sendo a coisa mais barata que pode
    derrubar a tese inteira, e continua não sendo trabalho de código.
-4. `L-06`, `L-07`, `L-09` e `L-10` do `docs/50` seguem abertos.
+4. `L-09` (série mensal congelada) e `L-10` (papéis mais finos) do `docs/50` seguem abertos, e
+   `L-04`/`L-08` (landing e `/precos`) também — os dois últimos são copy, e esta rodada evitou
+   fechar por copy de propósito: foi assim que as duas rodadas anteriores falharam.
+5. `L-03` está cumprido pela `0069`, mas ao contrário do que o `docs/50` supunha: ele pedia para
+   **começar** a semear a ficha, e a realidade era que ela já vinha semeada com o custo junto. O
+   critério que importava (*"nenhum custo é semeado"*, item 3, e a guarda do item 4) está de pé.
+
+## 6 · O que este PR entregou, em uma linha
+
+Quatro defeitos de silêncio na conta do lucro — o custo inventado pelo pack, a lacuna que não
+chegava a três telas, a ressalva recalculada do dia de hoje sobre um custo de ontem, e o produto de
+revenda sem compra —, mais `L-01`, `L-02`, `L-06` e `L-07` do `docs/50`. **Nenhuma linha de copy de
+landing**: o diff é código, e as duas rodadas anteriores falharam exatamente por não ser.
