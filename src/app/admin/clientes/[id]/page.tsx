@@ -26,7 +26,7 @@ export default async function PaginaFicha({ params }: { params: Promise<{ id: st
   const db = await criarClienteDoUsuario()
 
   const [ficha, modelos, negocio, planos, profissionais, servicos, plano] = await Promise.all([
-    fichaDoCliente(db, ctx.tenantId, id).catch((erro: unknown) => {
+    fichaDoCliente(db, ctx.tenantId, id, ctx.tenant.timezone).catch((erro: unknown) => {
       if (erro instanceof AppError && erro.code === 'NOT_FOUND') return null
       throw erro
     }),

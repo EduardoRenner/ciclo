@@ -31,6 +31,7 @@ import { dinheiro, formatarTelefone } from '@/lib/formato'
 import { camposDePreferencia } from '@/lib/preferencias'
 import { aplicarVariaveis, linkWhatsApp, precisaDeAgendamento } from '@/lib/mensagens'
 
+import { fraseDoRitmo } from '@/core/ciclo/ritmo-do-cliente'
 import type { EstadoCiclo } from '@/core/cycle/compute'
 import type { EstadoAgendamento } from '@/core/scheduling/state'
 import type { FichaCliente } from '@/server/services/crm'
@@ -335,9 +336,30 @@ export default function Ficha({
               {selo.texto}
               {ciclo.lateDays > 0 ? ` há ${ciclo.lateDays} dias` : ''}
             </p>
-            <p className="text-secundario text-txt-2">Costuma voltar para {ciclo.serviceName}.</p>
+            {/*
+              `docs/48` C4. A linha era "Costuma voltar para Corte." — verdadeira e muda sobre a
+              única coisa que separa o CICLO de um filtro de data: o ritmo DAQUELA pessoa. O
+              concorrente mais próximo entrega "quem não volta há 45 dias", igual para todo mundo
+              (`docs/47` §1.6); o Motor sabe que uma some em 18 dias e outra em 60 desde o
+              TICKET-036, e não dizia.
+            */}
+            <p className="text-secundario text-txt-2">
+              {fraseDoRitmo(ciclo.ritmo) ?? 'Costuma voltar'} Para {ciclo.serviceName}.
+            </p>
+            {ciclo.ritmo.procedencia ? <p className="text-label text-txt-3">{ciclo.ritmo.procedencia}</p> : null}
           </div>
         </Card>
+      ) : null}
+
+      {/*
+        Quem está em dia também tem ritmo, e vê-lo é o que faz a pessoa acreditar no aviso quando
+        ele vier. Sem alarme nenhum: linha de texto, não cartão.
+      */}
+      {ciclo && ciclo.state === 'on_track' && fraseDoRitmo(ciclo.ritmo) ? (
+        <p className="mb-4 text-secundario text-txt-2">
+          {fraseDoRitmo(ciclo.ritmo)} Para {ciclo.serviceName}.
+          {ciclo.ritmo.procedencia ? <span className="text-txt-3"> ({ciclo.ritmo.procedencia})</span> : null}
+        </p>
       ) : null}
 
       {/*

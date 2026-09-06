@@ -1,5 +1,6 @@
 import { Temporal } from '@js-temporal/polyfill'
 
+import { reguaEfetivaDias } from '@/core/ciclo/regua-do-servico'
 import { computeCycle } from '@/core/cycle/compute'
 import { valorEmRiscoCents } from '@/core/cycle/valor-em-risco'
 import { buscarTudoPaginado } from '@/server/db/paginar'
@@ -73,7 +74,7 @@ export async function recomputarCiclosDoTenant(db: Cliente, tenantId: string, ti
     ponto inteiro do mecanismo — e a configurada continua intacta na outra coluna, para o dono
     poder comparar e para a correção ser reversível.
   */
-  const cycleDaysPorServico = new Map(servicos.map((s) => [s.id, s.cycle_days_observado ?? s.cycle_days]))
+  const cycleDaysPorServico = new Map(servicos.map((s) => [s.id, reguaEfetivaDias(s.cycle_days, s.cycle_days_observado)]))
   const precoPorServico = new Map(servicos.map((s) => [s.id, s.price_cents]))
 
   const temFuturoPorCombinacao = new Set(futuros.filter((a) => a.client_id).map((a) => `${a.client_id}:${a.service_id}`))
@@ -195,7 +196,7 @@ export async function recomputarCicloDeUmAtendimento(
       .eq('client_id', combinacao.clientId)
       .eq('service_id', combinacao.serviceId)
       .in('status', ['pending', 'confirmed', 'arrived']),
-    db.from('services').select('cycle_days, price_cents').eq('id', combinacao.serviceId).maybeSingle(),
+    db.from('services').select('cycle_days, cycle_days_observado, price_cents').eq('id', combinacao.serviceId).maybeSingle(),
   ])
   if (concluidos.error) throw new AppError('INTERNAL', { cause: concluidos.error })
   if (futuros.error) throw new AppError('INTERNAL', { cause: futuros.error })
@@ -210,7 +211,9 @@ export async function recomputarCicloDeUmAtendimento(
 
   const resultado = computeCycle({
     history,
-    defaultCycleDays: servico.data.cycle_days,
+    // A MESMA régua do job noturno. Ler `cycle_days` sozinho aqui fazia concluir um atendimento
+    // reverter a previsão para o palpite de catálogo até a madrugada seguinte corrigir.
+    defaultCycleDays: reguaEfetivaDias(servico.data.cycle_days, servico.data.cycle_days_observado),
     today: Temporal.PlainDate.from(today),
     hasFutureAppointment: (futuros.count ?? 0) > 0,
   })

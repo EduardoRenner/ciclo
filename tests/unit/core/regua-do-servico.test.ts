@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { reguaDoServico } from '@/core/ciclo/regua-do-servico'
+import { reguaDoServico, reguaEfetivaDias } from '@/core/ciclo/regua-do-servico'
 
 /**
  * O produto passou a ter dois números para a mesma coisa: `cycle_days` (palpite de catálogo) e
@@ -52,5 +52,24 @@ describe('a régua do serviço diz o que usa e de onde veio', () => {
      */
     expect(reguaDoServico(21, 30, null)).toEqual({ diasEmUso: 30, procedencia: null })
     expect(reguaDoServico(21, 30, 0)).toEqual({ diasEmUso: 30, procedencia: null })
+  })
+})
+
+/**
+ * A régua que o Motor USA, e o defeito que fez ela virar função: os dois recálculos (o noturno e o
+ * de "concluir atendimento") escreviam a mesma linha de `client_cycles` escolhendo réguas
+ * diferentes. Ver `tests/unit/design/regua-do-ciclo-e-uma-so.test.ts`.
+ */
+describe('reguaEfetivaDias', () => {
+  it('sem medição, usa a configurada', () => {
+    expect(reguaEfetivaDias(21, null)).toBe(21)
+  })
+
+  it('com medição, a medida ganha — é o mecanismo inteiro da 0065', () => {
+    expect(reguaEfetivaDias(21, 30)).toBe(30)
+  })
+
+  it('medida mais curta que a configurada também ganha', () => {
+    expect(reguaEfetivaDias(45, 12)).toBe(12)
   })
 })
