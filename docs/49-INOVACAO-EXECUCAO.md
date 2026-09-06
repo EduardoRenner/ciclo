@@ -50,6 +50,26 @@ do plano é que a taxa já está lá. Ela não está.**
 
 Por isso o C1 não começa na tela: começa na taxa.
 
+### E não era uma coluna só — eram três, em fila
+
+Medido depois, executando o I-01 `[M]`: o mesmo padrão aparece três vezes seguidas no caminho do
+lucro de um serviço, cada uma escondendo a próxima.
+
+| Coluna / tabela | Quem lê | Quem escreve, antes de 2026-09-06 |
+|---|---|---|
+| `tickets.fee_cents` | `calcularSobraDaComanda`, resumo do caixa | **ninguém** |
+| `services.cost_cents` | `adicionarItemComanda` → `ticket_items.cost_cents` → `material_cost_cents` | **ninguém** (excluída de `listarServicos` de propósito, sem campo e sem rota) |
+| `service_products` (ficha de consumo) | `baixarEstoqueDaComanda`, e agora o custo do serviço | **ninguém** — nenhuma tela, nenhuma rota |
+
+Ou seja: o "Sobrou" de um salão que só vende serviço era **preço − comissão**. Nem material, nem
+taxa. O `docs/48` §Fase 3 imagina esse estado como o *pior* caso ("mesmo com insumo zerado…") e ele
+era o **único** caso, para todo tenant.
+
+A terceira linha é a que muda a resposta do plano. A mitigação do `48` para o custo desconhecido é
+"deixe em zero e diga que falta"; a ficha de consumo permite algo melhor, sem pedir ao dono o que o
+`47` P02 diz que ele não sabe: ele não informa o custo do serviço, informa **o que o serviço gasta**
+— que é o que ele já compra, conta e cadastra para o estoque não furar. O custo se deduz.
+
 ---
 
 ## Os tickets, na ordem do `48` §Fase 3
@@ -57,8 +77,8 @@ Por isso o C1 não começa na tela: começa na taxa.
 | # | Candidato | O que entrega |
 |---|---|---|
 | **I-01** | C1 | A taxa de pagamento passa a existir: forma de pagamento no fechamento + percentual por forma, por tenant. `fee_cents` ganha quem a escreva, e o quadro "Taxa" volta ao caixa |
-| **I-02** | C1 | "Sobrou" por atendimento na tela, ao lado do preço, com **estado incompleto honesto** quando o insumo é zero |
-| **I-03** | C1/§4.6 | O número de lucro atrás de `report:read` — invisível ao profissional comissionado |
+| **I-02** | C1 | O insumo do serviço sai da **ficha de consumo** × custo médio do produto, e não de `services.cost_cents` — outra coluna sem escritor. Inclui a tela da ficha, que também faltava |
+| **I-03** | C1/§4.6 | "Sobrou" por atendimento na tela, atrás de `report:read`, com **estado incompleto honesto** quando falta ficha ou taxa |
 | **I-04** | C4 | O ciclo de cada pessoa dito com todas as letras: *"vem a cada 18 dias, está há 31"* |
 | **I-05** | C7 | Concentração de lucro por profissional |
 | **I-06** | C6 | Margem viva do pacote/clube: alerta quando o assinante virou prejuízo |
