@@ -11,6 +11,7 @@ import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { concentracaoDoMes, fechamentoDiario, resumoMensal } from '@/server/services/caixa'
 import { extratoDeComissao } from '@/server/services/comissao'
+import { medirMaterialDoCatalogo } from '@/server/services/ficha-de-consumo'
 import { lerTaxasDoTenant } from '@/server/services/taxas-de-pagamento'
 
 import Caixa from './caixa'
@@ -81,7 +82,7 @@ export default async function PaginaCaixa({ searchParams }: { searchParams: Prom
   const inicioDoDia = dia.toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant().toString()
   const fimDoDia = dia.add({ days: 1 }).toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant().toString()
 
-  const [diario, mensal, profissionais, atendimentos, taxas, concentracao] = await Promise.all([
+  const [diario, mensal, profissionais, atendimentos, taxas, concentracao, material] = await Promise.all([
     fechamentoDiario(db, ctx.tenantId, timezone, dia.toString()),
     resumoMensal(db, ctx.tenantId, timezone, mes),
     db.from('professionals').select('id, display_name').eq('tenant_id', ctx.tenantId).eq('active', true).order('display_name'),
@@ -99,6 +100,7 @@ export default async function PaginaCaixa({ searchParams }: { searchParams: Prom
       pessoa é dado sensível DENTRO do salão, e o profissional comissionado não o alcança.
     */
     concentracaoDoMes(db, ctx.tenantId, timezone, mes),
+    medirMaterialDoCatalogo(db, ctx.tenantId),
   ])
 
   const atendidoCents = (atendimentos.data ?? []).reduce((soma, a) => soma + a.price_cents, 0)
@@ -127,6 +129,7 @@ export default async function PaginaCaixa({ searchParams }: { searchParams: Prom
       comissoes={comissoes}
       atendidoCents={atendidoCents}
       taxaRespondida={taxas.respondida}
+      servicosSemMaterial={material.semFicha + material.comProdutoSemCusto}
       concentracao={concentracao}
     />
   )

@@ -23,6 +23,16 @@ type Props = {
   atendidoCents: number
   /** O dono já disse quanto a maquininha cobra? Ver `taxaEstaConfigurada` e `docs/49`. */
   taxaRespondida: boolean
+  /**
+   * Quantos serviços ativos ainda não têm material confiável — sem ficha, ou com produto da ficha
+   * que nunca teve compra registrada (`medirMaterialDoCatalogo`).
+   *
+   * O quadro "Material" tem exatamente o problema que tirou o quadro "Taxa" desta tela em
+   * 2026-08-28: R$ 0,00 ao lado de Comissão não se lê como "não implementado", se lê como "hoje
+   * não teve". Até a 0069 o número vinha do custo que o pack semeou e parecia apurado; depois
+   * dela ele passa a ser zero honesto — e zero sem rótulo é a mesma mentira, só que para baixo.
+   */
+  servicosSemMaterial: number
   /** De quem depende o que sobrou no mês (`docs/48` C7). */
   concentracao: ConcentracaoDoMes
 }
@@ -49,7 +59,7 @@ function mesPorExtenso(mes: string): string {
   )
 }
 
-export default function Caixa({ dia, hoje, diario, mensal, comissoes, atendidoCents, taxaRespondida, concentracao }: Props) {
+export default function Caixa({ dia, hoje, diario, mensal, comissoes, atendidoCents, taxaRespondida, servicosSemMaterial, concentracao }: Props) {
   const ontem = somarDias(dia, -1)
   const amanha = somarDias(dia, 1)
   const ehHoje = dia === hoje
@@ -127,11 +137,12 @@ export default function Caixa({ dia, hoje, diario, mensal, comissoes, atendidoCe
             className="mb-3"
             rotulo="Sobrou"
             valor={dinheiro.format(diario.profitCents / 100)}
-            apoio={
-              taxaRespondida
-                ? 'O que entrou, menos a gorjeta do profissional, o material, a taxa da maquininha e a comissão.'
-                : 'O que entrou, menos a gorjeta do profissional, o material e a comissão.'
-            }
+            apoio={[
+              'O que entrou, menos a gorjeta do profissional, o material',
+              servicosSemMaterial > 0 ? ' (ainda incompleto)' : '',
+              taxaRespondida ? ', a taxa da maquininha' : '',
+              ' e a comissão.',
+            ].join('')}
           />
 
           {/*
@@ -146,7 +157,15 @@ export default function Caixa({ dia, hoje, diario, mensal, comissoes, atendidoCe
             mesma mentira de antes. Esse caso ganha a faixa, que diz o que falta e leva até lá.
           */}
           <div className="mb-6 grid grid-cols-2 gap-2">
-            <StatTile rotulo="Material" valor={dinheiro.format(diario.materialCents / 100)} />
+            <StatTile
+              rotulo="Material"
+              valor={dinheiro.format(diario.materialCents / 100)}
+              apoio={
+                servicosSemMaterial > 0
+                  ? `falta o custo de ${servicosSemMaterial} ${servicosSemMaterial === 1 ? 'serviço' : 'serviços'}`
+                  : undefined
+              }
+            />
             {taxaRespondida ? <StatTile rotulo="Taxa" valor={dinheiro.format(diario.feeCents / 100)} /> : null}
             <StatTile rotulo="Comissão" valor={dinheiro.format(diario.commissionCents / 100)} />
           </div>

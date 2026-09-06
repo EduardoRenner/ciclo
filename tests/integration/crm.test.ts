@@ -486,7 +486,7 @@ describe('margem do clube de assinatura', () => {
       expect(dele!.margemCents).toBe(9_000 - 10_800)
       expect(dele!.noPrejuizo).toBe(true)
       expect(dele!.acimaDoLimite, 'plano ilimitado não tem limite para estourar').toBe(false)
-      expect(dele!.visitasSemFicha).toBe(0)
+      expect(dele!.visitasSemMaterialConfiavel).toBe(0)
 
       // Pior primeiro: quem abre a tela quer ver quem está no vermelho, não conferir quem está bem.
       expect(margens[0]!.clientId).toBe(assinante.id)
