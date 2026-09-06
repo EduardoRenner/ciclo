@@ -1,3 +1,4 @@
+import { Temporal } from '@js-temporal/polyfill'
 import { z } from 'zod'
 
 import { alertaDoCliente } from '@/server/services/anamnese'
@@ -12,6 +13,7 @@ import { podeUsarModulo } from '@/core/billing/planos'
 import { limiarPertoDoPremio } from '@/core/loyalty/limiar'
 
 import { buscarTudoPaginado } from '@/server/db/paginar'
+import { ritmoDoCliente, type RitmoDoCliente } from '@/core/ciclo/ritmo-do-cliente'
 import { AppError } from '@/server/http/errors'
 
 import type { Database } from '@/server/db/types.gen'
@@ -52,7 +54,14 @@ export type FichaCliente = {
     ticketMedioCents: number
     ultimaVisita: string | null
   }
-  ciclo: { state: EstadoCiclo; lateDays: number; predictedOn: string | null; serviceName: string } | null
+  ciclo: {
+    state: EstadoCiclo
+    lateDays: number
+    predictedOn: string | null
+    serviceName: string
+    /** `docs/48` C4: a cadência da PESSOA dita na tela, e não só usada para ordenar por dentro. */
+    ritmo: RitmoDoCliente
+  } | null
   historico: {
     id: string
     startsAt: string
@@ -96,7 +105,7 @@ function lerPreferencias(bruto: unknown): PreferenciasCliente {
  * clientes nunca mostrou — até esta tela existir, esses dados estavam no banco sem porta de
  * entrada nenhuma.
  */
-export async function fichaDoCliente(db: Cliente, tenantId: string, clientId: string): Promise<FichaCliente> {
+export async function fichaDoCliente(db: Cliente, tenantId: string, clientId: string, timezone: string): Promise<FichaCliente> {
   const { data: cliente, error } = await db
     .from('clients')
     .select(
@@ -160,7 +169,7 @@ export async function fichaDoCliente(db: Cliente, tenantId: string, clientId: st
     buscarTudoPaginado(() =>
       db
         .from('appointments')
-        .select('price_cents, starts_at, status')
+        .select('price_cents, starts_at, status, service_id')
         .eq('tenant_id', tenantId)
         .eq('client_id', clientId)
         .in('status', ['done', 'no_show'])
@@ -168,7 +177,7 @@ export async function fichaDoCliente(db: Cliente, tenantId: string, clientId: st
     ),
     db
       .from('client_cycles')
-      .select('state, late_days, predicted_on, services(name)')
+      .select('state, late_days, predicted_on, service_id, personal_cycle_days, last_visit_on, services(name)')
       .eq('tenant_id', tenantId)
       .eq('client_id', clientId)
       .order('value_at_risk_cents', { ascending: false })
@@ -269,6 +278,18 @@ export async function fichaDoCliente(db: Cliente, tenantId: string, clientId: st
           lateDays: cicloBruto.late_days,
           predictedOn: cicloBruto.predicted_on,
           serviceName: cicloBruto.services?.name ?? '—',
+          /*
+            As visitas contam só as DAQUELE serviço, porque é por (cliente, serviço) que o Motor
+            calcula o ritmo — quem corta o cabelo há dois anos e fez barba uma vez tem duas
+            cadências diferentes, e a da barba ainda não existe. Contar o total de visitas da
+            pessoa afirmaria uma cadência medida onde não há intervalo nenhum.
+          */
+          ritmo: ritmoDoCliente({
+            cicloPessoalDias: cicloBruto.personal_cycle_days,
+            ultimaVisitaOn: cicloBruto.last_visit_on,
+            hoje: Temporal.Now.instant().toZonedDateTimeISO(timezone).toPlainDate().toString(),
+            visitas: concluidos.filter((a) => a.status === 'done' && a.service_id === cicloBruto.service_id).length,
+          }),
         }
       : null,
     historico,

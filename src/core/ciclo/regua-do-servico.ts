@@ -14,6 +14,21 @@
  * amostra é pequena. "Ainda estou aprendendo" é uma informação; ausência silenciosa não é.
  */
 
+/**
+ * A régua que o Motor USA: a medida quando existe, a configurada quando não.
+ *
+ * Existe como função — e não como `a ?? b` repetido — porque a repetição já divergiu. O
+ * `recomputarCiclosDoTenant` (job noturno) preferia a medida desde a `0065`; o
+ * `recomputarCicloDeUmAtendimento`, que roda ao concluir um atendimento, continuava lendo só
+ * `cycle_days`. As duas escrevem a MESMA linha de `client_cycles`: concluir um atendimento
+ * revertia a previsão para o palpite de catálogo, e a madrugada seguinte a trazia de volta. O
+ * número da tela oscilava sozinho, sem nada ficar vermelho — os dois caminhos estavam "certos"
+ * cada um por si.
+ */
+export function reguaEfetivaDias(cycleDays: number, observado: number | null): number {
+  return observado ?? cycleDays
+}
+
 export type ReguaDoServico = {
   /** O número que o Motor usa hoje. É este que vai na linha da lista. */
   diasEmUso: number

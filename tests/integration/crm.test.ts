@@ -145,7 +145,7 @@ describe('fichaDoCliente', () => {
   it(
     'devolve métricas, preferências e histórico juntos',
     async () => {
-      const ficha = await fichaDoCliente(svc, tenantId, fielId)
+      const ficha = await fichaDoCliente(svc, tenantId, fielId, 'America/Sao_Paulo')
 
       expect(ficha.cliente.name).toBe('Cliente Fiel')
       expect(ficha.cliente.preferences).toEqual({ maquina: '2', barba: 'navalha' })
@@ -173,7 +173,7 @@ describe('fichaDoCliente', () => {
   it(
     'cliente que nunca veio não quebra o ticket médio com divisão por zero',
     async () => {
-      const ficha = await fichaDoCliente(svc, tenantId, semOptInId)
+      const ficha = await fichaDoCliente(svc, tenantId, semOptInId, 'America/Sao_Paulo')
       expect(ficha.metricas.visitas).toBe(0)
       expect(ficha.metricas.ticketMedioCents).toBe(0)
       expect(ficha.historico).toEqual([])
@@ -186,15 +186,15 @@ describe('fichaDoCliente', () => {
     async () => {
       const { registrarConsentimento, revogarConsentimento } = await import('@/server/services/consentimentos')
 
-      const antes = await fichaDoCliente(svc, tenantId, semOptInId)
+      const antes = await fichaDoCliente(svc, tenantId, semOptInId, 'America/Sao_Paulo')
       expect(antes.consentimentos.find((c) => c.kind === 'image_use')?.consentId).toBeNull()
 
       const gravado = await registrarConsentimento(svc, tenantId, semOptInId, { kind: 'image_use', version: '1.0', text: 'texto', granted: true }, { ip: null, userAgent: null })
-      const concedido = await fichaDoCliente(svc, tenantId, semOptInId)
+      const concedido = await fichaDoCliente(svc, tenantId, semOptInId, 'America/Sao_Paulo')
       expect(concedido.consentimentos.find((c) => c.kind === 'image_use')?.consentId).toBe(gravado.id)
 
       await revogarConsentimento(svc, tenantId, semOptInId, 'image_use')
-      const revogado = await fichaDoCliente(svc, tenantId, semOptInId)
+      const revogado = await fichaDoCliente(svc, tenantId, semOptInId, 'America/Sao_Paulo')
       expect(revogado.consentimentos.find((c) => c.kind === 'image_use')?.consentId).toBeNull()
     },
     30_000,
@@ -203,7 +203,7 @@ describe('fichaDoCliente', () => {
   it(
     'id de outro tenant devolve NOT_FOUND, não a ficha alheia',
     async () => {
-      const erro = await fichaDoCliente(svc, randomUUID(), fielId).catch((e: unknown) => e)
+      const erro = await fichaDoCliente(svc, randomUUID(), fielId, 'America/Sao_Paulo').catch((e: unknown) => e)
       expect(erro).toMatchObject({ code: 'NOT_FOUND' })
     },
     30_000,
