@@ -68,7 +68,7 @@ usa (`src/app/admin/comanda/[id]/page.tsx:46`) `[M]`.
 
 | Pedido | Estado | Onde |
 |---|---|---|
-| T1 modelo de custo | pronto | `payment_fees_bps`, `service_products`, `products.avg_cost_cents` |
+| T1 modelo de custo | **quase** — ver §2.3 | `payment_fees_bps`, `service_products`, `products.avg_cost_cents` — **faltava o custo fixo** |
 | T2 cálculo puro | pronto | `core/comanda/sobra-explicada.ts` (`lacunas` = `missing`) |
 | T3 persistência congelada | pronto | `tickets.fee_bps`/`fee_cents` na `0066` |
 | T4 tela | pronto | comanda fechada, atrás de `report:read` |
@@ -137,6 +137,12 @@ com o custo junto, e o trabalho era o inverso: **tirar o custo e ensinar a tela 
 | 13 | `test(guarda)` | O veto de precificação vira **molde de permitidos**, não lista de proibidos |
 | 14 | `feat(lucro)` `L-07` | `/admin/mes` — os cinco números da tese numa página só |
 | 15 | `fix(mes)` | "não sei" e "zero" saem do JSX e viram regra guardada |
+| 16 | `feat(papeis)` `L-10` | O gerente não vê de quem o lucro depende — decisão registrada, e ela **não** é trava de segurança |
+| 17 | `feat(lucro)` `0071` `L-09` | A série mensal congelada, **sem depender de cron** |
+| 18 | `fix(serie)` | "só mês encerrado" vira comportamento: a varredura estava cega |
+| 19 | `test(integração)` | A ressalva do material chega ao banco, e o mês congelado não é reescrito |
+| 20 | `feat(lucro)` `0072` | O "Sobrou" passa a descontar a hora de cadeira — ver §2.3 |
+| 21 | `fix(lucro)` | A sobra tinha **duas fórmulas**, cada uma com sua própria guarda |
 
 **Decisões tomadas sozinho** `[D]`:
 
@@ -194,11 +200,34 @@ descartavam, cada um remontando a pergunta por conta própria. O do clube remont
 resposta voltou para dentro da função, e uma guarda impede o próximo chamador de repetir a conta
 por fora.
 
+
+### 2.3 · A correção da minha própria resposta do T0
+
+Respondendo a pergunta 4 do T0 eu escrevi que o T1 estava pronto. **Estava, menos uma peça**, e ela
+não é pequena: o custo fixo.
+
+`calcularSobraDaComanda` era `receita − material − taxa − comissão`. Não descontava aluguel, luz,
+água, internet nem software — e não existia uma linha em `src/` nem uma coluna no banco para isso.
+A única ocorrência de "aluguel" no projeto era `professionals.rent_cents`, que é o modelo de cadeira
+alugada e entra como **receita** do salão `[M]`.
+
+O número que o produto chama de "Sobrou" era, portanto, **margem de contribuição, não lucro**. Num
+corte de R$ 45 com 40% de comissão ele dizia *"Sobrou R$ 24,00"*, e o dono que paga R$ 3.500 de
+aluguel lia isso como o dinheiro que ficou. O `docs/47` P05 acusa o setor de mostrar faturamento com
+cara de lucro; isto era a mesma família, um degrau acima, **dentro do produto que faz a acusação**.
+
+A `0072` fecha isso com as três perguntas que o plano recebido desenhou em T1 — quanto sai por mês,
+quantas horas abre, quantas cadeiras —, congelando o valor no fechamento como `fee_bps` e
+`material_incerto`. O estado honesto vale para os dois lados: sem resposta o aluguel não é
+descontado **e a tela diz isso**.
+
+Registro a correção com estas palavras porque a resposta errada estava num documento que existe
+justamente para ser confiável sobre o estado do repositório.
 ---
 
 ## 4 · As lições de guarda desta rodada
 
-Foram **quatro** guardas cegas nesta rodada, todas pegas pelo procedimento de mutação e nenhuma
+Foram **sete** guardas cegas nesta rodada, todas pegas pelo procedimento de mutação e nenhuma
 pela leitura. Vale listar, porque as quatro têm caras diferentes:
 
 | Guarda | Como estava cega | O conserto |
@@ -207,6 +236,9 @@ pela leitura. Vale listar, porque as quatro têm caras diferentes:
 | margem do clube | testava o NÚCLEO, e o defeito estava no SERVIDOR | a decisão voltou para `custoDoServico` |
 | a ressalva é gravada | ninguém cobrava a ESCRITA, só o cálculo | casa com o INSERT, como a guarda de `fee_cents` |
 | "sem amostra" ≠ zero | casava com `acertoBps === null` do texto VIZINHO | virou `percentualOuTraco`, com teste de comportamento |
+| "só mês encerrado" | casava com `subtract({ months:` do texto VIZINHO (outra linha) | virou `mesesJaEncerrados`, com teste de comportamento |
+| o aluguel sai da sobra | todas as chamadas passavam **zero** naquela parcela | um caso com valor diferente de zero |
+| a sobra é uma só | **duas cópias da equação**, cada uma com a sua guarda | `explicarSobra` delega, e um teste afirma que as pontas batem |
 
 A terceira e a quarta são a mesma lição do `CLAUDE.md` em roupas novas: varrer fonte prova que um
 texto existe, nunca que um caminho executa — e o texto vizinho é o disfarce mais comum disso.
@@ -232,7 +264,7 @@ motivo que aquele foi para lá: eram duas cópias divergentes da mesma regra.
 
 ## 5 · O que ficou faltando
 
-1. **`supabase db push` das migrations `0066`, `0067`, `0068` e `0069`** — nenhuma está aplicada em
+1. **`supabase db push` das migrations `0066` a `0072`** — nenhuma está aplicada em
    produção, e não existe Action que faça isso `[M]`. A `0069` é a que devolve o custo semeado a
    zero: **enquanto ela não rodar, o "Sobrou" de todo salão de vertical legada continua saindo com
    material inventado**, agora com a tela já pronta para avisar.
@@ -240,9 +272,15 @@ motivo que aquele foi para lá: eram duas cópias divergentes da mesma regra.
    que quem valida é a CI.
 3. `L-05` (as três conversas com donos de salão) continua sendo a coisa mais barata que pode
    derrubar a tese inteira, e continua não sendo trabalho de código.
-4. `L-09` (série mensal congelada) e `L-10` (papéis mais finos) do `docs/50` seguem abertos, e
-   `L-04`/`L-08` (landing e `/precos`) também — os dois últimos são copy, e esta rodada evitou
-   fechar por copy de propósito: foi assim que as duas rodadas anteriores falharam.
+4. **`L-04` (primeira dobra) e `L-08` (tabela em `/precos`) NÃO foram feitos, e é decisão, não
+   esquecimento.** Os dois são copy de página pública, e o motivo de não entrarem agora está no
+   próprio `docs/50` §3.3: *"a porta promete o que a conta nova não mostra"*. A substância existe
+   no código, mas **não existe em produção** — nenhuma das sete migrations foi aplicada. Mudar a
+   porta da frente para prometer um número que nenhuma conta real consegue ver ainda é exatamente
+   o defeito que aquela seção nomeia. O `L-08` some ainda outra coisa: afirmações datadas sobre
+   produtos de concorrentes numa página pública são declaração da empresa, e essa é do dono.
+
+   A ordem segura é: aplicar as migrations → usar por algumas semanas → então mudar a porta.
 5. `L-03` está cumprido pela `0069`, mas ao contrário do que o `docs/50` supunha: ele pedia para
    **começar** a semear a ficha, e a realidade era que ela já vinha semeada com o custo junto. O
    critério que importava (*"nenhum custo é semeado"*, item 3, e a guarda do item 4) está de pé.
