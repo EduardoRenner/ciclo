@@ -31,6 +31,7 @@ import { dinheiro, formatarTelefone } from '@/lib/formato'
 import { camposDePreferencia } from '@/lib/preferencias'
 import { aplicarVariaveis, linkWhatsApp, precisaDeAgendamento } from '@/lib/mensagens'
 
+import { fraseDoRitmo } from '@/core/ciclo/ritmo-do-cliente'
 import type { EstadoCiclo } from '@/core/cycle/compute'
 import type { EstadoAgendamento } from '@/core/scheduling/state'
 import type { FichaCliente } from '@/server/services/crm'
@@ -335,9 +336,30 @@ export default function Ficha({
               {selo.texto}
               {ciclo.lateDays > 0 ? ` há ${ciclo.lateDays} dias` : ''}
             </p>
-            <p className="text-secundario text-txt-2">Costuma voltar para {ciclo.serviceName}.</p>
+            {/*
+              `docs/48` C4. A linha era "Costuma voltar para Corte." — verdadeira e muda sobre a
+              única coisa que separa o CICLO de um filtro de data: o ritmo DAQUELA pessoa. O
+              concorrente mais próximo entrega "quem não volta há 45 dias", igual para todo mundo
+              (`docs/47` §1.6); o Motor sabe que uma some em 18 dias e outra em 60 desde o
+              TICKET-036, e não dizia.
+            */}
+            <p className="text-secundario text-txt-2">
+              {fraseDoRitmo(ciclo.ritmo) ?? 'Costuma voltar'} Para {ciclo.serviceName}.
+            </p>
+            {ciclo.ritmo.procedencia ? <p className="text-label text-txt-3">{ciclo.ritmo.procedencia}</p> : null}
           </div>
         </Card>
+      ) : null}
+
+      {/*
+        Quem está em dia também tem ritmo, e vê-lo é o que faz a pessoa acreditar no aviso quando
+        ele vier. Sem alarme nenhum: linha de texto, não cartão.
+      */}
+      {ciclo && ciclo.state === 'on_track' && fraseDoRitmo(ciclo.ritmo) ? (
+        <p className="mb-4 text-secundario text-txt-2">
+          {fraseDoRitmo(ciclo.ritmo)} Para {ciclo.serviceName}.
+          {ciclo.ritmo.procedencia ? <span className="text-txt-3"> ({ciclo.ritmo.procedencia})</span> : null}
+        </p>
       ) : null}
 
       {/*
@@ -400,9 +422,38 @@ export default function Ficha({
               "atendido" é preço de tabela e "entrou" é dinheiro no caixa.
             */}
             <StatTile rotulo="Valor atendido" valor={dinheiro.format(metricas.ltvCents / 100)} />
+            {/*
+              `docs/48` C2. "Valor atendido" é a soma dos preços — o mesmo número que o `docs/47`
+              P01 acusa o setor inteiro de confundir com ganho. Ao lado dele, o que de fato SOBROU.
+
+              A frase de apoio não é enfeite: o lucro sai das comandas fechadas, e nem toda visita
+              passa por uma. Sem dizer de quantas está falando, três comandas de doze visitas
+              apareceriam como o valor da pessoa inteira.
+            */}
+            {metricas.lucro ? (
+              <StatTile
+                rotulo="Sobrou"
+                valor={dinheiro.format(metricas.lucro.lucroCents / 100)}
+                apoio={
+                  metricas.lucro.cobertura === 'nenhuma'
+                    ? 'nenhuma comanda fechada ainda'
+                    : metricas.lucro.cobertura === 'parcial'
+                      ? `de ${metricas.visitas - metricas.lucro.visitasSemComanda} de ${metricas.visitas} visitas`
+                      : 'de todas as visitas'
+                }
+              />
+            ) : null}
             <StatTile rotulo="Visitas" valor={String(metricas.visitas)} />
             <StatTile rotulo="Ticket médio" valor={dinheiro.format(metricas.ticketMedioCents / 100)} />
             <StatTile rotulo="Faltas" valor={String(metricas.faltas)} />
+            {/*
+              O anual é o C2 completo: lucro por visita × cadência daquela pessoa. É o número que
+              muda a decisão de quem chamar de volta primeiro — e some quando não há cadência
+              medida, porque projetar o que não se mediu é inventar.
+            */}
+            {metricas.lucro?.lucroAnualCents !== null && metricas.lucro?.lucroAnualCents !== undefined ? (
+              <StatTile rotulo="Lucro por ano" valor={dinheiro.format(metricas.lucro.lucroAnualCents / 100)} apoio="no ritmo de hoje" />
+            ) : null}
           </div>
 
           <Button

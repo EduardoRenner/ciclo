@@ -10,9 +10,11 @@ import { dinheiro } from '@/lib/formato'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { contextoDePlano } from '@/server/services/planos'
+import { prestacaoDeContasDoMotor } from '@/server/services/previsao'
 import { listarParaRecuperar } from '@/server/services/recuperar-receita'
 import { receitaAtribuidaAoCiclo } from '@/server/services/atribuicao'
 
+import PrestacaoDeContasDoMotor from './prestacao'
 import RecuperarReceita from './recuperar'
 
 export const metadata = { title: "Recuperar receita" }
@@ -38,7 +40,7 @@ export default async function PaginaRecuperar() {
    * São `head: true` com `count: 'exact'`: não trazem linha nenhuma, só o número, e vão no mesmo
    * `Promise.all` que já existia — custo de latência zero contra o que a tela já pagava.
    */
-  const [lista, atribuicao, plano, clientes, ciclos, concluidos] = await Promise.all([
+  const [lista, atribuicao, plano, clientes, ciclos, concluidos, contasDoMotor] = await Promise.all([
     listarParaRecuperar(db, ctx.tenantId),
     receitaAtribuidaAoCiclo(db, ctx.tenantId, timezone, desde, ate),
     contextoDePlano(db, ctx.tenantId),
@@ -55,6 +57,12 @@ export default async function PaginaRecuperar() {
       .select('id', { count: 'exact', head: true })
       .eq('tenant_id', ctx.tenantId)
       .eq('status', 'done'),
+    /*
+      `docs/48` C5. Lê `cycle_predictions` (append-only desde a `0064`) e devolve o quanto o Motor
+      acertou contra o que ele mesmo disse ANTES de saber. Entra no mesmo `Promise.all` — latência
+      somada: zero.
+    */
+    prestacaoDeContasDoMotor(db, ctx.tenantId, Temporal.Now.zonedDateTimeISO(timezone).toPlainDate().toString()),
   ])
 
   // A tela precisa saber para desenhar o caminho certo; quem RECUSA é a rota (§L.1). Aqui é
@@ -90,6 +98,8 @@ export default async function PaginaRecuperar() {
           {atribuicao.count} {atribuicao.count === 1 ? 'agendamento' : 'agendamentos'}).
         </AlertBanner>
       ) : null}
+
+      <PrestacaoDeContasDoMotor contas={contasDoMotor} />
 
       <RecuperarReceita
         inicial={lista}

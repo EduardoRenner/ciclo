@@ -1,3 +1,4 @@
+import { Temporal } from '@js-temporal/polyfill'
 import { z } from 'zod'
 
 import { alertaDoCliente } from '@/server/services/anamnese'
@@ -12,6 +13,8 @@ import { podeUsarModulo } from '@/core/billing/planos'
 import { limiarPertoDoPremio } from '@/core/loyalty/limiar'
 
 import { buscarTudoPaginado } from '@/server/db/paginar'
+import { ritmoDoCliente, type RitmoDoCliente } from '@/core/ciclo/ritmo-do-cliente'
+import { lucroDoCliente, type LucroDoCliente } from '@/core/crm/lucro-do-cliente'
 import { AppError } from '@/server/http/errors'
 
 import type { Database } from '@/server/db/types.gen'
@@ -51,8 +54,20 @@ export type FichaCliente = {
     faltas: number
     ticketMedioCents: number
     ultimaVisita: string | null
+    /**
+     * `docs/48` C2: quanto essa pessoa deixa de LUCRO, não de faturamento. `null` para quem não
+     * alcança `report:read` — a mesma trava do §4.6 que vale na comanda e no caixa.
+     */
+    lucro: LucroDoCliente | null
   }
-  ciclo: { state: EstadoCiclo; lateDays: number; predictedOn: string | null; serviceName: string } | null
+  ciclo: {
+    state: EstadoCiclo
+    lateDays: number
+    predictedOn: string | null
+    serviceName: string
+    /** `docs/48` C4: a cadência da PESSOA dita na tela, e não só usada para ordenar por dentro. */
+    ritmo: RitmoDoCliente
+  } | null
   historico: {
     id: string
     startsAt: string
@@ -96,7 +111,13 @@ function lerPreferencias(bruto: unknown): PreferenciasCliente {
  * clientes nunca mostrou — até esta tela existir, esses dados estavam no banco sem porta de
  * entrada nenhuma.
  */
-export async function fichaDoCliente(db: Cliente, tenantId: string, clientId: string): Promise<FichaCliente> {
+export async function fichaDoCliente(
+  db: Cliente,
+  tenantId: string,
+  clientId: string,
+  timezone: string,
+  opcoes: { podeVerLucro?: boolean } = {},
+): Promise<FichaCliente> {
   const { data: cliente, error } = await db
     .from('clients')
     .select(
@@ -126,6 +147,7 @@ export async function fichaDoCliente(db: Cliente, tenantId: string, clientId: st
     consentimentosBruto,
     saudeBruto,
     servicosBruto,
+    comandasBruto,
   ] = await Promise.all([
     db
       .from('appointments')
@@ -160,7 +182,7 @@ export async function fichaDoCliente(db: Cliente, tenantId: string, clientId: st
     buscarTudoPaginado(() =>
       db
         .from('appointments')
-        .select('price_cents, starts_at, status')
+        .select('price_cents, starts_at, status, service_id')
         .eq('tenant_id', tenantId)
         .eq('client_id', clientId)
         .in('status', ['done', 'no_show'])
@@ -168,7 +190,7 @@ export async function fichaDoCliente(db: Cliente, tenantId: string, clientId: st
     ),
     db
       .from('client_cycles')
-      .select('state, late_days, predicted_on, services(name)')
+      .select('state, late_days, predicted_on, service_id, personal_cycle_days, last_visit_on, services(name)')
       .eq('tenant_id', tenantId)
       .eq('client_id', clientId)
       .order('value_at_risk_cents', { ascending: false })
@@ -196,6 +218,28 @@ export async function fichaDoCliente(db: Cliente, tenantId: string, clientId: st
     // `listarPacotesDoCliente` devolve `serviceId`, não o nome — o catálogo de um salão é
     // pequeno, então uma leitura resolve todos os pacotes de uma vez.
     db.from('services').select('id, name').eq('tenant_id', tenantId),
+    /*
+      `docs/48` C2. O lucro sai das comandas FECHADAS, congelado — nunca de um segundo cálculo,
+      para bater com o caixa. Nem toda visita passa por comanda, e é por isso que o resultado
+      carrega a cobertura em vez de apresentar uma soma parcial como se fosse a pessoa inteira.
+
+      Só é buscado para quem pode ver: sem `report:read`, nem a consulta acontece.
+
+      Paginado pelo mesmo motivo da consulta de atendimentos logo acima: o PostgREST corta em
+      `max_rows = 1000` e NÃO erra. Uma cliente antiga o bastante passaria disso e o lucro dela
+      apareceria MENOR que o real — errado com cara de exato, que é o pior dos dois erros.
+    */
+    opcoes.podeVerLucro
+      ? buscarTudoPaginado(() =>
+          db
+            .from('tickets')
+            .select('profit_cents')
+            .eq('tenant_id', tenantId)
+            .eq('client_id', clientId)
+            .in('status', ['closed', 'paid'])
+            .order('id'),
+        )
+      : Promise.resolve(null),
   ])
 
   const historico = (historicoBruto.data ?? []).map((a) => ({
@@ -262,6 +306,14 @@ export async function fichaDoCliente(db: Cliente, tenantId: string, clientId: st
       // Ticket médio sobre visitas concluídas — dividir por 0 na cliente que nunca veio daria NaN na tela.
       ticketMedioCents: visitas > 0 ? Math.round(ltvCents / visitas) : 0,
       ultimaVisita,
+      lucro: comandasBruto
+        ? lucroDoCliente({
+            lucroCents: comandasBruto.reduce((soma, t) => soma + t.profit_cents, 0),
+            comandas: comandasBruto.length,
+            visitas,
+            cicloPessoalDias: cicloBruto?.personal_cycle_days ?? null,
+          })
+        : null,
     },
     ciclo: cicloBruto
       ? {
@@ -269,6 +321,18 @@ export async function fichaDoCliente(db: Cliente, tenantId: string, clientId: st
           lateDays: cicloBruto.late_days,
           predictedOn: cicloBruto.predicted_on,
           serviceName: cicloBruto.services?.name ?? '—',
+          /*
+            As visitas contam só as DAQUELE serviço, porque é por (cliente, serviço) que o Motor
+            calcula o ritmo — quem corta o cabelo há dois anos e fez barba uma vez tem duas
+            cadências diferentes, e a da barba ainda não existe. Contar o total de visitas da
+            pessoa afirmaria uma cadência medida onde não há intervalo nenhum.
+          */
+          ritmo: ritmoDoCliente({
+            cicloPessoalDias: cicloBruto.personal_cycle_days,
+            ultimaVisitaOn: cicloBruto.last_visit_on,
+            hoje: Temporal.Now.instant().toZonedDateTimeISO(timezone).toPlainDate().toString(),
+            visitas: concluidos.filter((a) => a.status === 'done' && a.service_id === cicloBruto.service_id).length,
+          }),
         }
       : null,
     historico,

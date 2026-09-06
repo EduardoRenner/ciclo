@@ -279,6 +279,22 @@ async function semear(f: Fixture, sufixo: string): Promise<void> {
       { tenant_id: t, client_id: f.clientId, service_id: f.serviceId, personal_cycle_days: 21, value_at_risk_cents: 22000 },
     ],
     [
+      // A trilha de previsão (0064). É o ativo que o `docs/46` chama de recurso cativo — a série
+      // que não é reconstruível de fora. Vazar isso entre tenants entregaria a cadência da
+      // clientela de um salão para outro.
+      'cycle_predictions',
+      {
+        tenant_id: t,
+        client_id: f.clientId,
+        service_id: f.serviceId,
+        last_visit_on: '2026-08-01',
+        predicted_on: '2026-08-22',
+        personal_cycle_days: 21,
+        default_cycle_days: 21,
+        algo_version: 1,
+      },
+    ],
+    [
       'payments',
       { tenant_id: t, ticket_id: f.ticketId, client_id: f.clientId, kind: 'service', method: 'pix', amount_cents: 22000 },
     ],

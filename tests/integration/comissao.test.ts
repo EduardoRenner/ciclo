@@ -90,7 +90,7 @@ async function fecharComandaDoProfissional() {
   const ticket = await svc.from('tickets').insert({ tenant_id: tenantId, client_id: cliente.data!.id, professional_id: professionalId }).select('id').single()
   const ticketId = ticket.data!.id
   await adicionarItemComanda(svc, tenantId, ticketId, { serviceId: servicoId, professionalId, qty: 1, discountCents: 0 })
-  return fecharComanda(svc, tenantId, ticketId)
+  return fecharComanda(svc, tenantId, ticketId, 'cash')
 }
 
 describe('extratoDeComissao', () => {

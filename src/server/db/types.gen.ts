@@ -421,6 +421,7 @@ export type Database = {
           late_days: number
           personal_cycle_days: number
           predicted_on: string | null
+          profit_at_risk_cents: number
           service_id: string
           state: Database["public"]["Enums"]["cycle_state"]
           tenant_id: string
@@ -434,6 +435,7 @@ export type Database = {
           late_days?: number
           personal_cycle_days: number
           predicted_on?: string | null
+          profit_at_risk_cents?: number
           service_id: string
           state?: Database["public"]["Enums"]["cycle_state"]
           tenant_id: string
@@ -447,6 +449,7 @@ export type Database = {
           late_days?: number
           personal_cycle_days?: number
           predicted_on?: string | null
+          profit_at_risk_cents?: number
           service_id?: string
           state?: Database["public"]["Enums"]["cycle_state"]
           tenant_id?: string
@@ -476,6 +479,73 @@ export type Database = {
           },
           {
             foreignKeyName: "client_cycles_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cycle_predictions: {
+        Row: {
+          actual_return_on: string | null
+          algo_version: number
+          client_id: string
+          default_cycle_days: number
+          id: string
+          last_visit_on: string
+          personal_cycle_days: number
+          predicted_at: string
+          predicted_on: string
+          resolved_at: string | null
+          service_id: string
+          tenant_id: string
+        }
+        Insert: {
+          actual_return_on?: string | null
+          algo_version: number
+          client_id: string
+          default_cycle_days: number
+          id?: string
+          last_visit_on: string
+          personal_cycle_days: number
+          predicted_at?: string
+          predicted_on: string
+          resolved_at?: string | null
+          service_id: string
+          tenant_id: string
+        }
+        Update: {
+          actual_return_on?: string | null
+          algo_version?: number
+          client_id?: string
+          default_cycle_days?: number
+          id?: string
+          last_visit_on?: string
+          personal_cycle_days?: number
+          predicted_at?: string
+          predicted_on?: string
+          resolved_at?: string | null
+          service_id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cycle_predictions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cycle_predictions_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cycle_predictions_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -2383,6 +2453,9 @@ export type Database = {
           cost_cents: number
           created_at: string
           cycle_days: number
+          cycle_days_observado: number | null
+          cycle_days_observado_amostra: number | null
+          cycle_days_observado_em: string | null
           deleted_at: string | null
           deposit_bps: number
           deposit_min_cents: number
@@ -2409,6 +2482,9 @@ export type Database = {
           cost_cents?: number
           created_at?: string
           cycle_days?: number
+          cycle_days_observado?: number | null
+          cycle_days_observado_amostra?: number | null
+          cycle_days_observado_em?: string | null
           deleted_at?: string | null
           deposit_bps?: number
           deposit_min_cents?: number
@@ -2435,6 +2511,9 @@ export type Database = {
           cost_cents?: number
           created_at?: string
           cycle_days?: number
+          cycle_days_observado?: number | null
+          cycle_days_observado_amostra?: number | null
+          cycle_days_observado_em?: string | null
           deleted_at?: string | null
           deposit_bps?: number
           deposit_min_cents?: number
@@ -2815,9 +2894,11 @@ export type Database = {
           created_at: string
           created_by: string | null
           discount_cents: number
+          fee_bps: number
           fee_cents: number
           id: string
           material_cost_cents: number
+          payment_method: Database["public"]["Enums"]["payment_method"] | null
           professional_id: string | null
           profit_cents: number
           status: Database["public"]["Enums"]["ticket_status"]
@@ -2834,9 +2915,11 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           discount_cents?: number
+          fee_bps?: number
           fee_cents?: number
           id?: string
           material_cost_cents?: number
+          payment_method?: Database["public"]["Enums"]["payment_method"] | null
           professional_id?: string | null
           profit_cents?: number
           status?: Database["public"]["Enums"]["ticket_status"]
@@ -2853,9 +2936,11 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           discount_cents?: number
+          fee_bps?: number
           fee_cents?: number
           id?: string
           material_cost_cents?: number
+          payment_method?: Database["public"]["Enums"]["payment_method"] | null
           professional_id?: string | null
           profit_cents?: number
           status?: Database["public"]["Enums"]["ticket_status"]
@@ -3337,6 +3422,7 @@ export type Database = {
           late_days: number | null
           phone_e164: string | null
           predicted_on: string | null
+          profit_at_risk_cents: number | null
           service_id: string | null
           service_name: string | null
           state: Database["public"]["Enums"]["cycle_state"] | null

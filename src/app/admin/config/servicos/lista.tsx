@@ -1,8 +1,10 @@
 'use client'
 
-import { ArrowDown, ArrowUp, Plus, Scissors } from 'lucide-react'
+import { ArrowDown, ArrowUp, FlaskConical, Plus, Scissors } from 'lucide-react'
+import Link from 'next/link'
 import { useState, useTransition } from 'react'
 
+import { reguaDoServico } from '@/core/ciclo/regua-do-servico'
 import Badge from '@/components/ui/badge'
 import { useVocabulario } from '@/components/shell/vocabulario'
 import Button from '@/components/ui/button'
@@ -18,6 +20,9 @@ type Servico = ServicoEditavel & {
   deposit_bps: number
   active: boolean
   position: number
+  /** A cadência MEDIDA (migration 0065). Nula até haver amostra — nunca sobrescreve `cycle_days`. */
+  cycle_days_observado: number | null
+  cycle_days_observado_amostra: number | null
 }
 
 export default function ListaServicos({ iniciais }: { iniciais: Servico[] }) {
@@ -70,7 +75,15 @@ export default function ListaServicos({ iniciais }: { iniciais: Servico[] }) {
      * como definir sinal no formulário. Desde que passou a haver, sobrescrever fazia o selo
      * "Sinal X%" não aparecer num serviço recém-criado COM sinal, até alguém recarregar a página.
      */
-    setServicos((atual) => [...atual, { ...servico, active: true, position: atual.length }])
+    /*
+      Serviço recém-criado não tem cadência medida, e `null` é a resposta certa — não zero. A régua
+      dele é o palpite do catálogo até a clientela dar voltas suficientes para medir, e a tela diz
+      exatamente isso ao não mostrar procedência nenhuma.
+    */
+    setServicos((atual) => [
+      ...atual,
+      { ...servico, active: true, position: atual.length, cycle_days_observado: null, cycle_days_observado_amostra: null },
+    ])
   }
 
   function aoSalvarEditado(servico: ServicoEditavel) {
@@ -126,7 +139,8 @@ export default function ListaServicos({ iniciais }: { iniciais: Servico[] }) {
       <ul className="flex flex-col gap-2">
         {visiveis.map((s, i) => (
           <li key={s.id}>
-            <Card className="flex items-center gap-3">
+            <Card className="flex flex-col gap-2">
+              <div className="flex items-center gap-3">
               <button type="button" onClick={() => setEditando(s)} className="min-w-0 flex-1 text-left">
                 <p className="truncate text-corpo font-semibold">{s.name}</p>
                 <p className="tabular mt-0.5 text-secundario text-txt-2">
@@ -137,8 +151,20 @@ export default function ListaServicos({ iniciais }: { iniciais: Servico[] }) {
                     hourlyRateCents: s.hourly_rate_cents,
                     halfDayPriceCents: s.half_day_price_cents,
                   })}{' '}
-                  · volta em {s.cycle_days}d
+                  · volta em {reguaDoServico(s.cycle_days, s.cycle_days_observado, s.cycle_days_observado_amostra).diasEmUso}d
                 </p>
+                {/*
+                  A procedência da régua, quando existe.
+
+                  O Motor mede a cadência real da clientela deste salão e guarda AO LADO do palpite
+                  de catálogo (migration 0065) — nunca por cima. Sem esta linha, o dono veria o
+                  número mudar sozinho, que é o defeito que esta base persegue; com ela, ele vê o
+                  que está em uso, de onde veio e quantas voltas sustentam a medida.
+                */}
+                {(() => {
+                  const { procedencia } = reguaDoServico(s.cycle_days, s.cycle_days_observado, s.cycle_days_observado_amostra)
+                  return procedencia ? <p className="mt-0.5 text-label text-txt-3">{procedencia}</p> : null
+                })()}
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {!s.active ? <Badge estado="bad">Arquivado</Badge> : null}
                   {!s.bookable_online ? <Badge estado="warn">Fora do site</Badge> : null}
@@ -168,6 +194,24 @@ export default function ListaServicos({ iniciais }: { iniciais: Servico[] }) {
                   <ArrowDown aria-hidden className="size-5" />
                 </button>
               </div>
+              </div>
+
+              {/*
+                A ficha de consumo ganhou tela em 2026-09-06 (`docs/49`). `service_products` existe
+                desde a `0001` e é lida pela baixa de estoque no fechamento da comanda — e nunca
+                teve como ser preenchida: nenhuma rota, nenhuma tela. Dois mecanismos prontos
+                paravam aí, e desde a `I-02` um terceiro (o custo de material do serviço).
+
+                Link sozinho na própria linha, e não ao lado do nome: `toque-48` em dois alvos que
+                dividem linha de texto corrida deixa o segundo intocável (`CLAUDE.md`).
+              */}
+              <Link
+                href={`/admin/config/servicos/${s.id}/ficha`}
+                className="flex h-12 items-center gap-2 text-label font-semibold text-acc-2"
+              >
+                <FlaskConical aria-hidden className="size-4" />
+                Ficha de consumo
+              </Link>
             </Card>
           </li>
         ))}
