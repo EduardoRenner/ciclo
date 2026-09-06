@@ -54,5 +54,16 @@ describe('fraseDaMargem — nomeia a alavanca, nunca a puxa', () => {
     const proibidos = /\b(suba|aumente|cobre|reduza|diminua|baixe|renegocie|deveria|recomend|sugerimos|ideal)\w*/i
     expect(frase, `a frase virou conselho: "${frase}"`).not.toMatch(proibidos)
     expect(frase, 'a frase passou a citar um preço').not.toMatch(/R\$/)
+
+    /*
+     * A lista de proibidos acima é útil e incompleta por natureza — "considere subir" passaria
+     * por ela inteira. Esta asserção é o lado de PERMITIDOS: a frase só pode ter a forma
+     * "<parcela> leva N% do que este serviço fatura.", e qualquer palavra a mais, de qualquer
+     * teor, reprova. É a diferença entre adivinhar as formas de dar conselho e não deixar sobrar
+     * espaço para nenhuma.
+     */
+    expect(frase, 'a frase saiu do molde: só o nome da parcela e o percentual cabem nela').toMatch(
+      /^(A comissão|O produto|A taxa da maquininha) leva \d+% do que este serviço fatura\.$/,
+    )
   })
 })
