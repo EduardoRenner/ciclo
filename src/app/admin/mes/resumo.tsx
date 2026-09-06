@@ -128,7 +128,7 @@ export default function ResumoDoMes({
       {!taxa.respondida ? (
         <Card>
           <p className="text-corpo text-txt-2">
-            Você ainda não disse quanto a maquininha cobra — o &ldquo;Sobrou&rdquo; acima não desconta a taxa de pagamento.{' '}
+            Você ainda não disse quanto a maquininha cobra: o &ldquo;Sobrou&rdquo; acima não desconta a taxa de pagamento.{' '}
             <Link href="/admin/config/taxas" className="font-semibold text-acc-2">
               Responder agora
             </Link>

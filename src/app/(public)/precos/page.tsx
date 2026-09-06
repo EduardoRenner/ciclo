@@ -106,7 +106,7 @@ const PERGUNTAS = [
   {
     pergunta: 'Vocês ganham alguma coisa da minha maquininha?',
     resposta:
-      'Não, nada. O CICLO não processa pagamento e não fica com nenhuma parte do que você recebe. Por isso o app pode te dizer, sem conflito de interesse, quanto a taxa da maquininha levou do seu mês — quem vive dessa taxa não tem por que te mostrar essa conta.',
+      'Não, nada. O CICLO não processa pagamento e não fica com nenhuma parte do que você recebe. Por isso o app pode te dizer, sem conflito de interesse, quanto a taxa da maquininha levou do seu mês; quem vive dessa taxa não tem por que te mostrar essa conta.',
   },
 ]
 

@@ -97,7 +97,7 @@ export default async function PaginaComissao() {
 
   return (
     <>
-      <PageHeader titulo="Minha comissão" descricao="Este mês, item a item — o valor de cada linha é o que foi congelado no fechamento daquela comanda." />
+      <PageHeader titulo="Minha comissão" descricao="Este mês, item a item: o valor de cada linha é o que foi congelado no fechamento daquela comanda." />
 
       <Card>
         <p className="text-overline font-semibold uppercase text-txt-3">Total do mês</p>
