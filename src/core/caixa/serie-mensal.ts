@@ -79,3 +79,28 @@ export function serieMensal(meses: readonly MesFechado[]): SerieMensal {
     ultimoMesComparado: ultimo.month,
   }
 }
+
+/**
+ * Os meses **já encerrados**, do mais recente para o mais antigo, a partir do mês corrente.
+ *
+ * Existe como função pura por causa de uma guarda cega: a versão anterior varria o serviço
+ * procurando `mesCorrente.subtract({ months:` e passou VERDE com o laço mexido, porque a mesma
+ * expressão aparecia noutra linha, calculando o limite da janela. Varrer fonte prova que um texto
+ * existe, nunca que um caminho executa — e aqui o caminho é o que importa: congelar o mês CORRENTE
+ * grava um número que ainda vai mudar, para sempre.
+ *
+ * Recebe o primeiro dia do mês corrente no fuso do salão. Nunca o devolve.
+ */
+export function mesesJaEncerrados(mesCorrente: string, quantos: number): string[] {
+  const [ano, mes] = mesCorrente.split('-').map(Number)
+  const meses: string[] = []
+
+  for (let i = 1; i <= quantos; i++) {
+    // Aritmética de calendário na mão, em base 0, para não depender de fuso nenhum: estes são
+    // rótulos de mês, não instantes.
+    const total = ano! * 12 + (mes! - 1) - i
+    meses.push(`${Math.floor(total / 12)}-${String((total % 12) + 1).padStart(2, '0')}-01`)
+  }
+
+  return meses
+}

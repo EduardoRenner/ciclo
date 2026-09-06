@@ -72,14 +72,14 @@ describe('monthly_profit é append-only', () => {
   })
 
   /**
-   * O mês corrente ainda vai mudar. Congelá-lo grava um número errado para sempre — e é o erro que
-   * um job "esperto demais" cometeria primeiro.
+   * "Só mês encerrado é congelado" era uma varredura aqui, e ela era CEGA: procurava
+   * `mesCorrente.subtract({ months:` e passou verde com o laço mexido, porque a mesma expressão
+   * aparecia noutra linha calculando o limite da janela. A regra virou `mesesJaEncerrados`, com
+   * teste de comportamento em `tests/unit/core/serie-mensal.test.ts`. O que sobra aqui é a única
+   * coisa que a varredura prova bem: que o serviço CHAMA a função em vez de refazer a conta.
    */
-  it('só mês encerrado é congelado', () => {
+  it('o serviço usa a função que exclui o mês corrente, em vez de refazer a conta', () => {
     const servico = semComentarios(readFileSync(SERVICO, 'utf8'))
-    expect(
-      /mesCorrente\.subtract\(\{\s*months:/.test(servico),
-      'a série parou de andar para TRÁS a partir do mês corrente — o mês em curso pode estar sendo congelado',
-    ).toBe(true)
+    expect(/mesesJaEncerrados\s*\(/.test(servico), 'o serviço voltou a montar a lista de meses por conta própria').toBe(true)
   })
 })
