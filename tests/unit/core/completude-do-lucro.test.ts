@@ -18,13 +18,14 @@ const TUDO_FALTANDO = {
   taxaRespondida: false,
   servicosSemFicha: 2,
   servicosComProdutoSemCusto: 1,
+  custoFixoRespondido: false,
 }
 
 const chaves = (e: Parameters<typeof acoesDeCompletude>[0]) => acoesDeCompletude(e).map((a) => a.chave)
 
 describe('acoesDeCompletude — a pergunta some quando é respondida', () => {
   it('conta que não sabe nada pergunta as duas coisas', () => {
-    expect(chaves(TUDO_FALTANDO)).toEqual(['completude-taxa', 'completude-material'])
+    expect(chaves(TUDO_FALTANDO)).toEqual(['completude-taxa', 'completude-custo-fixo', 'completude-material'])
   })
 
   /**
@@ -43,7 +44,7 @@ describe('acoesDeCompletude — a pergunta some quando é respondida', () => {
 
   it('as duas respondidas não deixam card nenhum para trás', () => {
     expect(
-      acoesDeCompletude({ podeVerLucro: true, taxaRespondida: true, servicosSemFicha: 0, servicosComProdutoSemCusto: 0 }),
+      acoesDeCompletude({ podeVerLucro: true, taxaRespondida: true, custoFixoRespondido: true, servicosSemFicha: 0, servicosComProdutoSemCusto: 0 }),
       'card que sobrevive à resposta é o alarme que ninguém lê',
     ).toEqual([])
   })
@@ -76,6 +77,22 @@ describe('acoesDeCompletude — a pergunta some quando é respondida', () => {
    */
   it('sem report:read não sai ação nenhuma, nem quando falta tudo', () => {
     expect(acoesDeCompletude({ ...TUDO_FALTANDO, podeVerLucro: false })).toEqual([])
+  })
+
+  /**
+   * A terceira pergunta, de 2026-09-06. Sem ela o "Sobrou" era margem de contribuição com nome de
+   * lucro: um corte de R$ 45 com 40% de comissão dizia "Sobrou R$ 24,00" para um dono que paga
+   * R$ 3.500 de aluguel.
+   */
+  it('o aluguel entra na fila de perguntas, e some quando respondido', () => {
+    expect(chaves(TUDO_FALTANDO)).toContain('completude-custo-fixo')
+    expect(chaves({ ...TUDO_FALTANDO, custoFixoRespondido: true })).not.toContain('completude-custo-fixo')
+  })
+
+  /** Quem atende em casa responde zero de propósito, e para ele o assunto acabou. */
+  it('custo fixo respondido com zero nunca mais é perguntado', () => {
+    const respondido = acoesDeCompletude({ ...TUDO_FALTANDO, custoFixoRespondido: true, taxaRespondida: true, servicosSemFicha: 0, servicosComProdutoSemCusto: 0 })
+    expect(respondido).toEqual([])
   })
 })
 

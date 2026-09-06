@@ -12,6 +12,7 @@ import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { concentracaoDoMes, fechamentoDiario, resumoMensal } from '@/server/services/caixa'
 import { extratoDeComissao } from '@/server/services/comissao'
 import { medirMaterialDoCatalogo } from '@/server/services/ficha-de-consumo'
+import { lerCustoFixoDoTenant } from '@/server/services/custo-fixo'
 import { lerTaxasDoTenant } from '@/server/services/taxas-de-pagamento'
 
 import Caixa from './caixa'
@@ -82,7 +83,7 @@ export default async function PaginaCaixa({ searchParams }: { searchParams: Prom
   const inicioDoDia = dia.toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant().toString()
   const fimDoDia = dia.add({ days: 1 }).toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant().toString()
 
-  const [diario, mensal, profissionais, atendimentos, taxas, concentracao, material] = await Promise.all([
+  const [diario, mensal, profissionais, atendimentos, taxas, concentracao, material, custoFixo] = await Promise.all([
     fechamentoDiario(db, ctx.tenantId, timezone, dia.toString()),
     resumoMensal(db, ctx.tenantId, timezone, mes),
     db.from('professionals').select('id, display_name').eq('tenant_id', ctx.tenantId).eq('active', true).order('display_name'),
@@ -107,6 +108,7 @@ export default async function PaginaCaixa({ searchParams }: { searchParams: Prom
      */
     avaliarPermissao(ctx.papel, RELATORIO_DA_EQUIPE) ? concentracaoDoMes(db, ctx.tenantId, timezone, mes) : null,
     medirMaterialDoCatalogo(db, ctx.tenantId),
+    lerCustoFixoDoTenant(db, ctx.tenantId),
   ])
 
   const atendidoCents = (atendimentos.data ?? []).reduce((soma, a) => soma + a.price_cents, 0)
@@ -135,6 +137,7 @@ export default async function PaginaCaixa({ searchParams }: { searchParams: Prom
       comissoes={comissoes}
       atendidoCents={atendidoCents}
       taxaRespondida={taxas.respondida}
+      custoFixoRespondido={custoFixo.respondido}
       servicosSemMaterial={material.semFicha + material.comProdutoSemCusto}
       concentracao={concentracao}
     />

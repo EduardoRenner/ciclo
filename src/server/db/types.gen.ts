@@ -2943,6 +2943,7 @@ export type Database = {
           discount_cents: number
           fee_bps: number
           fee_cents: number
+          fixed_cost_cents: number
           id: string
           material_cost_cents: number
           payment_method: Database["public"]["Enums"]["payment_method"] | null
@@ -2964,6 +2965,7 @@ export type Database = {
           discount_cents?: number
           fee_bps?: number
           fee_cents?: number
+          fixed_cost_cents?: number
           id?: string
           material_cost_cents?: number
           payment_method?: Database["public"]["Enums"]["payment_method"] | null
@@ -2985,6 +2987,7 @@ export type Database = {
           discount_cents?: number
           fee_bps?: number
           fee_cents?: number
+          fixed_cost_cents?: number
           id?: string
           material_cost_cents?: number
           payment_method?: Database["public"]["Enums"]["payment_method"] | null

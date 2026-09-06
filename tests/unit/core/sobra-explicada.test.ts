@@ -11,6 +11,8 @@ const COMPLETA = {
   commissionCents: 4_000,
   taxaRespondida: true,
   itensComMaterialIncerto: 0,
+  fixedCostCents: 0,
+  custoFixoRespondido: true,
 }
 
 describe('explicarSobra — o valor e o que falta nele, sempre juntos', () => {
@@ -86,9 +88,51 @@ describe('explicarSobra — as lacunas', () => {
     expect(r.frase!.length, 'a frase voltou a carregar a explicação inteira').toBeLessThan(60)
   })
 
-  it('as três linhas de desconto aparecem mesmo valendo zero — zero é resposta', () => {
-    const r = explicarSobra({ ...COMPLETA, materialCents: 0, feeCents: 0, commissionCents: 0 })
-    expect(r.descontos.map((d) => d.rotulo)).toEqual(['Material', 'Taxa da maquininha', 'Comissão'])
+  it('as quatro linhas de desconto aparecem mesmo valendo zero — zero é resposta', () => {
+    const r = explicarSobra({ ...COMPLETA, materialCents: 0, feeCents: 0, commissionCents: 0, fixedCostCents: 0 })
+    expect(r.descontos.map((d) => d.rotulo)).toEqual(['Material', 'Taxa da maquininha', 'Comissão', 'Aluguel e contas'])
+  })
+
+  /**
+   * A quarta linha nasceu em 2026-09-06 e é a que separa lucro de margem de contribuição. Sem ela,
+   * um corte de R$ 45 com 40% de comissão dizia "Sobrou R$ 24,00" para um dono que paga R$ 3.500
+   * de aluguel — o `docs/47` P05 acusa o setor de mostrar faturamento com cara de lucro, e isto
+   * era a mesma família dentro do produto que faz a acusação.
+   */
+  it('o aluguel entra na conta e sai da sobra', () => {
+    const semAluguel = explicarSobra({ ...COMPLETA, fixedCostCents: 0 })
+    const comAluguel = explicarSobra({ ...COMPLETA, fixedCostCents: 673 })
+    expect(comAluguel.sobraCents).toBe(semAluguel.sobraCents - 673)
+  })
+
+  it('sem as três perguntas respondidas, o aluguel vira lacuna — e não zero silencioso', () => {
+    const r = explicarSobra({ ...COMPLETA, fixedCostCents: 0, custoFixoRespondido: false })
+    expect(r.lacunas).toContain('custo-fixo')
+    expect(r.frase).toBe('Falta descontar o aluguel.')
+    expect(r.detalhes[0]).toContain('quantas cadeiras')
+  })
+
+  /** Quem atende em casa responde zero de propósito, e para ele a conta está completa. */
+  it('custo fixo respondido com zero não vira lacuna', () => {
+    const r = explicarSobra({ ...COMPLETA, fixedCostCents: 0, custoFixoRespondido: true })
+    expect(r.lacunas).not.toContain('custo-fixo')
+  })
+
+  /**
+   * Três lacunas juntas precisam de vírgula antes do "e". Sem isso a frase vira uma enumeração com
+   * dois "e" — "o produto e a taxa da maquininha e o aluguel" — e fica ilegível em 390 px, que é o
+   * mesmo motivo pelo qual frase e detalhe vivem separados aqui.
+   */
+  it('as três lacunas juntas produzem uma frase legível', () => {
+    const r = explicarSobra({
+      ...COMPLETA,
+      itensComMaterialIncerto: 1,
+      taxaRespondida: false,
+      custoFixoRespondido: false,
+    })
+    expect(r.lacunas).toEqual(['ficha', 'taxa', 'custo-fixo'])
+    expect(r.frase).toBe('Falta descontar o produto, a taxa da maquininha e o aluguel.')
+    expect(r.detalhes).toHaveLength(3)
   })
 
   /*

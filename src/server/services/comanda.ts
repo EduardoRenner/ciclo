@@ -2,6 +2,7 @@ import { z } from 'zod'
 
 import { calcularComissaoItem, calcularSobraDaComanda, calcularTotalItem, calcularTotaisComanda, type BaseComissao } from '@/core/comanda/totals'
 import { custoDoServico } from '@/core/comanda/custo-do-servico'
+import { custoFixoDoAtendimento, lerCustoFixo } from '@/core/comanda/custo-fixo'
 import { calcularTaxaDaMaquininha, FORMAS_DE_PAGAMENTO, lerTaxasDePagamento, type FormaDePagamento } from '@/core/comanda/taxa-de-pagamento'
 import { AppError } from '@/server/http/errors'
 import { baixarEstoqueDaComanda, estornarBaixaDaComanda } from '@/server/services/estoque'
@@ -290,6 +291,32 @@ export async function fecharComanda(db: Cliente, tenantId: string, ticketId: str
 
   const { subtotalCents, totalCents } = calcularTotaisComanda({ items: items.map((i) => ({ totalCents: i.total_cents })), discountCents: ticket.discount_cents, tipCents: ticket.tip_cents })
   const custoTotalCents = items.reduce((soma, item) => soma + item.cost_cents, 0)
+
+  /*
+   * O custo da hora de cadeira (`0072`). A duração vem do CATÁLOGO, e não do relógio: o tempo real
+   * do atendimento não é registrado em lugar nenhum, e inventar uma média seria pior que usar o
+   * que o próprio dono cadastrou como duração do serviço.
+   *
+   * Item de produto avulso não ocupa cadeira e não entra — vender um óleo no balcão não consome a
+   * hora que o aluguel paga.
+   */
+  const servicosDaComanda = items.map((i) => i.service_id).filter((id): id is string => Boolean(id))
+  let duracaoTotalMin = 0
+  if (servicosDaComanda.length > 0) {
+    const { data: duracoes, error: erroDuracao } = await db
+      .from('services')
+      .select('id, duration_min')
+      .eq('tenant_id', tenantId)
+      .in('id', [...new Set(servicosDaComanda)])
+    if (erroDuracao) throw new AppError('INTERNAL', { cause: erroDuracao })
+
+    const porServico = new Map((duracoes ?? []).map((s) => [s.id, s.duration_min]))
+    for (const item of items) {
+      if (!item.service_id) continue
+      duracaoTotalMin += (porServico.get(item.service_id) ?? 0) * item.qty
+    }
+  }
+  const fixedCostCents = custoFixoDoAtendimento(lerCustoFixo(tenant?.settings), duracaoTotalMin)
   // A base é o `total`, e não o subtotal: a maquininha cobra sobre o que foi passado nela, gorjeta
   // inclusa. Ver o docstring de `calcularTaxaDaMaquininha`.
   const feeCents = calcularTaxaDaMaquininha({ totalCents, feeBps })
@@ -300,6 +327,7 @@ export async function fecharComanda(db: Cliente, tenantId: string, ticketId: str
     materialCents: custoTotalCents,
     feeCents,
     commissionCents: commissaoTotalCents,
+    fixedCostCents,
   })
 
   // `.eq('status', 'open')` no próprio UPDATE, e não só na leitura acima: entre o
@@ -317,6 +345,7 @@ export async function fecharComanda(db: Cliente, tenantId: string, ticketId: str
       commission_cents: commissaoTotalCents,
       material_cost_cents: custoTotalCents,
       payment_method: formaDePagamento,
+      fixed_cost_cents: fixedCostCents,
       fee_bps: feeBps,
       fee_cents: feeCents,
       profit_cents: profitCents,

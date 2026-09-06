@@ -12,7 +12,7 @@
 export type TomDaAcao = 'warn' | 'info' | 'ok'
 
 export type AcaoDeCompletude = {
-  chave: 'completude-taxa' | 'completude-material'
+  chave: 'completude-taxa' | 'completude-material' | 'completude-custo-fixo'
   titulo: string
   descricao: string
   href: string
@@ -34,6 +34,11 @@ export type EntradaDeCompletude = {
   taxaRespondida: boolean
   servicosSemFicha: number
   servicosComProdutoSemCusto: number
+  /**
+   * O dono já disse quanto sai por mês, quantas horas abre e quantas cadeiras tem? Ver
+   * `custoFixoEstaConfigurado`. Sem isso o "Sobrou" é margem de contribuição com nome de lucro.
+   */
+  custoFixoRespondido: boolean
 }
 
 /**
@@ -58,6 +63,17 @@ export function acoesDeCompletude(entrada: EntradaDeCompletude): AcaoDeCompletud
       descricao:
         'Sem isso o "Sobrou" de cada atendimento sai maior do que é. Se você só recebe em dinheiro e Pix, salve com zero — a pergunta não volta.',
       href: '/admin/config/taxas',
+      tom: 'info',
+    })
+  }
+
+  if (!entrada.custoFixoRespondido) {
+    acoes.push({
+      chave: 'completude-custo-fixo',
+      titulo: 'O aluguel ainda não entra no que sobrou',
+      descricao:
+        'São três perguntas que você responde de cabeça: quanto sai por mês, quantas horas você abre e quantas cadeiras tem. Quem atende em casa responde zero.',
+      href: '/admin/config/custo-fixo',
       tom: 'info',
     })
   }

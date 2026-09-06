@@ -2,6 +2,7 @@ import { headers } from 'next/headers'
 
 import { podeUsarModulo } from '@/core/billing/planos'
 import { CATALOGO_DE_SERVICOS, destinoDoMaterial } from '@/core/comanda/completude-do-lucro'
+import { custoFixoEstaConfigurado } from '@/core/comanda/custo-fixo'
 import { explicarSobra } from '@/core/comanda/sobra-explicada'
 import { avaliarPermissao } from '@/server/auth/rbac'
 import { contextoAtual } from '@/server/auth/tenant'
@@ -65,7 +66,12 @@ export default async function PaginaComanda({ params }: { params: Promise<{ id: 
   const sobra =
     podeVerLucro && (ticket.status === 'closed' || ticket.status === 'paid')
       ? await (async () => {
-          const taxas = await lerTaxasDoTenant(db, ctx.tenantId)
+          const [taxas, tenantSettings] = await Promise.all([
+            lerTaxasDoTenant(db, ctx.tenantId),
+            // As três perguntas do custo fixo moram em `tenants.settings`, no mesmo lugar da taxa.
+            db.from('tenants').select('settings').eq('id', ctx.tenantId).maybeSingle(),
+          ])
+          const tenant = tenantSettings.data
 
           /*
            * O valor CONGELADO no lançamento de cada item (`0070`), e não uma medição do catálogo de
@@ -87,6 +93,8 @@ export default async function PaginaComanda({ params }: { params: Promise<{ id: 
             commissionCents: ticket.commission_cents,
             taxaRespondida: taxas.respondida,
             itensComMaterialIncerto: incertos.length,
+            fixedCostCents: ticket.fixed_cost_cents,
+            custoFixoRespondido: custoFixoEstaConfigurado(tenant?.settings),
           })
         })()
       : null
