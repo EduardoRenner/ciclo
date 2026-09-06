@@ -9,6 +9,8 @@ import Badge from '@/components/ui/badge'
 import { useVocabulario } from '@/components/shell/vocabulario'
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
+import { fraseDaMargem } from '@/core/caixa/frase-da-margem'
+import type { MargemDoServico } from '@/core/caixa/margem-do-servico'
 import Chip from '@/components/ui/chip'
 import EmptyState from '@/components/ui/empty-state'
 import { formatarPreco, type ModeloDePreco } from '@/core/pricing/formatar'
@@ -25,7 +27,18 @@ type Servico = ServicoEditavel & {
   cycle_days_observado_amostra: number | null
 }
 
-export default function ListaServicos({ iniciais }: { iniciais: Servico[] }) {
+export default function ListaServicos({
+  iniciais,
+  margens,
+  podeVerLucro,
+}: {
+  iniciais: Servico[]
+  /** `docs/50` L-06. Só dos serviços com atendimento suficiente para o número se sustentar. */
+  margens: MargemDoServico[]
+  podeVerLucro: boolean
+}) {
+  const margemPorId = new Map(margens.map((m) => [m.serviceId, m]))
+
   const vocabulario = useVocabulario()
   const [servicos, setServicos] = useState(iniciais)
   const [mostrarArquivados, setMostrarArquivados] = useState(false)
@@ -165,6 +178,35 @@ export default function ListaServicos({ iniciais }: { iniciais: Servico[] }) {
                   const { procedencia } = reguaDoServico(s.cycle_days, s.cycle_days_observado, s.cycle_days_observado_amostra)
                   return procedencia ? <p className="mt-0.5 text-label text-txt-3">{procedencia}</p> : null
                 })()}
+                {/*
+                  `docs/50` L-06: a razão ao lado do número.
+
+                  Três estados, e o terceiro é o que a honestidade custa: com margem saudável a
+                  linha mostra só o percentual, sem apontar vilão nenhum — apontar um em serviço que
+                  vai bem fabrica um problema por serviço, todo dia, e alarme que sempre toca deixa
+                  de ser lido. Serviço sem atendimento suficiente não aparece aqui de propósito:
+                  `margemPorServico` já o descarta abaixo de três comandas fechadas, porque uma
+                  coloração com desconto de amiga não define a margem de nada.
+                */}
+                {podeVerLucro
+                  ? (() => {
+                      const margem = margemPorId.get(s.id)
+                      if (!margem) {
+                        return <p className="mt-0.5 text-label text-txt-3">ainda sem atendimentos suficientes para calcular a margem</p>
+                      }
+                      const frase = fraseDaMargem(margem)
+                      return (
+                        <>
+                          <p className={`tabular mt-0.5 text-label ${margem.lucroCents < 0 ? 'text-bad' : 'text-txt-3'}`}>
+                            sobra {Math.round(margem.margemBps / 100)}% em {margem.atendimentos}{' '}
+                            {margem.atendimentos === 1 ? 'atendimento' : 'atendimentos'}
+                          </p>
+                          {frase ? <p className="mt-0.5 text-label text-txt-2">{frase}</p> : null}
+                        </>
+                      )
+                    })()
+                  : null}
+
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {!s.active ? <Badge estado="bad">Arquivado</Badge> : null}
                   {!s.bookable_online ? <Badge estado="warn">Fora do site</Badge> : null}
