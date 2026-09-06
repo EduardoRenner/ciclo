@@ -81,3 +81,21 @@ export function acoesDeCompletude(entrada: EntradaDeCompletude): AcaoDeCompletud
 
   return acoes
 }
+
+/** A lista do catálogo — o destino de quem tem mais de um serviço para resolver. */
+export const CATALOGO_DE_SERVICOS = '/admin/config/servicos'
+
+/**
+ * Para onde a faixa da comanda leva quando falta o custo do produto — `docs/50` L-02.
+ *
+ * Com UM serviço incerto, a ficha dele: a faixa já dizia o que falta, e o que faltava era ela
+ * custar um toque em vez de uma caçada no catálogo. Com vários, a lista, porque escolher um dos
+ * três esconderia os outros dois — e o dono voltaria achando que resolveu.
+ *
+ * Zero também devolve a lista, e isso não é caso morto: quem chama só desenha a faixa quando há
+ * lacuna, mas uma função que devolvesse `null` obrigaria todo chamador a tratar um estado que a
+ * tela não alcança, e é assim que nasce o `null` que ninguém trata.
+ */
+export function destinoDoMaterial(servicos: readonly string[]): string {
+  return servicos.length === 1 ? `${CATALOGO_DE_SERVICOS}/${servicos[0]}/ficha` : CATALOGO_DE_SERVICOS
+}

@@ -120,6 +120,14 @@ export type MaterialIncerto = {
   semFicha: number
   /** Serviços com ficha cujo material saiu curto: algum produto dela nunca teve compra registrada. */
   comProdutoSemCusto: number
+  /**
+   * Os ids dos serviços com material incerto, pelas duas razões juntas, na ordem em que vieram.
+   *
+   * Existe para a faixa da comanda levar à ficha DAQUELE serviço quando o problema é um só, em vez
+   * de despejar o dono na lista inteira do catálogo para procurar qual — `docs/50` L-02. Com mais
+   * de um, a lista continua sendo o destino honesto: escolher um dos três esconderia os outros.
+   */
+  servicos: string[]
 }
 
 /**
@@ -138,7 +146,7 @@ export type MaterialIncerto = {
  */
 export async function medirMaterialIncerto(db: Cliente, tenantId: string, serviceIds: readonly string[]): Promise<MaterialIncerto> {
   const distintos = [...new Set(serviceIds)]
-  if (distintos.length === 0) return { semFicha: 0, comProdutoSemCusto: 0 }
+  if (distintos.length === 0) return { semFicha: 0, comProdutoSemCusto: 0, servicos: [] }
 
   const { data, error } = await db
     .from('service_products')
@@ -156,9 +164,12 @@ export async function medirMaterialIncerto(db: Cliente, tenantId: string, servic
     if ((linha.products?.avg_cost_cents ?? 0) <= 0) comProdutoSemCusto.add(linha.service_id)
   }
 
+  const semFicha = distintos.filter((id) => !comFicha.has(id))
+
   return {
-    semFicha: distintos.filter((id) => !comFicha.has(id)).length,
+    semFicha: semFicha.length,
     comProdutoSemCusto: comProdutoSemCusto.size,
+    servicos: [...semFicha, ...comProdutoSemCusto],
   }
 }
 

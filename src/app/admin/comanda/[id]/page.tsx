@@ -1,6 +1,7 @@
 import { headers } from 'next/headers'
 
 import { podeUsarModulo } from '@/core/billing/planos'
+import { CATALOGO_DE_SERVICOS, destinoDoMaterial } from '@/core/comanda/completude-do-lucro'
 import { explicarSobra } from '@/core/comanda/sobra-explicada'
 import { avaliarPermissao } from '@/server/auth/rbac'
 import { contextoAtual } from '@/server/auth/tenant'
@@ -55,6 +56,13 @@ export default async function PaginaComanda({ params }: { params: Promise<{ id: 
    *   soma só `closed`/`paid` — mostrar o "Sobrou" de uma comanda estornada faria a tela do
    *   atendimento discordar do fechamento do dia.
    */
+  /*
+   * `docs/50` L-02: a faixa que diz o que falta já existia; o que faltava era ela custar um toque.
+   * Quando o material incerto vem de UM serviço só, o destino é a ficha dele. Com mais de um, a
+   * lista do catálogo continua sendo o destino honesto — escolher um dos três esconderia os outros.
+   */
+  let destinoDaFicha = CATALOGO_DE_SERVICOS
+
   const sobra =
     podeVerLucro && (ticket.status === 'closed' || ticket.status === 'paid')
       ? await (async () => {
@@ -62,6 +70,8 @@ export default async function PaginaComanda({ params }: { params: Promise<{ id: 
             lerTaxasDoTenant(db, ctx.tenantId),
             medirMaterialIncerto(db, ctx.tenantId, items.map((i) => i.service_id).filter((id): id is string => Boolean(id))),
           ])
+          destinoDaFicha = destinoDoMaterial(material.servicos)
+
           return explicarSobra({
             subtotalCents: ticket.subtotal_cents,
             discountCents: ticket.discount_cents,
@@ -80,7 +90,14 @@ export default async function PaginaComanda({ params }: { params: Promise<{ id: 
     <>
       <PageHeader titulo="Comanda" descricao={ticket.status === 'open' ? 'Aberta' : 'Fechada'} />
 
-      <Comanda ticketInicial={ticket} itensIniciais={items} servicos={servicos} podeLancarItem={podeLancarItem} sobra={sobra} />
+      <Comanda
+        ticketInicial={ticket}
+        itensIniciais={items}
+        servicos={servicos}
+        podeLancarItem={podeLancarItem}
+        sobra={sobra}
+        destinoDoMaterial={destinoDaFicha}
+      />
     </>
   )
 }
