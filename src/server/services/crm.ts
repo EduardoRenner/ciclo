@@ -14,6 +14,7 @@ import { limiarPertoDoPremio } from '@/core/loyalty/limiar'
 
 import { buscarTudoPaginado } from '@/server/db/paginar'
 import { ritmoDoCliente, type RitmoDoCliente } from '@/core/ciclo/ritmo-do-cliente'
+import { lucroDoCliente, type LucroDoCliente } from '@/core/crm/lucro-do-cliente'
 import { AppError } from '@/server/http/errors'
 
 import type { Database } from '@/server/db/types.gen'
@@ -53,6 +54,11 @@ export type FichaCliente = {
     faltas: number
     ticketMedioCents: number
     ultimaVisita: string | null
+    /**
+     * `docs/48` C2: quanto essa pessoa deixa de LUCRO, não de faturamento. `null` para quem não
+     * alcança `report:read` — a mesma trava do §4.6 que vale na comanda e no caixa.
+     */
+    lucro: LucroDoCliente | null
   }
   ciclo: {
     state: EstadoCiclo
@@ -105,7 +111,13 @@ function lerPreferencias(bruto: unknown): PreferenciasCliente {
  * clientes nunca mostrou — até esta tela existir, esses dados estavam no banco sem porta de
  * entrada nenhuma.
  */
-export async function fichaDoCliente(db: Cliente, tenantId: string, clientId: string, timezone: string): Promise<FichaCliente> {
+export async function fichaDoCliente(
+  db: Cliente,
+  tenantId: string,
+  clientId: string,
+  timezone: string,
+  opcoes: { podeVerLucro?: boolean } = {},
+): Promise<FichaCliente> {
   const { data: cliente, error } = await db
     .from('clients')
     .select(
@@ -135,6 +147,7 @@ export async function fichaDoCliente(db: Cliente, tenantId: string, clientId: st
     consentimentosBruto,
     saudeBruto,
     servicosBruto,
+    comandasBruto,
   ] = await Promise.all([
     db
       .from('appointments')
@@ -205,6 +218,16 @@ export async function fichaDoCliente(db: Cliente, tenantId: string, clientId: st
     // `listarPacotesDoCliente` devolve `serviceId`, não o nome — o catálogo de um salão é
     // pequeno, então uma leitura resolve todos os pacotes de uma vez.
     db.from('services').select('id, name').eq('tenant_id', tenantId),
+    /*
+      `docs/48` C2. O lucro sai das comandas FECHADAS, congelado — nunca de um segundo cálculo,
+      para bater com o caixa. Nem toda visita passa por comanda, e é por isso que o resultado
+      carrega a cobertura em vez de apresentar uma soma parcial como se fosse a pessoa inteira.
+
+      Só é buscado para quem pode ver: sem `report:read`, nem a consulta acontece.
+    */
+    opcoes.podeVerLucro
+      ? db.from('tickets').select('profit_cents').eq('tenant_id', tenantId).eq('client_id', clientId).in('status', ['closed', 'paid'])
+      : Promise.resolve({ data: null }),
   ])
 
   const historico = (historicoBruto.data ?? []).map((a) => ({
@@ -271,6 +294,14 @@ export async function fichaDoCliente(db: Cliente, tenantId: string, clientId: st
       // Ticket médio sobre visitas concluídas — dividir por 0 na cliente que nunca veio daria NaN na tela.
       ticketMedioCents: visitas > 0 ? Math.round(ltvCents / visitas) : 0,
       ultimaVisita,
+      lucro: comandasBruto.data
+        ? lucroDoCliente({
+            lucroCents: comandasBruto.data.reduce((soma, t) => soma + t.profit_cents, 0),
+            comandas: comandasBruto.data.length,
+            visitas,
+            cicloPessoalDias: cicloBruto?.personal_cycle_days ?? null,
+          })
+        : null,
     },
     ciclo: cicloBruto
       ? {
