@@ -2,6 +2,8 @@ import { readFileSync, readdirSync } from 'node:fs'
 
 import { describe, expect, it } from 'vitest'
 
+import { sqlSemComentarios as semComentarios } from '../../helpers/fonte'
+
 /**
  * O pack diz o que o serviço GASTA. Nunca quanto aquele salão PAGOU.
  *
@@ -36,21 +38,6 @@ function semeaduras(sql: string): string[] {
   return sql.match(/"avg_cost_cents"\s*:\s*(?!0\s*[,}])\d+/g) ?? []
 }
 
-/**
- * Comentário `--` sai antes de qualquer casamento: prosa que cita o defeito não é o defeito.
- *
- * O `\r` no `split` e o `[^\r\n]` no lugar do `.` não são zelo: as migrations estão em CRLF no
- * disco, e em JavaScript `\r` é terminador de linha — `.` não casa com ele, e `$` sem `/m` só casa
- * no fim absoluto da string. Com `split('\n')` puro TODA linha terminava em `\r`, `/--.*$/` não
- * casava com nenhuma, e o cortador de comentário não cortava nada. Medido ao MUTAR esta guarda em
- * 2026-09-06: ela reprovou a mutação pelo motivo errado, acusando o comentário como se fosse SQL.
- */
-function semComentarios(sql: string): string {
-  return sql
-    .split(/\r?\n/)
-    .map((linha) => linha.replace(/--[^\r\n]*$/, ''))
-    .join('\n')
-}
 
 function numeroDa(nome: string): number {
   return Number(nome.slice(0, 4))
