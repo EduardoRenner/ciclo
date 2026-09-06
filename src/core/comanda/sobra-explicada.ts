@@ -24,6 +24,17 @@ export type EntradaDaSobra = {
   taxaRespondida: boolean
   /** Quantos serviços desta comanda não têm ficha de consumo — o material deles não foi contado. */
   servicosSemFicha: number
+  /**
+   * Quantos serviços TÊM ficha e ainda assim não têm material confiável, porque pelo menos um
+   * produto dela nunca teve compra registrada (`avg_cost_cents = 0`).
+   *
+   * Este campo existe por causa de um defeito medido em 2026-09-06: `contarServicosSemFicha`
+   * respondia "0 serviços sem ficha" para o salão de cabelo cujo pack semeou a ficha inteira, e a
+   * tela então mostrava o "Sobrou" SEM lacuna nenhuma — completo por fora, com o material saindo
+   * de um custo que o próprio CICLO tinha inventado no cadastro. Perguntar "tem ficha?" nunca foi
+   * a mesma coisa que perguntar "o material é real?", e só a segunda pergunta protege o número.
+   */
+  servicosComProdutoSemCusto: number
 }
 
 export type LinhaDaSobra = { rotulo: string; valorCents: number }
@@ -57,14 +68,29 @@ function frasePara(lacunas: readonly LacunaDaSobra[]): string | null {
   return `Falta descontar ${nomes.join(' e ')}.`
 }
 
-function detalhesPara(lacunas: readonly LacunaDaSobra[], servicosSemFicha: number): string[] {
+/**
+ * As duas causas do material incompleto viram DUAS linhas, e não uma soma. Elas pedem coisas
+ * diferentes do dono: "monte a ficha" é cadastro de ofício, "registre a compra" é nota fiscal na
+ * mão. Somá-las num contador só produziria "3 serviços com material incompleto" sem dizer o que
+ * fazer com nenhum dos três.
+ */
+function detalhesPara(lacunas: readonly LacunaDaSobra[], semFicha: number, semCusto: number): string[] {
   const detalhes: string[] = []
   if (lacunas.includes('ficha')) {
-    detalhes.push(
-      servicosSemFicha === 1
-        ? '1 serviço desta comanda ainda não tem ficha de consumo'
-        : `${servicosSemFicha} serviços desta comanda ainda não têm ficha de consumo`,
-    )
+    if (semFicha > 0) {
+      detalhes.push(
+        semFicha === 1
+          ? '1 serviço desta comanda ainda não tem ficha de consumo'
+          : `${semFicha} serviços desta comanda ainda não têm ficha de consumo`,
+      )
+    }
+    if (semCusto > 0) {
+      detalhes.push(
+        semCusto === 1
+          ? '1 serviço tem ficha, mas algum produto dela nunca teve compra registrada — ele entrou valendo zero'
+          : `${semCusto} serviços têm ficha, mas algum produto delas nunca teve compra registrada — eles entraram valendo zero`,
+      )
+    }
   }
   if (lacunas.includes('taxa')) detalhes.push('você ainda não informou quanto a maquininha cobra')
   return detalhes
@@ -75,7 +101,7 @@ export function explicarSobra(entrada: EntradaDaSobra): SobraExplicada {
   const sobraCents = receitaCents - entrada.materialCents - entrada.feeCents - entrada.commissionCents
 
   const lacunas: LacunaDaSobra[] = []
-  if (entrada.servicosSemFicha > 0) lacunas.push('ficha')
+  if (entrada.servicosSemFicha > 0 || entrada.servicosComProdutoSemCusto > 0) lacunas.push('ficha')
   /*
    * A lacuna é "não respondeu", não "vale zero". Um salão que só recebe em dinheiro e Pix responde
    * zero de propósito, e para ele a conta está completa — cobrar dele uma resposta que ele já deu
@@ -93,6 +119,6 @@ export function explicarSobra(entrada: EntradaDaSobra): SobraExplicada {
     ],
     lacunas,
     frase: frasePara(lacunas),
-    detalhes: detalhesPara(lacunas, entrada.servicosSemFicha),
+    detalhes: detalhesPara(lacunas, entrada.servicosSemFicha, entrada.servicosComProdutoSemCusto),
   }
 }

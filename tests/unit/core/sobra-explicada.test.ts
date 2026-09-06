@@ -11,6 +11,7 @@ const COMPLETA = {
   commissionCents: 4_000,
   taxaRespondida: true,
   servicosSemFicha: 0,
+  servicosComProdutoSemCusto: 0,
 }
 
 describe('explicarSobra — o valor e o que falta nele, sempre juntos', () => {
@@ -89,5 +90,40 @@ describe('explicarSobra — as lacunas', () => {
   it('as três linhas de desconto aparecem mesmo valendo zero — zero é resposta', () => {
     const r = explicarSobra({ ...COMPLETA, materialCents: 0, feeCents: 0, commissionCents: 0 })
     expect(r.descontos.map((d) => d.rotulo)).toEqual(['Material', 'Taxa da maquininha', 'Comissão'])
+  })
+
+  /*
+   * O defeito de 2026-09-06, no formato exato em que ele chegava na tela.
+   *
+   * Um salão de cabelo criado pelo `apply_vertical_pack` recebia a ficha de "Coloração" completa e
+   * os produtos dela com custo de catálogo — tintura R$ 22,00, oxigenada R$ 0,03/ml. Então
+   * `servicosSemFicha` valia 0, a lacuna nunca era levantada, e a comanda fechada mostrava
+   * "Sobrou R$ 92,60" limpo, sem ressalva nenhuma, com R$ 24,60 de material que ninguém comprou.
+   *
+   * Um número inventado exibido com a cara de número completo é o defeito que este módulo inteiro
+   * existe para impedir — e ele estava passando por baixo, porque a pergunta era "tem ficha?" e
+   * não "o material é real?".
+   */
+  it('ficha completa com produto que nunca teve compra registrada é lacuna, e não conta fechada', () => {
+    const r = explicarSobra({ ...COMPLETA, servicosSemFicha: 0, servicosComProdutoSemCusto: 1 })
+
+    expect(r.lacunas, 'ficha semeada pelo pack não é material conferido').toContain('ficha')
+    expect(r.frase).toBe('Falta descontar o produto.')
+    expect(r.detalhes).toEqual(['1 serviço tem ficha, mas algum produto dela nunca teve compra registrada — ele entrou valendo zero'])
+  })
+
+  it('as duas causas do material incompleto aparecem como duas linhas, porque pedem coisas diferentes', () => {
+    const r = explicarSobra({ ...COMPLETA, servicosSemFicha: 2, servicosComProdutoSemCusto: 3 })
+
+    expect(r.lacunas).toEqual(['ficha'])
+    expect(r.detalhes).toHaveLength(2)
+    expect(r.detalhes[0]).toBe('2 serviços desta comanda ainda não têm ficha de consumo')
+    expect(r.detalhes[1]).toBe('3 serviços têm ficha, mas algum produto delas nunca teve compra registrada — eles entraram valendo zero')
+  })
+
+  it('material conferido e taxa respondida continuam fechando a conta sem aviso', () => {
+    const r = explicarSobra({ ...COMPLETA, servicosSemFicha: 0, servicosComProdutoSemCusto: 0 })
+    expect(r.lacunas).toEqual([])
+    expect(r.detalhes).toEqual([])
   })
 })

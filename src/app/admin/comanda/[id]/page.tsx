@@ -6,7 +6,7 @@ import { avaliarPermissao } from '@/server/auth/rbac'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { buscarComanda } from '@/server/services/comanda'
-import { contarServicosSemFicha } from '@/server/services/ficha-de-consumo'
+import { medirMaterialIncerto } from '@/server/services/ficha-de-consumo'
 import { contextoDePlano } from '@/server/services/planos'
 import { listarServicos } from '@/server/services/servicos'
 import { lerTaxasDoTenant } from '@/server/services/taxas-de-pagamento'
@@ -58,9 +58,9 @@ export default async function PaginaComanda({ params }: { params: Promise<{ id: 
   const sobra =
     podeVerLucro && (ticket.status === 'closed' || ticket.status === 'paid')
       ? await (async () => {
-          const [taxas, servicosSemFicha] = await Promise.all([
+          const [taxas, material] = await Promise.all([
             lerTaxasDoTenant(db, ctx.tenantId),
-            contarServicosSemFicha(db, ctx.tenantId, items.map((i) => i.service_id).filter((id): id is string => Boolean(id))),
+            medirMaterialIncerto(db, ctx.tenantId, items.map((i) => i.service_id).filter((id): id is string => Boolean(id))),
           ])
           return explicarSobra({
             subtotalCents: ticket.subtotal_cents,
@@ -70,7 +70,8 @@ export default async function PaginaComanda({ params }: { params: Promise<{ id: 
             feeCents: ticket.fee_cents,
             commissionCents: ticket.commission_cents,
             taxaRespondida: taxas.respondida,
-            servicosSemFicha,
+            servicosSemFicha: material.semFicha,
+            servicosComProdutoSemCusto: material.comProdutoSemCusto,
           })
         })()
       : null
