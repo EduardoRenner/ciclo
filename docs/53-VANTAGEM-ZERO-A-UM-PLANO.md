@@ -88,6 +88,45 @@ um disparo manual de teste. **Nenhuma linha deste candidato pode ser construída
 lançada antes disso.** Não é ordem de prioridade — é ordem de existência: um agente conversacional
 sem canal ligado não tem com quem conversar.
 
+## 1.3 · O segundo candidato de execução: o toque responde antes do servidor
+
+**Este é o exemplo mais literal da analogia Chrome/Firefox da §1.1, e não é hipótese — já foi
+medido neste repositório.** O `docs/28-LATENCIA-DE-CLIQUE-PLANO.md` documenta seis rodadas de
+trabalho: função rodando no hemisfério errado (`iad1` corrigido para `gru1`), Sentry carregando meio
+segundo em todo cold start sem ter DSN configurado, `sharp`/libvips de 19 MB entrando de carona em
+sete rotas que não processam imagem, política de RLS duplicada na tabela mais quente do banco. O
+resultado medido: `/admin/hoje` caiu de 391 ms para 219 ms quente, e o cold start (~950 ms, uma vez
+por período de ociosidade) foi isolado como o que sobra — **infraestrutura, não mais código**
+(`docs/28` §9).
+
+**O que aquele trabalho não tocou, porque não era o problema dele: o botão ainda espera a resposta
+do servidor para reagir.** Medido agora, nesta rodada `[M]`: `useOptimistic` **não aparece em
+nenhum arquivo do projeto** (`grep -rl "useOptimistic" src` devolve vazio). O padrão em toda tela de
+mutação (`admin/agenda/detalhe.tsx`, e por extensão todo o resto que segue o mesmo molde) é
+`useTransition` com um estado `pendente`: o botão mostra `carregando={pendente}` e só volta ao
+normal quando a rede responder. Mesmo depois do P0-c do `docs/28` (soltar o botão antes do
+`router.refresh()`), a pessoa que toca "Confirmar" ainda vê um spinner até a rede ir e voltar —
+**mesmo que a rede esteja em `gru1`, a 10 ms de distância**. Não existe versão onde o toque muda a
+tela **no mesmo frame**, antes de qualquer rede.
+
+Essa é exatamente a fronteira que separa Chrome de Firefox depois que os dois já são rápidos o
+suficiente: os dois carregam página rápido; a diferença que o usuário sente é a resposta ao toque
+ser **instantânea e depois corrigida se preciso**, contra **esperar para saber**. É `1→n-paridade`
+puro — nenhum concorrente da pesquisa foi auditado neste eixo especificamente, e não há reivindicação
+de que o CICLO seja pior ou melhor que os 31 nisso — mas é uma dimensão que **nenhum dado precisa
+ser amarrado** para valer, ao contrário da condição 1 da §1.1: aqui a condição que substitui o dado
+é **o produto já ter a régua de honestidade que evita a armadilha de "otimista e errado"**
+(`sobra-explicada.ts`, `explicarSobra`, os quatro estados do "Sobrou" do `docs/51` §5.1) — ou seja,
+o CICLO já tem o hábito de desenho de nunca mostrar número inventado, e otimismo de interface exige
+exatamente essa disciplina para não virar mentira na tela quando a mutação falhar.
+
+**O risco que faz isto não ser trivial, e por isso vira candidato com ticket, não ajuste solto:**
+UI otimista que **não desfaz** quando o servidor rejeita é pior que spinner — é a categoria "o
+conserto pode ser pior que o defeito" que esta base já nomeou. Confirmar um agendamento que na
+verdade colidiu (a constraint `appointments_no_overlap`) não pode aparecer confirmado na tela por
+meio segundo antes de voltar ao estado real. O ticket tem que tratar reversão como parte do
+critério de aceite, não como detalhe de implementação.
+
 ---
 
 # 2 · Priorização
@@ -135,6 +174,12 @@ ao mesmo veto que blindava os candidatos daquela lista contra depender de um can
   não existe ainda. Assim que o F0 for ligado (decisão do dono, fora desta execução), G sobe para o
   topo da fila de qualidade de produto, porque nesse momento passa a ser a coisa que mais rápido
   torna o WhatsApp do CICLO diferente do WhatsApp dos seis concorrentes que já o têm ligado.
+- **H nos critérios de aceite de A, B, C, D.**  A resposta otimista não é um candidato que compete
+  com eles pela agenda — é uma **dimensão de qualidade** que todos os tickets de mutação herdam.
+  Não entra em priorização porque não é executável isoladamente (exige `docs/28`, que já está
+  completo) — é um padrão: cada botão que troca estado mostra a mudança **antes** de a rede
+  responder, desde que tenha reversão garantida no critério de aceite. Registra-se aqui para não
+  desaparecer do escopo quando as pressões de prazo aparecerem.
 
 ---
 
@@ -452,6 +497,35 @@ O contrato mínimo, para quem for detalhar quando o F0 estiver resolvido:
 
 ---
 
+## H-00 a H-02 · Resposta otimista do toque — **padrão de desenho, nos critérios de A/B/C/D**
+
+H não é um ticket isolado — é um **critério de aceite expandido** para todo ticket que toca estado
+(`admin/agenda/detalhe.tsx`, `admin/clientes/acao-rapida`, qualquer lugar onde `useTransition` com
+`pendente` aparece hoje). O `docs/28-LATENCIA-DE-CLIQUE-PLANO.md` §9 mediu `/admin/hoje` quente em
+219 ms de servidor; H torna aquilo invisível ao toque.
+
+**O padrão, e ele é não negociável:**
+
+1. **H-00 · O botão muda a tela **antes** de a rede responder.** Toque em "Confirmar" → célula muda
+   para `checked`, spinner sai, lista reordena-se se houver. Nenhuma tesoura de `useTransition`
+   esperando. Isto usa `useOptimistic` de React 19 (`core/mutations/usar-otimista.ts`, novo),
+   nunca estado local manual que exija sincronização.
+2. **H-01 · Reversão quando servidor rejeita.** Se a constraint falha (colisão no no-overlap,
+   superação de quota de pacote, qualquer validação do banco), a tela volta ao estado anterior **no
+   mesmo frame** — não há frase "tentei mas não deu" numa tela que mostra o sucesso. O erro aparece
+   como toast, a tela reverte à verdade.
+3. **H-02 · Guarda: o estado otimista é reversível.** Não pode haver estado que, uma vez tocado,
+   fica assim mesmo se o servidor disser não. A guarda `otimismo-e-verdade` verifica que cada
+   `useOptimistic` tem correspondente `catch` ou validação pré-toque — nenhum estado que o servidor
+   valida depois de mostrado fica mostrado se a validação falhar.
+
+**Por que H entra aqui, na §4:** ele não é um ticket novo — é o **piso de qualidade** para todos
+os tickets de mutação deste plano. A pessoa que escrever A-01 / B-01 / C-01 / D-01 não vai
+esperar um ticket H-00 separado aparecer na fila; precisa saber que a definição de pronto para A
+**inclui** o padrão H. Por isso está registrado em vez de escondido.
+
+---
+
 # 5 · O que NÃO fazer, e por quê
 
 1. **Não tentar ser o grátis.** A InfinitePay entrega agenda + link + sinal + lembrete de graça
@@ -484,6 +558,10 @@ O contrato mínimo, para quem for detalhar quando o F0 estiver resolvido:
 11. **Não lançar G sem o dado do Motor de Ciclo na conversa.** Um agente genérico de agendamento
     por WhatsApp é `1→n-paridade` sem exceção nenhuma (`52` V7) — a única razão de construir é a
     condição da §1.1, e ela não é opcional no escopo.
+12. **Não criar estado local para "está carregando" em vez de `useOptimistic` em tickets de mutação.** H
+    não é um item de luxo — é o piso de qualidade medido no `docs/28`. Um spinner que dura meio segundo em
+    toda mutação é a diferença que Chrome ganhou sobre Firefox quando ambos ficaram rápidos. Tickets que usem
+    `useTransition(...pendente)` no botão vão passar por revisão até H estar dentro.
 
 ---
 
