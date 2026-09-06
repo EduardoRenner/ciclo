@@ -1,3 +1,0 @@
-src/app/(public)/precos/page.tsx:109: 'Não, nada. O CICLO não processa pagamento e não fica com nenhuma parte do que você recebe. Por isso o app pode te dizer, sem conflito de interesse, q
-src/app/admin/comissao/page.tsx:100: <PageHeader titulo="Minha comissão" descricao="Este mês, item a item — o valor de cada linha é o que foi congelado no fechamento daquela comanda." />
-src/app/admin/mes/resumo.tsx:131: Você ainda não disse quanto a maquininha cobra — o &ldquo;Sobrou&rdquo; acima não desconta a taxa de pagamento.{' '}
