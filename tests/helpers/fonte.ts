@@ -23,3 +23,24 @@ export function semComentarios(fonte: string): string {
     .replace(/\/\*[\s\S]*?\*\//g, ' ')
     .replace(/^\s*\/\/.*$/gm, ' ')
 }
+
+/**
+ * O mesmo para SQL, onde o comentario e `--` e nao `//`.
+ *
+ * Nao da para reusar o de cima, e a diferenca que importa nao e o traco: e a QUEBRA DE LINHA. As
+ * migrations estao em CRLF no disco, `\r` e terminador de linha em JavaScript, `.` nao casa com ele
+ * e `$` sem `/m` so casa no fim absoluto da string. Uma versao escrita como
+ * `linha.replace(/--.*$/, '')` depois de `split('\n')` nao corta comentario NENHUM em CRLF — e
+ * passa verde, porque nao ha caso que exercite a prosa. Medido em 2026-09-06, ao mutar a guarda da
+ * 0069: ela reprovou acusando o comentario que explicava o defeito.
+ *
+ * Duas copias divergentes disso ja existiam quando esta funcao nasceu (a guarda de pack e a de
+ * cobertura LGPD). Mora aqui pelo mesmo motivo que a de cima: cinco copias de uma regra e a
+ * armadilha de duas fontes da mesma verdade, aplicada a ferramenta que persegue essa armadilha.
+ */
+export function sqlSemComentarios(sql: string): string {
+  return sql
+    .split(/\r?\n/)
+    .map((linha) => linha.replace(/--[^\r\n]*$/, ''))
+    .join('\n')
+}

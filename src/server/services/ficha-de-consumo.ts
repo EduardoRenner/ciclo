@@ -161,3 +161,25 @@ export async function medirMaterialIncerto(db: Cliente, tenantId: string, servic
     comProdutoSemCusto: comProdutoSemCusto.size,
   }
 }
+
+/**
+ * O mesmo `medirMaterialIncerto`, mas sobre o catálogo ativo inteiro em vez de uma comanda — é o
+ * que a Central de Ações precisa para dizer ao dono o que falta ANTES de ele fechar a primeira
+ * comanda e descobrir a lacuna no pior momento possível.
+ *
+ * Duas idas de rede em série, e de propósito: a alternativa era um segundo `select` que
+ * respondesse "material incompleto" por conta própria, e regra de dinheiro escrita duas vezes é
+ * exatamente a segunda fonte que esta base já pagou uma vez no livro-caixa. A regra mora em
+ * `medirMaterialIncerto`; aqui só muda de quem se pergunta.
+ */
+export async function medirMaterialDoCatalogo(db: Cliente, tenantId: string): Promise<MaterialIncerto> {
+  const { data, error } = await db
+    .from('services')
+    .select('id')
+    .eq('tenant_id', tenantId)
+    .eq('active', true)
+    .is('deleted_at', null)
+  if (error) throw new AppError('INTERNAL', { cause: error })
+
+  return medirMaterialIncerto(db, tenantId, (data ?? []).map((s) => s.id))
+}

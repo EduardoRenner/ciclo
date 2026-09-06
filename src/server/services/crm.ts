@@ -6,11 +6,15 @@ import { statusConsentimentos } from '@/server/services/consentimentos'
 import { assinaturaAtiva, extratoDePontos, lerConfigFidelidade, type AssinaturaDoCliente, type ExtratoPontos } from '@/server/services/fidelidade'
 import { listarMediaDoCliente } from '@/server/services/media'
 import { listarNotas, type NotaDoCliente } from '@/server/services/notas'
+import { medirMaterialDoCatalogo } from '@/server/services/ficha-de-consumo'
 import { listarOrcamentos } from '@/server/services/orcamentos'
 import { listarPacotesDoCliente, saldoCarteira } from '@/server/services/pacotes'
 import { contextoDePlano } from '@/server/services/planos'
 import { podeUsarModulo } from '@/core/billing/planos'
 import { limiarPertoDoPremio } from '@/core/loyalty/limiar'
+import { acoesDeCompletude } from '@/core/comanda/completude-do-lucro'
+import { taxaEstaConfigurada } from '@/core/comanda/taxa-de-pagamento'
+import { avaliarPermissao } from '@/server/auth/rbac'
 
 import { buscarTudoPaginado } from '@/server/db/paginar'
 import { ritmoDoCliente, type RitmoDoCliente } from '@/core/ciclo/ritmo-do-cliente'
@@ -20,6 +24,7 @@ import { AppError } from '@/server/http/errors'
 import type { Database } from '@/server/db/types.gen'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { EstadoCiclo } from '@/core/cycle/compute'
+import type { Papel } from '@/server/auth/rbac'
 import type { EstadoAgendamento } from '@/core/scheduling/state'
 
 type Cliente = SupabaseClient<Database>
@@ -572,7 +577,13 @@ const PRIMEIROS_PASSOS: AcaoSugerida[] = [
   },
 ]
 
-export async function centralDeAcoes(db: Cliente, tenantId: string): Promise<CentralDeAcoes> {
+/**
+ * `papel` entrou em 2026-09-06 junto das duas ações de completude do lucro. Ele é opcional para
+ * não quebrar chamador nenhum, e a AUSÊNCIA dele esconde as ações — falhar fechado, porque o que
+ * elas revelam é dinheiro do negócio (`docs/48` §4.6) e um `undefined` distraído não pode virar
+ * porta aberta.
+ */
+export async function centralDeAcoes(db: Cliente, tenantId: string, papel?: Papel): Promise<CentralDeAcoes> {
   // As seis consultas (mais o contexto de plano) saem juntas de propósito. Descobrir "é conta
   // nova?" antes de pedir o resto custaria um round-trip a mais em TODO carregamento de "Hoje" —
   // a tela mais aberta do produto — para economizar consultas vazias só em contas sem dado nenhum.
@@ -581,7 +592,14 @@ export async function centralDeAcoes(db: Cliente, tenantId: string): Promise<Cen
   // docs/33 §7.2): esta função JÁ ERA o "resumo proativo, sem LLM, calculado ao abrir o painel"
   // que a Fase C pedia — faltava só orçamento parado, que a Fase A do assistente já sabia
   // responder (`orcamentos_parados`) mas a tela "Hoje" nunca mostrava sem o dono perguntar.
-  const [clientes, agendamentos, emRisco, aniversariantes, resgataveis, orcamentos, ctxPlano, tenantSettings] = await Promise.all([
+  /*
+   * Dinheiro do negócio: sem `report:read` nem a consulta acontece, no mesmo padrão que a ficha do
+   * cliente já usa para o lucro (§4.6). O barbeiro comissionado não descobre pela Central de Ações
+   * o que a trava da comanda esconde dele.
+   */
+  const podeVerLucro = papel !== undefined && avaliarPermissao(papel, 'report:read') !== null
+
+  const [clientes, agendamentos, emRisco, aniversariantes, resgataveis, orcamentos, ctxPlano, tenantSettings, material] = await Promise.all([
     db.from('clients').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId).is('deleted_at', null),
     db.from('appointments').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId),
     // `v_clientes_a_recuperar` (0058) conta CLIENTE, não linha de (cliente × serviço). Antes
@@ -609,6 +627,7 @@ export async function centralDeAcoes(db: Cliente, tenantId: string): Promise<Cen
     // fidelidade precisa do prêmio que o DONO configurou — ver `limiarPertoDoPremio` abaixo.
     // Mais uma consulta no mesmo `Promise.all`: paralela, sem round-trip serial a mais.
     db.from('tenants').select('settings').eq('id', tenantId).maybeSingle(),
+    podeVerLucro ? medirMaterialDoCatalogo(db, tenantId) : null,
   ])
 
   // Sem cliente E sem agendamento é conta que ainda não começou — quem só usa
@@ -685,6 +704,25 @@ export async function centralDeAcoes(db: Cliente, tenantId: string): Promise<Cen
       })
     }
   }
+
+  /*
+   * As duas perguntas de que o "Sobrou" depende, no lugar onde o dono já olha todo dia — e não numa
+   * tela de configuração que ele nunca abre (`docs/50` L-01). Entram por ÚLTIMO na lista de
+   * propósito: quem tem cliente sumindo hoje resolve isso primeiro; completar a conta pode esperar
+   * o fim da fila, mas não pode ficar invisível.
+   *
+   * A decisão de QUANDO parar de perguntar mora em `core/comanda/completude-do-lucro.ts`, e a
+   * guarda chama a mesma função — a versão anterior desta ideia, no card "perto do prêmio",
+   * espelhou a regra dentro do teste e passou verde com o defeito de volta.
+   */
+  acoes.push(
+    ...acoesDeCompletude({
+      podeVerLucro,
+      taxaRespondida: taxaEstaConfigurada(tenantSettings.data?.settings),
+      servicosSemFicha: material?.semFicha ?? 0,
+      servicosComProdutoSemCusto: material?.comProdutoSemCusto ?? 0,
+    }),
+  )
 
   return { titulo: 'Vale a pena hoje', acoes }
 }
