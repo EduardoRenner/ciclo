@@ -7,7 +7,6 @@ import { avaliarPermissao } from '@/server/auth/rbac'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { buscarComanda } from '@/server/services/comanda'
-import { medirMaterialIncerto } from '@/server/services/ficha-de-consumo'
 import { contextoDePlano } from '@/server/services/planos'
 import { listarServicos } from '@/server/services/servicos'
 import { lerTaxasDoTenant } from '@/server/services/taxas-de-pagamento'
@@ -66,11 +65,18 @@ export default async function PaginaComanda({ params }: { params: Promise<{ id: 
   const sobra =
     podeVerLucro && (ticket.status === 'closed' || ticket.status === 'paid')
       ? await (async () => {
-          const [taxas, material] = await Promise.all([
-            lerTaxasDoTenant(db, ctx.tenantId),
-            medirMaterialIncerto(db, ctx.tenantId, items.map((i) => i.service_id).filter((id): id is string => Boolean(id))),
-          ])
-          destinoDaFicha = destinoDoMaterial(material.servicos)
+          const taxas = await lerTaxasDoTenant(db, ctx.tenantId)
+
+          /*
+           * O valor CONGELADO no lançamento de cada item (`0070`), e não uma medição do catálogo de
+           * hoje. Enquanto era medido agora, a comanda de agosto parava de avisar assim que o dono
+           * registrasse a compra em outubro — e o `material_cost_cents` dela continuava zero. O
+           * número errado ficava, o aviso sumia. "O lucro é registro, não view" vale para o valor e
+           * vale para a ressalva sobre ele.
+           */
+          const incertos = items.filter((i) => i.material_incerto)
+          const servicosIncertos = [...new Set(incertos.map((i) => i.service_id).filter((id): id is string => Boolean(id)))]
+          destinoDaFicha = destinoDoMaterial(servicosIncertos)
 
           return explicarSobra({
             subtotalCents: ticket.subtotal_cents,
@@ -80,8 +86,7 @@ export default async function PaginaComanda({ params }: { params: Promise<{ id: 
             feeCents: ticket.fee_cents,
             commissionCents: ticket.commission_cents,
             taxaRespondida: taxas.respondida,
-            servicosSemFicha: material.semFicha,
-            servicosComProdutoSemCusto: material.comProdutoSemCusto,
+            itensComMaterialIncerto: incertos.length,
           })
         })()
       : null

@@ -87,6 +87,8 @@ export async function adicionarItemComanda(db: Cliente, tenantId: string, ticket
   let unitPriceCents: number
   /** Já multiplicado pela `qty` do item — cada ramo resolve o próprio arredondamento. */
   let costTotalCents: number
+  /** Se `costTotalCents` é o custo de verdade. Congela junto dele, e pelo mesmo motivo (`0070`). */
+  let materialIncerto: boolean
 
   if (entrada.serviceId) {
     /*
@@ -114,7 +116,18 @@ export async function adicionarItemComanda(db: Cliente, tenantId: string, ticket
     unitPriceCents = entrada.unitPriceCents ?? servico.price_cents
 
     const linhas = (ficha ?? []).map((l) => ({ qty: l.qty, avgCostCents: l.products?.avg_cost_cents ?? 0 }))
-    costTotalCents = linhas.length > 0 ? custoDoServico(linhas, entrada.qty).custoCents : Math.round(entrada.qty * servico.cost_cents)
+    const custo = custoDoServico(linhas, entrada.qty)
+    costTotalCents = linhas.length > 0 ? custo.custoCents : Math.round(entrada.qty * servico.cost_cents)
+    /*
+     * A ressalva nasce JUNTO do custo, da mesma consulta, no mesmo instante — e fica congelada com
+     * ele. Recalculá-la depois, do estado de hoje, fazia a faixa da comanda de agosto sumir quando
+     * o dono registrasse a compra em outubro, enquanto `material_cost_cents` continuava zero: o
+     * número errado e o aviso apagado (`0070`).
+     *
+     * Serviço sem ficha cai no `services.cost_cents`, a sobrescrita manual de quem não usa estoque
+     * — quando ela também é zero, não há custo nenhum e a lacuna é real.
+     */
+    materialIncerto = linhas.length > 0 ? custo.materialIncerto : servico.cost_cents <= 0
   } else {
     const { data: produto, error } = await db
       .from('products')
@@ -160,6 +173,11 @@ export async function adicionarItemComanda(db: Cliente, tenantId: string, ticket
     }
     unitPriceCents = entrada.unitPriceCents ?? precoDoCatalogo!
     costTotalCents = Math.round(entrada.qty * produto.avg_cost_cents)
+    /*
+     * O caminho que ninguém tinha olhado: produto de revenda sem compra registrada entra com custo
+     * zero e infla o lucro igualzinho ao insumo. A ressalva vale para os dois.
+     */
+    materialIncerto = produto.avg_cost_cents <= 0
   }
 
   const totalCents = calcularTotalItem({ qty: entrada.qty, unitPriceCents, discountCents: entrada.discountCents })
@@ -178,6 +196,7 @@ export async function adicionarItemComanda(db: Cliente, tenantId: string, ticket
       discount_cents: entrada.discountCents,
       total_cents: totalCents,
       cost_cents: costTotalCents,
+      material_incerto: materialIncerto,
     })
     .select('*')
     .single()

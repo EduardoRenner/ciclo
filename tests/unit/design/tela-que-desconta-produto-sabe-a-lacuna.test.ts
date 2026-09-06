@@ -19,8 +19,14 @@ import { semComentarios } from '../../helpers/fonte'
 
 const TELAS: { arquivo: string; sinal: RegExp; oQuePromete: string }[] = [
   {
+    /*
+     * O sinal desta tela mudou de `servicosComProdutoSemCusto` (medido no catálogo de hoje) para
+     * `material_incerto` (congelado no lançamento do item, `0070`) — e o sinal novo é mais forte,
+     * não mais fraco: enquanto a lacuna era medida agora, ela sumia da comanda de agosto assim que
+     * o dono registrasse a compra em outubro, com o `material_cost_cents` dela ainda em zero.
+     */
     arquivo: 'src/app/admin/comanda/[id]/page.tsx',
-    sinal: /servicosComProdutoSemCusto/,
+    sinal: /material_incerto/,
     oQuePromete: 'o "Sobrou" daquele atendimento',
   },
   {

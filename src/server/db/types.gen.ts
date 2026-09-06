@@ -2806,6 +2806,7 @@ export type Database = {
           description: string
           discount_cents: number
           id: string
+          material_incerto: boolean
           product_id: string | null
           professional_id: string | null
           qty: number
@@ -2822,6 +2823,7 @@ export type Database = {
           description: string
           discount_cents?: number
           id?: string
+          material_incerto?: boolean
           product_id?: string | null
           professional_id?: string | null
           qty?: number
@@ -2838,6 +2840,7 @@ export type Database = {
           description?: string
           discount_cents?: number
           id?: string
+          material_incerto?: boolean
           product_id?: string | null
           professional_id?: string | null
           qty?: number
