@@ -46,11 +46,15 @@ export default function MargemDoClube({ margens }: { margens: MargemDoClube[] })
 
       <Card className="flex flex-col gap-3">
         {margens.map((m) => (
-          <div key={m.clientId} className="flex flex-col gap-1">
+          /*
+            A linha inteira é o link, e não só o nome: um link de texto corrido tem ~20 px de
+            altura, metade do alvo de 48 px que o `CLAUDE.md` exige. Envolver a linha resolve sem
+            `toque-48`, que aqui seria a ferramenta errada — ela põe um `::after` absoluto, e dois
+            alvos na mesma linha de texto se cobrem.
+          */
+          <Link key={m.clientId} href={`/admin/clientes/${m.clientId}`} className="flex min-h-12 flex-col justify-center gap-1 py-1">
             <div className="flex items-baseline justify-between gap-3">
-              <Link href={`/admin/clientes/${m.clientId}`} className="min-w-0 truncate text-corpo font-semibold text-txt">
-                {m.clientName}
-              </Link>
+              <span className="min-w-0 truncate text-corpo font-semibold text-txt">{m.clientName}</span>
               <span className={`tabular shrink-0 text-corpo font-bold ${m.noPrejuizo ? 'text-bad' : 'text-acc-2'}`}>
                 {dinheiro.format(m.margemCents / 100)}
               </span>
@@ -61,7 +65,7 @@ export default function MargemDoClube({ margens }: { margens: MargemDoClube[] })
               {m.acimaDoLimite && m.limiteSessoes !== null ? ` · passou das ${m.limiteSessoes} do plano` : ''}
             </p>
             <p className="text-label text-txt-3">{periodo(m.desde, m.ate)}</p>
-          </div>
+          </Link>
         ))}
       </Card>
 
