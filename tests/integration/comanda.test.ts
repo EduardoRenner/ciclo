@@ -9,7 +9,7 @@ import { criarServico } from '@/server/services/servicos'
 import { executarOnboarding } from '@/server/services/onboarding'
 import { adicionarItemComanda, atualizarDescontoEGorjeta, buscarComanda, fecharComanda, removerItemComanda } from '@/server/services/comanda'
 
-import type { Database } from '@/server/db/types.gen'
+import type { Database, Json } from '@/server/db/types.gen'
 
 dotenv.config({ path: '.env.local' })
 
@@ -144,7 +144,7 @@ describe('comanda — abrir, itens, desconto, gorjeta, fechar', () => {
       const ticketId = await abrirTicketVazio()
       await adicionarItemComanda(svc, tenantId, ticketId, { serviceId: servicoId, professionalId, qty: 1, discountCents: 0 })
 
-      const fechado = await fecharComanda(svc, tenantId, ticketId)
+      const fechado = await fecharComanda(svc, tenantId, ticketId, 'cash')
       expect(fechado.status).toBe('closed')
       expect(fechado.closed_at).not.toBeNull()
       expect(fechado.commission_cents).toBe(4_000) // 40% de 10.000 (compModel commission, 4000 bps)
@@ -161,7 +161,7 @@ describe('comanda — abrir, itens, desconto, gorjeta, fechar', () => {
     'fechar comanda vazia é recusado — não faz sentido cobrar nada',
     async () => {
       const ticketId = await abrirTicketVazio()
-      await expect(fecharComanda(svc, tenantId, ticketId)).rejects.toMatchObject({ code: 'VALIDATION_ERROR' })
+      await expect(fecharComanda(svc, tenantId, ticketId, 'cash')).rejects.toMatchObject({ code: 'VALIDATION_ERROR' })
     },
     30_000,
   )
@@ -171,7 +171,7 @@ describe('comanda — abrir, itens, desconto, gorjeta, fechar', () => {
     async () => {
       const ticketId = await abrirTicketVazio()
       await adicionarItemComanda(svc, tenantId, ticketId, { serviceId: servicoId, professionalId, qty: 1, discountCents: 0 })
-      await fecharComanda(svc, tenantId, ticketId)
+      await fecharComanda(svc, tenantId, ticketId, 'cash')
 
       await expect(adicionarItemComanda(svc, tenantId, ticketId, { serviceId: servicoId, professionalId, qty: 1, discountCents: 0 })).rejects.toMatchObject({
         code: 'INVALID_TRANSITION',
@@ -203,7 +203,7 @@ describe('comanda — o que sobra e a trava de estado', () => {
       await adicionarItemComanda(svc, tenantId, ticketId, { serviceId: servicoId, professionalId, qty: 1, discountCents: 0 })
       await atualizarDescontoEGorjeta(svc, tenantId, ticketId, { discountCents: 2_000, tipCents: 0 })
 
-      const fechado = await fecharComanda(svc, tenantId, ticketId)
+      const fechado = await fecharComanda(svc, tenantId, ticketId, 'cash')
 
       expect(fechado.total_cents).toBe(8_000) // 10.000 - 2.000
       expect(fechado.commission_cents, 'a comissão não é a que este teste fixou — a aritmética abaixo não vale').toBe(4_000)
@@ -224,7 +224,7 @@ describe('comanda — o que sobra e a trava de estado', () => {
       await adicionarItemComanda(svc, tenantId, ticketId, { serviceId: servicoId, professionalId, qty: 1, discountCents: 0 })
       await atualizarDescontoEGorjeta(svc, tenantId, ticketId, { discountCents: 0, tipCents: 3_000 })
 
-      const fechado = await fecharComanda(svc, tenantId, ticketId)
+      const fechado = await fecharComanda(svc, tenantId, ticketId, 'cash')
 
       expect(fechado.total_cents).toBe(13_000)
       expect(fechado.profit_cents).toBe(6_000) // 10.000 - 4.000 de comissão; a gorjeta é do profissional
@@ -242,8 +242,8 @@ describe('comanda — o que sobra e a trava de estado', () => {
       // Simultâneas de verdade: é a janela entre ler `status = 'open'` e escrever `closed` que o
       // `.eq('status', 'open')` do UPDATE fechou. Em série as duas já eram recusadas antes.
       const resultados = await Promise.allSettled([
-        fecharComanda(svc, tenantId, ticketId),
-        fecharComanda(svc, tenantId, ticketId),
+        fecharComanda(svc, tenantId, ticketId, 'cash'),
+        fecharComanda(svc, tenantId, ticketId, 'cash'),
       ])
 
       const aceitas = resultados.filter((r) => r.status === 'fulfilled')
@@ -259,5 +259,100 @@ describe('comanda — o que sobra e a trava de estado', () => {
       expect(depois!.status).toBe('closed')
     },
     30_000,
+  )
+})
+
+/**
+ * `docs/49`: até a `0066`, `tickets.fee_cents` existia, era subtraída pela conta do lucro e somada
+ * pelo caixa — e **nada no projeto a escrevia**. O "Sobrou" do salão que passa no cartão era
+ * faturamento menos material e comissão, com a maquininha invisível.
+ *
+ * Só o banco de verdade prova este par: o percentual sai de `tenants.settings`, o valor é gravado
+ * na comanda, e o congelamento só existe se `fee_bps` continuar o de ontem depois de o dono
+ * renegociar a taxa.
+ */
+describe('comanda — a taxa da maquininha', () => {
+  async function abrirComItem() {
+    const { data, error } = await svc.from('tickets').insert({ tenant_id: tenantId, professional_id: professionalId, status: 'open' }).select('id').single()
+    if (error) throw error
+    await adicionarItemComanda(svc, tenantId, data.id, { serviceId: servicoId, professionalId, qty: 1, discountCents: 0 })
+    return data.id
+  }
+
+  async function gravarTaxas(taxas: Record<string, number>) {
+    const { data } = await svc.from('tenants').select('settings').eq('id', tenantId).single()
+    const settings = (data?.settings ?? {}) as Record<string, unknown>
+    const { error } = await svc.from('tenants').update({ settings: { ...settings, payment_fees_bps: taxas } }).eq('id', tenantId)
+    if (error) throw error
+  }
+
+  it(
+    'crédito a 3,49% sai do lucro; dinheiro na mesma comanda não tira nada',
+    async () => {
+      await svc.from('professionals').update({ commission_bps: 4_000 }).eq('id', professionalId)
+      await gravarTaxas({ cash: 0, pix: 0, debit: 149, credit: 349, other: 0 })
+
+      const noCredito = await fecharComanda(svc, tenantId, await abrirComItem(), 'credit')
+      expect(noCredito.payment_method).toBe('credit')
+      expect(noCredito.fee_bps).toBe(349)
+      expect(noCredito.fee_cents).toBe(349) // 3,49% de R$ 100
+      expect(noCredito.profit_cents).toBe(10_000 - 4_000 - 349)
+
+      const noDinheiro = await fecharComanda(svc, tenantId, await abrirComItem(), 'cash')
+      expect(noDinheiro.fee_cents).toBe(0)
+      expect(noDinheiro.profit_cents, 'a mesma comanda sobra mais em dinheiro — é o ponto').toBe(10_000 - 4_000)
+      expect(noDinheiro.profit_cents).toBeGreaterThan(noCredito.profit_cents)
+    },
+    60_000,
+  )
+
+  it(
+    'a maquininha cobra sobre a gorjeta também, e o salão paga por um dinheiro que não fica com ele',
+    async () => {
+      await svc.from('professionals').update({ commission_bps: 4_000 }).eq('id', professionalId)
+      await gravarTaxas({ cash: 0, pix: 0, debit: 149, credit: 349, other: 0 })
+
+      const ticketId = await abrirComItem()
+      await atualizarDescontoEGorjeta(svc, tenantId, ticketId, { discountCents: 0, tipCents: 2_000 })
+      const fechado = await fecharComanda(svc, tenantId, ticketId, 'credit')
+
+      expect(fechado.total_cents).toBe(12_000)
+      expect(fechado.fee_cents, 'a taxa saiu do subtotal, e não do que passou na máquina').toBe(419) // 3,49% de 12.000
+      expect(fechado.profit_cents).toBe(10_000 - 4_000 - 419)
+    },
+    60_000,
+  )
+
+  it(
+    'renegociar a maquininha em novembro não muda o lucro de agosto',
+    async () => {
+      await svc.from('professionals').update({ commission_bps: 4_000 }).eq('id', professionalId)
+      await gravarTaxas({ cash: 0, pix: 0, debit: 149, credit: 349, other: 0 })
+
+      const fechado = await fecharComanda(svc, tenantId, await abrirComItem(), 'credit')
+      await gravarTaxas({ cash: 0, pix: 0, debit: 149, credit: 199, other: 0 })
+
+      const { data: depois } = await svc.from('tickets').select('fee_bps, fee_cents, profit_cents').eq('id', fechado.id).single()
+      expect(depois!.fee_bps, 'o percentual congelado seguiu a taxa nova').toBe(349)
+      expect(depois!.fee_cents).toBe(349)
+      expect(depois!.profit_cents).toBe(fechado.profit_cents)
+    },
+    60_000,
+  )
+
+  it(
+    'sem taxa configurada, nada é inventado — a comanda fecha com zero e diz qual foi a forma',
+    async () => {
+      const { data } = await svc.from('tenants').select('settings').eq('id', tenantId).single()
+      const settings: Record<string, Json> = { ...((data?.settings ?? {}) as Record<string, Json>) }
+      delete settings.payment_fees_bps
+      await svc.from('tenants').update({ settings }).eq('id', tenantId)
+
+      const fechado = await fecharComanda(svc, tenantId, await abrirComItem(), 'credit')
+      expect(fechado.fee_bps).toBe(0)
+      expect(fechado.fee_cents).toBe(0)
+      expect(fechado.payment_method, 'a forma de pagamento se perde quando não há taxa').toBe('credit')
+    },
+    60_000,
   )
 })

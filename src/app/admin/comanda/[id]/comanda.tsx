@@ -6,6 +6,7 @@ import { useState, useTransition } from 'react'
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import { useToast } from '@/components/ui/toast'
+import { FORMAS_DE_PAGAMENTO, NOME_DA_FORMA, type FormaDePagamento } from '@/core/comanda/taxa-de-pagamento'
 
 import type { Database } from '@/server/db/types.gen'
 
@@ -43,11 +44,19 @@ export default function Comanda({
   const [qty, setQty] = useState('1')
   const [desconto, setDesconto] = useState(String(ticket.discount_cents / 100))
   const [gorjeta, setGorjeta] = useState(String(ticket.tip_cents / 100))
+  // Nasce vazio de propósito: pré-selecionar "Dinheiro" faria a maioria das comandas fechar com
+  // taxa zero sem ninguém escolher nada, e o "Sobrou" voltaria a ser o número inflado que a
+  // `0066` existe para consertar.
+  const [forma, setForma] = useState<FormaDePagamento | null>(null)
   const [pendente, iniciarTransicao] = useTransition()
   const [erro, setErro] = useState<string | null>(null)
   const mostrarToast = useToast()
 
   const aberta = ticket.status === 'open'
+  // `payment_method` é o enum de oito valores do banco; `NOME_DA_FORMA` só nomeia as cinco que se
+  // escolhem no fechamento. Comanda de antes da `0066` vem nula, e as três de fora (clube, pacote,
+  // voucher) não têm nome aqui — nos dois casos a frase sai sem a forma, em vez de sair torta.
+  const formaFechada = ticket.payment_method ? (NOME_DA_FORMA[ticket.payment_method as FormaDePagamento] ?? null) : null
 
   function adicionarItem() {
     if (!ticket.professional_id) {
@@ -108,7 +117,10 @@ export default function Comanda({
     setErro(null)
     iniciarTransicao(async () => {
       try {
-        const fechado = await chamar<Ticket>(`/api/v1/tickets/${ticket.id}/close`, { method: 'POST' })
+        const fechado = await chamar<Ticket>(`/api/v1/tickets/${ticket.id}/close`, {
+          method: 'POST',
+          body: JSON.stringify({ paymentMethod: forma }),
+        })
         setTicket(fechado)
         mostrarToast({ tom: 'ok', titulo: 'Comanda fechada' })
       } catch (e) {
@@ -244,17 +256,50 @@ export default function Comanda({
       </Card>
 
       {aberta ? (
-        <Button
-          largura="cheia"
-          carregando={pendente}
-          disabled={itens.length === 0}
-          motivoDesabilitado="Adicione pelo menos um item para poder fechar a comanda."
-          onClick={fechar}
-        >
-          Fechar comanda
-        </Button>
+        <>
+          {/*
+            A pergunta é obrigatória, e é ela que faz `tickets.fee_cents` deixar de ser uma coluna
+            que ninguém escreve (`docs/49`). Botões e não `select`: são cinco opções, cabem em
+            390 px, e um toque resolve — num `select` seriam três (abrir, rolar, escolher) na tela
+            mais usada do dia.
+          */}
+          <Card className="flex flex-col gap-3">
+            <p className="text-corpo font-semibold">Como a cliente pagou?</p>
+            <div className="grid grid-cols-2 gap-2">
+              {FORMAS_DE_PAGAMENTO.map((f) => (
+                <button
+                  key={f}
+                  type="button"
+                  aria-pressed={forma === f}
+                  onClick={() => setForma(f)}
+                  className={`min-h-12 rounded-[var(--radius-sm)] border px-3 text-corpo ${
+                    forma === f ? 'border-acc bg-acc-soft font-semibold text-acc-2' : 'border-line-2 bg-surface-2 text-txt'
+                  }`}
+                >
+                  {NOME_DA_FORMA[f]}
+                </button>
+              ))}
+            </div>
+          </Card>
+
+          <Button
+            largura="cheia"
+            carregando={pendente}
+            disabled={itens.length === 0 || forma === null}
+            motivoDesabilitado={
+              itens.length === 0
+                ? 'Adicione pelo menos um item para poder fechar a comanda.'
+                : 'Escolha como a cliente pagou — é o que permite descontar a taxa da maquininha.'
+            }
+            onClick={fechar}
+          >
+            Fechar comanda
+          </Button>
+        </>
       ) : (
-        <p className="text-center text-secundario text-txt-2">Comanda fechada. Nada mais pode mudar aqui.</p>
+        <p className="text-center text-secundario text-txt-2">
+          Comanda fechada{formaFechada ? ` — paga em ${formaFechada}` : ''}. Nada mais pode mudar aqui.
+        </p>
       )}
     </div>
   )
