@@ -1,6 +1,7 @@
 import { Temporal } from '@js-temporal/polyfill'
 
 import { computeCycle } from '@/core/cycle/compute'
+import { valorEmRiscoCents } from '@/core/cycle/valor-em-risco'
 import { buscarTudoPaginado } from '@/server/db/paginar'
 import { AppError } from '@/server/http/errors'
 
@@ -21,25 +22,13 @@ const TAMANHO_DO_LOTE = 1000
  */
 type Combinacao = { clientId: string; serviceId: string }
 
-/**
- * §5.3, "Valor em risco": `preço atual do serviço × probabilidade de
- * recuperação por estado`. `on_track` não entra na tela de recuperação
- * (a view `v_recover_revenue` já filtra por estado), mas o job roda para
- * todo estado — 0 aqui é o valor correto para quem não está em risco.
+/*
+ * `valorEmRiscoCents` mudou para `@/core/cycle/valor-em-risco` (import no topo). Era `preço ×
+ * fator`, sem I/O, mas morava aqui — e a consequência não era estética: a tabela que ORDENA a tela
+ * "Recuperar receita" só dava para exercitar pelo teste de integração, que precisa de banco no ar,
+ * enquanto a outra metade do mesmo `§5.3` (o estado, em `core/cycle/compute.ts`) tinha teste de
+ * unidade desde sempre.
  */
-const PROBABILIDADE_POR_ESTADO: Record<string, number> = {
-  on_track: 0,
-  due: 0.85,
-  late: 0.65,
-  at_risk: 0.35,
-  lost: 0.12,
-}
-
-function valorEmRiscoCents(priceCents: number, state: string): number {
-  const probabilidade = PROBABILIDADE_POR_ESTADO[state] ?? 0
-  // "sempre arredondado para baixo" — nunca prometer mais do que entrega.
-  return Math.floor(priceCents * probabilidade)
-}
 
 /**
  * TICKET-036. Recalcula `client_cycles` de um tenant inteiro numa passada só:

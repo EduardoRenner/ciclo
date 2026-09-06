@@ -3,6 +3,8 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
+import { semComentarios } from '../../helpers/fonte'
+
 import {
   NOME_DO_PLANO,
   ORDEM_DOS_PLANOS,
@@ -45,6 +47,42 @@ function arquivos(dir: string): string[] {
 
 const TODOS = arquivos(RAIZ).filter((f) => f !== FONTE_UNICA)
 
+/**
+ * O piso, e ele não é zelo: **este arquivo passava verde com a varredura devolvendo zero
+ * arquivos.** Medido em 05/09/2026 trocando `arquivos(RAIZ)` por `[]` — os cinco casos ficaram
+ * verdes, incluindo os dois que protegem preço de plano. Uma mudança de layout de pasta, um
+ * `RAIZ` errado ou uma exceção no `statSync` bastariam.
+ *
+ * É a regra 4 do procedimento de guarda do `CLAUDE.md` ("se o padrão parar de casar, o teste tem
+ * que GRITAR, não passar vazio"), que 41 das 43 guardas de varredura desta suíte já cumprem.
+ *
+ * O piso é o detector achando o positivo que ele DEVE achar, e não uma contagem: `planos.ts` é a
+ * fonte única, então é o único arquivo do projeto que legitimamente contém as duas coisas. Se os
+ * detectores abaixo pararem de casar com ELE, pararam de casar com qualquer um — e é isso que a
+ * contagem sozinha não diria.
+ */
+describe('a varredura enxerga alguma coisa', () => {
+  it('achou arquivo de sobra para varrer', () => {
+    expect(TODOS.length, `varredura de ${RAIZ} devolveu ${TODOS.length} arquivos — o caminho mudou?`).toBeGreaterThan(100)
+  })
+
+  it('e os dois detectores ainda casam com a fonte única, que é o positivo conhecido', () => {
+    const fonte = readFileSync(FONTE_UNICA, 'utf8')
+    expect(
+      /gratis:\s*['"]Grátis['"]/.test(fonte) && /avancado:\s*['"]Avançado['"]/.test(fonte),
+      'o detector de tabela de nomes não casa nem com `core/billing/planos.ts` — ele parou de ' +
+        'funcionar, e os testes abaixo passam vazios sem denunciar nada',
+    ).toBe(true)
+
+    const normalizar = (t: string) => t.split(NBSP).join(' ')
+    const precoEssencial = normalizar(precoDoPlano('essencial'))
+    expect(
+      normalizar(fonte).includes(String(PRECO_MENSAL_CENTS.essencial)) || normalizar(fonte).includes(precoEssencial),
+      'o valor do Essencial não aparece na fonte única — o detector de preço à mão perdeu a régua',
+    ).toBe(true)
+  })
+})
+
 describe('nome e preço de plano existem num lugar só', () => {
   it('nenhum arquivo fora do core redeclara a tabela de nomes', () => {
     const culpados = TODOS.filter((f) => {
@@ -71,8 +109,8 @@ describe('nome e preço de plano existem num lugar só', () => {
     const culpados = TODOS.filter((f) => {
       const src = readFileSync(f, 'utf8')
       // Comentário citando o preço é documentação, não duplicação — só o código conta.
-      const semComentarios = normalizar(src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, ''))
-      return proibidos.some((preco) => semComentarios.includes(preco))
+      const marcacao = normalizar(semComentarios(src))
+      return proibidos.some((preco) => marcacao.includes(preco))
     })
 
     expect(culpados, `preço de plano escrito à mão em: ${culpados.join(', ')}`).toEqual([])

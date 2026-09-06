@@ -1,8 +1,8 @@
-import { ArrowRight, Check, Minus } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 
-import { NOME_DO_PLANO, PLANOS, precoDoPlano } from '@/core/billing/planos'
+import { NOME_DO_PLANO, PLANOS, custoPorAtendimento, precoDoPlano } from '@/core/billing/planos'
 
 import { canalDeContato } from '@/lib/contato'
 import { CARTOES } from '@/lib/planos-cartoes'
@@ -97,6 +97,10 @@ const PERGUNTAS = [
   },
 ]
 
+/** Ids dos dois `<symbol>` da lista de planos — a definição e cada `<use>` leem daqui. */
+const ID_INCLUI = 'precos-inclui'
+const ID_NAO_INCLUI = 'precos-nao-inclui'
+
 export default function Precos() {
   const botaoPrimario =
     'inline-flex h-12 w-full items-center justify-center gap-2 rounded-[var(--radius-sm)] bg-acc px-5 text-corpo ' +
@@ -143,6 +147,25 @@ export default function Precos() {
       </section>
 
       <section className="flex flex-col gap-4">
+        {/*
+          Os dois ícones desta lista aparecem 24 vezes somadas — 19 `Check` e 5 `Minus` —, e o
+          lucide inlina o SVG inteiro em cada uma. Medido no HTML de produção de `/precos`:
+          7.161 B de 52.197, **14% da página só de ícone repetido**. Mesmo conserto das estrelas
+          da página do salão: um `<symbol>` e 24 `<use>`.
+
+          `fill="none"` fica em cada `<svg>` que usa, nunca no `<symbol>` — dentro do símbolo o
+          atributo ganha da classe do elemento externo na cascata, e foi assim que a primeira
+          versão daquele conserto renderizou 25 estrelas vazadas.
+        */}
+        <svg aria-hidden focusable="false" className="absolute size-0" width="0" height="0">
+          <symbol id={ID_INCLUI} viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20 6 9 17l-5-5" />
+          </symbol>
+          <symbol id={ID_NAO_INCLUI} viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5 12h14" />
+          </symbol>
+        </svg>
+
         {CARTOES.map((p) => (
           <article
             key={p.tier}
@@ -181,13 +204,17 @@ export default function Precos() {
             <ul className="mt-4 flex flex-col gap-2">
               {p.inclui.map((item) => (
                 <li key={item.texto} className="flex gap-2 text-secundario text-txt-2">
-                  <Check aria-hidden className="mt-0.5 size-4 shrink-0 text-ok" />
+                  <svg aria-hidden viewBox="0 0 24 24" fill="none" className="mt-0.5 size-4 shrink-0 text-ok">
+                    <use href={`#${ID_INCLUI}`} />
+                  </svg>
                   <span>{item.texto}</span>
                 </li>
               ))}
               {p.naoInclui?.map((item) => (
                 <li key={item} className="flex gap-2 text-secundario text-txt-3">
-                  <Minus aria-hidden className="mt-0.5 size-4 shrink-0" />
+                  <svg aria-hidden viewBox="0 0 24 24" fill="none" className="mt-0.5 size-4 shrink-0">
+                    <use href={`#${ID_NAO_INCLUI}`} />
+                  </svg>
                   <span>{item}</span>
                 </li>
               ))}
@@ -201,6 +228,72 @@ export default function Precos() {
             </Link>
           </article>
         ))}
+      </section>
+
+      {/*
+        Item C do `docs/43-POSICIONAMENTO-10X.md` — eixo 3, economia de escala.
+
+        A tabela de planos responde "quanto custa". Ela não responde a pergunta que separa o CICLO
+        do modelo dominante do nicho: **quanto custa quando eu crescer.** No preço fixo o custo por
+        atendimento cai sozinho; numa comissão ele é constante por definição, então a conta do salão
+        cresce junto com o sucesso dele. Esse argumento fica mais forte com o tempo sem ninguém
+        escrever nada novo, e é o único eixo da pesquisa em que a vantagem é aritmética, não opinião.
+
+        **Sem citar concorrente e sem número de terceiro.** A pesquisa do `43` tem as taxas
+        medidas, mas publicar preço alheio numa página nossa é afirmação que envelhece na mão deles
+        e que ninguém aqui pode reconferir depois. A conta abaixo usa só o nosso próprio preço, que
+        sai de `core/billing/planos` — e a comparação é de ESTRUTURA, que não envelhece.
+
+        O parágrafo final é o que faz a comparação ser honesta em vez de propaganda: quem cobra
+        comissão entrega uma coisa que o CICLO não entrega. Dizer isso na nossa própria página de
+        preço custa pouco e é a diferença entre argumento e omissão — e ainda deixa o veto do §5.2
+        (nunca construir vitrine de tenants) visível para quem compra, não só para quem programa.
+      */}
+      <section className="py-10">
+        <h2 className="text-titulo font-bold">O preço não sobe quando você cresce</h2>
+        <p className="mt-3 max-w-[52ch] text-corpo text-txt-2">
+          Existe plataforma de agendamento que fica com uma porcentagem do cliente novo que ela te manda. Faz
+          sentido para quem cobra, e tem um efeito que só aparece depois: <strong className="font-semibold text-txt">quanto
+          melhor o seu mês, maior a conta</strong>.
+        </p>
+        <p className="mt-3 max-w-[52ch] text-corpo text-txt-2">
+          No CICLO o plano é fixo e não existe taxa por agendamento. Então o custo de cada atendimento cai sozinho
+          conforme você atende mais:
+        </p>
+
+        <table className="mt-5 w-full border-collapse text-corpo">
+          <caption className="sr-only">
+            Custo por atendimento no plano {NOME_DO_PLANO.essencial}, conforme o número de atendimentos no mês
+          </caption>
+          <thead>
+            <tr className="border-b border-line">
+              <th scope="col" className="py-2 text-left text-label font-semibold uppercase tracking-[0.08em] text-txt-3">
+                Atendimentos no mês
+              </th>
+              <th scope="col" className="py-2 text-right text-label font-semibold uppercase tracking-[0.08em] text-txt-3">
+                Custo de cada um
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {[60, 150, 300].map((quantos) => (
+              <tr key={quantos} className="border-b border-line">
+                <th scope="row" className="py-3 text-left font-normal text-txt-2">{quantos}</th>
+                <td className="py-3 text-right font-semibold tabular-nums text-txt">{custoPorAtendimento('essencial', quantos)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <p className="mt-3 text-label text-txt-3">
+          {NOME_DO_PLANO.essencial}, {precoDoPlano('essencial')} por mês, dividido pelos atendimentos do mês. Nada mais entra na conta.
+        </p>
+
+        <p className="mt-5 max-w-[52ch] text-secundario text-txt-2">
+          A parte honesta: quem cobra comissão costuma cobrar sobre o cliente que a <em>própria plataforma</em> trouxe,
+          de uma vitrine onde a sua clientela também vê os seus concorrentes. O CICLO não tem vitrine e não traz cliente
+          de lugar nenhum &mdash; sua página é do seu negócio e só dele, e quem chega nela chegou por você. Se o que você
+          procura é alugar a clientela de um marketplace, o CICLO não é isso.
+        </p>
       </section>
 
       <section className="py-10">

@@ -108,6 +108,18 @@ async function criarClienteEmCiclo(nome: string, opcoes: { state: Database['publ
 // versão anterior deste teste.
 const DENTRO_DA_JANELA = Temporal.ZonedDateTime.from('2026-08-18T14:00:00-03:00[America/Sao_Paulo]').toInstant()
 
+/**
+ * 21h30, depois de fechar a loja — e é a hora em que o dono de verdade senta para chamar a base.
+ *
+ * A janela 8h–21h nunca teve caso de teste. Enquanto ela devolvia o mesmo `rate_limited` do
+ * dedupe de 7 dias, não havia o que distinguir: a tela dizia "opt-out ou limite de mensagens" e
+ * ele concluía que os 40 clientes tinham pedido para não receber, quando bastava tentar de manhã.
+ */
+const FORA_DA_JANELA = Temporal.ZonedDateTime.from('2026-08-18T21:30:00-03:00[America/Sao_Paulo]').toInstant()
+
+/** 9h do dia seguinte: a hora em que a tentativa das 21h30 deveria poder ser refeita. */
+const MANHA_SEGUINTE = Temporal.ZonedDateTime.from('2026-08-19T09:00:00-03:00[America/Sao_Paulo]').toInstant()
+
 function providerQueSempreFunciona(): MessagingProvider {
   return {
     sendTemplate: vi.fn(async () => ({ providerId: `wamid.${randomUUID()}` })),
@@ -195,6 +207,39 @@ describe('enviarParaRecuperar', () => {
       )
       expect(segunda.queued).toBe(0)
       expect(segunda.skipped).toEqual([{ clientId: cliente, reason: 'rate_limited' }])
+    },
+    30_000,
+  )
+
+  it(
+    'fora da janela 8h–21h tem motivo próprio, e não gasta a trava de 7 dias',
+    async () => {
+      const cliente = await criarClienteEmCiclo('Chamada às 21h30', { state: 'late', valueAtRiskCents: 6_000 })
+
+      const tarde = await enviarParaRecuperar(
+        svc,
+        tenantId,
+        TZ,
+        { items: [{ clientId: cliente, serviceId: servicoId }], mode: 'template' },
+        providerQueSempreFunciona(),
+        FORA_DA_JANELA,
+      )
+
+      expect(tarde.queued).toBe(0)
+      // Antes vinha `rate_limited`, indistinguível de "já avisei essa pessoa esta semana".
+      expect(tarde.skipped).toEqual([{ clientId: cliente, reason: 'fora_de_janela' }])
+
+      // E a metade que dá sentido à distinção: não enviar às 21h30 não pode queimar a chance de
+      // enviar às 9h. `last_campaign_at` continua nulo, então a tentativa de manhã passa.
+      const cedo = await enviarParaRecuperar(
+        svc,
+        tenantId,
+        TZ,
+        { items: [{ clientId: cliente, serviceId: servicoId }], mode: 'template' },
+        providerQueSempreFunciona(),
+        MANHA_SEGUINTE,
+      )
+      expect(cedo.queued).toBe(1)
     },
     30_000,
   )

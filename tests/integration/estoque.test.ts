@@ -251,4 +251,56 @@ describe('estoque — baixa no fechamento, estorno, média móvel', () => {
     },
     30_000,
   )
+
+  /*
+   * `reorder_point` era lida em tres lugares e escrita em nenhum: nao havia formulario, rota nem
+   * servico que a definisse. O alerta nao sumia — chegava tarde, porque "estoque <= ponto" com o
+   * ponto travado em 0 so dispara com o produto ja acabado.
+   */
+  it(
+    'define o ponto de pedido junto com a entrada',
+    async () => {
+      const produto = await criarProduto('Toalha com aviso', 10)
+      expect(produto.reorder_point).toBe(0)
+
+      const atualizado = await registrarEntradaEstoque(svc, tenantId, {
+        productId: produto.id,
+        qty: 5,
+        unitCostCents: 500,
+        reorderPoint: 4,
+      })
+
+      expect(atualizado.reorder_point).toBe(4)
+      expect(atualizado.stock_qty).toBe(15)
+    },
+    30_000,
+  )
+
+  it(
+    'entrada sem ponto de pedido PRESERVA o que ja estava definido',
+    async () => {
+      const produto = await criarProduto('Toalha que mantem o aviso', 10)
+      await registrarEntradaEstoque(svc, tenantId, { productId: produto.id, qty: 1, unitCostCents: 500, reorderPoint: 7 })
+
+      const atualizado = await registrarEntradaEstoque(svc, tenantId, { productId: produto.id, qty: 1, unitCostCents: 500 })
+
+      expect(atualizado.reorder_point).toBe(7)
+    },
+    30_000,
+  )
+
+  it(
+    'ponto de pedido ZERO desliga o aviso por quantidade — nao e tratado como ausencia',
+    async () => {
+      // O bug natural aqui e `entrada.reorderPoint ? ... : ...`, que trataria 0 como "nao mandou"
+      // e tornaria impossivel DESLIGAR o aviso depois de liga-lo.
+      const produto = await criarProduto('Toalha sem aviso', 10)
+      await registrarEntradaEstoque(svc, tenantId, { productId: produto.id, qty: 1, unitCostCents: 500, reorderPoint: 6 })
+
+      const atualizado = await registrarEntradaEstoque(svc, tenantId, { productId: produto.id, qty: 1, unitCostCents: 500, reorderPoint: 0 })
+
+      expect(atualizado.reorder_point).toBe(0)
+    },
+    30_000,
+  )
 })

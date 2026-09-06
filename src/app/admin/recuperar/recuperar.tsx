@@ -7,6 +7,8 @@ import { useState, useTransition } from 'react'
 
 import ActionBar from '@/components/ui/action-bar'
 import BloqueioPlano from '@/components/ui/bloqueio-plano'
+import { useVocabulario } from '@/components/shell/vocabulario'
+import { comMaiuscula, plural } from '@/core/text/vocabulario'
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import Chip from '@/components/ui/chip'
@@ -19,6 +21,8 @@ import { useToast } from '@/components/ui/toast'
 import { dinheiro } from '@/lib/formato'
 import { cn } from '@/lib/utils'
 
+import { recorteDaLista } from '@/core/ciclo/recorte-da-lista'
+import { resumoDoEnvio } from '@/core/ciclo/resumo-do-envio'
 import { vazioDeRecuperar } from '@/core/ciclo/vazio-de-recuperar'
 
 import type { ItemRecuperar, ListaRecuperar } from '@/server/services/recuperar-receita'
@@ -60,6 +64,7 @@ export default function RecuperarReceita({
   /** Separa "ainda nao atendeu ninguem" de "atendeu e o Motor nao processou". */
   temAtendimentosConcluidos: boolean
 }) {
+  const vocabulario = useVocabulario()
   const [filtro, setFiltro] = useState<Estado | 'all'>('all')
   const [lista, setLista] = useState(inicial)
   const [carregando, setCarregando] = useState(false)
@@ -105,13 +110,7 @@ export default function RecuperarReceita({
         }),
       })
       const json = (await r.json()) as { data?: { queued: number; skipped: { clientId: string; reason: string }[] } }
-      const queued = json.data?.queued ?? 0
-      const puladas = json.data?.skipped.length ?? 0
-      setAviso(
-        puladas === 0
-          ? `Mensagem enviada para ${queued} ${queued === 1 ? 'cliente' : 'clientes'}.`
-          : `${queued} enviada(s), ${puladas} não puderam ser avisadas agora (opt-out ou limite de mensagens).`,
-      )
+      setAviso(resumoDoEnvio(json.data?.queued ?? 0, (json.data?.skipped ?? []).map((s) => s.reason)))
       setSelecionados(new Set())
       await trocarFiltro(filtro)
     } finally {
@@ -119,6 +118,7 @@ export default function RecuperarReceita({
     }
   }
 
+  const recorte = recorteDaLista(lista.count, lista.items.length)
   const itensSelecionados = lista.items.filter((i) => selecionados.has(chave(i)))
   // O bloqueio só aparece quando ela realmente pediu o lote. Com uma cliente marcada o caminho
   // grátis atende, e mostrar oferta de plano ali seria vender no meio de uma tarefa que funciona.
@@ -137,7 +137,7 @@ export default function RecuperarReceita({
       */}
       <div className="mb-5 grid grid-cols-2 gap-3">
         <StatTile rotulo="Dá para recuperar" valor={dinheiro.format(lista.totalValueCents / 100)} />
-        <StatTile rotulo="Clientes" valor={String(lista.count)} />
+        <StatTile rotulo={comMaiuscula(plural(vocabulario.cliente))} valor={String(lista.count)} />
       </div>
 
       <p className="mb-4 text-secundario text-txt-3">
@@ -169,8 +169,15 @@ export default function RecuperarReceita({
       <p aria-live="polite" className="sr-only">
         {carregando
           ? 'Carregando a lista.'
-          : `${lista.count} ${lista.count === 1 ? 'cliente' : 'clientes'}, ${dinheiro.format(lista.totalValueCents / 100)} para recuperar.`}
+          : `${lista.count} ${lista.count === 1 ? 'cliente' : 'clientes'}, ${dinheiro.format(lista.totalValueCents / 100)} para recuperar.${recorte ? ` ${recorte}` : ''}`}
       </p>
+
+      {/*
+        O recorte vai para os DOIS lugares pelo mesmo motivo que o resto desta tela: quem enxerga
+        lê a linha abaixo, quem usa leitor de tela ouve a região viva acima. Sai do mesmo `lista`
+        que desenha os StatTiles, então o número que se ouve e o que se vê não podem divergir.
+      */}
+      {!carregando && recorte ? <p className="mb-3 text-secundario text-txt-2">{recorte}</p> : null}
 
       {aviso ? <p className="mb-4 rounded-[var(--radius-sm)] bg-acc-soft p-3 text-secundario text-txt">{aviso}</p> : null}
 

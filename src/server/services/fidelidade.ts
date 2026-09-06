@@ -2,8 +2,10 @@ import { Temporal } from '@js-temporal/polyfill'
 import { z } from 'zod'
 
 import { deveCreditarIndicacao } from '@/core/loyalty/indicacao'
+import { pontosPorGasto } from '@/core/loyalty/pontos'
 import { diaNoFuso } from '@/core/tempo/dia'
 import { podeUsarModulo } from '@/core/billing/planos'
+import { buscarTudoPaginado } from '@/server/db/paginar'
 import { AppError } from '@/server/http/errors'
 import { contextoDePlano } from '@/server/services/planos'
 
@@ -21,7 +23,9 @@ export const EsquemaPontos = z.object({
 })
 
 export type ExtratoPontos = {
+  /** De TODOS os lançamentos, não só dos que `lancamentos` traz — ver `saldoDeTodosOsLancamentos`. */
   saldo: number
+  /** Os mais recentes, para a tela. Não é o extrato completo, e o saldo não sai daqui. */
   lancamentos: { id: string; points: number; reason: string; createdAt: string }[]
 }
 
@@ -52,11 +56,49 @@ const CONFIG_PADRAO: ConfigFidelidade = {
   rewardLabel: null,
 }
 
-/** Nunca lança — tenant antigo pode não ter `settings.loyalty` nenhum; vira o padrão. */
+/** Um campo válido do namespace sobrevive mesmo se o vizinho estiver torto. */
+function campo<T>(esquema: z.ZodType<T>, valor: unknown, padrao: T): T {
+  const r = esquema.safeParse(valor)
+  return r.success ? r.data : padrao
+}
+
+/**
+ * Nunca lança — tenant antigo pode não ter `settings.loyalty` nenhum; vira o padrão.
+ *
+ * **O resgate é campo a campo, e isso não é preciosismo.** A versão anterior fazia
+ * `safeParse` do objeto inteiro e caía em `CONFIG_PADRAO` na primeira inválida. Medido: um tenant
+ * com `pointsPerReal: 0` — fidelidade DESLIGADA de propósito, o que o próprio comentário do
+ * esquema chama de escolha legítima ("nem todo negócio quer fidelidade ligada") — voltava para
+ * `pointsPerReal: 1` se qualquer OUTRO campo do namespace ficasse inválido: um `rewardLabel`
+ * longo demais, um `rewardThreshold` fora da faixa, um campo faltando.
+ *
+ * Religar sozinho custa mais que os outros erros desta família, porque não é só um número na
+ * tela: `pontuarAtendimentoConcluido` grava em `loyalty_entries`, que é livro-razão — resgate é
+ * lançamento negativo, nunca `UPDATE` (regra 11). Ponto creditado por engano vira obrigação com a
+ * cliente, e desfazer é tirar da frente dela algo que ela já viu.
+ *
+ * Escolher o lado oposto (cair para "desligado" quando o objeto está torto) teria o defeito
+ * espelhado: um tenant com fidelidade LIGADA e um rótulo inválido pararia de pontuar em silêncio.
+ * Por isso o conserto não escolhe lado nenhum — preserva o que dá para ler e só troca pelo padrão
+ * o campo que de fato não dá. É a mesma forma de `lerConfiguracoesAgenda`.
+ *
+ * O caminho realista até aqui não é edição manual: é apertar o esquema. Diminuir o máximo de
+ * `rewardLabel`, ou acrescentar campo obrigatório, invalidaria de uma vez o namespace inteiro de
+ * quem já tinha valor gravado.
+ */
 export function lerConfigFidelidade(settings: unknown): ConfigFidelidade {
   const bruto = settings && typeof settings === 'object' ? (settings as Record<string, unknown>).loyalty : null
-  const resultado = EsquemaConfigFidelidade.safeParse(bruto ?? {})
-  return resultado.success ? resultado.data : CONFIG_PADRAO
+  const completo = EsquemaConfigFidelidade.safeParse(bruto ?? {})
+  if (completo.success) return completo.data
+
+  const obj = bruto && typeof bruto === 'object' ? (bruto as Record<string, unknown>) : {}
+  const forma = EsquemaConfigFidelidade.shape
+  return {
+    pointsPerReal: campo(forma.pointsPerReal, obj.pointsPerReal, CONFIG_PADRAO.pointsPerReal),
+    referralBonusPoints: campo(forma.referralBonusPoints, obj.referralBonusPoints, CONFIG_PADRAO.referralBonusPoints),
+    rewardThreshold: campo(forma.rewardThreshold, obj.rewardThreshold, CONFIG_PADRAO.rewardThreshold),
+    rewardLabel: campo(forma.rewardLabel, obj.rewardLabel, CONFIG_PADRAO.rewardLabel),
+  }
 }
 
 /** Mesmo padrão de merge de `site.ts`: lê `settings` inteiro, troca só a chave `loyalty`. */
@@ -115,7 +157,7 @@ export async function pontuarAtendimentoConcluido(
   const lancamentos: Database['public']['Tables']['loyalty_entries']['Insert'][] = []
 
   if (config.pointsPerReal > 0) {
-    const pontos = Math.floor((entrada.priceCents / 100) * config.pointsPerReal)
+    const pontos = pontosPorGasto(entrada.priceCents, config.pointsPerReal)
     if (pontos > 0) {
       lancamentos.push({
         tenant_id: tenantId,
@@ -175,20 +217,57 @@ export async function pontuarAtendimentoConcluido(
  * negativos com o motivo — assim o cliente que pergunta "por que eu tinha 80 e agora tenho 30?"
  * tem resposta na tela, em vez de um número que mudou sozinho.
  */
+const LANCAMENTOS_NA_TELA = 50
+
+/**
+ * O saldo sai de TODOS os lançamentos, e essa é a correção — ele saía dos 50 que a tela mostra.
+ *
+ * `.limit(50)` é um limite de APRESENTAÇÃO, e estava servindo de base para uma SOMA. Passando de 50
+ * lançamentos, os mais antigos caíam fora e o saldo ficava errado; como a ordem é `created_at`
+ * desc, o que se perde primeiro são os créditos ganhos no começo. Quem tem mais de 50 lançamentos
+ * é, por definição, o cliente mais fiel — e era a ele que o produto dizia "só há N ponto(s)
+ * disponível(is)" ao recusar o resgate, porque `lancarPontos` guarda o resgate com este mesmo
+ * saldo. Nas duas direções: se os antigos que caíram fora fossem resgates, o saldo inflava e a
+ * trava deixava passar mais do que existia.
+ *
+ * A ironia mora na docstring de `extratoDePontos`: ela existe para que ninguém veja "um número que
+ * mudou sozinho" — e a barra de progresso da ficha ANDAVA PARA TRÁS sozinha, quando um lançamento
+ * novo empurrava um crédito velho para fora da janela de 50.
+ *
+ * Usa `buscarTudoPaginado` em vez de tirar o `.limit()`: sem paginar, o corte silencioso de 50
+ * viraria o teto de linhas do PostgREST, o mesmo defeito mais tarde e mais difícil de achar. E usa
+ * o helper compartilhado em vez de um laço próprio porque a docstring dele já avisa que a cópia
+ * que envelhece é sempre a que ninguém lembra que existe — este arquivo quase virou a quinta.
+ *
+ * Soma em JS, e não `sum()` no banco, pelo mesmo motivo que `ehDemonstracao` é lista em código e
+ * não coluna: migration neste projeto não sobe por deploy automático, então uma função nova ficaria
+ * quebrada entre o deploy e a aplicação manual — e o sintoma seria saldo zerado, pior que o
+ * problema original. A view continua sendo o alvo durável.
+ */
+async function saldoDeTodosOsLancamentos(db: Cliente, tenantId: string, clientId: string): Promise<number> {
+  const linhas = await buscarTudoPaginado<{ points: number }>(() =>
+    db.from('loyalty_entries').select('points').eq('tenant_id', tenantId).eq('client_id', clientId).order('id', { ascending: true }),
+  )
+  return linhas.reduce((s, l) => s + l.points, 0)
+}
+
 export async function extratoDePontos(db: Cliente, tenantId: string, clientId: string): Promise<ExtratoPontos> {
-  const { data, error } = await db
-    .from('loyalty_entries')
-    .select('id, points, reason, created_at')
-    .eq('tenant_id', tenantId)
-    .eq('client_id', clientId)
-    .order('created_at', { ascending: false })
-    .limit(50)
+  const [{ data, error }, saldo] = await Promise.all([
+    db
+      .from('loyalty_entries')
+      .select('id, points, reason, created_at')
+      .eq('tenant_id', tenantId)
+      .eq('client_id', clientId)
+      .order('created_at', { ascending: false })
+      .limit(LANCAMENTOS_NA_TELA),
+    saldoDeTodosOsLancamentos(db, tenantId, clientId),
+  ])
 
   if (error) throw new AppError('INTERNAL', { cause: error })
 
   const lancamentos = data ?? []
   return {
-    saldo: lancamentos.reduce((s, l) => s + l.points, 0),
+    saldo,
     lancamentos: lancamentos.map((l) => ({
       id: l.id,
       points: l.points,

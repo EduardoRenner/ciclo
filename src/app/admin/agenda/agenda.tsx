@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
 import AppointmentRow from '@/components/ui/appointment-row'
+import { useVocabulario } from '@/components/shell/vocabulario'
 import Card from '@/components/ui/card'
 import Chip from '@/components/ui/chip'
 import EmptyState from '@/components/ui/empty-state'
@@ -62,6 +63,7 @@ export default function Agenda({
   profissionais: { id: string; display_name: string }[]
   profissionalSelecionado?: string
 }) {
+  const vocabulario = useVocabulario()
   const router = useRouter()
   const atualizarDepois = useAtualizarDepois()
   const [selecionado, setSelecionado] = useState<LinhaAgendaDia | null>(null)
@@ -118,7 +120,7 @@ export default function Agenda({
       </div>
 
       {profissionais.length > 1 ? (
-        <FilterRow rotulo="Filtrar por profissional" className="mb-4">
+        <FilterRow rotulo={`Filtrar por ${vocabulario.profissional}`} className="mb-4">
           <Chip ligado={!profissionalSelecionado} onClick={() => navegar(dia, '')}>
             Todos
           </Chip>

@@ -112,6 +112,24 @@ export const EsquemaEntradaEstoque = z.object({
   qty: z.number().positive(),
   unitCostCents: z.number().int().nonnegative(),
   note: z.string().trim().max(500).nullish(),
+  /*
+   * `products.reorder_point` existe desde a migration 0001 e, até 2026-09-03, era LIDA em três
+   * lugares e escrita em NENHUM — não havia formulário, rota nem serviço que a definisse.
+   *
+   * A consequência é sutil porque o alerta não some, ele só chega tarde: `precisaRecomprar` é
+   * "estoque <= ponto_de_pedido **ou** cobertura < 7 dias", e com o ponto sempre em 0 a primeira
+   * metade da regra só dispara quando o produto ACABOU. O aviso que existe justamente para chegar
+   * antes chegava depois. E a linha " · repor com N" da lista, guardada por `pontoDePedido > 0`,
+   * nunca apareceu para ninguém.
+   *
+   * Entra aqui, na entrada de estoque, e não numa tela própria: quem está registrando a compra é
+   * exatamente quem acabou de decidir quanto precisa ter em mãos. Perguntar noutro lugar seria
+   * pedir a mesma decisão duas vezes.
+   *
+   * Opcional para não mexer no ponto de quem só quer lançar a compra — `undefined` preserva o
+   * valor atual, e zero é escolha válida ("não me avise por quantidade").
+   */
+  reorderPoint: z.number().nonnegative().optional(),
 })
 export type EntradaEstoqueManual = z.infer<typeof EsquemaEntradaEstoque>
 
@@ -144,7 +162,11 @@ export async function registrarEntradaEstoque(db: Cliente, tenantId: string, ent
 
   const { data: produtoAtualizado, error: erroUpdate } = await db
     .from('products')
-    .update({ stock_qty: produto.stock_qty + entrada.qty, avg_cost_cents: novoCustoMedio })
+    .update({
+      stock_qty: produto.stock_qty + entrada.qty,
+      avg_cost_cents: novoCustoMedio,
+      ...(entrada.reorderPoint === undefined ? {} : { reorder_point: entrada.reorderPoint }),
+    })
     .eq('tenant_id', tenantId)
     .eq('id', entrada.productId)
     .select('*')

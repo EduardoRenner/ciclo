@@ -37,12 +37,40 @@ const TENTATIVAS_WHATSAPP = 3
 // telefones inventados do seed. A trava fica no ponto por onde TODO envio passa, não em cada
 // chamador — é o mesmo raciocínio de `consertar-a-pergunta-nao-o-caso`. Grava `messages` como
 // enviada (a demo mostra histórico de mensagem e precisa parecer viva), só não chama provider.
+//
+// O `Map` não expira de propósito, e isso foi conferido em vez de suposto: `tenants.slug` não tem
+// NENHUM escritor depois do onboarding (`/api/v1/onboarding` grava; `atualizarSite` monta as
+// colunas uma a uma e slug não está entre elas; nenhuma migration nem script o altera). Slug
+// imutável e chave por tenant = sem envelhecimento e sem crescimento sem teto — ao contrário do
+// `Map` do rate limit, cuja chave era por IP. Se um dia o slug virar editável, este cache passa a
+// mentir e precisa ser invalidado na escrita.
 const slugPorTenant = new Map<string, string>()
 async function tenantEhDemonstracao(db: Cliente, tenantId: string): Promise<boolean> {
   let slug = slugPorTenant.get(tenantId)
   if (slug === undefined) {
-    const { data } = await db.from('tenants').select('slug').eq('id', tenantId).maybeSingle()
+    const { data, error } = await db.from('tenants').select('slug').eq('id', tenantId).maybeSingle()
+    if (error) {
+      /*
+        Erro de leitura deixa a pergunta SEM resposta, e o `error` era descartado sem nem um log —
+        a trava mais silenciosa é a que não sabe que não sabe. As duas saídas custam, e não custam
+        igual:
+
+        - falhar ABERTO (o que segue valendo): um tenant de demonstração com blip de rede manda
+          WhatsApp de verdade para um telefone inventado do seed — indelicado, e é o defeito que
+          este bloco existe para evitar;
+        - falhar FECHADO: um tenant DE VERDADE com o mesmo blip tem o lembrete engolido e gravado
+          em `messages` como `sent`/`demo-simulado`. A cliente perde o horário e o histórico do
+          salão jura que avisou.
+
+        O segundo é a "promessa de canal" que o CLAUDE.md nomeia como o pior defeito desta base, e
+        atinge quem paga. Por isso aberto — mas aberto e RUIDOSO, nunca aberto e mudo.
+      */
+      console.warn(JSON.stringify({ level: 'warn', event: 'demo_indeterminada_enviando_de_verdade', tenantId }), error)
+      return false
+    }
     slug = data?.slug ?? ''
+    // Ausência não entra no cache: `''` é "não sei ainda", não um slug. Guardá-lo congelaria a
+    // resposta errada para sempre — inclusive para um tenant criado depois desta leitura.
     if (slug) slugPorTenant.set(tenantId, slug)
   }
   return slug !== '' && ehDemonstracao(slug)

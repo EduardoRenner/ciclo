@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs'
 
 import { describe, expect, it } from 'vitest'
 
+import { semComentarios } from '../../helpers/fonte'
+
 /**
  * `/api/health` é o único endpoint da base que responde sem autenticação nenhuma e **sem passar
  * pelo `rota()`** — é o contrato dele: monitor de uptime externo bate de fora, sem credencial.
@@ -20,11 +22,6 @@ import { describe, expect, it } from 'vitest'
 
 const CAMINHO = 'src/server/services/health.ts'
 const FONTE = readFileSync(CAMINHO, 'utf8')
-
-/** Tira comentários antes de casar: o texto que explica o defeito não pode reprovar o conserto. */
-function semComentarios(src: string): string {
-  return src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')
-}
 
 describe('/api/health não devolve erro cru do banco para quem não está autenticado', () => {
   it('o leitor enxerga o arquivo — senão a guarda passa vazia', () => {

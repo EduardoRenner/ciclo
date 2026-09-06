@@ -90,11 +90,50 @@ export type Mensageria = z.infer<typeof EsquemaMensageria>
 
 const MENSAGERIA_PADRAO: Mensageria = { paused: false }
 
-/** Nunca lança — mesmo raciocínio de `lerSite`: tenant sem essa chave em `settings` nunca esteve pausado. */
+/**
+ * Nunca lança. Mas, ao contrário de `lerSite`, o padrão de erro NÃO é o mesmo dos dois lados —
+ * e a diferença é a razão de esta função não ser uma cópia daquela.
+ *
+ * **Ausente ≠ malformado.** Tenant sem a chave `messaging` nunca pausou nada: `paused: false` é a
+ * resposta certa. Mas um valor que EXISTE e não faz sentido (`paused: 'true'` como string, chave
+ * com typo, objeto vazio gravado pela metade) é outra história — ali o produto não sabe o que o
+ * dono pediu.
+ *
+ * Medido antes deste conserto: os três casos malformados devolviam `paused: false`, ou seja, o
+ * freio falhava **aberto**. O dono aperta "pausar", o valor chega torto ao banco por qualquer
+ * motivo, e o produto volta a mandar mensagem para cliente de verdade achando que está liberado.
+ *
+ * A régua está escrita neste repositório, em `normalizarPlano` (`server/services/planos.ts`), para
+ * exatamente esta classe de decisão: *"errar para menos bloqueia uma ação (recuperável, e a pessoa
+ * reclama) e errar para mais libera o que não foi pago (silencioso, e ninguém reclama)"*. Aqui a
+ * assimetria é ainda maior, porque errar para mais não é liberar recurso — é falar com a cliente
+ * do salão, que não tem desfazer, e quem fica mal é o salão.
+ *
+ * Então: desconhecido pausa, e registra. Deixar de enviar é reclamável; enviar sem querer, não.
+ */
 export function lerMensageria(settings: unknown): Mensageria {
   const bruto = settings && typeof settings === 'object' ? (settings as Record<string, unknown>).messaging : null
   const resultado = EsquemaMensageria.safeParse(bruto ?? {})
-  return resultado.success ? resultado.data : MENSAGERIA_PADRAO
+  if (resultado.success) return resultado.data
+
+  /*
+   * A distinção fina, e ela é o conserto inteiro: só o `paused` PRESENTE E TORTO pausa.
+   *
+   * `messaging` ausente, `messaging: {}` e `messaging` que nem é objeto continuam devolvendo
+   * `paused: false` — são "nunca configurado", e o teste desta função sempre tratou os três
+   * juntos. Pausar um tenant que nunca pediu seria trocar um defeito por outro: ele para de
+   * receber a automação que paga, em silêncio.
+   *
+   * `paused: 'sim'` é outra coisa. Alguém gravou um valor NAQUELE campo e ele não é booleano —
+   * o produto não sabe o que o dono pediu, e aqui as duas saídas não custam igual. Não enviar é
+   * reclamável e reversível; enviar sem querer fala com a cliente do salão e não tem desfazer, e
+   * quem fica mal é o salão.
+   */
+  const valor = bruto && typeof bruto === 'object' ? (bruto as Record<string, unknown>).paused : undefined
+  if (valor === undefined) return MENSAGERIA_PADRAO
+
+  console.warn(JSON.stringify({ level: 'warn', event: 'mensageria_paused_malformado_pausando_por_seguranca' }))
+  return { paused: true }
 }
 
 export const EsquemaTenant = z.object({

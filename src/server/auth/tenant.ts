@@ -2,6 +2,7 @@ import { cookies } from 'next/headers'
 
 import { cache } from 'react'
 
+import { resolverVocabulario, type Vocabulario } from '@/core/text/vocabulario'
 import { exigirSessao, type Sessao } from '@/server/auth/session'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { AppError } from '@/server/http/errors'
@@ -16,6 +17,18 @@ export type DadosDoTenant = {
   slug: string
   timezone: string
   vertical: string | null
+  /**
+   * As palavras da profissao, JA RESOLVIDAS (docs/DECISOES.md, 2026-09-04): um psicologo le
+   * "Sessao" onde a barbearia le "Servico".
+   *
+   * **Por que aqui e nao junto de `settings`, que este mesmo arquivo exclui de proposito.** O
+   * argumento contra `settings` e que ele e JSON que CRESCE por tenant e serve tres telas: cobrar
+   * isso de toda requisicao seria trocar uma ida de rede por bytes em todas. Aqui e o oposto nas
+   * duas pontas -- o vocabulario e limitado por desenho (as seis chaves de `PADRAO`, cada uma uma
+   * palavra) e quase toda tela do painel precisa dele. Resolver na borda tambem evita espalhar a
+   * regra de precedencia por todo componente que queira uma palavra.
+   */
+  vocabulario: Vocabulario
 }
 
 export type Contexto = {
@@ -54,7 +67,7 @@ const vinculosAtivos = cache(async function vinculosAtivos(userId: string) {
   const db = await criarClienteDoUsuario()
   const { data, error } = await db
     .from('memberships')
-    .select('tenant_id, role, tenants(name, slug, timezone, vertical)')
+    .select('tenant_id, role, tenants(name, slug, timezone, vertical, vocab_override, professions(vocab))')
     .eq('user_id', userId)
     .eq('active', true)
   if (error) throw new AppError('INTERNAL', { cause: error })
@@ -67,9 +80,26 @@ const vinculosAtivos = cache(async function vinculosAtivos(userId: string) {
  * `TENANT_MISMATCH` é o comportamento certo: membership apontando para tenant que sumiu não é
  * um contexto válido para trabalhar.
  */
-function dadosDoTenant(bruto: { name: string; slug: string; timezone: string; vertical: string | null } | null): DadosDoTenant {
+type TenantBruto = {
+  name: string
+  slug: string
+  timezone: string
+  vertical: string | null
+  vocab_override: unknown
+  professions: { vocab: unknown } | null
+}
+
+function dadosDoTenant(bruto: TenantBruto | null): DadosDoTenant {
   if (!bruto) throw new AppError('TENANT_MISMATCH')
-  return { name: bruto.name, slug: bruto.slug, timezone: bruto.timezone, vertical: bruto.vertical }
+  return {
+    name: bruto.name,
+    slug: bruto.slug,
+    timezone: bruto.timezone,
+    vertical: bruto.vertical,
+    // `professions` vem `null` em tenant sem profissao escolhida; `resolverVocabulario` trata
+    // ausencia como padrao, entao nao existe caminho em que a tela fique sem palavra.
+    vocabulario: resolverVocabulario(bruto.professions?.vocab, bruto.vocab_override),
+  }
 }
 
 /**

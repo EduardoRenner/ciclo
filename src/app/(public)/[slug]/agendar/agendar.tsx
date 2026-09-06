@@ -1,8 +1,11 @@
 "use client";
 
-import { CalendarPlus, CheckCircle2, ChevronDown } from "lucide-react";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { CalendarPlus, CheckCircle2, ChevronDown, MessageCircle, Phone } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 
+import { comMaiuscula, type Vocabulario } from "@/core/text/vocabulario";
+import { formatarPreco, type ModeloDePreco } from "@/core/pricing/formatar";
+import { saidaDeContato } from "@/lib/mensagens";
 import Button from "@/components/ui/button";
 import Card from "@/components/ui/card";
 import Chip from "@/components/ui/chip";
@@ -22,6 +25,16 @@ type Servico = {
   name: string;
   durationMin: number;
   priceCents: number;
+  /*
+   * Os três campos que decidem COMO o preço se lê. Eles já viajavam de `public-booking.ts` até
+   * aqui; o que faltava era esta declaração, e sem ela a tela caiu na própria formatação: mostrava
+   * `dinheiro.format(priceCents)` cru, ou seja, "R$ 50" para um serviço que a vitrine do mesmo
+   * salão anuncia como "R$ 50/hora". Duas fontes da mesma verdade, e a errada era justamente a do
+   * último passo antes de confirmar.
+   */
+  pricingModel: ModeloDePreco;
+  hourlyRateCents: number | null;
+  halfDayPriceCents: number | null;
   /** Quanto a cliente adianta para segurar o horário. `null` = este serviço não pede sinal. */
   depositCents: number | null;
 };
@@ -143,26 +156,35 @@ function Passo({ numero, titulo }: { numero: number; titulo: string }) {
 
 export default function Agendar({
   slug,
+  vocabulario,
   nomeDoSalao,
   enderecoDoSalao,
+  whatsappDoSalao,
+  telefoneDoSalao,
   timezone,
   hours,
   services,
   professionals,
   servicoInicial,
+  profissionalInicial,
   ind,
   indicadaPor,
 }: {
   slug: string;
+  /** As palavras da profissão, já resolvidas no servidor. Ver docs/DECISOES.md 2026-09-04. */
+  vocabulario: Vocabulario;
   nomeDoSalao: string;
   /** Vira o `LOCATION` do arquivo de calendário — sem ele o evento não diz onde é. */
   enderecoDoSalao: string | null;
+  whatsappDoSalao: string | null;
+  telefoneDoSalao: string | null;
   timezone: string;
   hours: { weekday: number; opensAt: string; closesAt: string }[];
   services: Servico[];
   professionals: Profissional[];
   /** Serviço tocado na página do salão (`?servico=`), já conferido contra o catálogo pelo servidor. */
   servicoInicial: string | null;
+  profissionalInicial: string | null;
   /** Token de `?ind=` (I-1) — repassado cru ao `POST book`, que confere e resolve sozinho. */
   ind: string | null;
   /** I-4: primeiro nome de quem indicou, já resolvido no servidor. `null` = sem convite válido. */
@@ -211,7 +233,10 @@ export default function Agendar({
   const [serviceId, setServiceId] = useState(
     servicoInicial ?? services[0]?.id ?? "",
   );
-  const [professionalId, setProfessionalId] = useState<string | null>(null);
+  // Mesmo motivo do `servicoInicial` acima: quem tocou num rosto na página do salão já
+  // escolheu, e abrir em "Tanto faz" desfaria a escolha em silêncio. O servidor já conferiu
+  // que o id pertence à equipe deste perfil.
+  const [professionalId, setProfessionalId] = useState<string | null>(profissionalInicial);
   const [dia, setDia] = useState(primeiroDiaUtil);
   const [slots, setSlots] = useState<Slot[] | null>(null);
   const [slotEscolhido, setSlotEscolhido] = useState<Slot | null>(null);
@@ -232,6 +257,28 @@ export default function Agendar({
   const [confirmado, setConfirmado] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [pendente, iniciarTransicao] = useTransition();
+
+  /*
+    Confirmar troca a página INTEIRA sem trocar de rota — o formulário some e entra a tela de
+    "Agendamento enviado!". Medido no navegador antes deste conserto: o foco ficava no `body`, a
+    região viva do formulário ia embora junto com ele, e a única `role="status"` que sobrava na
+    página era o aviso de demonstração, que não mudou. Ou seja, quem usa leitor de tela tocava em
+    "Confirmar agendamento" e não ouvia NADA — sem saber se marcou, se falhou, ou se ainda está
+    carregando, no momento mais importante do fluxo.
+
+    É a mesma WCAG 4.1.3 que `agendamento-anuncia-mudanca.test.ts` já guardava para a troca de dia;
+    a guarda simplesmente nunca cobriu o último passo.
+
+    **Foco, e não `role="status"`, e o motivo está escrito naquele mesmo teste:** a região que
+    NASCE junto com o conteúdo costuma não ser anunciada — o leitor precisa estar observando o nó
+    antes de o texto mudar. Aqui a tela inteira é montada de uma vez, então não há nó preexistente
+    para observar. Mover o foco para o título novo anuncia o texto E deixa a pessoa no começo do
+    conteúdo novo, que é o que ela precisa para ler o resumo do que marcou.
+  */
+  const tituloDoSucesso = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    if (confirmado) tituloDoSucesso.current?.focus();
+  }, [confirmado]);
 
   /*
     docs/34-PAGINA-PUBLICA-PLANO.md, Fase 2 — "reconhecer quem já é cliente". `reconhecimento`
@@ -420,10 +467,33 @@ export default function Agendar({
       (p) => p.id === slotEscolhido?.professionalId,
     )?.displayName;
 
+    /*
+      A decisão de POR ONDE falar mora em `lib/mensagens`, testada lá: dois dos três estados não
+      aparecem com os dados de hoje (todo tenant em produção tem WhatsApp), e estado que os dados
+      não produzem é onde o conserto quebra sem ninguém ver — `docs/42` §2.
+    */
+    const saidaDoSucesso = saidaDeContato(
+      whatsappDoSalao,
+      telefoneDoSalao,
+      nomeDoSalao,
+      `Oi! Acabei de marcar um horário pelo site da ${nomeDoSalao} e queria confirmar.`,
+    );
+
     return (
       <Card className="flex flex-col items-center py-10 text-center">
         <CheckCircle2 aria-hidden className="mb-4 size-14 text-ok" />
-        <p className="text-titulo font-bold">Agendamento enviado!</p>
+        {/*
+          `h2` e não `p`: além de ser o alvo do foco, é o que faz a tela de sucesso existir para
+          quem navega por títulos. Antes, o único título da página era o `h1` "Agendar em
+          {salão}", que continua o mesmo depois de confirmar — pular de título em título não
+          revelava nenhuma mudança.
+
+          `tabIndex={-1}` deixa o elemento focável por código sem entrar na ordem do Tab: quem
+          navega por teclado não ganha uma parada extra, e o foco programático funciona.
+        */}
+        <h2 ref={tituloDoSucesso} tabIndex={-1} className="text-titulo font-bold">
+          Agendamento enviado!
+        </h2>
 
         {slotEscolhido && servicoEscolhido ? (
           <div className="mt-4 w-full max-w-xs rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 p-4 text-left">
@@ -467,9 +537,41 @@ export default function Agendar({
         */}
         <p className="mt-4 max-w-xs text-corpo text-txt-2">
           Seu pedido chegou e já apareceu para a equipe. A confirmação vem de
-          quem vai te atender, e pode não ser na hora. Se não tiver retorno em
-          algumas horas, é só chamar por telefone.
+          quem vai te atender, e pode não ser na hora.
+          {saidaDoSucesso ? (
+            <> Se não tiver retorno em algumas horas, fale direto:</>
+          ) : (
+            <> Se não tiver retorno em algumas horas, é só chamar por telefone.</>
+          )}
         </p>
+
+        {/*
+          A saída que a frase acima prometia em prosa e a tela não dava.
+          
+          Medido no navegador em 05/09/2026: a tela dizia "é só chamar por telefone" e a única
+          coisa clicável era "Adicionar à minha agenda" e "Voltar para {salão}". Quem quisesse
+          seguir o próprio conselho da tela tinha que voltar, rolar até o rodapé e achar o
+          telefone — três toques e uma rolagem, no exato momento de ansiedade em que a pessoa
+          quer saber se o horário dela vale.
+          
+          E o irmão desta tela já fazia certo: `orcamento/pedido.tsx`, escrito depois, termina com
+          "Se quiser adiantar, fale direto" e o botão do WhatsApp ao lado. Mesma dúvida, mesmo
+          momento, duas respostas diferentes — e a que faltava era a do funil principal.
+          
+          Isto NÃO é promessa de canal: quem manda a mensagem é a pessoa, no aplicativo dela. É a
+          mesma distinção que o `DECISOES` de 05/09 registrou ao varrer as 16 linhas de canal —
+          botão que ABRE o WhatsApp é ação de quem clica, não compromisso de envio.
+        */}
+        {saidaDoSucesso ? (
+          <a
+            href={saidaDoSucesso.href}
+            {...(saidaDoSucesso.canal === "whatsapp" ? { target: "_blank", rel: "noreferrer" } : {})}
+            className="mt-3 inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-5 text-corpo font-semibold text-txt transition duration-[var(--dur-1)] hover:bg-surface-3 active:scale-[.97]"
+          >
+            {saidaDoSucesso.canal === "whatsapp" ? <MessageCircle aria-hidden className="size-4" /> : <Phone aria-hidden className="size-4" />}
+            {saidaDoSucesso.rotulo}
+          </a>
+        ) : null}
 
         <div className="mt-5 flex flex-wrap justify-center gap-3">
           {slotEscolhido && servicoEscolhido ? (
@@ -600,7 +702,7 @@ export default function Agendar({
       ) : null}
 
       <section>
-        <Passo numero={1} titulo="Serviço" />
+        <Passo numero={1} titulo={comMaiuscula(vocabulario.servico)} />
         <div className="flex flex-col gap-2">
           {services.map((s) => (
             <button
@@ -626,9 +728,12 @@ export default function Agendar({
                     </p>
                   </div>
                   <p className="tabular shrink-0 text-corpo font-semibold text-acc-2">
-                    {s.priceCents > 0
-                      ? dinheiro.format(s.priceCents / 100)
-                      : "Consultar"}
+                    {formatarPreco({
+                      pricingModel: s.pricingModel,
+                      priceCents: s.priceCents,
+                      hourlyRateCents: s.hourlyRateCents,
+                      halfDayPriceCents: s.halfDayPriceCents,
+                    })}
                   </p>
                 </div>
               </Card>
@@ -639,7 +744,7 @@ export default function Agendar({
 
       {professionals.length > 1 ? (
         <section>
-          <Passo numero={2} titulo="Profissional" />
+          <Passo numero={2} titulo={comMaiuscula(vocabulario.profissional)} />
           <div className="flex flex-wrap gap-2">
             <Chip
               ligado={professionalId === null}
@@ -764,15 +869,35 @@ export default function Agendar({
           região de status calar é melhor que repetir — e muito melhor que afirmar um resultado
           que não existe.
         */}
+        {/*
+          A ORDEM dos ramos importa tanto quanto o conteúdo, e é onde isto estava errado: o teste
+          de `diasFechados` vinha ANTES do de `slots.length`, enquanto o texto visível (logo
+          abaixo) só consulta `diasFechados` DENTRO do caso "zero horários".
+
+          `diasFechados` é o expediente padrão do SALÃO, e a agenda de um profissional pode fugir
+          dele — o comentário de `primeiroDiaUtil` diz isso com todas as letras, e é por isso que
+          o dia fechado continua clicável no trilho. Ou seja, "dia fechado no padrão E com
+          horários na tela" não é estado corrompido: é o caso que o produto foi desenhado para
+          permitir.
+
+          Medido no navegador a 375px, antes deste conserto: segunda-feira com **12 horários
+          visíveis** e a região viva anunciando "Nesse dia o atendimento não abre". Quem usa leitor
+          de tela ouvia que o salão está fechado, com a agenda cheia na tela, e ia embora.
+
+          O comentário acima desta região afirmava que "o texto sai do MESMO estado que desenha a
+          tela (`slots`), então os dois nunca divergem". Divergiam — porque este ramo lia outra
+          coisa além de `slots`. Agora a estrutura espelha a do texto visível, e a afirmação passa
+          a ser verdade.
+        */}
         {erro
           ? ""
           : slots === null
             ? "Buscando horários."
-            : diasFechados.has(dia)
-              ? "Nesse dia o atendimento não abre."
-              : slots.length === 0
-                ? "Sem horários livres nesse dia."
-                : `${slotsUnicos?.length ?? slots.length} ${(slotsUnicos?.length ?? slots.length) === 1 ? "horário livre" : "horários livres"} em ${paraData(dia).toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", timeZone: "UTC" })}.`}
+            : slots.length === 0
+              ? diasFechados.has(dia)
+                ? "Nesse dia o atendimento não abre."
+                : "Sem horários livres nesse dia."
+              : `${slotsUnicos?.length ?? slots.length} ${(slotsUnicos?.length ?? slots.length) === 1 ? "horário livre" : "horários livres"} em ${paraData(dia).toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", timeZone: "UTC" })}.`}
       </p>
 
       {slots ? (
@@ -901,8 +1026,17 @@ export default function Agendar({
           {/* Opcional: pedir endereço sempre (não só de quem "vai até o cliente")
               evita ramificar a tela por eixo de profissão só pra isto — o campo
               some sozinho da conversa se ninguém preencher. */}
+          {/*
+            "Endereço do atendimento" virou "Onde vai ser" porque a versão antiga **não sobrevive
+            ao vocabulário da profissão**: o artigo concorda com a palavra, e "do atendimento" vira
+            "da sessão" no psicólogo e "da aula" no professor. Injetar a palavra aqui exigiria
+            guardar o gênero de cada uma, e um `do/da` errado é pior que a palavra genérica.
+
+            Reescrever para não depender de gênero é a saída que o `docs/20` §403 já indica ao vetar
+            barra e parênteses. E o rótulo ficou melhor: mais curto e mais direto que o anterior.
+          */}
           <Input
-            rotulo="Endereço do atendimento (opcional)"
+            rotulo="Onde vai ser (opcional)"
             value={endereco}
             onChange={(e) => setEndereco(e.target.value)}
             ajuda="Só preencha se não for no nosso endereço."

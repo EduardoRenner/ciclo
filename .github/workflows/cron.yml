@@ -152,6 +152,24 @@ jobs:
           fi
           echo "heartbeat confirmado para recompute_cycles e recompute_segments"
 
+          # E TUDO O MAIS que o relatório sabe.
+          #
+          # Até 05/09/2026 este passo lia duas chaves e só. `verificarSaude` calcula um `ok` geral
+          # sobre dez checagens, e nove delas não tinham leitor nenhum: podiam ficar vermelhas para
+          # sempre, seis vezes por dia, com este job verde. Foi assim que a checagem de schema, que
+          # existe justamente para gritar quando o banco está atrás do código, quase nasceu muda.
+          #
+          # Ler o `ok` geral em vez de listar mais chaves é de propósito: lista fixa envelhece a
+          # cada checagem nova, e a próxima nasceria sem leitor de novo. O relatório é quem decide
+          # o que é vermelho — checagem que não deve alarmar sempre já devolve `ok: true` com o
+          # motivo escrito (`errorTracking`, `sendReminders`, `sendCampaigns`).
+          geral=$(printf '%s' "$corpo" | jq -r '.ok // false')
+          if [ "$geral" != "true" ]; then
+            echo "::error::/api/health não está ok: $(printf '%s' "$corpo" | jq -r '[.checks | to_entries[] | select(.value.ok == false) | "\(.key): \(.value.detail // "sem detalhe")"] | join(" | ")')"
+            exit 1
+          fi
+          echo "relatório de saúde ok nas dez checagens"
+
   sob_demanda:
     # Disparo manual, um de cada vez. Serve para `stock-alerts` e `jobs`, que ainda não foram
     # auditados quanto a efeito externo (`jobs` processa a fila, e a fila pode conter envio).

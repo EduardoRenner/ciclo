@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs'
 
 import { describe, expect, it } from 'vitest'
 
+import { semComentarios } from '../../helpers/fonte'
+
 /**
  * A página de agendamento muda inteira sem trocar de rota: escolher o dia carrega os horários,
  * escolher o horário monta o resumo. Medido no navegador em 2026-08-25, antes desta guarda: clicar
@@ -24,10 +26,7 @@ const CLIENTES = 'src/app/admin/clientes/lista.tsx'
  * família de testes (`docs/21-AUDITORIA-FALHA-SILENCIOSA.md` §3).
  */
 function fonte(arquivo: string = AGENDAR): string {
-  return readFileSync(arquivo, 'utf8')
-    .replace(/\/\*[\s\S]*?\*\//g, ' ')
-    .replace(/\{\/\*[\s\S]*?\*\/\}/g, ' ')
-    .replace(/^\s*\/\/.*$/gm, ' ')
+  return semComentarios(readFileSync(arquivo, 'utf8'))
 }
 
 describe('o agendamento anuncia o que mudou sem trocar de rota', () => {
@@ -67,6 +66,82 @@ describe('o agendamento anuncia o que mudou sem trocar de rota', () => {
     expect(/slots === null/.test(bloco), 'o anúncio precisa cobrir o estado de carregando').toBe(true)
     expect(/slots\.length === 0/.test(bloco), 'o anúncio precisa cobrir o dia sem horário').toBe(true)
     expect(/slotsUnicos|slots\.length/.test(bloco), 'o anúncio precisa dizer a quantidade que a tela mostra').toBe(true)
+  })
+
+  it('o dia fechado só é anunciado DENTRO do caso sem horários, como no texto visível', () => {
+    /*
+     * A parte que faltava a esta guarda, e o defeito que ela deixou passar por casar com token em
+     * vez de com o que muda: as três asserções acima conferem que o bloco MENCIONA `slots === null`,
+     * `slots.length === 0` e a contagem — nenhuma confere a ORDEM em que os ramos são testados.
+     *
+     * Com `diasFechados.has(dia)` antes de `slots.length === 0`, o bloco continha os três tokens e
+     * a guarda passava verde, enquanto a região viva contradizia a tela. `diasFechados` é o
+     * expediente padrão do SALÃO e a agenda de um profissional pode fugir dele — o dia fechado
+     * segue clicável no trilho de propósito —, então "fechado no padrão E com horários na tela" é
+     * estado previsto, não corrompido.
+     *
+     * Medido no navegador a 375px antes do conserto: 12 horários na tela e a região anunciando
+     * "Nesse dia o atendimento não abre".
+     *
+     * O texto VISÍVEL só consulta `diasFechados` dentro de `slots.length === 0`. Esta asserção
+     * obriga o anúncio a ter a mesma forma, que é o que a frase "sai do mesmo estado que desenha a
+     * tela" sempre quis dizer.
+     */
+    const src = fonte()
+    const inicio = src.indexOf('aria-live="polite"')
+    const bloco = src.slice(inicio, src.indexOf('</p>', inicio))
+
+    const semHorarios = bloco.indexOf('slots.length === 0')
+    const fechado = bloco.indexOf('diasFechados')
+
+    expect(semHorarios, 'não achei o ramo de "sem horários" no anúncio').toBeGreaterThan(-1)
+    expect(fechado, 'não achei o ramo de dia fechado no anúncio').toBeGreaterThan(-1)
+    expect(
+      semHorarios,
+      'o anúncio testa "dia fechado" ANTES de "sem horários": com horários na tela num dia fora do ' +
+        'expediente padrão, o leitor de tela ouve que o salão não abre enquanto a agenda está cheia',
+    ).toBeLessThan(fechado)
+  })
+
+  it('confirmar move o foco para o título da tela de sucesso', () => {
+    /*
+     * O passo que faltava a esta guarda: ela cobria a troca de DIA e parava ali. Confirmar troca a
+     * página inteira sem trocar de rota, e medido no navegador antes do conserto o foco continuava
+     * no `body`, a região viva do formulário sumia junto com ele, e a única `role="status"`
+     * restante era o aviso de demonstração — que não muda. Quem usa leitor de tela tocava em
+     * "Confirmar agendamento" e não ouvia nada, no momento em que mais precisa de resposta.
+     *
+     * A asserção casa com a CHAMADA de foco condicionada a `confirmado`, não com o nome da ref
+     * solto — o nome também aparece na declaração e no JSX, e casar com ele passaria verde com o
+     * efeito apagado.
+     */
+    const src = fonte()
+    expect(
+      /if \(confirmado\)\s*\w+\.current\?\.focus\(\)/.test(src),
+      'nada move o foco quando `confirmado` vira true — a tela de sucesso troca em silêncio',
+    ).toBe(true)
+  })
+
+  it('o título da tela de sucesso é um heading focável por código', () => {
+    /*
+     * Duas coisas numa: `h2` faz a tela de sucesso existir para quem navega por títulos (o `h1`
+     * continua sendo "Agendar em {salão}" depois de confirmar, então saltar de título em título
+     * não revelava mudança nenhuma), e `tabIndex={-1}` é o que permite o foco programático sem
+     * criar uma parada extra no Tab.
+     *
+     * Confere os atributos DENTRO da tag de abertura do heading, não no arquivo inteiro: procurar
+     * `tabIndex={-1}` solto casaria com o honeypot, que também o usa.
+     */
+    const src = fonte()
+    const i = src.indexOf('Agendamento enviado!')
+    expect(i, 'não achei a tela de sucesso').toBeGreaterThan(-1)
+
+    const abertura = src.lastIndexOf('<', src.lastIndexOf('>', i))
+    const tag = src.slice(abertura, src.indexOf('>', abertura) + 1)
+
+    expect(/^<h[1-6]\b/.test(tag), `o título da tela de sucesso não é um heading: ${tag.slice(0, 60)}`).toBe(true)
+    expect(/ref=\{/.test(tag), 'o heading não carrega a ref que recebe o foco').toBe(true)
+    expect(/tabIndex=\{-1\}/.test(tag), 'sem tabIndex={-1} o foco programático não pousa no heading').toBe(true)
   })
 
   it('não atrapalha a tela de quem enxerga', () => {

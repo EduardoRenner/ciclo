@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { diaDaSemanaNoFuso } from '@/core/tempo/dia'
 import { criarAgendamento } from '@/server/services/agendamentos'
 import { enviarComFallback } from '@/server/services/mensageria'
 import { gerarTokenAssinado, verificarTokenAssinado } from '@/server/services/token-assinado'
@@ -81,7 +82,9 @@ export async function listarListaEspera(db: Cliente, tenantId: string, serviceId
     .is('fulfilled_at', null)
   if (serviceId) consulta = consulta.eq('service_id', serviceId)
 
-  const { data, error } = await consulta.order('created_at')
+  // Mesmo desempate da consulta de baixo, e pelo mesmo motivo: esta é a fila que o salão VÊ, e
+  // sem critério estável a ordem de quem está esperando embaralha entre dois carregamentos.
+  const { data, error } = await consulta.order('created_at').order('id')
   if (error) throw new AppError('INTERNAL', { cause: error })
   return data ?? []
 }
@@ -144,7 +147,16 @@ function elegivel(linha: LinhaWaitlist, slot: SlotLiberado): boolean {
   if (linha.earliest_at && slot.startsAt < linha.earliest_at) return false
   if (linha.latest_at && slot.startsAt > linha.latest_at) return false
   if (linha.weekdays && linha.weekdays.length > 0) {
-    const weekdayDoSlot = new Date(slot.startsAt).getUTCDay() // aproximação; refinar no TICKET-057 se DST virar problema aqui
+    /*
+      Era `getUTCDay()`, com o comentário "aproximação; refinar se DST virar problema". Medido: em
+      Brasília, das 21h à meia-noite o dia em UTC já é o SEGUINTE — vaga de segunda 21:00 lida como
+      terça, sábado 22:00 como domingo. E o problema nunca foi horário de verão (o Brasil não tem
+      desde 2019, então a condição do comentário nunca chegaria): é o deslocamento fixo de -3, que
+      vale todo dia do ano.
+
+      `periodoDoHorario`, duas funções acima, já convertia certo com `timeZone`. Era só esta regra.
+    */
+    const weekdayDoSlot = diaDaSemanaNoFuso(slot.timezone, new Date(slot.startsAt))
     if (!linha.weekdays.includes(weekdayDoSlot)) return false
   }
   // Ainda dentro da exclusividade de outra pessoa? Não oferece para mais ninguém.
@@ -175,7 +187,21 @@ export async function notificarProximoDaLista(
     .eq('tenant_id', tenantId)
     .eq('service_id', slot.serviceId)
     .is('fulfilled_at', null)
+    /*
+     * `id` desempata, e aqui isso decide QUEM leva o horário que abriu.
+     *
+     * `ordenarCandidatos` termina com `return 0` e o comentário dele diz, com estas palavras, que
+     * "ordem de entrada já vem do `order('created_at')` da consulta — sort estável preserva". O
+     * `sort` do JS é estável de verdade, então a promessa depende inteiramente de esta consulta
+     * devolver uma ordem estável — e sem desempate ela NÃO devolve: com dois pedidos gravados no
+     * mesmo instante, o Postgres pode trocar a ordem entre duas execuções, e a vaga vai para
+     * qualquer um dos dois.
+     *
+     * Empate é improvável entre pessoas de verdade e garantido em importação e seed. Um critério
+     * estável custa nada e faz a fila cumprir o que ela promete.
+     */
     .order('created_at')
+    .order('id')
   if (error) throw new AppError('INTERNAL', { cause: error })
 
   // `waitlist` não tem FK para `client_cycles` (é tabela derivada, sem

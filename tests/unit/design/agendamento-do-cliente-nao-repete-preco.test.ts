@@ -30,7 +30,17 @@ function fonte(caminho: string): string {
 describe('a tela de agendamento da cliente', () => {
   it('formata o preço do serviço uma vez só', () => {
     const src = fonte(AGENDAR)
-    const ocorrencias = src.match(/priceCents\s*\/\s*100/g) ?? []
+    /*
+     * Casa com QUALQUER renderização do preço do serviço, não com uma função específica. A versão
+     * anterior contava só `priceCents / 100`, e reprovou quando a tela passou a usar o
+     * `formatarPreco` do core — que era um CONSERTO: a tela formatava sozinha e mostrava "R$ 50"
+     * para um serviço que a vitrine do mesmo salão anuncia como "R$ 50/hora".
+     *
+     * A regra protegida nunca foi "use esta função". É "o preço do serviço aparece uma vez só
+     * nesta rolagem". Ancorar na implementação fazia a guarda reprovar quem melhorava a tela e
+     * passar em quem a piorasse por outro caminho.
+     */
+    const ocorrencias = [...(src.match(/priceCents\s*\/\s*100/g) ?? []), ...(src.match(/formatarPreco\(\{/g) ?? [])]
 
     /*
      * Exatamente 1, nunca "no máximo 1": se alguém renomear o campo e o padrão parar de casar,
@@ -66,5 +76,40 @@ describe('a lista de serviços da página do salão', () => {
     // `?servico=` vem da URL: id de outro salão ou serviço desativado não pode virar estado.
     const page = fonte(join('src', 'app', '(public)', '[slug]', 'agendar', 'page.tsx'))
     expect(page).toMatch(/perfil\.services\.some\(/)
+  })
+})
+
+/**
+ * A seção "Quem atende" nasceu de uma medição, não de uma ideia: em 04/09, na produção, o
+ * `perfilPublico` entregava três profissionais COM foto e a página do salão renderizava duas
+ * imagens no total — logo e capa. As fotos que o dono sobe pelo painel só apareciam nos chips do
+ * passo 2 do agendamento, ou seja, depois de a pessoa já ter decidido entrar.
+ */
+describe('a seção "Quem atende" da página do salão', () => {
+  it('existe, e mostra a equipe que o servidor já buscava', () => {
+    const src = fonte(SECOES)
+    expect(src, `${SECOES} parou de listar a equipe — as fotos que o dono sobe voltam a não aparecer`).toMatch(
+      /perfil\.professionals\.map\(/,
+    )
+  })
+
+  it('cada rosto leva ao agendamento com a pessoa já escolhida', () => {
+    const src = fonte(SECOES)
+    const lista = src.slice(src.indexOf('perfil.professionals.map('))
+    expect(lista, 'tocar num rosto tem que levar para /<slug>/agendar?profissional=<id>').toMatch(/agendar\?profissional=\$\{p\.id\}/)
+  })
+
+  it('o servidor confere o id do profissional antes de escolher por ela', () => {
+    // Mesmo motivo do `?servico=`: id de outro salão, ou de quem saiu da equipe, não pode virar
+    // estado. Conferido ao vivo — id inexistente cai em "Tanto faz", sem erro na tela.
+    const page = fonte(join('src', 'app', '(public)', '[slug]', 'agendar', 'page.tsx'))
+    expect(page).toMatch(/perfil\.professionals\.some\(/)
+  })
+
+  it('a escolha vinda da URL vira o estado inicial, em vez de ser ignorada', () => {
+    // Conferir no servidor e depois abrir em "Tanto faz" seria pior que não ter o link: o toque
+    // some em silêncio. O estado tem que NASCER com a pessoa escolhida.
+    const agendar = fonte(AGENDAR)
+    expect(agendar).toMatch(/useState<string \| null>\(profissionalInicial\)/)
   })
 })

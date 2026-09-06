@@ -135,7 +135,25 @@ async function plantarOcorrencias(
     address: string | null
   },
   servico: ServicoAgendavel,
-  aPartirDe: string, // YYYY-MM-DD — permite estender uma série já plantada sem replantar o passado
+  /*
+   * YYYY-MM-DD — permite estender uma série já plantada sem replantar o passado.
+   *
+   * **Quem for usar isto para a extensão automática do horizonte: esta data tem que estar NA
+   * GRADE da série, não pode ser "hoje" nem "última data + 1 dia".** Hoje existe um chamador só e
+   * ele passa `entrada.startsOn`, então o problema não é alcançável — mas é uma armadilha armada
+   * justamente para a feature que falta.
+   *
+   * O motivo está em `proximasDatas`: `semanal` anda até o weekday pedido e `mensal_dia_semana`
+   * recalcula a enésima ocorrência dentro de cada mês — os dois se realinham sozinhos e não se
+   * importam com a data que recebem. **`a_cada_dias` não tem para onde se realinhar**: a grade é
+   * "de N em N dias a partir de `inicio`", então `inicio` É a fase. Retomar uma série de 30 em 30
+   * dias ancorada em 01/01 a partir de 05/02 devolve 05/02 e 07/03, quando a grade real passava
+   * por 02/03 — o ritmo da cliente anda, sem erro e sem teste vermelho.
+   *
+   * O certo é calcular a próxima data da grade (última gerada + intervalo) e passar ELA.
+   * Fixado em `tests/unit/core/gerar-ocorrencias.test.ts`, bloco "`inicio` é a âncora".
+   */
+  aPartirDe: string,
 ): Promise<ResultadoOcorrencia[]> {
   const regra = regraDaEntrada({
     tipo: serie.tipo as EntradaCriarSerie['tipo'],

@@ -4,11 +4,12 @@ import { ArrowDown, ArrowUp, Plus, Scissors } from 'lucide-react'
 import { useState, useTransition } from 'react'
 
 import Badge from '@/components/ui/badge'
+import { useVocabulario } from '@/components/shell/vocabulario'
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import Chip from '@/components/ui/chip'
 import EmptyState from '@/components/ui/empty-state'
-import { formatarPreco } from '@/core/pricing/formatar'
+import { formatarPreco, type ModeloDePreco } from '@/core/pricing/formatar'
 import { duracao } from '@/lib/formato'
 
 import FormularioServico, { type ServicoEditavel } from './formulario'
@@ -20,6 +21,7 @@ type Servico = ServicoEditavel & {
 }
 
 export default function ListaServicos({ iniciais }: { iniciais: Servico[] }) {
+  const vocabulario = useVocabulario()
   const [servicos, setServicos] = useState(iniciais)
   const [mostrarArquivados, setMostrarArquivados] = useState(false)
   const [salvando, iniciarSalvamento] = useTransition()
@@ -90,7 +92,7 @@ export default function ListaServicos({ iniciais }: { iniciais: Servico[] }) {
             icone={<Scissors aria-hidden className="size-6" />}
             titulo="Nenhum serviço ainda"
             descricao="Cadastre o primeiro para poder marcar horário e cobrar por ele."
-            acao={<Button onClick={() => setEditando('novo')}>Cadastrar serviço</Button>}
+            acao={<Button onClick={() => setEditando('novo')}>Cadastrar {vocabulario.servico}</Button>}
           />
         </Card>
         {sheet}
@@ -130,7 +132,7 @@ export default function ListaServicos({ iniciais }: { iniciais: Servico[] }) {
                 <p className="tabular mt-0.5 text-secundario text-txt-2">
                   {duracao(s.duration_min)} ·{' '}
                   {formatarPreco({
-                    pricingModel: s.pricing_model as 'fixed' | 'hourly' | 'visit_hourly' | 'daily',
+                    pricingModel: s.pricing_model as ModeloDePreco,
                     priceCents: s.price_cents,
                     hourlyRateCents: s.hourly_rate_cents,
                     halfDayPriceCents: s.half_day_price_cents,

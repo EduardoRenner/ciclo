@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState, useTransition } from 'react'
 
 import { diaDaquiA } from '@/core/tempo/dia'
+import { useVocabulario } from '@/components/shell/vocabulario'
+import { comMaiuscula } from '@/core/text/vocabulario'
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import Input from '@/components/ui/input'
@@ -27,6 +29,7 @@ export default function FormularioOrcamento({
   /** Fuso do salao: a validade e uma data de calendario, e calendario e do salao, nao do aparelho. */
   timezone: string
 }) {
+  const vocabulario = useVocabulario()
   const router = useRouter()
   const [pendente, iniciarTransicao] = useTransition()
 
@@ -140,7 +143,7 @@ export default function FormularioOrcamento({
   return (
     <form onSubmit={enviar} className="flex flex-col gap-4">
       {profissionais.length > 1 ? (
-        <Select rotulo="Profissional" value={professionalId} onChange={(e) => setProfessionalId(e.target.value)} required>
+        <Select rotulo={comMaiuscula(vocabulario.profissional)} value={professionalId} onChange={(e) => setProfessionalId(e.target.value)} required>
           {profissionais.map((p) => (
             <option key={p.id} value={p.id}>
               {p.display_name}
@@ -149,7 +152,7 @@ export default function FormularioOrcamento({
         </Select>
       ) : null}
 
-      <Input rotulo="Cliente" value={clienteNome} onChange={(e) => setClienteNome(e.target.value)} placeholder="Nome" autoComplete="name" required />
+      <Input rotulo={comMaiuscula(vocabulario.cliente)} value={clienteNome} onChange={(e) => setClienteNome(e.target.value)} placeholder="Nome" autoComplete="name" required />
       <PhoneInput valor={clienteTelefone} aoMudar={setClienteTelefone} required />
 
       <div className="flex flex-col gap-3">

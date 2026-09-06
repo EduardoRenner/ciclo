@@ -1,13 +1,19 @@
-import { AtSign, CalendarPlus, ChevronRight, Clock, MapPin, MessageCircle, Phone, Star } from 'lucide-react'
+import { AtSign, CalendarPlus, Clock, FileText, MapPin, MessageCircle, Phone, Star, Users } from 'lucide-react'
 import Link from 'next/link'
 
 import Badge from '@/components/ui/badge'
 import Card from '@/components/ui/card'
+import { comMaiuscula, plural } from '@/core/text/vocabulario'
 import { formatarPreco } from '@/core/pricing/formatar'
 import { apelidoDoInstagram, urlDoInstagram } from '@/core/text/instagram'
 import { duracao, formatarTelefone } from '@/lib/formato'
+import { linkWhatsApp } from '@/lib/mensagens'
 
 import type { PerfilPublico } from '@/server/services/public-booking'
+
+/** Um id só para o `<symbol>` da estrela — usado pela definição e por cada `<use>`. */
+const ID_ESTRELA = 'estrela-da-avaliacao'
+const ID_SETA = 'seta-do-servico'
 
 const DIAS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
 
@@ -33,11 +39,6 @@ function paraMinutos(hhmm: string): number {
   return Number(h) * 60 + Number(m)
 }
 
-function linkWhatsapp(numero: string, mensagem: string): string {
-  const digitos = numero.replace(/\D/g, '')
-  return `https://wa.me/${digitos}?text=${encodeURIComponent(mensagem)}`
-}
-
 /**
  * Toda seção se esconde sozinha quando não tem dado — a maioria dos tenants
  * existentes tem `settings = '{}'` (nunca preencheram "sobre o negócio"
@@ -48,6 +49,7 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
   // Pelo apelido normalizado, não pelo campo cru: um valor que não vira apelido não desenha
   // linha nenhuma, e contá-lo aqui abriria o cartão de contato vazio.
   const instagram = apelidoDoInstagram(perfil.instagram)
+  const linkDoWhatsapp = linkWhatsApp(perfil.whatsapp, `Oi! Vim pelo site da ${perfil.name}.`)
   const temContato = perfil.phone || perfil.whatsapp || perfil.address || instagram
   const temHorario = perfil.hours.length > 0
 
@@ -106,7 +108,21 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
         </div>
       ) : null}
 
-      <section className="relative -mx-[var(--gutter)] flex flex-col items-center gap-4 overflow-hidden px-[var(--gutter)] pb-8 text-center"
+      {/*
+        SEM `overflow-hidden` aqui, e isso é o conserto: o logo abaixo sobe 56 px (`-mt-14`) para
+        sobrepor a capa, e 56 px de um elemento de 80 px ficavam FORA da caixa desta section —
+        cortados. Medido na produção em 04/09 com `getBoundingClientRect`: logo em y=197,2, section
+        em y=253,2. **70% do logo invisível**, sobrando um risco de meia-lua no lugar da marca.
+
+        O `overflow-hidden` é mais antigo que o logo: já estava aqui antes do TICKET-062, e quem
+        acrescentou a margem negativa não tinha como ver o corte, porque nenhum tenant tinha logo
+        cadastrada. O defeito só nasceu quando as contas de demonstração ganharam marca.
+
+        Tirar não devolve rolagem horizontal: `-mx-[var(--gutter)]` é cancelado pelo
+        `px-[var(--gutter)]` do mesmo elemento, e a capa tem `overflow-hidden` próprio (ela é quem
+        precisa recortar a imagem). Conferido nas duas larguras com `scrollWidth === clientWidth`.
+      */}
+      <section className="relative -mx-[var(--gutter)] flex flex-col items-center gap-4 px-[var(--gutter)] pb-8 text-center"
         style={{ paddingTop: perfil.coverUrl ? undefined : '3rem' }}
       >
         {/*
@@ -144,9 +160,31 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
             <CalendarPlus aria-hidden className="size-4" />
             Agendar horário
           </Link>
-          {perfil.whatsapp ? (
+          {/*
+            Só aparece quando existe serviço sob orçamento, e essa é a regra inteira: uma barbearia
+            de tabela fechada não deve ter esta porta, e oferecer uma que o dono nunca vai atender é
+            a mesma classe de promessa vazia que a regra do canal de mensagem proíbe. A rota também
+            responde 404 nesse caso, então o botão e o destino concordam.
+          */}
+          {perfil.services.some((s) => s.pricingModel === 'quote') ? (
+            <Link
+              href={`/${perfil.slug}/orcamento`}
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-5 text-corpo font-semibold text-txt transition duration-[var(--dur-1)] hover:bg-surface-3 active:scale-[.97]"
+            >
+              <FileText aria-hidden className="size-4" />
+              Pedir orçamento
+            </Link>
+          ) : null}
+          {/*
+            `linkWhatsApp` recusa número com menos de 10 dígitos e devolve `null` — e o botão some
+            junto, em vez de virar um `wa.me/11` que abre "número inválido" no celular de quem
+            queria falar com o salão. A cópia local que existia aqui não tinha essa checagem.
+            Conferido em produção: nenhum tenant tem número curto hoje (o `TelefoneBR` do
+            `site.ts` já barra na gravação), então isto é rede, não conserto de defeito no ar.
+          */}
+          {linkDoWhatsapp ? (
             <a
-              href={linkWhatsapp(perfil.whatsapp, `Oi! Vim pelo site da ${perfil.name}.`)}
+              href={linkDoWhatsapp}
               target="_blank"
               rel="noreferrer"
               className="inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-5 text-corpo font-semibold text-txt transition duration-[var(--dur-1)] hover:bg-surface-3 active:scale-[.97]"
@@ -160,7 +198,18 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
 
       {perfil.services.length > 0 ? (
         <section className="py-6">
-          <h2 className="mb-3 text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">Serviços</h2>
+          {/*
+            O primeiro rótulo do produto a falar a língua da profissão: um psicólogo anuncia
+            "Sessões" e um personal anuncia "Treinos" onde a barbearia anuncia "Serviços".
+
+            O plural vem do `core` e não de um `+ 's'` aqui: "sessão" vira "sessões", e essa é a
+            única irregular do conjunto. Um pluralizador genérico de português erraria calado em
+            palavra terminada em -l, -r, -m ou -z, então o conjunto é fechado e há guarda conferindo
+            que toda palavra do seed cai nas duas regras conhecidas.
+          */}
+          <h2 className="mb-3 text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">
+            {comMaiuscula(plural(perfil.vocabulario.servico))}
+          </h2>
           <div className="flex flex-col gap-2">
             {/*
               O card já nascia `pressionavel` — retorno de toque, `hover`, tudo — dentro de uma
@@ -169,6 +218,18 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
               não pode ser "role até o fim e ache o botão". Agora o toque leva direto para o
               agendamento com o serviço já escolhido, que é o atalho que Fresha e Booksy usam.
             */}
+            {/*
+              Um `<use>` por serviço em vez de um `<ChevronRight>` inteiro. A seta aparece uma vez
+              por linha da lista, e o lucide inlina o path e todos os atributos em cada uma:
+              medido em `/demo-studio-bella`, que tem 10 serviços, deu 10 cópias do mesmo SVG.
+              Mesmo conserto (e mesma armadilha de cascata) das estrelas logo abaixo.
+            */}
+            <svg aria-hidden focusable="false" className="absolute size-0" width="0" height="0">
+              <symbol id={ID_SETA} viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m9 18 6-6-6-6" />
+              </symbol>
+            </svg>
+
             {perfil.services.map((s) => (
               <Link key={s.id} href={`/${perfil.slug}/agendar?servico=${s.id}`} className="block">
                 <Card pressionavel>
@@ -195,8 +256,8 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
                     {s.description ? <p className="mt-0.5 text-secundario text-txt-2">{s.description}</p> : null}
                     <p className="tabular mt-1 text-secundario text-txt-3">{duracao(s.durationMin)}</p>
                   </div>
-                  <div className="flex shrink-0 items-center gap-1.5">
-                    <p className="tabular text-corpo font-semibold text-acc-2">
+                  <div className="flex min-w-0 max-w-[52%] shrink items-center gap-1.5">
+                    <p className="tabular text-balance text-right text-corpo font-semibold text-acc-2">
                       {formatarPreco({
                         pricingModel: s.pricingModel,
                         priceCents: s.priceCents,
@@ -204,7 +265,9 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
                         halfDayPriceCents: s.halfDayPriceCents,
                       })}
                     </p>
-                    <ChevronRight aria-hidden className="size-4 text-txt-3" />
+                    <svg aria-hidden viewBox="0 0 24 24" fill="none" className="size-4 text-txt-3">
+                      <use href={`#${ID_SETA}`} />
+                    </svg>
                   </div>
                 </div>
                 </Card>
@@ -218,6 +281,61 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
         <section className="py-6">
           <h2 className="mb-3 text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">Sobre</h2>
           <p className="whitespace-pre-line text-corpo text-txt-2">{perfil.about}</p>
+        </section>
+      ) : null}
+
+      {/*
+        QUEM ATENDE. As fotos da equipe já subiam pelo painel (`vitrine/entidade`), já vinham no
+        `perfilPublico` e apareciam nos chips do passo 2 do agendamento — mas a página do salão,
+        que é onde a pessoa decide se confia antes de clicar em qualquer coisa, não mostrava
+        ninguém. Medido no ar em 04/09: `professionals` chegava com três pessoas e três fotos, e a
+        página renderizava duas imagens no total (logo e capa).
+
+        Cada pessoa leva para o agendamento JÁ escolhida (`?profissional=`), no mesmo desenho do
+        `?servico=` dos cards de serviço: quem tocou num rosto escolheu, e abrir em "Tanto faz"
+        desfaria a escolha em silêncio.
+
+        Sem foto o cartão continua existindo, só com o nome — moldura vazia denuncia a ausência,
+        que é o oposto do que esta seção existe para fazer. Mesmo critério dos chips do passo 2.
+      */}
+      {perfil.professionals.length > 0 ? (
+        <section className="py-6">
+          <h2 className="mb-3 flex items-center gap-1.5 text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">
+            <Users aria-hidden className="size-3.5" />
+            Quem atende
+          </h2>
+          {/*
+            Rola na horizontal em vez de quebrar em grade: equipe de três cabe na tela, e a de dez
+            não empurra o horário e as avaliações para fora do primeiro scroll. `-mx`/`px` casados
+            deixam o primeiro e o último cartão encostarem na margem do texto sem sangrar a página.
+          */}
+          <div className="-mx-[var(--gutter)] flex snap-x gap-3 overflow-x-auto px-[var(--gutter)] pb-1">
+            {perfil.professionals.map((p) => (
+              <Link
+                key={p.id}
+                href={`/${perfil.slug}/agendar?profissional=${p.id}`}
+                className="flex w-20 shrink-0 snap-start flex-col items-center gap-1.5 text-center"
+              >
+                {p.photoUrl ? (
+                  /* Já é WebP dimensionado no upload — mesmo padrão de logo/capa. */
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={p.photoUrl}
+                    alt=""
+                    width={512}
+                    height={512}
+                    loading="lazy"
+                    className="size-16 rounded-full border border-line-2 bg-surface-2 object-cover"
+                  />
+                ) : (
+                  <span aria-hidden className="grid size-16 place-items-center rounded-full bg-surface-2 text-corpo font-semibold text-txt-3">
+                    {p.displayName.trim().charAt(0).toUpperCase()}
+                  </span>
+                )}
+                <span className="line-clamp-2 text-secundario text-txt-2">{p.displayName}</span>
+              </Link>
+            ))}
+          </div>
         </section>
       ) : null}
 
@@ -285,6 +403,18 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
       {perfil.reviews.count > 0 ? (
         <section className="py-6">
           <h2 className="mb-3 text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">Avaliações</h2>
+          {/*
+            O `<symbol>` mora aqui, dentro da própria seção, e não num layout: é o único lugar
+            que usa a estrela, e definir sprite global obrigaria toda página a carregá-lo.
+            `size-0` em vez de `display:none` porque Safari não resolve `<use>` que aponta para
+            dentro de um ancestral escondido.
+          */}
+          <svg aria-hidden focusable="false" className="absolute size-0" width="0" height="0">
+            <symbol id={ID_ESTRELA} viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z" />
+            </symbol>
+          </svg>
+
           <div className="mb-3 flex items-center gap-2">
             <Star aria-hidden className="size-5 shrink-0 fill-acc-2 text-acc-2" />
             <span className="tabular text-titulo font-bold">{perfil.reviews.average.toFixed(1)}</span>
@@ -296,13 +426,37 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
             <div className="flex flex-col gap-2">
               {perfil.reviews.recentes.map((r, i) => (
                 <Card key={i}>
+                  {/*
+                    `<use>` em vez de 25 cópias do mesmo `<path>`. Medido no HTML da produção:
+                    26 estrelas ocupavam 16.978 B de uma página de 75.660 B — **22% do
+                    documento era o mesmo ícone repetido**, e num 3G de celular antigo o HTML é o
+                    custo dominante (o JS é 104 kB de framework, que não dá para cortar, e o
+                    Total Blocking Time medido foi 33 ms — a CPU não é o gargalo aqui, o
+                    documento é).
+
+                    A nota também passa a existir em TEXTO para leitor de tela. Antes as cinco
+                    estrelas eram `aria-hidden` e não havia alternativa nenhuma: quem não
+                    enxerga lia o comentário sem saber se veio de uma nota 5 ou 2.
+                  */}
                   <div className="mb-1.5 flex gap-0.5">
+                    <span className="sr-only">{r.rating} de 5 estrelas</span>
                     {Array.from({ length: 5 }).map((_, estrela) => (
-                      <Star
+                      <svg
                         key={estrela}
                         aria-hidden
+                        viewBox="0 0 24 24"
+                        /*
+                          `fill="none"` fica AQUI, no elemento que usa, e não no `<symbol>` — foi
+                          o erro da primeira versão e ele só apareceu olhando a tela: o atributo
+                          no símbolo fica mais perto do `<path>` do que a classe do `<svg>`
+                          externo, ganha da cascata, e as 25 estrelas saíram vazadas. É onde o
+                          próprio lucide põe, e por isso `fill-acc-2` consegue sobrepor.
+                        */
+                        fill="none"
                         className={`size-3.5 shrink-0 ${estrela < r.rating ? 'fill-acc-2 text-acc-2' : 'text-line-2'}`}
-                      />
+                      >
+                        <use href={`#${ID_ESTRELA}`} />
+                      </svg>
                     ))}
                   </div>
                   <p className="text-corpo text-txt">{r.comment}</p>

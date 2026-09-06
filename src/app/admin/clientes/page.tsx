@@ -8,6 +8,7 @@ import Card from '@/components/ui/card'
 import PageHeader from '@/components/ui/page-header'
 import StatTile from '@/components/ui/stat-tile'
 import { dinheiro } from '@/lib/formato'
+import { comMaiuscula, plural } from '@/core/text/vocabulario'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { listarClientes } from '@/server/services/clientes'
@@ -42,8 +43,13 @@ export default async function PaginaClientes() {
 
   return (
     <>
+      {/*
+          Primeiro rotulo do PAINEL a falar a lingua da profissao: um psicologo le "Pacientes".
+          Os tres desta tela sao seguros porque a palavra aparece sozinha ou com artigo que
+          concorda com OUTRA palavra ("do plano"), nunca com a que o vocabulario troca.
+      */}
       <PageHeader
-        titulo="Clientes"
+        titulo={comMaiuscula(plural(ctx.tenant.vocabulario.cliente))}
         descricao={`${painel.total} na carteira${
           painel.novosNoMes > 0
             ? ` · ${painel.novosNoMes} ${painel.novosNoMes === 1 ? 'cadastro' : 'cadastros'} esse mês`
@@ -54,7 +60,7 @@ export default async function PaginaClientes() {
              que fosse, o botão sumia e não havia mais como registrar ninguém pela tela. */
           <Link
             href="/admin/clientes/nova"
-            aria-label="Cadastrar cliente"
+            aria-label={`Cadastrar ${ctx.tenant.vocabulario.cliente}`}
             className="grid size-12 place-items-center rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 text-txt transition duration-[var(--dur-1)] hover:bg-surface-3 active:scale-[.94]"
           >
             <UserPlus className="size-5" />
@@ -82,7 +88,7 @@ export default async function PaginaClientes() {
       {limiteClientes.limite !== null ? (
         <div className="mb-4">
           <StatTile
-            rotulo="Clientes do plano"
+            rotulo={`${comMaiuscula(plural(ctx.tenant.vocabulario.cliente))} do plano`}
             valor={`${painel.total} de ${limiteClientes.limite}`}
             progresso={painel.total / limiteClientes.limite}
           />

@@ -42,7 +42,9 @@ export const POST = rota(async (req, _ctx, requestId) => {
     req,
   )
 
-  // Sprint 2 ainda não tem WhatsApp/e-mail (nenhum MessagingProvider existe);
-  // o link volta na resposta para o dono copiar e mandar manualmente.
+  // O link volta na resposta para o dono copiar e mandar. A redação anterior justificava isso com
+  // "nenhum MessagingProvider existe" — e existe desde então (`server/providers/messaging/`). O
+  // que impede o envio automático é credencial ausente mais o portão do `docs/25` F0; ver o
+  // docstring de `criarConvite`.
   return { invite, link: `${exigirEnv('NEXT_PUBLIC_APP_URL')}/convite/${token}` }
 })

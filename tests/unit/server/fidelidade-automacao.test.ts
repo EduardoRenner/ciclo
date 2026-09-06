@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { pontuarAtendimentoConcluido } from '@/server/services/fidelidade'
+import { lerConfigFidelidade, pontuarAtendimentoConcluido } from '@/server/services/fidelidade'
 
 /**
  * A fidelidade automática é o módulo `loyalty` — e era o único pedaço dele que nenhuma trava de
@@ -100,5 +100,59 @@ describe('fidelidade automática respeita o plano', () => {
     // não falha.
     const { db } = bancoFalso({ plano: 'gratis' })
     await expect(pontuarAtendimentoConcluido(db, T, ATENDIMENTO)).resolves.toBeUndefined()
+  })
+})
+
+/**
+ * O leitor da configuração, e o defeito que ele tinha: `safeParse` do objeto INTEIRO, caindo em
+ * `CONFIG_PADRAO` na primeira invalidade.
+ *
+ * Medido antes do conserto: um tenant com `pointsPerReal: 0` — fidelidade desligada de propósito,
+ * o que o comentário do próprio esquema chama de escolha legítima ("nem todo negócio quer
+ * fidelidade ligada") — voltava para `1` se qualquer OUTRO campo do namespace ficasse inválido.
+ *
+ * Religar sozinho custa mais que os outros erros desta família: `pontuarAtendimentoConcluido`
+ * grava em `loyalty_entries`, que é livro-razão (resgate é lançamento negativo, nunca `UPDATE`).
+ * Ponto creditado por engano vira obrigação com a cliente, e desfazer é tirar da frente dela algo
+ * que ela já viu.
+ *
+ * O conserto NÃO escolhe o lado oposto — cair para "desligado" teria o defeito espelhado, parando
+ * de pontuar quem tinha ligado. Resgata campo a campo: o que dá para ler fica, só o inválido vira
+ * padrão.
+ */
+describe('config de fidelidade: campo torto não derruba o vizinho', () => {
+  const COMPLETO = { pointsPerReal: 0, referralBonusPoints: 20, rewardThreshold: 100 }
+
+  it('quem nunca gravou nada continua no padrão', () => {
+    expect(lerConfigFidelidade({}).pointsPerReal).toBe(1)
+    expect(lerConfigFidelidade({ loyalty: {} }).pointsPerReal).toBe(1)
+    expect(lerConfigFidelidade(null).rewardThreshold).toBe(100)
+  })
+
+  it('config válida é respeitada, inclusive o zero que DESLIGA', () => {
+    expect(lerConfigFidelidade({ loyalty: COMPLETO }).pointsPerReal).toBe(0)
+    expect(lerConfigFidelidade({ loyalty: { ...COMPLETO, pointsPerReal: 3 } }).pointsPerReal).toBe(3)
+  })
+
+  it('rótulo inválido não religa a pontuação de quem desligou', () => {
+    // O caso medido: `rewardLabel` acima do máximo derrubava o objeto inteiro, e `pointsPerReal`
+    // voltava de 0 para 1 — fidelidade ligada sozinha, gravando em livro-razão.
+    const config = lerConfigFidelidade({ loyalty: { ...COMPLETO, rewardLabel: 'x'.repeat(200) } })
+    expect(config.pointsPerReal).toBe(0)
+    expect(config.rewardLabel, 'só o campo inválido vira padrão').toBe(null)
+  })
+
+  it('limiar fora da faixa e campo faltando também não religam', () => {
+    expect(lerConfigFidelidade({ loyalty: { ...COMPLETO, rewardThreshold: 0 } }).pointsPerReal).toBe(0)
+    expect(lerConfigFidelidade({ loyalty: { pointsPerReal: 0, referralBonusPoints: 20 } }).pointsPerReal).toBe(0)
+  })
+
+  it('o campo inválido cai no padrão, e só ele', () => {
+    // O outro lado: resgatar não pode virar aceitar lixo. Limiar 0 é inválido (mínimo 1) e vira
+    // 100; o resto do que estava certo continua de pé.
+    const config = lerConfigFidelidade({ loyalty: { ...COMPLETO, pointsPerReal: 5, rewardThreshold: 0 } })
+    expect(config.rewardThreshold).toBe(100)
+    expect(config.pointsPerReal).toBe(5)
+    expect(config.referralBonusPoints).toBe(20)
   })
 })

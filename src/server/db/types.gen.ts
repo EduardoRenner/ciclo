@@ -2195,7 +2195,7 @@ export type Database = {
           created_by: string | null
           id: string
           message: string | null
-          professional_id: string
+          professional_id: string | null
           rejected_at: string | null
           rejected_reason: string | null
           sent_at: string | null
@@ -2212,7 +2212,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           message?: string | null
-          professional_id: string
+          professional_id?: string | null
           rejected_at?: string | null
           rejected_reason?: string | null
           sent_at?: string | null
@@ -2229,7 +2229,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           message?: string | null
-          professional_id?: string
+          professional_id?: string | null
           rejected_at?: string | null
           rejected_reason?: string | null
           sent_at?: string | null
@@ -3449,6 +3449,12 @@ export type Database = {
       }
       has_tenant: { Args: { t: string }; Returns: boolean }
       imutavel_sem_acento: { Args: { texto: string }; Returns: string }
+      migracoes_aplicadas: {
+        Args: never
+        Returns: {
+          name: string
+        }[]
+      }
       my_professional_id: { Args: { t: string }; Returns: string }
       redigir_trilha_do_cliente: {
         Args: { p_client: string; p_tenant: string }

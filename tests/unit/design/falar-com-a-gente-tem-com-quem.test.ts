@@ -3,6 +3,8 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
+import { semComentarios } from '../../helpers/fonte'
+
 import { canalDeContato, textoDeMudarDePlano } from '@/lib/contato'
 
 /**
@@ -38,11 +40,8 @@ function arquivos(dir: string): string[] {
  * Comentário é prosa, não é o que a pessoa lê na tela — e casar com ele já custou três falsos
  * positivos nesta base no mesmo dia. Some com bloco e linha antes de procurar, JSX incluído.
  */
-function semComentarios(src: string): string {
-  return src
-    .replace(/\/\*[\s\S]*?\*\//g, ' ')
-    .replace(/^[ \t]*\/\/.*$/gm, ' ')
-}
+// A limpeza mora em `helpers/fonte` — esta era a última das doze cópias locais da mesma regra.
+
 
 const TODOS = arquivos(RAIZ)
 

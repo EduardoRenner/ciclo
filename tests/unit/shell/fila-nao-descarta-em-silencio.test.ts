@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs'
 
 import { describe, expect, it } from 'vitest'
 
+import { semComentarios } from '../../helpers/fonte'
+
 /**
  * Achado da auditoria de 2026-08-28, família "descarta em silêncio".
  *
@@ -25,16 +27,18 @@ import { describe, expect, it } from 'vitest'
 const CLIENTE = 'src/lib/offline/api-client.ts'
 const TELA = 'src/components/shell/resolucao-de-fila.tsx'
 
-function semComentarios(caminho: string): string {
-  return readFileSync(caminho, 'utf8')
-    .replace(/[{][/][*][\s\S]*?[*][/][}]/g, ' ')
-    .replace(/[/][*][\s\S]*?[*][/]/g, ' ')
-    .replace(/^\s*[/][/].*$/gm, ' ')
+/**
+ * A décima terceira cópia da mesma limpeza, e a que sobrou depois da consolidação de `f2fb50e` —
+ * porque escrevia os delimitadores como classe de caractere (`[/][*]`) em vez de escape (`\/\*`),
+ * e o detector que achou as outras doze procurava a segunda forma. O instrumento também erra.
+ */
+function marcacaoDe(caminho: string): string {
+  return semComentarios(readFileSync(caminho, 'utf8'))
 }
 
 describe('descarte da fila offline não é silencioso', () => {
-  const cliente = semComentarios(CLIENTE)
-  const tela = semComentarios(TELA)
+  const cliente = marcacaoDe(CLIENTE)
+  const tela = marcacaoDe(TELA)
 
   it('a leitura não voltou vazia', () => {
     expect(cliente.length, `${CLIENTE} veio vazio`).toBeGreaterThan(1_000)

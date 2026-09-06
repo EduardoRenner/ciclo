@@ -63,11 +63,39 @@ describe('lerMensageria — paused', () => {
     expect(lerMensageria({ messaging: { paused: false } }).paused).toBe(false)
   })
 
-  it('messaging corrompido (não é objeto, ou paused não é booleano) nunca lança e nunca fica pausado por acidente', () => {
+  it('messaging que nem é objeto nunca lança e nunca fica pausado por acidente', () => {
+    /*
+     * A garantia do bloco acima, mantida: nada disso é "o dono pediu para pausar". `messaging`
+     * que não é objeto, ou `settings` inteiro corrompido, são a mesma coisa que a chave não
+     * existir — e um tenant que nunca pediu pausa não pode parar de receber a automação que paga.
+     */
     expect(() => lerMensageria({ messaging: 'isto não é um objeto' })).not.toThrow()
     expect(lerMensageria({ messaging: 'isto não é um objeto' }).paused).toBe(false)
-    expect(lerMensageria({ messaging: { paused: 'sim' } }).paused).toBe(false)
     expect(() => lerMensageria('settings inteiro corrompido')).not.toThrow()
+  })
+
+  it('`paused` PRESENTE e torto pausa por segurança — as duas saídas não custam igual', () => {
+    /*
+     * **Esta asserção mudou de lado em 2026-09-05, e a inversão é deliberada.** Antes ela exigia
+     * `paused: 'sim'` → `false`, sob o mesmo título de "nunca pausado por acidente".
+     *
+     * A diferença que faltava: `messaging` ausente, `{}` ou não-objeto são "nunca configurado" —
+     * e continuam `false`, no caso acima. Mas `paused` PRESENTE e não-booleano é outra história:
+     * alguém gravou um valor naquele campo e ele está torto. O produto não sabe o que o dono
+     * pediu, e aí as duas saídas não custam igual — não enviar é reclamável e reversível; enviar
+     * sem querer fala com a cliente do salão, não tem desfazer, e quem fica mal é o salão.
+     *
+     * É a mesma régua que `normalizarPlano` (`server/services/planos.ts`) já escreve para esta
+     * classe de decisão: *"errar para menos bloqueia uma ação (recuperável, e a pessoa reclama) e
+     * errar para mais libera o que não foi pago (silencioso, e ninguém reclama)"*. Aqui a
+     * assimetria é maior, porque errar para mais não libera recurso: manda mensagem.
+     *
+     * E não é silencioso dos dois lados: a função registra `console.warn` ao pausar por isso, o
+     * que o caminho antigo não fazia.
+     */
+    expect(lerMensageria({ messaging: { paused: 'sim' } }).paused).toBe(true)
+    expect(lerMensageria({ messaging: { paused: 1 } }).paused).toBe(true)
+    expect(lerMensageria({ messaging: { paused: null } }).paused).toBe(true)
   })
 
   it('settings com site E messaging juntos: cada um lê o seu, sem vazar entre si', () => {
