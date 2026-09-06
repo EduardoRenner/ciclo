@@ -67,3 +67,7 @@ supabase/.env
 
 # A última palavra sobre o exemplo (ver comentário lá em cima).
 !.env.example
+
+# scratch e config local do Claude Code (entraram por engano no #83)
+/scratch_*.txt
+.claude/settings.local.json
