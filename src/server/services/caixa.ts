@@ -3,6 +3,8 @@ import { Temporal } from '@js-temporal/polyfill'
 import { concentracaoDeLucro, ratearLucroDaComanda, type Concentracao } from '@/core/caixa/concentracao'
 import { margemPorServico, type ItemFechado, type MargemDoServico } from '@/core/caixa/margem-do-servico'
 import { mesesJaEncerrados, serieMensal, type SerieMensal } from '@/core/caixa/serie-mensal'
+import { calcularTaxaDoMes, type TaxaDoMes } from '@/core/caixa/taxa-por-forma'
+import { lerTaxasDePagamento, taxaEstaConfigurada } from '@/core/comanda/taxa-de-pagamento'
 import { buscarTudoPaginado } from '@/server/db/paginar'
 import { AppError } from '@/server/http/errors'
 
@@ -102,6 +104,49 @@ export async function resumoMensal(db: Cliente, tenantId: string, timezone: stri
 
   const resumo = await somarTickets(db, tenantId, inicio, fim)
   return { month, ...resumo }
+}
+
+/**
+ * `docs/53` A-01. Duas idas: `tickets` do mês (a mesma janela de `resumoMensal`, mas com
+ * `payment_method` — que `somarTickets` não seleciona porque não precisa dele) e `settings` do
+ * tenant, para saber se a pergunta da taxa foi respondida. A conta em si é toda em
+ * `calcularTaxaDoMes`, puro — aqui só busca e entrega.
+ */
+export async function taxaPorFormaDoMes(db: Cliente, tenantId: string, timezone: string, month: string): Promise<TaxaDoMes> {
+  const [ano, mes] = month.split('-').map(Number)
+  if (!ano || !mes) throw AppError.validacao({ month: 'Use o formato AAAA-MM.' })
+
+  const anoMes = Temporal.PlainYearMonth.from({ year: ano, month: mes })
+  const inicio = anoMes.toPlainDate({ day: 1 }).toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant().toString()
+  const fim = anoMes
+    .toPlainDate({ day: 1 })
+    .add({ months: 1 })
+    .toZonedDateTime({ timeZone: timezone, plainTime: '00:00' })
+    .toInstant()
+    .toString()
+
+  const [tickets, tenant] = await Promise.all([
+    buscarTudoPaginado(() =>
+      db
+        .from('tickets')
+        .select('payment_method, total_cents, fee_cents')
+        .eq('tenant_id', tenantId)
+        .in('status', ['closed', 'paid'])
+        .gte('closed_at', inicio)
+        .lt('closed_at', fim)
+        .order('id'),
+    ),
+    db.from('tenants').select('settings').eq('id', tenantId).maybeSingle(),
+  ])
+
+  const respondida = taxaEstaConfigurada(tenant.data?.settings)
+  const taxas = lerTaxasDePagamento(tenant.data?.settings)
+
+  return calcularTaxaDoMes(
+    tickets.map((t) => ({ paymentMethod: t.payment_method, totalCents: t.total_cents, feeCents: t.fee_cents })),
+    taxas,
+    respondida,
+  )
 }
 
 export type ConcentracaoDoMes = Concentracao & {

@@ -201,7 +201,15 @@ export default function ListaServicos({
                             sobra {Math.round(margem.margemBps / 100)}% em {margem.atendimentos}{' '}
                             {margem.atendimentos === 1 ? 'atendimento' : 'atendimentos'}
                           </p>
-                          {frase ? <p className="mt-0.5 text-label text-txt-2">{frase}</p> : null}
+                          {/*
+                            `docs/53` A-02 — quando a vilã é a taxa, a frase vira link para
+                            `/admin/mes` (fora deste `<button>`, logo abaixo do row: `<a>` dentro
+                            de `<button>` é conteúdo interativo aninhado, inválido em HTML e com
+                            comportamento de clique imprevisível entre navegadores). Nas outras
+                            duas parcelas a frase fica como texto — comissão e material não têm,
+                            ainda, uma tela de destino melhor que o catálogo em que já está.
+                          */}
+                          {frase && margem.parcelaDominante !== 'taxa' ? <p className="mt-0.5 text-label text-txt-2">{frase}</p> : null}
                         </>
                       )
                     })()
@@ -237,6 +245,24 @@ export default function ListaServicos({
                 </button>
               </div>
               </div>
+
+              {/*
+                `docs/53` A-02 — continuação do comentário na frase acima: o link mora aqui, fora
+                do `<button>` de editar, na própria linha (mesma razão do `toque-48` que já
+                separou o link de "Ficha de consumo" do nome do serviço).
+              */}
+              {podeVerLucro
+                ? (() => {
+                    const margem = margemPorId.get(s.id)
+                    const frase = margem ? fraseDaMargem(margem) : null
+                    if (!margem || margem.parcelaDominante !== 'taxa' || !frase) return null
+                    return (
+                      <Link href="/admin/mes" className="flex h-12 items-center text-label font-semibold text-acc-2">
+                        {frase} Ver o que a maquininha levou no mês →
+                      </Link>
+                    )
+                  })()
+                : null}
 
               {/*
                 A ficha de consumo ganhou tela em 2026-09-06 (`docs/49`). `service_products` existe

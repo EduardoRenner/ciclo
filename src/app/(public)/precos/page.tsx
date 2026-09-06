@@ -95,6 +95,19 @@ const PERGUNTAS = [
     resposta:
       'Se um dia aumentar, avisamos com 30 dias de antecedência e quem já é cliente fica no preço antigo por 12 meses.',
   },
+  /*
+    `docs/53` B-01. Sem citar concorrente e sem número de terceiro — mesma régua do parágrafo da
+    vitrine acima, e pelo mesmo motivo: número alheio envelhece na mão dele. O argumento aqui é de
+    ESTRUTURA (quem ganha da taxa não pode te mostrar o que ela custa), não uma estatística — por
+    isso não precisa de fonte nem data, e não fica desatualizado. Só entra em produção porque a
+    conta que ele descreve (`/admin/mes`, TICKET A-01) já existe: prometer o que a tela de hoje não
+    mostra é exatamente o que o `docs/50` §5.6 e o `docs/51` §5.4 proíbem.
+  */
+  {
+    pergunta: 'Vocês ganham alguma coisa da minha maquininha?',
+    resposta:
+      'Não, nada. O CICLO não processa pagamento e não fica com nenhuma parte do que você recebe. Por isso o app pode te dizer, sem conflito de interesse, quanto a taxa da maquininha levou do seu mês; quem vive dessa taxa não tem por que te mostrar essa conta.',
+  },
 ]
 
 /** Ids dos dois `<symbol>` da lista de planos — a definição e cada `<use>` leem daqui. */
