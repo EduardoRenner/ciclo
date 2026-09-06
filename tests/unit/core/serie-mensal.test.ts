@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { MINIMO_DE_MESES, serieMensal } from '@/core/caixa/serie-mensal'
+import { MINIMO_DE_MESES, mesesJaEncerrados, serieMensal } from '@/core/caixa/serie-mensal'
 
 const mes = (month: string, profitCents: number, ticketsCount: number, revenueCents = profitCents * 3) => ({
   month,
@@ -61,5 +61,41 @@ describe('serieMensal — o fosso que só o tempo dá', () => {
 
   it('série vazia não estoura', () => {
     expect(serieMensal([])).toEqual({ pontos: [], variacaoBps: null, primeiroMesComparado: null, ultimoMesComparado: null })
+  })
+})
+
+/**
+ * A guarda que substitui uma varredura CEGA: a anterior procurava `mesCorrente.subtract({ months:`
+ * no serviço e passou verde com o laço mexido, porque a mesma expressão aparecia noutra linha,
+ * calculando o limite da janela. Casar com algo que o arquivo contém por outro motivo é a
+ * armadilha nº1 do `CLAUDE.md`, e aqui o que importa é comportamento, não texto.
+ */
+describe('mesesJaEncerrados — o mês corrente nunca entra', () => {
+  it('devolve os meses anteriores, do mais recente para o mais antigo', () => {
+    expect(mesesJaEncerrados('2026-09-01', 3)).toEqual(['2026-08-01', '2026-07-01', '2026-06-01'])
+  })
+
+  /**
+   * O defeito que um job "esperto demais" cometeria primeiro. O mês corrente ainda vai mudar:
+   * congelá-lo grava um número errado para sempre, e a série passa a mentir sobre o presente.
+   */
+  it('o mês corrente NUNCA aparece, em nenhuma janela', () => {
+    for (const quantos of [1, 3, 12, 24]) {
+      expect(mesesJaEncerrados('2026-09-01', quantos), `janela de ${quantos}`).not.toContain('2026-09-01')
+    }
+  })
+
+  it('atravessa a virada do ano sem inventar mês 0 nem mês 13', () => {
+    expect(mesesJaEncerrados('2026-02-01', 4)).toEqual(['2026-01-01', '2025-12-01', '2025-11-01', '2025-10-01'])
+  })
+
+  it('janela vazia devolve lista vazia, e não o mês corrente', () => {
+    expect(mesesJaEncerrados('2026-09-01', 0)).toEqual([])
+  })
+
+  it('vinte e quatro meses voltam dois anos exatos', () => {
+    const meses = mesesJaEncerrados('2026-09-01', 24)
+    expect(meses).toHaveLength(24)
+    expect(meses[23]).toBe('2024-09-01')
   })
 })

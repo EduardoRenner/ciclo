@@ -2,7 +2,7 @@ import { Temporal } from '@js-temporal/polyfill'
 
 import { concentracaoDeLucro, ratearLucroDaComanda, type Concentracao } from '@/core/caixa/concentracao'
 import { margemPorServico, type ItemFechado, type MargemDoServico } from '@/core/caixa/margem-do-servico'
-import { serieMensal, type MesFechado, type SerieMensal } from '@/core/caixa/serie-mensal'
+import { mesesJaEncerrados, serieMensal, type MesFechado, type SerieMensal } from '@/core/caixa/serie-mensal'
 import { buscarTudoPaginado } from '@/server/db/paginar'
 import { AppError } from '@/server/http/errors'
 
@@ -278,15 +278,11 @@ export async function serieMensalDeLucro(db: Cliente, tenantId: string, timezone
    * resumos em série. Congelar do mais recente para trás faz a tela ficar certa já na primeira
    * abertura e o resto vir nas próximas.
    */
-  const faltando: Temporal.PlainDate[] = []
-  for (let i = 1; i <= MESES_DA_SERIE; i++) {
-    const mes = mesCorrente.subtract({ months: i })
-    if (!jaCongelados.has(mes.toString())) faltando.push(mes)
-  }
+  const faltando = mesesJaEncerrados(mesCorrente.toString(), MESES_DA_SERIE).filter((m) => !jaCongelados.has(m))
 
   const novos: MesFechado[] = []
   for (const mes of faltando.slice(0, 6)) {
-    const resumo = await resumoMensal(db, tenantId, timezone, `${mes.year}-${String(mes.month).padStart(2, '0')}`)
+    const resumo = await resumoMensal(db, tenantId, timezone, mes.slice(0, 7))
 
     /*
      * Mês sem comanda fechada é congelado com zeros de propósito. Pular gravaria a mesma consulta
@@ -294,7 +290,7 @@ export async function serieMensalDeLucro(db: Cliente, tenantId: string, timezone
      */
     const { error: erroInsert } = await db.from('monthly_profit').insert({
       tenant_id: tenantId,
-      month: mes.toString(),
+      month: mes,
       revenue_cents: resumo.revenueCents,
       material_cents: resumo.materialCents,
       fee_cents: resumo.feeCents,
@@ -316,7 +312,7 @@ export async function serieMensalDeLucro(db: Cliente, tenantId: string, timezone
     if (erroInsert && erroInsert.code !== '23505') throw new AppError('INTERNAL', { cause: erroInsert })
 
     novos.push({
-      month: mes.toString(),
+      month: mes,
       revenueCents: resumo.revenueCents,
       profitCents: resumo.profitCents,
       ticketsCount: resumo.ticketsCount,
