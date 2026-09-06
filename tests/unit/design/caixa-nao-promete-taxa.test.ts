@@ -101,6 +101,31 @@ describe('o caixa não anuncia uma taxa que ninguém calcula', () => {
    * `ticket.fee_cents` (o valor de antes de fechar) volta a ser exatamente o defeito antigo — por
    * isso ele é proibido por nome.
    */
+  /*
+   * O mesmo defeito, uma coluna ao lado, e ele chegou junto com o conserto da 0069.
+   *
+   * "Material" tinha número apurado porque o pack semeava o custo do insumo (`docs/51` §2). Com o
+   * custo semeado de volta a zero, o quadro passa a mostrar R$ 0,00 para quem nunca registrou uma
+   * compra — e zero ao lado de Comissão se lê como "hoje não teve material", que é literalmente a
+   * frase que tirou o quadro "Taxa" desta tela em 2026-08-28.
+   *
+   * A guarda casa com o ELEMENTO inteiro (do `<StatTile rotulo="Material"` até o `/>` dele), e não
+   * com uma janela de N caracteres: a armadilha nº4 da tabela do `CLAUDE.md` é justamente o vizinho
+   * cair dentro da janela — e aqui o vizinho é o quadro "Taxa", que fala de lacuna o tempo todo.
+   */
+  it('o quadro Material diz quando o custo ainda não está completo', () => {
+    const tela = semComentarios(CAIXA)
+
+    const elemento = /<StatTile\s+rotulo="Material"[\s\S]*?\/>/.exec(tela)
+    expect(elemento?.[0], 'o quadro "Material" mudou de forma — esta guarda precisa ser revista junto').toBeDefined()
+    expect(
+      /servicosSemMaterial/.test(elemento![0]),
+      'o quadro "Material" mostra o número sem dizer que ele está incompleto: depois da 0069 o ' +
+        'custo do insumo é zero até o dono registrar a compra, e zero sem rótulo se lê como ' +
+        '"hoje não teve material" — o defeito que tirou o quadro "Taxa" daqui em 2026-08-28',
+    ).toBe(true)
+  })
+
   it('a sobra desconta a taxa CALCULADA no fechamento, não uma coluna que ninguém preencheu', () => {
     const fechamento = semComentarios('src/server/services/comanda.ts')
 

@@ -28,8 +28,18 @@ import { Temporal } from '@js-temporal/polyfill'
 export type VisitaDoAssinante = {
   /** Comissão + material daquela visita, em centavos. Quem monta é o servidor. */
   custoCents: number
-  /** O serviço daquela visita não tem ficha de consumo — o material dele não entrou. */
-  semFicha: boolean
+  /**
+   * O material daquela visita não é confiável, pelas DUAS razões possíveis: o serviço não tem
+   * ficha de consumo, ou tem ficha e algum produto dela nunca teve compra registrada.
+   *
+   * Era `semFicha` até 2026-09-06, e o nome dizia a pergunta errada. `apply_vertical_pack` semeia
+   * a ficha junto com um custo de catálogo, então "tem ficha" era verdade para todo salão de
+   * vertical legada — e a margem do clube saía sem ressalva, apoiada num custo que o CICLO
+   * inventou. Com a 0069 o custo semeado volta a zero, e sem esta segunda pergunta a mesma tela
+   * passaria a mostrar margem alta demais, agora por material zerado. O silêncio trocaria de
+   * direção sem trocar de natureza.
+   */
+  materialIncerto: boolean
 }
 
 export type MargemDoAssinante = {
@@ -42,8 +52,8 @@ export type MargemDoAssinante = {
   /** `null` = plano ilimitado, que é justamente o formato onde P06 acontece. */
   limiteSessoes: number | null
   acimaDoLimite: boolean
-  /** Quantas visitas entraram sem o material contado. */
-  visitasSemFicha: number
+  /** Quantas visitas entraram sem material confiável — sem ficha, ou com produto sem compra registrada. */
+  visitasSemMaterialConfiavel: number
 }
 
 export function margemDoAssinante(
@@ -68,7 +78,7 @@ export function margemDoAssinante(
       só faria o caso do ilimitado, que é o que a pesquisa aponta como o perigoso, sumir.
     */
     acimaDoLimite: limiteSessoes !== null && visitas.length > limiteSessoes,
-    visitasSemFicha: visitas.filter((v) => v.semFicha).length,
+    visitasSemMaterialConfiavel: visitas.filter((v) => v.materialIncerto).length,
   }
 }
 
