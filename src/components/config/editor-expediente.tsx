@@ -202,7 +202,7 @@ export default function EditorExpediente({
                         */}
                         <input
                           type="time"
-                          aria-label={`${nome} — abre às`}
+                          aria-label={`${nome}, abre às`}
                           value={b.opens_at.slice(0, 5)}
                           onChange={(e) => atualizarBloco(b.indiceOriginal, 'opens_at', e.target.value)}
                           className="h-12 flex-1 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo tabular text-txt"
@@ -212,7 +212,7 @@ export default function EditorExpediente({
                         </span>
                         <input
                           type="time"
-                          aria-label={`${nome} — fecha às`}
+                          aria-label={`${nome}, fecha às`}
                           value={b.closes_at.slice(0, 5)}
                           onChange={(e) => atualizarBloco(b.indiceOriginal, 'closes_at', e.target.value)}
                           className="h-12 flex-1 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo tabular text-txt"

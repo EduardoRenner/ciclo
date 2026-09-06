@@ -51,8 +51,8 @@ export default function Erro({ reset }: { error: Error & { digest?: string }; re
         <h1 className="text-titulo font-bold">Algo saiu do lugar</h1>
         <p className="mt-2 max-w-[34ch] text-corpo text-txt-2">
           {noPainel
-            ? 'Não consegui carregar esta tela. Seus dados estão salvos — foi só a exibição que falhou.'
-            : 'Não consegui carregar esta tela. Nada foi marcado ainda — dá para tentar de novo.'}
+            ? 'Não consegui carregar esta tela. Foi só a exibição que falhou, seus dados estão salvos.'
+            : 'Não consegui carregar esta tela. Nada foi marcado ainda, dá para tentar de novo.'}
         </p>
       </div>
       <div className="flex flex-wrap justify-center gap-3">

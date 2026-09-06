@@ -62,7 +62,7 @@ function Conteudo({ icones }: { icones: { agenda: React.ReactNode; clientes: Rea
         ))}
       </Secao>
 
-      <Secao titulo="Badge — cor sempre com marca">
+      <Secao titulo="Badge: cor sempre com marca">
         <Badge estado="ok">Confirmado</Badge>
         <Badge estado="warn">Aguardando</Badge>
         <Badge estado="risk">Em risco</Badge>
@@ -84,7 +84,7 @@ function Conteudo({ icones }: { icones: { agenda: React.ReactNode; clientes: Rea
             <option value="bia">Bia</option>
           </Select>
           <Textarea rotulo="Observações" placeholder="Alergia a acetona" />
-          <Input rotulo="E-mail" defaultValue="nao-e-um-email" erro="Confira o endereço — falta o @." />
+          <Input rotulo="E-mail" defaultValue="nao-e-um-email" erro="Confira o endereço, falta o @." />
         </div>
       </Secao>
 
@@ -104,7 +104,7 @@ function Conteudo({ icones }: { icones: { agenda: React.ReactNode; clientes: Rea
         <Avatar nome="Duda" tamanho="sm" />
       </Secao>
 
-      <Secao titulo="FilterRow — rola, encaixa e esmaece na borda">
+      <Secao titulo="FilterRow: rola, encaixa e esmaece na borda">
         <FilterRow rotulo="Exemplo de filtros" className="w-full">
           {['Todas', 'Na hora de voltar', 'Atrasadas', 'Em risco', 'Perdidas'].map((f) => (
             <Chip key={f} ligado={filtro === f} onClick={() => setFiltro(f)}>
@@ -114,7 +114,7 @@ function Conteudo({ icones }: { icones: { agenda: React.ReactNode; clientes: Rea
         </FilterRow>
       </Secao>
 
-      <Secao titulo="BloqueioPlano — com evidência e sem">
+      <Secao titulo="BloqueioPlano: com evidência e sem">
         {/*
           As duas variantes lado a lado porque a diferenca entre elas E o argumento do
           docs/18-MONETIZACAO-PLANO.md §M.1: com o dado da própria pessoa converte, sem ele vira
@@ -240,15 +240,15 @@ function Conteudo({ icones }: { icones: { agenda: React.ReactNode; clientes: Rea
           <p className="tabular text-numero font-bold">R$ 12.480</p>
           <p className="text-titulo font-bold">Título de tela</p>
           <p className="text-stat font-bold">Valor de stat</p>
-          <p className="text-corpo">Corpo — português direto, sem jargão.</p>
+          <p className="text-corpo">Corpo: português direto, sem jargão.</p>
           <p className="text-secundario text-txt-2">Secundário</p>
           <p className="text-label font-semibold text-txt-3">Label / caption</p>
         </div>
       </Secao>
 
-      <Secao titulo="Shell — tab bar (TICKET-014)">
+      <Secao titulo="Shell: tab bar (TICKET-014)">
         <p className="mb-2 text-secundario text-txt-2">
-          Fixa no rodapé da viewport, como no app de verdade — não uma cópia visual.
+          Fixa no rodapé da viewport, como no app de verdade, não uma cópia visual.
         </p>
       </Secao>
 

@@ -55,13 +55,22 @@ describe('a tela de erro não manda o cliente do salão para o painel', () => {
      * "Seus dados estão salvos" é verdade no painel e mentira em quem estava escolhendo horário.
      * A asserção exige que ela esteja num ramo condicional, não solta no JSX.
      */
+    /*
+     * TODAS as ocorrências, e sem depender da caixa nem da posição na frase. A versão anterior
+     * usava `indexOf('Seus dados estão salvos')` e quebrou quando a frase virou fim de período
+     * (`seus`, minúsculo) na faxina de travessões — e "guarda quebrou, ajusta a guarda" é onde a
+     * proteção afrouxa sem ninguém ver. Conferir cada ocorrência é mais forte que conferir a
+     * primeira: uma segunda cópia solta no JSX passava despercebida.
+     */
     const src = fonte()
-    const i = src.indexOf('Seus dados estão salvos')
-    expect(i, 'não achei a frase — se foi removida, ajuste este teste junto').toBeGreaterThan(-1)
-    const antes = src.slice(Math.max(0, i - 200), i)
-    expect(
-      /noPainel|\?\s*$|\?\s*\n/.test(antes),
-      'a frase precisa estar condicionada ao painel — na rota pública ela é falsa',
-    ).toBe(true)
+    const ocorrencias = [...src.matchAll(/[Ss]eus dados estão salvos/g)]
+    expect(ocorrencias.length, 'não achei a frase; se foi removida, ajuste este teste junto').toBeGreaterThan(0)
+    for (const oco of ocorrencias) {
+      const antes = src.slice(Math.max(0, oco.index - 200), oco.index)
+      expect(
+        /noPainel|\?\s*$|\?\s*\n/.test(antes),
+        `a frase precisa estar condicionada ao painel; na rota pública ela é falsa (posição ${oco.index})`,
+      ).toBe(true)
+    }
   })
 })

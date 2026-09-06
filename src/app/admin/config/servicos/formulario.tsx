@@ -250,7 +250,7 @@ export default function FormularioServico({ aberto, aoFechar, servico, aoSalvar 
           classNameCampo="tabular"
           ajuda={
             precoCentavos > 0 && Number(sinalPercentual.replace(',', '.')) > 0
-              ? `A cliente vê "sinal de ${dinheiro.format((precoCentavos * Number(sinalPercentual.replace(',', '.'))) / 10000)}" antes de confirmar. Você combina o pagamento com ela — o CICLO não cobra.`
+              ? `A cliente vê "sinal de ${dinheiro.format((precoCentavos * Number(sinalPercentual.replace(',', '.'))) / 10000)}" antes de confirmar. Você combina o pagamento com ela. O CICLO não cobra.`
               : 'Deixe 0 se não pede sinal. O valor aparece para a cliente antes dela confirmar o horário.'
           }
         />

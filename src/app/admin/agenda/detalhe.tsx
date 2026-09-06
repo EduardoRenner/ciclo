@@ -158,6 +158,25 @@ export default function DetalheAgendamento({
           })}
         </p>
         <p className="mt-0.5 text-secundario text-txt-2">{dinheiro.format(agendamento.price_cents / 100)}</p>
+        {/*
+          O sinal só aparece aqui, no detalhe, e nunca na lista: na lista ele viraria um segundo
+          número competindo com o preço em cada linha do dia, e o momento de agir sobre ele é
+          quando alguém abre o agendamento — não quando passa o olho na agenda.
+
+          A distinção por `origin` é a parte que torna a linha acionável. Sem ela quem atende não
+          sabe se está introduzindo o assunto ou lembrando de algo que a cliente já leu, e as duas
+          conversas são diferentes. `public_page` é o único caminho em que a tela mostrou o valor
+          antes de confirmar; nos outros o sinal é regra da casa que ninguém comunicou ainda.
+
+          Continua sem prometer cobrança: não há meio de pagamento no CICLO e esta linha não
+          sugere que haja — ela diz o que foi combinado, e o combinado acontece onde já acontece.
+        */}
+        {agendamento.deposit_cents > 0 ? (
+          <p className="mt-1 text-secundario text-txt-2">
+            Sinal de <strong className="tabular font-semibold text-txt">{dinheiro.format(agendamento.deposit_cents / 100)}</strong>
+            {agendamento.origin === 'public_page' ? '. A cliente viu esse valor ao agendar.' : '. A cliente ainda não foi avisada.'}
+          </p>
+        ) : null}
       </div>
 
       {/* docs/09-PLATAFORMA.md G3+G13 (P2.5): endereço do atendimento, quando

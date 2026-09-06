@@ -50,7 +50,7 @@ export const POST = rota(async (req) => {
       // nada a quem está do outro lado.
       console.warn(JSON.stringify({ level: 'warn', event: 'login_recusado_sem_ser_credencial', codigo: error?.code }))
       throw new AppError('UNAUTHENTICATED', {
-        message: 'Não consegui verificar seu acesso agora. Não é problema com a sua senha — tente de novo em instantes.',
+        message: 'Não consegui verificar seu acesso agora. Não é problema com a sua senha, tente de novo em instantes.',
       })
     }
 

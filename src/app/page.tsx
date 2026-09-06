@@ -107,7 +107,7 @@ const RECURSOS = [
       teste `pagina-do-negocio-e-so-dele.test.ts` trava as duas.
     */
     texto:
-      'Um link para colar na bio do Instagram. Quem for marcar abre no navegador e escolhe serviço, profissional e horário — sem baixar aplicativo, sem criar conta e sem esbarrar em nenhum concorrente pelo caminho. A página é do seu negócio e só dele, e o horário já entra na sua agenda sem risco de marcar dois no mesmo lugar.',
+      'Um link para colar na bio do Instagram. Quem for marcar abre no navegador e escolhe serviço, profissional e horário, sem baixar aplicativo, sem criar conta e sem esbarrar em nenhum concorrente pelo caminho. A página é do seu negócio e só dele, e o horário já entra na sua agenda sem risco de marcar dois no mesmo lugar.',
   },
   {
     icone: Wallet,
@@ -199,7 +199,7 @@ const PERGUNTAS = [
   {
     pergunta: 'Em quanto tempo a lista de quem sumiu fica útil?',
     resposta:
-      'Se você importar a data da última visita, já na primeira tela. Sem essa data, o CICLO precisa ver cada pessoa voltar duas ou três vezes para saber o ritmo dela — então a lista começa vazia e vai enchendo conforme você atende.',
+      'Se você importar a data da última visita, já na primeira tela. Sem essa data, o CICLO precisa ver cada pessoa voltar duas ou três vezes para saber o ritmo dela. Até lá a lista começa vazia e vai enchendo conforme você atende.',
   },
   {
     /*
