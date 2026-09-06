@@ -28,6 +28,66 @@ pode dizer o que a taxa comeu. É por isso que o processador não pode.
 E é uma aposta que **fica mais forte quanto mais fintech entrar na agenda**, que é exatamente a
 direção para onde o mercado está indo.
 
+## 1.1 · A segunda lente: execução também é vantagem, mesmo sem ser `0→1`
+
+A missão original filtra por originalidade estrutural (Parte 2), e é o filtro certo para chamar
+algo de **fosso**. Mas existe uma segunda pergunta, que a missão não fazia e que passou a fazer
+parte deste plano por decisão do dono, discutida em 2026-09-06: **um candidato `1→n-paridade` pode
+ainda valer a pena, se a diferença estiver em quão bem ele é executado, não em ele existir.**
+
+O exemplo que fundamenta isto não é hipotético — é o mercado de navegador inteiro. Firefox e Chrome
+fazem, em essência, a mesma coisa desde 2008. Nenhum dos dois tem uma feature que o outro não pode
+copiar em semanas. Chrome ganhou por **execução**: velocidade percebida, integração, polimento de
+interface — não por fazer algo estruturalmente impossível de copiar. É `1→n`, e mesmo assim um dos
+dois dominou o mercado inteiro.
+
+**A diferença entre isto e "feature de paridade que não vale nada" (`docs/52` V7, IA no WhatsApp,
+reprovado ali) está em duas condições, e as duas precisam estar presentes:**
+
+1. **A execução tem que estar amarrada a um dado que o concorrente não tem** — senão é só gastar
+   mais em polimento numa corrida onde quem tem mais dinheiro sempre vence, e o CICLO não tem mais
+   dinheiro que a InfinitePay ou o Simples Agenda. Sem essa amarração, "fazer melhor" é aposta sem
+   fosso nenhum por trás — bonita, mas do tamanho do orçamento de quem construir.
+2. **O canal em que a execução acontece tem que já estar disponível** — senão o trabalho de
+   qualidade é investido num tubo fechado. É exatamente o caso do candidato da §1.2: a IA de
+   WhatsApp não pode ser testada, refinada nem lançada enquanto o F0 (`docs/25`) não estiver ligado.
+
+**Isto não reabre os sete candidatos `1→n-paridade` que o `docs/52` §6 reprovou.** Aquela reprovação
+continha a palavra **vantagem** — nenhum deles constrói fosso, e isso continua verdadeiro. O que
+esta seção abre é uma categoria diferente, tratada à parte na §1.2 e na priorização abaixo: **aposta
+de qualidade de execução, com uma condição de dado amarrado, sem pretensão de ser `0→1`.** Ela entra
+no plano porque o dono decidiu que vale, não porque passou nos cinco filtros da Parte 2 da missão —
+e o plano registra essa diferença de origem em vez de escondê-la atrás do mesmo selo de "vantagem".
+
+## 1.2 · O candidato de execução: o agente de IA no WhatsApp, com o Motor de Ciclo na conversa
+
+**A reprovação do `docs/52` §6 V7 continua correta como resposta à pergunta "isto é vantagem
+estrutural?"** — não é. Seis concorrentes brasileiros novos (`52` §3.2 N3-N6) já têm IA
+conversacional no WhatsApp, e o Simples Agenda tem duas (GAIA + Gendo Zap). Um agente de IA que só
+agenda, remarca e tira dúvida é `1→n-paridade` puro.
+
+**O que muda a resposta é a condição 1 da §1.1: o CICLO tem um dado que nenhum desses seis tem, e
+ele cabe dentro da mesma conversa.** `client_cycles` sabe, por pessoa, de quanto em quanto tempo
+aquele cliente específico costuma voltar, e se ele já está atrasado. Nenhum concorrente com IA no
+WhatsApp usa isso na conversa — o que eles têm é um roteiro de agendamento genérico, igual para
+qualquer cliente que escreve. A diferença não está em "ter IA no WhatsApp"; está em a IA saber, sem
+perguntar, que aquele cliente específico está 5 dias atrasado do próprio ritmo — e puxar isso na
+resposta, em vez de esperar o dono abrir `/admin/recuperar` e mandar mensagem manual.
+
+**Isto não é o mecanismo do `docs/46`/`docs/52` de novo travestido.** O mecanismo de custo de troca
+(previsão registrada + calibração por salão) continua sendo o fosso estrutural, intocado por este
+candidato. O que este candidato faz é **dar um canal novo e melhor para um dado que já existe**, sem
+criar dado novo nenhum. É distribuição, não descoberta — e por isso é tratado como aposta de
+qualidade, nunca anunciado como "vantagem que os outros não têm", porque a capacidade de ter IA no
+WhatsApp, essa parte, eles têm.
+
+**A dependência que domina tudo: F0.** `docs/25` §3 registra que `reminders` e `campaigns` — as duas
+rotas que falam com o cliente final — estão desligadas em produção, por decisão consciente do dono,
+até confirmar credencial WhatsApp (`WHATSAPP_PHONE_NUMBER_ID`, `ACCESS_TOKEN`, `APP_SECRET`) e rodar
+um disparo manual de teste. **Nenhuma linha deste candidato pode ser construída, testada ou
+lançada antes disso.** Não é ordem de prioridade — é ordem de existência: um agente conversacional
+sem canal ligado não tem com quem conversar.
+
 ---
 
 # 2 · Priorização
@@ -37,6 +97,12 @@ veto permanente de vitrine; nada de cobrança, preço ou envio automático sem c
 nada que dependa de F0; nada que peça credencial de terceiro nova; nada que cruze fronteira de
 tenant; nunca inventar número para preencher tela.
 
+**Uma exceção registrada, e só uma:** o candidato **G** (§1.2) depende de F0 por natureza — é um
+agente que fala pelo WhatsApp, e não existe versão dele sem o canal ligado. Ele não é avaliado como
+`vantagem` sob os cinco filtros da Parte 2 (é aposta de execução, §1.1), e por isso não está sujeito
+ao mesmo veto que blindava os candidatos daquela lista contra depender de um canal desligado. Fica
+**fora da fila principal**, com o F0 como portão explícito, nunca como detalhe a resolver depois.
+
 | # | Candidato | Eixo (fosso) | Depende de | Custo `[E]` | Risco | Por que agora |
 |---|---|---|---|---|---|---|
 | **A** | **V4 · O que a forma de pagamento custou** — o número mensal da taxa por forma, com a comparação entre as formas que **aquele salão já usa** | **Counter-positioning** (o único que prende o líder) + recurso cativo pela `0071` | `0066` aplicada + o dono responder a taxa | **2 tickets** | Baixo. Não sugere preço, não pede credencial, não fala com ninguém | É a única parcela do "Sobrou" que o dono muda **na semana seguinte**, sem mexer em preço nem em comissão |
@@ -45,8 +111,9 @@ tenant; nunca inventar número para preencher tela.
 | **D** | **V2 · A cadeira vazia com piso de lucro** | Tecnologia proprietária (eixo 1), **condicional ao piso** | A + histórico de ocupação + custo completo | **4-5 tickets** | **Alto** `[V]` se mal desenhado — precificação automática é vedada | ~US$ 44 mil/ano por profissional de lacuna `[P]`. Mas é o mais caro e o único com risco de veto |
 | **E** | **V5 · NFS-e nacional** | Nenhum — higiene regulatória | decisão de escopo (está fora do MVP) | 5+ tickets `[E]` | Médio — é norma pública, erro é multa do cliente | Vale desde 01/01/2026 `[P]`. **Não é vantagem, é motivo de troca de sistema.** Entra na lista para não ser esquecido, não para ser feito agora |
 | **F** | **Validação de campo** (herda o `L-05`, nunca feito) | Prova | A + B | 0 tickets de código | Nenhum | Continua sendo a coisa mais barata que pode derrubar a tese inteira, e continua não feita |
+| **G** | **Execução · Agente de IA no WhatsApp com o ritmo do cliente** (§1.2) | Nenhum estrutural — é qualidade de execução amarrada ao dado do Motor de Ciclo | **F0 completo** (credencial + disparo de teste + `schedule` ligado, `docs/25`) | 5-6 tickets `[E]` | **Alto**, mas de reputação de canal, não de veto de produto — mensagem errada em massa custa o número de WhatsApp | É o único candidato onde "fazer igual, só que melhor" tem um dado real amarrado (§1.1). Sem F0, custo de oportunidade zero: não há o que perder esperando |
 
-## A ordem: **A → C → F → B → D**, com E fora da fila
+## A ordem: **A → C → F → B → D**, com E fora da fila e G represado atrás do F0
 
 **Por quê, em uma linha cada:**
 
@@ -64,6 +131,10 @@ tenant; nunca inventar número para preencher tela.
 - **D por último** porque é o mais caro, o único com risco de veto, e porque o piso de lucro que o
   torna defensável **é o A funcionando**. Fazer D antes de A é sugerir desconto sem saber o chão.
 - **E fora da fila** porque não é vantagem e a decisão de escopo é do dono, não do executor.
+- **G represado, não descartado.** Ele não compete com A pela mesma vaga — compete pelo canal que
+  não existe ainda. Assim que o F0 for ligado (decisão do dono, fora desta execução), G sobe para o
+  topo da fila de qualidade de produto, porque nesse momento passa a ser a coisa que mais rápido
+  torna o WhatsApp do CICLO diferente do WhatsApp dos seis concorrentes que já o têm ligado.
 
 ---
 
@@ -158,6 +229,42 @@ decide se o ticket passa.
 Provável, e é o mesmo formato da fragilidade que o `docs/46` §Fase 3 achou (*"o dono não se importa
 com acurácia"*). Consequência de projeto: a tela nunca lidera com desconto. Lidera com **"terça às
 14h está vazia há 6 semanas"** — que é um fato — e o preço é a segunda tela, atrás de um toque.
+
+## 3.4 · Contra G (o agente de IA no WhatsApp)
+
+**Ataque 1 — "isto é só copiar o que os outros seis já têm, com um enfeite."**
+
+É o ataque mais forte, e a defesa não é fingir que G é original — é o próprio §1.2: G nunca é
+vendido como vantagem estrutural. Se o "enfeite" (o ritmo do cliente entrando na conversa) for
+removido do escopo, **G deixa de valer a pena e vira só mais um concorrente do meio do pelotão** —
+não há razão de negócio para construir a versão genérica. O critério de aceite do ticket tem que
+travar nisso: sem o dado do Motor de Ciclo na conversa, o ticket não está pronto, está pela metade.
+
+**Ataque 2 — "o dado amarrado não muda a decisão de compra, só decora a conversa."**
+
+Risco real, do mesmo formato do `docs/46` §Fase 3 ("o dono não se importa com acurácia"). Se o
+cliente final não perceber diferença entre "oi, quer marcar um horário?" e "oi, faz tempo que você
+não vem, bora marcar?", o diferencial de dado não se traduz em experiência, e G volta a ser
+`1→n-paridade` pura, sem a exceção da §1.1. **Mitigação:** o critério de aceite do G-01 exige medir,
+não supor — comparar taxa de resposta e taxa de conversão da mensagem com e sem o ritmo do cliente,
+antes de declarar a diferença como real.
+
+**Ataque 3 — "canal de IA errando em massa é reputação de número de WhatsApp queimada, não bug de
+tela."**
+
+É o motivo do risco ser marcado **Alto** na tabela do §2, mesmo sem violar veto de produto. Um
+agente que interpreta mal e manda mensagem errada em volume tem uma consequência que uma tela com
+bug não tem: o número do WhatsApp Business do CICLO pode ser banido pela Meta, e isso afeta **todos
+os tenants ligados**, não só o que recebeu a mensagem errada. A mitigação não é nova — é reaproveitar
+o que o F0 já construiu: teto diário por tenant (`mensageria.ts`, `dentroDoTetoDiario`) e o
+interruptor manual de pausa (`tenants.settings.messaging.paused`). G herda os dois sem escolha.
+
+**Ataque 4 — "o F0 pode nunca ligar, e G fica sendo trabalho morto."**
+
+Verdadeiro, e é por isso que G não tem ticket detalhado além do esqueleto abaixo: detalhar cinco
+tickets de um agente que não tem canal para existir é planejar sobre premissa não confirmada — o
+mesmo erro que o `docs/51` §0 documenta para D. **G fica registrado como intenção com portão
+explícito, não como trabalho pronto para começar.**
 
 ---
 
@@ -318,6 +425,33 @@ O contrato mínimo, para quem for detalhar depois:
 
 ---
 
+## G-00 a G-04 · O agente de IA no WhatsApp com o ritmo do cliente — **desenhados, atrás do F0**
+
+Ficam em esboço pelo mesmo motivo de D, e mais um: G não tem canal. Nenhuma linha de execução entra
+antes do F0 estar ligado em produção (`docs/25`, credencial confirmada + disparo de teste +
+`schedule` de `reminders`/`campaigns` ativo).
+
+O contrato mínimo, para quem for detalhar quando o F0 estiver resolvido:
+
+1. **G-00 · Portão.** Confirmar, por consulta em `messages` e `/api/health`, que `reminders` e
+   `campaigns` estão rodando de verdade em produção — não só que a credencial existe. Sem isto,
+   nenhum ticket seguinte começa.
+2. **G-01 · O roteiro reaproveita o catálogo do assistente interno.** `server/assistente/ferramentas.ts`
+   já resolve agenda, cliente, serviço e orçamento com a regra "número nunca vem do modelo, só de
+   consulta real" (`docs/26`). O agente de WhatsApp usa o mesmo catálogo, nunca um caminho paralelo
+   que acessa o banco direto — a mesma exigência de RLS de sempre.
+3. **G-02 · O ritmo do cliente entra na conversa como contexto, nunca como decisão automática.**
+   Quando `client_cycles.state` daquele cliente for `late`/`at_risk`/`lost`, a IA pode nomear isso
+   na saudação. **A IA nunca decide sozinha oferecer desconto, remarcar sem pedir ou confirmar
+   presença por conta própria** — o mesmo veto de precificação e de ação automática vale aqui.
+4. **G-03 · Medir a diferença antes de declarar vitória** (ataque 2 da §3.4). Taxa de resposta e de
+   conversão da conversa com ritmo do cliente vs. sem, antes de qualquer copy pública dizer que o
+   CICLO "sabe quando seu cliente vai sumir" pelo WhatsApp.
+5. **G-04 · Herdar as duas travas do F0 sem exceção.** Teto diário por tenant e interruptor de
+   pausa (`tenants.settings.messaging.paused`) cobrem o agente do primeiro commit — nunca depois.
+
+---
+
 # 5 · O que NÃO fazer, e por quê
 
 1. **Não tentar ser o grátis.** A InfinitePay entrega agenda + link + sinal + lembrete de graça
@@ -343,6 +477,13 @@ O contrato mínimo, para quem for detalhar depois:
 9. **Não repetir a frase "0 de 27 não mostram lucro".** Ela está errada (`52` §4.1). A frase certa
    é *"nenhum dos 31 desconta a taxa nem o custo fixo, e a líder mundial cortou a versão dela em
    abril de 2022"* — e essa precisa da fonte junto.
+10. **Não escrever uma linha de código do agente de WhatsApp (G) antes do F0 estar confirmado
+    rodando em produção.** Não é questão de prioridade, é questão de existência: sem o `schedule`
+    ligado, não há canal para testar, e trabalho de qualidade investido num tubo fechado é
+    exatamente o risco que a §1.1 nomeia.
+11. **Não lançar G sem o dado do Motor de Ciclo na conversa.** Um agente genérico de agendamento
+    por WhatsApp é `1→n-paridade` sem exceção nenhuma (`52` V7) — a única razão de construir é a
+    condição da §1.1, e ela não é opcional no escopo.
 
 ---
 
@@ -389,6 +530,7 @@ contamina as respostas e transforma validação em demonstração.
 | Previsão de no-show: rejeitada porque o fosso seria "prevemos e eles não" | **Mantido** | E o `core/risk/no-show-score.ts` já existe e é usado na agenda `[M]` — não é candidato, é feature entregue |
 | **O poder é acumulação, não posição** (`46` §Fase 3.2: *"isto não é counter-positioning"*) | **Divergência: esta rodada acha um counter-positioning de verdade** — o do fluxo de pagamento (`52` pergunta 4) | O `46` estava certo sobre a **previsão**: nada prende o líder ali. Sobre a **taxa**, prende: a receita do processador é o custo do lojista. É um poder diferente, num eixo diferente, e os dois convivem |
 | A frase de dez segundos é *"o sistema aprende de quanto em quanto tempo os SEUS clientes voltam"* | **Não substituída.** A frase desta rodada é sobre a taxa, e é a **segunda** | Trocar a manchete de maior atenção por outro diferencial não é ganho — é a lição do `docs/43` §7, medida em pixels |
+| A missão original (Parte 2) descarta todo candidato `1→n-paridade` como "não é vantagem — é feature" | **Divergência explícita, por decisão do dono em 2026-09-06 (§1.1):** um candidato `1→n-paridade` pode entrar no plano como **aposta de execução**, se a diferença de qualidade estiver amarrada a um dado que o concorrente não tem. É o candidato **G** | O `docs/52` §6 V7 (IA no WhatsApp) continua reprovado como **vantagem estrutural** — essa parte da Parte 2 não mudou. O que mudou é que este plano passa a registrar uma segunda categoria, tratada com rótulo próprio, em vez de forçar G para dentro do selo de "vantagem" ou descartá-lo por completo |
 
 **Nenhum candidato deste plano contradiz uma decisão de `docs/DECISOES.md`.** Conferido `[M]`: o
 veto de vitrine (2026-09-05) segue intocado e é reafirmado no §5.3; a decisão do `L-10` sobre o
