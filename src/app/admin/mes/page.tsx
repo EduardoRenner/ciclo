@@ -9,7 +9,7 @@ import PageHeader from '@/components/ui/page-header'
 import { RELATORIO_DA_EQUIPE, avaliarPermissao } from '@/server/auth/rbac'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
-import { concentracaoDoMes, resumoMensal } from '@/server/services/caixa'
+import { concentracaoDoMes, resumoMensal, serieMensalDeLucro } from '@/server/services/caixa'
 import { medirMaterialDoCatalogo } from '@/server/services/ficha-de-consumo'
 import { prestacaoDeContasDoMotor } from '@/server/services/previsao'
 import { listarParaRecuperar } from '@/server/services/recuperar-receita'
@@ -55,7 +55,7 @@ export default async function PaginaDoMes() {
   const hoje = Temporal.Now.instant().toZonedDateTimeISO(timezone).toPlainDate()
   const mes = `${hoje.year}-${String(hoje.month).padStart(2, '0')}`
 
-  const [mensal, concentracao, recuperar, motor, material] = await Promise.all([
+  const [mensal, concentracao, recuperar, motor, material, serie] = await Promise.all([
     resumoMensal(db, ctx.tenantId, timezone, mes),
     // Mesma trava do caixa (`docs/50` L-10): sem `report:team` o número "de quem depende" não sai,
     // e a consulta nem acontece.
@@ -68,6 +68,12 @@ export default async function PaginaDoMes() {
      * alguém é o pior lugar possível para um número sem ressalva.
      */
     medirMaterialDoCatalogo(db, ctx.tenantId),
+    /*
+     * `docs/50` L-09. Além de LER a série, esta chamada é quem CONGELA os meses já encerrados que
+     * ainda não tinham linha — a primeira abertura da tela depois do virar do mês. Ver o cabeçalho
+     * de `serieMensalDeLucro` para o porquê de não ser um cron.
+     */
+    serieMensalDeLucro(db, ctx.tenantId, timezone, hoje.toString()),
   ])
 
   return (
@@ -87,6 +93,7 @@ export default async function PaginaDoMes() {
         clientesParados={recuperar.count}
         motor={motor}
         servicosSemMaterial={material.semFicha + material.comProdutoSemCusto}
+        serie={serie}
       />
     </>
   )

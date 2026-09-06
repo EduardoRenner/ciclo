@@ -2,6 +2,7 @@ import { Temporal } from '@js-temporal/polyfill'
 
 import { concentracaoDeLucro, ratearLucroDaComanda, type Concentracao } from '@/core/caixa/concentracao'
 import { margemPorServico, type ItemFechado, type MargemDoServico } from '@/core/caixa/margem-do-servico'
+import { serieMensal, type MesFechado, type SerieMensal } from '@/core/caixa/serie-mensal'
 import { buscarTudoPaginado } from '@/server/db/paginar'
 import { AppError } from '@/server/http/errors'
 
@@ -228,4 +229,107 @@ export async function margemDosServicos(db: Cliente, tenantId: string, timezone:
       .map((t) => ({ itens: porComanda.get(t.id) ?? [], discountCents: t.discount_cents, feeCents: t.fee_cents }))
       .filter((c) => c.itens.length > 0),
   )
+}
+
+/** Quantos meses fechados a série guarda e mostra. Dois anos: o bastante para ver sazonalidade. */
+const MESES_DA_SERIE = 24
+
+/**
+ * A série mensal congelada — `docs/50` L-09.
+ *
+ * ## Onde este desenho diverge do plano, e por quê
+ *
+ * O `L-09` pede "job mensal idempotente". Aqui a linha nasce na primeira leitura DEPOIS que o mês
+ * fechou, e não num horário. A troca é deliberada: cron desta casa atrasa em horas, o
+ * `/api/health` devolveu 503 por meses sem ninguém olhar, e o Motor de Ciclo passou um período
+ * inteiro sem rodar sozinho. Um fosso que depende de um disparo que ninguém confere não é um
+ * fosso. A propriedade que importa — a linha nasce uma vez e nunca é reescrita — está de pé, e sem
+ * herdar o único componente desta base que já falhou em silêncio.
+ *
+ * ## O que é congelado, e o que não é
+ *
+ * Só mês ENCERRADO. O mês corrente ainda vai mudar, e gravá-lo seria gravar um número errado — ele
+ * continua sendo somado ao vivo pelo `resumoMensal`, que é quem a tela do caixa já usa.
+ *
+ * O `on conflict do nothing` é o que faz a segunda leitura não reescrever a primeira. Vale para o
+ * caso banal (duas abas abertas no mesmo segundo) e para o que interessa: uma comanda de agosto
+ * reaberta e refechada em outubro **não** muda o agosto que o dono já viu.
+ */
+export async function serieMensalDeLucro(db: Cliente, tenantId: string, timezone: string, hoje: string): Promise<SerieMensal> {
+  const mesCorrente = Temporal.PlainDate.from(hoje).with({ day: 1 })
+  const maisAntigo = mesCorrente.subtract({ months: MESES_DA_SERIE })
+
+  const { data: congelados, error } = await db
+    .from('monthly_profit')
+    .select('month, revenue_cents, profit_cents, tickets_count')
+    .eq('tenant_id', tenantId)
+    .gte('month', maisAntigo.toString())
+    .lt('month', mesCorrente.toString())
+    .order('month')
+  if (error) throw new AppError('INTERNAL', { cause: error })
+
+  const jaCongelados = new Set((congelados ?? []).map((m) => m.month))
+
+  /*
+   * Os meses fechados que ainda não têm linha. Uma conta que só abre esta tela em dezembro congela
+   * março, abril e maio no mesmo instante — daí `frozen_at` existir separado de `month`.
+   *
+   * O limite não é zelo: sem ele, uma conta antiga abrindo a tela pela primeira vez dispararia 24
+   * resumos em série. Congelar do mais recente para trás faz a tela ficar certa já na primeira
+   * abertura e o resto vir nas próximas.
+   */
+  const faltando: Temporal.PlainDate[] = []
+  for (let i = 1; i <= MESES_DA_SERIE; i++) {
+    const mes = mesCorrente.subtract({ months: i })
+    if (!jaCongelados.has(mes.toString())) faltando.push(mes)
+  }
+
+  const novos: MesFechado[] = []
+  for (const mes of faltando.slice(0, 6)) {
+    const resumo = await resumoMensal(db, tenantId, timezone, `${mes.year}-${String(mes.month).padStart(2, '0')}`)
+
+    /*
+     * Mês sem comanda fechada é congelado com zeros de propósito. Pular gravaria a mesma consulta
+     * vazia em toda abertura da tela, para sempre — e o zero daquele mês é a verdade sobre ele.
+     */
+    const { error: erroInsert } = await db.from('monthly_profit').insert({
+      tenant_id: tenantId,
+      month: mes.toString(),
+      revenue_cents: resumo.revenueCents,
+      material_cents: resumo.materialCents,
+      fee_cents: resumo.feeCents,
+      commission_cents: resumo.commissionCents,
+      profit_cents: resumo.profitCents,
+      tickets_count: resumo.ticketsCount,
+    })
+
+    /*
+     * `insert` e não `upsert`, mesmo custando este tratamento à mão. `upsert` com
+     * `ignoreDuplicates` produziria o mesmo SQL hoje e deixaria a porta aberta para amanhã: basta
+     * alguém trocar a opção para `false` — uma palavra — e a tabela append-only passa a reescrever
+     * o passado, que é o ponto inteiro dela. O verbo importa quando ele é a documentação.
+     *
+     * `23505` (chave duplicada) é sucesso aqui: outra aba congelou o mês primeiro. Qualquer outro
+     * código sobe, porque falha de escrita silenciosa numa tabela que é o registro contábil do
+     * salão é a pior classe de defeito desta base.
+     */
+    if (erroInsert && erroInsert.code !== '23505') throw new AppError('INTERNAL', { cause: erroInsert })
+
+    novos.push({
+      month: mes.toString(),
+      revenueCents: resumo.revenueCents,
+      profitCents: resumo.profitCents,
+      ticketsCount: resumo.ticketsCount,
+    })
+  }
+
+  return serieMensal([
+    ...(congelados ?? []).map((m) => ({
+      month: m.month,
+      revenueCents: m.revenue_cents,
+      profitCents: m.profit_cents,
+      ticketsCount: m.tickets_count,
+    })),
+    ...novos,
+  ])
 }
