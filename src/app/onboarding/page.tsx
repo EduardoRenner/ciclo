@@ -9,6 +9,14 @@ import FormularioOnboarding from './formulario'
 
 export const metadata = { title: "Primeiros passos" }
 
+/*
+ * `/onboarding` recebe a CSP com nonce do `middleware.ts` (não está em `ROTAS_DE_CONTEUDO_ESTATICO`)
+ * e não herda mais o `force-dynamic` do layout raiz — ele mora só no painel agora. Já é dinâmica
+ * por ler `sessaoAtual()`, mas cravar aqui é a mesma defesa em profundidade do `admin/layout.tsx`:
+ * rota com nonce nunca pode ser cacheada. Ver `perf/csp-duas-faixas` e `docs/DECISOES.md` (01/09).
+ */
+export const dynamic = 'force-dynamic'
+
 export default async function PaginaOnboarding() {
   const sessao = await sessaoAtual()
   if (!sessao) redirect('/entrar')

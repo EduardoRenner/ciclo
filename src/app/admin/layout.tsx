@@ -18,6 +18,16 @@ export const metadata: Metadata = {
 }
 
 /**
+ * `force-dynamic` para TODO o painel (`perf/csp-duas-faixas`). Antes isto vivia no layout raiz e
+ * pesava em `/`, `/precos` etc.; agora só o painel paga — e ele já é dinâmico de fato (este layout
+ * lê `headers()` logo abaixo, e cada tela lê tenant). Cravar aqui garante que a CSP com nonce que
+ * o `middleware.ts` serve para `/admin/*` sempre encontre HTML renderizado fresco, com o nonce do
+ * header batendo com o do `<script>` — o descasamento de 01/09/2026 (`docs/DECISOES.md`) não pode
+ * voltar por uma tela nova esquecer de forçar dinâmico.
+ */
+export const dynamic = 'force-dynamic'
+
+/**
  * Shell do app do profissional (TICKET-014). O middleware já garante sessão
  * para tudo sob este grupo de rotas; aqui só entra layout, não guarda de novo.
  *
