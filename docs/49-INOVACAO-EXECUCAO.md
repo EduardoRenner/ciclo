@@ -101,3 +101,91 @@ C8 (preço por ociosidade) fica adiado pelo próprio `48`, e não entra nesta s�
   §Fase 2 registra como a maior diferença para o `45`: nenhum precisa de escala.
 - **Lucro é dado sensível dentro do salão.** `48` §Fase 3: o risco real destes tickets é social,
   não técnico.
+
+---
+
+# O que foi entregue, e o que a execução mediu
+
+**2026-09-06.** Os nove tickets estão em `main`-de-branch (`vantagem/fosso-competitivo`), um commit
+cada. Abaixo, o que mudou de fato — e as três coisas que a execução descobriu e que o `48` não
+podia saber, porque rodou fora do repositório.
+
+## Os nove
+
+| # | Commit | O que passou a existir |
+|---|---|---|
+| I-01 | `feat(caixa)` | Forma de pagamento no fechamento + percentual por forma. `tickets.fee_cents` e `fee_bps` ganham escritor; o quadro "Taxa" volta ao caixa — só para quem respondeu |
+| I-02 | `feat(comanda)` | O insumo sai da ficha de consumo × custo médio, e não de `services.cost_cents` |
+| I-02b | `feat(servicos)` | A ficha de consumo ganha tela. Dois mecanismos prontos desde a `0001` param de esperar |
+| I-03 | `feat(comanda)` | "Sobrou" por atendimento, com o que ainda falta descontar, atrás de `report:read` |
+| I-04 | `feat(ciclo)` | *"Vem a cada 18 dias, veio faz 31"* na ficha — e as duas réguas do ciclo viram uma |
+| I-05 | `feat(caixa)` | De quem depende o que sobra, com as fatias somando o "Sobrou no mês" exatamente |
+| I-06 | `feat(clube)` | Margem por assinante no ciclo de cobrança, com prejuízo e estouro de limite separados |
+| I-07 | `feat(recuperar)` | A fila ordenada por **lucro** em risco, não por receita. `0067` |
+| I-08 | `feat(clientes)` | Lucro por cliente e projeção anual, com a cobertura dita em voz alta |
+| I-09 | `feat(motor)` | A prestação de contas do Motor, lendo `cycle_predictions` sem viés de sobrevivência |
+
+## Os três achados da execução
+
+### 1. Não era uma coluna sem escritor — eram três, em fila
+
+`tickets.fee_cents`, `services.cost_cents` e `service_products` (a ficha inteira). Cada uma
+escondia a próxima: consertar a taxa revelou que o material também era zero; consertar o material
+revelou que não havia como preencher a ficha. Enquanto isso durou, o "Sobrou" de um salão que só
+vende serviço era **preço − comissão**, e mais nada.
+
+O `48` §Fase 3 imagina esse estado como o *pior* caso — *"mesmo com insumo zerado, o número já é
+radicalmente mais verdadeiro que o preço"*. Ele era o **único** caso, para todo tenant.
+
+### 2. A mitigação do plano para o custo desconhecido tinha uma opção melhor
+
+O `48` propõe: insumo em zero, e a tela diz que falta. O `47` P02 dá a razão — 73% dos donos não
+sabem calcular o custo de um serviço.
+
+Só que o dado já estava no banco por outro motivo: a ficha de consumo alimenta a baixa de estoque,
+e `products.avg_cost_cents` é a média móvel das compras. **O dono não precisa saber o custo do
+serviço; ele precisa saber o que o serviço gasta e quanto pagou no produto** — que é o que ele já
+cadastra para o estoque não furar. O custo se deduz. Estado incompleto honesto continua valendo
+onde a ficha não existe, mas deixou de ser o único caminho.
+
+### 3. As duas réguas do ciclo já tinham divergido
+
+A `0065` deu ao serviço `cycle_days` e `cycle_days_observado`. O job noturno passou a preferir a
+medida; o recálculo de "concluir atendimento" continuou lendo só a configurada. **As duas escrevem
+a mesma linha de `client_cycles`**: concluir um atendimento revertia a previsão daquela pessoa para
+o palpite de catálogo, e a madrugada seguinte a trazia de volta. Nada ficava vermelho, porque cada
+caminho estava certo por si.
+
+Consertado em I-04, e a guarda pergunta *"a régua sai de um lugar só?"*, não *"o recálculo ao vivo
+está certo?"* — caminho novo nasce coberto.
+
+---
+
+# A tabela do `48` §Fase 4, agora com estado real
+
+O `48` propôs a comparação como **teste de aceite** da rodada. Este é o estado medido `[M]` no
+repositório, não o desejado:
+
+| | Estado |
+|---|---|
+| Mostra quanto SOBRA de cada corte | ✅ I-01 + I-02 + I-03 |
+| Mostra quanto cada cliente deixa de lucro | ✅ I-08 |
+| Avisa quem vai sumir, pelo ciclo de **cada pessoa** | ✅ já existia; I-04 passou a **dizer** o número |
+| Diz quem vale a pena recuperar primeiro | ✅ I-07 |
+| Avisa se o clube de assinatura virou prejuízo | ✅ I-06 |
+| Mostra o cliente do salão a concorrentes | **Nunca** — veto de projeto, com guarda |
+| Preço sobe se você contratar | Não |
+
+## O que continua faltando, e é honesto dizer
+
+1. **As migrations `0066` e `0067` não foram aplicadas em produção.** Não existe Action que rode
+   `supabase db push` (`docs/05` B24 era uma promessa falsa, já corrigida). `compararSchema` vai
+   acusar "banco ATRÁS do código" até alguém aplicar — que é exatamente para isso que ele existe.
+2. **Os testes de banco não rodaram nesta máquina.** Sem Docker local, `test:rls` e
+   `test:integration` não sobem. Rodaram `typecheck`, `lint`, `test:unit` (1.930 casos) e `build`,
+   todos verdes; os 9 casos de integração novos dependem da CI.
+3. **C8 (preço por ociosidade) continua adiado**, pelo próprio `48`: é 10x de verdade e é o mais
+   caro, e o mais delicado com o veto de preço.
+4. **Nada disso foi visto por um dono de salão.** O `48` §Fase 3 nomeia a fragilidade real — o
+   custo desconhecido — e diz que ela *"é a primeira coisa a testar com cliente real"*. Continua
+   sendo.
