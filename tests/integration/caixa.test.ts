@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js'
 import dotenv from 'dotenv'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
-import { fechamentoDiario, resumoMensal } from '@/server/services/caixa'
+import { concentracaoDoMes, fechamentoDiario, resumoMensal } from '@/server/services/caixa'
 import { executarOnboarding } from '@/server/services/onboarding'
 
 import type { Database } from '@/server/db/types.gen'
@@ -124,6 +124,112 @@ describe('resumoMensal', () => {
       const resumo = await resumoMensal(svc, tenantId, TZ, '2026-05')
       expect(resumo.ticketsCount).toBe(2)
       expect(resumo.revenueCents).toBe(7_000)
+    },
+    30_000,
+  )
+})
+
+/**
+ * `docs/48` C7. A propriedade que só o banco prova: as fatias somam exatamente o "Sobrou no mês"
+ * que a MESMA tela mostra ao lado. Duas somas diferentes do mesmo dinheiro é a armadilha de
+ * livro-caixa que esta base já pagou uma vez — e aqui as duas vêm de consultas diferentes.
+ */
+describe('concentracaoDoMes', () => {
+  async function ticketComItens(
+    closedAtIso: string,
+    profitCents: number,
+    itens: { professionalId: string | null; totalCents: number }[],
+  ) {
+    const { data, error } = await svc
+      .from('tickets')
+      .insert({ tenant_id: tenantId, status: 'closed', profit_cents: profitCents, total_cents: itens.reduce((s, i) => s + i.totalCents, 0), closed_at: closedAtIso })
+      .select('id')
+      .single()
+    if (error) throw error
+    const linhas = itens.map((i) => ({
+      tenant_id: tenantId,
+      ticket_id: data.id,
+      professional_id: i.professionalId,
+      description: 'Item de teste',
+      qty: 1,
+      unit_price_cents: i.totalCents,
+      total_cents: i.totalCents,
+      service_id: null as string | null,
+      product_id: null as string | null,
+    }))
+    // `check (service_id is not null or product_id is not null)` na 0001 — o item precisa de um
+    // dos dois. Um serviço descartável resolve sem inventar produto de revenda.
+    const servico = await svc
+      .from('services')
+      .insert({ tenant_id: tenantId, name: `Serviço ${randomUUID().slice(0, 6)}`, duration_min: 30, price_cents: 1_000 })
+      .select('id')
+      .single()
+    if (servico.error) throw servico.error
+    const { error: erroItens } = await svc.from('ticket_items').insert(linhas.map((l) => ({ ...l, service_id: servico.data.id })))
+    if (erroItens) throw erroItens
+    return data.id
+  }
+
+  async function criarProfissional(nome: string) {
+    const { data, error } = await svc
+      .from('professionals')
+      .insert({ tenant_id: tenantId, display_name: nome, comp_model: 'commission', commission_bps: 4_000 })
+      .select('id')
+      .single()
+    if (error) throw error
+    return data.id
+  }
+
+  it(
+    'as fatias somam exatamente o lucro do mês, e a maior vira o percentual da tela',
+    async () => {
+      const mes = '2026-06'
+      const rafa = await criarProfissional(`Rafa ${randomUUID().slice(0, 4)}`)
+      const bia = await criarProfissional(`Bia ${randomUUID().slice(0, 4)}`)
+
+      await ticketComItens(`${mes}-05T14:00:00-03:00`, 6_200, [{ professionalId: rafa, totalCents: 10_000 }])
+      await ticketComItens(`${mes}-12T14:00:00-03:00`, 3_800, [{ professionalId: bia, totalCents: 6_000 }])
+
+      const mensal = await resumoMensal(svc, tenantId, TZ, mes)
+      const c = await concentracaoDoMes(svc, tenantId, TZ, mes)
+
+      expect(c.lucroTotalCents, 'a concentração e o resumo do mês contam dinheiros diferentes').toBe(mensal.profitCents)
+      expect(c.fatias.reduce((s, f) => s + f.lucroCents, 0)).toBe(mensal.profitCents)
+      expect(c.maior?.professionalId).toBe(rafa)
+      expect(c.maior?.participacaoBps).toBe(6_200)
+      expect(c.vaiADizerAlgo).toBe(true)
+      expect(c.nomes[rafa]).toMatch(/^Rafa/)
+    },
+    60_000,
+  )
+
+  it(
+    'comanda com dois profissionais divide por peso de receita, sem perder centavo',
+    async () => {
+      const mes = '2026-07'
+      const um = await criarProfissional(`Um ${randomUUID().slice(0, 4)}`)
+      const outro = await criarProfissional(`Outro ${randomUUID().slice(0, 4)}`)
+
+      await ticketComItens(`${mes}-03T14:00:00-03:00`, 3_333, [
+        { professionalId: um, totalCents: 3_333 },
+        { professionalId: outro, totalCents: 6_667 },
+      ])
+
+      const mensal = await resumoMensal(svc, tenantId, TZ, mes)
+      const c = await concentracaoDoMes(svc, tenantId, TZ, mes)
+      expect(c.fatias.reduce((s, f) => s + f.lucroCents, 0)).toBe(mensal.profitCents)
+      expect(c.fatias).toHaveLength(2)
+    },
+    60_000,
+  )
+
+  it(
+    'mês sem comanda nenhuma não erra e não afirma dependência de ninguém',
+    async () => {
+      const c = await concentracaoDoMes(svc, tenantId, TZ, '2019-01')
+      expect(c.maior).toBeNull()
+      expect(c.vaiADizerAlgo).toBe(false)
+      expect(c.nomes).toEqual({})
     },
     30_000,
   )

@@ -9,7 +9,7 @@ import PageHeader from '@/components/ui/page-header'
 import { avaliarPermissao } from '@/server/auth/rbac'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
-import { fechamentoDiario, resumoMensal } from '@/server/services/caixa'
+import { concentracaoDoMes, fechamentoDiario, resumoMensal } from '@/server/services/caixa'
 import { extratoDeComissao } from '@/server/services/comissao'
 import { lerTaxasDoTenant } from '@/server/services/taxas-de-pagamento'
 
@@ -81,7 +81,7 @@ export default async function PaginaCaixa({ searchParams }: { searchParams: Prom
   const inicioDoDia = dia.toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant().toString()
   const fimDoDia = dia.add({ days: 1 }).toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant().toString()
 
-  const [diario, mensal, profissionais, atendimentos, taxas] = await Promise.all([
+  const [diario, mensal, profissionais, atendimentos, taxas, concentracao] = await Promise.all([
     fechamentoDiario(db, ctx.tenantId, timezone, dia.toString()),
     resumoMensal(db, ctx.tenantId, timezone, mes),
     db.from('professionals').select('id, display_name').eq('tenant_id', ctx.tenantId).eq('active', true).order('display_name'),
@@ -93,6 +93,12 @@ export default async function PaginaCaixa({ searchParams }: { searchParams: Prom
       .gte('starts_at', inicioDoDia)
       .lt('starts_at', fimDoDia),
     lerTaxasDoTenant(db, ctx.tenantId),
+    /*
+      `docs/48` C7. Entra no mesmo `Promise.all` — latência somada: zero — e a tela inteira já
+      exige `report:read`, que é a trava que o §4.6 pede: dizer que 62% do lucro depende de uma
+      pessoa é dado sensível DENTRO do salão, e o profissional comissionado não o alcança.
+    */
+    concentracaoDoMes(db, ctx.tenantId, timezone, mes),
   ])
 
   const atendidoCents = (atendimentos.data ?? []).reduce((soma, a) => soma + a.price_cents, 0)
@@ -121,6 +127,7 @@ export default async function PaginaCaixa({ searchParams }: { searchParams: Prom
       comissoes={comissoes}
       atendidoCents={atendidoCents}
       taxaRespondida={taxas.respondida}
+      concentracao={concentracao}
     />
   )
 }

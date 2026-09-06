@@ -11,7 +11,7 @@ import { dinheiro } from '@/lib/formato'
 
 import SeletorDeDia from './seletor-de-dia'
 
-import type { ResumoCaixa } from '@/server/services/caixa'
+import type { ConcentracaoDoMes, ResumoCaixa } from '@/server/services/caixa'
 
 type Props = {
   dia: string
@@ -23,6 +23,8 @@ type Props = {
   atendidoCents: number
   /** O dono já disse quanto a maquininha cobra? Ver `taxaEstaConfigurada` e `docs/49`. */
   taxaRespondida: boolean
+  /** De quem depende o que sobrou no mês (`docs/48` C7). */
+  concentracao: ConcentracaoDoMes
 }
 
 /** A data já vem resolvida no fuso do salão pelo servidor; aqui é só aritmética de calendário. */
@@ -47,7 +49,7 @@ function mesPorExtenso(mes: string): string {
   )
 }
 
-export default function Caixa({ dia, hoje, diario, mensal, comissoes, atendidoCents, taxaRespondida }: Props) {
+export default function Caixa({ dia, hoje, diario, mensal, comissoes, atendidoCents, taxaRespondida, concentracao }: Props) {
   const ontem = somarDias(dia, -1)
   const amanha = somarDias(dia, 1)
   const ehHoje = dia === hoje
@@ -184,6 +186,48 @@ export default function Caixa({ dia, hoje, diario, mensal, comissoes, atendidoCe
           </div>
         </Card>
       </section>
+
+      {/*
+        `docs/48` C7, e `docs/47` P07 é o motivo de ele existir: *"um barbeiro bom pede as contas —
+        e leva metade da clientela junto"*. Nenhum sistema do setor mede isso; o dono descobre o
+        tamanho da dependência no dia da demissão.
+
+        Só aparece quando significa alguma coisa. Com um profissional só (o dono, quase sempre) a
+        resposta é 100% e não é risco nenhum — ninguém sai de si mesmo —, e num mês no prejuízo
+        "300% do prejuízo é do Rafa" não ajuda a decidir nada. Nos dois casos a seção some, em vez
+        de mostrar um número que se lê como alerta e não é.
+      */}
+      {concentracao.vaiADizerAlgo && concentracao.maior ? (
+        <section className="mb-6">
+          <SectionHeader>De quem depende o que sobra</SectionHeader>
+          <Card className="flex flex-col gap-3">
+            <p className="text-corpo">
+              <strong className="tabular">{Math.round(concentracao.maior.participacaoBps / 100)}%</strong> do que sobrou em{' '}
+              {mesPorExtenso(mensal.month)} veio de{' '}
+              <strong>{concentracao.maior.professionalId ? (concentracao.nomes[concentracao.maior.professionalId] ?? 'profissional removido') : 'itens sem profissional'}</strong>.
+            </p>
+
+            <ul className="flex flex-col gap-2">
+              {concentracao.fatias.map((fatia) => (
+                <li key={fatia.professionalId ?? 'sem-profissional'} className="flex flex-col gap-1">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <span className="min-w-0 truncate text-secundario text-txt-2">
+                      {fatia.professionalId ? (concentracao.nomes[fatia.professionalId] ?? 'Profissional removido') : 'Sem profissional'}
+                    </span>
+                    <span className="tabular shrink-0 text-secundario font-semibold text-txt">
+                      {Math.round(fatia.participacaoBps / 100)}% · {dinheiro.format(fatia.lucroCents / 100)}
+                    </span>
+                  </div>
+                  {/* A barra é decoração do número que já está escrito ao lado — daí `aria-hidden`. */}
+                  <div aria-hidden className="h-1.5 overflow-hidden rounded-[var(--radius-pill)] bg-surface-3">
+                    <div className="h-full rounded-[var(--radius-pill)] bg-acc" style={{ width: `${Math.max(0, Math.min(100, fatia.participacaoBps / 100))}%` }} />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        </section>
+      ) : null}
 
       {comComissao.length > 0 ? (
         <section className="mb-6">
