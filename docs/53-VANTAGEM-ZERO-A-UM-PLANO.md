@@ -650,3 +650,44 @@ que processa não pode mostrá-lo. Ela não precisa de mais nenhum ticket. Preci
   opcional.
 - Ao apendar em `docs/DECISOES.md`: **rebasear antes de abrir o PR**. Todos apendam no fim e dois
   PRs abertos conflitam sempre.
+
+---
+
+# 10 · Como executar este plano em modo autônomo
+
+Regra herdada do padrão já validado para manutenção noturna do CICLO
+([[ciclo-manutencao-noturna-loop]]): quem for rodar isto como `/loop` deve **emendar as rodadas no
+mesmo turno**, sem parar para relatar cada ticket ao chat. Isto poupa tokens de duas formas: menos
+texto de status entre passos, e nenhuma pausa de espera onde não há bloqueio real.
+
+**A regra prática:**
+
+1. **Trabalhe direto, sem narrar cada ação.** Fazer, testar, seguir para o próximo ticket. Um
+   resumo de progresso a cada ticket fechado é o suficiente — não a cada arquivo editado.
+2. **Pausas de no máximo 1 minuto**, e só quando genuinamente bloqueado — esperando `pnpm verify`
+   rodar, esperando a CI, esperando `supabase start` subir. Nunca uma pausa "de cadência" só para
+   dar satisfação: se não há nada a esperar, o próximo passo já começa.
+3. **Autonomia sobre o próximo alvo dentro da ordem definida** (§2: A → C → F → B → D, G represado
+   atrás do F0). Não pergunte "posso seguir para o C?" — a ordem já está decidida neste documento.
+   Pare de verdade só nos portões explícitos: **A-00 antes de A-01** (conferir o EiBarber), **F
+   antes de B** (a validação de campo pode derrubar a premissa da taxa), e **F0 confirmado antes de
+   qualquer G**.
+4. **Um ticket, um commit**, como manda o `CLAUDE.md` regra 12 — mas os commits se sucedem sem
+   pausa de relatório entre eles, só o tempo de rodar `pnpm verify` e ver o teste-guarda
+   reprovando com o defeito de volta (procedimento do `CLAUDE.md`, não é opcional).
+5. **Quando terminar um ticket e não houver bloqueio, comece o próximo imediatamente no mesmo
+   turno.** Só encerre a rodada quando: (a) todos os tickets da ordem principal estiverem feitos,
+   (b) um portão (`F0`, `A-00`) travar de verdade e precisar de decisão do dono, ou (c) o token
+   acabar.
+
+## Modelo e força recomendados
+
+| | Recomendação | Por quê |
+|---|---|---|
+| **Modelo** | **Sonnet 5** | O plano já está inteiramente especificado — cada ticket tem objetivo, critério de aceite, onde mexer e armadilhas nomeadas. O trabalho é executar com disciplina (RLS, teste-guarda visto reprovando, `pnpm verify`), não decidir arquitetura do zero. Sonnet 5 dá conta com folga; Opus é gasto sem retorno proporcional aqui. **Não use Haiku** — coordenar migração + RLS + guarda de mutação exige mais raciocínio do que um modelo leve sustenta em série sem erro |
+| **Força/esforço** | **Médio** | Baixo demais arrisca pular o procedimento de guarda (`CLAUDE.md`: commitar antes de mutar, reintroduzir CADA defeito, confirmar que a mutação foi aplicada) — é exatamente o tipo de disciplina que esforço baixo tende a encurtar. Alto é desperdício: não há ambiguidade de design para justificar deliberação extra, o plano já resolveu isso |
+
+**Se o executor for um `/loop` de sessão** (não cloud), lembre que ele fecha quando a sessão fecha
+— para algo que deve sobreviver ao fechamento do terminal, use `/schedule` em vez de `/loop`. Para
+uma rodada única "comece agora e vá até travar ou acabar o token", `/loop` no modo dinâmico (sem
+intervalo fixo) é suficiente, com o próprio ciclo decidindo quando não há mais bloqueio.
