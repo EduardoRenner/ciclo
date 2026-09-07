@@ -405,11 +405,15 @@ export default function Agendar({
     setReconhecimentoDispensado(true);
     const { serviceId: sugerido, professionalId: profissionalSugerido } = reconhecimento.sugestao;
     setServiceId(sugerido);
+    setEscolhaServicoFeita(true);
     const profissionalValido =
       profissionalSugerido && professionals.some((p) => p.id === profissionalSugerido)
         ? profissionalSugerido
         : undefined;
-    if (profissionalValido) setProfessionalId(profissionalValido);
+    if (profissionalValido) {
+      setProfessionalId(profissionalValido);
+      setEscolhaProfissionalFeita(true);
+    }
     buscarDisponibilidade(dia, sugerido, profissionalValido);
   }
 
@@ -517,25 +521,35 @@ export default function Agendar({
 
   /*
     Serviço e profissional SEMPRE têm um valor (o primeiro da lista, "Tanto faz") — não existe
-    estado "incompleto" para colapsar contra. O gatilho de colapso é outro: depois que a pessoa
-    já escolheu dia E horário, ela não precisa mais ver a lista inteira de serviços ou de rostos
-    na tela — só o resumo do que escolheu, com um jeito de voltar. É o que corta a rolagem entre
-    o topo da página e o botão de confirmar, sem esconder nenhum passo do fluxo.
+    estado "incompleto" para colapsar contra. O gatilho de colapso é o toque DELIBERADO, não o
+    horário escolhido: medido no navegador, a lista inteira de 6 serviços continuava na tela
+    inteira mesmo depois de "Corte + barba" já estar escolhido, porque o colapso só valia depois
+    de dia e horário também estarem prontos — ou seja, a pessoa via a lista cheia bem depois de já
+    ter decidido, exatamente a rolagem que este ticket existe para cortar.
 
-    `edicaoServico`/`edicaoProfissional` são o escape: tocar no resumo reabre a lista mesmo com
-    horário já escolhido. Voltam a `false` sozinhos quando um NOVO horário é escolhido — reabrir
-    e não fechar de novo deixaria a tela do jeito que a pessoa não pediu.
+    O valor pré-marcado (o primeiro da lista, antes de qualquer toque) fica de propósito FORA do
+    colapso: `escolhaServicoFeita`/`escolhaProfissionalFeita` só viram `true` dentro do clique de
+    verdade. Colapsar o padrão sozinho esconderia o catálogo de quem ainda não decidiu nada — o
+    ganho de rolagem tem que vir de esconder a ESCOLHA, não de esconder a decisão em aberto.
+
+    `edicaoServico`/`edicaoProfissional` são o escape: tocar no resumo reabre a lista. Voltam a
+    `false` sozinhas quando uma NOVA escolha acontece nesse passo (ou quando um novo horário é
+    escolhido) — reabrir e não fechar de novo deixaria a tela do jeito que a pessoa não pediu.
   */
+  const [escolhaServicoFeita, setEscolhaServicoFeita] = useState(false);
+  const [escolhaProfissionalFeita, setEscolhaProfissionalFeita] = useState(false);
   const [edicaoServico, setEdicaoServico] = useState(false);
   const [edicaoProfissional, setEdicaoProfissional] = useState(false);
-  const servicoExpandido = !slotEscolhido || edicaoServico;
-  const profissionalExpandido = !slotEscolhido || edicaoProfissional;
+  const servicoExpandido = !escolhaServicoFeita || edicaoServico;
+  const profissionalExpandido = !escolhaProfissionalFeita || edicaoProfissional;
 
   function escolherServico(id: string) {
     setServiceId(id);
     setSlots(null);
     setSlotEscolhido(null);
     buscarDisponibilidade(dia, id);
+    setEscolhaServicoFeita(true);
+    setEdicaoServico(false);
     rolarPara(professionals.length > 1 ? passoProfissionalRef : passoDiaRef);
   }
 
@@ -543,6 +557,14 @@ export default function Agendar({
     setSlotEscolhido(s);
     setEdicaoServico(false);
     setEdicaoProfissional(false);
+  }
+
+  function escolherProfissional(id: string | null) {
+    setProfessionalId(id);
+    buscarDisponibilidade(dia, undefined, id);
+    setEscolhaProfissionalFeita(true);
+    setEdicaoProfissional(false);
+    rolarPara(passoDiaRef);
   }
 
   function confirmar() {
@@ -935,11 +957,7 @@ export default function Agendar({
           <div className="flex flex-wrap gap-2">
             <Chip
               ligado={professionalId === null}
-              onClick={() => {
-                setProfessionalId(null);
-                buscarDisponibilidade(dia, undefined, null);
-                rolarPara(passoDiaRef);
-              }}
+              onClick={() => escolherProfissional(null)}
             >
               {/*
                 Era "Qualquer um". Num salão de unhas ou cílios, a equipe inteira costuma ser de
@@ -952,11 +970,7 @@ export default function Agendar({
               <Chip
                 key={p.id}
                 ligado={professionalId === p.id}
-                onClick={() => {
-                  setProfessionalId(p.id);
-                  buscarDisponibilidade(dia, undefined, p.id);
-                  rolarPara(passoDiaRef);
-                }}
+                onClick={() => escolherProfissional(p.id)}
               >
                 {/*
                   Rosto antes do nome: a cliente marca com ALGUÉM, não com uma string. Dentro do

@@ -75,10 +75,17 @@ describe('o agendamento consulta a agenda do profissional que a pessoa escolheu'
   it('a guarda ainda enxerga o alvo', () => {
     // Piso afirmado por nome: sem isto, um arquivo renomeado ou reescrito faria as asserções
     // abaixo passarem vazias em vez de gritar.
+    //
+    // `setProfessionalId` caiu de 3 chamadas para 2 no TICKET-UX08: os dois `onClick` inline dos
+    // Chips ("Tanto faz" e cada profissional) viraram um `escolherProfissional(id)` só, para
+    // colapsar o passo no mesmo lugar que já escolhe e busca. Consolidar duas chamadas
+    // DUPLICADAS numa função só não é o defeito que esta guarda existe para pegar — o defeito é
+    // um `setProfessionalId` sem a `busca` correspondente logo depois, e as duas próximas
+    // asserções continuam conferindo isso em CADA chamada que sobrou, não um total fixo.
     const src = fonte()
     const trocas = chamadas(src, 'setProfessionalId')
     const buscas = chamadas(src, 'buscarDisponibilidade')
-    expect(trocas.length, 'ninguém mais troca o profissional nesta tela').toBeGreaterThanOrEqual(3)
+    expect(trocas.length, 'ninguém mais troca o profissional nesta tela').toBeGreaterThanOrEqual(2)
     expect(buscas.length, 'ninguém mais busca disponibilidade nesta tela').toBeGreaterThanOrEqual(4)
   })
 
