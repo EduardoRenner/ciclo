@@ -4,6 +4,7 @@ import { CalendarPlus, CheckCircle2, ChevronDown, MessageCircle, Phone } from "l
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 
 import { comMaiuscula, type Vocabulario } from "@/core/text/vocabulario";
+import { cn } from "@/lib/utils";
 import { formatarPreco, type ModeloDePreco } from "@/core/pricing/formatar";
 import { saidaDeContato } from "@/lib/mensagens";
 import Button from "@/components/ui/button";
@@ -178,6 +179,56 @@ function ResumoDoPasso({
         </div>
       </Card>
     </button>
+  );
+}
+
+/**
+ * A ação primária ancorada no terço inferior da tela — mesma régua do `ActionBar` do admin
+ * (`§3.2`), numa variante sem tab bar, que a página pública não tem. Sem isto, "Confirmar
+ * agendamento" nascia no fim de um cartão que só aparece depois de rolar o trilho de serviço,
+ * o de profissional e o de dia inteiros: exatamente o oposto de "alcançável com o polegar",
+ * que é onde a pessoa seguraria o celular para marcar um horário com uma mão só.
+ *
+ * Sempre montada (nunca condicional no JSX) e escondida por `aria-hidden`/`inert` quando não é
+ * a vez dela — mesmo motivo do `ActionBar`: alternar `display` tira a barra do fluxo de
+ * transição, e um elemento invisível só por opacidade continua alcançável por Tab.
+ */
+function BarraFixaDeConfirmacao({
+  visivel,
+  carregando,
+  bloqueada,
+  motivoBloqueio,
+  onConfirmar,
+}: {
+  visivel: boolean;
+  carregando: boolean;
+  bloqueada: boolean;
+  motivoBloqueio: string;
+  onConfirmar: () => void;
+}) {
+  return (
+    <div
+      aria-hidden={!visivel}
+      inert={!visivel}
+      className={cn(
+        "fixed inset-x-0 z-30 mx-auto w-full max-w-[560px] px-[18px]",
+        "bottom-[calc(env(safe-area-inset-bottom)+12px)]",
+        "transition duration-[var(--dur-2)] ease-[var(--ease-ios)]",
+        visivel ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-6 opacity-0",
+      )}
+    >
+      <div className="rounded-[var(--radius)] border border-line-2 bg-surface/95 p-2.5 shadow-flutuante backdrop-blur-xl">
+        <Button
+          largura="cheia"
+          carregando={carregando}
+          disabled={bloqueada}
+          motivoDesabilitado={motivoBloqueio}
+          onClick={onConfirmar}
+        >
+          Confirmar agendamento
+        </Button>
+      </div>
+    </div>
   );
 }
 
@@ -739,8 +790,18 @@ export default function Agendar({
      que estava aberta, e aí nenhuma faixa casa — os dois casos precisam ser distinguíveis. */
   const periodoVisivel = periodoAberto ?? periodosComVaga[0]?.periodo ?? null;
 
+  const mostrarBarraFixa = Boolean(slotEscolhido && servicoEscolhido);
+
   return (
-    <div className="flex flex-col gap-5">
+    <>
+    <div
+      className={cn(
+        "flex flex-col gap-5",
+        // Espaço reservado para a barra fixa não tapar o último campo do formulário —
+        // mesma altura que ela ocupa (botão de 48px + padding + rodapé seguro do aparelho).
+        mostrarBarraFixa && "pb-[calc(64px+env(safe-area-inset-bottom))]",
+      )}
+    >
       {/*
         I-4, `docs/30-INDICACAO-PLANO.md` §6.2b — a moldura de chegada. Prova social de par: a
         nova cliente lê o nome de alguém que ela conhece ANTES do primeiro clique, e é isso que a
@@ -1183,21 +1244,20 @@ export default function Agendar({
           </label>
 
           {/*
-            Mesmo defeito do TICKET-105 em `/avaliar`: travado sem dizer por quê. Quem enxerga
-            deduz pelos dois campos vazios logo acima; no leitor de tela saía "Confirmar
-            agendamento, indisponível" e ponto — na última tela do funil que traz cliente novo.
+            O botão saiu daqui e foi para a `BarraFixaDeConfirmacao`, fixa no rodapé — mesmo
+            "Confirmar agendamento", mesma trava com motivo. Deixar os DOIS botões na tela
+            duplicaria o alvo de toque e confundiria quem navega por Tab; a barra fixa é o único.
           */}
-          <Button
-            largura="cheia"
-            carregando={pendente}
-            disabled={!nome || !telefone}
-            motivoDesabilitado="Preencha seu nome e seu telefone para confirmar."
-            onClick={confirmar}
-          >
-            Confirmar agendamento
-          </Button>
         </Card>
       ) : null}
     </div>
+    <BarraFixaDeConfirmacao
+      visivel={mostrarBarraFixa}
+      carregando={pendente}
+      bloqueada={!nome || !telefone}
+      motivoBloqueio="Preencha seu nome e seu telefone para confirmar."
+      onConfirmar={confirmar}
+    />
+    </>
   );
 }
