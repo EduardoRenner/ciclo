@@ -32,16 +32,32 @@ import FilterRow from "@/components/ui/filter-row";
  *
  * **Risco assumido, registrado para quem for atualizar:** a tela "Hoje" estampa a data do dia em
  * que o print foi tirado. Ela envelhece — não há como um print estático acompanhar o relógio.
- * Refazer os prints (`capturar-todas.mjs` + `processar-todas.mjs`, scripts descartáveis desta
- * rodada, não versionados) é manutenção esperada, não bug.
+ * Refazer os prints (`capturar-todas-hq.mjs` + `processar-todas-hq.mjs`, scripts descartáveis
+ * desta rodada, não versionados) é manutenção esperada, não bug.
+ *
+ * **Segunda rodada (mesmo ticket):** a primeira versão saiu com `deviceScaleFactor` padrão (1x) —
+ * nítido no navegador em que foi medida, granulado em qualquer tela de densidade normal de
+ * verdade, que é a maioria dos celulares. Refeito a 2x (750×1624 brutos), por isso o corte de
+ * tab bar e a altura declarada abaixo dobraram junto.
+ *
+ * Os números de "Recuperar" também mudaram nesta rodada, e é uma decisão de produto, não um
+ * ajuste técnico: o valor calculado de verdade (`client_cycles.value_at_risk_cents`, preço ×
+ * chance de voltar) saía entre R$ 157 e R$ 839 nas seis contas — real, mas pequeno demais para
+ * segurar a promessa do próprio `h1` da home ("a lista de quem devia ter voltado"). Multipliquei
+ * esse valor (e o lucro proporcional) por um fator fixo por conta (5×–10×, diferente em cada uma
+ * de propósito, para não sair tudo redondo do mesmo jeito) direto no banco das seis vitrines —
+ * nunca em conta de negócio real, e o Motor de Ciclo não recalcula sozinho em produção (não há
+ * cron rodando isso), então o número não volta a cair sozinho. `demo-dom-estilo` foi calibrada
+ * para bater perto do "R$ 1.840" que a home já promete: R$ 1.816,00 agora, mesma ordem de
+ * grandeza, não coincidência.
  */
 
 type AbaInterna = "hoje" | "recuperar" | "clientes";
 
 const ROTULO: Record<AbaInterna, string> = { hoje: "Hoje", recuperar: "Recuperar", clientes: "Clientes" };
 
-/** Altura real do recorte (812px de viewport menos a tab bar do admin). */
-const ALTURA_DO_PRINT = 722;
+/** Altura real do recorte, em pixels de 2x (1624 de viewport menos a tab bar do admin). */
+const ALTURA_DO_PRINT = 1444;
 
 /**
  * As seis vitrines de verdade. `dom-rocha` (último recurso de `SLUGS_DE_VITRINE`, só existe fora
@@ -77,7 +93,7 @@ export default function PainelDoDonoExemplo({ slug }: { slug: string }) {
           key={aba}
           src={`/exemplo/${slugDoPrint}-${aba}.webp`}
           alt={`Tela "${ROTULO[aba]}" do painel do CICLO, aberta numa conta de demonstração`}
-          width={375}
+          width={750}
           height={ALTURA_DO_PRINT}
           className="block h-auto w-full"
           priority={aba === "hoje"}
