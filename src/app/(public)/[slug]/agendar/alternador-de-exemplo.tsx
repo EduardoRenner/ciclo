@@ -12,13 +12,16 @@ import { useState } from "react";
  * troca reiniciaria a busca de disponibilidade à toa.
  */
 export default function AlternadorDeExemplo({
+  abaInicial = "cliente",
   visaoCliente,
   visaoDono,
 }: {
+  /** `?ver=dono` da home decide isso no servidor; sem o parâmetro, abre em "cliente" como sempre. */
+  abaInicial?: "cliente" | "dono";
   visaoCliente: React.ReactNode;
   visaoDono: React.ReactNode;
 }) {
-  const [aba, setAba] = useState<"cliente" | "dono">("cliente");
+  const [aba, setAba] = useState<"cliente" | "dono">(abaInicial);
 
   return (
     <div className="flex flex-col gap-5">

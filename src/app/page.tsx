@@ -350,7 +350,12 @@ export default async function Home() {
             argumento; um link para 404 é pior que os dois.
           */}
           {slugDeExemplo ? (
-            <Link href={`/${slugDeExemplo}`} className={botaoSecundario}>
+            // `?ver=dono` abre a vitrine já na aba "O que você vê": é a prova do Motor de Ciclo,
+            // o próprio argumento do `h1` acima, e demo clicável sem cadastro converte mais que
+            // descrição em prosa (medido em SaaS: motor de busca "interactive demo conversion").
+            // A rota aceita o parâmetro em `[slug]/agendar/page.tsx`; sem ele, abre em "cliente"
+            // como sempre abriu — link direto e sem cadastro continua funcionando do jeito antigo.
+            <Link href={`/${slugDeExemplo}/agendar?ver=dono`} className={botaoSecundario}>
               Ver uma página de exemplo
             </Link>
           ) : null}

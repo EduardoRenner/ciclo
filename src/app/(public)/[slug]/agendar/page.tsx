@@ -46,10 +46,13 @@ export default async function PaginaAgendar({
   // `?servico=<id>` é o toque na lista de serviços da página do salão. Só id viaja em URL (nunca
   // nome nem preço), e é conferido contra o catálogo do próprio perfil antes de virar estado: id
   // de outro salão, ou serviço já desativado, cai no comportamento padrão em vez de escolher nada.
-  searchParams: Promise<{ ind?: string; servico?: string; profissional?: string }>
+  // `?ver=dono` é o CTA "Ver uma página de exemplo" da home apontando direto para a aba do painel
+  // do dono — a prova do Motor de Ciclo, o argumento do `h1` da landing. Qualquer valor que não
+  // seja `dono` cai no padrão de sempre ("cliente"), incluindo link antigo sem o parâmetro.
+  searchParams: Promise<{ ind?: string; servico?: string; profissional?: string; ver?: string }>
 }) {
   const { slug } = await params
-  const { ind, servico, profissional } = await searchParams
+  const { ind, servico, profissional, ver } = await searchParams
 
   const perfil = await perfilPublico(slug).catch((erro: unknown) => {
     if (erro instanceof AppError && erro.code === 'NOT_FOUND') return null
@@ -123,6 +126,7 @@ export default async function PaginaAgendar({
         */
         return SLUGS_DE_VITRINE.includes(slug) ? (
           <AlternadorDeExemplo
+            abaInicial={ver === 'dono' ? 'dono' : 'cliente'}
             visaoCliente={agendar}
             visaoDono={<PainelDoDonoExemplo nomeDoSalao={perfil.name} />}
           />
