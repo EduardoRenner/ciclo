@@ -69,6 +69,14 @@ import FilterRow from "@/components/ui/filter-row";
  * "Ticket médio" e o LTV de cada cliente (`clients.ltv_cents`, também denormalizada e só escrita
  * pelo mesmo cron que não roda sozinho) subiram 1,5×–1,9× por conta — o "Ticket médio R$ 61,58"
  * do print antigo lia como salão de bairro; hoje lê como salão que cobra por serviço de verdade.
+ *
+ * **Quarta rodada, ajuste fino:** as duas contas de um profissional só (`demo-corte-fino`,
+ * `demo-navalha-de-ouro`) tinham "Atendido hoje" bem mais magro que as outras quatro (R$ 240
+ * contra R$ 540–750, porque só cabem quatro atendimentos numa agenda de uma pessoa só nos
+ * horários já ocupados). Somei mais um atendimento concluído (17h30, depois do último da rodada
+ * anterior) nas duas — R$ 310 agora, perto das demais. E o histórico (`clients.ltv_cents`) subiu
+ * mais um degrau em todas as seis (1,25×–1,4×) — "Ticket médio" sai de R$ 61,58 (original) para a
+ * faixa de R$ 140–280 conforme o tipo de negócio, que é onde um salão de verdade costuma estar.
  */
 
 type AbaInterna = "hoje" | "recuperar" | "clientes";
