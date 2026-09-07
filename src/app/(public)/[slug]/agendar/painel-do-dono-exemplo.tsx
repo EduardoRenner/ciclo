@@ -96,7 +96,11 @@ export default function PainelDoDonoExemplo({ slug }: { slug: string }) {
           width={750}
           height={ALTURA_DO_PRINT}
           className="block h-auto w-full"
-          priority={aba === "hoje"}
+          // Sempre prioritário, não só na aba inicial: é a ÚNICA imagem montada por vez (a `key`
+          // troca com a aba), então "lazy" nunca ajuda aqui — só atrasa o único conteúdo da aba
+          // que a pessoa acabou de abrir, esperando um IntersectionObserver que não tem por quê
+          // demorar. Medido: sem isto, trocar de aba mostrava a moldura vazia por um instante.
+          priority
         />
       </div>
 
