@@ -1,10 +1,12 @@
 import { notFound } from 'next/navigation'
 
-import { ehDemonstracao } from '@/core/tenants/demonstracao'
+import { ehDemonstracao, SLUGS_DE_VITRINE } from '@/core/tenants/demonstracao'
 import { AppError } from '@/server/http/errors'
 import { perfilPublico, quemIndicou } from '@/server/services/public-booking'
 
 import Agendar from './agendar'
+import AlternadorDeExemplo from './alternador-de-exemplo'
+import PainelDoDonoExemplo from './painel-do-dono-exemplo'
 
 import type { Metadata } from 'next'
 
@@ -93,22 +95,41 @@ export default async function PaginaAgendar({
         </p>
       ) : null}
 
-      <Agendar
-        slug={slug}
-        vocabulario={perfil.vocabulario}
-        nomeDoSalao={perfil.name}
-        enderecoDoSalao={perfil.address}
-        whatsappDoSalao={perfil.whatsapp}
-        telefoneDoSalao={perfil.phone}
-        timezone={perfil.timezone}
-        hours={perfil.hours}
-        services={perfil.services}
-        professionals={perfil.professionals}
-        servicoInicial={servicoInicial}
-        profissionalInicial={profissionalInicial}
-        ind={ind ?? null}
-        indicadaPor={indicadaPor}
-      />
+      {(() => {
+        const agendar = (
+          <Agendar
+            slug={slug}
+            vocabulario={perfil.vocabulario}
+            nomeDoSalao={perfil.name}
+            enderecoDoSalao={perfil.address}
+            whatsappDoSalao={perfil.whatsapp}
+            telefoneDoSalao={perfil.phone}
+            timezone={perfil.timezone}
+            hours={perfil.hours}
+            services={perfil.services}
+            professionals={perfil.professionals}
+            servicoInicial={servicoInicial}
+            profissionalInicial={profissionalInicial}
+            ind={ind ?? null}
+            indicadaPor={indicadaPor}
+          />
+        )
+
+        /*
+          A pergunta "o que a cliente vê" a própria `Agendar` já responde ao vivo — o que faltava
+          era "o que você vê quando esse pedido chega", que só existia em prosa na home. Só nas
+          seis vitrines: quem chegou aqui por `?servico=` ou por um link de indicação já está
+          marcando de verdade (ou pensa que está), e a escolha "cliente ou dono" não é dela.
+        */
+        return SLUGS_DE_VITRINE.includes(slug) ? (
+          <AlternadorDeExemplo
+            visaoCliente={agendar}
+            visaoDono={<PainelDoDonoExemplo nomeDoSalao={perfil.name} />}
+          />
+        ) : (
+          agendar
+        )
+      })()}
     </main>
   )
 }
