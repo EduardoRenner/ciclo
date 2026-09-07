@@ -406,11 +406,35 @@ export default function Agendar({
     });
   }
 
+  /** Passo 2 é "Profissional" só quando há mais de um; senão é "Dia" direto. */
+  const passoProfissionalRef = useRef<HTMLElement>(null);
+  const passoDiaRef = useRef<HTMLElement>(null);
+
+  /*
+    O toque já seleciona de primeira em cada um destes passos — o que faltava era a tela
+    RESPONDER a isso. Sem rolar, o card ou chip escolhido pode ficar com a mesma aparência de
+    quando a tela abriu (o primeiro serviço já vem pré-marcado), e quem toca não vê nada mudar:
+    parece que o toque não registrou, e a pessoa toca de novo. Rolar até o próximo passo pendente
+    prova que o toque funcionou.
+
+    Chamado direto, sem `requestAnimationFrame`: as seções de profissional e dia SEMPRE estão
+    montadas (não nascem da escolha do serviço), então o ref já existe no clique. Medido no
+    navegador: um `rAF` aqui é supérfluo no melhor caso e quebra o próprio silencioso no pior —
+    em aba sem foco de verdade o callback nunca dispara, e a rolagem simplesmente não acontece.
+  */
+  function rolarPara(ref: React.RefObject<HTMLElement | null>) {
+    const alvo = ref.current;
+    if (!alvo) return;
+    const prefereReduzido = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    alvo.scrollIntoView({ behavior: prefereReduzido ? "auto" : "smooth", block: "start" });
+  }
+
   function escolherServico(id: string) {
     setServiceId(id);
     setSlots(null);
     setSlotEscolhido(null);
     buscarDisponibilidade(dia, id);
+    rolarPara(professionals.length > 1 ? passoProfissionalRef : passoDiaRef);
   }
 
   function confirmar() {
@@ -727,9 +751,11 @@ export default function Agendar({
               key={s.id}
               type="button"
               onClick={() => escolherServico(s.id)}
+              aria-pressed={s.id === serviceId}
               className="block w-full text-left"
             >
               <Card
+                pressionavel
                 className={
                   s.id === serviceId
                     ? "border-acc bg-acc-soft transition"
@@ -737,13 +763,24 @@ export default function Agendar({
                 }
               >
                 <div className="flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-corpo font-semibold">
-                      {s.name}
-                    </p>
-                    <p className="tabular text-secundario text-txt-2">
-                      {duracao(s.durationMin)}
-                    </p>
+                  <div className="flex min-w-0 items-center gap-2">
+                    {/*
+                      A borda azul sozinha não bastava: é a MESMA borda de quando a tela abre
+                      (o primeiro serviço já vem pré-marcado), então tocar nele não muda nada
+                      visível. O check aparece só depois do toque de verdade escolher alguém —
+                      inclusive o primeiro, se a pessoa tocar nele por decisão, não por padrão.
+                    */}
+                    {s.id === serviceId ? (
+                      <CheckCircle2 aria-hidden className="size-4 shrink-0 text-acc" />
+                    ) : null}
+                    <div className="min-w-0">
+                      <p className="truncate text-corpo font-semibold">
+                        {s.name}
+                      </p>
+                      <p className="tabular text-secundario text-txt-2">
+                        {duracao(s.durationMin)}
+                      </p>
+                    </div>
                   </div>
                   <p className="tabular shrink-0 text-corpo font-semibold text-acc-2">
                     {formatarPreco({
@@ -761,7 +798,7 @@ export default function Agendar({
       </section>
 
       {professionals.length > 1 ? (
-        <section>
+        <section ref={passoProfissionalRef}>
           <Passo numero={2} titulo={comMaiuscula(vocabulario.profissional)} />
           <div className="flex flex-wrap gap-2">
             <Chip
@@ -769,6 +806,7 @@ export default function Agendar({
               onClick={() => {
                 setProfessionalId(null);
                 buscarDisponibilidade(dia, undefined, null);
+                rolarPara(passoDiaRef);
               }}
             >
               {/*
@@ -785,6 +823,7 @@ export default function Agendar({
                 onClick={() => {
                   setProfessionalId(p.id);
                   buscarDisponibilidade(dia, undefined, p.id);
+                  rolarPara(passoDiaRef);
                 }}
               >
                 {/*
@@ -811,7 +850,7 @@ export default function Agendar({
         </section>
       ) : null}
 
-      <section>
+      <section ref={passoDiaRef}>
         <Passo numero={professionals.length > 1 ? 3 : 2} titulo="Dia" />
         <FilterRow rotulo="Escolher o dia">
           {dias.map((d) => {
