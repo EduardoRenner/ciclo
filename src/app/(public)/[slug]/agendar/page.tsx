@@ -128,7 +128,7 @@ export default async function PaginaAgendar({
           <AlternadorDeExemplo
             abaInicial={ver === 'dono' ? 'dono' : 'cliente'}
             visaoCliente={agendar}
-            visaoDono={<PainelDoDonoExemplo nomeDoSalao={perfil.name} />}
+            visaoDono={<PainelDoDonoExemplo slug={slug} />}
           />
         ) : (
           agendar
