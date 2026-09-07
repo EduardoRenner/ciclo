@@ -154,6 +154,33 @@ function Passo({ numero, titulo }: { numero: number; titulo: string }) {
   );
 }
 
+/**
+ * A linha que substitui a lista inteira depois que dia e horário já foram escolhidos — é o que
+ * corta a rolagem entre o topo da página e o botão de confirmar sem esconder o passo, só
+ * recolhendo o que já está decidido. Tocar reabre a lista original.
+ */
+function ResumoDoPasso({
+  titulo,
+  onClick,
+}: {
+  titulo: string;
+  onClick: () => void;
+}) {
+  return (
+    <button type="button" onClick={onClick} className="block w-full text-left">
+      <Card pressionavel className="transition">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2">
+            <CheckCircle2 aria-hidden className="size-4 shrink-0 text-acc" />
+            <p className="truncate text-corpo font-semibold">{titulo}</p>
+          </div>
+          <span className="shrink-0 text-secundario font-semibold text-acc-2">Trocar</span>
+        </div>
+      </Card>
+    </button>
+  );
+}
+
 export default function Agendar({
   slug,
   vocabulario,
@@ -332,6 +359,10 @@ export default function Agendar({
   }
 
   const servicoEscolhido = services.find((s) => s.id === serviceId);
+  const nomeDoProfissionalEscolhido =
+    professionalId === null
+      ? "Tanto faz"
+      : (professionals.find((p) => p.id === professionalId)?.displayName ?? "Tanto faz");
 
   // Carrega os horários do primeiro dia sozinho — a versão anterior exigia
   // um toque em "Ver horários" antes de mostrar qualquer coisa; o Ruivo (o
@@ -429,12 +460,34 @@ export default function Agendar({
     alvo.scrollIntoView({ behavior: prefereReduzido ? "auto" : "smooth", block: "start" });
   }
 
+  /*
+    Serviço e profissional SEMPRE têm um valor (o primeiro da lista, "Tanto faz") — não existe
+    estado "incompleto" para colapsar contra. O gatilho de colapso é outro: depois que a pessoa
+    já escolheu dia E horário, ela não precisa mais ver a lista inteira de serviços ou de rostos
+    na tela — só o resumo do que escolheu, com um jeito de voltar. É o que corta a rolagem entre
+    o topo da página e o botão de confirmar, sem esconder nenhum passo do fluxo.
+
+    `edicaoServico`/`edicaoProfissional` são o escape: tocar no resumo reabre a lista mesmo com
+    horário já escolhido. Voltam a `false` sozinhos quando um NOVO horário é escolhido — reabrir
+    e não fechar de novo deixaria a tela do jeito que a pessoa não pediu.
+  */
+  const [edicaoServico, setEdicaoServico] = useState(false);
+  const [edicaoProfissional, setEdicaoProfissional] = useState(false);
+  const servicoExpandido = !slotEscolhido || edicaoServico;
+  const profissionalExpandido = !slotEscolhido || edicaoProfissional;
+
   function escolherServico(id: string) {
     setServiceId(id);
     setSlots(null);
     setSlotEscolhido(null);
     buscarDisponibilidade(dia, id);
     rolarPara(professionals.length > 1 ? passoProfissionalRef : passoDiaRef);
+  }
+
+  function escolherHorario(s: Slot) {
+    setSlotEscolhido(s);
+    setEdicaoServico(false);
+    setEdicaoProfissional(false);
   }
 
   function confirmar() {
@@ -745,6 +798,12 @@ export default function Agendar({
 
       <section>
         <Passo numero={1} titulo={comMaiuscula(vocabulario.servico)} />
+        {!servicoExpandido && servicoEscolhido ? (
+          <ResumoDoPasso
+            titulo={`${servicoEscolhido.name} · ${duracao(servicoEscolhido.durationMin)}`}
+            onClick={() => setEdicaoServico(true)}
+          />
+        ) : (
         <div className="flex flex-col gap-2">
           {services.map((s) => (
             <button
@@ -795,11 +854,18 @@ export default function Agendar({
             </button>
           ))}
         </div>
+        )}
       </section>
 
       {professionals.length > 1 ? (
         <section ref={passoProfissionalRef}>
           <Passo numero={2} titulo={comMaiuscula(vocabulario.profissional)} />
+          {!profissionalExpandido ? (
+            <ResumoDoPasso
+              titulo={nomeDoProfissionalEscolhido}
+              onClick={() => setEdicaoProfissional(true)}
+            />
+          ) : (
           <div className="flex flex-wrap gap-2">
             <Chip
               ligado={professionalId === null}
@@ -847,6 +913,7 @@ export default function Agendar({
               </Chip>
             ))}
           </div>
+          )}
         </section>
       ) : null}
 
@@ -1003,7 +1070,7 @@ export default function Agendar({
                         <Chip
                           key={`${s.startsAt}-${s.professionalId}`}
                           ligado={slotEscolhido?.startsAt === s.startsAt}
-                          onClick={() => setSlotEscolhido(s)}
+                          onClick={() => escolherHorario(s)}
                         >
                           {horaLocal(s.startsAt, timezone)}
                         </Chip>
