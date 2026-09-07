@@ -28,6 +28,7 @@ export const EsquemaCriarAgendamento = z
       .object({
         name: z.string().trim().min(2, 'Digite o nome do cliente.'),
         phone: z.string().trim().min(1, 'Digite o telefone do cliente.'),
+        email: z.email('E-mail inválido.').nullish(),
       })
       .nullish(),
     serviceId: z.uuid('Escolha um serviço.'),
@@ -76,7 +77,7 @@ type EntradaCriar = z.infer<typeof EsquemaCriarAgendamento>
 export async function resolverCliente(
   db: Cliente,
   tenantId: string,
-  entrada: { clientId?: string | null; clientDraft?: { name: string; phone: string } | null },
+  entrada: { clientId?: string | null; clientDraft?: { name: string; phone: string; email?: string | null } | null },
   referredBy?: string | null,
 ): Promise<string> {
   if (entrada.clientId) {
@@ -127,7 +128,15 @@ export async function resolverCliente(
 
   const { data: criado, error: erroCriar } = await db
     .from('clients')
-    .insert({ tenant_id: tenantId, name: draft.name, phone_e164: e164, phone_hash: hash, source: 'agenda', referred_by: referenciaValida })
+    .insert({
+      tenant_id: tenantId,
+      name: draft.name,
+      phone_e164: e164,
+      phone_hash: hash,
+      email: draft.email ?? null,
+      source: 'agenda',
+      referred_by: referenciaValida,
+    })
     .select('id')
     .single()
   if (erroCriar) throw new AppError('INTERNAL', { cause: erroCriar })

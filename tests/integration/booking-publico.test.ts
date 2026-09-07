@@ -312,6 +312,38 @@ describe('criarAgendamentoPublico', () => {
     },
     30_000,
   )
+
+  it(
+    // TICKET-UX04: o WhatsApp continua sendo o canal principal — este campo nunca bloqueia a
+    // confirmação. `clients.email` já existia no banco desde a migration base; o que faltava era
+    // o agendamento público chegar até ela.
+    'guarda o e-mail em clients quando informado, e null quando não',
+    async () => {
+      const comEmail = await criarAgendamentoPublico(slug, {
+        serviceId: servicoOnlineId,
+        professionalId,
+        startsAt: `${DIA}T14:00:00-03:00`,
+        name: 'Ana Com E-mail',
+        phone: '11988110004',
+        email: 'ana.publica@exemplo.test',
+      })
+      const linha1 = await svc.from('appointments').select('client_id').eq('id', comEmail.appointmentId).single()
+      const cliente1 = await svc.from('clients').select('email').eq('id', linha1.data!.client_id!).single()
+      expect(cliente1.data?.email).toBe('ana.publica@exemplo.test')
+
+      const semEmail = await criarAgendamentoPublico(slug, {
+        serviceId: servicoOnlineId,
+        professionalId,
+        startsAt: `${DIA}T14:30:00-03:00`,
+        name: 'Ana Sem E-mail',
+        phone: '11988110005',
+      })
+      const linha2 = await svc.from('appointments').select('client_id').eq('id', semEmail.appointmentId).single()
+      const cliente2 = await svc.from('clients').select('email').eq('id', linha2.data!.client_id!).single()
+      expect(cliente2.data?.email).toBeNull()
+    },
+    30_000,
+  )
 })
 
 describe('POST /api/v1/public/:slug/book — a rota inteira', () => {

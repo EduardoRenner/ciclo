@@ -482,6 +482,10 @@ export const EsquemaBookingPublico = z.object({
   startsAt: z.iso.datetime({ message: 'Horário inválido.', offset: true }),
   name: z.string().trim().min(2, 'Digite seu nome.'),
   phone: z.string().trim().min(1, 'Digite seu telefone.'),
+  // Opcional: quem prefere ser avisado por e-mail deixa o telefone valendo só
+  // como WhatsApp. `clients.email` já existe desde a migration base — nunca
+  // usado pelo agendamento público até este ticket.
+  email: z.email('E-mail inválido.').nullish(),
   // docs/09-PLATAFORMA.md G3+G13 (P2.5): opcional, sem geocodificação — só
   // texto, pro profissional saber pra onde ir quando o atendimento não é no
   // endereço fixo do negócio.
@@ -536,7 +540,7 @@ export async function criarAgendamentoPublico(slug: string, entrada: z.infer<typ
       tenant.timezone,
       null,
       {
-        clientDraft: { name: entrada.name, phone: telefone },
+        clientDraft: { name: entrada.name, phone: telefone, email: entrada.email ?? null },
         serviceId: entrada.serviceId,
         professionalId,
         startsAt: entrada.startsAt,
