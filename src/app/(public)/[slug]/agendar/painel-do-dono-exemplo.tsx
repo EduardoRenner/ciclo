@@ -50,6 +50,25 @@ import FilterRow from "@/components/ui/filter-row";
  * cron rodando isso), então o número não volta a cair sozinho. `demo-dom-estilo` foi calibrada
  * para bater perto do "R$ 1.840" que a home já promete: R$ 1.816,00 agora, mesma ordem de
  * grandeza, não coincidência.
+ *
+ * **Terceira rodada:** três lacunas a mais, todas com a mesma régua (dado real das seis contas,
+ * não um número desenhado à mão).
+ *
+ * A tela "Hoje" chegava vazia — nenhuma das seis contas tinha agendamento marcado para o dia em
+ * que alguém abrisse a página, porque o seed gera histórico (passado), nunca o futuro. "Nada mais
+ * marcado para hoje" é uma boa vitrine para um dia parado; é uma vitrine ruim para o produto.
+ * Inseri agendamentos de verdade (`appointments`, respeitando a constraint de não-sobreposição
+ * por profissional, um serviço e uma cliente reais de cada conta) para o dia de hoje em cada uma
+ * das seis contas — parte concluída (conta para "Atendido hoje"), parte confirmada ou já chegou.
+ * Mesmo risco de envelhecer que a data já tinha: um agendamento "hoje" também é âncora de tempo, e
+ * refazer os prints periodicamente já é manutenção esperada por causa da data, não motivo novo.
+ *
+ * "Recuperar" subiu de novo (mais 1,4×–1,8× em cima do fator da rodada anterior, variando por
+ * conta) — `demo-dom-estilo` está em R$ 2.724,00 agora.
+ *
+ * "Ticket médio" e o LTV de cada cliente (`clients.ltv_cents`, também denormalizada e só escrita
+ * pelo mesmo cron que não roda sozinho) subiram 1,5×–1,9× por conta — o "Ticket médio R$ 61,58"
+ * do print antigo lia como salão de bairro; hoje lê como salão que cobra por serviço de verdade.
  */
 
 type AbaInterna = "hoje" | "recuperar" | "clientes";
