@@ -48,13 +48,33 @@ import type { Metadata } from 'next'
  * perder: a linha antiga deste comentário dizia "página estática de propósito" e tinha deixado de
  * ser verdade antes desta mudança.
  */
+/*
+  TICKET-UX18: pedido do usuário foi juntar toda a copy da home num texto só e auditar com
+  copywriting avançado. A `openGraph.description` tinha ficado para trás das últimas rodadas —
+  ninguém a olha rolando a própria página, só aparece na prévia de um link colado no WhatsApp, e é
+  exatamente por isso que ela apodrece calada (mesmo raciocínio do cabeçalho de
+  `tests/unit/design/seo-nao-apodrece.test.ts`). Duas coisas nela contradiziam o resto da página:
+
+  1. Listava só "barbearia, unhas, cílios, sobrancelha, depilação e estética" — a mesma estreiteza
+     de alcance que o `docs/20-COPY-PLANO.md` §D.6 mediu e corrigiu no resto da página (das 8
+     profissões que a copy antiga nomeava, nenhuma tem ritmo recorrente; das 9 de fora, cinco têm).
+     Quem recebe o link e trabalha com pet, aula ou faxina lia "não é para mim" antes de clicar.
+  2. Trazia "Feito para o celular, em português" — o mesmo tricolon que o §D.3 matou do subtítulo
+     por ser "verdadeiro e irrelevante: nenhuma das três é motivo para escolher o CICLO em vez de
+     outro" (foi para a FAQ, como resposta a objeção, não como argumento de venda).
+
+  A nova frase espelha o subtítulo da dobra (mesma amplitude, "qualquer trabalho que dependa de
+  cliente que volta") e nomeia o Motor de Ciclo em vez do tricolon morto — o que preenche o feed
+  do WhatsApp já é o diferencial real, não uma lista de profissões que a própria home parou de
+  fazer.
+*/
 export const metadata: Metadata = {
   title: 'CICLO · a agenda que avisa quem parou de voltar',
   description:
     'Agenda, site de agendamento e caixa para quem atende com hora marcada. O CICLO calcula de quanto em quanto tempo cada cliente volta, mostra quem atrasou e te dá a mensagem pronta para chamar.',
   openGraph: {
     title: 'CICLO · a agenda que avisa quem parou de voltar',
-    description: 'Para barbearia, unhas, cílios, sobrancelha, depilação e estética. Feito para o celular, em português.',
+    description: 'Para qualquer trabalho que dependa de cliente que volta. O CICLO mostra quem sumiu, há quanto tempo, e quanto vale chamar de volta.',
     type: 'website',
     locale: 'pt_BR',
   },
