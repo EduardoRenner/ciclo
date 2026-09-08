@@ -2,7 +2,8 @@ import { ArrowRight, CalendarCheck, Link2, Wallet } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 
-import { NOME_DO_PLANO, PLANOS, precoDoPlano } from '@/core/billing/planos'
+import { NOME_DO_PLANO, PLANOS } from '@/core/billing/planos'
+import { SLUGS_DE_VITRINE } from '@/core/tenants/demonstracao'
 import { slugDeDemonstracaoNoAr } from '@/server/services/demonstracao'
 import IconeAnel from '@/components/ui/icone-anel'
 
@@ -235,6 +236,15 @@ export default async function Home() {
   */
   const slugDeExemplo = await slugDeDemonstracaoNoAr()
 
+  /*
+    TICKET-UX16: os seis tenants de `SLUGS_DE_VITRINE` que carregam print de verdade
+    (`public/exemplo/<slug>-recuperar-topo.webp`) são os seis primeiros da lista; o sétimo e último,
+    `dom-rocha`, é o último recurso só de desenvolvimento local (comentário do próprio array) e não
+    tem print gerado. `.slice(0, -1)` é a forma de checar isso sem datilografar nenhum slug aqui —
+    `vitrine-da-home-nao-e-literal.test.ts` reprova qualquer slug de tenant escrito à mão na home.
+  */
+  const temPrintReal = slugDeExemplo ? SLUGS_DE_VITRINE.slice(0, -1).includes(slugDeExemplo) : false
+
   const botaoPrimario =
     'inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-sm)] bg-acc px-5 text-corpo ' +
     'font-semibold text-on-acc shadow-elevado transition duration-[var(--dur-1)] hover:brightness-110 active:scale-[.97]'
@@ -280,8 +290,17 @@ export default async function Home() {
           navegação, o argumento fica no `h1`. O logo do `<header>` continua sendo a âncora de
           marca, igual em todas as telas.
         */}
+        {/*
+          TICKET-UX16: pedido do usuário foi que a PRIMEIRA coisa lida cause curiosidade e o
+          sentimento de "quero isso", em vez de abrir com a afirmação pronta. Uma pergunta faz o
+          trabalho que a afirmação antiga não fazia, ela obriga o dono a responder mentalmente
+          ANTES de ler o resto: a maioria não sabe o número, e a peça logo abaixo (agora um print
+          de verdade, não mais maquete) responde com um valor real em segundos. Continua sendo o
+          Motor de Ciclo, o eixo 1 do posicionamento (`docs/43` §4), só que perguntado em vez de
+          afirmado.
+        */}
         <h1 className="text-numero font-bold sm:text-[2.75rem] sm:leading-[1.05] sm:tracking-[-0.02em]">
-          A lista de quem devia ter voltado e não voltou.
+          Quantos clientes pararam de voltar sem você notar?
         </h1>
         {/*
           `docs/20-COPY-PLANO.md` §D.3, variante C — recomendada e até agora não implementada. Não
@@ -361,91 +380,88 @@ export default async function Home() {
           ) : null}
         </div>
         {/*
-          O preço aparece já na primeira dobra, em texto, sem precisar de clique. É o oposto do
-          que quatro dos treze concorrentes pesquisados fazem, e é de graça fazer diferente.
-
-          Era um link só, sublinhado, ocupando a linha inteira: medido a 375 px, a frase quebrava
-          em QUATRO pedaços de 13,5 px, sublinhados, logo abaixo de dois botões de 48 px. A
-          informação comercial mais importante da página estava no tratamento tipográfico menos
-          importante dela, e sublinhado de duas linhas lê como nota de rodapé, não como preço.
-
-          Agora a frase é texto e só "Ver os planos" é link. O preço ganha o peso da fonte em vez
-          de ganhar sublinhado, que é como se destaca número, e o alvo de toque fica no que é
-          clicável de fato.
+          TICKET-UX16: pedido direto do usuário foi tirar o preço do topo, "para não assustar" —
+          reverte a decisão anterior (comentário removido dizia "o preço aparece já na primeira
+          dobra... é de graça fazer diferente"). A transparência de preço continua existindo, só
+          que depois de a pessoa já ter visto o produto funcionando: no fecho da página ("Comece de
+          graça, e sem cartão", mais abaixo) e a um toque em qualquer momento pelo rodapé. Ninguém
+          perde a informação; ela só para de ser a segunda coisa que a pessoa lê, antes de entender
+          o que o produto faz.
         */}
-        <p className="mt-4 text-secundario text-txt-2">
-          Grátis para começar. <span className="font-semibold text-txt">{precoDoPlano('essencial')} por mês</span> para
-          ir além.{' '}
-          <Link href="/precos" className="toque-48 inline-flex font-semibold text-acc-2 underline-offset-4 hover:underline">
-            Ver os planos
-          </Link>
-        </p>
 
         {/*
-          A PEÇA QUE FALTAVA NA PÁGINA, e a única deste redesenho que o `docs/20` não tinha
-          previsto. Pesquisa de 2026-09-03 (`docs/38` §2.1): quase toda página de SaaS de alta
-          conversão mostra o produto, ou o resultado dele, dentro do primeiro scroll — um print
-          real do painel converte melhor que ilustração, porque a pessoa quer ver o que vai assinar
-          antes de ler lista de recurso.
+          TICKET-UX16: pedido direto do usuário foi trocar este painel por PRINT REAL, porque o
+          mockup (23/R$ 1.840 com nomes inventados) estava "confuso" — provavelmente porque a
+          própria legenda dizia "inventados" bem embaixo de um número grande e destacado, uma
+          contradição visual entre o que o olho vê primeiro (o valor, gritando importância) e o que
+          o texto pequeno corrige por último (não é bem assim). Prova de produto que carece de nota
+          de rodapé para não enganar é prova fraca.
 
-          A home descrevia o Motor de Ciclo em prosa e nunca o mostrava. Era o maior buraco de
-          conversão da página.
+          `painel-do-dono-exemplo.tsx` já resolveu esse problema para a vitrine (TICKET-UX10-14):
+          print de verdade de uma das seis contas de demonstração, recortado no topo
+          (`<slug>-recuperar-topo.webp`, 750×580, mesmo pipeline de captura). Aqui uso o mesmo
+          princípio recortado ainda mais curto, só até o card de valor, porque a home não pode
+          empurrar a dobra para baixo por uma tela inteira de admin.
 
-          **Por que isto NÃO viola o §5.10, e a distinção não é semântica.** O `docs/20` §D.4.1 já
-          a cravou: demonstração mostra o que o software FAZ; prova social afirma que outra pessoa
-          COMPROU. Isto é o primeiro. Os nomes são de exemplo, os números são de exemplo, e a
-          legenda diz isso em texto — não em letra miúda. O §D.5 var C exige exatamente esse
-          enquadramento para o número: *"ilustração de layout, não afirmação"*.
-
-          Feito em HTML e CSS, sem imagem, de propósito: público 100% celular, e a pesquisa que
-          recomenda vídeo/GIF na dobra não paga o custo de latência num produto cujo plano de
-          performance (`docs/28`) existe porque o clique já demorava.
-
-          O que a tela mostra é o que `/admin/recuperar` mostra de verdade: quem passou do ponto,
-          há quantos dias, e a estimativa de quanto vale chamar. A ordem das colunas é a mesma.
+          `temPrintReal` cobre o caso (só em desenvolvimento local) de a única vitrine no ar ser
+          `dom-rocha`, que não tem print gerado — cai no mockup antigo como último recurso, em vez
+          de pedir uma imagem que não existe.
         */}
-        <figure className="mt-8 rounded-[var(--radius)] border border-line bg-surface p-4 shadow-elevado sm:p-5">
-          <div className="flex items-baseline justify-between gap-3">
-            <p className="text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">
-              Passaram do ponto de voltar
-            </p>
-          </div>
-
-          <div className="mt-3 flex items-end gap-5">
-            <div>
-              <p className="tabular text-numero font-bold leading-none text-txt">23</p>
-              <p className="mt-1 text-label text-txt-3">pessoas</p>
+        {temPrintReal && slugDeExemplo ? (
+          <figure className="mt-8 overflow-hidden rounded-[var(--radius)] border border-line bg-surface shadow-elevado">
+            <Image
+              src={`/exemplo/${slugDeExemplo}-recuperar-topo.webp`}
+              alt='Tela "Recuperar receita" do CICLO, aberta numa conta de demonstração: o valor e os clientes que o Motor de Ciclo identificou como atrasados para voltar'
+              width={750}
+              height={580}
+              className="block h-auto w-full"
+              priority
+            />
+            <figcaption className="p-4 text-label text-txt-3 sm:p-5">
+              Print de verdade, tirado de uma conta de demonstração do CICLO. O negócio é fictício,
+              existe só para servir de exemplo; a tela e os valores são exatamente o que aquela
+              conta mostra.
+            </figcaption>
+          </figure>
+        ) : (
+          <figure className="mt-8 rounded-[var(--radius)] border border-line bg-surface p-4 shadow-elevado sm:p-5">
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">
+                Passaram do ponto de voltar
+              </p>
             </div>
-            <div>
-              <p className="tabular text-titulo font-bold leading-none text-acc-2">R$ 1.840</p>
-              {/*
-                "Estimativa" fica no rótulo, não num asterisco: é a mesma palavra que a tela
-                interna usa ("Estimativa, não promessa"), e o §D.5 var C manda mostrar a origem do
-                número junto com ele.
-              */}
-              <p className="mt-1 text-label text-txt-3">estimativa de retorno</p>
+
+            <div className="mt-3 flex items-end gap-5">
+              <div>
+                <p className="tabular text-numero font-bold leading-none text-txt">23</p>
+                <p className="mt-1 text-label text-txt-3">pessoas</p>
+              </div>
+              <div>
+                <p className="tabular text-titulo font-bold leading-none text-acc-2">R$ 1.840</p>
+                <p className="mt-1 text-label text-txt-3">estimativa de retorno</p>
+              </div>
             </div>
-          </div>
 
-          <ul className="mt-4 flex flex-col gap-px overflow-hidden rounded-[var(--radius-sm)] bg-line">
-            {[
-              { nome: 'Fernanda M.', atraso: '24 dias', valor: 'R$ 90' },
-              { nome: 'Juliana R.', atraso: '18 dias', valor: 'R$ 45' },
-              { nome: 'Camila S.', atraso: '15 dias', valor: 'R$ 70' },
-            ].map((p) => (
-              <li key={p.nome} className="flex items-center gap-3 bg-surface-2 px-3 py-2.5">
-                <span className="min-w-0 flex-1 truncate text-secundario font-semibold text-txt">{p.nome}</span>
-                <span className="tabular shrink-0 text-label text-txt-3">{p.atraso}</span>
-                <span className="tabular shrink-0 text-secundario font-semibold text-txt-2">{p.valor}</span>
-              </li>
-            ))}
-          </ul>
+            <ul className="mt-4 flex flex-col gap-px overflow-hidden rounded-[var(--radius-sm)] bg-line">
+              {[
+                { nome: 'Fernanda M.', atraso: '24 dias', valor: 'R$ 90' },
+                { nome: 'Juliana R.', atraso: '18 dias', valor: 'R$ 45' },
+                { nome: 'Camila S.', atraso: '15 dias', valor: 'R$ 70' },
+              ].map((p) => (
+                <li key={p.nome} className="flex items-center gap-3 bg-surface-2 px-3 py-2.5">
+                  <span className="min-w-0 flex-1 truncate text-secundario font-semibold text-txt">{p.nome}</span>
+                  <span className="tabular shrink-0 text-label text-txt-3">{p.atraso}</span>
+                  <span className="tabular shrink-0 text-secundario font-semibold text-txt-2">{p.valor}</span>
+                </li>
+              ))}
+            </ul>
 
-          <figcaption className="mt-3 text-label text-txt-3">
-            Exemplo de como a tela fica. Os nomes e os valores são inventados; a conta é a que o
-            CICLO faz com os seus atendimentos.
-          </figcaption>
-        </figure>
+            <figcaption className="mt-3 text-label text-txt-3">
+              Exemplo de como a tela fica. Os nomes e os valores são inventados; a conta é a que o
+              CICLO faz com os seus atendimentos.
+            </figcaption>
+          </figure>
+        )}
       </section>
 
       <section className="py-8">
