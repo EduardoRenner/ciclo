@@ -440,6 +440,13 @@ export default async function Home() {
           `temPrintReal` cobre o caso (só em desenvolvimento local) de a única vitrine no ar ser
           `dom-rocha`, que não tem print gerado — cai no mockup antigo como último recurso, em vez
           de pedir uma imagem que não existe.
+
+          TICKET-UX19: o `h1` abre uma pergunta ("Quantos clientes pararam de voltar sem você
+          notar?") e, até aqui, nada FECHAVA esse loop explicitamente — a legenda ia direto para a
+          garantia de autenticidade ("print de verdade..."), pulando a resposta. Técnica clássica
+          de copy direta: abrir a curiosidade, resolver com a prova concreta, DEPOIS tranquilizar
+          sobre a honestidade dela — nessa ordem, não invertida. A legenda ganhou uma abertura que
+          nomeia a peça como resposta antes de defender que ela é real.
         */}
         {temPrintReal && slugDeExemplo ? (
           <figure className="mt-8 overflow-hidden rounded-[var(--radius)] border border-line bg-surface shadow-elevado">
@@ -452,9 +459,9 @@ export default async function Home() {
               priority
             />
             <figcaption className="p-4 text-label text-txt-3 sm:p-5">
-              Print de verdade, tirado de uma conta de demonstração do CICLO. O negócio é fictício,
-              existe só para servir de exemplo; a tela e os valores são exatamente o que aquela
-              conta mostra.
+              A resposta que o Motor de Ciclo dá, ao vivo: print de verdade de uma conta de
+              demonstração do CICLO. O negócio é fictício, existe só para servir de exemplo; a
+              tela e os valores são exatamente o que aquela conta mostra.
             </figcaption>
           </figure>
         ) : (
