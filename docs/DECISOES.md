@@ -6784,3 +6784,48 @@ Decidido: pedir a SENHA ATUAL na troca normal; o fluxo do link de recuperação 
 Motivo: exigir AAL2 só protegeria quem já ligou MFA, que é a minoria, e deixaria a maioria com o
 buraco aberto; a senha atual protege todo mundo. A distinção entre os dois fluxos sai do `amr`/AAL
 da sessão, não de um parâmetro do cliente.
+
+---
+
+## 2026-09-08 · As irmãs da 0073: escrita de cadastro e leitura de dinheiro (0075)
+
+**Pergunta.** A `0073` fechou `tickets`/`ticket_items`, mas o laço da `0001:688-709` aplica
+`for all using (has_tenant(tenant_id))` a 25 tabelas. Quais das 23 restantes têm estrago real, e
+apertar quebra o produto?
+
+**Decisão.** Apertar cinco: escrita de `professionals` (só `owner`), de `services` e `products`
+(`owner`/`manager`), e leitura de `commissions` e `payments` (`owner`/`finance`, mais o próprio
+profissional na comissão dele).
+
+**A régua é o `rbac.ts`, não `can_see_ticket`.** Reusar a função da `0073` seria o caminho curto e
+estaria ERRADO: `can_see_ticket` delega para `can_see_appointment`, que libera `reception` — e a
+recepção não tem `commission:*` nem `payment:*` em `rbac.ts:12-29`. A política nova espelha o
+RBAC papel por papel; `can_see_commission` existe exatamente porque a régua é outra.
+
+**Por que `professionals` é só do `owner`, e não `owner`/`manager`.** O plano da auditoria dizia
+`owner`/`manager`. Ao ler o `rbac.ts` a suposição caiu: o `manager` tem `professional:read`, e só.
+Quem escreve profissional pelo app é o dono — a política reflete isso.
+
+**Por que não quebra, verificado chamador por chamador.** `commissions` e `payments` não têm
+NENHUM leitor no repositório (`grep -rn "from('commissions')" src` devolve zero) — a tela
+`/admin/comissao` lê `ticket_items` por `extratoDeComissao`, que a `0073` já protegeu; a trava de
+extrato por profissional já estava em vigor pelo outro caminho. Já `professionals`/`services`/
+`products` são escritas por rotas que usam `criarClienteDoUsuario()`, não `service_role` —
+diferente de `tickets` — e por isso a política teve de espelhar o RBAC em vez de ser mais estrita.
+As rotas atípicas (`services/reorder`, `tenant/vitrine/entidade`) exigem `service:update` e
+`professional:update`, que batem com a régua escolhida.
+
+**Leitura de `professionals` continua em `has_tenant`** de propósito: `caixa/page.tsx` e
+`meu-plano/page.tsx` são Server Components que leem com o cliente do usuário e passariam pela RLS.
+Apertar a leitura apagaria o seletor de profissional do caixa sem resolver risco nenhum — o risco
+dessa tabela é escrita.
+
+**Guarda.** `tests/rls/cadastro-e-dinheiro-por-papel.test.ts`, com `professional` e `reception`
+como atores LOGADOS. `isolation.test.ts:123` cria os dois fixtures como `owner` e compara tenant A
+com tenant B: prova isolamento ENTRE tenants e é cego para o que acontece DENTRO de um — foi por
+isso que estes buracos duraram tanto. As asserções de escrita olham o ESTADO pelo cliente admin,
+não o `error`: sob RLS um UPDATE sem linha permitida devolve sucesso com zero linhas.
+
+**Um falso verde corrigido antes de commitar:** o caso "não zera o próprio aluguel" comparava 0
+com 0, porque `rent_cents` nasce com default 0 — passaria com o defeito inteiro de volta. O
+fixture passou a nascer com 50000 para a asserção ter como falhar.
