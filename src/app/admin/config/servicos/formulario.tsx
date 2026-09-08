@@ -225,7 +225,7 @@ export default function FormularioServico({ aberto, aoFechar, servico, aoSalvar 
           value={cicloDias}
           onChange={(e) => setCicloDias(e.target.value)}
           classNameCampo="tabular"
-          ajuda="É o que o Motor de Ciclo usa até aprender o ritmo de cada cliente."
+          ajuda="É o que o Motor de Ciclo usa enquanto não tem visitas suficientes para calcular o ritmo de cada pessoa."
         />
 
         {/*

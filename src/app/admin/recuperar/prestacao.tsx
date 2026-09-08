@@ -20,7 +20,7 @@ export default function PrestacaoDeContasDoMotor({ contas }: { contas: Prestacao
       <p className="text-corpo">
         {percentual === null ? (
           <>
-            O Motor ainda está aprendendo com este salão:{' '}
+            O Motor ainda tem pouco histórico deste negócio:{' '}
             <strong className="tabular">
               {contas.conferidas} {contas.conferidas === 1 ? 'previsão conferida' : 'previsões conferidas'}
             </strong>{' '}

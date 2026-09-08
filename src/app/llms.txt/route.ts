@@ -33,8 +33,9 @@ export function GET(): Response {
 > Sistema de gestão para quem atende com hora marcada: agenda, página de agendamento própria,
 > ficha de cliente, comanda e caixa. Feito para celular, em português do Brasil.
 
-O diferencial é o Motor de Ciclo: o CICLO aprende de quanto em quanto tempo cada cliente costuma
-voltar, avisa quando alguém passou do ponto e entrega a mensagem pronta para chamar de volta.
+O diferencial é o Motor de Ciclo: a partir do intervalo entre as visitas de cada cliente, o CICLO
+calcula de quanto em quanto tempo essa pessoa costuma voltar, avisa quando alguém passou do ponto e
+entrega a mensagem pronta para chamar de volta.
 
 ## Para quem é
 

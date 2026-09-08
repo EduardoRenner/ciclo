@@ -26,7 +26,7 @@ export function vazioDeRecuperar(
   if (!temClientes) {
     return {
       titulo: 'Cadastre suas clientes para o Motor começar',
-      descricao: 'Ele aprende de quanto em quanto tempo cada uma volta. Sem ficha, não há o que acompanhar.',
+      descricao: 'Ele usa o intervalo entre as visitas de cada pessoa para saber quando ela costuma voltar. Sem ficha, não há o que acompanhar.',
       acaoRotulo: 'Cadastrar cliente',
       acaoHref: '/admin/clientes/nova',
     }

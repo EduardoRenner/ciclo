@@ -83,19 +83,16 @@ describe('a home não promete o que o código não faz', () => {
     ).toEqual([])
   })
 
-  it('não descreve o Motor de Ciclo com vocabulário de IA', () => {
-    /*
-     * `src/core/cycle/compute.ts` diz, no comentário do topo: "determinístico, sem ML". É mediana
-     * dos intervalos daquela pessoa, com descarte de exceção e limite de 0,5x a 2,5x. Chamar isso
-     * de "aprende" empresta vocabulário de IA a uma conta de mediana — e num público que precisa
-     * confiar dado de cliente ao software, ser pego exagerando custa mais que o exagero rende.
-     */
-    const achados = achar(copyDaHome(), [/aprende/i, /aprendizado/i, /intelig[êe]ncia artificial/i, /machine learning/i])
-    expect(
-      achados,
-      `a home usa vocabulário de IA para um cálculo determinístico (compute.ts: "sem ML"). Termos: ${achados.join(', ')}`,
-    ).toEqual([])
-  })
+  /*
+   * O caso "não descreve o Motor de Ciclo com vocabulário de IA" SAIU daqui em 2026-09-08, e a
+   * mudança é o próprio achado: esta guarda lê UM arquivo (`src/app/page.tsx`), então a home
+   * ficava limpa enquanto a palavra vetada sobrevivia em cinco telas internas — incluindo a
+   * primeira que um salão novo abre e o `llms.txt`, que serve a frase a robô.
+   *
+   * A regra agora mora em `motor-de-ciclo-nao-e-ia.test.ts`, que varre `app`, `core`, `server` e
+   * `components`. Não foi copiada: foi movida. Duas cópias da mesma regra divergem, e este
+   * projeto já pagou essa conta.
+   */
 })
 
 describe('a home não inventa prova nem número', () => {

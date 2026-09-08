@@ -572,7 +572,7 @@ const PRIMEIROS_PASSOS: AcaoSugerida[] = [
   {
     chave: 'inicio-agenda',
     titulo: 'Marque o primeiro horário',
-    descricao: 'Cada atendimento concluído ensina ao sistema de quanto em quanto tempo aquela pessoa volta.',
+    descricao: 'Cada atendimento concluído entra no histórico, e é dele que o Motor tira de quanto em quanto tempo aquela pessoa volta.',
     href: '/admin/agenda/novo',
     tom: 'ok',
   },
