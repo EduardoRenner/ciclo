@@ -95,8 +95,10 @@ describe('o número que o onboarding promete é o número de campos que ele tem'
     const alvos = [PAGINA, FORMULARIO].map((a) => semComentarios(readFileSync(a, 'utf8')))
     for (const [i, fonte] of alvos.entries()) {
       expect(
-        /criar (seu|o seu) neg[óo]cio/i.test(fonte),
-        `${[PAGINA, FORMULARIO][i]} diz "criar seu negócio" — o negócio dela já existe, o que se cria é a conta`,
+        // `meu` junto de `seu`/`o seu`: o botão dizia "Criar meu negócio" e passava batido por a
+        // guarda só olhar a segunda pessoa. A frase erra na mesma medida em qualquer pessoa.
+        /criar (seu|o seu|meu) neg[óo]cio/i.test(fonte),
+        `${[PAGINA, FORMULARIO][i]} diz "criar ... negócio" — o negócio dela já existe, o que se cria é a conta`,
       ).toBe(false)
     }
   })

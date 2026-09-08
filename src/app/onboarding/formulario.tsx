@@ -162,7 +162,7 @@ export default function FormularioOnboarding({ profissoes }: { profissoes: Profi
         </p>
       ) : null}
       <Button type="submit" largura="cheia" carregando={pendente}>
-        Criar meu negócio
+        Colocar minha página no ar
       </Button>
     </form>
   )
