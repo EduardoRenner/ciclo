@@ -111,7 +111,7 @@ export default function ConfirmarAgendamento({ token }: { token: string }) {
       <>
         <CheckCircle2 aria-hidden className="mb-4 size-14 text-ok" />
         <TituloDeEstado>Prontinho!</TituloDeEstado>
-        <p className="mt-2 text-corpo text-txt-2">Seu horário está confirmado. Te esperamos lá.</p>
+        <p className="mt-2 text-corpo text-txt-2">Seu horário está confirmado. Até lá!</p>
       </>
     )
   }
