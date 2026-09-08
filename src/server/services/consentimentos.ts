@@ -116,6 +116,36 @@ async function despublicarTudoDoCliente(tenantId: string, clientId: string): Pro
     if (erroLeitura) throw new AppError('INTERNAL', { cause: erroLeitura })
     if (!publicadas || publicadas.length === 0) return
 
+    /*
+     * A ORDEM aqui é a correção, e ela é o oposto da que estava.
+     *
+     * Antes: apagava a linha de `portfolio_photos` primeiro e só então tentava o Storage, com
+     * `console.warn` engolindo a falha. O bucket `vitrine` é PÚBLICO (0051) e servido com
+     * `cacheControl: 31536000`. Quando a remoção falhava, a rota devolvia 200, a cliente lia
+     * "consentimento revogado" — e a foto dela continuava acessível por URL. Pior: a linha que
+     * guardava o `storage_key` já não existia, então não sobrava de onde reprocessar. O arquivo
+     * ficava órfão e fora do alcance do produto para sempre.
+     *
+     * Agora o Storage vem primeiro e a falha é ALTA. Se o `remove` não der certo, a linha
+     * permanece e nada é prometido: a rota devolve erro, a pessoa tenta de novo, e a segunda
+     * tentativa reprocessa exatamente as mesmas fotos. Estado consistente e recuperável no lugar
+     * de inconsistente e irrecuperável.
+     *
+     * O que se aceita em troca: `revoked_at` já foi gravado no `consents` (linha 85) quando
+     * chegamos aqui, então uma falha de Storage deixa o consentimento revogado com a foto ainda
+     * no ar. É o lado seguro da escolha — a LEITURA do portfólio já filtra por
+     * `revoked_at is null` (`mediaParaPortfolio`), e a nova tentativa fecha a diferença. O outro
+     * lado deixaria o arquivo público sem ninguém sabendo que ele existe.
+     */
+    const { error: erroStorage } = await svc.storage.from('vitrine').remove(publicadas.map((p) => p.storage_key))
+    if (erroStorage) {
+      console.warn(
+        JSON.stringify({ level: 'warn', event: 'portfolio_nao_despublicado_ao_revogar', tenantId, clientId }),
+        erroStorage,
+      )
+      throw new AppError('INTERNAL', { cause: erroStorage })
+    }
+
     const { error: erroDelete } = await svc
       .from('portfolio_photos')
       .delete()
@@ -125,11 +155,6 @@ async function despublicarTudoDoCliente(tenantId: string, clientId: string): Pro
         publicadas.map((p) => p.id),
       )
     if (erroDelete) throw new AppError('INTERNAL', { cause: erroDelete })
-
-    const { error: erroStorage } = await svc.storage.from('vitrine').remove(publicadas.map((p) => p.storage_key))
-    if (erroStorage) {
-      console.warn(JSON.stringify({ level: 'warn', event: 'portfolio_orfao_nao_removido_ao_revogar', tenantId, clientId }))
-    }
   })
 }
 
