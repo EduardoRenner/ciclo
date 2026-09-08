@@ -33,6 +33,14 @@ import type { Metadata } from 'next'
  * O destaque visual do Equipe é ancoragem por posição, que é legítima: continua funcionando
  * mesmo que a pessoa saiba exatamente como funciona.
  */
+/**
+ * ISR: o HTML e igual para todo visitante e so muda em deploy (copy institucional, preco de tabela).
+ * `revalidate` da a esta rota um `s-maxage` real na borda do Vercel -- sem ele o prerender ainda
+ * revalida na origem a cada request (`age: 0`, TTFB de centenas de ms). Uma hora e conservador;
+ * mudanca de preco entra por deploy de qualquer forma.
+ */
+export const revalidate = 3600
+
 export const metadata = {
   // Sem "CICLO" no título: o `template` do layout raiz já anexa "· CICLO", e repetir cancelaria
   // o template — há teste de design que guarda exatamente isso.

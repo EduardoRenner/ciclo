@@ -27,6 +27,14 @@ const CANAL = canalDeContato('Oi! É sobre os meus dados no CICLO.')
  * junto — política de privacidade que promete o que o sistema não faz é a pior classe de promessa
  * vazia desta base, porque a consequência é legal e não só de produto.
  */
+/**
+ * ISR: o HTML e igual para todo visitante e so muda em deploy (copy institucional, preco de tabela).
+ * `revalidate` da a esta rota um `s-maxage` real na borda do Vercel -- sem ele o prerender ainda
+ * revalida na origem a cada request (`age: 0`, TTFB de centenas de ms). Uma hora e conservador;
+ * mudanca de preco entra por deploy de qualquer forma.
+ */
+export const revalidate = 3600
+
 export const metadata = {
   title: 'Política de Privacidade',
   description: 'Que dados o CICLO guarda, por quê, por quanto tempo, e o que você pode pedir a qualquer momento.',

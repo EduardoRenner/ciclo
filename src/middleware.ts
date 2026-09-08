@@ -78,7 +78,29 @@ export function naoCacheavel(pathname: string): boolean {
  * Tela continua passando pelo caminho completo, porque aí a renovação só pode acontecer aqui.
  */
 export function precisaRenovarSessao(pathname: string): boolean {
-  return !(pathname === '/api' || pathname.startsWith('/api/'))
+  // Rota de conteúdo estático também sai: o HTML dela é igual para todo visitante e não lê sessão
+  // em Server Component nenhum (`ROTAS_DE_CONTEUDO_ESTATICO`), então a renovação de token não tem
+  // o que servir ali — e a ida de rede ao auth (~40 ms de dentro do `gru1`) era o que fazia
+  // `/precos`, `/privacidade` e `/termos` responderem em centenas de ms mesmo servidas do
+  // prerender do Vercel: o middleware roda antes do cache e pagava o `getUser()` toda vez. A `/`
+  // continua com o redirecionamento de quem já entrou, mas por presença de cookie (abaixo), sem
+  // ida de rede. Token de quem só navega no site institucional é renovado na próxima tela de
+  // `/admin` ou na próxima chamada de `/api` (o `@supabase/ssr` renova nos dois).
+  return !(pathname === '/api' || pathname.startsWith('/api/') || rotaDeConteudoEstatico(pathname))
+}
+
+/**
+ * Tem cookie de sessão do Supabase? — pergunta respondida sem rede, para o redirecionamento
+ * otimista da `/`.
+ *
+ * O cookie de auth do `@supabase/ssr` é `sb-<ref>-auth-token`, às vezes fatiado em
+ * `...-auth-token.0`, `...-auth-token.1`. Presença não é prova de sessão válida: se o token
+ * estiver vencido, o redirecionamento manda a pessoa para `/admin/hoje`, e o middleware de lá
+ * (que renova) resolve — no pior caso um salto a mais, nunca um vazamento (nada protegido é
+ * servido aqui).
+ */
+export function temCookieDeSessao(req: NextRequest): boolean {
+  return req.cookies.getAll().some((c) => /^sb-.+-auth-token(\.\d+)?$/.test(c.name))
 }
 
 /**
@@ -193,11 +215,25 @@ export async function middleware(req: NextRequest) {
   let resposta = NextResponse.next({ request: { headers: requestHeaders } })
   aplicarCabecalhosDeSeguranca(resposta, csp, semCache)
 
+  // Quem já entrou e abre o domínio do site vai direto para o painel — sem ida de rede. A
+  // decisão do `getUser()` lá embaixo migrou para presença de cookie: a `/` é servida do
+  // prerender e o middleware não pode gastar um `getUser()` por visita anônima (que é 99% do
+  // tráfego da landing). Cookie vencido cai em `/admin/hoje` e o middleware de lá renova/desvia —
+  // um salto a mais no pior caso, nunca um vazamento.
+  if (req.nextUrl.pathname === '/' && temCookieDeSessao(req)) {
+    const hoje = req.nextUrl.clone()
+    hoje.pathname = '/admin/hoje'
+    const redirecionamento = NextResponse.redirect(hoje)
+    aplicarCabecalhosDeSeguranca(redirecionamento, csp, semCache)
+    return redirecionamento
+  }
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   if (!url || !anon) return resposta
-  // Rota de API já sai daqui com CSP e `no-store` aplicados — o que ela não paga mais é a ida
-  // de rede ao servidor de auth que ela mesma refaz um instante depois.
+  // Rota de API e rota de conteúdo estático já saem daqui com CSP e cache aplicados — o que elas
+  // não pagam mais é a ida de rede ao servidor de auth (a de API refaz a pergunta no
+  // `contextoAtual`; a estática não tem sessão a servir).
   if (!precisaRenovarSessao(req.nextUrl.pathname)) return resposta
 
   const db = createServerClient(url, anon, {
@@ -221,21 +257,8 @@ export async function middleware(req: NextRequest) {
   // teria como escrever o cookie novo.
   const { data } = await db.auth.getUser()
 
-  /*
-   * A landing (`/`) fazia essa mesma pergunta DE NOVO dentro do Server Component
-   * (`sessaoAtual()`, em `src/app/page.tsx`), só para redirecionar quem já está logado — e
-   * `cookies()`/sessão dentro de um Server Component marca a rota inteira como dinâmica (`ƒ`).
-   * Era a única razão da única página cujo trabalho é convencer um visitante anônimo não poder
-   * ser servida do CDN (`docs/21-AUDITORIA-FALHA-SILENCIOSA.md` §5.2). O middleware já resolve
-   * `data.user` para TODA rota — inclusive esta —, então a resposta já está aqui.
-   */
-  if (data.user && req.nextUrl.pathname === '/') {
-    const hoje = req.nextUrl.clone()
-    hoje.pathname = '/admin/hoje'
-    const redirecionamento = NextResponse.redirect(hoje)
-    aplicarCabecalhosDeSeguranca(redirecionamento, csp, semCache)
-    return redirecionamento
-  }
+  // O redirecionamento de quem já entrou e caiu na `/` agora acontece lá em cima, por presença de
+  // cookie e sem ida de rede — a `/` nem chega aqui (`precisaRenovarSessao` a exclui).
 
   if (!data.user && protegida) {
     const entrar = req.nextUrl.clone()
