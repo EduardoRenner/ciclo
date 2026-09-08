@@ -70,4 +70,5 @@ supabase/.env
 
 # scratch e config local do Claude Code (entraram por engano no #83)
 /scratch_*.txt
+*.local.mjs
 .claude/settings.local.json

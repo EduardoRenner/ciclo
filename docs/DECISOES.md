@@ -6829,3 +6829,32 @@ não o `error`: sob RLS um UPDATE sem linha permitida devolve sucesso com zero l
 **Um falso verde corrigido antes de commitar:** o caso "não zera o próprio aluguel" comparava 0
 com 0, porque `rent_cents` nasce com default 0 — passaria com o defeito inteiro de volta. O
 fixture passou a nascer com 50000 para a asserção ter como falhar.
+
+---
+
+## 2026-09-08 · Troca de senha: sessão de recuperação sim, sessão logada não (Unidade 5c)
+
+**Pergunta.** `POST /api/v1/auth/password/reset` só chamava `exigirSessao()`. Um cookie roubado
+de uma sessão comum trocava a senha e, com o `signOut({scope:'others'})` de baixo, expulsava o
+dono de vez. Como distinguir "chegou pelo link de recuperação" de "está logado normalmente"?
+
+**Medido.** Script `medir-amr.local.mjs` contra o projeto DEV: a sessão que o link de recuperação
+abre tem `amr: [{method:'otp'}]` e `aal1`. Uma sessão de login social tem `amr` com `oauth`; uma
+de senha, com `password`. A distinção sai daí — `getAuthenticatorAssuranceLevel()` já devolve
+`currentAuthenticationMethods`, sem chamada extra.
+
+**Decisão — diverge da nota delegada de 05/09.** A nota dizia "pedir a SENHA ATUAL na troca
+normal". Duas coisas mudaram isso: (1) **não existe** tela de troca de senha logada — o único
+caminho até esta rota é `/nova-senha`, que é o fim do fluxo de recuperação; (2) o projeto DEV tem
+captcha no `signInWithPassword`, então verificar a senha atual pelo servidor (`ERRO signIn captcha
+protection`) não é confiável. Então: a rota **aceita só** sessão que veio do link de recuperação
+(`veioDoLinkDeRecuperacao` em `session.ts`: `amr` tem `otp`/`recovery`/`magiclink` e não tem
+`oauth`/`password`). Sessão logada recebe `FORBIDDEN` com "abra o link Esqueci minha senha". É o
+fluxo padrão de muita gente (GitHub, por ex.) e fecha o buraco por inteiro sem caminho frágil.
+
+**Quando existir tela de troca logada:** aí sim vale a reautenticação, mas pelo `reauthenticate()`
++ nonce do Supabase (que não passa por captcha), não por senha no corpo.
+
+**Guarda.** `veioDoLinkDeRecuperacao` é função pura, testada em `tests/unit/server/session.test.ts`
+com os cinco casos (otp, otp+totp, oauth, oauth+totp, password, vazio). `metodos` entrou no tipo
+`Sessao` e no mock de `clienteCom`.

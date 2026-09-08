@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { exigirAal2, exigirSessao, sessaoAtual } from '@/server/auth/session'
+import { exigirAal2, exigirSessao, sessaoAtual, veioDoLinkDeRecuperacao } from '@/server/auth/session'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { rota } from '@/server/http/handler'
 
@@ -9,7 +9,7 @@ vi.mock('@/server/db/server-client', () => ({ criarClienteDoUsuario: vi.fn() }))
 type Usuario = { id: string; email: string } | null
 
 /** Cliente de mentira com só o que a sessão consulta. */
-function clienteCom(usuario: Usuario, aal: string | null = 'aal1') {
+function clienteCom(usuario: Usuario, aal: string | null = 'aal1', metodos: string[] = []) {
   return {
     auth: {
       getUser: async () => ({
@@ -17,15 +17,20 @@ function clienteCom(usuario: Usuario, aal: string | null = 'aal1') {
         error: usuario ? null : { message: 'Auth session missing!' },
       }),
       mfa: {
-        getAuthenticatorAssuranceLevel: async () => ({ data: aal === null ? null : { currentLevel: aal } }),
+        getAuthenticatorAssuranceLevel: async () => ({
+          data:
+            aal === null
+              ? null
+              : { currentLevel: aal, currentAuthenticationMethods: metodos.map((method) => ({ method, timestamp: 0 })) },
+        }),
       },
     },
   }
 }
 
-function comSessao(usuario: Usuario, aal: string | null = 'aal1') {
+function comSessao(usuario: Usuario, aal: string | null = 'aal1', metodos: string[] = []) {
   vi.mocked(criarClienteDoUsuario).mockResolvedValue(
-    clienteCom(usuario, aal) as unknown as Awaited<ReturnType<typeof criarClienteDoUsuario>>,
+    clienteCom(usuario, aal, metodos) as unknown as Awaited<ReturnType<typeof criarClienteDoUsuario>>,
   )
 }
 
@@ -39,9 +44,19 @@ describe('sessaoAtual', () => {
     expect(await sessaoAtual()).toBeNull()
   })
 
-  it('devolve o usuário e o nível de garantia', async () => {
-    comSessao({ id: 'u-1', email: 'bruna@salao.test' }, 'aal2')
-    expect(await sessaoAtual()).toEqual({ userId: 'u-1', email: 'bruna@salao.test', aal: 'aal2' })
+  it('devolve o usuário, o nível de garantia e os métodos de autenticação', async () => {
+    comSessao({ id: 'u-1', email: 'bruna@salao.test' }, 'aal2', ['oauth', 'totp'])
+    expect(await sessaoAtual()).toEqual({
+      userId: 'u-1',
+      email: 'bruna@salao.test',
+      aal: 'aal2',
+      metodos: ['oauth', 'totp'],
+    })
+  })
+
+  it('métodos vira lista vazia quando o Supabase não informa', async () => {
+    comSessao({ id: 'u-1', email: 'bruna@salao.test' }, 'aal1')
+    expect((await sessaoAtual())?.metodos).toEqual([])
   })
 
   it('assume aal1 quando o Supabase não informa o nível', async () => {
@@ -49,6 +64,29 @@ describe('sessaoAtual', () => {
     // Assumir aal2 por omissão liberaria exportação de base e troca de conta
     // bancária num caminho onde a resposta simplesmente não veio.
     expect((await sessaoAtual())?.aal).toBe('aal1')
+  })
+})
+
+describe('veioDoLinkDeRecuperacao', () => {
+  it('sessão do link de e-mail (otp) pode trocar a senha', () => {
+    expect(veioDoLinkDeRecuperacao(['otp'])).toBe(true)
+  })
+
+  it('link de e-mail + 2FA também pode', () => {
+    expect(veioDoLinkDeRecuperacao(['otp', 'totp'])).toBe(true)
+  })
+
+  it('login social não pode — é o cookie roubado que a trava barra', () => {
+    expect(veioDoLinkDeRecuperacao(['oauth'])).toBe(false)
+    expect(veioDoLinkDeRecuperacao(['oauth', 'totp'])).toBe(false)
+  })
+
+  it('login por senha não pode', () => {
+    expect(veioDoLinkDeRecuperacao(['password'])).toBe(false)
+  })
+
+  it('sem métodos, falha fechado', () => {
+    expect(veioDoLinkDeRecuperacao([])).toBe(false)
   })
 })
 

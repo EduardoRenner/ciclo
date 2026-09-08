@@ -8,6 +8,12 @@ export type Sessao = {
   email: string
   /** `aal1` = só senha; `aal2` = com o segundo fator. Ações sensíveis exigem aal2. */
   aal: string
+  /**
+   * Métodos com que esta sessão foi autenticada (`amr` do JWT): `oauth`, `password`,
+   * `otp` (link de e-mail / recuperação), `totp` (2FA). Uma rota que só pode rodar
+   * logo depois do link de recuperação — trocar a senha — se guarda por aqui.
+   */
+  metodos: string[]
 }
 
 /**
@@ -38,8 +44,21 @@ export const sessaoAtual = cache(async function sessaoAtual(): Promise<Sessao | 
     userId: data.user.id,
     email: data.user.email ?? '',
     aal: nivel?.currentLevel ?? 'aal1',
+    metodos: (nivel?.currentAuthenticationMethods ?? []).map((m) => (typeof m === 'string' ? m : m.method)),
   }
 })
+
+/**
+ * `true` só quando a sessão nasceu do link de recuperação por e-mail: `amr` tem
+ * `otp`/`recovery`/`magiclink` e **não** tem `oauth` nem `password`. A sessão de
+ * um login normal (social ou senha) devolve `false` — é o que impede que um
+ * cookie roubado troque a senha e tranque o dono para fora.
+ */
+export function veioDoLinkDeRecuperacao(metodos: readonly string[]): boolean {
+  const recuperacao = metodos.some((m) => m === 'otp' || m === 'recovery' || m === 'magiclink')
+  const loginNormal = metodos.some((m) => m === 'oauth' || m === 'password')
+  return recuperacao && !loginNormal
+}
 
 /** Guard das rotas autenticadas: sem sessão válida, `401 UNAUTHENTICATED`. */
 export async function exigirSessao(): Promise<Sessao> {
