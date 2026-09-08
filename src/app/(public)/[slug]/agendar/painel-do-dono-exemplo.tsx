@@ -77,11 +77,38 @@ import FilterRow from "@/components/ui/filter-row";
  * anterior) nas duas — R$ 310 agora, perto das demais. E o histórico (`clients.ltv_cents`) subiu
  * mais um degrau em todas as seis (1,25×–1,4×) — "Ticket médio" sai de R$ 61,58 (original) para a
  * faixa de R$ 140–280 conforme o tipo de negócio, que é onde um salão de verdade costuma estar.
+ *
+ * **Quinta rodada:** pedido do usuário foi colocar "Recuperar" antes de "Hoje" na ordem das
+ * abas, porque é o diferencial do produto (a home inteira gira em torno da promessa do Motor de
+ * Ciclo, não de um dashboard de agenda). Troquei a ordem em `ORDEM_DAS_ABAS` e o estado inicial
+ * de `useState` para "recuperar" — quem abre a vitrine agora bate de cara com a lista de clientes
+ * que sumiram, não com o resumo do dia.
+ *
+ * Isso expôs um problema que "Hoje" não tinha: a legenda abaixo do print era uma frase genérica
+ * ("print de verdade, tirado de uma conta de demonstração...") que não dizia o que a pessoa está
+ * olhando. Para "Hoje" isso não fazia falta, o dashboard se explica sozinho. Para "Recuperar",
+ * que agora é a primeira coisa que a vitrine mostra, faltava a frase que a HOME já usa para
+ * explicar o conceito ("clientes que iam voltar e sumiram, com valor em risco calculado"). Sem
+ * ela, alguém que chegou direto nesta aba (por `?ver=dono`, sem passar pela home) vê uma lista de
+ * nomes e dinheiro sem entender que aquilo é o Motor de Ciclo trabalhando. Troquei a legenda fixa
+ * por `LEGENDA_POR_ABA`, uma frase de abertura por aba que dá o contexto antes da parte honesta
+ * (print real, negócio fictício).
  */
 
-type AbaInterna = "hoje" | "recuperar" | "clientes";
+type AbaInterna = "recuperar" | "hoje" | "clientes";
 
 const ROTULO: Record<AbaInterna, string> = { hoje: "Hoje", recuperar: "Recuperar", clientes: "Clientes" };
+
+/** Ordem de exibição dos chips: Recuperar primeiro porque é o diferencial do produto. */
+const ORDEM_DAS_ABAS: AbaInterna[] = ["recuperar", "hoje", "clientes"];
+
+/** Frase de abertura por aba, antes da parte honesta sobre print real x negócio fictício. */
+const LEGENDA_POR_ABA: Record<AbaInterna, string> = {
+  recuperar:
+    "Esta é a lista que o Motor de Ciclo monta sozinho: clientes que costumavam voltar e sumiram, com o valor em risco calculado por cliente. ",
+  hoje: "Este é o resumo do dia: quanto já entrou, quem vem a seguir e o que vale a pena revisar agora. ",
+  clientes: "Esta é a carteira de clientes, com histórico, ticket médio e quem está prestes a virar cliente VIP. ",
+};
 
 /** Altura real do recorte, em pixels de 2x (1624 de viewport menos a tab bar do admin). */
 const ALTURA_DO_PRINT = 1444;
@@ -102,13 +129,13 @@ const SLUGS_COM_PRINT = [
 const SLUG_PADRAO = "demo-dom-estilo";
 
 export default function PainelDoDonoExemplo({ slug }: { slug: string }) {
-  const [aba, setAba] = useState<AbaInterna>("hoje");
+  const [aba, setAba] = useState<AbaInterna>("recuperar");
   const slugDoPrint = SLUGS_COM_PRINT.includes(slug) ? slug : SLUG_PADRAO;
 
   return (
     <div className="flex flex-col gap-4">
       <FilterRow rotulo="Trocar de tela">
-        {(Object.keys(ROTULO) as AbaInterna[]).map((chave) => (
+        {ORDEM_DAS_ABAS.map((chave) => (
           <Chip key={chave} ligado={aba === chave} onClick={() => setAba(chave)}>
             {ROTULO[chave]}
           </Chip>
@@ -132,6 +159,7 @@ export default function PainelDoDonoExemplo({ slug }: { slug: string }) {
       </div>
 
       <p className="text-label text-txt-3">
+        {LEGENDA_POR_ABA[aba]}
         Print de verdade, tirado de uma conta de demonstração do CICLO. Não é maquete: o negócio
         é fictício (existe só para servir de exemplo, igual ao seu agendamento aqui ao lado), mas
         a tela, os nomes e os valores são exatamente o que aquela conta mostra hoje.
