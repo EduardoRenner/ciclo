@@ -6725,3 +6725,39 @@ pré-`0073`, porque operar a comanda do colega é o desenho de equipe já em pro
 liberada — a régua é a mesma de agenda, não um "sempre nega". Guardado em
 `tests/rls/ticket-por-profissional.test.ts`, que o CI (`job "Banco e RLS"`) roda contra um banco
 aplicado do zero; reintroduzir `for all ... has_tenant` deixa o caso da Bia vermelho.
+
+---
+
+## 2026-09-08 · `tenant_keys` deixa de aceitar escrita de membro do tenant (0074)
+
+**Pergunta.** A auditoria desta data achou que `tenant_keys` entra no laço de 25 tabelas da
+`0001:688-709` (`for all using (has_tenant(tenant_id))`). Somado à `0038` (CRUD para
+`authenticated`) e à anon key ser pública, qualquer membro — `professional` e `reception`
+inclusive — executava `DELETE FROM tenant_keys WHERE tenant_id = '<o meu>'` pela REST direta.
+`dek_wrapped` é a ÚNICA cópia da DEK do tenant: apagar a linha torna toda anamnese ilegível
+permanentemente. Fechar as escritas, ou tem fluxo que depende delas?
+
+**Decisão.** Fechar as três escritas e manter só o SELECT.
+
+**Motivo.** Levantado chamador por chamador antes de escrever a migration: INSERT só em
+`services/onboarding.ts:130` e UPDATE só em `scripts/rotacionar-kek.mjs:138`, ambos com `svc`
+(service_role, que ignora RLS); DELETE não tem chamador legítimo em todo o repositório — a linha
+morre por cascade do tenant, e cascade não consulta política da tabela filha. Nenhum caminho de
+produto perde capacidade.
+
+**O SELECT fica, e não é meia-correção.** A rota do cofre
+(`api/v1/clients/[id]/vault/route.ts:29`) usa `criarClienteDoUsuario()`, não service_role, então
+`dekDoTenant` (`crypto/vault.ts:64`) lê esta tabela com o JWT do usuário e passa pela RLS.
+Derrubar o SELECT junto quebraria o cofre em produção, com sintoma de falha de criptografia longe
+da causa. E ler `dek_wrapped` sozinho não decifra nada: a KEK vive em `VAULT_KEK`, no ambiente. O
+risco desta tabela é destruição, não vazamento.
+
+**Forma.** Sem política de INSERT/UPDATE/DELETE, a RLS nega por padrão. Escrever as três como
+`using (false)` diria o mesmo em três linhas a mais e sugeriria que existe caso em que passariam.
+
+**Guarda.** `tests/rls/tenant-keys-so-leitura.test.ts`, com um caso por operação mais um caso de
+LEITURA que fica vermelho se alguém "apertar mais" e derrubar o cofre. As asserções de escrita
+olham o ESTADO pelo cliente admin, não o `error` devolvido: sob RLS um DELETE sem linha permitida
+volta sucesso com zero linhas, e perguntar só pelo erro deixaria o teste passar com o defeito de
+volta. Roda no CI (`job "Banco e RLS"`); nesta máquina não há Docker nem `SUPABASE_DB_URL`
+preenchida, mesma limitação registrada na `0073`.
