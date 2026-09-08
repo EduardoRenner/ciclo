@@ -61,7 +61,18 @@ export default function NovaCampanha({
           }),
         })
         if (!r.ok) {
-          mostrarToast({ tom: 'erro', titulo: 'Não consegui registrar a campanha' })
+          /*
+            A rota devolve o motivo com nome e caminho ("Isso faz parte do plano Essencial."), e
+            este toast descartava o corpo inteiro — a pessoa via só "não consegui" e não tinha
+            como saber se era plano, rede ou dado inválido. Ler a mensagem do servidor é o que
+            transforma um beco numa instrução.
+          */
+          const json = (await r.json().catch(() => null)) as { error?: { message?: string } } | null
+          mostrarToast({
+            tom: 'erro',
+            titulo: 'Não consegui registrar a campanha',
+            descricao: json?.error?.message ?? 'Confira a conexão e tente de novo.',
+          })
           return
         }
         mostrarToast({ tom: 'ok', titulo: 'Campanha registrada' })

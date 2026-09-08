@@ -1,9 +1,13 @@
 import { headers } from 'next/headers'
+import Link from 'next/link'
 
+import { podeUsarModulo } from '@/core/billing/planos'
+import BloqueioPlano from '@/components/ui/bloqueio-plano'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { publicoDaCampanha, SEGMENTOS_CAMPANHA } from '@/server/services/crm'
 import { listarModelos } from '@/server/services/mensagens-prontas'
+import { contextoDePlano } from '@/server/services/planos'
 
 import NovaCampanha from './nova'
 
@@ -24,6 +28,38 @@ export default async function PaginaNovaCampanha() {
   ])
 
   const porSegmento = Object.fromEntries(SEGMENTOS_CAMPANHA.map((s, i) => [s.valor, publicos[i] ?? []]))
+
+  /*
+    A lista (`campanhas/page.tsx`) trava isto desde 2026-09-03, mas o conserto ficou só lá — e
+    esta rota é alcançável direto: pela URL, por link salvo, e pelo card de aniversariantes da
+    Central de Ações (`crm.ts:661`, que aponta para cá sem checar plano).
+    Quem chegava no Grátis por qualquer um desses caminhos escolhia o público, escolhia o
+    modelo, abria o WhatsApp de uma pessoa por vez — e só no botão final a rota recusava. É o
+    defeito que `recurso-pago-avisa-antes` existe para pegar, na hora em que a pessoa mais quer
+    o Essencial: o produto joga fora o trabalho que ela acabou de fazer.
+
+    O maior dos cinco públicos é a evidência com o dado DELA que o §M.1 pede — é exatamente o
+    que o Essencial libera alcançar de uma vez.
+  */
+  const plano = await contextoDePlano(db, ctx.tenantId)
+  if (podeUsarModulo(plano, 'campaigns').estado !== 'liberado') {
+    const maiorPublico = Math.max(0, ...Object.values(porSegmento).map((p) => p.length))
+    return (
+      <BloqueioPlano
+        precisaDo="essencial"
+        acao="mandar a mesma mensagem para todo mundo de uma vez"
+        {...(maiorPublico > 0
+          ? {
+              evidencia: {
+                quantidade: maiorPublico,
+                substantivo: maiorPublico === 1 ? 'pessoa esperando no maior grupo' : 'pessoas esperando no maior grupo',
+              },
+            }
+          : {})}
+        alternativa={<Link href="/admin/recuperar">Avisar uma de cada vez, de graça</Link>}
+      />
+    )
+  }
 
   return (
     <NovaCampanha
