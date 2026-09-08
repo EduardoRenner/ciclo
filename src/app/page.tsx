@@ -339,9 +339,18 @@ export default async function Home() {
           Para qualquer trabalho que dependa de cliente que volta. Quem for marcar abre no navegador: sem baixar app
           e sem ver seus concorrentes.
         </p>
+        {/*
+          TICKET-UX17: pedido do usuário foi uma auditoria de copywriting na página inteira. Dois
+          microtextos de botão mudaram por um motivo específico, não geral: o preço saiu da dobra
+          neste mesmo ticket anterior (UX16), e sem ele em lugar nenhum acima do botão, "grátis" na
+          PRÓPRIA ação remove a última hesitação (quanto custa?) no exato instante da decisão, sem
+          reintroduzir um número que assusta. Não repeti no botão do fecho (`Comece de graça...`) —
+          ali "grátis" já aparece duas vezes no título e no parágrafo acima, e um terceiro "grátis"
+          no botão seria redundância, não reforço.
+        */}
         <div className="mt-7 flex flex-wrap gap-3">
           <Link href="/cadastro" className={botaoPrimario}>
-            Criar minha conta
+            Criar minha conta grátis
             <ArrowRight aria-hidden className="size-4" />
           </Link>
           {/*
@@ -374,8 +383,13 @@ export default async function Home() {
             // descrição em prosa (medido em SaaS: motor de busca "interactive demo conversion").
             // A rota aceita o parâmetro em `[slug]/agendar/page.tsx`; sem ele, abre em "cliente"
             // como sempre abriu — link direto e sem cadastro continua funcionando do jeito antigo.
+            //
+            // TICKET-UX17: "Ver uma página de exemplo" descrevia o link; "Ver funcionando, sem
+            // cadastro" descreve o RESULTADO de clicar (o produto rodando de verdade) e remove a
+            // objeção que mais atrapalha um botão secundário — "isso vai me pedir e-mail?" — antes
+            // de a pessoa precisar perguntar.
             <Link href={`/${slugDeExemplo}/agendar?ver=dono`} className={botaoSecundario}>
-              Ver uma página de exemplo
+              Ver funcionando, sem cadastro
             </Link>
           ) : null}
         </div>
