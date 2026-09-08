@@ -1,9 +1,8 @@
-import { ArrowRight, CalendarCheck, Link2, Wallet } from 'lucide-react'
+import { ArrowRight, CalendarCheck, Link2 } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 
-import { NOME_DO_PLANO, PLANOS } from '@/core/billing/planos'
-import { SLUGS_DE_VITRINE } from '@/core/tenants/demonstracao'
+import { PLANOS } from '@/core/billing/planos'
 import { slugDeDemonstracaoNoAr } from '@/server/services/demonstracao'
 import IconeAnel from '@/components/ui/icone-anel'
 
@@ -68,10 +67,19 @@ import type { Metadata } from 'next'
   do WhatsApp já é o diferencial real, não uma lista de profissões que a própria home parou de
   fazer.
 */
+/*
+  TICKET-UX20: a `description` mencionava "caixa" (recurso do plano Essencial) sem dizer o degrau —
+  passava despercebido enquanto a home também descrevia o mesmo recurso no cartão "O dia fechado
+  sem calculadora" (removido neste ticket a pedido do usuário). Sem esse cartão, a menção ficou
+  sozinha e `home-nao-promete-demais.test.ts` reprovou: mencionar recurso pago sem dizer o plano é
+  exatamente o que a guarda existe para pegar. Tirei "e caixa" em vez de adicionar o nome do plano
+  aqui — a `description` é a primeira frase que a pessoa lê antes mesmo de abrir o link, e é onde
+  "isso é pago" faz menos sentido pesar.
+*/
 export const metadata: Metadata = {
   title: 'CICLO · a agenda que avisa quem parou de voltar',
   description:
-    'Agenda, site de agendamento e caixa para quem atende com hora marcada. O CICLO calcula de quanto em quanto tempo cada cliente volta, mostra quem atrasou e te dá a mensagem pronta para chamar.',
+    'Agenda e site de agendamento para quem atende com hora marcada. O CICLO calcula de quanto em quanto tempo cada cliente volta, mostra quem atrasou e te dá a mensagem pronta para chamar.',
   openGraph: {
     title: 'CICLO · a agenda que avisa quem parou de voltar',
     description: 'Para qualquer trabalho que dependa de cliente que volta. O CICLO mostra quem sumiu, há quanto tempo, e quanto vale chamar de volta.',
@@ -80,61 +88,33 @@ export const metadata: Metadata = {
   },
 }
 
+/*
+  TICKET-UX20: pedido do usuário foi resumir esta copy pro essencial e tirar a menção a plano
+  pago, "pro cliente nem saber que as coisas são pagas". As duas mudanças andam juntas: a terceira
+  entrada ("O dia fechado sem calculadora") é a única das três que depende de um módulo pago
+  (`register`, a partir do Essencial) — `home-nao-promete-demais.test.ts` obriga nomear o degrau
+  sempre que a home menciona `caixa|comanda|fechamento do dia`, porque esconder isso é o defeito
+  que a guarda existe para pegar (§ "a home diz o degrau quando anuncia coisa de plano pago").
+  Cortar o cartão INTEIRO, em vez de tirar só a frase do plano, é a forma honesta de atender o
+  pedido: a home não fica muda sobre o preço (`/precos` continua a um toque, e o fecho da página
+  segue dizendo "grátis para sempre com 1 profissional"), só para de anunciar um recurso pago
+  sem dizer que é pago — que seria exatamente a lacuna que a guarda foi criada para fechar.
+
+  As duas entradas que sobraram foram cortadas para a frase mais forte de cada uma, tirando a
+  segunda metade explicativa (o "porquê" que já mora nos comentários e nos docs citados).
+*/
 const RECURSOS = [
   {
     icone: IconeAnel,
     titulo: 'Quem sumiu tem nome',
-    /*
-      `docs/20-COPY-PLANO.md` §D.5 recomendou a variante C, que abre com "23 pessoas passaram do
-      ponto de voltar" — o número COM a origem. **Desvio deliberado, e o motivo é a figura nova da
-      dobra:** ela já mostra o 23, com a legenda que o declara como exemplo. Repetir o número aqui,
-      em prosa e sem a legenda, transformaria uma ilustração de layout em afirmação sobre o
-      produto, que é exatamente o que o §D.5 proíbe ao recomendar C ("ilustração, não afirmação").
-
-      O que sobra para o cartão é o que a figura NÃO consegue dizer: como o ritmo é calculado por
-      pessoa, e por que a lista vem naquela ordem. Ordenação é a decisão de produto que a tela toma
-      e que nenhum print explica.
-
-      A frase diz "o que sai para quem atende" e não a palavra `comissão` de propósito, e não é
-      para driblar a guarda `home-nao-promete-demais`: gerir comissão é o módulo `team`, do plano
-      Equipe, e esta ordenação NÃO depende dele — num salão de uma pessoa só a comissão é zero e
-      a conta continua valendo. Usar a palavra aqui anunciaria um recurso pago dentro da seção do
-      grátis, que é exatamente o defeito que aquela guarda existe para pegar.
-    */
     texto:
-      'O ritmo é de cada pessoa, não uma média do salão: quem volta a cada 21 dias e quem volta a cada dois meses aparecem em dias diferentes. A lista vem ordenada por quanto vale chamar cada uma, e "valer" é o que SOBRA daquele serviço, não o preço cheio: o que sai para quem atende e o produto gasto entram na conta. Um serviço caro que deixa pouco fica abaixo de um mais barato que deixa mais, e é essa a ordem que a tela usa. Cada linha já traz o texto pronto para o WhatsApp.',
+      'O ritmo é de cada pessoa, não uma média do salão. A lista chama primeiro quem vale mais chamar, com o texto pronto pro WhatsApp.',
   },
   {
     icone: Link2,
     titulo: 'Sua página, sua clientela',
-    /*
-      Este cartão descrevia só a mecânica do link, e a mecânica é a parte que todo concorrente
-      também tem. O que ele calava é a única diferença ESTRUTURAL do CICLO, medida em
-      `docs/43-POSICIONAMENTO-10X.md` §2: as duas queixas recorrentes de donos sobre o líder do
-      nicho são o atrito do "baixe nosso app" (cliente novo não baixa e marca em outro lugar) e o
-      app mostrar a lista de concorrentes para a clientela dele. Os dois maiores do nicho têm a
-      mesma limitação, e não podem consertar — o app do cliente só tem valor porque agrega várias
-      barbearias, então a queixa do dono é o modelo de negócio deles.
-
-      **Isto não contradiz o §D.3 do `docs/20-COPY-PLANO.md`,** que tirou "feito para o celular,
-      sem treinamento" do subtítulo por serem "verdadeiras e irrelevantes — nenhuma é motivo para
-      escolher o CICLO em vez de outro". Era o julgamento certo com os dados de então; o §D.3 não
-      tinha a pesquisa competitiva. "Sem baixar aplicativo" é exatamente um motivo para escolher o
-      CICLO em vez de outro, e é o único item da página do qual isso se pode dizer com evidência.
-      Antes de remover daqui de novo citando o §D.3, ler o `43` §2.
-
-      As duas afirmações são conferíveis no repositório, não promessa: não existe nenhuma rota que
-      liste tenants para o público, e `sitemap.ts` entrega a página do negócio ao buscador. O
-      teste `pagina-do-negocio-e-so-dele.test.ts` trava as duas.
-    */
     texto:
-      'Um link para colar na bio do Instagram. Quem for marcar abre no navegador e escolhe serviço, profissional e horário, sem baixar aplicativo, sem criar conta e sem esbarrar em nenhum concorrente pelo caminho. A página é do seu negócio e só dele, e o horário já entra na sua agenda sem risco de marcar dois no mesmo lugar.',
-  },
-  {
-    icone: Wallet,
-    titulo: 'O dia fechado sem calculadora',
-    texto:
-      `Quanto entrou e quanto sobrou, com o extrato de cada profissional. Por dia e por mês. A partir do plano ${NOME_DO_PLANO.essencial}.`,
+      'Um link para colar na bio. Quem for marcar abre no navegador, sem baixar aplicativo e sem esbarrar em nenhum concorrente pelo caminho.',
   },
 ]
 
@@ -255,15 +235,6 @@ export default async function Home() {
     conserto do nonce do CSP, então a rota não perde estaticidade que ainda tivesse.
   */
   const slugDeExemplo = await slugDeDemonstracaoNoAr()
-
-  /*
-    TICKET-UX16: os seis tenants de `SLUGS_DE_VITRINE` que carregam print de verdade
-    (`public/exemplo/<slug>-recuperar-topo.webp`) são os seis primeiros da lista; o sétimo e último,
-    `dom-rocha`, é o último recurso só de desenvolvimento local (comentário do próprio array) e não
-    tem print gerado. `.slice(0, -1)` é a forma de checar isso sem datilografar nenhum slug aqui —
-    `vitrine-da-home-nao-e-literal.test.ts` reprova qualquer slug de tenant escrito à mão na home.
-  */
-  const temPrintReal = slugDeExemplo ? SLUGS_DE_VITRINE.slice(0, -1).includes(slugDeExemplo) : false
 
   const botaoPrimario =
     'inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-sm)] bg-acc px-5 text-corpo ' +
@@ -424,85 +395,13 @@ export default async function Home() {
         */}
 
         {/*
-          TICKET-UX16: pedido direto do usuário foi trocar este painel por PRINT REAL, porque o
-          mockup (23/R$ 1.840 com nomes inventados) estava "confuso" — provavelmente porque a
-          própria legenda dizia "inventados" bem embaixo de um número grande e destacado, uma
-          contradição visual entre o que o olho vê primeiro (o valor, gritando importância) e o que
-          o texto pequeno corrige por último (não é bem assim). Prova de produto que carece de nota
-          de rodapé para não enganar é prova fraca.
-
-          `painel-do-dono-exemplo.tsx` já resolveu esse problema para a vitrine (TICKET-UX10-14):
-          print de verdade de uma das seis contas de demonstração, recortado no topo
-          (`<slug>-recuperar-topo.webp`, 750×580, mesmo pipeline de captura). Aqui uso o mesmo
-          princípio recortado ainda mais curto, só até o card de valor, porque a home não pode
-          empurrar a dobra para baixo por uma tela inteira de admin.
-
-          `temPrintReal` cobre o caso (só em desenvolvimento local) de a única vitrine no ar ser
-          `dom-rocha`, que não tem print gerado — cai no mockup antigo como último recurso, em vez
-          de pedir uma imagem que não existe.
-
-          TICKET-UX19: o `h1` abre uma pergunta ("Quantos clientes pararam de voltar sem você
-          notar?") e, até aqui, nada FECHAVA esse loop explicitamente — a legenda ia direto para a
-          garantia de autenticidade ("print de verdade..."), pulando a resposta. Técnica clássica
-          de copy direta: abrir a curiosidade, resolver com a prova concreta, DEPOIS tranquilizar
-          sobre a honestidade dela — nessa ordem, não invertida. A legenda ganhou uma abertura que
-          nomeia a peça como resposta antes de defender que ela é real.
+          TICKET-UX20: pedido do usuário foi tirar o print da dobra ("tira esse print"). Saiu a
+          peça inteira (o print real de TICKET-UX16-19 e o mockup que era o último recurso dela) —
+          nenhuma substituiu, de propósito: a home continua com o `h1` fazendo a pergunta e os dois
+          CTAs respondendo com ação, sem precisar de uma terceira peça no primeiro scroll. O print
+          real segue existindo na vitrine (`?ver=dono`), que é onde `painel-do-dono-exemplo.tsx`
+          mostra as três telas de verdade sem o limite de espaço da dobra.
         */}
-        {temPrintReal && slugDeExemplo ? (
-          <figure className="mt-8 overflow-hidden rounded-[var(--radius)] border border-line bg-surface shadow-elevado">
-            <Image
-              src={`/exemplo/${slugDeExemplo}-recuperar-topo.webp`}
-              alt='Tela "Recuperar receita" do CICLO, aberta numa conta de demonstração: o valor e os clientes que o Motor de Ciclo identificou como atrasados para voltar'
-              width={750}
-              height={580}
-              className="block h-auto w-full"
-              priority
-            />
-            <figcaption className="p-4 text-label text-txt-3 sm:p-5">
-              A resposta que o Motor de Ciclo dá, ao vivo: print de verdade de uma conta de
-              demonstração do CICLO. O negócio é fictício, existe só para servir de exemplo; a
-              tela e os valores são exatamente o que aquela conta mostra.
-            </figcaption>
-          </figure>
-        ) : (
-          <figure className="mt-8 rounded-[var(--radius)] border border-line bg-surface p-4 shadow-elevado sm:p-5">
-            <div className="flex items-baseline justify-between gap-3">
-              <p className="text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">
-                Passaram do ponto de voltar
-              </p>
-            </div>
-
-            <div className="mt-3 flex items-end gap-5">
-              <div>
-                <p className="tabular text-numero font-bold leading-none text-txt">23</p>
-                <p className="mt-1 text-label text-txt-3">pessoas</p>
-              </div>
-              <div>
-                <p className="tabular text-titulo font-bold leading-none text-acc-2">R$ 1.840</p>
-                <p className="mt-1 text-label text-txt-3">estimativa de retorno</p>
-              </div>
-            </div>
-
-            <ul className="mt-4 flex flex-col gap-px overflow-hidden rounded-[var(--radius-sm)] bg-line">
-              {[
-                { nome: 'Fernanda M.', atraso: '24 dias', valor: 'R$ 90' },
-                { nome: 'Juliana R.', atraso: '18 dias', valor: 'R$ 45' },
-                { nome: 'Camila S.', atraso: '15 dias', valor: 'R$ 70' },
-              ].map((p) => (
-                <li key={p.nome} className="flex items-center gap-3 bg-surface-2 px-3 py-2.5">
-                  <span className="min-w-0 flex-1 truncate text-secundario font-semibold text-txt">{p.nome}</span>
-                  <span className="tabular shrink-0 text-label text-txt-3">{p.atraso}</span>
-                  <span className="tabular shrink-0 text-secundario font-semibold text-txt-2">{p.valor}</span>
-                </li>
-              ))}
-            </ul>
-
-            <figcaption className="mt-3 text-label text-txt-3">
-              Exemplo de como a tela fica. Os nomes e os valores são inventados; a conta é a que o
-              CICLO faz com os seus atendimentos.
-            </figcaption>
-          </figure>
-        )}
       </section>
 
       <section className="py-8">
