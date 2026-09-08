@@ -6761,3 +6761,26 @@ olham o ESTADO pelo cliente admin, não o `error` devolvido: sob RLS um DELETE s
 volta sucesso com zero linhas, e perguntar só pelo erro deixaria o teste passar com o defeito de
 volta. Roda no CI (`job "Banco e RLS"`); nesta máquina não há Docker nem `SUPABASE_DB_URL`
 preenchida, mesma limitação registrada na `0073`.
+
+---
+
+## 2026-09-08 · Duas decisões delegadas na execução do plano de correção
+
+**Contexto.** Ao executar o plano da auditoria, duas escolhas eram de produto e foram levadas ao
+dono, que respondeu "faz o que achar melhor" nas duas. Ficam registradas aqui com o raciocínio,
+porque decisão delegada sem motivo escrito vira decisão sem dono na próxima leitura.
+
+**1. `health_records`: quem enxerga o alerta de saúde (Unidade 10, ainda não implementada).**
+Decidido: a recepção continua vendo que EXISTE alerta, mas não lê o rótulo ("Alergia"); o rótulo
+fica com quem atende e com dono/gerente. Motivo: a recepção tem necessidade operacional real (não
+marcar um serviço que conflita com o alerta) e nenhuma necessidade clínica de saber QUAL é a
+condição. Cortar o alerta inteiro dela empurraria o salão a anotar "alergia" no nome da cliente,
+que é pior. Implementação provável: privilégio por coluna (`grant select (has_alert) ...`), já que
+RLS decide linha e não coluna — a confirmar quando a unidade for executada.
+
+**2. Reautenticação na troca de senha (Unidade 5).**
+Decidido: pedir a SENHA ATUAL na troca normal; o fluxo do link de recuperação continua isento
+(pedir a senha antiga ali seria impossível — quem chega por lá é justamente quem não a tem).
+Motivo: exigir AAL2 só protegeria quem já ligou MFA, que é a minoria, e deixaria a maioria com o
+buraco aberto; a senha atual protege todo mundo. A distinção entre os dois fluxos sai do `amr`/AAL
+da sessão, não de um parâmetro do cliente.
