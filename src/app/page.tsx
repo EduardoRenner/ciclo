@@ -1,4 +1,4 @@
-import { ArrowRight, CalendarCheck, Link2 } from 'lucide-react'
+import { ArrowRight, CalendarCheck, Link2, Wallet } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 
@@ -90,18 +90,21 @@ export const metadata: Metadata = {
 
 /*
   TICKET-UX20: pedido do usuário foi resumir esta copy pro essencial e tirar a menção a plano
-  pago, "pro cliente nem saber que as coisas são pagas". As duas mudanças andam juntas: a terceira
-  entrada ("O dia fechado sem calculadora") é a única das três que depende de um módulo pago
-  (`register`, a partir do Essencial) — `home-nao-promete-demais.test.ts` obriga nomear o degrau
-  sempre que a home menciona `caixa|comanda|fechamento do dia`, porque esconder isso é o defeito
-  que a guarda existe para pegar (§ "a home diz o degrau quando anuncia coisa de plano pago").
-  Cortar o cartão INTEIRO, em vez de tirar só a frase do plano, é a forma honesta de atender o
-  pedido: a home não fica muda sobre o preço (`/precos` continua a um toque, e o fecho da página
-  segue dizendo "grátis para sempre com 1 profissional"), só para de anunciar um recurso pago
-  sem dizer que é pago — que seria exatamente a lacuna que a guarda foi criada para fechar.
+  pago, "pro cliente nem saber que as coisas são pagas". As duas entradas que sobraram foram
+  cortadas para a frase mais forte de cada uma, tirando a segunda metade explicativa (o "porquê"
+  que já mora nos comentários e nos docs citados).
 
-  As duas entradas que sobraram foram cortadas para a frase mais forte de cada uma, tirando a
-  segunda metade explicativa (o "porquê" que já mora nos comentários e nos docs citados).
+  TICKET-UX21: pedido de volta foi trazer o terceiro cartão ("O dia fechado sem calculadora"), só
+  sem a frase do plano — diferente do UX20, que tinha cortado o cartão inteiro. A frase que sobra
+  ("Quanto entrou e quanto sobrou, com o extrato de cada profissional. Por dia e por mês.") NÃO
+  cita nenhum recurso pago pelo nome (nem `caixa`, nem `comanda`, nem `fechamento do dia`, as
+  palavras que `home-nao-promete-demais.test.ts` varre em "a home diz o degrau quando anuncia
+  coisa de plano pago") — é OUTCOME, não mecanismo: qualquer dono lê "quanto entrou e quanto
+  sobrou" sem saber que por trás disso tem um módulo chamado `register`. Isso é diferente de
+  ESCONDER que o recurso é pago depois de NOMEAR o recurso, que foi o problema real do UX20 (a
+  versão anterior desta frase dizia "com o extrato de cada profissional" E "A partir do plano
+  Essencial" ao mesmo tempo — cortar só a segunda metade teria deixado a primeira sem lastro). Sem
+  a palavra que aciona a guarda, não há lacuna pra ela pegar.
 */
 const RECURSOS = [
   {
@@ -115,6 +118,11 @@ const RECURSOS = [
     titulo: 'Sua página, sua clientela',
     texto:
       'Um link para colar na bio. Quem for marcar abre no navegador, sem baixar aplicativo e sem esbarrar em nenhum concorrente pelo caminho.',
+  },
+  {
+    icone: Wallet,
+    titulo: 'O dia fechado sem calculadora',
+    texto: 'Quanto entrou e quanto sobrou, com o extrato de cada profissional. Por dia e por mês.',
   },
 ]
 
