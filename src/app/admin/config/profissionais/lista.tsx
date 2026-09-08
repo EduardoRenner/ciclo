@@ -57,6 +57,14 @@ export default function ListaProfissionais({
   const [convites, setConvites] = useState(convitesIniciais)
   const [mostrarInativos, setMostrarInativos] = useState(false)
   const [sheetConvite, setSheetConvite] = useState(false)
+  /*
+    O link do convite existia SÓ dentro de `enviarConvite`: era copiado para a área de
+    transferência e descartado. Quando `writeText` falha (Safari, PWA, contexto sem foco), o
+    convite já está criado no servidor e o link não sobra em lugar nenhum da tela — a lista de
+    convites mostra e-mail, papel e validade, nunca o link. Este estado é a saída: guarda o link
+    para a pessoa copiar à mão quando o atalho não funcionar.
+  */
+  const [linkNaoCopiado, setLinkNaoCopiado] = useState<string | null>(null)
   const [editando, setEditando] = useState<Profissional | 'novo' | null>(null)
   const [pendente, iniciarTransicao] = useTransition()
   const mostrarToast = useToast()
@@ -100,12 +108,33 @@ export default function ListaProfissionais({
           link: string
         }
         setConvites((atual) => [resultado.invite, ...atual])
-        setSheetConvite(false)
 
         // Sem WhatsApp/e-mail automático ainda (Sprint 2): o link vai para a
         // área de transferência para o dono colar onde quiser mandar.
-        await navigator.clipboard.writeText(resultado.link).catch(() => {})
-        mostrarToast({ tom: 'ok', titulo: 'Convite criado', descricao: 'Link copiado. É só colar e mandar.' })
+        //
+        // O `.catch(() => {})` que existia aqui descartava a falha e o toast anunciava "Link
+        // copiado" de qualquer jeito. Quando a cópia falha — Safari, PWA, aba sem foco — o
+        // convite já existe no servidor e o link não sobra em lugar nenhum: a lista mostra
+        // e-mail, papel e validade, nunca o link. A pessoa ficava sem como mandar o convite que
+        // ela acabou de criar, e sem saber disso.
+        const copiou = await navigator.clipboard
+          .writeText(resultado.link)
+          .then(() => true)
+          .catch(() => false)
+
+        if (copiou) {
+          setSheetConvite(false)
+          mostrarToast({ tom: 'ok', titulo: 'Convite criado', descricao: 'Link copiado. É só colar e mandar.' })
+          return
+        }
+
+        // O Sheet fica ABERTO de propósito: fechar levaria embora a única cópia do link.
+        setLinkNaoCopiado(resultado.link)
+        mostrarToast({
+          tom: 'ok',
+          titulo: 'Convite criado',
+          descricao: 'Não consegui copiar sozinho. O link está aí na tela para você copiar.',
+        })
       } catch (erro) {
         mostrarToast({ tom: 'erro', titulo: 'Não consegui convidar', descricao: (erro as Error).message })
       }
@@ -198,9 +227,47 @@ export default function ListaProfissionais({
         </section>
       ) : null}
 
-      <Sheet aberto={sheetConvite} aoFechar={setSheetConvite} titulo="Convidar para o time">
+      <Sheet
+        aberto={sheetConvite}
+        aoFechar={(v) => {
+          setSheetConvite(v)
+          if (!v) setLinkNaoCopiado(null)
+        }}
+        titulo="Convidar para o time"
+      >
+        {/*
+          O link que o atalho de cópia não conseguiu levar. Fica DENTRO do Sheet, acima do
+          formulário, porque é a única cópia que existe: o convite já está no servidor e a lista
+          abaixo não mostra link nenhum. `readOnly` com `onFocus` selecionando tudo é o que
+          torna "copiar à mão" um gesto e não uma tarefa.
+        */}
+        {linkNaoCopiado ? (
+          <div className="mb-4 flex flex-col gap-2 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 p-3">
+            <p className="text-label font-semibold text-txt-2">Link do convite</p>
+            <input
+              readOnly
+              value={linkNaoCopiado}
+              onFocus={(e) => e.currentTarget.select()}
+              className="h-12 w-full rounded-[var(--radius-sm)] border border-line-2 bg-surface px-3 text-corpo text-txt"
+            />
+            <p className="text-label text-txt-3">
+              Copie e mande por onde preferir. Ele some desta tela quando você fechar.
+            </p>
+          </div>
+        ) : null}
+
         <form
-          action={enviarConvite}
+          /*
+            `onSubmit` e não `action`: no React 19 a action reseta o formulário quando TERMINA,
+            inclusive quando falhou. Os três campos daqui são não-controlados (`name=` puro, sem
+            `value`/`onChange`), então o reset apagava e-mail, papel e nome a cada tentativa de
+            convite que desse errado. É o mesmo conserto já feito nas quatro telas de `(auth)` e
+            em `editor-expediente`.
+          */
+          onSubmit={(e) => {
+            e.preventDefault()
+            enviarConvite(new FormData(e.currentTarget))
+          }}
           className="flex flex-col gap-3"
         >
           <label className="flex flex-col gap-1">

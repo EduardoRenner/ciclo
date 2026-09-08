@@ -85,6 +85,69 @@ describe('errar não pode custar o que a pessoa digitou', () => {
  * (8) estavam a salvo; `editor-expediente` tinha três campos NÃO controlados — duas datas com
  * `defaultValue` e o motivo — e perdia os três quando a folga falhava ao salvar.
  */
+/**
+ * **A guarda varria só `(auth)` e por isso não viu o painel.** Achado da auditoria de 2026-09-08:
+ * `RAIZ` estava fixa em `src/app/(auth)`, então os três casos acima eram conferidos e o resto do
+ * produto ficava fora do alcance — o `editor-expediente` só entrou porque alguém o citou À MÃO,
+ * um caminho literal que não cresce com o projeto. É guarda cega de RAIZ: a varredura não olhava
+ * onde o defeito podia nascer.
+ *
+ * **O critério aqui é diferente do de `(auth)`, e a diferença é a medição de 03/09 que este mesmo
+ * arquivo registra:** campo CONTROLADO não é apagado pelo reset, porque o React o redesenha a
+ * partir do state. Proibir `action` no painel inteiro reprovaria `negocio` e `servicos`, que têm
+ * todos os campos controlados e estão a salvo — e uma guarda que reprova o que está certo é
+ * desligada por quem mantém, não obedecida.
+ *
+ * Então o que reprova é o PAR: `<form action=>` **e** pelo menos um campo não-controlado dentro.
+ * Foi assim que a auditoria de 2026-09-08 separou o defeito real (`profissionais/lista.tsx`, três
+ * campos soltos e zero `onChange`) dos dois falsos positivos.
+ */
+describe('no painel, `action` só é seguro se todo campo for controlado', () => {
+  const PAINEL = join('src', 'app', 'admin')
+  const DO_PAINEL = formularios(PAINEL)
+
+  it('a varredura enxerga formulários no painel — não passa vazia', () => {
+    // O piso é o positivo conhecido, não uma contagem: `profissionais/lista.tsx` tem `<form>` e
+    // existe desde antes desta guarda. Se ele sumir da lista, a varredura parou de funcionar.
+    expect(DO_PAINEL.length, `nenhum formulário encontrado em ${PAINEL}`).toBeGreaterThan(0)
+    expect(
+      DO_PAINEL.some((t) => t.includes('/profissionais/lista.tsx')),
+      'a varredura do painel não achou profissionais/lista.tsx — o alcance quebrou',
+    ).toBe(true)
+  })
+
+  it.each(DO_PAINEL)('%s não junta `action` com campo não-controlado', (tela) => {
+    const fonte = semComentarios(readFileSync(tela, 'utf8'))
+    if (!/<form\s[^>]*\baction=/.test(fonte)) return
+
+    /*
+     * Campo não-controlado: tem `name=` e não tem `value=`. Casa com o par dentro da MESMA tag
+     * (`[^>]*`), senão o `value=` de um campo vizinho absolveria este — a armadilha da "janela de
+     * N caracteres" da tabela do CLAUDE.md.
+     */
+    const soltos = [...fonte.matchAll(/<(?:input|select|textarea)\s[^>]*\bname=[^>]*>/g)]
+      .map((m) => m[0])
+      .filter((tag) => !/\bvalue=/.test(tag))
+
+    expect(
+      soltos,
+      `${tela} usa <form action={...}> com campo não-controlado. No React 19 o reset acontece ` +
+        'quando a ação TERMINA, inclusive na falha, e campo sem `value` perde o que a pessoa ' +
+        'digitou. Troque por `onSubmit` com `preventDefault`, como em (auth).',
+    ).toEqual([])
+  })
+
+  it('o detector separa campo controlado de campo solto', () => {
+    // Guarda contra o próprio detector: se ele parar de distinguir, tudo acima passa vazio.
+    const solto = '<input name="email" type="email" required className="h-12" >'
+    const controlado = '<input name="nome" value={nome} onChange={(e) => setNome(e.target.value)} >'
+    const casa = (t: string) =>
+      [...t.matchAll(/<(?:input|select|textarea)\s[^>]*\bname=[^>]*>/g)].map((m) => m[0]).filter((x) => !/\bvalue=/.test(x))
+    expect(casa(solto)).toHaveLength(1)
+    expect(casa(controlado)).toHaveLength(0)
+  })
+})
+
 describe('fora de (auth), limpar no sucesso é permitido; na falha, não', () => {
   const EXPEDIENTE = 'src/components/config/editor-expediente.tsx'
   const fonte = semComentarios(readFileSync(EXPEDIENTE, 'utf8'))
