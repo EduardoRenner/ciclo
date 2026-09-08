@@ -29,8 +29,15 @@ export const ROTAS_DE_CRON = ['campaigns', 'jobs', 'lgpd-retention', 'recompute-
 export type RotaDeCron = (typeof ROTAS_DE_CRON)[number]
 
 /**
- * As que estão no `on.schedule` + na matriz do job `seguros`. As outras quatro existem só no
- * `workflow_dispatch`, cada uma por um motivo escrito no `cron.yml`.
+ * As que têm QUEM as dispare em produção. As outras quatro existem só no `workflow_dispatch`,
+ * cada uma por um motivo escrito no `cron.yml`.
+ *
+ * Desde 2026-09-08 quem dispara estas duas é o **cron-job.org** (agendador HTTP externo), não o
+ * `on.schedule` do GitHub Actions — a cota de Actions do repo privado estourou. O
+ * `docs/runbooks/cron-externo.md` tem a configuração. O `on.schedule` do `cron.yml` continua no
+ * repositório como backup e ainda casa com esta lista, então
+ * `tests/unit/server/saude-vigia-so-o-que-roda.test.ts` segue valendo — mas "agendada" aqui quer
+ * dizer "algo a dispara", não "está no YAML".
  */
 export const ROTAS_AGENDADAS: readonly RotaDeCron[] = ['recompute-cycles', 'segments']
 

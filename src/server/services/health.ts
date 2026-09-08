@@ -269,7 +269,7 @@ async function checarMensagens(db: Cliente, agora: Date): Promise<ChecagemSaude>
  */
 async function checarHeartbeat(db: Cliente, kind: string, agora: Date, limiarMinutos: number = LIMIAR_HEARTBEAT_MIN): Promise<ChecagemSaude> {
   if (!heartbeatVigiado(kind)) {
-    return { ok: true, detail: `job "${kind}" não está no schedule de .github/workflows/cron.yml — vigilância desligada de propósito` }
+    return { ok: true, detail: `job "${kind}" não tem agendador em produção (ver src/core/cron/agendadas.ts) — vigilância desligada de propósito` }
   }
 
   const { data, error } = await db.from('cron_heartbeats').select('last_run_at').eq('kind', kind).maybeSingle()
