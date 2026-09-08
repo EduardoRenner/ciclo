@@ -1,4 +1,10 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+
 import { describe, expect, it } from 'vitest'
+
+import { rotaDeCronAgendada } from '../../helpers/cron'
+import { semComentarios } from '../../helpers/fonte'
 
 import { textoDoCanalDeConfirmacao, textoDoEnvioAutomatico } from '@/core/messaging/promessa'
 
@@ -86,5 +92,53 @@ describe('textoDoEnvioAutomatico', () => {
     const ligado = textoDoEnvioAutomatico(false, true)
     const pausado = textoDoEnvioAutomatico(true, false)
     expect(new Set([desligado, ligado, pausado]).size).toBe(3)
+  })
+})
+
+/**
+ * **O rótulo, não só a função** — achado da auditoria de 2026-09-08.
+ *
+ * Os dois blocos acima exercitam as funções que têm o direito de afirmar automação, e passavam
+ * verdes enquanto a tela do interruptor dizia, no título, *"Lembretes e campanhas AUTOMÁTICOS"* —
+ * contradizendo, no adjetivo, a frase honesta que ela mesma renderiza logo abaixo ("o disparo é
+ * seu: a mensagem vai quando você toca em Avisar").
+ *
+ * É a recorrência que o docstring de `core/messaging/promessa.ts` já previa: a promessa saiu da
+ * prosa e sobreviveu no rótulo, um componente acima. Testar a função nunca ia pegar isso.
+ *
+ * A guarda é amarrada à condição REAL, não a uma lista de palavras: enquanto `reminders` estiver
+ * fora do `schedule` do `cron.yml`, o texto fixo da tela não pode afirmar automação. No dia em que
+ * entrar, este caso libera sozinho — do mesmo jeito que `home-nao-promete-demais` faz. É assim que
+ * a guarda fica do lado certo do tempo, em vez de virar um `skip` que ninguém revisita.
+ */
+describe('a tela do interruptor não afirma no rótulo o que a função nega no texto', () => {
+  const TELA = join('src', 'app', 'admin', 'config', 'mensagens', 'pausar-envios.tsx')
+
+  it('o texto fixo da tela não promete envio automático enquanto o cron não roda', () => {
+    if (rotaDeCronAgendada('reminders')) return
+
+    /*
+     * Casa a palavra PORTUGUESA, com acento e cercada por limite de palavra. A primeira versão
+     * usava `/autom[áa]tic[oa]s?/gi` e reprovava o arquivo já corrigido: casava com `Automatico`
+     * dentro do identificador `textoDoEnvioAutomatico`, que é justamente a chamada CERTA. Guarda
+     * que reprova o código correto é desligada por quem mantém, não obedecida — e o falso
+     * positivo só apareceu porque a mutação foi desfeita e o teste continuou vermelho.
+     */
+    const copy = semComentarios(readFileSync(TELA, 'utf8'))
+    const achados = [...copy.matchAll(/\bautomátic[oa]s?\b/gi)].map((m) => m[0])
+
+    expect(
+      achados,
+      `${TELA} afirma automação em texto fixo, mas 'reminders' não está no schedule do cron.yml. ` +
+        'Quem pode afirmar isso é `textoDoEnvioAutomatico`, que sabe os dois estados do mundo — ' +
+        'texto fixo na tela não sabe, e foi assim que a promessa voltou pelo rótulo.',
+    ).toEqual([])
+  })
+
+  it('e a frase honesta continua vindo da função, não escrita à mão', () => {
+    // O outro lado: tirar o adjetivo e também apagar a chamada deixaria a tela muda sobre o que
+    // o produto faz de verdade.
+    const copy = semComentarios(readFileSync(TELA, 'utf8'))
+    expect(/textoDoEnvioAutomatico\(/.test(copy), `${TELA} parou de consultar a fonte da verdade`).toBe(true)
   })
 })
