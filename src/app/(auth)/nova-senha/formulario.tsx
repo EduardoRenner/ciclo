@@ -62,16 +62,9 @@ export default function FormularioNovaSenha() {
       }}
       className="flex w-full max-w-sm flex-col gap-3"
     >
-      <Input
-        rotulo="Senha nova"
-        name="password"
-        type="password"
-        autoComplete="new-password"
-        required
-        minLength={10}
-        ajuda="No mínimo 10 caracteres."
-      />
-      <Input rotulo="Repita a senha" name="confirmacao" type="password" autoComplete="new-password" required minLength={10} />
+      {/* TICKET-UX22: mesmo corte do cadastro — sem o texto de ajuda permanente, minLength 8. */}
+      <Input rotulo="Senha nova" name="password" type="password" autoComplete="new-password" required minLength={8} />
+      <Input rotulo="Repita a senha" name="confirmacao" type="password" autoComplete="new-password" required minLength={8} />
       {erro ? (
         <p role="alert" className="text-secundario text-bad">
           {erro}

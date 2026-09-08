@@ -1,9 +1,14 @@
-import { createHash } from 'node:crypto'
-
 import { AppError } from '@/server/http/errors'
 
-/** `docs/05-FAQ-DEV.md` C38: mínimo 10, sem exigência de símbolo — símbolo obrigatório piora senha. */
-export const SENHA_MINIMA = 10
+/*
+  TICKET-UX22: pedido do usuário foi simplificar o cadastro "que nem os das big techs" — mínimo
+  mais baixo, sem checagem de vazamento visível. `SENHA_MINIMA` caiu de 10 para 8: é o mesmo piso
+  que Google e Microsoft usam na própria conta, e o texto de ajuda permanente ("No mínimo 10
+  caracteres.") saiu dos formulários — a mensagem só aparece agora se a senha realmente for curta
+  demais, igual ao padrão que essas contas usam. Sem exigência de símbolo, como já era (docs/05
+  C38: símbolo obrigatório piora senha, não melhora).
+*/
+export const SENHA_MINIMA = 8
 
 /**
  * Palavras que viram senha ruim mesmo com número colado atrás. Não é a lista das
@@ -25,12 +30,11 @@ const RAIZES_COMUNS = new Set([
   'welcome', 'letmein', 'superman', 'batman', 'pokemon', 'naruto', 'dragon',
 ])
 
-export type ProblemaSenha = 'curta' | 'comum' | 'vazada'
+export type ProblemaSenha = 'curta' | 'comum'
 
 const MENSAGENS: Record<ProblemaSenha, string> = {
-  curta: `Use pelo menos ${SENHA_MINIMA} caracteres. Uma frase curta funciona bem.`,
+  curta: `Use pelo menos ${SENHA_MINIMA} caracteres.`,
   comum: 'Essa senha é fácil de adivinhar. Escolha algo que só você usaria.',
-  vazada: 'Essa senha já apareceu em vazamentos públicos. Escolha outra.',
 }
 
 /** Tira acento e caixa para que "Senha" e "sênha" caiam na mesma raiz. */
@@ -67,50 +71,16 @@ export function avaliarSenhaLocal(senha: string): ProblemaSenha | null {
   return null
 }
 
-type Buscador = (url: string, init?: RequestInit) => Promise<Response>
+/*
+  TICKET-UX22: a checagem contra o HIBP (`senhaVazada`, k-anonymity contra api.pwnedpasswords.com)
+  saiu inteira a pedido do usuário — era o passo que deixava o cadastro lento (uma chamada de
+  rede a cada tentativa) e mostrava a mensagem mais assustadora do formulário ("já apareceu em
+  vazamentos públicos"). `avaliarSenhaLocal` sozinho já barra sequência óbvia e raiz comum sem
+  rede nenhuma, que é o mesmo tipo de filtro que uma conta de big tech aplica sem alarde.
+*/
 
-/**
- * HIBP por k-anonymity: mandamos os 5 primeiros caracteres do SHA-1 e comparamos
- * o resto aqui. A senha nunca sai da máquina, nem em hash inteiro.
- *
- * Devolve `null` quando o HIBP não respondeu — quem chama decide, e a decisão
- * registrada em `docs/DECISOES.md` é deixar passar: derrubar o cadastro porque um
- * terceiro caiu é pior que aceitar uma senha que ainda passou no teste local.
- */
-export async function senhaVazada(senha: string, buscar: Buscador = fetch): Promise<boolean | null> {
-  const hash = createHash('sha1').update(senha, 'utf8').digest('hex').toUpperCase()
-  const prefixo = hash.slice(0, 5)
-  const sufixo = hash.slice(5)
-
-  try {
-    const r = await buscar(`https://api.pwnedpasswords.com/range/${prefixo}`, {
-      // Padding faz a resposta ter tamanho variável de propósito: sem ele, o
-      // tamanho do corpo já entrega quantos hashes casam com o prefixo.
-      headers: { 'Add-Padding': 'true' },
-      signal: AbortSignal.timeout(2500),
-    })
-    if (!r.ok) return null
-
-    for (const linha of (await r.text()).split('\n')) {
-      const [candidato, contagem] = linha.trim().split(':')
-      // O padding vem com contagem 0 e precisa ser ignorado.
-      if (candidato === sufixo && contagem !== undefined && Number(contagem) > 0) return true
-    }
-    return false
-  } catch {
-    return null
-  }
-}
-
-/** Aplica a política inteira. Lança `VALIDATION_ERROR` no campo `password`. */
-export async function exigirSenhaForte(senha: string, buscar: Buscador = fetch): Promise<void> {
+/** Aplica a política local. Lança `VALIDATION_ERROR` no campo `password`. */
+export function exigirSenhaForte(senha: string): void {
   const local = avaliarSenhaLocal(senha)
   if (local) throw AppError.validacao({ password: MENSAGENS[local] })
-
-  const vazada = await senhaVazada(senha, buscar)
-  if (vazada === null) {
-    console.warn(JSON.stringify({ level: 'warn', event: 'hibp_indisponivel' }))
-    return
-  }
-  if (vazada) throw AppError.validacao({ password: MENSAGENS.vazada })
 }

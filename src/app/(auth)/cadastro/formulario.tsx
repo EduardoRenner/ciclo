@@ -73,15 +73,15 @@ export default function FormularioCadastro() {
       <Input rotulo="Nome completo" name="fullName" autoComplete="name" required />
       <Input rotulo="E-mail" name="email" type="email" autoComplete="email" required />
       <PhoneInput rotulo="Telefone com DDD" name="phone" valor={telefone} aoMudar={setTelefone} required />
-      <Input
-        rotulo="Senha"
-        name="password"
-        type="password"
-        autoComplete="new-password"
-        required
-        minLength={10}
-        ajuda="No mínimo 10 caracteres."
-      />
+      {/*
+        TICKET-UX22: pedido do usuário foi simplificar "que nem os das big techs" — o texto de
+        ajuda permanente ("No mínimo 10 caracteres.") saiu, igual a um cadastro do Google ou da
+        Microsoft não avisa o mínimo antes de a pessoa errar. `minLength` desceu de 10 para 8
+        (mesmo piso dessas contas) e continua fazendo a validação nativa do navegador; o servidor
+        (`exigirSenhaForte`) é quem decide de verdade e devolve o motivo certo se a senha for
+        fraca demais.
+      */}
+      <Input rotulo="Senha" name="password" type="password" autoComplete="new-password" required minLength={8} />
       {erro ? (
         <p role="alert" className="text-secundario text-bad">
           {erro}
