@@ -201,6 +201,10 @@ export async function middleware(req: NextRequest) {
   if (!precisaRenovarSessao(req.nextUrl.pathname)) return resposta
 
   const db = createServerClient(url, anon, {
+    // Mesma razão de `server-client.ts`: o default do `@supabase/ssr` é `httpOnly: false`, e é
+    // AQUI que o cookie de sessão é renovado a cada 15 minutos — sem isto, o token novo nasceria
+    // legível por `document.cookie` mesmo com o outro ponto corrigido.
+    cookieOptions: { httpOnly: true, secure: true, sameSite: 'lax' },
     cookies: {
       getAll: () => req.cookies.getAll(),
       setAll: (novos) => {

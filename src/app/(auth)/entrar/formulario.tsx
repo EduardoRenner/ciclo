@@ -6,6 +6,8 @@ import { useState } from 'react'
 
 import Button from '@/components/ui/button'
 import Input from '@/components/ui/input'
+// Função pura, sem I/O nem segredo: entra no bundle do cliente sem arrastar nada do servidor.
+import { caminhoInternoSeguro } from '@/server/auth/destino'
 
 /**
  * `/auth/callback` manda pessoas para cá com `?erro=` em dois casos: link de e-mail vencido ou
@@ -45,16 +47,27 @@ export default function FormularioEntrar() {
         return
       }
 
-      const proximo = params.get('proximo')
+      /*
+        `proximo` vem da query string, que qualquer um monta. Ia cru para `router.push`, e
+        `router.push` navega para URL externa: `?proximo=https://evil.com/entrar` autenticava a
+        pessoa no domínio de verdade e a jogava num clone no instante seguinte — bem quando ela
+        acabou de digitar a senha e espera ver o painel. `caminhoInternoSeguro` resolve o
+        candidato do mesmo jeito que o navegador resolveria e recusa tudo que sai do domínio,
+        inclusive o `/\evil.com` que passa por checagem de prefixo.
+
+        Sanitizado UMA vez, aqui, e não em cada uso: o valor também viaja para `/verificar` na
+        query do MFA, e mandar o valor cru adiante seria só mudar o defeito de lugar.
+      */
+      const proximo = caminhoInternoSeguro(params.get('proximo'))
 
       if (json.data?.mfaRequired && json.data.factorId) {
-        const destino = new URLSearchParams({ factorId: json.data.factorId, ...(proximo ? { proximo } : {}) })
+        const destino = new URLSearchParams({ factorId: json.data.factorId, proximo })
         router.push(`/verificar?${destino.toString()}`)
         return
       }
 
       const semNegocio = (json.data?.tenants.length ?? 0) === 0
-      router.push(semNegocio ? '/onboarding' : (proximo ?? '/admin/hoje'))
+      router.push(semNegocio ? '/onboarding' : proximo)
       router.refresh()
     } catch {
       setErro('Não consegui falar com o servidor. Tente de novo.')

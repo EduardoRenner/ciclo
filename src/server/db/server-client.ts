@@ -24,6 +24,20 @@ export async function criarClienteDoUsuario() {
     exigirEnv('NEXT_PUBLIC_SUPABASE_URL'),
     exigirEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY'),
     {
+      /*
+        Achado da auditoria de 2026-09-08: o default do `@supabase/ssr` é `httpOnly: false`
+        (`utils/constants.js`), então access e refresh token ficavam legíveis por
+        `document.cookie`. Qualquer XSS deixava de ser sequestro de aba e virava takeover
+        duradouro — o refresh token continua valendo depois de a aba fechar.
+        A CSP com nonce e `strict-dynamic` do middleware torna XSS improvável, e é o que segurou
+        a severidade; mas defesa que depende de uma só camada não é defesa.
+
+        **Isto governa só o cookie escrito pelo SERVIDOR.** O `createBrowserClient` escreve por
+        `document.cookie`, que não tem como marcar `httpOnly` nem se quisesse — e nada no cliente
+        depende de LER a sessão: `criarClienteDoNavegador` é usado num lugar só
+        (`(auth)/login-social.tsx`) e apenas para `signInWithOAuth`, que não lê sessão existente.
+      */
+      cookieOptions: { httpOnly: true, secure: true, sameSite: 'lax' },
       cookies: {
         getAll: () => jar.getAll(),
         setAll: (novos) => {

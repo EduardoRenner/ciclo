@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
 import Button from '@/components/ui/button'
+import { caminhoInternoSeguro } from '@/server/auth/destino'
 import Input from '@/components/ui/input'
 
 export default function FormularioVerificar({ factorId, proximo }: { factorId: string; proximo: string | null }) {
@@ -29,7 +30,12 @@ export default function FormularioVerificar({ factorId, proximo }: { factorId: s
         return
       }
 
-      router.push(proximo ?? '/admin/hoje')
+      /*
+        Sanitizado aqui TAMBÉM, e não só no login: `/verificar?proximo=` é alcançável direto pela
+        URL, então confiar que o valor já passou pelo formulário de entrar seria supor um caminho
+        que o atacante não é obrigado a seguir.
+      */
+      router.push(caminhoInternoSeguro(proximo))
       router.refresh()
     } catch {
       setErro('Não consegui falar com o servidor. Tente de novo.')
