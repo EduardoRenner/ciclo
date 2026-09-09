@@ -4,6 +4,7 @@ import { avaliarAlertas, type FormularioAnamnese, type PerguntaAnamnese } from '
 import { deBytea, paraBytea } from '@/server/crypto/bytea'
 import { decryptVault, encryptVault } from '@/server/crypto/vault'
 import { AppError } from '@/server/http/errors'
+import { withTenant } from '@/server/db/with-tenant'
 import { registrarAcessoAoCofre } from '@/server/services/cofre-trilha'
 
 import type { Database } from '@/server/db/types.gen'
@@ -133,17 +134,63 @@ export async function abrirFicha(
  * Leitura leve para card/ficha ("aparece no topo sem abrir", §9): só o
  * booleano e o rótulo genérico, sem decifrar nada e sem tocar em
  * `vault_access_log` — não é abertura do cofre, é o sinal que existe
- * justamente para não precisar abrir toda vez.
+ * justamente para não precisar abrir toda vez. É o que a recepção precisa
+ * para avisar quem atende.
+ *
+ * **Devolvia o rótulo junto, e isso era o vazamento da Unidade 10.** O rótulo
+ * ("Alergia a látex", "Gestante") é dado de saúde, e a rota `/vault` o protege
+ * com TRÊS travas: `exigirPermissao('vault:own')`, `exigirAal2()` e registro
+ * em `vault_access_log`. A ficha do cliente servia o MESMO rótulo sem nenhuma
+ * das três, para qualquer papel com `client:read` — recepção inclusive. O
+ * contrato de `fichaDoCliente` dizia, na linha de cima do campo, "só o SINAL
+ * de que existe alerta de saúde, nunca o conteúdo".
+ *
+ * Quem pode ler o rótulo usa `rotuloDoAlerta`, logo abaixo.
  */
-export async function alertaDoCliente(db: Cliente, tenantId: string, clientId: string): Promise<{ hasAlert: boolean; alertLabel: string | null }> {
+export async function alertaDoCliente(
+  db: Cliente,
+  tenantId: string,
+  clientId: string,
+): Promise<{ hasAlert: boolean; temFicha: boolean }> {
   const { data, error } = await db
     .from('health_records')
-    .select('has_alert, alert_label')
+    .select('has_alert')
     .eq('tenant_id', tenantId)
     .eq('client_id', clientId)
     .maybeSingle()
   if (error) throw new AppError('INTERNAL', { cause: error })
-  return { hasAlert: data?.has_alert ?? false, alertLabel: data?.alert_label ?? null }
+  // `temFicha` vem da EXISTÊNCIA da linha. Antes a ficha era deduzida de "tem alerta ou tem
+  // rótulo", e o rótulo saiu daqui — sem esta troca, quem tem anamnese preenchida e nenhum
+  // alerta desapareceria da tela.
+  return { hasAlert: data?.has_alert ?? false, temFicha: data !== null }
+}
+
+/**
+ * O rótulo do alerta, para quem tem direito ao cofre. **Só chame depois de
+ * conferir a permissão** — esta função não a confere, do mesmo jeito que
+ * `abrirFicha` não confere e depende da rota.
+ *
+ * Passa por `withTenant` (service_role) porque a `0077` tirou `alert_label` do
+ * `grant select` de `authenticated`: com o cliente do usuário esta consulta
+ * agora ERRA em vez de devolver o dado — que é justamente o ponto da segunda
+ * camada. O `tenant_id` continua filtrado na mão, como o wrapper exige.
+ *
+ * Não registra em `vault_access_log` pela mesma razão que `alertaDoCliente`
+ * não registra: o rótulo fica em claro no banco por desenho (`0001`, "rótulo
+ * curto, sem detalhe clínico") e ler não é decifrar. Abrir o cofre continua
+ * sendo o ato deliberado que a trilha existe para guardar.
+ */
+export async function rotuloDoAlerta(tenantId: string, clientId: string): Promise<string | null> {
+  return withTenant(tenantId, async (db, t) => {
+    const { data, error } = await db
+      .from('health_records')
+      .select('alert_label')
+      .eq('tenant_id', t)
+      .eq('client_id', clientId)
+      .maybeSingle()
+    if (error) throw new AppError('INTERNAL', { cause: error })
+    return data?.alert_label ?? null
+  })
 }
 
 export type { PerguntaAnamnese }

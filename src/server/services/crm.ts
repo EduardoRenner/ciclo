@@ -1,7 +1,7 @@
 import { Temporal } from '@js-temporal/polyfill'
 import { z } from 'zod'
 
-import { alertaDoCliente } from '@/server/services/anamnese'
+import { alertaDoCliente, rotuloDoAlerta } from '@/server/services/anamnese'
 import { statusConsentimentos } from '@/server/services/consentimentos'
 import { assinaturaAtiva, extratoDePontos, lerConfigFidelidade, type AssinaturaDoCliente, type ExtratoPontos } from '@/server/services/fidelidade'
 import { listarMediaDoCliente } from '@/server/services/media'
@@ -98,7 +98,16 @@ export type FichaCliente = {
    * deliberada, que passa por `/vault` e fica registrada na trilha de acesso (TICKET-053).
    * Carregar o conteúdo aqui geraria um acesso registrado a cada abertura da tela.
    */
-  saude: { temFicha: boolean; temAlerta: boolean; alerta: string | null }
+  saude: {
+    temFicha: boolean
+    temAlerta: boolean
+    /**
+     * O rótulo, e `null` para quem não pode lê-lo. Ver `podeLerCofre` na assinatura:
+     * até 2026-09-09 este campo vinha preenchido para QUALQUER papel com `client:read`,
+     * contradizendo a frase logo acima e as três travas da rota `/vault`.
+     */
+    alerta: string | null
+  }
 }
 
 /** `preferences` chega como `Json`; só interessa o objeto raso de texto que o formulário grava. */
@@ -122,7 +131,7 @@ export async function fichaDoCliente(
   tenantId: string,
   clientId: string,
   timezone: string,
-  opcoes: { podeVerLucro?: boolean } = {},
+  opcoes: { podeVerLucro?: boolean; podeLerCofre?: boolean } = {},
 ): Promise<FichaCliente> {
   const { data: cliente, error } = await db
     .from('clients')
@@ -152,6 +161,7 @@ export async function fichaDoCliente(
     fotos,
     consentimentosBruto,
     saudeBruto,
+    rotuloDoCofre,
     servicosBruto,
     comandasBruto,
   ] = await Promise.all([
@@ -221,6 +231,10 @@ export async function fichaDoCliente(
     listarMediaDoCliente(tenantId, clientId),
     statusConsentimentos(db, tenantId, clientId),
     alertaDoCliente(db, tenantId, clientId),
+    // Mesma régua do lucro seis linhas abaixo: sem permissão, a consulta NEM ACONTECE. Buscar e
+    // descartar deixaria o rótulo trafegar no payload do server component até o navegador de quem
+    // não pode vê-lo — invisível na tela e visível no devtools, que é o pior dos dois mundos.
+    opcoes.podeLerCofre ? rotuloDoAlerta(tenantId, clientId) : Promise.resolve(null),
     // `listarPacotesDoCliente` devolve `serviceId`, não o nome — o catálogo de um salão é
     // pequeno, então uma leitura resolve todos os pacotes de uma vez.
     db.from('services').select('id, name').eq('tenant_id', tenantId),
@@ -374,9 +388,13 @@ export async function fichaDoCliente(
       grantedAt: s?.grantedAt ?? null,
     })),
     saude: {
-      temFicha: saudeBruto.hasAlert || saudeBruto.alertLabel !== null,
+      // `temFicha` saía de `hasAlert || alertLabel !== null` — e o segundo termo era o rótulo,
+      // que agora só existe para quem pode. Sem trocar a fonte, a recepção deixaria de ver o
+      // cartão de saúde de quem tem ficha SEM alerta: o conserto de privacidade viraria um
+      // apagão de informação legítima.
+      temFicha: saudeBruto.temFicha,
       temAlerta: saudeBruto.hasAlert,
-      alerta: saudeBruto.alertLabel,
+      alerta: rotuloDoCofre,
     },
   }
 }
