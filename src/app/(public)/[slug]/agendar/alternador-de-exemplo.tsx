@@ -28,7 +28,7 @@ export default function AlternadorDeExemplo({
       <div role="tablist" className="grid grid-cols-2 gap-2 rounded-[var(--radius)] bg-surface-2 p-1">
         {(
           [
-            { chave: "cliente", rotulo: "O que a cliente vê" },
+            { chave: "cliente", rotulo: "O que quem agenda vê" },
             { chave: "dono", rotulo: "O que você vê" },
           ] as const
         ).map((opcao) => (

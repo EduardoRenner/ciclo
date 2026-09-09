@@ -11,7 +11,7 @@ const COLUNAS =
   'id, name, phone_e164, email, birth_date, notes, tags, source, referred_by, preferences, document, gender, address, emergency_contact, preferred_professional_id, online_booking_blocked, marketing_opt_in, whatsapp_opt_out, visits_count, no_show_count, ltv_cents, last_visit_at, created_at'
 
 export const EsquemaCliente = z.object({
-  name: z.string().trim().min(2, 'Digite o nome da cliente.').max(120, 'Nome muito longo.'),
+  name: z.string().trim().min(2, 'Digite o nome de quem vai ser atendido.').max(120, 'Nome muito longo.'),
   // D47: cliente sem telefone pode — só não entra em automação.
   phone: z.string().trim().nullish(),
   email: z.email('Digite um e-mail válido.').nullish(),
@@ -91,7 +91,7 @@ function paraColunas(entrada: EntradaParcial): ColunasCliente {
 /** Traduz o índice único `clients_unique_phone` (0001) em erro de campo. */
 function traduzirErro(erro: { code?: string }): never {
   if (erro.code === '23505') {
-    throw AppError.validacao({ phone: 'Já existe uma cliente com esse telefone.' })
+    throw AppError.validacao({ phone: 'Já existe uma ficha com esse telefone.' })
   }
   throw new AppError('INTERNAL', { cause: erro })
 }
@@ -163,7 +163,7 @@ export async function buscarCliente(db: Cliente, tenantId: string, id: string) {
     .maybeSingle()
 
   if (error) throw new AppError('INTERNAL', { cause: error })
-  if (!data) throw new AppError('NOT_FOUND', { message: 'Essa cliente não está mais na sua lista.' })
+  if (!data) throw new AppError('NOT_FOUND', { message: 'Essa ficha não está mais na sua lista.' })
   return data
 }
 
@@ -181,7 +181,7 @@ export async function atualizarCliente(db: Cliente, tenantId: string, id: string
     .maybeSingle()
 
   if (error) traduzirErro(error)
-  if (!data) throw new AppError('NOT_FOUND', { message: 'Essa cliente não está mais na sua lista.' })
+  if (!data) throw new AppError('NOT_FOUND', { message: 'Essa ficha não está mais na sua lista.' })
   return data
 }
 
@@ -197,6 +197,6 @@ export async function removerCliente(db: Cliente, tenantId: string, id: string) 
     .maybeSingle()
 
   if (error) throw new AppError('INTERNAL', { cause: error })
-  if (!data) throw new AppError('NOT_FOUND', { message: 'Essa cliente não está mais na sua lista.' })
+  if (!data) throw new AppError('NOT_FOUND', { message: 'Essa ficha não está mais na sua lista.' })
   return { removida: true }
 }

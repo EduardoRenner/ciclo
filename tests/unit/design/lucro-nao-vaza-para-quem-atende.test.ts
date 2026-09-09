@@ -73,3 +73,89 @@ describe('o lucro do atendimento não chega a quem não pode ver', () => {
     expect(/\{sobra\s*\?/.test(src), 'o cartão do Sobrou não é mais condicionado à prop').toBe(true)
   })
 })
+
+/**
+ * A METADE QUE FALTAVA, achada mutando em 2026-09-09.
+ *
+ * O bloco acima cobre a COMANDA, que é onde o vazamento apareceu primeiro. Só que o mesmo lucro
+ * é calculado na FICHA DO CLIENTE, pelo mesmo caminho e com a mesma régua — e nenhuma linha desta
+ * guarda olhava para lá.
+ *
+ * Provado: troquei `opcoes.podeVerLucro ?` por `true ?` em `fichaDoCliente`, que faz a consulta de
+ * `profit_cents` acontecer para QUALQUER papel, e os quatro testes acima passaram verdes.
+ *
+ * É a `guarda-cega-de-raiz` na forma clássica — a guarda ficou ancorada no arquivo onde o defeito
+ * nasceu — combinada com `consertar-a-pergunta-nao-o-caso`: o conserto de um caso deixou o irmão
+ * dele sem vigia. A ficha é aberta por quem atende, exatamente como a comanda.
+ */
+
+const PAGINA_FICHA = 'src/app/admin/clientes/[id]/page.tsx'
+const TELA_FICHA = 'src/app/admin/clientes/[id]/ficha.tsx'
+const SERVICO_CRM = 'src/server/services/crm.ts'
+
+describe('o lucro por cliente também não chega a quem não pode ver', () => {
+  it('a leitura não voltou vazia', () => {
+    expect(semComentarios(PAGINA_FICHA).length, `${PAGINA_FICHA} veio vazio`).toBeGreaterThan(500)
+    expect(semComentarios(TELA_FICHA).length, `${TELA_FICHA} veio vazio`).toBeGreaterThan(1_000)
+    expect(semComentarios(SERVICO_CRM), 'o CRM não busca mais o lucro — guarda a revisar').toContain('profit_cents')
+  })
+
+  it('a página confere `report:read` e passa a decisão adiante', () => {
+    const src = semComentarios(PAGINA_FICHA)
+    expect(
+      /podeVerLucro:\s*avaliarPermissao\(\s*ctx\.papel\s*,\s*'report:read'\s*\)/.test(src),
+      'a ficha decide o lucro por outra régua que não `report:read` — a mesma do caixa e da comanda',
+    ).toBe(true)
+  })
+
+  it('a consulta do lucro NÃO ACONTECE sem permissão', () => {
+    /*
+     * O ponto que a mutação expôs. Buscar e descartar já seria vazamento: o número viajaria no
+     * payload do server component até o navegador de quem não pode vê-lo. O próprio arquivo diz
+     * isso ("Só é buscado para quem pode ver: sem `report:read`, nem a consulta acontece") — e era
+     * uma promessa sem guarda.
+     */
+    const src = semComentarios(SERVICO_CRM)
+    const i = src.indexOf("select('profit_cents')")
+    expect(i, 'sumiu a consulta de `profit_cents` do CRM').toBeGreaterThan(-1)
+
+    // Recorte para trás, com piso: a condição tem que estar ANTES da consulta, perto dela.
+    const inicio = Math.max(0, i - 600)
+    const antes = src.slice(inicio, i)
+    expect(
+      /opcoes\.podeVerLucro\s*\?/.test(antes),
+      'a consulta de `profit_cents` não está condicionada a `opcoes.podeVerLucro`. Sem isso a ficha ' +
+        'busca o lucro para qualquer papel, e o número chega ao navegador de quem não podia vê-lo.',
+    ).toBe(true)
+  })
+
+  it('a tela recebe o lucro podendo ser nulo, e condiciona o que mostra', () => {
+    const src = semComentarios(TELA_FICHA)
+    /*
+      Os DOIS cartões, cada um com seu padrão, e não um padrão que casa qualquer um deles.
+
+      A primeira versão era `/\{metricas\.lucro\s*\?/` sozinha, e era cega: tirei o condicional do
+      cartão "Lucro" e o teste continuou verde, satisfeito pelo condicional do "Lucro por ano" que
+      ficou. Mesmo erro que a guarda de vocabulário tinha, no mesmo dia — padrão que casa em dois
+      lugares não guarda nenhum dos dois.
+
+      Cartão novo de lucro entra aqui. É trabalho manual de propósito: a alternativa seria uma
+      regra tentando adivinhar o que é "renderizar lucro", e ela erraria nos dois sentidos.
+    */
+    expect(/\{metricas\.lucro \? \(/.test(src), 'o cartão "Lucro" não é mais condicionado à prop').toBe(true)
+    expect(
+      /metricas\.lucro\?\.lucroAnualCents !== null/.test(src),
+      'o cartão "Lucro por ano" não é mais condicionado à prop',
+    ).toBe(true)
+    expect(
+      /lucro:\s*LucroDoCliente\s*\|\s*null/.test(semComentarios(SERVICO_CRM)),
+      'a prop do lucro deixou de poder ser nula — quem não pode ver não teria como não ver',
+    ).toBe(true)
+  })
+
+  it('a tela da ficha não lê número de lucro cru do ticket', () => {
+    const src = semComentarios(TELA_FICHA)
+    const vazando = NUMEROS_DE_LUCRO.filter((coluna) => new RegExp(`\b${coluna}\b`).test(src))
+    expect(vazando, `a ficha lê número de lucro cru, contornando a régua do servidor: ${vazando.join(', ')}`).toEqual([])
+  })
+})

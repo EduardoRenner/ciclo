@@ -5,10 +5,11 @@ import { useMemo, useState } from 'react'
 
 import Button from '@/components/ui/button'
 import Input from '@/components/ui/input'
+import { SLUG_PROFISSAO_GENERICA } from '@/core/profissoes'
 import { semAcento } from '@/core/text/normalizar'
 import { APP_HOST } from '@/lib/app-url'
 
-export type Profissao = { id: string; nome: string; grupo: string; sinonimos: string[] }
+export type Profissao = { id: string; slug: string; nome: string; grupo: string; sinonimos: string[] }
 
 function slugificar(texto: string): string {
   return texto
@@ -43,6 +44,14 @@ export default function FormularioOnboarding({ profissoes }: { profissoes: Profi
   }
 
   const profissaoEscolhida = profissoes.find((p) => p.id === professionId) ?? null
+
+  /*
+    A saída para quem não está nas 17. `?? null` e renderização condicional porque a linha vem do
+    banco: se a `0078` não tiver sido aplicada, a tela mostra a frase sem oferecer um botão que
+    levaria a um `professionId` inexistente — a rota recusaria com "Escolha uma profissão da lista",
+    que é justamente o beco de novo, agora com um clique a mais.
+  */
+  const generica = profissoes.find((p) => p.slug === SLUG_PROFISSAO_GENERICA) ?? null
 
   const filtradas = useMemo(() => {
     const termo = semAcento(buscaProfissao)
@@ -113,7 +122,32 @@ export default function FormularioOnboarding({ profissoes }: { profissoes: Profi
           />
           <div className="flex max-h-[220px] flex-col gap-1 overflow-y-auto rounded-[var(--radius-sm)] border border-line-2 p-1">
             {filtradas.length === 0 ? (
-              <p className="p-3 text-secundario text-txt-3">Nenhuma profissão encontrada.</p>
+              /*
+                O beco que o item 17 da auditoria achou. Aqui ficava só
+                "Nenhuma profissão encontrada." — ponto final, na PRIMEIRA tela depois de criar a
+                conta, com `professionId` obrigatório no esquema da rota. Quem não estivesse nas 17
+                não tinha o que fazer, depois de já ter dado e-mail e senha.
+
+                Tela vazia sem saída é beco sem saída: a mesma régua do `EmptyState`, que exige ação.
+              */
+              <div className="flex flex-col gap-2 p-3">
+                <p className="text-secundario text-txt-3">
+                  Não achamos “{buscaProfissao.trim()}” na lista.
+                </p>
+                {generica ? (
+                  <button
+                    type="button"
+                    onClick={() => setProfessionId(generica.id)}
+                    className="toque-48 flex h-11 shrink-0 items-center rounded-[var(--radius-sm)] bg-surface-2 px-3 text-left text-corpo font-semibold text-txt transition-colors hover:bg-surface-3"
+                  >
+                    Seguir como {generica.nome}
+                  </button>
+                ) : null}
+                <p className="text-label text-txt-3">
+                  A profissão só escolhe o ponto de partida. Seus serviços e horários você
+                  configura do seu jeito depois.
+                </p>
+              </div>
             ) : (
               filtradas.map((p) => (
                 <button

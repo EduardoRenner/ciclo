@@ -23,10 +23,19 @@ export default function DireitosDaCliente({
   clientId,
   nome,
   podeApagar,
+  podeExportar,
 }: {
   clientId: string
   nome: string
   podeApagar: boolean
+  /*
+    Entrou junto com a Unidade 10, e por causa dela. A rota de exportação passou a exigir
+    `client:export` (do dono), porque ela DECIFRA o cofre e antes aceitava `client:read`, que a
+    recepção tem. Sem esta prop, o botão continuaria na tela para todo mundo e só falharia no
+    clique — que é a armadilha "deixa trabalhar para recusar no envio" que o `docs/20` combate, e
+    que seria criada pelo próprio conserto de segurança.
+  */
+  podeExportar: boolean
 }) {
   const router = useRouter()
   const mostrarToast = useToast()
@@ -98,7 +107,7 @@ export default function DireitosDaCliente({
 
   return (
     <section className="mt-7">
-      <SectionHeader icone={<ShieldCheck aria-hidden className="size-3.5" />}>Direitos da cliente</SectionHeader>
+      <SectionHeader icone={<ShieldCheck aria-hidden className="size-3.5" />}>Direitos sobre os dados</SectionHeader>
       <Card className="flex flex-col gap-3">
         <p className="text-secundario text-txt-2">
           Ela pode pedir uma cópia de tudo que você guarda sobre ela, ou pedir para sumir da sua base. As duas coisas
@@ -116,10 +125,12 @@ export default function DireitosDaCliente({
         ) : null}
 
         <div className="flex flex-wrap gap-2">
-          <Button tamanho="sm" variante="secondary" carregando={pendente} onClick={baixar}>
-            <Download aria-hidden className="size-4" />
-            Baixar os dados
-          </Button>
+          {podeExportar ? (
+            <Button tamanho="sm" variante="secondary" carregando={pendente} onClick={baixar}>
+              <Download aria-hidden className="size-4" />
+              Baixar os dados
+            </Button>
+          ) : null}
           {podeApagar ? (
             <Button tamanho="sm" variante="ghost" onClick={() => setConfirmando(true)}>
               <Trash2 aria-hidden className="size-4" />

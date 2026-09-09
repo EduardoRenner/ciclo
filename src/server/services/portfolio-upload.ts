@@ -49,7 +49,7 @@ export async function publicarNoPortfolio(tenantId: string, mediaId: string): Pr
       .maybeSingle()
     if (erroConsentimento) throw new AppError('INTERNAL', { cause: erroConsentimento })
     if (!consentimento) {
-      throw AppError.validacao({ consentId: 'A autorização de uso de imagem desta cliente não está mais ativa.' })
+      throw AppError.validacao({ consentId: 'A autorização de uso de imagem dessa pessoa não está mais ativa.' })
     }
 
     const { data: original, error: erroDownload } = await db.storage.from(BUCKET_ORIGEM).download(foto.storage_key)

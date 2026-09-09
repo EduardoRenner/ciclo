@@ -350,7 +350,7 @@ export default function Comanda({
             mais usada do dia.
           */}
           <Card className="flex flex-col gap-3">
-            <p className="text-corpo font-semibold">Como a cliente pagou?</p>
+            <p className="text-corpo font-semibold">Como foi pago?</p>
             <div className="grid grid-cols-2 gap-2">
               {FORMAS_DE_PAGAMENTO.map((f) => (
                 <button
@@ -375,7 +375,7 @@ export default function Comanda({
             motivoDesabilitado={
               itens.length === 0
                 ? 'Adicione pelo menos um item para poder fechar a comanda.'
-                : 'Escolha como a cliente pagou. É o que permite descontar a taxa da maquininha.'
+                : 'Escolha como foi pago. É o que permite descontar a taxa da maquininha.'
             }
             onClick={fechar}
           >

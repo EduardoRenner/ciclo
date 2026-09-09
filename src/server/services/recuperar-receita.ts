@@ -266,7 +266,7 @@ export async function enviarParaRecuperar(
         console.error(JSON.stringify({
           level: 'error',
           event: 'recuperar_carimbo_nao_gravou',
-          detalhe: 'mensagem enviada e last_campaign_at NAO gravado — a trava de 7 dias fica cega para esta cliente',
+          detalhe: 'mensagem enviada e last_campaign_at NAO gravado — a trava de 7 dias fica cega para esta ficha',
           tenantId,
           clientId: item.clientId,
           serviceId: item.serviceId,

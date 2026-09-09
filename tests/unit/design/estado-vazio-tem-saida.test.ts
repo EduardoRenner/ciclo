@@ -26,11 +26,28 @@ const EXCECOES_COM_MOTIVO: Record<string, string> = {
  * primeiro recortava o bloco ANTES da prop `acao` — foi assim que a primeira medicao desta
  * varredura acusou 17 telas quebradas que nao existiam.
  */
+/**
+ * Abertura do componente EXATO, e não por prefixo.
+ *
+ * `linha.includes('<EmptyState')` casava também `<EmptyStateDeRecuperar`, que é um WRAPPER — ele
+ * renderiza o `EmptyState` de verdade lá dentro, com a `acao`. O bloco do wrapper entrava na lista
+ * sem `acao=` e caía no `continue` mudo lá embaixo. Nada quebrava, mas o extrator media outra coisa.
+ *
+ * Sem regex de propósito: escrever classe de caractere por script já corrompeu três guardas nesta
+ * base. Olhar o caractere seguinte responde a mesma pergunta e não tem escape para errar.
+ */
+function abreEmptyState(linha: string): boolean {
+  const i = linha.indexOf(ABERTURA)
+  if (i === -1) return false
+  const seguinte = linha[i + ABERTURA.length]
+  return seguinte === undefined || seguinte === ' ' || seguinte === '>' || seguinte === String.fromCharCode(13)
+}
+
 function blocosDeEmptyState(fonte: string): string[] {
   const blocos: string[] = []
   let atual: string[] | null = null
   for (const linha of fonte.split(NL)) {
-    if (atual === null && linha.includes(ABERTURA)) atual = [linha]
+    if (atual === null && abreEmptyState(linha)) atual = [linha]
     else if (atual !== null) atual.push(linha)
     if (atual !== null && linha.trim() === FECHAMENTO) {
       blocos.push(atual.join(NL))
@@ -71,7 +88,17 @@ describe('todo estado vazio oferece uma saida de verdade', () => {
     it(`${paraPosix(arquivo)} da caminho a quem chega`, () => {
       const normalizado = paraPosix(arquivo)
       for (const bloco of blocos) {
-        if (!bloco.includes('acao=')) continue
+        /*
+          ASSERÇÃO, e não `continue`. `acao` é prop OBRIGATÓRIA do `EmptyState` (`React.ReactNode`,
+          sem `?`), então todo bloco corretamente extraído a contém. Um bloco sem ela significa que
+          o RECORTE truncou — e desistir em silêncio era esconder o defeito do próprio extrator,
+          exatamente a armadilha que custou uma rodada nesta base em 2026-09-09.
+        */
+        expect(
+          bloco.includes('acao='),
+          `${normalizado}: bloco de EmptyState sem \`acao=\`. A prop é obrigatória, então o extrator 
+            de blocos truncou — conserte o extrator, não o componente.`,
+        ).toBe(true)
         const acao = bloco.slice(bloco.indexOf('acao='))
         if (/<Link|<button|<Button|<a |onClick/.test(acao)) continue
         expect(

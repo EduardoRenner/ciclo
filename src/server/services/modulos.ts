@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { CATALOGO, podeUsarModulo, type ModuloKey, type Veredito } from '@/core/billing/planos'
+import { CATALOGO, NOME_DO_PLANO, podeUsarModulo, type ModuloKey, type Veredito } from '@/core/billing/planos'
 import { AppError } from '@/server/http/errors'
 import { contextoDePlano } from '@/server/services/planos'
 
@@ -86,7 +86,7 @@ export async function definirModulo(db: Cliente, tenantId: string, entrada: Entr
   // permitido, e o plano é teto, nunca piso.
   if (entrada.ligado && veredito.estado === 'bloqueado_pelo_plano') {
     throw new AppError('PLAN_LIMIT', {
-      message: `"${doCatalogo.label}" faz parte de outro plano.`,
+      message: `"${doCatalogo.label}" faz parte do plano ${NOME_DO_PLANO[veredito.precisaDo]}. Veja o que muda em Config → Meu plano.`,
       details: { modulo: entrada.modulo, precisaDo: veredito.precisaDo },
     })
   }

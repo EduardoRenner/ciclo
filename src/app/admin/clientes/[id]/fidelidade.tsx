@@ -227,7 +227,7 @@ export default function Fidelidade({ clientId, pontosIniciais, assinaturaInicial
                     type="button"
                     onClick={cancelar}
                     disabled={pendente}
-                    className="toque-48 mt-2 inline-flex text-label font-semibold text-txt-2 underline-offset-2 transition-colors hover:text-bad hover:underline disabled:opacity-50"
+                    className="toque-48 -mx-2 px-2 mt-2 inline-flex text-label font-semibold text-txt-2 underline-offset-2 transition-colors hover:text-bad hover:underline disabled:opacity-50"
                   >
                     Cancelar assinatura
                   </button>

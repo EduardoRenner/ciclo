@@ -30,6 +30,18 @@ export default async function PaginaFicha({ params }: { params: Promise<{ id: st
       // `docs/48` §4.6: o lucro por cliente é dado sensível dentro do salão, e a ficha é aberta
       // por quem atende. Mesma porta do caixa e da comanda.
       podeVerLucro: avaliarPermissao(ctx.papel, 'report:read') !== null,
+      /*
+        Unidade 10. O rótulo do alerta de saúde ("Alergia a látex") é dado de saúde, e a rota
+        `/vault` o protege com permissão + AAL2 + trilha. Esta tela servia o MESMO rótulo com
+        nenhuma das três, para qualquer papel com `client:read` — recepção inclusive.
+
+        `vault:own` e não `vault:read` porque é a permissão que a tabela do `rbac` realmente
+        concede: `owner` alcança pelo curinga, `professional` pelo literal, e `manager`,
+        `reception` e `finance` não têm nada de `vault:` — que é a lista certa.
+
+        O SINAL (`temAlerta`) continua para todo mundo: é o que faz a recepção avisar quem atende.
+      */
+      podeLerCofre: avaliarPermissao(ctx.papel, 'vault:own') !== null,
     }).catch((erro: unknown) => {
       if (erro instanceof AppError && erro.code === 'NOT_FOUND') return null
       throw erro
@@ -64,6 +76,9 @@ export default async function PaginaFicha({ params }: { params: Promise<{ id: st
       profissionais={profissionais.map((p) => ({ id: p.id, name: p.display_name }))}
       configFidelidade={lerConfigFidelidade(negocio.data?.settings)}
       podeApagarCliente={avaliarPermissao(ctx.papel, 'client:delete') !== null}
+      // A MESMA permissão que a rota exige. Duas fontes da mesma verdade seria pior que uma só:
+      // a tela some para quem a rota recusaria, em vez de oferecer e falhar no clique.
+      podeExportarCliente={avaliarPermissao(ctx.papel, 'client:export') !== null}
       podeLancarPacote={avaliarPermissao(ctx.papel, 'comanda:own') !== null}
       servicos={servicos.map((s) => ({ id: s.id, name: s.name, priceCents: s.price_cents }))}
       linkIndicacao={linkIndicacao}

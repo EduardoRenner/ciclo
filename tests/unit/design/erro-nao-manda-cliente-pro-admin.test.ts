@@ -1,4 +1,5 @@
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
@@ -72,5 +73,63 @@ describe('a tela de erro não manda o cliente do salão para o painel', () => {
         `a frase precisa estar condicionada ao painel; na rota pública ela é falsa (posição ${oco.index})`,
       ).toBe(true)
     }
+  })
+})
+
+/**
+ * A REGRA VALE PARA TODO BOUNDARY, e esta guarda olhava um só.
+ *
+ * `src/app/error.tsx` é onde o defeito apareceu, e a guarda acima ficou ancorada nele — a forma
+ * clássica de [[guarda-cega-de-raiz]], que já custou caro nesta base mais de uma vez. O Next tem
+ * outros três pontos que o visitante público alcança: `global-error.tsx` (que substitui o layout
+ * RAIZ inteiro), `not-found.tsx` e qualquer `error.tsx` de segmento.
+ *
+ * Medido em 2026-09-09: os três mandam para `/`, então **não há defeito hoje**. O que havia era a
+ * ausência de vigia — um `href="/admin"` acrescentado a `global-error.tsx` amanhã passaria verde,
+ * na tela que o cliente do salão vê quando tudo quebra.
+ *
+ * A varredura é por diretório, e não por lista: boundary NOVO entra sozinho, que é a única forma
+ * de a guarda não voltar a ficar ancorada.
+ */
+
+const BOUNDARY = /^(error|global-error|not-found)\.tsx$/
+
+/** O boundary do painel pode mandar para o painel: ele só sombreia rotas `/admin`. */
+const SO_SOMBREIA_O_PAINEL = 'src/app/admin/error.tsx'
+
+function boundaries(dir: string): string[] {
+  const achados: string[] = []
+  for (const entrada of readdirSync(dir, { withFileTypes: true })) {
+    const caminho = join(dir, entrada.name).split(String.fromCharCode(92)).join('/')
+    if (entrada.isDirectory()) achados.push(...boundaries(caminho))
+    else if (BOUNDARY.test(entrada.name)) achados.push(caminho)
+  }
+  return achados
+}
+
+describe('nenhum boundary que o cliente do salão alcança oferece o painel', () => {
+  const TODOS = boundaries('src/app')
+
+  it('a varredura acha os boundaries — não passa por não ter olhado nada', () => {
+    expect(TODOS.length, 'nenhum boundary encontrado — a varredura cegou').toBeGreaterThan(2)
+    // Positivos conhecidos: os quatro de 2026-09-09.
+    for (const esperado of ['src/app/error.tsx', 'src/app/global-error.tsx', 'src/app/not-found.tsx']) {
+      expect(TODOS, `${esperado} saiu do alcance`).toContain(esperado)
+    }
+    expect(TODOS, 'o boundary do painel sumiu — a isenção abaixo ficou sem objeto').toContain(SO_SOMBREIA_O_PAINEL)
+  })
+
+  it.each(TODOS.filter((b) => b !== SO_SOMBREIA_O_PAINEL))('%s não manda para o painel', (arquivo) => {
+    const src = semComentarios(readFileSync(arquivo, 'utf8'))
+    /*
+     * `href="/admin…"` literal. O ramo condicional de `error.tsx` monta o destino do painel por
+     * variável, e é legítimo — proibir a string solta proibiria o próprio conserto que a metade de
+     * cima desta guarda exige.
+     */
+    expect(
+      /href="\/admin/.test(src),
+      `${arquivo} oferece o painel como saída. Quem cai aqui pode ser o cliente do salão, e o ` +
+        'painel é um login que não é dele — quem passa vergonha é o salão, não o CICLO.',
+    ).toBe(false)
   })
 })

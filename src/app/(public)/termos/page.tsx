@@ -199,13 +199,13 @@ export default function Termos() {
       </div>
 
       <footer className="pt-10 text-center text-label text-txt-3">
-        <Link href="/privacidade" className="toque-48 font-semibold text-txt-2 underline underline-offset-2">
+        <Link href="/privacidade" className="toque-48 -mx-2 px-2 font-semibold text-txt-2 underline underline-offset-2">
           Política de Privacidade
         </Link>
         <span className="mx-2" aria-hidden>
           ·
         </span>
-        <Link href="/precos" className="toque-48 font-semibold text-txt-2 underline underline-offset-2">
+        <Link href="/precos" className="toque-48 -mx-2 px-2 font-semibold text-txt-2 underline underline-offset-2">
           Preços
         </Link>
       </footer>

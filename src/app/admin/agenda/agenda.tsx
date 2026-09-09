@@ -78,6 +78,27 @@ export default function Agenda({
   const semana = semanaDe(dia)
   const hoje = paraISO(new Date())
 
+  /*
+    Trocar de dia ou de profissional troca a tela inteira sem trocar de rota: o `navegar` só mexe
+    na query, e nem o Next nem o navegador anunciam isso. Quem usa leitor de tela tocava numa
+    coluna da semana e não recebia nada de volta — nem a data, nem quantos agendamentos vieram,
+    nem se o filtro pegou.
+
+    O texto sai do MESMO `resumo` que desenha os cartões e a lista, `temExpediente` incluído: sem
+    ele, "0%" seria lido como dia vazio quando na verdade é dia sem expediente cadastrado — o
+    mesmo achado do docs/29 A3 que fez o cartão mostrar "—".
+  */
+  const quantos = resumo.appointments.length
+  const doFiltro = profissionais.find((p) => p.id === profissionalSelecionado)?.display_name
+  const anuncio = [
+    `${paraData(dia).toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', timeZone: 'UTC' })}.`,
+    doFiltro ? `${doFiltro}.` : null,
+    quantos === 0 ? 'Nada marcado.' : `${quantos} ${quantos === 1 ? 'agendamento' : 'agendamentos'}.`,
+    resumo.temExpediente ? `Ocupação ${Math.round(resumo.occupancyRate * 100)}%.` : 'Sem expediente cadastrado nesse dia.',
+  ]
+    .filter(Boolean)
+    .join(' ')
+
   return (
     <div>
       {/*
@@ -143,6 +164,15 @@ export default function Agenda({
         />
         <StatTile rotulo="Previsto" valor={dinheiro.format(resumo.forecastCents / 100)} />
       </div>
+
+      {/*
+        A região vive SEMPRE no DOM: leitor de tela precisa observar o nó ANTES de o texto mudar,
+        então nascer junto com o conteúdo não é anunciado (docs/21 §5.3). É o mesmo desenho da
+        busca de `admin/clientes/lista.tsx`.
+      */}
+      <p aria-live="polite" className="sr-only">
+        {anuncio}
+      </p>
 
       {resumo.appointments.length === 0 ? (
         <Card className="p-0">

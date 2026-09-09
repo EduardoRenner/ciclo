@@ -17,8 +17,8 @@ export const ERROR_CODES = {
   DEPOSIT_REQUIRED: { status: 402, message: 'Pague o sinal para confirmar o horário.' },
   PAYMENT_FAILED: { status: 402, message: 'O pagamento não foi aprovado. Tente outra forma.' },
   RATE_LIMITED: { status: 429, message: 'Muitas tentativas seguidas. Espere um instante e tente de novo.' },
-  PLAN_LIMIT: { status: 402, message: 'Seu plano chegou ao limite. Faça upgrade para continuar.' },
-  OPT_OUT: { status: 422, message: 'Essa cliente pediu para não receber mensagens.' },
+  PLAN_LIMIT: { status: 402, message: 'Seu plano chegou ao limite. Veja o que muda em Config → Meu plano.' },
+  OPT_OUT: { status: 422, message: 'Essa pessoa pediu para não receber mensagens.' },
   VAULT_LOCKED: { status: 423, message: 'Entre de novo para abrir a ficha de saúde.' },
   // docs/26-AGENTE-IA-PLANO.md §4.4 — distinto de INTERNAL de propósito: sem chave de IA ou
   // provedor fora do ar não é bug do CICLO, e a UI trata os dois diferente (esconde o botão do

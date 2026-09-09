@@ -185,7 +185,7 @@ export default function EditorModelos({ iniciais, nomeDoNegocio }: { iniciais: M
             <div className="rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 p-3">
               <p className="flex items-center gap-1.5 text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">
                 <Eye className="size-3.5" />
-                Como a cliente vê
+                Como quem recebe vê
               </p>
               <p className="mt-2 whitespace-pre-wrap text-corpo text-txt">
                 {aplicarVariaveis(corpo, { ...EXEMPLO, negocio: nomeDoNegocio })}

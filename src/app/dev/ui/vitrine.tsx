@@ -73,7 +73,7 @@ function Conteudo({ icones }: { icones: { agenda: React.ReactNode; clientes: Rea
 
       <Secao titulo="Campos (Input, PhoneInput, MoneyInput, Select, Textarea)">
         <div className="flex w-full flex-col gap-3">
-          <Input rotulo="Nome da cliente" placeholder="Maria Clara" autoComplete="name" />
+          <Input rotulo="Nome de quem vai ser atendido" placeholder="Maria Clara" autoComplete="name" />
           <PhoneInput valor={telefone} aoMudar={setTelefone} ajuda="A máscara é aplicada enquanto você digita." />
           <MoneyInput rotulo="Preço do serviço" centavos={preco} aoMudar={setPreco} />
           <Select rotulo="Profissional" defaultValue="">
@@ -94,7 +94,7 @@ function Conteudo({ icones }: { icones: { agenda: React.ReactNode; clientes: Rea
           <AlertBanner tom="warn" acao={<span className="text-warn">Recuperar</span>}>
             7 clientes estão sumindo
           </AlertBanner>
-          <AlertBanner tom="danger">Alergia registrada na ficha desta cliente.</AlertBanner>
+          <AlertBanner tom="danger">Alergia registrada nessa ficha.</AlertBanner>
         </div>
       </Secao>
 
@@ -123,7 +123,7 @@ function Conteudo({ icones }: { icones: { agenda: React.ReactNode; clientes: Rea
         <BloqueioPlano
           precisaDo="essencial"
           acao="avisar todas de uma vez"
-          evidencia={{ quantidade: 23, substantivo: 'clientes marcadas, esperando para voltar', valorCents: 184000 }}
+          evidencia={{ quantidade: 23, substantivo: 'clientes esperando para voltar', valorCents: 184000 }}
           alternativa={<button type="button">Avisar uma de cada vez, de graça</button>}
         />
         <BloqueioPlano
@@ -137,7 +137,7 @@ function Conteudo({ icones }: { icones: { agenda: React.ReactNode; clientes: Rea
         <StatTile
           className="w-full"
           heroi
-          rotulo="Faturado hoje"
+          rotulo="Atendido hoje"
           valor="R$ 1.240"
           apoio="Faltam 3 atendimentos hoje"
         />

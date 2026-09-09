@@ -61,13 +61,13 @@ Começa de graça, sem cartão. O preço fica na tela, sem "fale com vendas".
 
 ## Como funciona a página do salão
 
-Cada estabelecimento tem um endereço público próprio (${base}/nome-do-salao) onde a cliente marca
-sozinha, sem baixar aplicativo e sem criar conta.
+Cada estabelecimento tem um endereço público próprio (${base}/nome-do-salao) onde dá para marcar
+direto, sem baixar aplicativo e sem criar conta.
 
 ## O que o CICLO NÃO faz
 
-- Não envia mensagem para a cliente sem o profissional confirmar.
-- Não é marketplace: o CICLO não fica entre o salão e a cliente dele, e não cobra comissão por
+- Não envia mensagem para quem é atendido sem o profissional confirmar.
+- Não é marketplace: o CICLO não fica entre o salão e quem ele atende, e não cobra comissão por
   agendamento.
 - Não dá orientação de saúde. A ficha de anamnese é um registro do profissional, não um parecer.
 `

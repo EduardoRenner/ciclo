@@ -18,7 +18,7 @@ import { limparParaGemini } from '@/core/assistente/json-schema'
 import { diaNoFuso } from '@/core/tempo/dia'
 import { resolverPorNome, resolverProfissional, type Candidato } from '@/core/assistente/resolver'
 import { semAcento } from '@/core/text/normalizar'
-import { resumoDeHoje } from '@/server/services/resumo-hoje'
+import { resumoDeHoje, type LinhaHoje, type ResumoHoje } from '@/server/services/resumo-hoje'
 
 import type { Database } from '@/server/db/types.gen'
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -57,7 +57,7 @@ const EsquemaClienteId = z.object({
 })
 
 const EsquemaBusca = z.object({
-  termo: z.string().min(2).describe('nome ou telefone (com ou sem formatação) da cliente a procurar'),
+  termo: z.string().min(2).describe('nome ou telefone (com ou sem formatação) de quem procurar'),
 })
 
 // `.optional()`: sem isto, o schema vira `"required": ["mes"]` no JSON Schema que o Gemini lê —
@@ -100,7 +100,7 @@ export function hojeNoFuso(timezone: string): string {
 }
 
 const EsquemaPrepararAgendamento = z.object({
-  cliente: z.string().min(2).describe('nome da cliente, como o dono falou — não precisa ser exato'),
+  cliente: z.string().min(2).describe('nome de quem vai ser atendido, como o dono falou — não precisa ser exato'),
   servico: z.string().min(2).describe('nome do serviço, como o dono falou'),
   quando: z
     .string()
@@ -110,29 +110,29 @@ const EsquemaPrepararAgendamento = z.object({
   telefone: z
     .string()
     .optional()
-    .describe('telefone da cliente, SÓ quando ela ainda não está cadastrada e o dono informou o número'),
+    .describe('telefone, SÓ quando a pessoa ainda não está cadastrada e o dono informou o número'),
 })
 
 const EsquemaCadastroDeCliente = z.object({
-  nome: z.string().min(2).max(120).describe('nome completo da cliente, como o dono falou'),
+  nome: z.string().min(2).max(120).describe('nome completo de quem vai ser atendido, como o dono falou'),
   telefone: z.string().min(8).max(20).describe('telefone com DDD. OBRIGATORIO: se o dono nao disser, PERGUNTE. Nunca invente um numero.'),
   aniversario: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().describe('data de nascimento (AAAA-MM-DD), so se ele disser'),
 })
 
 const EsquemaItemNaComanda = z.object({
-  cliente: z.string().min(2).describe('nome da cliente cuja comanda vai receber o item'),
+  cliente: z.string().min(2).describe('nome de quem tem a comanda que vai receber o item'),
   item: z.string().min(2).describe('nome do serviço ou do produto, como o dono falou'),
   quantidade: z.number().int().positive().max(99).optional().describe('quantas unidades; some se ele não disser'),
   data: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().describe('dia do atendimento (AAAA-MM-DD); some se for hoje'),
 })
 
 const EsquemaNotaNaFicha = z.object({
-  cliente: z.string().min(2).describe('nome da cliente, como o dono falou'),
+  cliente: z.string().min(2).describe('nome de quem vai ser atendido, como o dono falou'),
   anotacao: z.string().min(2).max(2000).describe('o texto da anotação, EXATAMENTE como o dono ditou — não resuma, não reescreva, não corrija'),
 })
 
 const EsquemaConcluirAtendimento = z.object({
-  cliente: z.string().min(2).describe('nome da cliente cujo atendimento terminou'),
+  cliente: z.string().min(2).describe('nome de quem foi atendido'),
   data: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
@@ -151,18 +151,51 @@ function apagarTipo<T>(f: Ferramenta<T>): Ferramenta {
   return f as Ferramenta
 }
 
+/**
+ * Tira o dado de saúde antes de a resposta virar contexto do modelo.
+ *
+ * `docs/26` §2, regra inviolável: *"Dado de saúde nunca entra no contexto. `vault`,
+ * `health_records` e anamnese ficam fora, **por construção**, não por instrução no prompt."*
+ *
+ * `resumoDeHoje` carrega `clients.health_records[].has_alert` em cada linha do dia — a tela precisa
+ * dele para acender o sinal ⚡ ao lado do nome. A ferramenta devolvia o objeto INTEIRO, então o
+ * booleano ia junto com o NOME da pessoa para o Gemini: "Fulana tem alerta de saúde" saindo do
+ * produto, numa chamada a terceiro.
+ *
+ * Não é o rótulo clínico (a Unidade 10 já o tinha tirado daqui), e é "só" um booleano — mas a regra
+ * não fala de gravidade, fala de origem: é coluna de `health_records`. E o modelo não precisa dela
+ * para nada: nenhuma pergunta do catálogo depende de saber quem tem alerta.
+ *
+ * Fica na FERRAMENTA, e não no serviço, porque a tela continua precisando do sinal. É a fronteira
+ * do contexto que tem de filtrar — que é o que "por construção" quer dizer.
+ */
+export function semDadoDeSaude(resumo: ResumoHoje): ResumoHoje {
+  const limpar = (linha: LinhaHoje): LinhaHoje =>
+    linha.clients ? { ...linha, clients: { name: linha.clients.name, health_records: [] } } : linha
+
+  return {
+    ...resumo,
+    nextClient: resumo.nextClient ? limpar(resumo.nextClient) : null,
+    alerts: resumo.alerts.map(limpar),
+    restOfDay: resumo.restOfDay.map(limpar),
+  }
+}
+
 export const FERRAMENTAS: Ferramenta[] = [
   apagarTipo({
     nome: 'resumo_de_hoje',
-    descricao: 'O que está na agenda de hoje: próxima cliente, faturado até agora, confirmações pendentes e alertas de estoque.',
+    descricao:
+      'O que está na agenda de hoje: próxima cliente, ATENDIDO até agora (soma do preço de tabela ' +
+      'dos atendimentos concluídos, NÃO é faturamento — não enxerga desconto, item extra nem gorjeta), ' +
+      'confirmações pendentes e alertas de estoque. Quem tem o dinheiro que entrou é o caixa.',
     schema: EsquemaVazio,
     permissao: 'appointment:read',
     modulo: 'agenda',
-    executar: async (ctx) => resumoDeHoje(ctx.db, ctx.tenantId, ctx.timezone),
+    executar: async (ctx) => semDadoDeSaude(await resumoDeHoje(ctx.db, ctx.tenantId, ctx.timezone)),
   }),
   apagarTipo({
     nome: 'clientes_para_recuperar',
-    descricao: 'Lista de clientes atrasadas para voltar, ordenada pelo valor em risco — o que o Motor de Ciclo já calculou.',
+    descricao: 'Lista de quem está atrasado para voltar, ordenada pelo valor em risco — o que o Motor de Ciclo já calculou.',
     schema: EsquemaVazio,
     permissao: 'client:read',
     modulo: 'cycle_engine',
@@ -178,7 +211,7 @@ export const FERRAMENTAS: Ferramenta[] = [
   }),
   apagarTipo({
     nome: 'historico_do_cliente',
-    descricao: 'Dados cadastrais e os últimos agendamentos de uma cliente específica, pelo id.',
+    descricao: 'Dados cadastrais e os últimos agendamentos de uma pessoa específica, pelo id.',
     schema: EsquemaClienteId,
     permissao: 'client:read',
     modulo: 'clients',
@@ -219,7 +252,11 @@ export const FERRAMENTAS: Ferramenta[] = [
         quantidadeDeAgendamentos: resumo.appointments.length,
         taxaDeOcupacao: resumo.occupancyRate,
         temExpedienteCadastrado: resumo.temExpediente,
-        faturamentoPrevistoCents: resumo.forecastCents,
+        // `previstoCents`, e não `faturamentoPrevistoCents`: `forecastCents` soma `price_cents`
+        // dos agendamentos que ainda contam como receita — preço de TABELA. A tela da agenda o
+        // chama só de "Previsto", sem prometer faturamento, e o nome do campo é o que o modelo lê
+        // para redigir a resposta.
+        previstoCents: resumo.forecastCents,
       }
     },
   }),
@@ -249,7 +286,7 @@ export const FERRAMENTAS: Ferramenta[] = [
   apagarTipo({
     nome: 'preparar_agendamento',
     descricao:
-      'Prepara um agendamento a partir do que o dono falou (cliente, serviço, dia e hora) e devolve uma PROPOSTA para ele confirmar. NÃO marca nada — quem marca é o dono, tocando em confirmar. Se houver mais de uma cliente ou profissional possível, devolve as opções para você PERGUNTAR qual, nunca escolha por conta própria.',
+      'Prepara um agendamento a partir do que o dono falou (cliente, serviço, dia e hora) e devolve uma PROPOSTA para ele confirmar. NÃO marca nada — quem marca é o dono, tocando em confirmar. Se houver mais de uma pessoa ou profissional possível, devolve as opções para você PERGUNTAR qual, nunca escolha por conta própria.',
     schema: EsquemaPrepararAgendamento,
     // MESMA permissão que `POST /api/v1/appointments` exige: o assistente nunca prepara o que o
     // papel não poderia executar depois. Sem isso ele montaria uma proposta que a rota recusa,
@@ -337,7 +374,7 @@ export const FERRAMENTAS: Ferramenta[] = [
   apagarTipo({
     nome: 'preparar_conclusao_de_atendimento',
     descricao:
-      'Prepara a conclusão de um atendimento que já aconteceu (a cliente chegou e foi atendida) e devolve uma PROPOSTA para o dono confirmar. NÃO conclui nada. Concluir abre a comanda e credita os pontos da cliente, e NÃO tem como desfazer depois.',
+      'Prepara a conclusão de um atendimento que já aconteceu (a pessoa chegou e foi atendida) e devolve uma PROPOSTA para o dono confirmar. NÃO conclui nada. Concluir abre a comanda e credita os pontos na ficha, e NÃO tem como desfazer depois.',
     schema: EsquemaConcluirAtendimento,
     // Mesma permissão que `POST /api/v1/appointments/[id]/complete` exige.
     permissao: 'appointment:update',
@@ -383,7 +420,7 @@ export const FERRAMENTAS: Ferramenta[] = [
   apagarTipo({
     nome: 'preparar_cadastro_de_cliente',
     descricao:
-      'Prepara o cadastro de uma cliente nova (sem marcar horario junto) e devolve uma PROPOSTA para o dono confirmar. NAO cadastra nada. Precisa do telefone: se ele nao disser, PERGUNTE — nunca invente um numero. Se ele quiser cadastrar E marcar no mesmo pedido, use preparar_agendamento, que faz as duas coisas de uma vez.',
+      'Prepara o cadastro de uma pessoa nova (sem marcar horario junto) e devolve uma PROPOSTA para o dono confirmar. NAO cadastra nada. Precisa do telefone: se ele nao disser, PERGUNTE — nunca invente um numero. Se ele quiser cadastrar E marcar no mesmo pedido, use preparar_agendamento, que faz as duas coisas de uma vez.',
     schema: EsquemaCadastroDeCliente,
     // Mesma permissão que `POST /api/v1/clients` exige.
     permissao: 'client:create',
@@ -421,7 +458,7 @@ export const FERRAMENTAS: Ferramenta[] = [
   apagarTipo({
     nome: 'preparar_item_na_comanda',
     descricao:
-      'Prepara o lançamento de um serviço ou produto EXTRA na comanda de um atendimento já concluído, e devolve uma PROPOSTA para o dono confirmar. NAO lanca nada. Use quando o dono disser que a cliente levou um produto ou fez algo a mais. NUNCA informe preco: o preco sai do catalogo sozinho.',
+      'Prepara o lançamento de um serviço ou produto EXTRA na comanda de um atendimento já concluído, e devolve uma PROPOSTA para o dono confirmar. NAO lanca nada. Use quando o dono disser que a pessoa levou um produto ou fez algo a mais. NUNCA informe preco: o preco sai do catalogo sozinho.',
     schema: EsquemaItemNaComanda,
     // Mesma permissão que `POST /api/v1/tickets/[id]/items` exige.
     permissao: 'comanda:own',
@@ -503,7 +540,7 @@ export const FERRAMENTAS: Ferramenta[] = [
   apagarTipo({
     nome: 'preparar_nota_na_ficha',
     descricao:
-      'Prepara uma anotação na ficha de uma cliente e devolve uma PROPOSTA para o dono confirmar. NÃO salva nada. Use quando o dono quiser registrar algo sobre a cliente (preferência, alergia declarada, o que conversaram). Copie a anotação PALAVRA POR PALAVRA como ele ditou.',
+      'Prepara uma anotação na ficha de uma pessoa e devolve uma PROPOSTA para o dono confirmar. NÃO salva nada. Use quando o dono quiser registrar algo sobre a pessoa (preferência, alergia declarada, o que conversaram). Copie a anotação PALAVRA POR PALAVRA como ele ditou.',
     schema: EsquemaNotaNaFicha,
     // A MESMA permissão que `POST /api/v1/clients/[id]/notes` exige. Se fosse mais frouxa, o
     // assistente prepararia o que o papel não pode executar — o dono confirmaria para receber 403.

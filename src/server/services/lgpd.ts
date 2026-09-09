@@ -33,7 +33,7 @@ export async function exportarDadosDoCliente(
 ): Promise<ExportacaoDados> {
   const { data: cliente, error: erroCliente } = await db.from('clients').select('*').eq('tenant_id', tenantId).eq('id', clientId).maybeSingle()
   if (erroCliente) throw new AppError('INTERNAL', { cause: erroCliente })
-  if (!cliente) throw new AppError('NOT_FOUND', { message: 'Essa cliente não está mais na sua lista.' })
+  if (!cliente) throw new AppError('NOT_FOUND', { message: 'Essa ficha não está mais na sua lista.' })
 
   const [saude, consentimentos, agendamentos, pacotes, media] = await Promise.all([
     db.from('health_records').select('ciphertext, iv, auth_tag').eq('tenant_id', tenantId).eq('client_id', clientId).maybeSingle(),
@@ -130,7 +130,7 @@ export const TRATAMENTO_NA_ELIMINACAO: Record<string, Record<string, string>> = 
   appointments: {
     client_note: 'redige',
     internal_note: 'redige',
-    address: 'redige', // endereço de atendimento em domicílio — é a casa da cliente
+    address: 'redige', // endereço de atendimento em domicílio — é a casa de quem é atendido
     cancel_reason: 'redige', // texto livre; "estava no hospital" é dado de saúde
     risk_features: 'redige',
     canceled_by: 'preserva', // 'client' | 'professional' | 'system' — quem, não quem em nome próprio
@@ -151,13 +151,13 @@ export const TRATAMENTO_NA_ELIMINACAO: Record<string, Record<string, string>> = 
     period_of_day: 'apaga_linha', // fila viva: eliminada não pode continuar esperando vaga
   },
   messages: {
-    body: 'redige', // o corpo carrega o nome da cliente
+    body: 'redige', // o corpo carrega o nome de quem é atendido
     error: 'redige',
     template: 'preserva', // nome do modelo, não conteúdo
     provider_id: 'preserva', // id do provedor, necessário para conciliar entrega
   },
   quotes: {
-    message: 'redige', // texto escrito para a cliente
+    message: 'redige', // texto escrito para quem é atendido
     rejected_reason: 'redige', // texto escrito PELA cliente
     status: 'preserva', // sent | approved | rejected — registro financeiro, sem dado pessoal
   },
@@ -222,8 +222,8 @@ const TABELAS_APAGADAS = ['client_notes', 'waitlist', 'portfolio_photos'] as con
 export async function eliminarCliente(db: Cliente, tenantId: string, clientId: string): Promise<ResultadoEliminacao> {
   const { data: cliente, error: erroCliente } = await db.from('clients').select('id, anonymized_at').eq('tenant_id', tenantId).eq('id', clientId).maybeSingle()
   if (erroCliente) throw new AppError('INTERNAL', { cause: erroCliente })
-  if (!cliente) throw new AppError('NOT_FOUND', { message: 'Essa cliente não está mais na sua lista.' })
-  if (cliente.anonymized_at) throw AppError.validacao({ clientId: 'Essa cliente já foi eliminada.' })
+  if (!cliente) throw new AppError('NOT_FOUND', { message: 'Essa ficha não está mais na sua lista.' })
+  if (cliente.anonymized_at) throw AppError.validacao({ clientId: 'Essa ficha já foi eliminada.' })
 
   // ── arquivos do storage: mídia da cliente e, se houver, a assinatura de consentimento
   const { data: mediaParaApagar, error: erroListarMedia } = await db

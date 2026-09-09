@@ -3602,6 +3602,7 @@ export type Database = {
       tenant_rls_report: {
         Args: never
         Returns: {
+          has_tenant_id: boolean
           policy_count: number
           rls_enabled: boolean
           rls_forced: boolean

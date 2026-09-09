@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 import dotenv from 'dotenv'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
-import { abrirFicha, alertaDoCliente, formularioDoTenant, salvarRespostas } from '@/server/services/anamnese'
+import { abrirFicha, alertaDoCliente, formularioDoTenant, rotuloDoAlerta, salvarRespostas } from '@/server/services/anamnese'
 import { executarOnboarding } from '@/server/services/onboarding'
 
 import type { Database } from '@/server/db/types.gen'
@@ -95,10 +95,23 @@ describe('salvarRespostas / abrirFicha', () => {
       // Leitura leve, sem decifrar — é o que o card do "próximo atendimento" usa.
       const alerta = await alertaDoCliente(svc, tenantId, clientId)
       expect(alerta.hasAlert).toBe(true)
-      expect(alerta.alertLabel).toBe('Atenção')
+      expect(alerta.temFicha).toBe(true)
+
+      /*
+        Unidade 10: a leitura leve NÃO devolve mais o rótulo. Ela é o que a recepção enxerga, e
+        o rótulo é dado de saúde — quem tem direito a ele passa por `rotuloDoAlerta`, depois de
+        a chamadora conferir `vault:`.
+
+        Afirmado sobre o objeto, e não só pelo tipo: `tsc` já barraria o acesso, mas um `as` ou
+        um `any` em qualquer chamadora futura passaria batido, e o dado voltaria a trafegar.
+      */
+      expect(Object.keys(alerta).sort()).toEqual(['hasAlert', 'temFicha'])
+
+      const rotulo = await rotuloDoAlerta(tenantId, clientId)
+      expect(rotulo).toBe('Atenção')
 
       // O rótulo em claro nunca é a pergunta clínica.
-      expect(alerta.alertLabel).not.toContain('cola')
+      expect(rotulo).not.toContain('cola')
     },
     30_000,
   )

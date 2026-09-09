@@ -45,7 +45,7 @@ function decodificarOferta(codificado: string): OfertaEncaixe | null {
 }
 
 export const EsquemaEntrarListaEspera = z.object({
-  clientId: z.uuid('Escolha a cliente.'),
+  clientId: z.uuid('Escolha quem vai ser atendido.'),
   serviceId: z.uuid('Escolha o serviço.'),
   professionalId: z.uuid().nullish(),
   earliestAt: z.iso.datetime({ offset: true }).nullish(),

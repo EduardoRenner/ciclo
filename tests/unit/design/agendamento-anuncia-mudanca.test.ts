@@ -271,3 +271,96 @@ describe('o anúncio não inventa resultado quando a rede cai', () => {
     expect(/role="alert"/.test(src), 'precisa existir um alerta para falar do erro').toBe(true)
   })
 })
+
+/**
+ * A quarta tela da mesma família, e a de maior uso diário do painel: a Agenda.
+ *
+ * Trocar o dia na faixa da semana ou o profissional no filtro troca a tela inteira — os dois
+ * StatTiles e a lista — sem trocar de rota. `navegar()` só mexe na query (`?date=`,
+ * `?professionalId=`), e nem o Next nem o navegador anunciam isso. Quem usa leitor de tela tocava
+ * numa coluna da semana e não recebia nada de volta: nem a data, nem quantos agendamentos vieram,
+ * nem se o filtro pegou.
+ *
+ * ⚠️ Mesmo rigor declarado do bloco do Motor de Ciclo: `/admin` exige sessão e daqui não dá para
+ * autenticar, então isto cobre a estrutura, não o comportamento renderizado. O mecanismo é o
+ * mesmo já provado no navegador na página pública.
+ *
+ * O anúncio é montado num `const anuncio` acima do `return`, e não inline como nas outras três —
+ * são quatro pedaços e inline ficaria ilegível. Por isso a guarda tem que olhar DOIS lugares: o
+ * bloco que monta o texto e o `<p>` que o renderiza. Guardar só o `<p>` deixaria passar alguém
+ * trocar o conteúdo do `const` por estado próprio; guardar só o `const` deixaria passar alguém
+ * parar de renderizá-lo.
+ */
+describe('a Agenda anuncia o dia e o filtro que acabaram de mudar', () => {
+  const AGENDA = 'src/app/admin/agenda/agenda.tsx'
+
+  it('tem região viva de verdade, fora de comentário', () => {
+    expect(/aria-live="polite"/.test(fonte(AGENDA)), 'não há região viva na Agenda').toBe(true)
+  })
+
+  it('a região vive SEMPRE no DOM — vem depois da faixa da semana e antes da lista', () => {
+    const src = fonte(AGENDA)
+    const faixa = src.indexOf('aria-label="Dias da semana"')
+    const regiao = src.indexOf('aria-live="polite"')
+    const listaOuVazio = src.indexOf('{resumo.appointments.length === 0 ?')
+
+    expect(faixa, 'não achei a faixa da semana, que é o controle que dispara a troca').toBeGreaterThan(-1)
+    expect(regiao, 'não achei a região viva').toBeGreaterThan(-1)
+    expect(listaOuVazio, 'não achei o condicional que desenha a lista').toBeGreaterThan(-1)
+
+    expect(regiao, 'a região precisa vir depois do controle que dispara a troca').toBeGreaterThan(faixa)
+    expect(
+      regiao,
+      'a região viva está DENTRO do condicional da lista — nascendo junto com o conteúdo ela não é anunciada',
+    ).toBeLessThan(listaOuVazio)
+  })
+
+  it('o <p> renderiza o anúncio montado, e é sr-only', () => {
+    const src = fonte(AGENDA)
+    const i = src.indexOf('aria-live="polite"')
+    expect(i, 'não achei a região viva').toBeGreaterThan(-1)
+    // O fim afirmado pelo mesmo motivo do bloco de baixo: `indexOf` que não acha devolve `-1` e
+    // `slice(i, -1)` ALARGA o recorte até o fim do arquivo, em silêncio.
+    const fim = src.indexOf('</p>', i)
+    expect(fim, 'não achei o fim da região viva — o recorte cegou').toBeGreaterThan(i)
+    const bloco = src.slice(i, fim)
+    expect(/\{anuncio\}/.test(bloco), 'a região viva não renderiza mais o texto montado').toBe(true)
+    expect(/sr-only/.test(bloco), 'a região é para o leitor de tela, não para a tela').toBe(true)
+  })
+
+  it('o anúncio sai do mesmo `resumo` que desenha os StatTiles e a lista', () => {
+    /*
+     * Delimitado pelo fim real do bloco, não por uma janela de N caracteres: logo abaixo vem o
+     * `return` com o JSX inteiro, e uma fatia por tamanho casaria com qualquer coisa de lá.
+     *
+     * **O FIM precisa do próprio piso, e esta guarda nasceu cega por não ter.** A primeira versão
+     * recortava até `'].filter'` — que não existe no arquivo, porque entre o `]` e o `.filter` há
+     * quebra de linha (CRLF) e indentação. `indexOf` devolvia `-1`, `slice(inicio, -1)` pegava do
+     * anúncio até o fim do arquivo, e a asserção de `resumo.temExpediente` passava casando com os
+     * StatTiles 60 linhas abaixo. Medido: com o `temExpediente` removido do anúncio, os 19 testes
+     * passavam.
+     *
+     * A lição não é sobre este padrão: é que delimitador de recorte é tão capaz de cegar a guarda
+     * quanto o padrão que ela procura, e o `-1` do `indexOf` faz isso em silêncio, ALARGANDO o
+     * escopo em vez de esvaziá-lo. Todo fim de fatia precisa ser afirmado.
+     */
+    const src = fonte(AGENDA)
+    const inicio = src.indexOf('const anuncio = [')
+    expect(inicio, 'não achei o bloco que monta o anúncio — o padrão cegou').toBeGreaterThan(-1)
+    const fim = src.indexOf('.filter(Boolean)', inicio)
+    expect(fim, 'não achei o fim do bloco do anúncio — o recorte cegou e varreria o arquivo inteiro').toBeGreaterThan(inicio)
+    const bloco = src.slice(inicio, fim)
+
+    expect(/\bquantos\b/.test(bloco), 'o anúncio precisa dizer a quantidade que a lista mostra').toBe(true)
+    expect(
+      /const quantos = resumo\.appointments\.length/.test(src),
+      '`quantos` precisa sair do mesmo `resumo.appointments` que desenha a lista, ou tela e anúncio divergem',
+    ).toBe(true)
+    expect(
+      /resumo\.temExpediente/.test(bloco),
+      'sem `temExpediente` o anúncio lê "0%" como dia vazio quando é dia sem expediente cadastrado — ' +
+        'o StatTile mostra "—" justamente por isso (docs/29 A3), e o leitor de tela tem que ouvir o mesmo',
+    ).toBe(true)
+    expect(/doFiltro/.test(bloco), 'o anúncio precisa dizer se o filtro de profissional está valendo').toBe(true)
+  })
+})

@@ -185,8 +185,8 @@ export async function debitarCarteira(db: Cliente, tenantId: string, entrada: En
     // Distinguido por `code`, nunca pelo texto: a mensagem em pt-BR é da interface e muda sem
     // avisar; o errcode é contrato com o banco. `53000` é o que a função levanta quando o saldo
     // não cobre — é recusa esperada, não falha do servidor.
-    if (error.code === '53000') throw AppError.validacao({ amountCents: 'Saldo insuficiente na carteira dessa cliente.' })
-    if (error.code === 'P0002') throw new AppError('NOT_FOUND', { message: 'Essa cliente não está mais na sua lista.' })
+    if (error.code === '53000') throw AppError.validacao({ amountCents: 'Saldo insuficiente nessa carteira.' })
+    if (error.code === 'P0002') throw new AppError('NOT_FOUND', { message: 'Essa ficha não está mais na sua lista.' })
     throw new AppError('INTERNAL', { cause: error })
   }
 
