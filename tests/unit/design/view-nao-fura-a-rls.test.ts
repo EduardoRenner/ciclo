@@ -71,7 +71,7 @@ function declaracoes(): Declaracao[] {
       const daqui = sql.slice(m.index)
       // Fim do cabeçalho = o `select` que abre o corpo. Sem ele, o cabeçalho é a declaração toda.
       const fim = daqui.search(/\bselect\b/)
-      achadas.push({ migration: nome, view: m[1], cabecalho: fim === -1 ? daqui : daqui.slice(0, fim) })
+      achadas.push({ migration: nome, view: m[1] ?? '', cabecalho: fim === -1 ? daqui : daqui.slice(0, fim) })
       m = padrao.exec(sql)
     }
   }
