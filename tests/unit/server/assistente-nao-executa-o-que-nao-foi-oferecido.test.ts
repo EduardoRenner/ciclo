@@ -67,7 +67,7 @@ describe('o assistente não executa ferramenta que não foi oferecida', () => {
     const executou = vi.fn(async () => ({ ok: true }))
     const provider = providerComRoteiro([
       // O modelo "escolhe" uma ferramenta que este papel NÃO recebeu.
-      { tipo: 'ferramenta', nome: 'faturamento_do_periodo', argumentos: { periodo: '2026-09' } },
+      { tipo: 'chamada_ferramenta', nome: 'faturamento_do_periodo', argumentos: '{"periodo":"2026-09"}' },
       { tipo: 'texto', texto: 'Não consigo responder isso.' },
     ])
 
@@ -88,7 +88,7 @@ describe('o assistente não executa ferramenta que não foi oferecida', () => {
   it('e a ferramenta que FOI oferecida continua rodando — a guarda não tranca o caminho certo', async () => {
     const executou = vi.fn(async () => ({ vagas: 3 }))
     const provider = providerComRoteiro([
-      { tipo: 'ferramenta', nome: 'a_unica_oferecida', argumentos: {} },
+      { tipo: 'chamada_ferramenta', nome: 'a_unica_oferecida', argumentos: '{}' },
       { tipo: 'texto', texto: 'Você tem 3 horários.' },
     ])
 
