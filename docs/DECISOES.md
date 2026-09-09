@@ -7049,3 +7049,27 @@ Guardas atualizadas com registro (regra do afrouxamento): `middleware-cache.test
 **Falta validar em preview** (não dá para medir daqui): abrir o preview do Vercel, conferir no
 navegador que `/`, `/precos` respondem da borda com TTFB baixo, que `/entrar` e uma página de salão
 seguem dinâmicas e hidratam, e que um usuário logado abrindo a `/` ainda cai em `/admin/hoje`.
+
+## 2026-09-09 · RLS: as 12 tabelas de config compartilhada ficam `_tenant_all` de propósito
+
+**Contexto.** A varredura de `pg_policies` em produção (2026-09-09) acha 24 tabelas ainda com a
+política-blanket `*_tenant_all` da `0001` (`for all using has_tenant`, cega a papel). Os lotes 2.1
+(`0081`) e 2.2 (`0082`) recortaram as de "capacidade morta"; o `docs/58` mapeia as de dado
+sensível (grupo A, precisa de decisão).
+
+**Decisão.** Estas 12 ficam como estão, e a decisão é registrada para ninguém "consertar" de novo:
+
+`business_hours`, `service_categories`, `service_products`, `professional_services`, `packages`,
+`time_off`, `waitlist`, `portfolio_photos`, `tenant_modules`, `message_templates`, `campaigns`,
+`messages`.
+
+**Motivo.** Config operacional do salão que todo papel (`owner`/`manager`/`professional`/
+`reception`) legitimamente cria, edita e apaga no dia a dia. Nenhuma carrega dado de cliente
+decifrado nem valor de dinheiro por linha. Apertar por papel seria fricção pura — recepção sem
+mexer no expediente, profissional sem ajustar a própria ficha de serviço — sem defender risco
+nenhum.
+
+**Ressalva registrada.** `campaigns`/`messages`/`message_templates` carregam CONTEÚDO de mensagem.
+As rotas de envio já gate por `campaign:*` (`owner`/`manager`), e a tabela não guarda dado
+decifrado — mas num lote futuro elas podem virar `owner`/`manager` sem custo. Não é urgente e não
+é buraco; é preferência.
