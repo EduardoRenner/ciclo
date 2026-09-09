@@ -105,6 +105,36 @@ describe('dado de saúde não entra no contexto do modelo', () => {
   })
 })
 
+describe('e a ferramenta REALMENTE usa o filtro', () => {
+  /*
+   * A outra metade, e ela faltava. Achado mutando: tirei `semDadoDeSaude` do `executar` de
+   * `resumo_de_hoje` — que é o defeito inteiro de volta — e os oito testes acima passaram verdes,
+   * porque todos exercitam a FUNÇÃO e nenhum olha o USO.
+   *
+   * É a mesma armadilha da Unidade 5c: a função pura testada nos dois estados do mundo, e a
+   * chamada que a torna útil sem vigia nenhuma. Guarda de função e guarda de uso são duas coisas.
+   */
+  it('o `executar` de resumo_de_hoje passa pelo filtro', () => {
+    const fonte = semComentarios(readFileSync(FONTE, 'utf8'))
+    const i = fonte.indexOf("nome: 'resumo_de_hoje'")
+    expect(i, 'a ferramenta resumo_de_hoje sumiu — guarda a revisar').toBeGreaterThan(-1)
+
+    const fim = fonte.indexOf('apagarTipo({', i)
+    expect(fim, 'não achei o fim da declaração; o recorte iria até o fim do arquivo').toBeGreaterThan(i)
+    const declaracao = fonte.slice(i, fim)
+
+    // Duas checagens diretas em vez de um regex com classe de caractere: escrever classe de
+    // caractere por script ja me custou duas rodadas hoje — a quebra de linha entra literal e
+    // quebra o padrao, e a mensagem de erro fala de sintaxe, nao do defeito.
+    expect(declaracao, 'a declaração não tem `executar`').toContain('executar:')
+    expect(
+      declaracao.includes('semDadoDeSaude('),
+      'o `executar` de `resumo_de_hoje` devolve o resumo SEM passar por `semDadoDeSaude`: o sinal ' +
+        'de saúde volta a ir para o modelo junto com o nome da pessoa.',
+    ).toBe(true)
+  })
+})
+
 describe('nenhuma ferramenta do assistente escreve no banco', () => {
   const fonte = semComentarios(readFileSync(FONTE, 'utf8'))
 
