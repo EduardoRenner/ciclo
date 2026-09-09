@@ -55,7 +55,7 @@ export function vazioDeRecuperar(
      */
     return {
       titulo: 'O Motor começa no primeiro atendimento concluído',
-      descricao: 'Assim que você concluir um atendimento, ele passa a prever quando aquela cliente volta.',
+      descricao: 'Assim que você concluir um atendimento, ele passa a prever quando aquela pessoa volta.',
       acaoRotulo: 'Ver a agenda',
       acaoHref: '/admin/agenda',
     }

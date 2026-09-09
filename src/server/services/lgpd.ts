@@ -33,7 +33,7 @@ export async function exportarDadosDoCliente(
 ): Promise<ExportacaoDados> {
   const { data: cliente, error: erroCliente } = await db.from('clients').select('*').eq('tenant_id', tenantId).eq('id', clientId).maybeSingle()
   if (erroCliente) throw new AppError('INTERNAL', { cause: erroCliente })
-  if (!cliente) throw new AppError('NOT_FOUND', { message: 'Essa cliente não está mais na sua lista.' })
+  if (!cliente) throw new AppError('NOT_FOUND', { message: 'Essa ficha não está mais na sua lista.' })
 
   const [saude, consentimentos, agendamentos, pacotes, media] = await Promise.all([
     db.from('health_records').select('ciphertext, iv, auth_tag').eq('tenant_id', tenantId).eq('client_id', clientId).maybeSingle(),
@@ -222,8 +222,8 @@ const TABELAS_APAGADAS = ['client_notes', 'waitlist', 'portfolio_photos'] as con
 export async function eliminarCliente(db: Cliente, tenantId: string, clientId: string): Promise<ResultadoEliminacao> {
   const { data: cliente, error: erroCliente } = await db.from('clients').select('id, anonymized_at').eq('tenant_id', tenantId).eq('id', clientId).maybeSingle()
   if (erroCliente) throw new AppError('INTERNAL', { cause: erroCliente })
-  if (!cliente) throw new AppError('NOT_FOUND', { message: 'Essa cliente não está mais na sua lista.' })
-  if (cliente.anonymized_at) throw AppError.validacao({ clientId: 'Essa cliente já foi eliminada.' })
+  if (!cliente) throw new AppError('NOT_FOUND', { message: 'Essa ficha não está mais na sua lista.' })
+  if (cliente.anonymized_at) throw AppError.validacao({ clientId: 'Essa ficha já foi eliminada.' })
 
   // ── arquivos do storage: mídia da cliente e, se houver, a assinatura de consentimento
   const { data: mediaParaApagar, error: erroListarMedia } = await db

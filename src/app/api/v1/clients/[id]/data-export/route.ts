@@ -37,7 +37,7 @@ export const GET = rota(async (req, params) => {
   const sessao = await exigirAal2()
 
   const { id } = await (params as Ctx).params
-  if (!UUID.test(id)) throw new AppError('NOT_FOUND', { message: 'Essa cliente não está mais na sua lista.' })
+  if (!UUID.test(id)) throw new AppError('NOT_FOUND', { message: 'Essa ficha não está mais na sua lista.' })
 
   // `withTenant` e não o cliente do usuário: a `0077` tirou `ciphertext`/`iv`/`auth_tag` do
   // `grant select` de `authenticated`, então a leitura do cofre passa pelo service_role — depois

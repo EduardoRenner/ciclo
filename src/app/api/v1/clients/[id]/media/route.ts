@@ -12,7 +12,7 @@ const TAMANHO_MAXIMO = 10 * 1024 * 1024
 
 async function idValidado(ctx: unknown): Promise<string> {
   const { id } = await (ctx as Ctx).params
-  if (!UUID.test(id)) throw new AppError('NOT_FOUND', { message: 'Essa cliente não está mais na sua lista.' })
+  if (!UUID.test(id)) throw new AppError('NOT_FOUND', { message: 'Essa ficha não está mais na sua lista.' })
   return id
 }
 

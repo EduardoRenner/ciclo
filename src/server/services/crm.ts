@@ -144,7 +144,7 @@ export async function fichaDoCliente(
     .maybeSingle()
 
   if (error) throw new AppError('INTERNAL', { cause: error })
-  if (!cliente) throw new AppError('NOT_FOUND', { message: 'Essa cliente não está mais na sua lista.' })
+  if (!cliente) throw new AppError('NOT_FOUND', { message: 'Essa ficha não está mais na sua lista.' })
 
   const [
     historicoBruto,

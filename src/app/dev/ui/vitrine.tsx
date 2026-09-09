@@ -94,7 +94,7 @@ function Conteudo({ icones }: { icones: { agenda: React.ReactNode; clientes: Rea
           <AlertBanner tom="warn" acao={<span className="text-warn">Recuperar</span>}>
             7 clientes estão sumindo
           </AlertBanner>
-          <AlertBanner tom="danger">Alergia registrada na ficha desta cliente.</AlertBanner>
+          <AlertBanner tom="danger">Alergia registrada nessa ficha.</AlertBanner>
         </div>
       </Secao>
 

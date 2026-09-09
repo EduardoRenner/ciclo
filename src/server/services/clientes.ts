@@ -163,7 +163,7 @@ export async function buscarCliente(db: Cliente, tenantId: string, id: string) {
     .maybeSingle()
 
   if (error) throw new AppError('INTERNAL', { cause: error })
-  if (!data) throw new AppError('NOT_FOUND', { message: 'Essa cliente não está mais na sua lista.' })
+  if (!data) throw new AppError('NOT_FOUND', { message: 'Essa ficha não está mais na sua lista.' })
   return data
 }
 
@@ -181,7 +181,7 @@ export async function atualizarCliente(db: Cliente, tenantId: string, id: string
     .maybeSingle()
 
   if (error) traduzirErro(error)
-  if (!data) throw new AppError('NOT_FOUND', { message: 'Essa cliente não está mais na sua lista.' })
+  if (!data) throw new AppError('NOT_FOUND', { message: 'Essa ficha não está mais na sua lista.' })
   return data
 }
 
@@ -197,6 +197,6 @@ export async function removerCliente(db: Cliente, tenantId: string, id: string) 
     .maybeSingle()
 
   if (error) throw new AppError('INTERNAL', { cause: error })
-  if (!data) throw new AppError('NOT_FOUND', { message: 'Essa cliente não está mais na sua lista.' })
+  if (!data) throw new AppError('NOT_FOUND', { message: 'Essa ficha não está mais na sua lista.' })
   return { removida: true }
 }

@@ -16,7 +16,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-
 
 async function idValidado(ctx: unknown): Promise<string> {
   const { id } = await (ctx as Ctx).params
-  if (!UUID.test(id)) throw new AppError('NOT_FOUND', { message: 'Essa cliente não está mais na sua lista.' })
+  if (!UUID.test(id)) throw new AppError('NOT_FOUND', { message: 'Essa ficha não está mais na sua lista.' })
   return id
 }
 
@@ -38,7 +38,7 @@ export const GET = rota(async (req, params) => {
       userAgent: req.headers.get('user-agent')?.slice(0, 400) ?? null,
     }),
   )
-  if (!ficha) throw new AppError('NOT_FOUND', { message: 'Essa cliente ainda não tem anamnese preenchida.' })
+  if (!ficha) throw new AppError('NOT_FOUND', { message: 'Essa ficha ainda não tem anamnese preenchida.' })
   return ficha
 })
 

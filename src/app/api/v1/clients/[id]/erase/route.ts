@@ -18,7 +18,7 @@ export const POST = rota(async (req, params, requestId) => {
   const sessao = await exigirAal2()
 
   const { id } = await (params as Ctx).params
-  if (!UUID.test(id)) throw new AppError('NOT_FOUND', { message: 'Essa cliente não está mais na sua lista.' })
+  if (!UUID.test(id)) throw new AppError('NOT_FOUND', { message: 'Essa ficha não está mais na sua lista.' })
 
   const db = await criarClienteDoUsuario()
   const resultado = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/clients/${id}/erase` }, () => eliminarCliente(db, ctx.tenantId, id))
