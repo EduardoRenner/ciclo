@@ -375,6 +375,21 @@ const SUPOE_MULHER = [
   /\b[Aa]s? clientes?\b/,
   /\b[Dd]as? clientes?\b/,
   /\bclientes? (?:marcadas?|atrasadas?|cadastradas?|novas)\b/,
+  /*
+   * O quarto padrão entrou na MUTAÇÃO, e sem ele esta guarda tinha uma afirmação vazia.
+   *
+   * Reintroduzi a frase antiga do vazio de clientes — "Cadastre a primeira cliente" — e o teste
+   * "o que foi consertado não volta" passou verde. Os três padrões acima exigem o artigo COLADO
+   * em "cliente", e ali há um adjetivo no meio. A guarda estava afirmando sobre `lista.tsx` uma
+   * coisa que ela não sabia medir.
+   *
+   * O adjetivo intermediário tem que terminar em "a"/"as", que é o que distingue "a primeira
+   * cliente" (concorda no feminino) de "a lista de clientes" (não concorda com pessoa nenhuma —
+   * e nem casa, por causa do "de" no meio). Medido antes de entrar: a lista de pendentes continua
+   * nos mesmos 26 arquivos, então ele fechou o buraco sem alargar o alcance. Se tivesse alargado,
+   * o número da linha de base deixaria de valer no mesmo commit em que nasceu.
+   */
+  /\b[Aa]s?\s+[a-zà-ÿ]+as?\s+clientes?\b/i,
 ]
 
 /** O estado de 2026-09-08. Só encolhe. */
@@ -431,6 +446,11 @@ describe('a copy também não supõe que quem é ATENDIDO é mulher', () => {
     expect(supoeMulherEm('Escolha a cliente.'), 'não pegou "a cliente"').toBe(true)
     expect(supoeMulherEm('Nome da cliente'), 'não pegou "da cliente"').toBe(true)
     expect(supoeMulherEm('clientes atrasadas para voltar'), 'não pegou o particípio').toBe(true)
+    // A frase real que estava na tela, e que os três primeiros padrões deixavam passar.
+    expect(
+      supoeMulherEm('Cadastre a primeira cliente para começar a marcar horários.'),
+      'não pegou o artigo separado de "cliente" por um adjetivo',
+    ).toBe(true)
 
     for (const certo of [
       'Quem o Motor de Ciclo identificou em atraso para voltar.',
