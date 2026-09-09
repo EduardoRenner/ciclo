@@ -447,7 +447,6 @@ const PENDENTES = [
   'src/app/dev/ui/vitrine.tsx',
   'src/app/llms.txt/route.ts',
   'src/lib/mensagens.ts',
-  'src/server/assistente/ferramentas.ts',
   'src/server/services/clientes.ts',
   'src/server/services/comanda.ts',
   'src/server/services/crm.ts',
@@ -457,6 +456,9 @@ const PENDENTES = [
 
 /** Os que saíram nesta rodada. Voltar é regressão, não estado herdado. */
 const JA_CONSERTADOS = [
+  // As doze descrições de ferramenta e `.describe()` de esquema, 2026-09-09. O modelo LÊ estas
+  // strings para escolher a ferramenta e redigir a resposta — supor gênero aqui vira frase gerada.
+  'src/server/assistente/ferramentas.ts',
   // Saíram da lista de pendentes em 2026-09-09, na varredura do demonstrativo: treze telas que
   // tinham UMA ocorrência cada, reescritas uma a uma.
   'src/app/(public)/[slug]/agendar/alternador-de-exemplo.tsx',

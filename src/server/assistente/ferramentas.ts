@@ -57,7 +57,7 @@ const EsquemaClienteId = z.object({
 })
 
 const EsquemaBusca = z.object({
-  termo: z.string().min(2).describe('nome ou telefone (com ou sem formatação) da cliente a procurar'),
+  termo: z.string().min(2).describe('nome ou telefone (com ou sem formatação) de quem procurar'),
 })
 
 // `.optional()`: sem isto, o schema vira `"required": ["mes"]` no JSON Schema que o Gemini lê —
@@ -100,7 +100,7 @@ export function hojeNoFuso(timezone: string): string {
 }
 
 const EsquemaPrepararAgendamento = z.object({
-  cliente: z.string().min(2).describe('nome da cliente, como o dono falou — não precisa ser exato'),
+  cliente: z.string().min(2).describe('nome de quem vai ser atendido, como o dono falou — não precisa ser exato'),
   servico: z.string().min(2).describe('nome do serviço, como o dono falou'),
   quando: z
     .string()
@@ -110,29 +110,29 @@ const EsquemaPrepararAgendamento = z.object({
   telefone: z
     .string()
     .optional()
-    .describe('telefone da cliente, SÓ quando ela ainda não está cadastrada e o dono informou o número'),
+    .describe('telefone, SÓ quando a pessoa ainda não está cadastrada e o dono informou o número'),
 })
 
 const EsquemaCadastroDeCliente = z.object({
-  nome: z.string().min(2).max(120).describe('nome completo da cliente, como o dono falou'),
+  nome: z.string().min(2).max(120).describe('nome completo de quem vai ser atendido, como o dono falou'),
   telefone: z.string().min(8).max(20).describe('telefone com DDD. OBRIGATORIO: se o dono nao disser, PERGUNTE. Nunca invente um numero.'),
   aniversario: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().describe('data de nascimento (AAAA-MM-DD), so se ele disser'),
 })
 
 const EsquemaItemNaComanda = z.object({
-  cliente: z.string().min(2).describe('nome da cliente cuja comanda vai receber o item'),
+  cliente: z.string().min(2).describe('nome de quem tem a comanda que vai receber o item'),
   item: z.string().min(2).describe('nome do serviço ou do produto, como o dono falou'),
   quantidade: z.number().int().positive().max(99).optional().describe('quantas unidades; some se ele não disser'),
   data: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().describe('dia do atendimento (AAAA-MM-DD); some se for hoje'),
 })
 
 const EsquemaNotaNaFicha = z.object({
-  cliente: z.string().min(2).describe('nome da cliente, como o dono falou'),
+  cliente: z.string().min(2).describe('nome de quem vai ser atendido, como o dono falou'),
   anotacao: z.string().min(2).max(2000).describe('o texto da anotação, EXATAMENTE como o dono ditou — não resuma, não reescreva, não corrija'),
 })
 
 const EsquemaConcluirAtendimento = z.object({
-  cliente: z.string().min(2).describe('nome da cliente cujo atendimento terminou'),
+  cliente: z.string().min(2).describe('nome de quem foi atendido'),
   data: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
@@ -195,7 +195,7 @@ export const FERRAMENTAS: Ferramenta[] = [
   }),
   apagarTipo({
     nome: 'clientes_para_recuperar',
-    descricao: 'Lista de clientes atrasadas para voltar, ordenada pelo valor em risco — o que o Motor de Ciclo já calculou.',
+    descricao: 'Lista de quem está atrasado para voltar, ordenada pelo valor em risco — o que o Motor de Ciclo já calculou.',
     schema: EsquemaVazio,
     permissao: 'client:read',
     modulo: 'cycle_engine',
@@ -374,7 +374,7 @@ export const FERRAMENTAS: Ferramenta[] = [
   apagarTipo({
     nome: 'preparar_conclusao_de_atendimento',
     descricao:
-      'Prepara a conclusão de um atendimento que já aconteceu (a cliente chegou e foi atendida) e devolve uma PROPOSTA para o dono confirmar. NÃO conclui nada. Concluir abre a comanda e credita os pontos da cliente, e NÃO tem como desfazer depois.',
+      'Prepara a conclusão de um atendimento que já aconteceu (a pessoa chegou e foi atendida) e devolve uma PROPOSTA para o dono confirmar. NÃO conclui nada. Concluir abre a comanda e credita os pontos na ficha, e NÃO tem como desfazer depois.',
     schema: EsquemaConcluirAtendimento,
     // Mesma permissão que `POST /api/v1/appointments/[id]/complete` exige.
     permissao: 'appointment:update',
@@ -458,7 +458,7 @@ export const FERRAMENTAS: Ferramenta[] = [
   apagarTipo({
     nome: 'preparar_item_na_comanda',
     descricao:
-      'Prepara o lançamento de um serviço ou produto EXTRA na comanda de um atendimento já concluído, e devolve uma PROPOSTA para o dono confirmar. NAO lanca nada. Use quando o dono disser que a cliente levou um produto ou fez algo a mais. NUNCA informe preco: o preco sai do catalogo sozinho.',
+      'Prepara o lançamento de um serviço ou produto EXTRA na comanda de um atendimento já concluído, e devolve uma PROPOSTA para o dono confirmar. NAO lanca nada. Use quando o dono disser que a pessoa levou um produto ou fez algo a mais. NUNCA informe preco: o preco sai do catalogo sozinho.',
     schema: EsquemaItemNaComanda,
     // Mesma permissão que `POST /api/v1/tickets/[id]/items` exige.
     permissao: 'comanda:own',
@@ -540,7 +540,7 @@ export const FERRAMENTAS: Ferramenta[] = [
   apagarTipo({
     nome: 'preparar_nota_na_ficha',
     descricao:
-      'Prepara uma anotação na ficha de uma cliente e devolve uma PROPOSTA para o dono confirmar. NÃO salva nada. Use quando o dono quiser registrar algo sobre a cliente (preferência, alergia declarada, o que conversaram). Copie a anotação PALAVRA POR PALAVRA como ele ditou.',
+      'Prepara uma anotação na ficha de uma cliente e devolve uma PROPOSTA para o dono confirmar. NÃO salva nada. Use quando o dono quiser registrar algo sobre a pessoa (preferência, alergia declarada, o que conversaram). Copie a anotação PALAVRA POR PALAVRA como ele ditou.',
     schema: EsquemaNotaNaFicha,
     // A MESMA permissão que `POST /api/v1/clients/[id]/notes` exige. Se fosse mais frouxa, o
     // assistente prepararia o que o papel não pode executar — o dono confirmaria para receber 403.
