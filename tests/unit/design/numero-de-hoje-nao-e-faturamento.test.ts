@@ -85,8 +85,18 @@ function fontesDoProjeto(dir: string): string[] {
   return achados
 }
 
-/** O caixa é o único lugar onde "faturado" é verdade: ele soma comanda FECHADA. */
-const PODE_DIZER_FATURADO = ['src/app/admin/caixa/caixa.tsx', 'src/app/admin/mes/resumo.tsx']
+/*
+  NÃO existe lista de exceções, e a primeira versão desta guarda tinha uma.
+
+  Eu tinha escrito "o caixa é o único lugar onde 'faturado' é verdade" e isentado duas telas.
+  O piso que confere a lista reprovou na hora: `caixa.tsx` **não diz "faturado"**. A palavra da
+  casa para dinheiro que entrou é *"Entrou"* — "Entrou no dia", "Entrou no mês", "Entrou" no
+  fechamento. Isentei duas telas de dizer uma palavra que elas não dizem.
+
+  Sem exceção a regra fica mais forte e mais simples: **"faturado" não é vocabulário deste
+  produto em lugar nenhum.** Se um dia for, entra aqui com o motivo — e com o piso de que o
+  arquivo isento realmente diz a palavra.
+*/
 
 describe('nenhuma superfície chama preço de tabela de faturamento', () => {
   const TODOS = RAIZES_DO_VOCABULARIO.flatMap(fontesDoProjeto)
@@ -98,10 +108,9 @@ describe('nenhuma superfície chama preço de tabela de faturamento', () => {
     expect(TODOS, 'o arquivo das ferramentas do assistente saiu do alcance').toContain('src/server/assistente/ferramentas.ts')
   })
 
-  it('nenhum arquivo fora do caixa diz "faturado"', () => {
+  it('nenhum arquivo do projeto diz "faturado"', () => {
     const infratores: string[] = []
     for (const arquivo of TODOS) {
-      if (PODE_DIZER_FATURADO.includes(arquivo)) continue
       const src = semComentarios(readFileSync(arquivo, 'utf8'))
       /*
        * "NÃO é faturamento" é a negação, e ela é a copy CERTA — proibi-la seria proibir o conserto.
@@ -112,7 +121,7 @@ describe('nenhuma superfície chama preço de tabela de faturamento', () => {
     }
     expect(
       infratores,
-      'preço de tabela chamado de faturamento fora do caixa. "Faturar" é o que ENTROU (comanda ' +
+      '"faturado" não é vocabulário deste produto. O que entrou chama-se "Entrou" (comanda ' +
         'fechada); a soma de `price_cents` é o que foi ATENDIDO, e num dia com desconto os dois ' +
         'números diferem.',
     ).toEqual([])
