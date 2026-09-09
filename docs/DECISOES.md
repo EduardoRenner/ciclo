@@ -6980,3 +6980,38 @@ página pública tem score), mas as ~3.100 do seed foram inseridas direto no ban
 ele. Resultado: o ⚡ da agenda, que é um diferencial visível, **não aparece em nenhuma demo**.
 
 Não backfillei porque é dado de demonstração em produção e a decisão é de vitrine, não de código.
+
+## 2026-09-09 · a inviolável nº 11 no banco: o que apertei e o que deixei
+
+`0079` e `0080` fizeram a RLS e o schema concordarem com a regra "nunca delete agendamento,
+movimento de estoque ou registro de auditoria". Medido em produção antes: apagar um **produto**
+apagava o razão de estoque inteiro dele (`stock_moves.product_id on delete cascade`), qualquer
+membro ativo apagava movimento direto pelo PostgREST (`stock_moves_tenant_all` = `for all` com
+`has_tenant`), e dono ou gerente apagava agendamento (`appointments_delete`).
+
+**A régua para decidir o que entrava agora foi "a capacidade é comprovadamente morta?"** — nenhum
+caminho do app usa. `stock_moves` só recebe `select` e `insert`; agendamento nunca é apagado (o
+`DELETE` da API é cancelamento por estado, e o erase da LGPD preserva a linha por obrigação fiscal).
+Tirar capacidade morta não tem como quebrar nada.
+
+**O que NÃO entrou, e por quê.** A varredura achou **40 tabelas** com política cega a papel. As
+outras 38 exigem escolher papéis, e escolher errado quebra o app de um jeito que **não grita**:
+`delete`/`update` barrado por RLS devolve **zero linhas, não erro**. Dois exemplos medidos:
+
+- `health_records` — o erase da LGPD apaga a ficha de saúde com o cliente do **usuário**
+  (`clients/[id]/erase/route.ts:23`). Apertar ali às cegas transformaria o direito ao esquecimento
+  em `rowsRemoved: 0` com HTTP 200, que é pior que a falha original: some a garantia legal e fica a
+  aparência de sucesso.
+- `monthly_profit` — a política deixa profissional e recepção lerem o lucro do salão pelo
+  PostgREST, contra a intenção que a guarda `lucro-nao-vaza-para-quem-atende` já documenta. Mas
+  quem CONGELA o mês é o fechamento de comanda, feito por recepção com o cliente do usuário e
+  dentro de um `.catch()` que só avisa — restringir o `insert` pelo papel pararia o congelamento em
+  silêncio.
+
+**O que decidir:** as 38 restantes precisam de um banco de dev alinhado para serem verificadas uma
+a uma (hoje ele está 14 migrations atrás). Enquanto isso, elas ficam abertas de propósito — é a
+escolha entre um risco conhecido e um conserto não verificado.
+
+**Pendente do dono:** `0079` e `0080` estão no repositório e **não estão aplicadas**. Até
+`supabase db push`, `/api/health` responde 503 dizendo "banco ATRÁS do código" — é o alarme
+funcionando — e as três portas acima seguem abertas em produção.
