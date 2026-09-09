@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import Avatar from '@/components/ui/avatar'
 import { useVocabulario } from '@/components/shell/vocabulario'
+import { plural } from '@/core/text/vocabulario'
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import Chip from '@/components/ui/chip'
@@ -144,7 +145,7 @@ export default function ListaClientes({ iniciais }: { iniciais: ClienteLinha[] }
   return (
     <div>
       <label className="sr-only" htmlFor="busca-clientes">
-        Buscar cliente por nome ou telefone
+        Buscar {vocabulario.cliente} por nome ou telefone
       </label>
       <div className="relative mb-3">
         <Search aria-hidden className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-txt-3" />
@@ -179,13 +180,17 @@ export default function ListaClientes({ iniciais }: { iniciais: ClienteLinha[] }
         texto mudar (docs/21 §5.3).
 
         O texto sai do MESMO `clientes` que desenha a lista, então o que se lê é o que se vê.
+
+        Diz "na lista", e não "encontrados", de propósito: o particípio concorda em gênero com a
+        palavra da profissão, e ela muda ("aluno", "paciente", "tutora"). "12 alunas encontrados"
+        seria a concordância errada nascendo do próprio conserto. "na lista" não conjuga com nada.
       */}
       <p aria-live="polite" className="sr-only">
         {carregando
           ? 'Buscando.'
           : falhou
             ? 'Não consegui buscar. A lista abaixo é a anterior.'
-            : `${clientes.length} ${clientes.length === 1 ? 'cliente encontrado' : 'clientes encontrados'}.${fim ? '' : ' Há mais para carregar.'}`}
+            : `${clientes.length} ${clientes.length === 1 ? vocabulario.cliente : plural(vocabulario.cliente)} na lista.${fim ? '' : ' Há mais para carregar.'}`}
       </p>
 
       {falhou ? (
@@ -208,7 +213,13 @@ export default function ListaClientes({ iniciais }: { iniciais: ClienteLinha[] }
           <Card className="p-0">
             <EmptyState
               icone={<Users aria-hidden className="size-6" />}
-              titulo={segmento ? 'Ninguém nesse grupo agora' : termo ? 'Nenhum resultado' : 'Sem clientes ainda'}
+              titulo={
+                segmento
+                  ? 'Ninguém nesse grupo agora'
+                  : termo
+                    ? 'Nenhum resultado'
+                    : `Sem ${plural(vocabulario.cliente)} ainda`
+              }
               descricao={
                 segmento
                   ? 'Esse filtro atualiza todo dia, volte mais tarde.'

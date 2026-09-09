@@ -236,6 +236,19 @@ describe('o painel também fala a língua da profissão', () => {
       ['src/app/admin/campanhas/page.tsx', /plural\(ctx\.tenant\.vocabulario\.atendimento\)/],
       ['src/app/admin/config/meu-plano/page.tsx', /plural\(ctx\.tenant\.vocabulario\.cliente\)/],
       ['src/app/admin/clientes/[id]/pacotes-carteira.tsx', /comMaiuscula\(vocabulario\.servico\)/],
+      /*
+        Item 19 da auditoria de 2026-09-08, ligado em 2026-09-09. A LISTA de clientes é a tela de
+        maior volume do painel e falava fixo em três pontos: o rótulo da busca, o anúncio do leitor
+        de tela e o título do vazio. Um psicólogo lia "Buscar cliente" onde o certo é "paciente";
+        um personal, onde o certo é "aluno". O arquivo já importava `useVocabulario` — usava a
+        palavra em UM lugar (o botão do vazio) e nos outros três não.
+
+        As três frases foram escritas sem artigo concordando com a palavra injetada, que é a regra
+        do bloco logo abaixo: "Buscar X", "Sem Xs ainda", "N Xs na lista" (aqui o `na` concorda com
+        "lista", não com a palavra).
+      */
+      ['src/app/admin/clientes/lista.tsx', /Buscar \{vocabulario\.cliente\}/],
+      ['src/app/admin/clientes/lista.tsx', /plural\(vocabulario\.cliente\)/],
     ]
     for (const [arquivo, padrao] of casos) {
       const fonte = semComentarios(readFileSync(arquivo, 'utf8'))
