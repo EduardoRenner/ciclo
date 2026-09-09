@@ -7,6 +7,7 @@ import { resumoDeHoje } from '@/server/services/resumo-hoje'
 import { listarParaRecuperar } from '@/server/services/recuperar-receita'
 import { resumoMensal } from '@/server/services/caixa'
 import { listarOrcamentos } from '@/server/services/orcamentos'
+import { lerTaxasDoTenant } from '@/server/services/taxas-de-pagamento'
 
 import type { Database } from '@/server/db/types.gen'
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -174,13 +175,30 @@ async function recuperarQuemPrimeiro(ctx: ContextoRapido): Promise<RespostaRapid
   }
 }
 
+/*
+  NÃO diz "você TEM R$ X parado", e as duas palavras importam.
+
+  `totalValueCents` é `preço do serviço × chance de a pessoa voltar` (§5.3) — uma ESTIMATIVA. A
+  tela de Recuperar já tinha passado por isso: o rótulo era "Valor parado", ninguém entendia o
+  número (numa barbearia de corte a R$ 45 a linha aparecia como R$ 5,40), e ele virou "Dá para
+  recuperar", com a frase "estimativa, não promessa" logo abaixo.
+
+  Aqui a resposta ainda dizia a versão antiga, e em oração afirmativa: "você TEM" promete posse de
+  um dinheiro que não está parado em lugar nenhum. É a mesma classe do "faturou" — número honesto
+  com nome que promete demais, na superfície que fala em frases.
+
+  A frase espelha a tela: o mesmo verbo, a mesma ressalva.
+*/
 async function recuperarTotalParado(ctx: ContextoRapido): Promise<RespostaRapida> {
   const lista = await listarParaRecuperar(ctx.db, ctx.tenantId, { limit: 1 })
   if (lista.count === 0) {
-    return { resposta: 'Nada parado agora, toda a base está em dia.', ferramentasUsadas: ['clientes_para_recuperar'] }
+    return { resposta: 'Ninguém para recuperar agora, toda a base está em dia.', ferramentasUsadas: ['clientes_para_recuperar'] }
   }
+  const quantas = lista.count === 1 ? '1 pessoa' : `${lista.count} pessoas`
   return {
-    resposta: `Você tem ${dinheiro.format(lista.totalValueCents / 100)} parado, esperando ${lista.count} cliente(s) voltar.`,
+    resposta:
+      `Dá para recuperar cerca de ${dinheiro.format(lista.totalValueCents / 100)}, de ${quantas} que ` +
+      'estão atrasadas. É estimativa, não promessa: o preço do serviço de cada uma, multiplicado pela chance de voltar.',
     ferramentasUsadas: ['clientes_para_recuperar'],
   }
 }
@@ -207,10 +225,34 @@ async function caixaFaturamentoMes(ctx: ContextoRapido): Promise<RespostaRapida>
   return { resposta: `Você faturou ${dinheiro.format(resumo.revenueCents / 100)} neste mês, até agora.`, ferramentasUsadas: ['faturamento_do_periodo'] }
 }
 
-async function caixaLucroMes(ctx: ContextoRapido): Promise<RespostaRapida> {
-  const resumo = await resumoMensal(ctx.db, ctx.tenantId, ctx.timezone, mesCorrente(ctx.timezone))
+/*
+  DIZ "SOBROU", NÃO "LUCRO", e a ressalva da maquininha é CONDICIONAL.
+
+  Dois problemas na frase anterior, e o segundo era uma afirmação falsa:
+
+  1. `profitCents` soma o `profit_cents` congelado de cada comanda — receita menos material, taxa e
+     comissão. **Não desconta o custo fixo** (aluguel, hora de cadeira). É margem de contribuição, e
+     a tela do caixa chama de "Sobrou" exatamente por isso. "Lucro" promete uma conta que não foi
+     feita.
+  2. Ela afirmava "já descontado material, taxa e comissão" SEMPRE — e a taxa só entra se o dono
+     tiver dito quanto a maquininha cobra. A tela sabe disso e mostra um aviso ("o Sobrou ainda não
+     desconta a maquininha: você não disse quanto ela cobra") quando `taxas.respondida` é falso.
+     A resposta dizia que descontou algo que pode não ter descontado.
+
+  A frase espelha a tela nas duas coisas, e usa a MESMA fonte da condição
+  (`lerTaxasDoTenant().respondida`), para as duas não divergirem depois.
+*/
+async function caixaSobrouMes(ctx: ContextoRapido): Promise<RespostaRapida> {
+  const [resumo, taxas] = await Promise.all([
+    resumoMensal(ctx.db, ctx.tenantId, ctx.timezone, mesCorrente(ctx.timezone)),
+    lerTaxasDoTenant(ctx.db, ctx.tenantId),
+  ])
+  const descontado = taxas.respondida ? 'material, taxa da maquininha e comissão' : 'material e comissão'
+  const ressalva = taxas.respondida ? '' : ' A maquininha ainda não entra na conta: você não disse quanto ela cobra.'
   return {
-    resposta: `Seu lucro neste mês foi de ${dinheiro.format(resumo.profitCents / 100)}, já descontado material, taxa e comissão.`,
+    resposta:
+      `Sobrou ${dinheiro.format(resumo.profitCents / 100)} neste mês, já descontado ${descontado}. ` +
+      `Ainda não desconta o custo fixo.${ressalva}`,
     ferramentasUsadas: ['faturamento_do_periodo'],
   }
 }
@@ -236,7 +278,7 @@ const RESPOSTAS: Record<IdRespostaRapida, (ctx: ContextoRapido) => Promise<Respo
   recuperar_total_parado: recuperarTotalParado,
   recuperar_sumidos_60: recuperarSumidos60,
   caixa_faturamento_mes: caixaFaturamentoMes,
-  caixa_lucro_mes: caixaLucroMes,
+  caixa_lucro_mes: caixaSobrouMes,
   orcamentos_sem_resposta: orcamentosSemResposta,
 }
 
