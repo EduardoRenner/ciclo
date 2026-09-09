@@ -259,7 +259,7 @@ export default function RecuperarReceita({
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-corpo font-semibold">{item.name}</p>
                     <p className="truncate text-secundario text-txt-2">
-                      {item.serviceName} · {RUBRICA_ESTADO[item.state as Estado]} · {item.lateDays > 0 ? `${item.lateDays}d atrasada` : 'na janela'}
+                      {item.serviceName} · {RUBRICA_ESTADO[item.state as Estado]} · {item.lateDays > 0 ? `${item.lateDays}d de atraso` : 'na janela'}
                     </p>
                   </div>
                   <div className="shrink-0 text-right">
@@ -301,10 +301,10 @@ export default function RecuperarReceita({
           <BloqueioPlano
             className="border-0 bg-transparent p-1 shadow-none"
             precisaDo="essencial"
-            acao="avisar todas de uma vez"
+            acao="avisar todo mundo de uma vez"
             evidencia={{
               quantidade: itensSelecionados.length,
-              substantivo: 'clientes marcadas, esperando para voltar',
+              substantivo: 'na lista, esperando para voltar',
               valorCents: valorSelecionadoCents,
             }}
             alternativa={

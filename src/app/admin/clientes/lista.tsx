@@ -214,7 +214,7 @@ export default function ListaClientes({ iniciais }: { iniciais: ClienteLinha[] }
                   ? 'Esse filtro atualiza todo dia, volte mais tarde.'
                   : termo
                     ? 'Confira a grafia do nome ou o telefone digitado.'
-                    : 'Cadastre a primeira cliente para começar a marcar horários.'
+                    : 'A primeira ficha é o que faz o Motor de Ciclo ter de quem cuidar.'
               }
               acao={<Link href="/admin/clientes/nova">Cadastrar {vocabulario.cliente}</Link>}
             />

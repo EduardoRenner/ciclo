@@ -63,7 +63,7 @@ export const AUTOMACOES: readonly Automacao[] = [
     nivelMaximo: 1,
     rota: 'recompute-cycles',
     sempreLigada: true,
-    motivoDoTeto: 'Só calcula e mostra, e nunca fala com a cliente.',
+    motivoDoTeto: 'Só calcula e mostra, e nunca fala com quem é atendido.',
   },
   {
     chave: 'resumo_proativo',
@@ -77,10 +77,10 @@ export const AUTOMACOES: readonly Automacao[] = [
   {
     chave: 'fidelidade_automatica',
     nome: 'Pontos automáticos',
-    descricao: 'A cada atendimento concluído, a cliente ganha pontos sem ninguém lançar na mão.',
+    descricao: 'A cada atendimento concluído, os pontos entram sozinhos, sem ninguém lançar na mão.',
     nivelMaximo: 3,
     rota: null,
-    motivoDoTeto: 'Escreve só na ficha da própria cliente, e não manda mensagem.',
+    motivoDoTeto: 'Escreve só na ficha de quem foi atendido, e não manda mensagem.',
   },
   {
     chave: 'alertas_de_estoque',
@@ -93,10 +93,10 @@ export const AUTOMACOES: readonly Automacao[] = [
   {
     chave: 'lembrete_de_agendamento',
     nome: 'Lembrete de horário',
-    descricao: 'Lembra a cliente do horário marcado e pede a confirmação.',
+    descricao: 'Lembra do horário marcado e pede a confirmação.',
     nivelMaximo: 3,
     rota: 'reminders',
-    motivoDoTeto: 'Uma cliente por vez, de um horário que ela já marcou.',
+    motivoDoTeto: 'Uma pessoa por vez, de um horário que ela já marcou.',
   },
   {
     chave: 'campanha_de_recuperacao',
@@ -106,7 +106,7 @@ export const AUTOMACOES: readonly Automacao[] = [
     // Um erro que atinge 1 cliente é constrangimento; que atinge 46 é a reputação do salão.
     nivelMaximo: 2,
     rota: 'campaigns',
-    motivoDoTeto: 'Alcança várias clientes de uma vez, então esta sempre espera seu toque.',
+    motivoDoTeto: 'Alcança várias pessoas de uma vez, então esta sempre espera seu toque.',
   },
 ]
 

@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
@@ -89,10 +89,27 @@ const SUPOE_HOMEM: { padrao: RegExp; porque: string }[] = [
  * produto não mora só em `app/` e `components/`. `planos-cartoes.ts` é lido pela página pública de
  * preço E pela tela "Meu plano" — é a copy que a pessoa lê antes de pagar.
  *
- * `src/server` fica de fora aqui de propósito: a copy dele que interessa (`mensagens-prontas.ts`)
- * tem asserção própria mais abaixo, sobre o array tipado em vez de sobre o texto do arquivo.
+ * `src/core` e `src/server` entraram em 2026-09-08, e o motivo é o mesmo do `src/lib`: copy de
+ * produto não respeita a divisão de pastas. `core/automacoes/catalogo.ts` descreve as sete
+ * automações na tela `/admin/config/automacoes` — texto que a pessoa lê para decidir quanta rédea
+ * dar a cada uma — e estava fora do alcance. A frase anterior deste bloco dizia que `src/server`
+ * ficava de fora "de propósito, porque a copy dele que interessa é `mensagens-prontas.ts`, com
+ * asserção própria"; era verdade sobre `mensagens-prontas.ts` e falsa sobre o resto da pasta.
  */
-const RAIZES = ['src/app', 'src/components', 'src/lib']
+const RAIZES = ['src/app', 'src/components', 'src/lib', 'src/core', 'src/server']
+
+/**
+ * A única exceção, e ela é obrigatória: `services/assistente.ts` CITA as construções proibidas
+ * para PROIBI-LAS no prompt do modelo — "'você está preparado', 'seja bem-vindo' e 'obrigado' na
+ * voz dela erram com quem paga". Varrer o arquivo reprova a instrução que existe justamente para
+ * o defeito não acontecer: a guarda brigaria com o conserto. As três construções são strings de
+ * prompt, não comentário, então `semComentarios` não as remove.
+ *
+ * Não vira buraco por dois motivos, e os dois são conferidos logo abaixo: o prompt tem asserção
+ * PRÓPRIA ("o prompt do assistente manda não supor gênero"), e a lista é afirmada arquivo a
+ * arquivo — acrescentar um segundo nome aqui faz o teste gritar em vez de abrir a porta.
+ */
+const FORA_DA_VARREDURA = ['src/server/services/assistente.ts']
 
 function arquivos(dir: string): string[] {
   const achados: string[] = []
@@ -105,7 +122,8 @@ function arquivos(dir: string): string[] {
   return achados
 }
 
-const TELAS = RAIZES.flatMap(arquivos).map((f) => f.split(String.fromCharCode(92)).join('/'))
+const TODOS = RAIZES.flatMap(arquivos).map((f) => f.split(String.fromCharCode(92)).join('/'))
+const TELAS = TODOS.filter((f) => !FORA_DA_VARREDURA.includes(f))
 
 describe('o leitor deste teste', () => {
   it('enxerga as telas — não passa por não ter olhado nada', () => {
@@ -122,9 +140,27 @@ describe('o leitor deste teste', () => {
      * Os dois arquivos nomeados aqui não são exemplo: são os dois onde o defeito foi encontrado de
      * verdade. Arquivo que já falhou uma vez é o que precisa estar no alcance por escrito.
      */
-    for (const ondeJaFalhou of ['src/lib/planos-cartoes.ts', 'src/app/(auth)/entrar/page.tsx']) {
+    for (const ondeJaFalhou of [
+      'src/lib/planos-cartoes.ts',
+      'src/app/(auth)/entrar/page.tsx',
+      // 2026-09-08: descreve as automações na tela onde a pessoa decide quanta rédea dar a cada
+      // uma, e dizia "a cliente ganha pontos" — copy de produto morando em `core/`.
+      'src/core/automacoes/catalogo.ts',
+      // A pasta inteira estava fora, e o que a justificava cobria só `mensagens-prontas.ts`.
+      'src/server/services/crm.ts',
+    ]) {
       expect(TELAS, `${ondeJaFalhou} saiu do alcance da guarda`).toContain(ondeJaFalhou)
     }
+  })
+
+  it('a exceção continua sendo uma só, e continua coberta por outra asserção', () => {
+    /*
+     * Sem isto, a lista de exceções vira o lugar mais barato de calar a guarda: um arquivo novo ali
+     * some da varredura sem ninguém notar. Afirmar a lista inteira obriga quem acrescentar um nome
+     * a mexer aqui e a escrever o porquê.
+     */
+    expect(FORA_DA_VARREDURA).toEqual(['src/server/services/assistente.ts'])
+    expect(TODOS, 'o arquivo excluído precisa ao menos EXISTIR no alcance bruto').toContain(FORA_DA_VARREDURA[0])
   })
 
   it('os padrões pegam as construções que motivaram a guarda', () => {
@@ -309,5 +345,130 @@ describe('o vocabulário das profissões não supõe o gênero de quem usa o pro
         'próprio papel no gênero errado, e nenhuma outra guarda pega isto: o valor mora em seed ' +
         'SQL e nunca aparece no fonte. Use a palavra neutra, ou deixe a chave com o padrão.',
     ).toEqual([])
+  })
+})
+
+/**
+ * O ESPELHO, medido em 2026-09-08 e maior que o defeito original: 60 ocorrências supondo que quem
+ * é ATENDIDO é mulher — "a cliente", "da cliente", "clientes atrasadas", "avisar todas".
+ *
+ * A regra da casa sempre valeu para os dois lados (as asserções acima já reprovam "quem atende
+ * sozinha" tanto quanto "sozinho"), mas a varredura só olhava um. E o CICLO não atende só unhas e
+ * estética: atende barbearia, onde a clientela é homem, e as 17 profissões da `0022` incluem
+ * personal, eletricista e faxineira. "Escolha a cliente" erra com metade delas.
+ *
+ * ## Por que linha de base, e não uma regra que reprova tudo
+ *
+ * São 26 arquivos. Reescrever 26 pontos de copy num commit é onde o conserto vira defeito — a
+ * base já pagou isso uma vez (`toque-48` em dois links inline deixou o segundo intocável). E uma
+ * regra que reprovasse tudo hoje deixaria o build vermelho até a última frase, o que na prática
+ * significa que alguém a desliga.
+ *
+ * Então a lista é o estado de HOJE, e a única direção permitida é encolher. É o mesmo desenho de
+ * `rede-nao-derruba-tela.test.ts`, e ele tem a propriedade que importa: **arquivo novo com o
+ * defeito reprova na hora**, mesmo com os 26 antigos ainda lá.
+ *
+ * Os que saíram nesta rodada (`clientes/lista.tsx`, os dois de `recuperar/` e
+ * `core/automacoes/catalogo.ts`) não podem voltar: estão afirmados por nome.
+ */
+const SUPOE_MULHER = [
+  /\b[Aa]s? clientes?\b/,
+  /\b[Dd]as? clientes?\b/,
+  /\bclientes? (?:marcadas?|atrasadas?|cadastradas?|novas)\b/,
+]
+
+/** O estado de 2026-09-08. Só encolhe. */
+const PENDENTES = [
+  'src/app/(public)/[slug]/agendar/alternador-de-exemplo.tsx',
+  'src/app/admin/agenda/detalhe.tsx',
+  'src/app/admin/clientes/[id]/direitos.tsx',
+  'src/app/admin/clientes/[id]/ficha.tsx',
+  'src/app/admin/clientes/importar/importador.tsx',
+  'src/app/admin/comanda/[id]/comanda.tsx',
+  'src/app/admin/config/mensagens/editor.tsx',
+  'src/app/admin/config/page.tsx',
+  'src/app/admin/config/servicos/formulario.tsx',
+  'src/app/admin/config/servicos/page.tsx',
+  'src/app/admin/hoje/hoje.tsx',
+  'src/app/admin/orcamentos/page.tsx',
+  'src/app/api/v1/packages/route.ts',
+  'src/app/api/v1/wallet/route.ts',
+  'src/app/dev/ui/vitrine.tsx',
+  'src/app/llms.txt/route.ts',
+  'src/components/shell/assistente-flutuante.tsx',
+  'src/components/shell/resolucao-de-fila.tsx',
+  'src/lib/mensagens.ts',
+  'src/server/assistente/ferramentas.ts',
+  'src/server/services/assistente.ts',
+  'src/server/services/clientes.ts',
+  'src/server/services/comanda.ts',
+  'src/server/services/crm.ts',
+  'src/server/services/lgpd.ts',
+  'src/server/services/lista-espera.ts',
+]
+
+/** Os que saíram nesta rodada. Voltar é regressão, não estado herdado. */
+const JA_CONSERTADOS = [
+  'src/app/admin/clientes/lista.tsx',
+  'src/app/admin/recuperar/page.tsx',
+  'src/app/admin/recuperar/recuperar.tsx',
+  'src/core/automacoes/catalogo.ts',
+]
+
+/** O mesmo teste sobre um texto solto, para o autoteste do detector poder existir. */
+function supoeMulherEm(texto: string): boolean {
+  return SUPOE_MULHER.some((p) => p.test(texto))
+}
+
+function supoeMulher(arquivo: string): boolean {
+  const fonte = semComentarios(readFileSync(arquivo, 'utf8'))
+  return SUPOE_MULHER.some((p) => p.test(fonte))
+}
+
+describe('a copy também não supõe que quem é ATENDIDO é mulher', () => {
+  it('os padrões pegam as construções, e poupam as que estão certas', () => {
+    // Guarda contra o próprio detector: sem isto a lista de pendentes viraria decoração.
+    expect(supoeMulherEm('Escolha a cliente.'), 'não pegou "a cliente"').toBe(true)
+    expect(supoeMulherEm('Nome da cliente'), 'não pegou "da cliente"').toBe(true)
+    expect(supoeMulherEm('clientes atrasadas para voltar'), 'não pegou o particípio').toBe(true)
+
+    for (const certo of [
+      'Quem o Motor de Ciclo identificou em atraso para voltar.',
+      'A primeira ficha é o que faz o Motor de Ciclo ter de quem cuidar.',
+      'Lembra do horário marcado e pede a confirmação.',
+      // O vocabulário por profissão é o caminho certo, e não pode ser confundido com o defeito.
+      'Cadastrar {vocabulario.cliente}',
+    ]) {
+      expect(supoeMulherEm(certo), `acusou "${certo}", que está certo`).toBe(false)
+    }
+  })
+
+  it('a lista de pendentes é o estado real — nem inflada, nem defasada', () => {
+    /*
+     * Piso nos dois sentidos. Nome que saiu da lista mas continua com o defeito seria buraco
+     * silencioso; nome que já foi consertado e ficou na lista faz a próxima pessoa achar que ainda
+     * há trabalho ali, e o número deixa de significar alguma coisa.
+     */
+    const aindaTem = PENDENTES.filter((a) => existsSync(a) && supoeMulher(a))
+    const jaResolvidos = PENDENTES.filter((a) => existsSync(a) && !supoeMulher(a))
+    expect(jaResolvidos, 'estes já estão neutros — tire-os da lista e o número volta a valer').toEqual([])
+    expect(aindaTem.length, 'a lista encolheu sem ninguém atualizar o número').toBe(PENDENTES.length)
+  })
+
+  it('nenhum arquivo NOVO entra com o defeito', () => {
+    const novos = TODOS.filter((a) => !PENDENTES.includes(a) && supoeMulher(a))
+    expect(
+      novos,
+      'copy nova supondo que quem é atendido é mulher. O CICLO atende barbearia e eletricista ' +
+        'também — use "quem", "a pessoa", ou o vocabulário da profissão (`vocabulario.cliente`).',
+    ).toEqual([])
+  })
+
+  it('o que foi consertado nesta rodada não volta', () => {
+    for (const arquivo of JA_CONSERTADOS) {
+      expect(existsSync(arquivo), `${arquivo} sumiu — a afirmação abaixo passaria vazia`).toBe(true)
+      expect(supoeMulher(arquivo), `${arquivo} voltou a supor que quem é atendido é mulher`).toBe(false)
+      expect(PENDENTES, `${arquivo} não pode estar na lista de pendentes: ele foi consertado`).not.toContain(arquivo)
+    }
   })
 })

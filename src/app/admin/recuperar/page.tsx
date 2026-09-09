@@ -87,7 +87,7 @@ export default async function PaginaRecuperar() {
       */}
       <PageHeader
         titulo="Recuperar receita"
-        descricao="Clientes que o Motor de Ciclo identificou como atrasadas para voltar."
+        descricao="Quem o Motor de Ciclo identificou em atraso para voltar."
         acao={
           <Link
             href="/admin/campanhas"
