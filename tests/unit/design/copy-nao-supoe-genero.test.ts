@@ -441,7 +441,6 @@ const PENDENTES = [
   'src/components/shell/resolucao-de-fila.tsx',
   'src/lib/mensagens.ts',
   'src/server/assistente/ferramentas.ts',
-  'src/server/services/assistente.ts',
   'src/server/services/clientes.ts',
   'src/server/services/comanda.ts',
   'src/server/services/crm.ts',
@@ -451,6 +450,9 @@ const PENDENTES = [
 
 /** Os que saíram nesta rodada. Voltar é regressão, não estado herdado. */
 const JA_CONSERTADOS = [
+  // Saiu da lista de pendentes em 2026-09-09: o prompt do assistente deixou de supor gênero na
+  // VOZ PRÓPRIA dele. Só continuava lá porque a guarda o lia com as citações, que sempre casam.
+  'src/server/services/assistente.ts',
   'src/app/admin/clientes/lista.tsx',
   'src/app/admin/recuperar/page.tsx',
   'src/app/admin/recuperar/recuperar.tsx',
@@ -463,7 +465,10 @@ function supoeMulherEm(texto: string): boolean {
 }
 
 function supoeMulher(arquivo: string): boolean {
-  const fonte = semComentarios(readFileSync(arquivo, 'utf8'))
+  // MESMA leitura da varredura de cima, e isso importa: com leituras diferentes o arquivo do
+  // prompt ficava eternamente na lista de pendentes por causa das proprias citacoes, e defeito
+  // NOVO nele continuava invisivel por estar na lista.
+  const fonte = semCitacoes(arquivo, semComentarios(readFileSync(arquivo, 'utf8')))
   return SUPOE_MULHER.some((p) => p.test(fonte))
 }
 
