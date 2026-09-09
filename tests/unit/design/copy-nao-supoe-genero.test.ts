@@ -417,6 +417,17 @@ const SUPOE_MULHER = [
    * o número da linha de base deixaria de valer no mesmo commit em que nasceu.
    */
   /\b[Aa]s?\s+[a-zà-ÿ]+as?\s+clientes?\b/i,
+  /*
+   * O quinto padrão, achado em 2026-09-09 lendo as MENSAGENS que vão para o cliente do salão.
+   * O fluxo de indicação dizia "Indique uma amiga" (na página pública de avaliação), "Que tal
+   * indicar uma amiga? ELA agenda" (ficha) e "Dê um desconto pra uma amiga" (modelo pronto de
+   * WhatsApp). Numa barbearia erra nos três.
+   *
+   * Os padrões acima são todos sobre a palavra "cliente", e aqui a palavra é outra — o defeito
+   * não estava na construção, estava no substantivo escolhido. Guarda de vocabulário precisa
+   * cobrir os substantivos que a copy realmente usa, não só o canônico.
+   */
+  /\b(?:uma|sua|as|suas)\s+amigas?\b/i,
 ]
 
 /** O estado de 2026-09-08. Só encolhe. */
@@ -450,6 +461,9 @@ const PENDENTES = [
 
 /** Os que saíram nesta rodada. Voltar é regressão, não estado herdado. */
 const JA_CONSERTADOS = [
+  // O fluxo de indicação, 2026-09-09. O primeiro é público: o cliente do salão o lê.
+  'src/app/(public)/avaliar/[token]/avaliar.tsx',
+  'src/server/services/mensagens-prontas.ts',
   // Saiu da lista de pendentes em 2026-09-09: o prompt do assistente deixou de supor gênero na
   // VOZ PRÓPRIA dele. Só continuava lá porque a guarda o lia com as citações, que sempre casam.
   'src/server/services/assistente.ts',
@@ -478,6 +492,9 @@ describe('a copy também não supõe que quem é ATENDIDO é mulher', () => {
     expect(supoeMulherEm('Escolha a cliente.'), 'não pegou "a cliente"').toBe(true)
     expect(supoeMulherEm('Nome da cliente'), 'não pegou "da cliente"').toBe(true)
     expect(supoeMulherEm('clientes atrasadas para voltar'), 'não pegou o particípio').toBe(true)
+    // O fluxo de indicação, achado em 2026-09-09 nas mensagens que vão para o cliente do salão.
+    expect(supoeMulherEm('Indique uma amiga'), 'não pegou a amiga suposta').toBe(true)
+    expect(supoeMulherEm('Dê um desconto pra uma amiga'), 'não pegou a amiga suposta').toBe(true)
     // A frase real que estava na tela, e que os três primeiros padrões deixavam passar.
     expect(
       supoeMulherEm('Cadastre a primeira cliente para começar a marcar horários.'),
@@ -490,6 +507,8 @@ describe('a copy também não supõe que quem é ATENDIDO é mulher', () => {
       'Lembra do horário marcado e pede a confirmação.',
       // O vocabulário por profissão é o caminho certo, e não pode ser confundido com o defeito.
       'Cadastrar {vocabulario.cliente}',
+      // O conserto do fluxo de indicação: neutro dos dois lados.
+      'Indique alguém. A pessoa agenda o primeiro horário por aqui.',
     ]) {
       expect(supoeMulherEm(certo), `acusou "${certo}", que está certo`).toBe(false)
     }
