@@ -248,7 +248,14 @@ describe('o painel também fala a língua da profissão', () => {
         "lista", não com a palavra).
       */
       ['src/app/admin/clientes/lista.tsx', /Buscar \{vocabulario\.cliente\}/],
-      ['src/app/admin/clientes/lista.tsx', /plural\(vocabulario\.cliente\)/],
+      /*
+        Os TRES pontos, cada um com seu padrao. A primeira versao usava so `plural(...)` para os
+        dois ultimos, e era cega: reverti o titulo do vazio para 'Sem clientes ainda' e o teste
+        passou, porque o `plural` do ANUNCIO continuava no arquivo. Um padrao que casa em dois
+        lugares nao guarda nenhum dos dois.
+      */
+      ['src/app/admin/clientes/lista.tsx', /Sem \$\{plural\(vocabulario\.cliente\)\} ainda/],
+      ['src/app/admin/clientes/lista.tsx', /\$\{clientes\.length === 1 \? vocabulario\.cliente : plural\(vocabulario\.cliente\)\}/],
     ]
     for (const [arquivo, padrao] of casos) {
       const fonte = semComentarios(readFileSync(arquivo, 'utf8'))
@@ -288,7 +295,13 @@ describe('o painel também fala a língua da profissão', () => {
        * letra (com acento incluído). Consome um caractere, e isso é irrelevante porque só se usa
        * `.test()`.
        */
-      String.raw`(?:^|[^A-Za-zÀ-ÿ])(daquele|daquela|naquele|naquela|àquele|àquela|desta|deste|dessa|desse|nesta|neste|nessa|nesse|pelos|pelas|pelo|pela|nosso|nossa|aquele|aquela|numa|num|dos|das|nos|nas|aos|pros|pras|esse|essa|este|esta|cada|seu|sua|pro|pra|ao|do|da|no|na|os|as|às|à|o|a)\s+(\$\{[\w.(]*)?$`,
+      /*
+        `\$?\{` e nao `\$\{`: a injecao de JSX e `{vocabulario.cliente}`, SEM cifrao. So a de
+        template literal tem `$`. A guarda entendia so a segunda, e passou VERDE com
+        `Buscar o {vocabulario.cliente}` na lista de clientes, que e literalmente o defeito que ela
+        existe para pegar ("Buscar o sessao"). Achado por mutacao em 2026-09-09.
+      */
+      String.raw`(?:^|[^A-Za-zÀ-ÿ])(daquele|daquela|naquele|naquela|àquele|àquela|desta|deste|dessa|desse|nesta|neste|nessa|nesse|pelos|pelas|pelo|pela|nosso|nossa|aquele|aquela|numa|num|dos|das|nos|nas|aos|pros|pras|esse|essa|este|esta|cada|seu|sua|pro|pra|ao|do|da|no|na|os|as|às|à|o|a)\s+(\$?\{[\w.(]*)?$`,
       'i',
     )
     /*
@@ -317,6 +330,15 @@ describe('o painel também fala a língua da profissão', () => {
     expect(COLADO.test('rotulo={`Foto do ${'), 'o detector cegou para o caso que ele existe para pegar').toBe(true)
     expect(COLADO.test('rotulo={`Direitos da ${comMaiuscula('), 'o detector não alcança a chamada aninhada').toBe(true)
     expect(COLADO.test('descricao="a ordem que a cliente vê" titulo={'), 'o detector acusa atributo vizinho').toBe(false)
+    /*
+      A injeção de JSX, que a guarda não enxergava. `Buscar o {vocabulario.cliente}` vira
+      "Buscar o sessão" — o mesmo defeito de `Foto do ${...}`, escrito do outro jeito.
+    */
+    expect(COLADO.test('        Buscar o {'), 'o detector não enxerga injeção de JSX').toBe(true)
+    expect(COLADO.test('        Buscar a {comMaiuscula('), 'o detector não alcança chamada aninhada em JSX').toBe(true)
+    // E o outro lado: sem artigo colado, JSX é livre — é assim que a lista de clientes escreve hoje.
+    expect(COLADO.test('        Buscar {'), 'o detector acusa JSX sem artigo').toBe(false)
+    expect(COLADO.test('        Sem {plural('), 'o detector acusa preposição sem artigo').toBe(false)
     /*
      * As CONTRAÇÕES afirmadas por nome, e não só presentes na lista. Medido por mutação: apagá-las
      * do padrão passava VERDE, porque nenhum rótulo de hoje injeta vocabulário depois de "pro". A
