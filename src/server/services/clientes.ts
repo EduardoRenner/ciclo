@@ -11,7 +11,7 @@ const COLUNAS =
   'id, name, phone_e164, email, birth_date, notes, tags, source, referred_by, preferences, document, gender, address, emergency_contact, preferred_professional_id, online_booking_blocked, marketing_opt_in, whatsapp_opt_out, visits_count, no_show_count, ltv_cents, last_visit_at, created_at'
 
 export const EsquemaCliente = z.object({
-  name: z.string().trim().min(2, 'Digite o nome da cliente.').max(120, 'Nome muito longo.'),
+  name: z.string().trim().min(2, 'Digite o nome de quem vai ser atendido.').max(120, 'Nome muito longo.'),
   // D47: cliente sem telefone pode — só não entra em automação.
   phone: z.string().trim().nullish(),
   email: z.email('Digite um e-mail válido.').nullish(),

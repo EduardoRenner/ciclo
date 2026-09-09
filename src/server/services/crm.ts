@@ -717,7 +717,7 @@ export async function centralDeAcoes(db: Cliente, tenantId: string, papel?: Pape
       acoes.push({
         chave: 'orcamentos',
         titulo: `${parados.length} ${parados.length === 1 ? 'orçamento parado' : 'orçamentos parados'}`,
-        descricao: 'Esperando resposta da cliente. Um lembrete pode ser o empurrão que faltava.',
+        descricao: 'Esperando resposta. Um lembrete pode ser o empurrão que faltava.',
         href: '/admin/orcamentos',
         tom: 'warn',
       })

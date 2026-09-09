@@ -164,7 +164,7 @@ export default function DetalheAgendamento({
           quando alguém abre o agendamento — não quando passa o olho na agenda.
 
           A distinção por `origin` é a parte que torna a linha acionável. Sem ela quem atende não
-          sabe se está introduzindo o assunto ou lembrando de algo que a cliente já leu, e as duas
+          sabe se está introduzindo o assunto ou lembrando de algo que a pessoa já leu, e as duas
           conversas são diferentes. `public_page` é o único caminho em que a tela mostrou o valor
           antes de confirmar; nos outros o sinal é regra da casa que ninguém comunicou ainda.
 
@@ -174,7 +174,7 @@ export default function DetalheAgendamento({
         {agendamento.deposit_cents > 0 ? (
           <p className="mt-1 text-secundario text-txt-2">
             Sinal de <strong className="tabular font-semibold text-txt">{dinheiro.format(agendamento.deposit_cents / 100)}</strong>
-            {agendamento.origin === 'public_page' ? '. A cliente viu esse valor ao agendar.' : '. A cliente ainda não foi avisada.'}
+            {agendamento.origin === 'public_page' ? '. Quem marcou viu esse valor ao agendar.' : '. Ainda não avisamos quem marcou.'}
           </p>
         ) : null}
       </div>
@@ -229,7 +229,7 @@ export default function DetalheAgendamento({
           ) : null}
           {linkAvaliacao ? (
             // `api.whatsapp.com/send?text=` (sem número) abre o seletor de contato do
-            // WhatsApp — não precisa do telefone da cliente, que esta tela nem carrega.
+            // WhatsApp — não precisa do telefone de quem foi atendido, que esta tela nem carrega.
             <a
               href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`Oi! Poderia avaliar seu atendimento? ${linkAvaliacao}`)}`}
               target="_blank"
@@ -270,7 +270,7 @@ export default function DetalheAgendamento({
             rotulo="Motivo (opcional)"
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}
-            ajuda="Fica no histórico da cliente."
+            ajuda="Fica no histórico de quem ia ser atendido."
           />
           <Button variante="danger" largura="cheia" carregando={pendente} onClick={confirmarCancelamento}>
             Sim, cancelar

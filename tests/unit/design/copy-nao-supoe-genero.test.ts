@@ -439,8 +439,23 @@ const SUPOE_MULHER = [
   /\b(?:essa|esta|aquela|dessa|desta|daquela|nessa|nesta|naquela)s?\s+clientes?\b/i,
 ]
 
-/** O estado de 2026-09-08. Só encolhe. */
-const PENDENTES = [
+/**
+ * **A lista de pendentes acabou em 2026-09-09, e por isso ela nao existe mais aqui.**
+ *
+ * Ela nasceu com 26 nomes e a unica direcao permitida era encolher. Encolheu ate zero, entao a
+ * regra deixou de ser "nenhum arquivo NOVO" e passou a ser "nenhum arquivo". Manter a constante
+ * vazia seria pior que apaga-la: comparar o tamanho da lista com ela mesma, vazia, da
+ * `0 === 0`, uma afirmacao que passa sem medir nada — a armadilha do piso vazio que esta base ja
+ * pagou duas vezes (`it.each([])` e a guarda que "achou N arquivos" sem olhar onde o defeito
+ * mora). O piso agora e outro, e ele e real: `TODOS` tem que ter tamanho, e cada nome de
+ * `JA_CONSERTADOS` tem que existir no disco.
+ */
+
+/** Os que saíram nesta rodada. Voltar é regressão, não estado herdado. */
+const JA_CONSERTADOS = [
+  // Os ONZE ultimos, 2026-09-09: a divida chegou a zero. Aqui estava o defeito no lugar onde ele
+  // custa mais caro — `llms.txt` e o texto que os proprios modelos leem para descrever o CICLO, e
+  // ele dizia que a pessoa "marca sozinha" num produto que atende eletricista e personal.
   'src/app/admin/agenda/detalhe.tsx',
   'src/app/admin/comanda/[id]/comanda.tsx',
   'src/app/admin/config/servicos/formulario.tsx',
@@ -452,10 +467,6 @@ const PENDENTES = [
   'src/server/services/crm.ts',
   'src/server/services/lgpd.ts',
   'src/server/services/lista-espera.ts',
-]
-
-/** Os que saíram nesta rodada. Voltar é regressão, não estado herdado. */
-const JA_CONSERTADOS = [
   // As doze descrições de ferramenta e `.describe()` de esquema, 2026-09-09. O modelo LÊ estas
   // strings para escolher a ferramenta e redigir a resposta — supor gênero aqui vira frase gerada.
   'src/server/assistente/ferramentas.ts',
@@ -533,20 +544,8 @@ describe('a copy também não supõe que quem é ATENDIDO é mulher', () => {
     }
   })
 
-  it('a lista de pendentes é o estado real — nem inflada, nem defasada', () => {
-    /*
-     * Piso nos dois sentidos. Nome que saiu da lista mas continua com o defeito seria buraco
-     * silencioso; nome que já foi consertado e ficou na lista faz a próxima pessoa achar que ainda
-     * há trabalho ali, e o número deixa de significar alguma coisa.
-     */
-    const aindaTem = PENDENTES.filter((a) => existsSync(a) && supoeMulher(a))
-    const jaResolvidos = PENDENTES.filter((a) => existsSync(a) && !supoeMulher(a))
-    expect(jaResolvidos, 'estes já estão neutros — tire-os da lista e o número volta a valer').toEqual([])
-    expect(aindaTem.length, 'a lista encolheu sem ninguém atualizar o número').toBe(PENDENTES.length)
-  })
-
-  it('nenhum arquivo NOVO entra com o defeito', () => {
-    const novos = TODOS.filter((a) => !PENDENTES.includes(a) && supoeMulher(a))
+  it('nenhum arquivo supõe que quem é ATENDIDO é mulher', () => {
+    const novos = TODOS.filter((a) => supoeMulher(a))
     expect(
       novos,
       'copy nova supondo que quem é atendido é mulher. O CICLO atende barbearia e eletricista ' +
@@ -558,7 +557,6 @@ describe('a copy também não supõe que quem é ATENDIDO é mulher', () => {
     for (const arquivo of JA_CONSERTADOS) {
       expect(existsSync(arquivo), `${arquivo} sumiu — a afirmação abaixo passaria vazia`).toBe(true)
       expect(supoeMulher(arquivo), `${arquivo} voltou a supor que quem é atendido é mulher`).toBe(false)
-      expect(PENDENTES, `${arquivo} não pode estar na lista de pendentes: ele foi consertado`).not.toContain(arquivo)
     }
   })
 })
