@@ -102,7 +102,10 @@ describe('verificarSaude', () => {
 
       const relatorio = await verificarSaude(svc)
       expect(relatorio.checks.sendReminders.ok).toBe(true)
-      expect(relatorio.checks.sendReminders.detail).toMatch(/não está no schedule/)
+      // "não tem agendador em produção" desde `perf/csp-borda`-vizinho (`docs/cron-externo`): o
+      // cron saiu do `on.schedule` do GitHub e foi pro cron-job.org, então a mensagem não cita mais
+      // o YAML. `saude-vigia-so-o-que-roda.test.ts` casa a mesma string — as duas precisam bater.
+      expect(relatorio.checks.sendReminders.detail).toMatch(/não tem agendador/)
       expect(relatorio.checks.sendCampaigns.ok).toBe(true)
       /*
        * `relatorio.ok` NÃO é afirmado aqui de propósito. A fila é global e `job-queue.test.ts`
