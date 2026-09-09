@@ -6858,3 +6858,74 @@ fluxo padrão de muita gente (GitHub, por ex.) e fecha o buraco por inteiro sem 
 **Guarda.** `veioDoLinkDeRecuperacao` é função pura, testada em `tests/unit/server/session.test.ts`
 com os cinco casos (otp, otp+totp, oauth, oauth+totp, password, vazio). `metodos` entrou no tipo
 `Sessao` e no mock de `clienteCom`.
+
+---
+
+## 2026-09-09 · Quem lê o rótulo do alerta de saúde (Unidade 10)
+
+**Pergunta delegada em 05/09.** "Quem vê o alerta de saúde." Estava marcada como bloqueada por
+decisão do dono.
+
+**Medido antes de decidir.** A rota `/vault` protege o rótulo com três travas —
+`exigirPermissao('vault:own')`, `exigirAal2()` e registro em `vault_access_log`. A mesma
+informação estava sendo servida em três lugares sem nenhuma delas: a ficha do cliente
+(`fichaDoCliente` preenchia `saude.alerta` para qualquer papel com `client:read`, recepção
+inclusive), `/admin/hoje` (`resumo-hoje` selecionava `alert_label` e ninguém o usava — ia no
+payload até o navegador) e `GET .../data-export`, que **decifra o cofre inteiro** e exigia
+`client:read`.
+
+**Decisão.** O SINAL (`has_alert`) é de todo mundo do tenant; o RÓTULO é de quem tem `vault:`.
+
+O sinal precisa ser amplo porque é ele que faz a recepção avisar quem atende antes de o
+atendimento começar — `appointment-row.tsx` já dizia isso com todas as letras ("nunca o rótulo
+clínico, só o sinal"). O rótulo é dado de saúde, categoria especial na LGPD, e a régua de quem
+pode vê-lo já existia no `rbac.ts`: `owner` pelo curinga, `professional` por `vault:own`,
+ninguém mais.
+
+A exportação foi para `client:export`, que o `rbac.ts` **já reservava ao dono** citando a C35
+("só owner, com MFA na hora"). Não é permissão nova: é a decisão que já estava tomada e que a
+rota não aplicava.
+
+**Por que privilégio por COLUNA e não política por papel.** A `0077` tira
+`ciphertext`/`iv`/`auth_tag`/`alert_label` do `grant select` de `anon`/`authenticated`. Uma
+política no formato da `0073` seria row-level e tiraria a linha inteira — a recepção perderia o
+booleano junto com o rótulo, e o conserto de privacidade viraria um apagão de segurança do
+atendimento. As leituras privilegiadas passaram a ir por `withTenant` (service_role), sempre
+DEPOIS da checagem de permissão da rota.
+
+**O defeito que o próprio conserto criou, e o conserto dele.** Apertar a rota de exportação sem
+mexer na tela deixaria o botão "Baixar os dados" visível para quem passaria a receber recusa —
+a armadilha "deixa trabalhar para recusar no envio". O botão ganhou `podeExportar`, decidido pela
+mesma permissão da rota.
+
+**Guarda.** `tests/unit/design/cofre-nao-vaza-para-quem-nao-pode.test.ts`, com a régua de
+permissão exercitada de verdade (`avaliarPermissao` para os cinco papéis) e a regra geral de que
+coluna sensível só é lida via `withTenant`. Seis mutações vistas reprovando.
+
+**O que NÃO foi verificado:** `pnpm test:rls` não roda nesta máquina e a CI está parada por
+billing. A `0077` foi conferida por SQL direto em produção — um bloco `DO` com
+`set local role authenticated` que espera `insufficient_privilege` no rótulo e no cifrado, e
+leitura livre no sinal.
+
+---
+
+## 2026-09-09 · A profissão genérica não responde os quatro eixos (item 17)
+
+**Pergunta.** O catálogo tem 17 profissões e a busca do onboarding respondia "Nenhuma profissão
+encontrada." — com `professionId` obrigatório no esquema da rota. Quem não estivesse nas 17 ficava
+preso na primeira tela, depois de já ter criado a conta.
+
+**Decisão.** Entra "Outra profissão" no catálogo (`0078`), e ela **não grava** `onde`, `cobranca`,
+`inicio` nem `ritmo` no tenant.
+
+O motivo é o `podeUsarModulo`: ele esconde módulo quando o eixo tem valor CONHECIDO e incompatível,
+e não esconde nada quando é nulo — *"onboarding incompleto não é motivo para sumir com
+funcionalidade"*, diz o próprio arquivo. Os eixos do tenant são gravados uma única vez, no
+onboarding, e **não existe tela para corrigi-los**. Quem escolheu a genérica não descreveu como
+atende; inventar quatro valores por ela apagaria `routing`, `recurrence` ou `quotes` da interface
+de alguém que precisa deles, para sempre. Nulo é o estado honesto e o lado seguro de errar.
+
+Os quatro valores existem na LINHA do catálogo só porque a tabela os declara `not null`.
+`profession_id` continua gravado: saber quantos caem na genérica é o único sinal de qual profissão
+falta no catálogo. `sinonimos` fica vazio para a genérica não competir com a profissão certa numa
+busca legítima.
