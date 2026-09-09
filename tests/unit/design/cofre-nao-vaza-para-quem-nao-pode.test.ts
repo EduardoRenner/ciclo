@@ -250,3 +250,30 @@ describe('a migration 0077 corta na coluna certa', () => {
     }
   })
 })
+
+describe('a tela não oferece o que a rota vai recusar', () => {
+  /*
+   * O defeito que o PRÓPRIO conserto de segurança criava. Apertar a rota de exportação para
+   * `client:export` sem mexer na tela deixaria o botão "Baixar os dados" visível para recepção e
+   * gerente, falhando só no clique — a armadilha "deixa trabalhar para recusar no envio", que o
+   * `docs/20` combate e que esta base já corrigiu em seis telas.
+   *
+   * A mesma permissão nos dois lados, e é isso que a guarda prende: a tela some para quem a rota
+   * recusaria, em vez de oferecer e falhar.
+   */
+  it('o botão de exportar depende da MESMA permissão que a rota exige', () => {
+    const pagina = fonte('src/app/admin/clientes/[id]/page.tsx')
+    expect(
+      /podeExportarCliente=\{avaliarPermissao\(ctx\.papel, 'client:export'\)/.test(pagina),
+      'a página decide o botão de exportar por outra régua que não `client:export` — as duas ' +
+        'fontes divergem e a pessoa leva um erro no clique',
+    ).toBe(true)
+
+    const painel = fonte('src/app/admin/clientes/[id]/direitos.tsx')
+    expect(painel, 'o painel de direitos ignora a permissão de exportar').toContain('podeExportar')
+    expect(
+      /\{podeExportar \?/.test(painel),
+      'o botão de exportar não está condicionado — receber a prop e não usá-la é o mesmo que não tê-la',
+    ).toBe(true)
+  })
+})

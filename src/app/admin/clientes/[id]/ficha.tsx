@@ -122,6 +122,7 @@ export default function Ficha({
   profissionais,
   configFidelidade,
   podeApagarCliente,
+  podeExportarCliente,
   podeLancarPacote,
   servicos,
   linkIndicacao,
@@ -139,6 +140,7 @@ export default function Ficha({
   configFidelidade: ConfigFidelidade
   /** `client:delete` é de dono/gerente; recepção não apaga base de cliente. */
   podeApagarCliente: boolean
+  podeExportarCliente: boolean
   /** `comanda:own`: quem não tem nunca veria os sheets funcionarem. */
   podeLancarPacote: boolean
   /** Para vender pacote sem sair da ficha. */
@@ -589,7 +591,12 @@ export default function Ficha({
             consentimentoImagemConcedido={consentimentos.some((c) => c.kind === 'image_use' && c.consentId !== null)}
             consentId={consentimentos.find((c) => c.kind === 'image_use')?.consentId ?? null}
           />
-          <DireitosDaCliente clientId={cliente.id} nome={cliente.name} podeApagar={podeApagarCliente} />
+          <DireitosDaCliente
+            clientId={cliente.id}
+            nome={cliente.name}
+            podeApagar={podeApagarCliente}
+            podeExportar={podeExportarCliente}
+          />
         </div>
       ) : null}
 
