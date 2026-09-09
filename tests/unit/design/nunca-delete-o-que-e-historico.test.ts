@@ -220,7 +220,18 @@ describe('nada apaga histórico: nem o código, nem o schema', () => {
       passaria a ser uma quebra — e do tipo silencioso, porque insert barrado por RLS não estoura
       em toda rota.
     */
-    expect(zero80?.sql).toContain('create policy stock_moves_select')
-    expect(zero80?.sql).toContain('create policy stock_moves_insert')
+    /*
+      Com o `on public.stock_moves` junto, e não só o nome da política — porque a primeira versão
+      destas duas linhas casava com o PREFIXO e passou verde na mutação. Renomeei a política para
+      `stock_moves_insert_DESLIGADA` (o mesmo efeito de apagá-la: ninguém insere mais) e
+      `includes('create policy stock_moves_insert')` continuou casando, porque o nome novo CONTÉM o
+      antigo. A guarda afirmava "o insert sobreviveu" sobre uma migration em que ele não existe.
+
+      É a regra da tabela do CLAUDE.md na forma menos óbvia dela: casar com o que MUDA quando o
+      defeito volta. Um nome é prefixo de infinitos outros nomes; o que não é prefixo de nada é o
+      comando inteiro até a tabela.
+    */
+    expect(zero80?.sql).toContain('create policy stock_moves_select on public.stock_moves')
+    expect(zero80?.sql).toContain('create policy stock_moves_insert on public.stock_moves')
   })
 })
