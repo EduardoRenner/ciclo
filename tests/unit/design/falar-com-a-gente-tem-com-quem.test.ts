@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest'
 
 import { semComentarios } from '../../helpers/fonte'
 
+import { vazioDeRecuperar } from '@/core/ciclo/vazio-de-recuperar'
 import { canalDeContato, textoDeMudarDePlano } from '@/lib/contato'
 
 /**
@@ -186,12 +187,19 @@ describe('o decisor puro isenta o arquivo, não a regra', () => {
       `${arquivo} não escreve mais o convite — tire-o de DECISORES_PUROS`,
     ).toBe(true)
 
-    // O que faz dele um decisor: a frase é CONDICIONADA a um parâmetro, não escrita sempre.
+    /*
+     * O que faz dele um decisor: a frase é CONDICIONADA ao parâmetro, não escrita sempre.
+     *
+     * **A primeira versão disto casava só com `temCanalDeContato`, e era cega.** Tirei o
+     * condicional do arquivo — deixando o convite incondicional, que é o defeito exato — e a
+     * guarda passou verde, porque o identificador continua existindo na ASSINATURA da função. Foi
+     * a armadilha nº 1 da tabela do CLAUDE.md outra vez: casar com um nome que o arquivo contém
+     * por outro motivo.
+     */
     expect(
-      /temCanalDeContato/.test(src),
-      `${arquivo} escreve o convite sem depender de haver canal. Ou recebe a decisão por ` +
-        'parâmetro, ou consulta `canalDeContato` — escrever a frase incondicionalmente é a ' +
-        'promessa sem destinatário que esta guarda inteira existe para impedir.',
+      /temCanalDeContato\s*(?:\?|&&)/.test(src),
+      `${arquivo} escreve o convite sem depender de haver canal. Receber o parâmetro não basta — ` +
+        'a frase precisa depender dele.',
     ).toBe(true)
   })
 
@@ -210,5 +218,40 @@ describe('o decisor puro isenta o arquivo, não a regra', () => {
   it('a lista de decisores puros é uma só, e nomeada', () => {
     // Afirmar a lista inteira obriga quem acrescentar um nome a mexer aqui e escrever o porquê.
     expect(DECISORES_PUROS.map((d) => d.arquivo)).toEqual([join('src', 'core', 'ciclo', 'vazio-de-recuperar.ts')])
+  })
+})
+
+/**
+ * E a prova de comportamento, no mesmo desenho do bloco de `textoDeMudarDePlano` lá em cima:
+ * varredura de fonte prova a FORMA, chamar a função prova o RESULTADO. As duas juntas porque a
+ * varredura sozinha já foi burlada uma vez nesta guarda — o identificador sobrevive na assinatura
+ * mesmo com o condicional apagado.
+ */
+describe('o vazio do Motor de Ciclo não convida sem ter para onde', () => {
+  const SEM_CICLOS = { temClientes: true, temCiclos: false, temAtendimentos: true }
+
+  it('SEM canal, não manda falar com ninguém', () => {
+    const v = vazioDeRecuperar(SEM_CICLOS.temClientes, SEM_CICLOS.temCiclos, SEM_CICLOS.temAtendimentos, false)
+    expect(/fal(e|ar|a)\s+com\s+a\s+gente/i.test(v.descricao), `convidou sem canal: "${v.descricao}"`).toBe(false)
+    expect(/suporte/i.test(v.descricao), 'mandou falar com o suporte, que não é lugar nenhum').toBe(false)
+
+    // E não pode virar silêncio: quem abre a tela precisa entender por que ela está vazia.
+    expect(v.descricao.trim().length, 'ficou sem explicação nenhuma').toBeGreaterThan(60)
+    expect(v.acaoHref, 'tela vazia sem saída é beco sem saída').toBe('/admin/clientes')
+  })
+
+  it('COM canal, convida — a guarda não trava copy honesta', () => {
+    const v = vazioDeRecuperar(SEM_CICLOS.temClientes, SEM_CICLOS.temCiclos, SEM_CICLOS.temAtendimentos, true)
+    expect(/fal(e|ar|a)\s+com\s+a\s+gente/i.test(v.descricao)).toBe(true)
+  })
+
+  it('os dois estados dizem coisas diferentes', () => {
+    // Guarda contra o próprio detector: se alguém colapsar os ramos, as duas asserções acima
+    // continuariam passando com a função virada decoração.
+    const sem = vazioDeRecuperar(true, false, true, false).descricao
+    const com = vazioDeRecuperar(true, false, true, true).descricao
+    expect(sem).not.toBe(com)
+    // O ramo sem canal é PREFIXO do outro: a explicação é a mesma, só o convite entra ou não.
+    expect(com.startsWith(sem)).toBe(true)
   })
 })
