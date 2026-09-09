@@ -1,4 +1,7 @@
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
+
+import { semComentarios } from '../../helpers/fonte'
 
 import { describe, expect, it } from 'vitest'
 
@@ -40,5 +43,78 @@ describe('o numero de "hoje" nao se chama faturamento', () => {
     expect(CAIXA, 'as duas telas passaram a chamar coisas diferentes pelo mesmo nome').not.toContain(
       'rotulo="' + rotuloHoje + '"',
     )
+  })
+})
+
+/**
+ * A REGRA VALE FORA DAS TRÊS TELAS, e foi assim que a palavra sobreviveu.
+ *
+ * O bloco acima confere `hoje.tsx`, `caixa.tsx` e `resumo-hoje.ts` — os três arquivos onde o
+ * defeito apareceu em 31/08. Em 2026-09-09, varrendo o resto do projeto atrás das mesmas palavras,
+ * achei a mentira viva em `server/assistente/ferramentas.ts`:
+ *
+ *   > "O que está na agenda de hoje: próxima cliente, **faturado até agora**, …"
+ *
+ * É a descrição de `resumo_de_hoje`, que chama `resumoDeHoje` — a MESMA função cuja tela foi
+ * corrigida para "Atendido hoje", com um comentário dizendo *"'Faturado hoje' era mentira por uma
+ * palavra, e ficou escrito aqui para não voltar"*.
+ *
+ * E dói mais no assistente do que na tela: a descrição é o que o modelo lê para decidir quando
+ * chamar a ferramenta E como redigir a resposta. O dono pergunta "quanto faturei hoje?", o modelo
+ * casa com a palavra, chama a ferramenta do preço de tabela e devolve a frase com o nome errado —
+ * em linguagem natural, que é onde ninguém confere.
+ *
+ * A varredura passa a ser por diretório. Ancorar nos arquivos onde o defeito nasceu é o que
+ * deixou esta passar.
+ */
+
+const RAIZES_DO_VOCABULARIO = ['src/app', 'src/components', 'src/core', 'src/lib', 'src/server']
+
+/**
+ * `src/lib` está aqui de propósito: a Unidade 7 provou que copy de produto mora lá
+ * (`planos-cartoes.ts` é lido pela página de preço E por "Meu plano"). Só duas das dezoito guardas
+ * que varrem árvore o incluíam.
+ */
+function fontesDoProjeto(dir: string): string[] {
+  const achados: string[] = []
+  for (const entrada of readdirSync(dir, { withFileTypes: true })) {
+    const caminho = join(dir, entrada.name).split(String.fromCharCode(92)).join('/')
+    if (entrada.isDirectory()) achados.push(...fontesDoProjeto(caminho))
+    else if (/[.]tsx?$/.test(entrada.name)) achados.push(caminho)
+  }
+  return achados
+}
+
+/** O caixa é o único lugar onde "faturado" é verdade: ele soma comanda FECHADA. */
+const PODE_DIZER_FATURADO = ['src/app/admin/caixa/caixa.tsx', 'src/app/admin/mes/resumo.tsx']
+
+describe('nenhuma superfície chama preço de tabela de faturamento', () => {
+  const TODOS = RAIZES_DO_VOCABULARIO.flatMap(fontesDoProjeto)
+
+  it('a varredura enxerga o projeto — não passa por não ter olhado nada', () => {
+    expect(TODOS.length, 'a varredura cegou').toBeGreaterThan(150)
+    expect(TODOS, 'a tela de hoje saiu do alcance').toContain('src/app/admin/hoje/hoje.tsx')
+    // O positivo conhecido de 2026-09-09: onde a palavra estava viva.
+    expect(TODOS, 'o arquivo das ferramentas do assistente saiu do alcance').toContain('src/server/assistente/ferramentas.ts')
+  })
+
+  it('nenhum arquivo fora do caixa diz "faturado"', () => {
+    const infratores: string[] = []
+    for (const arquivo of TODOS) {
+      if (PODE_DIZER_FATURADO.includes(arquivo)) continue
+      const src = semComentarios(readFileSync(arquivo, 'utf8'))
+      /*
+       * "NÃO é faturamento" é a negação, e ela é a copy CERTA — proibi-la seria proibir o conserto.
+       * Some antes de procurar, que é o mesmo cuidado que a guarda de gênero faz com a exceção.
+       */
+      const semNegacao = src.split(/N[ÃA]O é faturamento/i).join(' ')
+      if (/faturad/i.test(semNegacao)) infratores.push(arquivo)
+    }
+    expect(
+      infratores,
+      'preço de tabela chamado de faturamento fora do caixa. "Faturar" é o que ENTROU (comanda ' +
+        'fechada); a soma de `price_cents` é o que foi ATENDIDO, e num dia com desconto os dois ' +
+        'números diferem.',
+    ).toEqual([])
   })
 })

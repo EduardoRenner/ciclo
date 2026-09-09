@@ -154,7 +154,10 @@ function apagarTipo<T>(f: Ferramenta<T>): Ferramenta {
 export const FERRAMENTAS: Ferramenta[] = [
   apagarTipo({
     nome: 'resumo_de_hoje',
-    descricao: 'O que está na agenda de hoje: próxima cliente, faturado até agora, confirmações pendentes e alertas de estoque.',
+    descricao:
+      'O que está na agenda de hoje: próxima cliente, ATENDIDO até agora (soma do preço de tabela ' +
+      'dos atendimentos concluídos, NÃO é faturamento — não enxerga desconto, item extra nem gorjeta), ' +
+      'confirmações pendentes e alertas de estoque. Quem tem o dinheiro que entrou é o caixa.',
     schema: EsquemaVazio,
     permissao: 'appointment:read',
     modulo: 'agenda',

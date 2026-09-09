@@ -137,7 +137,7 @@ function Conteudo({ icones }: { icones: { agenda: React.ReactNode; clientes: Rea
         <StatTile
           className="w-full"
           heroi
-          rotulo="Faturado hoje"
+          rotulo="Atendido hoje"
           valor="R$ 1.240"
           apoio="Faltam 3 atendimentos hoje"
         />
