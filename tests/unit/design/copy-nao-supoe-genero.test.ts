@@ -437,6 +437,28 @@ const SUPOE_MULHER = [
    * frase que a API mais devolve. O buraco estava na forma da frase, não no vocabulário.
    */
   /\b(?:essa|esta|aquela|dessa|desta|daquela|nessa|nesta|naquela)s?\s+clientes?\b/i,
+  /*
+   * O setimo padrao: ARTIGO INDEFINIDO, e ele nasceu do jeito mais caro possivel.
+   *
+   * Uma hora depois de `src/server/assistente/ferramentas.ts` sair da divida e entrar em
+   * `JA_CONSERTADOS` — afirmado POR NOME como neutro — ele ainda dizia 'os ultimos agendamentos
+   * de uma cliente especifica', 'se houver mais de uma cliente ou profissional possivel' e
+   * 'prepara o cadastro de uma cliente nova'. Quatro descricoes que o modelo LE para escolher a
+   * ferramenta, num arquivo que esta guarda garantia estar limpo.
+   *
+   * Os seis padroes acima sao todos sobre artigo DEFINIDO ('a cliente', 'da cliente') ou
+   * demonstrativo ('essa cliente'). Nenhum via 'uma cliente', que e a forma que a copy usa
+   * quando fala de um caso QUALQUER em vez de um registro especifico — e por isso e a forma das
+   * mensagens de erro genericas: `clientes.ts` e `importacao-clientes.ts` diziam, nas tres,
+   * 'Ja existe uma cliente com esse telefone'.
+   *
+   * A licao nao e 'faltou um padrao'. E que afirmar por nome nao vale mais do que o detector
+   * enxerga: JA_CONSERTADOS diz 'nao voltou a supor', e o que ele mede e 'nao voltou a supor DE
+   * UM JEITO QUE EU CONHECO'. A lista de padroes e o teto de toda afirmacao desta guarda.
+   *
+   * O adjetivo opcional no meio espelha o quarto padrao, pela mesma razao: 'uma primeira cliente'.
+   */
+  /\b(?:uma|numa|duma)\s+(?:[a-zà-ÿ]+as?\s+)?clientes?\b/i,
 ]
 
 /**
@@ -453,6 +475,12 @@ const SUPOE_MULHER = [
 
 /** Os que saíram nesta rodada. Voltar é regressão, não estado herdado. */
 const JA_CONSERTADOS = [
+  // Os quatro do artigo indefinido, 2026-09-09. `orcamentos.ts` e o pior: sao corpos de PUSH —
+  // o dono le a frase no aviso do celular, fora do app, onde nao ha contexto que a conserte.
+  'src/app/admin/config/cofre/page.tsx',
+  'src/app/admin/config/cofre/trilha.tsx',
+  'src/server/services/importacao-clientes.ts',
+  'src/server/services/orcamentos.ts',
   // Os ONZE ultimos, 2026-09-09: a divida chegou a zero. Aqui estava o defeito no lugar onde ele
   // custa mais caro — `llms.txt` e o texto que os proprios modelos leem para descrever o CICLO, e
   // ele dizia que a pessoa "marca sozinha" num produto que atende eletricista e personal.
@@ -523,6 +551,12 @@ describe('a copy também não supõe que quem é ATENDIDO é mulher', () => {
     // repetida da API sobreviveu em 15 arquivos.
     expect(supoeMulherEm('Essa cliente não está mais na sua lista.'), 'não pegou o demonstrativo').toBe(true)
     expect(supoeMulherEm('a autorização desta cliente'), 'não pegou o demonstrativo contraído').toBe(true)
+    // O indefinido, achado em 2026-09-09 num arquivo que a guarda AFIRMAVA estar limpo. As duas
+    // primeiras sao as frases reais que sobreviveram; a terceira e a que o quarto padrao ja
+    // pegaria se o artigo fosse definido, e agora tambem pega com o indefinido.
+    expect(supoeMulherEm('Já existe uma cliente com esse telefone.'), 'não pegou o indefinido').toBe(true)
+    expect(supoeMulherEm('se houver mais de uma cliente possível'), 'não pegou o indefinido').toBe(true)
+    expect(supoeMulherEm('o cadastro de uma primeira cliente'), 'não pegou o indefinido com adjetivo').toBe(true)
     // A frase real que estava na tela, e que os três primeiros padrões deixavam passar.
     expect(
       supoeMulherEm('Cadastre a primeira cliente para começar a marcar horários.'),
@@ -535,6 +569,8 @@ describe('a copy também não supõe que quem é ATENDIDO é mulher', () => {
       'Lembra do horário marcado e pede a confirmação.',
       // O vocabulário por profissão é o caminho certo, e não pode ser confundido com o defeito.
       'Cadastrar {vocabulario.cliente}',
+      // O indefinido com o vocabulario da profissao: neutro, e o padrao 7 nao pode acusa-lo.
+      'Já existe uma {vocabulario.cliente} com esse telefone.',
       // O conserto do grupo das mensagens de erro: a palavra da casa para o registro é "ficha".
       'Essa ficha não está mais na sua lista.',
       // O conserto do fluxo de indicação: neutro dos dois lados.

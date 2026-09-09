@@ -16,7 +16,7 @@ export default async function PaginaCofre() {
 
   return (
     <>
-      <PageHeader titulo="Trilha do cofre" descricao="Toda vez que a ficha de saúde de uma cliente foi aberta." />
+      <PageHeader titulo="Trilha do cofre" descricao="Toda vez que uma ficha de saúde foi aberta." />
 
       <TrilhaCofre entradasIniciais={entradas} />
     </>

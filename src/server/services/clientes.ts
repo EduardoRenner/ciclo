@@ -91,7 +91,7 @@ function paraColunas(entrada: EntradaParcial): ColunasCliente {
 /** Traduz o índice único `clients_unique_phone` (0001) em erro de campo. */
 function traduzirErro(erro: { code?: string }): never {
   if (erro.code === '23505') {
-    throw AppError.validacao({ phone: 'Já existe uma cliente com esse telefone.' })
+    throw AppError.validacao({ phone: 'Já existe uma ficha com esse telefone.' })
   }
   throw new AppError('INTERNAL', { cause: erro })
 }

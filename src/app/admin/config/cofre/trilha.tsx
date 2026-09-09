@@ -24,7 +24,7 @@ export default function TrilhaCofre({ entradasIniciais }: { entradasIniciais: Li
         <EmptyState
           icone={<ShieldCheck aria-hidden className="size-6" />}
           titulo="Nenhum acesso ainda"
-          descricao="Toda vez que alguém abrir a ficha de saúde de uma cliente, aparece aqui."
+          descricao="Toda vez que alguém abrir uma ficha de saúde, aparece aqui."
           acao={<span className="text-secundario text-txt-3">Nada pra ver por enquanto</span>}
         />
       </Card>
