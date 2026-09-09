@@ -117,7 +117,7 @@ export default async function PaginaMeuPlano() {
           <p className="text-secundario text-txt-2">
             <span className="font-semibold text-txt">Seu pagamento não passou.</span>{' '}
             {assinatura.graca_ate
-              ? `Você continua no ${NOME_DO_PLANO[atual]} até ${new Date(assinatura.graca_ate).toLocaleDateString('pt-BR')}. Depois disso, cai para o Grátis — sem perder nada, só limitando o que dá para criar.`
+              ? `Você continua no ${NOME_DO_PLANO[atual]} até ${new Date(assinatura.graca_ate).toLocaleDateString('pt-BR')}. Depois disso, cai para o Grátis, sem perder nada: só limita o que dá para criar.`
               : `O Mercado Pago está tentando de novo. Se não resolver, o plano cai para o Grátis.`}
           </p>
         </Card>
