@@ -43,6 +43,9 @@ const ONDE_A_TABELA_APARECE = "from('"
 
 const A_PARTIR_DE = '0079'
 
+/** A que fechou o caminho curto: política de RLS que deixava apagar pelo PostgREST. */
+const FECHOU_O_POSTGREST = '0080'
+
 function migrations(): { nome: string; sql: string }[] {
   return readdirSync(DIR)
     .filter((n) => n.endsWith('.sql'))
@@ -173,5 +176,51 @@ describe('nada apaga histórico: nem o código, nem o schema', () => {
     expect(zero79?.sql).toContain('stock_moves_product_id_fkey')
     expect(zero79?.sql).toContain('on delete no action')
     expect(zero79?.sql.includes('on delete cascade'), 'a 0079 é justamente quem tira o cascade').toBe(false)
+  })
+
+  /*
+    O cascade era o caminho LONGO. O curto é falar com o PostgREST: `authenticated` tem GRANT de
+    DELETE (`0038`), e a política dizia sim. Medido em produção antes da `0080`:
+    `stock_moves_tenant_all` era `for all using (has_tenant(tenant_id))` — qualquer membro ativo,
+    inclusive recepção, apagava movimento de estoque — e `appointments_delete` liberava dono e
+    gerente a apagar agendamento. As duas coisas que a inviolável nº 11 nomeia.
+
+    A guarda afirma as políticas que NÃO podem existir, e não as que existem. É a diferença entre
+    "confiro o texto de uma migration" e "confiro o estado": qualquer migration futura que recrie
+    uma delas reprova, venha ela com o nome antigo ou com outro qualquer.
+  */
+  it('nenhuma migration recria a porta de delete que a 0080 fechou', () => {
+    const proibidas = ['appointments_delete', 'stock_moves_tenant_all', 'stock_moves_delete', 'stock_moves_update']
+    const recriadas: string[] = []
+    for (const { nome, sql } of migrations()) {
+      if (nome.slice(0, 4) < FECHOU_O_POSTGREST) continue
+      for (const politica of proibidas) {
+        // `create policy <nome>` e não o nome solto: o `drop policy if exists` da própria 0080
+        // cita as duas, e casar com o nome daria a guarda reprovando quem a conserta.
+        if (sql.includes(`create policy ${politica}`)) recriadas.push(`${nome} → ${politica}`)
+      }
+    }
+    expect(
+      recriadas,
+      'política de DELETE/ALL numa tabela de histórico. Com RLS forçada, a ausência de política é ' +
+        'a negação — é assim que `audit_log` já se protege. Movimento de estoque se estorna com ' +
+        'um movimento `return`; agendamento se cancela por estado.',
+    ).toEqual([])
+  })
+
+  it('a 0080 continua fechando as duas portas, e sem fechar o que o app usa', () => {
+    const zero80 = migrations().find((m) => m.nome.startsWith(FECHOU_O_POSTGREST))
+    expect(zero80, 'a 0080 sumiu — a afirmação acima passaria sobre outra base').toBeDefined()
+    expect(zero80?.sql).toContain('drop policy if exists appointments_delete')
+    expect(zero80?.sql).toContain('drop policy if exists stock_moves_tenant_all')
+    /*
+      E o outro lado, que é onde um aperto vira defeito: `select` e `insert` TÊM que sobreviver.
+      `estoque.ts` insere entrada e saída com o cliente do usuário, e `alertas-estoque.ts` lê a
+      cada carregamento da tela "Hoje". Sem estas duas linhas a 0080 deixaria de ser um aperto e
+      passaria a ser uma quebra — e do tipo silencioso, porque insert barrado por RLS não estoura
+      em toda rota.
+    */
+    expect(zero80?.sql).toContain('create policy stock_moves_select')
+    expect(zero80?.sql).toContain('create policy stock_moves_insert')
   })
 })
