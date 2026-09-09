@@ -222,16 +222,19 @@ describe('eliminarCliente', () => {
   )
 
   it(
-    'chamado com o cliente de SESSÃO real de POST .../erase (não service_role): o arquivo some do bucket privado de verdade',
+    'chamado com um cliente de SESSÃO: o arquivo some do bucket privado de verdade (robustez do storage)',
     async () => {
       /*
-       * Medido ao vivo em 31/08/2026: até este commit, `eliminarCliente` sempre foi testado com
-       * `svc` (service_role) neste arquivo — o mesmo cliente que o job noturno usa. O botão
-       * manual da ficha (`POST .../clients/[id]/erase`) usa `criarClienteDoUsuario()`, um
-       * cliente de SESSÃO — e o bucket `media` só aceita escrita de `storage.objects` via
-       * service_role (migration 0013). Um teste que só usa `svc` nunca pegaria essa diferença;
-       * por isso este aqui faz login de verdade com senha e token, o mesmo caminho que o
-       * navegador percorre.
+       * Medido ao vivo em 31/08/2026: o bucket `media` só aceita escrita de `storage.objects` via
+       * service_role (migration 0013), e um teste que só usa `svc` nunca pegaria a diferença — por
+       * isso este faz login de verdade com senha e token.
+       *
+       * Desde 2026-09-09 a rota `POST .../clients/[id]/erase` chama `eliminarCliente` por
+       * `withTenant` (service_role), não mais pelo cliente de sessão — o lote 2.3 de RLS
+       * (`docs/58`) vai apertar `health_records`/`consents` e o erase pela sessão viraria
+       * `rowsRemoved: 0` em silêncio. Este caso continua passando um cliente de SESSÃO ao serviço
+       * de propósito: prova que a limpeza do storage (`withTenant` interno) é autossuficiente
+       * mesmo se alguém chamar `eliminarCliente` fora da rota.
        */
       const senha = randomUUID()
       const emailSessao = `lgpd-sessao-${randomUUID().slice(0, 8)}@ciclo.test`
