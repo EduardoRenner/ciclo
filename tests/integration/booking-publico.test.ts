@@ -319,10 +319,14 @@ describe('criarAgendamentoPublico', () => {
     // o agendamento público chegar até ela.
     'guarda o e-mail em clients quando informado, e null quando não',
     async () => {
+      // 15:00/15:30, e não 14:00/14:30: o fixture é `beforeAll` (não reseta entre casos), e o teste
+      // "conflito de horário no público também devolve alternativas" mais abaixo reserva 14:00 no
+      // MESMO profissional/dia esperando 200 no primeiro. Quem rodasse depois deste pegava
+      // SLOT_TAKEN — foi assim que a CID de `main` ficou vermelha em 09/09.
       const comEmail = await criarAgendamentoPublico(slug, {
         serviceId: servicoOnlineId,
         professionalId,
-        startsAt: `${DIA}T14:00:00-03:00`,
+        startsAt: `${DIA}T15:00:00-03:00`,
         name: 'Ana Com E-mail',
         phone: '11988110004',
         email: 'ana.publica@exemplo.test',
@@ -334,7 +338,7 @@ describe('criarAgendamentoPublico', () => {
       const semEmail = await criarAgendamentoPublico(slug, {
         serviceId: servicoOnlineId,
         professionalId,
-        startsAt: `${DIA}T14:30:00-03:00`,
+        startsAt: `${DIA}T15:30:00-03:00`,
         name: 'Ana Sem E-mail',
         phone: '11988110005',
       })
