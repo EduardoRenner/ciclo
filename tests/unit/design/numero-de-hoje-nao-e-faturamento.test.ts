@@ -229,6 +229,22 @@ const PALAVRA_QUE_O_NUMERO_NAO_CARREGA: { numero: string; proibido: RegExp; porq
 describe('cada número carrega só as palavras que ele merece', () => {
   const TODOS = RAIZES_DO_VOCABULARIO.flatMap(fontesDoProjeto)
 
+  it('a tabela não está vazia — `it.each([])` não reprova, some', () => {
+    /*
+     * Achado mutando: esvaziei a tabela e a suíte passou com um teste A MENOS, sem nada vermelho.
+     * `it.each` sobre lista vazia não gera caso nenhum — a guarda não falha, ela DESAPARECE, e
+     * ninguém lê o total de testes procurando um que sumiu.
+     *
+     * É `guarda-que-varre-passa-vazia` na forma de tabela, e vale para toda guarda desta base que
+     * itere uma lista declarada no próprio arquivo.
+     */
+    expect(PALAVRA_QUE_O_NUMERO_NAO_CARREGA.length, 'a tabela de duplas número/palavra ficou vazia').toBeGreaterThan(0)
+    expect(
+      PALAVRA_QUE_O_NUMERO_NAO_CARREGA.map((r) => r.numero),
+      'a regra do `totalValueCents` saiu da tabela — ela é o positivo conhecido de 2026-09-09',
+    ).toContain('totalValueCents')
+  })
+
   it.each(PALAVRA_QUE_O_NUMERO_NAO_CARREGA)('$numero não aparece perto da palavra que ele não é', ({ numero, proibido, porque }) => {
     // Piso: número que sumiu do código deixa a regra sem objeto, e a lista precisa encolher junto.
     const ondeVive = TODOS.filter((a) => readFileSync(a, 'utf8').includes(numero))
