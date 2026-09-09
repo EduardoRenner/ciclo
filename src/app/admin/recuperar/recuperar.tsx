@@ -139,8 +139,21 @@ export default function RecuperarReceita({
   const bloqueado = !podeEnviarEmLote && itensSelecionados.length > 1
   const valorSelecionadoCents = itensSelecionados.reduce((soma, i) => soma + i.valueCents, 0)
 
+  /*
+    A folga do fim da lista, quando a barra flutuante aparece.
+
+    MEDIDO em 2026-09-09, a 390px: a `ActionBar` e `fixed` em
+    `bottom: tabbar + 12px` e tem 70px de altura propria, entao o topo dela fica a 146px do fundo
+    da tela. O `pb` do layout do admin reserva `tabbar + 28` = 92px. Sobram ~54px de lista
+    passando POR BAIXO da barra, e a barra e quase opaca (`bg-surface/95` com desfoque).
+
+    `ficha.tsx` ja tinha topado com isto e resolvido com `pb-20`, com o motivo escrito — mas so
+    para ela. Aqui a barra e condicional (so com selecao), entao a folga tambem e: sem selecao
+    nao ha barra e o espaco vazio seria desperdicio. Padding no FIM nao move o que esta acima,
+    entao ligar a folga junto com a barra nao empurra a lista.
+  */
   return (
-    <div>
+    <div className={itensSelecionados.length > 0 ? 'pb-20' : undefined}>
       {/*
         O número era "Valor parado" e ninguém tinha como entendê-lo: §5.3 define
         valor em risco como `preço do serviço × chance de recuperação por
