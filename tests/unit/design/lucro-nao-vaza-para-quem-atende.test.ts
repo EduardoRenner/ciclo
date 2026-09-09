@@ -131,7 +131,22 @@ describe('o lucro por cliente também não chega a quem não pode ver', () => {
 
   it('a tela recebe o lucro podendo ser nulo, e condiciona o que mostra', () => {
     const src = semComentarios(TELA_FICHA)
-    expect(/\{metricas\.lucro\s*\?/.test(src), 'o cartão do lucro não é mais condicionado à prop').toBe(true)
+    /*
+      Os DOIS cartões, cada um com seu padrão, e não um padrão que casa qualquer um deles.
+
+      A primeira versão era `/\{metricas\.lucro\s*\?/` sozinha, e era cega: tirei o condicional do
+      cartão "Lucro" e o teste continuou verde, satisfeito pelo condicional do "Lucro por ano" que
+      ficou. Mesmo erro que a guarda de vocabulário tinha, no mesmo dia — padrão que casa em dois
+      lugares não guarda nenhum dos dois.
+
+      Cartão novo de lucro entra aqui. É trabalho manual de propósito: a alternativa seria uma
+      regra tentando adivinhar o que é "renderizar lucro", e ela erraria nos dois sentidos.
+    */
+    expect(/\{metricas\.lucro \? \(/.test(src), 'o cartão "Lucro" não é mais condicionado à prop').toBe(true)
+    expect(
+      /metricas\.lucro\?\.lucroAnualCents !== null/.test(src),
+      'o cartão "Lucro por ano" não é mais condicionado à prop',
+    ).toBe(true)
     expect(
       /lucro:\s*LucroDoCliente\s*\|\s*null/.test(semComentarios(SERVICO_CRM)),
       'a prop do lucro deixou de poder ser nula — quem não pode ver não teria como não ver',
