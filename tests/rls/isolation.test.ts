@@ -29,6 +29,24 @@ if (!SUPABASE_URL || !ANON_KEY || !SERVICE_KEY) {
  */
 const NEGADAS_POR_DESIGN = new Set(['idempotency_keys', 'job_queue'])
 
+/**
+ * Tabelas **sem `tenant_id`**, e por isso fora da regra "tem que ter política".
+ *
+ * Elas só passaram a existir aos olhos deste teste na `0076`: a `0005` fazia `join pg_attribute`
+ * por `tenant_id`, então tudo que não tem a coluna era invisível — nove tabelas, incluindo
+ * `tenants` e `profiles`. O teste que existe para "detectar tabela nova sem política sem ninguém
+ * lembrar de editar o teste" tinha um ponto cego do tamanho de um sexto da base.
+ *
+ * A lista aqui é das que também não têm política, e cada uma pelo mesmo motivo: são do SERVIDOR.
+ * `cron_heartbeats` e `webhook_events` só o cron e os webhooks escrevem; `rate_limits` é contador
+ * interno. Sem política, ninguém alcança pelo cliente — que é o desenho, desde que a RLS esteja
+ * forçada, coisa que o teste abaixo confere para a base inteira agora.
+ *
+ * As outras seis sem `tenant_id` (`modules`, `professions`, `profession_services`, `profiles`,
+ * `tenants`, `vertical_packs`) TÊM política e não entram aqui.
+ */
+const SEM_TENANT_ID_E_SO_DO_SERVIDOR = new Set(['cron_heartbeats', 'rate_limits', 'webhook_events'])
+
 
 
 type RelatorioRls = {
@@ -36,6 +54,8 @@ type RelatorioRls = {
   rls_enabled: boolean
   rls_forced: boolean
   policy_count: number
+  /** Entrou na `0076`. Sem ela, tabela sem `tenant_id` nem aparecia no relatorio. */
+  has_tenant_id: boolean
 }
 
 type Fixture = {
@@ -69,7 +89,15 @@ const criados: Fixture[] = []
 const relatorio = await admin.rpc('tenant_rls_report')
 if (relatorio.error) throw new Error(`tenant_rls_report falhou: ${relatorio.error.message}`)
 const tabelas = (relatorio.data ?? []) as RelatorioRls[]
-const nomes = tabelas.map((t) => t.table_name)
+/*
+  A partir da `0076` o relatorio traz a base INTEIRA, e as duas classes tem regras diferentes.
+  Os testes de comportamento (o tenant B nao alcanca o A) so fazem sentido para quem TEM
+  `tenant_id` — sem a coluna nao existe "linha do outro tenant" para tentar alcancar. Ja as
+  regras estruturais (RLS ligada e forcada) valem para todas, e e justamente isso que este
+  teste nao verificava em nove tabelas.
+*/
+const comTenantId = tabelas.filter((t) => t.has_tenant_id)
+const nomes = comTenantId.map((t) => t.table_name)
 const nomesAlcancaveis = nomes.filter((n) => !NEGADAS_POR_DESIGN.has(n))
 
 let clienteA: SupabaseClient
@@ -441,14 +469,61 @@ describe('estrutura: toda tabela com tenant_id está protegida', () => {
     expect(nomes).toContain('health_records')
   })
 
-  it('nenhuma tabela com tenant_id sem RLS habilitada e forçada', () => {
+  it('o relatório enxerga a base INTEIRA, não só quem tem tenant_id', () => {
+    /*
+     * O piso que faltava, e o motivo da `0076`. A `0005` juntava `pg_attribute` por `tenant_id`,
+     * então tabela sem a coluna não aparecia no relatório — e o teste que existe justamente para
+     * "detectar tabela nova sem política sem ninguém lembrar de editar o teste" não sabia da
+     * existência de nove delas.
+     *
+     * Sem esta asserção, alguém pode reintroduzir o `join` e tudo continua verde: os testes
+     * abaixo passariam sobre um conjunto menor, que é a forma mais silenciosa de uma guarda
+     * morrer. Afirmo pelo positivo CONHECIDO — `tenants` e `profiles` não têm `tenant_id` e são
+     * duas das tabelas mais sensíveis que existem aqui.
+     */
+    const todos = tabelas.map((t) => t.table_name)
+    for (const semColuna of ['tenants', 'profiles', 'rate_limits']) {
+      expect(todos, `${semColuna} sumiu do relatório — o join por tenant_id voltou`).toContain(semColuna)
+    }
+    expect(tabelas.filter((t) => !t.has_tenant_id).length, 'nenhuma tabela sem tenant_id no relatório').toBeGreaterThan(0)
+    expect(comTenantId.length, 'nenhuma tabela COM tenant_id — o relatório quebrou do outro lado').toBeGreaterThan(30)
+  })
+
+  it('nenhuma tabela sem RLS habilitada e forçada — a base inteira', () => {
+    // Antes da `0076` esta linha lia só as tabelas com `tenant_id`. Agora lê todas, que é o que o
+    // texto dela sempre prometeu.
     const frouxas = tabelas.filter((t) => !t.rls_enabled || !t.rls_forced)
     expect(frouxas.map((t) => t.table_name)).toEqual([])
   })
 
-  it('nenhuma tabela sem política fora da lista de negadas por design', () => {
-    const semPolitica = tabelas.filter((t) => t.policy_count === 0 && !NEGADAS_POR_DESIGN.has(t.table_name))
+  it('nenhuma tabela sem política fora das duas listas conscientes', () => {
+    const semPolitica = tabelas.filter(
+      (t) =>
+        t.policy_count === 0 &&
+        !NEGADAS_POR_DESIGN.has(t.table_name) &&
+        !SEM_TENANT_ID_E_SO_DO_SERVIDOR.has(t.table_name),
+    )
     expect(semPolitica.map((t) => t.table_name)).toEqual([])
+  })
+
+  it('as duas listas conscientes são o estado real — nem infladas, nem defasadas', () => {
+    /*
+     * Lista de exceção sem conferência é o lugar mais barato de calar um teste. Nos DOIS sentidos:
+     * nome que ganhou política e ficou na lista faz a próxima pessoa achar que aquilo é
+     * inalcançável quando já não é; nome que sumiu da base deixa a lista virar folclore.
+     */
+    const porNome = new Map(tabelas.map((t) => [t.table_name, t]))
+    for (const nome of [...NEGADAS_POR_DESIGN, ...SEM_TENANT_ID_E_SO_DO_SERVIDOR]) {
+      const linha = porNome.get(nome)
+      expect(linha, `${nome} está na lista de exceções e não existe mais na base`).toBeDefined()
+      expect(linha!.policy_count, `${nome} ganhou política — tire-o da lista de exceções`).toBe(0)
+    }
+    for (const nome of SEM_TENANT_ID_E_SO_DO_SERVIDOR) {
+      expect(
+        porNome.get(nome)!.has_tenant_id,
+        `${nome} ganhou tenant_id — ele precisa de política e sai desta lista`,
+      ).toBe(false)
+    }
   })
 })
 
