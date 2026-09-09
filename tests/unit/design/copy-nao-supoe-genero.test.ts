@@ -99,17 +99,31 @@ const SUPOE_HOMEM: { padrao: RegExp; porque: string }[] = [
 const RAIZES = ['src/app', 'src/components', 'src/lib', 'src/core', 'src/server']
 
 /**
- * A única exceção, e ela é obrigatória: `services/assistente.ts` CITA as construções proibidas
- * para PROIBI-LAS no prompt do modelo — "'você está preparado', 'seja bem-vindo' e 'obrigado' na
- * voz dela erram com quem paga". Varrer o arquivo reprova a instrução que existe justamente para
- * o defeito não acontecer: a guarda brigaria com o conserto. As três construções são strings de
- * prompt, não comentário, então `semComentarios` não as remove.
+ * O prompt do assistente CITA as construções proibidas para PROIBI-LAS ao modelo — "'você está
+ * preparado', 'seja bem-vindo' e 'obrigado' na voz de quem usa o produto erram com boa parte da
+ * base". Varrer o arquivo inteiro reprovaria a instrução que existe justamente para o defeito não
+ * acontecer.
  *
- * Não vira buraco por dois motivos, e os dois são conferidos logo abaixo: o prompt tem asserção
- * PRÓPRIA ("o prompt do assistente manda não supor gênero"), e a lista é afirmada arquivo a
- * arquivo — acrescentar um segundo nome aqui faz o teste gritar em vez de abrir a porta.
+ * **A primeira versão disto excluía o ARQUIVO, e a exclusão escondeu defeito de verdade.** Em
+ * 2026-09-09 li o prompt gerado e achei, na voz PRÓPRIA dele: "um painel de gestão para
+ * profissionais de beleza" (o produto atende 17 profissões, entre elas eletricista e professor),
+ * "o dono do salão está sem tempo", "marcar horário para a cliente errada" e "se a cliente não
+ * estiver cadastrada, peça o telefone dela" — tudo isso duas linhas ABAIXO da instrução que manda
+ * não supor gênero. Nada disso é citação, e nada disso era visto.
+ *
+ * Agora a exceção é só das CITAÇÕES: some com o que está entre aspas duplas antes de procurar. No
+ * arquivo, aspas duplas só aparecem em citação (conferido: as 27 ocorrências são todas trechos que
+ * o prompt cita para proibir ou para dar como exemplo bom), então a voz própria dele fica exposta.
+ *
+ * Exceção que apaga o arquivo esconde o que ele tem de errado. Exceção que apaga a CITAÇÃO
+ * esconde só o que é citação.
  */
-const FORA_DA_VARREDURA = ['src/server/services/assistente.ts']
+const SO_AS_CITACOES = ["src/server/services/assistente.ts"]
+
+/** Tira o que está entre aspas duplas — no arquivo do prompt, é sempre citação. */
+function semCitacoes(caminho: string, fonte: string): string {
+  return SO_AS_CITACOES.includes(caminho) ? fonte.split(/"[^"\n]*"/).join(" ") : fonte
+}
 
 function arquivos(dir: string): string[] {
   const achados: string[] = []
@@ -123,7 +137,7 @@ function arquivos(dir: string): string[] {
 }
 
 const TODOS = RAIZES.flatMap(arquivos).map((f) => f.split(String.fromCharCode(92)).join('/'))
-const TELAS = TODOS.filter((f) => !FORA_DA_VARREDURA.includes(f))
+const TELAS = TODOS
 
 describe('o leitor deste teste', () => {
   it('enxerga as telas — não passa por não ter olhado nada', () => {
@@ -153,14 +167,21 @@ describe('o leitor deste teste', () => {
     }
   })
 
-  it('a exceção continua sendo uma só, e continua coberta por outra asserção', () => {
+  it('a exceção some com a CITAÇÃO, não com o arquivo', () => {
     /*
-     * Sem isto, a lista de exceções vira o lugar mais barato de calar a guarda: um arquivo novo ali
-     * some da varredura sem ninguém notar. Afirmar a lista inteira obriga quem acrescentar um nome
-     * a mexer aqui e a escrever o porquê.
+     * Piso nos dois sentidos. A lista de arquivos com citação é afirmada inteira — acrescentar um
+     * nome exige mexer aqui — e o arquivo tem que continuar sendo varrido, porque a exceção agora
+     * é do trecho, não do arquivo.
      */
-    expect(FORA_DA_VARREDURA).toEqual(['src/server/services/assistente.ts'])
-    expect(TODOS, 'o arquivo excluído precisa ao menos EXISTIR no alcance bruto').toContain(FORA_DA_VARREDURA[0])
+    expect(SO_AS_CITACOES).toEqual(['src/server/services/assistente.ts'])
+    expect(TELAS, 'o arquivo do prompt saiu da varredura — a exceção voltou a ser do arquivo').toContain(SO_AS_CITACOES[0])
+
+    // E o filtro faz o que promete: apaga a citação, preserva a voz própria.
+    const exemplo = 'diga "seja bem-vindo" nunca; o dono do salão está sem tempo'
+    const limpo = semCitacoes(SO_AS_CITACOES[0]!, exemplo)
+    expect(limpo, 'o filtro não apagou a citação').not.toContain('bem-vindo')
+    expect(limpo, 'o filtro apagou a voz própria junto').toContain('o dono do salão')
+    expect(semCitacoes('src/app/page.tsx', exemplo), 'o filtro vazou para outro arquivo').toBe(exemplo)
   })
 
   it('os padrões pegam as construções que motivaram a guarda', () => {
@@ -225,7 +246,7 @@ describe('a copy não supõe que quem usa o produto é homem', () => {
   it('nenhuma tela fala com a pessoa no masculino', () => {
     const achados: string[] = []
     for (const tela of TELAS) {
-      const fonte = semComentarios(readFileSync(tela, 'utf8'))
+      const fonte = semCitacoes(tela, semComentarios(readFileSync(tela, 'utf8')))
       for (const { padrao, porque } of SUPOE_HOMEM) {
         if (padrao.test(fonte)) achados.push(`${tela}: ${porque}`)
       }
