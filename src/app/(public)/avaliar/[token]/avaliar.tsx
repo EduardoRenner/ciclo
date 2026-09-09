@@ -134,7 +134,7 @@ export default function Avaliar({ token }: { token: string }) {
             <div className="flex items-start gap-3">
               <Gift aria-hidden className="mt-0.5 size-5 shrink-0 text-acc-2" />
               <div className="flex-1">
-                <p className="text-corpo font-semibold text-txt">Indique uma amiga</p>
+                <p className="text-corpo font-semibold text-txt">Indique alguém</p>
                 <p className="mt-1 text-secundario text-txt-2">
                   Ela agenda o primeiro horário sem esperar resposta, e {dados?.negocioNome ?? 'o salão'} fica sabendo que foi você.
                 </p>

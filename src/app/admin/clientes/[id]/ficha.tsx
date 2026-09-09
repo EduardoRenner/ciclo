@@ -243,7 +243,7 @@ export default function Ficha({
    */
   const textoIndicacao = linkIndicacao
     ? aplicarVariaveis(
-        '{{nome}}, adoro te atender! Que tal indicar uma amiga? Ela agenda o primeiro horário por aqui, sem esperar resposta: {{link}}',
+        '{{nome}}, adoro te atender! Que tal indicar alguém? A pessoa agenda o primeiro horário por aqui, sem esperar resposta: {{link}}',
         variaveis,
       )
     : ''
