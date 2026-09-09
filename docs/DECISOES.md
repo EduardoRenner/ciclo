@@ -7015,3 +7015,37 @@ escolha entre um risco conhecido e um conserto não verificado.
 **Pendente do dono:** `0079` e `0080` estão no repositório e **não estão aplicadas**. Até
 `supabase db push`, `/api/health` responde 503 dizendo "banco ATRÁS do código" — é o alarme
 funcionando — e as três portas acima seguem abertas em produção.
+
+---
+
+## 2026-09-08 · perf/csp-borda — o middleware parava de gastar `getUser()` no site institucional
+
+**Medido em produção (navegador):** depois do `perf/csp-duas-faixas`, `/`, `/precos`, `/privacidade`
+e `/termos` viraram `x-vercel-cache: PRERENDER` — mas com TTFB de 250–500 ms e `age: 0` a cada
+request. O prerender do Vercel serve o HTML, mas o **middleware roda antes dele** e pagava um
+`getUser()` (ida de rede ao auth do Supabase, ~40 ms de dentro do `gru1`, mais em cold start) em
+TODA visita — inclusive as anônimas, que são ~99% do tráfego da landing.
+
+**Decisão.** `precisaRenovarSessao` passa a excluir `rotaDeConteudoEstatico(pathname)` além de
+`/api/*`. Essas quatro rotas não têm Server Component que leia sessão, então a renovação de token
+não tem o que servir ali. Quem só navega no site institucional tem o token renovado na próxima tela
+de `/admin` ou chamada de `/api` (o `@supabase/ssr` renova nos dois).
+
+A `/` mantinha o desvio de quem já entrou (`data.user && pathname === '/'` → `/admin/hoje`), que
+dependia do `getUser()`. Passou a ser por **presença de cookie** (`temCookieDeSessao`, regex
+`^sb-.+-auth-token(\.\d+)?$`), decisão idêntica sem custo de rede. Cookie vencido cai em
+`/admin/hoje` e o middleware de lá renova/desvia — um salto a mais no pior caso, nunca vazamento
+(nada protegido é servido a partir da `/`).
+
+As quatro páginas ganharam `export const revalidate` (600 s na `/` pela leitura de
+`slugDeDemonstracaoNoAr`; 3600 s nas institucionais) — sem ele o prerender é estático só até o
+próximo deploy e não recebe `s-maxage` de borda.
+
+Guardas atualizadas com registro (regra do afrouxamento): `middleware-cache.test.ts`
+(`precisaRenovarSessao` ganhou o grupo de conteúdo estático + teste de `temCookieDeSessao`) e
+`landing-nao-resolve-sessao-no-componente.test.ts` (o regex do desvio agora casa
+`pathname === '/' && temCookieDeSessao(req)`). As duas mutações foram vistas reprovando.
+
+**Falta validar em preview** (não dá para medir daqui): abrir o preview do Vercel, conferir no
+navegador que `/`, `/precos` respondem da borda com TTFB baixo, que `/entrar` e uma página de salão
+seguem dinâmicas e hidratam, e que um usuário logado abrindo a `/` ainda cai em `/admin/hoje`.

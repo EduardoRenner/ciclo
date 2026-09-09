@@ -76,6 +76,15 @@ import type { Metadata } from 'next'
   aqui — a `description` é a primeira frase que a pessoa lê antes mesmo de abrir o link, e é onde
   "isso é pago" faz menos sentido pesar.
 */
+/**
+ * ISR de 10 minutos. A única leitura de banco da página (`slugDeDemonstracaoNoAr`) é igual para
+ * todo visitante e muda no ritmo de "uma conta de demonstração entrou/saiu do ar" — 10 min é folga
+ * de sobra. Sem `revalidate` a rota é estática só até o próximo deploy e o slug pode ficar velho;
+ * com ele, a `/` ganha `s-maxage` de borda no Vercel e para de revalidar na origem a cada visita
+ * anônima (que é 99% do tráfego da landing).
+ */
+export const revalidate = 600
+
 export const metadata: Metadata = {
   title: 'CICLO · a agenda que avisa quem parou de voltar',
   description:

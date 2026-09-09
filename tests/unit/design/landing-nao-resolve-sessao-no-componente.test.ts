@@ -94,11 +94,22 @@ describe('o redirecionamento de quem já está logado mora no middleware', () =>
     expect(fonte.length, `${MIDDLEWARE} veio vazio`).toBeGreaterThan(500)
   })
 
-  it('redireciona para /admin/hoje quando data.user existe e o caminho é a raiz', () => {
-    const cobre = /data\.user\s*&&\s*req\.nextUrl\.pathname\s*===\s*'\/'/.test(fonte) && fonte.includes("hoje.pathname = '/admin/hoje'")
+  it('redireciona para /admin/hoje quando há cookie de sessão e o caminho é a raiz', () => {
+    /*
+     * Até 2026-09-08 este teste casava com `data.user && req.nextUrl.pathname === '/'`. Trocado
+     * de propósito por `perf/csp-borda`: a `/` saiu da renovação de sessão do middleware
+     * (`precisaRenovarSessao`), então o `getUser()` — uma ida de rede ao auth — não roda mais
+     * nela. O desvio de quem já entrou passou a ser por PRESENÇA DE COOKIE (`temCookieDeSessao`),
+     * que é a mesma decisão sem custo de rede. Não é afrouxamento: cookie vencido cai em
+     * `/admin/hoje` e o middleware de lá renova/desvia — a garantia de que "quem entrou não vê a
+     * página de venda" continua, e nada protegido é servido a partir daqui.
+     */
+    const cobre =
+      /req\.nextUrl\.pathname\s*===\s*'\/'\s*&&\s*temCookieDeSessao\(req\)/.test(fonte) &&
+      fonte.includes("hoje.pathname = '/admin/hoje'")
     expect(
       cobre,
-      'o middleware não redireciona mais quem já está logado para longe da landing — ' +
+      'o middleware não desvia mais quem já entrou para longe da landing — ' +
         'sem isso, um usuário autenticado vê a página de venda em vez do próprio painel',
     ).toBe(true)
   })

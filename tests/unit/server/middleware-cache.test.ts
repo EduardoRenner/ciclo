@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
-import { exigeSessao, naoCacheavel, precisaRenovarSessao } from '@/middleware'
+import type { NextRequest } from 'next/server'
+
+import { exigeSessao, naoCacheavel, precisaRenovarSessao, temCookieDeSessao } from '@/middleware'
+
+/** Um `NextRequest` de mentira com só o `cookies.getAll` que `temCookieDeSessao` toca. */
+function reqComCookies(nomes: string[]): NextRequest {
+  return { cookies: { getAll: () => nomes.map((name) => ({ name, value: 'x' })) } } as unknown as NextRequest
+}
 
 /**
  * Achado S10 da auditoria de 2026-08-23: `Cache-Control: no-store` era aplicado só onde o
@@ -74,9 +81,17 @@ describe('exigeSessao continua valendo só para telas', () => {
  * `/api/v1`, que refazem a mesma pergunta pelo `contextoAtual` um instante depois.
  *
  * O risco de errar aqui é de segurança, não de performance: se este predicado devolvesse `false`
- * para uma **tela**, a renovação de token pararia de acontecer no único lugar em que ela pode
- * acontecer (Server Component não escreve cookie) e a pessoa cairia em `/entrar` a cada 15
- * minutos. Por isso o par de casos: API sai do caminho, tela nunca sai.
+ * para uma **tela que renderiza dado de usuário**, a renovação de token pararia de acontecer no
+ * único lugar em que ela pode acontecer (Server Component não escreve cookie) e a pessoa cairia em
+ * `/entrar` a cada 15 minutos.
+ *
+ * `perf/csp-borda` (2026-09-08) acrescentou um terceiro grupo: as rotas de CONTEÚDO ESTÁTICO
+ * (`rotaDeConteudoEstatico`: `/`, `/precos`, `/privacidade`, `/termos`) também saem da renovação —
+ * o HTML delas é igual para todo visitante, nenhum Server Component lê sessão ali, e o `getUser()`
+ * do middleware (que roda ANTES do prerender do Vercel) era o que fazia `/precos` responder em
+ * centenas de ms. Quem só navega no site institucional tem o token renovado na próxima tela de
+ * `/admin` ou na próxima chamada de `/api` — o `@supabase/ssr` renova nos dois. A `/` mantém o
+ * desvio de quem já entrou, mas por presença de cookie, sem ida de rede.
  */
 describe('precisaRenovarSessao (§3 P1-a — ida de rede duplicada)', () => {
   it.each(['/api', '/api/v1/clients', '/api/v1/appointments/abc/confirm', '/api/cron/reminders', '/api/health'])(
@@ -86,12 +101,36 @@ describe('precisaRenovarSessao (§3 P1-a — ida de rede duplicada)', () => {
     },
   )
 
-  it.each(['/admin/hoje', '/admin/agenda', '/onboarding', '/', '/entrar', '/dom-rocha/agendar'])(
-    '%s é tela e continua renovando a sessão no middleware',
+  it.each(['/', '/precos', '/privacidade', '/termos'])(
+    '%s é conteúdo estático — não lê sessão em Server Component, sai da renovação para poder ser servida da borda',
+    (caminho) => {
+      expect(precisaRenovarSessao(caminho)).toBe(false)
+      // …e continua CACHEÁVEL (é o ponto): o S10 só proíbe cache em `/api/*`, não aqui.
+      expect(naoCacheavel(caminho)).toBe(false)
+    },
+  )
+
+  it.each(['/admin/hoje', '/admin/agenda', '/onboarding', '/entrar', '/dom-rocha/agendar', '/salao-da-bia'])(
+    '%s renderiza dado de quem pede e continua renovando a sessão no middleware',
     (caminho) => {
       expect(precisaRenovarSessao(caminho)).toBe(true)
     },
   )
+})
+
+describe('temCookieDeSessao (desvio otimista da / sem ida de rede)', () => {
+  it('reconhece o cookie de auth do @supabase/ssr, inteiro ou fatiado', () => {
+    expect(temCookieDeSessao(reqComCookies(['sb-eqzlvthz-auth-token']))).toBe(true)
+    expect(temCookieDeSessao(reqComCookies(['sb-eqzlvthz-auth-token.0', 'sb-eqzlvthz-auth-token.1']))).toBe(true)
+  })
+
+  it('não confunde outros cookies do Supabase nem lixo de terceiro', () => {
+    expect(temCookieDeSessao(reqComCookies([]))).toBe(false)
+    expect(temCookieDeSessao(reqComCookies(['sb-eqzlvthz-auth-token-code-verifier']))).toBe(false)
+    expect(temCookieDeSessao(reqComCookies(['_ga', 'sb-provider-token']))).toBe(false)
+    // `auth-token` sem o prefixo `sb-<ref>-` não é o cookie de sessão.
+    expect(temCookieDeSessao(reqComCookies(['auth-token']))).toBe(false)
+  })
 
   it('não confunde rota que apenas COMEÇA com as letras de /api', () => {
     // Mesma armadilha de prefixo sem barra que `naoCacheavel` já cobre: `/apiario` é uma tela
