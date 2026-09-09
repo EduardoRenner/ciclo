@@ -122,6 +122,7 @@ export default function Ficha({
   profissionais,
   configFidelidade,
   podeApagarCliente,
+  podeExportarCliente,
   podeLancarPacote,
   servicos,
   linkIndicacao,
@@ -139,6 +140,7 @@ export default function Ficha({
   configFidelidade: ConfigFidelidade
   /** `client:delete` é de dono/gerente; recepção não apaga base de cliente. */
   podeApagarCliente: boolean
+  podeExportarCliente: boolean
   /** `comanda:own`: quem não tem nunca veria os sheets funcionarem. */
   podeLancarPacote: boolean
   /** Para vender pacote sem sair da ficha. */
@@ -241,7 +243,7 @@ export default function Ficha({
    */
   const textoIndicacao = linkIndicacao
     ? aplicarVariaveis(
-        '{{nome}}, adoro te atender! Que tal indicar uma amiga? Ela agenda o primeiro horário por aqui, sem esperar resposta: {{link}}',
+        '{{nome}}, adoro te atender! Que tal indicar alguém? A pessoa agenda o primeiro horário por aqui, sem esperar resposta: {{link}}',
         variaveis,
       )
     : ''
@@ -475,7 +477,7 @@ export default function Ficha({
               className="mt-2"
               onClick={() => setIndicando(true)}
               disabled={!cliente.phoneE164}
-              motivoDesabilitado="Cadastre o telefone da cliente para poder mandar o convite."
+              motivoDesabilitado="Cadastre o telefone na ficha para poder mandar o convite."
             >
               <Share2 className="size-4" />
               Indicar
@@ -508,7 +510,7 @@ export default function Ficha({
                   Veio por indicação de{' '}
                   <Link
                     href={`/admin/clientes/${indicadoPor.id}`}
-                    className="toque-48 inline-flex font-semibold text-acc-2 underline-offset-2 hover:underline"
+                    className="toque-48 -mx-2 px-2 inline-flex font-semibold text-acc-2 underline-offset-2 hover:underline"
                   >
                     {indicadoPor.name}
                   </Link>
@@ -544,7 +546,7 @@ export default function Ficha({
                   {mostrarPaywallFidelidade ? (
                     <p className="mt-2 text-secundario text-txt-3">
                       No Equipe, isso creditaria pontos pros dois lados automaticamente.{' '}
-                      <Link href="/precos" className="toque-48 inline-flex font-semibold text-acc-2 underline-offset-2 hover:underline">
+                      <Link href="/precos" className="toque-48 -mx-2 px-2 inline-flex font-semibold text-acc-2 underline-offset-2 hover:underline">
                         Ver planos
                       </Link>
                     </p>
@@ -589,7 +591,12 @@ export default function Ficha({
             consentimentoImagemConcedido={consentimentos.some((c) => c.kind === 'image_use' && c.consentId !== null)}
             consentId={consentimentos.find((c) => c.kind === 'image_use')?.consentId ?? null}
           />
-          <DireitosDaCliente clientId={cliente.id} nome={cliente.name} podeApagar={podeApagarCliente} />
+          <DireitosDaCliente
+            clientId={cliente.id}
+            nome={cliente.name}
+            podeApagar={podeApagarCliente}
+            podeExportar={podeExportarCliente}
+          />
         </div>
       ) : null}
 

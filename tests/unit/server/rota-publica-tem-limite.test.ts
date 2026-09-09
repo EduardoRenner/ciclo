@@ -53,6 +53,23 @@ describe('o leitor desta guarda', () => {
     expect(ARQUIVOS.length, 'nenhuma rota pública encontrada — o caminho mudou?').toBeGreaterThanOrEqual(10)
   })
 
+  it('reconhece as duas grafias de handler — a outra era pulada em silêncio', () => {
+    /*
+     * O detector de handler é o que decide se a rota é COBRADA ou ignorada. Errar para menos aqui
+     * não reprova nada: a guarda simplesmente desiste daquele arquivo, e `22 passed` continua
+     * igual. É a mesma família do `it.each` sobre lista vazia.
+     */
+    const comConst = 'export const POST = rota(async () => {})'
+    const comFuncao = 'export async function POST(req: Request) {}'
+    const soTipos = 'export type Corpo = { a: string }'
+    const reconhece = (fonte: string) =>
+      VERBOS.some((v) => new RegExp(`export (?:const ${v}\\s*=|async function ${v}\\b)`).test(fonte))
+
+    expect(reconhece(comConst), 'não reconhece `export const POST =`').toBe(true)
+    expect(reconhece(comFuncao), 'não reconhece `export async function POST` — seria pulada em silêncio').toBe(true)
+    expect(reconhece(soTipos), 'acusou arquivo que só exporta tipo').toBe(false)
+  })
+
   it('não confunde import com chamada', () => {
     expect(CHAMA_LIMITE.test("import { limitarRotaPublica } from '@/server/http/limite-publico'")).toBe(false)
     expect(CHAMA_LIMITE.test("await limitarRotaPublica(req, 'perfil')")).toBe(true)
@@ -64,8 +81,18 @@ describe('toda rota pública tem limite por IP', () => {
   it.each(ARQUIVOS)('%s chama o limitador', (arquivo) => {
     const fonte = semComentarios(readFileSync(arquivo, 'utf8'))
 
-    // Só cobra de arquivo que de fato exporta handler — um `route.ts` só com tipos não é porta.
-    const exporta = VERBOS.filter((v) => new RegExp(`export const ${v}\\s*=`).test(fonte))
+    /*
+      Só cobra de arquivo que de fato exporta handler: um `route.ts` só com tipos não é porta.
+
+      As DUAS grafias, e isto era um buraco. A versão anterior só reconhecia
+      `export const POST = …`, e o Next aceita `export async function POST` igual. Uma rota pública
+      escrita no segundo estilo caía no `return` abaixo e era PULADA EM SILÊNCIO — a guarda não
+      reprovava, ela desistia. Nenhuma rota usa esse estilo hoje (medido em 2026-09-09), e é
+      justamente por isso que ninguém veria a próxima.
+    */
+    const exporta = VERBOS.filter((v) =>
+      new RegExp(`export (?:const ${v}\\s*=|async function ${v}\\b)`).test(fonte),
+    )
     if (exporta.length === 0) return
 
     expect(

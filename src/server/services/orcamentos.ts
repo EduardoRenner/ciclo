@@ -199,7 +199,7 @@ export function aprovarOrcamentoPublico(db: Cliente, token: string) {
     token,
     'approved',
     { status: 'approved', approved_at: new Date().toISOString() },
-    { title: 'Orçamento aprovado', body: 'Uma cliente aprovou um orçamento pelo link.' },
+    { title: 'Orçamento aprovado', body: 'Um orçamento foi aprovado pelo link.' },
   )
 }
 
@@ -211,7 +211,7 @@ export function recusarOrcamentoPublico(db: Cliente, token: string, entrada: z.i
     token,
     'rejected',
     { status: 'rejected', rejected_at: new Date().toISOString(), rejected_reason: entrada.reason ?? null },
-    { title: 'Orçamento recusado', body: 'Uma cliente recusou um orçamento pelo link.' },
+    { title: 'Orçamento recusado', body: 'Um orçamento foi recusado pelo link.' },
   )
 }
 

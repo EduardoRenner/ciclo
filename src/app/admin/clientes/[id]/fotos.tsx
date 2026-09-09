@@ -276,7 +276,7 @@ export default function Fotos({ clientId, fotos: fotosIniciais, consentimentoIma
         aberto={arquivoPendente !== null}
         aoFechar={(aberto) => !aberto && setArquivoPendente(null)}
         titulo="Autorizar uso de imagem"
-        descricao="Necessário antes da primeira foto desta cliente."
+        descricao="Necessário antes da primeira foto dessa pessoa."
       >
         <div className="flex flex-col gap-4">
           <p className="text-corpo text-txt-2">{TEXTO_CONSENTIMENTO_IMAGEM}</p>
@@ -313,7 +313,7 @@ export default function Fotos({ clientId, fotos: fotosIniciais, consentimentoIma
                 onClick={() => publicar(visualizando.id)}
                 carregando={carregando}
                 disabled={!concedido}
-                motivoDesabilitado="Conceda a autorização de uso de imagem desta cliente antes de publicar."
+                motivoDesabilitado="Conceda a autorização de uso de imagem dessa pessoa antes de publicar."
               >
                 <Globe aria-hidden className="size-4" />
                 Publicar no site

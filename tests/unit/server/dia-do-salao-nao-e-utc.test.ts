@@ -59,6 +59,16 @@ const TODOS = RAIZES.flatMap(arquivos).map((f) => f.split(String.fromCharCode(92
 const CULPADOS = TODOS.filter((f) => INSTANTE_UTC_LITERAL.test(marcacaoDe(f)))
 
 describe('o dia do salão nunca é montado em UTC', () => {
+  it('a lista de dívida é UMA SÓ — acrescentar um nome exige mexer aqui', () => {
+    /*
+     * O piso de "já consertado" (mais abaixo) já existia, e eu quase o escrevi de novo por não ter
+     * lido o arquivo inteiro antes. O que faltava era este: sem afirmar a lista INTEIRA,
+     * acrescentar um nome isenta aquele arquivo em silêncio, e o piso de baixo aceita o nome novo
+     * de bom grado — ele só reclama de quem JÁ foi consertado.
+     */
+    expect(DIVIDA_CONHECIDA).toEqual(['src/server/services/alertas-estoque.ts'])
+  })
+
   it('o leitor enxerga o servidor e as telas', () => {
     expect(TODOS.length, 'nenhum arquivo lido').toBeGreaterThan(80)
     expect(TODOS, 'o caixa sumiu do caminho varrido — a guarda precisa ser revista junto').toContain('src/server/services/caixa.ts')

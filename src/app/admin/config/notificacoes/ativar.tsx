@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
+import Skeleton from '@/components/ui/skeleton'
 
 /** `applicationServerKey` do `PushManager.subscribe` exige `Uint8Array`, não a string base64url que o VAPID usa. */
 function base64UrlParaUint8Array(base64Url: string): Uint8Array {
@@ -96,7 +97,25 @@ export default function AtivarPush() {
     }
   }
 
-  if (estado === 'carregando') return null
+  /*
+    Era `return null`. A seção sumia da tela enquanto a detecção rodava (service worker pronto +
+    `getSubscription()`, que dependem do navegador e não são instantâneos) e depois aparecia do
+    nada, empurrando o resto da página para baixo. Pior: se a detecção travasse, a pessoa ficava
+    olhando para um buraco sem saber que faltava algo ali.
+
+    O esqueleto imita a FORMA REAL do cartão que vem depois — duas linhas de texto e um botão —
+    para a página não pular quando o conteúdo chega. `aria-busy` é quem conta o carregamento; o
+    `Skeleton` é `aria-hidden` de propósito, leitor de tela não narra caixa cinza.
+  */
+  if (estado === 'carregando') {
+    return (
+      <Card aria-busy="true">
+        <Skeleton className="h-4 w-2/3" />
+        <Skeleton className="mt-2 h-3 w-1/2" />
+        <Skeleton className="mt-3 h-11 w-48 rounded-[var(--radius-md)]" />
+      </Card>
+    )
+  }
 
   if (estado === 'ios_nao_instalado') {
     return (

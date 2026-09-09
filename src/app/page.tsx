@@ -542,15 +542,15 @@ export default async function Home() {
         que existe mas ninguém acha não cumpre a função que a LGPD pede.
       */}
       <footer className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 pt-10 text-center text-label text-txt-3">
-        <Link href="/precos" className="toque-48 font-semibold text-txt-2 underline underline-offset-2">
+        <Link href="/precos" className="toque-48 -mx-2 px-2 font-semibold text-txt-2 underline underline-offset-2">
           Preços
         </Link>
         <span aria-hidden>·</span>
-        <Link href="/termos" className="toque-48 font-semibold text-txt-2 underline underline-offset-2">
+        <Link href="/termos" className="toque-48 -mx-2 px-2 font-semibold text-txt-2 underline underline-offset-2">
           Termos
         </Link>
         <span aria-hidden>·</span>
-        <Link href="/privacidade" className="toque-48 font-semibold text-txt-2 underline underline-offset-2">
+        <Link href="/privacidade" className="toque-48 -mx-2 px-2 font-semibold text-txt-2 underline underline-offset-2">
           Privacidade
         </Link>
         <span className="w-full sm:w-auto">

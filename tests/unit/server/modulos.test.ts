@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import { NOME_DO_PLANO } from '@/core/billing/planos'
 import { AppError } from '@/server/http/errors'
 import { definirModulo, listarModulos } from '@/server/services/modulos'
 
@@ -116,6 +117,17 @@ describe('definirModulo — o plano é teto, o dono só desliga (§L.2)', () => 
     expect(erro).toBeInstanceOf(AppError)
     expect(erro.code).toBe('PLAN_LIMIT')
     expect(erro.details).toMatchObject({ precisaDo: 'essencial' })
+
+    /*
+      E a MENSAGEM, que é a parte que a pessoa lê — a asserção acima olha só o `details`, que é
+      para a máquina. Era exatamente essa a assimetria da Unidade 8: a recusa dizia apenas
+      "faz parte de outro plano" e não dizia QUAL, embora o veredito já soubesse.
+
+      Duas coisas: nomear o degrau e apontar onde resolver. Sem o nome, quem lê não sabe quanto
+      custa; sem o destino, sabe e não sabe onde clicar.
+    */
+    expect(erro.message, 'a recusa não diz QUAL plano libera o módulo').toContain(NOME_DO_PLANO.essencial)
+    expect(erro.message, 'a recusa não aponta onde resolver').toMatch(/Meu plano/)
   })
 
   it('DESligar o que o plano não libera não quebra E não grava nada', async () => {

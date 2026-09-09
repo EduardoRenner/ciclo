@@ -69,6 +69,14 @@ export function assuntoDeMudarDePlano(planoAtual: string): string {
 }
 
 /**
+ * O outro assunto que existe hoje: o Motor de Ciclo não recalculou.
+ *
+ * Mora aqui pelo mesmo motivo que o de cima — o texto que sai no WhatsApp é copy de produto, e
+ * espalhá-lo pelas telas é como a frase "fale com a gente" acabou sem endereço em primeiro lugar.
+ */
+export const ASSUNTO_MOTOR_PARADO = 'Oi! O Motor de Ciclo do meu CICLO não está recalculando as previsões.'
+
+/**
  * A frase de "como se muda de plano" na tela Meu plano, nos dois estados do mundo.
  *
  * Sem canal, a frase evita a construção "fale com a gente" MESMO negando, pela mesma razão

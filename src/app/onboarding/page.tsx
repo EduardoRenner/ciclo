@@ -28,7 +28,7 @@ export default async function PaginaOnboarding() {
   // P4: as 17 profissões do catálogo (professions, P0+P5) — busca de verdade, não mais as 8
   // verticais de beleza hardcoded. Server-side pra não custar um round-trip extra no fluxo
   // que precisa ficar em menos de 3 minutos (§16 critério 4).
-  const { data: profissoes } = await db.from('professions').select('id, nome, grupo, sinonimos').eq('ativa', true).order('posicao').order('nome')
+  const { data: profissoes } = await db.from('professions').select('id, slug, nome, grupo, sinonimos').eq('ativa', true).order('posicao').order('nome')
 
   return (
     <TelaPublica>

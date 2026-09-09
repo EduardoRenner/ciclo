@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
@@ -89,10 +89,41 @@ const SUPOE_HOMEM: { padrao: RegExp; porque: string }[] = [
  * produto não mora só em `app/` e `components/`. `planos-cartoes.ts` é lido pela página pública de
  * preço E pela tela "Meu plano" — é a copy que a pessoa lê antes de pagar.
  *
- * `src/server` fica de fora aqui de propósito: a copy dele que interessa (`mensagens-prontas.ts`)
- * tem asserção própria mais abaixo, sobre o array tipado em vez de sobre o texto do arquivo.
+ * `src/core` e `src/server` entraram em 2026-09-08, e o motivo é o mesmo do `src/lib`: copy de
+ * produto não respeita a divisão de pastas. `core/automacoes/catalogo.ts` descreve as sete
+ * automações na tela `/admin/config/automacoes` — texto que a pessoa lê para decidir quanta rédea
+ * dar a cada uma — e estava fora do alcance. A frase anterior deste bloco dizia que `src/server`
+ * ficava de fora "de propósito, porque a copy dele que interessa é `mensagens-prontas.ts`, com
+ * asserção própria"; era verdade sobre `mensagens-prontas.ts` e falsa sobre o resto da pasta.
  */
-const RAIZES = ['src/app', 'src/components', 'src/lib']
+const RAIZES = ['src/app', 'src/components', 'src/lib', 'src/core', 'src/server']
+
+/**
+ * O prompt do assistente CITA as construções proibidas para PROIBI-LAS ao modelo — "'você está
+ * preparado', 'seja bem-vindo' e 'obrigado' na voz de quem usa o produto erram com boa parte da
+ * base". Varrer o arquivo inteiro reprovaria a instrução que existe justamente para o defeito não
+ * acontecer.
+ *
+ * **A primeira versão disto excluía o ARQUIVO, e a exclusão escondeu defeito de verdade.** Em
+ * 2026-09-09 li o prompt gerado e achei, na voz PRÓPRIA dele: "um painel de gestão para
+ * profissionais de beleza" (o produto atende 17 profissões, entre elas eletricista e professor),
+ * "o dono do salão está sem tempo", "marcar horário para a cliente errada" e "se a cliente não
+ * estiver cadastrada, peça o telefone dela" — tudo isso duas linhas ABAIXO da instrução que manda
+ * não supor gênero. Nada disso é citação, e nada disso era visto.
+ *
+ * Agora a exceção é só das CITAÇÕES: some com o que está entre aspas duplas antes de procurar. No
+ * arquivo, aspas duplas só aparecem em citação (conferido: as 27 ocorrências são todas trechos que
+ * o prompt cita para proibir ou para dar como exemplo bom), então a voz própria dele fica exposta.
+ *
+ * Exceção que apaga o arquivo esconde o que ele tem de errado. Exceção que apaga a CITAÇÃO
+ * esconde só o que é citação.
+ */
+const SO_AS_CITACOES = ["src/server/services/assistente.ts"]
+
+/** Tira o que está entre aspas duplas — no arquivo do prompt, é sempre citação. */
+function semCitacoes(caminho: string, fonte: string): string {
+  return SO_AS_CITACOES.includes(caminho) ? fonte.split(/"[^"\n]*"/).join(" ") : fonte
+}
 
 function arquivos(dir: string): string[] {
   const achados: string[] = []
@@ -105,7 +136,8 @@ function arquivos(dir: string): string[] {
   return achados
 }
 
-const TELAS = RAIZES.flatMap(arquivos).map((f) => f.split(String.fromCharCode(92)).join('/'))
+const TODOS = RAIZES.flatMap(arquivos).map((f) => f.split(String.fromCharCode(92)).join('/'))
+const TELAS = TODOS
 
 describe('o leitor deste teste', () => {
   it('enxerga as telas — não passa por não ter olhado nada', () => {
@@ -122,9 +154,34 @@ describe('o leitor deste teste', () => {
      * Os dois arquivos nomeados aqui não são exemplo: são os dois onde o defeito foi encontrado de
      * verdade. Arquivo que já falhou uma vez é o que precisa estar no alcance por escrito.
      */
-    for (const ondeJaFalhou of ['src/lib/planos-cartoes.ts', 'src/app/(auth)/entrar/page.tsx']) {
+    for (const ondeJaFalhou of [
+      'src/lib/planos-cartoes.ts',
+      'src/app/(auth)/entrar/page.tsx',
+      // 2026-09-08: descreve as automações na tela onde a pessoa decide quanta rédea dar a cada
+      // uma, e dizia "a cliente ganha pontos" — copy de produto morando em `core/`.
+      'src/core/automacoes/catalogo.ts',
+      // A pasta inteira estava fora, e o que a justificava cobria só `mensagens-prontas.ts`.
+      'src/server/services/crm.ts',
+    ]) {
       expect(TELAS, `${ondeJaFalhou} saiu do alcance da guarda`).toContain(ondeJaFalhou)
     }
+  })
+
+  it('a exceção some com a CITAÇÃO, não com o arquivo', () => {
+    /*
+     * Piso nos dois sentidos. A lista de arquivos com citação é afirmada inteira — acrescentar um
+     * nome exige mexer aqui — e o arquivo tem que continuar sendo varrido, porque a exceção agora
+     * é do trecho, não do arquivo.
+     */
+    expect(SO_AS_CITACOES).toEqual(['src/server/services/assistente.ts'])
+    expect(TELAS, 'o arquivo do prompt saiu da varredura — a exceção voltou a ser do arquivo').toContain(SO_AS_CITACOES[0])
+
+    // E o filtro faz o que promete: apaga a citação, preserva a voz própria.
+    const exemplo = 'diga "seja bem-vindo" nunca; o dono do salão está sem tempo'
+    const limpo = semCitacoes(SO_AS_CITACOES[0]!, exemplo)
+    expect(limpo, 'o filtro não apagou a citação').not.toContain('bem-vindo')
+    expect(limpo, 'o filtro apagou a voz própria junto').toContain('o dono do salão')
+    expect(semCitacoes('src/app/page.tsx', exemplo), 'o filtro vazou para outro arquivo').toBe(exemplo)
   })
 
   it('os padrões pegam as construções que motivaram a guarda', () => {
@@ -189,7 +246,7 @@ describe('a copy não supõe que quem usa o produto é homem', () => {
   it('nenhuma tela fala com a pessoa no masculino', () => {
     const achados: string[] = []
     for (const tela of TELAS) {
-      const fonte = semComentarios(readFileSync(tela, 'utf8'))
+      const fonte = semCitacoes(tela, semComentarios(readFileSync(tela, 'utf8')))
       for (const { padrao, porque } of SUPOE_HOMEM) {
         if (padrao.test(fonte)) achados.push(`${tela}: ${porque}`)
       }
@@ -309,5 +366,233 @@ describe('o vocabulário das profissões não supõe o gênero de quem usa o pro
         'próprio papel no gênero errado, e nenhuma outra guarda pega isto: o valor mora em seed ' +
         'SQL e nunca aparece no fonte. Use a palavra neutra, ou deixe a chave com o padrão.',
     ).toEqual([])
+  })
+})
+
+/**
+ * O ESPELHO, medido em 2026-09-08 e maior que o defeito original: 60 ocorrências supondo que quem
+ * é ATENDIDO é mulher — "a cliente", "da cliente", "clientes atrasadas", "avisar todas".
+ *
+ * A regra da casa sempre valeu para os dois lados (as asserções acima já reprovam "quem atende
+ * sozinha" tanto quanto "sozinho"), mas a varredura só olhava um. E o CICLO não atende só unhas e
+ * estética: atende barbearia, onde a clientela é homem, e as 17 profissões da `0022` incluem
+ * personal, eletricista e faxineira. "Escolha a cliente" erra com metade delas.
+ *
+ * ## Por que linha de base, e não uma regra que reprova tudo
+ *
+ * São 26 arquivos. Reescrever 26 pontos de copy num commit é onde o conserto vira defeito — a
+ * base já pagou isso uma vez (`toque-48` em dois links inline deixou o segundo intocável). E uma
+ * regra que reprovasse tudo hoje deixaria o build vermelho até a última frase, o que na prática
+ * significa que alguém a desliga.
+ *
+ * Então a lista é o estado de HOJE, e a única direção permitida é encolher. É o mesmo desenho de
+ * `rede-nao-derruba-tela.test.ts`, e ele tem a propriedade que importa: **arquivo novo com o
+ * defeito reprova na hora**, mesmo com os 26 antigos ainda lá.
+ *
+ * Os que saíram nesta rodada (`clientes/lista.tsx`, os dois de `recuperar/` e
+ * `core/automacoes/catalogo.ts`) não podem voltar: estão afirmados por nome.
+ */
+const SUPOE_MULHER = [
+  /\b[Aa]s? clientes?\b/,
+  /\b[Dd]as? clientes?\b/,
+  /*
+   * O `(?:\(s\))?` no meio, e `sumidas?` na lista, entraram em 2026-09-09 por um achado vivo: a
+   * resposta rápida do assistente dizia "3 cliente(s) sumida(s) há mais de 60 dias". A construção
+   * `(s)` — o plural preguiçoso — separava as duas palavras e nenhum padrão daqui casava, numa
+   * frase que o dono LÊ. O CICLO atende barbearia: quem sumiu não é necessariamente "sumida".
+   */
+  /\bclientes?(?:\(s\))?\s+(?:marcadas?|atrasadas?|cadastradas?|novas|sumidas?)(?:\(s\))?\b/,
+  /*
+   * O quarto padrão entrou na MUTAÇÃO, e sem ele esta guarda tinha uma afirmação vazia.
+   *
+   * Reintroduzi a frase antiga do vazio de clientes — "Cadastre a primeira cliente" — e o teste
+   * "o que foi consertado não volta" passou verde. Os três padrões acima exigem o artigo COLADO
+   * em "cliente", e ali há um adjetivo no meio. A guarda estava afirmando sobre `lista.tsx` uma
+   * coisa que ela não sabia medir.
+   *
+   * O adjetivo intermediário tem que terminar em "a"/"as", que é o que distingue "a primeira
+   * cliente" (concorda no feminino) de "a lista de clientes" (não concorda com pessoa nenhuma —
+   * e nem casa, por causa do "de" no meio). Medido antes de entrar: a lista de pendentes continua
+   * nos mesmos 26 arquivos, então ele fechou o buraco sem alargar o alcance. Se tivesse alargado,
+   * o número da linha de base deixaria de valer no mesmo commit em que nasceu.
+   */
+  /\b[Aa]s?\s+[a-zà-ÿ]+as?\s+clientes?\b/i,
+  /*
+   * O quinto padrão, achado em 2026-09-09 lendo as MENSAGENS que vão para o cliente do salão.
+   * O fluxo de indicação dizia "Indique uma amiga" (na página pública de avaliação), "Que tal
+   * indicar uma amiga? ELA agenda" (ficha) e "Dê um desconto pra uma amiga" (modelo pronto de
+   * WhatsApp). Numa barbearia erra nos três.
+   *
+   * Os padrões acima são todos sobre a palavra "cliente", e aqui a palavra é outra — o defeito
+   * não estava na construção, estava no substantivo escolhido. Guarda de vocabulário precisa
+   * cobrir os substantivos que a copy realmente usa, não só o canônico.
+   */
+  /\b(?:uma|sua|as|suas)\s+amigas?\b/i,
+  /*
+   * O sexto padrão: DEMONSTRATIVO. Os quatro primeiros são sobre artigo ("a cliente", "da
+   * cliente"), e nenhum cobria "essa/esta/aquela cliente" — que é justamente a forma que uma
+   * MENSAGEM DE ERRO usa, porque ela fala de um registro específico.
+   *
+   * Foi assim que "Essa cliente não está mais na sua lista" sobreviveu em 15 arquivos, sendo a
+   * frase que a API mais devolve. O buraco estava na forma da frase, não no vocabulário.
+   */
+  /\b(?:essa|esta|aquela|dessa|desta|daquela|nessa|nesta|naquela)s?\s+clientes?\b/i,
+  /*
+   * O setimo padrao: ARTIGO INDEFINIDO, e ele nasceu do jeito mais caro possivel.
+   *
+   * Uma hora depois de `src/server/assistente/ferramentas.ts` sair da divida e entrar em
+   * `JA_CONSERTADOS` — afirmado POR NOME como neutro — ele ainda dizia 'os ultimos agendamentos
+   * de uma cliente especifica', 'se houver mais de uma cliente ou profissional possivel' e
+   * 'prepara o cadastro de uma cliente nova'. Quatro descricoes que o modelo LE para escolher a
+   * ferramenta, num arquivo que esta guarda garantia estar limpo.
+   *
+   * Os seis padroes acima sao todos sobre artigo DEFINIDO ('a cliente', 'da cliente') ou
+   * demonstrativo ('essa cliente'). Nenhum via 'uma cliente', que e a forma que a copy usa
+   * quando fala de um caso QUALQUER em vez de um registro especifico — e por isso e a forma das
+   * mensagens de erro genericas: `clientes.ts` e `importacao-clientes.ts` diziam, nas tres,
+   * 'Ja existe uma cliente com esse telefone'.
+   *
+   * A licao nao e 'faltou um padrao'. E que afirmar por nome nao vale mais do que o detector
+   * enxerga: JA_CONSERTADOS diz 'nao voltou a supor', e o que ele mede e 'nao voltou a supor DE
+   * UM JEITO QUE EU CONHECO'. A lista de padroes e o teto de toda afirmacao desta guarda.
+   *
+   * O adjetivo opcional no meio espelha o quarto padrao, pela mesma razao: 'uma primeira cliente'.
+   */
+  /\b(?:uma|numa|duma)\s+(?:[a-zà-ÿ]+as?\s+)?clientes?\b/i,
+]
+
+/**
+ * **A lista de pendentes acabou em 2026-09-09, e por isso ela nao existe mais aqui.**
+ *
+ * Ela nasceu com 26 nomes e a unica direcao permitida era encolher. Encolheu ate zero, entao a
+ * regra deixou de ser "nenhum arquivo NOVO" e passou a ser "nenhum arquivo". Manter a constante
+ * vazia seria pior que apaga-la: comparar o tamanho da lista com ela mesma, vazia, da
+ * `0 === 0`, uma afirmacao que passa sem medir nada — a armadilha do piso vazio que esta base ja
+ * pagou duas vezes (`it.each([])` e a guarda que "achou N arquivos" sem olhar onde o defeito
+ * mora). O piso agora e outro, e ele e real: `TODOS` tem que ter tamanho, e cada nome de
+ * `JA_CONSERTADOS` tem que existir no disco.
+ */
+
+/** Os que saíram nesta rodada. Voltar é regressão, não estado herdado. */
+const JA_CONSERTADOS = [
+  // Os quatro do artigo indefinido, 2026-09-09. `orcamentos.ts` e o pior: sao corpos de PUSH —
+  // o dono le a frase no aviso do celular, fora do app, onde nao ha contexto que a conserte.
+  'src/app/admin/config/cofre/page.tsx',
+  'src/app/admin/config/cofre/trilha.tsx',
+  'src/server/services/importacao-clientes.ts',
+  'src/server/services/orcamentos.ts',
+  // Os ONZE ultimos, 2026-09-09: a divida chegou a zero. Aqui estava o defeito no lugar onde ele
+  // custa mais caro — `llms.txt` e o texto que os proprios modelos leem para descrever o CICLO, e
+  // ele dizia que a pessoa "marca sozinha" num produto que atende eletricista e personal.
+  'src/app/admin/agenda/detalhe.tsx',
+  'src/app/admin/comanda/[id]/comanda.tsx',
+  'src/app/admin/config/servicos/formulario.tsx',
+  'src/app/dev/ui/vitrine.tsx',
+  'src/app/llms.txt/route.ts',
+  'src/lib/mensagens.ts',
+  'src/server/services/clientes.ts',
+  'src/server/services/comanda.ts',
+  'src/server/services/crm.ts',
+  'src/server/services/lgpd.ts',
+  'src/server/services/lista-espera.ts',
+  // As doze descrições de ferramenta e `.describe()` de esquema, 2026-09-09. O modelo LÊ estas
+  // strings para escolher a ferramenta e redigir a resposta — supor gênero aqui vira frase gerada.
+  'src/server/assistente/ferramentas.ts',
+  // Saíram da lista de pendentes em 2026-09-09, na varredura do demonstrativo: treze telas que
+  // tinham UMA ocorrência cada, reescritas uma a uma.
+  'src/app/(public)/[slug]/agendar/alternador-de-exemplo.tsx',
+  'src/app/admin/clientes/[id]/direitos.tsx',
+  'src/app/admin/clientes/[id]/ficha.tsx',
+  'src/app/admin/clientes/importar/importador.tsx',
+  'src/app/admin/config/mensagens/editor.tsx',
+  'src/app/admin/config/page.tsx',
+  'src/app/admin/config/servicos/page.tsx',
+  'src/app/admin/hoje/hoje.tsx',
+  'src/app/admin/orcamentos/page.tsx',
+  'src/app/api/v1/packages/route.ts',
+  'src/app/api/v1/wallet/route.ts',
+  'src/components/shell/assistente-flutuante.tsx',
+  'src/components/shell/resolucao-de-fila.tsx',
+  // O fluxo de indicação, 2026-09-09. O primeiro é público: o cliente do salão o lê.
+  'src/app/(public)/avaliar/[token]/avaliar.tsx',
+  'src/server/services/mensagens-prontas.ts',
+  // Saiu da lista de pendentes em 2026-09-09: o prompt do assistente deixou de supor gênero na
+  // VOZ PRÓPRIA dele. Só continuava lá porque a guarda o lia com as citações, que sempre casam.
+  'src/server/services/assistente.ts',
+  'src/app/admin/clientes/lista.tsx',
+  'src/app/admin/recuperar/page.tsx',
+  'src/app/admin/recuperar/recuperar.tsx',
+  'src/core/automacoes/catalogo.ts',
+]
+
+/** O mesmo teste sobre um texto solto, para o autoteste do detector poder existir. */
+function supoeMulherEm(texto: string): boolean {
+  return SUPOE_MULHER.some((p) => p.test(texto))
+}
+
+function supoeMulher(arquivo: string): boolean {
+  // MESMA leitura da varredura de cima, e isso importa: com leituras diferentes o arquivo do
+  // prompt ficava eternamente na lista de pendentes por causa das proprias citacoes, e defeito
+  // NOVO nele continuava invisivel por estar na lista.
+  const fonte = semCitacoes(arquivo, semComentarios(readFileSync(arquivo, 'utf8')))
+  return SUPOE_MULHER.some((p) => p.test(fonte))
+}
+
+describe('a copy também não supõe que quem é ATENDIDO é mulher', () => {
+  it('os padrões pegam as construções, e poupam as que estão certas', () => {
+    // Guarda contra o próprio detector: sem isto a lista de pendentes viraria decoração.
+    expect(supoeMulherEm('Escolha a cliente.'), 'não pegou "a cliente"').toBe(true)
+    expect(supoeMulherEm('Nome da cliente'), 'não pegou "da cliente"').toBe(true)
+    expect(supoeMulherEm('clientes atrasadas para voltar'), 'não pegou o particípio').toBe(true)
+    // O fluxo de indicação, achado em 2026-09-09 nas mensagens que vão para o cliente do salão.
+    expect(supoeMulherEm('Indique uma amiga'), 'não pegou a amiga suposta').toBe(true)
+    expect(supoeMulherEm('Dê um desconto pra uma amiga'), 'não pegou a amiga suposta').toBe(true)
+    // O demonstrativo, que e a forma que MENSAGEM DE ERRO usa — foi assim que a frase mais
+    // repetida da API sobreviveu em 15 arquivos.
+    expect(supoeMulherEm('Essa cliente não está mais na sua lista.'), 'não pegou o demonstrativo').toBe(true)
+    expect(supoeMulherEm('a autorização desta cliente'), 'não pegou o demonstrativo contraído').toBe(true)
+    // O indefinido, achado em 2026-09-09 num arquivo que a guarda AFIRMAVA estar limpo. As duas
+    // primeiras sao as frases reais que sobreviveram; a terceira e a que o quarto padrao ja
+    // pegaria se o artigo fosse definido, e agora tambem pega com o indefinido.
+    expect(supoeMulherEm('Já existe uma cliente com esse telefone.'), 'não pegou o indefinido').toBe(true)
+    expect(supoeMulherEm('se houver mais de uma cliente possível'), 'não pegou o indefinido').toBe(true)
+    expect(supoeMulherEm('o cadastro de uma primeira cliente'), 'não pegou o indefinido com adjetivo').toBe(true)
+    // A frase real que estava na tela, e que os três primeiros padrões deixavam passar.
+    expect(
+      supoeMulherEm('Cadastre a primeira cliente para começar a marcar horários.'),
+      'não pegou o artigo separado de "cliente" por um adjetivo',
+    ).toBe(true)
+
+    for (const certo of [
+      'Quem o Motor de Ciclo identificou em atraso para voltar.',
+      'A primeira ficha é o que faz o Motor de Ciclo ter de quem cuidar.',
+      'Lembra do horário marcado e pede a confirmação.',
+      // O vocabulário por profissão é o caminho certo, e não pode ser confundido com o defeito.
+      'Cadastrar {vocabulario.cliente}',
+      // O indefinido com o vocabulario da profissao: neutro, e o padrao 7 nao pode acusa-lo.
+      'Já existe uma {vocabulario.cliente} com esse telefone.',
+      // O conserto do grupo das mensagens de erro: a palavra da casa para o registro é "ficha".
+      'Essa ficha não está mais na sua lista.',
+      // O conserto do fluxo de indicação: neutro dos dois lados.
+      'Indique alguém. A pessoa agenda o primeiro horário por aqui.',
+    ]) {
+      expect(supoeMulherEm(certo), `acusou "${certo}", que está certo`).toBe(false)
+    }
+  })
+
+  it('nenhum arquivo supõe que quem é ATENDIDO é mulher', () => {
+    const novos = TODOS.filter((a) => supoeMulher(a))
+    expect(
+      novos,
+      'copy nova supondo que quem é atendido é mulher. O CICLO atende barbearia e eletricista ' +
+        'também — use "quem", "a pessoa", ou o vocabulário da profissão (`vocabulario.cliente`).',
+    ).toEqual([])
+  })
+
+  it('o que foi consertado nesta rodada não volta', () => {
+    for (const arquivo of JA_CONSERTADOS) {
+      expect(existsSync(arquivo), `${arquivo} sumiu — a afirmação abaixo passaria vazia`).toBe(true)
+      expect(supoeMulher(arquivo), `${arquivo} voltou a supor que quem é atendido é mulher`).toBe(false)
+    }
   })
 })

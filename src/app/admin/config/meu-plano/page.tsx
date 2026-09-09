@@ -229,7 +229,7 @@ export default async function PaginaMeuPlano() {
       </Card>
 
       <p className="py-8 text-center text-label text-txt-3">
-        <Link href="/precos" className="toque-48 font-semibold text-acc-2 underline underline-offset-2">
+        <Link href="/precos" className="toque-48 -mx-2 px-2 font-semibold text-acc-2 underline underline-offset-2">
           Ver a tabela de preços completa
         </Link>
       </p>

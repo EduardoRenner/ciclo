@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 
+import { SLUG_PROFISSAO_GENERICA } from '@/core/profissoes'
 import { gerarDekCifrada } from '@/server/crypto/kek'
 import { AppError } from '@/server/http/errors'
 
@@ -88,8 +89,26 @@ export async function executarOnboarding(
       slug: params.slug,
       vertical: params.vertical,
       timezone: params.timezone,
+      /*
+        Os quatro eixos vêm da profissão — MENOS quando ela é a genérica.
+
+        `podeUsarModulo` trata eixo nulo como "ainda não respondido" e não esconde nada por causa
+        dele; só um valor CONHECIDO e incompatível esconde. Quem escolheu "Outra profissão" não
+        descreveu como atende, então gravar quatro valores por ela seria inventar uma resposta — e
+        uma resposta errada aqui APAGA módulo da interface (`routing`, `recurrence`, `quotes`) sem
+        tela nenhuma para corrigir: os eixos são gravados uma vez só, neste insert.
+
+        Nulo mantém tudo visível, que é o lado seguro de errar. `profession_id` continua gravado:
+        a pessoa escolheu uma linha do catálogo, e saber quantos caíram na genérica é o sinal de
+        qual profissão falta no catálogo.
+      */
       ...(profissao
-        ? { profession_id: profissao.id, onde: profissao.onde, cobranca: profissao.cobranca, inicio: profissao.inicio, ritmo: profissao.ritmo }
+        ? {
+            profession_id: profissao.id,
+            ...(profissao.slug === SLUG_PROFISSAO_GENERICA
+              ? {}
+              : { onde: profissao.onde, cobranca: profissao.cobranca, inicio: profissao.inicio, ritmo: profissao.ritmo }),
+          }
         : {}),
     })
     .select('id, name, slug, vertical, timezone')

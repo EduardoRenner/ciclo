@@ -119,11 +119,11 @@ export default function FormularioCadastro() {
       <div className="text-center text-label text-txt-3">
         <p>Ao criar a conta você aceita:</p>
         <p className="mt-0.5 flex flex-wrap items-center justify-center gap-x-2">
-          <Link href="/termos" className="toque-48 font-semibold text-txt-2 underline underline-offset-2">
+          <Link href="/termos" className="toque-48 -mx-2 px-2 font-semibold text-txt-2 underline underline-offset-2">
             Termos de uso
           </Link>
           <span aria-hidden>·</span>
-          <Link href="/privacidade" className="toque-48 font-semibold text-txt-2 underline underline-offset-2">
+          <Link href="/privacidade" className="toque-48 -mx-2 px-2 font-semibold text-txt-2 underline underline-offset-2">
             Política de Privacidade
           </Link>
         </p>

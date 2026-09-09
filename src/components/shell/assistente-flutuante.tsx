@@ -35,7 +35,7 @@ const SUGESTOES_POR_ROTA: { prefixo: string; sugestoes: Sugestao[] }[] = [
     prefixo: '/admin/hoje',
     sugestoes: [
       { rotulo: 'Quem falta confirmar hoje?', pergunta: 'Quem falta confirmar hoje?', idRapido: 'hoje_confirmar' },
-      { rotulo: 'Quanto já faturei hoje?', pergunta: 'Quanto eu já faturei hoje?', idRapido: 'hoje_faturamento' },
+      { rotulo: 'Quanto já atendi hoje?', pergunta: 'Quanto eu já atendi hoje?', idRapido: 'hoje_atendido' },
       { rotulo: 'Tenho horário vago amanhã?', pergunta: 'Eu tenho horário vago amanhã?', idRapido: 'hoje_horario_vago_amanha' },
     ],
   },
@@ -59,7 +59,7 @@ const SUGESTOES_POR_ROTA: { prefixo: string; sugestoes: Sugestao[] }[] = [
   {
     prefixo: '/admin/orcamentos',
     sugestoes: [
-      { rotulo: 'Quais orçamentos estão sem resposta?', pergunta: 'Quais orçamentos estão parados, sem resposta da cliente?', idRapido: 'orcamentos_sem_resposta' },
+      { rotulo: 'Quais orçamentos estão sem resposta?', pergunta: 'Quais orçamentos estão parados, sem resposta de quem pediu?', idRapido: 'orcamentos_sem_resposta' },
     ],
   },
 ]

@@ -13,6 +13,7 @@ import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import Chip from '@/components/ui/chip'
 import EmptyState from '@/components/ui/empty-state'
+import { ASSUNTO_MOTOR_PARADO, canalDeContato } from '@/lib/contato'
 import FilterRow from '@/components/ui/filter-row'
 import IconeAnel from '@/components/ui/icone-anel'
 import Skeleton from '@/components/ui/skeleton'
@@ -138,8 +139,21 @@ export default function RecuperarReceita({
   const bloqueado = !podeEnviarEmLote && itensSelecionados.length > 1
   const valorSelecionadoCents = itensSelecionados.reduce((soma, i) => soma + i.valueCents, 0)
 
+  /*
+    A folga do fim da lista, quando a barra flutuante aparece.
+
+    MEDIDO em 2026-09-09, a 390px: a `ActionBar` e `fixed` em
+    `bottom: tabbar + 12px` e tem 70px de altura propria, entao o topo dela fica a 146px do fundo
+    da tela. O `pb` do layout do admin reserva `tabbar + 28` = 92px. Sobram ~54px de lista
+    passando POR BAIXO da barra, e a barra e quase opaca (`bg-surface/95` com desfoque).
+
+    `ficha.tsx` ja tinha topado com isto e resolvido com `pb-20`, com o motivo escrito — mas so
+    para ela. Aqui a barra e condicional (so com selecao), entao a folga tambem e: sem selecao
+    nao ha barra e o espaco vazio seria desperdicio. Padding no FIM nao move o que esta acima,
+    entao ligar a folga junto com a barra nao empurra a lista.
+  */
   return (
-    <div>
+    <div className={itensSelecionados.length > 0 ? 'pb-20' : undefined}>
       {/*
         O número era "Valor parado" e ninguém tinha como entendê-lo: §5.3 define
         valor em risco como `preço do serviço × chance de recuperação por
@@ -259,7 +273,7 @@ export default function RecuperarReceita({
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-corpo font-semibold">{item.name}</p>
                     <p className="truncate text-secundario text-txt-2">
-                      {item.serviceName} · {RUBRICA_ESTADO[item.state as Estado]} · {item.lateDays > 0 ? `${item.lateDays}d atrasada` : 'na janela'}
+                      {item.serviceName} · {RUBRICA_ESTADO[item.state as Estado]} · {item.lateDays > 0 ? `${item.lateDays}d de atraso` : 'na janela'}
                     </p>
                   </div>
                   <div className="shrink-0 text-right">
@@ -301,10 +315,10 @@ export default function RecuperarReceita({
           <BloqueioPlano
             className="border-0 bg-transparent p-1 shadow-none"
             precisaDo="essencial"
-            acao="avisar todas de uma vez"
+            acao="avisar todo mundo de uma vez"
             evidencia={{
               quantidade: itensSelecionados.length,
-              substantivo: 'clientes marcadas, esperando para voltar',
+              substantivo: 'na lista, esperando para voltar',
               valorCents: valorSelecionadoCents,
             }}
             alternativa={
@@ -341,7 +355,9 @@ function EmptyStateDeRecuperar({
   temCiclos: boolean
   temAtendimentosConcluidos: boolean
 }) {
-  const v = vazioDeRecuperar(temClientes, temCiclos, temAtendimentosConcluidos)
+  // `canalDeContato` devolve `null` quando nao ha WhatsApp nem e-mail configurado. E o que
+  // decide se a frase pode mandar falar com a gente ou tem que calar.
+  const v = vazioDeRecuperar(temClientes, temCiclos, temAtendimentosConcluidos, canalDeContato(ASSUNTO_MOTOR_PARADO) !== null)
   return (
     <EmptyState
       icone={<IconeAnel aria-hidden className="size-6" />}

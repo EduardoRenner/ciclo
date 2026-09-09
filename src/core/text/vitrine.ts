@@ -12,9 +12,18 @@
  * imagem apontar para o projeto antigo depois de qualquer restauração de banco em outro lugar,
  * inclusive nos forks desta base.
  *
- * Fica em `core/` (puro, sem I/O) e NÃO importa nada de `server/`: a página pública do salão lê
- * isto, e um caminho de import daqui até `media-upload.ts` arrastaria os 19,2 MB do `sharp` para o
- * pacote da rota — ver `tests/unit/server/sharp-so-onde-precisa.test.ts`.
+ * Fica em `core/` e NÃO importa nada de `server/`: a página pública do salão lê isto, e um caminho
+ * de import daqui até `media-upload.ts` arrastaria os 19,2 MB do `sharp` para o pacote da rota —
+ * ver `tests/unit/server/sharp-so-onde-precisa.test.ts`.
+ *
+ * **É a única função de `core/` que não é pura, e o cabeçalho dizia o contrário.** Ela lê
+ * `NEXT_PUBLIC_SUPABASE_URL` seis linhas abaixo de uma frase que afirmava "puro, sem I/O" — e
+ * comentário que desmente o código é pior que comentário nenhum, porque a próxima pessoa acredita.
+ * A impureza fica, por medição: são nove chamadores, três deles client components, e passar a
+ * origem como argumento significaria uma prop nova em cada caminho para ganhar pureza numa leitura
+ * que o Next substitui no BUILD — constante de compilação, não I/O de tempo de execução. A exceção
+ * está nomeada em `tests/unit/design/core-nao-conhece-o-mundo.test.ts`, que reprova se ela deixar
+ * de ser verdade.
  */
 
 /** O bucket público criado na migration 0051. Privado é o `media`, que guarda foto de cliente. */

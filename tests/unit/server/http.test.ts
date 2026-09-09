@@ -54,8 +54,8 @@ describe('AppError', () => {
   })
 
   it('aceita mensagem própria em erro de negócio', () => {
-    const erro = new AppError('NOT_FOUND', { message: 'Essa cliente não está mais na sua lista.' })
-    expect(erro.publicMessage).toBe('Essa cliente não está mais na sua lista.')
+    const erro = new AppError('NOT_FOUND', { message: 'Essa ficha não está mais na sua lista.' })
+    expect(erro.publicMessage).toBe('Essa ficha não está mais na sua lista.')
   })
 
   it('INTERNAL ignora mensagem customizada — é por onde vazaria o erro do banco', () => {

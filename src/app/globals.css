@@ -431,6 +431,21 @@ body[data-scroll-locked] .recua-com-sheet {
    */
   position: relative;
 
+  /*
+   * O QUE ELA NAO FAZ, e isso custou um achado: a faixa e `left: 0; right: 0`,
+   * entao ela estende SO NA VERTICAL. Um link curto continua estreito.
+   *
+   * Medido ao vivo em 2026-09-09, na home a 320px: "Precos" tinha 39x48 e
+   * "Termos" 42x48 — passam no minimo da WCAG (24x24) e ficam abaixo do piso de
+   * 48px da casa, no eixo horizontal. O conserto e `px-2 -mx-2` no proprio link:
+   * a caixa cresce 16px e a margem negativa devolve o espaco, entao o texto nao
+   * se move e o vizinho nao e empurrado.
+   *
+   * Alargar a faixa AQUI seria o conserto errado: ela viraria 48px de largura em
+   * todos os 52 usos, e em lista densa a faixa de um vizinho passa por cima da do
+   * outro. Ja aconteceu nesta base — dois links inline em que o segundo ficou com
+   * ZERO area tocavel. Largura se resolve onde o layout e conhecido.
+   */
   &::after {
     content: "";
     position: absolute;

@@ -14,7 +14,7 @@ export const DELETE = rota(async (req, params) => {
   exigirPermissao(ctx.papel, 'client:update')
 
   const { id, kind } = await (params as Ctx).params
-  if (!UUID.test(id)) throw new AppError('NOT_FOUND', { message: 'Essa cliente não está mais na sua lista.' })
+  if (!UUID.test(id)) throw new AppError('NOT_FOUND', { message: 'Essa ficha não está mais na sua lista.' })
   if (!(TIPOS_CONSENTIMENTO_CLIENTE as readonly string[]).includes(kind)) {
     throw AppError.validacao({ kind: 'Tipo de consentimento inválido.' })
   }

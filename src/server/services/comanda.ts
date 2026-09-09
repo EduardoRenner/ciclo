@@ -34,7 +34,7 @@ export type EntradaItemComanda = z.infer<typeof EsquemaItemComanda>
  * tela do caixa continua sendo um número inflado com cara de resultado.
  */
 export const EsquemaFechamento = z.object({
-  paymentMethod: z.enum(FORMAS_DE_PAGAMENTO, { message: 'Diga como a cliente pagou para poder fechar.' }),
+  paymentMethod: z.enum(FORMAS_DE_PAGAMENTO, { message: 'Diga como foi pago para poder fechar.' }),
 })
 export type EntradaFechamentoComanda = z.infer<typeof EsquemaFechamento>
 

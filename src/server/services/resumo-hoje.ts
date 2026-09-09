@@ -8,8 +8,16 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 type Cliente = SupabaseClient<Database>
 
+/*
+  `health_records` traz só `has_alert`, e o `alert_label` que estava aqui saiu na Unidade 10.
+  Ninguém o usava: `hoje.tsx` passa `alertaSaude={...some((h) => h.has_alert)}` e o
+  `appointment-row` declara `alertaSaude?: boolean` com a nota "nunca o rótulo clínico, só o
+  sinal". O rótulo ia junto no payload do server component até o navegador de quem abre /hoje —
+  recepção inclusive — invisível na tela e legível no devtools. Buscar o que não se mostra é
+  a forma mais silenciosa de vazar dado de saúde.
+*/
 const COLUNAS_HOJE =
-  'id, starts_at, ends_at, status, price_cents, client_note, address, professional_id, clients ( name, health_records ( has_alert, alert_label ) ), services ( name ), professionals ( display_name )'
+  'id, starts_at, ends_at, status, price_cents, client_note, address, professional_id, clients ( name, health_records ( has_alert ) ), services ( name ), professionals ( display_name )'
 
 /** Mesmo formato de `LinhaAgendaDia` (TICKET-022) — dá para abrir no mesmo `DetalheAgendamento` da tela de agenda, sem duplicar o sheet de ações. */
 export type LinhaHoje = {
@@ -22,7 +30,7 @@ export type LinhaHoje = {
   /** docs/09-PLATAFORMA.md G3+G13 (P2.5) — endereço do atendimento, não do cliente. */
   address: string | null
   professional_id: string
-  clients: { name: string; health_records: { has_alert: boolean; alert_label: string | null }[] } | null
+  clients: { name: string; health_records: { has_alert: boolean }[] } | null
   services: { name: string } | null
   professionals: { display_name: string } | null
 }

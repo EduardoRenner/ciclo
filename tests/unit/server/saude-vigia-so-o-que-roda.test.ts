@@ -62,6 +62,20 @@ describe('ROTAS_AGENDADAS espelha o cron.yml, nas duas direções', () => {
 describe('o mapa kind → rota bate com quem grava o heartbeat', () => {
   const entradas = Object.entries(ROTA_DO_HEARTBEAT) as [string, RotaDeCron][]
 
+  it('o mapa de heartbeats não está vazio — `it.each([])` some em vez de reprovar', () => {
+    /*
+     * Achado varrendo a suíte em 2026-09-09: esta era a ÚNICA lista derivada usada em `it.each`
+     * sem nenhuma asserção sobre ela. Se `ROTA_DO_HEARTBEAT` esvaziar, o `it.each` não gera caso
+     * nenhum — a guarda não falha, ela DESAPARECE, e `250 passed` continua parecendo saúde.
+     *
+     * Dói mais aqui do que em qualquer outro lugar: é a guarda de que o vigia de saúde observa os
+     * crons que de fato rodam, num produto que já ficou 54h com o Motor de Ciclo parado sem
+     * ninguém ver.
+     */
+    expect(entradas.length, 'ROTA_DO_HEARTBEAT ficou vazio — o vigia deixaria de vigiar sem reprovar nada').toBeGreaterThan(0)
+    expect(entradas.map(([kind]) => kind), 'o Motor de Ciclo saiu do mapa de heartbeats').toContain('recompute_cycles')
+  })
+
   it.each(entradas)('o kind %s é gravado dentro de src/app/api/cron/%s', (kind, rota) => {
     const fonte = readFileSync(`${DIR_DAS_ROTAS}/${rota}/route.ts`, 'utf8')
     expect(fonte.length, `route.ts de ${rota} veio vazio`).toBeGreaterThan(200)

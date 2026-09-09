@@ -6859,6 +6859,165 @@ fluxo padrão de muita gente (GitHub, por ex.) e fecha o buraco por inteiro sem 
 com os cinco casos (otp, otp+totp, oauth, oauth+totp, password, vazio). `metodos` entrou no tipo
 `Sessao` e no mock de `clienteCom`.
 
+---
+
+## 2026-09-09 · Quem lê o rótulo do alerta de saúde (Unidade 10)
+
+**Pergunta delegada em 05/09.** "Quem vê o alerta de saúde." Estava marcada como bloqueada por
+decisão do dono.
+
+**Medido antes de decidir.** A rota `/vault` protege o rótulo com três travas —
+`exigirPermissao('vault:own')`, `exigirAal2()` e registro em `vault_access_log`. A mesma
+informação estava sendo servida em três lugares sem nenhuma delas: a ficha do cliente
+(`fichaDoCliente` preenchia `saude.alerta` para qualquer papel com `client:read`, recepção
+inclusive), `/admin/hoje` (`resumo-hoje` selecionava `alert_label` e ninguém o usava — ia no
+payload até o navegador) e `GET .../data-export`, que **decifra o cofre inteiro** e exigia
+`client:read`.
+
+**Decisão.** O SINAL (`has_alert`) é de todo mundo do tenant; o RÓTULO é de quem tem `vault:`.
+
+O sinal precisa ser amplo porque é ele que faz a recepção avisar quem atende antes de o
+atendimento começar — `appointment-row.tsx` já dizia isso com todas as letras ("nunca o rótulo
+clínico, só o sinal"). O rótulo é dado de saúde, categoria especial na LGPD, e a régua de quem
+pode vê-lo já existia no `rbac.ts`: `owner` pelo curinga, `professional` por `vault:own`,
+ninguém mais.
+
+A exportação foi para `client:export`, e aqui vale uma ressalva que o commit original não fez: a
+C35 que o `rbac.ts` cita pergunta *"quem pode exportar A BASE de clientes"* — a carteira inteira.
+Esta rota é outra coisa: a ficha de UMA cliente, para o direito de acesso da LGPD. **Reusar a
+permissão é decisão desta rodada, não herança**; a C35 não decide por ela.
+
+O piso que decide é mais simples: o que sai da exportação CONTÉM o que o `/vault` protege, então a
+porta não pode ser mais larga que a dele — `vault:own` (dono + profissional) é o mínimo coerente.
+Ficou no dono, um degrau acima, porque exportar produz um arquivo que sai do sistema, e porque
+errar restritivo se conserta com um clique enquanto errar permissivo já vazou. Se um salão com
+gerente reclamar da fricção, `vault:own` é o afrouxamento certo — nunca `client:read`.
+
+O limite de 1×/mês da C35 é da exportação em massa e **não** se aplica aqui: um titular pode pedir
+os próprios dados quantas vezes quiser.
+
+**Por que privilégio por COLUNA e não política por papel.** A `0077` tira
+`ciphertext`/`iv`/`auth_tag`/`alert_label` do `grant select` de `anon`/`authenticated`. Uma
+política no formato da `0073` seria row-level e tiraria a linha inteira — a recepção perderia o
+booleano junto com o rótulo, e o conserto de privacidade viraria um apagão de segurança do
+atendimento. As leituras privilegiadas passaram a ir por `withTenant` (service_role), sempre
+DEPOIS da checagem de permissão da rota.
+
+**O defeito que o próprio conserto criou, e o conserto dele.** Apertar a rota de exportação sem
+mexer na tela deixaria o botão "Baixar os dados" visível para quem passaria a receber recusa —
+a armadilha "deixa trabalhar para recusar no envio". O botão ganhou `podeExportar`, decidido pela
+mesma permissão da rota.
+
+**Guarda.** `tests/unit/design/cofre-nao-vaza-para-quem-nao-pode.test.ts`, com a régua de
+permissão exercitada de verdade (`avaliarPermissao` para os cinco papéis) e a regra geral de que
+coluna sensível só é lida via `withTenant`. Seis mutações vistas reprovando.
+
+**O que NÃO foi verificado:** `pnpm test:rls` não roda nesta máquina e a CI está parada por
+billing. A `0077` foi conferida por SQL direto em produção — um bloco `DO` com
+`set local role authenticated` que espera `insufficient_privilege` no rótulo e no cifrado, e
+leitura livre no sinal.
+
+---
+
+## 2026-09-09 · A profissão genérica não responde os quatro eixos (item 17)
+
+**Pergunta.** O catálogo tem 17 profissões e a busca do onboarding respondia "Nenhuma profissão
+encontrada." — com `professionId` obrigatório no esquema da rota. Quem não estivesse nas 17 ficava
+preso na primeira tela, depois de já ter criado a conta.
+
+**Decisão.** Entra "Outra profissão" no catálogo (`0078`), e ela **não grava** `onde`, `cobranca`,
+`inicio` nem `ritmo` no tenant.
+
+O motivo é o `podeUsarModulo`: ele esconde módulo quando o eixo tem valor CONHECIDO e incompatível,
+e não esconde nada quando é nulo — *"onboarding incompleto não é motivo para sumir com
+funcionalidade"*, diz o próprio arquivo. Os eixos do tenant são gravados uma única vez, no
+onboarding, e **não existe tela para corrigi-los**. Quem escolheu a genérica não descreveu como
+atende; inventar quatro valores por ela apagaria `routing`, `recurrence` ou `quotes` da interface
+de alguém que precisa deles, para sempre. Nulo é o estado honesto e o lado seguro de errar.
+
+Os quatro valores existem na LINHA do catálogo só porque a tabela os declara `not null`.
+`profession_id` continua gravado: saber quantos caem na genérica é o único sinal de qual profissão
+falta no catálogo. `sinonimos` fica vazio para a genérica não competir com a profissão certa numa
+busca legítima.
+
+---
+
+## 2026-09-09 · Três perguntas que ficaram para o dono (rodada noturna)
+
+Deixadas em aberto de propósito. Cada uma é escolha de produto, não de implementação, e decidi que
+inventar a resposta sozinho custaria mais caro que perguntar.
+
+### 1. "Sobrou" ou "Lucro"? O produto usa os dois para o mesmo número
+
+`tickets.profit_cents` é receita menos material, taxa e comissão. **Não desconta o custo fixo**
+(aluguel, hora de cadeira). Hoje o produto o chama de duas coisas:
+
+- **caixa** → "Sobrou", com um aviso quando a taxa da maquininha não foi informada;
+- **ficha do cliente** → "Lucro", sem aviso nenhum.
+
+O `docs/50` já registra que margem de contribuição com nome de lucro é defeito. A tela do caixa
+seguiu essa régua; a ficha não. Não uniformizei porque escolher entre os dois nomes muda o que o
+dono lê na tela que ele mais abre, e porque uma guarda que enforçasse "Sobrou" acusaria copy
+legítima da tela de Recuperar ("R$ X de lucro" ao lado do valor em risco, onde o sentido é outro).
+
+**O que decidir:** a ficha passa a dizer "Sobrou" (consistente, e com o mesmo aviso do caixa), ou o
+caixa passa a dizer "Lucro" (mais familiar, e o aviso já cobre a ressalva)?
+
+### 2. A exportação da ficha de uma cliente ficou no dono. Fica?
+
+`GET /api/v1/clients/[id]/data-export` decifra o cofre e devolve a anamnese em texto claro. Ela
+aceitava `client:read`, que a **recepção** tem; passou a exigir `client:export`, que é do dono.
+
+O piso que decide é que o que sai dali contém o que o `/vault` protege, então a porta não pode ser
+mais larga que a dele — `vault:own` (dono + profissional) seria o mínimo coerente, e eu fiquei um
+degrau acima. Se um salão com gerente reclamar da fricção ao responder um pedido de LGPD (o prazo
+legal é de 15 dias), **`vault:own` é o afrouxamento certo — nunca `client:read`**.
+
+### 3. O alerta de risco de falta nunca aparece na demonstração
+
+`appointments.no_show_score` é gravado no agendamento real (medido: 1 das 1.526 marcações vindas da
+página pública tem score), mas as ~3.100 do seed foram inseridas direto no banco e nasceram sem
+ele. Resultado: o ⚡ da agenda, que é um diferencial visível, **não aparece em nenhuma demo**.
+
+Não backfillei porque é dado de demonstração em produção e a decisão é de vitrine, não de código.
+
+## 2026-09-09 · a inviolável nº 11 no banco: o que apertei e o que deixei
+
+`0079` e `0080` fizeram a RLS e o schema concordarem com a regra "nunca delete agendamento,
+movimento de estoque ou registro de auditoria". Medido em produção antes: apagar um **produto**
+apagava o razão de estoque inteiro dele (`stock_moves.product_id on delete cascade`), qualquer
+membro ativo apagava movimento direto pelo PostgREST (`stock_moves_tenant_all` = `for all` com
+`has_tenant`), e dono ou gerente apagava agendamento (`appointments_delete`).
+
+**A régua para decidir o que entrava agora foi "a capacidade é comprovadamente morta?"** — nenhum
+caminho do app usa. `stock_moves` só recebe `select` e `insert`; agendamento nunca é apagado (o
+`DELETE` da API é cancelamento por estado, e o erase da LGPD preserva a linha por obrigação fiscal).
+Tirar capacidade morta não tem como quebrar nada.
+
+**O que NÃO entrou, e por quê.** A varredura achou **40 tabelas** com política cega a papel. As
+outras 38 exigem escolher papéis, e escolher errado quebra o app de um jeito que **não grita**:
+`delete`/`update` barrado por RLS devolve **zero linhas, não erro**. Dois exemplos medidos:
+
+- `health_records` — o erase da LGPD apaga a ficha de saúde com o cliente do **usuário**
+  (`clients/[id]/erase/route.ts:23`). Apertar ali às cegas transformaria o direito ao esquecimento
+  em `rowsRemoved: 0` com HTTP 200, que é pior que a falha original: some a garantia legal e fica a
+  aparência de sucesso.
+- `monthly_profit` — a política deixa profissional e recepção lerem o lucro do salão pelo
+  PostgREST, contra a intenção que a guarda `lucro-nao-vaza-para-quem-atende` já documenta. Mas
+  quem CONGELA o mês é o fechamento de comanda, feito por recepção com o cliente do usuário e
+  dentro de um `.catch()` que só avisa — restringir o `insert` pelo papel pararia o congelamento em
+  silêncio.
+
+**O que decidir:** as 38 restantes precisam de um banco de dev alinhado para serem verificadas uma
+a uma (hoje ele está 14 migrations atrás). Enquanto isso, elas ficam abertas de propósito — é a
+escolha entre um risco conhecido e um conserto não verificado.
+
+**Pendente do dono:** `0079` e `0080` estão no repositório e **não estão aplicadas**. Até
+`supabase db push`, `/api/health` responde 503 dizendo "banco ATRÁS do código" — é o alarme
+funcionando — e as três portas acima seguem abertas em produção.
+
+---
+
 ## 2026-09-08 · perf/csp-borda — o middleware parava de gastar `getUser()` no site institucional
 
 **Medido em produção (navegador):** depois do `perf/csp-duas-faixas`, `/`, `/precos`, `/privacidade`

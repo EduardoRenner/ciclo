@@ -89,7 +89,7 @@ export async function resolverCliente(
       .is('deleted_at', null)
       .maybeSingle()
     if (error) throw new AppError('INTERNAL', { cause: error })
-    if (!data) throw new AppError('NOT_FOUND', { message: 'Essa cliente não está mais na sua lista.' })
+    if (!data) throw new AppError('NOT_FOUND', { message: 'Essa ficha não está mais na sua lista.' })
     return data.id
   }
 

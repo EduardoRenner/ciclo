@@ -17,7 +17,7 @@ export type VariaveisMensagem = {
 
 /** As chaves que o editor de modelos oferece — a tela mostra esta lista como botões. */
 export const VARIAVEIS_DISPONIVEIS: { chave: keyof VariaveisMensagem; rotulo: string }[] = [
-  { chave: 'nome', rotulo: 'Nome da cliente' },
+  { chave: 'nome', rotulo: 'Nome de quem é atendido' },
   { chave: 'servico', rotulo: 'Serviço' },
   { chave: 'data', rotulo: 'Data' },
   { chave: 'hora', rotulo: 'Hora' },

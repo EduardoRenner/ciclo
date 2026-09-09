@@ -258,7 +258,7 @@ export async function importarClientes(
   for (const linha of semDuplicataNoArquivo) {
     const hash = linha.phoneE164 ? hashTelefone(linha.phoneE164) : null
     if (hash && hashesExistentes.has(hash)) {
-      skipped.push({ linha: linha.linha, motivo: 'Já existe uma cliente com esse telefone.' })
+      skipped.push({ linha: linha.linha, motivo: 'Já existe uma ficha com esse telefone.' })
       continue
     }
     paraInserir.push(linha)
@@ -301,7 +301,7 @@ export async function importarClientes(
       })
       if (erroLinha) {
         if (erroLinha.code === '23505') {
-          skipped.push({ linha: linha.linha, motivo: 'Já existe uma cliente com esse telefone.' })
+          skipped.push({ linha: linha.linha, motivo: 'Já existe uma ficha com esse telefone.' })
         } else {
           errors.push({ linha: linha.linha, motivo: 'Não consegui salvar esta linha.' })
         }

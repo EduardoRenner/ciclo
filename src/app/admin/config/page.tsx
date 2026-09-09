@@ -33,7 +33,7 @@ const GRUPOS = [
     ],
   },
   {
-    titulo: 'Falar com a cliente',
+    titulo: 'Falar com quem você atende',
     itens: [
       { href: '/admin/config/mensagens', titulo: 'Mensagens prontas', descricao: 'Textos que você manda com um toque', icone: MessageSquareText },
       { href: '/admin/config/automacoes', titulo: 'Automações', descricao: 'O que o CICLO faz sozinho, e quanta rédea você dá', icone: Bot },

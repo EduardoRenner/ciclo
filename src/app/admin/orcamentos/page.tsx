@@ -36,7 +36,7 @@ export default async function PaginaOrcamentos() {
         <BloqueioPlano
           className="mb-4"
           precisaDo="essencial"
-          acao="montar um orçamento e mandar o link para a cliente responder"
+          acao="montar um orçamento e mandar o link para quem pediu responder"
         />
       ) : null}
       <ListaOrcamentos orcamentos={orcamentos} bloqueado={bloqueado} />
