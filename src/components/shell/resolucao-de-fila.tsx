@@ -33,7 +33,7 @@ function descrever(mutacao: Mutacao | null): string {
   if (!mutacao) return 'Uma alteração feita offline'
   const caminho = mutacao.url.split('?')[0] ?? ''
   if (caminho.includes('/appointments')) return mutacao.method === 'POST' ? 'Um agendamento criado sem conexão' : 'Uma alteração num agendamento'
-  if (caminho.includes('/clients')) return mutacao.method === 'POST' ? 'Uma cliente cadastrada sem conexão' : 'Uma alteração no cadastro de uma cliente'
+  if (caminho.includes('/clients')) return mutacao.method === 'POST' ? 'Uma ficha cadastrada sem conexão' : 'Uma alteração numa ficha'
   if (caminho.includes('/tickets')) return 'Uma alteração numa comanda'
   return 'Uma alteração feita offline'
 }

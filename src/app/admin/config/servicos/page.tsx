@@ -35,7 +35,7 @@ export default async function PaginaServicos() {
 
   return (
     <>
-      <PageHeader titulo={comMaiuscula(plural(ctx.tenant.vocabulario.servico))} descricao="O que você oferece, quanto dura e quanto custa. Arraste para mudar a ordem que a cliente vê." />
+      <PageHeader titulo={comMaiuscula(plural(ctx.tenant.vocabulario.servico))} descricao="O que você oferece, quanto dura e quanto custa. Arraste para mudar a ordem que aparece na sua página." />
 
       <ListaServicos iniciais={servicos} margens={margens} podeVerLucro={podeVerLucro} />
     </>

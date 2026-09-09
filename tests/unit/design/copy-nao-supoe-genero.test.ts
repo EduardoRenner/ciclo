@@ -441,24 +441,11 @@ const SUPOE_MULHER = [
 
 /** O estado de 2026-09-08. Só encolhe. */
 const PENDENTES = [
-  'src/app/(public)/[slug]/agendar/alternador-de-exemplo.tsx',
   'src/app/admin/agenda/detalhe.tsx',
-  'src/app/admin/clientes/[id]/direitos.tsx',
-  'src/app/admin/clientes/[id]/ficha.tsx',
-  'src/app/admin/clientes/importar/importador.tsx',
   'src/app/admin/comanda/[id]/comanda.tsx',
-  'src/app/admin/config/mensagens/editor.tsx',
-  'src/app/admin/config/page.tsx',
   'src/app/admin/config/servicos/formulario.tsx',
-  'src/app/admin/config/servicos/page.tsx',
-  'src/app/admin/hoje/hoje.tsx',
-  'src/app/admin/orcamentos/page.tsx',
-  'src/app/api/v1/packages/route.ts',
-  'src/app/api/v1/wallet/route.ts',
   'src/app/dev/ui/vitrine.tsx',
   'src/app/llms.txt/route.ts',
-  'src/components/shell/assistente-flutuante.tsx',
-  'src/components/shell/resolucao-de-fila.tsx',
   'src/lib/mensagens.ts',
   'src/server/assistente/ferramentas.ts',
   'src/server/services/clientes.ts',
@@ -470,6 +457,21 @@ const PENDENTES = [
 
 /** Os que saíram nesta rodada. Voltar é regressão, não estado herdado. */
 const JA_CONSERTADOS = [
+  // Saíram da lista de pendentes em 2026-09-09, na varredura do demonstrativo: treze telas que
+  // tinham UMA ocorrência cada, reescritas uma a uma.
+  'src/app/(public)/[slug]/agendar/alternador-de-exemplo.tsx',
+  'src/app/admin/clientes/[id]/direitos.tsx',
+  'src/app/admin/clientes/[id]/ficha.tsx',
+  'src/app/admin/clientes/importar/importador.tsx',
+  'src/app/admin/config/mensagens/editor.tsx',
+  'src/app/admin/config/page.tsx',
+  'src/app/admin/config/servicos/page.tsx',
+  'src/app/admin/hoje/hoje.tsx',
+  'src/app/admin/orcamentos/page.tsx',
+  'src/app/api/v1/packages/route.ts',
+  'src/app/api/v1/wallet/route.ts',
+  'src/components/shell/assistente-flutuante.tsx',
+  'src/components/shell/resolucao-de-fila.tsx',
   // O fluxo de indicação, 2026-09-09. O primeiro é público: o cliente do salão o lê.
   'src/app/(public)/avaliar/[token]/avaliar.tsx',
   'src/server/services/mensagens-prontas.ts',

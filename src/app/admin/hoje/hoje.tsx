@@ -158,7 +158,7 @@ export default function Hoje({
           <p className="text-corpo text-txt">
             Suas clientes trouxeram{' '}
             <span className="font-semibold">
-              {resumo.indicacoesEsteMes} {resumo.indicacoesEsteMes === 1 ? 'cliente nova' : 'clientes novas'}
+              {resumo.indicacoesEsteMes} {resumo.indicacoesEsteMes === 1 ? 'pessoa nova' : 'pessoas novas'}
             </span>{' '}
             este mês. Quem vem por indicação costuma voltar mais.
           </p>

@@ -107,7 +107,7 @@ export default function DireitosDaCliente({
 
   return (
     <section className="mt-7">
-      <SectionHeader icone={<ShieldCheck aria-hidden className="size-3.5" />}>Direitos da cliente</SectionHeader>
+      <SectionHeader icone={<ShieldCheck aria-hidden className="size-3.5" />}>Direitos sobre os dados</SectionHeader>
       <Card className="flex flex-col gap-3">
         <p className="text-secundario text-txt-2">
           Ela pode pedir uma cópia de tudo que você guarda sobre ela, ou pedir para sumir da sua base. As duas coisas

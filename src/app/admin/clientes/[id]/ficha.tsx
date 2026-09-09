@@ -477,7 +477,7 @@ export default function Ficha({
               className="mt-2"
               onClick={() => setIndicando(true)}
               disabled={!cliente.phoneE164}
-              motivoDesabilitado="Cadastre o telefone da cliente para poder mandar o convite."
+              motivoDesabilitado="Cadastre o telefone na ficha para poder mandar o convite."
             >
               <Share2 className="size-4" />
               Indicar

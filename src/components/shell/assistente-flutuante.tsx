@@ -59,7 +59,7 @@ const SUGESTOES_POR_ROTA: { prefixo: string; sugestoes: Sugestao[] }[] = [
   {
     prefixo: '/admin/orcamentos',
     sugestoes: [
-      { rotulo: 'Quais orçamentos estão sem resposta?', pergunta: 'Quais orçamentos estão parados, sem resposta da cliente?', idRapido: 'orcamentos_sem_resposta' },
+      { rotulo: 'Quais orçamentos estão sem resposta?', pergunta: 'Quais orçamentos estão parados, sem resposta de quem pediu?', idRapido: 'orcamentos_sem_resposta' },
     ],
   },
 ]
