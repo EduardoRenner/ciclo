@@ -6939,3 +6939,44 @@ Os quatro valores existem na LINHA do catálogo só porque a tabela os declara `
 `profession_id` continua gravado: saber quantos caem na genérica é o único sinal de qual profissão
 falta no catálogo. `sinonimos` fica vazio para a genérica não competir com a profissão certa numa
 busca legítima.
+
+---
+
+## 2026-09-09 · Três perguntas que ficaram para o dono (rodada noturna)
+
+Deixadas em aberto de propósito. Cada uma é escolha de produto, não de implementação, e decidi que
+inventar a resposta sozinho custaria mais caro que perguntar.
+
+### 1. "Sobrou" ou "Lucro"? O produto usa os dois para o mesmo número
+
+`tickets.profit_cents` é receita menos material, taxa e comissão. **Não desconta o custo fixo**
+(aluguel, hora de cadeira). Hoje o produto o chama de duas coisas:
+
+- **caixa** → "Sobrou", com um aviso quando a taxa da maquininha não foi informada;
+- **ficha do cliente** → "Lucro", sem aviso nenhum.
+
+O `docs/50` já registra que margem de contribuição com nome de lucro é defeito. A tela do caixa
+seguiu essa régua; a ficha não. Não uniformizei porque escolher entre os dois nomes muda o que o
+dono lê na tela que ele mais abre, e porque uma guarda que enforçasse "Sobrou" acusaria copy
+legítima da tela de Recuperar ("R$ X de lucro" ao lado do valor em risco, onde o sentido é outro).
+
+**O que decidir:** a ficha passa a dizer "Sobrou" (consistente, e com o mesmo aviso do caixa), ou o
+caixa passa a dizer "Lucro" (mais familiar, e o aviso já cobre a ressalva)?
+
+### 2. A exportação da ficha de uma cliente ficou no dono. Fica?
+
+`GET /api/v1/clients/[id]/data-export` decifra o cofre e devolve a anamnese em texto claro. Ela
+aceitava `client:read`, que a **recepção** tem; passou a exigir `client:export`, que é do dono.
+
+O piso que decide é que o que sai dali contém o que o `/vault` protege, então a porta não pode ser
+mais larga que a dele — `vault:own` (dono + profissional) seria o mínimo coerente, e eu fiquei um
+degrau acima. Se um salão com gerente reclamar da fricção ao responder um pedido de LGPD (o prazo
+legal é de 15 dias), **`vault:own` é o afrouxamento certo — nunca `client:read`**.
+
+### 3. O alerta de risco de falta nunca aparece na demonstração
+
+`appointments.no_show_score` é gravado no agendamento real (medido: 1 das 1.526 marcações vindas da
+página pública tem score), mas as ~3.100 do seed foram inseridas direto no banco e nasceram sem
+ele. Resultado: o ⚡ da agenda, que é um diferencial visível, **não aparece em nenhuma demo**.
+
+Não backfillei porque é dado de demonstração em produção e a decisão é de vitrine, não de código.
