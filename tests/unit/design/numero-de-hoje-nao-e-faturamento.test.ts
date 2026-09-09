@@ -200,3 +200,48 @@ describe('a palavra "faturamento" não encosta nos números de preço de tabela'
     ).toEqual([])
   })
 })
+
+/**
+ * A MESMA REGRA, generalizada: cada número tem palavras que ele não pode carregar.
+ *
+ * O padrão apareceu cinco vezes em 2026-09-09, sempre no assistente e sempre com a mesma forma —
+ * **um número honesto com um nome que promete mais do que ele entrega**, numa oração afirmativa.
+ * E sempre a mesma origem: a TELA já tinha aprendido a palavra certa, e a frase do assistente
+ * ficou com a antiga. Ninguém revisa uma frase gerada; ela só soa confiante.
+ *
+ * Aqui ficam as duplas onde a proibição é inequívoca — o número tem UM significado e a palavra
+ * proibida afirma outro. Casos ambíguos ficam de fora de propósito: `profitCents` é chamado de
+ * "Sobrou" no caixa (que avisa não descontar custo fixo) e de "Lucro" na ficha do cliente, e
+ * decidir entre os dois é do dono, não de uma guarda.
+ */
+const PALAVRA_QUE_O_NUMERO_NAO_CARREGA: { numero: string; proibido: RegExp; porque: string }[] = [
+  {
+    numero: 'totalValueCents',
+    proibido: /\bparad[oa]s?\b|voc[êe] tem/i,
+    porque:
+      'é `preço do serviço × chance de a pessoa voltar` — uma ESTIMATIVA. A tela de Recuperar ' +
+      'abandonou "Valor parado" porque ninguém entendia o número, e "você tem" promete posse de ' +
+      'um dinheiro que não está parado em lugar nenhum. A tela diz "Dá para recuperar", com ' +
+      '"estimativa, não promessa" logo abaixo.',
+  },
+]
+
+describe('cada número carrega só as palavras que ele merece', () => {
+  const TODOS = RAIZES_DO_VOCABULARIO.flatMap(fontesDoProjeto)
+
+  it.each(PALAVRA_QUE_O_NUMERO_NAO_CARREGA)('$numero não aparece perto da palavra que ele não é', ({ numero, proibido, porque }) => {
+    // Piso: número que sumiu do código deixa a regra sem objeto, e a lista precisa encolher junto.
+    const ondeVive = TODOS.filter((a) => readFileSync(a, 'utf8').includes(numero))
+    expect(ondeVive.length, `\`${numero}\` não existe mais — tire a regra desta lista`).toBeGreaterThan(0)
+
+    const infratores: string[] = []
+    for (const arquivo of ondeVive) {
+      const src = semComentarios(readFileSync(arquivo, 'utf8'))
+      for (let i = src.indexOf(numero); i !== -1; i = src.indexOf(numero, i + 1)) {
+        const janela = src.slice(Math.max(0, i - 140), i + 70)
+        if (proibido.test(janela)) infratores.push(`${arquivo}: …${janela.trim().slice(0, 90)}…`)
+      }
+    }
+    expect(infratores, `\`${numero}\` ${porque}`).toEqual([])
+  })
+})
