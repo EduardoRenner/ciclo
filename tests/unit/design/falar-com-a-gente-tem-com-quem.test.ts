@@ -26,6 +26,28 @@ import { canalDeContato, textoDeMudarDePlano } from '@/lib/contato'
 const RAIZ = 'src'
 const CANONICO = join('src', 'lib', 'contato.ts')
 
+/**
+ * O SEGUNDO desenho correto, e a guarda não o enxergava.
+ *
+ * `core/ciclo/vazio-de-recuperar.ts` escolhe a frase do vazio da tela do Motor de Ciclo, e uma
+ * das três dizia "fale com o suporte" — suporte que não é lugar nenhum, o mesmo defeito que este
+ * arquivo inteiro existe para impedir, na tela que é o botão CENTRAL da barra.
+ *
+ * O conserto não podia ser chamar `canalDeContato` lá dentro: `core/` é função pura, sem I/O, e o
+ * canal sai de `process.env`. Então ela recebe a decisão por parâmetro — que é **exatamente** o
+ * desenho de `textoDeMudarDePlano`, o canônico que este teste exercita nos quatro estados.
+ *
+ * A regra passa a ser: quem escreve a frase ou consulta o canal, ou é um decisor puro declarado
+ * aqui — e aí quem CHAMA ele é que precisa consultar. Sem a segunda metade isto seria só um
+ * buraco com nome bonito, então cada decisor traz o chamador junto, afirmado logo abaixo.
+ */
+const DECISORES_PUROS: { arquivo: string; chamadores: string[] }[] = [
+  {
+    arquivo: join('src', 'core', 'ciclo', 'vazio-de-recuperar.ts'),
+    chamadores: [join('src', 'app', 'admin', 'recuperar', 'recuperar.tsx')],
+  },
+]
+
 function arquivos(dir: string): string[] {
   const achados: string[] = []
   for (const entrada of readdirSync(dir, { withFileTypes: true })) {
@@ -120,8 +142,9 @@ describe('nenhuma tela escreve o convite à mão', () => {
 
   it('quem escreve "falar com a gente" na tela consulta `canalDeContato`', () => {
     const infratores: string[] = []
+    const puros = DECISORES_PUROS.map((d) => d.arquivo)
     for (const arquivo of TODOS) {
-      if (arquivo === CANONICO) continue
+      if (arquivo === CANONICO || puros.includes(arquivo)) continue
       const src = semComentarios(readFileSync(arquivo, 'utf8'))
       if (!/fal(e|ar|a)\s+com\s+a\s+gente/i.test(src)) continue
       // Casa com a CHAMADA, não com o import: `canalDeContato` solto casaria com a linha de
@@ -145,5 +168,47 @@ describe('nenhuma tela escreve o convite à mão', () => {
     ]) {
       expect(/canalDeContato\s*\(/.test(readFileSync(tela, 'utf8')), `${tela} não consulta o canal`).toBe(true)
     }
+  })
+})
+
+/**
+ * A outra metade da isenção acima. Sem isto, `DECISORES_PUROS` seria o lugar mais barato de calar
+ * a guarda: bastaria pôr um arquivo na lista para a frase voltar a nascer sem canal nenhum.
+ */
+describe('o decisor puro isenta o arquivo, não a regra', () => {
+  it.each(DECISORES_PUROS)('$arquivo recebe a decisão em vez de inventá-la', ({ arquivo }) => {
+    const src = semComentarios(readFileSync(arquivo, 'utf8'))
+
+    // Piso: se o arquivo parar de escrever a frase, a isenção virou letra morta e tem que sair
+    // da lista — decisor que não decide nada não precisa de exceção.
+    expect(
+      /fal(e|ar|a)\s+com\s+a\s+gente/i.test(src),
+      `${arquivo} não escreve mais o convite — tire-o de DECISORES_PUROS`,
+    ).toBe(true)
+
+    // O que faz dele um decisor: a frase é CONDICIONADA a um parâmetro, não escrita sempre.
+    expect(
+      /temCanalDeContato/.test(src),
+      `${arquivo} escreve o convite sem depender de haver canal. Ou recebe a decisão por ` +
+        'parâmetro, ou consulta `canalDeContato` — escrever a frase incondicionalmente é a ' +
+        'promessa sem destinatário que esta guarda inteira existe para impedir.',
+    ).toBe(true)
+  })
+
+  it.each(DECISORES_PUROS.flatMap((d) => d.chamadores.map((c) => ({ arquivo: d.arquivo, chamador: c }))))(
+    '$chamador (que usa $arquivo) é quem consulta o canal',
+    ({ chamador }) => {
+      const src = readFileSync(chamador, 'utf8')
+      expect(
+        /canalDeContato\s*\(/.test(src),
+        `${chamador} usa um decisor puro e não pergunta se existe canal — a decisão chega errada ` +
+          'e a frase convida para uma conversa que não tem onde acontecer.',
+      ).toBe(true)
+    },
+  )
+
+  it('a lista de decisores puros é uma só, e nomeada', () => {
+    // Afirmar a lista inteira obriga quem acrescentar um nome a mexer aqui e escrever o porquê.
+    expect(DECISORES_PUROS.map((d) => d.arquivo)).toEqual([join('src', 'core', 'ciclo', 'vazio-de-recuperar.ts')])
   })
 })

@@ -22,6 +22,21 @@ export function vazioDeRecuperar(
   temClientes: boolean,
   temCiclos: boolean,
   temAtendimentosConcluidos = false,
+  /*
+    Se existe canal de contato configurado nesta instalação. O padrão é `false` porque o estado
+    normal do produto, hoje, é NÃO ter canal — e o padrão de uma copy tem que ser o mundo real,
+    não o mundo desejado.
+
+    Entrou porque uma das três frases mandava "fale com o suporte", e suporte não é um lugar:
+    `lib/contato.ts` já documenta que a palavra "gente" não tinha endereço em parte alguma do
+    repositório. Mandar alguém falar com o suporte que não existe é a mesma classe de defeito que
+    aquele arquivo conserta — promessa sem destinatário — cometida na tela do Motor de Ciclo, que
+    é o botão central da barra e a primeira coisa que um salão novo toca.
+
+    Mesmo desenho de `core/messaging/promessa.ts`: a copy conhece os DOIS estados do mundo, e sem
+    canal ela simplesmente não convida.
+  */
+  temCanalDeContato = false,
 ): VazioDeRecuperar {
   if (!temClientes) {
     return {
@@ -65,7 +80,8 @@ export function vazioDeRecuperar(
     return {
       titulo: 'O Motor ainda não processou seus atendimentos',
       descricao:
-        'Seus atendimentos concluídos já estão aqui, mas a previsão de retorno é recalculada de tempos em tempos e ainda não rodou. Se continuar assim por vários dias, fale com o suporte.',
+        'Seus atendimentos concluídos já estão aqui, mas a previsão de retorno é recalculada de tempos em tempos e ainda não rodou.' +
+        (temCanalDeContato ? ' Se continuar assim por vários dias, fale com a gente.' : ''),
       acaoRotulo: 'Ver clientes',
       acaoHref: '/admin/clientes',
     }

@@ -13,6 +13,7 @@ import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import Chip from '@/components/ui/chip'
 import EmptyState from '@/components/ui/empty-state'
+import { ASSUNTO_MOTOR_PARADO, canalDeContato } from '@/lib/contato'
 import FilterRow from '@/components/ui/filter-row'
 import IconeAnel from '@/components/ui/icone-anel'
 import Skeleton from '@/components/ui/skeleton'
@@ -341,7 +342,9 @@ function EmptyStateDeRecuperar({
   temCiclos: boolean
   temAtendimentosConcluidos: boolean
 }) {
-  const v = vazioDeRecuperar(temClientes, temCiclos, temAtendimentosConcluidos)
+  // `canalDeContato` devolve `null` quando nao ha WhatsApp nem e-mail configurado. E o que
+  // decide se a frase pode mandar falar com a gente ou tem que calar.
+  const v = vazioDeRecuperar(temClientes, temCiclos, temAtendimentosConcluidos, canalDeContato(ASSUNTO_MOTOR_PARADO) !== null)
   return (
     <EmptyState
       icone={<IconeAnel aria-hidden className="size-6" />}
