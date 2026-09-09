@@ -95,7 +95,7 @@ describe('o /api/health não fica vermelho por job desligado de propósito', () 
   it('reminders parado há 8h não derruba a saúde — 454 min era o número real da produção', async () => {
     const r = await verificarSaude(bancoSaudavel({ send_reminders: 8 * 60 }), new Date())
     expect(r.checks.sendReminders.ok, 'job fora do schedule derrubou o /api/health').toBe(true)
-    expect(r.checks.sendReminders.detail, 'o endpoint precisa DIZER por que não vigia — a regra da casa é ler o corpo, não a cor').toMatch(/não está no schedule/)
+    expect(r.checks.sendReminders.detail, 'o endpoint precisa DIZER por que não vigia — a regra da casa é ler o corpo, não a cor').toMatch(/não tem agendador/)
     expect(r.ok).toBe(true)
   })
 
