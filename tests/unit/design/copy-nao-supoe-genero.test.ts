@@ -428,6 +428,15 @@ const SUPOE_MULHER = [
    * cobrir os substantivos que a copy realmente usa, não só o canônico.
    */
   /\b(?:uma|sua|as|suas)\s+amigas?\b/i,
+  /*
+   * O sexto padrão: DEMONSTRATIVO. Os quatro primeiros são sobre artigo ("a cliente", "da
+   * cliente"), e nenhum cobria "essa/esta/aquela cliente" — que é justamente a forma que uma
+   * MENSAGEM DE ERRO usa, porque ela fala de um registro específico.
+   *
+   * Foi assim que "Essa cliente não está mais na sua lista" sobreviveu em 15 arquivos, sendo a
+   * frase que a API mais devolve. O buraco estava na forma da frase, não no vocabulário.
+   */
+  /\b(?:essa|esta|aquela|dessa|desta|daquela|nessa|nesta|naquela)s?\s+clientes?\b/i,
 ]
 
 /** O estado de 2026-09-08. Só encolhe. */
@@ -495,6 +504,10 @@ describe('a copy também não supõe que quem é ATENDIDO é mulher', () => {
     // O fluxo de indicação, achado em 2026-09-09 nas mensagens que vão para o cliente do salão.
     expect(supoeMulherEm('Indique uma amiga'), 'não pegou a amiga suposta').toBe(true)
     expect(supoeMulherEm('Dê um desconto pra uma amiga'), 'não pegou a amiga suposta').toBe(true)
+    // O demonstrativo, que e a forma que MENSAGEM DE ERRO usa — foi assim que a frase mais
+    // repetida da API sobreviveu em 15 arquivos.
+    expect(supoeMulherEm('Essa cliente não está mais na sua lista.'), 'não pegou o demonstrativo').toBe(true)
+    expect(supoeMulherEm('a autorização desta cliente'), 'não pegou o demonstrativo contraído').toBe(true)
     // A frase real que estava na tela, e que os três primeiros padrões deixavam passar.
     expect(
       supoeMulherEm('Cadastre a primeira cliente para começar a marcar horários.'),
@@ -507,6 +520,8 @@ describe('a copy também não supõe que quem é ATENDIDO é mulher', () => {
       'Lembra do horário marcado e pede a confirmação.',
       // O vocabulário por profissão é o caminho certo, e não pode ser confundido com o defeito.
       'Cadastrar {vocabulario.cliente}',
+      // O conserto do grupo das mensagens de erro: a palavra da casa para o registro é "ficha".
+      'Essa ficha não está mais na sua lista.',
       // O conserto do fluxo de indicação: neutro dos dois lados.
       'Indique alguém. A pessoa agenda o primeiro horário por aqui.',
     ]) {
