@@ -169,7 +169,7 @@ function apagarTipo<T>(f: Ferramenta<T>): Ferramenta {
  * Fica na FERRAMENTA, e não no serviço, porque a tela continua precisando do sinal. É a fronteira
  * do contexto que tem de filtrar — que é o que "por construção" quer dizer.
  */
-function semDadoDeSaude(resumo: ResumoHoje): ResumoHoje {
+export function semDadoDeSaude(resumo: ResumoHoje): ResumoHoje {
   const limpar = (linha: LinhaHoje): LinhaHoje =>
     linha.clients ? { ...linha, clients: { name: linha.clients.name, health_records: [] } } : linha
 
