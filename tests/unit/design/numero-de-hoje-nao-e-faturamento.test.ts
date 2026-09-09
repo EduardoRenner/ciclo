@@ -127,3 +127,76 @@ describe('nenhuma superfície chama preço de tabela de faturamento', () => {
     ).toEqual([])
   })
 })
+
+/**
+ * A REGRA CERTA NÃO É SOBRE A PALAVRA, É SOBRE O NÚMERO — e a versão anterior desta guarda só
+ * funcionava por acidente.
+ *
+ * Eu tinha escrito "'faturado' não é vocabulário deste produto em lugar nenhum" e o padrão era
+ * `/faturad/i`. Ele não casa `faturou`, `faturei` nem `faturamento` — e a regra absoluta só passou
+ * porque o padrão era estreito demais para encontrar os casos em que ela estaria ERRADA.
+ *
+ * Porque a palavra É legítima: `faturamento_do_periodo` lê o fechamento de caixa, e ali faturamento
+ * é faturamento mesmo. O que nunca é legítimo é chamar de faturamento os números derivados de
+ * `price_cents`:
+ *
+ *   `revenueTodayCents` — soma do preço de tabela dos atendimentos CONCLUÍDOS ("Atendido hoje");
+ *   `forecastCents`     — soma do preço de tabela do que ainda conta como receita ("Previsto").
+ *
+ * Achados vivos em 2026-09-09, todos no assistente, que é a superfície que fala em frases:
+ *
+ *   1. a resposta rápida dizia **"Você já faturou R$ X hoje"** com `revenueTodayCents`;
+ *   2. a pergunta sugerida no botão era **"Quanto eu já faturei hoje?"**, apontando para ela;
+ *   3. a ferramenta expunha o campo **`faturamentoPrevistoCents`** com `forecastCents`.
+ *
+ * O terceiro é o mais silencioso: nome de campo é o que o modelo lê para redigir a resposta.
+ */
+
+/** As duas somas de preço de tabela. Perto delas, a palavra "faturamento" é mentira. */
+const NUMEROS_DE_TABELA = ['revenueTodayCents', 'forecastCents']
+
+/** A família inteira, e não só o particípio — foi o particípio sozinho que deixou os três passarem. */
+const PALAVRA = /\bfatur(?:ad[oa]s?|ou|ei|amos|ar|amento\w*)\b/i
+
+describe('a palavra "faturamento" não encosta nos números de preço de tabela', () => {
+  const TODOS = RAIZES_DO_VOCABULARIO.flatMap(fontesDoProjeto)
+
+  it('o detector conhece a família toda, não só o particípio', () => {
+    // Autoteste: a versão anterior (`/faturad/i`) achava só a primeira destas.
+    for (const forma of ['faturado', 'faturou', 'faturei', 'faturamento', 'faturamentoPrevistoCents']) {
+      expect(PALAVRA.test(forma), `o detector não conhece "${forma}"`).toBe(true)
+    }
+    // E não acusa palavra de outra família.
+    for (const outra of ['fatura de energia', 'featured', 'atendido']) {
+      expect(PALAVRA.test(outra), `o detector acusou "${outra}"`).toBe(false)
+    }
+  })
+
+  it('os números de tabela ainda existem — a guarda não passa por não achar nada', () => {
+    const ondeVivem = TODOS.filter((a) => NUMEROS_DE_TABELA.some((n) => readFileSync(a, 'utf8').includes(n)))
+    expect(ondeVivem.length, 'nenhum dos números de preço de tabela foi encontrado').toBeGreaterThan(2)
+  })
+
+  it('nenhuma linha nomeia um número de tabela como faturamento', () => {
+    const infratores: string[] = []
+    for (const arquivo of TODOS) {
+      const src = semComentarios(readFileSync(arquivo, 'utf8'))
+      for (const numero of NUMEROS_DE_TABELA) {
+        for (let i = src.indexOf(numero); i !== -1; i = src.indexOf(numero, i + 1)) {
+          /*
+           * Janela curta dos dois lados: pega `faturamentoPrevistoCents: resumo.forecastCents` e
+           * `faturou ${...revenueTodayCents...}`, sem alcançar outra frase do arquivo. É o mesmo
+           * cuidado que a guarda de vocabulário toma com o artigo colado.
+           */
+          const janela = src.slice(Math.max(0, i - 120), i + 60)
+          if (PALAVRA.test(janela)) infratores.push(`${arquivo}: …${janela.trim().slice(0, 90)}…`)
+        }
+      }
+    }
+    expect(
+      infratores,
+      'um número derivado de `price_cents` está sendo chamado de faturamento. Ele é o ATENDIDO ' +
+        '(ou o PREVISTO); o que entrou de verdade sai do fechamento de caixa e pode ser menor.',
+    ).toEqual([])
+  })
+})

@@ -26,7 +26,7 @@ type Permissao = `${string}:${string}`
  */
 export const IDS_RESPOSTA_RAPIDA = [
   'hoje_confirmar',
-  'hoje_faturamento',
+  'hoje_atendido',
   'hoje_horario_vago_amanha',
   'recuperar_quem_primeiro',
   'recuperar_total_parado',
@@ -42,7 +42,7 @@ export type RespostaRapida = { resposta: string; ferramentasUsadas: string[] }
 
 export const PERMISSAO_POR_ID: Record<IdRespostaRapida, { modulo: ModuloKey; permissao: Permissao }> = {
   hoje_confirmar: { modulo: 'agenda', permissao: 'appointment:read' },
-  hoje_faturamento: { modulo: 'agenda', permissao: 'appointment:read' },
+  hoje_atendido: { modulo: 'agenda', permissao: 'appointment:read' },
   hoje_horario_vago_amanha: { modulo: 'agenda', permissao: 'appointment:read' },
   recuperar_quem_primeiro: { modulo: 'cycle_engine', permissao: 'client:read' },
   recuperar_total_parado: { modulo: 'cycle_engine', permissao: 'client:read' },
@@ -94,9 +94,28 @@ async function hojeConfirmar(ctx: ContextoRapido): Promise<RespostaRapida> {
   return { resposta: `${pendentes.length} ${pendentes.length === 1 ? 'cliente' : 'clientes'} ${verbo} confirmar hoje: ${lista}.`, ferramentasUsadas: ['resumo_de_hoje'] }
 }
 
-async function hojeFaturamento(ctx: ContextoRapido): Promise<RespostaRapida> {
+/*
+  DIZ "ATENDIDO", E NÃO "FATUROU". `resumoDeHoje` devolve a soma de `price_cents` dos atendimentos
+  concluídos — preço de TABELA. Não enxerga desconto dado na comanda, item extra lançado nem
+  gorjeta. Num dia com desconto, esse número é MAIOR do que a pessoa recebeu.
+
+  A tela `/admin/hoje` foi corrigida em 31/08 pelo mesmo motivo ("Faturado hoje" virou "Atendido
+  hoje", com "Ver o caixa" ao lado). Aqui a frase dizia "Você já faturou R$ X hoje" — a mesma
+  mentira, em oração afirmativa, respondendo a uma pergunta direta. É pior que o rótulo: ninguém
+  confere uma frase.
+
+  O número do dinheiro que ENTROU mora no caixa (`fechamentoDiario`), e ele é do módulo `register`,
+  que é pago. Trocar a fonte tiraria esta resposta de quem está no Grátis — então a saída é a
+  mesma da tela: dizer o número certo com o nome certo, e apontar onde está o outro.
+*/
+async function hojeAtendido(ctx: ContextoRapido): Promise<RespostaRapida> {
   const resumo = await resumoDeHoje(ctx.db, ctx.tenantId, ctx.timezone)
-  return { resposta: `Você já faturou ${dinheiro.format(resumo.revenueTodayCents / 100)} hoje.`, ferramentasUsadas: ['resumo_de_hoje'] }
+  return {
+    resposta:
+      `Você já atendeu ${dinheiro.format(resumo.revenueTodayCents / 100)} hoje, somando o preço de ` +
+      'tabela dos atendimentos concluídos. O que entrou de verdade, já com desconto e gorjeta, está no caixa.',
+    ferramentasUsadas: ['resumo_de_hoje'],
+  }
 }
 
 async function hojeHorarioVagoAmanha(ctx: ContextoRapido): Promise<RespostaRapida> {
@@ -193,7 +212,7 @@ async function orcamentosSemResposta(ctx: ContextoRapido): Promise<RespostaRapid
 
 const RESPOSTAS: Record<IdRespostaRapida, (ctx: ContextoRapido) => Promise<RespostaRapida>> = {
   hoje_confirmar: hojeConfirmar,
-  hoje_faturamento: hojeFaturamento,
+  hoje_atendido: hojeAtendido,
   hoje_horario_vago_amanha: hojeHorarioVagoAmanha,
   recuperar_quem_primeiro: recuperarQuemPrimeiro,
   recuperar_total_parado: recuperarTotalParado,

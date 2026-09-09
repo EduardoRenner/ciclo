@@ -222,7 +222,11 @@ export const FERRAMENTAS: Ferramenta[] = [
         quantidadeDeAgendamentos: resumo.appointments.length,
         taxaDeOcupacao: resumo.occupancyRate,
         temExpedienteCadastrado: resumo.temExpediente,
-        faturamentoPrevistoCents: resumo.forecastCents,
+        // `previstoCents`, e não `faturamentoPrevistoCents`: `forecastCents` soma `price_cents`
+        // dos agendamentos que ainda contam como receita — preço de TABELA. A tela da agenda o
+        // chama só de "Previsto", sem prometer faturamento, e o nome do campo é o que o modelo lê
+        // para redigir a resposta.
+        previstoCents: resumo.forecastCents,
       }
     },
   }),
