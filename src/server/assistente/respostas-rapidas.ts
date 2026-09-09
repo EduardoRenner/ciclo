@@ -125,18 +125,34 @@ async function hojeHorarioVagoAmanha(ctx: ContextoRapido): Promise<RespostaRapid
   const dataFmt = formatarDataCurta(amanha)
   const ocupacaoPct = Math.round(resumo.occupancyRate * 100)
 
-  if (resumo.appointments.length === 0) {
-    return { resposta: `Sim, amanhã (${dataFmt}) sua agenda está totalmente livre.`, ferramentasUsadas: ['ocupacao_do_dia'] }
-  }
-  // 2026-08-30, achado ao vivo: dia sem expediente cadastrado (ex.: domingo fechado) tem
-  // occupancyRate=0 mesmo com agendamentos reais — "0% de ocupação" lê como dia vazio, que é
-  // falso. Mesma correção da tela da Agenda (docs/DECISOES.md, mesma data).
+  /*
+    A checagem de expediente vem ANTES do dia vazio, e essa ordem é o conserto de 2026-09-09.
+
+    O conserto de 30/08 tratou o dia sem expediente que TEM agendamentos e deixou o irmão dele
+    passar: com zero agendamentos, a resposta caía no ramo de baixo e dizia "sua agenda está
+    totalmente livre" — num domingo em que o salão nem abre. E o dia fechado com zero marcações é
+    justamente o caso MAIS comum dos dois.
+
+    "Livre" convida a marcar; "fechada" manda cadastrar o expediente. A diferença é o que a pessoa
+    faz depois de ler.
+  */
   if (!resumo.temExpediente) {
+    if (resumo.appointments.length === 0) {
+      return {
+        resposta: `Amanhã (${dataFmt}) não há expediente cadastrado: a agenda está fechada, não vazia. Dá para cadastrar o horário em Config, Horários.`,
+        ferramentasUsadas: ['ocupacao_do_dia'],
+      }
+    }
     return {
       resposta: `Sim, amanhã (${dataFmt}) você tem horário vago: ${resumo.appointments.length} agendamento(s) marcado(s). Não há expediente cadastrado para esse dia.`,
       ferramentasUsadas: ['ocupacao_do_dia'],
     }
   }
+  // Agora sim: expediente cadastrado E nenhuma marcação. Aqui "livre" é verdade.
+  if (resumo.appointments.length === 0) {
+    return { resposta: `Sim, amanhã (${dataFmt}) sua agenda está totalmente livre.`, ferramentasUsadas: ['ocupacao_do_dia'] }
+  }
+
   if (ocupacaoPct >= 100) {
     return { resposta: `Não, amanhã (${dataFmt}) sua agenda já está cheia (100% ocupada).`, ferramentasUsadas: ['ocupacao_do_dia'] }
   }
@@ -179,7 +195,9 @@ async function recuperarSumidos60(ctx: ContextoRapido): Promise<RespostaRapida> 
   }
   const nomes = truncarLista(sumidos.map((i) => i.name))
   return {
-    resposta: `${sumidos.length} cliente(s) sumida(s) há mais de 60 dias: ${nomes}.`,
+    // "cliente(s) sumida(s)" supunha que quem sumiu é mulher — o CICLO atende barbearia, e a frase
+    // é lida pelo dono. `docs/20` §C.4: reescrever sem gênero, não alternar.
+    resposta: `${sumidos.length === 1 ? '1 pessoa sumiu' : `${sumidos.length} pessoas sumiram`} há mais de 60 dias: ${nomes}.`,
     ferramentasUsadas: ['clientes_para_recuperar'],
   }
 }

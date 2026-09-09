@@ -374,7 +374,13 @@ describe('o vocabulário das profissões não supõe o gênero de quem usa o pro
 const SUPOE_MULHER = [
   /\b[Aa]s? clientes?\b/,
   /\b[Dd]as? clientes?\b/,
-  /\bclientes? (?:marcadas?|atrasadas?|cadastradas?|novas)\b/,
+  /*
+   * O `(?:\(s\))?` no meio, e `sumidas?` na lista, entraram em 2026-09-09 por um achado vivo: a
+   * resposta rápida do assistente dizia "3 cliente(s) sumida(s) há mais de 60 dias". A construção
+   * `(s)` — o plural preguiçoso — separava as duas palavras e nenhum padrão daqui casava, numa
+   * frase que o dono LÊ. O CICLO atende barbearia: quem sumiu não é necessariamente "sumida".
+   */
+  /\bclientes?(?:\(s\))?\s+(?:marcadas?|atrasadas?|cadastradas?|novas|sumidas?)(?:\(s\))?\b/,
   /*
    * O quarto padrão entrou na MUTAÇÃO, e sem ele esta guarda tinha uma afirmação vazia.
    *
