@@ -6882,9 +6882,19 @@ clínico, só o sinal"). O rótulo é dado de saúde, categoria especial na LGPD
 pode vê-lo já existia no `rbac.ts`: `owner` pelo curinga, `professional` por `vault:own`,
 ninguém mais.
 
-A exportação foi para `client:export`, que o `rbac.ts` **já reservava ao dono** citando a C35
-("só owner, com MFA na hora"). Não é permissão nova: é a decisão que já estava tomada e que a
-rota não aplicava.
+A exportação foi para `client:export`, e aqui vale uma ressalva que o commit original não fez: a
+C35 que o `rbac.ts` cita pergunta *"quem pode exportar A BASE de clientes"* — a carteira inteira.
+Esta rota é outra coisa: a ficha de UMA cliente, para o direito de acesso da LGPD. **Reusar a
+permissão é decisão desta rodada, não herança**; a C35 não decide por ela.
+
+O piso que decide é mais simples: o que sai da exportação CONTÉM o que o `/vault` protege, então a
+porta não pode ser mais larga que a dele — `vault:own` (dono + profissional) é o mínimo coerente.
+Ficou no dono, um degrau acima, porque exportar produz um arquivo que sai do sistema, e porque
+errar restritivo se conserta com um clique enquanto errar permissivo já vazou. Se um salão com
+gerente reclamar da fricção, `vault:own` é o afrouxamento certo — nunca `client:read`.
+
+O limite de 1×/mês da C35 é da exportação em massa e **não** se aplica aqui: um titular pode pedir
+os próprios dados quantas vezes quiser.
 
 **Por que privilégio por COLUNA e não política por papel.** A `0077` tira
 `ciphertext`/`iv`/`auth_tag`/`alert_label` do `grant select` de `anon`/`authenticated`. Uma
