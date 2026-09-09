@@ -508,7 +508,7 @@ export default function Ficha({
                   Veio por indicação de{' '}
                   <Link
                     href={`/admin/clientes/${indicadoPor.id}`}
-                    className="toque-48 inline-flex font-semibold text-acc-2 underline-offset-2 hover:underline"
+                    className="toque-48 -mx-2 px-2 inline-flex font-semibold text-acc-2 underline-offset-2 hover:underline"
                   >
                     {indicadoPor.name}
                   </Link>
@@ -544,7 +544,7 @@ export default function Ficha({
                   {mostrarPaywallFidelidade ? (
                     <p className="mt-2 text-secundario text-txt-3">
                       No Equipe, isso creditaria pontos pros dois lados automaticamente.{' '}
-                      <Link href="/precos" className="toque-48 inline-flex font-semibold text-acc-2 underline-offset-2 hover:underline">
+                      <Link href="/precos" className="toque-48 -mx-2 px-2 inline-flex font-semibold text-acc-2 underline-offset-2 hover:underline">
                         Ver planos
                       </Link>
                     </p>

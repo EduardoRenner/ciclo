@@ -70,7 +70,7 @@ export default function ResolucaoDeFila() {
               <p className="text-secundario font-semibold text-txt">Uma alteração feita offline não pôde ser enviada</p>
               <p className="mt-0.5 text-label text-txt-2">O que mudou no servidor pode ter conflitado. Confira antes de tentar de novo.</p>
               <div className="mt-2 flex gap-3">
-                <button type="button" onClick={() => drenarFilaPendente()} className="toque-48 text-label font-semibold text-acc-2 underline">
+                <button type="button" onClick={() => drenarFilaPendente()} className="toque-48 -mx-2 px-2 text-label font-semibold text-acc-2 underline">
                   Tentar de novo
                 </button>
                 <button
@@ -79,7 +79,7 @@ export default function ResolucaoDeFila() {
                     await removerMutacao(m.id)
                     setConflitos((atual) => atual.filter((x) => x.id !== m.id))
                   }}
-                  className="toque-48 text-label font-semibold text-txt-3 underline"
+                  className="toque-48 -mx-2 px-2 text-label font-semibold text-txt-3 underline"
                 >
                   Descartar
                 </button>
@@ -102,7 +102,7 @@ export default function ResolucaoDeFila() {
                 <button
                   type="button"
                   onClick={() => setDescartadas((atual) => atual.filter((x) => x.id !== d.id))}
-                  className="toque-48 text-label font-semibold text-acc-2 underline"
+                  className="toque-48 -mx-2 px-2 text-label font-semibold text-acc-2 underline"
                 >
                   Entendi
                 </button>

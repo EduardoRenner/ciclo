@@ -348,15 +348,15 @@ export default function Precos() {
       {/* L-7 (`docs/31`): quem está lendo preço é quem vai assinar — os termos e a política têm
           que estar a um toque daqui, não escondidos só na porta de entrada. */}
       <footer className="mt-3 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center text-label text-txt-3">
-        <Link href="/termos" className="toque-48 font-semibold text-txt-2 underline underline-offset-2">
+        <Link href="/termos" className="toque-48 -mx-2 px-2 font-semibold text-txt-2 underline underline-offset-2">
           Termos
         </Link>
         <span aria-hidden>·</span>
-        <Link href="/privacidade" className="toque-48 font-semibold text-txt-2 underline underline-offset-2">
+        <Link href="/privacidade" className="toque-48 -mx-2 px-2 font-semibold text-txt-2 underline underline-offset-2">
           Privacidade
         </Link>
         <span aria-hidden>·</span>
-        <Link href="/" className="toque-48 font-semibold text-acc-2 underline underline-offset-2">
+        <Link href="/" className="toque-48 -mx-2 px-2 font-semibold text-acc-2 underline underline-offset-2">
           Voltar para o início
         </Link>
       </footer>
