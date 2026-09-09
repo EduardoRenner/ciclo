@@ -118,9 +118,18 @@ describe('a migration e o código concordam sobre qual é a linha', () => {
   })
 
   it('a genérica entra sem sinônimo, para não roubar busca legítima', () => {
-    // Um sinônimo aqui faria "Outra profissão" aparecer numa busca por "cabelo" e competir com a
-    // profissão certa — o conserto atrapalhando quem já estava bem servido.
-    expect(/'\{\}'\s*,/.test(sql) || /'\{\}'/.test(sql), 'a 0078 deixou de inserir sinônimos vazios').toBe(true)
+    /*
+      Um sinônimo aqui faria "Outra profissão" aparecer numa busca por "cabelo" e competir com a
+      profissão certa: o conserto atrapalhando quem já estava bem servido.
+
+      **A primeira versão desta asserção era cega.** Ela procurava `'{}'` em qualquer lugar do SQL
+      — e o `vocab` do mesmo insert também é `'{}'::jsonb`. Enchi os sinônimos de
+      `{cabelo,unhas,barbeiro}` na mutação e o teste passou verde, casando com o vocab.
+
+      Agora a asserção é POSICIONAL: o grupo vem imediatamente antes dos sinônimos na lista de
+      valores, então casar os dois juntos prende o campo certo.
+    */
+    expect(sql, 'a 0078 deixou de inserir sinônimos vazios').toContain("'outros', '{}'")
   })
 
   it('entra ativa e por último na lista', () => {
