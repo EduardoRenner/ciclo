@@ -59,21 +59,14 @@ const TODOS = RAIZES.flatMap(arquivos).map((f) => f.split(String.fromCharCode(92
 const CULPADOS = TODOS.filter((f) => INSTANTE_UTC_LITERAL.test(marcacaoDe(f)))
 
 describe('o dia do salão nunca é montado em UTC', () => {
-  it('a lista de dívida é uma só, e cada nome ainda precisa dela', () => {
+  it('a lista de dívida é UMA SÓ — acrescentar um nome exige mexer aqui', () => {
     /*
-     * Sem isto, acrescentar um nome à dívida é a forma mais barata de calar a guarda, e não deixa
-     * rastro. E o piso do outro lado é o menos óbvio: nome que já foi consertado e ficou na lista
-     * protege o que não existe mais — descobri isso hoje isentando uma tela de dizer uma palavra
-     * que ela não dizia.
+     * O piso de "já consertado" (mais abaixo) já existia, e eu quase o escrevi de novo por não ter
+     * lido o arquivo inteiro antes. O que faltava era este: sem afirmar a lista INTEIRA,
+     * acrescentar um nome isenta aquele arquivo em silêncio, e o piso de baixo aceita o nome novo
+     * de bom grado — ele só reclama de quem JÁ foi consertado.
      */
     expect(DIVIDA_CONHECIDA).toEqual(['src/server/services/alertas-estoque.ts'])
-    for (const arquivo of DIVIDA_CONHECIDA) {
-      const fonte = semComentarios(readFileSync(arquivo, 'utf8'))
-      expect(
-        /T00:00:00Z|T23:59:59/.test(fonte),
-        `${arquivo} não monta mais o dia em UTC — tire-o da dívida, senão ela isenta o que já está certo`,
-      ).toBe(true)
-    }
   })
 
   it('o leitor enxerga o servidor e as telas', () => {
