@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 
 import { createClient } from '@supabase/supabase-js'
 import dotenv from 'dotenv'
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { executarOnboarding } from '@/server/services/onboarding'
 import { aplicarEventoDeAssinatura, expirarGracaVencida, iniciarAssinatura } from '@/server/services/assinatura'
@@ -53,7 +53,18 @@ beforeAll(async () => {
   tenants.push(tenantId)
 }, 60_000)
 
-afterEach(() => vi.clearAllMocks())
+beforeEach(async () => {
+  vi.clearAllMocks()
+  // Fixture compartilhado: cada caso começa em `gratis`, sem assinatura e sem trilha.
+  const { data } = await svc.from('tenants').select('settings').eq('id', tenantId).single()
+  const settings = { ...((data!.settings ?? {}) as Record<string, unknown>) }
+  delete settings.assinatura
+  await svc
+    .from('tenants')
+    .update({ plan: 'gratis', settings: settings as Database['public']['Tables']['tenants']['Update']['settings'] })
+    .eq('id', tenantId)
+  await svc.from('audit_log').delete().eq('tenant_id', tenantId)
+})
 
 afterAll(async () => {
   for (const t of tenants) await svc.from('tenants').delete().eq('id', t)
@@ -84,7 +95,8 @@ describe('assinatura Mercado Pago — webhook → tenants.plan', () => {
     await iniciarComoPreapproval('pa-2', 'equipe')
     mpMock.consultarPreapproval.mockResolvedValueOnce({ status: 'authorized', externalReference: tenantId, valorAutorizado: 99 })
 
-    const r = await aplicarEventoDeAssinatura(svc, { assunto: 'subscription', id: 'ev-1' })
+    // num evento de subscription, data.id É o preapproval id
+    const r = await aplicarEventoDeAssinatura(svc, { assunto: 'subscription', id: 'pa-2' }, { notificacaoId: 'n-1' })
     expect(r.resultado).toBe('aplicado')
     expect((await planoEAssinatura()).plan).toBe('equipe')
   })
@@ -93,7 +105,7 @@ describe('assinatura Mercado Pago — webhook → tenants.plan', () => {
     await iniciarComoPreapproval('pa-3', 'avancado')
     mpMock.consultarPreapproval.mockResolvedValueOnce({ status: 'authorized', externalReference: tenantId, valorAutorizado: 1 })
 
-    const r = await aplicarEventoDeAssinatura(svc, { assunto: 'subscription', id: 'ev-2' })
+    const r = await aplicarEventoDeAssinatura(svc, { assunto: 'subscription', id: 'pa-3' }, { notificacaoId: 'n-2' })
     expect(r.resultado).toBe('ignorado')
     expect((await planoEAssinatura()).plan).toBe('gratis')
 
@@ -104,11 +116,11 @@ describe('assinatura Mercado Pago — webhook → tenants.plan', () => {
   it('paused → mantém o degrau, grava graca_ate; expirar depois do prazo derruba pra gratis', async () => {
     await iniciarComoPreapproval('pa-4', 'essencial')
     mpMock.consultarPreapproval.mockResolvedValueOnce({ status: 'authorized', externalReference: tenantId, valorAutorizado: 49 })
-    await aplicarEventoDeAssinatura(svc, { assunto: 'subscription', id: 'ev-3' })
+    await aplicarEventoDeAssinatura(svc, { assunto: 'subscription', id: 'pa-4' }, { notificacaoId: 'n-3' })
     expect((await planoEAssinatura()).plan).toBe('essencial')
 
     mpMock.consultarPreapproval.mockResolvedValueOnce({ status: 'paused', externalReference: tenantId, valorAutorizado: 49 })
-    await aplicarEventoDeAssinatura(svc, { assunto: 'subscription', id: 'ev-4' })
+    await aplicarEventoDeAssinatura(svc, { assunto: 'subscription', id: 'pa-4' }, { notificacaoId: 'n-4' })
     const emGraca = await planoEAssinatura()
     expect(emGraca.plan).toBe('essencial')
     expect(emGraca.assinatura).toMatchObject({ status: 'paused' })
@@ -122,12 +134,12 @@ describe('assinatura Mercado Pago — webhook → tenants.plan', () => {
     expect((await planoEAssinatura()).plan).toBe('gratis')
   })
 
-  it('evento repetido (mesmo id) é no-op', async () => {
+  it('notificação repetida (mesmo notificacaoId) é no-op', async () => {
     await iniciarComoPreapproval('pa-5', 'equipe')
     mpMock.consultarPreapproval.mockResolvedValue({ status: 'authorized', externalReference: tenantId, valorAutorizado: 99 })
 
-    await aplicarEventoDeAssinatura(svc, { assunto: 'subscription', id: 'ev-mesmo' })
-    const r2 = await aplicarEventoDeAssinatura(svc, { assunto: 'subscription', id: 'ev-mesmo' })
+    await aplicarEventoDeAssinatura(svc, { assunto: 'subscription', id: 'pa-5' }, { notificacaoId: 'n-repetida' })
+    const r2 = await aplicarEventoDeAssinatura(svc, { assunto: 'subscription', id: 'pa-5' }, { notificacaoId: 'n-repetida' })
     expect(r2.motivo).toContain('repetido')
   })
 
@@ -135,7 +147,7 @@ describe('assinatura Mercado Pago — webhook → tenants.plan', () => {
     await iniciarComoPreapproval('pa-6', 'equipe')
     // o evento resolve para um preapproval (pa-OUTRO) que não é o que o tenant gravou (pa-6)
     mpMock.consultarPreapproval.mockResolvedValue({ status: 'authorized', externalReference: tenantId, valorAutorizado: 99 })
-    const rOrfao = await aplicarEventoDeAssinatura(svc, { assunto: 'subscription', id: 'pa-OUTRO' })
+    const rOrfao = await aplicarEventoDeAssinatura(svc, { assunto: 'subscription', id: 'pa-OUTRO' }, { notificacaoId: 'n-orfa' })
 
     expect(rOrfao.resultado).toBe('ignorado')
     expect(rOrfao.motivo).toContain('não bate')

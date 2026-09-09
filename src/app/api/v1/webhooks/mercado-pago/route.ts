@@ -40,6 +40,13 @@ export const POST = rota(async (req) => {
   const evento = lerNotificacaoMP(corpo)
   if (!evento) return { recebido: true, aplicado: false, motivo: 'evento não reconhecido' }
 
-  const r = await withNovoTenant((svc) => aplicarEventoDeAssinatura(svc, evento))
+  // O `id` do topo do corpo é único por notificação — é a chave de idempotência (o `data.id` num
+  // evento de subscription é o próprio preapproval, igual em toda notificação daquela assinatura).
+  const notificacaoId =
+    corpo && typeof corpo === 'object' && (corpo as { id?: unknown }).id != null
+      ? String((corpo as { id: unknown }).id)
+      : null
+
+  const r = await withNovoTenant((svc) => aplicarEventoDeAssinatura(svc, evento, { notificacaoId }))
   return { recebido: true, aplicado: r.resultado === 'aplicado', motivo: r.motivo }
 })

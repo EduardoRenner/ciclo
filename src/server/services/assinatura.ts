@@ -74,7 +74,9 @@ export async function iniciarAssinatura(
 
 /**
  * Recebe o evento já normalizado (`lerNotificacaoMP`) e a assinatura já verificada
- * (`verificarAssinaturaWebhook`). Faz o trabalho e é **idempotente**: evento repetido → no-op.
+ * (`verificarAssinaturaWebhook`). Faz o trabalho e é **idempotente** pelo `notificacaoId` — que é
+ * o `id` do TOPO do corpo do webhook (único por notificação), NÃO o `data.id` (que num evento de
+ * `subscription` é o próprio preapproval, igual em toda notificação daquela assinatura).
  *
  * Devolve o que aconteceu, para o log da rota — nunca lança por evento "não interessa" (senão o
  * MP retenta para sempre).
@@ -82,9 +84,12 @@ export async function iniciarAssinatura(
 export async function aplicarEventoDeAssinatura(
   svc: Servico,
   evento: EventoMP,
-  opts: { agora?: Date } = {},
+  opts: { notificacaoId?: string | null; agora?: Date } = {},
 ): Promise<{ resultado: 'aplicado' | 'ignorado'; motivo?: string }> {
   const agora = opts.agora ?? new Date()
+  // Sem `notificacaoId` (formato antigo do MP, ou teste), cai numa chave fraca por assunto+id — melhor
+  // que nada, e o `decidirPlano` é determinístico então reprocessar não corrompe.
+  const chaveDoEvento = opts.notificacaoId ?? `${evento.assunto}:${evento.id}`
 
   // 1. resolver o preapproval e o valor autorizado
   let preapprovalId: string
@@ -130,7 +135,7 @@ export async function aplicarEventoDeAssinatura(
   }
 
   // 3. idempotência
-  if (assinatura.ultimo_evento_id === evento.id) return { resultado: 'ignorado', motivo: 'evento repetido' }
+  if (assinatura.ultimo_evento_id === chaveDoEvento) return { resultado: 'ignorado', motivo: 'evento repetido' }
 
   // 4. o valor autorizado TEM que bater com o degrau contratado
   if (valorAutorizado != null && !valorConfereComDegrau(assinatura.plano_contratado, valorAutorizado)) {
@@ -149,7 +154,7 @@ export async function aplicarEventoDeAssinatura(
     status,
     atualizado_em: agora.toISOString(),
     graca_ate: decisao.emGraca ? new Date(agora.getTime() + DIAS_DE_GRACA * 86_400_000).toISOString() : null,
-    ultimo_evento_id: evento.id,
+    ultimo_evento_id: chaveDoEvento,
   }
   const settings = { ...((tenant.settings ?? {}) as Record<string, unknown>), assinatura: novaAssinatura }
 
