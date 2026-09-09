@@ -59,6 +59,23 @@ const TODOS = RAIZES.flatMap(arquivos).map((f) => f.split(String.fromCharCode(92
 const CULPADOS = TODOS.filter((f) => INSTANTE_UTC_LITERAL.test(marcacaoDe(f)))
 
 describe('o dia do salão nunca é montado em UTC', () => {
+  it('a lista de dívida é uma só, e cada nome ainda precisa dela', () => {
+    /*
+     * Sem isto, acrescentar um nome à dívida é a forma mais barata de calar a guarda, e não deixa
+     * rastro. E o piso do outro lado é o menos óbvio: nome que já foi consertado e ficou na lista
+     * protege o que não existe mais — descobri isso hoje isentando uma tela de dizer uma palavra
+     * que ela não dizia.
+     */
+    expect(DIVIDA_CONHECIDA).toEqual(['src/server/services/alertas-estoque.ts'])
+    for (const arquivo of DIVIDA_CONHECIDA) {
+      const fonte = semComentarios(readFileSync(arquivo, 'utf8'))
+      expect(
+        /T00:00:00Z|T23:59:59/.test(fonte),
+        `${arquivo} não monta mais o dia em UTC — tire-o da dívida, senão ela isenta o que já está certo`,
+      ).toBe(true)
+    }
+  })
+
   it('o leitor enxerga o servidor e as telas', () => {
     expect(TODOS.length, 'nenhum arquivo lido').toBeGreaterThan(80)
     expect(TODOS, 'o caixa sumiu do caminho varrido — a guarda precisa ser revista junto').toContain('src/server/services/caixa.ts')

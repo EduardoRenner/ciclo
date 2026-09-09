@@ -62,6 +62,22 @@ function passaPeloRota(caminho: string): boolean {
 }
 
 describe('toda rota da API passa pelo `rota()`', () => {
+  it('a lista de isentas é uma só, e cada uma ainda precisa da isenção', () => {
+    /*
+     * A lista é onde a guarda morre barato: um nome a mais, e aquela rota perde as quatro defesas
+     * do `rota()` sem nada ficar vermelho. Afirmar a lista inteira obriga quem acrescentar a
+     * escrever o motivo — que é o que o cabeçalho promete.
+     */
+    expect(FORA_DO_ROTA.map((f) => f.arquivo)).toEqual(['src/app/api/health/route.ts'])
+    for (const { arquivo, porque } of FORA_DO_ROTA) {
+      expect(porque.length, `${arquivo} está isenta sem motivo escrito`).toBeGreaterThan(40)
+      expect(
+        passaPeloRota(arquivo),
+        `${arquivo} passou a usar o \`rota()\` — tire-a da lista, senão a isenção protege o que já está certo`,
+      ).toBe(false)
+    }
+  })
+
   it('o leitor enxerga as rotas — senão a guarda passa vazia', () => {
     const rotas = rotasVersionadas()
     // Se o glob parar de casar, isto grita em vez de aprovar tudo.
