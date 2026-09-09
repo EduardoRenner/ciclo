@@ -52,6 +52,13 @@ export type AssinaturaDoTenant = {
   status: StatusMP
   /** ISO. Quando a assinatura foi vista pela última vez pelo webhook — para não regredir com evento atrasado. */
   atualizado_em: string
+  /**
+   * ISO. Preenchido quando o `status` é `paused`: até esta data o degrau segue de pé; depois,
+   * `expirarGracaVencida` (server) derruba para `gratis`. Nulo quando não há graça em curso.
+   */
+  graca_ate?: string | null
+  /** Id do último evento de webbook processado — evento repetido do MP é ignorado (idempotência). */
+  ultimo_evento_id?: string | null
 }
 
 export type DecisaoDePlano = {
@@ -111,6 +118,8 @@ export function lerAssinatura(settings: unknown): AssinaturaDoTenant | null {
     plano_contratado: o.plano_contratado as PlanoTier,
     status: o.status,
     atualizado_em: o.atualizado_em,
+    graca_ate: typeof o.graca_ate === 'string' ? o.graca_ate : null,
+    ultimo_evento_id: typeof o.ultimo_evento_id === 'string' ? o.ultimo_evento_id : null,
   }
 }
 

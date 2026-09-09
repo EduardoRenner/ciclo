@@ -142,6 +142,12 @@ const ISENTAS: { rota: string; porque: string }[] = [
   { rota: 'public/quotes/[token]/approve', porque: 'anônimo; `aprovarOrcamentoPublico` checa o estado e responde igual no segundo clique' },
   { rota: 'public/quotes/[token]/reject', porque: 'anônimo; mesma checagem de estado do approve' },
   { rota: 'public/reviews/[token]', porque: 'anônimo; a constraint única em client_reviews.appointment_id impede a duplicata e o 23505 vira sucesso' },
+
+  // ── Webhook do Mercado Pago: chamado pelo MP (servidor-a-servidor), nunca pela fila offline do
+  //    PWA, e o MP não manda `Idempotency-Key`. A repetição é tratada pelo `ultimo_evento_id` em
+  //    `tenants.settings.assinatura` (`aplicarEventoDeAssinatura`), e a defesa de acesso é a
+  //    assinatura `x-signature`, não o header.
+  { rota: 'webhooks/mercado-pago', porque: 'chamado pelo MP; idempotência por ultimo_evento_id, não por header, e o MP não manda Idempotency-Key' },
 ].map((e) => ({ ...e, rota: `${RAIZ}/${e.rota}/route.ts` }))
 
 /**

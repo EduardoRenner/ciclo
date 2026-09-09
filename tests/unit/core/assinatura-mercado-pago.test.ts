@@ -72,6 +72,12 @@ describe('lerAssinatura: tenants.settings.assinatura é jsonb livre', () => {
     expect(lerAssinatura({ assinatura: boa })?.status).toBe('authorized')
   })
 
+  it('graca_ate e ultimo_evento_id: lidos quando presentes, null quando ausentes', () => {
+    expect(lerAssinatura({ assinatura: boa })).toMatchObject({ graca_ate: null, ultimo_evento_id: null })
+    const comGraca = { ...boa, status: 'paused', graca_ate: '2026-09-16T00:00:00.000Z', ultimo_evento_id: 'ev-9' }
+    expect(lerAssinatura({ assinatura: comGraca })).toMatchObject({ graca_ate: '2026-09-16T00:00:00.000Z', ultimo_evento_id: 'ev-9' })
+  })
+
   it('devolve null para settings sem assinatura, provedor errado, ou status desconhecido', () => {
     expect(lerAssinatura(null)).toBeNull()
     expect(lerAssinatura({})).toBeNull()
