@@ -3,6 +3,8 @@ import { dirname, join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
+import { semComentarios } from '../../helpers/fonte'
+
 /**
  * Toda tela do `/admin` que é Server Component `async` e busca dados (`await`) precisa de um
  * `loading.tsx` irmão.
@@ -79,7 +81,10 @@ describe('detecção do navegador não deixa a seção em branco', () => {
   const ATIVAR = join('src', 'app', 'admin', 'config', 'notificacoes', 'ativar.tsx')
 
   it('o estado de carregando desenha esqueleto, não nada', () => {
-    const src = readFileSync(ATIVAR, 'utf8')
+    // Sem comentário: o bloco que explica esta guarda cita `aria-busy` e `Skeleton`, e uma
+    // asserção que casasse com ele passaria com o esqueleto apagado — a armadilha nº 1 da
+    // tabela do CLAUDE.md, três vezes repetida nesta base.
+    const src = semComentarios(readFileSync(ATIVAR, 'utf8'))
 
     // Piso: se o componente parar de ter estado de espera, a asserção abaixo passaria vazia.
     const i = src.indexOf("if (estado === 'carregando')")
@@ -87,7 +92,14 @@ describe('detecção do navegador não deixa a seção em branco', () => {
 
     // Só o ramo, delimitado pelo próximo `if` de estado: fatia por N caracteres pegaria o cartão
     // de `ios_nao_instalado` logo abaixo, que tem conteúdo e faria a asserção passar sempre.
-    const ramo = src.slice(i, src.indexOf("if (estado ===", i + 10))
+    //
+    // O FIM é afirmado, e não por preciosismo: `indexOf` que não acha devolve `-1`, e
+    // `slice(i, -1)` não esvazia o recorte — ALARGA ele até o fim do arquivo, calado. Foi assim
+    // que a guarda irmã da Agenda nasceu cega nesta mesma rodada, casando com um trecho 60 linhas
+    // abaixo do que ela achava estar lendo.
+    const fimDoRamo = src.indexOf("if (estado ===", i + 10)
+    expect(fimDoRamo, `${ATIVAR}: não achei o fim do ramo de carregando — o recorte cegou`).toBeGreaterThan(i)
+    const ramo = src.slice(i, fimDoRamo)
 
     expect(
       /return null/.test(ramo),

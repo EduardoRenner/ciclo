@@ -318,21 +318,38 @@ describe('a Agenda anuncia o dia e o filtro que acabaram de mudar', () => {
   it('o <p> renderiza o anúncio montado, e é sr-only', () => {
     const src = fonte(AGENDA)
     const i = src.indexOf('aria-live="polite"')
-    const bloco = src.slice(i, src.indexOf('</p>', i))
+    expect(i, 'não achei a região viva').toBeGreaterThan(-1)
+    // O fim afirmado pelo mesmo motivo do bloco de baixo: `indexOf` que não acha devolve `-1` e
+    // `slice(i, -1)` ALARGA o recorte até o fim do arquivo, em silêncio.
+    const fim = src.indexOf('</p>', i)
+    expect(fim, 'não achei o fim da região viva — o recorte cegou').toBeGreaterThan(i)
+    const bloco = src.slice(i, fim)
     expect(/\{anuncio\}/.test(bloco), 'a região viva não renderiza mais o texto montado').toBe(true)
     expect(/sr-only/.test(bloco), 'a região é para o leitor de tela, não para a tela').toBe(true)
   })
 
   it('o anúncio sai do mesmo `resumo` que desenha os StatTiles e a lista', () => {
     /*
-     * Delimitado pelo fim real do array (`].filter`), não por uma janela de N caracteres: logo
-     * abaixo vem o `return` com o JSX inteiro, e uma fatia por tamanho casaria com qualquer coisa
-     * de lá. É a mesma correção que este arquivo já registrou uma vez, na guarda do Motor de Ciclo.
+     * Delimitado pelo fim real do bloco, não por uma janela de N caracteres: logo abaixo vem o
+     * `return` com o JSX inteiro, e uma fatia por tamanho casaria com qualquer coisa de lá.
+     *
+     * **O FIM precisa do próprio piso, e esta guarda nasceu cega por não ter.** A primeira versão
+     * recortava até `'].filter'` — que não existe no arquivo, porque entre o `]` e o `.filter` há
+     * quebra de linha (CRLF) e indentação. `indexOf` devolvia `-1`, `slice(inicio, -1)` pegava do
+     * anúncio até o fim do arquivo, e a asserção de `resumo.temExpediente` passava casando com os
+     * StatTiles 60 linhas abaixo. Medido: com o `temExpediente` removido do anúncio, os 19 testes
+     * passavam.
+     *
+     * A lição não é sobre este padrão: é que delimitador de recorte é tão capaz de cegar a guarda
+     * quanto o padrão que ela procura, e o `-1` do `indexOf` faz isso em silêncio, ALARGANDO o
+     * escopo em vez de esvaziá-lo. Todo fim de fatia precisa ser afirmado.
      */
     const src = fonte(AGENDA)
     const inicio = src.indexOf('const anuncio = [')
     expect(inicio, 'não achei o bloco que monta o anúncio — o padrão cegou').toBeGreaterThan(-1)
-    const bloco = src.slice(inicio, src.indexOf('].filter', inicio))
+    const fim = src.indexOf('.filter(Boolean)', inicio)
+    expect(fim, 'não achei o fim do bloco do anúncio — o recorte cegou e varreria o arquivo inteiro').toBeGreaterThan(inicio)
+    const bloco = src.slice(inicio, fim)
 
     expect(/\bquantos\b/.test(bloco), 'o anúncio precisa dizer a quantidade que a lista mostra').toBe(true)
     expect(
