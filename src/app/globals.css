@@ -254,6 +254,30 @@
   }
 }
 
+
+/*
+ * Troca de imagem por tema (hoje só o wordmark da topbar). O escuro é o padrão: `.marca-no-claro`
+ * nasce escondida e só aparece quando o tema resolvido é claro — por escolha (`[data-theme=light]`)
+ * ou por sistema (`[data-theme=sistema]` + `@media`).
+ */
+.marca-no-claro {
+  display: none;
+}
+[data-theme="light"] .marca-no-escuro {
+  display: none;
+}
+[data-theme="light"] .marca-no-claro {
+  display: revert;
+}
+@media (prefers-color-scheme: light) {
+  [data-theme="sistema"] .marca-no-escuro {
+    display: none;
+  }
+  [data-theme="sistema"] .marca-no-claro {
+    display: revert;
+  }
+}
+
 @theme inline {
   --color-bg: var(--bg);
   --color-surface: var(--surface);
@@ -360,6 +384,23 @@
 }
 
 @layer base {
+  /*
+   * O wrapper de tema do `/admin` (`admin/layout.tsx`) precisa pintar o PRÓPRIO fundo: as
+   * variáveis que ele redefine (`--bg` etc.) descem para os filhos, mas NÃO sobem para o
+   * `<body>`, que é ancestral. Sem isto, "claro" deixava o body escuro aparecendo nas bordas
+   * (coluna centralizada no monitor, rubber-band no celular).
+   */
+  #raiz-do-tema {
+    background: var(--bg);
+    /*
+     * `color` é herdado, e o `<body>` já COMPUTOU o dele com o `--txt` escuro — os filhos herdam
+     * esse valor pronto, não `var(--txt)`. Re-declarar aqui faz a subárvore herdar do `--txt`
+     * que este wrapper redefiniu. Mesmo motivo do `background` acima.
+     */
+    color: var(--txt);
+    min-height: 100dvh;
+  }
+
   * {
     border-color: var(--line);
   }

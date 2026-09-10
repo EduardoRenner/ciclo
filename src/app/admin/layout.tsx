@@ -55,8 +55,16 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const temaSalvo = cabecalhos.get('cookie')?.match(/(?:^|;\s*)ciclo-tema=(claro|escuro)/)?.[1]
   const dataTheme = temaSalvo === 'claro' ? 'light' : temaSalvo === 'escuro' ? 'dark' : 'sistema'
 
+  // O `<div>` abaixo pinta o próprio fundo; este `<style>` estende essa cor ao `<html>`/`<body>`
+  // (ancestrais, fora do alcance da variável) para o rubber-band do celular não mostrar o escuro.
+  // `style-src` da CSP permite inline — só `script-src` tem `strict-dynamic`.
+  const corDeFundo = dataTheme === 'light' ? '#faf8f5' : dataTheme === 'dark' ? '#0d0c0c' : null
+
   return (
     <ToastProvider>
+      {corDeFundo ? (
+        <style dangerouslySetInnerHTML={{ __html: `html,body{background:${corDeFundo}}` }} />
+      ) : null}
       <VocabularioProvider valor={ctx?.tenant.vocabulario ?? PADRAO}>
       {/*
         No monitor, o app é uma coluna de 560px sobre um fundo preto infinito —
