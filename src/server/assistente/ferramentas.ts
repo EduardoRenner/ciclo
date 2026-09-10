@@ -181,6 +181,48 @@ export function semDadoDeSaude(resumo: ResumoHoje): ResumoHoje {
   }
 }
 
+/**
+ * Tira do retorno de `buscar_cliente`/`historico_do_cliente` o que o modelo não precisa e o que não
+ * devia sair do produto numa chamada a terceiro (Gemini).
+ *
+ * `clients.notes` e `clients.preferences` são texto livre, e o próprio schema em
+ * `server/services/clientes.ts` diz o que vai neles: *"número da máquina, como faz a barba,
+ * alergia"*. Não são `health_records` — mas guardam dado de saúde que o dono digitou, e é a
+ * fronteira do contexto que filtra (a mesma razão de `semDadoDeSaude`). `document` (CPF),
+ * `address` e `emergency_contact` são dado pessoal — de terceiro, no caso do contato de emergência
+ * — que nunca é a resposta de "quando ela veio" nem de "dados cadastrais": minimização de LGPD.
+ *
+ * É lista de PERMITIDOS, não de proibidos: coluna nova em `clients` não vaza por esquecimento.
+ */
+const CAMPOS_DO_CLIENTE_PARA_O_MODELO = [
+  'id',
+  'name',
+  'phone_e164',
+  'email',
+  'birth_date',
+  'gender',
+  'tags',
+  'source',
+  'referred_by',
+  'preferred_professional_id',
+  'online_booking_blocked',
+  'marketing_opt_in',
+  'whatsapp_opt_out',
+  'visits_count',
+  'no_show_count',
+  'ltv_cents',
+  'last_visit_at',
+  'created_at',
+] as const
+
+export function soCadastroQueOModeloPrecisa<T extends Record<string, unknown>>(cliente: T): Partial<T> {
+  const saida: Partial<T> = {}
+  for (const campo of CAMPOS_DO_CLIENTE_PARA_O_MODELO) {
+    if (campo in cliente) saida[campo as keyof T] = cliente[campo as keyof T]
+  }
+  return saida
+}
+
 export const FERRAMENTAS: Ferramenta[] = [
   apagarTipo({
     nome: 'resumo_de_hoje',
@@ -207,7 +249,8 @@ export const FERRAMENTAS: Ferramenta[] = [
     schema: EsquemaBusca,
     permissao: 'client:read',
     modulo: 'clients',
-    executar: async (ctx, { termo }) => listarClientes(ctx.db, ctx.tenantId, { busca: termo, limite: 10 }),
+    executar: async (ctx, { termo }) =>
+      (await listarClientes(ctx.db, ctx.tenantId, { busca: termo, limite: 10 })).map(soCadastroQueOModeloPrecisa),
   }),
   apagarTipo({
     nome: 'historico_do_cliente',
@@ -222,7 +265,7 @@ export const FERRAMENTAS: Ferramenta[] = [
       ])
       // Só os 10 mais recentes voltam ao modelo — histórico inteiro de anos não cabe no
       // contexto e não muda a resposta de "quando ela veio da última vez".
-      return { cliente, ultimosAgendamentos: agendamentos.slice(-10).reverse() }
+      return { cliente: soCadastroQueOModeloPrecisa(cliente), ultimosAgendamentos: agendamentos.slice(-10).reverse() }
     },
   }),
   apagarTipo({

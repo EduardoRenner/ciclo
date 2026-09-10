@@ -7050,6 +7050,7 @@ Guardas atualizadas com registro (regra do afrouxamento): `middleware-cache.test
 navegador que `/`, `/precos` respondem da borda com TTFB baixo, que `/entrar` e uma página de salão
 seguem dinâmicas e hidratam, e que um usuário logado abrindo a `/` ainda cai em `/admin/hoje`.
 
+2026-09-09 · `buscar_cliente`/`historico_do_cliente` do assistente devolviam a linha de `clients` inteira para o Gemini (CPF, `emergency_contact`, `notes` e `preferences` — os dois últimos guardam alergia, diz o schema) · filtro `soCadastroQueOModeloPrecisa` (lista de PERMITIDOS) na fronteira da ferramenta, igual `semDadoDeSaude`; guarda em `contexto-do-modelo-nao-leva-cadastro-sensivel` vista reprovando por mutação.
 ## 2026-09-09 · RLS: as 12 tabelas de config compartilhada ficam `_tenant_all` de propósito
 
 **Contexto.** A varredura de `pg_policies` em produção (2026-09-09) acha 24 tabelas ainda com a
