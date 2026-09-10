@@ -21,6 +21,19 @@ const eslintConfig = [
       "build/**",
       "next-env.d.ts",
       "src/server/db/types.gen.ts",
+      /*
+        Gerado pelo `supabase start`, e é isto que ele custava: o `CLAUDE.md` manda subir o banco
+        local antes do `pnpm dev`, e o `supabase start` escreve o bootstrap do edge runtime aqui.
+        São 154 erros de lint em código que não é nosso — e como `pnpm verify` roda lint, seguir o
+        setup documentado do projeto passava a REPROVAR o próprio portão de pré-commit.
+
+        A CI nunca viu: `qualidade` (typecheck + lint) e `Banco e RLS` (que roda `supabase start`)
+        são jobs separados, em contêineres separados. Verde lá, vermelho em toda máquina de quem
+        desenvolve — a direção mais cara de um falso verde.
+
+        Já estava no `.gitignore` desde sempre. As duas listas discordavam sobre o mesmo diretório.
+      */
+      "supabase/.temp/**",
     ],
   },
 

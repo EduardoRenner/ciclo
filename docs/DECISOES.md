@@ -7051,3 +7051,5 @@ navegador que `/`, `/precos` respondem da borda com TTFB baixo, que `/entrar` e 
 seguem dinâmicas e hidratam, e que um usuário logado abrindo a `/` ainda cai em `/admin/hoje`.
 
 2026-09-09 · Bloco 4 do docs/57 (reconferência do docs/55) · a maior parte já estava feita (0066-0072 aplicadas, RLS de tickets na 0073, banco de teste na CI pelo repo público) ou é decisão do Eduardo (PSP, WhatsApp, CNPJ); o único item de código que sobrou é o gate de "produção atrás do código" (docs/57 PR 3.2) · virou `scripts/conferir-schema-prod.mjs` porque o classificador não escreve em `.github/workflows/`; `docs/59` registra o placar linha a linha.
+
+2026-09-10 · `supabase/.temp` estava no .gitignore e não no ignore do ESLint: como `pnpm verify` roda lint, subir o banco local (que o CLAUDE.md manda fazer antes do `pnpm dev`) passava a REPROVAR o portão de pré-commit, com 154 erros em código gerado · a CI nunca viu porque `qualidade` e `Banco e RLS` são jobs separados — verde no CI, vermelho em toda máquina de quem desenvolve.
