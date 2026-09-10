@@ -11,6 +11,7 @@ import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { listarModulos } from '@/server/services/modulos'
 
+import { rotuloDoPapel } from '@/core/auth/rotulo-do-papel'
 import SairDaConta from './sair'
 
 /** Sem `await`, viraria página estática — quebra o nonce do CSP por requisição (ver `docs/DECISOES.md`). */
@@ -136,6 +137,40 @@ export default async function PaginaConfig() {
       <PageHeader titulo="Configurações" />
 
       <div className="flex flex-col gap-6">
+        {/*
+          A conta vem PRIMEIRO, e isso é conserto de descoberta, não gosto.
+
+          Medido em 2026-09-10 no navegador, com o painel no ar: "Sair da conta" ficava em y=2184
+          numa página de 2427 px, com 812 px de tela — depois de QUATORZE seções de configuração do
+          negócio, e só depois de tocar num ícone de engrenagem sem rótulo. O Eduardo relatou "não
+          consigo sair da conta" e o botão estava lá, funcionando, a 1.400 px de rolagem.
+
+          O que NÃO mudou, de propósito: a saída continua fora da Topbar. O motivo original segue
+          valendo — a Topbar aparece em toda tela, e um alvo de 48 px que encerra a sessão a um
+          toque de distância o dia inteiro é acidente esperando acontecer no tablet do balcão. O
+          conserto é de ORDEM, não de lugar.
+
+          E ganha identidade: uma tela de conta que não diz de quem é a conta não é tela de conta.
+          Quem entra como Recepção num salão que não é o seu precisa ver isso escrito.
+        */}
+        <section>
+          <SectionHeader>Sua conta</SectionHeader>
+          <div className="flex flex-col gap-2">
+            <Card className="flex items-center gap-3">
+              <div className="grid size-10 shrink-0 place-items-center rounded-[var(--radius-pill)] bg-acc-soft text-corpo font-semibold text-acc-2">
+                {ctx.sessao.email.slice(0, 1).toUpperCase()}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-corpo font-semibold">{ctx.sessao.email}</p>
+                <p className="truncate text-secundario text-txt-2">
+                  {rotuloDoPapel(ctx.papel)} em {ctx.tenant.name}
+                </p>
+              </div>
+            </Card>
+            <SairDaConta />
+          </div>
+        </section>
+
         {grupos.map((grupo) => (
           <section key={grupo.titulo}>
             <SectionHeader>{grupo.titulo}</SectionHeader>
@@ -175,11 +210,6 @@ export default async function PaginaConfig() {
           </section>
         ))}
 
-        {/* Auditoria de segurança, achado S9: até 2026-08-23 não havia como sair da conta. */}
-        <section>
-          <SectionHeader>Sua conta</SectionHeader>
-          <SairDaConta />
-        </section>
       </div>
     </>
   )
