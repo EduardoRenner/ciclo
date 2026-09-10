@@ -7049,3 +7049,6 @@ Guardas atualizadas com registro (regra do afrouxamento): `middleware-cache.test
 **Falta validar em preview** (não dá para medir daqui): abrir o preview do Vercel, conferir no
 navegador que `/`, `/precos` respondem da borda com TTFB baixo, que `/entrar` e uma página de salão
 seguem dinâmicas e hidratam, e que um usuário logado abrindo a `/` ainda cai em `/admin/hoje`.
+
+2026-09-10 · a vigia de "banco atrás do código" falhava para o VERDE: `checarSchema` chama a RPC `migracoes_aplicadas`, criada pela 0062, e quando ela não existia (PGRST202) devolvia `ok: true` — ou seja, quanto mais atrás o banco, mais verde o indicador, e o `conferir-schema-prod.mjs` do PR #97 aprovaria um banco catastroficamente velho · PGRST202 agora é VERMELHO (prova que o banco está antes da 0062); outros códigos de leitura seguem verdes mas com texto que não se vende como saudável.
+2026-09-10 · o error boundary de `/admin` dizia sempre "Pode ter sido a conexão", inclusive com a conexão perfeita e o schema defasado (foi o que aconteceu ao abrir a tela Hoje) · ele passa a perguntar a causa a `/api/health` e escolher a frase por `causaDaFalhaDaTela` (core, pura); o erro do Next não serve porque em produção a mensagem de Server Component é higienizada.
