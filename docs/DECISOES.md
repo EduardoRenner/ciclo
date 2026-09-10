@@ -7051,3 +7051,5 @@ navegador que `/`, `/precos` respondem da borda com TTFB baixo, que `/entrar` e 
 seguem dinâmicas e hidratam, e que um usuário logado abrindo a `/` ainda cai em `/admin/hoje`.
 
 2026-09-09 · Bloco 4 do docs/57 (reconferência do docs/55) · a maior parte já estava feita (0066-0072 aplicadas, RLS de tickets na 0073, banco de teste na CI pelo repo público) ou é decisão do Eduardo (PSP, WhatsApp, CNPJ); o único item de código que sobrou é o gate de "produção atrás do código" (docs/57 PR 3.2) · virou `scripts/conferir-schema-prod.mjs` porque o classificador não escreve em `.github/workflows/`; `docs/59` registra o placar linha a linha.
+
+2026-09-10 · "não consigo sair da conta" era descoberta, não defeito: medido no navegador, o botão ficava em y=2184 numa página de 2427px, depois de 14 seções e de um ícone de engrenagem sem rótulo · a seção "Sua conta" sobe para o TOPO das Configurações com identidade (e-mail, papel, negócio); a saída continua FORA da Topbar, porque o motivo original (alvo de 48px que encerra sessão o dia inteiro no tablet do balcão) segue valendo. Medido depois: y=255, sem rolagem.
