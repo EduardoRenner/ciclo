@@ -7073,3 +7073,4 @@ nenhum.
 As rotas de envio já gate por `campaign:*` (`owner`/`manager`), e a tabela não guarda dado
 decifrado — mas num lote futuro elas podem virar `owner`/`manager` sem custo. Não é urgente e não
 é buraco; é preferência.
+2026-09-09 · Bloco 4 do docs/57 (reconferência do docs/55) · a maior parte já estava feita (0066-0072 aplicadas, RLS de tickets na 0073, banco de teste na CI pelo repo público) ou é decisão do Eduardo (PSP, WhatsApp, CNPJ); o único item de código que sobrou é o gate de "produção atrás do código" (docs/57 PR 3.2) · virou `scripts/conferir-schema-prod.mjs` porque o classificador não escreve em `.github/workflows/`; `docs/59` registra o placar linha a linha.
