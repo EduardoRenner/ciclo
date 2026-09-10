@@ -1,5 +1,5 @@
 import { heartbeatVigiado } from '@/core/cron/agendadas'
-import { compararSchema } from '@/core/schema/versao'
+import { compararSchema, MIGRATIONS_ESPERADAS } from '@/core/schema/versao'
 import { AppError } from '@/server/http/errors'
 import { semHandlerRegistrado } from '@/server/services/job-queue'
 
@@ -179,7 +179,33 @@ function falhaSemVazar(onde: string, erro: { message: string }): ChecagemSaude {
 async function checarSchema(db: Cliente): Promise<ChecagemSaude> {
   const { data, error } = await db.rpc('migracoes_aplicadas')
   if (error || !data) {
-    return { ok: true, detail: `não deu para ler a lista de migrations aplicadas (${error?.code ?? 'sem dados'}) — vigilância de schema desligada até a 0062 existir neste banco` }
+    /*
+     * `PGRST202` é o PostgREST dizendo "essa função não existe". Quem cria `migracoes_aplicadas`
+     * é a própria `0062`, então este código PROVA que o banco está antes dela — e o código espera
+     * `MIGRATIONS_ESPERADAS`. Isso não é "não consegui ler": é a evidência mais forte possível de
+     * banco atrás do código, e por isso é vermelho.
+     *
+     * Até 2026-09-10 caía tudo no `ok: true` de baixo. Medido no banco do `.env.local` naquele
+     * dia: faltavam a `0058`, a `0064` e a `0071`, a tela Hoje quebrava de verdade, e
+     * `/api/health` respondia `schema: {"ok": true}`. **Quanto mais atrás o banco, mais verde o
+     * indicador** — a métrica melhorava com o fracasso, e o `scripts/conferir-schema-prod.mjs`,
+     * que lê exatamente este `ok`, aprovava um banco catastroficamente velho.
+     *
+     * A preocupação original continua respeitada e é o `if` de baixo: enquanto a `0062` estava
+     * sendo publicada, um vermelho apontaria para a própria vigia. Aquela janela fechou (produção
+     * passou da `0080`), e o que sobrou foi o buraco.
+     */
+    if (error?.code === 'PGRST202') {
+      return {
+        ok: false,
+        // Sem travessão: desde 2026-09-10 este texto é RENDERIZADO na tela de erro do painel
+        // (`app/admin/error.tsx`), e a guarda `copy-sem-travessao` vale para copy que a pessoa lê.
+        detail: `banco ATRÁS do código: a função \`migracoes_aplicadas\` (migration 0062) não existe neste banco, então ele está antes dela. O código espera ${MIGRATIONS_ESPERADAS}. Aplicar com \`supabase db push\`.`,
+      }
+    }
+    // Qualquer outra falha de leitura é ambígua de verdade (permissão, rede, indisponibilidade):
+    // aí continua valendo a regra de não alarmar sobre o que não dá para provar.
+    return { ok: true, detail: `não deu para ler a lista de migrations aplicadas (${error?.code ?? 'sem dados'}): vigilância de schema desligada, e isto NÃO quer dizer que o banco está em dia` }
   }
   return compararSchema(data.map((linha) => linha.name))
 }

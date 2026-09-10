@@ -55,3 +55,18 @@ export function bancoDeSaudeFalso(heartbeats: Record<string, number | null>, mig
 export function bancoSaudavel(sobrescreve: Record<string, number | null> = {}, migracoes?: { name: string }[]) {
   return bancoDeSaudeFalso({ send_reminders: 5, send_campaigns: 60, recompute_cycles: 60, recompute_segments: 60, ...sobrescreve }, migracoes)
 }
+
+/**
+ * Banco onde a leitura da lista de migrations FALHA, com o código que o caso quiser.
+ *
+ * `PGRST202` é o caso real medido em 2026-09-10: a função `migracoes_aplicadas` (criada pela
+ * `0062`) não existe, o que prova que o banco está antes dela. Qualquer outro código é ambíguo.
+ * Tudo o mais fica saudável de propósito, para o caso isolar a checagem de schema.
+ */
+export function bancoComLeituraDeMigrationsFalhando(codigo: string) {
+  const base = bancoDeSaudeFalso({ send_reminders: 5, send_campaigns: 60, recompute_cycles: 60, recompute_segments: 60 }) as unknown as Record<
+    string,
+    unknown
+  >
+  return { ...base, rpc: async () => ({ data: null, error: { code: codigo } }) } as never
+}
