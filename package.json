@@ -20,7 +20,8 @@
     "db:reset": "node scripts/db-reset.mjs",
     "db:new": "supabase migration new",
     "db:types:local": "node scripts/gerar-types.mjs --local",
-    "test:integration": "vitest run --config vitest.banco.config.ts --dir tests/integration"
+    "test:integration": "vitest run --config vitest.banco.config.ts --dir tests/integration",
+    "check:schema-prod": "node scripts/conferir-schema-prod.mjs"
   },
   "dependencies": {
     "@js-temporal/polyfill": "^0.5.1",
