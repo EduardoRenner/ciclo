@@ -22,10 +22,22 @@ export const GET = rota(async (req) => {
     const { data: tenants, error } = await svc.from('tenants').select('id, timezone').is('deleted_at', null)
     if (error) throw new AppError('INTERNAL', { cause: error })
 
+    // `try` por tenant: um tenant com dado malformado não pode abortar o laço e deixar os outros
+    // sem segmentos neste disparo. Mesmo raciocínio de `recompute-cycles/route.ts` — o erro vai
+    // para o log/Sentry e `tenantsComFalha` volta no corpo.
     let processados = 0
+    let falhas = 0
     for (const tenant of tenants ?? []) {
-      await recalcularSegmentosDoTenant(svc, tenant.id)
-      processados++
+      try {
+        await recalcularSegmentosDoTenant(svc, tenant.id)
+        processados++
+      } catch (erro) {
+        falhas++
+        console.error(
+          JSON.stringify({ level: 'error', event: 'recompute_segments_tenant_falhou', tenantId: tenant.id }),
+          erro,
+        )
+      }
     }
 
     /*
@@ -47,6 +59,6 @@ export const GET = rota(async (req) => {
       })
     }
 
-    return { tenantsProcessados: processados }
+    return { tenantsProcessados: processados, tenantsComFalha: falhas }
   })
 })
