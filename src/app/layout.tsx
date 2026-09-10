@@ -86,14 +86,12 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // O `<html>` fica no escuro: a landing, o login e a página do salão são a "frente de casa", e a
+  // identidade do produto é escura. Claro/escuro é preferência do PROFISSIONAL e vale dentro de
+  // `/admin` — o `admin/layout.tsx` (server, lê o cookie `ciclo-tema`) embrulha o painel num
+  // `<div data-theme>`, e o CSS cascateia dali. Sem `<script>`, sem piscada, sem esbarrar na CSP.
   return (
-    <html lang="pt-BR" suppressHydrationWarning>
-      {/*
-        Sem `className="dark"`: o tema é decidido pelo `:root` (escuro, padrão), pelo `@media` do
-        `globals.css` (modo sistema) ou por `data-theme` (escolha explícita). O script anti-flash
-        que aplica a escolha salva antes da pintura vive em `admin/layout.tsx` — só ali há a
-        `headers()` de onde tirar o nonce do CSP, e é só ali que o seletor de tema existe.
-      */}
+    <html lang="pt-BR" className="dark">
       <body className={`${archivo.variable} antialiased`}>
         <RegistrarServiceWorker />
         {children}

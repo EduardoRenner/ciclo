@@ -8,10 +8,11 @@
  * **O tema escuro é o PADRÃO** e mora no `:root` puro: quem nunca escolheu, e quem tem o sistema
  * no escuro, abre a agenda no escuro sem uma linha de JS.
  *
- * Desde 2026-09-10 há um tema CLARO (pedido do dono). Ele sobrescreve em dois gatilhos:
- * `@media (prefers-color-scheme: light)` guardado com `:not([data-theme="dark"])` para quem tem o
- * sistema no claro e não escolheu, e `:root[data-theme="light"]` para quem escolheu no seletor
- * (`components/shell/seletor-de-tema.tsx`). A escolha explícita ganha do sistema nos dois sentidos.
+ * Desde 2026-09-10 há um tema CLARO (pedido do dono). O `admin/layout.tsx` (server, lê cookie)
+ * embrulha o painel num `<div data-theme="sistema|light|dark">`. `[data-theme="light"]` e
+ * `[data-theme="dark"]` cravam a paleta; `[data-theme="sistema"]` deixa o `@media` decidir.
+ * Cookie `ciclo-tema` em vez de `localStorage`: só o cookie chega ao servidor, e é o servidor
+ * que evita a piscada — nada de `<script>` inline (a CSP com `strict-dynamic` o bloquearia).
  *
  * Cada valor claro foi medido para 4,5:1 — `tests/unit/design/contraste.test.ts` confere as duas
  * paletas. A ressalva do daltonismo (0,15 de Δ luminância entre semânticos é inatingível no claro
@@ -140,7 +141,7 @@
  * (`[data-theme="light"]`) — divergir reprova o build.
  */
 @media (prefers-color-scheme: light) {
-  :root:not([data-theme="dark"]) {
+  [data-theme="sistema"] {
     --bg: #faf8f5;
     --surface: #ffffff;
     --surface-2: #f1eee9;
@@ -173,7 +174,7 @@
   }
 }
 
-:root[data-theme="light"] {
+[data-theme="light"] {
     --bg: #faf8f5;
   --surface: #ffffff;
   --surface-2: #f1eee9;
@@ -203,6 +204,42 @@
   /* Sombra de tema claro é curta: o card já se destaca do fundo sozinho. */
   --shadow-elevado: 0 1px 3px rgba(24, 18, 12, 0.08);
   --shadow-flutuante: 0 8px 24px rgba(24, 18, 12, 0.14);
+}
+
+/*
+ * Escolha explícita "escuro" num aparelho com o sistema no claro: sem este bloco o `@media` de
+ * cima (via `[data-theme="sistema"]`) não pega — mas se a pessoa escolheu escuro, o wrapper tem
+ * `data-theme="dark"` e nada casaria, então o `:root` puro (que já é escuro) valeria. Este bloco
+ * existe só para deixar isso ÓBVIO e à prova de refactor: escuro é escuro, venha de onde vier.
+ */
+[data-theme="dark"] {
+  --bg: #0d0c0c;
+  --surface: #161514;
+  --surface-2: #201e1d;
+  --surface-3: #2b2926;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-2: rgba(255, 255, 255, 0.14);
+  --surface-press: rgba(255, 255, 255, 0.05);
+  --overlay: rgba(5, 5, 10, 0.72);
+
+  --txt: #f5f3f1;
+  --txt-2: #a8a29c;
+  --txt-3: #99938c;
+
+  --acc: #14b8a6;
+  --acc-2: #99f6e4;
+  --acc-soft: rgba(20, 184, 166, 0.14);
+  --on-acc: #0d0c0c;
+  --ring: var(--acc-2);
+
+  --ok: #90dfba;
+  --warn: #e2af36;
+  --risk: #e79955;
+  --bad: #e05d52;
+  --info: #6da1d5;
+
+  --shadow-elevado: 0 1px 2px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  --shadow-flutuante: 0 8px 24px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 /*

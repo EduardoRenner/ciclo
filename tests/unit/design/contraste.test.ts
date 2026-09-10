@@ -16,14 +16,17 @@ function token(nome: string): string {
 }
 
 /**
- * O mesmo `token`, mas lendo o bloco `:root[data-theme="light"]`. O tema claro entrou em
+ * O mesmo `token`, mas lendo o bloco `[data-theme="light"]`. O tema claro entrou em
  * 2026-09-10 com a própria paleta; sem isto, mudar uma cor clara sem olhar o contraste passava
  * despercebido — a guarda só via a paleta escura, que é o primeiro `--x:` do arquivo.
  */
 const blocoClaro = (() => {
-  const i = css.indexOf(':root[data-theme="light"]')
-  if (i < 0) throw new Error('bloco :root[data-theme="light"] não existe — o tema claro sumiu?')
-  return css.slice(i, css.indexOf('}', i))
+  // A abertura do bloco, com a chave: o cabeçalho do arquivo cita o seletor em prosa e pegar
+  // dali traria comentário no lugar de token.
+  const marca = '[data-theme="light"] {'
+  const i = css.indexOf(marca)
+  if (i < 0) throw new Error('bloco [data-theme="light"] { não existe — o tema claro sumiu?')
+  return css.slice(i, css.indexOf(String.fromCharCode(10) + String.fromCharCode(125), i))
 })()
 
 function tokenClaro(nome: string): string {

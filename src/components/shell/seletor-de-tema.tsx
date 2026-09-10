@@ -5,15 +5,14 @@ import { useEffect, useState } from 'react'
 import Segmented from '@/components/ui/segmented'
 
 /**
- * Claro, escuro ou o que o sistema pedir. Pedido do dono em 2026-09-10.
+ * Claro, escuro ou o que o aparelho pedir. Pedido do dono em 2026-09-10.
  *
- * O padrão é **sistema**: nesse modo não há `data-theme` no `<html>`, e o `@media
- * (prefers-color-scheme)` do `globals.css` decide. Escolher claro ou escuro crava um
- * `data-theme` que ganha do sistema — e o `<script>` do `layout.tsx` relê isso antes da primeira
- * pintura, então a escolha não pisca na navegação de página inteira.
+ * Grava um **cookie** `ciclo-tema` (não `localStorage`): só o cookie chega ao servidor, e é o
+ * `admin/layout.tsx` que, lendo-o, embrulha o painel num `<div data-theme>` já no HTML — então a
+ * escolha não pisca na próxima carga. Aqui a troca também é aplicada AO VIVO no mesmo `<div>`
+ * (`#raiz-do-tema`), sem recarregar.
  *
- * `ciclo-tema` no `localStorage`: `'claro'` | `'escuro'` | ausente (= sistema). Ausente e não
- * `'sistema'` de propósito — é o estado que não precisa ser gravado.
+ * Valores: `claro` | `escuro` | ausente (= automático, o `@media` do CSS decide).
  */
 
 type Escolha = 'sistema' | 'claro' | 'escuro'
@@ -24,57 +23,43 @@ const SEGMENTOS = [
   { valor: 'escuro', rotulo: 'Escuro' },
 ]
 
-/** `light`/`dark` são os valores que o CSS e o script anti-flash entendem; `null` = tira o atributo. */
-const DATA_THEME: Record<Escolha, 'light' | 'dark' | null> = {
-  sistema: null,
+/** O que o `data-theme` do wrapper recebe. `globals.css` conhece estes três. */
+const DATA_THEME: Record<Escolha, 'sistema' | 'light' | 'dark'> = {
+  sistema: 'sistema',
   claro: 'light',
   escuro: 'dark',
 }
 
-/** A cor da barra do navegador em cada tema — o mesmo `--bg` de `globals.css`. */
-const COR_DA_BARRA = { light: '#faf8f5', dark: '#0d0c0c' }
+const UM_ANO = 60 * 60 * 24 * 365
+
+function lerCookie(): Escolha {
+  const m = document.cookie.match(/(?:^|;\s*)ciclo-tema=(claro|escuro)/)
+  return m ? (m[1] as Escolha) : 'sistema'
+}
 
 function aplicar(escolha: Escolha) {
-  const alvo = DATA_THEME[escolha]
-  const raiz = document.documentElement
-
-  if (alvo === null) {
-    delete raiz.dataset.theme
+  document.getElementById('raiz-do-tema')?.setAttribute('data-theme', DATA_THEME[escolha])
+  if (escolha === 'sistema') {
+    document.cookie = `ciclo-tema=; path=/; max-age=0; samesite=lax`
   } else {
-    raiz.dataset.theme = alvo
+    document.cookie = `ciclo-tema=${escolha}; path=/; max-age=${UM_ANO}; samesite=lax`
   }
-
-  // A `<meta name="theme-color">` do `viewport` é por `@media`; no modo sistema ela já resolve
-  // sozinha. Na escolha explícita, reescreve para a cor combinar com o que está na tela.
-  const meta = document.querySelector('meta[name="theme-color"]:not([media])')
-  if (meta && alvo) meta.setAttribute('content', COR_DA_BARRA[alvo])
 }
 
 export default function SeletorDeTema() {
-  // SSR não conhece o `localStorage`; nasce em `sistema` e o efeito corrige no cliente. Sem
-  // `suppressHydrationWarning` porque o texto do botão ativo é o único que muda, e ele não está
-  // no HTML do servidor de um jeito que o React compare (o `aria-selected` muda, não o conteúdo).
+  // SSR não lê o cookie do lado do cliente; nasce em `sistema` e o efeito corrige. O wrapper do
+  // `admin/layout` já veio com o valor certo do servidor, então não há piscada — só o botão ativo
+  // se acerta um frame depois.
   const [escolha, setEscolha] = useState<Escolha>('sistema')
 
   useEffect(() => {
-    try {
-      const salvo = localStorage.getItem('ciclo-tema')
-      if (salvo === 'claro' || salvo === 'escuro') setEscolha(salvo)
-    } catch {
-      // storage indisponível (aba anônima, quota) — fica em `sistema`, que é o padrão seguro.
-    }
+    setEscolha(lerCookie())
   }, [])
 
   function trocar(valor: string) {
     const nova = valor as Escolha
     setEscolha(nova)
     aplicar(nova)
-    try {
-      if (nova === 'sistema') localStorage.removeItem('ciclo-tema')
-      else localStorage.setItem('ciclo-tema', nova)
-    } catch {
-      // não conseguiu gravar: o tema vale para esta sessão e volta ao padrão no próximo acesso.
-    }
   }
 
   return (
@@ -82,7 +67,7 @@ export default function SeletorDeTema() {
       <div>
         <p className="text-corpo font-semibold">Tema</p>
         <p className="text-secundario text-txt-2">
-          No automático, segue o aparelho: claro de dia, escuro de noite, se o sistema estiver assim.
+          No automático, segue o aparelho: claro se o sistema estiver no claro, escuro se estiver no escuro.
         </p>
       </div>
       <Segmented segmentos={SEGMENTOS} valor={escolha} aoTrocar={trocar} rotulo="Tema do aplicativo" />
