@@ -7051,6 +7051,7 @@ navegador que `/`, `/precos` respondem da borda com TTFB baixo, que `/entrar` e 
 seguem dinâmicas e hidratam, e que um usuário logado abrindo a `/` ainda cai em `/admin/hoje`.
 
 2026-09-10 · a deny-list de cache do service worker (`NUNCA_CACHEAR`, public/sw.js) cumpria a inviolável de "nunca cachear /vault nem mídia assinada", mas era por PREFIXO e sem guarda: tela privada nova fora de `/admin` nasceria cacheável em silêncio · guarda `sw-nao-cacheia-tela-privada` itera as rotas do DISCO e lê o padrão do próprio sw.js e os prefixos do próprio middleware, nunca cópias.
+2026-09-09 · `buscar_cliente`/`historico_do_cliente` do assistente devolviam a linha de `clients` inteira para o Gemini (CPF, `emergency_contact`, `notes` e `preferences` — os dois últimos guardam alergia, diz o schema) · filtro `soCadastroQueOModeloPrecisa` (lista de PERMITIDOS) na fronteira da ferramenta, igual `semDadoDeSaude`; guarda em `contexto-do-modelo-nao-leva-cadastro-sensivel` vista reprovando por mutação.
 ## 2026-09-09 · RLS: as 12 tabelas de config compartilhada ficam `_tenant_all` de propósito
 
 **Contexto.** A varredura de `pg_policies` em produção (2026-09-09) acha 24 tabelas ainda com a
