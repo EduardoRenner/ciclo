@@ -7051,6 +7051,29 @@ navegador que `/`, `/precos` respondem da borda com TTFB baixo, que `/entrar` e 
 seguem dinâmicas e hidratam, e que um usuário logado abrindo a `/` ainda cai em `/admin/hoje`.
 
 2026-09-09 · `buscar_cliente`/`historico_do_cliente` do assistente devolviam a linha de `clients` inteira para o Gemini (CPF, `emergency_contact`, `notes` e `preferences` — os dois últimos guardam alergia, diz o schema) · filtro `soCadastroQueOModeloPrecisa` (lista de PERMITIDOS) na fronteira da ferramenta, igual `semDadoDeSaude`; guarda em `contexto-do-modelo-nao-leva-cadastro-sensivel` vista reprovando por mutação.
+## 2026-09-09 · RLS: as 12 tabelas de config compartilhada ficam `_tenant_all` de propósito
+
+**Contexto.** A varredura de `pg_policies` em produção (2026-09-09) acha 24 tabelas ainda com a
+política-blanket `*_tenant_all` da `0001` (`for all using has_tenant`, cega a papel). Os lotes 2.1
+(`0081`) e 2.2 (`0082`) recortaram as de "capacidade morta"; o `docs/58` mapeia as de dado
+sensível (grupo A, precisa de decisão).
+
+**Decisão.** Estas 12 ficam como estão, e a decisão é registrada para ninguém "consertar" de novo:
+
+`business_hours`, `service_categories`, `service_products`, `professional_services`, `packages`,
+`time_off`, `waitlist`, `portfolio_photos`, `tenant_modules`, `message_templates`, `campaigns`,
+`messages`.
+
+**Motivo.** Config operacional do salão que todo papel (`owner`/`manager`/`professional`/
+`reception`) legitimamente cria, edita e apaga no dia a dia. Nenhuma carrega dado de cliente
+decifrado nem valor de dinheiro por linha. Apertar por papel seria fricção pura — recepção sem
+mexer no expediente, profissional sem ajustar a própria ficha de serviço — sem defender risco
+nenhum.
+
+**Ressalva registrada.** `campaigns`/`messages`/`message_templates` carregam CONTEÚDO de mensagem.
+As rotas de envio já gate por `campaign:*` (`owner`/`manager`), e a tabela não guarda dado
+decifrado — mas num lote futuro elas podem virar `owner`/`manager` sem custo. Não é urgente e não
+é buraco; é preferência.
 2026-09-10 · a home abria com `R$ 0,00` a 34px (o maior elemento da tela) enquanto `R$ 302,75` de receita em risco — o número que só este produto calcula — não aparecia em lugar nenhum; medido no painel local com dados reais · `deveMostrarHeroiDoMotor` virou `escolherHeroi`, com o valor em risco como terceira opção de manchete e `temProximoCliente` fora da conta (era ele que anulava o conserto no caso mais comum).
 2026-09-10 · `compararSchema` comparava o nome COM prefixo (`0080_...`) contra o que `migracoes_aplicadas` devolve, e o CLI da Supabase grava o `name` SEM prefixo (o prefixo vai para `version`) · produção só estava verde porque foi migrada à mão com o nome completo; no primeiro `supabase db push` a saúde viraria 503 depois de uma publicação CORRETA. Comparação passa a ignorar o prefixo, que é ordenação, não identidade.
 2026-09-10 · `supabase start` (o passo que o CLAUDE.md manda dar antes do `pnpm dev`) deixava o `pnpm lint` com 154 erros vindos de `supabase/.temp/`, código minificado de terceiro · acrescentado aos `ignores` do ESLint; a CI não via porque lá o lint roda antes do start.
