@@ -8,6 +8,7 @@ import { useState, useTransition } from 'react'
 
 
 
+import { ROTULO_DO_PAPEL, rotuloDoPapel } from '@/core/auth/rotulo-do-papel'
 import Badge from '@/components/ui/badge'
 
 import Button from '@/components/ui/button'
@@ -59,20 +60,6 @@ type Convite = {
 /* Constante e não `useId()`: o campo é único na tela e o Sheet monta e desmonta — um id estável
    evita que o `htmlFor` aponte para um id diferente a cada abertura. */
 const ID_LINK_CONVITE = 'link-do-convite'
-
-const ROTULO_PAPEL: Record<string, string> = {
-
-  owner: 'Dono',
-
-  manager: 'Gerente',
-
-  professional: 'Profissional',
-
-  reception: 'Recepção',
-
-  finance: 'Financeiro',
-
-}
 
 
 
@@ -440,7 +427,7 @@ export default function ListaProfissionais({
 
                     <p className="mt-0.5 text-secundario text-txt-2">
 
-                      {ROTULO_PAPEL[c.role] ?? c.role} · vence em{' '}
+                      {rotuloDoPapel(c.role)} · vence em{' '}
 
                       {new Date(c.expires_at).toLocaleDateString('pt-BR')}
 
@@ -596,7 +583,7 @@ export default function ListaProfissionais({
 
             >
 
-              {Object.entries(ROTULO_PAPEL)
+              {Object.entries(ROTULO_DO_PAPEL)
 
                 .filter(([valor]) => valor !== 'owner')
 
