@@ -15,6 +15,23 @@ function token(nome: string): string {
   return achado[1]
 }
 
+/**
+ * O mesmo `token`, mas lendo o bloco `:root[data-theme="light"]`. O tema claro entrou em
+ * 2026-09-10 com a própria paleta; sem isto, mudar uma cor clara sem olhar o contraste passava
+ * despercebido — a guarda só via a paleta escura, que é o primeiro `--x:` do arquivo.
+ */
+const blocoClaro = (() => {
+  const i = css.indexOf(':root[data-theme="light"]')
+  if (i < 0) throw new Error('bloco :root[data-theme="light"] não existe — o tema claro sumiu?')
+  return css.slice(i, css.indexOf('}', i))
+})()
+
+function tokenClaro(nome: string): string {
+  const achado = new RegExp(`--${nome}:\\s*(#[0-9a-fA-F]{6})`).exec(blocoClaro)
+  if (!achado?.[1]) throw new Error(`token claro --${nome} não encontrado`)
+  return achado[1]
+}
+
 /** Luminância relativa da WCAG 2.1. */
 function luminancia(hex: string): number {
   const canais = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
@@ -127,5 +144,49 @@ describe('contraste dos tokens (WCAG AA)', () => {
     // o card, e a borda sozinha não sustenta a hierarquia.
     expect(new Set([BG, SURFACE, SURFACE_2, token('surface-3')]).size).toBe(4)
     expect(css).toMatch(/--line:\s*rgba/)
+  })
+})
+
+describe('a paleta CLARA também passa no WCAG AA', () => {
+  const BG_C = tokenClaro('bg')
+  const SURFACE_C = tokenClaro('surface')
+  const SURFACE_2_C = tokenClaro('surface-2')
+  const SURFACE_3_C = tokenClaro('surface-3')
+
+  it('as quatro superfícies claras são distintas', () => {
+    expect(new Set([BG_C, SURFACE_C, SURFACE_2_C, SURFACE_3_C]).size).toBe(4)
+  })
+
+  it.each(['txt', 'txt-2', 'txt-3'])('--%s claro tem 4,5:1 sobre as quatro superfícies', (nome) => {
+    for (const s of [BG_C, SURFACE_C, SURFACE_2_C, SURFACE_3_C]) {
+      expect(contraste(tokenClaro(nome), s), `${nome} claro sobre ${s}`).toBeGreaterThanOrEqual(4.5)
+    }
+  })
+
+  it('--on-acc claro tem 4,5:1 sobre --acc e --acc-2 claros', () => {
+    const onAcc = tokenClaro('on-acc')
+    expect(contraste(onAcc, tokenClaro('acc'))).toBeGreaterThanOrEqual(4.5)
+    expect(contraste(onAcc, tokenClaro('acc-2'))).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it('--acc-2 claro (link, foco) tem 4,5:1 como texto sobre bg e surface', () => {
+    expect(contraste(tokenClaro('acc-2'), BG_C)).toBeGreaterThanOrEqual(4.5)
+    expect(contraste(tokenClaro('acc-2'), SURFACE_C)).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it.each(['ok', 'warn', 'risk', 'bad', 'info'])('--%s claro tem 4,5:1 como texto sobre o card', (nome) => {
+    expect(contraste(tokenClaro(nome), SURFACE_C)).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it('ok e bad claros ainda se separam por luminância o quanto o teto de 4,5:1 permite', () => {
+    /*
+     * No escuro o piso é 0,15 (Parte II §3.7). No claro é impossível: para os cinco semânticos
+     * passarem 4,5:1 sobre branco todos ficam abaixo de L=0,18, e não cabe 0,15 de distância
+     * entre eles nessa faixa. O melhor alcançável é ~0,13 (ok↔bad). O tema claro compensa com
+     * ícone + rótulo no estado, nunca cor sozinha — registrado no docs/DECISOES.md.
+     * Este piso baixo pega a regressão real: alguém deixar ok e bad na MESMA luminância.
+     */
+    const delta = Math.abs(luminancia(tokenClaro('ok')) - luminancia(tokenClaro('bad')))
+    expect(delta, `Δ(ok, bad) claro = ${delta.toFixed(3)}`).toBeGreaterThanOrEqual(0.1)
   })
 })
