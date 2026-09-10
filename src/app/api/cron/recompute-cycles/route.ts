@@ -48,10 +48,30 @@ export const GET = rota(async (req) => {
     // na virada da hora usaria um relógio diferente do vizinho.
     const agora = new Date()
 
+    /*
+     * `try` por tenant, e não um `await` solto no laço: sem isto, o primeiro tenant com dado
+     * malformado (fuso que o `dataLocalDe` não parseia, atendimento sem serviço) lança, o laço
+     * inteiro aborta, e os tenants seguintes não têm o ciclo recalculado NESTE disparo nem em
+     * nenhum outro enquanto aquele não for consertado. É o mesmo silêncio dos dias 25/26/08 por
+     * outra porta — o diferencial do produto parado para quase todo mundo por causa de um.
+     *
+     * O erro não some: vai para o log estruturado (e para o Sentry), e `tenantsComFalha` volta no
+     * corpo — que o cron-job.org guarda ("Save responses in job history", ver o runbook). Se a
+     * falha for sistêmica (zero processados), o heartbeat não bate e o `/api/health` acusa em 26h.
+     */
     let processados = 0
+    let falhas = 0
     for (const tenant of tenants ?? []) {
-      await recomputarCiclosDoTenant(svc, tenant.id, tenant.timezone, dataLocalDe(tenant.timezone, agora))
-      processados++
+      try {
+        await recomputarCiclosDoTenant(svc, tenant.id, tenant.timezone, dataLocalDe(tenant.timezone, agora))
+        processados++
+      } catch (erro) {
+        falhas++
+        console.error(
+          JSON.stringify({ level: 'error', event: 'recompute_cycles_tenant_falhou', tenantId: tenant.id }),
+          erro,
+        )
+      }
     }
 
     /*
@@ -94,6 +114,6 @@ export const GET = rota(async (req) => {
       return { orfas: 0, vencidas: 0 }
     })
 
-    return { tenantsProcessados: processados, chavesOrfas: faxina.orfas, chavesVencidas: faxina.vencidas }
+    return { tenantsProcessados: processados, tenantsComFalha: falhas, chavesOrfas: faxina.orfas, chavesVencidas: faxina.vencidas }
   })
 })
