@@ -2,7 +2,9 @@
 
 import { RotateCcw } from 'lucide-react'
 import { usePathname } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
+import { causaDaFalhaDaTela, detalheTecnicoDaFalha, FRASE_DA_CAUSA, type CausaDaFalha } from '@/core/schema/causa-da-falha'
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 
@@ -34,13 +36,50 @@ import Card from '@/components/ui/card'
 export default function ErroDoApp({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
   const caminho = usePathname() ?? ''
   const jaEstaNoHoje = caminho.startsWith('/admin/hoje')
+  const [causa, setCausa] = useState<CausaDaFalha>('desconhecida')
+  const [detalhe, setDetalhe] = useState<string | null>(null)
+
+  /*
+   * Pergunta a CAUSA a quem sabe, em vez de chutar.
+   *
+   * O `error` que chega aqui não serve: em produção o Next higieniza a mensagem de erro de Server
+   * Component e sobra só o `digest`. Quem já compara o livro de migrations com o que o código
+   * espera é `/api/health` (`compararSchema`), e ele responde sem sessão.
+   *
+   * Falhar aqui é o caso NORMAL de queda de rede, e aí a frase genérica é a verdadeira: por isso o
+   * `catch` não conta nem avisa nada, ele só deixa a causa em `desconhecida`. É a exceção
+   * consciente à armadilha do "catch que descarta" do CLAUDE.md, porque o que ele descarta é
+   * justamente o sinal de que a hipótese padrão estava certa.
+   */
+  useEffect(() => {
+    const controlador = new AbortController()
+    // Teto curto: este cartão já é a tela de erro, e ninguém espera por um diagnóstico.
+    const relogio = setTimeout(() => controlador.abort(), 4000)
+
+    fetch('/api/health', { signal: controlador.signal, cache: 'no-store' })
+      .then((r) => r.json())
+      .then((corpo: unknown) => {
+        const c = causaDaFalhaDaTela(corpo)
+        setCausa(c)
+        setDetalhe(detalheTecnicoDaFalha(corpo, c))
+      })
+      .catch(() => {})
+      .finally(() => clearTimeout(relogio))
+
+    return () => {
+      clearTimeout(relogio)
+      controlador.abort()
+    }
+  }, [])
 
   return (
     <Card className="mt-8 flex flex-col items-center px-6 py-12 text-center">
       <p className="text-corpo font-semibold text-txt">Não consegui carregar esta tela</p>
-      <p className="mt-1 max-w-[36ch] text-secundario text-txt-2">
-        Pode ter sido a conexão. Nada do que você salvou foi perdido.
-      </p>
+      <p className="mt-1 max-w-[42ch] text-secundario text-txt-2">{FRASE_DA_CAUSA[causa]}</p>
+      {detalhe ? (
+        // Linha discreta: quem cuida do salão ignora, quem cuida do sistema lê aqui o que fazer.
+        <p className="mt-2 max-w-[52ch] font-mono text-[11px] leading-relaxed text-txt-3">{detalhe}</p>
+      ) : null}
       <div className="mt-5 flex flex-wrap justify-center gap-3">
         <Button onClick={() => reset()}>
           <RotateCcw aria-hidden className="size-4" />
