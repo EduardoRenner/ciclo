@@ -8,6 +8,7 @@ import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { receitaAtribuidaAoCiclo } from '@/server/services/atribuicao'
 import { centralDeAcoes } from '@/server/services/crm'
+import { listarParaRecuperar } from '@/server/services/recuperar-receita'
 import { resumoDeHoje } from '@/server/services/resumo-hoje'
 
 import CentralDeAcoes from './central-de-acoes'
@@ -35,7 +36,7 @@ export default async function PaginaHoje() {
   const desde = mesAtual.toPlainDate({ day: 1 }).toString()
   const ate = mesAtual.toPlainDate({ day: mesAtual.daysInMonth }).toString()
 
-  const [resumo, acoes, atribuicao] = await Promise.all([
+  const [resumo, acoes, atribuicao, emRisco] = await Promise.all([
     resumoDeHoje(db, ctx.tenantId, timezone),
     /*
       Nunca derruba "Hoje": um resumo de CRM que falhar vira lista vazia, não erro na tela mais
@@ -65,6 +66,22 @@ export default async function PaginaHoje() {
     receitaAtribuidaAoCiclo(db, ctx.tenantId, timezone, desde, ate).catch((erro: unknown) => {
       console.warn(JSON.stringify({ level: 'warn', event: 'atribuicao_do_ciclo_indisponivel' }), erro)
       return { totalCents: 0, count: 0, items: [], mensagensNaJanela: 0 }
+    }),
+    /*
+      A receita em risco AGORA — a manchete da tela quando ainda nao entrou dinheiro hoje e o Motor
+      ainda nao tem atribuicao (`escolherHeroi`). Sai de `listarParaRecuperar`, que e a MESMA funcao
+      que desenha `/admin/recuperar`: o numero da manchete e o numero da tela de destino tem que ser
+      identicos, senao o toque parece levar a outro assunto.
+
+      `limit: 1` porque aqui so interessam os agregados (`totalValueCents`, `count`), que a funcao
+      calcula sobre a lista inteira antes de cortar.
+
+      Mesmo `catch` das outras: falha vira zero e linha de log, nunca erro na tela mais importante
+      do app. Zero aqui so faz a manchete cair para "Atendido hoje", que e o comportamento anterior.
+    */
+    listarParaRecuperar(db, ctx.tenantId, { limit: 1 }).catch((erro: unknown) => {
+      console.warn(JSON.stringify({ level: 'warn', event: 'receita_em_risco_indisponivel' }), erro)
+      return { totalValueCents: 0, totalProfitCents: 0, count: 0, items: [] }
     }),
   ])
 
@@ -104,7 +121,7 @@ export default async function PaginaHoje() {
         }
       />
 
-      <Hoje resumo={resumo} atribuicao={atribuicao}>
+      <Hoje resumo={resumo} atribuicao={atribuicao} emRisco={{ totalCents: emRisco.totalValueCents, count: emRisco.count }}>
         <CentralDeAcoes dados={acoes} />
       </Hoje>
     </>
