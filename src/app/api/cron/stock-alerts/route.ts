@@ -29,18 +29,26 @@ export const GET = rota(async (req) => {
     const agora = new Date()
     let tenantsProcessados = 0
     let totalAlertas = 0
+    let falhas = 0
     for (const tenant of tenants ?? []) {
       if (!dentroDaJanela(horaLocalDe(tenant.timezone, agora), 7)) continue
 
-      const hojeLocal = dataLocalDe(tenant.timezone, agora)
-      const alertas = await listarAlertasDeEstoque(svc, tenant.id, hojeLocal)
-      if (alertas.length > 0) {
-        console.log(JSON.stringify({ level: 'info', event: 'stock_alerts', tenantId: tenant.id, count: alertas.length }))
+      // `try` por tenant — mesmo raciocínio de `recompute-cycles`/`campaigns`: um tenant com erro
+      // não pode abortar o laço e deixar os outros sem varredura de estoque.
+      try {
+        const hojeLocal = dataLocalDe(tenant.timezone, agora)
+        const alertas = await listarAlertasDeEstoque(svc, tenant.id, hojeLocal)
+        if (alertas.length > 0) {
+          console.log(JSON.stringify({ level: 'info', event: 'stock_alerts', tenantId: tenant.id, count: alertas.length }))
+        }
+        totalAlertas += alertas.length
+        tenantsProcessados++
+      } catch (erro) {
+        falhas++
+        console.error(JSON.stringify({ level: 'error', event: 'stock_alerts_tenant_falhou', tenantId: tenant.id }), erro)
       }
-      totalAlertas += alertas.length
-      tenantsProcessados++
     }
 
-    return { tenantsProcessados, totalAlertas }
+    return { tenantsProcessados, totalAlertas, tenantsComFalha: falhas }
   })
 })

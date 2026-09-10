@@ -7049,3 +7049,5 @@ Guardas atualizadas com registro (regra do afrouxamento): `middleware-cache.test
 **Falta validar em preview** (não dá para medir daqui): abrir o preview do Vercel, conferir no
 navegador que `/`, `/precos` respondem da borda com TTFB baixo, que `/entrar` e uma página de salão
 seguem dinâmicas e hidratam, e que um usuário logado abrindo a `/` ainda cai em `/admin/hoje`.
+
+2026-09-10 · as duas rotas de cron que rodam sozinhas em produção (`recompute-cycles`, `segments`) varrem todos os tenants com `await` solto no laço — um tenant com dado malformado abortava o laço e deixava todos os seguintes sem recálculo, neste disparo e nos próximos · `try` por tenant, `falhas++` no catch, log estruturado + `tenantsComFalha` no corpo; guarda `motor-de-ciclo-um-tenant-nao-derruba-o-laco` vista reprovando.
