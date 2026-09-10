@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation'
 
 import { paiDaRota } from './navegacao'
 import wordmark from '../../../public/marca/ciclo-wordmark-aqua.png'
+import wordmarkClaro from '../../../public/marca/ciclo-wordmark-aqua-claro.png'
 
 /**
  * Barra do topo. Deixou de ser um enfeite de marca e virou **navegação**: na
@@ -45,8 +46,13 @@ export default function Topbar() {
         <div className="flex h-12 items-center">
           {/* Lockup completo (redesenho aqua, 2026-08-26) — nunca mais o nome
               digitado à parte do símbolo; onde "Ciclo" aparece fora de frase,
-              é a marca de verdade. */}
-          <Image src={wordmark} alt="CICLO" className="h-7 w-auto" />
+              é a marca de verdade.
+
+              Dois arquivos: o "iclo" do wordmark padrão é quase branco e some no
+              tema claro. O CSS (`globals.css`, `.marca-no-escuro`/`.marca-no-claro`)
+              mostra um por vez conforme o `data-theme` do wrapper. */}
+          <Image src={wordmark} alt="CICLO" className="marca-no-escuro h-7 w-auto" />
+          <Image src={wordmarkClaro} alt="" aria-hidden className="marca-no-claro h-7 w-auto" />
         </div>
       )}
 

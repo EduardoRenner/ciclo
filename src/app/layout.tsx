@@ -68,9 +68,14 @@ export const metadata: Metadata = {
   },
 };
 
-// O app é mobile-first e o tema escuro é o padrão; a barra do navegador acompanha.
+// O escuro é o padrão; a barra do navegador acompanha o tema do sistema. A escolha explícita do
+// seletor não passa por aqui (viewport é estático) — o `seletor-de-tema` reescreve a
+// <meta name="theme-color"> quando troca.
 export const viewport: Viewport = {
-  themeColor: "#0d0c0c",
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#0d0c0c" },
+    { media: "(prefers-color-scheme: light)", color: "#faf8f5" },
+  ],
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -81,6 +86,10 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // O `<html>` fica no escuro: a landing, o login e a página do salão são a "frente de casa", e a
+  // identidade do produto é escura. Claro/escuro é preferência do PROFISSIONAL e vale dentro de
+  // `/admin` — o `admin/layout.tsx` (server, lê o cookie `ciclo-tema`) embrulha o painel num
+  // `<div data-theme>`, e o CSS cascateia dali. Sem `<script>`, sem piscada, sem esbarrar na CSP.
   return (
     <html lang="pt-BR" className="dark">
       <body className={`${archivo.variable} antialiased`}>

@@ -3,11 +3,20 @@
 @import "shadcn/tailwind.css";
 
 /*
- * Tokens de `docs/03-DESIGN-SYSTEM.md §1`, com as emendas de
- * `docs/08-REDESIGN-E-IDENTIDADE.md`. O tema escuro é o padrão — não é uma variante, é
- * como o produto se parece. Por isso os valores moram em `:root` e não numa
- * classe `.dark`: o salão abre a agenda no escuro sem depender de classe no
- * <html>.
+ * Tokens de `docs/03-DESIGN-SYSTEM.md §1`, com as emendas de `docs/08-REDESIGN-E-IDENTIDADE.md`.
+ *
+ * **O tema escuro é o PADRÃO** e mora no `:root` puro: quem nunca escolheu, e quem tem o sistema
+ * no escuro, abre a agenda no escuro sem uma linha de JS.
+ *
+ * Desde 2026-09-10 há um tema CLARO (pedido do dono). O `admin/layout.tsx` (server, lê cookie)
+ * embrulha o painel num `<div data-theme="sistema|light|dark">`. `[data-theme="light"]` e
+ * `[data-theme="dark"]` cravam a paleta; `[data-theme="sistema"]` deixa o `@media` decidir.
+ * Cookie `ciclo-tema` em vez de `localStorage`: só o cookie chega ao servidor, e é o servidor
+ * que evita a piscada — nada de `<script>` inline (a CSP com `strict-dynamic` o bloquearia).
+ *
+ * Cada valor claro foi medido para 4,5:1 — `tests/unit/design/contraste.test.ts` confere as duas
+ * paletas. A ressalva do daltonismo (0,15 de Δ luminância entre semânticos é inatingível no claro
+ * sob o teto de 4,5:1) está no `docs/DECISOES.md`.
  */
 :root {
   /*
@@ -124,6 +133,115 @@
   --dur-3: 320ms;
 }
 
+/* ─── TEMA CLARO ─── só os tokens que mudam. Raio, espaço, tipografia e curva são iguais. ─── */
+
+/*
+ * O mesmo conjunto aparece em dois seletores de propósito: CSS não aplica uma lista a vários
+ * seletores. As duas cópias TÊM que ser idênticas, e a guarda de contraste lê o segundo bloco
+ * (`[data-theme="light"]`) — divergir reprova o build.
+ */
+@media (prefers-color-scheme: light) {
+  [data-theme="sistema"] {
+    --bg: #faf8f5;
+    --surface: #ffffff;
+    --surface-2: #f1eee9;
+    --surface-3: #e7e2db;
+    --line: rgba(24, 18, 12, 0.10);
+    --line-2: rgba(24, 18, 12, 0.16);
+    --surface-press: rgba(24, 18, 12, 0.05);
+    --overlay: rgba(24, 18, 12, 0.45);
+
+    --txt: #1b1712;
+    --txt-2: #5b544c;
+    --txt-3: #655d53;
+
+    /* Aqua mais fundo: o #14b8a6 do escuro dá 2,5:1 com texto branco num botão de fundo claro. */
+    --acc: #0b7d6f;
+    --acc-2: #0a6a5e;
+    --acc-soft: rgba(11, 125, 111, 0.12);
+    --on-acc: #ffffff;
+    --ring: var(--acc);
+
+    --ok: #2b8449;
+    --warn: #835800;
+    --risk: #934315;
+    --bad: #78120b;
+    --info: #2563a0;
+
+    /* Sombra de tema claro é curta: o card já se destaca do fundo sozinho. */
+    --shadow-elevado: 0 1px 3px rgba(24, 18, 12, 0.08);
+    --shadow-flutuante: 0 8px 24px rgba(24, 18, 12, 0.14);
+  }
+}
+
+[data-theme="light"] {
+    --bg: #faf8f5;
+  --surface: #ffffff;
+  --surface-2: #f1eee9;
+  --surface-3: #e7e2db;
+  --line: rgba(24, 18, 12, 0.10);
+  --line-2: rgba(24, 18, 12, 0.16);
+  --surface-press: rgba(24, 18, 12, 0.05);
+  --overlay: rgba(24, 18, 12, 0.45);
+
+  --txt: #1b1712;
+  --txt-2: #5b544c;
+  --txt-3: #655d53;
+
+  /* Aqua mais fundo: o #14b8a6 do escuro dá 2,5:1 com texto branco num botão de fundo claro. */
+  --acc: #0b7d6f;
+  --acc-2: #0a6a5e;
+  --acc-soft: rgba(11, 125, 111, 0.12);
+  --on-acc: #ffffff;
+  --ring: var(--acc);
+
+  --ok: #2b8449;
+  --warn: #835800;
+  --risk: #934315;
+  --bad: #78120b;
+  --info: #2563a0;
+
+  /* Sombra de tema claro é curta: o card já se destaca do fundo sozinho. */
+  --shadow-elevado: 0 1px 3px rgba(24, 18, 12, 0.08);
+  --shadow-flutuante: 0 8px 24px rgba(24, 18, 12, 0.14);
+}
+
+/*
+ * Escolha explícita "escuro" num aparelho com o sistema no claro: sem este bloco o `@media` de
+ * cima (via `[data-theme="sistema"]`) não pega — mas se a pessoa escolheu escuro, o wrapper tem
+ * `data-theme="dark"` e nada casaria, então o `:root` puro (que já é escuro) valeria. Este bloco
+ * existe só para deixar isso ÓBVIO e à prova de refactor: escuro é escuro, venha de onde vier.
+ */
+[data-theme="dark"] {
+  --bg: #0d0c0c;
+  --surface: #161514;
+  --surface-2: #201e1d;
+  --surface-3: #2b2926;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-2: rgba(255, 255, 255, 0.14);
+  --surface-press: rgba(255, 255, 255, 0.05);
+  --overlay: rgba(5, 5, 10, 0.72);
+
+  --txt: #f5f3f1;
+  --txt-2: #a8a29c;
+  --txt-3: #99938c;
+
+  --acc: #14b8a6;
+  --acc-2: #99f6e4;
+  --acc-soft: rgba(20, 184, 166, 0.14);
+  --on-acc: #0d0c0c;
+  --ring: var(--acc-2);
+
+  --ok: #90dfba;
+  --warn: #e2af36;
+  --risk: #e79955;
+  --bad: #e05d52;
+  --info: #6da1d5;
+
+  --shadow-elevado: 0 1px 2px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  --shadow-flutuante: 0 8px 24px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
 /*
  * No monitor a navegação sai de baixo e vira coluna lateral, então a altura reservada para a
  * barra inferior deixa de existir. Zerar o token aqui conserta de uma vez os três lugares que
@@ -133,6 +251,30 @@
 @media (min-width: 1024px) {
   :root {
     --tabbar-h: 0px;
+  }
+}
+
+
+/*
+ * Troca de imagem por tema (hoje só o wordmark da topbar). O escuro é o padrão: `.marca-no-claro`
+ * nasce escondida e só aparece quando o tema resolvido é claro — por escolha (`[data-theme=light]`)
+ * ou por sistema (`[data-theme=sistema]` + `@media`).
+ */
+.marca-no-claro {
+  display: none;
+}
+[data-theme="light"] .marca-no-escuro {
+  display: none;
+}
+[data-theme="light"] .marca-no-claro {
+  display: revert;
+}
+@media (prefers-color-scheme: light) {
+  [data-theme="sistema"] .marca-no-escuro {
+    display: none;
+  }
+  [data-theme="sistema"] .marca-no-claro {
+    display: revert;
   }
 }
 
@@ -242,6 +384,23 @@
 }
 
 @layer base {
+  /*
+   * O wrapper de tema do `/admin` (`admin/layout.tsx`) precisa pintar o PRÓPRIO fundo: as
+   * variáveis que ele redefine (`--bg` etc.) descem para os filhos, mas NÃO sobem para o
+   * `<body>`, que é ancestral. Sem isto, "claro" deixava o body escuro aparecendo nas bordas
+   * (coluna centralizada no monitor, rubber-band no celular).
+   */
+  #raiz-do-tema {
+    background: var(--bg);
+    /*
+     * `color` é herdado, e o `<body>` já COMPUTOU o dele com o `--txt` escuro — os filhos herdam
+     * esse valor pronto, não `var(--txt)`. Re-declarar aqui faz a subárvore herdar do `--txt`
+     * que este wrapper redefiniu. Mesmo motivo do `background` acima.
+     */
+    color: var(--txt);
+    min-height: 100dvh;
+  }
+
   * {
     border-color: var(--line);
   }
