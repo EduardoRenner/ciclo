@@ -45,6 +45,9 @@ let tenantId: string
 let previsaoId: string
 let usoId: string
 let packageId: string
+let cicloClientId: string
+let cicloServiceId: string
+let pontoId: string
 let email: string
 let senha: string
 const userIds: string[] = []
@@ -71,6 +74,8 @@ beforeAll(async () => {
     await admin.from('services').insert({ tenant_id: tenantId, name: 'Corte', duration_min: 30, price_cents: 5000 }).select('id').single(),
     'services',
   ).id
+  cicloClientId = clientId
+  cicloServiceId = serviceId
 
   previsaoId = exigir(
     await admin
@@ -102,6 +107,42 @@ beforeAll(async () => {
     await admin.from('package_uses').insert({ tenant_id: tenantId, package_id: packageId }).select('id').single(),
     'package_uses',
   ).id
+
+  // 0082
+  if (
+    (await admin.from('client_cycles').insert({ tenant_id: tenantId, client_id: clientId, service_id: serviceId, personal_cycle_days: 21 }))
+      .error
+  ) {
+    throw new Error('seed client_cycles falhou')
+  }
+  if ((await admin.from('loyalty_entries').insert({ tenant_id: tenantId, client_id: clientId, points: 100, reason: 'seed' })).error) {
+    throw new Error('seed loyalty_entries falhou')
+  }
+  pontoId = exigir(
+    await admin
+      .from('loyalty_entries')
+      .select('id')
+      .eq('tenant_id', tenantId)
+      .eq('reason', 'seed')
+      .single(),
+    'loyalty_entries id',
+  ).id
+  if (
+    (
+      await admin.from('monthly_profit').insert({
+        tenant_id: tenantId,
+        month: '2026-08-01',
+        revenue_cents: 100000,
+        material_cents: 10000,
+        fee_cents: 2000,
+        commission_cents: 30000,
+        profit_cents: 58000,
+        tickets_count: 12,
+      })
+    ).error
+  ) {
+    throw new Error('seed monthly_profit falhou')
+  }
 }, 180_000)
 
 afterAll(async () => {
@@ -152,5 +193,50 @@ describe('0081 · cycle_predictions e package_uses não se apagam pela porta lat
     await c.from('package_uses').delete().eq('id', usoId)
     const { count } = await admin.from('package_uses').select('id', { count: 'exact', head: true }).eq('id', usoId)
     expect(count).toBe(1)
+  })
+})
+
+describe('0082 · client_cycles, loyalty_entries e monthly_profit param de aceitar DELETE', () => {
+  it('client_cycles: UPDATE ainda funciona (o Motor faz upsert pelo cliente do usuário ao concluir atendimento)', async () => {
+    const c = await entrar()
+    const r = await c
+      .from('client_cycles')
+      .update({ late_days: 3 })
+      .eq('tenant_id', tenantId)
+      .eq('client_id', cicloClientId)
+      .eq('service_id', cicloServiceId)
+      .select('late_days')
+    expect(r.error, r.error?.message).toBeNull()
+    expect(r.data?.[0]?.late_days).toBe(3)
+  })
+
+  it('client_cycles: DELETE não passa', async () => {
+    const c = await entrar()
+    await c.from('client_cycles').delete().eq('tenant_id', tenantId).eq('client_id', cicloClientId)
+    const { count } = await admin
+      .from('client_cycles')
+      .select('client_id', { count: 'exact', head: true })
+      .eq('tenant_id', tenantId)
+      .eq('client_id', cicloClientId)
+    expect(count).toBe(1)
+  })
+
+  it('loyalty_entries: INSERT funciona (lançar ponto), UPDATE e DELETE não', async () => {
+    const c = await entrar()
+    const ins = await c.from('loyalty_entries').insert({ tenant_id: tenantId, client_id: cicloClientId, points: -50, reason: 'resgate' }).select('id').single()
+    expect(ins.error, ins.error?.message).toBeNull()
+
+    await c.from('loyalty_entries').update({ points: 9999 }).eq('id', pontoId)
+    await c.from('loyalty_entries').delete().eq('id', pontoId)
+    const { data } = await admin.from('loyalty_entries').select('points').eq('id', pontoId).single()
+    expect(data!.points).toBe(100) // nem editado, nem apagado
+  })
+
+  it('monthly_profit: UPDATE e DELETE não passam (append-only da 0071)', async () => {
+    const c = await entrar()
+    await c.from('monthly_profit').update({ profit_cents: 1 }).eq('tenant_id', tenantId).eq('month', '2026-08-01')
+    await c.from('monthly_profit').delete().eq('tenant_id', tenantId).eq('month', '2026-08-01')
+    const { data } = await admin.from('monthly_profit').select('profit_cents').eq('tenant_id', tenantId).eq('month', '2026-08-01').single()
+    expect(data!.profit_cents).toBe(58000)
   })
 })
