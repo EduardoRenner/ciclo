@@ -7049,3 +7049,5 @@ Guardas atualizadas com registro (regra do afrouxamento): `middleware-cache.test
 **Falta validar em preview** (não dá para medir daqui): abrir o preview do Vercel, conferir no
 navegador que `/`, `/precos` respondem da borda com TTFB baixo, que `/entrar` e uma página de salão
 seguem dinâmicas e hidratam, e que um usuário logado abrindo a `/` ainda cai em `/admin/hoje`.
+
+2026-09-10 · a home abria com `R$ 0,00` a 34px (o maior elemento da tela) enquanto `R$ 302,75` de receita em risco — o número que só este produto calcula — não aparecia em lugar nenhum; medido no painel local com dados reais · `deveMostrarHeroiDoMotor` virou `escolherHeroi`, com o valor em risco como terceira opção de manchete e `temProximoCliente` fora da conta (era ele que anulava o conserto no caso mais comum).
