@@ -1,0 +1,22 @@
+# `docs/DECISOES.md` é um livro append-only: cada decisão entra no FIM, com a data.
+#
+# Isso faz dois PRs abertos ao mesmo tempo conflitarem SEMPRE — os dois escrevem na mesma última
+# linha, e o git não tem como saber a ordem. A armadilha já está escrita no `CLAUDE.md`
+# ("apendar em docs/DECISOES.md sem rebasear"), e a receita de lá é rebasear antes de abrir o PR:
+# funciona com um PR aberto por vez, e não escala.
+#
+# Medido em 2026-09-10, com 13 PRs verdes na fila: mergeando em lote a partir de `main`, o sétimo
+# parava em conflito de `DECISOES.md`. O GitHub mostrava os treze como "mergeable" porque avalia
+# cada um contra `main` isoladamente, nunca contra o lote.
+#
+# `merge=union` é o driver embutido do git para exatamente este caso: em vez de conflitar, ele
+# mantém OS DOIS lados. Para um livro em que cada linha é autocontida e datada, a ordem relativa
+# entre duas entradas do mesmo dia não significa nada, e nenhuma se perde.
+#
+# Medido com o driver ligado: os mesmos 13 PRs mergeiam 13/13 limpos, 5 entradas do dia
+# preservadas, zero marcador de conflito, zero linha duplicada.
+#
+# Vale só para este arquivo. Em código, `union` seria perigoso (juntaria os dois lados de uma
+# função e produziria algo que compila e está errado); aqui é um log de texto, onde juntar é
+# exatamente o certo.
+docs/DECISOES.md merge=union
