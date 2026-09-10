@@ -255,6 +255,49 @@ describe('0082 · client_cycles, loyalty_entries e monthly_profit param de aceit
 })
 
 /**
+ * CONTROLE POSITIVO — o caso que prova que todos os "NÃO apaga" acima sabem falhar.
+ *
+ * Os casos de negação afirmam que o estado NÃO mudou. Um arnês quebrado — sessão que não
+ * autenticou, `entrar()` devolvendo cliente anônimo, filtro que não casa linha nenhuma — produz
+ * exatamente o mesmo resultado: nada muda, tudo verde. É a "guarda que passa vazia" do CLAUDE.md,
+ * e num arquivo inteiro de asserções negativas ela é a falha mais provável.
+ *
+ * `waitlist` continua com o `waitlist_tenant_all` do loop da `0001` (`for all using has_tenant`) —
+ * o `docs/57` a lista em "deixar como está, de propósito", config compartilhada do salão. Então o
+ * MESMO membro, pelo MESMO caminho, TEM que conseguir apagar aqui. Se este caso ficar verde
+ * dizendo "não apagou", o arnês está cego e nenhuma negação deste arquivo vale nada.
+ *
+ * Isto substitui a mutação (afrouxar a 0083 para vê-la reprovar) com uma vantagem: a mutação é
+ * uma observação única, feita uma vez por quem escreveu; o controle roda em toda CI, para sempre.
+ */
+describe('controle positivo · o arnês sabe detectar política permissiva', () => {
+  it('na waitlist, que segue em `for all`, o MESMO membro apaga de verdade', async () => {
+    const linha = exigir(
+      await admin
+        .from('waitlist')
+        .insert({ tenant_id: tenantId, client_id: cicloClientId, service_id: cicloServiceId })
+        .select('id')
+        .single(),
+      'waitlist',
+    )
+
+    const antes = await admin.from('waitlist').select('id', { count: 'exact', head: true }).eq('id', linha.id)
+    expect(antes.count, 'o seed da waitlist não entrou — o controle não provaria nada').toBe(1)
+
+    const c = await entrar()
+    await c.from('waitlist').delete().eq('id', linha.id)
+
+    const depois = await admin.from('waitlist').select('id', { count: 'exact', head: true }).eq('id', linha.id)
+    expect(
+      depois.count,
+      'o membro NÃO conseguiu apagar de uma tabela `for all` — o arnês está cego (sessão que não ' +
+        'autenticou, filtro que não casa), e então todos os casos de "não apaga" deste arquivo ' +
+        'estão passando vazios.',
+    ).toBe(0)
+  })
+})
+
+/**
  * A carteira é a que mais importa das seis, e foi a que ficou de fora da 0080/0081/0082: o saldo
  * é `sum(amount_cents)`, então apagar uma linha MOVE DINHEIRO — apagar débito ressuscita crédito
  * já gasto, apagar crédito evapora o que a cliente pagou. E some sem rastro, porque o rastro era
