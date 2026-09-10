@@ -68,9 +68,14 @@ export const metadata: Metadata = {
   },
 };
 
-// O app é mobile-first e o tema escuro é o padrão; a barra do navegador acompanha.
+// O escuro é o padrão; a barra do navegador acompanha o tema do sistema. A escolha explícita do
+// seletor não passa por aqui (viewport é estático) — o `seletor-de-tema` reescreve a
+// <meta name="theme-color"> quando troca.
 export const viewport: Viewport = {
-  themeColor: "#0d0c0c",
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#0d0c0c" },
+    { media: "(prefers-color-scheme: light)", color: "#faf8f5" },
+  ],
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -82,7 +87,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" className="dark">
+    <html lang="pt-BR" suppressHydrationWarning>
+      <head>
+        {/*
+          Anti-flash: aplica a escolha de tema ANTES da primeira pintura. Sem isto, quem escolheu
+          "claro" veria a tela escura piscar a cada navegação de página inteira (o React só roda
+          depois). Lê `localStorage`; "sistema" ou ausência = não mexe, e aí o `@media` do CSS
+          decide. Erro de storage (aba anônima, quota) não pode derrubar o `<head>` — o `try` cai
+          no comportamento padrão, que é o escuro.
+        */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var t=localStorage.getItem('ciclo-tema');if(t==='claro'||t==='escuro'){document.documentElement.dataset.theme=t==='claro'?'light':'dark'}}catch(e){}",
+          }}
+        />
+      </head>
       <body className={`${archivo.variable} antialiased`}>
         <RegistrarServiceWorker />
         {children}
