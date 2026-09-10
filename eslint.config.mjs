@@ -21,6 +21,18 @@ const eslintConfig = [
       "build/**",
       "next-env.d.ts",
       "src/server/db/types.gen.ts",
+      /*
+       * `supabase start` escreve aqui os segredos e o runtime das Edge Functions — código
+       * MINIFICADO de terceiro, que o `.gitignore` já esconde do git mas o ESLint continuava
+       * varrendo. Medido em 2026-09-10, ao montar o ambiente local pela primeira vez: 154 erros
+       * de `prefer-const` em nomes de uma letra, todos vindos de um `index.ts` gerado.
+       *
+       * O efeito é pior que o ruído: `supabase start` é o passo que o CLAUDE.md manda dar ANTES
+       * do `pnpm dev`, então quem monta o ambiente do jeito documentado ganha um `pnpm verify`
+       * quebrado por código que não é dele. A CI não via porque lá o `lint` roda antes do
+       * `supabase start`.
+       */
+      "supabase/.temp/**",
     ],
   },
 
