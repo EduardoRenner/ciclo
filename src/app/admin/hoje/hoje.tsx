@@ -26,12 +26,6 @@ function horaLocal(iso: string): string {
 }
 
 /**
- * F1 (`docs/25-ESTRATEGIA-E-EXECUCAO.md`): em dia sem movimento nenhum (nada faturado, nada
- * marcado pra frente), R$ 0,00 é a primeira coisa que a tela diz — pro profissional em teste, no
- * dia 1, isso lê como fracasso. Exportada pura (sem props do componente) para poder testar a
- * decisão sem montar React — este projeto não tem harness de render de componente.
- */
-/**
  * "Faturado hoje" era mentira por uma palavra, e ficou escrito aqui para não voltar.
  *
  * O número embaixo deste rótulo soma o `price_cents` DO AGENDAMENTO dos atendimentos concluídos —
@@ -45,8 +39,45 @@ function horaLocal(iso: string): string {
  */
 const ROTULO_DO_ATENDIDO = 'Atendido hoje'
 
-export function deveMostrarHeroiDoMotor(revenueTodayCents: number, temProximoCliente: boolean, atribuicaoCount: number): boolean {
-  return revenueTodayCents === 0 && !temProximoCliente && atribuicaoCount > 0
+export type HeroiDaHome = 'motor_trouxe' | 'motor_em_risco' | 'atendido'
+
+/**
+ * Qual número abre a tela — e por que "R$ 0,00" deixou de ser a resposta padrão.
+ *
+ * **Medido em 2026-09-10**, no painel local com dados de verdade, às 11h30: o maior elemento da
+ * home era `R$ 0,00` a 34 px (o dobro de qualquer outra coisa), enquanto `R$ 302,75` de receita em
+ * risco — o número que o Motor calcula e que nenhum concorrente tem — não aparecia em lugar
+ * nenhum. Ele existe, bem apresentado, em `/admin/recuperar`, a um clique de distância.
+ *
+ * A regra anterior exigia TRÊS condições ao mesmo tempo (`receita === 0 && !temProximoCliente &&
+ * atribuicao > 0`) e por isso quase nunca disparava: bastava ter um cliente marcado para as 13h
+ * para a tela voltar a abrir com zero. E a atribuição só existe DEPOIS que o Motor já trouxe
+ * alguém — ou seja, o reforço chegava para quem já estava convencido, e faltava justamente para
+ * quem está decidindo se o produto vale.
+ *
+ * A ordem aqui é a da utilidade, não a do otimismo:
+ *
+ * 1. **Entrou dinheiro hoje** — o dia está acontecendo, e o número do dia ganha de qualquer outro.
+ * 2. **O Motor já trouxe este mês** — prova consumada vence oportunidade; é o valor que o produto
+ *    já entregou, com nome e sobrenome em `/admin/recuperar`.
+ * 3. **Tem receita em risco agora** — a pergunta que só este produto responde: quanto sai pela
+ *    porta se ninguém fizer nada.
+ * 4. **Nada disso** — `R$ 0,00` com "Atendido hoje", porque aí não há número melhor e inventar um
+ *    seria pior que mostrar zero.
+ *
+ * `temProximoCliente` saiu da conta de propósito: ter cliente às 13h não torna `R$ 0,00` uma
+ * manchete melhor que `R$ 302,75`, e o próximo cliente já tem cartão próprio e destacado logo
+ * abaixo ("A seguir"). O que ele fazia era anular o conserto no caso mais comum.
+ */
+export function escolherHeroi(entrada: {
+  atendidoHojeCents: number
+  atribuicaoCount: number
+  valorEmRiscoCents: number
+}): HeroiDaHome {
+  if (entrada.atendidoHojeCents > 0) return 'atendido'
+  if (entrada.atribuicaoCount > 0) return 'motor_trouxe'
+  if (entrada.valorEmRiscoCents > 0) return 'motor_em_risco'
+  return 'atendido'
 }
 
 /**
@@ -60,17 +91,25 @@ export function deveMostrarHeroiDoMotor(revenueTodayCents: number, temProximoCli
 export default function Hoje({
   resumo,
   atribuicao,
+  emRisco,
   children,
 }: {
   resumo: ResumoHoje
   atribuicao: ReceitaAtribuida
+  /** Total e contagem de `listarParaRecuperar` — a MESMA fonte de `/admin/recuperar`. */
+  emRisco: { totalCents: number; count: number }
   children?: React.ReactNode
 }) {
   const atualizarDepois = useAtualizarDepois()
   const [selecionado, setSelecionado] = useState<LinhaHoje | null>(null)
 
   const faltam = resumo.restOfDay.length
-  const mostrarHeroiDoMotor = deveMostrarHeroiDoMotor(resumo.revenueTodayCents, !!resumo.nextClient, atribuicao.count)
+  const heroi = escolherHeroi({
+    atendidoHojeCents: resumo.revenueTodayCents,
+    atribuicaoCount: atribuicao.count,
+    valorEmRiscoCents: emRisco.totalCents,
+  })
+  const destinoDoHeroi = heroi === 'atendido' ? '/admin/caixa' : '/admin/recuperar'
 
   /*
    * As três seções desta tela mostram fatias da MESMA lista, e antes disto elas se sobrepunham:
@@ -105,8 +144,8 @@ export default function Hoje({
         quanto sobrou?") tem tela desde esta rodada — tocar no número é o gesto
         natural para chegar nela.
       */}
-      <Link href={mostrarHeroiDoMotor ? '/admin/recuperar' : '/admin/caixa'} className="mb-6 block">
-        {mostrarHeroiDoMotor ? (
+      <Link href={destinoDoHeroi} className="mb-6 block">
+        {heroi === 'motor_trouxe' ? (
           <StatTile
             pressionavel
             heroi
@@ -117,6 +156,29 @@ export default function Hoje({
                 {`${atribuicao.count} ${atribuicao.count === 1 ? 'agendamento recuperado' : 'agendamentos recuperados'}`}
                 <span className="flex shrink-0 items-center gap-0.5 font-semibold text-acc-2">
                   Ver quem voltou
+                  <ChevronRight aria-hidden className="size-4" />
+                </span>
+              </span>
+            }
+          />
+        ) : heroi === 'motor_em_risco' ? (
+          /*
+            "Dá para recuperar" e não "em risco": o rótulo diz o que a pessoa PODE fazer, não o que
+            ela está perdendo. É a mesma palavra que `/admin/recuperar` usa no topo — a manchete e o
+            destino têm que falar igual, senão o toque parece levar a outro assunto. E o valor sai
+            da MESMA função que aquela tela (`listarParaRecuperar`), para os dois números nunca
+            divergirem.
+          */
+          <StatTile
+            pressionavel
+            heroi
+            rotulo="Dá para recuperar"
+            valor={dinheiro.format(emRisco.totalCents / 100)}
+            apoio={
+              <span className="flex items-center justify-between gap-2">
+                {`${emRisco.count} ${emRisco.count === 1 ? 'cliente passou da hora de voltar' : 'clientes passaram da hora de voltar'}`}
+                <span className="flex shrink-0 items-center gap-0.5 font-semibold text-acc-2">
+                  Ver quem sumiu
                   <ChevronRight aria-hidden className="size-4" />
                 </span>
               </span>
