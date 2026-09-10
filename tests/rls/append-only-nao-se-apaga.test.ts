@@ -48,6 +48,7 @@ let packageId: string
 let cicloClientId: string
 let cicloServiceId: string
 let pontoId: string
+let carteiraId: string
 let email: string
 let senha: string
 const userIds: string[] = []
@@ -143,6 +144,18 @@ beforeAll(async () => {
   ) {
     throw new Error('seed monthly_profit falhou')
   }
+
+  // 0083 — `5000`, e não `0`: o teste do UPDATE compara o valor DEPOIS com este número. Com zero,
+  // um `update({ amount_cents: 0 })` barrado e um permitido dariam o mesmo "0 vs 0" (o quase-erro
+  // da 0075). O fixture precisa poder falhar.
+  carteiraId = exigir(
+    await admin
+      .from('wallet_entries')
+      .insert({ tenant_id: tenantId, client_id: clientId, amount_cents: 5000, reason: 'seed: sinal virado crédito' })
+      .select('id')
+      .single(),
+    'wallet_entries',
+  ).id
 }, 180_000)
 
 afterAll(async () => {
@@ -238,5 +251,108 @@ describe('0082 · client_cycles, loyalty_entries e monthly_profit param de aceit
     await c.from('monthly_profit').delete().eq('tenant_id', tenantId).eq('month', '2026-08-01')
     const { data } = await admin.from('monthly_profit').select('profit_cents').eq('tenant_id', tenantId).eq('month', '2026-08-01').single()
     expect(data!.profit_cents).toBe(58000)
+  })
+})
+
+/**
+ * CONTROLE POSITIVO — o caso que prova que todos os "NÃO apaga" acima sabem falhar.
+ *
+ * Os casos de negação afirmam que o estado NÃO mudou. Um arnês quebrado — sessão que não
+ * autenticou, `entrar()` devolvendo cliente anônimo, filtro que não casa linha nenhuma — produz
+ * exatamente o mesmo resultado: nada muda, tudo verde. É a "guarda que passa vazia" do CLAUDE.md,
+ * e num arquivo inteiro de asserções negativas ela é a falha mais provável.
+ *
+ * `waitlist` continua com o `waitlist_tenant_all` do loop da `0001` (`for all using has_tenant`) —
+ * o `docs/57` a lista em "deixar como está, de propósito", config compartilhada do salão. Então o
+ * MESMO membro, pelo MESMO caminho, TEM que conseguir apagar aqui. Se este caso ficar verde
+ * dizendo "não apagou", o arnês está cego e nenhuma negação deste arquivo vale nada.
+ *
+ * Isto substitui a mutação (afrouxar a 0083 para vê-la reprovar) com uma vantagem: a mutação é
+ * uma observação única, feita uma vez por quem escreveu; o controle roda em toda CI, para sempre.
+ */
+describe('controle positivo · o arnês sabe detectar política permissiva', () => {
+  it('na waitlist, que segue em `for all`, o MESMO membro apaga de verdade', async () => {
+    const linha = exigir(
+      await admin
+        .from('waitlist')
+        .insert({ tenant_id: tenantId, client_id: cicloClientId, service_id: cicloServiceId })
+        .select('id')
+        .single(),
+      'waitlist',
+    )
+
+    const antes = await admin.from('waitlist').select('id', { count: 'exact', head: true }).eq('id', linha.id)
+    expect(antes.count, 'o seed da waitlist não entrou — o controle não provaria nada').toBe(1)
+
+    const c = await entrar()
+    await c.from('waitlist').delete().eq('id', linha.id)
+
+    const depois = await admin.from('waitlist').select('id', { count: 'exact', head: true }).eq('id', linha.id)
+    expect(
+      depois.count,
+      'o membro NÃO conseguiu apagar de uma tabela `for all` — o arnês está cego (sessão que não ' +
+        'autenticou, filtro que não casa), e então todos os casos de "não apaga" deste arquivo ' +
+        'estão passando vazios.',
+    ).toBe(0)
+  })
+})
+
+/**
+ * A carteira é a que mais importa das seis, e foi a que ficou de fora da 0080/0081/0082: o saldo
+ * é `sum(amount_cents)`, então apagar uma linha MOVE DINHEIRO — apagar débito ressuscita crédito
+ * já gasto, apagar crédito evapora o que a cliente pagou. E some sem rastro, porque o rastro era
+ * a linha.
+ */
+describe('0083 · a carteira da cliente é livro-razão: entra linha, nada sai', () => {
+  it('o membro LÊ o extrato (o saldo na comanda depende disso)', async () => {
+    const c = await entrar()
+    const { data } = await c.from('wallet_entries').select('id').eq('id', carteiraId)
+    expect((data ?? []).map((r) => r.id)).toEqual([carteiraId])
+  })
+
+  it('o membro INSERE crédito (cortesia e sinal virado crédito vêm do cliente do usuário)', async () => {
+    const c = await entrar()
+    const ins = await c
+      .from('wallet_entries')
+      .insert({ tenant_id: tenantId, client_id: cicloClientId, amount_cents: 1500, reason: 'cortesia' })
+      .select('id')
+      .single()
+    expect(ins.error, ins.error?.message).toBeNull()
+    expect(ins.data?.id).toBeTruthy()
+  })
+
+  it('o membro NÃO imprime dinheiro reescrevendo o valor de uma linha', async () => {
+    const c = await entrar()
+    await c.from('wallet_entries').update({ amount_cents: 999_999 }).eq('id', carteiraId)
+    const { data } = await admin.from('wallet_entries').select('amount_cents').eq('id', carteiraId).single()
+    expect(data!.amount_cents).toBe(5000)
+  })
+
+  it('o membro NÃO apaga uma linha do extrato', async () => {
+    const c = await entrar()
+    await c.from('wallet_entries').delete().eq('id', carteiraId)
+    const { count } = await admin.from('wallet_entries').select('id', { count: 'exact', head: true }).eq('id', carteiraId)
+    expect(count).toBe(1)
+  })
+
+  it('e não apaga em lote pelo client_id, que é como se limpa um extrato inteiro', async () => {
+    const contar = async () =>
+      (
+        await admin
+          .from('wallet_entries')
+          .select('id', { count: 'exact', head: true })
+          .eq('tenant_id', tenantId)
+          .eq('client_id', cicloClientId)
+      ).count
+
+    // Conta ANTES em vez de cravar um número: assim o caso não depende de quais `it` rodaram
+    // antes dele. O piso garante que não está afirmando sobre um extrato vazio.
+    const antes = await contar()
+    expect(antes ?? 0, 'o extrato do fixture está vazio — o caso não provaria nada').toBeGreaterThan(0)
+
+    const c = await entrar()
+    await c.from('wallet_entries').delete().eq('tenant_id', tenantId).eq('client_id', cicloClientId)
+
+    expect(await contar()).toBe(antes)
   })
 })

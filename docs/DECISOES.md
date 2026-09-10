@@ -7049,3 +7049,5 @@ Guardas atualizadas com registro (regra do afrouxamento): `middleware-cache.test
 **Falta validar em preview** (não dá para medir daqui): abrir o preview do Vercel, conferir no
 navegador que `/`, `/precos` respondem da borda com TTFB baixo, que `/entrar` e uma página de salão
 seguem dinâmicas e hidratam, e que um usuário logado abrindo a `/` ainda cai em `/admin/hoje`.
+
+2026-09-10 · `wallet_entries` — a carteira da cliente — ficou fora da 0080/0081/0082 e seguia com `for all using has_tenant`: qualquer membro apagava ou reescrevia linha do livro-razão pelo PostgREST, e o saldo é `sum(amount_cents)` (apagar débito ressuscita crédito gasto) · 0083 recorta em `select`+`insert`; varredura do repo inteiro não achou um `update`/`delete` de carteira em lugar nenhum, é capacidade morta igual `stock_moves` na 0080.
