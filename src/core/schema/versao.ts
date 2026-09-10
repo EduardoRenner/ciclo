@@ -42,9 +42,35 @@ export type EstadoDoSchema = {
  *   falha ensinaria a fazer na ordem perigosa, e ainda transformaria toda publicação em alarme —
  *   o que `core/cron/agendadas.ts` proíbe por já ter custado dois dias de silêncio.
  */
+/**
+ * O livro de migrations guarda o nome em DOIS formatos, e a diferença é quem aplicou.
+ *
+ * O CLI da Supabase (`supabase db push`, `supabase start`, `db reset`) parte o arquivo em duas
+ * colunas: `version` recebe o prefixo numérico e `name` recebe só o resto — `0080_historico_...`
+ * vira `name = 'historico_...'`. Quem aplica À MÃO pelo SQL Editor escreve o `insert` inteiro, e
+ * ali o costume desta casa foi gravar o nome completo, COM prefixo (`docs/runbooks/aplicar-
+ * migrations-pendentes.md`).
+ *
+ * Produção nasceu do segundo jeito e por isso a comparação funcionava. Medido em 2026-09-10 num
+ * Supabase local recém-criado pelo CLI, com as 80 migrations aplicadas: `/api/health` respondia
+ * **503 dizendo "banco ATRÁS do código: falta a 0080"**, porque `includes` procurava
+ * `0080_historico_...` numa lista que só tinha `historico_...`.
+ *
+ * O estrago não é local: no primeiro `supabase db push` em produção, a migration nova entra SEM
+ * prefixo, `ULTIMA_MIGRATION` deixa de casar, e o `/api/health` vira 503 logo depois de uma
+ * publicação CORRETA — com o job `vigia` do `cron.yml` vermelho e o banco em dia.
+ *
+ * Comparar sem o prefixo aceita os dois formatos e não perde poder: o prefixo é ordenação, o nome
+ * é a identidade, e dois arquivos nunca compartilham o nome.
+ */
+function semPrefixo(nome: string): string {
+  return nome.replace(/^\d+_/, '')
+}
+
 export function compararSchema(aplicadas: readonly string[]): EstadoDoSchema {
   const total = aplicadas.length
-  const temAUltima = aplicadas.includes(ULTIMA_MIGRATION)
+  const alvo = semPrefixo(ULTIMA_MIGRATION)
+  const temAUltima = aplicadas.some((a) => semPrefixo(a) === alvo)
 
   /*
    * Faltando a última E o total abaixo do esperado são checados separados de propósito: aplicar a

@@ -7049,3 +7049,6 @@ Guardas atualizadas com registro (regra do afrouxamento): `middleware-cache.test
 **Falta validar em preview** (não dá para medir daqui): abrir o preview do Vercel, conferir no
 navegador que `/`, `/precos` respondem da borda com TTFB baixo, que `/entrar` e uma página de salão
 seguem dinâmicas e hidratam, e que um usuário logado abrindo a `/` ainda cai em `/admin/hoje`.
+
+2026-09-10 · `compararSchema` comparava o nome COM prefixo (`0080_...`) contra o que `migracoes_aplicadas` devolve, e o CLI da Supabase grava o `name` SEM prefixo (o prefixo vai para `version`) · produção só estava verde porque foi migrada à mão com o nome completo; no primeiro `supabase db push` a saúde viraria 503 depois de uma publicação CORRETA. Comparação passa a ignorar o prefixo, que é ordenação, não identidade.
+2026-09-10 · `supabase start` (o passo que o CLAUDE.md manda dar antes do `pnpm dev`) deixava o `pnpm lint` com 154 erros vindos de `supabase/.temp/`, código minificado de terceiro · acrescentado aos `ignores` do ESLint; a CI não via porque lá o lint roda antes do start.
