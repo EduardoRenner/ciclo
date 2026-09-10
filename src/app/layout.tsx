@@ -88,21 +88,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
-      <head>
-        {/*
-          Anti-flash: aplica a escolha de tema ANTES da primeira pintura. Sem isto, quem escolheu
-          "claro" veria a tela escura piscar a cada navegação de página inteira (o React só roda
-          depois). Lê `localStorage`; "sistema" ou ausência = não mexe, e aí o `@media` do CSS
-          decide. Erro de storage (aba anônima, quota) não pode derrubar o `<head>` — o `try` cai
-          no comportamento padrão, que é o escuro.
-        */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html:
-              "try{var t=localStorage.getItem('ciclo-tema');if(t==='claro'||t==='escuro'){document.documentElement.dataset.theme=t==='claro'?'light':'dark'}}catch(e){}",
-          }}
-        />
-      </head>
+      {/*
+        Sem `className="dark"`: o tema é decidido pelo `:root` (escuro, padrão), pelo `@media` do
+        `globals.css` (modo sistema) ou por `data-theme` (escolha explícita). O script anti-flash
+        que aplica a escolha salva antes da pintura vive em `admin/layout.tsx` — só ali há a
+        `headers()` de onde tirar o nonce do CSP, e é só ali que o seletor de tema existe.
+      */}
       <body className={`${archivo.variable} antialiased`}>
         <RegistrarServiceWorker />
         {children}

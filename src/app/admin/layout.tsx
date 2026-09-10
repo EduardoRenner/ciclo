@@ -47,10 +47,27 @@ export const dynamic = 'force-dynamic'
  * que também chama `contextoAtual` reaproveita a mesma consulta na mesma requisição.
  */
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const ctx = await contextoAtual(new Request('https://interno/admin', { headers: await headers() })).catch(() => null)
+  const cabecalhos = await headers()
+  const ctx = await contextoAtual(new Request('https://interno/admin', { headers: cabecalhos })).catch(() => null)
+  // `x-nonce` é o que o `middleware.ts` gera por requisição e carimba na CSP. O `<script>` abaixo
+  // precisa dele porque `strict-dynamic` faz o navegador ignorar `'unsafe-inline'`.
+  const nonce = cabecalhos.get('x-nonce') ?? undefined
 
   return (
     <ToastProvider>
+      {/*
+        Anti-flash do tema, dentro de `/admin` (o único lugar com seletor). Roda ANTES do conteúdo
+        do painel ser parseado, então quem escolheu "claro" não vê a tela escura piscar num F5 ou
+        na primeira carga. "sistema"/ausência não mexe — o `@media` do CSS decide. Erro de storage
+        cai no padrão (escuro). O nonce vem do CSP desta requisição.
+      */}
+      <script
+        nonce={nonce}
+        dangerouslySetInnerHTML={{
+          __html:
+            "try{var t=localStorage.getItem('ciclo-tema');if(t==='claro'||t==='escuro')document.documentElement.dataset.theme=t==='claro'?'light':'dark'}catch(e){}",
+        }}
+      />
       <VocabularioProvider valor={ctx?.tenant.vocabulario ?? PADRAO}>
       {/*
         No monitor, o app é uma coluna de 560px sobre um fundo preto infinito —

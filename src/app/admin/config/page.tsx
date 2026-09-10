@@ -12,6 +12,7 @@ import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { listarModulos } from '@/server/services/modulos'
 
 import { rotuloDoPapel } from '@/core/auth/rotulo-do-papel'
+import SeletorDeTema from '@/components/shell/seletor-de-tema'
 import SairDaConta from './sair'
 
 /** Sem `await`, viraria página estática — quebra o nonce do CSP por requisição (ver `docs/DECISOES.md`). */
@@ -169,6 +170,13 @@ export default async function PaginaConfig() {
             </Card>
             <SairDaConta />
           </div>
+        </section>
+
+        <section>
+          <SectionHeader>Aparência</SectionHeader>
+          <Card>
+            <SeletorDeTema />
+          </Card>
         </section>
 
         {grupos.map((grupo) => (
