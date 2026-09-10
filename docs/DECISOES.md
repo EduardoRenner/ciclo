@@ -7049,3 +7049,5 @@ Guardas atualizadas com registro (regra do afrouxamento): `middleware-cache.test
 **Falta validar em preview** (não dá para medir daqui): abrir o preview do Vercel, conferir no
 navegador que `/`, `/precos` respondem da borda com TTFB baixo, que `/entrar` e uma página de salão
 seguem dinâmicas e hidratam, e que um usuário logado abrindo a `/` ainda cai em `/admin/hoje`.
+
+2026-09-10 · a deny-list de cache do service worker (`NUNCA_CACHEAR`, public/sw.js) cumpria a inviolável de "nunca cachear /vault nem mídia assinada", mas era por PREFIXO e sem guarda: tela privada nova fora de `/admin` nasceria cacheável em silêncio · guarda `sw-nao-cacheia-tela-privada` itera as rotas do DISCO e lê o padrão do próprio sw.js e os prefixos do próprio middleware, nunca cópias.
