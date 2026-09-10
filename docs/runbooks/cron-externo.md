@@ -18,6 +18,7 @@ Dois jobs, `GET` a cada 3 horas, fuso `America/Sao_Paulo`:
 |---|---|---|
 | `CICLO - motor de ciclo` | `https://seuciclo.com.br/api/cron/recompute-cycles` | `Authorization: Bearer <CRON_SECRET>` |
 | `CICLO - segmentos` | `https://seuciclo.com.br/api/cron/segments` | `Authorization: Bearer <CRON_SECRET>` |
+| `CICLO - expirar graça` (só depois que o MP estiver ligado) | `https://seuciclo.com.br/api/cron/expirar-graca` | `Authorization: Bearer <CRON_SECRET>` — 1×/dia basta |
 
 - `CRON_SECRET` é a env var do Vercel (Production + Preview + Development). Rotacionar exige
   redeploy — a rota lê `process.env.CRON_SECRET` (`src/app/api/cron/recompute-cycles/route.ts`).
