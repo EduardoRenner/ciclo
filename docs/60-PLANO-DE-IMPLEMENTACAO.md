@@ -1,0 +1,192 @@
+# 60 · Plano de implementação — CICLO
+
+Documento único de execução. Editado, nunca recriado. Substitui os artifacts HTML anteriores.
+
+---
+
+## 1. A meta
+
+> **Um salão real pagando, e evidência de o que fez ele ficar.**
+
+Não "terminar o backlog". Não "deixar o produto bom". Um salão, pagando, e saber por quê.
+
+**Como sabemos que chegou:** existe uma assinatura ativa no Mercado Pago, e existe um número que
+diz quanto tempo passou entre aquele salão criar a conta e ver dinheiro na tela do Motor.
+
+Tudo que não serve a essa frase sai da fila. Item que não responde *"isso aproxima do primeiro
+pagante?"* não entra, por melhor que seja.
+
+---
+
+## 2. Por que esta meta, e não outra
+
+Quatro fatos medidos, não opinados:
+
+1. **O produto está completo e agora ativa de verdade.** Os PRs #109 e #114 fecharam a cadeia que
+   fazia a base importada não chegar no Motor. As duas portas (planilha e memória) funcionam.
+2. **A segurança parou de ser risco.** De 20 tabelas com RLS cega para 1 (e a que sobra é
+   proposital). Isso deixou de ser motivo para adiar clientes reais.
+3. **Não existe um único número de comportamento.** Zero instrumentação de funil. Sentry mede erro,
+   não pessoa.
+4. **Não dá para cobrar.** Código de assinatura pronto, credencial faltando.
+
+Conclusão: o gargalo saiu da engenharia. O que falta é **ver** e **cobrar** — e as duas coisas
+precisam existir *antes* do primeiro cliente, ou o primeiro cliente passa sem deixar rastro.
+
+---
+
+## 3. As três travas (e de quem é cada uma)
+
+| Trava | Quem destrava | Sem isso |
+|---|---|---|
+| **Não dá para cobrar** | Eduardo — credencial Mercado Pago | Não existe "pagante". A meta é inalcançável por definição |
+| **Não dá para ver** | Claude — instrumentação mínima | O primeiro cliente ativa ou não ativa e ninguém fica sabendo |
+| **Não tem cliente** | Eduardo — conversa com salões que ele conhece | Nada para medir |
+
+As três são paralelas. Nenhuma depende da outra para começar.
+
+**Critério de escolha do primeiro salão:** *tem clientela registrada em algum lugar* — caderno,
+planilha, contatos do celular. Esse perfil ativa em minutos depois do #114; sem base, leva meses.
+Esse é o único critério que importa na primeira dezena.
+
+---
+
+## 4. Fases, com critério de saída
+
+Fase não acaba porque os itens acabaram. Acaba quando o critério é satisfeito.
+
+### Fase 0 — Confiar na própria oficina
+**Sai quando:** `pnpm verify` passa limpo num banco semeado.
+
+Hoje ele falha sempre (slug fixo colidindo com o seed). Verify que sempre falha é verify que
+ninguém lê — e toda mudança daqui pra frente depende dele para significar alguma coisa. É a coisa
+mais barata da lista e destrava a confiança em todo o resto.
+
+### Fase 1 — Ver e cobrar
+**Sai quando:** uma conta nova de teste produz os eventos do funil de ponta a ponta, e uma compra
+de teste no Mercado Pago fecha o ciclo (cobrou, webhook respondeu, plano mudou).
+
+É o que transforma o primeiro cliente real em aprendizado em vez de anedota.
+
+### Fase 2 — Os primeiros salões
+**Sai quando:** 3 salões reais usando, com o número de ativação medido para cada um.
+
+Aqui eu não construo por antecipação. **Construo o que os três primeiros mostrarem que falta** — e
+o que eles mostrarem provavelmente não está nesta lista.
+
+### Fase 3 — O que os dados justificarem
+Não planejada de propósito. Planejar a Fase 3 agora é inventar o que os clientes vão querer.
+
+---
+
+## 5. A fila
+
+Ordenada por fase. Cada item tem **definição de pronto** — o que precisa ser verdade para eu parar
+de mexer nele. Isso existe para a execução não precisar de deliberação nova.
+
+### Fase 0
+
+| ID | Item | Pronto quando |
+|---|---|---|
+| **T-09** | Slug fixo em `mensageria.test.ts` colide com o seed de demonstração | `pnpm verify` verde com o banco semeado, e nenhum outro teste de integração usa identificador fixo (varrer `tests/integration/` atrás do mesmo padrão) |
+
+### Fase 1
+
+| ID | Item | Pronto quando |
+|---|---|---|
+| **G-05a** | Instrumentação **mínima**: 2 eventos | Tabela `product_events` + `conta_criada` e `motor_viu_valor` gravando. Uma conta nova de teste produz os dois, e dá para calcular o intervalo entre eles por SQL |
+| **G-13** | Webhook de status do Mercado Pago | Pagamento recusado rebaixa o plano; teste de integração prova a transição. Não depende de credencial para ser escrito |
+| **G-05b** | Os outros 4 eventos | Só depois do G-05a estar gravando em produção. `base_importada`, `recuperacao_enviada`, `cliente_voltou`, `onboarding_ok` |
+
+### Fase 2 — só entra o que os primeiros salões pedirem
+
+Nada pré-planejado. A lista abaixo é **banco de reserva**, não fila: itens que já estudei e sei
+implementar, esperando evidência de que alguém precisa deles.
+
+| ID | Item | Entra quando |
+|---|---|---|
+| T-01 | Webhook de entrada do WhatsApp (CONFIRMAR/CANCELAR grátis na janela de 24h) | Houver conta Meta **e** um salão mandando lembrete de verdade |
+| G-06 | Convite B2B sai de `config/meu-plano` e vira momento pós-recuperação | Houver um dono satisfeito para convidar alguém |
+| T-02 | Dead-man switch do Motor | Houver salão dependendo do cron. Primeiro passo é URL monitorada, não código |
+| T-07 | Assistente escreve a mensagem de recuperação para o dono aprovar | Alguém reclamar de escrever mensagem na mão |
+| T-06/T-08 | Guardas de comportamento no lugar das que só varrem fonte | Uma guarda cega deixar passar um defeito real |
+
+### Congelado
+
+| ID | Item | Por quê |
+|---|---|---|
+| G-10 | Cunha do repasse (Lei 13.352) | Maior vantagem competitiva não explorada, e trava em revisão jurídica. Não se implementa modelo fiscal por conta própria |
+| G-11 | `billing_credits` + indicação com prêmio | Programa de indicação com zero pagantes é máquina sem combustível |
+| — | Apps nas lojas (Capacitor) | Depende de CNPJ e domínio resolvidos |
+
+---
+
+## 6. Decisões congeladas
+
+Tomadas, com base medida. **Não reabrir sem fato novo** — reabrir decisão fechada é o que mais
+gastou tempo até aqui.
+
+1. **Régua de RLS deriva do `exigirPermissao` da rota.** Nunca escolhida à mão. Se a rota autoriza
+   `owner+manager`, a política autoriza `owner+manager`.
+2. **"Capacidade morta" só se corta depois de rodar a suíte inteira**, não só o alvo. "Nenhum
+   chamador hoje" responde uso; permissão responde autoridade. A intenção mora no docstring do
+   teste. (Custou um vermelho no #113.)
+3. **Uma fórmula, duas portas.** Planilha e memória usam `ciclo-de-quem-ja-atende.ts`. Nunca
+   duplicar o cálculo de ciclo.
+4. **Instrumentação é first-party.** Sem Posthog/GA: CSP `strict-dynamic` bloqueia script de
+   terceiro, o produto processa dado de saúde, e fornecedor externo traz banner de cookie para
+   medir seis eventos que o próprio banco registra.
+5. **Instrumentação começa com 2 eventos, não 6.** A pergunta que importa é uma só: *o salão novo
+   chega a ver dinheiro na tela?* Os outros quatro entram quando houver tráfego que justifique.
+6. **O assistente de IA nunca envia sozinho.** Escreve, o dono aprova. O custo de LLM fica travado
+   atrás da aprovação humana.
+7. **Migration restritiva vai depois do deploy.** `delete` barrado por RLS devolve "sucesso, zero
+   linhas" — erro de régua não grita, silencia.
+8. **A porta padrão da base é a memória**, com planilha no rodapé. Segue a proporção do público.
+
+---
+
+## 7. O que não vamos fazer agora
+
+Escrito para eu não voltar a propor:
+
+- **Otimizar conversão / testes A/B.** Com tráfego perto de zero, nenhum teste alcança
+  significância. É teatro de método.
+- **Tráfego pago.** Comprar visita para um funil que ninguém mede é comprar churn.
+- **Automação de marketing / régua de nutrição.** Com menos de 20 contas, o dono fala com cada uma.
+- **Competir com o agente conversacional da Meta.** É revender a Meta. O valor do CICLO é saber
+  *quem* chamar, não ser o canal.
+- **Redesign de telas por gosto.** Só mexe em interface o que uma medição ou um usuário apontar.
+
+---
+
+## 8. Regras de execução
+
+Para a execução ser execução, e não deliberação disfarçada.
+
+**Escopo de PR.** Um item da fila, um PR. Se durante a implementação aparecer um segundo problema,
+ele vira linha nova nesta tabela — não entra no PR em curso.
+
+**Verificação proporcional.** Typecheck + os testes do escopo tocado durante o trabalho.
+`pnpm verify` completo só antes de abrir o PR. Navegador apenas quando a mudança é visível.
+
+**Guarda vista reprovando.** Continua obrigatório — é o que separou defeito real de falso positivo
+várias vezes aqui. Mas uma mutação bem escolhida basta; duas só quando a primeira não prova que as
+asserções de banco enxergam.
+
+**Comentário de código.** O porquê em duas ou três linhas. O histórico da investigação vai para a
+mensagem de commit ou para o PR, não para dentro do arquivo.
+
+**Relato.** Bullets curtos: o que mudou, o que a medição mostrou, o que está na sua mão. Sem
+seções, sem artifact, salvo pedido explícito.
+
+**Quando parar e perguntar.** Só quando a resposta mudar materialmente o que eu faço — e isso é
+raro, porque a seção 6 já decidiu quase tudo. Decisão de negócio, dinheiro ou risco jurídico é
+sempre sua.
+
+---
+
+## 9. Manutenção deste documento
+
+Editar a tabela da fila a cada PR que entra ou sai. Mover item entre fases quando o critério de
+entrada for satisfeito. Não recriar, não duplicar em HTML.
