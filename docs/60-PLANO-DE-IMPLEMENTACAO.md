@@ -250,7 +250,7 @@ C-09, C-10, C-11, C-12) fica parado até essa validação vir do Eduardo.**
 | C-03 | Tela "Raio-X de Recorrência" | **Feito** — PR #116, verificado no navegador com o seed (14 elegíveis, R$ 69,64 ticket médio) |
 | C-04 | Cobrança recorrente (criar assinatura, webhook) | **Bloqueado** na validação de PSP. Achado: `server/billing/mercado-pago.ts` já tem `criarPreapproval`/`consultarPagamento`/`verificarAssinaturaWebhook` prontos e sem nenhuma rota consumindo — é billing do CICLO→tenant (SaaS), reaproveitável na parte de baixo nível, mas a lógica de split é nova |
 | C-05 | Split/taxa de plataforma | Bloqueado (mesma validação) |
-| C-06 | Tela "Receita contratada do mês" | Aberto, não bloqueado — pode entrar depois do C-03 |
+| C-06 | Tela "Receita contratada do mês" | **Feito** — PR #117 (empilhado sobre #116), verificado no navegador |
 | C-07 | Checkin de uso do assinante | Aberto, não bloqueado |
 | C-08 | Cancelamento de assinatura | Aberto, não bloqueado — `client_subscriptions.status` já suporta `canceled` |
 | C-09–C-12 | Inadimplência, idempotência de webhook, edge cases de cobrança | Bloqueados (dependem de C-04/C-05 existirem primeiro) |
