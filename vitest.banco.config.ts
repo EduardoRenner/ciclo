@@ -11,10 +11,19 @@ import base from './vitest.config'
  *
  * Mora num arquivo separado, e não na `vitest.config.ts`, porque `tests/unit` não abre banco
  * nenhum e não deve pagar por essa checagem nem carregar `.env.local`.
+ *
+ * **A ORDEM DOS DOIS IMPORTA.** `so-banco-local` decide *contra qual banco* pode rodar; só depois
+ * `banco-em-dia` pergunta *se aquele banco está em dia*. Invertido, a segunda checagem abriria
+ * conexão com um Supabase remoto antes de a primeira ter a chance de recusar.
  */
 export default mergeConfig(
   base,
   defineConfig({
-    test: { setupFiles: [fileURLToPath(new URL('./tests/setup/so-banco-local.ts', import.meta.url))] },
+    test: {
+      setupFiles: [
+        fileURLToPath(new URL('./tests/setup/so-banco-local.ts', import.meta.url)),
+        fileURLToPath(new URL('./tests/setup/banco-em-dia.ts', import.meta.url)),
+      ],
+    },
   }),
 )
