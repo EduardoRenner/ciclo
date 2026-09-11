@@ -180,7 +180,9 @@ describe('importarClientes — previsão (F2/ticket 13, docs/25-ESTRATEGIA-E-EXE
       const resultado = await importarClientes(svc, tenantId, csv, { name: 'Nome', phone: 'Telefone', lastVisit: 'UltimaVisita' })
 
       expect(resultado.imported).toBe(1)
-      expect(resultado.previsao).toEqual({ comDataInformada: 1, jaDevendoVoltar: 1 })
+      // `cyclesGravados: 0` não é detalhe de forma: este caso importa SEM escolher serviço, e a
+      // afirmação é que nesse caminho a previsão continua sendo só prévia de tela (2026-09-10).
+      expect(resultado.previsao).toEqual({ comDataInformada: 1, jaDevendoVoltar: 1, cyclesGravados: 0 })
     },
     30_000,
   )
@@ -197,7 +199,7 @@ describe('importarClientes — previsão (F2/ticket 13, docs/25-ESTRATEGIA-E-EXE
       const resultado = await importarClientes(svc, tenantId, csv, { name: 'Nome', phone: 'Telefone', lastVisit: 'UltimaVisita' })
 
       expect(resultado.imported).toBe(1)
-      expect(resultado.previsao).toEqual({ comDataInformada: 1, jaDevendoVoltar: 0 })
+      expect(resultado.previsao).toEqual({ comDataInformada: 1, jaDevendoVoltar: 0, cyclesGravados: 0 })
     },
     30_000,
   )
