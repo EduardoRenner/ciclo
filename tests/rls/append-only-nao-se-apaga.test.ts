@@ -356,3 +356,123 @@ describe('0083 · a carteira da cliente é livro-razão: entra linha, nada sai',
     expect(await contar()).toBe(antes)
   })
 })
+
+/**
+ * 0084 · A migration que a `0080` deixou registrada como pendente, com o motivo:
+ *
+ *   "`health_records` é o exemplo vivo: o erase da LGPD apaga a ficha de saúde com o cliente do
+ *    USUÁRIO, então apertar ali às cegas transformaria 'direito ao esquecimento' em
+ *    `rowsRemoved: 0` com HTTP 200. Fica registrado para quando houver banco de dev para verificar."
+ *
+ * O passo de código saiu em 2026-09-09 (o erase passou a rodar por `withTenant`), e este bloco é a
+ * verificação que faltava: o último caso prova que o erase AINDA apaga depois do aperto. Sem ele,
+ * esta migration seria exatamente o desastre que a `0080` descreveu — e ele falharia calado.
+ */
+describe('0084 · ficha de saúde e consentimento não se apagam pelo PostgREST', () => {
+  let saudeId: string
+  let consentId: string
+  let saudeDoErase: string
+
+  beforeAll(async () => {
+    const ficha = exigir(
+      await admin
+        .from('health_records')
+        .insert({ tenant_id: tenantId, client_id: cicloClientId, form_key: 'anamnese', ciphertext: '\x0102', iv: '\x03', auth_tag: '\x04' })
+        .select('id')
+        .single(),
+      'health_records',
+    )
+    saudeId = ficha.id
+
+    const outra = exigir(
+      await admin
+        .from('health_records')
+        .insert({ tenant_id: tenantId, client_id: cicloClientId, form_key: 'para-o-erase', ciphertext: '\x0102', iv: '\x03', auth_tag: '\x04' })
+        .select('id')
+        .single(),
+      'health_records do erase',
+    )
+    saudeDoErase = outra.id
+
+    const consentimento = exigir(
+      await admin
+        .from('consents')
+        .insert({ tenant_id: tenantId, client_id: cicloClientId, kind: 'image_use', version: '1', text_hash: 'abc', granted: true })
+        .select('id')
+        .single(),
+      'consents',
+    )
+    consentId = consentimento.id
+  }, 60_000)
+
+  it('o membro LÊ a linha da ficha (o alerta na tela do cliente depende disso)', async () => {
+    // Só o metadado: a `0077` já tirou `ciphertext`/`iv`/`auth_tag` do grant de `authenticated`.
+    const c = await entrar()
+    const { data } = await c.from('health_records').select('id').eq('id', saudeId)
+    expect((data ?? []).map((r) => r.id)).toEqual([saudeId])
+  })
+
+  it('o membro ESCREVE a anamnese (o upsert de `anamnese.ts` vem do cliente do usuário)', async () => {
+    const c = await entrar()
+    const upd = await c.from('health_records').update({ has_alert: true }).eq('id', saudeId).select('id')
+    expect(upd.error, upd.error?.message).toBeNull()
+    const { data } = await admin.from('health_records').select('has_alert').eq('id', saudeId).single()
+    expect(data!.has_alert, 'o UPDATE parou de passar: editar ficha existente quebraria').toBe(true)
+  })
+
+  it('o membro NÃO apaga a ficha de saúde', async () => {
+    const c = await entrar()
+    await c.from('health_records').delete().eq('id', saudeId)
+    const { count } = await admin.from('health_records').select('id', { count: 'exact', head: true }).eq('id', saudeId)
+    expect(count, 'dado de saúde apagável por qualquer membro pelo PostgREST').toBe(1)
+  })
+
+  it('e não apaga em lote pelo client_id, que é como se limpa a ficha inteira', async () => {
+    const c = await entrar()
+    await c.from('health_records').delete().eq('tenant_id', tenantId).eq('client_id', cicloClientId)
+    const { count } = await admin
+      .from('health_records')
+      .select('id', { count: 'exact', head: true })
+      .eq('tenant_id', tenantId)
+      .eq('client_id', cicloClientId)
+    expect(count, 'o DELETE em lote passou — é o caminho mais curto para destruir dado de saúde').toBeGreaterThan(0)
+  })
+
+  it('o membro LÊ, INSERE e REVOGA consentimento (as três são caminho de app)', async () => {
+    const c = await entrar()
+    const { data: lidos } = await c.from('consents').select('id').eq('id', consentId)
+    expect((lidos ?? []).length, 'a ficha do cliente monta a seção de consentimentos com isto').toBe(1)
+
+    const ins = await c
+      .from('consents')
+      .insert({ tenant_id: tenantId, client_id: cicloClientId, kind: 'image_use', version: '2', text_hash: 'def', granted: true })
+      .select('id')
+      .single()
+    expect(ins.error, ins.error?.message).toBeNull()
+
+    // Revogar é UPDATE, nunca DELETE — a linha revogada continua sendo a prova.
+    await c.from('consents').update({ revoked_at: new Date().toISOString() }).eq('id', consentId)
+    const { data } = await admin.from('consents').select('revoked_at').eq('id', consentId).single()
+    expect(data!.revoked_at, 'revogar parou de funcionar: o titular perde o direito de retirar o consentimento').toBeTruthy()
+  })
+
+  it('o membro NÃO apaga o registro de consentimento', async () => {
+    const c = await entrar()
+    await c.from('consents').delete().eq('id', consentId)
+    const { count } = await admin.from('consents').select('id', { count: 'exact', head: true }).eq('id', consentId)
+    expect(count, 'apagar consentimento destrói a prova de que ele existiu — é o oposto do que a LGPD pede').toBe(1)
+  })
+
+  it('O ERASE CONTINUA APAGANDO — a verificação que a 0080 deixou pendente', async () => {
+    /*
+      Este caso é a razão de a migration poder existir. `eliminarCliente` roda por `withTenant`
+      (rota de erase) e `withNovoTenant` (cron de retenção) — os dois service_role, que é o que
+      `admin` representa aqui. Se este caso ficar vermelho, o direito ao esquecimento virou
+      `rowsRemoved: 0` com HTTP 200, exatamente o desastre descrito na `0080`.
+    */
+    const { error } = await admin.from('health_records').delete().eq('id', saudeDoErase)
+    expect(error, error?.message).toBeNull()
+    const { count } = await admin.from('health_records').select('id', { count: 'exact', head: true }).eq('id', saudeDoErase)
+    expect(count, 'o service_role deixou de apagar a ficha: o erase da LGPD está quebrado').toBe(0)
+  })
+})
