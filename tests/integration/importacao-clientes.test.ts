@@ -180,7 +180,9 @@ describe('importarClientes — previsão (F2/ticket 13, docs/25-ESTRATEGIA-E-EXE
       const resultado = await importarClientes(svc, tenantId, csv, { name: 'Nome', phone: 'Telefone', lastVisit: 'UltimaVisita' })
 
       expect(resultado.imported).toBe(1)
-      expect(resultado.previsao).toEqual({ comDataInformada: 1, jaDevendoVoltar: 1 })
+      // `cyclesGravados: 0` não é detalhe de forma: este caso importa SEM escolher serviço, e a
+      // afirmação é que nesse caminho a previsão continua sendo só prévia de tela (2026-09-10).
+      expect(resultado.previsao).toEqual({ comDataInformada: 1, jaDevendoVoltar: 1, cyclesGravados: 0 })
     },
     30_000,
   )
@@ -197,7 +199,7 @@ describe('importarClientes — previsão (F2/ticket 13, docs/25-ESTRATEGIA-E-EXE
       const resultado = await importarClientes(svc, tenantId, csv, { name: 'Nome', phone: 'Telefone', lastVisit: 'UltimaVisita' })
 
       expect(resultado.imported).toBe(1)
-      expect(resultado.previsao).toEqual({ comDataInformada: 1, jaDevendoVoltar: 0 })
+      expect(resultado.previsao).toEqual({ comDataInformada: 1, jaDevendoVoltar: 0, cyclesGravados: 0 })
     },
     30_000,
   )
@@ -234,6 +236,136 @@ describe('importarClientes — previsão (F2/ticket 13, docs/25-ESTRATEGIA-E-EXE
       expect(resultado.imported).toBe(0)
       expect(resultado.skipped).toHaveLength(1)
       expect(resultado.previsao).toBeNull()
+    },
+    30_000,
+  )
+})
+
+/**
+ * A base importada TEM que aparecer no Motor de Ciclo.
+ *
+ * Até 2026-09-10 ela não aparecia, e o jeito como falhava é o pior possível: tudo respondia certo.
+ * O importador lia a data de última visita, rodava `computeCycle` (o algoritmo de verdade), mostrava
+ * "47 já devendo voltar" na tela — e descartava o resultado. `clients.last_visit_at` nem era
+ * gravado, com a coluna existindo desde a `0001`.
+ *
+ * A cadeia, conferida naquele dia:
+ *   1. `insert` em `clients` sem `last_visit_at`;
+ *   2. nenhuma linha em `client_cycles` (a PK exige `service_id`, e importado não tem serviço);
+ *   3. `recompute-cycles` lê só `appointments`, então nunca alcançaria essa gente;
+ *   4. `v_clientes_a_recuperar` lê `client_cycles` → zero;
+ *   5. `/admin/hoje` em R$ 0,00 depois de importar a clientela inteira.
+ *
+ * E a FAQ da home prometia o contrário com todas as letras: "é ela que faz a lista de quem sumiu
+ * nascer cheia no primeiro dia".
+ *
+ * O último caso deste bloco é o CONTROLE POSITIVO, e ele não é enfeite: um arquivo que só afirma
+ * "gravou" passa verde num arnês que não consegue ver a diferença. Importar SEM `serviceId` tem que
+ * produzir zero ciclos pelo mesmo caminho — se isso também vier cheio, os outros casos não provam
+ * nada.
+ */
+describe('a base importada entra no Motor de Ciclo', () => {
+  const DIAS_ATRAS = 400
+
+  async function servicoComRitmo() {
+    const { data } = await svc.from('services').select('id, cycle_days, price_cents').eq('tenant_id', tenantId).gt('cycle_days', 0).limit(1)
+    const s = data?.[0]
+    if (!s) throw new Error('o onboarding devia ter criado serviços com cycle_days — sem isso o caso não mede nada')
+    return s
+  }
+
+  function csvDeUmaPessoa(nome: string, telefone: string) {
+    const d = new Date()
+    d.setDate(d.getDate() - DIAS_ATRAS)
+    return ['Nome,Telefone,UltimaVisita', `${nome},${telefone},${d.toISOString().slice(0, 10)}`].join('\n')
+  }
+
+  function telefoneNovo() {
+    return `1198${String(1000000 + Math.floor(Math.random() * 8999999)).padStart(7, '0')}`
+  }
+
+  it(
+    'com serviço escolhido: grava last_visit_at, cria o ciclo e a pessoa aparece em v_clientes_a_recuperar',
+    async () => {
+      const servico = await servicoComRitmo()
+      const marca = randomUUID().slice(0, 6)
+      const telefone = telefoneNovo()
+
+      const r = await importarClientes(svc, tenantId, csvDeUmaPessoa(`Sumida ${marca}`, telefone), {
+        name: 'Nome',
+        phone: 'Telefone',
+        lastVisit: 'UltimaVisita',
+        serviceId: servico.id,
+      })
+
+      expect(r.imported).toBe(1)
+      expect(r.previsao?.comDataInformada).toBe(1)
+      expect(r.previsao?.jaDevendoVoltar, `${DIAS_ATRAS} dias sem voltar tinha que contar como atrasada`).toBe(1)
+      expect(r.previsao?.cyclesGravados, 'o ciclo não foi persistido: é o defeito de 2026-09-10 de volta').toBe(1)
+
+      const { data: cliente } = await svc
+        .from('clients')
+        .select('id, last_visit_at')
+        .eq('tenant_id', tenantId)
+        .eq('name', `Sumida ${marca}`)
+        .maybeSingle()
+      expect(cliente?.id, 'o cadastro sumiu').toBeTruthy()
+      expect(cliente?.last_visit_at, 'a data importada voltou a ser descartada na escrita de clients').toBeTruthy()
+
+      const { data: ciclo } = await svc
+        .from('client_cycles')
+        .select('state, last_visit_on, value_at_risk_cents, service_id')
+        .eq('tenant_id', tenantId)
+        .eq('client_id', cliente!.id)
+        .maybeSingle()
+      expect(ciclo, 'nenhuma linha em client_cycles — a cadeia quebrou de novo no passo 2').toBeTruthy()
+      expect(ciclo?.state, 'quem não vem há mais de um ano não pode estar on_track').not.toBe('on_track')
+      expect(ciclo?.service_id).toBe(servico.id)
+
+      // O fim da cadeia, e é o que a tela "Hoje" realmente lê. Passar nos anteriores e falhar aqui
+      // significaria ciclo gravado num estado que a view não conta.
+      const { data: aRecuperar } = await svc
+        .from('v_clientes_a_recuperar')
+        .select('client_id')
+        .eq('tenant_id', tenantId)
+        .eq('client_id', cliente!.id)
+      expect(aRecuperar?.length, 'gravou o ciclo mas a pessoa não chega em v_clientes_a_recuperar').toBeGreaterThan(0)
+    },
+    30_000,
+  )
+
+  it(
+    'CONTROLE POSITIVO — sem serviço escolhido, nada é persistido (se isto falhar, o caso acima não prova nada)',
+    async () => {
+      const marca = randomUUID().slice(0, 6)
+      const telefone = telefoneNovo()
+
+      const r = await importarClientes(svc, tenantId, csvDeUmaPessoa(`Sem Servico ${marca}`, telefone), {
+        name: 'Nome',
+        phone: 'Telefone',
+        lastVisit: 'UltimaVisita',
+      })
+
+      expect(r.imported).toBe(1)
+      // A previsão de tela continua existindo: é o comportamento antigo, preservado de propósito.
+      expect(r.previsao?.jaDevendoVoltar).toBe(1)
+      expect(r.previsao?.cyclesGravados, 'gravou ciclo sem ninguém ter escolhido serviço').toBe(0)
+
+      const { data: cliente } = await svc
+        .from('clients')
+        .select('id, last_visit_at')
+        .eq('tenant_id', tenantId)
+        .eq('name', `Sem Servico ${marca}`)
+        .maybeSingle()
+      // `last_visit_at` é gravado SEMPRE — não depende de serviço, e é o conserto G-01 sozinho.
+      expect(cliente?.last_visit_at, 'a data tem que ser gravada mesmo sem serviço escolhido').toBeTruthy()
+
+      const { count } = await svc
+        .from('client_cycles')
+        .select('client_id', { count: 'exact', head: true })
+        .eq('tenant_id', tenantId)
+        .eq('client_id', cliente!.id)
+      expect(count, 'o arnês não distingue gravado de não-gravado: as asserções do caso anterior são vazias').toBe(0)
     },
     30_000,
   )

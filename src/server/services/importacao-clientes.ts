@@ -3,6 +3,7 @@ import Papa from 'papaparse'
 import { z } from 'zod'
 
 import { computeCycle } from '@/core/cycle/compute'
+import { valorEmRiscoCents } from '@/core/cycle/valor-em-risco'
 import { AppError } from '@/server/http/errors'
 import { hashTelefone, normalizarTelefoneBR } from '@/server/services/telefone'
 
@@ -51,6 +52,23 @@ export const EsquemaMapeamento = z.object({
    * `computeCycle`: history vazio nunca é "atrasado", é "nunca veio").
    */
   lastVisit: z.string().nullish(),
+  /**
+   * 2026-09-10. Não é uma coluna do arquivo: é a resposta de "que serviço essas pessoas fazem com
+   * você?". Ele existe porque sem ele a importação **não entra no Motor de Ciclo** — e essa era a
+   * promessa central do produto falhando calada.
+   *
+   * `client_cycles` tem PK `(tenant_id, client_id, service_id)` desde a `0001`, e cliente importado
+   * não tem atendimento nenhum, logo não tem serviço. O efeito medido: a data de última visita era
+   * lida, usada para mostrar "47 já devendo voltar" na tela da importação, e **descartada** — nem
+   * `clients.last_visit_at` era gravado. `recompute-cycles` lê só `appointments`, e
+   * `v_clientes_a_recuperar` lê `client_cycles`, então `/admin/hoje` continuava em R$ 0,00 depois de
+   * importar 200 pessoas com data. A FAQ da home promete o contrário com todas as letras ("é ela que
+   * faz a lista de quem sumiu nascer cheia no primeiro dia").
+   *
+   * Opcional de propósito: sem ele a importação continua funcionando exatamente como antes (cadastro
+   * entra, prévia aparece, nada de ciclo). Quem não souber responder não fica travado na porta.
+   */
+  serviceId: z.string().uuid().nullish(),
 })
 
 export type Mapeamento = z.infer<typeof EsquemaMapeamento>
@@ -71,7 +89,19 @@ export type PrevisaoImportacao = {
   comDataInformada: number
   /** Entre esses, quantos já passaram do ciclo esperado (`computeCycle` não devolveu on_track). */
   jaDevendoVoltar: number
+  /**
+   * Quantos viraram linha em `client_cycles` — ou seja, quantos o Motor de Ciclo passou de fato a
+   * acompanhar. `0` quando ninguém escolheu serviço (ou quando a escrita falhou), e aí a previsão
+   * acima é só uma prévia de tela, como era antes de 2026-09-10.
+   *
+   * A distinção existe porque ela é a diferença entre a tela poder dizer "já está no Motor" e estar
+   * mentindo. Os dois números vêm do MESMO cálculo; só este prova que ele sobreviveu à requisição.
+   */
+  cyclesGravados: number
 }
+
+/** Cadastro recém-criado que trouxe data de última visita — o par que o ciclo precisa. */
+type ClienteComUltimaVisita = { clientId: string; ultimaVisita: Temporal.PlainDate }
 
 export type ResultadoImportacao = {
   imported: number
@@ -265,24 +295,45 @@ export async function importarClientes(
   }
 
   let imported = 0
-  const datasDeUltimaVisitaInseridas: Temporal.PlainDate[] = []
+  const comData: ClienteComUltimaVisita[] = []
   for (let i = 0; i < paraInserir.length; i += TAMANHO_DO_LOTE) {
     const lote = paraInserir.slice(i, i + TAMANHO_DO_LOTE)
-    const { error } = await db.from('clients').insert(
-      lote.map((l) => ({
-        tenant_id: tenantId,
-        name: l.name,
-        phone_e164: l.phoneE164,
-        phone_hash: l.phoneE164 ? hashTelefone(l.phoneE164) : null,
-        email: l.email,
-        tags: l.tags,
-        source: 'csv_import',
-      })),
-    )
+    /*
+      `last_visit_at` passou a ser GRAVADO em 2026-09-10. A coluna existe desde a `0001` e a
+      importação nunca escreveu nela: a data que a pessoa mapeou virava um contador na tela e sumia.
+      Ver o comentário de `serviceId` em `EsquemaMapeamento` para a cadeia inteira.
+
+      `.select('id')` é o que permite ligar cada cadastro recém-criado ao ciclo dele. O Postgres
+      devolve as linhas de um `insert` de múltiplos valores na ordem do `VALUES`, então o índice
+      casa com o `lote` — mas isso é conferido antes de usar, e não é o tipo de coisa que se
+      pressupõe calada (ver a guarda de tamanho logo abaixo).
+    */
+    const { data, error } = await db
+      .from('clients')
+      .insert(
+        lote.map((l) => ({
+          tenant_id: tenantId,
+          name: l.name,
+          phone_e164: l.phoneE164,
+          phone_hash: l.phoneE164 ? hashTelefone(l.phoneE164) : null,
+          email: l.email,
+          tags: l.tags,
+          source: 'csv_import',
+          last_visit_at: l.lastVisitDate ? l.lastVisitDate.toString() : null,
+        })),
+      )
+      .select('id')
 
     if (!error) {
       imported += lote.length
-      for (const l of lote) if (l.lastVisitDate) datasDeUltimaVisitaInseridas.push(l.lastVisitDate)
+      // Sem o mesmo tamanho não dá para casar cadastro com data, e casar errado escreveria o ciclo
+      // de uma pessoa no nome de outra. O cadastro fica (já entrou); só a previsão é abandonada.
+      if (data && data.length === lote.length) {
+        for (const [indice, l] of lote.entries()) {
+          const id = data[indice]?.id
+          if (id && l.lastVisitDate) comData.push({ clientId: id, ultimaVisita: l.lastVisitDate })
+        }
+      }
       continue
     }
 
@@ -290,15 +341,20 @@ export async function importarClientes(
     // telefone entre a checagem e esta escrita). Refaz linha a linha só deste
     // lote, para isolar qual e não perder as outras 199 do grupo.
     for (const linha of lote) {
-      const { error: erroLinha } = await db.from('clients').insert({
-        tenant_id: tenantId,
-        name: linha.name,
-        phone_e164: linha.phoneE164,
-        phone_hash: linha.phoneE164 ? hashTelefone(linha.phoneE164) : null,
-        email: linha.email,
-        tags: linha.tags,
-        source: 'csv_import',
-      })
+      const { data: criado, error: erroLinha } = await db
+        .from('clients')
+        .insert({
+          tenant_id: tenantId,
+          name: linha.name,
+          phone_e164: linha.phoneE164,
+          phone_hash: linha.phoneE164 ? hashTelefone(linha.phoneE164) : null,
+          email: linha.email,
+          tags: linha.tags,
+          source: 'csv_import',
+          last_visit_at: linha.lastVisitDate ? linha.lastVisitDate.toString() : null,
+        })
+        .select('id')
+        .maybeSingle()
       if (erroLinha) {
         if (erroLinha.code === '23505') {
           skipped.push({ linha: linha.linha, motivo: 'Já existe uma ficha com esse telefone.' })
@@ -307,39 +363,99 @@ export async function importarClientes(
         }
       } else {
         imported++
-        if (linha.lastVisitDate) datasDeUltimaVisitaInseridas.push(linha.lastVisitDate)
+        if (criado?.id && linha.lastVisitDate) comData.push({ clientId: criado.id, ultimaVisita: linha.lastVisitDate })
       }
     }
   }
 
-  const previsao = await calcularPrevisao(db, tenantId, datasDeUltimaVisitaInseridas)
+  const previsao = await preverEPersistirCiclos(db, tenantId, comData, mapa.serviceId ?? null)
 
   return { imported, skipped, errors, previsao }
 }
 
 /**
  * Ver `PrevisaoImportacao`. `defaultCycleDays` vem da média dos `cycle_days` já cadastrados no
- * tenant (todo tenant sai do onboarding com um pacote de serviços — TICKET-072) porque o cliente
- * importado não tem `service_id` nenhum ainda; 30 dias é só o último recurso, para um tenant sem
- * nenhum serviço configurado (não deveria acontecer, mas não é motivo para a prévia quebrar).
+ * tenant (todo tenant sai do onboarding com um pacote de serviços — TICKET-072); 30 dias é só o
+ * último recurso, para um tenant sem nenhum serviço configurado (não deveria acontecer, mas não é
+ * motivo para a prévia quebrar).
+ *
+ * **O que mudou em 2026-09-10, e é a razão de esta função ter trocado de nome.** Ela calculava a
+ * previsão com `computeCycle` — o algoritmo certo, o número certo — e devolvia só um contador para
+ * a tela. O resultado por pessoa era jogado fora. Com `serviceId`, o mesmo cálculo passa a ser
+ * GRAVADO em `client_cycles`, que é de onde `v_clientes_a_recuperar` (e portanto `/admin/hoje` e
+ * `/admin/recuperar`) lê. É a diferença entre a promessa da home ser verdade ou não.
+ *
+ * Sem `serviceId` o comportamento é o antigo, inteiro: prévia na tela, nada persistido. Isso não é
+ * degradação silenciosa — é o caminho de quem não soube responder qual serviço, e `cyclesGravados`
+ * volta em `0` para a tela poder dizer a verdade sobre o que aconteceu.
  */
-async function calcularPrevisao(
+async function preverEPersistirCiclos(
   db: SupabaseClient<Database>,
   tenantId: string,
-  datas: readonly Temporal.PlainDate[],
+  importados: readonly ClienteComUltimaVisita[],
+  serviceId: string | null,
 ): Promise<PrevisaoImportacao | null> {
-  if (datas.length === 0) return null
+  if (importados.length === 0) return null
 
-  const { data: servicos, error } = await db.from('services').select('cycle_days').eq('tenant_id', tenantId).gt('cycle_days', 0)
+  const { data: servicos, error } = await db
+    .from('services')
+    .select('id, cycle_days, price_cents')
+    .eq('tenant_id', tenantId)
+    .gt('cycle_days', 0)
   if (error) throw new AppError('INTERNAL', { cause: error })
 
   const ciclos = (servicos ?? []).map((s) => s.cycle_days).filter((c): c is number => c !== null)
   const defaultCycleDays = ciclos.length > 0 ? Math.round(ciclos.reduce((soma, c) => soma + c, 0) / ciclos.length) : 30
 
-  const hoje = Temporal.Now.plainDateISO()
-  const jaDevendoVoltar = datas.filter(
-    (data) => computeCycle({ history: [{ date: data }], defaultCycleDays, today: hoje }).state !== 'on_track',
-  ).length
+  /*
+    O serviço escolhido manda no ritmo e no preço — é dele que sai tanto o `personal_cycle_days`
+    quanto o dinheiro que a tela "Hoje" soma. `?? null` porque o id vem do cliente: um serviço de
+    outro tenant, ou apagado entre a tela e o envio, não pode virar linha de ciclo (a RLS recusaria
+    de qualquer jeito, mas o `find` falha antes e sem erro feio).
+  */
+  const escolhido = serviceId ? (servicos ?? []).find((s) => s.id === serviceId) ?? null : null
+  const cicloDoServico = escolhido?.cycle_days ?? defaultCycleDays
 
-  return { comDataInformada: datas.length, jaDevendoVoltar }
+  const hoje = Temporal.Now.plainDateISO()
+  const calculados = importados.map((c) => ({
+    ...c,
+    resultado: computeCycle({ history: [{ date: c.ultimaVisita }], defaultCycleDays: cicloDoServico, today: hoje }),
+  }))
+  const jaDevendoVoltar = calculados.filter((c) => c.resultado.state !== 'on_track').length
+
+  if (!escolhido) return { comDataInformada: importados.length, jaDevendoVoltar, cyclesGravados: 0 }
+
+  let cyclesGravados = 0
+  for (let i = 0; i < calculados.length; i += TAMANHO_DO_LOTE) {
+    const lote = calculados.slice(i, i + TAMANHO_DO_LOTE)
+    const { error: erroCiclo } = await db.from('client_cycles').upsert(
+      lote.map((c) => ({
+        tenant_id: tenantId,
+        client_id: c.clientId,
+        service_id: escolhido.id,
+        personal_cycle_days: c.resultado.personalCycleDays,
+        last_visit_on: c.ultimaVisita.toString(),
+        predicted_on: c.resultado.predictedDate.toString(),
+        late_days: c.resultado.lateDays,
+        state: c.resultado.state,
+        value_at_risk_cents: valorEmRiscoCents(escolhido.price_cents ?? 0, c.resultado.state),
+      })),
+      { onConflict: 'tenant_id,client_id,service_id' },
+    )
+    /*
+      O cadastro já entrou e não se desfaz por causa do ciclo. Falhar aqui degrada para o
+      comportamento antigo (previsão só na tela), e o contador conta a verdade — a tela não pode
+      anunciar "já está no Motor" sobre uma escrita que não aconteceu.
+    */
+    if (erroCiclo) {
+      console.error(
+        JSON.stringify({ level: 'error', event: 'importacao_ciclos_falharam', tenantId, quantidade: lote.length }),
+        erroCiclo,
+      )
+      continue
+    }
+    cyclesGravados += lote.length
+  }
+
+  return { comDataInformada: importados.length, jaDevendoVoltar, cyclesGravados }
 }
