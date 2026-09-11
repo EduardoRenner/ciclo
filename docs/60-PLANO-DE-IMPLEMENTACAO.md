@@ -233,6 +233,34 @@ sempre sua.
 
 ---
 
+## 10. Clube (receita recorrente) — mapeado contra o que já existe
+
+Documento fonte: `CICLO_Plano_Clube_Prioridade.md` (C-01 a C-12). Reconferido item a item contra o
+código em 2026-09-11 antes de escrever qualquer linha nova — **metade do plano já existia**.
+
+**Bloqueio real, não contornável por mim:** a seção 1 do documento fonte exige validar com
+Mercado Pago/Asaas se dá pra fazer split com taxa de plataforma, e quais os requisitos de CNPJ.
+É conversa de negócio com o PSP — nenhuma API resolve isso. **Todo item de cobrança (C-04, C-05,
+C-09, C-10, C-11, C-12) fica parado até essa validação vir do Eduardo.**
+
+| ID | Item | Status real |
+|---|---|---|
+| C-01 | Modelo `plano_assinatura`/`assinatura_cliente` | **Já existia**, desde a migration `0019`: `subscription_plans` + `client_subscriptions`, com CRUD (`fidelidade.ts`), rota (`/api/v1/subscription-plans`) e análise de margem por assinante (`clube.ts`) |
+| C-02 | Motor de precificação | **Feito** — PR #115. Sugere só as cadências que a base já tem, precificadas pela mediana do ticket observado |
+| C-03 | Tela "Raio-X de Recorrência" | Aberto — próximo item não bloqueado |
+| C-04 | Cobrança recorrente (criar assinatura, webhook) | **Bloqueado** na validação de PSP. Achado: `server/billing/mercado-pago.ts` já tem `criarPreapproval`/`consultarPagamento`/`verificarAssinaturaWebhook` prontos e sem nenhuma rota consumindo — é billing do CICLO→tenant (SaaS), reaproveitável na parte de baixo nível, mas a lógica de split é nova |
+| C-05 | Split/taxa de plataforma | Bloqueado (mesma validação) |
+| C-06 | Tela "Receita contratada do mês" | Aberto, não bloqueado — pode entrar depois do C-03 |
+| C-07 | Checkin de uso do assinante | Aberto, não bloqueado |
+| C-08 | Cancelamento de assinatura | Aberto, não bloqueado — `client_subscriptions.status` já suporta `canceled` |
+| C-09–C-12 | Inadimplência, idempotência de webhook, edge cases de cobrança | Bloqueados (dependem de C-04/C-05 existirem primeiro) |
+
+**Próximo passo não bloqueado:** C-03, depois C-06 e C-07, que dão valor ao dono (visibilidade e
+operação do clube) sem depender de nenhuma cobrança automática ainda — hoje o Clube já funciona com
+cobrança manual (o dono lança o pagamento na comanda, como já faz).
+
+---
+
 ## 9. Manutenção deste documento
 
 Editar a tabela da fila a cada PR que entra ou sai. Mover item entre fases quando o critério de
