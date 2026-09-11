@@ -4,6 +4,27 @@ Documento único de execução. Editado, nunca recriado. Substitui os artifacts 
 
 ---
 
+## 0. AÇÃO PENDENTE — PRs esperando merge
+
+**#111, #112, #113 e #114 estão abertos e MERGEABLE, mas ainda não entraram na `main`.** Só #108,
+#109 e #110 estão na `main` hoje. É por isso que nada do RLS completo nem da tela "quem você já
+atende" aparece se você olhar o produto agora — o código existe, está verde, está revisado, mas não
+foi publicado.
+
+| PR | O que faz | Depende de |
+|---|---|---|
+| [#111](https://github.com/EduardoRenner/ciclo/pull/111) | RLS: ficha de saúde e consentimento não se apagam pelo PostgREST | nada — mergear primeiro |
+| [#112](https://github.com/EduardoRenner/ciclo/pull/112) | RLS: dez tabelas param de aceitar DELETE | #111 |
+| [#113](https://github.com/EduardoRenner/ciclo/pull/113) | RLS: DELETE exige o papel que a rota já exige | #112 |
+| [#114](https://github.com/EduardoRenner/ciclo/pull/114) | Cadastro de clientela por memória (sem planilha) | nenhum dos RLS — pode entrar em qualquer ordem |
+
+**Ordem de merge: #111 → #112 → #113 (empilhados). #114 é independente.**
+
+Depois do merge, rodar `npx supabase migration up --local` (ou aplicar em produção pelo SQL Editor,
+como nas rodadas anteriores) para as migrations 0084–0086 baterem com o código.
+
+---
+
 ## 1. A meta
 
 > **Um salão real pagando, e evidência de o que fez ele ficar.**
@@ -15,6 +36,32 @@ diz quanto tempo passou entre aquele salão criar a conta e ver dinheiro na tela
 
 Tudo que não serve a essa frase sai da fila. Item que não responde *"isso aproxima do primeiro
 pagante?"* não entra, por melhor que seja.
+
+---
+
+## 1b. Os 9 itens originais — cada um, verificado agora
+
+Lista que o Eduardo trouxe de uma auditoria anterior. Reconferida contra o código em 2026-09-11,
+item a item, para nenhum sumir na reestruturação.
+
+| # | Item original | Status real | Onde |
+|---|---|---|---|
+| 1 | Cron externo do Motor pode cair sem avisar (já caiu 54h) | **Aberto** | Fase 2 reserva — `T-02`. Heartbeat já existe (`cron_heartbeats`); falta o alerta sair dele |
+| 2 | RLS cega em ~22 tabelas | **Resolvido, aguardando merge** | PRs #111+#112+#113. Medido no fim: eram 20 tabelas, não 22 — uma (`waitlist`) fica cega de propósito (controle positivo de teste) |
+| 3 | `.env.local` pode apontar pra produção sem guarda | **Já resolvido antes desta sessão** | `tests/setup/so-banco-local.ts` — recusa rodar fora de `127.0.0.1`/`localhost` |
+| 5 | CI não pega banco atrás do código | **Resolvido e mergeado** | PR #110 — `tests/setup/banco-em-dia.ts` compara `schema_migrations` com o disco antes de qualquer suíte de banco rodar |
+| 6 | Idempotency-Key sem teste de replay | **Já estava resolvido, verificado agora** | `tests/unit/server/idempotency.test.ts:118` — "o mesmo POST duas vezes executa uma vez só", com Postgres falso respeitando a mesma regra de chave primária do banco real. Não é varredura, é comportamento |
+| 7 | Assistente de IA proativo (sugere, não envia) | **Aberto, de propósito** | Fase 2 reserva — `T-07`. Entra quando alguém reclamar de escrever mensagem na mão |
+| 8 | Guardas que só varrem código-fonte | **Parcialmente resolvido** | O caso crítico (idempotência) já tem par de comportamento (item 6 acima). `escrita-passa-por-idempotencia.test.ts` continua varredura pura — barata, mantida como primeira linha, não removida. Os outros casos (veto do assistente) ficam em `T-06/T-08`, Fase 2 reserva |
+| 9 | Fila offline sem teste de drenagem | **Já estava resolvido, verificado agora** | `tests/unit/core/offline-queue.test.ts` — 12 casos: ordem de criação, 409 vira conflito sem travar a fila, 5xx trava e mantém ordem, reenvio automático no evento `online` |
+
+**Item 4 do original era "Melhoria real (depois)" sem numeração própria** — ficou implícito que era
+o mesmo grupo do 5. Não há item 4 separado nesta lista.
+
+**O que isso muda na prática:** dos 9, **3 já eram falso alarme** (itens 3, 6, 9 — a auditoria que
+gerou a lista original não tinha visto código que já existia), **2 estão resolvidos e só faltam
+review/merge** (itens 2 e 5), e **3 continuam genuinamente abertos** (itens 1, 7, 8-parcial) — todos
+deliberadamente em Fase 2 porque nenhum bloqueia o primeiro cliente pagante.
 
 ---
 
