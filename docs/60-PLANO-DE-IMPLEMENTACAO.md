@@ -247,7 +247,7 @@ C-09, C-10, C-11, C-12) fica parado até essa validação vir do Eduardo.**
 |---|---|---|
 | C-01 | Modelo `plano_assinatura`/`assinatura_cliente` | **Já existia**, desde a migration `0019`: `subscription_plans` + `client_subscriptions`, com CRUD (`fidelidade.ts`), rota (`/api/v1/subscription-plans`) e análise de margem por assinante (`clube.ts`) |
 | C-02 | Motor de precificação | **Feito** — PR #115. Sugere só as cadências que a base já tem, precificadas pela mediana do ticket observado |
-| C-03 | Tela "Raio-X de Recorrência" | Aberto — próximo item não bloqueado |
+| C-03 | Tela "Raio-X de Recorrência" | **Feito** — PR #116, verificado no navegador com o seed (14 elegíveis, R$ 69,64 ticket médio) |
 | C-04 | Cobrança recorrente (criar assinatura, webhook) | **Bloqueado** na validação de PSP. Achado: `server/billing/mercado-pago.ts` já tem `criarPreapproval`/`consultarPagamento`/`verificarAssinaturaWebhook` prontos e sem nenhuma rota consumindo — é billing do CICLO→tenant (SaaS), reaproveitável na parte de baixo nível, mas a lógica de split é nova |
 | C-05 | Split/taxa de plataforma | Bloqueado (mesma validação) |
 | C-06 | Tela "Receita contratada do mês" | Aberto, não bloqueado — pode entrar depois do C-03 |
