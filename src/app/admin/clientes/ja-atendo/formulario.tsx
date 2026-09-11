@@ -153,7 +153,13 @@ export default function FormularioQuemJaAtendo({ servicos }: { servicos: Servico
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <label className="flex min-w-[150px] flex-1 flex-col gap-1">
+              {/*
+                `min-w` de 128px, e o número é medido, não escolhido: a 375px sobram ~311px dentro do
+                cartão, então dois campos de 150px (o valor anterior) não cabiam e quebravam linha —
+                cada pessoa ocupava ~250px de altura. Numa tela cujo trabalho é digitar quinze
+                nomes, isso é rolagem que a tarefa não precisa.
+              */}
+              <label className="flex min-w-[128px] flex-1 flex-col gap-1">
                 <span className="text-label font-semibold text-txt-2">Última vez</span>
                 <select
                   value={pessoa.quando}
@@ -167,7 +173,7 @@ export default function FormularioQuemJaAtendo({ servicos }: { servicos: Servico
                   ))}
                 </select>
               </label>
-              <div className="min-w-[150px] flex-1">
+              <div className="min-w-[128px] flex-1">
                 <Input
                   rotulo="WhatsApp (opcional)"
                   value={pessoa.telefone}
@@ -194,7 +200,14 @@ export default function FormularioQuemJaAtendo({ servicos }: { servicos: Servico
         O número no botão é o que diz que a tarefa está avançando — numa tela de digitação em lote, o
         rótulo fixo ("Salvar") não distingue uma linha preenchida de quinze.
       */}
-      <Button carregando={pendente} onClick={enviar} disabled={preenchidas.length === 0 || !serviceId}>
+      <Button
+        carregando={pendente}
+        onClick={enviar}
+        disabled={preenchidas.length === 0 || !serviceId}
+        motivoDesabilitado={
+          preenchidas.length === 0 ? 'Escreva o nome de pelo menos uma pessoa.' : 'Escolha acima o serviço que essas pessoas fazem.'
+        }
+      >
         {preenchidas.length === 0
           ? 'Escreva pelo menos um nome'
           : `Pôr ${preenchidas.length} ${preenchidas.length === 1 ? 'pessoa' : 'pessoas'} no Motor`}
