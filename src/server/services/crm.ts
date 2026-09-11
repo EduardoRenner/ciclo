@@ -582,8 +582,15 @@ const PRIMEIROS_PASSOS: AcaoSugerida[] = [
   },
   {
     chave: 'inicio-clientes',
+    /*
+      2026-09-10: a descrição dizia "com nome e telefone" e parava aí. A coluna que decide se esta
+      conta vê o produto funcionando hoje ou daqui a três meses é a da ÚLTIMA VISITA — é ela que faz
+      a lista de quem sumiu nascer cheia, e é o argumento que a FAQ da home já usa. Quem seguisse
+      este passo ao pé da letra levava só nome e telefone, e o Motor nascia sem nada para prever.
+    */
     titulo: 'Traga sua lista de clientes',
-    descricao: 'De uma planilha, com nome e telefone. É o que faz o Motor de Ciclo ter de quem cuidar.',
+    descricao:
+      'De uma planilha. Se ela tiver a data do último atendimento de cada pessoa, traga essa coluna: é ela que faz a lista de quem sumiu nascer cheia hoje, em vez de esperar cada cliente voltar duas ou três vezes.',
     href: '/admin/clientes/importar',
     tom: 'info',
   },
