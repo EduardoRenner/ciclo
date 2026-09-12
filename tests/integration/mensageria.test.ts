@@ -54,23 +54,58 @@ beforeAll(async () => {
     .select('id')
     .single()
   clientId = cliente.data!.id
-  // Conta de demonstração: `enviarComFallback` tem de barrar transporte real aqui, porque
-  // `notificarProximoDaLista` e `/cycle/recover/send` chegam nele sem laço de tenant onde pular.
-  const { tenant: td } = await executarOnboarding(svc, {
-    userId: usuarios[0]!,
-    businessName: 'Navalha de Ouro (exemplo)',
-    vertical: 'hair',
-    slug: 'demo-navalha-de-ouro',
-    timezone: 'America/Sao_Paulo',
-  })
-  tenantDemoId = td.id
-  tenants.push(tenantDemoId)
-  const clienteDemo = await svc
+
+  /*
+   * Conta de demonstração: `enviarComFallback` tem de barrar transporte real aqui, porque
+   * `notificarProximoDaLista` e `/cycle/recover/send` chegam nele sem laço de tenant onde pular.
+   * `ehDemonstracao()` (`core/tenants/demonstracao.ts`) casa contra uma LISTA FIXA de slugs — não
+   * dá para inventar um slug novo com sufixo aleatório e continuar testando o caminho de verdade.
+   *
+   * `demo-navalha-de-ouro` é um dos seis que `scripts/seed-demo-6-negocios.mjs` semeia — script
+   * manual, não faz parte de `pnpm db:reset` (não há `supabase/seed.sql` neste projeto). Mas quem
+   * já rodou aquele seed neste banco (como esta própria sessão, numa rodada anterior) colide: o
+   * `executarOnboarding` recusava a segunda criação do mesmo slug com `VALIDATION_ERROR`, e o
+   * `pnpm verify` inteiro caía nisso.
+   *
+   * O conserto é REUSAR se já existir — o mesmo padrão de `antigo` que o próprio seed usa — e só
+   * marcar para apagar no `afterAll` o que este teste de fato criou. Apagar um tenant de demo real
+   * (com seis meses de histórico semeado) seria bem pior que o problema original.
+   */
+  const { data: tenantDemoExistente } = await svc.from('tenants').select('id').eq('slug', 'demo-navalha-de-ouro').maybeSingle()
+  if (tenantDemoExistente) {
+    tenantDemoId = tenantDemoExistente.id
+  } else {
+    const { tenant: td } = await executarOnboarding(svc, {
+      userId: usuarios[0]!,
+      businessName: 'Navalha de Ouro (exemplo)',
+      vertical: 'hair',
+      slug: 'demo-navalha-de-ouro',
+      timezone: 'America/Sao_Paulo',
+    })
+    tenantDemoId = td.id
+    tenants.push(tenantDemoId)
+  }
+
+  // Mesma lógica para o cliente: o índice único é (tenant_id, phone_e164), então reaproveitar o
+  // tenant sem reaproveitar o cliente colidiria do mesmo jeito na segunda rodada.
+  const { data: clienteDemoExistente } = await svc
     .from('clients')
-    .insert({ tenant_id: tenantDemoId, name: 'Cliente da Demo', phone_e164: '+5511988990002' })
     .select('id')
-    .single()
-  clientDemoId = clienteDemo.data!.id
+    .eq('tenant_id', tenantDemoId)
+    .eq('phone_e164', '+5511988990002')
+    .maybeSingle()
+  if (clienteDemoExistente) {
+    clientDemoId = clienteDemoExistente.id
+  } else {
+    const clienteDemo = await svc
+      .from('clients')
+      .insert({ tenant_id: tenantDemoId, name: 'Cliente da Demo', phone_e164: '+5511988990002' })
+      .select('id')
+      .single()
+    clientDemoId = clienteDemo.data!.id
+    // Não entra em `tenants` (isso apagaria o tenant real); e apagar só o cliente cascateia
+    // sozinho se um dia o tenant de demo for removido por outro processo — não precisa de lista própria.
+  }
 }, 60_000)
 
 afterAll(async () => {
