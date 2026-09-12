@@ -41,8 +41,12 @@ export default async function PaginaHoje() {
   const desde = mesAtual.toPlainDate({ day: 1 }).toString()
   const ate = mesAtual.toPlainDate({ day: mesAtual.daysInMonth }).toString()
 
+  const tA0 = Date.now()
   const [resumo, acoes, atribuicao, emRisco] = await Promise.all([
-    resumoDeHoje(db, ctx.tenantId, timezone),
+    resumoDeHoje(db, ctx.tenantId, timezone).then((r) => {
+      console.log(JSON.stringify({ level: 'info', event: 'medicao_ramo', ramo: 'resumoDeHoje', ms: Date.now() - tA0 }))
+      return r
+    }),
     /*
       Nunca derruba "Hoje": um resumo de CRM que falhar vira lista vazia, não erro na tela mais
       importante do app. **Mas registra**, e o `CLAUDE.md` é explícito sobre isso na tabela de
@@ -51,10 +55,15 @@ export default async function PaginaHoje() {
       schema, por exemplo — e o sintoma seria só uma tela um pouco mais vazia, que ninguém
       reporta.
     */
-    centralDeAcoes(db, ctx.tenantId, ctx.papel).catch((erro: unknown) => {
-      console.warn(JSON.stringify({ level: 'warn', event: 'central_de_acoes_indisponivel' }), erro)
-      return { titulo: '', acoes: [] }
-    }),
+    centralDeAcoes(db, ctx.tenantId, ctx.papel)
+      .then((r) => {
+        console.log(JSON.stringify({ level: 'info', event: 'medicao_ramo', ramo: 'centralDeAcoes', ms: Date.now() - tA0 }))
+        return r
+      })
+      .catch((erro: unknown) => {
+        console.warn(JSON.stringify({ level: 'warn', event: 'central_de_acoes_indisponivel' }), erro)
+        return { titulo: '', acoes: [] }
+      }),
     /*
       F1 (docs/25-ESTRATEGIA-E-EXECUCAO.md): em dia sem movimento, o herói mostra o que o Motor
       de Ciclo já trouxe este mês em vez de R$ 0,00. Mesmo cálculo de `/admin/recuperar`.
@@ -68,10 +77,15 @@ export default async function PaginaHoje() {
       Continua sem derrubar a tela, de propósito. O que muda é não ser mais silencioso: falha
       medida vira linha de log em vez de um zero com cara de número apurado.
     */
-    receitaAtribuidaAoCiclo(db, ctx.tenantId, timezone, desde, ate).catch((erro: unknown) => {
-      console.warn(JSON.stringify({ level: 'warn', event: 'atribuicao_do_ciclo_indisponivel' }), erro)
-      return { totalCents: 0, count: 0, items: [], mensagensNaJanela: 0 }
-    }),
+    receitaAtribuidaAoCiclo(db, ctx.tenantId, timezone, desde, ate)
+      .then((r) => {
+        console.log(JSON.stringify({ level: 'info', event: 'medicao_ramo', ramo: 'receitaAtribuidaAoCiclo', ms: Date.now() - tA0 }))
+        return r
+      })
+      .catch((erro: unknown) => {
+        console.warn(JSON.stringify({ level: 'warn', event: 'atribuicao_do_ciclo_indisponivel' }), erro)
+        return { totalCents: 0, count: 0, items: [], mensagensNaJanela: 0 }
+      }),
     /*
       A receita em risco AGORA — a manchete da tela quando ainda nao entrou dinheiro hoje e o Motor
       ainda nao tem atribuicao (`escolherHeroi`). Sai de `listarParaRecuperar`, que e a MESMA funcao
@@ -84,10 +98,15 @@ export default async function PaginaHoje() {
       Mesmo `catch` das outras: falha vira zero e linha de log, nunca erro na tela mais importante
       do app. Zero aqui so faz a manchete cair para "Atendido hoje", que e o comportamento anterior.
     */
-    listarParaRecuperar(db, ctx.tenantId, { limit: 1 }).catch((erro: unknown) => {
-      console.warn(JSON.stringify({ level: 'warn', event: 'receita_em_risco_indisponivel' }), erro)
-      return { totalValueCents: 0, totalProfitCents: 0, count: 0, items: [] }
-    }),
+    listarParaRecuperar(db, ctx.tenantId, { limit: 1 })
+      .then((r) => {
+        console.log(JSON.stringify({ level: 'info', event: 'medicao_ramo', ramo: 'listarParaRecuperar', ms: Date.now() - tA0 }))
+        return r
+      })
+      .catch((erro: unknown) => {
+        console.warn(JSON.stringify({ level: 'warn', event: 'receita_em_risco_indisponivel' }), erro)
+        return { totalValueCents: 0, totalProfitCents: 0, count: 0, items: [] }
+      }),
   ])
   const t3 = Date.now()
 
