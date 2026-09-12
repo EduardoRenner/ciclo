@@ -588,3 +588,170 @@ describe('0085 · a base de clientes, as notas e o histórico de mensagens não 
     expect(count, 'a base INTEIRA do salão saiu num comando').toBeGreaterThan(0)
   })
 })
+
+/**
+ * 0086 · O DELETE passa a exigir o mesmo papel que a rota já exige.
+ *
+ * As duas migrations anteriores tiraram capacidade MORTA — aperto sem risco. Esta mexe em
+ * capacidade VIVA, e por isso a guarda precisa provar os DOIS lados:
+ *
+ *   - quem a rota recusa também é recusado pela RLS (senão o atalho continua aberto);
+ *   - **quem a rota autoriza continua passando** — e este é o lado que, se quebrar, quebra calado.
+ *     `delete` barrado por RLS devolve "sucesso, zero linhas", não erro: o dono clicaria em
+ *     "remover folga", veria sucesso, e a folga continuaria lá.
+ *
+ * A régua não foi escolhida, foi derivada do mapa rota → `exigirPermissao` do próprio produto:
+ * `time-off/[id]` exige `professional:update`, que em `rbac.ts` só o `owner` tem (o `manager` tem
+ * `professional:read`); `message-templates/[id]` exige `client:update`, que owner e manager têm.
+ */
+describe('0086 · o DELETE segue o papel que a rota exige', () => {
+  let donoEmail: string
+  let gerenteEmail: string
+  const senhaComum = randomUUID()
+
+  async function entrarComo(mail: string): Promise<SupabaseClient> {
+    const c = createClient(SUPABASE_URL!, ANON_KEY!, { auth: { persistSession: false, autoRefreshToken: false } })
+    const { error } = await c.auth.signInWithPassword({ email: mail, password: senhaComum })
+    if (error) throw new Error(`autenticar ${mail}: ${error.message}`)
+    return c
+  }
+
+  async function criarMembro(papel: 'owner' | 'manager'): Promise<string> {
+    const mail = `rls-${papel}-${randomUUID().slice(0, 8)}@ciclo.test`
+    const { data, error } = await admin.auth.admin.createUser({ email: mail, password: senhaComum, email_confirm: true })
+    if (error || !data.user) throw new Error(`criar ${papel}: ${error?.message}`)
+    userIds.push(data.user.id)
+    const { error: erroM } = await admin.from('memberships').insert({ tenant_id: tenantId, user_id: data.user.id, role: papel })
+    if (erroM) throw new Error(`membership ${papel}: ${erroM.message}`)
+    return mail
+  }
+
+  async function novaFolga(): Promise<string> {
+    const inicio = new Date(Date.now() + 86_400_000).toISOString()
+    const fim = new Date(Date.now() + 90_000_000).toISOString()
+    return exigir(
+      await admin.from('time_off').insert({ tenant_id: tenantId, starts_at: inicio, ends_at: fim }).select('id').single(),
+      'time_off',
+    ).id
+  }
+
+  async function novoModelo(): Promise<string> {
+    return exigir(
+      await admin
+        .from('message_templates')
+        .insert({ tenant_id: tenantId, slug: `modelo-${randomUUID().slice(0, 8)}`, title: 'Lembrete', body: 'Oi!' })
+        .select('id')
+        .single(),
+      'message_templates',
+    ).id
+  }
+
+  async function existe(tabela: 'time_off' | 'message_templates', id: string): Promise<number> {
+    const { count } = await admin.from(tabela).select('id', { count: 'exact', head: true }).eq('id', id)
+    return count ?? 0
+  }
+
+  beforeAll(async () => {
+    donoEmail = await criarMembro('owner')
+    gerenteEmail = await criarMembro('manager')
+  }, 60_000)
+
+  it('time_off · o PROFISSIONAL não apaga folga (a rota exige professional:update)', async () => {
+    const id = await novaFolga()
+    const c = await entrar()
+    await c.from('time_off').delete().eq('id', id)
+    expect(await existe('time_off', id), 'o profissional apagou folga pelo PostgREST — a rota recusaria').toBe(1)
+  })
+
+  it('time_off · o GERENTE também não (rbac dá a ele professional:read, não :update)', async () => {
+    // O caso mais afiado do arquivo: é ele que prova que eu li a matriz de papéis certo. Se o
+    // manager passar, a régua ficou mais frouxa que a rota e a RLS não está protegendo nada novo.
+    const id = await novaFolga()
+    const c = await entrarComo(gerenteEmail)
+    await c.from('time_off').delete().eq('id', id)
+    expect(await existe('time_off', id), 'o gerente apagou folga, mas a rota `time-off/[id]` o recusa').toBe(1)
+  })
+
+  it('time_off · o DONO apaga — e é este lado que quebraria calado', async () => {
+    const id = await novaFolga()
+    const c = await entrarComo(donoEmail)
+    await c.from('time_off').delete().eq('id', id)
+    expect(
+      await existe('time_off', id),
+      'o DONO deixou de conseguir remover folga. Pela RLS isso volta como "sucesso, zero linhas": ' +
+        'a tela diria que removeu e a folga continuaria na agenda.',
+    ).toBe(0)
+  })
+
+  it('message_templates · o profissional não apaga modelo', async () => {
+    const id = await novoModelo()
+    const c = await entrar()
+    await c.from('message_templates').delete().eq('id', id)
+    expect(await existe('message_templates', id)).toBe(1)
+  })
+
+  it('message_templates · o GERENTE apaga (aqui a rota exige client:update, que ele tem)', async () => {
+    // O par do caso do gerente acima: a régua distingue as duas tabelas, em vez de apertar tudo
+    // para owner e chamar isso de segurança. Apertar demais também quebra, e quebra calado.
+    const id = await novoModelo()
+    const c = await entrarComo(gerenteEmail)
+    await c.from('message_templates').delete().eq('id', id)
+    expect(await existe('message_templates', id), 'o gerente perdeu o direito de remover modelo de mensagem').toBe(0)
+  })
+
+  async function novaFoto(): Promise<string> {
+    return exigir(
+      await admin.from('media').insert({ tenant_id: tenantId, storage_key: `k/${randomUUID()}`, kind: 'photo' }).select('id').single(),
+      'media',
+    ).id
+  }
+
+  it('media · o profissional não apaga (no app, remover foto é soft delete)', async () => {
+    const id = await novaFoto()
+    const c = await entrar()
+    await c.from('media').delete().eq('id', id)
+    const { count } = await admin.from('media').select('id', { count: 'exact', head: true }).eq('id', id)
+    expect(count, 'o profissional apagou mídia pelo PostgREST').toBe(1)
+  })
+
+  it('media · o DONO apaga — e este caso existe porque a primeira versão da 0086 o quebrou', async () => {
+    /*
+      Registro de um erro meu, mantido como caso porque é o tipo que volta.
+
+      A 0086 original tirou o DELETE de `media` inteiro, com o raciocínio de "capacidade morta": no
+      app remover foto é soft delete, e o erase roda por service_role. Certo sobre produção, errado
+      sobre o produto — `tests/integration/lgpd.test.ts` guarda de propósito a propriedade de que
+      `eliminarCliente` funciona mesmo chamado FORA da rota, com um cliente de sessão, e reprovou.
+
+      O conserto foi na migration, não no teste: a régua espelha a rota, e a rota do erase exige
+      `client:delete` (owner + manager). Este caso é o que impede a versão errada de voltar.
+    */
+    const id = await novaFoto()
+    const c = await entrarComo(donoEmail)
+    await c.from('media').delete().eq('id', id)
+    const { count } = await admin.from('media').select('id', { count: 'exact', head: true }).eq('id', id)
+    expect(count, 'o dono deixou de apagar mídia: o erase chamado fora da rota volta a falhar calado').toBe(0)
+  })
+
+  it('client_notes · mesma lista do erase, mesma régua: profissional não, dono sim', async () => {
+    // `client_notes` está em `TABELAS_APAGADAS` junto com `media`. A 0085 a deixou sem DELETE
+    // nenhum e NENHUM teste cobria esse caminho — teria quebrado em silêncio.
+    const criar = async () =>
+      exigir(
+        await admin.from('client_notes').insert({ tenant_id: tenantId, client_id: cicloClientId, body: 'nota' }).select('id').single(),
+        'client_notes',
+      ).id
+
+    const doProfissional = await criar()
+    const prof = await entrar()
+    await prof.from('client_notes').delete().eq('id', doProfissional)
+    const { count: sobrou } = await admin.from('client_notes').select('id', { count: 'exact', head: true }).eq('id', doProfissional)
+    expect(sobrou, 'o profissional apagou nota de cliente').toBe(1)
+
+    const doDono = await criar()
+    const dono = await entrarComo(donoEmail)
+    await dono.from('client_notes').delete().eq('id', doDono)
+    const { count: foi } = await admin.from('client_notes').select('id', { count: 'exact', head: true }).eq('id', doDono)
+    expect(foi, 'o dono deixou de apagar nota: o erase fora da rota falharia calado').toBe(0)
+  })
+})
