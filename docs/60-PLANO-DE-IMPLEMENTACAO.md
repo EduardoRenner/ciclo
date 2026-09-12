@@ -148,7 +148,7 @@ implementar, esperando evidência de que alguém precisa deles.
 
 | ID | Item | Entra quando |
 |---|---|---|
-| T-01 | Webhook de entrada do WhatsApp (CONFIRMAR/CANCELAR grátis na janela de 24h) | Houver conta Meta **e** um salão mandando lembrete de verdade |
+| T-01 | Webhook de entrada do WhatsApp (CONFIRMAR/CANCELAR grátis na janela de 24h) | **Feito, aguardando merge** — PR #121. Correlação bounded (telefone → lembrete mais recente → agendamento único), vocabulário fechado sem regex de prefixo, testado ponta a ponta contra `next dev` local (200/401/403 reais). Fica inerte sem conta Meta |
 | G-06 | Convite B2B sai de `config/meu-plano` e vira momento pós-recuperação | Houver um dono satisfeito para convidar alguém |
 | T-02 | Dead-man switch do Motor | **Metade feita, em produção (2026-09-12)** — PR #120 mergeado, migration `0087` aplicada, 2 secrets criados no Vault. `CRON_SECRET` foi rotacionado (o valor antigo era "Sensitive" na Vercel — nunca mais legível por design deles — então gerei um novo e atualizei Vercel + GitHub Actions + Vault juntos, redeploy incluído). Confirmado com disparo real: `200`, `tenantsProcessados: 7`. Falta só um monitor externo pra alertar se as DUAS redes pararem — isso é conta de terceiro, fica represado até você decidir qual serviço usar |
 | T-07 | Assistente escreve a mensagem de recuperação para o dono aprovar | Alguém reclamar de escrever mensagem na mão |
