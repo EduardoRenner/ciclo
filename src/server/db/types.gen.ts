@@ -3667,6 +3667,15 @@ export type Database = {
         Args: { p_client: string; p_tenant: string }
         Returns: Json
       }
+      resumo_central_de_acoes: {
+        Args: { p_tenant: string }
+        Returns: {
+          agendamentos: number
+          aniversariantes: number
+          clientes: number
+          em_risco: number
+        }[]
+      }
       set_tenant_context: { Args: { t: string }; Returns: undefined }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }

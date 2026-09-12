@@ -3,7 +3,7 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { semComentarios } from '../../helpers/fonte'
+import { semComentarios, sqlSemComentarios } from '../../helpers/fonte'
 
 /**
  * "Quantas clientes estão sumindo" é UM número, e o produto dizia três.
@@ -22,10 +22,18 @@ import { semComentarios } from '../../helpers/fonte'
  * A definição agora mora na view `v_clientes_a_recuperar` (migration 0058) — uma linha por
  * CLIENTE, sem quem tem qualquer ciclo em dia. Esta guarda existe para impedir que alguém volte a
  * contar `client_cycles` direto, que é o gesto natural de quem não conhece a história.
+ *
+ * Migration 0089 moveu a contagem da Central de Ações de uma consulta em `crm.ts` para dentro da
+ * função `resumo_central_de_acoes` (uma ida de rede em vez de quatro, docs/28 §12) — a mesma view,
+ * o mesmo filtro, só que agora escrito em SQL na migration. A guarda passou a olhar os DOIS
+ * arquivos: se o dia vier em que a função some ou perder o filtro, ela continua vendo (o teste de
+ * mutação da 0089 confirma: tirar `deleted_at is null` da função já reprovou um teste de
+ * integração — aqui é o mesmo princípio, aplicado à consistência entre os dois contadores).
  */
 const CRM = join('src', 'server', 'services', 'crm.ts')
+const MIGRATION_0089 = join('supabase', 'migrations', '0089_resumo_central_de_acoes_em_uma_ida.sql')
 
-const fonte = () => semComentarios(readFileSync(CRM, 'utf8'))
+const fonte = () => semComentarios(readFileSync(CRM, 'utf8')) + '\n' + sqlSemComentarios(readFileSync(MIGRATION_0089, 'utf8'))
 
 /** Recorta a chamada encadeada que começa em `.from('<tabela>')` até o `,` que fecha o item. */
 function consultaDe(src: string, tabela: string): string {
@@ -38,8 +46,11 @@ function consultaDe(src: string, tabela: string): string {
 describe('quantas clientes estão sumindo', () => {
   it('sai da view que conta cliente, não de client_cycles cru', () => {
     const src = fonte()
-    const ocorrencias = src.match(/from\('v_clientes_a_recuperar'\)/g) ?? []
-    // As DUAS: Central de Ações (tela inicial) e painel da carteira (lista de clientes).
+    // `.from('v_clientes_a_recuperar')` em TS, `from v_clientes_a_recuperar` em SQL (0089) — a
+    // mesma view, duas sintaxes.
+    const ocorrencias = src.match(/from\s*\(?'?v_clientes_a_recuperar'?\)?/g) ?? []
+    // As DUAS: Central de Ações (função `resumo_central_de_acoes`, 0089) e painel da carteira
+    // (lista de clientes, ainda em `crm.ts`).
     expect(
       ocorrencias.length,
       'os dois contadores precisam sair da mesma view, senão as telas se contradizem',
@@ -73,7 +84,9 @@ describe('quantas clientes estão sumindo', () => {
      * `due` é "vence hoje", ainda não sumiu. Chamar isso de "está sumindo" assusta à toa, e o
      * alarme que assusta à toa é o que ensina a ignorar todos os outros.
      */
-    const filtros = fonte().match(/eq\('ja_atrasado',\s*true\)/g) ?? []
+    // `.eq('ja_atrasado', true)` em TS, `ja_atrasado = true` em SQL (0089) — o mesmo filtro, duas
+    // sintaxes.
+    const filtros = fonte().match(/eq\('ja_atrasado',\s*true\)|ja_atrasado\s*=\s*true/g) ?? []
     expect(filtros.length, 'os dois contadores precisam do mesmo filtro').toBe(2)
   })
 })
