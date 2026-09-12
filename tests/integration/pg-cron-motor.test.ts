@@ -17,9 +17,12 @@ const svc = createClient<Database>(SUPABASE_URL, SERVICE_KEY, { auth: { persistS
 /**
  * `0087` — pg_cron como SEGUNDA rede do Motor de Ciclo, independente do GitHub Actions.
  *
- * `public.v_cron_status` (criada na própria `0087`) é a única porta: `cron.job` não é schema que
- * o PostgREST expõe, e a view existe só para este teste enxergar o agendamento sem precisar de
- * uma dependência nova (`pg`) neste projeto.
+ * `public.status_do_cron_do_motor()` (criada na própria `0087`) é a única porta: `cron.job` não é
+ * schema que o PostgREST expõe, e a função existe só para este teste enxergar o agendamento sem
+ * precisar de uma dependência nova (`pg`) neste projeto. É `security definer` — mesmo padrão de
+ * `migracoes_aplicadas()` (`0062`) — e não uma view, porque a guarda `view-nao-fura-a-rls` exige
+ * `security_invoker` em TODA view deste repositório, e aqui isso quebraria o propósito: `cron.job`
+ * tem RLS por `username`, e `service_role` não é quem agendou o job.
  *
  * O que este arquivo prova: o agendamento sobrevive a `supabase db reset` e continua ativo. O que
  * ele NÃO prova: que `net.http_get` chega na rota de verdade — isso foi verificado à mão contra o
@@ -30,11 +33,15 @@ const svc = createClient<Database>(SUPABASE_URL, SERVICE_KEY, { auth: { persistS
  * cron desativado, ou os dois horários colidindo).
  */
 describe('0087 · pg_cron agenda as duas rotas seguras do Motor', () => {
-  it('os dois jobs existem, estão ativos, e com o schedule esperado', async () => {
-    const { data, error } = await svc.from('v_cron_status').select('jobname, schedule, active')
+  async function statusDoCron() {
+    const { data, error } = await svc.rpc('status_do_cron_do_motor')
     expect(error, error?.message).toBeNull()
+    return data ?? []
+  }
 
-    const porNome = new Map((data ?? []).map((j) => [j.jobname, j]))
+  it('os dois jobs existem, estão ativos, e com o schedule esperado', async () => {
+    const jobs = await statusDoCron()
+    const porNome = new Map(jobs.map((j) => [j.jobname, j]))
 
     expect(porNome.get('ciclo_recompute_cycles'), 'job do Motor de Ciclo sumiu de cron.job').toMatchObject({
       schedule: '20 * * * *',
@@ -47,8 +54,8 @@ describe('0087 · pg_cron agenda as duas rotas seguras do Motor', () => {
   })
 
   it('os dois horários são diferentes — redundância que falha junto na mesma hora não é redundância', async () => {
-    const { data } = await svc.from('v_cron_status').select('jobname, schedule')
-    const porNome = new Map((data ?? []).map((j) => [j.jobname, j.schedule]))
+    const jobs = await statusDoCron()
+    const porNome = new Map(jobs.map((j) => [j.jobname, j.schedule]))
     expect(porNome.get('ciclo_recompute_cycles')).not.toBe(porNome.get('ciclo_recompute_segments'))
   })
 })

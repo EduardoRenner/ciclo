@@ -77,17 +77,27 @@ select cron.schedule(
 -- (`supabase/config.toml`: só `public`/`graphql_public`), e adicionar uma dependência nova
 -- (`pg`) só para uma consulta administrativa seria desproporcional.
 --
--- SEM `security_invoker` de propósito — e isto não contradiz a regra de views sobre dado de
--- tenant (`security_invoker = true` sempre, CLAUDE.md). Ali a razão é RLS por `tenant_id`; aqui
--- `cron.job` tem RLS por `username` (só o dono do job vê o próprio), e o objetivo é justamente
--- que `service_role` — que já contorna RLS de tenant em toda a base — enxergue os jobs agendados
--- por quem rodou a migration. `where jobname like 'ciclo_%'` restringe o que a view mostra, caso
--- outro job (de outra extensão) um dia exista neste schema.
+-- FUNÇÃO, não view — de propósito, e por causa de outra guarda desta casa
+-- (`tests/unit/design/view-nao-fura-a-rls.test.ts`): TODA `create view` neste repositório precisa
+-- de `security_invoker = true`, sem exceção, porque é o jeito de uma view sobre dado de TENANT não
+-- vazar entre salões. Aqui o problema é o oposto: `cron.job` tem RLS por `username` (só o dono do
+-- job enxerga o próprio), e COM `security_invoker` o `service_role` — que não é quem agendou o
+-- job — veria a consulta vazia. Mesmo padrão de `migracoes_aplicadas()` (migration `0062`):
+-- `security definer`, acesso restrito por `grant`/`revoke`, não por RLS.
 -- ---------------------------------------------------------------------
-create view public.v_cron_status as
-select jobname, schedule, active
-from cron.job
-where jobname like 'ciclo_%';
+create or replace function public.status_do_cron_do_motor()
+returns table (jobname text, schedule text, active boolean)
+language sql
+stable
+security definer
+set search_path = pg_catalog, cron
+as $$
+  select jobname, schedule, active
+  from cron.job
+  where jobname like 'ciclo_%'
+$$;
 
-revoke all on public.v_cron_status from public, anon, authenticated;
-grant select on public.v_cron_status to service_role;
+revoke all on function public.status_do_cron_do_motor() from public;
+revoke all on function public.status_do_cron_do_motor() from anon;
+revoke all on function public.status_do_cron_do_motor() from authenticated;
+grant execute on function public.status_do_cron_do_motor() to service_role;

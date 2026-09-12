@@ -3477,24 +3477,6 @@ export type Database = {
           },
         ]
       }
-      v_cron_status: {
-        Row: {
-          active: boolean | null
-          jobname: string | null
-          schedule: string | null
-        }
-        Insert: {
-          active?: boolean | null
-          jobname?: string | null
-          schedule?: string | null
-        }
-        Update: {
-          active?: boolean | null
-          jobname?: string | null
-          schedule?: string | null
-        }
-        Relationships: []
-      }
       v_daily_cash: {
         Row: {
           commission_cents: number | null
@@ -3656,6 +3638,14 @@ export type Database = {
       set_tenant_context: { Args: { t: string }; Returns: undefined }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      status_do_cron_do_motor: {
+        Args: never
+        Returns: {
+          active: boolean
+          jobname: string
+          schedule: string
+        }[]
+      }
       tenant_rls_report: {
         Args: never
         Returns: {
