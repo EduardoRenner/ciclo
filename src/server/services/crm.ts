@@ -224,7 +224,7 @@ export async function fichaDoCliente(
       : Promise.resolve({ data: null }),
     listarNotas(db, tenantId, clientId),
     extratoDePontos(db, tenantId, clientId),
-    assinaturaAtiva(db, tenantId, clientId),
+    assinaturaAtiva(db, tenantId, clientId, timezone),
     listarPacotesDoCliente(db, tenantId, clientId),
     saldoCarteira(db, tenantId, clientId),
     // Não recebe `db`: a mídia vive em bucket privado e o módulo resolve o acesso por conta.

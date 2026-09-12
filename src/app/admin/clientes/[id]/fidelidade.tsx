@@ -107,6 +107,10 @@ export default function Fidelidade({ clientId, pontosIniciais, assinaturaInicial
           priceCents: plano.price_cents,
           sessionsPerMonth: plano.sessions_per_month,
           billingDay: dia,
+          // Assinatura recém-criada: zero visita no ciclo ainda, então zero excedeu.
+          visitasNoCiclo: 0,
+          restantes: plano.sessions_per_month,
+          excedeuLimite: false,
           /*
             Era `toISOString().slice(0, 10)` — data em UTC. Ficou errado de um jeito novo quando
             `assinar()` passou a gravar `started_on` no fuso do salao (antes o banco decidia, com
@@ -220,6 +224,17 @@ export default function Fidelidade({ clientId, pontosIniciais, assinaturaInicial
                     {assinatura.sessionsPerMonth ? ` · ${assinatura.sessionsPerMonth}x` : ' · ilimitado'} · cobra dia{' '}
                     {assinatura.billingDay}
                   </p>
+                  {/*
+                    CICLO Clube · C-07: avisa, não bloqueia (mesma filosofia do estoque negativo).
+                    Sem limite (`restantes === null`), não tem o que contar — a linha nem aparece.
+                  */}
+                  {assinatura.restantes !== null ? (
+                    <p className={`mt-0.5 text-label font-semibold ${assinatura.excedeuLimite ? 'text-warn' : 'text-txt-3'}`}>
+                      {assinatura.excedeuLimite
+                        ? `Já usou ${assinatura.visitasNoCiclo} de ${assinatura.sessionsPerMonth} neste ciclo`
+                        : `${assinatura.restantes} de ${assinatura.sessionsPerMonth} restantes neste ciclo`}
+                    </p>
+                  ) : null}
                   {/* Ação destrutiva (encerra a mensalidade de um cliente pagante): `toque-48`
                       leva a área tocável ao mínimo, e o tom sai de `txt-3` — cinza de texto
                       apagado não é cor de coisa que cobra confirmação. */}

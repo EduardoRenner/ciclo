@@ -385,6 +385,51 @@ describe('clube de assinatura', () => {
     },
     30_000,
   )
+
+  it(
+    'C-07 — visita concluída no ciclo conta contra o limite, e passar do limite avisa em vez de travar',
+    async () => {
+      const cliente = await criarCliente(svc, tenantId, { name: 'Assinante do Limite', tags: [], marketingOptIn: false })
+      const plano = await criarPlano(svc, tenantId, { name: 'Plano 2x', priceCents: 8_000, sessionsPerMonth: 2, active: true })
+      // `billingDay` = hoje, pro ciclo atual cobrir "agora" sem depender de qual dia o teste roda.
+      const hoje = new Date()
+      await assinar(svc, tenantId, cliente.id, { planId: plano.id, billingDay: hoje.getUTCDate() }, 'America/Sao_Paulo')
+
+      // Ainda sem visita: 2 de 2 restantes, não excedeu.
+      const antes = await assinaturaAtiva(svc, tenantId, cliente.id, 'America/Sao_Paulo')
+      expect(antes).toMatchObject({ restantes: 2, excedeuLimite: false })
+
+      // 3 atendimentos concluídos HOJE — passa do limite de 2.
+      for (let i = 0; i < 3; i++) {
+        const inicio = new Date()
+        inicio.setUTCHours(10 + i, 0, 0, 0)
+        const { error: erroAg } = await svc.from('appointments').insert({
+          tenant_id: tenantId,
+          client_id: cliente.id,
+          professional_id: profissionalId,
+          service_id: servicoId,
+          starts_at: inicio.toISOString(),
+          ends_at: new Date(inicio.getTime() + 30 * 60_000).toISOString(),
+          status: 'done',
+          price_cents: 5000,
+          completed_at: inicio.toISOString(),
+        })
+        if (erroAg) throw new Error(`seed de agendamento falhou: ${erroAg.message}`)
+      }
+
+      const depois = await assinaturaAtiva(svc, tenantId, cliente.id, 'America/Sao_Paulo')
+      expect(depois, 'passou do limite mas a assinatura sumiu ou parou de contar').toMatchObject({
+        visitasNoCiclo: 3,
+        restantes: 0,
+        excedeuLimite: true,
+      })
+      // O ponto central de C-07: excedeu É INFORMAÇÃO, não motivo pra assinatura desaparecer ou
+      // pra `assinaturaAtiva` lançar. A pessoa continua sendo atendida.
+
+      await cancelarAssinatura(svc, tenantId, depois!.id)
+    },
+    30_000,
+  )
 })
 
 describe('listarModelos', () => {
