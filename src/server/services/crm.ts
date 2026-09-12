@@ -588,10 +588,19 @@ const PRIMEIROS_PASSOS: AcaoSugerida[] = [
       a lista de quem sumiu nascer cheia, e é o argumento que a FAQ da home já usa. Quem seguisse
       este passo ao pé da letra levava só nome e telefone, e o Motor nascia sem nada para prever.
     */
-    titulo: 'Traga sua lista de clientes',
+    /*
+      2026-09-11: apontava para a IMPORTAÇÃO por planilha. O conserto do #109 fez a planilha
+      funcionar de verdade, mas planilha é a minoria deste público — barbeiro, manicure e depiladora
+      têm a clientela nos contatos e na cabeça. Para quem não tem CSV, este passo era uma porta
+      fechada, e o Motor nascia vazio pelo mesmo motivo de antes, por outro caminho.
+
+      O destino agora é a tela de digitar de memória, que oferece a planilha como alternativa. A
+      ordem segue a proporção do público, não a facilidade de implementar.
+    */
+    titulo: 'Traga quem você já atende',
     descricao:
-      'De uma planilha. Se ela tiver a data do último atendimento de cada pessoa, traga essa coluna: é ela que faz a lista de quem sumiu nascer cheia hoje, em vez de esperar cada cliente voltar duas ou três vezes.',
-    href: '/admin/clientes/importar',
+      'Escreva os nomes e diga mais ou menos quando cada pessoa veio pela última vez — não precisa ser exato. É o que faz a lista de quem sumiu nascer cheia hoje, em vez de esperar cada cliente voltar duas ou três vezes.',
+    href: '/admin/clientes/ja-atendo',
     tom: 'info',
   },
   {
