@@ -137,7 +137,7 @@ que nenhum outro teste usa slug fixo.
 
 | ID | Item | Pronto quando |
 |---|---|---|
-| **G-05a** | Instrumentação **mínima**: 2 eventos | Tabela `product_events` + `conta_criada` e `motor_viu_valor` gravando. Uma conta nova de teste produz os dois, e dá para calcular o intervalo entre eles por SQL |
+| **G-05a** | Instrumentação **mínima**: 2 eventos | **Feito, aguardando aplicar em produção** — PR #123, mergeado em `main`. `product_events` (append-only, RLS por tenant), `conta_criada` grava no fim de `executarOnboarding`, `motor_viu_valor` grava em `/admin/hoje` na primeira vez que o Motor mostra atribuição. Migration `0088` é aditiva e ainda **não foi aplicada em produção** — precisa de `supabase db push` contra o projeto de produção antes de gerar dado real |
 | **G-13** | Webhook de status do Mercado Pago | **Feito** — PR #122, mergeado em `main`. `processarWebhookMP` reconsulta sempre a preapproval no MP (nunca confia no corpo do webhook), 8 cenários de integração contra Postgres real (autorização, graça de pausa, cancelamento, guarda de valor, guarda de preapproval divergente, idempotência). Fica inerte sem `MERCADOPAGO_ACCESS_TOKEN`/`MERCADOPAGO_WEBHOOK_SECRET` |
 | **G-05b** | Os outros 4 eventos | Só depois do G-05a estar gravando em produção. `base_importada`, `recuperacao_enviada`, `cliente_voltou`, `onboarding_ok` |
 
