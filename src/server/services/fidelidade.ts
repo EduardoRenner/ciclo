@@ -2,7 +2,9 @@ import { Temporal } from '@js-temporal/polyfill'
 import { z } from 'zod'
 
 import { deveCreditarIndicacao } from '@/core/loyalty/indicacao'
+import { janelaDeCobranca } from '@/core/loyalty/margem-do-clube'
 import { pontosPorGasto } from '@/core/loyalty/pontos'
+import { usoDoPlano } from '@/core/loyalty/uso-do-plano'
 import { diaNoFuso } from '@/core/tempo/dia'
 import { podeUsarModulo } from '@/core/billing/planos'
 import { buscarTudoPaginado } from '@/server/db/paginar'
@@ -361,13 +363,25 @@ export type AssinaturaDoCliente = {
   sessionsPerMonth: number | null
   billingDay: number
   startedOn: string
+  /** CICLO Clube · C-07: quantos atendimentos concluídos essa pessoa já teve no ciclo ATUAL. */
+  visitasNoCiclo: number
+  /** `null` em plano ilimitado. Ver `usoDoPlano`. */
+  restantes: number | null
+  excedeuLimite: boolean
 }
 
-/** A assinatura ativa do cliente, se houver — o índice parcial garante que é no máximo uma. */
+/**
+ * A assinatura ativa do cliente, se houver — o índice parcial garante que é no máximo uma.
+ *
+ * `timezone` é opcional só para não quebrar o único chamador que cancela sem precisar do uso
+ * (`clients/[id]/subscription` DELETE, que só lê pra achar o id): sem ele, o uso do ciclo não é
+ * calculado e vem zerado — não fazer a consulta extra numa rota que vai descartar o resultado.
+ */
 export async function assinaturaAtiva(
   db: Cliente,
   tenantId: string,
   clientId: string,
+  timezone?: string,
 ): Promise<AssinaturaDoCliente | null> {
   const { data, error } = await db
     .from('client_subscriptions')
@@ -380,11 +394,35 @@ export async function assinaturaAtiva(
   if (error) throw new AppError('INTERNAL', { cause: error })
   if (!data?.subscription_plans) return null
 
+  let visitasNoCiclo = 0
+  if (timezone) {
+    const hoje = Temporal.Now.instant().toZonedDateTimeISO(timezone).toPlainDate()
+    const janela = janelaDeCobranca(data.billing_day, hoje)
+    const inicio = janela.inicio.toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant().toString()
+    const fim = janela.fim.toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant().toString()
+
+    const { count, error: erroVisitas } = await db
+      .from('appointments')
+      .select('id', { count: 'exact', head: true })
+      .eq('tenant_id', tenantId)
+      .eq('client_id', clientId)
+      .eq('status', 'done')
+      .gte('starts_at', inicio)
+      .lt('starts_at', fim)
+    if (erroVisitas) throw new AppError('INTERNAL', { cause: erroVisitas })
+    visitasNoCiclo = count ?? 0
+  }
+
+  const uso = usoDoPlano(data.subscription_plans.sessions_per_month, visitasNoCiclo)
+
   return {
     id: data.id,
     planName: data.subscription_plans.name,
     priceCents: data.subscription_plans.price_cents,
     sessionsPerMonth: data.subscription_plans.sessions_per_month,
+    visitasNoCiclo,
+    restantes: uso.restantes,
+    excedeuLimite: uso.excedeu,
     billingDay: data.billing_day,
     startedOn: data.started_on,
   }
