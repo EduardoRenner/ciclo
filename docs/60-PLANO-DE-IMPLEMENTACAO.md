@@ -7,13 +7,15 @@ Documento único de execução. Editado, nunca recriado. Substitui os artifacts 
 ## 0. Estado (2026-09-12)
 
 **#111 a #119 estão todos mergeados na `main`.** `pnpm verify` inteiro está verde — 0 falhas, unit
-+ integração + RLS + build — pela primeira vez nesta base (o que faltava era o T-09).
++ integração + RLS + build. **As migrations 0084–0086 foram aplicadas em produção e confirmadas**:
+`/api/health` de `seuciclo.com.br` responde `"ok": true`, `"schema": {"ok": true}`. Código e banco
+de produção estão em dia. Fase 0 e Fase 1 fechadas de ponta a ponta.
 
-**Pendente, fora do código, na sua mão:** as migrations `0084`–`0086` (o lote inteiro de RLS por
-papel) ainda não estavam em **produção** quando medido pelo `/api/health` em 2026-09-12
-(`"schema": {"ok": false, "detail": "faltam 3, 83 aplicadas, 86 esperadas"}`). Os 3 arquivos SQL
-prontos pra colar no SQL Editor do Supabase foram entregues nesta rodada. Depois de aplicar,
-conferir `/api/health` de novo — `schema.ok` tem que virar `true`.
+Uma delas precisou ser reaplicada de forma idempotente (`drop policy if exists <nome_da_política>`
+antes de cada `create policy`, não só o `drop` da política antiga `_tenant_all`): uma tentativa
+anterior tinha deixado políticas parciais em produção, e o script original não previa reaplicação.
+Fica registrado — se este lote precisar rodar nesse banco de novo por qualquer motivo, usar a
+versão idempotente, não a original deste documento.
 
 ---
 
