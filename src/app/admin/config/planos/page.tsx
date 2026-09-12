@@ -6,7 +6,7 @@ import { podeUsarModulo } from '@/core/billing/planos'
 import { avaliarPermissao } from '@/server/auth/rbac'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
-import { margensDoClube, raioXDeRecorrencia } from '@/server/services/clube'
+import { margensDoClube, raioXDeRecorrencia, receitaContratadaDoMes } from '@/server/services/clube'
 import { lerConfigFidelidade, listarPlanos } from '@/server/services/fidelidade'
 import { contextoDePlano } from '@/server/services/planos'
 
@@ -14,6 +14,7 @@ import EditorFidelidade from './fidelidade-config'
 import EditorPlanos from './editor'
 import MargemDoClube from './margem-do-clube'
 import RaioXRecorrencia from './raio-x-recorrencia'
+import ReceitaContratada from './receita-contratada'
 import PageHeader from '@/components/ui/page-header'
 
 export const dynamic = 'force-dynamic'
@@ -30,12 +31,13 @@ export default async function PaginaPlanos() {
    */
   const podeVerMargem = avaliarPermissao(ctx.papel, 'report:read') !== null
 
-  const [planos, negocio, plano, margens, raioX] = await Promise.all([
+  const [planos, negocio, plano, margens, raioX, receitaContratadaCents] = await Promise.all([
     listarPlanos(db, ctx.tenantId),
     db.from('tenants').select('settings').eq('id', ctx.tenantId).single(),
     contextoDePlano(db, ctx.tenantId),
     podeVerMargem ? margensDoClube(db, ctx.tenantId, ctx.tenant.timezone) : Promise.resolve([]),
     raioXDeRecorrencia(db, ctx.tenantId),
+    podeVerMargem ? receitaContratadaDoMes(db, ctx.tenantId) : Promise.resolve(null),
   ])
 
   /*
@@ -67,6 +69,7 @@ export default async function PaginaPlanos() {
       <div className="mt-7">
         <p className="mb-3 text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">Planos mensais</p>
         <EditorPlanos iniciais={planos} />
+        {receitaContratadaCents !== null ? <ReceitaContratada cents={receitaContratadaCents} /> : null}
       </div>
 
       <MargemDoClube margens={margens} />

@@ -9,6 +9,7 @@ import {
   type ClienteElegivel,
   type RaioXDeRecorrencia,
 } from '@/core/loyalty/raio-x-de-recorrencia'
+import { receitaContratadaCents } from '@/core/loyalty/receita-contratada'
 import { buscarTudoPaginado } from '@/server/db/paginar'
 import { AppError } from '@/server/http/errors'
 
@@ -162,4 +163,20 @@ export async function raioXDeRecorrencia(db: Cliente, tenantId: string): Promise
   }
 
   return calcularRaioX([...porCliente.values()])
+}
+
+/**
+ * CICLO Clube · C-06 — "quanto o clube já garante esse mês", separado da receita avulsa que
+ * depende de agenda cheia. Só assinaturas `active`: quem cancelou não conta mais, e inadimplência
+ * (C-09) ainda não existe como estado — quando existir, entra no filtro aqui, não num SQL solto.
+ */
+export async function receitaContratadaDoMes(db: Cliente, tenantId: string): Promise<number> {
+  const { data, error } = await db
+    .from('client_subscriptions')
+    .select('subscription_plans(price_cents)')
+    .eq('tenant_id', tenantId)
+    .eq('status', 'active')
+  if (error) throw new AppError('INTERNAL', { cause: error })
+
+  return receitaContratadaCents((data ?? []).filter((a) => a.subscription_plans).map((a) => ({ priceCents: a.subscription_plans!.price_cents })))
 }
