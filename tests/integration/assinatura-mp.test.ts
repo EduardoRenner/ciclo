@@ -32,7 +32,11 @@ const svc = createClient<Database>(SUPABASE_URL, SERVICE_KEY, { auth: { persistS
 const tenants: string[] = []
 const usuarios: string[] = []
 
-async function tenantComAssinatura(planoContratado: 'essencial' | 'equipe' | 'avancado', preapprovalId: string, planoVigente = planoContratado) {
+async function tenantComAssinatura(
+  planoContratado: 'essencial' | 'equipe' | 'avancado',
+  preapprovalId: string,
+  planoVigente: 'gratis' | 'essencial' | 'equipe' | 'avancado' = planoContratado,
+) {
   const marca = randomUUID().slice(0, 8)
   const { data, error } = await svc.auth.admin.createUser({ email: `mp-${marca}@ciclo.test`, password: randomUUID(), email_confirm: true })
   if (error || !data.user) throw new Error(`seed falhou: ${error?.message}`)
