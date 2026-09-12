@@ -7,10 +7,30 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5"
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
   public: {
     Tables: {
@@ -486,73 +506,6 @@ export type Database = {
           },
         ]
       }
-      cycle_predictions: {
-        Row: {
-          actual_return_on: string | null
-          algo_version: number
-          client_id: string
-          default_cycle_days: number
-          id: string
-          last_visit_on: string
-          personal_cycle_days: number
-          predicted_at: string
-          predicted_on: string
-          resolved_at: string | null
-          service_id: string
-          tenant_id: string
-        }
-        Insert: {
-          actual_return_on?: string | null
-          algo_version: number
-          client_id: string
-          default_cycle_days: number
-          id?: string
-          last_visit_on: string
-          personal_cycle_days: number
-          predicted_at?: string
-          predicted_on: string
-          resolved_at?: string | null
-          service_id: string
-          tenant_id: string
-        }
-        Update: {
-          actual_return_on?: string | null
-          algo_version?: number
-          client_id?: string
-          default_cycle_days?: number
-          id?: string
-          last_visit_on?: string
-          personal_cycle_days?: number
-          predicted_at?: string
-          predicted_on?: string
-          resolved_at?: string | null
-          service_id?: string
-          tenant_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "cycle_predictions_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "clients"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cycle_predictions_service_id_fkey"
-            columns: ["service_id"]
-            isOneToOne: false
-            referencedRelation: "services"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cycle_predictions_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       client_notes: {
         Row: {
           appointment_id: string | null
@@ -1020,6 +973,80 @@ export type Database = {
           last_run_at?: string
         }
         Relationships: []
+      }
+      cycle_predictions: {
+        Row: {
+          actual_return_on: string | null
+          algo_version: number
+          client_id: string
+          default_cycle_days: number
+          id: string
+          last_visit_on: string
+          personal_cycle_days: number
+          predicted_at: string
+          predicted_on: string
+          resolved_at: string | null
+          service_id: string
+          tenant_id: string
+        }
+        Insert: {
+          actual_return_on?: string | null
+          algo_version: number
+          client_id: string
+          default_cycle_days: number
+          id?: string
+          last_visit_on: string
+          personal_cycle_days: number
+          predicted_at?: string
+          predicted_on: string
+          resolved_at?: string | null
+          service_id: string
+          tenant_id: string
+        }
+        Update: {
+          actual_return_on?: string | null
+          algo_version?: number
+          client_id?: string
+          default_cycle_days?: number
+          id?: string
+          last_visit_on?: string
+          personal_cycle_days?: number
+          predicted_at?: string
+          predicted_on?: string
+          resolved_at?: string | null
+          service_id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cycle_predictions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cycle_predictions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "v_client_segments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cycle_predictions_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cycle_predictions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       health_records: {
         Row: {
@@ -1559,6 +1586,30 @@ export type Database = {
           },
         ]
       }
+      modules: {
+        Row: {
+          eixo: string | null
+          key: string
+          label: string
+          ordem: number
+          sempre_ligado: boolean
+        }
+        Insert: {
+          eixo?: string | null
+          key: string
+          label: string
+          ordem: number
+          sempre_ligado?: boolean
+        }
+        Update: {
+          eixo?: string | null
+          key?: string
+          label?: string
+          ordem?: number
+          sempre_ligado?: boolean
+        }
+        Relationships: []
+      }
       monthly_profit: {
         Row: {
           commission_cents: number
@@ -1602,30 +1653,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      modules: {
-        Row: {
-          eixo: string | null
-          key: string
-          label: string
-          ordem: number
-          sempre_ligado: boolean
-        }
-        Insert: {
-          eixo?: string | null
-          key: string
-          label: string
-          ordem: number
-          sempre_ligado?: boolean
-        }
-        Update: {
-          eixo?: string | null
-          key?: string
-          label?: string
-          ordem?: number
-          sempre_ligado?: boolean
-        }
-        Relationships: []
       }
       package_uses: {
         Row: {
@@ -3418,27 +3445,6 @@ export type Database = {
           },
         ]
       }
-      v_daily_cash: {
-        Row: {
-          commission_cents: number | null
-          day: string | null
-          fee_cents: number | null
-          material_cents: number | null
-          profit_cents: number | null
-          revenue_cents: number | null
-          tenant_id: string | null
-          tickets: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "tickets_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       v_clientes_a_recuperar: {
         Row: {
           client_id: string | null
@@ -3456,7 +3462,35 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "client_cycles_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "v_client_segments"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "client_cycles_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_daily_cash: {
+        Row: {
+          commission_cents: number | null
+          day: string | null
+          fee_cents: number | null
+          material_cents: number | null
+          profit_cents: number | null
+          revenue_cents: number | null
+          tenant_id: string | null
+          tickets: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tickets_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -3527,6 +3561,11 @@ export type Database = {
         Args: { prof: string; t: string }
         Returns: boolean
       }
+      can_see_commission: {
+        Args: { prof: string; t: string }
+        Returns: boolean
+      }
+      can_see_ticket: { Args: { prof: string; t: string }; Returns: boolean }
       claim_jobs: {
         Args: { p_limit?: number }
         Returns: {
@@ -3599,6 +3638,14 @@ export type Database = {
       set_tenant_context: { Args: { t: string }; Returns: undefined }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      status_do_cron_do_motor: {
+        Args: never
+        Returns: {
+          active: boolean
+          jobname: string
+          schedule: string
+        }[]
+      }
       tenant_rls_report: {
         Args: never
         Returns: {
@@ -3696,12 +3743,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never) = never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -3725,11 +3772,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never) = never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -3750,11 +3797,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never) = never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -3775,11 +3822,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never) = never,
+    : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -3792,11 +3839,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never) = never,
+    : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -3806,6 +3853,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       appointment_origin: [
@@ -3883,3 +3933,4 @@ export const Constants = {
     },
   },
 } as const
+
