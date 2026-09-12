@@ -91,6 +91,15 @@ const JUSTIFICADAS: { arquivo: string; tabela: string; quantas: number; porque: 
     porque: 'healthcheck da instância — conta mensagens de TODOS os tenants de propósito, sem ler conteúdo',
   },
   {
+    arquivo: 'src/server/services/whatsapp-inbound.ts',
+    tabela: 'messages',
+    quantas: 1,
+    porque:
+      'webhook de status de entrega (T-01): o correlato é o provider_id (id da mensagem na Meta, globalmente único), ' +
+      'e a autorização já foi provada pela assinatura HMAC em parseWebhook — não existe tenant de contexto ANTES desta ' +
+      'consulta, é ela quem descobre a qual tenant a mensagem pertence',
+  },
+  {
     arquivo: 'src/server/services/lembretes.ts',
     tabela: 'appointments',
     quantas: 1,
