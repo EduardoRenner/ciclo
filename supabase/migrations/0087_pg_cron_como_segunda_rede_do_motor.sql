@@ -24,8 +24,8 @@
 --
 -- Regra 10 do CLAUDE.md: segredo nunca no repositório. Os dois valores que o job precisa
 -- (`CRON_BASE_URL`, `CRON_SECRET`) ficam no Vault do Supabase, e ESTA MIGRATION NÃO OS CRIA — só
--- lê pelo nome. Sem eles, o `cron.schedule` abaixo roda e falha silenciosamente (a chamada HTTP
--- não encontra segredo, `net.http_post` não dispara) — inofensivo, mas também inútil.
+-- lê pelo nome. Sem eles, o `cron.schedule` abaixo roda e a chamada HTTP não encontra segredo —
+-- inofensivo, mas também inútil.
 --
 -- **Passo manual, uma vez, no SQL Editor do Supabase (nunca num arquivo versionado):**
 --
