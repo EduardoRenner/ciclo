@@ -138,7 +138,7 @@ que nenhum outro teste usa slug fixo.
 | ID | Item | Pronto quando |
 |---|---|---|
 | **G-05a** | Instrumentação **mínima**: 2 eventos | Tabela `product_events` + `conta_criada` e `motor_viu_valor` gravando. Uma conta nova de teste produz os dois, e dá para calcular o intervalo entre eles por SQL |
-| **G-13** | Webhook de status do Mercado Pago | Pagamento recusado rebaixa o plano; teste de integração prova a transição. Não depende de credencial para ser escrito |
+| **G-13** | Webhook de status do Mercado Pago | **Feito** — PR #122, mergeado em `main`. `processarWebhookMP` reconsulta sempre a preapproval no MP (nunca confia no corpo do webhook), 8 cenários de integração contra Postgres real (autorização, graça de pausa, cancelamento, guarda de valor, guarda de preapproval divergente, idempotência). Fica inerte sem `MERCADOPAGO_ACCESS_TOKEN`/`MERCADOPAGO_WEBHOOK_SECRET` |
 | **G-05b** | Os outros 4 eventos | Só depois do G-05a estar gravando em produção. `base_importada`, `recuperacao_enviada`, `cliente_voltou`, `onboarding_ok` |
 
 ### Fase 2 — só entra o que os primeiros salões pedirem
