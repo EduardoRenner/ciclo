@@ -9,9 +9,13 @@ import { processarWebhookMP } from '@/server/services/assinatura-mp'
  * ninguém precisar notar. `criarPreapproval`/`consultarPreapproval`/`decidirPlano` já existiam,
  * prontos e sem chamador; este arquivo é a última peça, a cola que os liga.
  *
- * **Sempre responde 200**, mesmo quando não há o que fazer (evento sem preapproval associado,
- * assinatura não registrada) — devolver erro pro MP pra um evento que só não bateu com nada vira
- * reenvio em loop, mesmo padrão do webhook do WhatsApp. Assinatura inválida é a única rejeição real.
+ * Responde 200 quando o evento é válido mas não há o que fazer (sem preapproval associado,
+ * assinatura não registrada, valor não confere) — devolver erro pro MP por um evento que só não
+ * bateu com nada vira reenvio em loop, mesmo padrão do webhook do WhatsApp. Assinatura inválida é a
+ * única rejeição por CONTEÚDO (401). Uma falha de verdade ao falar com a API do MP (rede, token
+ * inválido, resposta inesperada) propaga como erro do `rota()` — isso é o que faz o MP tentar de
+ * novo mais tarde, o comportamento certo para uma falha transitória, diferente de um evento que
+ * simplesmente não corresponde a nada no nosso lado.
  *
  * Fica inerte sem `MERCADOPAGO_ACCESS_TOKEN`/`MERCADOPAGO_WEBHOOK_SECRET` — mesmo desenho do
  * WhatsApp e do `pg_cron`.
