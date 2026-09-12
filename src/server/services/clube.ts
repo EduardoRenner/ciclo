@@ -3,6 +3,13 @@ import { Temporal } from '@js-temporal/polyfill'
 import { custoDoServico } from '@/core/comanda/custo-do-servico'
 import { calcularComissaoItem, type BaseComissao } from '@/core/comanda/totals'
 import { janelaDeCobranca, margemDoAssinante, type MargemDoAssinante } from '@/core/loyalty/margem-do-clube'
+import {
+  calcularRaioX,
+  LIMITE_DIAS_ELEGIVEL,
+  type ClienteElegivel,
+  type RaioXDeRecorrencia,
+} from '@/core/loyalty/raio-x-de-recorrencia'
+import { receitaContratadaCents } from '@/core/loyalty/receita-contratada'
 import { buscarTudoPaginado } from '@/server/db/paginar'
 import { AppError } from '@/server/http/errors'
 
@@ -128,4 +135,48 @@ export async function margensDoClube(db: Cliente, tenantId: string, timezone: st
       }
     })
     .sort((a, b) => a.margemCents - b.margemCents)
+}
+
+/**
+ * CICLO Clube · C-03 — "quantos dos seus clientes já voltam rápido o bastante pra virar assinante,
+ * e quanto isso valeria?". Lê `client_cycles`, que o Motor de Ciclo já mantém em dia; nenhuma
+ * consulta nova de agendamento.
+ */
+export async function raioXDeRecorrencia(db: Cliente, tenantId: string): Promise<RaioXDeRecorrencia> {
+  const { data, error } = await db
+    .from('client_cycles')
+    .select('client_id, personal_cycle_days, services(price_cents)')
+    .eq('tenant_id', tenantId)
+    .lte('personal_cycle_days', LIMITE_DIAS_ELEGIVEL)
+    .order('personal_cycle_days', { ascending: true })
+  if (error) throw new AppError('INTERNAL', { cause: error })
+
+  /*
+   * `client_cycles` tem uma linha por (cliente, serviço) — um cliente com dois serviços elegíveis
+   * apareceria duas vezes. Fica com a linha do ciclo MAIS FREQUENTE (menor `personal_cycle_days`),
+   * já garantido pelo `order` acima: o primeiro `client_id` visto é o mais frequente daquela pessoa.
+   */
+  const porCliente = new Map<string, ClienteElegivel>()
+  for (const linha of data ?? []) {
+    if (porCliente.has(linha.client_id)) continue
+    porCliente.set(linha.client_id, { cicloPessoalDias: linha.personal_cycle_days, ticketCents: linha.services?.price_cents ?? 0 })
+  }
+
+  return calcularRaioX([...porCliente.values()])
+}
+
+/**
+ * CICLO Clube · C-06 — "quanto o clube já garante esse mês", separado da receita avulsa que
+ * depende de agenda cheia. Só assinaturas `active`: quem cancelou não conta mais, e inadimplência
+ * (C-09) ainda não existe como estado — quando existir, entra no filtro aqui, não num SQL solto.
+ */
+export async function receitaContratadaDoMes(db: Cliente, tenantId: string): Promise<number> {
+  const { data, error } = await db
+    .from('client_subscriptions')
+    .select('subscription_plans(price_cents)')
+    .eq('tenant_id', tenantId)
+    .eq('status', 'active')
+  if (error) throw new AppError('INTERNAL', { cause: error })
+
+  return receitaContratadaCents((data ?? []).filter((a) => a.subscription_plans).map((a) => ({ priceCents: a.subscription_plans!.price_cents })))
 }
