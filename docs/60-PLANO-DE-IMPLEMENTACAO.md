@@ -251,8 +251,8 @@ C-09, C-10, C-11, C-12) fica parado até essa validação vir do Eduardo.**
 | C-04 | Cobrança recorrente (criar assinatura, webhook) | **Bloqueado** na validação de PSP. Achado: `server/billing/mercado-pago.ts` já tem `criarPreapproval`/`consultarPagamento`/`verificarAssinaturaWebhook` prontos e sem nenhuma rota consumindo — é billing do CICLO→tenant (SaaS), reaproveitável na parte de baixo nível, mas a lógica de split é nova |
 | C-05 | Split/taxa de plataforma | Bloqueado (mesma validação) |
 | C-06 | Tela "Receita contratada do mês" | **Feito** — PR #117 (empilhado sobre #116), verificado no navegador |
-| C-07 | Checkin de uso do assinante | Aberto, não bloqueado |
-| C-08 | Cancelamento de assinatura | Aberto, não bloqueado — `client_subscriptions.status` já suporta `canceled` |
+| C-07 | Checkin de uso do assinante | **Feito** — PR #118. Avisa, não bloqueia (mesma filosofia do estoque negativo) |
+| C-08 | Cancelamento de assinatura | **Já estava pronto antes desta rodada** — `assinar`/`cancelarAssinatura`/rota `DELETE` e teste de integração já existiam. Achado ao investigar C-07 |
 | C-09–C-12 | Inadimplência, idempotência de webhook, edge cases de cobrança | Bloqueados (dependem de C-04/C-05 existirem primeiro) |
 
 **Próximo passo não bloqueado:** C-03, depois C-06 e C-07, que dão valor ao dono (visibilidade e
