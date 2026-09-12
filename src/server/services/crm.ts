@@ -634,27 +634,17 @@ export async function centralDeAcoes(db: Cliente, tenantId: string, papel?: Pape
    */
   const podeVerLucro = papel !== undefined && avaliarPermissao(papel, 'report:read') !== null
 
-  const [clientes, agendamentos, emRisco, aniversariantes, resgataveis, orcamentos, ctxPlano, tenantSettings, material] = await Promise.all([
-    db.from('clients').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId).is('deleted_at', null),
-    db.from('appointments').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId),
-    // `v_clientes_a_recuperar` (0058) conta CLIENTE, não linha de (cliente × serviço). Antes
-    // este alarme dizia "147 clientes estão sumindo" num salão com 55 — e levava para uma lista
-    // que mostrava outro número. `ja_atrasado` exclui quem só está vencendo hoje: ainda não sumiu.
+  const [resumo, resgataveis, orcamentos, ctxPlano, tenantSettings, material] = await Promise.all([
+    // `resumo_central_de_acoes` (0089): as quatro contagens que eram quatro idas de rede separadas
+    // (clientes, agendamentos, v_clientes_a_recuperar, v_client_segments) viraram uma função só —
+    // medido em produção (docs/28 §12), `centralDeAcoes` sozinha respondia por 2-4x o tempo dos
+    // outros três ramos de `/admin/hoje`, e nenhuma consulta individual era lenta no banco: o
+    // custo é a sobrecarga de rede por chamada ao PostgREST, que `Promise.all` não elimina.
     //
-    // Só o CONTADOR sai daqui. O comentário da própria 0058 diz que `maior_valor_cents` "é o que a
-    // tela mostra na linha da cliente" e isso é falso: o valor e o atraso da lista de
-    // `/admin/recuperar` vêm de `v_recover_revenue`, por SERVIÇO. Os dois agregados da view não têm
-    // leitor nenhum — conferido em 05/09/2026, as duas consultas a ela neste arquivo são as únicas,
-    // e as duas são `head: true`. Não foram removidos porque servem à ordenação por cliente que a
-    // lista ainda não tem, e recalculá-los fora daqui recriaria a segunda definição que a view
-    // existe para eliminar. A nota mora aqui, e não na migration, porque migration aplicada não se
-    // edita — quem lê o `crm.ts` é quem vai duvidar do número. Ver `docs/41` §C.
-    db
-      .from('v_clientes_a_recuperar')
-      .select('client_id', { count: 'exact', head: true })
-      .eq('tenant_id', tenantId)
-      .eq('ja_atrasado', true),
-    db.from('v_client_segments').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId).eq('is_aniversariante', true),
+    // `v_clientes_a_recuperar` (0058) conta CLIENTE, não linha de (cliente × serviço). Antes este
+    // alarme dizia "147 clientes estão sumindo" num salão com 55 — e levava para uma lista que
+    // mostrava outro número. `ja_atrasado` exclui quem só está vencendo hoje: ainda não sumiu.
+    db.rpc('resumo_central_de_acoes', { p_tenant: tenantId }).single(),
     db.from('loyalty_entries').select('client_id, points').eq('tenant_id', tenantId),
     listarOrcamentos(db, tenantId),
     contextoDePlano(db, tenantId),
@@ -664,6 +654,11 @@ export async function centralDeAcoes(db: Cliente, tenantId: string, papel?: Pape
     db.from('tenants').select('settings').eq('id', tenantId).maybeSingle(),
     podeVerLucro ? medirMaterialDoCatalogo(db, tenantId) : null,
   ])
+  if (resumo.error) throw new AppError('INTERNAL', { cause: resumo.error })
+  const clientes = { count: resumo.data?.clientes ?? 0 }
+  const agendamentos = { count: resumo.data?.agendamentos ?? 0 }
+  const emRisco = { count: resumo.data?.em_risco ?? 0 }
+  const aniversariantes = { count: resumo.data?.aniversariantes ?? 0 }
 
   // Sem cliente E sem agendamento é conta que ainda não começou — quem só usa
   // agendamento online tem cliente criado pela própria reserva, então os dois
