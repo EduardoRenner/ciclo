@@ -76,9 +76,10 @@ describe('registrarEvento / registrarPrimeiraOcorrencia', () => {
         .order('created_at', { ascending: true })
 
       expect(data?.map((e) => e.event_type)).toEqual(['conta_criada', 'motor_viu_valor'])
+      if (!data) throw new Error('sem dados')
 
-      const contaCriada = new Date(data![0].created_at).getTime()
-      const motorViuValor = new Date(data![1].created_at).getTime()
+      const contaCriada = new Date(data[0]!.created_at).getTime()
+      const motorViuValor = new Date(data[1]!.created_at).getTime()
       expect(motorViuValor - contaCriada, 'motor_viu_valor tem que vir depois de conta_criada').toBeGreaterThanOrEqual(0)
     },
     30_000,
@@ -93,7 +94,7 @@ describe('registrarEvento / registrarPrimeiraOcorrencia', () => {
 
       const { data } = await svc.from('product_events').select('meta').eq('tenant_id', tenantId).eq('event_type', 'motor_viu_valor')
       expect(data).toHaveLength(1)
-      expect(data![0].meta, 'a SEGUNDA chamada não pode ter sobrescrito o meta da primeira').toEqual({ count: 1 })
+      expect(data?.[0]?.meta, 'a SEGUNDA chamada não pode ter sobrescrito o meta da primeira').toEqual({ count: 1 })
     },
     30_000,
   )
