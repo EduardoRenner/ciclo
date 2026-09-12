@@ -4,24 +4,20 @@ Documento único de execução. Editado, nunca recriado. Substitui os artifacts 
 
 ---
 
-## 0. AÇÃO PENDENTE — PRs esperando merge
+## 0. Estado do merge (2026-09-12)
 
-**#111, #112, #113 e #114 estão abertos e MERGEABLE, mas ainda não entraram na `main`.** Só #108,
-#109 e #110 estão na `main` hoje. É por isso que nada do RLS completo nem da tela "quem você já
-atende" aparece se você olhar o produto agora — o código existe, está verde, está revisado, mas não
-foi publicado.
+**#111 a #118 estão todos mergeados na `main`.** Alguns (#112, #113, #115, #118) travaram em
+conflito no meio do caminho — o padrão sempre foi o mesmo: a branch tinha um commit que já tinha
+entrado por outro PR (ex.: a `0084` duplicada) ou a `main` andou por causa de um `docs/60` que eu
+mesmo empurrei direto. Conserto de cada vez: `git rebase origin/main` na branch, resolver (quase
+sempre automático), `pnpm typecheck` + `pnpm test:unit`, `--force-with-lease`, mergear.
 
-| PR | O que faz | Depende de |
-|---|---|---|
-| [#111](https://github.com/EduardoRenner/ciclo/pull/111) | RLS: ficha de saúde e consentimento não se apagam pelo PostgREST | nada — mergear primeiro |
-| [#112](https://github.com/EduardoRenner/ciclo/pull/112) | RLS: dez tabelas param de aceitar DELETE | #111 |
-| [#113](https://github.com/EduardoRenner/ciclo/pull/113) | RLS: DELETE exige o papel que a rota já exige | #112 |
-| [#114](https://github.com/EduardoRenner/ciclo/pull/114) | Cadastro de clientela por memória (sem planilha) | nenhum dos RLS — pode entrar em qualquer ordem |
-
-**Ordem de merge: #111 → #112 → #113 (empilhados). #114 é independente.**
-
-Depois do merge, rodar `npx supabase migration up --local` (ou aplicar em produção pelo SQL Editor,
-como nas rodadas anteriores) para as migrations 0084–0086 baterem com o código.
+**Pendente, fora do código:** as migrations `0084`–`0086` (o lote inteiro de RLS por papel) ainda
+não foram aplicadas em **produção** — só no banco local, onde todo o `pnpm verify` deste documento
+rodou. Aplicar com `supabase db push` contra o projeto de produção, ou colar o SQL das três
+migrations no SQL Editor do Supabase (mesmo processo das rodadas anteriores). É restritiva:
+confirmar que o deploy do commit que passou o erase para `service_role` (2026-09-09) já está no ar
+antes de aplicar — ver o comentário da própria `0084`.
 
 ---
 
