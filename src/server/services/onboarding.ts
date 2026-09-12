@@ -3,6 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { SLUG_PROFISSAO_GENERICA } from '@/core/profissoes'
 import { gerarDekCifrada } from '@/server/crypto/kek'
 import { AppError } from '@/server/http/errors'
+import { registrarEvento } from '@/server/services/product-events'
 
 import type { Database } from '@/server/db/types.gen'
 
@@ -173,6 +174,11 @@ export async function executarOnboarding(
     }
     throw new AppError('INTERNAL', { cause: erro })
   }
+
+  // G-05a (docs/60): o primeiro dos dois eventos do funil mínimo. Depois deste ponto o tenant já
+  // está completo (membership, profissional, chave, catálogo) — `registrarEvento` nunca lança,
+  // então isto não pode desfazer o cadastro que acabou de suceder.
+  await registrarEvento(svc, tenant.id, 'conta_criada', { vertical: params.vertical })
 
   return { tenant }
 }

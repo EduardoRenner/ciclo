@@ -8,6 +8,7 @@ import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { receitaAtribuidaAoCiclo } from '@/server/services/atribuicao'
 import { centralDeAcoes } from '@/server/services/crm'
+import { registrarPrimeiraOcorrencia } from '@/server/services/product-events'
 import { listarParaRecuperar } from '@/server/services/recuperar-receita'
 import { resumoDeHoje } from '@/server/services/resumo-hoje'
 
@@ -84,6 +85,13 @@ export default async function PaginaHoje() {
       return { totalValueCents: 0, totalProfitCents: 0, count: 0, items: [] }
     }),
   ])
+
+  // G-05a (docs/60): o segundo evento do funil mínimo — o momento em que o Motor de Ciclo mostra,
+  // pela primeira vez, que trouxe dinheiro de volta para este tenant. `registrarPrimeiraOcorrencia`
+  // nunca lança e não bloqueia a tela; falha aqui vira log, não erro na tela mais importante do app.
+  if (atribuicao.count > 0) {
+    await registrarPrimeiraOcorrencia(db, ctx.tenantId, 'motor_viu_valor', { count: atribuicao.count })
+  }
 
   const data = new Intl.DateTimeFormat('pt-BR', {
     weekday: 'long',

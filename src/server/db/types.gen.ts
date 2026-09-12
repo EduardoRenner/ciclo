@@ -1932,6 +1932,38 @@ export type Database = {
           },
         ]
       }
+      product_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          meta: Json
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          meta?: Json
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          meta?: Json
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_events_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           active: boolean

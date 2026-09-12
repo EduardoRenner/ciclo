@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 
 import { createClient } from '@supabase/supabase-js'
 import dotenv from 'dotenv'
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, describe, expect, it } from 'vitest'
 
 import { processarWebhookMP } from '@/server/services/assinatura-mp'
 import { executarOnboarding } from '@/server/services/onboarding'
