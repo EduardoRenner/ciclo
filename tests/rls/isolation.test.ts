@@ -281,6 +281,7 @@ async function semear(f: Fixture, sufixo: string): Promise<void> {
 
   const restantes: Array<[string, Record<string, unknown>]> = [
     ['tenant_keys', { tenant_id: t, dek_wrapped: '\\xdeadbeef' }],
+    ['product_events', { tenant_id: t, event_type: 'conta_criada' }],
     ['business_hours', { tenant_id: t, weekday: 1, opens_at: '09:00', closes_at: '19:00' }],
     ['time_off', { tenant_id: t, starts_at: inicio, ends_at: fim }],
     ['professional_services', { tenant_id: t, professional_id: f.professionalId, service_id: f.serviceId }],
