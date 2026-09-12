@@ -40,7 +40,7 @@ item a item, para nenhum sumir na reestruturação.
 
 | # | Item original | Status real | Onde |
 |---|---|---|---|
-| 1 | Cron externo do Motor pode cair sem avisar (já caiu 54h) | **Metade feita** | PR #120 (aberto) — segunda rede via `pg_cron`, independente do GitHub. Falta o monitor externo do próprio `/api/health` |
+| 1 | Cron externo do Motor pode cair sem avisar (já caiu 54h) | **Metade feita, em produção** | PR #120 mergeado e aplicado — segunda rede via `pg_cron`, independente do GitHub, confirmada disparando de verdade em produção (`200`, `tenantsProcessados: 7`, 2026-09-12). Falta o monitor externo do próprio `/api/health` |
 | 2 | RLS cega em ~22 tabelas | **Resolvido, aguardando merge** | PRs #111+#112+#113. Medido no fim: eram 20 tabelas, não 22 — uma (`waitlist`) fica cega de propósito (controle positivo de teste) |
 | 3 | `.env.local` pode apontar pra produção sem guarda | **Já resolvido antes desta sessão** | `tests/setup/so-banco-local.ts` — recusa rodar fora de `127.0.0.1`/`localhost` |
 | 5 | CI não pega banco atrás do código | **Resolvido e mergeado** | PR #110 — `tests/setup/banco-em-dia.ts` compara `schema_migrations` com o disco antes de qualquer suíte de banco rodar |
@@ -150,7 +150,7 @@ implementar, esperando evidência de que alguém precisa deles.
 |---|---|---|
 | T-01 | Webhook de entrada do WhatsApp (CONFIRMAR/CANCELAR grátis na janela de 24h) | Houver conta Meta **e** um salão mandando lembrete de verdade |
 | G-06 | Convite B2B sai de `config/meu-plano` e vira momento pós-recuperação | Houver um dono satisfeito para convidar alguém |
-| T-02 | Dead-man switch do Motor | **Metade feita** — PR #120 (aberto, aguardando você): `pg_cron` como segunda rede do Motor, independente do GitHub. Verificado ponta a ponta contra `next dev` local (200 real). Pendente: você popular 2 secrets no Vault do Supabase (o PR traz o SQL) e revisar antes de mergear — é infra de produção, não mergeei sozinho. Falta ainda um monitor externo pra alertar se as DUAS redes pararem (isso sim é conta de terceiro, fica represado) |
+| T-02 | Dead-man switch do Motor | **Metade feita, em produção (2026-09-12)** — PR #120 mergeado, migration `0087` aplicada, 2 secrets criados no Vault. `CRON_SECRET` foi rotacionado (o valor antigo era "Sensitive" na Vercel — nunca mais legível por design deles — então gerei um novo e atualizei Vercel + GitHub Actions + Vault juntos, redeploy incluído). Confirmado com disparo real: `200`, `tenantsProcessados: 7`. Falta só um monitor externo pra alertar se as DUAS redes pararem — isso é conta de terceiro, fica represado até você decidir qual serviço usar |
 | T-07 | Assistente escreve a mensagem de recuperação para o dono aprovar | Alguém reclamar de escrever mensagem na mão |
 | T-06/T-08 | Guardas de comportamento no lugar das que só varrem fonte | Uma guarda cega deixar passar um defeito real |
 
