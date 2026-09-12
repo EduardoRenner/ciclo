@@ -476,3 +476,115 @@ describe('0084 · ficha de saúde e consentimento não se apagam pelo PostgREST'
     expect(count, 'o service_role deixou de apagar a ficha: o erase da LGPD está quebrado').toBe(0)
   })
 })
+
+/**
+ * 0085 · O terceiro lote do mesmo aperto seguro: dez tabelas param de aceitar DELETE.
+ *
+ * "Morta" não foi estabelecido por leitura tabela a tabela — é assim que se erra. Foi pelo lado
+ * contrário: enumerando os **17 `.delete()` do `src/` inteiro** e atribuindo cada um à sua tabela.
+ * Quem aparece nessa lista ficou de fora do lote.
+ *
+ * A contagem importou mais que a leitura: 17 no total, 16 atribuídos. O que faltava era
+ * `lgpd.ts:296`, `db.from(tabela).delete()` num laço sobre `TABELAS_APAGADAS` — nome de tabela
+ * dinâmico, invisível para qualquer grep por literal. É por lá que `client_notes` é apagada, e por
+ * isso ela entra neste lote com a justificativa CERTA: morta para o cliente da sessão, viva para o
+ * erase, que é service_role.
+ *
+ * Exercita três das dez. As outras sete são a mesma política, escrita igual, e o custo de montar
+ * linha em cada uma não compra confiança proporcional — o que compra é o controle positivo logo
+ * abaixo, que prova que este arnês distingue apagou de não apagou.
+ */
+describe('0085 · a base de clientes, as notas e o histórico de mensagens não se apagam', () => {
+  let clienteId: string
+  let notaId: string
+  let mensagemId: string
+
+  beforeAll(async () => {
+    const cliente = exigir(
+      await admin.from('clients').insert({ tenant_id: tenantId, name: 'Cliente da 0085' }).select('id').single(),
+      'clients',
+    )
+    clienteId = cliente.id
+
+    const nota = exigir(
+      await admin.from('client_notes').insert({ tenant_id: tenantId, client_id: clienteId, body: 'prefere café sem açúcar' }).select('id').single(),
+      'client_notes',
+    )
+    notaId = nota.id
+
+    const msg = exigir(
+      await admin.from('messages').insert({ tenant_id: tenantId, client_id: clienteId, kind: 'reminder', channel: 'whatsapp' }).select('id').single(),
+      'messages',
+    )
+    mensagemId = msg.id
+  }, 60_000)
+
+  it('o membro LÊ e ATUALIZA a ficha do cliente (a tela inteira depende das duas)', async () => {
+    const c = await entrar()
+    const { data: lidos } = await c.from('clients').select('id').eq('id', clienteId)
+    expect((lidos ?? []).length).toBe(1)
+
+    const upd = await c.from('clients').update({ name: 'Nome Editado' }).eq('id', clienteId).select('id')
+    expect(upd.error, upd.error?.message).toBeNull()
+  })
+
+  it('o membro ARQUIVA o cliente por `deleted_at`, que é como o app apaga', async () => {
+    // A inviolável nº 11 vira RLS: o caminho certo continua aberto, o atalho destrutivo fecha.
+    const c = await entrar()
+    await c.from('clients').update({ deleted_at: new Date().toISOString() }).eq('id', clienteId)
+    const { data } = await admin.from('clients').select('deleted_at').eq('id', clienteId).single()
+    expect(data!.deleted_at, 'o soft delete parou de funcionar: arquivar cliente quebraria').toBeTruthy()
+  })
+
+  /*
+    Os dois casos destrutivos de `clients` ficam POR ÚLTIMO, e cada um usa a própria linha.
+
+    Não é organização: com a política permissiva (ou seja, quando a guarda está fazendo o trabalho
+    dela), o delete PASSA e cascateia — `client_notes` e `messages` do mesmo cliente vão junto. Na
+    primeira versão deste bloco, o caso de apagar a ficha derrubava a fixture dos dois casos
+    seguintes, que reprovavam com `23503` (violação de chave estrangeira) em vez da mensagem que
+    explica o problema. Guarda que falha pela razão errada custa o tempo de quem for consertar.
+  */
+  it('client_notes: o membro escreve e lê, mas não apaga', async () => {
+    const c = await entrar()
+    const ins = await c.from('client_notes').insert({ tenant_id: tenantId, client_id: clienteId, body: 'nota nova' }).select('id')
+    expect(ins.error, ins.error?.message).toBeNull()
+
+    await c.from('client_notes').delete().eq('id', notaId)
+    const { count } = await admin.from('client_notes').select('id', { count: 'exact', head: true }).eq('id', notaId)
+    expect(count, 'a nota some pelo PostgREST — o erase da LGPD apaga por service_role, não por aqui').toBe(1)
+  })
+
+  it('messages: o histórico de envio não se apaga (é a prova do que saiu para quem)', async () => {
+    const c = await entrar()
+    await c.from('messages').delete().eq('id', mensagemId)
+    const { count } = await admin.from('messages').select('id', { count: 'exact', head: true }).eq('id', mensagemId)
+    expect(count, 'apagar mensagem enviada destrói a resposta de "essa cliente foi avisada?"').toBe(1)
+  })
+
+  it('o membro NÃO apaga a ficha do cliente de verdade', async () => {
+    const alvo = exigir(
+      await admin.from('clients').insert({ tenant_id: tenantId, name: 'Alvo do delete' }).select('id').single(),
+      'clients alvo',
+    )
+    const c = await entrar()
+    await c.from('clients').delete().eq('id', alvo.id)
+    const { count } = await admin.from('clients').select('id', { count: 'exact', head: true }).eq('id', alvo.id)
+    expect(count, 'a base de clientes é apagável pelo PostgREST — e o produto promete que ela é do salão').toBe(1)
+  })
+
+  it('o membro NÃO apaga a base inteira num comando só', async () => {
+    /*
+      O caso que justifica o lote sozinho: `delete().eq('tenant_id', ...)` é o caminho mais curto
+      entre uma credencial de recepção vazada e um salão sem clientela. Medido em 2026-09-10, com a
+      política `clients_tenant_all` ainda viva: a base INTEIRA do tenant saiu numa chamada.
+
+      Por último de propósito — é o único caso do arquivo que, quando reprova, leva junto todo o
+      resto dos dados do tenant.
+    */
+    const c = await entrar()
+    await c.from('clients').delete().eq('tenant_id', tenantId)
+    const { count } = await admin.from('clients').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId)
+    expect(count, 'a base INTEIRA do salão saiu num comando').toBeGreaterThan(0)
+  })
+})
