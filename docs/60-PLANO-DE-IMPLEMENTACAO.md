@@ -4,20 +4,16 @@ Documento único de execução. Editado, nunca recriado. Substitui os artifacts 
 
 ---
 
-## 0. Estado do merge (2026-09-12)
+## 0. Estado (2026-09-12)
 
-**#111 a #118 estão todos mergeados na `main`.** Alguns (#112, #113, #115, #118) travaram em
-conflito no meio do caminho — o padrão sempre foi o mesmo: a branch tinha um commit que já tinha
-entrado por outro PR (ex.: a `0084` duplicada) ou a `main` andou por causa de um `docs/60` que eu
-mesmo empurrei direto. Conserto de cada vez: `git rebase origin/main` na branch, resolver (quase
-sempre automático), `pnpm typecheck` + `pnpm test:unit`, `--force-with-lease`, mergear.
+**#111 a #119 estão todos mergeados na `main`.** `pnpm verify` inteiro está verde — 0 falhas, unit
++ integração + RLS + build — pela primeira vez nesta base (o que faltava era o T-09).
 
-**Pendente, fora do código:** as migrations `0084`–`0086` (o lote inteiro de RLS por papel) ainda
-não foram aplicadas em **produção** — só no banco local, onde todo o `pnpm verify` deste documento
-rodou. Aplicar com `supabase db push` contra o projeto de produção, ou colar o SQL das três
-migrations no SQL Editor do Supabase (mesmo processo das rodadas anteriores). É restritiva:
-confirmar que o deploy do commit que passou o erase para `service_role` (2026-09-09) já está no ar
-antes de aplicar — ver o comentário da própria `0084`.
+**Pendente, fora do código, na sua mão:** as migrations `0084`–`0086` (o lote inteiro de RLS por
+papel) ainda não estavam em **produção** quando medido pelo `/api/health` em 2026-09-12
+(`"schema": {"ok": false, "detail": "faltam 3, 83 aplicadas, 86 esperadas"}`). Os 3 arquivos SQL
+prontos pra colar no SQL Editor do Supabase foram entregues nesta rodada. Depois de aplicar,
+conferir `/api/health` de novo — `schema.ok` tem que virar `true`.
 
 ---
 
@@ -129,9 +125,11 @@ de mexer nele. Isso existe para a execução não precisar de deliberação nova
 
 ### Fase 0
 
-| ID | Item | Pronto quando |
-|---|---|---|
-| **T-09** | Slug fixo em `mensageria.test.ts` colide com o seed de demonstração | `pnpm verify` verde com o banco semeado, e nenhum outro teste de integração usa identificador fixo (varrer `tests/integration/` atrás do mesmo padrão) |
+**Concluída.** T-09 feito (PR #119) — o diagnóstico original estava impreciso (não é `db:reset`,
+que não semeia nada; é o script manual `seed-demo-6-negocios.mjs` já ter rodado neste banco).
+Conserto: reaproveitar o tenant/cliente de demo em vez de recriar. `pnpm verify` **inteiro** ficou
+verde pela primeira vez nesta base — 0 falhas, unit + integração + RLS + build. Varredura confirmou
+que nenhum outro teste usa slug fixo.
 
 ### Fase 1
 
