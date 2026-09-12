@@ -142,6 +142,13 @@ const ISENTAS: { rota: string; porque: string }[] = [
   { rota: 'public/quotes/[token]/approve', porque: 'anônimo; `aprovarOrcamentoPublico` checa o estado e responde igual no segundo clique' },
   { rota: 'public/quotes/[token]/reject', porque: 'anônimo; mesma checagem de estado do approve' },
   { rota: 'public/reviews/[token]', porque: 'anônimo; a constraint única em client_reviews.appointment_id impede a duplicata e o 23505 vira sucesso' },
+
+  // ── Webhook do Mercado Pago: quem reenvia é o PROVEDOR (retry de entrega), não a fila offline do
+  //    PWA, e a chave de idempotência não existe nesse mundo — o corpo só traz um id. A proteção real
+  //    é a assinatura HMAC (`verificarAssinaturaWebhook`) e o fato de `processarWebhookMP` ser
+  //    idempotente por construção: sempre reconsulta o status ATUAL da preapproval e escreve o mesmo
+  //    valor de novo, nunca soma. Reenviar o mesmo evento dez vezes deixa o mesmo estado.
+  { rota: 'webhooks/mercado-pago', porque: 'reenvio é do provedor MP, não da fila offline; idempotente por reconsultar sempre o status atual' },
 ].map((e) => ({ ...e, rota: `${RAIZ}/${e.rota}/route.ts` }))
 
 /**
