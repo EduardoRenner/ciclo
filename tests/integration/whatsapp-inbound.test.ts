@@ -80,7 +80,7 @@ async function criarClienteComAgendamentoELembrete(telefone: string, statusAgend
   const { data: cliente } = await svc.from('clients').insert({ tenant_id: tenantId, name: `Cliente ${randomUUID().slice(0, 6)}`, phone_e164: telefone }).select('id').single()
   // Deslocamento aleatório: mesmo profissional em todos os casos, e sem isso todo teste cairia no
   // mesmo horário e colidiria com `appointments_no_overlap` (a trava de sobreposição é por design).
-  const inicio = new Date(Date.now() + 86_400_000 + Math.floor(Math.random() * 200) * 3_600_000)
+  const inicio = new Date(Date.now() + 86_400_000 + Math.floor(Math.random() * 20_000) * 3_600_000)
   const { data: agendamento, error: erroAg } = await svc
     .from('appointments')
     .insert({
@@ -173,7 +173,7 @@ describe('processarMensagemRecebida', () => {
       const a = await criarClienteComAgendamentoELembrete(telefone)
       // Segundo agendamento, MESMO telefone (cliente com dois horários marcados). Deslocamento
       // aleatório pelo mesmo motivo do primeiro — evitar colidir com `appointments_no_overlap`.
-      const inicio2 = new Date(Date.now() + 172_800_000 + Math.floor(Math.random() * 200) * 3_600_000)
+      const inicio2 = new Date(Date.now() + 172_800_000 + Math.floor(Math.random() * 20_000) * 3_600_000)
       const { data: agendamento2, error: erroAg2 } = await svc
         .from('appointments')
         .insert({

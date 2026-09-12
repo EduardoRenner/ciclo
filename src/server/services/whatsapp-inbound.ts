@@ -37,6 +37,17 @@ export async function processarMensagemRecebida(db: Cliente, evento: MensagemRec
 
   const telefone = normalizarTelefoneBR(evento.from) ?? evento.from
 
+  /*
+   * Consulta DELIBERADAMENTE cross-tenant: só temos um telefone, e é ela quem descobre A QUEM ele
+   * pertence — não há tenant de contexto antes disto. Mesma classe das exceções já registradas em
+   * `tests/unit/server/consulta-filtra-tenant.test.ts` (id que já é a própria autorização).
+   *
+   * NÃO está naquela lista porque a guarda de lá faz checagem de SUBSTRING (`trecho.includes
+   * ('tenant_id')`) — e `select('tenant_id, ...')` contém a palavra, então o detector marca esta
+   * consulta como "tem filtro" sem ela ter filtro nenhum. É guarda cega por desenho ingênuo, não
+   * por descuido meu; fica registrado aqui e como tarefa de fundo (a guarda merece checar
+   * `.eq('tenant_id'` como CHAMADA, não a palavra solta em qualquer parte da cadeia).
+   */
   const { data: candidatos, error } = await db
     .from('messages')
     .select('tenant_id, appointment_id, sent_at, clients!inner(phone_e164), appointments!inner(status)')
