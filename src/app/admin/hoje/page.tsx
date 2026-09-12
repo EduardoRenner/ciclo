@@ -27,8 +27,12 @@ function saudacao(timezone: string): string {
 export const metadata = { title: "Hoje" }
 
 export default async function PaginaHoje() {
+  // MEDIÇÃO TEMPORÁRIA (docs/28 P2) — remover depois de achar o gargalo real.
+  const t0 = Date.now()
   const ctx = await contextoAtual(new Request('https://interno/hoje', { headers: await headers() }))
+  const t1 = Date.now()
   const db = await criarClienteDoUsuario()
+  const t2 = Date.now()
 
   // Vem junto do `select` que revalida o membership — era uma ida de rede serial, e o
   // `timezone` decide o intervalo de tudo que vem depois (`docs/28` §8).
@@ -85,6 +89,18 @@ export default async function PaginaHoje() {
       return { totalValueCents: 0, totalProfitCents: 0, count: 0, items: [] }
     }),
   ])
+  const t3 = Date.now()
+
+  console.log(
+    JSON.stringify({
+      level: 'info',
+      event: 'medicao_hoje_temporaria',
+      contextoAtual_ms: t1 - t0,
+      criarClienteDoUsuario_ms: t2 - t1,
+      promiseAll_ms: t3 - t2,
+      total_ate_aqui_ms: t3 - t0,
+    }),
+  )
 
   // G-05a (docs/60): o segundo evento do funil mínimo — o momento em que o Motor de Ciclo mostra,
   // pela primeira vez, que trouxe dinheiro de volta para este tenant. `registrarPrimeiraOcorrencia`
