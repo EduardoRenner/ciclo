@@ -34,20 +34,18 @@ Três coisas que a análise anterior não cobriu:
    precisa de migration nova** para o que este plano propõe — é trabalho de aplicação (rota + UI),
    não de banco.
 
-### 1.2 · Fechando a análise da aba Hoje (prioridade, não lista nova)
+### 1.2 · Fechando a análise da aba Hoje
 
-Das ideias da rodada anterior, a ordem de valor por esforço:
+Medido no código (não só opinião): nenhuma das quatro ideias tem trabalho de banco/migration —
+são leitura de dado que já existe (2), mais um agregado novo simples (1) e um componente de
+apresentação (1). A ordem de valor por esforço, que a Parte 3 implementa nessa sequência:
 
-| Ideia | Esforço | Por quê primeiro/depois |
+| Ideia | Esforço | Por quê nessa posição |
 |---|---|---|
-| WhatsApp direto no card "A seguir" | Baixo | Um ícone, reusa link que `DetalheAgendamento` já monta |
-| Comparação com a média (herói "hoje vs. costume") | Médio | Precisa de agregado novo, mas é só leitura |
-| Timeline visual do dia | Médio-alto | Componente novo; maior ganho perceptível, maior risco de ficar poluído em tela de 375px |
+| WhatsApp direto no card "A seguir" | Baixo | Falta só o telefone no `select`; o link já existe em `DetalheAgendamento` |
+| Comparação com a média (herói "hoje vs. costume") | Médio | Precisa de um agregado novo (não existe hoje), mas é só leitura |
+| Timeline visual do dia | Médio-alto | Componente novo; maior ganho perceptível, maior risco de poluir a tela em 375px |
 | Visão por profissional (quem trabalha hoje) | Alto | Só faz sentido pra quem tem equipe (plano `equipe`+) — não é P0 |
-
-Fica registrado; a Parte 2 não inclui essas por escolha — o pedido desta rodada foi focar no plano
-de produtos/upsell, que é o achado maior. Se o Eduardo quiser, a Fase 4 abaixo tem espaço reservado
-pra puxar 1-2 dessas junto.
 
 ---
 
@@ -129,13 +127,105 @@ não há dado para sugerir nada.
 
 ---
 
-## Ordem de execução recomendada
-
-`Fase 1 → Fase 2 → Fase 3 → (validar com uso real) → Fase 4`. As três primeiras são um ticket
-plausível cada (meio dia de trabalho, no ritmo desta base); a Fase 4 é deliberadamente vaga porque
-depende de dado que só existe depois que 1-3 rodam de verdade.
-
 **Decisão de escopo, registrada aqui para não reabrir a pergunta:** a Fase 4 (relação
 serviço↔produto-sugerido) fica fora deste ciclo de implementação. Motivo: `CLAUDE.md` — não criar
 schema para hipótese sem dado real que a valide. Se o Eduardo quiser adiantar mesmo assim, é uma
 conversa separada, não uma decisão que esta sessão toma sozinha.
+
+---
+
+## Parte 3 · Plano de implementação — aba Hoje
+
+### Fase A · WhatsApp direto no card "A seguir"
+
+**O de menor esforço e maior frequência de uso.** Hoje, pra chamar o próximo cliente no WhatsApp,
+é: tocar no card → abrir o sheet → achar o botão. Vira um ícone no próprio card.
+
+- `resumo-hoje.ts`: `COLUNAS_HOJE` ganha `phone` dentro de `clients(...)` (hoje só busca `name` e
+  `health_records`), e o tipo `LinhaHoje` recebe `phone: string | null`.
+  - **Sem telefone, sem ícone** — nunca inventar contato. Client sem `phone` cadastrado mantém o
+    card como está hoje (só abre o sheet).
+- `hoje.tsx`: o card de "A seguir" ganha um botão de ícone (WhatsApp) ao lado do
+  `AppointmentRow`, fora da área de toque que abre o sheet (dois alvos empilhados — cuidado com o
+  `toque-48` de dois elementos na mesma linha, armadilha já catalogada no `CLAUDE.md`; solução
+  testada nesta base é `flex` com `gap`, não texto corrido).
+  - Mensagem sai de um texto pronto, não texto livre — mesmo padrão de `mensagens-prontas.ts`
+    ("Confirmando: {{servico}} às {{hora}}"), preenchido com o que a linha já tem em mãos.
+- **Critério de aceite:** card "A seguir" com cliente que tem telefone mostra o ícone; tocar nele
+  abre o WhatsApp com a mensagem pronta, sem sair da aba Hoje. Cliente sem telefone: sem ícone,
+  sem erro.
+- **Teste:** unit no componente (ícone aparece/some conforme `phone`), sem precisar de E2E.
+
+### Fase B · "Hoje comparado ao costume"
+
+**A pergunta que o herói não responde:** R$ 240 hoje é bom ou ruim pra este salão? Hoje não tem
+referência nenhuma.
+
+- Novo agregado em `resumo-hoje.ts` (ou serviço próprio, se a função já estiver grande):
+  receita média dos últimos N dias **do mesmo dia da semana** (domingo compara com domingos, não
+  com a semana toda — um salão fechado no domingo não pode comparar "hoje" com uma média que
+  inclui os dias que ele não abre). `N` sugerido: 4 semanas — amostra pequena o bastante pra
+  refletir o salão de agora, grande o bastante pra não ser 1 dia de sorte/azar.
+  - **Piso de amostra**: com menos de 2 ocorrências do mesmo dia da semana no histórico (salão
+    muito novo), a comparação não aparece — mostrar "23% acima do costume" com uma amostra de 1
+    dia é o tipo de número que a casa já sabe que engana (`docs/`
+    [[guarda-que-varre-passa-vazia]]/"o piso é o positivo conhecido, não a contagem").
+- `hoje.tsx`: linha de apoio no herói (quando `heroi === 'atendido'`) ganha o comparativo, no
+  mesmo tom textual de "3 previsões recalculadas" — número como prova, nunca "pronto!" seco.
+  Exemplo: `R$ 240,00 · 15% acima do que este domingo costuma render`. Sem comparação disponível
+  (piso de amostra), a linha de apoio atual continua igual — a feature é aditiva, nunca some algo
+  que já funcionava.
+  - **Sem cor de julgamento** (verde "bateu a meta" / vermelho "não bateu"): é comparação
+    informativa, não avaliação de desempenho — `docs/61 §5` já descartou reforço que possa soar
+    como pressão.
+- **Critério de aceite:** salão com histórico de pelo menos 2 domingos anteriores vê o comparativo
+  na linha de apoio do herói "Atendido hoje"; salão novo não vê nada diferente do que já existe.
+- **Teste:** função pura testável isoladamente (dado um array de receitas passadas + a de hoje,
+  devolve `{comparavel: boolean, percentual: number}`), mesmo padrão de `escolherHeroi`.
+
+### Fase C · Timeline visual do dia
+
+**A maior mudança visual das quatro — pensar antes de construir.** Hoje a tela é uma lista
+vertical; não dá pra ver "manhã cheia, tarde livre" sem rolar tudo.
+
+- Componente novo (`components/ui/timeline-do-dia.tsx` ou nome equivalente): uma faixa horizontal
+  ou vertical compacta representando o expediente do dia, com blocos ocupados (por status/cor, no
+  mesmo `COR_BARRA` de `AppointmentRow` — reusar a paleta de estado, não inventar uma nova) e
+  vazios.
+  - **Medir antes de decidir o desenho definitivo**: a régua desta casa é `docs/61 §0` — subir e
+    olhar em 375px antes de escolher entre faixa horizontal (rolável) ou lista compacta com
+    marcadores de hora. Um mockup em código vale mais que a decisão de cabeça.
+  - Toque num bloco abre o mesmo `Sheet` de detalhe que os cards já abrem — não duplicar a lógica
+    de estado, só o resumo visual.
+- **Risco documentado:** em dia com poucos agendamentos (a maioria dos casos hoje, pelos dados
+  seedados), uma timeline pode parecer mais vazia/estranha que a lista atual — **testar com um dia
+  cheio E um dia vazio antes de considerar pronto**, não só o caminho feliz.
+- **Critério de aceite:** dá pra ver, sem rolar, a forma geral do dia (cheio/vazio, manhã/tarde) em
+  375px, nos dois temas.
+- Sem teste automatizado de layout (é visual) — verificação por screenshot no Browser pane, dos
+  dois temas e dos dois cenários (dia cheio, dia vazio), documentada no PR.
+
+### Fase D · Visão por profissional (quem trabalha hoje)
+
+**Só para quem tem equipe — não é P0.** Fica de propósito por último e sem detalhamento de
+implementação nesta rodada: depende de decisão de produto (isto entra em `/admin/hoje` como seção
+nova, ou é uma tela própria tipo `/admin/agenda?por=profissional`, que já pode existir em forma
+parecida na Agenda?) que vale conferir antes de desenhar — não vale a pena planejar em detalhe uma
+fase que talvez já tenha equivalente em outra tela do app.
+
+---
+
+## Ordem de execução recomendada
+
+Dentro de cada frente, a ordem já reflete valor/esforço. Entre as duas frentes — não há
+dependência técnica entre "Hoje" e "produtos de revenda", podem intercalar à vontade. Sugestão,
+juntando as duas listas por esforço crescente:
+
+1. Fase A (WhatsApp no card) — menor esforço de tudo, ganho imediato.
+2. Fase 1 (cadastro de produto) — alicerce da frente de revenda.
+3. Fase B (comparação com a média).
+4. Fase 2 (estoque separa revenda/insumo).
+5. Fase 3 (comanda ganha "Adicionar produto").
+6. Fase C (timeline do dia) — maior, e o CLAUDE.md pede medir em 375px antes de fechar o desenho.
+7. Fase 4 (ganchos de upsell) e Fase D (visão por profissional) — as duas ficam para depois de
+   validar as anteriores com uso real; nenhuma das duas é bloqueio pra nada.
