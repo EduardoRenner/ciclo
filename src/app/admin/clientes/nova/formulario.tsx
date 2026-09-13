@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
 
 import { useVocabulario } from '@/components/shell/vocabulario'
+import { mensagemDeClienteCadastrado } from '@/core/ciclo/primeiro-cliente'
 import { comMaiuscula } from '@/core/text/vocabulario'
 import Button from '@/components/ui/button'
 import Input from '@/components/ui/input'
@@ -20,7 +21,7 @@ import { camposDePreferencia } from '@/lib/preferencias'
  * cliente" e caía num 404, no primeiro minuto de uso. Até aqui só dava para criar cliente
  * importando planilha ou de raspão, ao marcar um horário.
  */
-export default function FormularioCliente({ vertical }: { vertical: string }) {
+export default function FormularioCliente({ vertical, ehPrimeiroCliente = false }: { vertical: string; ehPrimeiroCliente?: boolean }) {
   const vocabulario = useVocabulario()
   const router = useRouter()
   const mostrarToast = useToast()
@@ -66,7 +67,7 @@ export default function FormularioCliente({ vertical }: { vertical: string }) {
           setErro(campo ?? json.error?.message ?? 'Não consegui cadastrar.')
           return
         }
-        mostrarToast({ tom: 'ok', titulo: 'Cliente cadastrado' })
+        mostrarToast({ tom: 'ok', ...mensagemDeClienteCadastrado(ehPrimeiroCliente) })
         // Vai direto para a ficha: quem acabou de cadastrar quase sempre quer marcar o horário.
         router.push(`/admin/clientes/${json.data.id}`)
         router.refresh()
