@@ -7134,3 +7134,33 @@ que o padrão atual). Decisão: sem mudança.
 **Item implementado de verdade nesta sessão (não só decidido):** toggle de tema com ícone
 (`Sun`/`Moon`/`SunMoon` do lucide) em vez de só texto, no `SeletorDeTema` — commit separado.
 Verificado nos dois temas em 375px antes do commit.
+
+---
+
+## 2026-09-13 · `<form action=>` em negocio/formulario.tsx e servicos/formulario.tsx — checado, não reproduz
+
+Continuação do loop de `docs/61`, seção 6. `CLAUDE.md` documenta que `<form action={fn}>` no
+React 19 reseta o formulário quando a ação termina, mesmo se ela falhou (medido em
+`entrar/formulario.tsx`, docs/28 §5.4) — e os dois arquivos acima usam exatamente esse padrão com
+campos controlados, o candidato óbvio para o mesmo defeito.
+
+**Medido ao vivo, não deduzido do código** (padrão que este documento exige): logado no painel
+local, digitei num campo, forcei `window.fetch` a rejeitar só a chamada de `/api/v1/tenant`, e
+submeti com `requestSubmit()`. Repeti a mesma sequência antes de escrever qualquer linha de
+código. **O valor digitado sobreviveu à falha nos dois testes** — o reset nativo não ocorreu.
+
+Cheguei a aplicar o mesmo fix de `onSubmit`+`preventDefault` que funcionou em `entrar/formulario.tsx`
+e o typecheck passou limpo, mas descartei (`git stash drop`) porque o teste ao vivo desmentiu a
+premissa: aplicar um "conserto" para um defeito que não reproduz aqui é exatamente o tipo de
+mudança sem justificativa concreta que o CLAUDE.md pede pra evitar, e deixaria um `onSubmit`
+redundante para a próxima pessoa investigar sem necessidade.
+
+**Por que não reproduz aqui, ao contrário de `entrar`:** os únicos campos não-controlados dentro
+do `<form>` são os `<input type=file>` do `UploadDeFoto`, e esse componente envia a foto na hora,
+por fora do "salvar" do formulário ao redor (multipart para `/api/v1/tenant/vitrine/entidade`,
+comentário no próprio arquivo) — o preview que aparece na tela vem de `useState`, não do valor do
+input, então mesmo que o navegador limpe a seleção do arquivo, nada na tela desfaz.
+
+**Não repetir esta investigação** sem uma reprodução nova e diferente (versão do Next mudou, campo
+não-controlado novo entrou no formulário, etc.) — ficou provado que não é um caso geral de "todo
+`<form action=>` tem esse defeito", é específico do formulário onde foi medido.
