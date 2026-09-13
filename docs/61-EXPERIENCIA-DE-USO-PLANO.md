@@ -40,10 +40,23 @@ não cabe terminar direito no que sobrou desta rodada. Começar features novas s
 terminar é o "implementação pela metade" que o `CLAUDE.md` proíbe. Fica para a próxima rodada,
 com orçamento cheio.
 
-Próxima rodada: seção 5, com escopo definido ANTES de escrever código — escolher UM padrão (não
-os três), de preferência o que usa dado que já existe (`lateDays` de `recuperar.tsx` já dá
-material pra um indicador de progresso mais concreto, por exemplo), implementar e testar por
-inteiro numa rodada só.
+**Rodada 4:** seção 5, item 6 (fricção zero no primeiro valor) — **feito, testado e verificado**,
+commit `9bc58a0`. Antes de escrever código, investiguei os outros dois candidatos óbvios da seção
+(item 2 "progresso visível" e item 3 "streak") e descartei os dois por bons motivos, não por
+preguiça: `recuperar.tsx` já mostra `Xd de atraso` por cliente (progresso concreto já existe);
+`resumoDoEnvio` já segue à risca "número é a prova, não 'pronto' seco"; e uma celebração no
+ENVIO da mensagem de recuperação (em vez de no RETORNO real da cliente) seria reforço positivo
+prematuro/desonesto — o tipo de coisa que a própria seção 5 item 7 proíbe. Isso confirmou que boa
+parte da filosofia da seção 5 **já é prática da casa**, só não estava nomeada como tal.
+
+O item que sobrou (primeira cliente cadastrada) era o único genuinamente ausente, barato e seguro:
+usa dado que já existe (contagem de clientes do tenant), sem gamificação falsa, sem tocar em rota
+de API. Implementado como função pura testada + uma consulta a mais na página que já ia ao banco.
+
+**Seções 5 e 6 do plano estão, na prática, esgotadas para esta noite.** O que sobra do backlog
+inteiro de `docs/61` são os três itens bloqueados em decisão do dono (4, 8, 17 — ver seção 7) e,
+opcionalmente, uma segunda passada de seção 5 com os itens 2-5 caso o dono queira ir além do que
+já existe (não é órfão, é "dá pra ir mais fundo se quiser").
 
 
 **Origem:** pedido direto do Eduardo em 2026-09-13, em linguagem solta ("faz um plano extenso...
