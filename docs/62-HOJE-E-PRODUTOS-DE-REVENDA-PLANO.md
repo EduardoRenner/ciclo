@@ -301,8 +301,14 @@ produto na mesma comanda, subtotal somando os dois certo.
 organizar com margem (Fase 2), vender (Fase 3). Só a Fase 4 (ganchos de upsell) segue
 deliberadamente fora de escopo, aguardando uso real.
 
-Próxima rodada: Fase B (comparação com a média) — não depende de nada das fases de produto, é a
-próxima da aba Hoje ainda não tocada.
+**Rodada 5:** Fase B (comparação com a média) — **feita, testada e verificada no navegador**,
+`ce9171f`. Compara com a média do mesmo dia da semana (últimas 8 semanas), piso de amostra de 2
+ocorrências, sem cor de julgamento. Testado com dado real inserido/removido: "50% acima do costume
+nesse dia da semana" apareceu certo nos dois temas.
+
+Próxima rodada: Fase C (timeline visual do dia) — a maior peça que resta, pede medir em 375px
+antes de fechar o desenho (dia cheio E dia vazio). Depois disso só sobram as duas fases
+deliberadamente fora de escopo (4 e D).
 
 ## Execução autônoma (docs/61 §0/0a)
 
