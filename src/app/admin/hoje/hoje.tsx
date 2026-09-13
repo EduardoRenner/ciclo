@@ -28,6 +28,18 @@ function horaLocal(iso: string): string {
 }
 
 /**
+ * docs/62 Fase B: frase sem citar o dia da semana por nome — o dado vem calculado no servidor
+ * (fuso do tenant), e nomear "domingo" aqui exigiria ou mandar o nome do servidor (mais um campo
+ * só pra isso) ou calcular de novo no cliente arriscando um fuso diferente do que gerou o número.
+ * "Nesse dia da semana" é o mesmo fato, sem esse risco.
+ */
+function textoDaComparacao(percentual: number): string {
+  if (percentual === 0) return 'Igual ao costume nesse dia da semana'
+  const abs = Math.abs(percentual)
+  return `${abs}% ${percentual > 0 ? 'acima' : 'abaixo'} do costume nesse dia da semana`
+}
+
+/**
  * docs/62 Fase A: texto pronto, não campo livre — mesmo padrão de `mensagens-prontas.ts`.
  * `null` sem telefone cadastrado: nunca inventa contato, o ícone some (ver ponto de uso).
  */
@@ -254,16 +266,26 @@ export default function Hoje({
             rotulo={ROTULO_DO_ATENDIDO}
             valor={dinheiro.format(resumo.revenueTodayCents / 100)}
             apoio={
-              <span className="flex items-center justify-between gap-2">
-                {/* O verbo concorda junto com o substantivo: era "Faltam 1 atendimento hoje". */}
-                {faltam === 0
-                  ? 'Nada mais marcado para hoje'
-                  : faltam === 1
-                    ? 'Falta 1 atendimento hoje'
-                    : `Faltam ${faltam} atendimentos hoje`}
-                <span className="flex shrink-0 items-center gap-0.5 font-semibold text-acc-2">
-                  Ver o caixa
-                  <ChevronRight aria-hidden className="size-4" />
+              <span className="flex flex-col gap-0.5">
+                {/*
+                  docs/62 Fase B: "R$ 240 hoje é bom ou ruim?" não tinha resposta. Compara com a
+                  MÉDIA do mesmo dia da semana — nunca com julgamento de cor (verde "bateu meta" /
+                  vermelho "não bateu"): é informativo, não pressão (docs/61 §5.7).
+                */}
+                {resumo.comparacaoComCostume ? (
+                  <span className="text-txt-2">{textoDaComparacao(resumo.comparacaoComCostume.percentual)}</span>
+                ) : null}
+                <span className="flex items-center justify-between gap-2">
+                  {/* O verbo concorda junto com o substantivo: era "Faltam 1 atendimento hoje". */}
+                  {faltam === 0
+                    ? 'Nada mais marcado para hoje'
+                    : faltam === 1
+                      ? 'Falta 1 atendimento hoje'
+                      : `Faltam ${faltam} atendimentos hoje`}
+                  <span className="flex shrink-0 items-center gap-0.5 font-semibold text-acc-2">
+                    Ver o caixa
+                    <ChevronRight aria-hidden className="size-4" />
+                  </span>
                 </span>
               </span>
             }

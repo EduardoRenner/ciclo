@@ -1,5 +1,6 @@
 import { Temporal } from '@js-temporal/polyfill'
 
+import { compararComCostume, type ComparacaoComCostume } from '@/core/ciclo/comparacao-com-costume'
 import { listarAlertasDeEstoque, type AlertaEstoque } from '@/server/services/alertas-estoque'
 import { AppError } from '@/server/http/errors'
 
@@ -73,6 +74,12 @@ export type ResumoHoje = {
    * merece sugerir compartilhar o link de agendamento.
    */
   totalAgendamentosHoje: number
+  /**
+   * docs/62 Fase B: `null` sem amostra suficiente do mesmo dia da semana (salão novo, ou dia da
+   * semana raro) — a tela não deve inventar comparação com base pequena demais pra significar
+   * algo.
+   */
+  comparacaoComCostume: ComparacaoComCostume | null
 }
 
 const JANELA_ALERTA_HORAS = 3
@@ -99,24 +106,52 @@ export async function resumoDeHoje(db: Cliente, tenantId: string, timezone: stri
     .toZonedDateTime({ timeZone: timezone, plainTime: '00:00' })
     .toInstant()
 
-  const [{ data, error }, stockAlerts, { count: indicacoesEsteMes, error: erroIndicacoes }] = await Promise.all([
-    db.from('appointments').select(COLUNAS_HOJE).eq('tenant_id', tenantId).gte('starts_at', inicioDoDia.toString()).lt('starts_at', fimDoDia.toString()).order('starts_at'),
-    listarAlertasDeEstoque(db, tenantId, hoje.toString()),
-    db
-      .from('clients')
-      .select('id', { count: 'exact', head: true })
-      .eq('tenant_id', tenantId)
-      .is('deleted_at', null)
-      .not('referred_by', 'is', null)
-      .gte('created_at', inicioDoMes.toString())
-      .lt('created_at', inicioDoMesSeguinte.toString()),
-  ])
+  // docs/62 Fase B: 8 semanas pra trás é amostra o bastante pra puxar o piso de 2 ocorrências
+  // (`compararComCostume`) sem ir tão longe que o salão de HOJE (outro time, outro preço) deixe
+  // de ser o que a média descreve.
+  const inicioDaJanelaDeComparacao = hoje.subtract({ days: 56 }).toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant()
+
+  const [{ data, error }, stockAlerts, { count: indicacoesEsteMes, error: erroIndicacoes }, { data: diasPassados, error: erroDiasPassados }] =
+    await Promise.all([
+      db.from('appointments').select(COLUNAS_HOJE).eq('tenant_id', tenantId).gte('starts_at', inicioDoDia.toString()).lt('starts_at', fimDoDia.toString()).order('starts_at'),
+      listarAlertasDeEstoque(db, tenantId, hoje.toString()),
+      db
+        .from('clients')
+        .select('id', { count: 'exact', head: true })
+        .eq('tenant_id', tenantId)
+        .is('deleted_at', null)
+        .not('referred_by', 'is', null)
+        .gte('created_at', inicioDoMes.toString())
+        .lt('created_at', inicioDoMesSeguinte.toString()),
+      db
+        .from('appointments')
+        .select('starts_at, price_cents')
+        .eq('tenant_id', tenantId)
+        .eq('status', 'done')
+        .gte('starts_at', inicioDaJanelaDeComparacao.toString())
+        .lt('starts_at', inicioDoDia.toString()),
+    ])
   if (error) throw new AppError('INTERNAL', { cause: error })
   if (erroIndicacoes) throw new AppError('INTERNAL', { cause: erroIndicacoes })
+  if (erroDiasPassados) throw new AppError('INTERNAL', { cause: erroDiasPassados })
 
   const linhas = (data ?? []) as unknown as LinhaHoje[]
 
   const revenueTodayCents = linhas.filter((a) => a.status === 'done').reduce((soma, a) => soma + a.price_cents, 0)
+
+  /*
+   * Agrupa por DIA LOCAL do tenant (não por instante UTC — a régua 4 do CLAUDE.md), filtra pro
+   * mesmo dia da semana de hoje ("domingo compara com domingos") e soma cada dia numa entrada só.
+   * O resultado é a amostra que `compararComCostume` decide se é grande o bastante pra mostrar.
+   */
+  const somaPorDia = new Map<string, number>()
+  for (const a of diasPassados ?? []) {
+    const dataLocal = Temporal.Instant.from(a.starts_at).toZonedDateTimeISO(timezone).toPlainDate()
+    if (dataLocal.dayOfWeek !== hoje.dayOfWeek) continue
+    const chave = dataLocal.toString()
+    somaPorDia.set(chave, (somaPorDia.get(chave) ?? 0) + a.price_cents)
+  }
+  const receitasDeMesmoDiaDaSemana = [...somaPorDia.values()]
 
   const aindaPorVir = linhas.filter(
     (a) =>
@@ -137,5 +172,6 @@ export async function resumoDeHoje(db: Cliente, tenantId: string, timezone: stri
     stockAlerts,
     indicacoesEsteMes: indicacoesEsteMes ?? 0,
     totalAgendamentosHoje: linhas.length,
+    comparacaoComCostume: compararComCostume(receitasDeMesmoDiaDaSemana, revenueTodayCents),
   }
 }
