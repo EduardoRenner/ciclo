@@ -1,6 +1,7 @@
 'use client'
 
 import { Dialog } from 'radix-ui'
+import { useState } from 'react'
 
 import { cn } from '@/lib/utils'
 
@@ -21,11 +22,25 @@ type Props = {
  * fechar; o handle no topo é a área de arrasto.
  */
 export default function Sheet({ aberto, aoFechar, titulo, descricao, gatilho, className, children }: Props) {
+  /*
+   * Sem `container`, o `Dialog.Portal` do Radix monta em `document.body` por padrão — FORA do
+   * `<div id="raiz-do-tema" data-theme>` que `admin/layout.tsx` embrulha em volta de tudo. As
+   * variáveis de cor (`--bg`, `--surface`...) só existem dentro daquele wrapper, então todo Sheet
+   * caía no fallback escuro de `:root` mesmo com "Claro" escolhido de verdade — medido ao vivo em
+   * 2026-09-13 (docs/DECISOES.md), o app claro por trás com o Sheet sempre escuro por cima.
+   *
+   * Inicializador preguiçoso, não `useEffect`: o elemento já existe no HTML vindo do servidor
+   * (é ancestral de tudo que renderiza um Sheet), então buscar durante o primeiro render acha na
+   * hora — um `useEffect` atrasaria um commit e piscaria escuro→claro na primeira abertura.
+   * `null` (SSR, ou o elemento raro de não existir) volta pro padrão do Radix, nunca quebra.
+   */
+  const [raizDoTema] = useState<HTMLElement | null>(() => (typeof document === 'undefined' ? null : document.getElementById('raiz-do-tema')))
+
   return (
     <Dialog.Root open={aberto} onOpenChange={aoFechar}>
       {gatilho ? <Dialog.Trigger asChild>{gatilho}</Dialog.Trigger> : null}
 
-      <Dialog.Portal>
+      <Dialog.Portal container={raizDoTema ?? undefined}>
         <Dialog.Overlay className="fixed inset-0 z-40 bg-overlay backdrop-blur-[2px] data-[state=open]:animate-in data-[state=open]:fade-in" />
 
         <Dialog.Content
