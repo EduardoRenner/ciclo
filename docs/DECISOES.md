@@ -7226,3 +7226,55 @@ Também fechado nesta rodada: a parte VERIFICÁVEL do item 8 (FAQ de `/precos` p
 cancelar hoje custam a mesma coisa (uma conversa), porque não há cobrança automática. O FAQ saiu
 alinhado com esse fato. A cláusula do CDC (7 dias, valor integral) continua intocada — é política
 de negócio, não fato verificável em código, e segue esperando confirmação do Eduardo.
+
+---
+
+## 2026-09-13 (tarde) · Toast também ignorava tema claro — mesma causa-raiz do Sheet
+
+Depois de fechar o Sheet acima, perguntei "o que mais usa `radix-ui` e pode ter o mesmo problema de
+Portal fora do wrapper de tema?" — achei que `ToastProvider` era o elemento mais externo em
+`admin/layout.tsx`, por fora de `#raiz-do-tema`. Diferente do Sheet, o `Toast.Viewport`/`Toast.Root`
+do Radix **não usam Portal** — nascem exatamente onde `ToastProvider` fica na árvore React. Com
+`ToastProvider` por fora, todo toast era irmão do wrapper de tema, não descendente, e caía no
+fallback escuro de `:root` mesmo com "Claro" escolhido — confirmado ao vivo (`raiz.contains(toast)`
+= `false`, fundo `rgb(32,30,29)` com cookie `ciclo-tema=claro`).
+
+Conserto: reestruturei `admin/layout.tsx` para `#raiz-do-tema` virar o elemento mais externo,
+com `ToastProvider` por dentro. Sem Portal novo, sem dependência nova — só reordenar o JSX.
+Verificado no navegador: tema claro (fundo `rgb(241,238,233)`, `dentroDaRaiz: true`), tema escuro
+sem regressão, e a 375px disparando o toast de "Produto atualizado" ao editar um produto —
+mesmo resultado nos três casos. Commit `9350741`.
+
+---
+
+## 2026-09-13 (noite) · Auditoria de pendências — o checkout do Mercado Pago sumiu num PR empilhado
+
+O Eduardo pediu para verificar tudo que ficou incompleto: PRs abertos, aquecimento do número de
+WhatsApp, e "o resto pendurado". `docs/63-AUDITORIA-PENDENCIAS-2026-09-13.md` tem o detalhe
+completo; aqui vai o que muda o entendimento do projeto.
+
+**Não há PR aberto** — todos os 26 anteriores estão mesclados ou fechados (até `#125`). Mas a
+auditoria achou algo pior que um PR pendente: **`#91` (o botão "Assinar", a rota
+`/api/v1/billing/assinar`, `iniciarAssinatura`) e `#94` (`GET /api/cron/expirar-graca`) aparecem
+como MERGED no GitHub e nunca chegaram em `main`** — a base deles era outro branch de feature
+(`feat/mp-cliente-api`/`feat/mp-service-rotas`), não `main`, e esse branch nunca foi mesclado.
+Confirmado com `git merge-base --is-ancestor`, não por título de commit. Consequência real: o
+webhook do Mercado Pago que ESTÁ em produção (`#122`, G-13 do `docs/60`, marcado "Feito") é hoje um
+ouvinte sem escritor — nada em produção cria a assinatura que ele deveria acompanhar. O item que o
+`docs/55` chamou de "o que mais importa" (poder cobrar de alguém) segue tão bloqueado quanto em
+06/09, apesar do histórico de PRs sugerir o contrário.
+
+**Falso alarme corrigido:** a memória (e o registro anterior desta pilha de PRs) dizia que a
+carteira (`wallet_entries`) tinha ficado fora do aperto de RLS por causa do mesmo tipo de PR
+empilhado (`#100`). Verificado agora: **é falso** — o `#92` (que está em `main`) já incluía a
+migration `0083` inteira, mesmo conteúdo que `#93`/`#100` tentavam adicionar depois por outro
+caminho. Esses dois branches são duplicatas órfãs seguras para apagar, não gaps.
+
+**Não existe, em lugar nenhum, um plano de aquecimento/rampa de volume para o número de WhatsApp
+Business** antes de ligar `reminders`/`campanhas` — só existe teto diário + interruptor de pausa
+(proteção contra laço, não rampa de confiança perante a Meta). Registrado como recomendação no
+`docs/63`, a fazer quando a conta comercial existir.
+
+**Migration `0088` (product_events) confirmada como não aplicada em produção** pelo próprio
+`docs/60` (G-05a). Não dá para confirmar `0089`/`0090` sem acesso ao Supabase de produção — item do
+Eduardo via `conferir-schema-prod.mjs`.
