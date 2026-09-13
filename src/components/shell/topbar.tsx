@@ -1,13 +1,33 @@
 'use client'
 
-import { ChevronLeft, Settings } from 'lucide-react'
+import { CalendarClock, ChevronLeft, Megaphone, Menu, Package, Scissors, Settings, Users, Wallet } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useState } from 'react'
+
+import Sheet from '@/components/ui/sheet'
 
 import { paiDaRota } from './navegacao'
 import wordmark from '../../../public/marca/ciclo-wordmark-aqua.png'
 import wordmarkClaro from '../../../public/marca/ciclo-wordmark-aqua-claro.png'
+
+/**
+ * Atalhos do menu de funcionalidades (docs/61 §4, pedido do Eduardo em 2026-09-13 de comparar
+ * com apps do setor tipo Booksy/Belezinha). Curadoria, não a lista inteira de `/admin/config`:
+ * a barra inferior já cobre Hoje/Agenda/Recuperar/Clientes/Marcar, então aqui entra só o que fica
+ * de fora dela e é usado com frequência — o resto (fidelidade, notificações, segurança...)
+ * continua em "Configurações", o último item da lista.
+ */
+const ATALHOS = [
+  { href: '/admin/caixa', titulo: 'Caixa', icone: Wallet },
+  { href: '/admin/config/servicos', titulo: 'Serviços', icone: Scissors },
+  { href: '/admin/config/profissionais', titulo: 'Time', icone: Users },
+  { href: '/admin/campanhas', titulo: 'Campanhas', icone: Megaphone },
+  { href: '/admin/estoque', titulo: 'Estoque', icone: Package },
+  { href: '/admin/series', titulo: 'Recorrência', icone: CalendarClock },
+  { href: '/admin/config', titulo: 'Configurações', icone: Settings },
+] as const
 
 /**
  * Barra do topo. Deixou de ser um enfeite de marca e virou **navegação**: na
@@ -26,6 +46,7 @@ import wordmarkClaro from '../../../public/marca/ciclo-wordmark-aqua-claro.png'
 export default function Topbar() {
   const pathname = usePathname()
   const pai = paiDaRota(pathname)
+  const [menuAberto, setMenuAberto] = useState(false)
 
   return (
     <header
@@ -43,28 +64,52 @@ export default function Topbar() {
           {pai.rotulo}
         </Link>
       ) : (
-        <div className="flex h-12 items-center">
-          {/* Lockup completo (redesenho aqua, 2026-08-26) — nunca mais o nome
-              digitado à parte do símbolo; onde "Ciclo" aparece fora de frase,
-              é a marca de verdade.
+        <>
+          {/*
+            Menu de 3 linhas (docs/61 §4): a navegação PRINCIPAL continua sendo a barra inferior —
+            isto é só o atalho pro que fica de fora dela. Substitui a engrenagem que ficava sozinha
+            à direita, competindo com peso de navegação primária por um ícone que só levava a uma
+            tela: agora abre a lista, e "Configurações" é o último item dela, não um ícone à parte.
+          */}
+          <button
+            type="button"
+            onClick={() => setMenuAberto(true)}
+            aria-label="Menu"
+            className="-ml-2 grid size-12 shrink-0 place-items-center rounded-[var(--radius-pill)] text-txt-2 transition hover:bg-surface-2 active:scale-[.94]"
+          >
+            <Menu aria-hidden className="size-5" />
+          </button>
+          <div className="flex h-12 flex-1 items-center justify-center">
+            {/* Lockup completo (redesenho aqua, 2026-08-26) — nunca mais o nome
+                digitado à parte do símbolo; onde "Ciclo" aparece fora de frase,
+                é a marca de verdade.
 
-              Dois arquivos: o "iclo" do wordmark padrão é quase branco e some no
-              tema claro. O CSS (`globals.css`, `.marca-no-escuro`/`.marca-no-claro`)
-              mostra um por vez conforme o `data-theme` do wrapper. */}
-          <Image src={wordmark} alt="CICLO" className="marca-no-escuro h-7 w-auto" />
-          <Image src={wordmarkClaro} alt="" aria-hidden className="marca-no-claro h-7 w-auto" />
-        </div>
+                Dois arquivos: o "iclo" do wordmark padrão é quase branco e some no
+                tema claro. O CSS (`globals.css`, `.marca-no-escuro`/`.marca-no-claro`)
+                mostra um por vez conforme o `data-theme` do wrapper. */}
+            <Image src={wordmark} alt="CICLO" className="marca-no-escuro h-7 w-auto" />
+            <Image src={wordmarkClaro} alt="" aria-hidden className="marca-no-claro h-7 w-auto" />
+          </div>
+          {/* Espaço espelhado do botão de menu, pra marca ficar centralizada de verdade. */}
+          <div aria-hidden className="size-12 shrink-0" />
+        </>
       )}
 
-      {!pai ? (
-        <Link
-          href="/admin/config"
-          aria-label="Configurações"
-          className="ml-auto grid size-12 place-items-center rounded-[var(--radius-pill)] text-txt-3 transition hover:bg-surface-2 hover:text-txt-2 active:scale-[.94]"
-        >
-          <Settings aria-hidden className="size-5" />
-        </Link>
-      ) : null}
+      <Sheet aberto={menuAberto} aoFechar={setMenuAberto} titulo="Menu">
+        <nav className="flex flex-col gap-1 pb-2">
+          {ATALHOS.map((a) => (
+            <Link
+              key={a.href}
+              href={a.href}
+              onClick={() => setMenuAberto(false)}
+              className="flex h-12 items-center gap-3 rounded-[var(--radius-sm)] px-2 text-corpo font-semibold text-txt transition hover:bg-surface-2 active:scale-[.98]"
+            >
+              <a.icone aria-hidden className="size-5 text-txt-3" />
+              {a.titulo}
+            </Link>
+          ))}
+        </nav>
+      </Sheet>
     </header>
   )
 }
