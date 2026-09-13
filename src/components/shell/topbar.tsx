@@ -31,10 +31,11 @@ const ATALHOS = [
 
 /**
  * Barra do topo. Deixou de ser um enfeite de marca e virou **navegação**: na
- * raiz de cada aba mostra a marca e o atalho de configurações (o único caminho
- * para `/admin/config` que existe no app); em qualquer sub-rota vira o caminho
- * de volta, com o nome do destino — que num PWA `standalone`, sem barra de
- * navegador, é a diferença entre poder sair da tela e não poder.
+ * raiz de cada aba mostra a marca e o menu de atalhos (`ATALHOS`, com
+ * Configurações como último item — não existe mais ícone de engrenagem à
+ * parte); em qualquer sub-rota vira o caminho de volta, com o nome do
+ * destino — que num PWA `standalone`, sem barra de navegador, é a diferença
+ * entre poder sair da tela e não poder.
  *
  * `pt-[env(safe-area-inset-top)]`: com `viewportFit: "cover"` e a barra de
  * status translúcida do iOS (os dois declarados em `app/layout.tsx`), sem esta
@@ -65,21 +66,7 @@ export default function Topbar() {
         </Link>
       ) : (
         <>
-          {/*
-            Menu de 3 linhas (docs/61 §4): a navegação PRINCIPAL continua sendo a barra inferior —
-            isto é só o atalho pro que fica de fora dela. Substitui a engrenagem que ficava sozinha
-            à direita, competindo com peso de navegação primária por um ícone que só levava a uma
-            tela: agora abre a lista, e "Configurações" é o último item dela, não um ícone à parte.
-          */}
-          <button
-            type="button"
-            onClick={() => setMenuAberto(true)}
-            aria-label="Menu"
-            className="-ml-2 grid size-12 shrink-0 place-items-center rounded-[var(--radius-pill)] text-txt-2 transition hover:bg-surface-2 active:scale-[.94]"
-          >
-            <Menu aria-hidden className="size-5" />
-          </button>
-          <div className="flex h-12 flex-1 items-center justify-center">
+          <div className="flex h-12 items-center">
             {/* Lockup completo (redesenho aqua, 2026-08-26) — nunca mais o nome
                 digitado à parte do símbolo; onde "Ciclo" aparece fora de frase,
                 é a marca de verdade.
@@ -90,8 +77,25 @@ export default function Topbar() {
             <Image src={wordmark} alt="CICLO" className="marca-no-escuro h-7 w-auto" />
             <Image src={wordmarkClaro} alt="" aria-hidden className="marca-no-claro h-7 w-auto" />
           </div>
-          {/* Espaço espelhado do botão de menu, pra marca ficar centralizada de verdade. */}
-          <div aria-hidden className="size-12 shrink-0" />
+
+          {/*
+            Menu de 3 linhas (docs/61 §4): a navegação PRINCIPAL continua sendo a barra inferior —
+            isto é só o atalho pro que fica de fora dela. Substitui a engrenagem que ficava sozinha
+            aqui, competindo com peso de navegação primária por um ícone que só levava a uma tela:
+            agora abre a lista, e "Configurações" é o último item dela, não um ícone à parte.
+
+            À direita, não à esquerda: é o lado que o polegar alcança sem trocar a pega do
+            aparelho — pedido do Eduardo em 2026-09-13, depois de a primeira versão ter ido pra
+            esquerda (a marca centralizada valia menos que o alcance de verdade).
+          */}
+          <button
+            type="button"
+            onClick={() => setMenuAberto(true)}
+            aria-label="Menu"
+            className="ml-auto grid size-12 shrink-0 place-items-center rounded-[var(--radius-pill)] text-txt-2 transition hover:bg-surface-2 active:scale-[.94]"
+          >
+            <Menu aria-hidden className="size-5" />
+          </button>
         </>
       )}
 
