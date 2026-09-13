@@ -3,6 +3,7 @@
 import { Share2 } from 'lucide-react'
 
 import { ehCancelamentoDoUsuario } from '@/core/share/cancelamento'
+import Button from '@/components/ui/button'
 import { useToast } from '@/components/ui/toast'
 
 /**
@@ -15,7 +16,19 @@ import { useToast } from '@/components/ui/toast'
  * na bio); onde ela não existe — desktop, navegador antigo — cai para a área de
  * transferência, que resolve o mesmo problema sem tela extra.
  */
-export default function CompartilharSite({ slug, nome }: { slug: string; nome: string }) {
+export default function CompartilharSite({
+  slug,
+  nome,
+  rotulo,
+}: {
+  slug: string
+  nome: string
+  /**
+   * docs/62 Fase A2: com rótulo, vira botão de texto (para o `EmptyState` do dia sem cliente
+   * nenhum) em vez do ícone solto do cabeçalho — mesma ação, dois formatos.
+   */
+  rotulo?: string
+}) {
   const mostrarToast = useToast()
 
   async function compartilhar() {
@@ -44,6 +57,15 @@ export default function CompartilharSite({ slug, nome }: { slug: string; nome: s
     } catch {
       mostrarToast({ tom: 'erro', titulo: 'Não consegui copiar', descricao: `Seu link é ${url}` })
     }
+  }
+
+  if (rotulo) {
+    return (
+      <Button type="button" variante="secondary" onClick={compartilhar}>
+        <Share2 aria-hidden className="size-4" />
+        {rotulo}
+      </Button>
+    )
   }
 
   return (

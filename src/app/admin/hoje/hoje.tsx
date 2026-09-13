@@ -16,6 +16,7 @@ import { dinheiro } from '@/lib/formato'
 import { aplicarVariaveis, linkWhatsApp } from '@/lib/mensagens'
 
 import DetalheAgendamento from '../agenda/detalhe'
+import CompartilharSite from './compartilhar'
 
 import type { EstadoAgendamento } from '@/core/scheduling/state'
 import type { LinhaAgendaDia } from '@/server/services/agendamentos'
@@ -105,12 +106,15 @@ export default function Hoje({
   resumo,
   atribuicao,
   emRisco,
+  site,
   children,
 }: {
   resumo: ResumoHoje
   atribuicao: ReceitaAtribuida
   /** Total e contagem de `listarParaRecuperar` — a MESMA fonte de `/admin/recuperar`. */
   emRisco: { totalCents: number; count: number }
+  /** docs/62 Fase A2: `null` só quando o tenant ainda não tem slug (não deveria acontecer em /admin, mas o tipo permite). */
+  site: { slug: string; nome: string } | null
   children?: React.ReactNode
 }) {
   const atualizarDepois = useAtualizarDepois()
@@ -289,7 +293,22 @@ export default function Hoje({
               icone={<CalendarCheck aria-hidden className="size-6" />}
               titulo="Nada mais para hoje"
               descricao="A agenda de hoje está livre a partir de agora."
-              acao={<Link href="/admin/agenda/novo">Novo agendamento</Link>}
+              acao={
+                /*
+                  docs/62 Fase A2: "Novo agendamento" resolve quem já tem cliente pra marcar — pra
+                  quem não tem NENHUM hoje (nem concluído, nem cancelado), a saída mais útil é
+                  levar gente nova pra agenda, não abrir um formulário vazio. `totalAgendamentosHoje`
+                  distingue "dia que já rodou e acabou" de "dia que nunca teve nada".
+                */
+                resumo.totalAgendamentosHoje === 0 && site ? (
+                  <div className="flex flex-col items-center gap-2">
+                    <Link href="/admin/agenda/novo">Novo agendamento</Link>
+                    <CompartilharSite slug={site.slug} nome={site.nome} rotulo="Compartilhar meu link" />
+                  </div>
+                ) : (
+                  <Link href="/admin/agenda/novo">Novo agendamento</Link>
+                )
+              }
             />
           </Card>
         </>

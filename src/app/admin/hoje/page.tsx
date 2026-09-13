@@ -129,7 +129,12 @@ export default async function PaginaHoje() {
         }
       />
 
-      <Hoje resumo={resumo} atribuicao={atribuicao} emRisco={{ totalCents: emRisco.totalValueCents, count: emRisco.count }}>
+      <Hoje
+        resumo={resumo}
+        atribuicao={atribuicao}
+        emRisco={{ totalCents: emRisco.totalValueCents, count: emRisco.count }}
+        site={ctx.tenant.slug ? { slug: ctx.tenant.slug, nome: ctx.tenant.name } : null}
+      >
         <CentralDeAcoes dados={acoes} />
       </Hoje>
     </>

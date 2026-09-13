@@ -66,6 +66,13 @@ export type ResumoHoje = {
    * laço — sem ele o card só teria número; com ele vira motivo de usar (§2.4).
    */
   indicacoesEsteMes: number
+  /**
+   * docs/62 Fase A2: quantos agendamentos existem hoje, contando os já concluídos e os
+   * cancelados — não só os que ainda vêm (`restOfDay`, que zera tanto num dia sem cliente
+   * nenhum quanto num dia cheio que já terminou). Distingue os dois casos: só o primeiro
+   * merece sugerir compartilhar o link de agendamento.
+   */
+  totalAgendamentosHoje: number
 }
 
 const JANELA_ALERTA_HORAS = 3
@@ -129,5 +136,6 @@ export async function resumoDeHoje(db: Cliente, tenantId: string, timezone: stri
     restOfDay: aindaPorVir,
     stockAlerts,
     indicacoesEsteMes: indicacoesEsteMes ?? 0,
+    totalAgendamentosHoje: linhas.length,
   }
 }
