@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { TriangleAlert, CalendarCheck, ChevronRight, Gift, MessageCircle, PackageX } from 'lucide-react'
 import { useState } from 'react'
 
-import AppointmentRow from '@/components/ui/appointment-row'
+import AppointmentRow, { COR_BARRA } from '@/components/ui/appointment-row'
 import Card from '@/components/ui/card'
 import EmptyState from '@/components/ui/empty-state'
 import SectionHeader from '@/components/ui/section-header'
@@ -49,6 +49,57 @@ export function linkWhatsAppDoProximo(agendamento: LinhaHoje): string | null {
     hora: horaLocal(agendamento.starts_at),
   })
   return linkWhatsApp(agendamento.clients?.phone_e164 ?? null, texto)
+}
+
+/**
+ * docs/62 Fase C: "manhã lotada, tarde livre" não dava pra ver sem rolar a lista inteira. Uma
+ * faixa horizontal do que ainda vem hoje — cada bloco colorido por status (mesma paleta de
+ * `AppointmentRow`, `COR_BARRA` — nunca uma segunda tabela de cor que possa divergir), o espaço
+ * SEM bloco é o vazio de propósito, não precisa desenhar o "livre".
+ *
+ * Escopo v1 deliberadamente pequeno: só o que falta de agora em diante (`restOfDay`, a mesma
+ * fatia que "Resto do dia" já usa), sem clique nem detalhe — é um resumo visual, o clique pra
+ * abrir o agendamento já existe nas seções de baixo. Medido nos dois cenários (dia cheio, dia
+ * vazio/só um horário) antes de considerar pronta: com um item só ou nenhum, a faixa não ajuda
+ * em nada e teria mais chance de parecer quebrada que informativa — por isso só aparece a partir
+ * de 2 itens.
+ */
+function TimelineDoDia({ itens }: { itens: LinhaHoje[] }) {
+  if (itens.length < 2) return null
+
+  const agora = Date.now()
+  const inicios = itens.map((i) => new Date(i.starts_at).getTime())
+  const fins = itens.map((i) => new Date(i.ends_at).getTime())
+  const inicioDaFaixa = Math.min(agora, ...inicios)
+  const fimDaFaixa = Math.max(...fins)
+  const duracaoTotal = fimDaFaixa - inicioDaFaixa
+  // Dado inconsistente (fim antes do início, agendamentos zerados) não quebra a tela — só some.
+  if (!(duracaoTotal > 0)) return null
+
+  return (
+    <section className="mb-6">
+      <SectionHeader>Forma do dia</SectionHeader>
+      <div aria-hidden className="relative h-3 w-full overflow-hidden rounded-[var(--radius-pill)] bg-surface-3">
+        {itens.map((item) => {
+          const inicio = new Date(item.starts_at).getTime()
+          const fim = new Date(item.ends_at).getTime()
+          const esquerda = ((inicio - inicioDaFaixa) / duracaoTotal) * 100
+          const largura = Math.max(((fim - inicio) / duracaoTotal) * 100, 1.5)
+          return (
+            <div
+              key={item.id}
+              className={`absolute inset-y-0 rounded-[var(--radius-pill)] ${COR_BARRA[item.status as EstadoAgendamento]}`}
+              style={{ left: `${esquerda}%`, width: `${largura}%` }}
+            />
+          )
+        })}
+      </div>
+      {/* A faixa é decorativa (`aria-hidden`) — quem usa leitor de tela já tem a lista de baixo, com hora e nome de cada uma. */}
+      <p className="mt-1.5 text-label text-txt-3">
+        {horaLocal(itens[0]!.starts_at)}–{horaLocal(itens[itens.length - 1]!.ends_at)}
+      </p>
+    </section>
+  )
 }
 
 /**
@@ -313,6 +364,8 @@ export default function Hoje({
           </p>
         </Card>
       ) : null}
+
+      <TimelineDoDia itens={resumo.restOfDay} />
 
       {resumo.nextClient ? (
         <section className="mb-6">

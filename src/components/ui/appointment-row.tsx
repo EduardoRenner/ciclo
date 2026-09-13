@@ -6,8 +6,12 @@ import Card from './card'
 
 import type { EstadoAgendamento } from '@/core/scheduling/state'
 
-/** §5: as mesmas cores de estado usadas em `Badge`, aqui na barra lateral do agendamento. */
-const COR_BARRA: Record<EstadoAgendamento, string> = {
+/**
+ * §5: as mesmas cores de estado usadas em `Badge`, aqui na barra lateral do agendamento.
+ * Exportada (docs/62 Fase C) pra `TimelineDoDia` reusar exatamente esta paleta — duas cópias da
+ * mesma tabela de cor por estado é o tipo de duplicação que diverge sem ninguém perceber.
+ */
+export const COR_BARRA: Record<EstadoAgendamento, string> = {
   pending: 'bg-warn',
   confirmed: 'bg-ok',
   arrived: 'bg-info',
