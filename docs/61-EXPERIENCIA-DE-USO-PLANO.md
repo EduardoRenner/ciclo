@@ -40,6 +40,13 @@ não cabe terminar direito no que sobrou desta rodada. Começar features novas s
 terminar é o "implementação pela metade" que o `CLAUDE.md` proíbe. Fica para a próxima rodada,
 com orçamento cheio.
 
+**Rodada 5 (depois de o Eduardo acordar e cobrar):** a seção 4 (menu de 3 linhas) tinha sido
+DECIDIDA sem virar código na rodada 1 — julguei que a arquitetura já estava boa e não implementei.
+Foi engano: o pedido era literal, e "já tá bom" não é a mesma coisa que "foi o que ele pediu".
+Implementado em `e081ede`: hamburguer no lugar da engrenagem, abre bottom sheet com atalhos
+(Caixa, Serviços, Time, Campanhas, Estoque, Recorrência) e Configurações como último item da
+lista. Verificado no navegador nos dois temas, sub-rota sem regressão, suíte inteira verde.
+
 **Rodada 4:** seção 5, item 6 (fricção zero no primeiro valor) — **feito, testado e verificado**,
 commit `9bc58a0`. Antes de escrever código, investiguei os outros dois candidatos óbvios da seção
 (item 2 "progresso visível" e item 3 "streak") e descartei os dois por bons motivos, não por
