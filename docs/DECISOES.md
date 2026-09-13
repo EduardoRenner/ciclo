@@ -7307,6 +7307,26 @@ cliques em criar conta. Investigado o fluxo inteiro (`/cadastro` → confirmaç�
 onboarding tem 3, com autopreenchimento de endereço da página e busca com atalho pra quem não está
 nas 17 profissões catalogadas). Nenhum campo sobrando para cortar sem redesenhar a experiência.
 
+---
+
+## 2026-09-13 (noite) · Keep-alive contra cold start — a plataforma já foi escolhida, e está no ar
+
+O Eduardo perguntou se precisava escolher plataforma pra "manter o site quente". Não precisa: a
+decisão já foi tomada em 12/09 (migration `0090`) e está registrada no próprio SQL da migration —
+NÃO pagar Vercel Pro/Enterprise por instância sempre-quente, e sim um ping grátis a cada 5 min em
+`/api/health` via `pg_cron`, reaproveitando o mesmo mecanismo do Motor de Ciclo (`0087`).
+
+Escrito `scripts/conferir-keep-alive.mjs` (só leitura, sem credencial, mesmo padrão de
+`conferir-schema-prod.mjs`) e rodado contra produção nesta sessão: `checks.schema.ok === true`
+(as migrations `0088`-`0090` **estão** aplicadas — contradiz a suspeita registrada no `docs/63` de
+que poderiam estar atrasadas; aquela suspeita nasceu de uma nota antiga do `docs/60`, e o estado
+real hoje é outro), `/api/health` respondeu rápido nas duas chamadas medidas, e `recomputeCycles`/
+`recomputeSegments` com heartbeat fresco — sinal forte de que o `pg_cron` da `0087` está ativo de
+verdade em produção, o que por extensão torna muito provável que a `0090` (mesmo secret, mesmo
+mecanismo) também esteja. **Não dá pra confirmar 100% só por HTTP** — falta olhar
+`cron.job`/`cron.job_run_details` no painel do Supabase, passo que só o Eduardo pode fazer; o
+script imprime o SQL exato pra isso.
+
 **O que reduziria cliques de verdade já está construído e parado, achado em `docs/DECISOES.md`
 2026-09-01:** login social (Google e Apple) via Supabase Auth — o código inteiro funciona
 (`signInWithOAuth`, `/auth/callback` reaproveitado, tratamento de cancelamento e erro), só falta
