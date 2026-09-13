@@ -199,3 +199,87 @@ export async function listarProdutosAtivos(db: Cliente, tenantId: string) {
   if (error) throw new AppError('INTERNAL', { cause: error })
   return data ?? []
 }
+
+/**
+ * docs/62 Fase 1: o alicerce que faltava. `products` tem `price_cents`/`is_retail` desde a
+ * migration 0001 e `adicionarItemComanda` (comanda.ts) já sabe vender um produto de revenda —
+ * só não existia rota nem tela para CADASTRAR um produto novo depois do pacote inicial do nicho.
+ *
+ * `priceCents` só é exigido quando `isRetail` é `true` — o mesmo `.refine()` que
+ * `adicionarItemComanda` já checa em runtime (comanda.ts: "produto de revenda sem preço, definir
+ * no estoque antes de vender"), agora barrado na borda, em vez de só na hora de vender.
+ */
+const EsquemaProdutoBase = z.object({
+  name: z.string().trim().min(2, 'Dê um nome ao produto.').max(120, 'Nome muito longo.'),
+  unit: z.string().trim().min(1, 'Informe a unidade.').max(10, 'Unidade muito longa.').default('un'),
+  avgCostCents: z.number().int().nonnegative('O custo não pode ser negativo.').default(0),
+  priceCents: z.number().int().nonnegative('O preço não pode ser negativo.').nullish(),
+  isRetail: z.boolean().default(false),
+  reorderPoint: z.number().nonnegative('O ponto de pedido não pode ser negativo.').default(0),
+})
+
+export const EsquemaProduto = EsquemaProdutoBase.refine((d) => !d.isRetail || d.priceCents != null, {
+  message: 'Defina o preço de venda para um produto de revenda.',
+  path: ['priceCents'],
+})
+
+/** No PATCH todo campo é opcional — mas a combinação isRetail+priceCents ainda é checada quando as duas chegam juntas. */
+export const EsquemaProdutoParcial = EsquemaProdutoBase.partial().refine(
+  (d) => d.isRetail !== true || d.priceCents !== null,
+  { message: 'Defina o preço de venda para um produto de revenda.', path: ['priceCents'] },
+)
+
+type EntradaProduto = z.infer<typeof EsquemaProdutoBase>
+type EntradaProdutoParcial = z.infer<typeof EsquemaProdutoParcial>
+
+/** Traduz o índice único `products_tenant_name_uniq` (0003) em erro de campo, mesmo padrão de `servicos.ts`. */
+function traduzirErroProduto(erro: { code?: string }): never {
+  if (erro.code === '23505') {
+    throw AppError.validacao({ name: 'Já existe um produto com esse nome.' })
+  }
+  throw new AppError('INTERNAL', { cause: erro })
+}
+
+type ColunasProduto = Database['public']['Tables']['products']['Update']
+
+function paraColunasProduto(entrada: Partial<EntradaProduto>): ColunasProduto {
+  const colunas: ColunasProduto = {}
+  if (entrada.name !== undefined) colunas.name = entrada.name
+  if (entrada.unit !== undefined) colunas.unit = entrada.unit
+  if (entrada.avgCostCents !== undefined) colunas.avg_cost_cents = entrada.avgCostCents
+  if (entrada.priceCents !== undefined) colunas.price_cents = entrada.priceCents ?? null
+  if (entrada.isRetail !== undefined) colunas.is_retail = entrada.isRetail
+  if (entrada.reorderPoint !== undefined) colunas.reorder_point = entrada.reorderPoint
+  return colunas
+}
+
+const COLUNAS_PRODUTO = 'id, name, unit, avg_cost_cents, price_cents, is_retail, stock_qty, reorder_point, expires_at, active'
+
+export async function criarProduto(db: Cliente, tenantId: string, entrada: EntradaProduto) {
+  const { data, error } = await db
+    .from('products')
+    .insert({ tenant_id: tenantId, ...(paraColunasProduto(entrada) as { name: string }) })
+    .select(COLUNAS_PRODUTO)
+    .single()
+
+  if (error) traduzirErroProduto(error)
+  return data
+}
+
+export async function atualizarProduto(db: Cliente, tenantId: string, id: string, entrada: EntradaProdutoParcial) {
+  const colunas = paraColunasProduto(entrada)
+  if (Object.keys(colunas).length === 0) throw AppError.validacao({ _corpo: 'Nada para alterar.' })
+
+  const { data, error } = await db
+    .from('products')
+    .update(colunas)
+    .eq('id', id)
+    .eq('tenant_id', tenantId)
+    .is('deleted_at', null)
+    .select(COLUNAS_PRODUTO)
+    .maybeSingle()
+
+  if (error) traduzirErroProduto(error)
+  if (!data) throw new AppError('NOT_FOUND', { message: 'Esse produto não está mais no seu estoque.' })
+  return data
+}

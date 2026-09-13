@@ -50,7 +50,9 @@ export default async function PaginaEstoque() {
   const [{ data: produtos }, alertas] = await Promise.all([
     db
       .from('products')
-      .select('id, name, unit, stock_qty, reorder_point, avg_cost_cents, expires_at')
+      // docs/62 Fase 1: `price_cents`/`is_retail` nunca eram buscados aqui, mesmo existindo desde
+      // a 0001 — a tela não tinha como mostrar preço de revenda nem separar das duas naturezas.
+      .select('id, name, unit, stock_qty, reorder_point, avg_cost_cents, price_cents, is_retail, expires_at')
       .eq('tenant_id', ctx.tenantId)
       .eq('active', true)
       .is('deleted_at', null)
@@ -79,6 +81,8 @@ export default async function PaginaEstoque() {
           estoque: p.stock_qty,
           pontoDePedido: p.reorder_point,
           custoMedioCents: p.avg_cost_cents,
+          precoCents: p.price_cents,
+          isRetail: p.is_retail,
           venceEm: p.expires_at,
           emAlerta: emAlerta.has(p.id),
         }))}

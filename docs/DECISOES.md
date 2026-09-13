@@ -7189,3 +7189,25 @@ maior só na altura.
 **Lição para a próxima varredura de `toque-48`:** ler a definição da classe antes de calcular
 geometria de cabeça. A sondagem por `elementFromPoint` continua sendo a forma certa de confirmar,
 mas só depois de saber o que a classe realmente faz.
+
+---
+
+## 2026-09-13 (madrugada/manhã) · Fase 1 de produtos de revenda — achado: Sheets ignoram tema claro
+
+Continuação do loop de `docs/62`. Implementando o cadastro de produto (Fase 1), fui verificar o
+novo formulário nos dois temas e medi um bug pré-existente, não relacionado a esta feature:
+**todo `<Sheet>` do app ignora o tema claro explícito.** `Dialog.Portal` (Radix) não tem
+`container` customizado, então monta fora de `#raiz-do-tema` — onde vivem o `data-theme` e as
+variáveis de cor — e cai no fallback escuro de `:root`, mesmo com "Claro" escolhido de verdade
+(confirmado com o cookie `ciclo-tema=claro`, não só a mutação de teste). Afeta todos os usos de
+`Sheet`: formulários de estoque/agendamento/configuração, o menu de 3 linhas do topo.
+
+**Decisão: não misturar o conserto com a Fase 1.** É uma mudança que toca o componente mais
+reutilizado da UI, pede teste em várias telas e atenção a z-index/overflow (o Portal em `body`
+pode existir de propósito, para não ser cortado por `overflow:hidden` de algum ancestral). Virou
+tarefa separada (chip `task_1f4e6fb7`), pra rodar com orçamento próprio.
+
+**Como isso muda a verificação visual das próximas fases:** qualquer Sheet novo (Fase 2, Fase 3)
+vai continuar aparecendo escuro no Browser pane mesmo testando "tema claro" — isso é esperado até
+a tarefa acima ser resolvida, não é regressão da fase em execução. Não vale reabrir a investigação
+a cada Sheet novo.
