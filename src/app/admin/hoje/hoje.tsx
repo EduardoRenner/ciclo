@@ -147,6 +147,47 @@ export default function Hoje({
   const jaMostrados = new Set([idProximo, ...alertasSemOProximo.map((a) => a.id)].filter(Boolean))
   const restanteNaoMostrado = resumo.restOfDay.filter((a) => !jaMostrados.has(a.id))
 
+  /*
+   * docs/62 Fase E4: a seção sempre vinha na mesma posição, não importa a gravidade — um
+   * produto VENCIDO (uso bloqueado, o estado mais grave que `stockAlerts` conhece) ficava
+   * espremido entre "Precisa confirmar" e "Resto do dia" do mesmo jeito que um aviso de
+   * "perto de vencer"/"hora de recomprar". Critério objetivo (existe bloqueio ou não), não um
+   * número de prioridade inventado.
+   */
+  const temBloqueioDeEstoque = resumo.stockAlerts.some((a) => a.validade === 'bloqueado')
+  const secaoEstoque =
+    resumo.stockAlerts.length > 0 ? (
+      <section className="mb-6">
+        <SectionHeader tom="alerta" icone={<PackageX aria-hidden className="size-4" />}>
+          Estoque
+        </SectionHeader>
+        <ul className="flex flex-col gap-2">
+          {/* Cada aviso era um cartão sem saída: dizia "hora de recomprar" e não levava a lugar nenhum. */}
+          {resumo.stockAlerts.map((a) => (
+            <li key={a.productId}>
+              <Link href="/admin/estoque" className="block">
+                <Card pressionavel className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-corpo font-semibold">{a.name}</p>
+                    <p className="text-secundario text-txt-2">
+                      {a.validade === 'bloqueado'
+                        ? 'Vencido: uso bloqueado'
+                        : a.validade === 'alerta'
+                          ? 'Perto de vencer'
+                          : a.precisaRecomprar
+                            ? `${a.stockQty} em estoque, hora de recomprar`
+                            : ''}
+                    </p>
+                  </div>
+                  <ChevronRight aria-hidden className="size-5 shrink-0 text-txt-3" />
+                </Card>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ) : null
+
   return (
     <div>
       {/*
@@ -166,6 +207,11 @@ export default function Hoje({
           <StatTile
             pressionavel
             heroi
+            // docs/62 Fase E3: é a única manchete que comemora um fato JÁ acontecido (dinheiro que
+            // voltou por causa do produto) em vez de um estado neutro — o mesmo cinza dos outros
+            // heróis apagava a diferença. Tom sutil de `--ok`, não confete: é celebrar dado real
+            // (docs/61 §5.7), não gamificação.
+            className="border-ok/30 bg-ok/5"
             rotulo="O Motor de Ciclo trouxe este mês"
             valor={dinheiro.format(atribuicao.totalCents / 100)}
             apoio={
@@ -224,6 +270,8 @@ export default function Hoje({
           />
         )}
       </Link>
+
+      {temBloqueioDeEstoque ? secaoEstoque : null}
 
       {/*
         I-7, `docs/30-INDICACAO-PLANO.md` §5.3/§6.2d: o extrato do laço. Segue o padrão do
@@ -339,37 +387,7 @@ export default function Hoje({
       {/* Quando não há próximo cliente, a Central de Ações já foi renderizada acima. */}
       {resumo.nextClient ? children : null}
 
-      {resumo.stockAlerts.length > 0 ? (
-        <section className="mb-6">
-          <SectionHeader tom="alerta" icone={<PackageX aria-hidden className="size-4" />}>
-            Estoque
-          </SectionHeader>
-          <ul className="flex flex-col gap-2">
-            {/* Cada aviso era um cartão sem saída: dizia "hora de recomprar" e não levava a lugar nenhum. */}
-            {resumo.stockAlerts.map((a) => (
-              <li key={a.productId}>
-                <Link href="/admin/estoque" className="block">
-                  <Card pressionavel className="flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="truncate text-corpo font-semibold">{a.name}</p>
-                      <p className="text-secundario text-txt-2">
-                        {a.validade === 'bloqueado'
-                          ? 'Vencido: uso bloqueado'
-                          : a.validade === 'alerta'
-                            ? 'Perto de vencer'
-                            : a.precisaRecomprar
-                              ? `${a.stockQty} em estoque, hora de recomprar`
-                              : ''}
-                      </p>
-                    </div>
-                    <ChevronRight aria-hidden className="size-5 shrink-0 text-txt-3" />
-                  </Card>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
+      {!temBloqueioDeEstoque ? secaoEstoque : null}
 
       {/*
         A seção some quando tudo que ainda vem já está desenhado acima. Mostrar "Resto do dia ·
