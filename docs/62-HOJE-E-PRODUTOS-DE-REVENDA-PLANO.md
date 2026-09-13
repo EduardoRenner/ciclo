@@ -292,10 +292,17 @@ verificada no navegador**, `64cd99a`. Duas seções ("Para revenda"/"Uso interno
 % com cor por faixa (vermelho abaixo do custo, amarelo <20%, verde acima). Testado ao vivo os dois
 casos de cor, não só o caminho feliz.
 
-Próxima rodada: Fase 3 (comanda ganha "Adicionar produto") é o gap mais visível do achado
-original — zero trabalho de backend novo (`adicionarItemComanda` já aceita `productId`,
-`listarProdutosAtivos` já existe), só UI. Ou Fase B (comparação com a média), que não depende de
-nada das fases de produto.
+**Rodada 4:** Fase 3 (comanda ganha "Adicionar produto") — **feita, testada e verificada no
+navegador**, `4c24654`. Alternador Serviço/Produto que só aparece quando os dois catálogos
+coexistem; testado com comanda real (professional válido, descartada depois) misturando serviço +
+produto na mesma comanda, subtotal somando os dois certo.
+
+**A frente de produtos de revenda/upsell está com o essencial completo**: cadastrar (Fase 1),
+organizar com margem (Fase 2), vender (Fase 3). Só a Fase 4 (ganchos de upsell) segue
+deliberadamente fora de escopo, aguardando uso real.
+
+Próxima rodada: Fase B (comparação com a média) — não depende de nada das fases de produto, é a
+próxima da aba Hoje ainda não tocada.
 
 ## Execução autônoma (docs/61 §0/0a)
 
