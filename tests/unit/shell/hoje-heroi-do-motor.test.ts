@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
-import { escolherHeroi } from '@/app/admin/hoje/hoje'
+import { escolherHeroi, linkWhatsAppDoProximo } from '@/app/admin/hoje/hoje'
+
+import type { LinhaHoje } from '@/server/services/resumo-hoje'
 
 /**
  * Qual número abre a home. Sem harness de render de componente neste projeto, testa a decisão pura.
@@ -76,5 +78,35 @@ describe('escolherHeroi', () => {
       // manchete de "R$ 0,00 dá para recuperar" seria pior que o Atendido hoje.
       expect(escolherHeroi({ ...nada, valorEmRiscoCents: 0 })).toBe('atendido')
     })
+  })
+})
+
+/** docs/62 Fase A: WhatsApp direto no card "A seguir". */
+describe('linkWhatsAppDoProximo', () => {
+  function agendamento(overrides: Partial<Pick<LinhaHoje, 'starts_at'>> & { nome?: string | null; telefone?: string | null }): LinhaHoje {
+    return {
+      id: 'a1',
+      starts_at: overrides.starts_at ?? '2026-09-13T14:00:00.000Z',
+      ends_at: '2026-09-13T15:00:00.000Z',
+      status: 'confirmed',
+      price_cents: 5000,
+      client_note: null,
+      address: null,
+      professional_id: 'p1',
+      clients: { name: overrides.nome ?? 'Ana', phone_e164: overrides.telefone ?? null, health_records: [] },
+      services: { name: 'Corte' },
+      professionals: { display_name: 'Bia' },
+    }
+  }
+
+  it('sem telefone cadastrado, não inventa contato', () => {
+    expect(linkWhatsAppDoProximo(agendamento({ telefone: null }))).toBeNull()
+  })
+
+  it('com telefone, monta o link com nome e hora prontos', () => {
+    const link = linkWhatsAppDoProximo(agendamento({ telefone: '+5511999998888', nome: 'Ana Paula' }))
+    expect(link).toContain('https://wa.me/5511999998888')
+    // Só o primeiro nome, mesma regra de `aplicarVariaveis` — "Fala, Ana!" soa como gente.
+    expect(decodeURIComponent(link!)).toContain('Oi Ana!')
   })
 })

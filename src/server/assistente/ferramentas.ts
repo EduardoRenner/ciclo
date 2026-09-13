@@ -170,8 +170,11 @@ function apagarTipo<T>(f: Ferramenta<T>): Ferramenta {
  * do contexto que tem de filtrar — que é o que "por construção" quer dizer.
  */
 export function semDadoDeSaude(resumo: ResumoHoje): ResumoHoje {
+  // `phone` (docs/62 Fase A) sai pelo mesmo motivo: o modelo não precisa dele para nada do
+  // catálogo, e mandar telefone de cliente numa chamada a terceiro não é o raio de ação certo
+  // pra reduzir, mesmo não sendo dado de saúde.
   const limpar = (linha: LinhaHoje): LinhaHoje =>
-    linha.clients ? { ...linha, clients: { name: linha.clients.name, health_records: [] } } : linha
+    linha.clients ? { ...linha, clients: { name: linha.clients.name, phone_e164: null, health_records: [] } } : linha
 
   return {
     ...resumo,

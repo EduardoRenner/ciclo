@@ -17,7 +17,7 @@ type Cliente = SupabaseClient<Database>
   a forma mais silenciosa de vazar dado de saúde.
 */
 const COLUNAS_HOJE =
-  'id, starts_at, ends_at, status, price_cents, client_note, address, professional_id, clients ( name, health_records ( has_alert ) ), services ( name ), professionals ( display_name )'
+  'id, starts_at, ends_at, status, price_cents, client_note, address, professional_id, clients ( name, phone_e164, health_records ( has_alert ) ), services ( name ), professionals ( display_name )'
 
 /** Mesmo formato de `LinhaAgendaDia` (TICKET-022) — dá para abrir no mesmo `DetalheAgendamento` da tela de agenda, sem duplicar o sheet de ações. */
 export type LinhaHoje = {
@@ -30,7 +30,12 @@ export type LinhaHoje = {
   /** docs/09-PLATAFORMA.md G3+G13 (P2.5) — endereço do atendimento, não do cliente. */
   address: string | null
   professional_id: string
-  clients: { name: string; health_records: { has_alert: boolean }[] } | null
+  /**
+   * `phone` entra aqui (docs/62 Fase A) pro WhatsApp direto no card "A seguir" — diferente do
+   * `alert_label` que saiu na Unidade 10, telefone não é dado de saúde e quem vê `/admin/hoje` já
+   * tem `client:read` ou `client:own`, os mesmos papéis que já alcançam o telefone na ficha.
+   */
+  clients: { name: string; phone_e164: string | null; health_records: { has_alert: boolean }[] } | null
   services: { name: string } | null
   professionals: { display_name: string } | null
 }

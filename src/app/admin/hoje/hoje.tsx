@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 
-import { TriangleAlert, CalendarCheck, ChevronRight, Gift, PackageX } from 'lucide-react'
+import { TriangleAlert, CalendarCheck, ChevronRight, Gift, MessageCircle, PackageX } from 'lucide-react'
 import { useState } from 'react'
 
 import AppointmentRow from '@/components/ui/appointment-row'
@@ -13,6 +13,7 @@ import Sheet from '@/components/ui/sheet'
 import StatTile from '@/components/ui/stat-tile'
 import { useAtualizarDepois } from '@/lib/atualizar-depois'
 import { dinheiro } from '@/lib/formato'
+import { aplicarVariaveis, linkWhatsApp } from '@/lib/mensagens'
 
 import DetalheAgendamento from '../agenda/detalhe'
 
@@ -23,6 +24,18 @@ import type { LinhaHoje, ResumoHoje } from '@/server/services/resumo-hoje'
 
 function horaLocal(iso: string): string {
   return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+}
+
+/**
+ * docs/62 Fase A: texto pronto, não campo livre — mesmo padrão de `mensagens-prontas.ts`.
+ * `null` sem telefone cadastrado: nunca inventa contato, o ícone some (ver ponto de uso).
+ */
+export function linkWhatsAppDoProximo(agendamento: LinhaHoje): string | null {
+  const texto = aplicarVariaveis('Oi {{nome}}! Tudo certo pro seu horário hoje às {{hora}}?', {
+    nome: agendamento.clients?.name ?? null,
+    hora: horaLocal(agendamento.starts_at),
+  })
+  return linkWhatsApp(agendamento.clients?.phone_e164 ?? null, texto)
 }
 
 /**
@@ -230,15 +243,38 @@ export default function Hoje({
       {resumo.nextClient ? (
         <section className="mb-6">
           <SectionHeader>A seguir</SectionHeader>
-          <button type="button" onClick={() => setSelecionado(resumo.nextClient)} className="block w-full text-left">
-            <AppointmentRow
-              horario={horaLocal(resumo.nextClient.starts_at)}
-              clienteNome={resumo.nextClient.clients?.name ?? 'Cliente'}
-              servicoNome={resumo.nextClient.services?.name ?? 'Serviço'}
-              status={resumo.nextClient.status as EstadoAgendamento}
-              alertaSaude={resumo.nextClient.clients?.health_records?.some((h) => h.has_alert) ?? false}
-            />
-          </button>
+          {/*
+            docs/62 Fase A: o toque mais comum do dia (chamar o próximo cliente) levava a
+            três telas — card, sheet, achar o botão lá dentro. Vira um ícone ao lado, não
+            empilhado no mesmo texto corrido: dois `toque-48` na mesma linha já se cobriram
+            nesta base (CLAUDE.md), o `flex gap-2` com dois irmãos evita repetir.
+          */}
+          <div className="flex items-stretch gap-2">
+            <button
+              type="button"
+              onClick={() => setSelecionado(resumo.nextClient)}
+              className="block min-w-0 flex-1 text-left"
+            >
+              <AppointmentRow
+                horario={horaLocal(resumo.nextClient.starts_at)}
+                clienteNome={resumo.nextClient.clients?.name ?? 'Cliente'}
+                servicoNome={resumo.nextClient.services?.name ?? 'Serviço'}
+                status={resumo.nextClient.status as EstadoAgendamento}
+                alertaSaude={resumo.nextClient.clients?.health_records?.some((h) => h.has_alert) ?? false}
+              />
+            </button>
+            {linkWhatsAppDoProximo(resumo.nextClient) ? (
+              <a
+                href={linkWhatsAppDoProximo(resumo.nextClient)!}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={`Chamar ${resumo.nextClient.clients?.name ?? 'cliente'} no WhatsApp`}
+                className="grid size-12 shrink-0 place-items-center self-center rounded-[var(--radius-pill)] border border-line-2 bg-surface-2 text-acc-2 transition hover:bg-surface-3 active:scale-[.94]"
+              >
+                <MessageCircle aria-hidden className="size-5" />
+              </a>
+            ) : null}
+          </div>
         </section>
       ) : (
         <>
