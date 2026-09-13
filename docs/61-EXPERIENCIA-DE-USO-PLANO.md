@@ -19,8 +19,31 @@
   além do que já está listado como bloqueado. **Próximas rodadas não devem re-varrer a seção 7** —
   só os itens explicitamente bloqueados (4, 8, 17) continuam abertos, e continuam exigindo decisão
   do dono ou trabalho de schema maior que o esforço original estimava.
-- Próxima rodada: seção 5 (padrões de hábito/prazer de uso) e o resto da seção 6 (skeleton fora do
-  guard, `toque-48`, contraste) — ainda não tocadas.
+**Rodada 2:** testei a paleta de cor de `profissionais/formulario.tsx` por sobreposição de
+`toque-48` (candidato óbvio ao mesmo defeito de dois links inline se cobrindo) — sondado com
+`elementFromPoint`, não reproduz (a classe só estende na vertical, por desenho; ver DECISOES). Sem
+mudança de código. Reseedei o banco local depois de um clique por coordenada (em vez de `ref`)
+ter apagado um profissional de teste sem querer — lição: sempre clicar por `ref`, nunca por pixel
+cru quando o zoom/scale do screenshot pode ter mudado.
+
+**Rodada 3:** varri o resto da seção 6 antes de tentar a seção 5 — todas as 11 rotas de
+`/admin` já têm `loading.tsx`; as telas com filtro client-side (`clientes/lista.tsx`,
+`recuperar/recuperar.tsx`) já têm `aria-live`; `campanhas`/`orcamentos` não têm filtro client-side,
+então não precisam. Contraste calculado matematicamente (WCAG, luminância relativa) para os pares
+texto/fundo dos dois temas — todos passam AA folgado (mínimo medido: 6,0:1 em `--txt-3` sobre
+`--surface` no escuro; a régua é 4,5:1). **Seção 6 está, na prática, esgotada** — o que sobra
+exige olho de designer (não código), não achado novo.
+
+Decidido não forçar a seção 5 (hábito/prazer) nesta rodada: as duas ideias mais concretas do
+plano (streak, progresso visível) são feature nova — estado, função em `core/`, teste, UI — e
+não cabe terminar direito no que sobrou desta rodada. Começar features novas sem orçamento pra
+terminar é o "implementação pela metade" que o `CLAUDE.md` proíbe. Fica para a próxima rodada,
+com orçamento cheio.
+
+Próxima rodada: seção 5, com escopo definido ANTES de escrever código — escolher UM padrão (não
+os três), de preferência o que usa dado que já existe (`lateDays` de `recuperar.tsx` já dá
+material pra um indicador de progresso mais concreto, por exemplo), implementar e testar por
+inteiro numa rodada só.
 
 
 **Origem:** pedido direto do Eduardo em 2026-09-13, em linguagem solta ("faz um plano extenso...
