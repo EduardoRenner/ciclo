@@ -79,6 +79,13 @@ describe('lerAssinatura: tenants.settings.assinatura é jsonb livre', () => {
     expect(lerAssinatura({ assinatura: { ...boa, status: 'active' } })).toBeNull()
     expect(lerAssinatura({ assinatura: { ...boa, preapproval_id: '' } })).toBeNull()
   })
+
+  it('graca_ate é opcional: null quando ausente, lido quando presente', () => {
+    expect(lerAssinatura({ assinatura: boa })?.graca_ate).toBeNull()
+    expect(lerAssinatura({ assinatura: { ...boa, graca_ate: '2026-09-20T00:00:00.000Z' } })?.graca_ate).toBe(
+      '2026-09-20T00:00:00.000Z',
+    )
+  })
 })
 
 describe('lerNotificacaoMP: aceita os dois formatos históricos do webhook', () => {

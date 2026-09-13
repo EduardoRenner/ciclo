@@ -5,14 +5,65 @@ import {
   type AssinaturaDoTenant,
   type EventoMP,
 } from '@/core/billing/mercado-pago'
+import type { PlanoTier } from '@/core/billing/planos'
 import { normalizarPlano } from '@/server/services/planos'
-import { consultarPagamento, consultarPreapproval } from '@/server/billing/mercado-pago'
+import { consultarPagamento, consultarPreapproval, criarPreapproval } from '@/server/billing/mercado-pago'
 import { AppError } from '@/server/http/errors'
 
 import type { Database } from '@/server/db/types.gen'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 type Cliente = SupabaseClient<Database>
+
+const DIAS_DE_GRACA = 7
+
+/** Só degrau cobrável — `gratis` não passa por checkout nenhum. */
+export type TierCobravel = Exclude<PlanoTier, 'gratis'>
+export const TIERS_COBRAVEIS: readonly TierCobravel[] = ['essencial', 'equipe', 'avancado']
+export function ehTierCobravel(v: string): v is TierCobravel {
+  return (TIERS_COBRAVEIS as readonly string[]).includes(v)
+}
+
+// ---------------------------------------------------------------------------------------------
+// Iniciar (rota POST /api/v1/billing/assinar, cliente do usuário — permissão já conferida lá)
+// ---------------------------------------------------------------------------------------------
+
+/**
+ * O dono clica "Assinar {plano}" → cria o preapproval no MP e grava a INTENÇÃO em
+ * `tenants.settings.assinatura` (`status: 'pending'`). Quem grava o plano de verdade é
+ * `processarWebhookMP`, quando o MP confirmar o pagamento — aqui só nasce o registro que o webhook
+ * vai procurar pelo `preapproval_id`.
+ */
+export async function iniciarAssinatura(
+  db: Cliente,
+  tenantId: string,
+  tier: TierCobravel,
+  payerEmail: string,
+  backUrl: string,
+): Promise<{ initPoint: string }> {
+  const { preapprovalId, initPoint } = await criarPreapproval({ tenantId, tier, payerEmail, backUrl })
+
+  const assinatura: AssinaturaDoTenant = {
+    provedor: 'mercado_pago',
+    preapproval_id: preapprovalId,
+    plano_contratado: tier,
+    status: 'pending',
+    atualizado_em: new Date().toISOString(),
+    graca_ate: null,
+  }
+
+  const { data: atual, error: erroLeitura } = await db.from('tenants').select('settings').eq('id', tenantId).single()
+  if (erroLeitura) throw new AppError('INTERNAL', { cause: erroLeitura })
+  const settings = { ...((atual.settings ?? {}) as Record<string, unknown>), assinatura }
+
+  const { error } = await db
+    .from('tenants')
+    .update({ settings: settings as Database['public']['Tables']['tenants']['Update']['settings'] })
+    .eq('id', tenantId)
+  if (error) throw new AppError('INTERNAL', { cause: error })
+
+  return { initPoint }
+}
 
 export type ResultadoWebhookMP =
   | { resultado: 'plano_atualizado'; tenantId: string; plano: string }
@@ -86,6 +137,10 @@ export async function processarWebhookMP(
     ...assinatura,
     status: situacao.status,
     atualizado_em: new Date().toISOString(),
+    // Recalculada a cada webhook de `paused` (não só na primeira vez) — ver o comentário do campo
+    // em `core/billing/mercado-pago.ts`. `null` assim que sair de `paused`, para não sobrar data
+    // de graça velha numa assinatura que já voltou a pagar.
+    graca_ate: decisao.emGraca ? new Date(Date.now() + DIAS_DE_GRACA * 86_400_000).toISOString() : null,
   }
 
   const { error: erroUpdate } = await db
@@ -95,4 +150,54 @@ export async function processarWebhookMP(
   if (erroUpdate) throw new AppError('INTERNAL', { cause: erroUpdate })
 
   return { resultado: 'plano_atualizado', tenantId, plano: decisao.plano }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Expirar graça (rota GET /api/cron/expirar-graca)
+// ---------------------------------------------------------------------------------------------
+
+/**
+ * Varre tenants com assinatura registrada, e derruba para `gratis` quem está `paused` com
+ * `graca_ate` no passado — ou seja, o MP tentou cobrar e falhou por 7 dias seguidos sem se
+ * recuperar. Sem isto, uma assinatura pausada fica no degrau pago para sempre: o webhook só
+ * REAGE a evento novo do MP, e o MP para de mandar evento quando desiste de retentar.
+ */
+export async function expirarGracaVencida(svc: Cliente, agora: Date = new Date()): Promise<number> {
+  const { data, error } = await svc
+    .from('tenants')
+    .select('id, plan, settings')
+    .not('settings->assinatura', 'is', null)
+    .is('deleted_at', null)
+  if (error) throw new AppError('INTERNAL', { cause: error })
+
+  let derrubados = 0
+  for (const t of data ?? []) {
+    const a = lerAssinatura(t.settings)
+    if (!a || a.status !== 'paused' || !a.graca_ate) continue
+    if (new Date(a.graca_ate) > agora) continue
+
+    const novaAssinatura: AssinaturaDoTenant = { ...a, graca_ate: null, atualizado_em: agora.toISOString() }
+    const { error: erroUpdate } = await svc
+      .from('tenants')
+      .update({
+        plan: 'gratis',
+        settings: { ...((t.settings ?? {}) as Record<string, unknown>), assinatura: novaAssinatura },
+      })
+      .eq('id', t.id)
+    if (erroUpdate) throw new AppError('INTERNAL', { cause: erroUpdate })
+
+    // Insert direto, não `writeAudit`: o cron não tem `Request` de pessoa nenhuma para tirar
+    // IP/user-agent, e `request_id` é opcional na tabela. Mesma exceção que `service_role` já é.
+    const { error: erroAudit } = await svc.from('audit_log').insert({
+      tenant_id: t.id,
+      action: 'tenant.plan.change',
+      entity: 'tenants',
+      entity_id: t.id,
+      after: { de: t.plan, para: 'gratis', por: 'graca_expirada' } as never,
+    })
+    if (erroAudit) console.error(JSON.stringify({ level: 'error', event: 'audit_graca_expirada_falhou', tenantId: t.id }), erroAudit)
+
+    derrubados++
+  }
+  return derrubados
 }

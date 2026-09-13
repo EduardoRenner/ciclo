@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { headers } from 'next/headers'
 
 import { textoDeParaQueIndicar, textoDoConviteDoCiclo } from '@/core/billing/convite-do-ciclo'
+import { lerAssinatura } from '@/core/billing/mercado-pago'
 import { NOME_DO_PLANO, ORDEM_DOS_PLANOS, precoDoPlanoPorMes, verificarLimite } from '@/core/billing/planos'
 import { comMaiuscula, plural } from '@/core/text/vocabulario'
 import { APP_URL } from '@/lib/app-url'
@@ -16,6 +17,7 @@ import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { assuntoDeMudarDePlano, canalDeContato, textoDeMudarDePlano } from '@/lib/contato'
 import { CARTOES } from '@/lib/planos-cartoes'
 import { contextoDePlano } from '@/server/services/planos'
+import AssinarPlano from './assinar-plano'
 
 /** Sem `await`, viraria página estática — quebra o nonce do CSP por requisição. */
 export const dynamic = 'force-dynamic'
@@ -31,16 +33,19 @@ export const metadata = { title: 'Meu plano' }
  * o espaço de URL — duas telas chamadas "planos" com significados opostos é armadilha para quem
  * chegar depois.
  *
- * O que esta tela NÃO tem, e é deliberado (regra 5.4: não fingir que integração de pagamento está
- * pronta):
- *   - nenhum botão "assinar", porque não existe assinatura automática;
- *   - nenhum botão "cancelar", porque não há o que cancelar — e um botão de cancelar que abre um
- *     formulário morto é pior que a ausência dele. A Fase K exige que cancelar custe os mesmos
- *     toques que assinar; hoje os dois custam a mesma coisa (uma conversa), o que satisfaz a
- *     regra pelo caminho mais honesto disponível.
- *   - nenhuma data de "próxima cobrança", porque não há cobrança.
+ * O botão "Assinar {plano}" só aparece quando `MERCADOPAGO_ACCESS_TOKEN` está configurado
+ * (`cobrancaAutomatica` abaixo) — regra 5.4 do `docs/18`: não fingir que a cobrança automática
+ * existe. Sem a credencial, o degrau acima continua com o link de WhatsApp ("Quero o {plano}"),
+ * porque virar um botão morto seria pior que a ausência dele.
  *
- * Quando a cobrança existir, é aqui que ela entra.
+ * Reconciliado em `docs/63-AUDITORIA-PENDENCIAS-2026-09-13.md`: este botão já tinha sido
+ * construído (PR #91) mas ficou preso num branch que nunca chegou em `main` — reescrito contra o
+ * `assinatura-mp.ts` atual (que substituiu o service original no #122), não um merge cego.
+ *
+ * Ainda NÃO existe botão de "cancelar" nem data de "próxima cobrança" — cancelar continua sendo
+ * uma conversa (canal de contato), e a Fase K exige que custe os mesmos toques que assinar. Isso
+ * deixa de ser verdade no instante em que este botão for usado de verdade; cancelamento
+ * self-service é o próximo item quando isso incomodar na prática.
  */
 
 function textoDeTeto(limite: number | null, usado: number): string {
@@ -52,7 +57,7 @@ export default async function PaginaMeuPlano() {
   const ctx = await contextoAtual(new Request('https://interno/meu-plano', { headers: await headers() }))
   const db = await criarClienteDoUsuario()
 
-  const [plano, profissionais, clientes] = await Promise.all([
+  const [plano, profissionais, clientes, tenantRow] = await Promise.all([
     contextoDePlano(db, ctx.tenantId),
     db
       .from('professionals')
@@ -61,7 +66,10 @@ export default async function PaginaMeuPlano() {
       .eq('active', true)
       .is('deleted_at', null),
     db.from('clients').select('id', { count: 'exact', head: true }).eq('tenant_id', ctx.tenantId).is('deleted_at', null),
+    db.from('tenants').select('settings').eq('id', ctx.tenantId).single(),
   ])
+
+  const assinatura = lerAssinatura(tenantRow.data?.settings)
 
   const usoProf = profissionais.count ?? 0
   const usoCli = clientes.count ?? 0
@@ -77,6 +85,10 @@ export default async function PaginaMeuPlano() {
   // A porta que faltava. Enquanto não há cobrança automática, mudar de plano é uma conversa — e
   // até 2026-09-03 esta tela mandava "falar com a gente" sem oferecer com quem. Ver `lib/contato.ts`.
   const canal = canalDeContato(assuntoDeMudarDePlano(NOME_DO_PLANO[atual]))
+
+  // Leitura de variável de ambiente, não I/O — mesmo raciocínio de `AssistenteFlutuante` em
+  // `admin/layout.tsx`. Sem a credencial do MP, o botão de assinar nem existe: regra 5.4.
+  const cobrancaAutomatica = Boolean(process.env.MERCADOPAGO_ACCESS_TOKEN)
 
   return (
     <>
@@ -105,6 +117,18 @@ export default async function PaginaMeuPlano() {
           </a>
         ) : null}
       </Card>
+
+      {assinatura?.status === 'paused' ? (
+        <Card className="mb-5 flex gap-3 border-warn">
+          <Lock aria-hidden className="mt-0.5 size-5 shrink-0 text-warn" />
+          <p className="text-secundario text-txt-2">
+            <span className="font-semibold text-txt">Seu pagamento não passou.</span>{' '}
+            {assinatura.graca_ate
+              ? `Você continua no ${NOME_DO_PLANO[atual]} até ${new Date(assinatura.graca_ate).toLocaleDateString('pt-BR')}. Depois disso, cai para o Grátis, sem perder nada: só limita o que dá para criar.`
+              : 'O Mercado Pago está tentando de novo. Se não resolver, o plano cai para o Grátis.'}
+          </p>
+        </Card>
+      ) : null}
 
       <SectionHeader>O que você está usando</SectionHeader>
       <div className="mb-5 grid grid-cols-2 gap-3">
@@ -173,22 +197,26 @@ export default async function PaginaMeuPlano() {
                   como pedir. O botão nomeia o plano em vez de dizer "fazer upgrade" — quem toca
                   aqui já escolheu, e o texto que sai no WhatsApp poupa a pessoa de explicar.
                 */}
-                {(() => {
-                  const pedido = canalDeContato(
-                    `Oi! Uso o CICLO no ${NOME_DO_PLANO[atual]} e quero passar para o ${NOME_DO_PLANO[tier]}.`,
-                  )
-                  return pedido ? (
-                    <a
-                      href={pedido.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-4 inline-flex h-12 w-full items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-5 text-corpo font-semibold text-txt transition duration-[var(--dur-1)] hover:bg-surface-3 active:scale-[.97]"
-                    >
-                      Quero o {NOME_DO_PLANO[tier]}
-                      <ArrowRight aria-hidden className="size-4" />
-                    </a>
-                  ) : null
-                })()}
+                {cobrancaAutomatica ? (
+                  <AssinarPlano tier={tier} />
+                ) : (
+                  (() => {
+                    const pedido = canalDeContato(
+                      `Oi! Uso o CICLO no ${NOME_DO_PLANO[atual]} e quero passar para o ${NOME_DO_PLANO[tier]}.`,
+                    )
+                    return pedido ? (
+                      <a
+                        href={pedido.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-4 inline-flex h-12 w-full items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-5 text-corpo font-semibold text-txt transition duration-[var(--dur-1)] hover:bg-surface-3 active:scale-[.97]"
+                      >
+                        Quero o {NOME_DO_PLANO[tier]}
+                        <ArrowRight aria-hidden className="size-4" />
+                      </a>
+                    ) : null
+                  })()
+                )}
               </Card>
             ))}
           </div>

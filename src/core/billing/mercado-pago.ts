@@ -52,6 +52,15 @@ export type AssinaturaDoTenant = {
   status: StatusMP
   /** ISO. Quando a assinatura foi vista pela última vez pelo webhook — para não regredir com evento atrasado. */
   atualizado_em: string
+  /**
+   * ISO ou `null`. Só existe enquanto `status === 'paused'`: a data-limite que
+   * `expirarGracaVencida` (cron) usa para derrubar sozinho quem passou da graça sem voltar a pagar.
+   * Recalculada a CADA webhook de `paused` (não só na primeira vez) — a Meta/MP reenvia notificação
+   * a cada retentativa de cobrança, e dar 7 dias a partir do sinal mais recente é mais generoso e
+   * mais simples que rastrear "quando começou" à parte. Nunca surpreende: a tela de "Meu plano"
+   * mostra esta data antes de o degrau cair.
+   */
+  graca_ate?: string | null
 }
 
 export type DecisaoDePlano = {
@@ -111,6 +120,7 @@ export function lerAssinatura(settings: unknown): AssinaturaDoTenant | null {
     plano_contratado: o.plano_contratado as PlanoTier,
     status: o.status,
     atualizado_em: o.atualizado_em,
+    graca_ate: typeof o.graca_ate === 'string' ? o.graca_ate : null,
   }
 }
 

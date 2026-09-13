@@ -47,3 +47,7 @@ voltar, ele retoma sozinho, e rodar as duas coisas no mesmo dia não causa dano.
 `reminders` e `campaigns` continuam fora de qualquer agendador — elas mandam mensagem para cliente
 final e ligá-las é decisão do dono + credencial de WhatsApp (`docs/25` F0). `src/core/cron/agendadas.ts`
 é a fonte da verdade de "o que roda sozinho".
+
+`expirar-graca` (`GET /api/cron/expirar-graca`, reconciliado em `docs/63`) segue a mesma regra:
+só entra em `ROTAS_AGENDADAS` quando existir credencial real do Mercado Pago — até lá, sem
+assinatura nenhuma para expirar, um heartbeat que nunca bate deixaria `/api/health` vermelho à toa.
