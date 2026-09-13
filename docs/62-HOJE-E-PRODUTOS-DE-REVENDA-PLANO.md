@@ -279,9 +279,17 @@ juntando as duas listas por esforço crescente:
 - `51861b2` Fase E (E1-E4): corte de 3 cards + "ver mais", ícone por categoria, cor de vitória no
   herói "Motor trouxe", alerta de estoque bloqueante sobe de posição.
 
-Próxima rodada: Fase 1 (cadastro de produto) — o alicerce da frente de revenda/upsell, ainda não
-tocada. Maior escopo que A/A2/E (rota nova + form novo + mudança na query de `estoque/page.tsx`),
-não coube na mesma rodada sem virar pressa.
+**Rodada 2:** Fase 1 (cadastro de produto) — **feita, testada e verificada no navegador**,
+`a958d2c`. `POST`/`PATCH /api/v1/products`, form de criar/editar em `estoque/lista.tsx` com o
+toggle revenda/insumo, selo "Revenda" na lista. Achado à parte (não desta fase): todo `Sheet` do
+app ignora tema claro explícito (Portal do Radix fora do wrapper com `data-theme`) — virou tarefa
+separada (chip `task_1f4e6fb7`), registrado em DECISOES.md 2026-09-13. Não bloqueia as próximas
+fases, só significa que Sheets novos vão continuar aparecendo escuros no teste de tema claro até
+aquela tarefa rodar — não é regressão de fase nenhuma.
+
+Próxima rodada: Fase 2 (estoque separa revenda de insumo, com margem) é o complemento natural do
+que a Fase 1 já deixou pronto (o campo `isRetail` já existe e já aparece na lista) — ou Fase B
+(comparação com a média), que não depende de nada das fases de produto.
 
 ## Execução autônoma (docs/61 §0/0a)
 
