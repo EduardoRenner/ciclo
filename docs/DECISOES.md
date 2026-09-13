@@ -7164,3 +7164,28 @@ input, então mesmo que o navegador limpe a seleção do arquivo, nada na tela d
 **Não repetir esta investigação** sem uma reprodução nova e diferente (versão do Next mudou, campo
 não-controlado novo entrou no formulário, etc.) — ficou provado que não é um caso geral de "todo
 `<form action=>` tem esse defeito", é específico do formulário onde foi medido.
+
+---
+
+## 2026-09-13 · Paleta de cor de `profissionais/formulario.tsx` — sem sobreposição de `toque-48`
+
+Continuação do loop de `docs/61`, seção 6 (varredura de `toque-48`). A paleta de seis bolas de
+cor (36px visuais, `gap-2` = 8px) parecia o mesmo tipo de caso do achado antigo de dois links
+inline se cobrindo — pareceu ainda mais provável por ter MÚLTIPLOS alvos pequenos lado a lado.
+
+Cheguei a aplicar `gap-3` achando que fechava uma sobreposição de 4px entre os `::after` de 48px
+dos vizinhos, calculada de cabeça. **Antes de commitar, sondei com `elementFromPoint` (a receita
+que o próprio `CLAUDE.md` manda seguir) e a sobreposição não existe** — revertido
+(`git checkout --`).
+
+**Por quê:** a definição de `toque-48` (`globals.css:580`) documenta, no próprio comentário, que a
+faixa estendida é **só vertical** (`left: 0; right: 0` do próprio elemento — sem estourar a
+largura dele) e que alargar horizontalmente "seria o conserto errado" exatamente por causa do
+achado antigo. Ou seja, a classe nunca fez o que eu presumi que fazia; o caso antigo (dois links
+inline) se resolveu no PRÓPRIO link (`px-2 -mx-2`), não na faixa de `toque-48`. Numa grade de
+botões redondos com `gap` explícito, não há de onde vir sobreposição horizontal — cada alvo é
+maior só na altura.
+
+**Lição para a próxima varredura de `toque-48`:** ler a definição da classe antes de calcular
+geometria de cabeça. A sondagem por `elementFromPoint` continua sendo a forma certa de confirmar,
+mas só depois de saber o que a classe realmente faz.
