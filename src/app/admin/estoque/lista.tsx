@@ -11,6 +11,7 @@ import Card from '@/components/ui/card'
 import EmptyState from '@/components/ui/empty-state'
 import Input from '@/components/ui/input'
 import MoneyInput from '@/components/ui/money-input'
+import SectionHeader from '@/components/ui/section-header'
 import Sheet from '@/components/ui/sheet'
 import { useToast } from '@/components/ui/toast'
 import { dinheiro } from '@/lib/formato'
@@ -60,8 +61,17 @@ export default function ListaEstoque({
   // docs/62 Fase 1: `'novo'` abre o formulário vazio; um produto abre pra edição.
   const [editando, setEditando] = useState<ProdutoEstoque | 'novo' | null>(null)
 
-  // Alerta em cima: quem abre esta tela veio resolver o aviso de "Hoje".
-  const ordenados = [...lista].sort((a, b) => Number(b.emAlerta) - Number(a.emAlerta) || a.nome.localeCompare(b.nome, 'pt-BR'))
+  /*
+   * docs/62 Fase 2: `products` sempre guardou duas naturezas na mesma tabela (`is_retail`) —
+   * revenda, com preço e margem que interessam pra decisão de vender mais; insumo, que só
+   * interessa pelo consumo/custo do serviço. Numa lista só, misturado, nenhuma das duas
+   * perguntas ("o que vale a pena empurrar" / "o que tá acabando") ficava fácil de responder.
+   * Alerta em cima de cada seção: quem abre esta tela veio resolver o aviso de "Hoje".
+   */
+  const porAlertaENome = (a: ProdutoEstoque, b: ProdutoEstoque) => Number(b.emAlerta) - Number(a.emAlerta) || a.nome.localeCompare(b.nome, 'pt-BR')
+  const revenda = lista.filter((p) => p.isRetail).sort(porAlertaENome)
+  const insumo = lista.filter((p) => !p.isRetail).sort(porAlertaENome)
+  const ordenados = [...lista].sort(porAlertaENome)
 
   function aoSalvarProduto(produto: ProdutoEstoque, ehNovo: boolean) {
     setLista((atual) => (ehNovo ? [...atual, produto] : atual.map((p) => (p.id === produto.id ? produto : p))))
@@ -105,59 +115,29 @@ export default function ListaEstoque({
     )
   }
 
+  const linha = (p: ProdutoEstoque) => (
+    <LinhaProduto key={p.id} produto={p} podeLancar={podeLancar} aoEditar={() => setEditando(p)} aoLancarEntrada={() => setEntrando(p)} />
+  )
+
   return (
     <>
       <div className="mb-2 flex justify-end">{botaoNovoProduto}</div>
-      <div className="flex flex-col gap-2">
-        {ordenados.map((p) => {
-          const dias = p.venceEm ? diasAte(p.venceEm) : null
-          return (
-            <Card key={p.id} className="flex items-center justify-between gap-3">
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="min-w-0 truncate text-corpo font-semibold">{p.nome}</p>
-                  {dias !== null && dias <= 0 ? (
-                    <Badge estado="bad">Vencido</Badge>
-                  ) : dias !== null && dias <= 30 ? (
-                    <Badge estado="warn">Vence em {dias}d</Badge>
-                  ) : p.emAlerta ? (
-                    <Badge estado="warn">Repor</Badge>
-                  ) : null}
-                  {/* docs/62 Fase 1: sinal visual de qual das duas naturezas é este produto — a
-                      separação em duas seções com margem fica pra Fase 2, isto já distingue. */}
-                  {p.isRetail ? <Badge estado="ok">Revenda</Badge> : null}
-                </div>
-                <p className="tabular mt-0.5 text-secundario text-txt-2">
-                  {quantidade(p.estoque)} {p.unidade}
-                  {p.pontoDePedido > 0 ? ` · repor com ${quantidade(p.pontoDePedido)}` : ''}
-                  {p.custoMedioCents > 0 ? ` · ${dinheiro.format(p.custoMedioCents / 100)} custo` : ''}
-                  {p.isRetail && p.precoCents != null ? ` · vende por ${dinheiro.format(p.precoCents / 100)}` : ''}
-                </p>
-              </div>
-              <div className="flex shrink-0 items-center gap-2">
-                <Button tamanho="sm" variante="secondary" aria-label={`Editar ${p.nome}`} onClick={() => setEditando(p)}>
-                  <Pencil aria-hidden className="size-4" />
-                </Button>
-                {/*
-                  Sem o módulo, o botão trava AQUI e diz por quê — em vez de abrir o formulário,
-                  deixar a pessoa preencher quantidade e custo, e só então a rota recusar
-                  (`exigirModulo(..., 'stock')` em `inventory/entries`). Trabalho jogado fora é a
-                  pior forma de descobrir que o recurso é pago.
-                */}
-                <Button
-                  tamanho="sm"
-                  variante="secondary"
-                  disabled={!podeLancar}
-                  motivoDesabilitado={podeLancar ? undefined : 'Registrar compra é do plano Avançado'}
-                  onClick={() => setEntrando(p)}
-                >
-                  Entrada
-                </Button>
-              </div>
-            </Card>
-          )
-        })}
-      </div>
+
+      {revenda.length > 0 ? (
+        <div className="mb-4">
+          <SectionHeader>Para revenda</SectionHeader>
+          <div className="flex flex-col gap-2">{revenda.map(linha)}</div>
+        </div>
+      ) : null}
+
+      {insumo.length > 0 ? (
+        <div className="mb-4">
+          {/* Só rotula "Uso interno" quando as duas seções coexistem — com um produto só cadastrado
+              (típico do dia 1, ainda no pacote do nicho), o rótulo extra não ensina nada. */}
+          {revenda.length > 0 ? <SectionHeader>Uso interno</SectionHeader> : null}
+          <div className="flex flex-col gap-2">{insumo.map(linha)}</div>
+        </div>
+      ) : null}
 
       {editando ? (
         <FormularioProduto
@@ -196,6 +176,87 @@ export default function ListaEstoque({
         />
       ) : null}
     </>
+  )
+}
+
+/**
+ * docs/62 Fase 2: a linha ganhou uma pergunta a mais pra revenda ("essa margem compensa?"), que
+ * insumo não tem por não ter preço de venda. Extraída da função de cima porque agora renderiza em
+ * dois lugares (seção de revenda, seção de insumo) — duplicar o JSX ali seria divergir as duas
+ * cópias na primeira mudança futura (a mesma lição de `docs/DECISOES.md` sobre fórmula duplicada).
+ */
+function LinhaProduto({
+  produto: p,
+  podeLancar,
+  aoEditar,
+  aoLancarEntrada,
+}: {
+  produto: ProdutoEstoque
+  podeLancar: boolean
+  aoEditar: () => void
+  aoLancarEntrada: () => void
+}) {
+  const dias = p.venceEm ? diasAte(p.venceEm) : null
+  // `null` sem preço (não deveria acontecer pra `isRetail`, mas a UI não assume — a rota já barra
+  // isso na borda, esta tela só não quebra se algum dado antigo escapar da regra).
+  const margemCents = p.isRetail && p.precoCents != null ? p.precoCents - p.custoMedioCents : null
+  const margemPct = margemCents !== null && p.precoCents ? Math.round((margemCents / p.precoCents) * 100) : null
+
+  return (
+    <Card className="flex items-center justify-between gap-3">
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="min-w-0 truncate text-corpo font-semibold">{p.nome}</p>
+          {dias !== null && dias <= 0 ? (
+            <Badge estado="bad">Vencido</Badge>
+          ) : dias !== null && dias <= 30 ? (
+            <Badge estado="warn">Vence em {dias}d</Badge>
+          ) : p.emAlerta ? (
+            <Badge estado="warn">Repor</Badge>
+          ) : null}
+        </div>
+        <p className="tabular mt-0.5 text-secundario text-txt-2">
+          {quantidade(p.estoque)} {p.unidade}
+          {p.pontoDePedido > 0 ? ` · repor com ${quantidade(p.pontoDePedido)}` : ''}
+          {p.custoMedioCents > 0 ? ` · ${dinheiro.format(p.custoMedioCents / 100)} custo` : ''}
+          {p.isRetail && p.precoCents != null ? ` · vende por ${dinheiro.format(p.precoCents / 100)}` : ''}
+        </p>
+        {/*
+          Margem visível é o dado que justifica revenda e que hoje não aparecia em lugar nenhum:
+          custo e preço já ficavam lado a lado na mesma linha, e ninguém tinha feito a subtração.
+          Vermelho quando vende abaixo do custo (bug de precificação de verdade, não estilo) ou
+          quando a margem é baixa demais pra valer o espaço na prateleira — o piso de 20% é uma
+          régua inicial, não uma constante importada de lugar nenhum.
+        */}
+        {margemCents !== null ? (
+          <p className={`tabular mt-0.5 text-secundario ${margemCents <= 0 ? 'text-bad' : margemPct !== null && margemPct < 20 ? 'text-warn' : 'text-ok'}`}>
+            {margemCents <= 0
+              ? `Vendendo abaixo do custo (${dinheiro.format(margemCents / 100)})`
+              : `Margem: ${dinheiro.format(margemCents / 100)}${margemPct !== null ? ` (${margemPct}%)` : ''}`}
+          </p>
+        ) : null}
+      </div>
+      <div className="flex shrink-0 items-center gap-2">
+        <Button tamanho="sm" variante="secondary" aria-label={`Editar ${p.nome}`} onClick={aoEditar}>
+          <Pencil aria-hidden className="size-4" />
+        </Button>
+        {/*
+          Sem o módulo, o botão trava AQUI e diz por quê — em vez de abrir o formulário,
+          deixar a pessoa preencher quantidade e custo, e só então a rota recusar
+          (`exigirModulo(..., 'stock')` em `inventory/entries`). Trabalho jogado fora é a
+          pior forma de descobrir que o recurso é pago.
+        */}
+        <Button
+          tamanho="sm"
+          variante="secondary"
+          disabled={!podeLancar}
+          motivoDesabilitado={podeLancar ? undefined : 'Registrar compra é do plano Avançado'}
+          onClick={aoLancarEntrada}
+        >
+          Entrada
+        </Button>
+      </div>
+    </Card>
   )
 }
 
