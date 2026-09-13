@@ -287,9 +287,15 @@ separada (chip `task_1f4e6fb7`), registrado em DECISOES.md 2026-09-13. Não bloq
 fases, só significa que Sheets novos vão continuar aparecendo escuros no teste de tema claro até
 aquela tarefa rodar — não é regressão de fase nenhuma.
 
-Próxima rodada: Fase 2 (estoque separa revenda de insumo, com margem) é o complemento natural do
-que a Fase 1 já deixou pronto (o campo `isRetail` já existe e já aparece na lista) — ou Fase B
-(comparação com a média), que não depende de nada das fases de produto.
+**Rodada 3:** Fase 2 (estoque separa revenda de insumo, com margem) — **feita, testada e
+verificada no navegador**, `64cd99a`. Duas seções ("Para revenda"/"Uso interno"), margem em R$ e
+% com cor por faixa (vermelho abaixo do custo, amarelo <20%, verde acima). Testado ao vivo os dois
+casos de cor, não só o caminho feliz.
+
+Próxima rodada: Fase 3 (comanda ganha "Adicionar produto") é o gap mais visível do achado
+original — zero trabalho de backend novo (`adicionarItemComanda` já aceita `productId`,
+`listarProdutosAtivos` já existe), só UI. Ou Fase B (comparação com a média), que não depende de
+nada das fases de produto.
 
 ## Execução autônoma (docs/61 §0/0a)
 
