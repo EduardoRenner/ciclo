@@ -61,6 +61,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const corDeFundo = dataTheme === 'light' ? '#faf8f5' : dataTheme === 'dark' ? '#0d0c0c' : null
 
   return (
+    /*
+     * `ToastProvider` entra AQUI DENTRO, não por fora (era o contrário até 2026-09-13) — o toast
+     * não usa `Toast.Portal` do Radix, então `Viewport`/`Root` nascem exatamente onde
+     * `ToastProvider` fica na árvore. Com `ToastProvider` por fora de `#raiz-do-tema`, todo toast
+     * era irmão do wrapper de tema, não descendente — e caía no fallback escuro de `:root` mesmo
+     * com "Claro" escolhido de verdade. Mesma causa-raiz do `Sheet` (Radix `Portal` fora do
+     * wrapper), medida no mesmo dia; ver `docs/DECISOES.md` 2026-09-13.
+     */
+    <div data-theme={dataTheme} id="raiz-do-tema" className="lg:pl-[var(--sidebar-w)]">
     <ToastProvider>
       {corDeFundo ? (
         <style dangerouslySetInnerHTML={{ __html: `html,body{background:${corDeFundo}}` }} />
@@ -84,8 +93,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         dentro mantém o `mx-auto`. Feito com `ml` numa camada só, a margem explícita anulava o
         `auto` do outro lado e o conteúdo grudava na coluna, com 649px vazios à direita.
       */}
-      {/* O tema vive aqui, não no <html>: preferência do profissional, escopo /admin. */}
-      <div data-theme={dataTheme} id="raiz-do-tema" className="lg:pl-[var(--sidebar-w)]">
       <div className="mx-auto min-h-dvh max-w-[560px] sm:border-x sm:border-line">
         <Topbar />
         {/*
@@ -108,8 +115,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           primeira pergunta, porque isso sim depende de banco e de tenant.
         */}
         <AssistenteFlutuante disponivel={Boolean(process.env.GEMINI_API_KEY)} />
-      </div>
     </VocabularioProvider>
     </ToastProvider>
+    </div>
   )
 }
