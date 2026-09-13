@@ -205,6 +205,42 @@ vertical; não dá pra ver "manhã cheia, tarde livre" sem rolar tudo.
 - Sem teste automatizado de layout (é visual) — verificação por screenshot no Browser pane, dos
   dois temas e dos dois cenários (dia cheio, dia vazio), documentada no PR.
 
+### Fase A2 · Dia sem cliente nenhum sugere compartilhar o link
+
+Complemento pequeno da Fase A, mesma ordem de grandeza de esforço. Hoje, com a agenda vazia, o
+`EmptyState` de "Nada mais para hoje" só oferece "Novo agendamento" — bom pra quem já tem cliente
+pra marcar, inútil pra quem não tem nenhum ainda. `CompartilharSite` já existe (usado no cabeçalho
+da própria tela, `hoje/compartilhar.tsx`) — o `EmptyState` ganha uma segunda ação reusando o mesmo
+componente, só nesse cenário mais vazio (zero atendimento hoje E zero clientes marcados, não só
+"não tem mais nada depois desta hora").
+
+### Fase E · Ajustes de interface na própria tela Hoje
+
+Quatro ajustes pontuais, cada um pequeno o bastante pra não precisar de fase própria — agrupados
+porque tocam nos mesmos arquivos (`hoje.tsx`, `central-de-acoes.tsx`).
+
+- **E1 — Limitar "Vale a pena hoje" a 2-3 cards, com "ver mais".** Hoje `CentralDeAcoes` sempre
+  mostra a lista inteira; em dia vazio, isso empurra qualquer coisa acionável pra debaixo de 4
+  cards de sugestão. `centralDeAcoes` (crm.ts) já ordena por prioridade implícita (recuperar →
+  aniversariantes → pontos → orçamentos → completude) — o componente corta em 3 e, se sobrar,
+  mostra um link/botão "ver mais N" que expande em vez de navegar (não precisa de tela nova).
+- **E2 — Ícone por categoria nos cards de ação.** Hoje só a borda (`TOM`) diferencia
+  warn/info/ok, e é sutil demais no tema claro (medido: quase invisível). Cada `chave` de
+  `AcaoSugerida` já identifica o tipo (`recuperar`, `aniversariantes`, `pontos`, `orcamentos`,
+  completude) — mapear pra um ícone lucide por chave (ex.: `UserX` pra recuperar, `Gift` pra
+  aniversariante, `Star` pra pontos, `FileText` pra orçamento) do lado do rótulo, não só a cor.
+- **E3 — Cor de vitória no herói quando o Motor trouxe dinheiro.** `heroi === 'motor_trouxe'` usa
+  hoje o mesmo `StatTile` neutro dos outros estados. Ganha um tom de destaque (verde/`--ok`
+  suave, não confete nem badge) só nesse caso — é celebrar um fato real (dinheiro que voltou por
+  causa do produto), não gamificação, e está alinhado com `docs/61 §5.7` (nunca comemorar dado que
+  não é verdadeiro).
+- **E4 — Estoque com alerta bloqueante sobe de posição.** Hoje a seção de estoque vem sempre depois
+  de "Precisa confirmar" e antes de "Resto do dia", não importa a gravidade. Quando existe alerta
+  `validade === 'bloqueado'` (produto vencido, uso impedido — já é o estado mais grave que
+  `resumo.stockAlerts` conhece), a seção de estoque sobe para logo depois do herói; alertas de
+  "perto de vencer"/"recomprar" continuam na posição atual. Critério objetivo (existe bloqueio ou
+  não), não um número de prioridade inventado.
+
 ### Fase D · Visão por profissional (quem trabalha hoje)
 
 **Só para quem tem equipe — não é P0.** Fica de propósito por último e sem detalhamento de
@@ -221,11 +257,22 @@ Dentro de cada frente, a ordem já reflete valor/esforço. Entre as duas frentes
 dependência técnica entre "Hoje" e "produtos de revenda", podem intercalar à vontade. Sugestão,
 juntando as duas listas por esforço crescente:
 
-1. Fase A (WhatsApp no card) — menor esforço de tudo, ganho imediato.
-2. Fase 1 (cadastro de produto) — alicerce da frente de revenda.
-3. Fase B (comparação com a média).
-4. Fase 2 (estoque separa revenda/insumo).
-5. Fase 3 (comanda ganha "Adicionar produto").
-6. Fase C (timeline do dia) — maior, e o CLAUDE.md pede medir em 375px antes de fechar o desenho.
-7. Fase 4 (ganchos de upsell) e Fase D (visão por profissional) — as duas ficam para depois de
+1. Fase A (WhatsApp no card) + Fase A2 (compartilhar link no vazio total) — menor esforço, mesmos
+   arquivos, ganho imediato.
+2. Fase E (E1-E4, ajustes de interface na Hoje) — pontuais, mesmos arquivos de A/A2, sem
+   dependência de nada novo.
+3. Fase 1 (cadastro de produto) — alicerce da frente de revenda.
+4. Fase B (comparação com a média).
+5. Fase 2 (estoque separa revenda/insumo).
+6. Fase 3 (comanda ganha "Adicionar produto").
+7. Fase C (timeline do dia) — maior, e o CLAUDE.md pede medir em 375px antes de fechar o desenho.
+8. Fase 4 (ganchos de upsell) e Fase D (visão por profissional) — as duas ficam para depois de
    validar as anteriores com uso real; nenhuma das duas é bloqueio pra nada.
+
+## Execução autônoma (docs/61 §0/0a)
+
+Mesmo regime já estabelecido: sessão roda sozinha, decide sozinha o que uma pergunta resolveria,
+registra em `docs/DECISOES.md`, um ticket por commit, `pnpm verify`/testes relevantes antes de
+cada commit, medir no navegador (Browser pane, 375px, claro e escuro) antes de considerar pronto
+qualquer mudança visual, nunca commitar hipótese que a medição desmentiu. Push direto pra `main`
+depois de cada commit verde, como o resto deste loop.
