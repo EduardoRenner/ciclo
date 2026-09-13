@@ -306,9 +306,24 @@ deliberadamente fora de escopo, aguardando uso real.
 ocorrências, sem cor de julgamento. Testado com dado real inserido/removido: "50% acima do costume
 nesse dia da semana" apareceu certo nos dois temas.
 
-Próxima rodada: Fase C (timeline visual do dia) — a maior peça que resta, pede medir em 375px
-antes de fechar o desenho (dia cheio E dia vazio). Depois disso só sobram as duas fases
-deliberadamente fora de escopo (4 e D).
+**Rodada 6:** Fase C ("Forma do dia", faixa visual proporcional) — **feita, testada e verificada
+no navegador**, `2dfaa1e`. Testados os dois cenários que o plano exigia medir antes de fechar o
+desenho: dia com 3 agendamentos (faixa com blocos coloridos e vãos) e dia vazio (seção
+simplesmente não aparece, sem tentar desenhar "livre").
+
+## Plano concluído
+
+Todas as fases com escopo definido (A, A2, E1-E4, 1, 2, 3, B, C) estão no ar, testadas e
+verificadas no navegador nos dois temas. As únicas que restam são as duas que o próprio plano
+deixou deliberadamente de fora:
+
+- **Fase 4** (ganchos de upsell — card de revenda parada, sugestão pós-atendimento): aguardando
+  uso real das Fases 1-3 pra ter dado que valide a régua, não hipótese.
+- **Fase D** (visão por profissional): sem detalhamento de propósito — depende de decisão de
+  produto (nova seção em `/admin/hoje` ou tela própria) que vale conferir antes de desenhar.
+
+Nenhuma das duas é bloqueio pra nada. Este documento continua sendo a referência de execução;
+retomar quando houver dado real de uso das fases de produto, ou pedido novo do Eduardo.
 
 ## Execução autônoma (docs/61 §0/0a)
 
