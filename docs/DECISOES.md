@@ -7211,3 +7211,18 @@ tarefa separada (chip `task_1f4e6fb7`), pra rodar com orçamento próprio.
 vai continuar aparecendo escuro no Browser pane mesmo testando "tema claro" — isso é esperado até
 a tarefa acima ser resolvida, não é regressão da fase em execução. Não vale reabrir a investigação
 a cada Sheet novo.
+
+---
+
+## 2026-09-13 (tarde) · Sheet ignorava tema claro — resolvido
+
+Fecha o achado registrado mais cedo hoje (seção "Fase 1 de produtos de revenda — achado: Sheets
+ignoram tema claro"). `Dialog.Portal` ganhou `container={raiz-do-tema}` (`sheet.tsx`), testado no
+navegador com cookie `ciclo-tema=claro` real em dois Sheets diferentes (formulário de produto, o
+menu de 3 linhas) — os dois corretos, tema escuro sem regressão, 375px sem quebra.
+
+Também fechado nesta rodada: a parte VERIFICÁVEL do item 8 (FAQ de `/precos` prometendo cancelar
+"sem falar com ninguém") — `meu-plano/page.tsx` já documentava, com estas palavras, que assinar e
+cancelar hoje custam a mesma coisa (uma conversa), porque não há cobrança automática. O FAQ saiu
+alinhado com esse fato. A cláusula do CDC (7 dias, valor integral) continua intocada — é política
+de negócio, não fato verificável em código, e segue esperando confirmação do Eduardo.
