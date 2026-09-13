@@ -269,6 +269,20 @@ juntando as duas listas por esforço crescente:
 8. Fase 4 (ganchos de upsell) e Fase D (visão por profissional) — as duas ficam para depois de
    validar as anteriores com uso real; nenhuma das duas é bloqueio pra nada.
 
+## Execução (atualizado a cada rodada do loop)
+
+**Rodada 1 (2026-09-13):** Fases A, A2 e E — **feitas, testadas e verificadas no navegador**.
+- `8e5f4f2` Fase A: WhatsApp direto no card "A seguir" (`phone_e164` novo em `resumo-hoje.ts`,
+  redigido no `ferramentas.ts` do assistente).
+- `bb07f06` Fase A2: dia com zero agendamento (nem concluído, nem cancelado) sugere compartilhar
+  o link, ao lado de "Novo agendamento" (`totalAgendamentosHoje` novo em `ResumoHoje`).
+- `51861b2` Fase E (E1-E4): corte de 3 cards + "ver mais", ícone por categoria, cor de vitória no
+  herói "Motor trouxe", alerta de estoque bloqueante sobe de posição.
+
+Próxima rodada: Fase 1 (cadastro de produto) — o alicerce da frente de revenda/upsell, ainda não
+tocada. Maior escopo que A/A2/E (rota nova + form novo + mudança na query de `estoque/page.tsx`),
+não coube na mesma rodada sem virar pressa.
+
 ## Execução autônoma (docs/61 §0/0a)
 
 Mesmo regime já estabelecido: sessão roda sozinha, decide sozinha o que uma pergunta resolveria,
