@@ -7294,4 +7294,25 @@ verdade (não CI simulada). Commit `3d23b5c`.
 **Consequência que muda a regra 5.10 do `docs/18`:** "cancelar deve custar os mesmos cliques que
 assinar" era satisfeita porque os DOIS eram uma conversa. Agora que assinar é 1 clique, a regra
 exige que cancelar também vire self-service — senão a Fase K quebra pelo lado contrário do que ela
-foi escrita para evitar. Próximo item.
+foi escrita para evitar. Resolvido no commit seguinte (`c0d5ea2`): "Cancelar assinatura", um clique,
+sem modal.
+
+---
+
+## 2026-09-13 (noite) · "Criar conta com menos cliques" — o que já existe e o que ainda trava
+
+Segundo pedido do Eduardo na mesma rodada: conciliar o que ficou de decisão nossa sobre reduzir
+cliques em criar conta. Investigado o fluxo inteiro (`/cadastro` → confirmação de e-mail →
+`/onboarding` → `/admin/hoje`): os formulários já estão enxutos (cadastro tem 4 campos e 1 clique;
+onboarding tem 3, com autopreenchimento de endereço da página e busca com atalho pra quem não está
+nas 17 profissões catalogadas). Nenhum campo sobrando para cortar sem redesenhar a experiência.
+
+**O que reduziria cliques de verdade já está construído e parado, achado em `docs/DECISOES.md`
+2026-09-01:** login social (Google e Apple) via Supabase Auth — o código inteiro funciona
+(`signInWithOAuth`, `/auth/callback` reaproveitado, tratamento de cancelamento e erro), só falta
+**habilitar os provedores no painel do Supabase** (Authentication → Providers) com credencial do
+Google Cloud Console e do Apple Developer Program — ação de conta do Eduardo, não código. Confirmado
+hoje que segue bloqueado: nenhuma credencial `GOOGLE_*`/`APPLE_*` em `.env.example`, nenhuma entrada
+posterior de `docs/DECISOES.md` revertendo o bloqueio. Um clique de OAuth substitui os 4 campos +
+espera de e-mail do cadastro tradicional — é o item de maior alavancagem para "menos cliques para
+criar conta", e não depende de nenhuma linha de código nova.
