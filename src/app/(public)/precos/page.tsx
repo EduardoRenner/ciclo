@@ -96,7 +96,7 @@ const PERGUNTAS = [
   {
     pergunta: 'Posso cancelar quando quiser?',
     resposta:
-      'Pode, com o mesmo número de toques que levou para assinar, e sem precisar falar com ninguém para isso. Nos primeiros 7 dias o valor volta integral, como manda o Código de Defesa do Consumidor.',
+      'Pode, e cancelar custa os mesmos toques que assinar: os dois são uma conversa, porque a cobrança automática ainda não está no ar. Nos primeiros 7 dias o valor volta integral, como manda o Código de Defesa do Consumidor.',
   },
   {
     pergunta: 'Vocês aumentam o preço depois?',
