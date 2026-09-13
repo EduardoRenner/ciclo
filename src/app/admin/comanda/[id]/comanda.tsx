@@ -19,6 +19,8 @@ const dinheiro = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: '
 type Ticket = Database['public']['Tables']['tickets']['Row']
 type TicketItem = Database['public']['Tables']['ticket_items']['Row']
 type Servico = { id: string; name: string; price_cents: number }
+/** docs/62 Fase 3: catálogo de revenda — `listarProdutosAtivos` já filtra `is_retail`. */
+type Produto = { id: string; name: string; price_cents: number; stock_qty: number }
 
 async function chamar<T>(url: string, opcoes: RequestInit = {}): Promise<T> {
   const r = await fetch(url, {
@@ -34,6 +36,7 @@ export default function Comanda({
   ticketInicial,
   itensIniciais,
   servicos,
+  produtos,
   podeLancarItem = true,
   sobra,
   destinoDoMaterial,
@@ -41,6 +44,8 @@ export default function Comanda({
   ticketInicial: Ticket
   itensIniciais: TicketItem[]
   servicos: Servico[]
+  /** docs/62 Fase 3: catálogo de revenda pra vender direto na comanda. */
+  produtos: Produto[]
   /** `register` liberado neste degrau. Ver o comentário em `page.tsx`. */
   podeLancarItem?: boolean
   /** `null` quando a comanda está aberta ou quando o papel não alcança `report:read`. */
@@ -53,7 +58,10 @@ export default function Comanda({
 }) {
   const [ticket, setTicket] = useState(ticketInicial)
   const [itens, setItens] = useState(itensIniciais)
+  // docs/62 Fase 3: nasce em "servico" — é o caminho de sempre, produto é o adicional.
+  const [tipoItem, setTipoItem] = useState<'servico' | 'produto'>('servico')
   const [servicoId, setServicoId] = useState(servicos[0]?.id ?? '')
+  const [produtoId, setProdutoId] = useState(produtos[0]?.id ?? '')
   const [qty, setQty] = useState('1')
   const [desconto, setDesconto] = useState(String(ticket.discount_cents / 100))
   const [gorjeta, setGorjeta] = useState(String(ticket.tip_cents / 100))
@@ -82,7 +90,15 @@ export default function Comanda({
       try {
         const item = await chamar<TicketItem>(`/api/v1/tickets/${ticket.id}/items`, {
           method: 'POST',
-          body: JSON.stringify({ serviceId: servicoId, professionalId: ticket.professional_id, qty: Number(qty) }),
+          body: JSON.stringify({
+            // Espelha a mesma regra efetiva da UI: com um catálogo só, o tipo escolhido não
+            // importa — segue o que existe.
+            ...((tipoItem === 'servico' || produtos.length === 0) && servicos.length > 0
+              ? { serviceId: servicoId }
+              : { productId: produtoId }),
+            professionalId: ticket.professional_id,
+            qty: Number(qty),
+          }),
         })
         setItens((atual) => [...atual, item])
         await recarregarTicket()
@@ -189,23 +205,76 @@ export default function Comanda({
         )}
       </Card>
 
-      {aberta && servicos.length > 0 ? (
+      {aberta && (servicos.length > 0 || produtos.length > 0) ? (
         <Card className="flex flex-col gap-3">
           <p className="text-corpo font-semibold">Adicionar item</p>
-          <label className="flex flex-col gap-1">
-            <span className="text-label font-semibold text-txt-2">Serviço</span>
-            <select
-              value={servicoId}
-              onChange={(e) => setServicoId(e.target.value)}
-              className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo text-txt"
-            >
-              {servicos.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name} · {dinheiro.format(s.price_cents / 100)}
-                </option>
-              ))}
-            </select>
-          </label>
+
+          {/*
+            docs/62 Fase 3: só mostra o alternador quando os dois catálogos existem — com um só,
+            a pergunta "serviço ou produto?" não teria resposta errada possível, e perguntar mesmo
+            assim seria atrito à toa (mesmo princípio do rótulo condicional da Fase 2).
+          */}
+          {servicos.length > 0 && produtos.length > 0 ? (
+            <div role="tablist" aria-label="Tipo de item" className="flex gap-2">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={tipoItem === 'servico'}
+                onClick={() => setTipoItem('servico')}
+                className={`toque-48 h-10 flex-1 rounded-[var(--radius-pill)] border text-label font-semibold transition ${
+                  tipoItem === 'servico' ? 'border-acc bg-acc-soft text-acc-2' : 'border-line-2 bg-surface-2 text-txt-2'
+                }`}
+              >
+                Serviço
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={tipoItem === 'produto'}
+                onClick={() => setTipoItem('produto')}
+                className={`toque-48 h-10 flex-1 rounded-[var(--radius-pill)] border text-label font-semibold transition ${
+                  tipoItem === 'produto' ? 'border-acc bg-acc-soft text-acc-2' : 'border-line-2 bg-surface-2 text-txt-2'
+                }`}
+              >
+                Produto
+              </button>
+            </div>
+          ) : null}
+
+          {(tipoItem === 'servico' || produtos.length === 0) && servicos.length > 0 ? (
+            <label className="flex flex-col gap-1">
+              <span className="text-label font-semibold text-txt-2">Serviço</span>
+              <select
+                value={servicoId}
+                onChange={(e) => setServicoId(e.target.value)}
+                className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo text-txt"
+              >
+                {servicos.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name} · {dinheiro.format(s.price_cents / 100)}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
+
+          {(tipoItem === 'produto' || servicos.length === 0) && produtos.length > 0 ? (
+            <label className="flex flex-col gap-1">
+              <span className="text-label font-semibold text-txt-2">Produto</span>
+              <select
+                value={produtoId}
+                onChange={(e) => setProdutoId(e.target.value)}
+                className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo text-txt"
+              >
+                {produtos.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} · {dinheiro.format(p.price_cents / 100)}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
+
           <label className="flex flex-col gap-1">
             <span className="text-label font-semibold text-txt-2">Quantidade</span>
             <input

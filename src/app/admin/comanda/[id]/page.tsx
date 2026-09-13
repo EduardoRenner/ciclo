@@ -8,6 +8,7 @@ import { avaliarPermissao } from '@/server/auth/rbac'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { buscarComanda } from '@/server/services/comanda'
+import { listarProdutosAtivos } from '@/server/services/estoque'
 import { contextoDePlano } from '@/server/services/planos'
 import { listarServicos } from '@/server/services/servicos'
 import { lerTaxasDoTenant } from '@/server/services/taxas-de-pagamento'
@@ -23,9 +24,13 @@ export default async function PaginaComanda({ params }: { params: Promise<{ id: 
   const ctx = await contextoAtual(new Request('https://interno/comanda', { headers: await headers() }))
   const db = await criarClienteDoUsuario()
 
-  const [{ ticket, items }, servicos, plano] = await Promise.all([
+  const [{ ticket, items }, servicos, produtos, plano] = await Promise.all([
     buscarComanda(db, ctx.tenantId, id),
     listarServicos(db, ctx.tenantId),
+    // docs/62 Fase 3: o motor (adicionarItemComanda) já sabia vender produto de revenda desde
+    // sempre — só faltava a comanda oferecer a opção. `listarProdutosAtivos` já filtra
+    // `is_retail`, então insumo de uso interno nunca aparece aqui pra vender por engano.
+    listarProdutosAtivos(db, ctx.tenantId),
     contextoDePlano(db, ctx.tenantId),
   ])
 
@@ -107,6 +112,9 @@ export default async function PaginaComanda({ params }: { params: Promise<{ id: 
         ticketInicial={ticket}
         itensIniciais={items}
         servicos={servicos}
+        // `is_retail` sem preço não deveria existir (a rota de cadastro exige o par), mas a
+        // comanda não assume — filtra em vez de deixar `undefined` virar "R$ NaN" na tela.
+        produtos={produtos.filter((p): p is typeof p & { price_cents: number } => p.price_cents != null)}
         podeLancarItem={podeLancarItem}
         sobra={sobra}
         destinoDoMaterial={destinoDaFicha}
