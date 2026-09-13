@@ -1,5 +1,28 @@
 # 61 · Experiência de uso — plano e prompt de execução autônoma
 
+## Execução (atualizado em cada rodada do loop)
+
+**Rodada 1 (2026-09-13, noite):**
+- Seção 3 (toggle de tema com ícone) — **feito e verificado no navegador**, commit `0374d07`.
+- Seções 1, 2 e 4 — **decididas sem mudar código**, medindo ao vivo (tema padrão automático fica;
+  logo é estilo de traço, não bug de rotação, registrado para aprovação; topo do painel já segue o
+  padrão recomendado). Motivo completo em `docs/DECISOES.md` (2026-09-13).
+- Seção 6 — testei `<form action=>` em `negocio/formulario.tsx` e `servicos/formulario.tsx`
+  (candidato óbvio ao mesmo defeito de `entrar/formulario.tsx`). **Medido ao vivo: não reproduz.**
+  Cheguei a aplicar o fix e descartei porque a premissa foi desmentida — registrado em DECISOES
+  para não reinvestigar sem motivo novo. Commit `bd2b193`.
+- Seção 7 — **conferi os 10 itens do backlog de `docs/59-BLOCO-4-AUDITORIA-55.md`/auditoria de
+  09-08 um por um antes de tentar consertar qualquer um, e 8 dos 10 JÁ ESTAVAM RESOLVIDOS** por
+  sessões intermediárias (itens 9, 15, 19, 20, 21, 22 confirmados corrigidos no código atual; item
+  4 parcialmente — o `DELETE` morto já saiu na `0084`, só falta a régua de papel, que segue
+  bloqueada por decisão do dono, como a própria `0084` registra). Não sobrou trabalho novo aqui
+  além do que já está listado como bloqueado. **Próximas rodadas não devem re-varrer a seção 7** —
+  só os itens explicitamente bloqueados (4, 8, 17) continuam abertos, e continuam exigindo decisão
+  do dono ou trabalho de schema maior que o esforço original estimava.
+- Próxima rodada: seção 5 (padrões de hábito/prazer de uso) e o resto da seção 6 (skeleton fora do
+  guard, `toque-48`, contraste) — ainda não tocadas.
+
+
 **Origem:** pedido direto do Eduardo em 2026-09-13, em linguagem solta ("faz um plano extenso...
 enquanto eu durmo"). Este documento traduz o pedido em um prompt de execução que uma sessão
 autônoma (`/loop`) roda sem supervisão, e registra o raciocínio por trás de cada item para que
