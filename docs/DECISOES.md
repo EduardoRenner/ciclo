@@ -7278,3 +7278,20 @@ Business** antes de ligar `reminders`/`campanhas` — só existe teto diário + 
 **Migration `0088` (product_events) confirmada como não aplicada em produção** pelo próprio
 `docs/60` (G-05a). Não dá para confirmar `0089`/`0090` sem acesso ao Supabase de produção — item do
 Eduardo via `conferir-schema-prod.mjs`.
+
+---
+
+## 2026-09-13 (noite) · Checkout do Mercado Pago reconciliado — o botão "Assinar" existe de verdade
+
+Fecha o item #1 do `docs/63`. `iniciarAssinatura`, `POST /api/v1/billing/assinar`, o botão
+"Assinar {plano}" em `/admin/config/meu-plano`, e o cron `GET /api/cron/expirar-graca` foram
+reescritos contra `assinatura-mp.ts` (o service que substituiu o `assinatura.ts` original quando
+o `#122` foi mesclado) — não um merge cego do branch órfão `feat/mp-cliente-api`. `AssinaturaDoTenant`
+ganhou o campo opcional `graca_ate`, que não existia na versão simplificada do webhook; o próprio
+webhook passa a gravá-lo/limpá-lo. 5 casos de integração novos rodados contra Supabase local de
+verdade (não CI simulada). Commit `3d23b5c`.
+
+**Consequência que muda a regra 5.10 do `docs/18`:** "cancelar deve custar os mesmos cliques que
+assinar" era satisfeita porque os DOIS eram uma conversa. Agora que assinar é 1 clique, a regra
+exige que cancelar também vire self-service — senão a Fase K quebra pelo lado contrário do que ela
+foi escrita para evitar. Próximo item.

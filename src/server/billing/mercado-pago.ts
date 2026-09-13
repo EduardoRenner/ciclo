@@ -103,6 +103,28 @@ export async function criarPreapproval(params: {
 }
 
 // ---------------------------------------------------------------------------------------------
+// Cancelar
+// ---------------------------------------------------------------------------------------------
+
+const RespostaCancelamento = z.object({ id: z.string(), status: z.string() })
+
+/**
+ * Encerra o preapproval no MP. `docs/18` Fase K, regra "Cancelar": autoatendimento, mesmo número
+ * de cliques que assinar — o dono clica uma vez e acabou, sem passar por conversa nenhuma. Quem
+ * grava `tenants.plan = 'gratis'` é `cancelarAssinatura` (`server/services/assinatura-mp.ts`)
+ * LOGO DEPOIS desta chamada, sem esperar o webhook: esperar faria o clique único parecer que não
+ * funcionou, e o webhook de `cancelled` que eventualmente chegar só confirma o que já está feito
+ * (idempotente por construção — `decidirPlano('cancelled', ...)` sempre devolve `gratis`).
+ */
+export async function cancelarPreapproval(preapprovalId: string): Promise<void> {
+  await chamar(
+    `/preapproval/${encodeURIComponent(preapprovalId)}`,
+    { method: 'PUT', body: JSON.stringify({ status: 'cancelled' }) },
+    RespostaCancelamento,
+  )
+}
+
+// ---------------------------------------------------------------------------------------------
 // Consultar
 // ---------------------------------------------------------------------------------------------
 

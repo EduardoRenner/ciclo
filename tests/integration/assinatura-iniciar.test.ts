@@ -5,7 +5,7 @@ import dotenv from 'dotenv'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { executarOnboarding } from '@/server/services/onboarding'
-import { expirarGracaVencida, iniciarAssinatura } from '@/server/services/assinatura-mp'
+import { cancelarAssinatura, expirarGracaVencida, iniciarAssinatura } from '@/server/services/assinatura-mp'
 
 import type { Database } from '@/server/db/types.gen'
 
@@ -17,11 +17,11 @@ if (!SUPABASE_URL || !SERVICE_KEY) {
   throw new Error('Este teste precisa de NEXT_PUBLIC_SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY no .env.local.')
 }
 
-// A ida à API do MP é mockada no nível do módulo — `criarPreapproval` é o único ponto de I/O que
-// `iniciarAssinatura` chama. `assinatura-mp.test.ts` (o webhook) injeta as funções por parâmetro
-// em vez de mockar o módulo; aqui não dá porque `iniciarAssinatura` não recebe injeção — arquivo
+// A ida à API do MP é mockada no nível do módulo — `criarPreapproval`/`cancelarPreapproval` são os
+// pontos de I/O que este arquivo chama. `assinatura-mp.test.ts` (o webhook) injeta as funções por
+// parâmetro em vez de mockar o módulo; aqui não dá porque nenhuma das duas recebe injeção — arquivo
 // separado evita os dois estilos de mock colidirem no mesmo módulo.
-const mpMock = vi.hoisted(() => ({ criarPreapproval: vi.fn() }))
+const mpMock = vi.hoisted(() => ({ criarPreapproval: vi.fn(), cancelarPreapproval: vi.fn() }))
 vi.mock('@/server/billing/mercado-pago', () => mpMock)
 
 const svc = createClient<Database>(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false, autoRefreshToken: false } })
@@ -108,6 +108,54 @@ describe('iniciarAssinatura — a intenção de assinar', () => {
 
       const { data } = await svc.from('tenants').select('settings').eq('id', tenantId).single()
       expect((data!.settings as Record<string, unknown>).taxas).toEqual({ pix_bps: 99 })
+    },
+    30_000,
+  )
+})
+
+describe('cancelarAssinatura — o dono clica "Cancelar" e o plano cai na hora', () => {
+  it(
+    'cancela o preapproval no MP e derruba pra gratis sem esperar webhook',
+    async () => {
+      mpMock.criarPreapproval.mockResolvedValueOnce({ preapprovalId: 'pre-6', initPoint: 'https://mp.test/pre-6' })
+      await iniciarAssinatura(svc, tenantId, 'equipe', 'dona@salao.test', 'https://seuciclo.com.br/x')
+      // Simula o MP tendo autorizado (fora do escopo deste teste; só a assinatura já registrada importa aqui).
+
+      mpMock.cancelarPreapproval.mockResolvedValueOnce(undefined)
+      const r = await cancelarAssinatura(svc, tenantId)
+
+      expect(r).toEqual({ resultado: 'cancelada', plano: 'gratis' })
+      expect(mpMock.cancelarPreapproval).toHaveBeenCalledWith('pre-6')
+      const { plan, assinatura } = await planoEAssinatura()
+      expect(plan).toBe('gratis')
+      expect(assinatura?.status).toBe('cancelled')
+    },
+    30_000,
+  )
+
+  it(
+    'sem assinatura registrada: não chama o MP, devolve sem_assinatura_ativa',
+    async () => {
+      const r = await cancelarAssinatura(svc, tenantId)
+      expect(r).toEqual({ resultado: 'sem_assinatura_ativa' })
+      expect(mpMock.cancelarPreapproval).not.toHaveBeenCalled()
+    },
+    30_000,
+  )
+
+  it(
+    'cancelar de novo uma assinatura já cancelada é idempotente — não chama o MP outra vez',
+    async () => {
+      mpMock.criarPreapproval.mockResolvedValueOnce({ preapprovalId: 'pre-7', initPoint: 'https://mp.test/pre-7' })
+      await iniciarAssinatura(svc, tenantId, 'essencial', 'dona@salao.test', 'https://seuciclo.com.br/x')
+      mpMock.cancelarPreapproval.mockResolvedValueOnce(undefined)
+      await cancelarAssinatura(svc, tenantId)
+
+      mpMock.cancelarPreapproval.mockClear()
+      const r2 = await cancelarAssinatura(svc, tenantId)
+
+      expect(r2).toEqual({ resultado: 'sem_assinatura_ativa' })
+      expect(mpMock.cancelarPreapproval).not.toHaveBeenCalled()
     },
     30_000,
   )

@@ -18,6 +18,7 @@ import { assuntoDeMudarDePlano, canalDeContato, textoDeMudarDePlano } from '@/li
 import { CARTOES } from '@/lib/planos-cartoes'
 import { contextoDePlano } from '@/server/services/planos'
 import AssinarPlano from './assinar-plano'
+import CancelarAssinatura from './cancelar-assinatura'
 
 /** Sem `await`, viraria página estática — quebra o nonce do CSP por requisição. */
 export const dynamic = 'force-dynamic'
@@ -42,10 +43,11 @@ export const metadata = { title: 'Meu plano' }
  * construído (PR #91) mas ficou preso num branch que nunca chegou em `main` — reescrito contra o
  * `assinatura-mp.ts` atual (que substituiu o service original no #122), não um merge cego.
  *
- * Ainda NÃO existe botão de "cancelar" nem data de "próxima cobrança" — cancelar continua sendo
- * uma conversa (canal de contato), e a Fase K exige que custe os mesmos toques que assinar. Isso
- * deixa de ser verdade no instante em que este botão for usado de verdade; cancelamento
- * self-service é o próximo item quando isso incomodar na prática.
+ * "Cancelar assinatura" (`cancelar-assinatura.tsx`) aparece do lado do botão de assinar quando há
+ * uma assinatura ativa — `docs/18` Fase K: "mesmo número de cliques que assinar". Um clique, sem
+ * modal de confirmação; o clique único É a decisão da casa, não uma omissão.
+ *
+ * Ainda NÃO existe data de "próxima cobrança" (o MP tem, mas não vale um GET a mais por render).
  */
 
 function textoDeTeto(limite: number | null, usado: number): string {
@@ -116,6 +118,7 @@ export default async function PaginaMeuPlano() {
             <ArrowRight aria-hidden className="size-4" />
           </a>
         ) : null}
+        {cobrancaAutomatica && assinatura && assinatura.status !== 'cancelled' ? <CancelarAssinatura /> : null}
       </Card>
 
       {assinatura?.status === 'paused' ? (

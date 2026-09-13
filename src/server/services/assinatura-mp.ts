@@ -7,7 +7,7 @@ import {
 } from '@/core/billing/mercado-pago'
 import type { PlanoTier } from '@/core/billing/planos'
 import { normalizarPlano } from '@/server/services/planos'
-import { consultarPagamento, consultarPreapproval, criarPreapproval } from '@/server/billing/mercado-pago'
+import { cancelarPreapproval, consultarPagamento, consultarPreapproval, criarPreapproval } from '@/server/billing/mercado-pago'
 import { AppError } from '@/server/http/errors'
 
 import type { Database } from '@/server/db/types.gen'
@@ -63,6 +63,49 @@ export async function iniciarAssinatura(
   if (error) throw new AppError('INTERNAL', { cause: error })
 
   return { initPoint }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Cancelar (rota POST /api/v1/billing/cancelar, cliente do usuário)
+// ---------------------------------------------------------------------------------------------
+
+/**
+ * O dono clica "Cancelar assinatura" → cancela o preapproval no MP e derruba para `gratis` NA
+ * HORA, sem esperar o webhook (`docs/18` Fase K: "mesmo número de cliques que assinar" — esperar
+ * faria o clique único parecer que não funcionou). Idempotente por construção: chamar de novo numa
+ * assinatura já cancelada/inexistente é `sem_assinatura_ativa`, não erro.
+ *
+ * Regra 11 do CLAUDE.md ("nunca delete... use estado/compensação") não se aplica aqui: isto é a
+ * PRÓPRIA transição de estado que a regra pede, não um delete de linha nem de histórico.
+ */
+export async function cancelarAssinatura(
+  db: Cliente,
+  tenantId: string,
+): Promise<{ resultado: 'cancelada'; plano: PlanoTier } | { resultado: 'sem_assinatura_ativa' }> {
+  const { data: tenant, error } = await db.from('tenants').select('plan, settings').eq('id', tenantId).single()
+  if (error) throw new AppError('INTERNAL', { cause: error })
+
+  const assinatura = lerAssinatura(tenant.settings)
+  if (!assinatura || assinatura.status === 'cancelled') return { resultado: 'sem_assinatura_ativa' }
+
+  await cancelarPreapproval(assinatura.preapproval_id)
+
+  const novaAssinatura: AssinaturaDoTenant = {
+    ...assinatura,
+    status: 'cancelled',
+    atualizado_em: new Date().toISOString(),
+    graca_ate: null,
+  }
+  const { error: erroUpdate } = await db
+    .from('tenants')
+    .update({
+      plan: 'gratis',
+      settings: { ...((tenant.settings ?? {}) as Record<string, unknown>), assinatura: novaAssinatura },
+    })
+    .eq('id', tenantId)
+  if (erroUpdate) throw new AppError('INTERNAL', { cause: erroUpdate })
+
+  return { resultado: 'cancelada', plano: 'gratis' }
 }
 
 export type ResultadoWebhookMP =
