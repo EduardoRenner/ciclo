@@ -4,7 +4,7 @@ import { useRef } from 'react'
 
 import { cn } from '@/lib/utils'
 
-export type Segmento = { valor: string; rotulo: string }
+export type Segmento = { valor: string; rotulo: string; icone?: React.ReactNode }
 
 type Props = {
   segmentos: Segmento[]
@@ -64,13 +64,14 @@ export default function Segmented({ segmentos, valor, aoTrocar, rotulo, classNam
             onKeyDown={(e) => aoTeclar(e, i)}
             className={cn(
               // 40px visuais + `toque-48`: mesma regra do `Chip`, o alvo cresce sem engordar o desenho.
-              'toque-48 h-10 shrink-0 rounded-[var(--radius-pill)] border px-4 text-label font-semibold',
+              'toque-48 flex h-10 shrink-0 items-center gap-1.5 rounded-[var(--radius-pill)] border px-4 text-label font-semibold',
               'transition duration-[var(--dur-1)] ease-[var(--ease-ios)] active:scale-[.96]',
               ativo
                 ? 'border-acc bg-acc-soft text-acc-2'
                 : 'border-line-2 bg-surface-2 text-txt-2 hover:bg-surface-3 hover:text-txt',
             )}
           >
+            {s.icone}
             {s.rotulo}
           </button>
         )

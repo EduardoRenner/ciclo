@@ -7089,3 +7089,48 @@ decifrado — mas num lote futuro elas podem virar `owner`/`manager` sem custo. 
 2026-09-10 · o dono pediu modo claro/escuro · o escuro segue padrão (`:root` puro + `<html className="dark">`); o claro é preferência do PROFISSIONAL, escopo /admin: `admin/layout.tsx` lê o cookie `ciclo-tema` e embrulha o painel num `<div data-theme>`, o `globals.css` cascateia dali · sem `<script>` inline (a 1ª tentativa foi bloqueada pela CSP com strict-dynamic + mismatch de nonce na hidratação, a armadilha que o `[slug]/page.tsx` já documenta) · paleta clara medida para 4,5:1 nas duas direções; a separação de 0,15 de luminância entre semânticos (anti-daltonismo) é inatingível no claro sob o teto de 4,5:1 sobre branco (melhor ~0,13), compensado com ícone+rótulo no estado.
 
 2026-09-10 · A 0084 aperta `health_records`/`consents` só tirando DELETE, sem estreitar por papel · Fica em `has_tenant` para select/insert/update; o DELETE sai porque é capacidade comprovadamente morta (o único `.delete()` de `health_records` está em `eliminarCliente`, e os dois chamadores são service_role; em `consents` não existe `.delete()` nenhum). · A régua por papel que o `docs/58` propõe (`vault:own`, `client:*`) é marcada lá como decisão do dono e quebra em silêncio se escolhida errado: `fichaDoCliente` monta a seção de consentimentos com `statusConsentimentos`, e um `professional` (que tem `client:own`, não `client:read`) abriria a ficha com a seção VAZIA, sem erro. Decisão pendente não vira migration; capacidade morta vira.
+
+---
+
+## 2026-09-13 · Experiência de uso (docs/61) — três decisões medidas ao vivo
+
+Sessão autônoma noturna, pedido de melhoria de interface/UX/segurança. Subi o app local
+(Supabase local + seed de 6 negócios) e medi no navegador (claro/escuro, 375px) antes de decidir
+qualquer coisa visual — não só li o código.
+
+**1. Tema padrão: mantém "Automático", sem mudar o fallback.** A pergunta era se claro ou escuro
+deveria ser o padrão. Medido: quando não há preferência de sistema detectável, o app cai no
+`:root` puro, que é **escuro** — e as telas de auth/marketing (`/entrar`, `/cadastro`, home
+pública) usam esse escuro como identidade de marca de propósito (teal sobre preto, deliberado,
+sem token de "claro" ali). Forçar um fallback claro só dentro do painel fragmentaria a identidade
+entre páginas do mesmo produto sem resolver problema real nenhum — não há usuário afetado hoje
+(a esmagadora maioria dos navegadores/WebViews modernos expõe `prefers-color-scheme`). Decisão:
+sem mudança de código; documentar aqui para não reabrir a pergunta sem motivo novo.
+
+**2. Logo "C": medido pixel a pixel, não é rotação.** `ciclo-icone-aqua.png` tem a caixa
+delimitadora perfeitamente centralizada no canvas (x: 35–858 de 894, y: 35–914 de 950 — margens
+simétricas nas duas direções). O que lê como "torto" é o desenho em si: é uma seta circular
+(motivo "ciclo"), com uma ponta de flecha bem definida no topo-direita e, do lado oposto, a
+extremidade inferior-direita termina num corte diagonal sem acabamento arredondado — a assimetria
+entre as duas pontas (uma com flecha, outra com corte reto) é o que o olho lê como "inclinado para
+baixo". Não é bug de export nem rotação acidental. É arte rasterizada (PNG) sem fonte vetorial no
+repo — redesenhar a extremidade exige o arquivo de origem (Figma/Illustrator/SVG) que não está
+aqui. Decisão: **não redesenhar o ícone sem aprovação** (CLAUDE.md — não inventar asset que o
+ticket não pediu, e mexer na marca sem o dono ver antes é o tipo de "conserto pior que o defeito").
+Registrado para o Eduardo decidir de manhã: ou aprova um recorte específico (arredondar a
+extremidade inferior-direita para ficar simétrica com a flecha) e alguém exporta um SVG novo, ou
+mantém como está — hoje é estilo, não defeito técnico.
+
+**3. Topo do painel (engrenagem): arquitetura já segue o padrão recomendado, sem mudança.**
+O pedido original comparava com apps do setor (Booksy/Belezinha) e supunha que a engrenagem
+"compete" com a navegação. Medido ao vivo em 375px: a navegação principal do CICLO **já é** a
+barra inferior (Hoje/Agenda/Recuperar receita — destacado com a marca no centro,
+propositalmente/Clientes/Marcar), e a engrenagem no topo é um ícone secundário isolado, sem peso
+visual comparável, só na raiz de cada aba (`topbar.tsx`). Isso já é exatamente o padrão que
+produtos grandes usam (nav primária embaixo, ajuste de conta/config num ícone leve no topo) — um
+menu hambúrguer de "3 linhas" seria uma REGRESSÃO (esconde funcionalidade, convenção mais datada
+que o padrão atual). Decisão: sem mudança.
+
+**Item implementado de verdade nesta sessão (não só decidido):** toggle de tema com ícone
+(`Sun`/`Moon`/`SunMoon` do lucide) em vez de só texto, no `SeletorDeTema` — commit separado.
+Verificado nos dois temas em 375px antes do commit.

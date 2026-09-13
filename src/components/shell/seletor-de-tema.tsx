@@ -1,5 +1,6 @@
 'use client'
 
+import { Moon, Sun, SunMoon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 import Segmented from '@/components/ui/segmented'
@@ -17,10 +18,15 @@ import Segmented from '@/components/ui/segmented'
 
 type Escolha = 'sistema' | 'claro' | 'escuro'
 
+/*
+  docs/61 §3: ícone reconhecível num relance, sem depender do rótulo — é como todo produto grande
+  faz (iOS, Android, GitHub). O rótulo continua no DOM (acessibilidade e reforço visual), só deixa
+  de ser a única pista.
+*/
 const SEGMENTOS = [
-  { valor: 'sistema', rotulo: 'Automático' },
-  { valor: 'claro', rotulo: 'Claro' },
-  { valor: 'escuro', rotulo: 'Escuro' },
+  { valor: 'sistema', rotulo: 'Automático', icone: <SunMoon aria-hidden className="size-4" /> },
+  { valor: 'claro', rotulo: 'Claro', icone: <Sun aria-hidden className="size-4" /> },
+  { valor: 'escuro', rotulo: 'Escuro', icone: <Moon aria-hidden className="size-4" /> },
 ]
 
 /** O que o `data-theme` do wrapper recebe. `globals.css` conhece estes três. */
