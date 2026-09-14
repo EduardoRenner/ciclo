@@ -1,6 +1,7 @@
 import { ExternalLink } from 'lucide-react'
 import { headers } from 'next/headers'
 import Link from 'next/link'
+import { after } from 'next/server'
 import { Temporal } from '@js-temporal/polyfill'
 
 import PageHeader from '@/components/ui/page-header'
@@ -89,8 +90,15 @@ export default async function PaginaHoje() {
   // G-05a (docs/60): o segundo evento do funil mínimo — o momento em que o Motor de Ciclo mostra,
   // pela primeira vez, que trouxe dinheiro de volta para este tenant. `registrarPrimeiraOcorrencia`
   // nunca lança e não bloqueia a tela; falha aqui vira log, não erro na tela mais importante do app.
+  //
+  // `after()`, não `await`: até 2026-09-13 isto era um `await` de verdade — uma ida de rede a mais
+  // (SELECT em `product_events`) DEPOIS do `Promise.all` de cima, no caminho crítico de TODA
+  // visita a "Hoje" em qualquer tenant que o Motor já tenha trazido dinheiro de volta (a maioria
+  // dos ativos). O comentário já prometia "não bloqueia a tela" — só o código não cumpria.
+  // `after()` roda depois da resposta ser enviada: a pessoa vê a tela, o evento grava por trás.
   if (atribuicao.count > 0) {
-    await registrarPrimeiraOcorrencia(db, ctx.tenantId, 'motor_viu_valor', { count: atribuicao.count })
+    const contagem = atribuicao.count
+    after(() => registrarPrimeiraOcorrencia(db, ctx.tenantId, 'motor_viu_valor', { count: contagem }))
   }
 
   const data = new Intl.DateTimeFormat('pt-BR', {
