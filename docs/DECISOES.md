@@ -7397,3 +7397,35 @@ dificuldade de portar dado de cliente ao cancelar — argumento de confiança em
 Recomendação registrada, não construída: abrir páginas por profissão sem tirar o Motor de Ciclo do
 centro — crescer alcance sem virar "mais uma agenda genérica", que é o erro que o `docs/43` já
 documentou contra os concorrentes de nicho.
+
+## 2026-09-14 · Fecha o item "assimetria do C" (docs/63 §4) — fonte vetorial já existe, achado era sobre asset morto
+
+Retomando o item deixado para o Eduardo decidir (`docs/63` §4, `docs/61` §2, e a entrada de
+09-13 acima "Logo 'C': medido pixel a pixel"). Duas correções ao que ficou registrado:
+
+**1. A "fonte de origem" que faltava já está no repo — só não em `public/marca/`.**
+`src/app/icon.svg` (o favicon) e `IconeAnel.tsx` já usam o mesmíssimo path/polygon vetorial
+(`M138.6 146 A60 60 0 1 1 146 61.4` + `160.5,41.4 167.9,87.4 123.7,72.2`, `#14B8A6`). O
+`docs/61` procurou "arquivo de origem (Figma/Illustrator/SVG)" e não achou porque procurou em
+`public/marca/`, não em `src/app/`. Copiado agora para `public/marca/ciclo-icone.svg`, ao lado
+dos outros arquivos de marca, para não se repetir a busca.
+
+**2. `ciclo-icone-aqua.png` (o arquivo medido "pixel a pixel" em 09-13) não é usado em lugar
+nenhum do produto.** `grep -rn "ciclo-icone-aqua"` em `src/` não bate com nenhum import nem
+caminho hardcoded — não é favicon (isso é `icon.svg`), não é apple-touch-icon, não é ícone de
+PWA (esses são `public/icons/icon-*.png`, gerados à parte, quadrados, sem o mesmo problema). É
+um asset órfão. A "assimetria" que a sessão de 09-13 mediu como "correta, é o desenho mesmo,
+não é bug" está tecnicamente certa (a ponta com flecha vs. a ponta com corte reto é o desenho
+aprovado pelo Eduardo na sessão do Claude Design, "Redesign de logo uróboros", 26/08) — mas
+media um arquivo que ninguém vê.
+
+**Trocado, não redesenhado:** `ciclo-icone-aqua.png` era 894×950 (não quadrado — provável
+resíduo de um recorte manual antigo). Substituído por um render 1024×1024 do mesmo
+`ciclo-icone.svg` (mesmo path, mesma cor, fundo transparente, ~4% de respiro), para o dia que
+alguém precisar do ícone isolado (splash screen, e-mail, redes sociais) ele já esteja certo.
+Nenhum lugar visível do produto muda: `Selo`/`topbar`/páginas públicas usam os wordmarks
+(`ciclo-wordmark-aqua.png` / `-claro.png`), que já batem pixel a pixel com o design aprovado e
+não foram tocados. `icon.svg` e os ícones de PWA também não mudaram — já estavam corretos.
+
+Fecha `docs/63` §4 "Assimetria do C" e a pergunta em aberto de `docs/61` §2. Próxima sessão não
+precisa remedir isso.
