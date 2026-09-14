@@ -7360,3 +7360,40 @@ conserto tira uma ida de rede real do caminho crítico, mas pode não explicar o
 sozinho. Pedido ao Eduardo: remedir `/admin/hoje` depois deste deploy e reportar o novo número —
 se ainda estiver alto, o próximo suspeito é o tempo de `getUser()` (autenticação) ou algo
 específico da conta de teste, não mais este achado.
+
+---
+
+## 2026-09-14 (madrugada) · `retornos` — a tese "não troque de sistema" ganha o suporte técnico dela
+
+Continuação da conversa comercial: a tese de "não precisa trocar de sistema, o CICLO entra só como
+camada de recuperação" tinha um furo técnico real — sem integração viva com AppBarber/Trinks (não
+existe API pública nenhuma dos concorrentes, confirmado por pesquisa), o Motor de Ciclo só sabia
+CRIAR cliente novo (`cadastrarQuemJaAtendo`). Cliente que já tem ficha e voltou de novo não tinha
+porta nenhuma — o Motor nascia uma vez com o cadastro inicial e nunca mais era alimentado, e a
+"camada contínua" virava, na prática, uma campanha única.
+
+**Conserto:** `retornos` — `{clientId, quando}[]`, na mesma rota `/api/v1/clients/ja-atendo`, ao
+lado de `pessoas` (gente nova). Busca de cliente existente (debounce, reusa `GET /api/v1/clients?
+q=` que já existia) na tela, sem reabrir ficha, sem repetir telefone. Mesmo `preverEPersistirCiclos`
+no fim para as duas — três, agora — portas não divergirem. `clientId` é conferido contra
+`tenant_id` antes de gravar ciclo (a RLS impediria a escrita cruzada, mas sem a conferência
+explícita o upsert não afetaria linha nenhuma para um id de outro tenant e a tela diria "gravado"
+sobre um retorno que não aconteceu — mesma armadilha do UPDATE de zero linhas que não é erro).
+
+**Sinceridade sobre o teste:** typecheck, lint, build e a suíte unit inteira (2443 casos, incluindo
+a guarda de design nova — vista reprovando de propósito, e a primeira versão dela era cega, casava
+com a query solta em vez do que alimenta `idsValidos`, corrigida antes de seguir) passaram. Os 4
+casos de integração novos foram escritos e revisados à mão, mas **não rodaram contra banco real**
+nesta sessão — o Docker local não subiu depois de mais de 20 minutos tentando. Rodar
+`pnpm test:integration`/`test:rls` antes do próximo deploy para fechar essa verificação.
+
+**Pesquisa comercial na mesma rodada (Simples Agenda):** eles não são de nicho — páginas dedicadas
+pra prestador de serviço, evento, secretaria, clínica, tatuagem, autônomo, todos com o MESMO
+conjunto de funcionalidades, R$ 39,90/mês, só escalando por nº de profissional. O CICLO já tem 17
+profissões catalogadas no onboarding e ZERO página pública fala com elas fora de beleza — achado
+concreto, ainda não construído. Achado também: uma reclamação pública no Reclame Aqui sobre
+dificuldade de portar dado de cliente ao cancelar — argumento de confiança em aberto pro CICLO
+("seus dados nunca ficam presos" já é regra 5.1, só nunca foi usado como munição de marketing).
+Recomendação registrada, não construída: abrir páginas por profissão sem tirar o Motor de Ciclo do
+centro — crescer alcance sem virar "mais uma agenda genérica", que é o erro que o `docs/43` já
+documentou contra os concorrentes de nicho.
