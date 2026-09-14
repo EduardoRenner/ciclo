@@ -7336,3 +7336,27 @@ hoje que segue bloqueado: nenhuma credencial `GOOGLE_*`/`APPLE_*` em `.env.examp
 posterior de `docs/DECISOES.md` revertendo o bloqueio. Um clique de OAuth substitui os 4 campos +
 espera de e-mail do cadastro tradicional — é o item de maior alavancagem para "menos cliques para
 criar conta", e não depende de nenhuma linha de código nova.
+
+---
+
+## 2026-09-14 (madrugada) · "O site continua lento" — achado real em /admin/hoje, não é mais cold start
+
+O Eduardo reportou que o site "continua lento" mesmo com o keep-alive confirmado rodando. Medi
+`/admin/hoje` numa conta de teste real (`dono-demo-espaco-vitoria`, 26 clientes) via DevTools do
+próprio Eduardo: **1,63s na 1ª visita, 1,11s na 2ª** — não caiu na repetição, diferente do padrão
+de cold start medido em páginas públicas antes (900ms→110ms, 2,4s→400ms). Sinal claro de que não é
+contêiner frio: é trabalho de verdade acontecendo em toda visita.
+
+**Achado no código:** `registrarPrimeiraOcorrencia` (G-05a, PR #123, 12/09) rodava com `await`
+DEPOIS do `Promise.all` principal de `/admin/hoje` — uma ida de rede extra (SELECT em
+`product_events`) no caminho crítico de toda visita à tela mais aberta do produto, em qualquer
+tenant onde o Motor de Ciclo já atribuiu receita (a maioria dos ativos). O próprio comentário do
+código já dizia "não bloqueia a tela" — só o código não cumpria a promessa do comentário. Corrigido
+com `after()` do Next.js, que roda depois da resposta já ter sido enviada. Commit `d63594b`.
+
+**Honestidade sobre a magnitude:** um round-trip a mais dentro da mesma região (Vercel `gru1` +
+Supabase `sa-east-1`) normalmente custa dezenas de ms, não a maior parte de 1,1-1,6s — então este
+conserto tira uma ida de rede real do caminho crítico, mas pode não explicar o número inteiro
+sozinho. Pedido ao Eduardo: remedir `/admin/hoje` depois deste deploy e reportar o novo número —
+se ainda estiver alto, o próximo suspeito é o tempo de `getUser()` (autenticação) ou algo
+específico da conta de teste, não mais este achado.
