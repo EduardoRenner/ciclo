@@ -22,6 +22,14 @@ import { semComentarios } from '../../helpers/fonte'
 
 const PAGINA = 'src/app/onboarding/page.tsx'
 const FORMULARIO = 'src/app/onboarding/formulario.tsx'
+/*
+ * 14/09: o campo de profissão saiu de `FORMULARIO` para cá — extraído como `SeletorProfissao`
+ * porque o quiz de `/cadastro` (docs/DECISOES.md 14/09) também precisa da mesma busca, e
+ * duplicar a lógica em dois arquivos é como as duas versões divergem sem ninguém notar. O
+ * campo continua existindo e continua com `rotulo=`, só mudou de arquivo — por isso a
+ * contagem agora soma os dois.
+ */
+const SELETOR_PROFISSAO = 'src/components/ui/seletor-profissao.tsx'
 
 /** Como o número aparece escrito na copy. Só os que cabem num formulário de onboarding. */
 const NUMERO_POR_PALAVRA: Record<string, number> = { uma: 1, duas: 2, três: 3, tres: 3, quatro: 4, cinco: 5, seis: 6 }
@@ -36,7 +44,7 @@ const NUMERO_POR_PALAVRA: Record<string, number> = { uma: 1, duas: 2, três: 3, 
  * prosa, e casar com a citação é a armadilha nº 1 da tabela de guarda cega do `CLAUDE.md`.
  */
 function camposDoFormulario(): number {
-  const fonte = semComentarios(readFileSync(FORMULARIO, 'utf8'))
+  const fonte = semComentarios(readFileSync(FORMULARIO, 'utf8')) + semComentarios(readFileSync(SELETOR_PROFISSAO, 'utf8'))
   return (fonte.match(/\brotulo=/g) ?? []).length
 }
 

@@ -3,119 +3,325 @@
 import Link from 'next/link'
 import { useState } from 'react'
 
+import QuizShell from '@/components/shell/quiz-shell'
 import Button from '@/components/ui/button'
 import Input from '@/components/ui/input'
 import PhoneInput from '@/components/ui/phone-input'
+import SeletorProfissao, { type Profissao } from '@/components/ui/seletor-profissao'
+import { NOME_DO_PLANO } from '@/core/billing/planos'
+import { APP_HOST } from '@/lib/app-url'
+import { salvarRascunhoOnboarding } from '@/lib/rascunho-onboarding'
+import type { ProvedorSocial } from '@/server/auth/provedores-sociais'
 
-export default function FormularioCadastro() {
+import LoginSocial from '../login-social'
+
+function slugificar(texto: string): string {
+  return texto
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40)
+}
+
+const TOTAL_PASSOS = 4
+
+/**
+ * Cadastro em 4 telas (uma pergunta por vez) em vez do formulário único de antes — pedido do
+ * Eduardo, inspirado em apps que adiam e-mail/senha para o fim (docs/DECISOES.md 14/09).
+ *
+ * O contrato com o servidor NÃO muda: `/api/v1/auth/signup` continua recebendo exatamente
+ * {fullName, email, phone, password}, do jeito que já validava e mandava e-mail de confirmação.
+ * Nome do negócio, profissão e endereço da página são coletados aqui mas só existem no
+ * navegador até o fim — viram sessão de verdade só depois que a pessoa clica no link do
+ * e-mail e cai em `/onboarding`, que lê o rascunho salvo (`rascunho-onboarding.ts`).
+ *
+ * Login social (Google etc.) continua no passo 1: quem escolhe esse caminho ganha sessão na
+ * hora e cai direto no `/onboarding` de sempre, sem passar pelos passos 2-4 — não colide com
+ * este fluxo, só o ignora.
+ */
+export default function FormularioCadastro({ profissoes, provedores }: { profissoes: Profissao[]; provedores: ProvedorSocial[] }) {
+  const [passo, setPasso] = useState(0)
+  const [nome, setNome] = useState('')
+  const [professionId, setProfessionId] = useState('')
+  const [businessName, setBusinessName] = useState('')
+  const [slug, setSlug] = useState('')
+  const [slugTocado, setSlugTocado] = useState(false)
   const [telefone, setTelefone] = useState('')
   const [pendente, setPendente] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
   const [enviado, setEnviado] = useState(false)
 
-  async function enviar(formData: FormData) {
-    setPendente(true)
+  function aoMudarBusinessName(valor: string) {
+    setBusinessName(valor)
+    if (!slugTocado) setSlug(slugificar(valor))
+  }
+
+  function avancar() {
     setErro(null)
-    try {
-      const resposta = await fetch('/api/v1/auth/signup', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          fullName: formData.get('fullName'),
-          email: formData.get('email'),
-          phone: formData.get('phone'),
-          password: formData.get('password'),
-        }),
-      })
-      const json = (await resposta.json()) as { error?: { message: string; details?: { fields?: Record<string, string> } } }
-      if (!resposta.ok) {
-        const primeiroCampo = json.error?.details?.fields ? Object.values(json.error.details.fields)[0] : undefined
-        setErro(primeiroCampo ?? json.error?.message ?? 'Não consegui criar sua conta.')
-        return
-      }
-      setEnviado(true)
-    } catch {
-      setErro('Não consegui falar com o servidor. Tente de novo.')
-    } finally {
-      setPendente(false)
-    }
+    setPasso((p) => Math.min(p + 1, TOTAL_PASSOS - 1))
+  }
+
+  function voltar() {
+    setErro(null)
+    setPasso((p) => Math.max(p - 1, 0))
   }
 
   if (enviado) {
     return (
-      <p className="max-w-sm text-center text-corpo text-txt">
-        Quase lá! Mandamos um link de confirmação para o seu e-mail. Abra a mensagem e clique nele para continuar.
-      </p>
+      <main className="flex min-h-dvh flex-col items-center justify-center gap-6 px-[18px] py-10 text-center">
+        <p className="max-w-sm text-corpo text-txt">
+          Quase lá, {nome.split(' ')[0] || 'tudo certo'}! Mandamos um link de confirmação para o seu e-mail. Abra a mensagem e clique nele para continuar.
+        </p>
+      </main>
     )
   }
 
   return (
+    <QuizShell passo={passo} total={TOTAL_PASSOS} aoVoltar={passo > 0 ? voltar : undefined}>
+      {passo === 0 ? (
+        <PassoNome
+          nome={nome}
+          aoMudar={setNome}
+          aoContinuar={avancar}
+          provedores={provedores}
+        />
+      ) : null}
+      {passo === 1 ? (
+        <PassoProfissao
+          profissoes={profissoes}
+          professionId={professionId}
+          aoEscolher={setProfessionId}
+          aoContinuar={avancar}
+          erro={erro}
+          aoErrar={setErro}
+        />
+      ) : null}
+      {passo === 2 ? (
+        <PassoNegocio
+          businessName={businessName}
+          aoMudarNome={aoMudarBusinessName}
+          slug={slug}
+          aoMudarSlug={(v) => {
+            setSlugTocado(true)
+            setSlug(slugificar(v))
+          }}
+          aoContinuar={avancar}
+        />
+      ) : null}
+      {passo === 3 ? (
+        <PassoConta
+          nome={nome}
+          telefone={telefone}
+          aoMudarTelefone={setTelefone}
+          professionId={professionId}
+          businessName={businessName}
+          slug={slug}
+          pendente={pendente}
+          erro={erro}
+          aoEnviar={async (email, password) => {
+            setPendente(true)
+            setErro(null)
+            try {
+              const resposta = await fetch('/api/v1/auth/signup', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ fullName: nome, email, phone: telefone, password }),
+              })
+              const json = (await resposta.json()) as { error?: { message: string; details?: { fields?: Record<string, string> } } }
+              if (!resposta.ok) {
+                const primeiroCampo = json.error?.details?.fields ? Object.values(json.error.details.fields)[0] : undefined
+                setErro(primeiroCampo ?? json.error?.message ?? 'Não consegui criar sua conta.')
+                return
+              }
+              salvarRascunhoOnboarding({ businessName, professionId, slug })
+              setEnviado(true)
+            } catch {
+              setErro('Não consegui falar com o servidor. Tente de novo.')
+            } finally {
+              setPendente(false)
+            }
+          }}
+        />
+      ) : null}
+    </QuizShell>
+  )
+}
+
+function PassoNome({
+  nome,
+  aoMudar,
+  aoContinuar,
+  provedores,
+}: {
+  nome: string
+  aoMudar: (v: string) => void
+  aoContinuar: () => void
+  provedores: ProvedorSocial[]
+}) {
+  return (
     <form
-      /*
-        `onSubmit` e não `action`, e a diferença é medida: no React 19 um `<form action={fn}>`
-        RESETA o formulário quando a ação termina, inclusive quando ela FALHOU. Conferido no
-        navegador em 2026-09-03 na tela de entrar: errar a senha limpava e-mail E senha, e a
-        pessoa tinha que redigitar o e-mail a cada tentativa.
-
-        É um dos problemas de maior impacto em UX de login, e explica o "a etapa de login está
-        muito ruim" que originou este conserto: cada erro custava o formulário inteiro.
-
-        Nas quatro telas de autenticação o sucesso sempre navega para fora, então não existe
-        caso em que limpar seja desejado: o reset era puro efeito colateral. `enviar` continua
-        recebendo `FormData`, igual.
-      */
       onSubmit={(e) => {
         e.preventDefault()
-        void enviar(new FormData(e.currentTarget))
+        if (nome.trim()) aoContinuar()
       }}
-      className="flex w-full max-w-sm flex-col gap-3"
+      className="flex flex-1 flex-col gap-3"
     >
-      <Input rotulo="Nome completo" name="fullName" autoComplete="name" required />
-      <Input rotulo="E-mail" name="email" type="email" autoComplete="email" required />
-      <PhoneInput rotulo="Telefone com DDD" name="phone" valor={telefone} aoMudar={setTelefone} required />
+      <h1 className="text-titulo font-bold text-txt">Como podemos te chamar?</h1>
+      <p className="text-secundario text-txt-2">Só isso por enquanto. E-mail e senha vêm no final.</p>
+      <LoginSocial provedores={provedores} />
+      <Input rotulo="Seu nome" value={nome} onChange={(e) => aoMudar(e.target.value)} required autoFocus />
+      <div className="flex-1" />
+      <Button type="submit" largura="cheia" disabled={!nome.trim()} motivoDesabilitado="Digite seu nome para continuar.">
+        Continuar
+      </Button>
+      <Link href="/entrar" className="grid h-12 place-items-center text-secundario text-txt-2 transition hover:text-txt">
+        Já tem conta? <span className="ml-1 font-semibold text-acc-2">Entrar</span>
+      </Link>
+    </form>
+  )
+}
+
+function PassoProfissao({
+  profissoes,
+  professionId,
+  aoEscolher,
+  aoContinuar,
+  erro,
+  aoErrar,
+}: {
+  profissoes: Profissao[]
+  professionId: string
+  aoEscolher: (id: string) => void
+  aoContinuar: () => void
+  erro: string | null
+  aoErrar: (msg: string | null) => void
+}) {
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault()
+        if (!professionId) {
+          aoErrar('Escolha sua profissão na lista.')
+          return
+        }
+        aoContinuar()
+      }}
+      className="flex flex-1 flex-col gap-3"
+    >
+      <h1 className="text-titulo font-bold text-txt">Qual é a sua profissão?</h1>
+      <p className="text-secundario text-txt-2">É só o ponto de partida. Você ajusta serviços e horários depois.</p>
+      <SeletorProfissao profissoes={profissoes} professionId={professionId || null} aoEscolher={aoEscolher} />
+      {erro ? (
+        <p role="alert" className="text-secundario text-bad">
+          {erro}
+        </p>
+      ) : null}
+      <div className="flex-1" />
+      <Button type="submit" largura="cheia" disabled={!professionId} motivoDesabilitado="Escolha sua profissão para continuar.">
+        Continuar
+      </Button>
+    </form>
+  )
+}
+
+function PassoNegocio({
+  businessName,
+  aoMudarNome,
+  slug,
+  aoMudarSlug,
+  aoContinuar,
+}: {
+  businessName: string
+  aoMudarNome: (v: string) => void
+  slug: string
+  aoMudarSlug: (v: string) => void
+  aoContinuar: () => void
+}) {
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault()
+        if (businessName.trim() && slug.length >= 5) aoContinuar()
+      }}
+      className="flex flex-1 flex-col gap-3"
+    >
+      <h1 className="text-titulo font-bold text-txt">Como se chama o seu negócio?</h1>
+      <Input rotulo="Nome do negócio" value={businessName} onChange={(e) => aoMudarNome(e.target.value)} required autoFocus />
+      <Input
+        rotulo="Endereço da sua página"
+        prefixo={`${APP_HOST}/`}
+        value={slug}
+        onChange={(e) => aoMudarSlug(e.target.value)}
+        required
+        minLength={5}
+        classNameCampo="tabular pl-[148px]"
+        ajuda="É o link que você manda para agendar."
+      />
+      <div className="flex-1" />
+      <Button
+        type="submit"
+        largura="cheia"
+        disabled={!businessName.trim() || slug.length < 5}
+        motivoDesabilitado={
+          !businessName.trim() ? 'Digite o nome do negócio para continuar.' : 'O endereço da página precisa de pelo menos 5 caracteres.'
+        }
+      >
+        Continuar
+      </Button>
+    </form>
+  )
+}
+
+function PassoConta({
+  nome,
+  telefone,
+  aoMudarTelefone,
+  pendente,
+  erro,
+  aoEnviar,
+}: {
+  nome: string
+  telefone: string
+  aoMudarTelefone: (v: string) => void
+  professionId: string
+  businessName: string
+  slug: string
+  pendente: boolean
+  erro: string | null
+  aoEnviar: (email: string, password: string) => void
+}) {
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault()
+        const dados = new FormData(e.currentTarget)
+        aoEnviar(String(dados.get('email')), String(dados.get('password')))
+      }}
+      className="flex flex-1 flex-col gap-3"
+    >
+      <h1 className="text-titulo font-bold text-txt">Falta pouco, {nome.split(' ')[0] || 'você'}</h1>
       {/*
-        TICKET-UX22: pedido do usuário foi simplificar "que nem os das big techs" — o texto de
-        ajuda permanente ("No mínimo 10 caracteres.") saiu, igual a um cadastro do Google ou da
-        Microsoft não avisa o mínimo antes de a pessoa errar. `minLength` desceu de 10 para 8
-        (mesmo piso dessas contas) e continua fazendo a validação nativa do navegador; o servidor
-        (`exigirSenhaForte`) é quem decide de verdade e devolve o motivo certo se a senha for
-        fraca demais.
+        Movida de `cadastro/page.tsx` quando o cadastro virou quiz (docs/DECISOES.md 14/09) — a
+        razão de existir não mudou: mata a objeção de "vai pedir cartão" bem no momento em que a
+        pessoa está prestes a assinar, que segue sendo esta tela, só que agora é a última.
       */}
+      <p className="text-secundario text-txt-2">
+        Você começa no {NOME_DO_PLANO.gratis} e não pedimos cartão. Seu e-mail e uma senha para acessar sua conta.
+      </p>
+      <PhoneInput rotulo="Telefone com DDD" name="phone" valor={telefone} aoMudar={aoMudarTelefone} required />
+      <Input rotulo="E-mail" name="email" type="email" autoComplete="email" required />
       <Input rotulo="Senha" name="password" type="password" autoComplete="new-password" required minLength={8} />
       {erro ? (
         <p role="alert" className="text-secundario text-bad">
           {erro}
         </p>
       ) : null}
+      <div className="flex-1" />
       <Button type="submit" largura="cheia" carregando={pendente}>
         Criar conta
       </Button>
-      {/*
-        O contrato se forma AQUI, e esta tela não dizia isso nem linkava para lugar nenhum. Os
-        termos afirmam "ao criar uma conta, você concorda com estes termos" e a política de
-        privacidade descreve tratamento de dado sensível de saúde — os dois existem desde 30/08 e
-        só eram alcançáveis pela landing e pela página de preço, que ninguém precisa visitar para
-        chegar até este botão (o link de convite e o `/entrar` levam direto).
-
-        Fica ABAIXO do botão, não acima, e sem caixa de marcar: a lei brasileira aceita o aceite
-        pelo próprio ato de contratar quando os termos estão à vista, e uma caixa a mais num
-        formulário de quatro campos é atrito que não protege ninguém.
-      */}
-      {/*
-        Os links ficam numa LINHA PRÓPRIA, e não dentro da frase, por um motivo medido.
-
-        A primeira versão punha os dois no meio do texto com `toque-48` em cada. Sondando ponto a
-        ponto (a receita do docstring de `alvo-de-toque-tem-48`), o resultado foi: "Termos de uso"
-        com 49 px efetivos e **"Política de Privacidade" com ZERO**. Os dois começam na mesma linha,
-        e o `::after` absoluto de 48 px do primeiro cobre o segundo inteiro — o link ficou
-        intocável, o que é muito pior que o alvo de 14 px que eu estava consertando.
-
-        `toque-48` só é seguro quando os elementos não dividem linha de texto corrida. É por isso
-        que os rodapés da landing e de `/precos` funcionam: lá é uma `flex` com `gap`, que é o
-        mesmo desenho adotado aqui. A guarda do fonte não pega isto (ela confere se a classe está
-        lá, não se o alvo resultante é alcançável), então fica registrado no lugar onde o erro
-        aconteceu.
-      */}
       <div className="text-center text-label text-txt-3">
         <p>Ao criar a conta você aceita:</p>
         <p className="mt-0.5 flex flex-wrap items-center justify-center gap-x-2">
@@ -128,9 +334,6 @@ export default function FormularioCadastro() {
           </Link>
         </p>
       </div>
-      <Link href="/entrar" className="grid h-12 place-items-center text-secundario text-txt-2 transition hover:text-txt">
-        Já tem conta? <span className="ml-1 font-semibold text-acc-2">Entrar</span>
-      </Link>
     </form>
   )
 }

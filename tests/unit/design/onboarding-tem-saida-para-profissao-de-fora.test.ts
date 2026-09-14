@@ -21,7 +21,14 @@ import { semComentarios } from '../../helpers/fonte'
  * não acha nada.
  */
 
-const TELA = 'src/app/onboarding/formulario.tsx'
+/*
+ * 14/09: a busca de profissão (e o ramo de "não achei nada") saiu de `formulario.tsx` para
+ * `SeletorProfissao` — o quiz de `/cadastro` (docs/DECISOES.md 14/09) também precisa dela, e
+ * duplicar era como as duas cópias iam divergir sem ninguém notar. A guarda passa a olhar o
+ * componente compartilhado: é onde o beco de fato pode voltar a existir agora, pro onboarding
+ * E pro cadastro ao mesmo tempo.
+ */
+const TELA = 'src/components/ui/seletor-profissao.tsx'
 const SERVICO = 'src/server/services/onboarding.ts'
 const MIGRATION = 'supabase/migrations/0078_profissao_generica.sql'
 
@@ -54,9 +61,12 @@ describe('a busca de profissão não termina em parede', () => {
       'a busca vazia não oferece a profissão genérica. Sem ela a tela é um beco: `professionId` é ' +
         'obrigatório no esquema da rota, então quem não está nas 17 não tem como seguir.',
     ).toBe(true)
+    // O nome do setter mudou pra `aoEscolher` quando a busca virou componente compartilhado
+    // (`SeletorProfissao`, 14/09) — o que importa é que ALGUMA função de seleção seja chamada
+    // com `generica.id`, não o nome dela.
     expect(
-      /setProfessionId\(generica\.id\)/.test(ramo),
-      'a saída não SELECIONA a genérica — texto que não age é o beco com outra roupa',
+      /(setProfessionId|aoEscolher)\(generica\.id\)/.test(ramo),
+      'a saída não SELECIONA a genérica. Texto que não age é o beco com outra roupa',
     ).toBe(true)
   })
 
