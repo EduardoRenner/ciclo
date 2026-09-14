@@ -13,12 +13,18 @@ export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Quem você já atende' }
 
 /**
- * A porta da base para quem NÃO tem planilha — que é a maioria do público do produto.
+ * A porta da base para quem NÃO tem planilha — que é a maioria do público do produto — e também a
+ * manutenção de quem já está na ficha e voltou de novo.
  *
  * O caminho da importação (`/admin/clientes/importar`) resolve quem já mantém a clientela num CSV.
  * Barbeiro, manicure e depiladora têm a base nos contatos do celular e na memória: para essas
  * pessoas o Motor de Ciclo nascia vazio e ficava vazio por meses, esperando cada cliente voltar duas
  * ou três vezes.
+ *
+ * A busca de "já é sua cliente" (dentro de `FormularioQuemJaAtendo`) é o que sustenta o salão que
+ * continua operando noutro sistema e usa o CICLO só como camada de recuperação: sem ela, o Motor
+ * nascia uma vez com o cadastro inicial e nunca mais era alimentado, porque marcar "voltou" exigia
+ * reabrir a ficha inteira ou lançar um atendimento de verdade na agenda.
  *
  * Só os serviços com `cycle_days > 0` aparecem: serviço sem ritmo declarado não tem de quanto em
  * quanto tempo prever, e oferecê-lo aqui produziria um ciclo sem sentido.
@@ -36,7 +42,7 @@ export default async function PaginaQuemJaAtendo() {
     <>
       <PageHeader
         titulo="Quem você já atende"
-        descricao="Escreva os nomes e diga mais ou menos quando cada pessoa veio pela última vez. Não precisa ser exato."
+        descricao="Busque quem já tem ficha e voltou, ou escreva o nome de quem é novo. Não precisa ser exato na data."
       />
 
       {comRitmo.length === 0 ? (

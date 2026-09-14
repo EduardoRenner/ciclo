@@ -9,7 +9,10 @@ import { cadastrarQuemJaAtendo, EsquemaQuemJaAtendo } from '@/server/services/qu
 
 /**
  * Cadastra de uma vez a clientela que o salão já atendia antes do CICLO, com a última visita
- * respondida de memória.
+ * respondida de memória — e, em `retornos`, atualiza quem JÁ tem ficha e voltou de novo, sem
+ * reabrir o cadastro. É a manutenção semanal de quem opera no dia a dia em outro sistema (agenda de
+ * papel, concorrente) e usa o CICLO só como camada de recuperação: a mesma tela que povoa o Motor
+ * na primeira vez também o mantém vivo depois, com o mesmo gesto.
  *
  * `client:create` e não `client:update`: a operação é criar ficha em lote — a mesma autoridade da
  * importação por planilha (`clients/import`), que é a outra porta para a mesma coisa. Recepção tem
@@ -41,6 +44,7 @@ export const POST = rota(async (req, _params, requestId) => {
       after: {
         cadastrados: resultado.cadastrados,
         jaExistiam: resultado.jaExistiam.length,
+        retornos: entrada.retornos?.length ?? 0,
         cyclesGravados: resultado.previsao?.cyclesGravados ?? 0,
       },
       requestId,

@@ -172,3 +172,119 @@ describe('cadastrar de memória põe a clientela no Motor', () => {
     30_000,
   )
 })
+
+/**
+ * A terceira porta: `retornos` — cliente que JÁ tem ficha (veio da importação, da memória, ou de
+ * atendimento de verdade) e voltou de novo, sem reabrir o cadastro. É o que sustenta o salão que
+ * continua operando noutro sistema e usa o CICLO só como camada de recuperação: sem isso, o Motor
+ * nascia uma vez e nunca mais era alimentado.
+ */
+describe('retornos: quem já tem ficha e voltou, sem reabrir o cadastro', () => {
+  async function clienteExistente(nome: string) {
+    const { data, error } = await svc
+      .from('clients')
+      .insert({ tenant_id: tenantId, name: nome, source: 'memoria', last_visit_at: '2026-01-01' })
+      .select('id')
+      .single()
+    if (error || !data) throw new Error(`seed de cliente falhou: ${error?.message}`)
+    return data.id
+  }
+
+  it(
+    'atualiza o ciclo de um cliente existente sem criar ficha nova',
+    async () => {
+      const marca = randomUUID().slice(0, 6)
+      const clientId = await clienteExistente(`Voltou ${marca}`)
+
+      const r = await cadastrarQuemJaAtendo(svc, tenantId, {
+        serviceId,
+        retornos: [{ clientId, quando: 'faz-tempo' }],
+      })
+
+      expect(r.cadastrados, 'não deveria criar ficha nova — o cliente já existia').toBe(0)
+      expect(r.previsao?.cyclesGravados).toBe(1)
+
+      const { data: clientes } = await svc.from('clients').select('id').eq('tenant_id', tenantId).eq('name', `Voltou ${marca}`)
+      expect(clientes?.length, 'virou ficha duplicada em vez de atualizar a existente').toBe(1)
+
+      const { data: ciclo } = await svc.from('client_cycles').select('state').eq('tenant_id', tenantId).eq('client_id', clientId).maybeSingle()
+      expect(ciclo?.state).toBe('late')
+    },
+    30_000,
+  )
+
+  it(
+    'clientId de outro tenant é ignorado, não gravado — a RLS não é a única linha de defesa',
+    async () => {
+      const marca = randomUUID().slice(0, 6)
+      const { data: outroUsuario } = await svc.auth.admin.createUser({
+        email: `outro-tenant-${marca}@ciclo.test`,
+        password: randomUUID(),
+        email_confirm: true,
+      })
+      const { tenant: outroTenant } = await executarOnboarding(svc, {
+        userId: outroUsuario!.user!.id,
+        businessName: 'Outro Salão',
+        vertical: 'barber',
+        slug: `outro-${marca}`,
+        timezone: 'America/Sao_Paulo',
+      })
+      const { data: clienteDeOutro } = await svc
+        .from('clients')
+        .insert({ tenant_id: outroTenant.id, name: 'Cliente de outro salão', source: 'memoria', last_visit_at: '2026-01-01' })
+        .select('id')
+        .single()
+
+      const r = await cadastrarQuemJaAtendo(svc, tenantId, {
+        serviceId,
+        retornos: [{ clientId: clienteDeOutro!.id, quando: 'semana' }],
+      })
+
+      expect(r.previsao, 'gravou ciclo para um cliente de outro tenant').toBeNull()
+      const { data: ciclo } = await svc.from('client_cycles').select('id').eq('tenant_id', tenantId).eq('client_id', clienteDeOutro!.id)
+      expect(ciclo?.length ?? 0).toBe(0)
+
+      await svc.from('tenants').delete().eq('id', outroTenant.id)
+      await svc.auth.admin.deleteUser(outroUsuario!.user!.id)
+    },
+    30_000,
+  )
+
+  it(
+    'pessoas e retornos no mesmo envio: os dois contam para o mesmo cálculo',
+    async () => {
+      const marca = randomUUID().slice(0, 6)
+      const clientId = await clienteExistente(`Antiga ${marca}`)
+
+      const r = await cadastrarQuemJaAtendo(svc, tenantId, {
+        serviceId,
+        pessoas: [{ nome: `Nova ${marca}`, telefone: telefoneNovo(), quando: 'faz-tempo' }],
+        retornos: [{ clientId, quando: 'faz-tempo' }],
+      })
+
+      expect(r.cadastrados).toBe(1)
+      expect(r.previsao?.comDataInformada).toBe(2)
+      expect(r.previsao?.cyclesGravados).toBe(2)
+    },
+    30_000,
+  )
+
+  it(
+    'clientId repetido no mesmo lote não quebra o upsert — fica só um',
+    async () => {
+      const marca = randomUUID().slice(0, 6)
+      const clientId = await clienteExistente(`Duplicado ${marca}`)
+
+      const r = await cadastrarQuemJaAtendo(svc, tenantId, {
+        serviceId,
+        retornos: [
+          { clientId, quando: 'semana' },
+          { clientId, quando: 'faz-tempo' },
+        ],
+      })
+
+      expect(r.previsao?.cyclesGravados, 'o mesmo cliente duas vezes no lote devia virar uma linha só').toBe(1)
+    },
+    30_000,
+  )
+})
