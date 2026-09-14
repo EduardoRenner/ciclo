@@ -7419,13 +7419,16 @@ não é bug" está tecnicamente certa (a ponta com flecha vs. a ponta com corte 
 aprovado pelo Eduardo na sessão do Claude Design, "Redesign de logo uróboros", 26/08) — mas
 media um arquivo que ninguém vê.
 
-**Trocado, não redesenhado:** `ciclo-icone-aqua.png` era 894×950 (não quadrado — provável
-resíduo de um recorte manual antigo). Substituído por um render 1024×1024 do mesmo
-`ciclo-icone.svg` (mesmo path, mesma cor, fundo transparente, ~4% de respiro), para o dia que
-alguém precisar do ícone isolado (splash screen, e-mail, redes sociais) ele já esteja certo.
-Nenhum lugar visível do produto muda: `Selo`/`topbar`/páginas públicas usam os wordmarks
-(`ciclo-wordmark-aqua.png` / `-claro.png`), que já batem pixel a pixel com o design aprovado e
-não foram tocados. `icon.svg` e os ícones de PWA também não mudaram — já estavam corretos.
+**`ciclo-icone-aqua.png` fica exatamente como estava (894×950, não quadrado).** Cheguei a gerar
+um render 1024×1024 a partir de `ciclo-icone.svg` achando que o canvas não-quadrado era resíduo
+de recorte manual — o Eduardo pediu pra manter o arquivo original tal como estava, byte a byte
+(reconferido por hash contra o blob do commit anterior), então revertido. O ganho real desta
+sessão é só o `ciclo-icone.svg` como fonte vetorial documentada ao lado dos outros arquivos de
+marca — o PNG em si não muda. Nenhum lugar visível do produto muda: `Selo`/`topbar`/páginas
+públicas usam os wordmarks (`ciclo-wordmark-aqua.png` / `-claro.png`), que já batem pixel a
+pixel com o design aprovado e não foram tocados. `icon.svg` e os ícones de PWA também não
+mudaram — já estavam corretos. `IconeAnel.tsx` (ícone de navegação) mantém `currentColor` de
+propósito — confirmado com o Eduardo em 14/09 para não perder o destaque de aba ativa/inativa.
 
 Fecha `docs/63` §4 "Assimetria do C" e a pergunta em aberto de `docs/61` §2. Próxima sessão não
 precisa remedir isso.
