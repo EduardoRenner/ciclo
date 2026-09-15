@@ -17,12 +17,55 @@
 ## 0 · Atualização 15/09: pesquisa de mercado — o que muda o plano
 
 Pedido do Eduardo: pesquisar a fundo o que é preciso pra passar direto na revisão, porque ele não
-quer nem correr o risco de reprovação. **A pesquisa achou dois riscos reais que o plano original
-(seções 1-7 abaixo) não cobria — um deles sem solução garantida, mesmo fazendo tudo certo.** Registro
-com honestidade, porque prometer aprovação certa seria mentir com base no que developers reais
-relatam.
+quer nem correr o risco de reprovação. **Segunda rodada de pesquisa, mais ampla:** a primeira olhou
+só 4.2 e 3.1.1; esta olha o levantamento estatístico de causas de rejeição de verdade, e a ordem de
+prioridade do plano mudou por causa disso. Registro com honestidade, porque prometer aprovação
+certa seria mentir com base no que developers reais relatam.
 
-### 0.1 · O risco que NÃO tem solução garantida: guideline 3.1.1 (compra dentro do app) `[RISCO-ABERTO]`
+### 0.0 · A ordem real de risco, por peso estatístico `[P]`
+
+Levantamento de causas de rejeição sobre ~7,77 milhões de submissões analisadas em 2026 (Apple
+rejeitou perto de 25% delas) `[P]`. **A ordem muda o que este plano trata como prioridade número 1**
+— não é mais 4.2, nem 3.1.1 sozinho:
+
+| # | Categoria | Peso | O que é, pro CICLO especificamente |
+|---|---|---|---|
+| **1** | **2.1 — Completude/performance** | **Mais rejeições que todas as outras categorias JUNTAS** `[P]` | Crash, trava, e **conta de demonstração ausente ou que não funciona** — o item que a pesquisa anterior não tinha coberto NADA, e é o maior risco isolado do plano inteiro. Ver §0.1-novo e T-DEMO. |
+| 2 | 5.1.1 — Privacidade/dado pessoal | 2º lugar `[P]` | Exclusão de conta ausente (já coberto em T-DEL, rodada anterior) |
+| 3 | 4.2 — Funcionalidade mínima | 3º lugar `[P]` | Já coberto (T3/T4, casca nativa + capacidade real) |
+| 4 | 3.1.1 — Compra dentro do app | 4º lugar `[P]` | Já coberto (T1.5, esconder cobrança) — **menos comum estatisticamente do que a rodada anterior sugeria, mas continua sendo o único item desta lista sem solução garantida (§0.2 abaixo)** |
+| 5 | 2.3 — Metadado impreciso | 5º lugar `[P]` | Screenshot que promete o que o app não tem, ícone genérico — ver T7 revisado |
+
+**Conclusão prática: o ticket de maior prioridade do plano inteiro não é nenhum dos dois que a
+primeira rodada tinha marcado como críticos — é preparar uma conta de demonstração real e estável
+pro revisor da Apple usar.** Sem ela, a Apple nem chega a avaliar o resto: um app que pede login e
+não vem com credencial que funciona é recusado antes de qualquer julgamento sobre 4.2 ou 3.1.1.
+
+### 0.1 · O maior risco isolado, e que a primeira rodada não tinha coberto: conta de demonstração (2.1)
+
+**O que a regra exige, literalmente:** se o app tem função atrás de login, a submissão precisa vir
+com usuário e senha de uma conta REAL que funciona, com dado de verdade — ou um "modo demo" dentro
+do próprio app, pré-aprovado pela Apple como substituto `[P]`. O revisor não cria conta nova
+sozinho contando com um fluxo de cadastro completo; ele espera entrar e ver o produto funcionando.
+
+**Por que isto é crítico pro CICLO especificamente:** o produto **não faz sentido vazio.** Um tenant
+recém-criado sem agenda, sem cliente, sem histórico é uma tela de "Primeiros passos" — o revisor não
+vê o Motor de Ciclo prevendo retorno, não vê a Central de Ações, não vê nada do que diferencia o
+produto. Testar o CICLO com uma conta vazia é como testar o Spotify sem nenhuma música — tecnicamente
+"funciona", mas não mostra nada, e aumenta a chance de a Apple concluir "app incompleto" por conta
+própria.
+
+**A boa notícia: o produto já tem exatamente a peça que resolve isto.** `scripts/seed-tenant-teste.mjs`
+já existe e já semeia um tenant de demonstração com histórico fabricado — feito originalmente pra
+uso local/demo, não pra revisor da Apple, mas é o mesmo problema. E o próprio produto já opera um
+tenant de demonstração em produção, `dom-rocha`, com plano Avançado vitalício de cortesia
+justamente para servir de vitrine — **reaproveitável direto, sem trabalho novo de seed**, só
+precisa de uma senha estável e documentada pro revisor usar (nunca a senha real de ninguém).
+
+Vira o ticket **T-DEMO**, novo e de prioridade 1 (antes de T1.5 na ordem de importância, embora
+possa ser feito em paralelo — não depende de Capacitor nem do Mac).
+
+### 0.2 · O risco que continua sem solução garantida: guideline 3.1.1 (compra dentro do app) `[RISCO-ABERTO]`
 
 **O que a regra diz:** qualquer conteúdo ou serviço digital pago acessado dentro do app tem que
 passar pela compra dentro do app (In-App Purchase), com os 30% da Apple — a menos que o app se
@@ -53,7 +96,7 @@ que a diretriz 4.2 que o plano original tratava como risco principal. **Nenhuma 
 plano ou "Assinar" pode ser alcançável de dentro do app iOS**, nem por link, nem por redirecionamento
 — tem que estar tecnicamente impossível de chegar lá pelo app, não só escondida visualmente.
 
-### 0.2 · Achado que veio de graça, e é bug de verdade, App Store ou não: falta exclusão de conta
+### 0.3 · Achado que veio de graça, e é bug de verdade, App Store ou não: falta exclusão de conta
 
 Guideline 5.1.1(v): todo app que permite criar conta tem que permitir **excluir a própria conta, de
 dentro do app**, sem precisar ligar ou mandar e-mail (exceto setor super-regulado) `[P]`. Prazo
@@ -68,7 +111,7 @@ eliminação, que o produto já implementa pra cliente do salão mas não pra si
 novo (T-DEL abaixo), e vale a pena fazer independente do app, porque é direito do titular dos dados
 seja qual for a plataforma.
 
-### 0.3 · Guideline 4.2, revisado com mais precisão
+### 0.4 · Guideline 4.2, revisado com mais precisão
 
 A pesquisa original (mensagem anterior desta conversa) estava direcionalmente certa mas **um detalhe
 técnico estava errado**: o plano original (T1) mandava o app carregar a URL de produção
@@ -88,7 +131,16 @@ acima do mínimo, não em cima da linha.
 critério do revisor é "esta experiência é claramente diferente de abrir o Safari?", não uma lista
 de checkbox `[P]`.
 
-### 0.4 · Sources
+### 0.5 · Um risco que a pesquisa descartou — bom saber que NÃO precisa fazer
+
+**App Tracking Transparency (ATT, guideline 5.1.2)** só é exigido quando o app usa IDFA ou um SDK
+de publicidade/analytics para rastrear entre apps `[P]`. Conferido `[M]`: `grep` por
+Google Analytics, Meta Pixel, Amplitude, Mixpanel, Segment em `src/` **não encontra nada** — o
+CICLO nunca teve SDK de rastreamento (Sentry, quando ligado, é diagnóstico de erro, não
+publicidade/atribuição, e nem isso está ativo hoje). **Não precisa de prompt de ATT, não precisa
+declarar IDFA.** Um risco a menos, sem nenhum ticket novo.
+
+### 0.6 · Sources
 
 - [App Store Review Guidelines: Will Your Webview App Be Rejected? — MobiLoud](https://www.mobiloud.com/blog/app-store-review-guidelines-webview-wrapper)
 - [Wrapping a Vibe-Coded Web App for iOS: What Apple Actually Requires — AcceptMyApp](https://acceptmy.app/guides/web-app-to-ios-app-store-requirements)
@@ -98,6 +150,14 @@ de checkbox `[P]`.
 - [Account deletion within apps — Apple Developer](https://developer.apple.com/news/upcoming-requirements/?id=06302022b)
 - [Fresha for Business — App Store](https://apps.apple.com/us/app/fresha-for-business/id1455346253)
 - [Booksy Biz: Booking & Payments App — App Store](https://apps.apple.com/us/app/booksy-biz-booking-payments/id725335996)
+- [App Store Rejection Reasons in 2026: The 15 Most Common — App Lander](https://www.applander.io/blog/app-store-rejection-reasons-2026)
+- [Most Common App Store Rejection Reasons and Fixes (2026) — Superapp](https://www.superappp.com/blog/most-common-app-store-rejection-reasons)
+- [App Store Guideline 2.1: App Completeness — AcceptMyApp](https://acceptmy.app/guidelines/2-1-app-completeness)
+- [16 Reasons Apple Could Reject Your App — MobiLoud](https://www.mobiloud.com/blog/avoid-app-rejected-apple/)
+- [App Store Guideline 2.1 Performance rejection, demo account guidance — PTKD Journal](https://ptkd.com/journal/app-store-rejection-guideline-2-1-performance)
+- [Guideline 2.3: Accurate Metadata — iOS Submission Guide](https://iossubmissionguide.com/guideline-2-3-accurate-metadata/)
+- [Why App Store Screenshots Get Rejected and How to Fix Them — ScreenshotBro](https://screenshotbro.app/blog/app-store-screenshots-rejected-fix)
+- [App Tracking Transparency — Usercentrics](https://usercentrics.com/knowledge-hub/apples-app-tracking-transparency-att/)
 
 ---
 
@@ -139,6 +199,44 @@ três é o primeiro item acionável do Eduardo (T0), porque trava tudo depois de
 ## 2 · Os tickets
 
 Convenção da casa: objetivo, critério de aceite, onde mexer, armadilhas. Um ticket, um commit.
+
+### T-DEMO · Conta de demonstração pro revisor da Apple — PRIORIDADE 1, o maior risco do plano
+
+**Objetivo.** Uma conta que o revisor da Apple loga e vê o CICLO funcionando de verdade — agenda
+com atendimento, clientes com histórico, Motor de Ciclo prevendo retorno — não um tenant vazio de
+"Primeiros passos". Não depende de Capacitor, do Mac (T0) nem de nada do resto do plano: **pode
+começar agora, em paralelo com tudo.**
+
+**Critério de aceite.**
+1. Decidir entre duas opções, e registrar a escolha em `docs/DECISOES.md`:
+   - **(a) Reaproveitar `dom-rocha`**, o tenant de demonstração que já roda em produção com plano
+     Avançado vitalício de cortesia — zero trabalho de seed, só criar (ou confirmar que já existe)
+     uma credencial de login estável para ele, nunca a senha real de quem administra.
+   - **(b) Rodar `scripts/seed-tenant-teste.mjs`** contra produção pra criar um tenant novo,
+     exclusivo pra revisão da Apple, sem misturar com o tenant de vitrine do marketing.
+2. Credencial documentada em `App Store Connect` → "App Review Information": e-mail, senha,
+   **instruções curtas e numeradas** de onde olhar (ex.: "1. Toque em Agenda. 2. Veja o Motor de
+   Ciclo em Clientes → filtro 'Sumindo'.") — a pesquisa (§0.1) confirma que passos determinísticos
+   e curtos ajudam a revisão a não interpretar mal uma tela.
+3. Login testado do zero, no mínimo pela web (o app em si só existe depois de T1) — confirmar que
+   a senha documentada realmente entra, sem MFA que trave um revisor sem acesso ao celular do
+   Eduardo.
+4. Conta **não expira** — nunca usar um convite ou token com prazo; a Apple pode reabrir revisão
+   numa atualização futura meses depois, com a MESMA credencial.
+5. Se houver papel diferente (`owner` vs `professional`), documentar qual foi dado e por quê — o
+   caminho mais completo (Motor de Ciclo, caixa, Central de Ações) só existe pra `owner`/`report:read`.
+
+**Onde mexer.** Fora do repositório, majoritariamente (conta em produção + App Store Connect);
+`docs/DECISOES.md` registra a escolha.
+
+**Armadilhas.**
+- Não usar dado de cliente real/produção não-anonimizado — LGPD vale pro revisor também. Se for a
+  opção (a), `dom-rocha` já é de demonstração por desenho, sem esse risco; se for (b), confirmar
+  que o seed usa nome/telefone fictício, como o próprio script já documenta.
+- Testar a credencial de novo pouco antes de CADA submissão (T7) — uma senha trocada por engano
+  entre a preparação e o envio é o jeito mais bobo de tomar um 2.1 por "não consegui logar".
+
+---
 
 ### T0 · Decisão do Eduardo — onde faz o build iOS `[BLOQ]`
 
@@ -309,8 +407,10 @@ ninguém entender por quê.
 
 ### T4 · Ajustes para a diretriz 4.2 (não ser "só WebView")
 
-**Objetivo.** Reduzir o risco de rejeição na primeira submissão — este é o item de MAIOR risco de
-prazo do plano inteiro, porque só se confirma testando de verdade contra a revisão da Apple.
+**Objetivo.** Reduzir o risco de rejeição na primeira submissão. **Revisado 15/09 (§0.0):** não é
+mais o item de maior risco do plano — T-DEMO e T1.5 pesam mais na estatística real — mas continua
+sendo o que só se confirma testando de verdade contra a revisão da Apple, então o prazo dele
+continua incerto.
 
 **Critério de aceite.**
 1. Pelo menos DOIS comportamentos nativos genuínos além do push (T3): candidatos, em ordem de
@@ -354,20 +454,31 @@ ticket**, nenhuma sessão de IA tem como comprar a assinatura em nome dele.
 
 **Objetivo.** Antes de submeter para revisão pública, alguém usa o app de verdade num iPhone.
 
-**Critério de aceite.**
-1. Build via TestFlight (beta interno da própria Apple, sem revisão completa — é rápido, geralmente
-   liberado em minutos a poucas horas).
-2. Login, agenda, Motor de Ciclo, push (T3) testados manualmente num aparelho real, não só
+**Critério de aceite, na ordem em que testar (§0.0: 2.1 pesa mais que tudo, testa primeiro).**
+1. **Login com a credencial de T-DEMO, do zero, no aparelho.** Se travar aqui, nada mais importa —
+   é a causa nº1 de rejeição estatística (§0.0), e é a mais fácil de checar antes de gastar tempo
+   no resto.
+2. **Cold start sem crash, em pelo menos 3 aparelhos/tamanhos de tela diferentes** (a pesquisa
+   destaca que o revisor testa em hardware real, não só simulador) — se possível, um iPhone mais
+   antigo/mais lento além do topo de linha.
+3. **Tentar chegar em qualquer tela de cobrança pelo app (T1.5).** Se algum caminho ainda leva lá,
+   T7 não começa.
+4. Navegação completa sem tela em branco, sem link morto, sem gesto que trava (voltar, deslizar).
+5. Login, agenda, Motor de Ciclo, push (T3) testados manualmente num aparelho real, não só
    simulador — simulador não testa push nativo de verdade.
-3. **Primeiro teste de todos: tentar chegar em qualquer tela de cobrança pelo app (T1.5).** Se
-   algum caminho ainda leva lá, T7 não começa.
-4. Uma lista de bugs encontrados vira ticket normal antes de avançar para T7.
+6. Modo avião ligado no meio do uso — confirma que a fila offline (`src/lib/offline`) segura o
+   golpe dentro do app nativo do mesmo jeito que já segura na PWA.
+7. Build via TestFlight (beta interno da própria Apple, sem revisão completa — é rápido, geralmente
+   liberado em minutos a poucas horas) ANTES de qualquer submissão pra revisão pública.
+8. Uma lista de bugs encontrados vira ticket normal antes de avançar para T7.
 
 **Onde mexer.** Nenhuma mudança de código previsível aqui — é ciclo de teste manual e conserto do
 que aparecer.
 
 **Armadilhas.** Pular TestFlight e submeter direto pra revisão pública é o jeito mais caro de achar
-bug — cada rejeição da revisão completa custa dias, o TestFlight custa minutos.
+bug — cada rejeição da revisão completa custa dias, o TestFlight custa minutos. E crash/trava é a
+categoria que mais reprova no geral (§0.0) — vale mais tempo de teste manual aqui do que em
+qualquer outro ticket do plano.
 
 ---
 
@@ -376,39 +487,51 @@ bug — cada rejeição da revisão completa custa dias, o TestFlight custa minu
 **Objetivo.** O app aprovado e publicado.
 
 **Critério de aceite.**
-1. Ficha da loja preenchida: descrição, screenshots (mínimo por tamanho de tela exigido pela
-   Apple), categoria (Business ou Productivity), política de privacidade **linkada para
-   `/privacidade`, que já existe** (`docs/31` confirma que a página já foi criada por decisão de
-   lançamento anterior — reaproveitar, não recriar).
-2. **App Privacy questionnaire** (App Store Connect) preenchido com precisão — o CICLO lida com
+1. Screenshots tirados do app REAL rodando (T6), nunca mockup com tela/feature que não existe —
+   **causa nº1 de rejeição por metadado (2.3)** é mostrar algo que o app não faz `[P]`. Cada
+   tamanho de tela exigido pela Apple, mostrando o app em uso de verdade (agenda com dado, não
+   splash screen sozinho).
+2. Descrição da loja não promete nada que a versão submetida ainda não faz — nada de "em breve" pra
+   funcionalidade central, nada de recurso do site que o app ainda não tem.
+3. Categoria (Business ou Productivity), política de privacidade **linkada para `/privacidade`, que
+   já existe** (`docs/31` confirma que a página já foi criada por decisão de lançamento anterior —
+   reaproveitar, não recriar).
+4. **App Privacy questionnaire** (App Store Connect) preenchido com precisão — o CICLO lida com
    dado de saúde (anamnese/cofre), e a Apple pede declaração explícita de categorias sensíveis.
    Declarar a menos é motivo de rejeição/remoção posterior; declarar certo é conferir contra o que
-   `src/server/crypto/vault.ts` de fato coleta, não supor.
-3. `PrivacyInfo.xcprivacy` (manifest de privacidade, exigido desde 2024 `[P]`) presente no bundle
+   `src/server/crypto/vault.ts` de fato coleta, não supor. **Nenhuma seção de rastreamento/IDFA a
+   marcar** — confirmado em §0.5 que o produto não usa isso.
+5. `PrivacyInfo.xcprivacy` (manifest de privacidade, exigido desde 2024 `[P]`) presente no bundle
    — gerado pelos plugins do Capacitor usados (push, etc.), conferir se algum falta o próprio.
-4. **Notas pro revisor preenchidas** com o argumento de T1.5 (exceção 3.1.3(b) + precedente
+6. **Credencial de T-DEMO preenchida em "App Review Information"**, testada de novo nas últimas 24h
+   antes de enviar (§ armadilha de T-DEMO).
+7. **Notas pro revisor preenchidas** com o argumento de T1.5 (exceção 3.1.3(b) + precedente
    Fresha/Booksy) — não é garantia, mas a pesquisa mostra que ajuda.
-5. Submissão enviada via App Store Connect.
-6. Se rejeitado: ler o motivo exato, corrigir, ressubmeter — **não é permitido "tentar de novo sem
+8. Submissão enviada via App Store Connect.
+9. Se rejeitado: ler o motivo exato, corrigir, ressubmeter — **não é permitido "tentar de novo sem
    mudar nada"**, a Apple registra o padrão de tentativa e piora a relação com contas que fazem isso.
 
 **Onde mexer.** App Store Connect (fora do repositório).
 
-**Armadilhas.** A pesquisa de 15/09 (§0) corrigiu a hipótese original: a causa mais provável de
-rejeição pra este app específico não é 4.2 (que T1+T3+T4 já mitigam bem) — é **3.1.1**, por causa da
-tela de assinatura que o produto genuinamente tem. T1.5 é o item que decide isto, não T4.
+**Armadilhas.** A segunda rodada de pesquisa (§0.0) corrigiu a ordem de risco: a causa mais provável
+de rejeição, ESTATISTICAMENTE, não é 3.1.1 nem 4.2 — é 2.1 (crash/conta de demo que não funciona),
+por larga margem sobre todas as outras categorias somadas. T-DEMO e o passo 1 de T6 são o que mais
+protege contra isso. 3.1.1 (T1.5) continua sendo o único item da lista sem garantia mesmo fazendo
+tudo certo (§0.2) — os dois merecem o mesmo nível de cuidado, por razões diferentes.
 
 ---
 
 ## 3 · Ordem e paralelismo
 
 ```
+T-DEMO (prioridade 1 — começa JÁ, não depende de nada)
+T-DEL  (pode começar já, não depende de nada)
+
 T0 (Eduardo, decide onde builda)
   └─▶ T1 (scaffold) ─▶ T1.5 (bloquear cobrança) ─▶ T2 (ícone/splash) ─▶ T6 (device — Mac de T0)
          │                                                                    ▲
          └─▶ T3 (push nativo) ─────────────────────────────────────────────┘
          └─▶ T4 (ajustes 4.2) ─────────────────────────────────────────────┘
-         └─▶ T-DEL (exclusão de conta, pode começar já, não depende de nada) ┘
 
 T5 (Eduardo, conta+certificados — em paralelo com T1-T4)
                                                    │
@@ -416,10 +539,10 @@ T5 (Eduardo, conta+certificados — em paralelo com T1-T4)
                                                   T7 (submissão)
 ```
 
-**T0 e T5 são do Eduardo e podem começar imediatamente, em paralelo com T1-T-DEL.** T1, T1.5, T2,
-T3, T4 e T-DEL são código e podem ser escritos nesta sessão, mas **T6 em diante depende
-fisicamente do Mac** que T0 escolhe. **T1.5 é o ticket de maior prioridade depois do scaffold** —
-mais importante que T2/T3/T4, porque decide se a submissão tem chance real.
+**T-DEMO e T-DEL não dependem de NADA — podem ser feitos nesta sessão, antes de qualquer decisão do
+Eduardo.** T0 e T5 são do Eduardo e podem começar em paralelo. T1, T1.5, T2, T3 e T4 são código e
+podem ser escritos nesta sessão, mas **T6 em diante depende fisicamente do Mac** que T0 escolhe.
+**Ordem de prioridade real, revisada em §0.0: T-DEMO > T1.5 ≈ T-DEL > T4 > T2/T3.**
 
 ## 4 · Custos `[M]`
 
@@ -433,19 +556,21 @@ mais importante que T2/T3/T4, porque decide se a submissão tem chance real.
 
 | Fase | Tempo `[E]` |
 |---|---|
-| T1 + T2 (scaffold, ícone) | 1 dia de trabalho de código |
-| **T1.5 (bloquear cobrança no app)** | **1-2 dias — o item que mais importa pra "passar direto"** |
+| **T-DEMO (conta de demonstração)** | **Meio dia a 1 dia — prioridade 1, revisado em §0.0** |
 | T-DEL (exclusão de conta) | 1-2 dias, pode rodar em paralelo com tudo |
+| T1 + T2 (scaffold, ícone) | 1 dia de trabalho de código |
+| T1.5 (bloquear cobrança no app) | 1-2 dias — o único risco sem garantia (§0.2) |
 | T3 (push nativo) | 1-2 dias |
 | T4 (ajustes 4.2) | 1-3 dias — variável, só se confirma testando |
 | T5 (conta Apple) | 1-2 dias, aprovação da Apple pode demorar |
-| T6 (TestFlight + teste real) | 1-2 dias |
-| T7 (revisão da Apple) | 1-3 dias, **mais se rejeitar — e a §0.1 mostra que pode rejeitar mesmo tudo certo** |
+| T6 (TestFlight + teste real, ordem de prioridade revisada) | 1-2 dias |
+| T7 (revisão da Apple) | 1-3 dias, **mais se rejeitar — e a §0.2 mostra que pode rejeitar mesmo tudo certo** |
 
-**Total: 2 a 4 semanas** (subiu em relação à primeira versão do plano, por causa de T1.5/T-DEL, que
-não existiam antes da pesquisa). **Não existe número que garanta zero rejeição** — o que dá pra
-prometer é fazer os dois tickets que a pesquisa mostra que mais reduzem o risco (T1.5, T-DEL) e
-citar o precedente certo na submissão (T7). O resto é decisão de um revisor humano do lado de lá.
+**Total: 2 a 4 semanas** (subiu em relação à primeira versão do plano, por causa de T1.5/T-DEL/T-DEMO,
+que não existiam antes da pesquisa). **Não existe número que garanta zero rejeição** — o que dá pra
+prometer é fazer os três tickets que a pesquisa mostra que mais reduzem o risco (T-DEMO, T1.5,
+T-DEL) e citar o precedente certo na submissão (T7). O resto é decisão de um revisor humano do lado
+de lá.
 
 ## 6 · O que NÃO muda
 
