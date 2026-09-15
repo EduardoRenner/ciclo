@@ -19,7 +19,7 @@
 | Ticket | Estado |
 |---|---|
 | **T1** (scaffold Capacitor) | ✅ Feito — commit `58043e5` |
-| **T1.5** (bloquear cobrança no app) | ✅ Feito — commit `a847275`. Pendência de baixo risco: Central de Ações e tela de bloqueio de módulo ainda não checam `ehRequisicaoDoAppNativo` (o LINK delas já leva pra telas neutralizadas, só o texto do convite continua aparecendo) |
+| **T1.5** (bloquear cobrança no app) | ✅ Feito por completo — commits `a847275` + `7af6328` (as 9 telas com `BloqueioPlano`). Só ficou de fora a Central de Ações e `/precos`, nenhuma das duas completa compra (link já neutralizado do outro lado) |
 | **T-DEL** (exclusão de conta) | ✅ Feito — commit `e6a633b` |
 | **T-DEMO** (conta de demonstração) | ⏸️ Não feito — decidir entre reaproveitar `dom-rocha` ou rodar `seed-tenant-teste.mjs` exige acesso de produção que esta sessão não tem. Ação do Eduardo. |
 | **T-AND** (scaffold Android) | 🔴 Bloqueado — esta máquina não tem Java/JDK nem Android SDK, nem pro esqueleto do projeto |
