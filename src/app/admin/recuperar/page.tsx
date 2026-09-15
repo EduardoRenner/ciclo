@@ -4,6 +4,7 @@ import { headers } from 'next/headers'
 import { Temporal } from '@js-temporal/polyfill'
 
 import { podeUsarCapacidade } from '@/core/billing/planos'
+import { ehRequisicaoDoAppNativo } from '@/core/plataforma/nativo'
 import AlertBanner from '@/components/ui/alert-banner'
 import PageHeader from '@/components/ui/page-header'
 import { dinheiro } from '@/lib/formato'
@@ -21,8 +22,11 @@ import RecuperarReceita from './recuperar'
 export const metadata = { title: "Recuperar receita" }
 
 export default async function PaginaRecuperar() {
-  const ctx = await contextoAtual(new Request('https://interno/recuperar', { headers: await headers() }))
+  const cabecalhos = await headers()
+  const ctx = await contextoAtual(new Request('https://interno/recuperar', { headers: cabecalhos }))
   const db = await criarClienteDoUsuario()
+  // T1.5 (docs/64 §0.2): a versão nativa não pode oferecer caminho pra pagar.
+  const nativo = ehRequisicaoDoAppNativo(cabecalhos.get('user-agent'))
 
   // `docs/28` §8: o `timezone` chega no contexto, sem segunda ida ao banco.
   const timezone = ctx.tenant.timezone
@@ -111,6 +115,7 @@ export default async function PaginaRecuperar() {
 
       <RecuperarReceita
         inicial={lista}
+        nativo={nativo}
         podeEnviarEmLote={podeEnviarEmLote}
         temClientes={(clientes.count ?? 0) > 0}
         temCiclos={(ciclos.count ?? 0) > 0}

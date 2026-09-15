@@ -8,6 +8,7 @@ import EmptyState from '@/components/ui/empty-state'
 import PageHeader from '@/components/ui/page-header'
 import { avaliarPermissao } from '@/server/auth/rbac'
 import { podeUsarModulo } from '@/core/billing/planos'
+import { ehRequisicaoDoAppNativo } from '@/core/plataforma/nativo'
 import { contextoAtual } from '@/server/auth/tenant'
 import { contextoDePlano } from '@/server/services/planos'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
@@ -24,8 +25,11 @@ export const metadata = { title: "Estoque" }
  * Sem isto, o alerta de recompra é um aviso que ninguém consegue resolver.
  */
 export default async function PaginaEstoque() {
-  const ctx = await contextoAtual(new Request('https://interno/estoque', { headers: await headers() }))
+  const cabecalhos = await headers()
+  const ctx = await contextoAtual(new Request('https://interno/estoque', { headers: cabecalhos }))
   const db = await criarClienteDoUsuario()
+  // T1.5 (docs/64 §0.2): a versão nativa não pode oferecer caminho pra pagar.
+  const nativo = ehRequisicaoDoAppNativo(cabecalhos.get('user-agent'))
 
   if (!avaliarPermissao(ctx.papel, 'inventory:read')) {
     return (
@@ -73,6 +77,7 @@ export default async function PaginaEstoque() {
         }
       />
       <ListaEstoque
+        nativo={nativo}
         podeLancar={podeUsarModulo(await contextoDePlano(db, ctx.tenantId), 'stock').estado === 'liberado'}
         produtos={(produtos ?? []).map((p) => ({
           id: p.id,

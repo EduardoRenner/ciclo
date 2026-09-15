@@ -7622,3 +7622,32 @@ novo de `ehRequisicaoDoAppNativo` e a correção do domínio hardcoded) e build 
 Não existe app nativo de verdade pra testar o User-Agent chegando na prática (T-AND travado por
 falta de Java/SDK, T0/iOS travado por falta de Mac) — a verificação real fica pendente pro dia em
 que alguém conseguir rodar `npx cap add ios`/`android` numa máquina com as ferramentas certas.
+
+---
+
+## 2026-09-15 · T1.5 completo — BloqueioPlano em todas as 9 telas
+
+**Contexto:** fast-follow que o commit `a847275` tinha deixado pendente, registrado como risco
+baixo. Reconsiderado a pedido do Eduardo ("aprimore mais uma vez").
+
+**Por que deu pra fazer sem o risco que eu tinha estimado antes:** achei que precisaria de DOIS
+mecanismos (checagem de header no servidor + `Capacitor.isNativePlatform()` no cliente, pros 3
+call sites que são componente cliente). Não precisa — em todos os casos existe um `page.tsx`
+SERVIDOR mais acima na árvore que já chama `headers()` (ou pode chamar), e Server Component pode
+passar prop computada pra dentro de Client Component normalmente. Um mecanismo só, `nativo:
+boolean` como prop OBRIGATÓRIA em `BloqueioPlano` (nunca opcional — um `undefined` esquecido não
+pode virar "mostra o botão de cobrança", a mesma disciplina de falhar fechado do resto da casa).
+
+**9 call sites corrigidos:** `campanhas/nova`, `campanhas`, `config/planos`, `config/profissionais/
+[id]`, `estoque` (via `ListaEstoque`, componente cliente), `orcamentos`, `recuperar` (via
+`RecuperarReceita`, componente cliente), e os 2 usos em `dev/ui/vitrine.tsx` (ferramenta de design,
+`nativo={false}` — nunca roda dentro do app de verdade).
+
+**O que ficou de fora, ainda:** a Central de Ações (`crm.ts`, card `plano-perto-do-teto`) e a
+página pública `/precos` continuam sem essa checagem — mas nenhuma das duas renderiza
+`BloqueioPlano` nem completa uma compra: a primeira só linka pra `/admin/config/meu-plano`, que já
+neutraliza; a segunda é marketing público que só linka pra `/cadastro` (grátis) e WhatsApp, o mesmo
+padrão já aceito em `meu-plano` quando não há credencial do Mercado Pago.
+
+**Sinceridade sobre o teste:** typecheck, lint (`.` inteiro) e suíte unit (2449 casos) e build de
+produção passaram. Continua sem teste contra app nativo de verdade — mesmo motivo de sempre.

@@ -2,6 +2,7 @@ import { Lock } from 'lucide-react'
 import Link from 'next/link'
 
 import { dinheiro } from '@/lib/formato'
+import { APP_HOST } from '@/lib/app-url'
 import { cn } from '@/lib/utils'
 
 import { NOME_DO_PLANO, precoDoPlanoPorMes, type PlanoTier } from '@/core/billing/planos'
@@ -54,9 +55,19 @@ type Props = {
   /** O caminho gratuito, quando existe. "Mande um a um agora, de graça." */
   alternativa?: React.ReactNode
   className?: string
+  /**
+   * T1.5 (docs/64 §0.2): `true` quando o pedido veio do app nativo (`ehRequisicaoDoAppNativo`,
+   * calculado no servidor mais acima e passado como prop — este componente não lê header nenhum
+   * sozinho, porque também é renderizado de dentro de componente cliente). Guideline 3.1.1 não
+   * abre exceção pro CICLO: nenhum link nem botão que leve a pagar pode existir dentro do app.
+   *
+   * Obrigatório, e não `?: boolean`, de propósito — um `undefined` distraído não pode virar "mostra
+   * o botão de cobrança", a mesma regra de falhar fechado que `docs/51` já usa noutro lugar.
+   */
+  nativo: boolean
 }
 
-export default function BloqueioPlano({ precisaDo, acao, evidencia, alternativa, className }: Props) {
+export default function BloqueioPlano({ precisaDo, acao, evidencia, alternativa, className, nativo }: Props) {
   const nome = NOME_DO_PLANO[precisaDo]
 
   return (
@@ -101,16 +112,24 @@ export default function BloqueioPlano({ precisaDo, acao, evidencia, alternativa,
       ) : null}
 
       <div className="mt-5 flex flex-col gap-2">
-        <Link
-          href="/precos"
-          className={
-            'inline-flex h-12 w-full items-center justify-center gap-2 rounded-[var(--radius-sm)] bg-acc px-5 ' +
-            'text-corpo font-semibold text-on-acc shadow-elevado transition duration-[var(--dur-1)] ' +
-            'hover:brightness-110 active:scale-[.97]'
-          }
-        >
-          Ver o {nome} por {precoDoPlanoPorMes(precisaDo)}
-        </Link>
+        {nativo ? (
+          // T1.5: sem link, sem preço, sem botão — um link também conta como "direcionar pra
+          // compra externa" (guideline 3.1.3), então nem isso fica clicável aqui dentro.
+          <p className="rounded-[var(--radius-sm)] bg-surface-2 px-3 py-2.5 text-secundario text-txt-2">
+            Gerencie seu plano em {APP_HOST}.
+          </p>
+        ) : (
+          <Link
+            href="/precos"
+            className={
+              'inline-flex h-12 w-full items-center justify-center gap-2 rounded-[var(--radius-sm)] bg-acc px-5 ' +
+              'text-corpo font-semibold text-on-acc shadow-elevado transition duration-[var(--dur-1)] ' +
+              'hover:brightness-110 active:scale-[.97]'
+            }
+          >
+            Ver o {nome} por {precoDoPlanoPorMes(precisaDo)}
+          </Link>
+        )}
 
         {/*
           O caminho gratuito fica embaixo, mas fica — e com alvo de 48px como qualquer outra ação.

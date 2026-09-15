@@ -2,6 +2,7 @@ import { headers } from 'next/headers'
 import Link from 'next/link'
 
 import { podeUsarModulo } from '@/core/billing/planos'
+import { ehRequisicaoDoAppNativo } from '@/core/plataforma/nativo'
 import BloqueioPlano from '@/components/ui/bloqueio-plano'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
@@ -16,8 +17,11 @@ export const dynamic = 'force-dynamic'
 export const metadata = { title: "Nova campanha" }
 
 export default async function PaginaNovaCampanha() {
-  const ctx = await contextoAtual(new Request('https://interno/campanhas/nova', { headers: await headers() }))
+  const cabecalhos = await headers()
+  const ctx = await contextoAtual(new Request('https://interno/campanhas/nova', { headers: cabecalhos }))
   const db = await criarClienteDoUsuario()
+  // T1.5 (docs/64 §0.2): a versão nativa não pode oferecer caminho pra pagar.
+  const nativo = ehRequisicaoDoAppNativo(cabecalhos.get('user-agent'))
 
   // Os cinco públicos vêm resolvidos de uma vez: a tela precisa mostrar o tamanho de cada grupo
   // ANTES da escolha ("Sumiram · 11 pessoas"), senão a pessoa escolhe às cegas.
@@ -46,6 +50,7 @@ export default async function PaginaNovaCampanha() {
     const maiorPublico = Math.max(0, ...Object.values(porSegmento).map((p) => p.length))
     return (
       <BloqueioPlano
+        nativo={nativo}
         precisaDo="essencial"
         acao="mandar a mesma mensagem para todo mundo de uma vez"
         {...(maiorPublico > 0

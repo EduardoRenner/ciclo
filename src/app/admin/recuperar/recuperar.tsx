@@ -52,6 +52,7 @@ function chave(item: Pick<ItemRecuperar, 'clientId' | 'serviceId'>): string {
 export default function RecuperarReceita({
   inicial,
   podeEnviarEmLote,
+  nativo,
   temClientes,
   temCiclos,
   temAtendimentosConcluidos,
@@ -59,6 +60,8 @@ export default function RecuperarReceita({
 }: {
   inicial: ListaRecuperar
   podeEnviarEmLote: boolean
+  /** T1.5 (docs/64 §0.2) — calculado no servidor (`page.tsx`), repassado pro `BloqueioPlano`. */
+  nativo: boolean
   /**
    * Quantos serviços ativos ainda não têm material confiável. A frase abaixo promete que o lucro
    * é "o que sobra depois da comissão e do produto" — e depois da 0069 o produto vale zero até o
@@ -313,6 +316,7 @@ export default function RecuperarReceita({
             Sem as bordas próprias: a ActionBar já é o cartão.
           */
           <BloqueioPlano
+            nativo={nativo}
             className="border-0 bg-transparent p-1 shadow-none"
             precisaDo="essencial"
             acao="avisar todo mundo de uma vez"

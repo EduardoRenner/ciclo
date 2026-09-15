@@ -47,6 +47,7 @@ function diasAte(iso: string): number {
 export default function ListaEstoque({
   produtos,
   podeLancar,
+  nativo,
 }: {
   produtos: ProdutoEstoque[]
   /**
@@ -54,6 +55,8 @@ export default function ListaEstoque({
    * o motivo e o caminho, e sumir com o item esconderia o que dá para comprar.
    */
   podeLancar: boolean
+  /** T1.5 (docs/64 §0.2) — calculado no servidor (`page.tsx`), repassado pro `BloqueioPlano`. */
+  nativo: boolean
 }) {
   const mostrarToast = useToast()
   const [lista, setLista] = useState(produtos)
@@ -154,6 +157,7 @@ export default function ListaEstoque({
           valor concreto com o dado dela, não o folheto.
         */
         <BloqueioPlano
+          nativo={nativo}
           className="mt-4"
           precisaDo="avancado"
           acao="registrar compra e manter o estoque em dia"

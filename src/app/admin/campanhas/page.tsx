@@ -11,6 +11,7 @@ import SectionHeader from '@/components/ui/section-header'
 import StatTile from '@/components/ui/stat-tile'
 import PageHeader from '@/components/ui/page-header'
 import { podeUsarModulo } from '@/core/billing/planos'
+import { ehRequisicaoDoAppNativo } from '@/core/plataforma/nativo'
 import { comMaiuscula, plural } from '@/core/text/vocabulario'
 import { dinheiro } from '@/lib/formato'
 import { contextoAtual } from '@/server/auth/tenant'
@@ -24,8 +25,11 @@ export const dynamic = 'force-dynamic'
 export const metadata = { title: "Campanhas" }
 
 export default async function PaginaCampanhas() {
-  const ctx = await contextoAtual(new Request('https://interno/campanhas', { headers: await headers() }))
+  const cabecalhos = await headers()
+  const ctx = await contextoAtual(new Request('https://interno/campanhas', { headers: cabecalhos }))
   const db = await criarClienteDoUsuario()
+  // T1.5 (docs/64 §0.2): a versão nativa não pode oferecer caminho pra pagar.
+  const nativo = ehRequisicaoDoAppNativo(cabecalhos.get('user-agent'))
 
   const { data: campanhas } = await db
     .from('campaigns')
@@ -122,6 +126,7 @@ export default async function PaginaCampanhas() {
 
       {bloqueado ? (
         <BloqueioPlano
+          nativo={nativo}
           className="mt-4"
           precisaDo="essencial"
           acao="mandar a mesma mensagem para todas de uma vez"

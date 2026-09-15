@@ -120,13 +120,16 @@ function Conteudo({ icones }: { icones: { agenda: React.ReactNode; clientes: Rea
           docs/18-MONETIZACAO-PLANO.md §M.1: com o dado da própria pessoa converte, sem ele vira
           folheto. Quem for mexer aqui precisa ver as duas.
         */}
+        {/* `nativo={false}`: vitrine de design é ferramenta de dev, nunca roda dentro do app nativo — sempre mostra a variante de verdade. */}
         <BloqueioPlano
+          nativo={false}
           precisaDo="essencial"
           acao="avisar todas de uma vez"
           evidencia={{ quantidade: 23, substantivo: 'clientes esperando para voltar', valorCents: 184000 }}
           alternativa={<button type="button">Avisar uma de cada vez, de graça</button>}
         />
         <BloqueioPlano
+          nativo={false}
           className="mt-3"
           precisaDo="avancado"
           acao="guardar ficha de saúde"

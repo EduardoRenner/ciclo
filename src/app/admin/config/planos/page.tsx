@@ -3,6 +3,7 @@ import Link from 'next/link'
 
 import BloqueioPlano from '@/components/ui/bloqueio-plano'
 import { podeUsarModulo } from '@/core/billing/planos'
+import { ehRequisicaoDoAppNativo } from '@/core/plataforma/nativo'
 import { avaliarPermissao } from '@/server/auth/rbac'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
@@ -22,8 +23,11 @@ export const dynamic = 'force-dynamic'
 export const metadata = { title: "Fidelidade e assinatura" }
 
 export default async function PaginaPlanos() {
-  const ctx = await contextoAtual(new Request('https://interno/config/planos', { headers: await headers() }))
+  const cabecalhos = await headers()
+  const ctx = await contextoAtual(new Request('https://interno/config/planos', { headers: cabecalhos }))
   const db = await criarClienteDoUsuario()
+  // T1.5 (docs/64 §0.2): a versão nativa não pode oferecer caminho pra pagar.
+  const nativo = ehRequisicaoDoAppNativo(cabecalhos.get('user-agent'))
   /*
    * `docs/48` §4.6: margem por assinante é dinheiro do negócio, e a mesma regra do caixa vale
    * aqui — `professional` e `reception` não têm `report:read`. O resto da tela (planos e pontos)
@@ -56,6 +60,7 @@ export default async function PaginaPlanos() {
 
       {bloqueado ? (
         <BloqueioPlano
+          nativo={nativo}
           className="mb-4"
           precisaDo="equipe"
           acao="creditar os pontos sozinho, a cada atendimento concluído"

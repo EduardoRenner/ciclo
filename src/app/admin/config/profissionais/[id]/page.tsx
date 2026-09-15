@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 
 import BloqueioPlano from '@/components/ui/bloqueio-plano'
 import { podeUsarModulo } from '@/core/billing/planos'
+import { ehRequisicaoDoAppNativo } from '@/core/plataforma/nativo'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { listarExpediente } from '@/server/services/expediente'
@@ -18,8 +19,11 @@ export const metadata = { title: "Profissional" }
 
 export default async function PaginaExpediente({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const ctx = await contextoAtual(new Request(`https://interno/config/profissionais/${id}`, { headers: await headers() }))
+  const cabecalhos = await headers()
+  const ctx = await contextoAtual(new Request(`https://interno/config/profissionais/${id}`, { headers: cabecalhos }))
   const db = await criarClienteDoUsuario()
+  // T1.5 (docs/64 §0.2): a versão nativa não pode oferecer caminho pra pagar.
+  const nativo = ehRequisicaoDoAppNativo(cabecalhos.get('user-agent'))
 
   const [profissionais, expediente, folgas, plano] = await Promise.all([
     listarProfissionais(db, ctx.tenantId, true),
@@ -48,6 +52,7 @@ export default async function PaginaExpediente({ params }: { params: Promise<{ i
 
       {bloqueado ? (
         <BloqueioPlano
+          nativo={nativo}
           className="mb-4"
           precisaDo="equipe"
           acao="dar um expediente próprio a cada profissional"
