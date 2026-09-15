@@ -7651,3 +7651,35 @@ padrão já aceito em `meu-plano` quando não há credencial do Mercado Pago.
 
 **Sinceridade sobre o teste:** typecheck, lint (`.` inteiro) e suíte unit (2449 casos) e build de
 produção passaram. Continua sem teste contra app nativo de verdade — mesmo motivo de sempre.
+
+---
+
+## 2026-09-15 · Ícone verificado + T1.5 refinado + T4 começado (haptics, compartilhamento nativo)
+
+**Ícone (T2, risco fechado):** conferido byte a byte (`PIL`, canal alfa) — os 4 ícones em
+`public/icons/` têm alpha 255 em toda a imagem, sem transparência real apesar do formato RGBA. Não
+é motivo de rejeição. Um item a menos de incerteza no T2.
+
+**T1.5 refinado — a primeira versão escondia mais do que devia.** A versão nativa de
+`/admin/config/meu-plano` blindava a tela INTEIRA, inclusive "Indicar o CICLO" (convite de um dono
+pro outro, `docs/30` §3) — que não é caminho de cobrança nenhum. A guideline 3.1.1 protege contra
+CAMINHO DE PAGAR, não contra a tela existir. Agora só o bloco de plano/preço/assinar (topo,
+"Se precisar de mais", "Ver tabela de preços") vira texto neutro; uso (profissionais/clientes) e
+indicação continuam normais pros dois. Achado ao revisar em voz alta, não em teste — a guarda
+`meu-plano-tem-porta-de-assinar` (5 casos) confirma que o caminho de assinar sobrevive intacto pra
+quem não é nativo.
+
+**T4 iniciado — duas capacidades nativas genuínas, código pronto, sem precisar de dispositivo pra
+escrever:**
+- `@capacitor/haptics`: toque de confirmar/chegou/concluir/faltou na agenda (a mesma ação
+  otimista do H desta sessão) agora vibra de verdade dentro do app — `src/lib/haptics.ts`,
+  chamado sem `await` pra nunca atrasar a ação real.
+- `@capacitor/share`: "Mandar para um colega" (convite B2B) abre o seletor de compartilhamento do
+  sistema dentro do app, em vez do link fixo pro WhatsApp — `compartilhar-convite.tsx`, com
+  fallback pro link de sempre fora do app nativo.
+- `@capacitor/status-bar` instalado, ainda não conectado — fica pro próximo passo do T4.
+
+**Sinceridade sobre o teste:** typecheck, lint (`.` inteiro), suíte unit (2449 casos, incluindo a
+guarda de "porta de assinar" confirmando o refinamento do T1.5) e build de produção passaram.
+`Capacitor.isNativePlatform()`/`Haptics.impact()`/`Share.share()` nunca rodaram contra um app
+nativo de verdade — mesma ressalva de sempre, T-AND e T0 seguem travados.

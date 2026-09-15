@@ -8,6 +8,7 @@ import { useState, useTransition } from 'react'
 import Button from '@/components/ui/button'
 import Input from '@/components/ui/input'
 import { useToast } from '@/components/ui/toast'
+import { vibrarConfirmacao } from '@/lib/haptics'
 
 import { proximosEstados, type EstadoAgendamento } from '@/core/scheduling/state'
 
@@ -89,6 +90,9 @@ export default function DetalheAgendamento({
       // H-00: dentro da MESMA transição do `fetch` — é isso que faz o React mostrar o estado novo
       // já neste render e descartá-lo sozinho se a transição terminar sem `onAtualizado` (H-01).
       aoMudarOtimista(novoEstado)
+      // T4 (docs/64 §0.4): reforço físico da mudança que já apareceu na tela — nunca aguardado,
+      // nunca pode atrasar nem falhar a ação real.
+      void vibrarConfirmacao()
       try {
         const resultado = await post(`/api/v1/appointments/${agendamento.id}/${ROTA_ACAO[novoEstado]}`)
         // Só `complete` devolve link de avaliação — os outros estados (confirmar, chegou,

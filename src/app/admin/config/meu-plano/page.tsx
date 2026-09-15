@@ -1,4 +1,4 @@
-import { ArrowRight, Check, Lock, Minus, Share2 } from 'lucide-react'
+import { ArrowRight, Check, Lock, Minus } from 'lucide-react'
 import Link from 'next/link'
 import { headers } from 'next/headers'
 
@@ -20,6 +20,7 @@ import { CARTOES } from '@/lib/planos-cartoes'
 import { contextoDePlano } from '@/server/services/planos'
 import AssinarPlano from './assinar-plano'
 import CancelarAssinatura from './cancelar-assinatura'
+import CompartilharConvite from './compartilhar-convite'
 
 /** Sem `await`, viraria página estática — quebra o nonce do CSP por requisição. */
 export const dynamic = 'force-dynamic'
@@ -58,24 +59,18 @@ function textoDeTeto(limite: number | null, usado: number): string {
 
 export default async function PaginaMeuPlano() {
   const cabecalhos = await headers()
-
   /*
    * T1.5 (docs/64 §0.2/§0.7): nenhuma tela de preço, plano ou "Assinar" pode ser alcançável de
    * dentro do app nativo — a Apple/Google proíbem cobrança fora da compra do próprio app
-   * (guideline 3.1.1), e o CICLO não se qualifica pra nenhuma exceção nomeada (§0.9). A versão
-   * nativa desta tela é só o texto: sem preço, sem formulário, sem botão de ação, sem link
-   * clicável — um link contaria como "direcionar pra compra externa", outra regra proibida.
+   * (guideline 3.1.1), e o CICLO não se qualifica pra nenhuma exceção nomeada (§0.9).
+   *
+   * Revisado 15/09: a primeira versão desta trava escondia a tela INTEIRA, inclusive "Indicar o
+   * CICLO" — que não é cobrança nenhuma, é convite de um dono pro outro (`docs/30` §3). Isso
+   * tirava valor real do app sem motivo: a guideline protege contra CAMINHO DE PAGAR, não contra
+   * a tela existir. Agora só o bloco de plano/preço/assinar vira texto neutro; o resto da tela
+   * (uso, indicação) continua normal — nenhum dos dois é caminho pra cobrança.
    */
-  if (ehRequisicaoDoAppNativo(cabecalhos.get('user-agent'))) {
-    return (
-      <>
-        <PageHeader titulo="Meu plano" />
-        <Card>
-          <p className="text-corpo text-txt">Gerencie seu plano em {APP_HOST}.</p>
-        </Card>
-      </>
-    )
-  }
+  const nativo = ehRequisicaoDoAppNativo(cabecalhos.get('user-agent'))
 
   const ctx = await contextoAtual(new Request('https://interno/meu-plano', { headers: cabecalhos }))
   const db = await criarClienteDoUsuario()
@@ -115,34 +110,40 @@ export default async function PaginaMeuPlano() {
 
   return (
     <>
-      <PageHeader titulo="Meu plano" descricao={`Você está no ${NOME_DO_PLANO[atual]}.`} />
+      <PageHeader titulo="Meu plano" descricao={nativo ? undefined : `Você está no ${NOME_DO_PLANO[atual]}.`} />
 
-      <Card className="mb-5">
-        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-          <p className="text-corpo font-semibold text-txt">{NOME_DO_PLANO[atual]}</p>
-          <p className="tabular text-stat font-bold text-txt">{precoDoPlanoPorMes(atual)}</p>
-        </div>
-        {/*
-          A frase mais importante da tela, e a que responde a pergunta que a pessoa realmente tem
-          quando abre "Meu plano" num produto que ainda não cobra. Dizer isso em texto simples é
-          mais honesto — e menos assustador — que um botão de cobrança que não funciona.
-        */}
-        <p className="mt-2 text-secundario text-txt-2">{textoDeMudarDePlano(atual === 'gratis', canal !== null)}</p>
-        {canal ? (
-          <a
-            href={canal.href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-4 inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-5 text-corpo font-semibold text-txt transition duration-[var(--dur-1)] hover:bg-surface-3 active:scale-[.97]"
-          >
-            {canal.rotulo}
-            <ArrowRight aria-hidden className="size-4" />
-          </a>
-        ) : null}
-        {cobrancaAutomatica && assinatura && assinatura.status !== 'cancelled' ? <CancelarAssinatura /> : null}
-      </Card>
+      {nativo ? (
+        <Card className="mb-5">
+          <p className="text-corpo text-txt">Gerencie seu plano em {APP_HOST}.</p>
+        </Card>
+      ) : (
+        <Card className="mb-5">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+            <p className="text-corpo font-semibold text-txt">{NOME_DO_PLANO[atual]}</p>
+            <p className="tabular text-stat font-bold text-txt">{precoDoPlanoPorMes(atual)}</p>
+          </div>
+          {/*
+            A frase mais importante da tela, e a que responde a pergunta que a pessoa realmente tem
+            quando abre "Meu plano" num produto que ainda não cobra. Dizer isso em texto simples é
+            mais honesto — e menos assustador — que um botão de cobrança que não funciona.
+          */}
+          <p className="mt-2 text-secundario text-txt-2">{textoDeMudarDePlano(atual === 'gratis', canal !== null)}</p>
+          {canal ? (
+            <a
+              href={canal.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-4 inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-5 text-corpo font-semibold text-txt transition duration-[var(--dur-1)] hover:bg-surface-3 active:scale-[.97]"
+            >
+              {canal.rotulo}
+              <ArrowRight aria-hidden className="size-4" />
+            </a>
+          ) : null}
+          {cobrancaAutomatica && assinatura && assinatura.status !== 'cancelled' ? <CancelarAssinatura /> : null}
+        </Card>
+      )}
 
-      {assinatura?.status === 'paused' ? (
+      {!nativo && assinatura?.status === 'paused' ? (
         <Card className="mb-5 flex gap-3 border-warn">
           <Lock aria-hidden className="mt-0.5 size-5 shrink-0 text-warn" />
           <p className="text-secundario text-txt-2">
@@ -192,7 +193,7 @@ export default async function PaginaMeuPlano() {
         </p>
       </Card>
 
-      {acima.length > 0 ? (
+      {nativo ? null : acima.length > 0 ? (
         <>
           <SectionHeader>Se precisar de mais</SectionHeader>
           <div className="flex flex-col gap-3">
@@ -267,24 +268,19 @@ export default async function PaginaMeuPlano() {
       <SectionHeader>Indicar o CICLO</SectionHeader>
       <Card className="mb-6">
         <p className="text-secundario text-txt-2">{textoDeParaQueIndicar()}</p>
-        <a
-          href={linkWhatsAppCompartilhar(
-            textoDoConviteDoCiclo({ nomeDoNegocio: ctx.tenant.name ?? '', url: APP_URL }),
-          )}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-4 inline-flex h-12 w-full items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-5 text-corpo font-semibold text-txt transition duration-[var(--dur-1)] hover:bg-surface-3 active:scale-[.97]"
-        >
-          <Share2 aria-hidden className="size-4" />
-          Mandar para um colega
-        </a>
+        <CompartilharConvite
+          texto={textoDoConviteDoCiclo({ nomeDoNegocio: ctx.tenant.name ?? '', url: APP_URL })}
+          hrefWhatsApp={linkWhatsAppCompartilhar(textoDoConviteDoCiclo({ nomeDoNegocio: ctx.tenant.name ?? '', url: APP_URL }))}
+        />
       </Card>
 
-      <p className="py-8 text-center text-label text-txt-3">
-        <Link href="/precos" className="toque-48 -mx-2 px-2 font-semibold text-acc-2 underline underline-offset-2">
-          Ver a tabela de preços completa
-        </Link>
-      </p>
+      {nativo ? null : (
+        <p className="py-8 text-center text-label text-txt-3">
+          <Link href="/precos" className="toque-48 -mx-2 px-2 font-semibold text-acc-2 underline underline-offset-2">
+            Ver a tabela de preços completa
+          </Link>
+        </p>
+      )}
     </>
   )
 }
