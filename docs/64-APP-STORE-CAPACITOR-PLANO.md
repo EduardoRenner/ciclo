@@ -14,6 +14,26 @@
 
 ---
 
+## Status desta rodada (15/09, loop autônomo)
+
+| Ticket | Estado |
+|---|---|
+| **T1** (scaffold Capacitor) | ✅ Feito — commit `58043e5` |
+| **T1.5** (bloquear cobrança no app) | ✅ Feito — commit `a847275`. Pendência de baixo risco: Central de Ações e tela de bloqueio de módulo ainda não checam `ehRequisicaoDoAppNativo` (o LINK delas já leva pra telas neutralizadas, só o texto do convite continua aparecendo) |
+| **T-DEL** (exclusão de conta) | ✅ Feito — commit `e6a633b` |
+| **T-DEMO** (conta de demonstração) | ⏸️ Não feito — decidir entre reaproveitar `dom-rocha` ou rodar `seed-tenant-teste.mjs` exige acesso de produção que esta sessão não tem. Ação do Eduardo. |
+| **T-AND** (scaffold Android) | 🔴 Bloqueado — esta máquina não tem Java/JDK nem Android SDK, nem pro esqueleto do projeto |
+| **T0** (decisão Mac/CI pro iOS) | 🔴 Bloqueado — só o Eduardo decide |
+| **T2, T3, T4** (ícone, push, ajustes 4.2) | Não iniciados — dependem de `ios/`/`android/` existirem (T0/T-AND) |
+| **T5, T6, T7** (conta Apple, teste real, submissão) | Não iniciados — dependem do exposto acima |
+
+**Nenhum código deste plano foi testado contra um app nativo de verdade** — nem `ios/` nem
+`android/` existem no repositório ainda, só as dependências e a configuração. Toda verificação foi
+typecheck + lint + suíte unit + build de produção; `test:integration`/`test:rls` seguem pendentes
+(Docker local fora do ar a sessão inteira).
+
+---
+
 ## 0 · Atualização 15/09: pesquisa de mercado — o que muda o plano
 
 Pedido do Eduardo: pesquisar a fundo o que é preciso pra passar direto na revisão, porque ele não
@@ -403,7 +423,7 @@ comprar/pedir emprestado um Mac.
 
 ---
 
-### T1 · Scaffold do Capacitor sobre o Next.js
+### T1 · Scaffold do Capacitor sobre o Next.js `[FEITO 2026-09-15]`
 
 **Objetivo.** `npx cap init` configurado, apontando para o build estático/SSR do Next existente,
 sem quebrar o deploy web atual.
@@ -442,7 +462,7 @@ não escrito à mão).
 
 ---
 
-### T1.5 · Bloquear TODA tela de cobrança dentro do app iOS `[RISCO-ABERTO]` — o ticket mais importante do plano
+### T1.5 · Bloquear TODA tela de cobrança dentro do app iOS `[RISCO-ABERTO]` `[FEITO 2026-09-15]` — o ticket mais importante do plano
 
 **Objetivo.** Fechar o risco #1 achado na pesquisa (§0.2): nenhuma tela de preço, plano ou
 "Assinar" pode ser alcançável de dentro do app nativo — a Apple rejeita isso sob a guideline 3.1.1
@@ -507,7 +527,7 @@ plataforma; `meu-plano/page.tsx`, `crm.ts`, `bloqueio-plano.tsx`.
 
 ---
 
-### T-DEL · Exclusão de conta pelo próprio dono/profissional
+### T-DEL · Exclusão de conta pelo próprio dono/profissional `[FEITO 2026-09-15]`
 
 **Objetivo.** Fechar a lacuna achada em §0.3 — hoje ninguém consegue excluir a própria conta, nem
 no site. É pré-requisito de App Store (guideline 5.1.1(v)) **e** de Google Play (mesma exigência, e
@@ -544,7 +564,7 @@ resto.
 
 ---
 
-### T-AND · Scaffold Android — pode começar JÁ, sem depender do Eduardo nem de Mac
+### T-AND · Scaffold Android — pode começar JÁ, sem depender do Eduardo nem de Mac `[BLOQUEADO 2026-09-15: falta Java/JDK e Android SDK nesta máquina]`
 
 **Objetivo.** A descoberta de §0.7: Android builda inteiro no Windows desta sessão. Enquanto T0
 (decisão do Mac/CI pro iOS) não sai, o Android pode chegar bem mais longe — potencialmente até
