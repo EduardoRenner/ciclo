@@ -2574,6 +2574,7 @@ export type Database = {
           price_cents: number
           pricing_model: string
           requires_anamnesis: boolean
+          suggested_product_id: string | null
           tenant_id: string
         }
         Insert: {
@@ -2603,6 +2604,7 @@ export type Database = {
           price_cents: number
           pricing_model?: string
           requires_anamnesis?: boolean
+          suggested_product_id?: string | null
           tenant_id: string
         }
         Update: {
@@ -2632,6 +2634,7 @@ export type Database = {
           price_cents?: number
           pricing_model?: string
           requires_anamnesis?: boolean
+          suggested_product_id?: string | null
           tenant_id?: string
         }
         Relationships: [
@@ -2640,6 +2643,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "service_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "services_suggested_product_id_fkey"
+            columns: ["suggested_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
           {

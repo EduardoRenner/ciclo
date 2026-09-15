@@ -7,7 +7,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 /** Colunas devolvidas pela API. `cost_cents` fica de fora: é estimativa interna, não vai para a UI de catálogo. */
 const COLUNAS =
-  'id, name, description, duration_min, buffer_before_min, buffer_after_min, price_cents, pricing_model, hourly_rate_cents, half_day_price_cents, cycle_days, cycle_days_observado, cycle_days_observado_amostra, deposit_bps, deposit_min_cents, parallel_capacity, requires_anamnesis, bookable_online, active, position, category_id, image_key'
+  'id, name, description, duration_min, buffer_before_min, buffer_after_min, price_cents, pricing_model, hourly_rate_cents, half_day_price_cents, cycle_days, cycle_days_observado, cycle_days_observado_amostra, deposit_bps, deposit_min_cents, parallel_capacity, requires_anamnesis, bookable_online, active, position, category_id, image_key, suggested_product_id'
 
 /**
  * Limites copiados dos `check` da 0001 — validar aqui devolve erro de campo em
@@ -43,6 +43,10 @@ const EsquemaServicoBase = z.object({
   requiresAnamnesis: z.boolean().default(false),
   bookableOnline: z.boolean().default(true),
   categoryId: z.uuid('Categoria inválida.').nullish(),
+  // 0091: produto de revenda oferecido no momento de marcar este serviço (ex: corte → máscara de
+  // hidratação). Null = sem sugestão, o caso comum. A validação de que o produto É de revenda e É
+  // deste tenant mora em `atualizarServico`/`criarServico`, não aqui — o Zod não bate no banco.
+  suggestedProductId: z.uuid('Produto inválido.').nullish(),
 })
 
 /** Mesma regra de `services_visit_hourly_tem_taxa` (migration 0029), checada antes do banco pra devolver erro de campo em pt-BR. */
@@ -94,7 +98,26 @@ function paraColunas(entrada: EntradaParcial): ColunasServico {
   if (entrada.requiresAnamnesis !== undefined) colunas.requires_anamnesis = entrada.requiresAnamnesis
   if (entrada.bookableOnline !== undefined) colunas.bookable_online = entrada.bookableOnline
   if (entrada.categoryId !== undefined) colunas.category_id = entrada.categoryId ?? null
+  if (entrada.suggestedProductId !== undefined) colunas.suggested_product_id = entrada.suggestedProductId ?? null
   return colunas
+}
+
+/**
+ * Confere que o produto sugerido é deste tenant E é de revenda (`is_retail`) — a ficha de consumo
+ * aceita insumo E revenda juntos (0105/ficha-de-consumo.ts), mas aqui é o produto que a CLIENTE vê
+ * e pode querer levar, então insumo puro (água oxigenada) não faz sentido na lista.
+ */
+async function exigirProdutoDeRevenda(db: Cliente, tenantId: string, productId: string): Promise<void> {
+  const { data, error } = await db
+    .from('products')
+    .select('id')
+    .eq('tenant_id', tenantId)
+    .eq('id', productId)
+    .eq('is_retail', true)
+    .is('deleted_at', null)
+    .maybeSingle()
+  if (error) throw new AppError('INTERNAL', { cause: error })
+  if (!data) throw AppError.validacao({ suggestedProductId: 'Esse produto não está no seu catálogo de revenda.' })
 }
 
 export async function listarServicos(db: Cliente, tenantId: string, incluirArquivados = false) {
@@ -130,6 +153,7 @@ function exigirTaxaDeVisitHourly(entrada: Pick<Entrada, 'pricingModel' | 'hourly
 
 export async function criarServico(db: Cliente, tenantId: string, entrada: Entrada) {
   exigirTaxaDeVisitHourly(entrada)
+  if (entrada.suggestedProductId != null) await exigirProdutoDeRevenda(db, tenantId, entrada.suggestedProductId)
 
   // Nasce no fim da lista: `position` = maior + 1. Sem isso todo serviço novo
   // entraria em 0 e brigaria com os do pack.
@@ -158,6 +182,8 @@ export async function criarServico(db: Cliente, tenantId: string, entrada: Entra
 }
 
 export async function atualizarServico(db: Cliente, tenantId: string, id: string, entrada: EntradaParcial) {
+  if (entrada.suggestedProductId != null) await exigirProdutoDeRevenda(db, tenantId, entrada.suggestedProductId)
+
   const colunas = paraColunas(entrada)
   if (Object.keys(colunas).length === 0) throw AppError.validacao({ _corpo: 'Nada para alterar.' })
 

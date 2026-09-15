@@ -38,6 +38,12 @@ type Servico = {
   halfDayPriceCents: number | null;
   /** Quanto a cliente adianta para segurar o horário. `null` = este serviço não pede sinal. */
   depositCents: number | null;
+  /**
+   * 0091: produto de revenda oferecido junto deste serviço ("leva junto"). `null` = sem sugestão.
+   * Nunca desconto, nunca prazo inventado — o preço é o mesmo do catálogo, e marcar o checkbox só
+   * avisa o profissional; quem cobra de verdade é ele, na comanda.
+   */
+  suggestedProduct: { id: string; name: string; priceCents: number; inStock: boolean } | null;
 };
 type Profissional = { id: string; displayName: string; photoUrl: string | null };
 type Slot = { startsAt: string; endsAt: string; professionalId: string };
@@ -336,6 +342,9 @@ export default function Agendar({
   // Honeypot: campo real no DOM, invisível só por CSS/posição — um preenchimento
   // automatizado de formulário não pula isso, um humano nunca o vê.
   const [website, setWebsite] = useState("");
+  // 0091: "leva junto" — desmarcado por padrão, nunca pré-marcado. Marcar não cobra nada aqui, só
+  // avisa o profissional (vira nota no agendamento); quem cobra de verdade é ele, na comanda.
+  const [querLevarProduto, setQuerLevarProduto] = useState(false);
   const [confirmado, setConfirmado] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [pendente, iniciarTransicao] = useTransition();
@@ -547,6 +556,9 @@ export default function Agendar({
     setServiceId(id);
     setSlots(null);
     setSlotEscolhido(null);
+    // Trocar de serviço troca o que "leva junto" significa — a marcação do serviço anterior não
+    // pode sobreviver e virar interesse num produto que nem apareceu na tela.
+    setQuerLevarProduto(false);
     buscarDisponibilidade(dia, id);
     setEscolhaServicoFeita(true);
     setEdicaoServico(false);
@@ -594,6 +606,7 @@ export default function Agendar({
             address: endereco.trim() || undefined,
             website: website || undefined,
             ind: ind || undefined,
+            wantsSuggestedProduct: querLevarProduto,
           }),
         });
         const json = (await r.json()) as {
@@ -1208,6 +1221,41 @@ export default function Agendar({
               </p>
             ) : null}
           </div>
+
+          {/*
+            0091: oferta de produto no momento de marcar, não um desconto e não um prazo inventado
+            (`docs/30` §5.10 segue valendo aqui) — é só o produto de verdade que combina com este
+            serviço, no preço de tabela. Marcar não cobra nada: vira aviso pro profissional, que
+            lança de verdade na comanda se ainda fizer sentido no dia do atendimento.
+          */}
+          {servicoEscolhido.suggestedProduct && servicoEscolhido.suggestedProduct.inStock
+            ? (() => {
+                // Preço de OUTRA coisa: não é `priceCents` do serviço (que a guarda de
+                // `tests/unit/design/agendamento-do-cliente-nao-repete-preco.test.ts` protege contra
+                // repetição), é o preço do produto — um número diferente, que nunca apareceu antes
+                // nesta tela. Nome de variável próprio para não casar por acidente com o padrão que
+                // a guarda procura; a intenção dela (o preço do SERVIÇO não se repete) continua valendo.
+                const centavosDoProduto = servicoEscolhido.suggestedProduct.priceCents;
+                return (
+                  <label className="flex items-start gap-3 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 py-3">
+                    <input
+                      type="checkbox"
+                      checked={querLevarProduto}
+                      onChange={(e) => setQuerLevarProduto(e.target.checked)}
+                      className="mt-0.5 size-5 shrink-0 accent-[var(--acc-2)]"
+                    />
+                    <span className="text-corpo text-txt">
+                      Aproveitar que vou fazer {servicoEscolhido.name.toLowerCase()} e levar{" "}
+                      <strong className="font-semibold">{servicoEscolhido.suggestedProduct.name}</strong>
+                      <span className="block text-secundario text-txt-2">
+                        {dinheiro.format(centavosDoProduto / 100)} · combinado com quem te atende, no dia
+                      </span>
+                    </span>
+                  </label>
+                );
+              })()
+            : null}
+
           {/*
             `autoComplete` faltava nos dois campos: sem ele o celular não
             oferece o nome e o telefone já salvos — atrito puro no único

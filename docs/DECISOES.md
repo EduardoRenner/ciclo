@@ -7397,3 +7397,42 @@ dificuldade de portar dado de cliente ao cancelar — argumento de confiança em
 Recomendação registrada, não construída: abrir páginas por profissão sem tirar o Motor de Ciclo do
 centro — crescer alcance sem virar "mais uma agenda genérica", que é o erro que o `docs/43` já
 documentou contra os concorrentes de nicho.
+
+---
+
+## 2026-09-15 · Produto sugerido no momento de marcar (upsell, migration 0091)
+
+**Pedido:** Eduardo pediu um upsell "inovador": quando a cliente marca um serviço, o CICLO oferece
+um produto de revenda relacionado (ex: corte de cabelo → máscara de hidratação), com um empurrão
+de "leva junto" — não desconto de verdade, framing de bundle.
+
+**Duas travas do próprio código, resolvidas sem quebrar nenhuma:**
+1. `core/agenda/ociosidade.ts` já registra que desconto automático é "a porta dos fundos da
+   precificação automática, vedada pelo CLAUDE.md" — a feature NÃO corta preço. O produto aparece
+   pelo preço de tabela; quem decide cobrar (e quanto) continua sendo o profissional na comanda.
+2. `docs/30` §5.10 proíbe urgência/prazo inventado. Sem contador, sem "só hoje" — a moldura é
+   genuinamente a oportunidade real de "já que você vai fazer X, leva Y junto", não um relógio falso.
+
+**Reverte uma decisão anterior, por pedido explícito:** `docs/62` Fase 4 tinha adiado a tabela de
+relação serviço↔produto-sugerido por falta de dado real que justificasse o desenho. Aqui o pedido
+já É o dado real — o desenho ficou mais simples que uma tabela N-para-N: uma FK só
+(`services.suggested_product_id`, migration 0091), um produto de revenda por serviço no MVP.
+
+**O que foi construído:**
+- `services.suggested_product_id` (nullable, `on delete set null`), validado no servidor como
+  produto do tenant E `is_retail = true` (`exigirProdutoDeRevenda` em `servicos.ts`).
+- Tela de configuração em `/admin/config/servicos/[id]/ficha` (mesma página da ficha de consumo —
+  as duas são a mesma pergunta de fundo, "o que este serviço leva junto", uma consumida e outra
+  vendida), componente `sugestao.tsx`.
+- Página pública de agendar: card "leva junto" depois de escolher horário, preço real, checkbox
+  desmarcado por padrão. Marcar não cobra nada — vira `client_note` no agendamento
+  ("Demonstrou interesse em levar: {produto}"), resolvido NO SERVIDOR a partir do `service_id`
+  (nunca confiando em nome que o navegador mandou), pro profissional ver na agenda e lançar de
+  verdade na comanda se ainda fizer sentido no dia.
+
+**Sinceridade sobre o teste:** typecheck, lint (`src/` inteiro) e a suíte unit inteira (2445 casos,
+incluindo `MIGRATIONS_ESPERADAS`/`ULTIMA_MIGRATION` atualizados junto da migration, e a guarda de
+"preço do serviço aparece uma vez só" ajustada para o preço do PRODUTO não colidir com o padrão
+dela) e build de produção passaram. A migration 0091 e a RLS dela **não rodaram contra banco
+real** — Docker local seguia fora do ar nesta máquina a sessão inteira. Rodar `supabase db reset`
++ `pnpm verify` completo (incluindo `test:rls`) antes do próximo deploy.

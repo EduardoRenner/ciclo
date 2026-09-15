@@ -101,6 +101,12 @@ export type PerfilPublico = {
     depositCents: number | null
     /** Foto do serviço — endereço já montado. `null` quando o salão não subiu nenhuma. */
     imageUrl: string | null
+    /**
+     * 0091: o produto de revenda que o dono escolheu para "leva junto" deste serviço. `null` = sem
+     * sugestão, o caso comum. Sem desconto e sem preço cortado — é o MESMO `price_cents` do
+     * catálogo; o que muda é só o momento em que a cliente vê o produto.
+     */
+    suggestedProduct: { id: string; name: string; priceCents: number; inStock: boolean } | null
   }[]
   professionals: { id: string; displayName: string; photoUrl: string | null }[]
   /**
@@ -142,7 +148,7 @@ export const perfilPublico = cache(async (slug: string): Promise<PerfilPublico> 
       svc
         .from('services')
         .select(
-          'id, name, description, duration_min, price_cents, pricing_model, hourly_rate_cents, half_day_price_cents, deposit_bps, deposit_min_cents, image_key',
+          'id, name, description, duration_min, price_cents, pricing_model, hourly_rate_cents, half_day_price_cents, deposit_bps, deposit_min_cents, image_key, suggested_product_id, products:suggested_product_id ( id, name, price_cents, stock_qty, active )',
         )
         .eq('tenant_id', tenant.id)
         .eq('active', true)
@@ -246,6 +252,15 @@ export const perfilPublico = cache(async (slug: string): Promise<PerfilPublico> 
           depositMinCents: s.deposit_min_cents,
         }),
         imageUrl: urlDaVitrine(s.image_key),
+        // Produto arquivado (`active: false`) não aparece — o dono desligou do catálogo, mas a FK
+        // continua apontando pra ele até alguém trocar a sugestão (mesmo raciocínio de `on delete
+        // set null` na migration: a sugestão não pode sobreviver ao produto sumir de verdade).
+        // `price_cents` pode ser `null` (produto de revenda sem preço ainda cadastrado) — sem
+        // preço não é oferecível, mesma regra de `adicionarItemComanda`.
+        suggestedProduct:
+          s.products && s.products.active && s.products.price_cents != null
+            ? { id: s.products.id, name: s.products.name, priceCents: s.products.price_cents, inStock: s.products.stock_qty > 0 }
+            : null,
       })),
       professionals: (profissionais.data ?? []).map((p) => ({ id: p.id, displayName: p.display_name, photoUrl: urlDaVitrine(p.photo_key) })),
       reviews: {
@@ -502,6 +517,9 @@ export const EsquemaBookingPublico = z.object({
   // `criarAgendamentoPublico`, não do schema. Um token inválido nunca vira erro de validação:
   // vira, na pior das hipóteses, um agendamento sem indicação.
   ind: z.string().trim().nullish(),
+  // 0091: a cliente marcou que quer o produto sugerido para este serviço. Não cobra nada aqui —
+  // vira uma nota pro profissional lançar na comanda de verdade, se ainda fizer sentido no dia.
+  wantsSuggestedProduct: z.boolean().default(false),
 })
 
 /**
@@ -511,7 +529,11 @@ export const EsquemaBookingPublico = z.object({
  * novo e existente" do TICKET-027: o retorno de sucesso é o mesmo dos dois
  * jeitos, porque `resolverCliente` não diferencia por fora).
  */
-export async function criarAgendamentoPublico(slug: string, entrada: z.infer<typeof EsquemaBookingPublico>) {
+// `z.input`, não `z.infer`: `wantsSuggestedProduct` tem `.default(false)` no schema, o que o
+// deixa OPCIONAL na entrada e OBRIGATÓRIO na saída inferida. `lerCorpo` (rota) aplica o default
+// via `.parse()`; os testes de integração chamam esta função direto, sem passar pelo Zod, e
+// `z.input` é o tipo que reflete o que dá para digitar sem o default.
+export async function criarAgendamentoPublico(slug: string, entrada: z.input<typeof EsquemaBookingPublico>) {
   const telefone = normalizarTelefoneBR(entrada.phone)
   if (!telefone) throw AppError.validacao({ phone: 'Telefone inválido. Confira o DDD e o número.' })
 
@@ -534,6 +556,21 @@ export async function criarAgendamentoPublico(slug: string, entrada: z.infer<typ
     // não pode transformar "agendar" em "não consigo agendar".
     const referredBy = entrada.ind ? verificarTokenIndicacao(entrada.ind) : null
 
+    // 0091: resolvido no servidor, nunca a partir de um nome que o navegador mandou — quem decide
+    // se o produto ainda existe e ainda é o sugerido deste serviço é o banco, na hora.
+    let notaProduto: string | null = null
+    if (entrada.wantsSuggestedProduct) {
+      const { data: servicoComSugestao } = await svc
+        .from('services')
+        .select('products:suggested_product_id ( name )')
+        .eq('id', entrada.serviceId)
+        .eq('tenant_id', tenant.id)
+        .maybeSingle()
+      if (servicoComSugestao?.products?.name) {
+        notaProduto = `Demonstrou interesse em levar: ${servicoComSugestao.products.name}.`
+      }
+    }
+
     const agendamento = await criarAgendamento(
       svc,
       tenant.id,
@@ -545,7 +582,7 @@ export async function criarAgendamentoPublico(slug: string, entrada: z.infer<typ
         professionalId,
         startsAt: entrada.startsAt,
         origin: 'public_page',
-        note: null,
+        note: notaProduto,
         address: entrada.address ?? null,
       },
       tenant.settings,
