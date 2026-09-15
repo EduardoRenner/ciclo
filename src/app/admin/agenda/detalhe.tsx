@@ -60,10 +60,13 @@ export default function DetalheAgendamento({
   agendamento,
   onFechar,
   onAtualizado,
+  aoMudarOtimista,
 }: {
   agendamento: LinhaAgendaDia
   onFechar: () => void
   onAtualizado: () => void
+  /** docs/53 H-00: aplica o novo status na lista e neste sheet antes da rede responder. */
+  aoMudarOtimista: (status: EstadoAgendamento) => void
 }) {
   const [pendente, iniciarTransicao] = useTransition()
   const [mostrarCancelar, setMostrarCancelar] = useState(false)
@@ -83,6 +86,9 @@ export default function DetalheAgendamento({
   function executar(novoEstado: EstadoAgendamento) {
     setErro(null)
     iniciarTransicao(async () => {
+      // H-00: dentro da MESMA transição do `fetch` — é isso que faz o React mostrar o estado novo
+      // já neste render e descartá-lo sozinho se a transição terminar sem `onAtualizado` (H-01).
+      aoMudarOtimista(novoEstado)
       try {
         const resultado = await post(`/api/v1/appointments/${agendamento.id}/${ROTA_ACAO[novoEstado]}`)
         // Só `complete` devolve link de avaliação — os outros estados (confirmar, chegou,
@@ -217,8 +223,14 @@ export default function DetalheAgendamento({
 
       {!mostrarCancelar && !mostrarRemarcar ? (
         <div className="flex flex-col gap-2">
+          {/*
+            H-00: SEM `carregando={pendente}` de propósito. Assim que este botão é tocado, o
+            estado otimista troca `acoesDeEstado` inteiro (o próprio botão some, o próximo da
+            sequência aparece no lugar) — um spinner aqui giraria num botão que ninguém tocou.
+            `disabled` continua bloqueando toque duplo enquanto a mutação real está em voo.
+          */}
           {acoesDeEstado.map((estado) => (
-            <Button key={estado} largura="cheia" carregando={pendente} onClick={() => executar(estado)}>
+            <Button key={estado} largura="cheia" disabled={pendente} onClick={() => executar(estado)}>
               {ROTULO_ACAO[estado]}
             </Button>
           ))}

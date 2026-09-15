@@ -502,6 +502,14 @@ export default function Hoje({
               setSelecionado(null)
               atualizarDepois()
             }}
+            /*
+              docs/53 H-00, escopo menor que em `agenda.tsx`: aqui "Hoje" fatia `resumo.restOfDay`
+              em três seções (a seguir, alertas, resto do dia) sem uma lista única — otimizar as TRÊS
+              juntas é trabalho maior que este ticket cobre. O sheet em si já fica otimista (os
+              botões trocam na hora); as linhas por trás dele continuam esperando `atualizarDepois()`,
+              como sempre esperaram.
+            */
+            aoMudarOtimista={(status) => setSelecionado((s) => (s ? { ...s, status } : s))}
           />
         ) : null}
       </Sheet>

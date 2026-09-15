@@ -4,7 +4,7 @@ import Link from 'next/link'
 
 import { CalendarX } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useOptimistic, useState } from 'react'
 
 import AppointmentRow from '@/components/ui/appointment-row'
 import { useVocabulario } from '@/components/shell/vocabulario'
@@ -66,7 +66,22 @@ export default function Agenda({
   const vocabulario = useVocabulario()
   const router = useRouter()
   const atualizarDepois = useAtualizarDepois()
-  const [selecionado, setSelecionado] = useState<LinhaAgendaDia | null>(null)
+  const [selecionadoId, setSelecionadoId] = useState<string | null>(null)
+
+  /*
+    docs/53 H-00: o toque em "Confirmar"/"Chegou"/"Concluir"/"Marcar falta" muda a linha e o sheet
+    NA HORA, sem esperar a rede. `resumo.appointments` é a verdade que vem do servidor (prop); este
+    estado é só a projeção otimista por cima dela. Se a mutação falhar, `DetalheAgendamento` não
+    chama `onAtualizado`, a prop `resumo` não muda, e o React descarta a atualização otimista
+    sozinho assim que a transição termina — a linha volta ao estado real (H-01), sem código extra
+    de reversão aqui.
+  */
+  const [appointmentsOtimista, aplicarStatusOtimista] = useOptimistic(
+    resumo.appointments,
+    (estado, mudanca: { id: string; status: EstadoAgendamento }) =>
+      estado.map((a) => (a.id === mudanca.id ? { ...a, status: mudanca.status } : a)),
+  )
+  const selecionado = appointmentsOtimista.find((a) => a.id === selecionadoId) ?? null
 
   function navegar(novoDia: string, novoProfissional?: string) {
     const params = new URLSearchParams({ date: novoDia })
@@ -185,9 +200,9 @@ export default function Agenda({
         </Card>
       ) : (
         <ul className="flex flex-col gap-2">
-          {resumo.appointments.map((a: LinhaAgendaDia) => (
+          {appointmentsOtimista.map((a: LinhaAgendaDia) => (
             <li key={a.id}>
-              <button type="button" onClick={() => setSelecionado(a)} className="block w-full text-left">
+              <button type="button" onClick={() => setSelecionadoId(a.id)} className="block w-full text-left">
                 <AppointmentRow
                   horario={horaLocal(a.starts_at)}
                   clienteNome={a.clients?.name ?? 'Cliente'}
@@ -203,15 +218,16 @@ export default function Agenda({
         </ul>
       )}
 
-      <Sheet aberto={!!selecionado} aoFechar={(aberto) => !aberto && setSelecionado(null)} titulo="Agendamento">
+      <Sheet aberto={!!selecionado} aoFechar={(aberto) => !aberto && setSelecionadoId(null)} titulo="Agendamento">
         {selecionado ? (
           <DetalheAgendamento
             agendamento={selecionado}
-            onFechar={() => setSelecionado(null)}
+            onFechar={() => setSelecionadoId(null)}
             onAtualizado={() => {
-              setSelecionado(null)
+              setSelecionadoId(null)
               atualizarDepois()
             }}
+            aoMudarOtimista={(status) => aplicarStatusOtimista({ id: selecionado.id, status })}
           />
         ) : null}
       </Sheet>

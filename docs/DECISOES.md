@@ -7436,3 +7436,44 @@ incluindo `MIGRATIONS_ESPERADAS`/`ULTIMA_MIGRATION` atualizados junto da migrati
 dela) e build de produção passaram. A migration 0091 e a RLS dela **não rodaram contra banco
 real** — Docker local seguia fora do ar nesta máquina a sessão inteira. Rodar `supabase db reset`
 + `pnpm verify` completo (incluindo `test:rls`) antes do próximo deploy.
+
+---
+
+## 2026-09-15 · H-00/H-01 — toque otimista na agenda (docs/53)
+
+**Contexto:** auditoria de diferencial (`docs/53`) pedida pelo Eduardo. A confirmou já estar pronto
+(custo por forma de pagamento), C já pronto (extrato do profissional), B já pronto (frase do
+conflito de interesse em `/precos`). Escolhido para construir agora: **H**, o único item sem risco
+de veto de precificação — "resposta otimista do toque", já descrito no `docs/53` §4 H-00/H-01 como
+padrão a herdar por todo ticket de mutação, não como feature isolada.
+
+**Construído:** `useOptimistic` (React 19) em `src/app/admin/agenda/agenda.tsx` — a lista do dia e o
+sheet de detalhe mudam de estado (Confirmar → Chegou → Concluir, Marcar falta) no MESMO frame do
+toque, sem esperar a rede. Reversão é o comportamento nativo do hook: se a mutação falhar,
+`DetalheAgendamento` não chama `onAtualizado`, a prop real não muda, e o React descarta a atualização
+otimista sozinho quando a transição termina — sem código de rollback escrito à mão (H-01).
+
+**Escopo, e o que ficou de fora conscientemente:**
+- Só as transições de estado direto (confirmar/chegou/concluir/faltou). Cancelar e remarcar
+  continuam com o fluxo anterior (formulário de motivo/novo horário primeiro) — menos sensíveis a
+  latência, e otimizá-los juntos inflaria o ticket sem o mesmo ganho.
+- `src/app/admin/hoje/hoje.tsx` reusa o mesmo `DetalheAgendamento`, mas fatia `resumo.restOfDay` em
+  três seções (a seguir/alertas/resto do dia) sem uma lista única — só o SHEET ficou otimista ali;
+  as linhas atrás dele continuam esperando `atualizarDepois()`. Fazer as três seções otimistas
+  juntas é trabalho maior, não deste ticket.
+- Não criei o `core/mutations/usar-otimista.ts` que o `docs/53` §4 H-00 sugere: um hook genérico com
+  UM único call-site é abstração prematura (regra da casa). `useOptimistic` foi usado direto; se um
+  segundo call-site aparecer (ex.: comanda, clientes), aí sim vale extrair o padrão.
+- Não criei a guarda `otimismo-e-verdade` (H-02) mencionada no plano: o projeto não tem infra de
+  teste de componente (`@testing-library/react` não está instalado), e adicionar essa dependência é
+  decisão maior que este ticket sozinho não deveria tomar.
+
+**Sinceridade sobre o teste:** typecheck, lint e a suíte unit inteira (2445 casos) e build de
+produção passaram. Comportamento do `useOptimistic` em si (o toque muda a tela antes da rede, e
+reverte se o servidor recusar) **não foi visto ao vivo no navegador** — Docker local segue fora do
+ar nesta máquina a sessão inteira. Verificar isso no navegador é o primeiro passo assim que o
+ambiente local voltar.
+
+**Próximo item da fila do `docs/53` (ordem A → C → F → B → D, G represado atrás do F0):** só resta
+**D** (a cadeira vazia com piso de lucro) na fila principal — o mais caro e o único com risco real
+de veto de precificação automática. Prosseguindo autonomamente por pedido do Eduardo.
