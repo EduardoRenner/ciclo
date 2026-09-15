@@ -93,7 +93,7 @@ export default function FormularioExcluirConta() {
     <div className="flex flex-col gap-4">
       <Card className="flex flex-col gap-3">
         <p className="text-secundario text-txt-2">
-          Isto apaga seu login do CICLO para sempre — não dá para voltar atrás. O histórico de{' '}
+          Isto apaga seu login do CICLO para sempre. Não dá para voltar atrás. O histórico de{' '}
           {negocios === 0 ? 'qualquer negócio' : negocios === 1 ? 'o negócio abaixo' : 'os negócios abaixo'} (agenda, clientes,
           caixa) continua intacto, exatamente como quando alguém sai da equipe: só o SEU acesso some.
         </p>
@@ -135,7 +135,7 @@ export default function FormularioExcluirConta() {
         <div className="flex flex-col gap-3">
           <p className="text-corpo text-txt-2">
             Seu nome, e-mail e login somem. {negocios === 1 ? 'O negócio continua' : 'Os negócios continuam'} funcionando com o
-            histórico intacto — só você deixa de conseguir entrar.
+            histórico intacto, só você deixa de conseguir entrar.
           </p>
           <Button variante="danger" largura="cheia" carregando={pendente} onClick={excluir}>
             Excluir mesmo assim
