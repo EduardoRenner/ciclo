@@ -1,5 +1,6 @@
 'use client'
 
+import { ChevronDown } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
 
@@ -10,7 +11,6 @@ import Button from '@/components/ui/button'
 import Input from '@/components/ui/input'
 import PageHeader from '@/components/ui/page-header'
 import PhoneInput from '@/components/ui/phone-input'
-import SectionHeader from '@/components/ui/section-header'
 import Textarea from '@/components/ui/textarea'
 import { useToast } from '@/components/ui/toast'
 import { camposDePreferencia } from '@/lib/preferencias'
@@ -37,6 +37,10 @@ export default function FormularioCliente({ vertical, ehPrimeiroCliente = false 
   const [preferencias, setPreferencias] = useState<Record<string, string>>({})
   const [aceitaMarketing, setAceitaMarketing] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
+  // Fechado por padrão: cadastro rápido, com a cliente na cadeira, não pode parecer que exige
+  // curvatura/espessura/alergia pra continuar. Quem tem a informação abre e preenche; quem não
+  // tem segue direto pro nome e telefone, que é o caminho comum.
+  const [mostrarComoAtender, setMostrarComoAtender] = useState(false)
 
   function salvar() {
     setErro(null)
@@ -98,16 +102,34 @@ export default function FormularioCliente({ vertical, ehPrimeiroCliente = false 
           />
         </div>
 
-        <SectionHeader className="mb-0 mt-2">Como atender</SectionHeader>
-        {campos.map((campo) => (
-          <Input
-            key={campo.chave}
-            rotulo={campo.rotulo}
-            value={preferencias[campo.chave] ?? ''}
-            placeholder={campo.dica}
-            onChange={(e) => setPreferencias((p) => ({ ...p, [campo.chave]: e.target.value }))}
-          />
-        ))}
+        {campos.length > 0 ? (
+          <div className="mt-2">
+            <button
+              type="button"
+              onClick={() => setMostrarComoAtender((v) => !v)}
+              aria-expanded={mostrarComoAtender}
+              className="toque-48 -mx-2 flex h-11 w-full items-center justify-between px-2 text-left"
+            >
+              <span className="text-label font-semibold text-txt-2">
+                Como atender <span className="font-normal text-txt-3">(opcional)</span>
+              </span>
+              <ChevronDown aria-hidden className={`size-4 shrink-0 text-txt-3 transition-transform ${mostrarComoAtender ? 'rotate-180' : ''}`} />
+            </button>
+            {mostrarComoAtender ? (
+              <div className="mt-2 flex flex-col gap-3">
+                {campos.map((campo) => (
+                  <Input
+                    key={campo.chave}
+                    rotulo={campo.rotulo}
+                    value={preferencias[campo.chave] ?? ''}
+                    placeholder={campo.dica}
+                    onChange={(e) => setPreferencias((p) => ({ ...p, [campo.chave]: e.target.value }))}
+                  />
+                ))}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
 
         <Input
           rotulo="Etiquetas"
