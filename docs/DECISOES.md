@@ -7683,3 +7683,46 @@ escrever:**
 guarda de "porta de assinar" confirmando o refinamento do T1.5) e build de produção passaram.
 `Capacitor.isNativePlatform()`/`Haptics.impact()`/`Share.share()` nunca rodaram contra um app
 nativo de verdade — mesma ressalva de sempre, T-AND e T0 seguem travados.
+
+---
+
+## 2026-09-15 · Loop autônomo — fast-follow do T1.5 fechado + T4 avança (status bar, indicador de conexão) + JDK em instalação (T-AND)
+
+**Contexto:** `/loop` pedido pelo Eduardo pra executar `docs/64-APP-STORE-CAPACITOR-PLANO.md`
+sozinho, sem perguntar, tomando toda decisão técnica.
+
+**Fast-follow do T1.5 fechado.** As duas menções de "Ver planos" que a rodada anterior tinha
+deixado de fora (`admin/clientes/page.tsx`, banner de teto de clientes; `admin/clientes/[id]/
+ficha.tsx`, paywall de fidelidade na aba de indicações) agora seguem o mesmo padrão do
+`BloqueioPlano`: dentro do app nativo viram texto neutro ("Gerencie seu plano em {APP_HOST}"),
+sem link nem botão. Nenhuma das duas completava compra antes (só linkavam pra `/precos`,
+marketing público sem checkout), mas o texto sozinho já contava como "convite pra sair" — mais
+seguro fechar do que confiar na leitura de que o risco era baixo o bastante pra deixar.
+
+**T4 avançou duas frentes:**
+1. `@capacitor/status-bar` estava instalado desde a rodada anterior mas nunca conectado a nada —
+   `ConfigurarStatusBarNativo` (novo, `src/components/shell/`) monta no layout raiz e, só quando
+   `Capacitor.isNativePlatform()`, reserva a faixa da barra pro sistema e pinta os ícones em
+   branco sobre o fundo escuro padrão (`#0d0c0c`). Fica muda no navegador.
+2. Item 2 do T4 (§0.4) pedia um indicador visual de estado offline dentro do app — não existia
+   nem na versão web (conferido antes de construir, como a armadilha do ticket pedia).
+   `IndicadorDeConexao` (novo) mostra uma faixa fina quando sem conexão ou com mutação pendente
+   na fila (`src/lib/offline`) — serve os dois lados, porque a fila em si nunca teve gate de
+   plataforma. Precisou de um evento novo (`enfileirada`) em `api-client.ts`: as três emissões que
+   já existiam só avisavam quando a mutação SAI da fila, nenhuma quando ENTRA — sem isso o
+   indicador só saberia que existe fila depois de tentar drenar.
+
+**T-AND: JDK em instalação, decisão de caminho tomada sem esperar o Eduardo.** A pesquisa (§0.7)
+confirma que Android builda inteiro no Windows, sem Mac — o bloqueio real registrado no plano era
+só "falta Java/JDK e Android SDK nesta máquina", não uma decisão a tomar. `winget install
+Microsoft.OpenJDK.17` iniciado (build oficial da Microsoft, mesma escolha que `docs/64` já cita
+como caminho sem custo). Passo seguinte, quando a instalação terminar: baixar os Android SDK
+command-line tools (mais leve que o Android Studio inteiro — só o CLI é necessário pro Capacitor
+buildar, não o IDE), configurar `ANDROID_HOME`, rodar `npx cap add android` e tentar um build de
+debug (`./gradlew assembleDebug`).
+
+**Sinceridade sobre o teste:** typecheck, lint (`.` inteiro), suíte unit (2449 casos) e build de
+produção passaram nas duas rodadas de código desta sessão. `api-client.ts`/`IndicadorDeConexao`
+dependem de `navigator`/`window` de browser real — mesma limitação de sempre, sem jsdom neste
+projeto, verificação fica pra quando existir `android/`/dispositivo de verdade. Nenhuma mudança
+desta rodada tocou `ios/`, que continua sem existir (T0 travado, sem Mac).
