@@ -2,6 +2,7 @@ import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 
 import { podeUsarModulo } from '@/core/billing/planos'
+import { ehRequisicaoDoAppNativo } from '@/core/plataforma/nativo'
 import { avaliarPermissao } from '@/server/auth/rbac'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
@@ -22,8 +23,10 @@ export const metadata = { title: "Cliente" }
 
 export default async function PaginaFicha({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const ctx = await contextoAtual(new Request('https://interno/clientes', { headers: await headers() }))
+  const hdrs = await headers()
+  const ctx = await contextoAtual(new Request('https://interno/clientes', { headers: hdrs }))
   const db = await criarClienteDoUsuario()
+  const nativo = ehRequisicaoDoAppNativo(hdrs.get('user-agent'))
 
   const [ficha, modelos, negocio, planos, profissionais, servicos, plano] = await Promise.all([
     fichaDoCliente(db, ctx.tenantId, id, ctx.tenant.timezone, {
@@ -90,6 +93,7 @@ export default async function PaginaFicha({ params }: { params: Promise<{ id: st
       // `quotes` (Essencial). Aqui a trava é no botão, e não um `BloqueioPlano`: a ficha é uma tela
       // de trabalho com muita coisa acontecendo, e a oferta cheia é a da tela de Orçamentos.
       podeOrcamento={podeUsarModulo(plano, 'quotes').estado === 'liberado'}
+      nativo={nativo}
     />
   )
 }

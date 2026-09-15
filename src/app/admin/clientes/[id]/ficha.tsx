@@ -28,6 +28,7 @@ import Sheet from '@/components/ui/sheet'
 import StatTile from '@/components/ui/stat-tile'
 import { useToast } from '@/components/ui/toast'
 import { dinheiro, formatarTelefone } from '@/lib/formato'
+import { APP_HOST } from '@/lib/app-url'
 import { camposDePreferencia } from '@/lib/preferencias'
 import { aplicarVariaveis, linkWhatsApp, precisaDeAgendamento } from '@/lib/mensagens'
 
@@ -128,6 +129,7 @@ export default function Ficha({
   linkIndicacao,
   mostrarPaywallFidelidade,
   podeOrcamento,
+  nativo,
 }: {
   ficha: FichaCliente
   /** Fuso do salao: a data de inicio da assinatura e de calendario, e calendario e do salao. */
@@ -151,6 +153,8 @@ export default function Ficha({
   mostrarPaywallFidelidade: boolean
   /** `quotes` liberado neste degrau. Ver o comentário em `page.tsx`. */
   podeOrcamento: boolean
+  /** T1.5 (docs/64 §0.2): `ehRequisicaoDoAppNativo`, calculado no servidor em `page.tsx`. */
+  nativo: boolean
 }) {
   const router = useRouter()
   const parametros = useSearchParams()
@@ -546,9 +550,15 @@ export default function Ficha({
                   {mostrarPaywallFidelidade ? (
                     <p className="mt-2 text-secundario text-txt-3">
                       No Equipe, isso creditaria pontos pros dois lados automaticamente.{' '}
-                      <Link href="/precos" className="toque-48 -mx-2 px-2 inline-flex font-semibold text-acc-2 underline-offset-2 hover:underline">
-                        Ver planos
-                      </Link>
+                      {nativo ? (
+                        // T1.5 (docs/64 §0.2/§0.3, fast-follow do 2026-09-15): mesma regra do
+                        // `BloqueioPlano` — nenhum link pra `/precos` dentro do app nativo.
+                        `Gerencie seu plano em ${APP_HOST}.`
+                      ) : (
+                        <Link href="/precos" className="toque-48 -mx-2 px-2 inline-flex font-semibold text-acc-2 underline-offset-2 hover:underline">
+                          Ver planos
+                        </Link>
+                      )}
                     </p>
                   ) : null}
                 </div>

@@ -3,11 +3,13 @@ import Link from 'next/link'
 import { headers } from 'next/headers'
 
 import { verificarLimite } from '@/core/billing/planos'
+import { ehRequisicaoDoAppNativo } from '@/core/plataforma/nativo'
 import AlertBanner from '@/components/ui/alert-banner'
 import Card from '@/components/ui/card'
 import PageHeader from '@/components/ui/page-header'
 import StatTile from '@/components/ui/stat-tile'
 import { dinheiro } from '@/lib/formato'
+import { APP_HOST } from '@/lib/app-url'
 import { comMaiuscula, plural } from '@/core/text/vocabulario'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
@@ -22,8 +24,10 @@ export const dynamic = 'force-dynamic'
 export const metadata = { title: "Clientes" }
 
 export default async function PaginaClientes() {
-  const ctx = await contextoAtual(new Request('https://interno/clientes', { headers: await headers() }))
+  const hdrs = await headers()
+  const ctx = await contextoAtual(new Request('https://interno/clientes', { headers: hdrs }))
   const db = await criarClienteDoUsuario()
+  const nativo = ehRequisicaoDoAppNativo(hdrs.get('user-agent'))
 
   const [clientes, painel, plano] = await Promise.all([
     listarClientes(db, ctx.tenantId),
@@ -104,25 +108,39 @@ export default async function PaginaClientes() {
         explicitamente que nada foi bloqueado, porque é verdade e porque é a dúvida real de quem lê.
       */}
       {limiteClientes.perto && limiteClientes.limite !== null ? (
-        <Link href="/precos" className="mb-4 block transition active:scale-[.99]">
-          <AlertBanner
-            tom={acimaDoTeto ? 'warn' : 'acento'}
-            acao={<span className={acimaDoTeto ? 'text-warn' : 'text-acc-2'}>Ver planos</span>}
-          >
-            {acimaDoTeto ? (
-              <>
-                Você tem <span className="font-semibold">{painel.total}</span> clientes, acima dos{' '}
-                {limiteClientes.limite} do plano atual. <span className="font-semibold">Nada foi bloqueado</span>:
-                cadastrar continua funcionando e nenhuma ficha some.
-              </>
-            ) : (
-              <>
-                <span className="font-semibold">{painel.total}</span> de {limiteClientes.limite} clientes do plano
-                atual.
-              </>
-            )}
-          </AlertBanner>
-        </Link>
+        (() => {
+          const conteudo = (
+            <AlertBanner
+              tom={acimaDoTeto ? 'warn' : 'acento'}
+              // T1.5 (docs/64 §0.2/§0.3, fast-follow do 2026-09-15): dentro do app nativo isto não
+              // pode virar link nem botão pra `/precos` — mesma regra do `BloqueioPlano`, um link
+              // também conta como "direcionar pra compra externa" na 3.1.1/3.1.3.
+              acao={nativo ? undefined : <span className={acimaDoTeto ? 'text-warn' : 'text-acc-2'}>Ver planos</span>}
+            >
+              {acimaDoTeto ? (
+                <>
+                  Você tem <span className="font-semibold">{painel.total}</span> clientes, acima dos{' '}
+                  {limiteClientes.limite} do plano atual. <span className="font-semibold">Nada foi bloqueado</span>:
+                  cadastrar continua funcionando e nenhuma ficha some.
+                </>
+              ) : (
+                <>
+                  <span className="font-semibold">{painel.total}</span> de {limiteClientes.limite} clientes do plano
+                  atual.
+                </>
+              )}
+              {nativo ? <> Gerencie seu plano em {APP_HOST}.</> : null}
+            </AlertBanner>
+          )
+
+          return nativo ? (
+            <div className="mb-4">{conteudo}</div>
+          ) : (
+            <Link href="/precos" className="mb-4 block transition active:scale-[.99]">
+              {conteudo}
+            </Link>
+          )
+        })()
       ) : null}
 
       {/* Atalhos acionáveis: número que não leva a lugar nenhum não muda o dia de ninguém. */}
