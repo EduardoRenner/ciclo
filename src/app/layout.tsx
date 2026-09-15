@@ -3,6 +3,7 @@ import { Archivo } from "next/font/google";
 import "./globals.css";
 
 import RegistrarServiceWorker from "@/components/shell/registrar-service-worker";
+import ConfigurarStatusBarNativo from "@/components/shell/configurar-status-bar-nativo";
 import { APP_URL } from "@/lib/app-url";
 
 /**
@@ -94,6 +95,7 @@ export default function RootLayout({
     <html lang="pt-BR" className="dark">
       <body className={`${archivo.variable} antialiased`}>
         <RegistrarServiceWorker />
+        <ConfigurarStatusBarNativo />
         {children}
       </body>
     </html>

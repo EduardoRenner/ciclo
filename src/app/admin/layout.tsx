@@ -6,6 +6,7 @@ import ToastProvider from '@/components/ui/toast'
 import AssistenteFlutuante from '@/components/shell/assistente-flutuante'
 import { VocabularioProvider } from '@/components/shell/vocabulario'
 import ResolucaoDeFila from '@/components/shell/resolucao-de-fila'
+import IndicadorDeConexao from '@/components/shell/indicador-de-conexao'
 import TabBar from '@/components/shell/tab-bar'
 import TransicaoDeTela from '@/components/shell/transicao-de-tela'
 import Topbar from '@/components/shell/topbar'
@@ -95,6 +96,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       */}
       <div className="mx-auto min-h-dvh max-w-[560px] sm:border-x sm:border-line">
         <Topbar />
+        <IndicadorDeConexao />
         {/*
           A folga inferior é a barra + o relevo do aparelho + respiro. Sai do
           token: era `pb-24` fixo, que já não batia com a barra de 82px e passou

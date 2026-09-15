@@ -21,6 +21,13 @@ export type EventoFila =
   /** Leva a `mutacao` junto: sem ela a UI não tem o que mostrar, e o descarte volta a ser mudo. */
   | { tipo: 'descartada'; id: string; mutacao: Mutacao | null }
   | { tipo: 'conflito'; mutacao: Mutacao }
+  /**
+   * T4 (docs/64 §0.4 item 2): o único sinal de que uma mutação acabou de ENTRAR na fila — as
+   * outras três só disparam quando ela SAI. Sem isto, `IndicadorDeConexao` só saberia que existe
+   * fila depois de tentar drenar, nunca no instante em que a pessoa perdeu conexão no meio de um
+   * salvamento.
+   */
+  | { tipo: 'enfileirada' }
 
 const assinantes = new Set<(evento: EventoFila) => void>()
 
@@ -116,6 +123,7 @@ export async function apiFetch(url: string, opcoes: { method: 'POST' | 'PATCH' |
 
   if (!navigator.onLine) {
     await salvarMutacao(mutacao)
+    emitir({ tipo: 'enfileirada' })
     return { queued: true }
   }
 
@@ -125,6 +133,7 @@ export async function apiFetch(url: string, opcoes: { method: 'POST' | 'PATCH' |
   if (resultado.kind === 'discard') throw new MutacaoRecusada('discarded')
 
   await salvarMutacao(mutacao)
+  emitir({ tipo: 'enfileirada' })
   void tentarNovamenteComBackoff()
   return { queued: true }
 }
