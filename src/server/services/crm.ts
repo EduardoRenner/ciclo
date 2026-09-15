@@ -10,7 +10,7 @@ import { medirMaterialDoCatalogo } from '@/server/services/ficha-de-consumo'
 import { listarOrcamentos } from '@/server/services/orcamentos'
 import { listarPacotesDoCliente, saldoCarteira } from '@/server/services/pacotes'
 import { contextoDePlano } from '@/server/services/planos'
-import { podeUsarModulo } from '@/core/billing/planos'
+import { podeUsarModulo, verificarLimite } from '@/core/billing/planos'
 import { limiarPertoDoPremio } from '@/core/loyalty/limiar'
 import { acoesDeCompletude } from '@/core/comanda/completude-do-lucro'
 import { custoFixoEstaConfigurado } from '@/core/comanda/custo-fixo'
@@ -733,6 +733,29 @@ export async function centralDeAcoes(db: Cliente, tenantId: string, papel?: Pape
         tom: 'warn',
       })
     }
+  }
+
+  /*
+   * O MESMO sinal que `/admin/clientes` já calcula (`verificarLimite`/`perto`), só que aqui — onde
+   * o dono abre todo dia, e não numa tela que ele só visita se já foi procurar. Nenhum número novo:
+   * é o mesmo teto e a mesma contagem, o cartão só muda de endereço. Continua só a partir de 80% do
+   * teto (a mesma regra de lá), então uma conta no plano Grátis com 10 clientes não vê nada — ruído
+   * zero até fazer sentido, e sem prazo nem urgência inventada (§5.10 do docs/30).
+   */
+  const limiteClientes = verificarLimite(ctxPlano, 'clientes', clientes.count ?? 0, 0)
+  if (limiteClientes.perto && limiteClientes.limite !== null) {
+    const acimaDoTeto = (clientes.count ?? 0) > limiteClientes.limite
+    acoes.push({
+      chave: 'plano-perto-do-teto',
+      titulo: acimaDoTeto
+        ? `Você passou de ${limiteClientes.limite} clientes do seu plano`
+        : `Perto do teto de ${limiteClientes.limite} clientes do plano`,
+      descricao: acimaDoTeto
+        ? 'Nada foi bloqueado e nenhuma ficha sumiu. Dá pra ampliar quando quiser.'
+        : 'Cadastrar continua liberado normalmente. Se a base seguir crescendo, dá pra ampliar antes de chegar lá.',
+      href: '/precos',
+      tom: acimaDoTeto ? 'warn' : 'info',
+    })
   }
 
   /*

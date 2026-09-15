@@ -1,6 +1,6 @@
 'use client'
 
-import { ChevronRight, DollarSign, FileText, Gift, Scissors, Star, UserPlus, UserX } from 'lucide-react'
+import { ChevronRight, DollarSign, FileText, Gift, Scissors, Star, TrendingUp, UserPlus, UserX } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 
@@ -27,6 +27,7 @@ const ICONE: Record<string, typeof DollarSign> = {
   aniversariantes: Gift,
   pontos: Star,
   orcamentos: FileText,
+  'plano-perto-do-teto': TrendingUp,
   'completude-taxa': DollarSign,
   'completude-custo-fixo': DollarSign,
   'completude-material': Scissors,
