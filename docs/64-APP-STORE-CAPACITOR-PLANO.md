@@ -41,6 +41,12 @@ primeira rodada tinha marcado como críticos — é preparar uma conta de demons
 pro revisor da Apple usar.** Sem ela, a Apple nem chega a avaliar o resto: um app que pede login e
 não vem com credencial que funciona é recusado antes de qualquer julgamento sobre 4.2 ou 3.1.1.
 
+**Duas atualizações da terceira rodada de pesquisa (§0.6, §0.7) mudam mais coisa:** o bloqueio de
+cobrança (3.1.1/T1.5) deixou de ser "nunca um link, sem exceção" — o Brasil abriu a opção de link
+clicável com 15% de taxa pra Apple, então virou decisão de negócio, não regra fixa (§0.6). E existe
+um caminho pra ANDROID que não depende de Mac e pode começar nesta mesma sessão, possivelmente
+chegando na loja antes do iOS (§0.7, ticket T-AND).
+
 ### 0.1 · O maior risco isolado, e que a primeira rodada não tinha coberto: conta de demonstração (2.1)
 
 **O que a regra exige, literalmente:** se o app tem função atrás de login, a submissão precisa vir
@@ -140,7 +146,76 @@ CICLO nunca teve SDK de rastreamento (Sentry, quando ligado, é diagnóstico de 
 publicidade/atribuição, e nem isso está ativo hoje). **Não precisa de prompt de ATT, não precisa
 declarar IDFA.** Um risco a menos, sem nenhum ticket novo.
 
-### 0.6 · Sources
+### 0.6 · Terceira rodada: o texto oficial da regra, e uma opção que o Brasil abriu em 2026
+
+Fui direto na fonte (`developer.apple.com/app-store/review/guidelines`) em vez de confiar só em
+blog de terceiro, e achei uma mudança recente que muda a decisão de T1.5 — não é mais "nunca um
+link", é uma escolha com preço.
+
+**O texto oficial da 3.1.3(b) "Multiplatform Services"** `[P]`: *"Apps that operate across multiple
+platforms may allow users to access content, subscriptions, or features they have acquired in your
+app on other platforms or your web site... Apps in this section cannot, within the app, encourage
+users to use a purchasing method other than in-app purchase, **except for apps on the United States
+storefront** and as set forth in 3.1.1(a) e 3.1.3(a)."* — a franquia de link nos EUA, que resultou
+do processo Epic v. Apple (decisão de 2025), **historicamente não valia fora dos EUA.**
+
+**O que mudou pro Brasil especificamente, em 2026:** Apple fechou acordo com o CADE (o órgão
+antitruste brasileiro) — a partir do iOS 26.5, apps no storefront BRASILEIRO também podem incluir
+link clicável de pagamento externo `[P]`. **Mas com uma pegadinha que os EUA não têm:** link
+clicável paga **15% de taxa pra Apple sobre a transação**, mesmo o pagamento acontecendo fora do
+app (Mercado Pago); **texto estático sem link continua sem taxa nenhuma** `[P]`.
+
+**Isto vira uma decisão de negócio, não só técnica — registrada aqui, decisão do Eduardo:**
+
+| Opção | Taxa pra Apple | Experiência |
+|---|---|---|
+| **(A) Só texto, sem link** (o que T1.5 já previa) | Zero | "Gerencie seu plano em seuciclo.com.br" — a pessoa digita o site de cabeça ou copia o texto |
+| **(B) Link clicável pro checkout** | **15% da assinatura**, cobrado pela Apple sobre transações que vieram do link | Um toque abre o navegador direto na tela de assinar — mais conversão, custo real |
+
+Num plano de R$ 49-179/mês, 15% é R$ 7,35 a R$ 26,85/mês por assinante que veio pelo link — **contra
+zero no Mercado Pago hoje.** A pergunta que só o Eduardo responde: o link clicável converte gente
+o bastante a mais pra justificar dar uma fatia pra Apple, ou o produto prefere ficar 100% fora do
+alcance da taxa e aceitar que quem quiser assinar vai ter que digitar o site sozinho? **T1.5 abaixo
+foi ajustado pra oferecer os dois caminhos, com a opção (A) como padrão até haver decisão.**
+
+**Recomendação, se quiser a minha opinião:** começar pela opção (A) (sem link, sem taxa) — é reversível
+(virar link depois é troca de uma linha), e evita registrar o app num programa de link externo (que
+exige `entitlement`/inscrição própria na Apple, mais um item de processo) antes de saber se vale a
+pena. Trocar pra (B) depois que o app já estiver no ar e der pra medir se falta conversão é decisão
+mais barata que decidir às cegas agora.
+
+### 0.7 · Descoberta estratégica: talvez o caminho mais rápido pra "credibilidade" não seja o iOS primeiro
+
+Voltando à razão original do Eduardo pra querer apps nas lojas (`ciclo-apps-mobile-lojas`,
+memória): **credibilidade, não distribuição** — as duas lojas existirem importa mais do que qual
+vem primeiro. Isso muda a pergunta de "quando o app fica pronto" pra "qual dos dois fica pronto
+primeiro, com menos risco".
+
+**Medido/pesquisado `[M]`/`[P]`: Android NÃO precisa de Mac.** `Capacitor` builda Android inteiro —
+APK/AAB assinado — em Windows, com Android Studio + JDK, sem NENHUMA dependência de macOS/Xcode.
+**Isto significa que eu consigo avançar o Android bem mais longe nesta própria sessão**, sem
+esperar o Eduardo decidir T0 (Mac/Codemagic/Xcode Cloud) — algo que trava o iOS por completo.
+
+**Comparação direta:**
+
+| | iOS (App Store) | Android (Google Play) |
+|---|---|---|
+| Precisa de Mac | Sim, sem exceção `[BLOQ]` | **Não — builda em Windows** `[P]` |
+| Custo de conta | US$ 99/ano | **US$ 25, uma vez só** `[M]`, já medido em rodada anterior |
+| Prazo de revisão | 1-3 dias, pode ir mais | Geralmente mais rápido, horas a poucos dias `[P]` |
+| Risco de rejeição por completude/crash (a categoria nº1, §0.0) | Alto se faltar T-DEMO | Mesmo risco existe (18-20% das rejeições `[P]`) — T-DEMO serve os DOIS |
+| Risco de rejeição por cobrança (3.1.1) | Real, sem garantia (§0.2) | Google tem regra parecida, mas historicamente mais flexível com apps B2B `[P]` — T1.5 ainda vale fazer, mas o risco é menor |
+| Exclusão de conta | Só precisa do caminho dentro do app | **Precisa do caminho dentro do app E de um link público na web** `[P]` — T-DEL já cobre os dois se o link for público |
+
+**O que isto muda no plano:** os tickets que não são específicos de iOS (T-DEMO, T-DEL, T1.5, e a
+parte de T4 que é ajuste de UI/comportamento, não de Xcode) **servem pros dois apps ao mesmo tempo,
+sem trabalho duplicado.** Só T2 (ícone nativo), T3 (push — APNs pra iOS, FCM pra Android, mecanismos
+diferentes) e T6/T7 (build e submissão) precisam de trilhos separados.
+
+**Novo ticket, T-AND, abaixo — e ele pode COMEÇAR AGORA, nesta sessão, sem depender de nenhuma
+decisão do Eduardo.**
+
+### 0.8 · Sources
 
 - [App Store Review Guidelines: Will Your Webview App Be Rejected? — MobiLoud](https://www.mobiloud.com/blog/app-store-review-guidelines-webview-wrapper)
 - [Wrapping a Vibe-Coded Web App for iOS: What Apple Actually Requires — AcceptMyApp](https://acceptmy.app/guides/web-app-to-ios-app-store-requirements)
@@ -158,6 +233,15 @@ declarar IDFA.** Um risco a menos, sem nenhum ticket novo.
 - [Guideline 2.3: Accurate Metadata — iOS Submission Guide](https://iossubmissionguide.com/guideline-2-3-accurate-metadata/)
 - [Why App Store Screenshots Get Rejected and How to Fix Them — ScreenshotBro](https://screenshotbro.app/blog/app-store-screenshots-rejected-fix)
 - [App Tracking Transparency — Usercentrics](https://usercentrics.com/knowledge-hub/apples-app-tracking-transparency-att/)
+- [App Review Guidelines — Apple Developer (texto oficial 3.1.1/3.1.3)](https://developer.apple.com/app-store/review/guidelines/#business)
+- [Apple Settles Brazilian Antitrust Case, Must Allow Third-Party App Stores and External Payment Links — Slashdot](https://apple.slashdot.org/story/25/12/26/0039248/apple-settles-brazilian-antitrust-case-must-allow-third-party-app-stores-and-external-payment-links)
+- [Payment options on the App Store in Brazil — Apple Developer](https://developer.apple.com/support/payment-options-on-the-app-store-in-brazil)
+- [App-to-web: navigating external purchases in iOS and Android apps — RevenueCat](https://www.revenuecat.com/blog/engineering/app-to-web-purchase-guidelines)
+- [Apple must allow External Payment Links: Epic v. Apple ruling — RevenueCat](https://www.revenuecat.com/blog/growth/apple-anti-steering-ruling-monetization-strategy)
+- [Deploying Capacitor Applications to Android — Josh Morony](https://www.joshmorony.com/deploying-capacitor-applications-to-android-development-distribution/)
+- [Android Setup for Capacitor Apps — Capgo](https://capgo.app/blog/android-setup-for-capacitor-apps/)
+- [Google Play App Rejected in 2026: Rejection Reasons Decoded — QAwerk](https://qawerk.com/blog/google-play-rejection-reasons/)
+- [Understanding Google Play's app account deletion requirements — Google Play Console Help](https://support.google.com/googleplay/android-developer/answer/13327111?hl=en)
 
 ---
 
@@ -240,6 +324,9 @@ começar agora, em paralelo com tudo.**
 
 ### T0 · Decisão do Eduardo — onde faz o build iOS `[BLOQ]`
 
+**Só bloqueia o iOS** (§0.6) — o Android (T-AND) não depende desta decisão e pode avançar em
+paralelo, sem esperar.
+
 **Não é ticket de código.** Três caminhos, escolher um antes de T5:
 
 | Caminho | Custo | Prós | Contras |
@@ -304,20 +391,24 @@ sai.** As duas coisas são eventos diferentes no produto, e só um dos dois é r
   casca" do que um que deixa a pessoa realmente começar a usar ali. Zero trabalho novo — é o mesmo
   onboarding que já existe.
 - **Qualquer caminho que leve a PAGAR — `/admin/config/meu-plano`, o botão "Assinar", checkout do
-  Mercado Pago — fica de fora do app inteiramente**, sem exceção e sem link (mesmo um link "assine
-  no site" conta como direcionar pra compra externa, que é OUTRA regra proibida, a 3.1.3 — por
-  isso o texto fica sem nenhum link clicável, só instrução: "gerencie seu plano em
-  seuciclo.com.br"). Quem quiser pagar, sai do app e abre o navegador por conta própria.
+  Mercado Pago — fica de fora do app inteiramente.** A forma como fica de fora é decisão de
+  negócio, revisada em §0.6: **opção (A), padrão até o Eduardo decidir o contrário** — texto sem
+  nenhum link clicável ("gerencie seu plano em seuciclo.com.br"), zero taxa pra Apple; **opção
+  (B)** — link clicável de verdade, permitido no storefront brasileiro desde o acordo com o CADE,
+  mas com 15% de taxa pra Apple sobre quem assinar por ali. As duas são legítimas; a diferença é
+  quem fica com uma fatia da receita.
 - É exatamente o padrão que Fresha for Business e Booksy Biz já usam, publicados (§0.2): cadastro e
   uso livres no app, cobrança 100% no site.
 
 **Critério de aceite.**
 1. Detectar `Capacitor.isNativePlatform()` num ponto central (middleware ou layout raiz de
    `/admin/config`), e quando verdadeiro: `/admin/config/meu-plano` e qualquer rota de
-   `/api/v1/billing/*` respondem com uma tela/mensagem "Gerencie seu plano em seuciclo.com.br",
-   **sem formulário, sem preço, sem botão de ação nenhum** — nunca um link clicável pra abrir a
-   URL de cobrança (mesmo um link pode ser lido como "direciona pra compra fora do app", que é OUTRA
-   regra, a 3.1.3, então o texto fica sem link nenhum, só instrução).
+   `/api/v1/billing/*` respondem com uma tela/mensagem "Gerencie seu plano em seuciclo.com.br".
+   **Implementar a opção (A) primeiro** (§0.6): sem formulário, sem preço, sem botão de ação, sem
+   link clicável — o texto sozinho basta, e não exige inscrição em nenhum programa da Apple. A
+   opção (B) (link clicável + 15% de taxa, só permitido no storefront BR) fica registrada como
+   troca de uma linha pra depois, se o Eduardo decidir que vale a taxa — não implementar sem essa
+   decisão explícita.
 2. O mesmo vale pra qualquer lugar que hoje mencione upgrade de plano dentro do fluxo normal — a
    Central de Ações (`chave: 'plano-perto-do-teto'`, `src/server/services/crm.ts`) e a tela de
    bloqueio de módulo (`src/components/ui/bloqueio-plano.tsx`) também precisam saber que estão
@@ -352,8 +443,8 @@ plataforma; `meu-plano/page.tsx`, `crm.ts`, `bloqueio-plano.tsx`.
 ### T-DEL · Exclusão de conta pelo próprio dono/profissional
 
 **Objetivo.** Fechar a lacuna achada em §0.3 — hoje ninguém consegue excluir a própria conta, nem
-no site. É pré-requisito de App Store (guideline 5.1.1(v)) **e** lacuna de LGPD (art. 18 VI)
-independente do app.
+no site. É pré-requisito de App Store (guideline 5.1.1(v)) **e** de Google Play (mesma exigência, e
+mais rígida numa parte — ver item 4a) **e** lacuna de LGPD (art. 18 VI) independente do app.
 
 **Critério de aceite.**
 1. Rota nova (`/api/v1/account`, `DELETE`) que o usuário logado chama sobre a PRÓPRIA conta — nunca
@@ -369,11 +460,16 @@ independente do app.
 4. Entrada visível em `/admin/config` (ou nova seção de conta), com confirmação de duas etapas
    (não é ação de um toque só) — texto claro do que é apagado e do que fica retido por obrigação
    legal (nota fiscal, se existir).
+   1. **(4a) Google Play pede um passo a mais que a Apple não pede** (§0.7, confirmado `[P]`):
+      além do caminho DENTRO do app, precisa de uma **página pública na web** que explica como
+      excluir a conta, sem precisar estar logado no app pra ler. `/privacidade` (que já existe) é
+      o lugar natural — uma seção nova com o link direto pra `/admin/config` (pedindo login) já
+      satisfaz os dois, sem página extra.
 5. Guarda: teste de integração que cria conta, chama a exclusão, confirma que login deixa de
    funcionar e que dados de outros tenants não foram tocados.
 
 **Onde mexer.** `src/app/api/v1/account/`, `src/server/services/` (novo `contas.ts` ou estender
-existente), UI em `src/app/admin/config/`.
+existente), UI em `src/app/admin/config/`, seção nova em `src/app/(public)/privacidade/`.
 
 **Armadilhas.** Igual à `erase` de cliente: decidir com cuidado o que é "excluído" vs. "anonimizado
 por obrigação legal" — LGPD permite reter o mínimo que a lei exigir (fiscal, por exemplo), nunca o
@@ -381,7 +477,47 @@ resto.
 
 ---
 
-### T2 · Ícone, splash screen e identidade nativa
+### T-AND · Scaffold Android — pode começar JÁ, sem depender do Eduardo nem de Mac
+
+**Objetivo.** A descoberta de §0.7: Android builda inteiro no Windows desta sessão. Enquanto T0
+(decisão do Mac/CI pro iOS) não sai, o Android pode chegar bem mais longe — potencialmente até
+"pronto pra submeter", sozinho.
+
+**Critério de aceite.**
+1. `@capacitor/android` instalado junto de `@capacitor/core`/`cli` (T1 vira "T1 pros dois", não
+   dois scaffolds separados — o `capacitor.config.ts` é um só, com `server.url` igual pros dois).
+2. Android Studio + JDK 17+ instalados nesta máquina (Windows) — confirmar que builda um APK de
+   debug local antes de ir mais longe (`npx cap run android` ou `Build > Generate Signed APK`).
+3. T1.5 (bloqueio de cobrança) e T-DEMO/T-DEL (conta de demo, exclusão de conta) **servem os dois
+   apps sem duplicar trabalho** — são checagem de `Capacitor.isNativePlatform()`, que é `true` nos
+   dois, não só no iOS.
+4. Ícone/splash Android (equivalente ao T2, mas em `android/app/src/main/res/`) — mesma arte-fonte
+   de `public/icons/`, dimensões diferentes das do iOS.
+5. Push nativo Android usa **Firebase Cloud Messaging (FCM)**, não APNs — mecanismo diferente do
+   T3, mas o mesmo formato de trabalho (token do dispositivo, mesma tabela/coluna que o T3 já
+   desenha para o token do iOS, só um terceiro valor no "tipo").
+6. Build assinado (keystore próprio, gerado uma vez e guardado com cuidado — **perder o keystore
+   significa não poder mais atualizar o mesmo app na Play Store, para sempre**) — isto sim precisa
+   de uma decisão do Eduardo (onde guardar o keystore com segurança), mas é rápido de resolver, sem
+   custo e sem Mac.
+7. Conta Google Play Developer (US$ 25, uma vez só, não anual como a Apple) — só o Eduardo compra,
+   mas a aprovação da conta costuma ser mais rápida que a da Apple `[P]`.
+
+**Onde mexer.** `android/` (gerado pelo CLI, não escrito à mão), mesmo helper de plataforma do
+T1.5 (`Capacitor.isNativePlatform()` já cobre Android e iOS igual, sem `if` separado por SO a menos
+que o comportamento realmente precise diferir).
+
+**Armadilhas.**
+- Guideline de completude/crash do Google Play (§0.7) é tão séria quanto a da Apple — **T-DEMO e o
+  checklist de crash de T6 valem igual aqui**, não é "Android é mais light, relaxa".
+- Keystore perdido é o único erro deste ticket que não tem conserto — backup em local seguro desde
+  o primeiro build assinado, nunca só na máquina de build.
+- Push nativo (item 5) precisa de projeto Firebase configurado — outra conta/console novo, mas
+  gratuito e sem aprovação demorada como a Apple.
+
+---
+
+### T2 · Ícone, splash screen e identidade nativa (iOS — Android tem o espelho em T-AND item 4)
 
 **Objetivo.** O app abre com a marca do CICLO, não com o ícone genérico do Capacitor.
 
@@ -400,7 +536,7 @@ precisa ser conferido antes.
 
 ---
 
-### T3 · Push notification nativo (APNs)
+### T3 · Push notification nativo — APNs no iOS, FCM no Android (T-AND item 5)
 
 **Objetivo.** Quem instalar o app recebe notificação de verdade — lembrete de horário, alerta de
 cliente sumindo — sem depender do navegador estar aberto.
@@ -544,53 +680,61 @@ tudo certo (§0.2) — os dois merecem o mesmo nível de cuidado, por razões di
 ## 3 · Ordem e paralelismo
 
 ```
-T-DEMO (prioridade 1 — começa JÁ, não depende de nada)
-T-DEL  (pode começar já, não depende de nada)
+T-DEMO (prioridade 1 — começa JÁ, serve os dois apps)
+T-DEL  (pode começar já, serve os dois apps)
 
-T0 (Eduardo, decide onde builda)
-  └─▶ T1 (scaffold) ─▶ T1.5 (bloquear cobrança) ─▶ T2 (ícone/splash) ─▶ T6 (device — Mac de T0)
-         │                                                                    ▲
-         └─▶ T3 (push nativo) ─────────────────────────────────────────────┘
-         └─▶ T4 (ajustes 4.2) ─────────────────────────────────────────────┘
+T-AND (Android — pode começar JÁ, não depende do Eduardo nem de Mac)
+  └─▶ T1 (scaffold, os dois) ─▶ T1.5 (bloquear cobrança, os dois) ─▶ T2/T3 Android ─▶ submissão Android
+                                                                          ▲
+T0 (Eduardo, decide onde builda O iOS)                                   │
+  └─▶ T2/T3 iOS ─────────────────────────────────────────────────────────┘
+         └─▶ T4 (ajustes 4.2, os dois) ──────────────────────────────────┘
+                                                                          │
+                                                                          ▼
+                                                      T6 (device — Mac só pro iOS) ─▶ T7 (submissão)
 
-T5 (Eduardo, conta+certificados — em paralelo com T1-T4)
-                                                   │
-                                                   ▼
-                                                  T7 (submissão)
+T5 (Eduardo, conta Apple+certificados — só pro iOS, paralelo com tudo)
 ```
 
 **T-DEMO e T-DEL não dependem de NADA — podem ser feitos nesta sessão, antes de qualquer decisão do
-Eduardo.** T0 e T5 são do Eduardo e podem começar em paralelo. T1, T1.5, T2, T3 e T4 são código e
-podem ser escritos nesta sessão, mas **T6 em diante depende fisicamente do Mac** que T0 escolhe.
-**Ordem de prioridade real, revisada em §0.0: T-DEMO > T1.5 ≈ T-DEL > T4 > T2/T3.**
+Eduardo, e servem os DOIS apps.** T-AND também não depende de nada do Eduardo e pode avançar nesta
+sessão. T0 e T5 são do Eduardo e só bloqueiam o iOS. T1, T1.5, T2, T3 e T4 são código — a maior
+parte serve as duas plataformas ao mesmo tempo (§0.7), só T2/T3 (ícone, push) têm uma metade
+específica por SO. **Ordem de prioridade real, revisada em §0.0/§0.7: T-DEMO > T1.5 ≈ T-DEL > T-AND
+> T4 > T2/T3.**
 
 ## 4 · Custos `[M]`
 
-| Item | Custo | Recorrência |
-|---|---|---|
-| Apple Developer Program | US$ 99 (~R$ 550-600) | Anual |
-| Codemagic (se for essa a escolha de T0) | Grátis até um teto de minutos/mês | — |
-| Certificado APNs | Incluso no Developer Program | Anual (expira junto) |
+| Item | Custo | Recorrência | Plataforma |
+|---|---|---|---|
+| Apple Developer Program | US$ 99 (~R$ 550-600) | Anual | iOS |
+| Google Play Developer | US$ 25 (~R$ 140) | **Uma vez só** | Android |
+| Codemagic (se for essa a escolha de T0) | Grátis até um teto de minutos/mês | — | iOS |
+| Certificado APNs | Incluso no Developer Program | Anual (expira junto) | iOS |
+| Firebase (push Android, FCM) | Grátis no volume do CICLO | — | Android |
 
 ## 5 · Prazo, honesto sobre a variável que eu não controlo
 
-| Fase | Tempo `[E]` |
-|---|---|
-| **T-DEMO (conta de demonstração)** | **Meio dia a 1 dia — prioridade 1, revisado em §0.0** |
-| T-DEL (exclusão de conta) | 1-2 dias, pode rodar em paralelo com tudo |
-| T1 + T2 (scaffold, ícone) | 1 dia de trabalho de código |
-| T1.5 (bloquear cobrança no app) | 1-2 dias — o único risco sem garantia (§0.2) |
-| T3 (push nativo) | 1-2 dias |
-| T4 (ajustes 4.2) | 1-3 dias — variável, só se confirma testando |
-| T5 (conta Apple) | 1-2 dias, aprovação da Apple pode demorar |
-| T6 (TestFlight + teste real, ordem de prioridade revisada) | 1-2 dias |
-| T7 (revisão da Apple) | 1-3 dias, **mais se rejeitar — e a §0.2 mostra que pode rejeitar mesmo tudo certo** |
+| Fase | Tempo `[E]` | Plataforma |
+|---|---|---|
+| **T-DEMO (conta de demonstração)** | **Meio dia a 1 dia — prioridade 1, revisado em §0.0** | Ambas |
+| T-DEL (exclusão de conta) | 1-2 dias, pode rodar em paralelo com tudo | Ambas |
+| T-AND (scaffold Android) | 1 dia — pode começar já, sem Mac | Android |
+| T1 + T2 (scaffold, ícone) | 1 dia de trabalho de código | Ambas (ícone é por SO) |
+| T1.5 (bloquear cobrança no app) | 1-2 dias — o único risco sem garantia (§0.2/§0.6) | Ambas |
+| T3 (push nativo) | 1-2 dias por plataforma (APNs ≠ FCM) | Ambas, mecanismo diferente |
+| T4 (ajustes 4.2) | 1-3 dias — variável, só se confirma testando | Ambas |
+| T5 (conta Apple) | 1-2 dias, aprovação da Apple pode demorar | iOS |
+| T6 (TestFlight/teste real, ordem de prioridade revisada) | 1-2 dias | Ambas |
+| T7 (revisão da loja) | 1-3 dias, **mais se rejeitar — e a §0.2 mostra que pode rejeitar mesmo tudo certo** | Ambas, Google costuma ser mais rápido |
 
-**Total: 2 a 4 semanas** (subiu em relação à primeira versão do plano, por causa de T1.5/T-DEL/T-DEMO,
-que não existiam antes da pesquisa). **Não existe número que garanta zero rejeição** — o que dá pra
-prometer é fazer os três tickets que a pesquisa mostra que mais reduzem o risco (T-DEMO, T1.5,
-T-DEL) e citar o precedente certo na submissão (T7). O resto é decisão de um revisor humano do lado
-de lá.
+**Android pode estar no ar em 1-2 semanas, sozinho** — sem depender de T0/T5 (que são só do
+Eduardo e só do iOS). **iOS continua em 2 a 4 semanas.** Fazer os dois em paralelo, com o trabalho
+compartilhado (T-DEMO/T-DEL/T1.5) contando uma vez só, é mais rápido que fazer em série — e resolve
+a motivação original (`ciclo-apps-mobile-lojas`: credibilidade das duas lojas existindo) parcialmente
+mais cedo. **Não existe número que garanta zero rejeição em nenhuma das duas** — o que dá pra
+prometer é fazer os tickets que a pesquisa mostra que mais reduzem o risco (T-DEMO, T1.5, T-DEL) e
+citar o precedente certo na submissão (T7). O resto é decisão de revisor humano do lado de lá.
 
 ## 6 · O que NÃO muda
 
