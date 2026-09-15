@@ -7506,3 +7506,47 @@ desativado entre abrir e confirmar) — fica pendente junto com o resto do `test
 
 **Próximo:** seguindo a varredura autônoma por outro ganho real, D continua fora da fila (aguarda
 decisão do Eduardo sobre conta real validada).
+
+---
+
+## 2026-09-15 · T-DEL implementado — exclusão de conta pelo próprio dono/profissional
+
+**Contexto:** loop autônomo, `docs/64` (plano do app). T-DEL era o primeiro ticket executável sem
+depender de Mac nem de decisão do Eduardo — fecha guideline 5.1.1(v) da Apple, a exigência
+equivalente do Google Play (que pede TAMBÉM um link público na web, não só dentro do app), e uma
+lacuna de LGPD (art. 18 VI) que existia independente de loja nenhuma: o CICLO já dava esse direito
+à cliente do salão (`eliminarCliente`), nunca a quem opera o próprio CICLO.
+
+**Descoberta que simplificou tudo:** `profiles.id references auth.users(id) on delete cascade`
+(migration 0032) + `memberships.user_id references profiles(id) on delete cascade` (migration
+0001) — chamar `auth.admin.deleteUser` já cascade profile e memberships sozinho, sem UPDATE manual
+coluna por coluna como `eliminarCliente` precisa fazer. E `professionals.user_id` é `on delete set
+null`: o profissional sobrevive (agenda, histórico — regra 11 do CLAUDE.md), só perde o login.
+
+**Regra de negócio decidida agora, registrada aqui por não ter ticket próprio:** quem é `owner`
+sozinho num tenant pode se excluir (o tenant fica órfão de login, dado intacto — mesmo espírito da
+regra 5.1, cair de plano nunca apaga dado). Quem é `owner` de um tenant com MAIS gente na equipe é
+recusado, com o motivo explicado na tela — este módulo não tenta escolher um substituto sozinho
+(transferência de titularidade é feature própria, ainda não existe). `professional`/`reception`
+sempre pode se excluir, nunca orfanam nada.
+
+**Construído:**
+- `src/server/services/conta.ts` — `situacaoDaConta` (só lê, nunca lança) e `excluirPropriaConta`.
+- `DELETE /api/v1/account` (atrás de `exigirAal2`, mesma trava de segundo fator do `erase` de
+  cliente) e `GET /api/v1/account` (a checagem, pra tela mostrar o motivo ANTES de confirmar).
+- `/admin/config/excluir-conta` — confirmação em duas etapas, mesmo padrão de
+  `clientes/[id]/direitos.tsx` (trata `MFA_REQUIRED` como aviso, não erro genérico).
+- Seção nova em `/privacidade` linkando pro caminho — satisfaz a exigência do Google Play de link
+  público (mesmo exigindo login pra usar, a política em si é pública).
+
+**Achado e corrigido durante a implementação:** a guarda `escrita-passa-por-idempotencia` pegou a
+rota `DELETE` sem `comIdempotencia` — sem isso, um reenvio da fila offline poderia tentar excluir
+duas vezes. Corrigido usando o próprio `userId` como `tenantId` de `comIdempotencia` (o parâmetro é
+só prefixo de chave, `idempotency_keys.tenant_id` não tem FK — funciona igual pra uma ação que não
+é de tenant nenhum).
+
+**Sinceridade sobre o teste:** typecheck, lint e a suíte unit inteira (2446 casos, incluindo a
+guarda de idempotência pega e corrigida) e build de produção passaram. Não rodou contra banco
+real — Docker local segue fora do ar a sessão inteira. `tests/integration`/`test:rls` novos pra
+este fluxo (criar conta de teste, excluir, confirmar que login para de funcionar e que outros
+tenants não são tocados) ficam pendentes pro dia em que o ambiente local voltar.

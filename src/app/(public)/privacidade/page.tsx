@@ -196,6 +196,14 @@ export default function Privacidade() {
             <li>revogar uma autorização que tenha dado;</li>
             <li>saber com quem a gente compartilhou.</li>
           </ul>
+          <p>
+            E você, profissional que usa o CICLO: sua própria conta também pode ser excluída a
+            qualquer momento, direto de dentro do sistema, em{' '}
+            <strong className="font-semibold text-txt">Configurações → Excluir minha conta</strong>{' '}
+            (exige login e verificação em duas etapas, por ser irreversível). Excluir a conta apaga
+            seu login para sempre; o histórico do negócio continua existindo, como acontece quando
+            qualquer pessoa sai de uma equipe.
+          </p>
           {/*
             Dizia "pelo canal em que você contratou", e esse canal não existe: todo mundo entra
             sozinho pelo cadastro do Grátis. Numa política de privacidade isso é pior que na página

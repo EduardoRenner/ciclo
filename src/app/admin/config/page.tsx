@@ -1,4 +1,4 @@
-import { BadgeDollarSign, Bell, Bot, Building2, CalendarRange, Clock, CreditCard, FileText, HandCoins, Megaphone, MessageSquareText, Package, Repeat, Repeat2, Scissors, ScrollText, ShieldCheck, Store, ToggleRight, Users, Wallet } from 'lucide-react'
+import { BadgeDollarSign, Bell, Bot, Building2, CalendarRange, Clock, CreditCard, FileText, HandCoins, Megaphone, MessageSquareText, Package, Repeat, Repeat2, Scissors, ScrollText, ShieldCheck, Store, ToggleRight, Trash2, Users, Wallet } from 'lucide-react'
 import Link from 'next/link'
 
 import { headers } from 'next/headers'
@@ -85,6 +85,10 @@ const GRUPOS = [
     itens: [
       { href: '/admin/config/cofre', titulo: 'Trilha do cofre', descricao: 'Quem acessou a ficha de saúde de cada cliente', icone: ScrollText, modulo: 'health_records' },
       { href: '/admin/config/seguranca', titulo: 'Segurança', descricao: 'Autenticação em duas etapas da sua conta', icone: ShieldCheck },
+      // T-DEL (docs/64 §0.3): guideline 5.1.1(v) — quem criou conta precisa conseguir excluí-la
+      // de dentro do app. Sem `modulo`: é sobre a CONTA da pessoa, não sobre o negócio, então
+      // aparece pra qualquer papel — inclusive quem não tem módulo nenhum ligado.
+      { href: '/admin/config/excluir-conta', titulo: 'Excluir minha conta', descricao: 'Apaga seu login para sempre', icone: Trash2 },
     ],
   },
 ] as const
