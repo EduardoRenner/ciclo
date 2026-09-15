@@ -558,16 +558,24 @@ export async function criarAgendamentoPublico(slug: string, entrada: z.input<typ
 
     // 0091: resolvido no servidor, nunca a partir de um nome que o navegador mandou — quem decide
     // se o produto ainda existe e ainda é o sugerido deste serviço é o banco, na hora.
+    //
+    // 0093: faltavam as MESMAS condições que decidem se o card aparece na tela (`suggestedProduct`
+    // em `perfilPublico`, mais acima neste arquivo) — `active`, não excluído, com preço e em
+    // estoque. Sem elas, um produto desativado/zerado ENTRE a cliente abrir a tela e confirmar (a
+    // tela já escondeu o card, mas o corpo da requisição pode chegar com `wantsSuggestedProduct:
+    // true` mesmo assim — replay, ou a corrida de poucos segundos) gravava uma nota pro
+    // profissional pedindo pra vender algo que não existe mais pra vender.
     let notaProduto: string | null = null
     if (entrada.wantsSuggestedProduct) {
       const { data: servicoComSugestao } = await svc
         .from('services')
-        .select('products:suggested_product_id ( name )')
+        .select('products:suggested_product_id ( name, active, deleted_at, price_cents, stock_qty )')
         .eq('id', entrada.serviceId)
         .eq('tenant_id', tenant.id)
         .maybeSingle()
-      if (servicoComSugestao?.products?.name) {
-        notaProduto = `Demonstrou interesse em levar: ${servicoComSugestao.products.name}.`
+      const produto = servicoComSugestao?.products
+      if (produto && produto.active && produto.deleted_at == null && produto.price_cents != null && produto.stock_qty > 0) {
+        notaProduto = `Demonstrou interesse em levar: ${produto.name}.`
       }
     }
 

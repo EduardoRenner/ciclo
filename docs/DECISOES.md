@@ -7477,3 +7477,32 @@ ambiente local voltar.
 **Próximo item da fila do `docs/53` (ordem A → C → F → B → D, G represado atrás do F0):** só resta
 **D** (a cadeira vazia com piso de lucro) na fila principal — o mais caro e o único com risco real
 de veto de precificação automática. Prosseguindo autonomamente por pedido do Eduardo.
+
+---
+
+## 2026-09-15 · Corrida no produto sugerido: nota gravada mesmo com produto inativo/sem estoque
+
+**Achado, auditoria rápida autônoma** (D travado até conta real validada, decisão do Eduardo
+acima nesta mesma sessão — procurei outro ganho real em vez de ficar parado): a consulta que
+resolve `notaProduto` em `criarAgendamentoPublico` (`public-booking.ts`, feature 0091) buscava só
+`name` do produto sugerido, sem conferir `active`, `deleted_at` nem estoque — diferente da leitura
+que decide se o card aparece na tela pública (`perfilPublico`, que já exige `active` + `price_cents`
++ `stock_qty > 0`).
+
+**Cenário real:** o dono desativa o produto, exclui ou zera o estoque no intervalo entre a cliente
+abrir a tela de agendar e confirmar (ou um replay de requisição chega depois desse intervalo). A
+tela já escondeu o card, mas se o corpo da requisição vier com `wantsSuggestedProduct: true` mesmo
+assim, o servidor gravava a nota "Demonstrou interesse em levar: {produto}" pro profissional —
+pedindo pra vender algo que não existe mais pra vender.
+
+**Conserto:** a mesma consulta agora traz `active, deleted_at, price_cents, stock_qty` e só grava a
+nota se as MESMAS quatro condições da tela pública forem verdadeiras. Sem tabela nova, sem RLS
+nova — só a consulta corrigida.
+
+**Teste:** typecheck, lint, suíte unit (2445 casos) e build passaram. Não escrevi teste de
+integração novo para este caso específico (precisa de banco real pra montar o cenário de produto
+desativado entre abrir e confirmar) — fica pendente junto com o resto do `test:integration`/
+`test:rls` que a feature 0091 já esperava rodar quando o Docker local voltar.
+
+**Próximo:** seguindo a varredura autônoma por outro ganho real, D continua fora da fila (aguarda
+decisão do Eduardo sobre conta real validada).
