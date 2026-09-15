@@ -30,7 +30,7 @@ rejeitou perto de 25% delas) `[P]`. **A ordem muda o que este plano trata como p
 
 | # | Categoria | Peso | O que é, pro CICLO especificamente |
 |---|---|---|---|
-| **1** | **2.1 — Completude/performance** | **Mais rejeições que todas as outras categorias JUNTAS** `[P]` | Crash, trava, e **conta de demonstração ausente ou que não funciona** — o item que a pesquisa anterior não tinha coberto NADA, e é o maior risco isolado do plano inteiro. Ver §0.1-novo e T-DEMO. |
+| **1** | **2.1 — Completude/performance** | **Mais rejeições que todas as outras categorias JUNTAS** `[P]` | Crash, trava, e **conta de demonstração ausente ou que não funciona** — o item que a pesquisa anterior não tinha coberto NADA, e é o maior risco isolado do plano inteiro. Ver §0.1 e T-DEMO. |
 | 2 | 5.1.1 — Privacidade/dado pessoal | 2º lugar `[P]` | Exclusão de conta ausente (já coberto em T-DEL, rodada anterior) |
 | 3 | 4.2 — Funcionalidade mínima | 3º lugar `[P]` | Já coberto (T3/T4, casca nativa + capacidade real) |
 | 4 | 3.1.1 — Compra dentro do app | 4º lugar `[P]` | Já coberto (T1.5, esconder cobrança) — **menos comum estatisticamente do que a rodada anterior sugeria, mas continua sendo o único item desta lista sem solução garantida (§0.2 abaixo)** |
@@ -263,7 +263,7 @@ sem quebrar o deploy web atual.
    sem afetar o bundle que a Vercel serve (Capacitor só entra no build nativo, nunca no `next
    build` da Vercel).
 2. `capacitor.config.ts` na raiz, com `server.url` apontando para o domínio de produção. **Revisado
-   em 15/09 (§0.3):** a pesquisa aponta "app que só abre uma URL remota" como bandeira vermelha —
+   em 15/09 (§0.4):** a pesquisa aponta "app que só abre uma URL remota" como bandeira vermelha —
    mas para um Next.js com Server Components/Server Actions e sessão via cookie, empacotar tudo
    localmente (sem servidor) não é viável sem reescrever a autenticação. O que a pesquisa mostra
    que REALMENTE decide 4.2 não é de onde vem o HTML, é se existe casca nativa (barra de status,
@@ -275,7 +275,7 @@ sem quebrar o deploy web atual.
    `.eslintignore`/`tsconfig` `exclude` se necessário).
 5. **Nenhuma barra de endereço, nenhum link "Abrir no Safari" visível** — configurar
    `WKWebView`/Capacitor para nunca mostrar chrome de navegador. É o item mais citado como causa de
-   rejeição por parecer literalmente o Safari (§0.3).
+   rejeição por parecer literalmente o Safari (§0.4).
 
 **Onde mexer.** Raiz do projeto (`capacitor.config.ts`, `package.json`), `ios/` (gerado pelo CLI,
 não escrito à mão).
@@ -290,10 +290,26 @@ não escrito à mão).
 
 ### T1.5 · Bloquear TODA tela de cobrança dentro do app iOS `[RISCO-ABERTO]` — o ticket mais importante do plano
 
-**Objetivo.** Fechar o risco #1 achado na pesquisa (§0.1): nenhuma tela de preço, plano ou
+**Objetivo.** Fechar o risco #1 achado na pesquisa (§0.2): nenhuma tela de preço, plano ou
 "Assinar" pode ser alcançável de dentro do app nativo — a Apple rejeita isso sob a guideline 3.1.1
 com quase certeza (é o padrão de rejeição mais citado pra este tipo de app), e mesmo fazendo tudo
-certo o risco não some 100% (caso documentado em §0.1).
+certo o risco não some 100% (caso documentado em §0.2).
+
+**Decisão de escopo, perguntada pelo Eduardo em 15/09: cadastro fica dentro do app, só o pagamento
+sai.** As duas coisas são eventos diferentes no produto, e só um dos dois é regulado pela 3.1.1:
+
+- **Criar conta nova (nome, e-mail, senha, nome do salão) continua funcionando dentro do app**,
+  normalmente, e nasce no plano **Grátis** — que não cobra nada, então não é "conteúdo pago" e a
+  3.1.1 não se aplica. É inclusive melhor pra 4.2 (§0.4): um app que só faz login é mais "site numa
+  casca" do que um que deixa a pessoa realmente começar a usar ali. Zero trabalho novo — é o mesmo
+  onboarding que já existe.
+- **Qualquer caminho que leve a PAGAR — `/admin/config/meu-plano`, o botão "Assinar", checkout do
+  Mercado Pago — fica de fora do app inteiramente**, sem exceção e sem link (mesmo um link "assine
+  no site" conta como direcionar pra compra externa, que é OUTRA regra proibida, a 3.1.3 — por
+  isso o texto fica sem nenhum link clicável, só instrução: "gerencie seu plano em
+  seuciclo.com.br"). Quem quiser pagar, sai do app e abre o navegador por conta própria.
+- É exatamente o padrão que Fresha for Business e Booksy Biz já usam, publicados (§0.2): cadastro e
+  uso livres no app, cobrança 100% no site.
 
 **Critério de aceite.**
 1. Detectar `Capacitor.isNativePlatform()` num ponto central (middleware ou layout raiz de
@@ -312,7 +328,11 @@ certo o risco não some 100% (caso documentado em §0.1).
 4. Notas pro revisor da Apple (App Store Connect, campo de "Notas para o revisor"), preenchidas na
    submissão (T7): citar explicitamente a exceção 3.1.3(b) "Multiplatform Services", nomear que é
    companion app B2B de conta já existente, e citar Fresha for Business/Booksy Biz como precedente
-   aprovado no mesmo nicho — a pesquisa (§0.1) mostra que isso ajuda, mesmo não garantindo.
+   aprovado no mesmo nicho — a pesquisa (§0.2) mostra que isso ajuda, mesmo não garantindo.
+5. **Cadastro de conta nova (plano Grátis) testado dentro do app e confirmado que continua
+   funcionando sem nenhuma mudança** — este ticket só bloqueia cobrança, nunca cadastro. Se algum
+   ajuste de T1.5 sem querer também esconder o formulário de cadastro, é regressão, não é o
+   objetivo.
 
 **Onde mexer.** Um novo helper (`src/lib/capacitor.ts` ou similar, isomorphic-safe) que detecta a
 plataforma; `meu-plano/page.tsx`, `crm.ts`, `bloqueio-plano.tsx`.
@@ -331,7 +351,7 @@ plataforma; `meu-plano/page.tsx`, `crm.ts`, `bloqueio-plano.tsx`.
 
 ### T-DEL · Exclusão de conta pelo próprio dono/profissional
 
-**Objetivo.** Fechar a lacuna achada em §0.2 — hoje ninguém consegue excluir a própria conta, nem
+**Objetivo.** Fechar a lacuna achada em §0.3 — hoje ninguém consegue excluir a própria conta, nem
 no site. É pré-requisito de App Store (guideline 5.1.1(v)) **e** lacuna de LGPD (art. 18 VI)
 independente do app.
 
