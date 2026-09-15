@@ -24,6 +24,9 @@
     "check:schema-prod": "node scripts/conferir-schema-prod.mjs"
   },
   "dependencies": {
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/core": "^8.5.2",
+    "@capacitor/ios": "^8.5.2",
     "@js-temporal/polyfill": "^0.5.1",
     "@sentry/nextjs": "^10.70.0",
     "@supabase/ssr": "^0.12.4",
@@ -44,6 +47,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.5.2",
     "@eslint/eslintrc": "^3",
     "@next/swc-wasm-nodejs": "15.5.23",
     "@tailwindcss/postcss": "^4",

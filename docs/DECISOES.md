@@ -7550,3 +7550,37 @@ guarda de idempotência pega e corrigida) e build de produção passaram. Não r
 real — Docker local segue fora do ar a sessão inteira. `tests/integration`/`test:rls` novos pra
 este fluxo (criar conta de teste, excluir, confirmar que login para de funcionar e que outros
 tenants não são tocados) ficam pendentes pro dia em que o ambiente local voltar.
+
+---
+
+## 2026-09-15 · T1 implementado — scaffold do Capacitor (parte que roda sem Mac)
+
+**Contexto:** loop autônomo, `docs/64`. T1 completo exige `npx cap add ios`, que precisa de Xcode
+(bloqueado, T0 é decisão do Eduardo). A parte de código puro roda em Windows sem restrição.
+
+**Construído:** `@capacitor/core`, `@capacitor/ios`, `@capacitor/android` (dependencies) e
+`@capacitor/cli` (devDependency) instalados — versão 8.5.2, que já usa `WKWebView` por padrão
+(confirma o achado de §0.9: `UIWebView`, motivo histórico de rejeição, está descontinuado há anos).
+`capacitor.config.ts` na raiz, com `server.url` apontando pro MESMO `APP_URL` que
+`src/lib/app-url.ts` já centraliza — nunca um domínio novo hardcoded.
+
+**Decisão registrada, não tomada sozinho:** `appId: 'br.com.seuciclo.app'` é um PLACEHOLDER
+explícito no comentário do arquivo. Bundle ID é permanente depois da primeira submissão numa loja
+— o Eduardo confirma (ou troca) antes do primeiro `npx cap add ios`/`npx cap add android` de
+verdade, nunca depois.
+
+**T-AND avaliado e travado, atualização honesta do plano:** tentei avançar o scaffold Android
+(`npx cap add android`) nesta sessão. **Não tem Java/JDK nem Android SDK instalados nesta
+máquina** — nem o mínimo pra gerar o esqueleto do projeto, não só pra buildar de verdade. O plano
+(`docs/64` T-AND) dizia "Android builda no Windows", o que é verdade pro BUILD final com Android
+Studio instalado — mas a checagem que a própria auditoria pedia (§0.9, item 6: "decida sozinho, e
+avalie T-AND verificando primeiro se há Android Studio/SDK") não tinha sido feita antes de eu
+escrever aquele ticket. Registrado como correção, não como bloqueio novo: T-AND precisa do Eduardo
+instalar Java + Android Studio antes de continuar, ou de rodar `npx cap add android` numa máquina
+que já tenha isso.
+
+**Sinceridade sobre o teste:** typecheck, lint, suíte unit inteira (2446 casos, incluindo um
+travessão que escapou do commit anterior e foi corrigido à parte) e build de produção passaram.
+Nenhuma build nativa foi tentada de verdade — nem `ios/` nem `android/` existem ainda no
+repositório, só as dependências e a configuração que os comandos `cap add` vão usar quando alguém
+rodar de uma máquina com as ferramentas certas.
