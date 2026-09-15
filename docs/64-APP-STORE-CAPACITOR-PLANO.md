@@ -204,7 +204,7 @@ esperar o Eduardo decidir T0 (Mac/Codemagic/Xcode Cloud) — algo que trava o iO
 | Custo de conta | US$ 99/ano | **US$ 25, uma vez só** `[M]`, já medido em rodada anterior |
 | Prazo de revisão | 1-3 dias, pode ir mais | Geralmente mais rápido, horas a poucos dias `[P]` |
 | Risco de rejeição por completude/crash (a categoria nº1, §0.0) | Alto se faltar T-DEMO | Mesmo risco existe (18-20% das rejeições `[P]`) — T-DEMO serve os DOIS |
-| Risco de rejeição por cobrança (3.1.1) | Real, sem garantia (§0.2) | Google tem regra parecida, mas historicamente mais flexível com apps B2B `[P]` — T1.5 ainda vale fazer, mas o risco é menor |
+| Risco de rejeição por cobrança (3.1.1) | Real, sem garantia (§0.2) | **Corrigido em §0.9 (quarta rodada): mesmo risco, sem exceção nomeada equivalente à 3.1.3(b)** — T1.5 vale igual pros dois apps, não é "mais fácil" no Android |
 | Exclusão de conta | Só precisa do caminho dentro do app | **Precisa do caminho dentro do app E de um link público na web** `[P]` — T-DEL já cobre os dois se o link for público |
 
 **O que isto muda no plano:** os tickets que não são específicos de iOS (T-DEMO, T-DEL, T1.5, e a
@@ -215,7 +215,63 @@ diferentes) e T6/T7 (build e submissão) precisam de trilhos separados.
 **Novo ticket, T-AND, abaixo — e ele pode COMEÇAR AGORA, nesta sessão, sem depender de nenhuma
 decisão do Eduardo.**
 
-### 0.8 · Sources
+### 0.9 · Quarta rodada (/loop autônomo): cinco ângulos fechados, um enfraquece o plano, quatro confirmam/reduzem risco
+
+Pedido do Eduardo: pesquisar mais fundo, deixar o mais perfeito possível, rodando sozinho. Cinco
+frentes que as rodadas anteriores tinham deixado sem citação firme ou sem checar.
+
+**1. Google Play NÃO tem uma exceção tão larga quanto a 3.1.3(b) da Apple — corrige uma afirmação
+anterior.** A rodada de §0.7 dizia "Google historicamente mais flexível com apps B2B", **sem
+fonte** — errado dizer isso sem citação. Conferido agora `[P]`: a política de pagamento do Google
+Play só lista exceções estreitas e nomeadas (operadoras de telecom/TV a cabo cobrando na fatura do
+serviço físico) — não existe uma cláusula geral de "app B2B multiplataforma" escrita como a da
+Apple. **Na prática**, apps como Fresha, Booksy, Mindbody Business seguem publicados no Google Play
+com o mesmo padrão (login-only, sem compra) — o que sugere que o Google aplica a regra com mais
+folga NA PRÁTICA do que o texto da política sozinho sugeriria, mas **isso é dedução por precedente,
+não uma regra escrita que eu possa citar como garantia.** T1.5 continua valendo igual pros dois
+apps — o risco não é menor no Android, só não tem uma exceção nomeada dos dois lados.
+
+**2. Mais um precedente real, direto do nicho: Mindbody Business App já está na App Store** `[P]`
+— confirma pela terceira vez (com Fresha e Booksy) que o padrão "login-only, sem compra dentro do
+app" é aceito pra ferramentas de gestão de salão/estúdio/spa, categoria quase idêntica ao CICLO.
+
+**3. Por que o CICLO não se qualifica pra exceção de "serviço do mundo real" (a que livra Uber e
+Airbnb de usar IAP)** `[P]`: essa exceção vale quando o app cobra por algo consumido FORA do
+app (uma corrida, uma hospedagem) — a Apple não é o processador desse serviço. **A assinatura do
+CICLO não se encaixa aqui**: ela libera MÓDULO dentro do próprio app (equipe, estoque, mais
+profissionais) — é literalmente "desbloquear funcionalidade dentro do app", a definição textual da
+3.1.1 (§0.2). Não é uma porta que valha a pena perseguir; T1.5 (esconder a cobrança inteira)
+continua sendo o caminho certo, não uma reclassificação de categoria.
+
+**4. Guideline 2.5.1 (API privada) — risco baixo, mas com uma pegadinha histórica do próprio
+Capacitor** `[P]`: apps Capacitor antigos (anteriores à migração de `UIWebView` pra `WKWebView`,
+Capacitor 3+) já foram rejeitados por isso — `UIWebView` está formalmente descontinuado pela Apple.
+**Toda versão atual do Capacitor usa `WKWebView` por padrão**, então o risco é baixo — mas vira um
+item de checklist explícito em T1, não uma suposição.
+
+**5. Face ID/Touch ID como capacidade nativa de T4 — risco de LGPD MENOR do que eu esperava** `[P]`:
+dado biométrico é categoria sensível (LGPD art. 11), mas o `LocalAuthentication` da Apple mantém o
+molde biométrico **só no dispositivo** (Secure Enclave) — o CICLO nunca recebe nem armazena o dado
+biométrico em si, só um "sim/não" do sistema operacional. Isso tira o CICLO do papel de controlador
+desse dado especificamente, reduzindo bastante a exigência de consentimento formal em cima dele
+(comparado a, por exemplo, foto de reconhecimento facial armazenada em servidor). **Face ID sobe de
+prioridade como candidato de T4** — nativo, útil de verdade (destrava a agenda rápido), risco de
+compliance baixo.
+
+**6. Soft-ask antes do prompt nativo de notificação — vira critério de aceite novo em T3** `[P]`:
+mostrar uma tela própria explicando o valor ("avise quando um cliente sumir") ANTES do prompt do
+sistema aumenta a taxa de aceite em 30-50%, e protege a única tentativa que o sistema permite —
+quem recusa o soft-ask nunca vê o prompt de verdade, então pode tentar de novo depois; quem recusa
+o prompt do SISTEMA não pode ser perguntado de novo pelo app. T3 ganhou este item.
+
+**Conclusão desta rodada: nenhum achado novo enfraquece o plano de forma que exija mudar decisão
+já tomada.** O item 1 corrige uma afirmação que estava sem base (Google "mais flexível") pra uma
+mais honesta (mesmo risco, sem exceção nomeada). Os itens 2-6 reforçam ou destravam pequenas
+melhorias (Face ID, soft-ask, checklist de WebView). **A pesquisa está no ponto de retornos
+decrescentes** — mais rodadas tendem a confirmar o que já está escrito, não a virar o plano de
+cabeça pra baixo.
+
+### 0.10 · Sources
 
 - [App Store Review Guidelines: Will Your Webview App Be Rejected? — MobiLoud](https://www.mobiloud.com/blog/app-store-review-guidelines-webview-wrapper)
 - [Wrapping a Vibe-Coded Web App for iOS: What Apple Actually Requires — AcceptMyApp](https://acceptmy.app/guides/web-app-to-ios-app-store-requirements)
@@ -242,6 +298,13 @@ decisão do Eduardo.**
 - [Android Setup for Capacitor Apps — Capgo](https://capgo.app/blog/android-setup-for-capacitor-apps/)
 - [Google Play App Rejected in 2026: Rejection Reasons Decoded — QAwerk](https://qawerk.com/blog/google-play-rejection-reasons/)
 - [Understanding Google Play's app account deletion requirements — Google Play Console Help](https://support.google.com/googleplay/android-developer/answer/13327111?hl=en)
+- [Understanding Google Play's Payments policy — Google Play Console Help](https://support.google.com/googleplay/android-developer/answer/10281818?hl=en)
+- [Mindbody Business App — App Store](https://apps.apple.com/us/app/mindbody-business/id599125654)
+- [Guideline 3.1 Rejection: How to Fix In-App Purchase Issues (real-world services exemption) — iOS Submission Guide](https://iossubmissionguide.com/guideline-3-1-in-app-purchase/)
+- [Guideline 2.5.1 - Software Requirements: Using Private or Undocumented APIs — AppStoreReject](https://appstorereject.com/rejections/apple/2/guideline-251-software-requirements-using-private-or-undocumented-apis)
+- [LGPD e Dados Biométricos — Reconhecimento Facial, Digital e Voz — Confidata](https://confidata.com.br/blog/lgpd-dados-biometricos-reconhecimento-facial-digital)
+- [iOS Push Notification Permissions: The Best Practices — Hurree](https://blog.hurree.co/ios-push-notification-permissions-best-practises)
+- [iOS Push Permission: Priming Patterns That Lift Opt-In — PushEngage](https://www.pushengage.com/ios-push-notification-permission/)
 
 ---
 
@@ -363,6 +426,10 @@ sem quebrar o deploy web atual.
 5. **Nenhuma barra de endereço, nenhum link "Abrir no Safari" visível** — configurar
    `WKWebView`/Capacitor para nunca mostrar chrome de navegador. É o item mais citado como causa de
    rejeição por parecer literalmente o Safari (§0.4).
+6. **Confirmar versão do Capacitor usando `WKWebView`, nunca `UIWebView`** (§0.9): `UIWebView` está
+   formalmente descontinuado pela Apple e é motivo de rejeição automática sob a guideline 2.5.1 —
+   toda versão atual do Capacitor (3+) já usa `WKWebView` por padrão, mas checar `package.json` e
+   qualquer plugin de terceiro que ainda possa carregar `UIWebView` por baixo.
 
 **Onde mexer.** Raiz do projeto (`capacitor.config.ts`, `package.json`), `ios/` (gerado pelo CLI,
 não escrito à mão).
@@ -551,9 +618,15 @@ cliente sumindo — sem depender do navegador estar aberto.
    `email.ts`/`push.ts` — este ticket estende `push.ts`, não cria arquivo novo).
 3. Guarda: mesmo padrão de teto diário e pausa que `reminders`/`campaigns` já respeitam — push
    nativo não é um canal novo sem as travas que os outros dois já têm.
+4. **Soft-ask antes do prompt nativo do sistema** (§0.9): uma tela própria, dentro do app,
+   explicando o valor ("avise quando um cliente sumir" / "lembre de um horário chegando") ANTES de
+   chamar a permissão real do iOS/Android. Pesquisa mostra 30-50% mais aceite, e protege a única
+   tentativa que o sistema permite — quem recusa a tela própria pode ser perguntado de novo mais
+   tarde; quem recusa o prompt do SISTEMA não pode.
 
 **Onde mexer.** `src/server/providers/messaging/push.ts`, migration nova (coluna de tipo de token),
-`ios/` (capabilities do Xcode: Push Notifications habilitado).
+`ios/` (capabilities do Xcode: Push Notifications habilitado), tela nova de soft-ask (componente
+React simples, reaproveitando o padrão visual de qualquer outro convite do produto).
 
 **Armadilhas.** Certificado APNs expira anualmente — documentar a data de expiração em algum lugar
 visível (`docs/DECISOES.md` serve), senão o push para de funcionar em silêncio um ano depois, sem
@@ -570,10 +643,17 @@ continua incerto.
 
 **Critério de aceite.**
 1. Pelo menos DOIS comportamentos nativos genuínos além do push (T3): candidatos, em ordem de
-   esforço — haptic feedback (`@capacitor/haptics`, esforço baixo) em ações de confirmar/cancelar
-   agendamento; compartilhamento nativo (`@capacitor/share`) no lugar do link `wa.me` cru, quando
-   dentro do app; status bar/safe area nativos (`@capacitor/status-bar`) para não ter WebView com
-   barra branca por cima do notch.
+   prioridade revisada em §0.9 —
+   - **Face ID/Touch ID pra destravar o app** (`@capacitor/biometrics` ou equivalente): subiu de
+     prioridade nesta rodada — é útil de verdade (reabrir a agenda rápido sem digitar senha) e o
+     risco de LGPD é baixo, porque o molde biométrico nunca sai do dispositivo (Secure Enclave); o
+     CICLO só recebe um "autenticado: sim/não" do sistema operacional, nunca o dado em si.
+   - Haptic feedback (`@capacitor/haptics`, esforço baixo) em ações de confirmar/cancelar
+     agendamento.
+   - Compartilhamento nativo (`@capacitor/share`) no lugar do link `wa.me` cru, quando dentro do
+     app.
+   - Status bar/safe area nativos (`@capacitor/status-bar`) para não ter WebView com barra branca
+     por cima do notch.
 2. Ícone de rede/estado offline reconhecível dentro do app — a fila offline que já existe
    (`src/lib/offline`) ganha um indicador visual dentro do app nativo (a versão web pode já ter
    isso; conferir antes de reconstruir).
