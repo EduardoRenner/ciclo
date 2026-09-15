@@ -7584,3 +7584,41 @@ travessão que escapou do commit anterior e foi corrigido à parte) e build de p
 Nenhuma build nativa foi tentada de verdade — nem `ios/` nem `android/` existem ainda no
 repositório, só as dependências e a configuração que os comandos `cap add` vão usar quando alguém
 rodar de uma máquina com as ferramentas certas.
+
+---
+
+## 2026-09-15 · T1.5 implementado — bloqueio de cobrança no app nativo
+
+**Contexto:** loop autônomo, `docs/64`. T1.5 é o ticket de maior risco documentado (§0.2,
+`[RISCO-ABERTO]`) — guideline 3.1.1, sem exceção que cubra o CICLO (§0.9).
+
+**Mecanismo:** `capacitor.config.ts` ganhou `appendUserAgent: 'CicloApp'` — todo pedido que sai do
+app nativo carrega essa marca no User-Agent, que nenhum navegador comum escreve sozinho.
+`src/core/plataforma/nativo.ts` (`ehRequisicaoDoAppNativo`, função pura, com teste) é quem lê.
+
+**Duas camadas, defesa em profundidade** (a mesma disciplina que RLS + permissão de rota já seguem
+no resto do produto — uma só nunca basta):
+1. `meu-plano/page.tsx`: quando nativo, a tela inteira vira só "Gerencie seu plano em
+   seuciclo.com.br" — sem preço, sem formulário, sem botão, sem link clicável (um link contaria
+   como direcionar pra compra externa, outra regra proibida).
+2. `POST /api/v1/billing/assinar`: recusa com `FORBIDDEN` quando o User-Agent é do app — pra quem
+   souber montar a requisição direto (DevTools do WebView, replay) não conseguir contornar
+   escondendo só o botão.
+
+**Achado e corrigido durante a implementação:** a guarda `dominio-em-um-lugar-so` pegou o literal
+"seuciclo.com.br" escrito à mão nos dois arquivos novos — trocado por `APP_HOST`
+(`src/lib/app-url.ts`), a fonte única que já existe pra isso.
+
+**O que ficou de fora desta rodada, registrado como pendência e não como esquecimento:** a Central
+de Ações (`chave: 'plano-perto-do-teto'`) e a tela de bloqueio de módulo
+(`src/components/ui/bloqueio-plano.tsx`) ainda mencionam "Ver planos"/upgrade sem checar
+`ehRequisicaoDoAppNativo`. Risco baixo hoje: os dois só LINKAM pra `/admin/config/meu-plano` e
+`/precos`, que já ficam neutralizadas quando nativo (clicar leva pra uma tela sem cobrança
+nenhuma, não completa uma compra) — mas o texto do convite em si ("Ver planos") ainda aparece.
+Fast-follow, não bloqueador de submissão.
+
+**Sinceridade sobre o teste:** typecheck, lint, suíte unit inteira (2449 casos, incluindo o teste
+novo de `ehRequisicaoDoAppNativo` e a correção do domínio hardcoded) e build de produção passaram.
+Não existe app nativo de verdade pra testar o User-Agent chegando na prática (T-AND travado por
+falta de Java/SDK, T0/iOS travado por falta de Mac) — a verificação real fica pendente pro dia em
+que alguém conseguir rodar `npx cap add ios`/`android` numa máquina com as ferramentas certas.

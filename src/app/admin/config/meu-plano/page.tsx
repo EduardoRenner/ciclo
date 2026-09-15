@@ -5,8 +5,9 @@ import { headers } from 'next/headers'
 import { textoDeParaQueIndicar, textoDoConviteDoCiclo } from '@/core/billing/convite-do-ciclo'
 import { lerAssinatura } from '@/core/billing/mercado-pago'
 import { NOME_DO_PLANO, ORDEM_DOS_PLANOS, precoDoPlanoPorMes, verificarLimite } from '@/core/billing/planos'
+import { ehRequisicaoDoAppNativo } from '@/core/plataforma/nativo'
 import { comMaiuscula, plural } from '@/core/text/vocabulario'
-import { APP_URL } from '@/lib/app-url'
+import { APP_HOST, APP_URL } from '@/lib/app-url'
 import { linkWhatsAppCompartilhar } from '@/lib/mensagens'
 import Card from '@/components/ui/card'
 import PageHeader from '@/components/ui/page-header'
@@ -56,7 +57,27 @@ function textoDeTeto(limite: number | null, usado: number): string {
 }
 
 export default async function PaginaMeuPlano() {
-  const ctx = await contextoAtual(new Request('https://interno/meu-plano', { headers: await headers() }))
+  const cabecalhos = await headers()
+
+  /*
+   * T1.5 (docs/64 §0.2/§0.7): nenhuma tela de preço, plano ou "Assinar" pode ser alcançável de
+   * dentro do app nativo — a Apple/Google proíbem cobrança fora da compra do próprio app
+   * (guideline 3.1.1), e o CICLO não se qualifica pra nenhuma exceção nomeada (§0.9). A versão
+   * nativa desta tela é só o texto: sem preço, sem formulário, sem botão de ação, sem link
+   * clicável — um link contaria como "direcionar pra compra externa", outra regra proibida.
+   */
+  if (ehRequisicaoDoAppNativo(cabecalhos.get('user-agent'))) {
+    return (
+      <>
+        <PageHeader titulo="Meu plano" />
+        <Card>
+          <p className="text-corpo text-txt">Gerencie seu plano em {APP_HOST}.</p>
+        </Card>
+      </>
+    )
+  }
+
+  const ctx = await contextoAtual(new Request('https://interno/meu-plano', { headers: cabecalhos }))
   const db = await criarClienteDoUsuario()
 
   const [plano, profissionais, clientes, tenantRow] = await Promise.all([

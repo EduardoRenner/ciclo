@@ -37,6 +37,14 @@ const config: CapacitorConfig = {
     // depende de cookie `Secure`, e um esquema não-https quebraria o login silenciosamente.
     cleartext: false,
   },
+  /*
+   * T1.5 (docs/64 §0.2): o servidor precisa saber, sem confiar no cliente, se um pedido veio do
+   * app nativo — é o sinal que decide se a tela/rota de cobrança aparece ou fica neutralizada
+   * (guideline 3.1.1, nenhuma exceção cobre o CICLO). `appendUserAgent` soma este texto ao final
+   * do User-Agent que o WebView manda em TODA requisição — nenhum navegador comum escreve
+   * "CicloApp" sozinho. `src/core/plataforma/nativo.ts` (`ehRequisicaoDoAppNativo`) é quem lê.
+   */
+  appendUserAgent: 'CicloApp',
 }
 
 export default config

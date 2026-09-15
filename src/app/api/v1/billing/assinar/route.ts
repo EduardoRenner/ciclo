@@ -4,7 +4,9 @@ import { writeAudit } from '@/server/audit/write'
 import { exigirPermissao } from '@/server/auth/rbac'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
-import { APP_URL } from '@/lib/app-url'
+import { ehRequisicaoDoAppNativo } from '@/core/plataforma/nativo'
+import { APP_HOST, APP_URL } from '@/lib/app-url'
+import { AppError } from '@/server/http/errors'
 import { lerCorpo } from '@/server/http/body'
 import { rota } from '@/server/http/handler'
 import { comIdempotencia } from '@/server/http/idempotency'
@@ -29,6 +31,14 @@ const Esquema = z.object({
 })
 
 export const POST = rota(async (req, _params, requestId) => {
+  // T1.5 (docs/64 §0.2): a tela some pro app nativo, mas a rota também precisa recusar — quem
+  // sabe montar a requisição direto (DevTools do WebView, replay) não pode contornar escondendo
+  // só o botão. Guideline 3.1.1 não abre exceção pro CICLO (§0.9): a assinatura desbloqueia
+  // módulo DENTRO do app, a definição textual da regra.
+  if (ehRequisicaoDoAppNativo(req.headers.get('user-agent'))) {
+    throw new AppError('FORBIDDEN', { message: `Gerencie seu plano em ${APP_HOST}.` })
+  }
+
   const ctx = await contextoAtual(req)
   exigirPermissao(ctx.papel, 'tenant:update')
 
