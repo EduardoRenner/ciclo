@@ -7,8 +7,97 @@
 | Tag | Significado |
 |---|---|
 | `[M]` | Medido neste repositório em 2026-09-15 |
+| `[P]` | Pesquisa externa, com link, em 2026-09-15 |
 | `[E]` | Estimativa — vira fato quando alguém tentar |
 | `[BLOQ]` | Bloqueio de ambiente, não de código |
+| `[RISCO-ABERTO]` | Risco que a pesquisa NÃO encontrou forma de eliminar 100% — só de reduzir |
+
+---
+
+## 0 · Atualização 15/09: pesquisa de mercado — o que muda o plano
+
+Pedido do Eduardo: pesquisar a fundo o que é preciso pra passar direto na revisão, porque ele não
+quer nem correr o risco de reprovação. **A pesquisa achou dois riscos reais que o plano original
+(seções 1-7 abaixo) não cobria — um deles sem solução garantida, mesmo fazendo tudo certo.** Registro
+com honestidade, porque prometer aprovação certa seria mentir com base no que developers reais
+relatam.
+
+### 0.1 · O risco que NÃO tem solução garantida: guideline 3.1.1 (compra dentro do app) `[RISCO-ABERTO]`
+
+**O que a regra diz:** qualquer conteúdo ou serviço digital pago acessado dentro do app tem que
+passar pela compra dentro do app (In-App Purchase), com os 30% da Apple — a menos que o app se
+encaixe numa exceção `[P]`.
+
+**Por que isto importa pro CICLO especificamente:** `/admin/config/meu-plano` tem um botão
+"Assinar {plano}" que cobra pelo Mercado Pago (`src/app/admin/config/meu-plano/assinar-plano.tsx`).
+Se essa tela existir dentro do app iOS do jeito que existe no site hoje, é rejeição automática e
+óbvia — é literalmente vender assinatura sem IAP dentro do app.
+
+**A mitigação que a pesquisa encontrou — e o limite dela:** o padrão usado por apps B2B "SaaS
+companion" (login com conta que já existe, sem nenhuma tela de comprar/assinar dentro do app,
+citando a exceção 3.1.3(b) "Multiplatform Services" nas notas pro revisor) é o caminho certo — e é
+exatamente o que **Fresha for Business** e **Booksy Biz** fazem hoje, os dois publicados e
+aprovados, os dois concorrentes diretos do CICLO no mesmo nicho `[P]`. Isso prova que o padrão
+FUNCIONA na prática.
+
+**Mas não é garantia.** Um developer com o MESMO padrão exato (app B2B companion, login-only, zero
+tela de compra, citando a mesma exceção 3.1.3(b), citando apps aprovados como precedente) relatou
+rejeição sob 3.1.1 num fórum oficial da Apple em 2026, com a resposta do revisor sendo genérica
+("seu app acessa conteúdo comprado fora do app") e **sem resposta de ninguém, inclusive da própria
+Apple, sobre como resolver** `[P]`. Ou seja: existe caso documentado de reprovação mesmo seguindo à
+risca a receita que funciona pra outros. A decisão de revisor humano nesta regra específica não é
+100% previsível — nenhuma pesquisa de mercado consegue eliminar isso, só reduzir a chance.
+
+**O que isto muda no plano:** vira ticket próprio (T1.5, novo, abaixo) e crítico — mais importante
+que a diretriz 4.2 que o plano original tratava como risco principal. **Nenhuma tela de preço,
+plano ou "Assinar" pode ser alcançável de dentro do app iOS**, nem por link, nem por redirecionamento
+— tem que estar tecnicamente impossível de chegar lá pelo app, não só escondida visualmente.
+
+### 0.2 · Achado que veio de graça, e é bug de verdade, App Store ou não: falta exclusão de conta
+
+Guideline 5.1.1(v): todo app que permite criar conta tem que permitir **excluir a própria conta, de
+dentro do app**, sem precisar ligar ou mandar e-mail (exceto setor super-regulado) `[P]`. Prazo
+desde 2022, não é novidade de 2026.
+
+**Medido `[M]`:** `grep -rn "excluir.{0,20}conta" src` não encontra rota nenhuma — só uma menção em
+`/termos`. O CICLO tem `erase` para excluir um CLIENTE (LGPD, `clients/[id]/erase`), mas **não tem
+como o PRÓPRIO dono/profissional excluir a própria conta** de lugar nenhum, nem no site.
+
+**Isto não é só bloqueio de App Store — é lacuna de LGPD também** (art. 18 VI, direito de
+eliminação, que o produto já implementa pra cliente do salão mas não pra si mesmo). Vira ticket
+novo (T-DEL abaixo), e vale a pena fazer independente do app, porque é direito do titular dos dados
+seja qual for a plataforma.
+
+### 0.3 · Guideline 4.2, revisado com mais precisão
+
+A pesquisa original (mensagem anterior desta conversa) estava direcionalmente certa mas **um detalhe
+técnico estava errado**: o plano original (T1) mandava o app carregar a URL de produção
+(`server.url` remoto). **Isto é apontado por múltiplas fontes como bandeira vermelha para o
+revisor** `[P]` — "carregar uma URL HTTPS remota na abertura é o padrão mais associado a rejeição".
+O certo é o app **empacotar o shell da interface localmente** (os componentes de navegação, o
+`chrome` do app) e só fazer chamada de API pra buscar dado — T1 corrigido abaixo.
+
+Confirmado por três fontes independentes `[P]`, o que conta como "nativo o suficiente" pra 4.2:
+**pelo menos duas capacidades nativas genuínas**, de uma lista que inclui push notification ligado
+a evento real (não só permissão vazia), modo offline de verdade (não tela em branco), autenticação
+biométrica, widget de tela inicial, ou integração de câmera/localização. O CICLO já tem base para
+push (T3) e offline (fila existente) — falta só UM item nativo a mais pra ficar confortavelmente
+acima do mínimo, não em cima da linha.
+
+**Não é automático:** nem push, nem biometria, nem splash screen sozinhos garantem aprovação — o
+critério do revisor é "esta experiência é claramente diferente de abrir o Safari?", não uma lista
+de checkbox `[P]`.
+
+### 0.4 · Sources
+
+- [App Store Review Guidelines: Will Your Webview App Be Rejected? — MobiLoud](https://www.mobiloud.com/blog/app-store-review-guidelines-webview-wrapper)
+- [Wrapping a Vibe-Coded Web App for iOS: What Apple Actually Requires — AcceptMyApp](https://acceptmy.app/guides/web-app-to-ios-app-store-requirements)
+- [Can You Publish a PWA to the App Store and Google Play? — MobiLoud](https://www.mobiloud.com/blog/publishing-pwa-app-store/)
+- [Rejected under Guideline 3.1.1 – B2B SaaS app, existing accounts only, no purchases in the app — Apple Developer Forums](https://developer.apple.com/forums/thread/811018)
+- [Guideline 4.8 Design Login Services — Appraysal](https://appraysal.com/rules/4.8_sign_in_with_apple)
+- [Account deletion within apps — Apple Developer](https://developer.apple.com/news/upcoming-requirements/?id=06302022b)
+- [Fresha for Business — App Store](https://apps.apple.com/us/app/fresha-for-business/id1455346253)
+- [Booksy Biz: Booking & Payments App — App Store](https://apps.apple.com/us/app/booksy-biz-booking-payments/id725335996)
 
 ---
 
@@ -75,14 +164,20 @@ sem quebrar o deploy web atual.
 1. `@capacitor/core`, `@capacitor/cli`, `@capacitor/ios` instalados como dependência do projeto,
    sem afetar o bundle que a Vercel serve (Capacitor só entra no build nativo, nunca no `next
    build` da Vercel).
-2. `capacitor.config.ts` na raiz, com `server.url` apontando para o domínio de produção **em vez de**
-   empacotar os assets localmente — isso é o que permite o app abrir sempre a versão mais nova do
-   site sem precisar de uma nova submissão à Apple a cada deploy. (Trade-off consciente: revisão
-   4.2 às vezes pede assets locais também — ver T4.)
+2. `capacitor.config.ts` na raiz, com `server.url` apontando para o domínio de produção. **Revisado
+   em 15/09 (§0.3):** a pesquisa aponta "app que só abre uma URL remota" como bandeira vermelha —
+   mas para um Next.js com Server Components/Server Actions e sessão via cookie, empacotar tudo
+   localmente (sem servidor) não é viável sem reescrever a autenticação. O que a pesquisa mostra
+   que REALMENTE decide 4.2 não é de onde vem o HTML, é se existe casca nativa (barra de status,
+   navegação, sem chrome de navegador visível) **e** capacidade nativa real por cima — que é
+   exatamente o que T3/T4 constroem. `server.url` remoto fica, mas T4 deixa de ser opcional.
 3. `pnpm build`/`pnpm verify` da Vercel continuam passando sem tocar em nada do Capacitor —
    pacotes nativos ficam num diretório próprio (`ios/`), fora do caminho que o `next build` varre.
 4. Guarda: nenhum arquivo de `ios/` é lido por `tsc`/`eslint` do projeto Next (adicionar ao
    `.eslintignore`/`tsconfig` `exclude` se necessário).
+5. **Nenhuma barra de endereço, nenhum link "Abrir no Safari" visível** — configurar
+   `WKWebView`/Capacitor para nunca mostrar chrome de navegador. É o item mais citado como causa de
+   rejeição por parecer literalmente o Safari (§0.3).
 
 **Onde mexer.** Raiz do projeto (`capacitor.config.ts`, `package.json`), `ios/` (gerado pelo CLI,
 não escrito à mão).
@@ -92,6 +187,79 @@ não escrito à mão).
   `criar-tenant-real.mjs` já documentou para scripts de banco: ambiente errado, gravado sem avisar.
 - Next.js com Server Components/Server Actions dentro de uma WebView exige atenção a cookies/CORS
   — testar login de verdade antes de considerar T1 pronto (precisa do Mac de T0).
+
+---
+
+### T1.5 · Bloquear TODA tela de cobrança dentro do app iOS `[RISCO-ABERTO]` — o ticket mais importante do plano
+
+**Objetivo.** Fechar o risco #1 achado na pesquisa (§0.1): nenhuma tela de preço, plano ou
+"Assinar" pode ser alcançável de dentro do app nativo — a Apple rejeita isso sob a guideline 3.1.1
+com quase certeza (é o padrão de rejeição mais citado pra este tipo de app), e mesmo fazendo tudo
+certo o risco não some 100% (caso documentado em §0.1).
+
+**Critério de aceite.**
+1. Detectar `Capacitor.isNativePlatform()` num ponto central (middleware ou layout raiz de
+   `/admin/config`), e quando verdadeiro: `/admin/config/meu-plano` e qualquer rota de
+   `/api/v1/billing/*` respondem com uma tela/mensagem "Gerencie seu plano em seuciclo.com.br",
+   **sem formulário, sem preço, sem botão de ação nenhum** — nunca um link clicável pra abrir a
+   URL de cobrança (mesmo um link pode ser lido como "direciona pra compra fora do app", que é OUTRA
+   regra, a 3.1.3, então o texto fica sem link nenhum, só instrução).
+2. O mesmo vale pra qualquer lugar que hoje mencione upgrade de plano dentro do fluxo normal — a
+   Central de Ações (`chave: 'plano-perto-do-teto'`, `src/server/services/crm.ts`) e a tela de
+   bloqueio de módulo (`src/components/ui/bloqueio-plano.tsx`) também precisam saber que estão
+   rodando nativo e trocar "Ver planos" por texto sem ação, pelo mesmo motivo.
+3. Guarda: um teste que varre o app por qualquer combinação de "Assinar"/"assinatura"/preço com um
+   `<a>`/`<button>` ativo quando `Capacitor.isNativePlatform()` é verdadeiro — visto reprovando com
+   o botão de volta, no molde do `CLAUDE.md`.
+4. Notas pro revisor da Apple (App Store Connect, campo de "Notas para o revisor"), preenchidas na
+   submissão (T7): citar explicitamente a exceção 3.1.3(b) "Multiplatform Services", nomear que é
+   companion app B2B de conta já existente, e citar Fresha for Business/Booksy Biz como precedente
+   aprovado no mesmo nicho — a pesquisa (§0.1) mostra que isso ajuda, mesmo não garantindo.
+
+**Onde mexer.** Um novo helper (`src/lib/capacitor.ts` ou similar, isomorphic-safe) que detecta a
+plataforma; `meu-plano/page.tsx`, `crm.ts`, `bloqueio-plano.tsx`.
+
+**Armadilhas.**
+- Esconder só no CLIENTE (React) sem bloquear no servidor não basta — quem sabe montar a requisição
+  direto (DevTools do WebView, replay) ainda vê a rota. O bloqueio tem que estar em pelo menos uma
+  camada de servidor também: a rota de billing pode recusar quando o `User-Agent`/header do
+  Capacitor indicar app nativo, mas isso é heurística fraca — o mais seguro é o app nativo nunca
+  navegar pra essas rotas, e a decisão de negócio real (quem pode assinar) continua sendo por
+  usuário/sessão, não por plataforma.
+- **Isto não é opcional nem "fazer depois".** É o ticket que decide se o app passa ou não — deve
+  ser o PRIMEIRO testado em T6, antes de qualquer outro item da lista.
+
+---
+
+### T-DEL · Exclusão de conta pelo próprio dono/profissional
+
+**Objetivo.** Fechar a lacuna achada em §0.2 — hoje ninguém consegue excluir a própria conta, nem
+no site. É pré-requisito de App Store (guideline 5.1.1(v)) **e** lacuna de LGPD (art. 18 VI)
+independente do app.
+
+**Critério de aceite.**
+1. Rota nova (`/api/v1/account`, `DELETE`) que o usuário logado chama sobre a PRÓPRIA conta — nunca
+   aceita id de outro usuário no corpo (mesma regra de sempre: contexto validado, não corpo da
+   requisição).
+2. Confirma quem é `owner` de algum tenant: exigir transferência de titularidade ou exclusão do
+   tenant inteiro primeiro (não é opcional — apagar o dono sem decidir o destino do tenant deixa
+   `memberships`/dados órfãos). Quem é só `professional`/`reception` de um tenant alheio só perde o
+   próprio acesso de login, sem tocar no tenant.
+3. Some com sessão (`auth.users`), mas **preserva o que a regra 11 do `CLAUDE.md` já protege**
+   (agendamento, movimento de estoque, auditoria) — mesma disciplina que `clients/[id]/erase` já
+   segue pro lado do cliente do salão; este ticket é o espelho pro lado de quem opera o CICLO.
+4. Entrada visível em `/admin/config` (ou nova seção de conta), com confirmação de duas etapas
+   (não é ação de um toque só) — texto claro do que é apagado e do que fica retido por obrigação
+   legal (nota fiscal, se existir).
+5. Guarda: teste de integração que cria conta, chama a exclusão, confirma que login deixa de
+   funcionar e que dados de outros tenants não foram tocados.
+
+**Onde mexer.** `src/app/api/v1/account/`, `src/server/services/` (novo `contas.ts` ou estender
+existente), UI em `src/app/admin/config/`.
+
+**Armadilhas.** Igual à `erase` de cliente: decidir com cuidado o que é "excluído" vs. "anonimizado
+por obrigação legal" — LGPD permite reter o mínimo que a lei exigir (fiscal, por exemplo), nunca o
+resto.
 
 ---
 
@@ -191,7 +359,9 @@ ticket**, nenhuma sessão de IA tem como comprar a assinatura em nome dele.
    liberado em minutos a poucas horas).
 2. Login, agenda, Motor de Ciclo, push (T3) testados manualmente num aparelho real, não só
    simulador — simulador não testa push nativo de verdade.
-3. Uma lista de bugs encontrados vira ticket normal antes de avançar para T7.
+3. **Primeiro teste de todos: tentar chegar em qualquer tela de cobrança pelo app (T1.5).** Se
+   algum caminho ainda leva lá, T7 não começa.
+4. Uma lista de bugs encontrados vira ticket normal antes de avançar para T7.
 
 **Onde mexer.** Nenhuma mudança de código previsível aqui — é ciclo de teste manual e conserto do
 que aparecer.
@@ -210,14 +380,23 @@ bug — cada rejeição da revisão completa custa dias, o TestFlight custa minu
    Apple), categoria (Business ou Productivity), política de privacidade **linkada para
    `/privacidade`, que já existe** (`docs/31` confirma que a página já foi criada por decisão de
    lançamento anterior — reaproveitar, não recriar).
-2. Submissão enviada via App Store Connect.
-3. Se rejeitado: ler o motivo exato, corrigir, ressubmeter — **não é permitido "tentar de novo sem
+2. **App Privacy questionnaire** (App Store Connect) preenchido com precisão — o CICLO lida com
+   dado de saúde (anamnese/cofre), e a Apple pede declaração explícita de categorias sensíveis.
+   Declarar a menos é motivo de rejeição/remoção posterior; declarar certo é conferir contra o que
+   `src/server/crypto/vault.ts` de fato coleta, não supor.
+3. `PrivacyInfo.xcprivacy` (manifest de privacidade, exigido desde 2024 `[P]`) presente no bundle
+   — gerado pelos plugins do Capacitor usados (push, etc.), conferir se algum falta o próprio.
+4. **Notas pro revisor preenchidas** com o argumento de T1.5 (exceção 3.1.3(b) + precedente
+   Fresha/Booksy) — não é garantia, mas a pesquisa mostra que ajuda.
+5. Submissão enviada via App Store Connect.
+6. Se rejeitado: ler o motivo exato, corrigir, ressubmeter — **não é permitido "tentar de novo sem
    mudar nada"**, a Apple registra o padrão de tentativa e piora a relação com contas que fazem isso.
 
 **Onde mexer.** App Store Connect (fora do repositório).
 
-**Armadilhas.** A causa mais comum de rejeição para apps deste perfil (WebView + PWA) é
-precisamente a 4.2 — é por isso que T4 vem antes, não depois.
+**Armadilhas.** A pesquisa de 15/09 (§0) corrigiu a hipótese original: a causa mais provável de
+rejeição pra este app específico não é 4.2 (que T1+T3+T4 já mitigam bem) — é **3.1.1**, por causa da
+tela de assinatura que o produto genuinamente tem. T1.5 é o item que decide isto, não T4.
 
 ---
 
@@ -225,18 +404,22 @@ precisamente a 4.2 — é por isso que T4 vem antes, não depois.
 
 ```
 T0 (Eduardo, decide onde builda)
-  └─▶ T1 (scaffold) ─▶ T2 (ícone/splash) ─▶ T6 (testar em device — precisa do Mac de T0)
-         │                                        ▲
-         └─▶ T3 (push nativo) ──────────────────┘
-         └─▶ T4 (ajustes 4.2) ──────────────────┘
+  └─▶ T1 (scaffold) ─▶ T1.5 (bloquear cobrança) ─▶ T2 (ícone/splash) ─▶ T6 (device — Mac de T0)
+         │                                                                    ▲
+         └─▶ T3 (push nativo) ─────────────────────────────────────────────┘
+         └─▶ T4 (ajustes 4.2) ─────────────────────────────────────────────┘
+         └─▶ T-DEL (exclusão de conta, pode começar já, não depende de nada) ┘
+
+T5 (Eduardo, conta+certificados — em paralelo com T1-T4)
                                                    │
-T5 (Eduardo, conta+certificados — pode rodar em paralelo com T1-T4)
                                                    ▼
                                                   T7 (submissão)
 ```
 
-**T0 e T5 são do Eduardo e podem começar imediatamente, em paralelo com T1-T4.** T1-T4 são código e
-podem ser escritos nesta sessão, mas **T6 em diante depende fisicamente do Mac** que T0 escolhe.
+**T0 e T5 são do Eduardo e podem começar imediatamente, em paralelo com T1-T-DEL.** T1, T1.5, T2,
+T3, T4 e T-DEL são código e podem ser escritos nesta sessão, mas **T6 em diante depende
+fisicamente do Mac** que T0 escolhe. **T1.5 é o ticket de maior prioridade depois do scaffold** —
+mais importante que T2/T3/T4, porque decide se a submissão tem chance real.
 
 ## 4 · Custos `[M]`
 
@@ -251,14 +434,18 @@ podem ser escritos nesta sessão, mas **T6 em diante depende fisicamente do Mac*
 | Fase | Tempo `[E]` |
 |---|---|
 | T1 + T2 (scaffold, ícone) | 1 dia de trabalho de código |
+| **T1.5 (bloquear cobrança no app)** | **1-2 dias — o item que mais importa pra "passar direto"** |
+| T-DEL (exclusão de conta) | 1-2 dias, pode rodar em paralelo com tudo |
 | T3 (push nativo) | 1-2 dias |
-| T4 (ajustes 4.2) | 1-3 dias — a variável mais incerta, só se confirma testando |
+| T4 (ajustes 4.2) | 1-3 dias — variável, só se confirma testando |
 | T5 (conta Apple) | 1-2 dias, aprovação da Apple pode demorar |
 | T6 (TestFlight + teste real) | 1-2 dias |
-| T7 (revisão da Apple) | 1-3 dias, mais se rejeitar na primeira |
+| T7 (revisão da Apple) | 1-3 dias, **mais se rejeitar — e a §0.1 mostra que pode rejeitar mesmo tudo certo** |
 
-**Total: 1 a 3 semanas**, quase todo o range vindo de quantas vezes a Apple rejeita e de quão rápido
-o Eduardo resolve T0/T5 (que não sou eu que resolvo).
+**Total: 2 a 4 semanas** (subiu em relação à primeira versão do plano, por causa de T1.5/T-DEL, que
+não existiam antes da pesquisa). **Não existe número que garanta zero rejeição** — o que dá pra
+prometer é fazer os dois tickets que a pesquisa mostra que mais reduzem o risco (T1.5, T-DEL) e
+citar o precedente certo na submissão (T7). O resto é decisão de um revisor humano do lado de lá.
 
 ## 6 · O que NÃO muda
 
