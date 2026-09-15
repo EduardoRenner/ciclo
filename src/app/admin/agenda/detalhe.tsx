@@ -1,6 +1,6 @@
 'use client'
 
-import { MapPin } from 'lucide-react'
+import { MapPin, StickyNote } from 'lucide-react'
 import Link from 'next/link'
 
 import { useState, useTransition } from 'react'
@@ -194,6 +194,19 @@ export default function DetalheAgendamento({
           <MapPin aria-hidden className="mt-0.5 size-4 shrink-0" />
           <span>{agendamento.address}</span>
         </a>
+      ) : null}
+
+      {/*
+        0092: sem isto, `client_note` — inclusive o "quero levar produto X" do agendamento público
+        (0091) — ficava gravado no banco e NINGUÉM via. A feature de "leva junto" só converte se
+        o profissional lê o interesse ANTES do atendimento, e este é o único lugar da agenda que
+        mostra o agendamento por completo antes de agir sobre ele.
+      */}
+      {agendamento.client_note ? (
+        <p className="flex items-start gap-2 text-secundario text-txt-2">
+          <StickyNote aria-hidden className="mt-0.5 size-4 shrink-0 text-acc-2" />
+          <span>{agendamento.client_note}</span>
+        </p>
       ) : null}
 
       {erro ? (

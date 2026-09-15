@@ -1,4 +1,4 @@
-import { TriangleAlert, ChevronRight, UserX } from 'lucide-react'
+import { TriangleAlert, ChevronRight, StickyNote, UserX } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 
@@ -52,6 +52,12 @@ type Props = React.ComponentPropsWithoutRef<'div'> & {
   altoRisco?: boolean
   /** §9/TICKET-050: `health_records.has_alert` — nunca o rótulo clínico, só o sinal. */
   alertaSaude?: boolean
+  /**
+   * 0091/0092: `client_note` preenchido — hoje é sobretudo "quero levar produto X" vindo do
+   * agendamento público, mas serve qualquer nota. Só o sinal aqui, igual ao alerta de saúde: o
+   * texto em si mora no detalhe (`detalhe.tsx`), a lista não tem espaço pra citação longa.
+   */
+  temNota?: boolean
 }
 
 /** §4: barra lateral de 3px colorida por status, horário à esquerda em tabular. */
@@ -64,6 +70,7 @@ export default function AppointmentRow({
   profissionalNome,
   altoRisco,
   alertaSaude,
+  temNota,
   ...props
 }: Props) {
   const concluido = status === 'done' || status === 'canceled' || status === 'expired'
@@ -106,6 +113,12 @@ export default function AppointmentRow({
               <span title="Atenção na ficha de saúde">
                 <TriangleAlert aria-hidden className="size-4 shrink-0 text-bad" />
                 <span className="sr-only">Atenção na ficha de saúde</span>
+              </span>
+            ) : null}
+            {temNota ? (
+              <span title="Tem observação">
+                <StickyNote aria-hidden className="size-4 shrink-0 text-acc-2" />
+                <span className="sr-only">Tem observação</span>
               </span>
             ) : null}
             <span className="truncate">{clienteNome}</span>

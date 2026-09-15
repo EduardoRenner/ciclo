@@ -195,6 +195,7 @@ export default function Agenda({
                   profissionalNome={profissionais.length > 1 ? a.professionals?.display_name : undefined}
                   status={a.status as EstadoAgendamento}
                   altoRisco={(a.no_show_score ?? 0) >= LIMIAR_ALERTA_AGENDA}
+                  temNota={!!a.client_note}
                 />
               </button>
             </li>

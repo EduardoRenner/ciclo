@@ -594,9 +594,12 @@ export async function criarAgendamentoPublico(slug: string, entrada: z.input<typ
     // existe um pedido esperando — o aviso valia pra qualquer tenant, não só
     // pra quem tiver `inicio = solicitacao` no futuro. Melhor esforço: uma
     // falha de push nunca pode derrubar o agendamento que acabou de nascer.
+    // 0091/0092: o interesse no produto vai JUNTO do push, não só na nota do agendamento — é o
+    // sinal mais rápido que existe, chega no celular do profissional no mesmo instante da reserva,
+    // antes de ele precisar abrir a agenda pra ver.
     void notificarEquipe(svc, tenant.id, {
       title: 'Novo pedido de agendamento',
-      body: `${entrada.name} pediu horário para ${quandoLocal(entrada.startsAt, tenant.timezone)}.`,
+      body: `${entrada.name} pediu horário para ${quandoLocal(entrada.startsAt, tenant.timezone)}.${notaProduto ? ` ${notaProduto}` : ''}`,
     }).catch((erro: unknown) => {
       console.error(JSON.stringify({ level: 'error', event: 'push_equipe_falhou', tenantId: tenant.id }), erro)
     })

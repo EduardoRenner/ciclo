@@ -77,7 +77,7 @@ export default function SugestaoDeProduto({
       <div>
         <p className="text-corpo font-semibold">Leva junto</p>
         <p className="mt-0.5 text-secundario text-txt-2">
-          Quem marcar este serviço vê esse produto na hora de agendar. Ninguém é cobrado aqui — é o profissional quem lança na comanda, se a
+          Quem marcar este serviço vê esse produto na hora de agendar. Ninguém é cobrado aqui: é o profissional quem lança na comanda, se a
           cliente quiser mesmo.
         </p>
       </div>
