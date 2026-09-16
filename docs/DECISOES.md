@@ -8119,3 +8119,22 @@ rota), `expirar-graca` (sem assinatura nenhuma pra expirar até existir credenci
 via cron-job.org desde 08/09) estão cobertas.
 
 **Nenhum achado.**
+
+---
+
+## 2026-09-16 · Auditoria ampla (docs/66), Fase I · testes que pulam ou provam vazio — amostra OK, backlog registrado
+
+**Skips:** `grep -rn "\.skip(\|it\.todo(\|test\.skip("` na suíte inteira achou só 4 ocorrências,
+todas em `tests/integration/resumo-hoje.test.ts`, todas com `ctx.skip(motivo)` explicando por quê
+(falta de dia suficiente no fuso pra montar o cenário sem sobrepor) — cumprindo a regra do
+`CLAUDE.md` à risca. Nenhum skip mudo em lugar nenhum da base.
+
+**Assert vazio:** 40 arquivos de teste usam `toEqual([])`/`toHaveLength(0)`. Amostra de 1
+(`consentimentos.test.ts:144`, "revogar fecha as duas de uma vez") confirma o padrão correto: o
+teste MONTA o cenário positivo primeiro (duas concessões ativas do mesmo tipo), executa a ação, só
+então assere vazio — não é "passou vazio porque nada foi montado".
+
+**Escopo real, backlog explícito:** não foi viável conferir os 40 arquivos individualmente nesta
+rodada. Amostra de 1 não prova os outros 39. Próxima rodada da Fase I deveria continuar a amostra,
+priorizando os arquivos ligados a áreas com histórico de bug de dinheiro/RLS (`comissao.test.ts`,
+`crm.test.ts`, `estoque.test.ts` já identificados e ainda não abertos).
