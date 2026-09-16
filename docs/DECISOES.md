@@ -7904,3 +7904,29 @@ várias outras entradas (WindowsApps, Python Scripts, VS Code, Docker Desktop). 
 reconstruindo o PATH completo e salvando via `[Environment]::SetEnvironmentVariable(...,"User")`
 (API do .NET, sem o limite do `setx`). **Lição pra próxima vez:** nunca usar `setx` pra PATH nesta
 máquina — sempre `[Environment]::SetEnvironmentVariable`, que não trunca.
+
+---
+
+## 2026-09-16 · Banco de produção em dia — migrations 0088-0091 aplicadas
+
+**Contexto:** o cron estava falhando desde 15/09 por causa de banco atrasado do código (achado
+nesta mesma sessão, entrada acima "primeiro app rodando de verdade"). Investigado com
+`supabase migration list` — a causa real era mais sutil do que "falta a 0091": o histórico de
+migrations em produção tinha ~86 entradas com nomes de timestamp antigos (`20260902171051` etc.),
+de uma época em que este projeto nomeava migrations diferente. Isso fazia o `supabase db push`
+recusar rodar (`Remote migration versions not found in local migrations directory`), e o comando
+de reparo que ele sugeria (`migration repair --status reverted` pras 86 antigas) teria feito ele
+tentar recriar tabela/função que já existe — arriscado, não tentamos.
+
+**Resolvido com cirurgia, não com o comando sugerido:** o Eduardo rodou o SQL de cada uma das 4
+migrations genuinamente faltando (`0088_product_events`, `0089_resumo_central_de_acoes_em_uma_ida`,
+`0090_keep_alive_sem_custo`, `0091_produto_sugerido_do_servico`) direto no SQL Editor do Supabase,
+uma de cada vez. A 0088 já existia (`relation already exists` — confirma que era uma das 86 com
+nome antigo, nada quebrado). As outras três rodaram limpo. Depois, `supabase migration repair
+--status applied 0088 0089 0090 0091` atualizou o registro do CLI sem tocar nas 86 antigas.
+
+**Confirmado parcialmente:** disparo manual do workflow `cron.yml` rodou os dois jobs que dependiam
+da 0091 (`recompute-cycles`, `recompute-segments`) com sucesso. O job de verificação de saúde
+completa só roda no agendamento automático (`if: github.event_name == 'schedule'`), que o próprio
+`cron.yml` documenta atrasar em HORAS — não dá pra forçar uma confirmação imediata dele. Considero
+resolvido na prática; falta só a confirmação formal do próximo disparo automático.
