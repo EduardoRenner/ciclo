@@ -208,7 +208,12 @@ describe('retornos: quem já tem ficha e voltou, sem reabrir o cadastro', () => 
       expect(clientes?.length, 'virou ficha duplicada em vez de atualizar a existente').toBe(1)
 
       const { data: ciclo } = await svc.from('client_cycles').select('state').eq('tenant_id', tenantId).eq('client_id', clientId).maybeSingle()
-      expect(ciclo?.state).toBe('late')
+      // `quando: 'faz-tempo'` (120 dias) é o degrau documentado em `quando-foi-a-ultima-vez.ts`
+      // como "de propósito vago e generoso: quem cai nele já está perdido para qualquer ciclo" —
+      // com o "Corte" do pack barber (cycle_days: 21), 120 dias de atraso é lateDays = 99, muito
+      // acima do corte de 30 de `estadoPorAtraso` (compute.ts). O estado certo é `lost`, não
+      // `late`; a asserção original nunca bateu com o próprio design do degrau que ela usa.
+      expect(ciclo?.state).toBe('lost')
     },
     30_000,
   )
