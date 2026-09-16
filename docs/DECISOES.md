@@ -7783,3 +7783,32 @@ toa.
 `ios/` continua sem existir (T0/Mac), e mesmo no Android só a parte SEM LOGIN foi verificada (sem
 credencial de T-DEMO, não dá pra testar `/admin`, o Motor de Ciclo, nem se T1.5 bloqueia cobrança
 de verdade quando alguém está logado). Isso continua pendente de T-DEMO.
+
+---
+
+## 2026-09-15 · StatusBar corrigida por leitura de código, mas SEM confirmação visual (limite importante)
+
+**Contexto:** achado da entrada anterior ("Primeiro app rodando de verdade") — a StatusBar não
+mudava de cor no emulador. Investigado lendo o source real do plugin que o Capacitor 8 registra
+(`node_modules/@capacitor/android/.../plugin/SystemBars.java`): `android/variables.gradle` mira
+`targetSdkVersion 36` (Android 15+), que **força** layout edge-to-edge — a partir desse alvo,
+`Window.setStatusBarColor`/`overlaysWebView(false)` simplesmente não fazem mais nada, é o próprio
+Android que decide. Corrigido (commit `b0898c7`): tirar as duas chamadas que não funcionam,
+confiar que o fundo escuro da própria página aparece através da área transparente (já é o padrão
+edge-to-edge do Capacitor 8), manter só `setStyle(Dark)` pra pintar os ícones de branco.
+
+**Por que isto NÃO conta como "corrigido e confirmado", ao contrário do resto desta rodada: o
+emulador carrega produção, não o código local.** `capacitor.config.ts` aponta `server.url` pro
+domínio de produção (decisão do T1, §0.4 do plano) — o WebView roda o JavaScript que está
+publicado no Vercel HOJE, não o `src/` desta máquina. Rebuildar o APK localmente não muda o que a
+página carrega, porque a página em si não é local. **A prova visual de verdade só existe depois de
+alguém publicar esta mudança** (`git push` + deploy) **e abrir o app de novo.** Registrado aqui com
+honestidade justamente para não deixar "raciocinei a partir do source de um plugin" parecer
+"testei e vi funcionar" — são coisas diferentes, e a diferença importa (`verificacao-final-protocolo`,
+`medicao-ingenua-da-falso-positivo`).
+
+**Consequência prática pra quem for continuar o T6 de verdade:** qualquer mudança de código deste
+plano só é visível no emulador/dispositivo DEPOIS de publicada em produção — não existe "testar
+localmente" pro lado nativo enquanto `server.url` apontar pra produção. Isso é intencional (T1,
+§0.4: reescrever pra empacotar tudo localmente quebraria Server Components/Server Actions), mas
+muda o ciclo de teste: escrever → publicar → só então testar no app.
