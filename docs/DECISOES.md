@@ -8187,3 +8187,23 @@ note. Não foi feita mutação ao vivo nestas 5 guardas nesta rodada (ficaria re
 raciocínio da Fase A); se uma auditoria futura tiver orçamento, mutar 1-2 páginas de propósito
 (remover `loading.tsx`, por exemplo) e confirmar reprovação seria o próximo passo real, não outra
 varredura manual.
+
+---
+
+## 2026-09-16 · Auditoria ampla (docs/66), Fase H · acessibilidade/aria-live — amostra OK
+
+**Medido:** 5 arquivos usam `aria-live` hoje (`agendar.tsx`, `admin/agenda/agenda.tsx`,
+`clientes/lista.tsx`, `recuperar.tsx`, `titulo-de-estado.tsx`), mais o guard dedicado
+`agendamento-anuncia-mudanca.test.ts`.
+
+Varredura por estado de filtro/aba/busca em `src/app/admin` achou 7 candidatos; a maioria já tem
+`aria-live` (`agenda.tsx`, `recuperar.tsx`) ou não se aplica (passos de formulário multi-etapa, não
+troca de CONTEÚDO visível sem navegação). O único candidato novo, `comanda/[id]/comanda.tsx`
+(alterna serviço/produto), usa o padrão ARIA de abas de verdade (`role="tablist"`, `role="tab"`,
+`aria-selected`) — que é o mecanismo CORRETO para esse caso, não precisa de `aria-live` (a
+navegação por abas já é anunciada pelo leitor de tela via o papel da role, diferente de um
+filtro/busca que muda conteúdo sem nenhum papel ARIA sinalizando).
+
+**Nenhum achado.** Amostra pequena (7 candidatos de um grep, não uma varredura exaustiva de todo
+padrão de troca de conteúdo) — não é garantia de cobertura total, mas nenhum caso do padrão que o
+`CLAUDE.md` documenta (filtro/busca mudando tela sem aviso, sem role nenhum) foi encontrado.
