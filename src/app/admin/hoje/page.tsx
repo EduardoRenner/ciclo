@@ -5,6 +5,7 @@ import { after } from 'next/server'
 import { Temporal } from '@js-temporal/polyfill'
 
 import PageHeader from '@/components/ui/page-header'
+import { ehRequisicaoDoAppNativo } from '@/core/plataforma/nativo'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { receitaAtribuidaAoCiclo } from '@/server/services/atribuicao'
@@ -28,8 +29,12 @@ function saudacao(timezone: string): string {
 export const metadata = { title: "Hoje" }
 
 export default async function PaginaHoje() {
-  const ctx = await contextoAtual(new Request('https://interno/hoje', { headers: await headers() }))
+  const hdrs = await headers()
+  const ctx = await contextoAtual(new Request('https://interno/hoje', { headers: hdrs }))
   const db = await criarClienteDoUsuario()
+  // T1.5 (docs/64 §0.2): a Central de Ações pode sugerir "plano-perto-do-teto", que aponta pra
+  // /precos — dentro do app nativo isso não pode virar link. Ver central-de-acoes.tsx.
+  const nativo = ehRequisicaoDoAppNativo(hdrs.get('user-agent'))
 
   // Vem junto do `select` que revalida o membership — era uma ida de rede serial, e o
   // `timezone` decide o intervalo de tudo que vem depois (`docs/28` §8).
@@ -143,7 +148,7 @@ export default async function PaginaHoje() {
         emRisco={{ totalCents: emRisco.totalValueCents, count: emRisco.count }}
         site={ctx.tenant.slug ? { slug: ctx.tenant.slug, nome: ctx.tenant.name } : null}
       >
-        <CentralDeAcoes dados={acoes} />
+        <CentralDeAcoes dados={acoes} nativo={nativo} />
       </Hoje>
     </>
   )

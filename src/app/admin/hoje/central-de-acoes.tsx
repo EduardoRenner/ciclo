@@ -7,6 +7,7 @@ import { useState } from 'react'
 import Card from '@/components/ui/card'
 import IconeAnel from '@/components/ui/icone-anel'
 import SectionHeader from '@/components/ui/section-header'
+import { APP_HOST } from '@/lib/app-url'
 
 import type { CentralDeAcoes as Dados } from '@/server/services/crm'
 
@@ -45,7 +46,7 @@ const VISIVEIS_DE_INICIO = 3
  * O título vem do servidor porque muda de sentido numa conta que ainda não começou ("Primeiros
  * passos"), onde antes a seção inteira simplesmente não existia.
  */
-export default function CentralDeAcoes({ dados }: { dados: Dados }) {
+export default function CentralDeAcoes({ dados, nativo }: { dados: Dados; nativo: boolean }) {
   const { titulo, acoes } = dados
   const [expandido, setExpandido] = useState(false)
   if (acoes.length === 0) return null
@@ -61,16 +62,29 @@ export default function CentralDeAcoes({ dados }: { dados: Dados }) {
       <div className="grid gap-2">
         {visiveis.map((acao) => {
           const Icone = ICONE[acao.chave] ?? FileText
-          return (
+          // T1.5 (docs/64 §0.2): "plano-perto-do-teto" é a única ação que aponta pra `/precos` —
+          // nenhum link de cobrança pode ficar ativo dentro do app nativo, mesma regra do
+          // `BloqueioPlano`. O card continua aparecendo (a informação em si não é cobrança), só
+          // deixa de ser clicável.
+          const ehCobranca = nativo && acao.href === '/precos'
+          const conteudo = (
+            <Card pressionavel={!ehCobranca} className={`flex items-center gap-3 ${TOM[acao.tom]}`}>
+              <Icone aria-hidden className="size-5 shrink-0 text-txt-3" />
+              <div className="min-w-0 flex-1">
+                <p className="text-corpo font-semibold">{acao.titulo}</p>
+                <p className="mt-0.5 text-secundario text-txt-2">
+                  {acao.descricao}
+                  {ehCobranca ? ` Gerencie seu plano em ${APP_HOST}.` : ''}
+                </p>
+              </div>
+              {ehCobranca ? null : <ChevronRight aria-hidden className="size-5 shrink-0 text-txt-3" />}
+            </Card>
+          )
+          return ehCobranca ? (
+            <div key={acao.chave}>{conteudo}</div>
+          ) : (
             <Link key={acao.chave} href={acao.href} className="block">
-              <Card pressionavel className={`flex items-center gap-3 ${TOM[acao.tom]}`}>
-                <Icone aria-hidden className="size-5 shrink-0 text-txt-3" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-corpo font-semibold">{acao.titulo}</p>
-                  <p className="mt-0.5 text-secundario text-txt-2">{acao.descricao}</p>
-                </div>
-                <ChevronRight aria-hidden className="size-5 shrink-0 text-txt-3" />
-              </Card>
+              {conteudo}
             </Link>
           )
         })}
