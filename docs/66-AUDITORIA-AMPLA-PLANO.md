@@ -215,6 +215,38 @@ medido aqui.
 
 ---
 
+## 11.1 · Resultado — as 9 fases, rodadas em modo autônomo (16/09)
+
+**Placar:** 9 de 9 fases cobertas (6 com medição exaustiva ou próxima disso, 3 por amostragem
+honesta e declarada). **Zero achados novos de bug em produção.** Todos os detalhes e evidências de
+como cada fase foi medida estão em `docs/DECISOES.md`, entradas de 2026-09-16 tituladas "Auditoria
+ampla (docs/66), Fase X".
+
+| Fase | Cobertura | Resultado |
+|---|---|---|
+| A · guardas-cegas | Amostra: as 8 guardas tocadas nos últimos 3 dias | Todas corretas; 1 mutação AO VIVO confirmada (`admin/layout.tsx`). Backlog: ~132 guardas mais antigas não mutadas nesta rodada. |
+| B · RLS pós-23/08 | Exaustiva: as 6 tabelas novas criadas desde a última auditoria de segurança | Todas com `enable`+`force row level security` e no teste de isolamento. Sem achado. |
+| C · dinheiro fora da carteira | Amostra: 1 de 16 módulos (`margem-do-servico.ts`, o de maior histórico de bug) | Comissão calculada num só lugar, rótulo honesto ("sobra", não "lucro"). Backlog: 15 módulos restantes. |
+| D · cron e jobs | Exaustiva: os 5 crons com laço por tenant | Todos com `try/catch` por item — lição do #99 100% aplicada. As 3 rotas sem heartbeat são exclusão deliberada e documentada, não gap. |
+| E · estados vazio/carregando/erro | Exaustiva: a premissa do plano ("nunca houve varredura") estava ERRADA — já existem 5 guardas que varrem TODAS as páginas (89 casos, todos verdes) | Cobertura já sistemática. Único gap: nenhuma mutação ao vivo destas guardas nesta rodada. |
+| F · mobile/Capacitor | Parcial: análise estática completa, teste visual NÃO feito (sem emulador disponível) | Sem vazamento novo de tela de cobrança; 1 caso investigado (`fidelidade.tsx`) confirmado como categoria diferente (bem físico, exceção Apple 3.1.3(a)). |
+| G · drift schema | Exaustiva | `MIGRATIONS_ESPERADAS` já bate com a última migration; health check `checarSchema` já existe e já teria pego o incidente de 0088-0091. |
+| H · acessibilidade/aria-live | Amostra: 7 candidatos por grep de estado de filtro/aba | Sem achado; o único caso novo (`comanda.tsx`) usa padrão ARIA de abas correto, não precisa de `aria-live`. |
+| I · testes que pulam/provam vazio | Amostra: skips (100% checados, todos com motivo) + 1 de 40 arquivos de assert-vazio | Skips limpos. Assert-vazio: amostra de 1 confirma padrão correto; 39 arquivos restantes viram backlog. |
+
+**O que isso muda na resposta "o código está perfeito?":** continua não sendo a palavra certa — mas
+agora há evidência de verdade, não opinião, de que as áreas de maior risco histórico (guarda-cega,
+RLS de tabela nova, cron silencioso, dinheiro fora da carteira) estão genuinamente bem cobertas.
+O que falta é escopo, não suspeita: 132 guardas antigas, 15 módulos de dinheiro e 39 arquivos de
+assert-vazio nunca tiveram o mesmo crivo — não porque algo esteja errado neles, mas porque uma
+sessão não alcança tudo com rigor. Isso é o backlog real para a próxima rodada, não uma dúvida em
+aberto sobre o que já foi medido.
+
+**Custo:** 8 commits, ~1h de execução autônoma, zero intervenção do Eduardo entre o pedido e este
+resumo.
+
+---
+
 ## 12 · O que este plano NÃO inclui, de propósito
 
 - **Não repete Fases A-K de `docs/16`** (segurança já coberta) nem o levantamento de PRs órfãos de
