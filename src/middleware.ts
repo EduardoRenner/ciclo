@@ -155,7 +155,7 @@ export function cabecalhosDeSeguranca(nonce: string | null): string {
     style-src 'self' 'unsafe-inline';
     img-src 'self' blob: data: ${origemSupabase};
     font-src 'self' data:;
-    connect-src 'self' ${origemSupabase};
+    connect-src 'self' ${origemSupabase} https://*.ingest.de.sentry.io https://*.ingest.sentry.io;
     worker-src 'self';
     manifest-src 'self';
     object-src 'none';
