@@ -130,9 +130,28 @@ export default function Privacidade() {
             obrigação legal e para defender direitos, se for preciso.
           </p>
           <p>
-            A gente não vende sua base, não cede para terceiro e não usa seus dados nem os dos seus
-            clientes para anunciar nada a ninguém.
+            A gente não vende sua base, não usa seus dados nem os dos seus clientes para anunciar
+            nada a ninguém, e não cede pra terceiro fora do que é estritamente necessário pra
+            operar o serviço que você contratou. Isso inclui, hoje:
           </p>
+          <ul className="mt-2 list-disc pl-5">
+            <li>
+              <strong className="font-semibold text-txt">Mercado Pago</strong>, pra processar a
+              assinatura do seu plano. A gente nunca vê nem guarda número de cartão.
+            </li>
+            <li>
+              <strong className="font-semibold text-txt">WhatsApp Business Platform (Meta)</strong>,
+              pra entregar lembrete e mensagem de recuperação de cliente.
+            </li>
+            <li>
+              <strong className="font-semibold text-txt">Resend</strong>, pra entregar e-mail
+              transacional (confirmação, recuperação de senha).
+            </li>
+            <li>
+              <strong className="font-semibold text-txt">Supabase</strong>, que hospeda o banco de
+              dados, com o mesmo isolamento por salão descrito na seção 4.
+            </li>
+          </ul>
         </section>
 
         <section>
