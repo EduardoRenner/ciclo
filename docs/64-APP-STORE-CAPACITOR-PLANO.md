@@ -644,6 +644,51 @@ que o comportamento realmente precise diferir).
 
 ---
 
+### T-AND-DS · Rascunho do formulário "Data Safety" do Google Play `[PREP 16/09]`
+
+**Objetivo.** O Google Play exige um questionário próprio de privacidade (diferente do "App
+Privacy" da Apple, T7 critério #4) — preenchido errado é motivo de remoção da loja depois, mesmo
+padrão de risco. Rascunho pronto por leitura do schema real (`supabase/migrations/`), não por
+suposição — pra quando alguém for preencher o formulário de verdade no Play Console, ter a lista
+certa em mãos em vez de decidir às pressas.
+
+**O que o CICLO de fato coleta, por categoria do formulário do Google (conferido no schema):**
+
+| Categoria do Google | Coleta? | De onde vem |
+|---|---|---|
+| **Nome** | Sim | `clients.name`, dados da conta do profissional |
+| **E-mail** | Sim | `clients.email`, conta do profissional (Supabase Auth) |
+| **Telefone** | Sim | `clients.phone_e164` |
+| **Endereço** | Sim | `clients.address` |
+| **ID do usuário** (CPF/documento) | Sim | `clients.document` — nota fiscal |
+| **Fotos** | Sim | `portfolio_photos`, fotos de serviço/profissional (migrations 0052/0053) |
+| **Informação de saúde** | **Sim** | O cofre (`vault`/anamnese) — mesma categoria sensível do App Privacy da Apple |
+| **Informação financeira** | Não coleta cartão — Mercado Pago processa o pagamento, o CICLO nunca vê número de cartão. Só valores de transação (não é a categoria "financeira" que o Google pergunta, que é sobre credencial de pagamento) |
+| **Localização** | Não | Nenhuma coluna de geolocalização no schema |
+| **Identificadores de dispositivo/publicidade** | Não | Confirmado em §0.5: nenhum SDK de rastreamento/analytics no código |
+| **Contatos** | Não | O app não lê a agenda de contatos do celular |
+
+**Perguntas que o formulário do Google faz, com a resposta já pronta:**
+- "Os dados são criptografados em trânsito?" → **Sim** (HTTPS obrigatório, `cleartext: false` no
+  `capacitor.config.ts`).
+- "O usuário pode pedir a exclusão dos dados?" → **Sim** — T-DEL (`/admin/config/excluir-conta`
+  dentro do app, `/privacidade` fora dele, os dois já existem).
+- "Os dados são compartilhados com terceiros?" → Tecnicamente sim (Mercado Pago processa o
+  pagamento, algum provedor processa WhatsApp/e-mail — confirmar qual em
+  `src/server/providers/messaging/`), **mas `/privacidade` hoje só diz genericamente "não cede a
+  terceiro", sem nomear nenhum processador**. Isso é uma lacuna real da própria política, não só
+  do formulário do Google — vale considerar atualizar `/privacidade` pra nomear os processadores
+  antes de preencher o Data Safety com uma resposta que a página pública ainda não sustenta.
+- "A informação de saúde é opcional?" → Sim, a anamnese não é obrigatória pro básico do produto
+  funcionar (agenda, clientes, caixa funcionam sem nunca abrir o cofre).
+
+**O que NÃO fica pronto aqui, de propósito:** a lista de terceiros que recebem dado (pergunta do
+formulário) precisa bater com o que `/privacidade` já diz publicamente — meu levantamento é do
+schema, não da política publicada. Quem for preencher o formulário do Play Console deve abrir
+`/privacidade` ao lado e usar a mesma lista, não uma nova.
+
+---
+
 ### T2 · Ícone, splash screen e identidade nativa (iOS — Android tem o espelho em T-AND item 4)
 
 **Objetivo.** O app abre com a marca do CICLO, não com o ícone genérico do Capacitor.
