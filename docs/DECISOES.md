@@ -8138,3 +8138,28 @@ então assere vazio — não é "passou vazio porque nada foi montado".
 rodada. Amostra de 1 não prova os outros 39. Próxima rodada da Fase I deveria continuar a amostra,
 priorizando os arquivos ligados a áreas com histórico de bug de dinheiro/RLS (`comissao.test.ts`,
 `crm.test.ts`, `estoque.test.ts` já identificados e ainda não abertos).
+
+---
+
+## 2026-09-16 · Auditoria ampla (docs/66), Fase F · prontidão mobile/Capacitor — parcial, sem achado novo
+
+**Medido (análise estática):**
+- `ehRequisicaoDoAppNativo` usado em 19 arquivos (`grep -rl`) — nenhum ponto óbvio de checkout/
+  upgrade fora dessa lista.
+- Varredura por `upgrade|addon|comprar` em `src/app/admin` achou 6 arquivos; todos falsos positivos
+  ao ler o contexto (recompra de ESTOQUE, upsell de agendamento cancelado, texto de ajuda sobre
+  limitação de plano — nenhum é CTA de cobrança que escape do bloqueio).
+- Achado um `href` de "Assinar plano" fora da lista já auditada por T1.5:
+  `clientes/[id]/fidelidade.tsx:258` — analisado com cuidado: é o DONO do salão registrando a
+  assinatura do CLUBE DE FIDELIDADE do CLIENTE (cobrança física/presencial do salão pro cliente
+  dele, não o CICLO cobrando o dono). Cai na exceção de "bens e serviços físicos" da própria Apple
+  (guideline 3.1.3(a), o mesmo motivo que Uber não precisa de IAP) — **não é vazamento**, é
+  categoria diferente de cobrança. Nenhuma ação necessária.
+
+**Não medido, e registrado como limitação real, não como "verificado":** o critério de aceite #3
+da Fase F pede testar o app Android num emulador (deep link, botão voltar, teclado cobrindo campo).
+Não havia emulador/dispositivo rodando nesta sessão (`adb devices` retornou lista vazia) e subir um
+emulador do zero está fora do escopo de uma checagem automática — fica pendente de sessão com
+ambiente gráfico ou teste manual do Eduardo no dispositivo real.
+
+**Nenhum achado de código.** Fase F fica PARCIAL — a parte estática está feita, a parte visual não.
