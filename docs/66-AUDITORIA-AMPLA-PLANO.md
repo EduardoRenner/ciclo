@@ -217,10 +217,36 @@ medido aqui.
 
 ## 12 · O que este plano NÃO inclui, de propósito
 
-- **Não inclui rodar `/loop` auditando fase por fase sem parar** — cada fase troca completamente de
-  contexto (RLS ≠ cron ≠ acessibilidade); rodar em sequência automática arrisca superficialidade.
-  Melhor uma fase por vez, com o Eduardo revisando o achado antes da próxima.
 - **Não repete Fases A-K de `docs/16`** (segurança já coberta) nem o levantamento de PRs órfãos de
   `docs/63` (já resolvido, `docs/DECISOES.md` 2026-09-13).
 - **Não cobre o que só o Eduardo pode decidir** (contas Google/Apple, T0) — isso já está listado em
   `docs/64`, não é auditoria de código.
+
+---
+
+## 13 · Modo autônomo (16/09, a pedido do Eduardo)
+
+**Mudança de plano:** a recomendação original (§11 antigo) era uma fase por vez com revisão do
+Eduardo entre cada uma. Pedido explícito: rodar sozinho, sem precisar de check-in, até esgotar as
+9 fases. Registrado aqui o que isso muda na prática — não é menos rigor, é sem pausa.
+
+**Regras de execução autônoma:**
+1. **Uma fase por vez, na ordem do §1**, cada uma até "achados" OU "verificado e correto" antes de
+   passar pra próxima — sem pular etapa de medição por pressa de avançar.
+2. **Achado ALTO ou CRÍTICO com correção óbvia e de baixo risco:** corrigir na hora, seguindo o
+   procedimento de guarda (commit antes de mutar, ver reprovar, corrigir, ver passar), igual foi
+   feito nos bugs de produção achados no `docs/64`.
+3. **Achado que exige decisão de produto** (ex.: mudar regra de negócio, não só corrigir bug) ou
+   que **toca produção/dinheiro de um jeito irreversível**: documentar em `docs/DECISOES.md` com
+   opção mais simples escolhida (regra padrão do `CLAUDE.md` §"Quando faltar informação") — não
+   parar a rodada esperando resposta.
+4. **Nunca** rodar comando que grava/lê segredo de produção diretamente (mesma restrição de sempre
+   — o classificador de segurança do Claude Code bloqueia, e é proteção correta).
+5. Cada fase concluída: commit próprio (achados + correções + registro em `DECISOES.md`), seguindo
+   "um ticket, um commit". `pnpm verify` antes de cada commit que mexe em código.
+6. Ao fim das 9 fases (ou quando o orçamento de uma sessão esgotar), um resumo único no
+   `docs/DECISOES.md` listando o placar: quantos achados por severidade, quantos corrigidos na
+   hora, quantos ficaram para decisão do Eduardo.
+7. Se uma fase travar em algo que só o Eduardo pode fazer (ex.: testar login contra produção,
+   comando bloqueado pelo classificador) — registrar a trava e **pular pra próxima fase**, não
+   parar o loop inteiro.
