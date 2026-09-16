@@ -38,6 +38,14 @@ seguiu sendo typecheck + lint + suíte unit + build de produção + o build Grad
 manual no emulador; `test:integration`/`test:rls` seguem pendentes (Docker local fora do ar a
 sessão inteira).
 
+**Limite importante pra quem for continuar: o emulador carrega `server.url` de PRODUÇÃO (T1,
+§0.4), não o `src/` local.** A rodada de navegação sem login testou código que já estava publicado
+antes desta sessão. Qualquer coisa nova escrita hoje (T1.5 fast-follow, T4) só fica visível no
+app depois de alguém publicar em produção e abrir de novo — não existe "testar localmente" pro
+lado nativo com essa arquitetura. A correção da StatusBar (abaixo) é o primeiro exemplo real disso:
+código corrigido por leitura do source do plugin, mas sem confirmação visual porque não foi
+publicado ainda. Ver `docs/DECISOES.md` 2026-09-15 pros dois registros.
+
 ---
 
 ## 0 · Atualização 15/09: pesquisa de mercado — o que muda o plano
