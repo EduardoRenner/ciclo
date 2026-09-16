@@ -44,7 +44,7 @@ export default async function PaginaOrcamentos() {
           acao="montar um orçamento e mandar o link para quem pediu responder"
         />
       ) : null}
-      <ListaOrcamentos orcamentos={orcamentos} bloqueado={bloqueado} />
+      <ListaOrcamentos orcamentos={orcamentos} bloqueado={bloqueado} nativo={nativo} />
     </>
   )
 }

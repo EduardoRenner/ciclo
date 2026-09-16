@@ -1,6 +1,7 @@
 import { headers } from 'next/headers'
 
 import PageHeader from '@/components/ui/page-header'
+import { ehRequisicaoDoAppNativo } from '@/core/plataforma/nativo'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { listarModulos } from '@/server/services/modulos'
@@ -26,7 +27,8 @@ export const metadata = { title: 'Módulos' }
  * `tenant_modules` viraria uma segunda fonte de verdade brigando com `tenants.plan`.
  */
 export default async function PaginaModulos() {
-  const ctx = await contextoAtual(new Request('https://interno/modulos', { headers: await headers() }))
+  const hdrs = await headers()
+  const ctx = await contextoAtual(new Request('https://interno/modulos', { headers: hdrs }))
   const db = await criarClienteDoUsuario()
 
   const modulos = await listarModulos(db, ctx.tenantId)
@@ -37,7 +39,7 @@ export default async function PaginaModulos() {
         titulo="Módulos"
         descricao="Ligue só o que você usa. Desligar esconde da interface, e nunca apaga nada."
       />
-      <Modulos iniciais={modulos} />
+      <Modulos iniciais={modulos} nativo={ehRequisicaoDoAppNativo(hdrs.get('user-agent'))} />
     </>
   )
 }

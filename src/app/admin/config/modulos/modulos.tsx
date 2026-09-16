@@ -7,10 +7,11 @@ import { useState } from 'react'
 import Card from '@/components/ui/card'
 
 import { NOME_DO_PLANO } from '@/core/billing/planos'
+import { APP_HOST } from '@/lib/app-url'
 
 import type { ModuloNaTela } from '@/server/services/modulos'
 
-export default function Modulos({ iniciais }: { iniciais: ModuloNaTela[] }) {
+export default function Modulos({ iniciais, nativo }: { iniciais: ModuloNaTela[]; nativo: boolean }) {
   const [modulos, setModulos] = useState(iniciais)
   const [salvando, setSalvando] = useState<string | null>(null)
   const [erro, setErro] = useState<string | null>(null)
@@ -68,10 +69,18 @@ export default function Modulos({ iniciais }: { iniciais: ModuloNaTela[] }) {
               */}
               {bloqueado && precisaDo ? (
                 <p className="mt-0.5 text-secundario text-txt-3">
-                  Faz parte do{' '}
-                  <Link href="/precos" className="font-semibold text-acc-2 underline underline-offset-2">
-                    {NOME_DO_PLANO[precisaDo]}
-                  </Link>
+                  {nativo ? (
+                    // T1.5 (docs/64 §0.2/§0.3): mesma regra do BloqueioPlano — nenhum link pra
+                    // /precos dentro do app nativo.
+                    `Faz parte do ${NOME_DO_PLANO[precisaDo]}. Gerencie seu plano em ${APP_HOST}.`
+                  ) : (
+                    <>
+                      Faz parte do{' '}
+                      <Link href="/precos" className="font-semibold text-acc-2 underline underline-offset-2">
+                        {NOME_DO_PLANO[precisaDo]}
+                      </Link>
+                    </>
+                  )}
                 </p>
               ) : m.sempreLigado ? (
                 <p className="mt-0.5 text-secundario text-txt-3">Sempre ligado: é a base do produto</p>

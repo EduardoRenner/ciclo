@@ -10,6 +10,7 @@ import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import EmptyState from '@/components/ui/empty-state'
 import { dinheiro } from '@/lib/formato'
+import { APP_HOST } from '@/lib/app-url'
 
 import type { OrcamentoDaLista } from '@/server/services/orcamentos'
 
@@ -103,10 +104,13 @@ function LinhaOrcamento({ orcamento }: { orcamento: OrcamentoDaLista }) {
 export default function ListaOrcamentos({
   orcamentos,
   bloqueado = false,
+  nativo,
 }: {
   orcamentos: OrcamentoDaLista[]
   /** `quotes` fora do degrau. O bloqueio com o caminho já está na página; aqui só some o convite. */
   bloqueado?: boolean
+  /** T1.5 (docs/64 §0.2): computado no servidor em `page.tsx`, via `ehRequisicaoDoAppNativo`. */
+  nativo: boolean
 }) {
   if (orcamentos.length === 0) {
     return (
@@ -121,7 +125,12 @@ export default function ListaOrcamentos({
         */
         acao={
           bloqueado ? (
-            <Link href="/precos">Ver os planos</Link>
+            nativo ? (
+              // T1.5: mesma regra do BloqueioPlano — nenhum link pra /precos dentro do app nativo.
+              <p className="text-secundario text-txt-2">Gerencie seu plano em {APP_HOST}.</p>
+            ) : (
+              <Link href="/precos">Ver os planos</Link>
+            )
           ) : (
             <Link href="/admin/orcamentos/novo">Criar orçamento</Link>
           )
