@@ -8097,3 +8097,25 @@ alerta. Confirmar que o `MIGRATIONS_ESPERADAS` é atualizado a cada `db:new` dev
 Fase C. Se houver próxima rodada, os 15 módulos restantes (`caixa/concentracao.ts`,
 `caixa/taxa-por-forma.ts`, `comanda/*`, `crm/lucro-do-cliente.ts`, `loyalty/*`, `billing/mercado-
 pago.ts`, `pricing/*`) seguem sem o mesmo crivo.
+
+---
+
+## 2026-09-16 · Auditoria ampla (docs/66), Fase D · cron e jobs em segundo plano — VERIFICADO, correto
+
+**Medido:** os 5 crons com laço por tenant/cliente (`campaigns`, `lgpd-retention`, `recompute-
+cycles`, `segments`, `stock-alerts`) têm `try/catch` por iteração — nenhum `await` solto que
+aborte o laço inteiro por um tenant ruim (a lição do #99 já está 100% aplicada, não parcial).
+
+**Verificado também:** `tests/unit/server/todo-cron-agendado-tem-heartbeat.test.ts` varre
+`ROTAS_AGENDADAS` (não `ROTAS_DE_CRON`) e reprova se alguma rota REALMENTE agendada não tiver
+heartbeat + checagem em `/api/health` — testado que a lista não está vazia (guarda contra passar
+vazio, o próprio padrão que esta fase existe pra caçar).
+
+**As 3 rotas sem heartbeat são exclusão deliberada, não gap:** `lgpd-retention` (destruição de
+dado pessoal — ligar sozinho não pode ser efeito colateral de deploy, documentado no cabeçalho da
+rota), `expirar-graca` (sem assinatura nenhuma pra expirar até existir credencial MP, `docs/63`),
+`stock-alerts`/`jobs` (nunca auditados quanto a efeito externo, comentário explícito no
+`cron.yml`). As duas únicas rotas que rodam sozinhas em produção (`recompute-cycles`, `segments`,
+via cron-job.org desde 08/09) estão cobertas.
+
+**Nenhum achado.**
