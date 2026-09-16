@@ -8038,3 +8038,20 @@ as menos "batidas" — guarda nova nunca foi vista reprovando por ninguém além
 sessão que tocar `docs/66` deve continuar a Fase A por amostragem — por exemplo, as guardas mais
 antigas (antes de 25/08, a rodada que já achou 3 de 5 cegas) ou as ligadas a área que vai receber
 mudança de qualquer forma.
+
+---
+
+## 2026-09-16 · Auditoria ampla (docs/66), Fase B · RLS das tabelas pós-23/08 — VERIFICADO, correto
+
+**Medido:** `git log --since=2026-08-23 -- supabase/migrations/` deu 58 migrations; filtrado por
+`create table` deu 6 tabelas novas: `rate_limits`, `modules`, `portfolio_photos`,
+`cycle_predictions`, `monthly_profit`, `product_events`.
+
+Para cada uma, confirmado por grep direto no SQL (não por memória do que "deveria" ter):
+`enable row level security` + `force row level security` presentes, na MESMA migration que cria a
+tabela, e a tabela aparece em `tests/rls/isolation.test.ts`. `cycle_predictions` e `monthly_profit`
+também aparecem em `tests/rls/append-only-nao-se-apaga.test.ts` (condizente com serem tabelas
+append-only, regra 11 do CLAUDE.md).
+
+**Nenhum achado.** As 6 tabelas seguem o padrão da casa sem exceção. Não repetir esta checagem
+específica em auditoria futura — só migrations DEPOIS de 16/09/2026 precisam do mesmo crivo.
