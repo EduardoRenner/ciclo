@@ -50,7 +50,6 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@capacitor/assets": "^3.0.5",
     "@capacitor/cli": "^8.5.2",
     "@eslint/eslintrc": "^3",
     "@next/swc-wasm-nodejs": "15.5.23",
