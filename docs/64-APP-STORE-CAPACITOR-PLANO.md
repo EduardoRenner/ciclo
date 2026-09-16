@@ -673,12 +673,10 @@ certa em mãos em vez de decidir às pressas.
   `capacitor.config.ts`).
 - "O usuário pode pedir a exclusão dos dados?" → **Sim** — T-DEL (`/admin/config/excluir-conta`
   dentro do app, `/privacidade` fora dele, os dois já existem).
-- "Os dados são compartilhados com terceiros?" → Tecnicamente sim (Mercado Pago processa o
-  pagamento, algum provedor processa WhatsApp/e-mail — confirmar qual em
-  `src/server/providers/messaging/`), **mas `/privacidade` hoje só diz genericamente "não cede a
-  terceiro", sem nomear nenhum processador**. Isso é uma lacuna real da própria política, não só
-  do formulário do Google — vale considerar atualizar `/privacidade` pra nomear os processadores
-  antes de preencher o Data Safety com uma resposta que a página pública ainda não sustenta.
+- "Os dados são compartilhados com terceiros?" → **Sim, e agora `/privacidade` nomeia os quatro**
+  (commit `ac01671`, 16/09): Mercado Pago (pagamento), WhatsApp Business Platform/Meta
+  (mensageria), Resend (e-mail transacional), Supabase (hospedagem do banco). A lacuna que existia
+  — a política só dizia genericamente "não cede a terceiro", sem nomear nenhum — já foi corrigida.
 - "A informação de saúde é opcional?" → Sim, a anamnese não é obrigatória pro básico do produto
   funcionar (agenda, clientes, caixa funcionam sem nunca abrir o cofre).
 
