@@ -8055,3 +8055,22 @@ append-only, regra 11 do CLAUDE.md).
 
 **Nenhum achado.** As 6 tabelas seguem o padrão da casa sem exceção. Não repetir esta checagem
 específica em auditoria futura — só migrations DEPOIS de 16/09/2026 precisam do mesmo crivo.
+
+---
+
+## 2026-09-16 · Auditoria ampla (docs/66), Fase G · drift migration×banco — VERIFICADO, correto
+
+**Preocupação do plano:** o incidente de 0088-0091 atrasadas (resolvido nesta sessão) poderia se
+repetir sem ninguém notar, se não houver alerta automático.
+
+**Medido:** `src/core/schema/versao.ts` já tem `MIGRATIONS_ESPERADAS = 91` e `ULTIMA_MIGRATION =
+'0091_produto_sugerido_do_servico'` — batendo com a última migration real do repositório
+(`ls supabase/migrations/ | tail -1`). `src/server/services/health.ts` já roda `checarSchema` como
+parte de `/api/health`, e o próprio código documenta a lição de `metrica-que-melhora-com-o-
+fracasso`: falha ao LER a lista de migrations aplicadas não vira `ok: true` por padrão, avisa
+explicitamente que a vigilância está desligada.
+
+**Nenhum achado — mas ação necessária que não é deste código:** o mecanismo existe e está correto;
+o que faltou no incidente de 0088-0091 foi alguém rodar `supabase db push` a tempo, não falta de
+alerta. Confirmar que o `MIGRATIONS_ESPERADAS` é atualizado a cada `db:new` deveria ser automático
+(hoje é manual, no PR que cria a migration) — ficou como sugestão de melhoria, não achado de bug.
