@@ -385,8 +385,20 @@ describe('o painel também fala a língua da profissão', () => {
       /valor=\{ctx\?\.tenant\.vocabulario \?\? PADRAO\}/.test(fonte),
       'o layout provê um valor fixo: toda tela do painel cai no padrão da casa em silêncio',
     ).toBe(true)
-    // O `catch` é o que impede o layout de derrubar o painel de quem ainda não tem estabelecimento.
-    expect(/contextoAtual\([\s\S]{0,120}catch\(\(\) => null\)/.test(fonte), 'o layout estoura para conta sem tenant').toBe(true)
+    // O `catch` é o que impede o layout de derrubar o painel de quem ainda não tem estabelecimento
+    // — 16/09: virou redirecionamento pro onboarding (achado em produção, duas pessoas reais
+    // ficaram presas em loop sem essa saída), mas continua nunca deixando a exceção subir crua.
+    expect(
+      /contextoAtual\([\s\S]{0,120}\.catch\(\(erro: unknown\) => \{[\s\S]{0,200}return null[\s\S]{0,10}\}\)/.test(fonte),
+      'o layout estoura para conta sem tenant, em vez de tratar o erro',
+    ).toBe(true)
+    // A saída de verdade: só quem não tem NENHUM estabelecimento (FORBIDDEN) vai pro onboarding —
+    // não pode confundir com TENANT_MISMATCH (cookie de tenant inválido) nem com a validação de
+    // "escolha um estabelecimento" (múltiplos vínculos), senão manda gente pro lugar errado.
+    expect(
+      /code === 'FORBIDDEN'\) redirect\('\/onboarding'\)/.test(fonte),
+      'quem não tem nenhum estabelecimento não é mandado pro onboarding — fica preso no loop de erro de novo',
+    ).toBe(true)
   })
 
   it('o leitor do painel achou os arquivos — não passa por ter varrido lista vazia', () => {

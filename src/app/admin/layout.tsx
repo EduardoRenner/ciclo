@@ -1,7 +1,9 @@
 import { headers } from 'next/headers'
+import { redirect } from 'next/navigation'
 
 import { PADRAO } from '@/core/text/vocabulario'
 import { contextoAtual } from '@/server/auth/tenant'
+import { AppError } from '@/server/http/errors'
 import ToastProvider from '@/components/ui/toast'
 import AssistenteFlutuante from '@/components/shell/assistente-flutuante'
 import { VocabularioProvider } from '@/components/shell/vocabulario'
@@ -46,10 +48,24 @@ export const dynamic = 'force-dynamic'
  *
  * Não custa uma ida a mais ao banco: `vinculosAtivos` é `cache()` do React, então a página filha
  * que também chama `contextoAtual` reaproveita a mesma consulta na mesma requisição.
+ *
+ * **Achado em produção (16/09, via logs reais da Vercel): o `catch` sozinho não bastava.** Quem
+ * cai aqui SEM nenhum estabelecimento nunca via este layout quebrar — via a PÁGINA FILHA quebrar,
+ * porque cada `page.tsx` chama `contextoAtual` de novo, sem `catch`. O boundary de erro
+ * (`admin/error.tsx`) então oferecia só "Tentar de novo" e "Ir para Hoje" — os dois batem na
+ * MESMA falta de estabelecimento e devolvem a MESMA tela. Duas pessoas reais ficaram presas nesse
+ * looping por até 12 dias sem nenhum caminho de saída. `FORBIDDEN` aqui só nasce de um jeito
+ * (`server/auth/tenant.ts`: `ativos.length === 0`) — nunca de `TENANT_MISMATCH` (cookie de tenant
+ * inválido) nem da validação de "escolha um estabelecimento" (múltiplos vínculos, `code` diferente)
+ * — então checar o `code` antes de redirecionar não manda pro onboarding quem só precisa trocar de
+ * aba ou escolher qual negócio usar.
  */
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const cabecalhos = await headers()
-  const ctx = await contextoAtual(new Request('https://interno/admin', { headers: cabecalhos })).catch(() => null)
+  const ctx = await contextoAtual(new Request('https://interno/admin', { headers: cabecalhos })).catch((erro: unknown) => {
+    if (erro instanceof AppError && erro.code === 'FORBIDDEN') redirect('/onboarding')
+    return null
+  })
   // Cookie `ciclo-tema` (o seletor em Configurações → Aparência grava): `claro` | `escuro` |
   // ausente. O wrapper abaixo carrega isso como `data-theme`, e o CSS de `globals.css` decide a
   // paleta a partir dali — no servidor, então não pisca. `sistema` deixa o `@media` resolver.
