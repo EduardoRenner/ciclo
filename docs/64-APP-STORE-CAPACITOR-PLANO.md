@@ -19,17 +19,20 @@
 | Ticket | Estado |
 |---|---|
 | **T1** (scaffold Capacitor) | ✅ Feito — commit `58043e5` |
-| **T1.5** (bloquear cobrança no app) | ✅ Feito por completo — commits `a847275` + `7af6328` (as 9 telas com `BloqueioPlano`). Só ficou de fora a Central de Ações e `/precos`, nenhuma das duas completa compra (link já neutralizado do outro lado) |
+| **T1.5** (bloquear cobrança no app) | ✅ Feito por completo, sem pendência — commits `a847275`+`7af6328` (as 9 telas com `BloqueioPlano`) e `89b2d84` (fast-follow: os dois "Ver planos" que ainda escapavam, em `clientes/page.tsx` e `clientes/[id]/ficha.tsx`, agora também viram texto neutro dentro do app nativo) |
 | **T-DEL** (exclusão de conta) | ✅ Feito — commit `e6a633b` |
 | **T-DEMO** (conta de demonstração) | ⏸️ Não feito — decidir entre reaproveitar `dom-rocha` ou rodar `seed-tenant-teste.mjs` exige acesso de produção que esta sessão não tem. Ação do Eduardo. |
-| **T-AND** (scaffold Android) | 🔴 Bloqueado — esta máquina não tem Java/JDK nem Android SDK, nem pro esqueleto do projeto |
+| **T-AND** (scaffold Android) | ✅ **Destravado nesta rodada** — commits `aa17e7f`+`2b9048c`+`f061c18`. JDK 21 e Android SDK command-line tools instalados nesta máquina (JDK via .zip portátil, não MSI — o instalador pediu UAC que a sessão não interativa não conseguiu conceder). `android/` gerado por `npx cap add android`, `./gradlew assembleDebug` builda com sucesso, ícone/splash reais gerados por `@capacitor/assets`. **Primeiro app nativo de verdade que compila neste projeto.** |
 | **T0** (decisão Mac/CI pro iOS) | 🔴 Bloqueado — só o Eduardo decide |
-| **T2, T3, T4** (ícone, push, ajustes 4.2) | Não iniciados — dependem de `ios/`/`android/` existirem (T0/T-AND) |
+| **T2** (ícone/splash) | ✅ Feito pro Android (dentro do T-AND) — iOS segue esperando T0/`ios/` existir |
+| **T3** (push nativo) | Não iniciado — precisa de conta Apple (T5)/Firebase, ambos fora do alcance desta sessão |
+| **T4** (ajustes 4.2) | 🟡 Em andamento — status bar nativa (commit `8ac1a7a`) e indicador de conexão offline (mesmo commit, corrigido em `f061c18`) prontos; haptics/share já vinham de rodada anterior. Falta biometria e o resto da lista de candidatos |
 | **T5, T6, T7** (conta Apple, teste real, submissão) | Não iniciados — dependem do exposto acima |
 
-**Nenhum código deste plano foi testado contra um app nativo de verdade** — nem `ios/` nem
-`android/` existem no repositório ainda, só as dependências e a configuração. Toda verificação foi
-typecheck + lint + suíte unit + build de produção; `test:integration`/`test:rls` seguem pendentes
+**O Android já compila; nada foi testado num dispositivo/emulador de verdade ainda** — `android/`
+existe e builda (debug), mas "compila" e "funciona na tela" são coisas diferentes (T6). `ios/`
+continua sem existir (T0 travado, sem Mac). Toda verificação seguiu sendo typecheck + lint + suíte
+unit + build de produção + o build Gradle em si; `test:integration`/`test:rls` seguem pendentes
 (Docker local fora do ar a sessão inteira).
 
 ---
@@ -564,31 +567,42 @@ resto.
 
 ---
 
-### T-AND · Scaffold Android — pode começar JÁ, sem depender do Eduardo nem de Mac `[BLOQUEADO 2026-09-15: falta Java/JDK e Android SDK nesta máquina]`
+### T-AND · Scaffold Android — pode começar JÁ, sem depender do Eduardo nem de Mac `[DESTRAVADO 2026-09-15: JDK 21 + Android SDK instalados, android/ builda]`
 
 **Objetivo.** A descoberta de §0.7: Android builda inteiro no Windows desta sessão. Enquanto T0
 (decisão do Mac/CI pro iOS) não sai, o Android pode chegar bem mais longe — potencialmente até
 "pronto pra submeter", sozinho.
 
 **Critério de aceite.**
-1. `@capacitor/android` instalado junto de `@capacitor/core`/`cli` (T1 vira "T1 pros dois", não
+1. ✅ `@capacitor/android` instalado junto de `@capacitor/core`/`cli` (T1 virou "T1 pros dois", não
    dois scaffolds separados — o `capacitor.config.ts` é um só, com `server.url` igual pros dois).
-2. Android Studio + JDK 17+ instalados nesta máquina (Windows) — confirmar que builda um APK de
-   debug local antes de ir mais longe (`npx cap run android` ou `Build > Generate Signed APK`).
-3. T1.5 (bloqueio de cobrança) e T-DEMO/T-DEL (conta de demo, exclusão de conta) **servem os dois
-   apps sem duplicar trabalho** — são checagem de `Capacitor.isNativePlatform()`, que é `true` nos
-   dois, não só no iOS.
-4. Ícone/splash Android (equivalente ao T2, mas em `android/app/src/main/res/`) — mesma arte-fonte
-   de `public/icons/`, dimensões diferentes das do iOS.
-5. Push nativo Android usa **Firebase Cloud Messaging (FCM)**, não APNs — mecanismo diferente do
+2. ✅ **JDK 21, não 17.** JDK 17 foi a primeira tentativa e falhou o build (`invalid source
+   release: 21` — o Android Gradle Plugin do Capacitor 8 exige `--release 21`). Instalado via .zip
+   portátil da Microsoft, não o instalador MSI do winget: o MSI pede elevação (UAC) que uma sessão
+   não interativa não consegue conceder ("Você cancelou a instalação", código 1602). Android SDK
+   command-line tools (só o CLI, não o Android Studio inteiro — suficiente pro Capacitor) via
+   download direto do repositório do Google; `sdkmanager --licenses` aceito, `platform-tools` +
+   `platforms;android-34` + `build-tools;34.0.0` instalados. `JAVA_HOME`/`ANDROID_HOME` persistidos
+   como variável de usuário do Windows (`setx`), sobrevivem a esta sessão. `npx cap add android` +
+   `./gradlew assembleDebug` confirmados — **primeiro app nativo de verdade que compila neste
+   projeto.**
+3. ✅ T1.5 (bloqueio de cobrança) e T-DEL (exclusão de conta) **servem os dois apps sem duplicar
+   trabalho** — são checagem de `Capacitor.isNativePlatform()`, que é `true` nos dois, não só no
+   iOS. T-DEMO segue pendente (ação do Eduardo, ver acima).
+4. ✅ Ícone/splash Android gerados por `@capacitor/assets` a partir do mesmo ícone da PWA
+   (`public/icons/icon-512.png`) — `ic_launcher` em todas as densidades, adaptive icon, splash
+   claro/escuro. `resources/icon.png`/`resources/splash.png` versionados como fonte pro T2 do iOS
+   reaproveitar depois.
+5. ⏸️ Push nativo Android usa **Firebase Cloud Messaging (FCM)**, não APNs — mecanismo diferente do
    T3, mas o mesmo formato de trabalho (token do dispositivo, mesma tabela/coluna que o T3 já
-   desenha para o token do iOS, só um terceiro valor no "tipo").
-6. Build assinado (keystore próprio, gerado uma vez e guardado com cuidado — **perder o keystore
+   desenha para o token do iOS, só um terceiro valor no "tipo"). Não iniciado — precisa de projeto
+   Firebase configurado, fora do alcance desta sessão.
+6. ⏸️ Build assinado (keystore próprio, gerado uma vez e guardado com cuidado — **perder o keystore
    significa não poder mais atualizar o mesmo app na Play Store, para sempre**) — isto sim precisa
    de uma decisão do Eduardo (onde guardar o keystore com segurança), mas é rápido de resolver, sem
-   custo e sem Mac.
-7. Conta Google Play Developer (US$ 25, uma vez só, não anual como a Apple) — só o Eduardo compra,
-   mas a aprovação da conta costuma ser mais rápida que a da Apple `[P]`.
+   custo e sem Mac. Só o build de DEBUG existe hoje, sem assinatura de release.
+7. ⏸️ Conta Google Play Developer (US$ 25, uma vez só, não anual como a Apple) — só o Eduardo
+   compra, mas a aprovação da conta costuma ser mais rápida que a da Apple `[P]`.
 
 **Onde mexer.** `android/` (gerado pelo CLI, não escrito à mão), mesmo helper de plataforma do
 T1.5 (`Capacitor.isNativePlatform()` já cobre Android e iOS igual, sem `if` separado por SO a menos
