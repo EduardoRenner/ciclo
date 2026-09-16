@@ -7990,3 +7990,23 @@ a regra de nunca criar conta em produção sozinho) — verificado por leitura c
 dentro de `.catch()` é padrão documentado do Next.js, o mesmo mecanismo que `/onboarding/page.tsx`
 já usa em três lugares. Guarda nova em `vocabulario-da-profissao.test.ts` vista reprovando antes
 de confiar.
+
+---
+
+## 2026-09-16 · PHONE_HASH_SALT: suspeita de bug descartada por medição
+
+**Contexto:** a entrada anterior (T-DEMO) registrou como "suspeita a investigar" o relato do
+Eduardo de não achar `PHONE_HASH_SALT` em nenhum ambiente da Vercel — o que, se verdade, faria
+`src/server/services/telefone.ts:38` lançar erro toda vez que o código hasheia um telefone em
+produção (cadastro de cliente, booking público, CSV).
+
+**Medido, não deduzido:** `get_runtime_errors` (janela de 30 dias, 44 grupos de erro) não mostra
+NENHUMA ocorrência da mensagem `'PHONE_HASH_SALT ausente — necessário para hash de telefone.'` —
+e os fluxos que dependem dela (booking público, cadastro) aparecem nos logs por OUTROS motivos
+(migration atrasada, `Database error saving new user` isolado em 02-03/09) sem nunca essa causa.
+Telefone é hasheado em todo agendamento público e toda importação de CSV; se a variável estivesse
+mesmo ausente, o volume de erro seria constante, não zero.
+
+**Conclusão:** a variável está presente em produção. O que não existe é a LEITURA dela pela
+Vercel (marcada "Sensitive", só sobrescreve, não mostra) — o Eduardo procurou visualizar o valor,
+não confirmar a presença. Suspeita fechada, sem ação de código necessária.
