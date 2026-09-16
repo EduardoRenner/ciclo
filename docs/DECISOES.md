@@ -7930,3 +7930,32 @@ da 0091 (`recompute-cycles`, `recompute-segments`) com sucesso. O job de verific
 completa só roda no agendamento automático (`if: github.event_name == 'schedule'`), que o próprio
 `cron.yml` documenta atrasar em HORAS — não dá pra forçar uma confirmação imediata dele. Considero
 resolvido na prática; falta só a confirmação formal do próximo disparo automático.
+
+---
+
+## 2026-09-16 · A migration atrasada também estava quebrando o agendamento público (achado via logs reais da Vercel)
+
+**Contexto:** depois de consertar o banco atrasado (entrada acima), usei as ferramentas de runtime
+error/log da Vercel (não código, não suposição) pra ver o que estava acontecendo de verdade em
+produção. Achado: `/[slug]/agendar` — a página que os CLIENTES dos salões usam pra marcar horário —
+vinha dando 500 genérico ("Algo deu errado do nosso lado") há pelo menos uma semana:
+20 ocorrências, **10 usuários reais diferentes**, `first=2026-09-09`, `last=2026-09-16T12:19`.
+
+**Causa raiz:** `perfilPublico()` (`src/server/services/public-booking.ts:151`), chamada por essa
+mesma página, seleciona `suggested_product_id` da tabela `services` — a coluna que a migration
+`0091_produto_sugerido_do_servico` cria. Como essa migration nunca tinha sido aplicada em produção
+até hoje, TODA carga da página de agendamento de QUALQUER salão batia num "column does not exist"
+do Postgres, embrulhado como erro genérico. Não era um salão específico — era o produto inteiro,
+pro lado do cliente final.
+
+**Confirmado resolvido:** `get_runtime_errors` desde `2026-09-16T15:00:00Z` (bem depois da correção
+da migration, feita pela manhã) devolve zero erros. O mesmo `supabase db push`/SQL manual que
+consertou o alarme do cron também consertou, de bônus, um bug real afetando clientes de verdade —
+sem que ninguém soubesse que os dois estavam conectados até este momento.
+
+**Lição:** "banco atrasado do código" nunca é só sobre o cron que checa isso — é sobre QUALQUER
+rota que dependa das colunas que faltam. O `/api/health` só testava recompute-cycles/segments;
+a página pública de agendamento nunca teve checagem de saúde nenhuma, e ficou quebrada em silêncio
+uma semana inteira sem nenhum alarme automático apontar pra ela. Vale considerar, numa rodada
+futura, ampliar o `/api/health` pra também confirmar que o schema esperado pelas rotas públicas
+mais usadas está presente — não só os crons.
