@@ -399,6 +399,21 @@ começar agora, em paralelo com tudo.**
    **instruções curtas e numeradas** de onde olhar (ex.: "1. Toque em Agenda. 2. Veja o Motor de
    Ciclo em Clientes → filtro 'Sumindo'.") — a pesquisa (§0.1) confirma que passos determinísticos
    e curtos ajudam a revisão a não interpretar mal uma tela.
+
+   **Rascunho pronto (16/09), já batendo com o tenant `apple-review` real** (barbearia, 12
+   clientes, 59 agendamentos, 5 semanas de histórico) — pra colar em "App Review Information",
+   campo "Notes":
+
+   > 1. Log in with the credentials above.
+   > 2. Tap "Hoje" (Today) — the home screen shows today's schedule and pending actions.
+   > 3. Tap "Clientes" (Clients) — the client list shows return-visit predictions; clients tagged
+   >    "Sumindo" (Fading) are predicted to be overdue for their next visit.
+   > 4. Tap any client to see their visit history and the "Motor de Ciclo" (Cycle Engine)
+   >    prediction for their next expected visit.
+   > 5. Tap "Agenda" — the calendar view shows scheduled appointments across the team.
+   >
+   > This account has real seeded history (created 2026-09-16) so the prediction engine has data
+   > to show — a brand-new account would appear empty.
 3. Login testado do zero, no mínimo pela web (o app em si só existe depois de T1) — confirmar que
    a senha documentada realmente entra, sem MFA que trave um revisor sem acesso ao celular do
    Eduardo.
@@ -814,7 +829,28 @@ qualquer outro ticket do plano.
 6. **Credencial de T-DEMO preenchida em "App Review Information"**, testada de novo nas últimas 24h
    antes de enviar (§ armadilha de T-DEMO).
 7. **Notas pro revisor preenchidas** com o argumento de T1.5 (exceção 3.1.3(b) + precedente
-   Fresha/Booksy) — não é garantia, mas a pesquisa mostra que ajuda.
+   Fresha/Booksy) — não é garantia, mas a pesquisa mostra que ajuda. **Rascunho pronto pra copiar
+   (16/09), pra não escrever isso com pressa na hora da submissão:**
+
+   > CICLO is a business management companion app for service professionals (salons, barbers,
+   > nail studios) who already manage their business through our web platform at
+   > seuciclo.com.br. This app provides mobile access to an existing account — appointment
+   > scheduling, client management, and business analytics.
+   >
+   > In line with guideline 3.1.3(b) (Multiplatform Services), this app does not offer any
+   > in-app purchase, subscription, or payment flow. All plan/subscription management happens
+   > exclusively on our website, which the app does not link to or embed. New users can create a
+   > free-tier account directly within the app (no payment involved); upgrading to a paid tier is
+   > only possible by visiting seuciclo.com.br in a browser, outside this app.
+   >
+   > This is the same pattern used by other apps in the salon/spa/studio management category,
+   > such as Fresha for Business and Booksy Biz, both published on the App Store.
+   >
+   > Demo account credentials are provided in the App Review Information section above.
+
+   **Depois de revisado por alguém de verdade** (o texto acima é rascunho técnico, não passou por
+   revisão de inglês nativo nem jurídica) — vale conferir se o nome exato "seuciclo.com.br" ainda é
+   o domínio de produção na hora de usar (`APP_HOST`, `src/lib/app-url.ts`, é a fonte única).
 8. Submissão enviada via App Store Connect.
 9. Se rejeitado: ler o motivo exato, corrigir, ressubmeter — **não é permitido "tentar de novo sem
    mudar nada"**, a Apple registra o padrão de tentativa e piora a relação com contas que fazem isso.
