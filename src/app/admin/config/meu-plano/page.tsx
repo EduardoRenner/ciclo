@@ -115,6 +115,14 @@ export default async function PaginaMeuPlano() {
       {nativo ? (
         <Card className="mb-5">
           <p className="text-corpo text-txt">Gerencie seu plano em {APP_HOST}.</p>
+          {/*
+            T1.5 (docs/64 §0.2) bloqueia CRIAR cobrança, nunca cancelar uma que já existe —
+            guideline 3.1.1/5.1.1 pune o oposto (app que dificulta cancelamento). A rota
+            `/api/v1/billing/cancelar` já não tem o check de nativo de propósito; esconder o
+            botão aqui desfazia essa decisão sem ninguém perceber. Achado auditando o critério
+            #3 do T1.5 em 16/09 — mesma classe dos vazamentos de `/precos` corrigidos antes.
+          */}
+          {cobrancaAutomatica && assinatura && assinatura.status !== 'cancelled' ? <CancelarAssinatura /> : null}
         </Card>
       ) : (
         <Card className="mb-5">
