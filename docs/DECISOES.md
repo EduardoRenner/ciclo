@@ -8163,3 +8163,27 @@ emulador do zero está fora do escopo de uma checagem automática — fica pende
 ambiente gráfico ou teste manual do Eduardo no dispositivo real.
 
 **Nenhum achado de código.** Fase F fica PARCIAL — a parte estática está feita, a parte visual não.
+
+---
+
+## 2026-09-16 · Auditoria ampla (docs/66), Fase E · estados vazio/carregando/erro — premissa do plano estava errada
+
+**O plano (docs/66 §6) assumia:** "nunca houve uma varredura sistemática confirmando isso, só
+revisão pontual por ticket." **Falso — verificado agora.** Já existem 4 guardas que varrem TODAS
+as páginas (`it.each` sobre a lista real de arquivos, não uma amostra nem uma lista fixa):
+
+- `telas-do-admin-tem-loading.test.ts`: 38 casos, um por página `async` que busca dado — cada uma
+  precisa de `loading.tsx` irmão.
+- `estado-vazio-tem-saida.test.ts`: 30 casos.
+- `erro-do-cliente-tem-saida.test.ts`: 14 casos.
+- `toda-rota-travada-tem-tela-que-avisa.test.ts`: 7 casos.
+- `rede-nao-derruba-tela.test.ts`: varre `telas('src/app')` por função, não por lista fixa.
+
+Todas as 89 asserções passam hoje (`vitest run`, medido, não deduzido).
+
+**Nenhum achado — mas a lição da fase muda:** o gap real não é "falta varredura", é o mesmo risco
+já registrado na Fase A — guarda que varre pode ficar cega depois de um refactor sem que ninguém
+note. Não foi feita mutação ao vivo nestas 5 guardas nesta rodada (ficaria redundante com o
+raciocínio da Fase A); se uma auditoria futura tiver orçamento, mutar 1-2 páginas de propósito
+(remover `loading.tsx`, por exemplo) e confirmar reprovação seria o próximo passo real, não outra
+varredura manual.
