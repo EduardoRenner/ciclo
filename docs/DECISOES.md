@@ -8074,3 +8074,26 @@ explicitamente que a vigilância está desligada.
 o que faltou no incidente de 0088-0091 foi alguém rodar `supabase db push` a tempo, não falta de
 alerta. Confirmar que o `MIGRATIONS_ESPERADAS` é atualizado a cada `db:new` deveria ser automático
 (hoje é manual, no PR que cria a migration) — ficou como sugestão de melhoria, não achado de bug.
+
+---
+
+## 2026-09-16 · Auditoria ampla (docs/66), Fase C · dinheiro fora da carteira — VERIFICADO, correto
+
+**Medido:** listadas as 16 funções de `src/core` que mexem em `_cents`/`_bps`. Foco em
+`margem-do-servico.ts` (histórico de bug real, `margem-de-contribuicao-com-nome-de-lucro`):
+
+- **Comissão calculada em um único lugar** (`server/services/comanda.ts:287`, via
+  `calcularComissaoItem`) — sem fórmula duplicada em outro arquivo.
+- **Rótulo honesto:** a UI (`servicos/lista.tsx:201`) mostra "sobra X%", não "lucro X%" — a lição
+  do bug antigo (chamar margem de contribuição de lucro, sem contar hora de cadeira) já está
+  incorporada tanto no código (`lucroCents` é nome interno, nunca vaza pro texto do usuário) quanto
+  no comentário do próprio arquivo, que documenta explicitamente de onde vem cada parcela e por que
+  a hora de cadeira fica de fora (é margem de CONTRIBUIÇÃO por desenho, não lucro líquido — e a
+  tela nunca promete o contrário).
+- `tests/unit/core/margem-do-servico.test.ts` (112 linhas): só 1 ocorrência de valor zero em campo
+  monetário — não tem o padrão de `parcela-testada-so-com-zero`.
+
+**Nenhum achado.** Esta é uma amostra (1 de 16 módulos de dinheiro) — não é auditoria completa da
+Fase C. Se houver próxima rodada, os 15 módulos restantes (`caixa/concentracao.ts`,
+`caixa/taxa-por-forma.ts`, `comanda/*`, `crm/lucro-do-cliente.ts`, `loyalty/*`, `billing/mercado-
+pago.ts`, `pricing/*`) seguem sem o mesmo crivo.
