@@ -7880,3 +7880,27 @@ repositório inteiro, não a lista de arquivos que a memória lembrou. `docs/64`
 
 **Guarda nova:** `tests/unit/design/precos-nunca-sozinho-no-app-nativo.test.ts`. Vista reprovando
 contra `modulos.tsx` no estado quebrado (via `git stash`) antes de confiar nela.
+
+---
+
+## 2026-09-16 · T1.5: cancelamento não podia ficar bloqueado + incidente de PATH consertado
+
+**Achado ao auditar TODAS as rotas de `/api/v1/billing/`:** `cancelar/route.ts` não tinha o check
+`ehRequisicaoDoAppNativo` que `assinar/route.ts` tem. Pensado com calma antes de "consertar" —
+**não é bug**: bloquear cancelamento dentro do app é o padrão que a Apple pune (guideline
+3.1.1/5.1.1), e cada vez mais também alvo de regulação de consumidor. Documentado no próprio
+arquivo pra não virar correção errada de uma sessão futura.
+
+**Mas a UI que chama essa rota tinha um bug de verdade:** `meu-plano/page.tsx` escondia
+`<CancelarAssinatura />` inteiro dentro do ramo `nativo ? null : (...)` do bloco de preço — quem
+já é assinante (ex.: assinou pelo site antes de instalar o app) ficava sem jeito de cancelar de
+dentro do app, mesmo a rota estando de propósito acessível. Corrigido, commit `eac63fe`.
+
+**Incidente separado, técnico, registrado pra quem mexer nesta máquina de novo:** as chamadas
+`setx PATH "...` desta sessão (pra adicionar JDK/Android SDK ao PATH, rodada de ontem) truncaram
+silenciosamente a variável PATH do usuário do Windows — bug conhecido do `setx.exe` (corta perto
+de 1024 caracteres). Isso apagou `AppData\Roaming\npm` (por isso `pnpm` sumiu do PATH hoje) e
+várias outras entradas (WindowsApps, Python Scripts, VS Code, Docker Desktop). **Consertado**
+reconstruindo o PATH completo e salvando via `[Environment]::SetEnvironmentVariable(...,"User")`
+(API do .NET, sem o limite do `setx`). **Lição pra próxima vez:** nunca usar `setx` pra PATH nesta
+máquina — sempre `[Environment]::SetEnvironmentVariable`, que não trunca.
