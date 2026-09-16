@@ -33,6 +33,16 @@ const eslintConfig = [
        * `supabase start`.
        */
       "supabase/.temp/**",
+      /*
+       * T1/T-AND (docs/64-APP-STORE-CAPACITOR-PLANO.md, critério de aceite #4): `android/` e
+       * `ios/` são gerados pelo `npx cap add`/`cap sync`, nunca escritos à mão, e o `next build`
+       * da Vercel nunca lê nada aqui dentro. Medido ao rodar `./gradlew assembleDebug` pela
+       * primeira vez: o build nativo copia o bridge JS minificado do Capacitor pra dentro de
+       * `android/app/build/`, e sem esta exclusão o ESLint varria esse arquivo de terceiro
+       * (16 avisos, mesma classe de ruído que `supabase/.temp/**` já resolveu acima).
+       */
+      "android/**",
+      "ios/**",
     ],
   },
 
