@@ -8010,3 +8010,31 @@ mesmo ausente, o volume de erro seria constante, não zero.
 **Conclusão:** a variável está presente em produção. O que não existe é a LEITURA dela pela
 Vercel (marcada "Sensitive", só sobrescreve, não mostra) — o Eduardo procurou visualizar o valor,
 não confirmar a presença. Suspeita fechada, sem ação de código necessária.
+
+---
+
+## 2026-09-16 · Auditoria ampla (docs/66), Fase A · guardas-cegas — amostra verificada, backlog registrado
+
+**Escopo real, não o ideal:** o projeto tem 140+ testes que varrem código-fonte (`grep -rlE
+"readFileSync|source.includes" tests/`). Mutar TODOS numa sessão não é viável com rigor — cada
+mutação exige commitar antes, quebrar de propósito, confirmar reprovação, restaurar. Escolhido um
+recorte objetivo: as 8 guardas tocadas nos últimos 3 dias (`git log --since=2026-09-13`), por serem
+as menos "batidas" — guarda nova nunca foi vista reprovando por ninguém além de quem escreveu.
+
+**Medido:**
+- As 8 rodam verdes isoladas (61 casos, `vitest run` direto — `pnpm` não estava no PATH desta
+  sessão, usado `node_modules/.bin/vitest.CMD`).
+- 3 delas (`vocabulario-da-profissao`, `retornos-confere-o-tenant`, `precos-nunca-sozinho-no-app-
+  nativo`) já têm um caso `'o detector reconhece o defeito que ele impede'` embutido — comparado
+  contra o padrão exato do bug real que motivou a guarda.
+- Mutação AO VIVO em `admin/layout.tsx` (reintroduzido `.catch(() => null)` sem checar
+  `FORBIDDEN`, o bug real de 16/09): a guarda reprovou com a mensagem certa (`"o layout estoura
+  para conta sem tenant, em vez de tratar o erro"`). Restaurado, `git diff --stat` confirma estado
+  idêntico ao commit, suíte volta a verde.
+
+**Backlog explícito, não auditado nesta rodada:** as outras ~132 guardas (a maioria em
+`tests/unit/design/`) não foram mutadas agora. Risco conhecido pela própria casa
+(`atualizar-guarda-que-reprova`): refactor pode ter afrouxado alguma sem ninguém notar. Próxima
+sessão que tocar `docs/66` deve continuar a Fase A por amostragem — por exemplo, as guardas mais
+antigas (antes de 25/08, a rodada que já achou 3 de 5 cegas) ou as ligadas a área que vai receber
+mudança de qualquer forma.
