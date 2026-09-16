@@ -686,25 +686,52 @@ mais o item de maior risco do plano — T-DEMO e T1.5 pesam mais na estatística
 sendo o que só se confirma testando de verdade contra a revisão da Apple, então o prazo dele
 continua incerto.
 
-**Critério de aceite.**
+**Critério de aceite — status em 16/09, depois do primeiro teste em emulador de verdade.**
 1. Pelo menos DOIS comportamentos nativos genuínos além do push (T3): candidatos, em ordem de
    prioridade revisada em §0.9 —
-   - **Face ID/Touch ID pra destravar o app** (`@capacitor/biometrics` ou equivalente): subiu de
-     prioridade nesta rodada — é útil de verdade (reabrir a agenda rápido sem digitar senha) e o
-     risco de LGPD é baixo, porque o molde biométrico nunca sai do dispositivo (Secure Enclave); o
-     CICLO só recebe um "autenticado: sim/não" do sistema operacional, nunca o dado em si.
-   - Haptic feedback (`@capacitor/haptics`, esforço baixo) em ações de confirmar/cancelar
-     agendamento.
-   - Compartilhamento nativo (`@capacitor/share`) no lugar do link `wa.me` cru, quando dentro do
-     app.
-   - Status bar/safe area nativos (`@capacitor/status-bar`) para não ter WebView com barra branca
-     por cima do notch.
-2. Ícone de rede/estado offline reconhecível dentro do app — a fila offline que já existe
-   (`src/lib/offline`) ganha um indicador visual dentro do app nativo (a versão web pode já ter
-   isso; conferir antes de reconstruir).
-3. **Não fazer nada disto até T1 estar rodando de verdade num dispositivo** (precisa do Mac de T0)
-   — decidir o escopo de "nativo o suficiente" sem ver o app rodando é o mesmo erro que o `docs/51`
-   §0 já nomeou para outros planos ("planejar sobre premissa não testada").
+   - ✅ Haptic feedback (`@capacitor/haptics`): confirmar/chegou/concluir/faltou desde a rodada
+     anterior, cancelamento de agendamento fechado em 16/09 (commit `06b5e4f`).
+   - ✅ Compartilhamento nativo (`@capacitor/share`) no convite B2B ("Indicar o CICLO") — o único
+     lugar que o plano pedia; os demais links `wa.me` do produto (avaliação, orçamento, lembrete)
+     são decisão de escopo deliberada, não vazamento — convertê-los pra `Share` trocaria "abre
+     direto no WhatsApp" por "abre o seletor do sistema", mudança de UX que pede decisão de
+     produto, não conserto de bug.
+   - ✅ Status bar nativa (`@capacitor/status-bar`) — corrigida em 16/09 depois do achado no
+     emulador (edge-to-edge no `targetSdk 36` ignora `setBackgroundColor`; ver `docs/DECISOES.md`).
+     **Ainda sem confirmação visual** — só fica visível depois de publicado (T1, `server.url` é
+     produção, não local).
+   - ⏸️ **Face ID/Touch ID pra destravar o app**: continua sendo o único candidato NÃO iniciado.
+     Continua de prioridade alta (LGPD baixo risco, molde nunca sai do Secure Enclave), mas
+     **de propósito não implementado ainda nesta rodada** — ver nota abaixo.
+2. ✅ Ícone de rede/estado offline (`IndicadorDeConexao`, commit `8ac1a7a`, corrigido em `f061c18`)
+   — feito, serve os dois lados (web e nativo), a versão web NÃO tinha isso antes (conferido).
+3. **Cumprido de um jeito parcial**: T1 rodou de verdade num EMULADOR Android em 16/09 (não um
+   dispositivo físico, e só o lado Android — `ios/` continua sem existir, T0 travado). Suficiente
+   pra confirmar que o WebView carrega produção e navega, insuficiente pra testar biometria de
+   verdade (emulador simula digital via `adb -e emu finger touch`, mas é outra camada de
+   verificação que esta sessão não chegou a montar).
+
+**Por que a biometria fica de fora desta rodada, registrado como decisão e não esquecimento:** ao
+contrário de status bar/haptics/share/indicador — que são aditivos e falham fechado sozinhos (nunca
+bloqueiam nada se o plugin não responder) — um destravador biométrico muda o FLUXO DE ENTRADA do
+app. Implementado errado (ex.: sem fallback quando o aparelho não tem biometria configurada, ou
+travando em vez de deixar passar num erro do plugin), a "melhoria" tranca gente pra fora da própria
+conta — pior que não ter a funcionalidade. Sem um dispositivo real (ou pelo menos um emulador com
+impressão digital simulada e testada) pra ver o caminho de erro funcionando, implementar isso é
+repetir o erro que o critério #3 original já nomeava ("planejar sobre premissa não testada") — só
+que desta vez sobre um recurso que pode trancar gente pra fora, não só ficar feio.
+
+**Especificação pronta pra quando alguém for implementar, com dispositivo em mãos:**
+- Plugin: `@aparajita/capacitor-biometric-auth` (único encontrado com peer deps batendo Capacitor 8
+  — `capacitor-native-biometric`, mais popular, trava em Capacitor 3).
+- Opt-in, OFF por padrão — nunca forçar. Preferência em `localStorage` (é uma trava de tela, não
+  dado de conta; não precisa sincronizar entre aparelhos, e mantém o desenho "sem servidor" que o
+  resto de T4 já usa).
+- **Falhar aberto, sempre**: aparelho sem biometria configurada, plugin retornando erro, ou usuário
+  cancelando a prompt → deixa entrar normalmente (mesma sessão de cookie que já existe, T1). Nunca
+  um segundo passo de senha "de emergência" — isso duplicaria o login que já existe.
+- Gatilho: `App.addListener('resume', ...)` do `@capacitor/app` (voltar de segundo plano), não só
+  no primeiro carregamento — é o momento que a Apple/reviews de UX de app-lock mais citam.
 
 **Onde mexer.** Componentes React existentes que dependem do host (detectar `Capacitor.isNativePlatform()`
 e ramificar comportamento), nunca duplicar tela.
