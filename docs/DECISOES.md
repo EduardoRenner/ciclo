@@ -7856,3 +7856,27 @@ escrita, `criarUser`).
 bloqueada de testar via `curl` contra produção, motivo "Production Reads" — mesma proteção). Falta
 também preencher "App Review Information" no App Store Connect com o roteiro de navegação
 (T-DEMO critério de aceite #2), que só faz sentido depois de T0/T2 iOS existirem.
+
+---
+
+## 2026-09-16 · T1.5: a guarda do critério #3 nunca tinha sido escrita — achou 2 vazamentos reais
+
+**Contexto:** loop autônomo pedido pelo Eduardo pra "aprimorar tudo, sem parar". Reli os critérios
+de aceite do T1.5 letra por letra em vez de confiar no status "✅ completo" de duas rodadas
+anteriores — o critério #3 pedia uma guarda de varredura ("Assinar/assinatura/preço com `<a>`/
+`<button>` ativo quando nativo") que nunca chegou a existir; só havia teste da função pura.
+
+**Escrevendo a guarda de verdade, ela achou dois vazamentos reais que sobreviveram a DUAS rodadas
+marcadas como "T1.5 completo por inteiro":** `admin/config/modulos/modulos.tsx` (card de módulo
+bloqueado) e `admin/orcamentos/lista.tsx` (estado vazio de orçamentos bloqueado) — os dois
+linkavam pra `/precos` sem checar `nativo`. Corrigidos com o padrão de sempre.
+
+**A lição, registrada com honestidade:** "T1.5 completo" foi declarado duas vezes achando que
+tinha coberto todas as 9 telas com `BloqueioPlano` — mas nunca existiu uma varredura que provasse
+isso por CÓDIGO, só revisão manual de call sites conhecidos. Call site que ninguém lembrou de
+procurar é call site que passa despercebido pra sempre até alguém escrever o teste que varre o
+repositório inteiro, não a lista de arquivos que a memória lembrou. `docs/64` critério de aceite
+#3 pedia exatamente essa guarda desde o início — só não tinha sido cumprido.
+
+**Guarda nova:** `tests/unit/design/precos-nunca-sozinho-no-app-nativo.test.ts`. Vista reprovando
+contra `modulos.tsx` no estado quebrado (via `git stash`) antes de confiar nela.
