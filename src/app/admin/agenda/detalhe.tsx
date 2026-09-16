@@ -121,6 +121,9 @@ export default function DetalheAgendamento({
           setErro(json.error?.message ?? 'Não consegui cancelar.')
           return
         }
+        // T4 (docs/64 §0.4): mesmo reforço físico de `executar()` — aqui só depois da resposta
+        // OK, porque este caminho não é otimista (espera o servidor antes de confirmar na tela).
+        void vibrarConfirmacao()
         mostrarToast({ tom: 'ok', titulo: 'Agendamento cancelado' })
         onAtualizado()
       } catch {
