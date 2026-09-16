@@ -40,7 +40,7 @@ export const metadata = {
   description: 'Que dados o CICLO guarda, por quê, por quanto tempo, e o que você pode pedir a qualquer momento.',
 }
 
-const ATUALIZADO_EM = '30 de agosto de 2026'
+const ATUALIZADO_EM = '16 de setembro de 2026'
 
 export default function Privacidade() {
   return (
