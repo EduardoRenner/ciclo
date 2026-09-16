@@ -26,14 +26,17 @@
 | **T0** (decisão Mac/CI pro iOS) | 🔴 Bloqueado — só o Eduardo decide |
 | **T2** (ícone/splash) | ✅ Feito pro Android (dentro do T-AND) — iOS segue esperando T0/`ios/` existir |
 | **T3** (push nativo) | Não iniciado — precisa de conta Apple (T5)/Firebase, ambos fora do alcance desta sessão |
-| **T4** (ajustes 4.2) | 🟡 Em andamento — status bar nativa (commit `8ac1a7a`) e indicador de conexão offline (mesmo commit, corrigido em `f061c18`) prontos; haptics/share já vinham de rodada anterior. Falta biometria e o resto da lista de candidatos |
-| **T5, T6, T7** (conta Apple, teste real, submissão) | Não iniciados — dependem do exposto acima |
+| **T4** (ajustes 4.2) | 🟡 Em andamento — status bar nativa (commit `8ac1a7a`) e indicador de conexão offline (mesmo commit, corrigido em `f061c18`) prontos; haptics/share já vinham de rodada anterior. **Achado no emulador:** a StatusBar não muda de cor de verdade — Capacitor 8 parece ter trocado o mecanismo por um plugin interno novo (`SystemBars`), ver `docs/DECISOES.md` 2026-09-15. Falta corrigir isso, biometria, e o resto da lista de candidatos |
+| **T6** (teste em dispositivo real) | 🟡 **Começado pro Android, sem login** — emulador `ciclo_test` (Pixel 6, API 34) criado e rodando nesta sessão: app abre, carrega `seuciclo.com.br` de verdade, navega entre `/entrar`↔`/recuperar-senha`, formulário valida campo vazio. Nenhuma conta criada (produção intocada). Falta tudo que precisa de login (T-DEMO) e o lado iOS inteiro (T0) |
+| **T5, T7** (conta Apple, submissão) | Não iniciados — dependem do exposto acima |
 
-**O Android já compila; nada foi testado num dispositivo/emulador de verdade ainda** — `android/`
-existe e builda (debug), mas "compila" e "funciona na tela" são coisas diferentes (T6). `ios/`
-continua sem existir (T0 travado, sem Mac). Toda verificação seguiu sendo typecheck + lint + suíte
-unit + build de produção + o build Gradle em si; `test:integration`/`test:rls` seguem pendentes
-(Docker local fora do ar a sessão inteira).
+**O Android roda de verdade num emulador; falta login pra testar o resto.** `android/` builda e
+ABRE, carregando produção de ponta a ponta — mas sem a credencial de T-DEMO não dá pra testar
+`/admin`, o Motor de Ciclo, nem se T1.5 bloqueia cobrança na prática (só foi verificado por
+leitura de código até aqui). `ios/` continua sem existir (T0 travado, sem Mac). Toda verificação
+seguiu sendo typecheck + lint + suíte unit + build de produção + o build Gradle em si + a rodada
+manual no emulador; `test:integration`/`test:rls` seguem pendentes (Docker local fora do ar a
+sessão inteira).
 
 ---
 
