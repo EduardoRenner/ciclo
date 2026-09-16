@@ -7959,3 +7959,34 @@ a página pública de agendamento nunca teve checagem de saúde nenhuma, e ficou
 uma semana inteira sem nenhum alarme automático apontar pra ela. Vale considerar, numa rodada
 futura, ampliar o `/api/health` pra também confirmar que o schema esperado pelas rotas públicas
 mais usadas está presente — não só os crons.
+
+---
+
+## 2026-09-16 · Loop de erro real preso: conta sem estabelecimento não tinha saída
+
+**Contexto:** na mesma leva de achados via `get_runtime_errors` da Vercel — o grupo de erro
+"Sua conta ainda não tem um estabelecimento" tinha `count=22`, `users=2`, `first=2026-09-03`,
+`last=2026-09-15`. Doze dias, duas pessoas reais, o mesmo erro repetindo em várias telas
+(`/admin/hoje`, `/admin/clientes`, `/admin/config`, `/admin/agenda`).
+
+**Causa:** `admin/layout.tsx` já tratava esse `AppError('FORBIDDEN')` com um `.catch(() => null)`
+de propósito — o comentário explicava que deixar subir ali derrubaria o painel inteiro pra quem
+está no meio do cadastro. Mas isso só evitava o LAYOUT quebrar. Cada `page.tsx` filha chama
+`contextoAtual()` de novo, sem `catch`, e quebra de verdade — caindo no boundary de erro
+(`admin/error.tsx`), que só oferece dois botões: "Tentar de novo" e "Ir para Hoje". **Os dois
+batem na mesma falta de estabelecimento e devolvem a mesma tela.** Sem saída nenhuma pra quem
+ficou sem terminar o cadastro (por que motivo, não dá pra saber pelos logs — talvez um erro no
+meio do onboarding, talvez abandono e depois voltou por um link salvo).
+
+**Corrigido:** o layout agora checa o `code` do `AppError` antes de engolir — só `FORBIDDEN`
+(que só nasce de um jeito: `ativos.length === 0` em `server/auth/tenant.ts`) redireciona pro
+`/onboarding`, que já sabe tratar os três casos (sem sessão, já tem negócio, ainda não tem).
+`TENANT_MISMATCH` (cookie de tenant inválido) e a validação de "escolha um estabelecimento"
+(múltiplos vínculos) continuam caindo no comportamento antigo — não fazia sentido mandar pra
+onboarding quem só tem cookie velho ou só precisa escolher qual negócio usar.
+
+**Não deu pra testar contra sessão real** (não tenho como criar uma conta sem tenant sem violar
+a regra de nunca criar conta em produção sozinho) — verificado por leitura cuidadosa: `redirect()`
+dentro de `.catch()` é padrão documentado do Next.js, o mesmo mecanismo que `/onboarding/page.tsx`
+já usa em três lugares. Guarda nova em `vocabulario-da-profissao.test.ts` vista reprovando antes
+de confiar.
