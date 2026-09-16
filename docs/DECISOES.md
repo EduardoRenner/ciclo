@@ -7726,3 +7726,60 @@ produção passaram nas duas rodadas de código desta sessão. `api-client.ts`/`
 dependem de `navigator`/`window` de browser real — mesma limitação de sempre, sem jsdom neste
 projeto, verificação fica pra quando existir `android/`/dispositivo de verdade. Nenhuma mudança
 desta rodada tocou `ios/`, que continua sem existir (T0 travado, sem Mac).
+
+---
+
+## 2026-09-15 · Primeiro app rodando de verdade — emulador Android, achado real na StatusBar
+
+**Contexto:** mesmo `/loop` autônomo, continuação da rodada que destravou o T-AND. Com JDK/SDK já
+instalados, dava pra ir além de "compila" — instalar o pacote `emulator` do SDK, criar um AVD
+(`ciclo_test`, Pixel 6, Android 14/API 34, `google_apis;x86_64`) e rodar o app de debug de
+verdade. Isto é exatamente o que a própria armadilha do T4 pedia antes de decidir mais escopo
+("planejar sobre premissa não testada") — e valeu a pena: apareceu um achado real que nenhuma
+leitura de código teria pego.
+
+**O que funcionou, confirmado visualmente (screenshots + logcat), sem tocar em produção:**
+- App abre, carrega `https://seuciclo.com.br` de verdade dentro do WebView nativo (log: `Loading
+  app at https://seuciclo.com.br`, `App started`, `App resumed`) — a aposta central do plano (T1)
+  funciona fim a fim, não só no `pnpm build`.
+- Landing page renderiza pixel a pixel igual à versão web: marca, textos, botões, cards.
+- Navegação funciona: toque em "Entrar" leva pro login; toque (por engano) em "Esqueci minha
+  senha" leva pra tela certa; validação HTML5 nativa do campo vazio aparece (`Please fill out this
+  field`) — mostra que o formulário roda de verdade dentro do WebView, sem quebrar.
+- **Nenhuma conta foi criada, nenhum formulário foi submetido com dado real** — só navegação e
+  toque em campo vazio, de propósito, pra não sujar produção nem violar a regra de nunca criar
+  conta sem autorização explícita.
+
+**Achado real: `ConfigurarStatusBarNativo` (commit `8ac1a7a`) não muda nada visível.** A barra de
+status continua clara/padrão do Android, não o escuro (`#0d0c0c`) que o código pede. O logcat
+mostra a pista: o Capacitor 8 registra um plugin interno novo, `SystemBars` (`Registering plugin
+instance: SystemBars`), separado do `StatusBar` que este código usa — e aparece um stack trace de
+`SystemBars.lambda$injectSafeAreaCSS` chamando `evaluateJavaScript` sozinho, sinal de que o
+Capacitor 8 mudou o mecanismo de gestão de barra de sistema/safe-area por baixo do pacote
+`@capacitor/status-bar` legado. **Não vira ticket de correção agora** (T4 é "reduzir risco", não
+"perfeição visual", e o resto do app funciona) — fica registrado pra quando alguém for polir T4 de
+verdade: provavelmente a API certa em Capacitor 8 é a de `SystemBars`, não `@capacitor/status-bar`.
+
+**Achado fora do escopo deste plano, mas real e ativo em produção — virou tarefa separada:** o
+console acusou o Sentry sendo bloqueado pelo CSP (`connect-src 'self'
+https://eqzlvthzdjnsbogymcsw.supabase.co` não inclui o host de ingest do Sentry,
+`src/middleware.ts:158`). Como `NEXT_PUBLIC_SENTRY_DSN` está configurado e ativo, isso significa
+que o monitoramento de erro do NAVEGADOR está quebrado em produção hoje — no site normal também,
+não só no app. Sugestão registrada como tarefa separada (`task_1a8a867d`), fora do escopo deste
+plano de App Store.
+
+**IndicadorDeConexao teve o mesmo travessão duplo pego pela guarda `copy-sem-travessao`** — achado
+e corrigido antes mesmo de chegar no emulador, na própria rodada de `pnpm test:unit` (commit
+`f061c18`). Fica registrado aqui porque é outro exemplo do princípio "verde não é prova": a guarda
+existe, funcionou, mas só porque alguém rodou a suíte antes de declarar pronto.
+
+**Ambiente de teste, pra quem for continuar:** JDK 21 em `C:\Users\Usuario\dev-tools\jdk-21.0.8+9`,
+Android SDK em `C:\Users\Usuario\dev-tools\android-sdk` (`JAVA_HOME`/`ANDROID_HOME` já persistidos
+como variável de usuário do Windows), AVD `ciclo_test` já criado e pronto pra reabrir
+(`emulator -avd ciclo_test`). Emulador foi desligado ao fim da sessão pra não consumir recursos à
+toa.
+
+**Sinceridade sobre o teste:** isto É o dispositivo real que T6 pedia, mas só a metade Android —
+`ios/` continua sem existir (T0/Mac), e mesmo no Android só a parte SEM LOGIN foi verificada (sem
+credencial de T-DEMO, não dá pra testar `/admin`, o Motor de Ciclo, nem se T1.5 bloqueia cobrança
+de verdade quando alguém está logado). Isso continua pendente de T-DEMO.
