@@ -56,10 +56,10 @@ export default function IndicadorDeConexao() {
     >
       <CloudOff aria-hidden className="size-3.5 shrink-0" />
       {online
-        ? `${pendentes} ${pendentes === 1 ? 'alteração pendente' : 'alterações pendentes'} — enviando quando possível`
+        ? `${pendentes} ${pendentes === 1 ? 'alteração pendente' : 'alterações pendentes'} · enviando quando possível`
         : pendentes > 0
           ? `Sem conexão · ${pendentes} ${pendentes === 1 ? 'alteração guardada' : 'alterações guardadas'}`
-          : 'Sem conexão — mudanças serão guardadas'}
+          : 'Sem conexão · mudanças serão guardadas'}
     </div>
   )
 }
