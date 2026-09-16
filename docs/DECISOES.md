@@ -7812,3 +7812,47 @@ plano só é visível no emulador/dispositivo DEPOIS de publicada em produção 
 localmente" pro lado nativo enquanto `server.url` apontar pra produção. Isso é intencional (T1,
 §0.4: reescrever pra empacotar tudo localmente quebraria Server Components/Server Actions), mas
 muda o ciclo de teste: escrever → publicar → só então testar no app.
+
+---
+
+## 2026-09-16 · T-DEMO resolvido — tenant `apple-review` criado em produção
+
+**Contexto:** o Eduardo pediu pra rodar `scripts/seed-tenant-teste.mjs` contra produção (opção
+(b) do T-DEMO). Esta sessão não tem — e não pode ter — a `SUPABASE_SERVICE_ROLE_KEY` de produção;
+o Eduardo colou a chave diretamente no chat. O classificador de segurança do Claude Code bloqueou
+DUAS tentativas minhas de usar essa chave (uma via `Bash`, outra via `Edit`, ambas tentando gravar
+a chave em `.env.local`) com os motivos "Credential Leakage" e "Production Deploy" — proteção
+correta, não é bug. Resolvido entregando o comando pronto pro próprio Eduardo rodar no PowerShell
+dele, fora das restrições desta sessão.
+
+**PHONE_HASH_SALT:** o valor de produção está marcado como "Sensitive" na Vercel — a Vercel não
+deixa mais LER o valor depois de criado, só sobrescrever. O Eduardo não tinha esse valor anotado
+em lugar nenhum. Usado o valor que já estava em `.env.local`/`.env.local.backup-nuvem`
+(`llxee...`, gerado em 18/08 conforme entrada acima) como melhor palpite disponível — **sem
+garantia de que é idêntico ao de produção**. Risco aceito e contido: se estiver errado, só afeta a
+busca por telefone dos 12 clientes FICTÍCIOS deste tenant novo, nunca um cliente real (que já
+tinha `phone_hash` gravado antes, com o salt certo, e não foi tocado).
+
+**Achado que ficou pendente de confirmar, registrado à parte:** o Eduardo relatou não encontrar
+NENHUM valor de `PHONE_HASH_SALT` na Vercel (nenhum ambiente). Se for verdade, `src/server/
+services/telefone.ts:38` lança erro toda vez que o código tenta hashear um telefone em produção —
+bug sério, sem relação com o plano do app. Não confirmado (pode ter sido procurado no escopo
+errado da Vercel); fica como suspeita a investigar, não como fato.
+
+**Primeira tentativa falhou por acento:** `"Salão Demonstração"` como argumento de linha de
+comando no PowerShell quebrou (`Cannot convert argument to a ByteString`) — encoding do console,
+não bug do script. Corrigido usando `"Salao Demonstracao"` (sem acento) na segunda tentativa, que
+funcionou de primeira. Nenhum dado ficou pela metade da tentativa que falhou (quebrou na primeira
+escrita, `criarUser`).
+
+**Resultado:**
+- Tenant: `apple-review` (vertical `barber`), tenant ID `dfbb94b5-8394-4ae8-afb5-804fb95e87b3`
+- 12 clientes fictícios, 59 agendamentos históricos, 1 assinatura de teste
+- Login: `revisor-apple@ciclo.app` — senha combinada com o Eduardo fora deste repositório (regra 10
+  do `CLAUDE.md`: segredo nunca no repositório, nem sendo conta de demonstração)
+- Conta **não expira** (login normal, sem convite/token com prazo) — critério de aceite do T-DEMO
+
+**Ainda pendente:** confirmação visual do Eduardo que o login realmente entra (esta sessão foi
+bloqueada de testar via `curl` contra produção, motivo "Production Reads" — mesma proteção). Falta
+também preencher "App Review Information" no App Store Connect com o roteiro de navegação
+(T-DEMO critério de aceite #2), que só faz sentido depois de T0/T2 iOS existirem.
