@@ -10060,3 +10060,18 @@ corretamente: `src/instrumentation.ts não passa mais por redigirEventoSentry em
 produto guarda dado de saúde (anamnese, alergia)...`. Restaurado com `git checkout --`, confirmado
 grep (2 ocorrências de `redigirEventoSentry(event)` de volta). `tests/unit` inteiro (283/2461)
 verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 40: `imagem-da-marca-diz-o-tamanho`
+
+Guarda de performance: o wordmark aparece a 69×28 px nas quatro páginas públicas, mas sem a prop
+`sizes` o `next/image` não sabe disso e serve a variante de 1.200 px — medido em produção: 13.248 B
+em vez de 5.450 B, 59% a mais, e a landing paga duas vezes porque aquela imagem tem `priority`
+(pré-carregada, disputando banda na primeira pintura em 3G). Mutação:
+`src/app/(public)/precos/page.tsx`, removida a prop `sizes="70px"` da tag `<Image src={wordmark}>`.
+Guarda reprovou corretamente, apontando exatamente a página mutada: `expected '<Image
+src={wordmark} alt="CICLO" cla…' to match /sizes=/` — as outras três páginas continuaram passando.
+Restaurado com `git checkout --`, confirmado grep (`sizes="70px"` de volta). `tests/unit` inteiro
+(283/2461) verde depois.
