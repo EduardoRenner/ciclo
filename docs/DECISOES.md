@@ -8668,3 +8668,25 @@ reconferir estes dois arquivos específicos.
 **Backlog explícito:** os outros 16 arquivos com múltiplas ocorrências de `toque-48` (button.tsx,
 chip.tsx, segmented.tsx e outros — a maioria é definição de componente com variantes, não dois
 links adjacentes) não foram medidos individualmente nesta rodada.
+
+---
+
+## 2026-09-17 · Loop noturno (docs/67), item 19 · copy: promessa de canal (WhatsApp) — mutado, correto
+
+**Medido:** `core/messaging/promessa.ts` (`textoDoCanalDeConfirmacao`, `textoDoEnvioAutomatico`) —
+a fonte única que decide se o produto pode dizer "chega sozinho"/"sai sozinho", criada depois de
+DOIS incidentes reais documentados (promessa falsa pro cliente do tenant em 27/08, promessa falsa
+pro dono em 30/08 — as duas com guarda anterior que passava verde por lista fechada de sinônimos
+ou por a tela nunca chamar a função certa).
+
+**Mutação ao vivo:** colapsados os dois ramos de `textoDoCanalDeConfirmacao` pra sempre devolver a
+frase de "chega sozinho" — o estado real de produção hoje (`reminders` fora do `schedule`) faria
+essa mensagem falsa aparecer pra todo cliente que agenda. Reprovou em 2 dos 9 casos, incluindo a
+guarda-espelho dedicada ("os dois estados dizem coisas diferentes"). Restaurado, `pnpm test:unit`
+completo (283 arquivos, 2461 casos) verde.
+
+**Nenhum achado.** Confirma que o padrão "fonte única de verdade pra copy sensível" (mesmo usado
+em `NOME_DO_PLANO`, `ROTAS_AGENDADAS`) está genuinamente funcionando aqui, não só documentado.
+Também confirmado por leitura: a tela de sucesso do agendamento público (`agendar.tsx`) já usa o
+botão de WhatsApp corretamente como AÇÃO de quem clica, não como promessa de envio automático —
+distinção que o próprio código documenta ter aprendido da vez anterior.
