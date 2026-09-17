@@ -8482,3 +8482,20 @@ Restaurado, suíte volta a 20/20.
 **Nenhum achado.** Sexto dos 16 módulos de dinheiro confirmados por mutação real — e o mais
 crítico até agora, por ser a função que escreve o valor final no banco (`tickets.profit_cents`),
 consumida tanto no fechamento quanto na tela ao vivo (o teste cruzado confirma as duas batem).
+
+---
+
+## 2026-09-17 · Loop noturno (docs/67), item 10 · dinheiro: margem-do-clube.ts — mutado, correto
+
+**Medido:** `loyalty/margem-do-clube.ts` (docs/48 C6, margem viva do clube de assinatura). Já
+carrega histórico de guarda-cega documentado (o campo `materialIncerto`, renomeado de `semFicha`
+em 06/09 pela mesma razão do `custo-do-servico.ts`, item 5).
+
+**Mutação ao vivo:** trocado `mensalidadeCents - custoCents` por `+` em `margemCents` (inversão de
+sinal). 3 de 12 casos reprovaram, incluindo "passar do limite e dar prejuízo são coisas
+diferentes". Restaurado, suíte volta a 12/12.
+
+**Nenhum achado.** Sétimo dos 16 módulos de dinheiro confirmados por mutação real. Restam 9:
+`caixa/concentracao.ts`, `loyalty/raio-x-de-recorrencia.ts`, `billing/mercado-pago.ts`,
+`pricing/formatar.ts`, `pricing/sinal.ts`, `agenda/ainda-conta-como-receita.ts`,
+`text/sem-amostra.ts`, `crm/lucro-do-cliente.ts` (parte não tocada no item 4).
