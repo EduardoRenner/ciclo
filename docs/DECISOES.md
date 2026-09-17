@@ -9695,3 +9695,34 @@ livro-caixa, onde pedido e caixa contavam o mesmo dinheiro duas vezes). Mutaçã
 que a guarda documenta (zero medido virando indistinguível de "sem amostra"). Guarda reprovou
 corretamente na asserção que checa a chamada da função. Restaurado com `git checkout --`, árvore
 limpa. `tests/unit` inteiro (283/2461) verde depois.
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 20: `previsto-nao-conta-pending-vencido`
+
+Guarda de dinheiro: `forecastCents` (o "previsto do dia") tem que decidir por
+`aindaContaComoReceita`, não pela lista crua `CONTAM_COMO_RECEITA` — um `pending` cuja hora já
+passou (ninguém confirmou, ninguém atendeu) não pode contar como receita esperada, mesmo que
+ainda conte pra OCUPAÇÃO da cadeira (`minutosOcupados`, que usa a lista crua de propósito, sem
+decair com o tempo). Mutação: `agendamentos.ts`, trocado o filtro de `forecastCents` de
+`aindaContaComoReceita(...)` para `CONTAM_COMO_RECEITA.includes(...)` — exatamente a
+"simplificação" que o docstring da guarda prevê como regressão natural. Guarda reprovou nas DUAS
+asserções (sumiu `aindaContaComoReceita`, apareceu `CONTAM_COMO_RECEITA`). Restaurado com
+`git checkout --`, árvore limpa. `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 21: `agendamento-do-cliente-nao-repete-preco`
+
+Guarda de copy/interface: o preço de um serviço na tela pública de agendamento
+(`(public)/[slug]/agendar/agendar.tsx`) tem que aparecer exatamente 1 vez (na linha do serviço) —
+historicamente aparecia 2x, uma na linha e outra num resumo grande no passo de confirmar, o que
+poluía o passo final e podia até divergir se alguém mexesse num sem mexer no outro. Mutação:
+duplicado o bloco `<p>{formatarPreco({...})}</p>` inteiro logo depois do original, dentro do mesmo
+card de serviço, com os mesmos props (`pricingModel`, `priceCents`, `hourlyRateCents`,
+`halfDayPriceCents`) — confirmado via `grep -c "formatarPreco({" agendar.tsx` indo de 1 para 2.
+Guarda reprovou corretamente: `AssertionError: o preço do serviço é formatado 2x ... deve ser
+exatamente 1 (a linha do serviço). Se o campo mudou de nome, atualize este guarda junto.:
+expected 2 to be 1`. Restaurado com `git checkout --`, confirmado grep voltando a 1. `tests/unit`
+inteiro (283/2461) verde depois.
