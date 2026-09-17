@@ -10177,3 +10177,21 @@ reprovou corretamente nas duas asserções: o contrapeso ("o contrapeso saiu: a 
 do modelo de comissão sem dizer...") e "para quem o CICLO não serve". Restaurado com
 `git checkout --`, confirmado grep (as duas frases de volta). `tests/unit` inteiro (283/2461)
 verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 47: `runbook-aponta-pro-agendador-certo`
+
+Guarda de incidente: o runbook é lido no pior momento possível (produção quebrada, pressa,
+ninguém conferindo se a instrução ainda vale), e mandava "desabilitar o cron em `vercel.json` +
+redeploy" — mas o `vercel.json` fica com `crons: []` de propósito e para sempre (`docs/18` §L.5);
+o agendador de verdade é o GitHub Actions. Seguir a instrução à risca não desligaria nada, e a
+pessoa só descobriria depois do redeploy. É a TERCEIRA vez que essa confusão de arquivo aparece
+no repositório. Mutação: `docs/runbooks/incidente.md`, revertida a linha de `**O agendador é o
+GitHub Actions**, não a Vercel: o vercel.json fica com crons: [] de propósito...` para
+`Desabilite o cron específico em vercel.json e faça redeploy` — a instrução errada original.
+Guarda reprovou corretamente: `o runbook manda mexer no vercel.json para lidar com cron ...:
+expected [ Array(1) ] to deeply equal []`, com a linha exata mutada aparecendo na lista de
+suspeitas. Restaurado com `git checkout --`, confirmado grep (texto correto de volta).
+`tests/unit` inteiro (283/2461) verde depois.
