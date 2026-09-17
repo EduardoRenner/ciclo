@@ -8702,3 +8702,24 @@ cometeu e corrigiu: reescrever pra feminino em vez de neutro). Rodada limpa: 15/
 **Nenhum achado.** Guarda já tem mutação documentada no histórico do arquivo; não repetida agora
 por já ter evidência de funcionar (regra de bom senso: não gastar orçamento remutando o que já foi
 visto reprovando por outro motivo válido, quando o arquivo já documenta isso).
+
+---
+
+## 2026-09-17 · Loop noturno (docs/67), item 21 · funcionalidade: /api/v1/cash/daily e /summary sem chamador interno
+
+**Medido:** `admin/caixa/page.tsx` lê `fechamentoDiario`/`resumoDoMes` (`services/caixa.ts`) DIRETO,
+como Server Component — não via HTTP. As rotas `GET /api/v1/cash/daily` e `GET /api/v1/cash/
+summary` (TICKET-047, existiam ANTES da tela) fazem a mesma chamada por HTTP, mas nenhum `fetch`
+no `src/app` bate nelas — só aparecem numa asserção de `middleware-cache.test.ts` (cache-control),
+não em uso real.
+
+**Não é achado de bug — é observação, registrada com a ressalva certa** (memória `capacidade-
+morta-em-producao-nao-e-morta`: "nenhum chamador" responde uso, não autoridade — não é motivo pra
+apagar sozinho). Hipóteses igualmente plausíveis sem dado pra decidir: (a) resquício do TICKET-047,
+seguro remover; (b) superfície de API pública/futura (app mobile nativo, integração externa)
+mantida de propósito. Rotas corretamente protegidas (`exigirPermissao('report:read')`,
+`contextoAtual` — não precisam de `contextoDoPainel`, que é só pra páginas que redirecionam;
+resposta de API não redireciona).
+
+**Fica para o Eduardo decidir:** manter (documentando o propósito) ou remover (com o `pnpm verify`
+confirmando que nada mais depende). Nenhuma ação tomada.
