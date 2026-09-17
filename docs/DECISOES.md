@@ -8831,3 +8831,20 @@ anonimização automática for ligada sem o FAQ ser atualizado junto. Reprovou c
 que o teste certo, e só ele, reagiu).
 
 **Nenhum achado.** Backlog Fase A: 6 guardas antigas confirmadas nesta noite. Restam ~124.
+
+---
+
+## 2026-09-17 · Loop noturno (docs/67), item 29 · Fase A: nunca-delete-o-que-e-historico.ts — VERIFICADO, cross-checado
+
+**Medido, com verificação independente da própria guarda** (não confiei só no regex dela):
+1. `grep` próprio por `.delete()` logo após `from('appointments'|'stock_moves'|'audit_log'|
+   'vault_access_log')` em todo `src/` — zero ocorrências.
+2. `grep` próprio por `on delete cascade` combinado com as 4 tabelas em toda migration ≥ 0079 —
+   2 hits, ambos falso positivo confirmado por leitura: um dentro de COMENTÁRIO (0079, descrevendo
+   o problema antigo que ela conserta), outro é a exceção documentada de `tenants` (0088,
+   `tenant_id references tenants(id) on delete cascade` — cascata a PARTIR de tenants, não uma das
+   4 tabelas protegidas cascateando).
+
+**Nenhum achado.** Regra 11 do `CLAUDE.md` (nunca hard-delete de histórico) cumprida de fato,
+confirmada por dois métodos independentes, não só pela guarda existente. Backlog Fase A: 7 guardas
+antigas confirmadas nesta noite. Restam ~123.
