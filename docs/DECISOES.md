@@ -10335,3 +10335,21 @@ removido `'secundario'` do array `ESCALA`. Guarda reprovou corretamente, e de um
 bug real acontecendo: `expected 'font-semibold text-acc-2' to contain 'text-secundario'` — o
 `tailwind-merge` de fato engoliu a classe de tamanho. Restaurado com `git checkout --`, confirmado
 (`'secundario'` de volta no array). `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 56: `dinheiro-tem-duas-palavras`
+
+Guarda de vocabulário financeiro: "atendido" (soma de `price_cents`, preço de tabela, não enxerga
+desconto/gorjeta) e "entrou" (soma de `tickets.total_cents`, dinheiro de verdade das comandas
+fechadas) NÃO são sinônimos. Em 31/08 três telas chamavam o primeiro pelo nome do segundo
+("Faturado hoje", "Já gastou" na ficha, "já gastou R$ X" em campanhas) — num dia com desconto,
+todas mostravam mais do que a pessoa pagou. A guarda protege o VOCABULÁRIO, não um texto
+específico: varre toda tela que exibe um valor derivado de `ltv_cents`/`ltvCents`/
+`revenueTodayCents` atrás de "gastou"/"faturad". Mutação: `admin/clientes/[id]/ficha.tsx`, trocado
+o rótulo `"Valor atendido"` de volta para `"Já gastou"` — o defeito histórico exato citado no
+próprio comentário do arquivo, duas linhas acima. Guarda reprovou corretamente, apontando só o
+arquivo mutado: `src/app/admin/clientes/[id]/ficha.tsx nao promete gasto nem faturamento` — as
+outras quatro telas continuaram passando. Restaurado com `git checkout --`, confirmado (rótulo
+`"Valor atendido"` de volta). `tests/unit` inteiro (283/2461) verde depois.
