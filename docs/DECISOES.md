@@ -9975,3 +9975,20 @@ corretamente: `o portfólio parou de cruzar com consents.revoked_at ...: expecte
 true`. Restaurado com `git checkout --`. `crm.ts` também restaurado (a mutação de teste da
 chamada). O conserto do extrator (`portfolio-nao-promete-foto.test.ts`) foi MANTIDO, não
 revertido. `tests/unit` inteiro (283/2461) verde depois, com o conserto em vigor.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 35: `landing-nao-resolve-sessao-no-componente`
+
+Guarda de arquitetura/performance: `/` (a landing) tem que ficar estática/CDN — qualquer leitura
+de `cookies()`/`headers()`/`sessaoAtual()`/`contextoAtual()`/`criarClienteDoUsuario` dentro do
+Server Component marca a rota como dinâmica POR USUÁRIO, tirando-a do CDN. O redirecionamento de
+quem já entrou mora no `middleware.ts`, que roda em toda requisição de qualquer forma. Mutação:
+`src/app/page.tsx`, acrescentado `import { sessaoAtual } from '@/server/auth/session'` — nunca
+chamada, só o import já é o que a guarda proíbe (a mesma classe do defeito histórico: qualquer uso
+da API, não só uma chamada de verdade). Guarda reprovou corretamente nas duas asserções que
+cobrem `sessaoAtual`: `not.toMatch(/sessaoAtual/)` e o teste parametrizado
+`a landing não lê dado por usuário: 'resolve a sessão que o middleware já resolveu'`. Restaurado
+com `git checkout --`, confirmado grep (import sumiu). `tests/unit` inteiro (283/2461) verde
+depois.
