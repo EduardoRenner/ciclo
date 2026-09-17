@@ -8641,3 +8641,30 @@ suíte volta a 12/12.
 copy) é frágil — o código já reformula a mensagem várias vezes até o commit final. Buscar pela
 FUNÇÃO/CONCEITO (aqui, "quando a pergunta some" e "para onde ela leva") é o que realmente confirma
 se o critério foi cumprido.
+
+---
+
+## 2026-09-17 · Loop noturno (docs/67), item 18 · interface: dois toque-48 em texto corrido — MEDIDO, sem achado
+
+**Contexto:** varredura pela armadilha documentada no `CLAUDE.md` ("toque-48 em dois links dentro
+do MESMO parágrafo... a guarda `alvo-de-toque-tem-48` não pega isto"). Achei 2 candidatos por
+leitura de código: `(public)/termos/page.tsx` e `(public)/privacidade/page.tsx`, rodapé com dois
+`<Link toque-48>` separados por um `·` em texto corrido — o mesmo formato estrutural do bug
+original de `/cadastro`.
+
+**Medido de verdade, não deduzido** (regra do `CLAUDE.md` — "mudança que a pessoa vê se verifica
+no navegador, não se deduz do código"): sondagem `elementFromPoint` ponto a ponto, viewport mobile
+375px (onde o espaço horizontal é mais apertado), varrendo tanto o eixo vertical (±30px de cada
+link) quanto o horizontal (da borda esquerda do primeiro link até a borda direita do segundo, a
+cada 3-4px). Nos dois arquivos: transição limpa entre os dois links, passando pelo `<span>` do
+"·", sem nenhum ponto ambíguo ou "morto".
+
+**Hipótese descartada por medição.** Diferente do bug original de `/cadastro` (que tinha os dois
+`toque-48` colados sem separador visual e SEM classe de margem negativa compensando), aqui
+`-mx-2 px-2` em cada link dá espaço suficiente e o `·` central absorve a transição. **Registrado
+como "verificado, correto"**, não como não-achado silencioso — a próxima auditoria não precisa
+reconferir estes dois arquivos específicos.
+
+**Backlog explícito:** os outros 16 arquivos com múltiplas ocorrências de `toque-48` (button.tsx,
+chip.tsx, segmented.tsx e outros — a maioria é definição de componente com variantes, não dois
+links adjacentes) não foram medidos individualmente nesta rodada.
