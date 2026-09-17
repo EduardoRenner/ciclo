@@ -9644,3 +9644,27 @@ conta, open redirect (2 mecanismos), dois seeds de hash de telefone, estado vazi
 rótulo de campo, foco visível, formulário que não apaga o digitado, e boundary de erro que não
 manda o cliente pro painel. Ainda restam ~107 das ~122 guardas do backlog do `docs/68` §6 para
 uma próxima rodada.
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 16: `campanhas-nao-inventam-retorno`
+
+Guarda de dinheiro: `campaigns.booked_count`/`revenue_cents` nasceram sem escritor e a tela
+mostrava "R$ 0,00" pra toda campanha, estruturalmente, pra sempre — corrigido na migration 0054
+com atribuição de verdade por `campaign_id`. Mutação: `crm.ts`, removido `campaign_id: data.id`
+da gravação da mensagem dentro de `registrarCampanha` — exatamente o que reverteria pro "R$ 0,00
+estrutural" (sem `campaign_id` na mensagem, `receitaPorCampanha` nunca encontra nada pra somar).
+Guarda reprovou corretamente. Restaurado com `git checkout --`, árvore limpa. `tests/unit`
+inteiro (283/2461) verde depois.
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 17: `campanha-nao-compara-janelas-diferentes`
+
+Guarda de dinheiro sutil: a tela de campanhas comparava um numerador do MÊS com um denominador
+de TODA A HISTÓRIA ("N de M mensagens enviadas"), levando o dono a concluir que campanha
+converte 6% quando a campanha real convertia 30% — decisão errada (parar de fazer campanha) por
+comparar duas janelas diferentes como se fossem uma. Mutação: `atribuicao.ts`, removido
+`mensagensNaJanela: campanhas.length` do retorno de `receitaAtribuidaAoCiclo`. Guarda reprovou
+corretamente. Restaurado com `git checkout --`, árvore limpa. `tests/unit` inteiro (283/2461)
+verde depois.
