@@ -9760,3 +9760,18 @@ por `defaultCycleDays: servico.data.cycle_days` — exatamente o defeito histór
 corretamente: `expected [ Array(1) ] to deeply equal []`, apontando a chamada exata de
 `computeCycle` com a régua torta. Restaurado com `git checkout --`, confirmado grep. `tests/unit`
 inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 24: `ponto-de-pedido-tem-onde-ser-definido`
+
+Guarda de estoque: `products.reorder_point` existia desde a `0001` sem NENHUM caminho de escrita
+até 2026-09-03 — o alerta de recompra não sumia, chegava tarde (a regra "estoque ≤ ponto ou
+cobertura < 7 dias" só disparava com o produto já zerado). Testada a asserção mais sutil: zero
+tem que ser gravado, não confundido com "não mexi nisso" — o bug natural é usar `reorderPoint ?
+{...} : {}`, que trata 0 como falsy e torna impossível desligar o aviso por quantidade. Mutação:
+`server/services/estoque.ts` linha 168, trocado `entrada.reorderPoint === undefined ? {} : {...}`
+por `entrada.reorderPoint ? {...} : {}` — exatamente esse bug natural. Guarda reprovou
+corretamente: o padrão `/reorderPoint\s*===\s*undefined/` parou de casar. Restaurado com
+`git checkout --`, confirmado grep. `tests/unit` inteiro (283/2461) verde depois.
