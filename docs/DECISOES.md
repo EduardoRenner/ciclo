@@ -10008,3 +10008,20 @@ comentários aparecem. Mutação: `server/services/public-booking.ts`, removida 
 limit(5) escolhe comentários diferentes a cada carregamento`, com o `.order('id')` ausente do
 trecho capturado. Restaurado com `git checkout --`, confirmado grep (desempate de volta).
 `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 37: `onboarding-tem-saida-para-profissao-de-fora`
+
+Guarda de arquitetura sensível a `podeUsarModulo`: quando a profissão escolhida é a genérica
+("Outra profissão", `0078`), os quatro eixos (`onde`, `cobranca`, `inicio`, `ritmo`) NÃO podem ser
+gravados — eles são respondidos uma única vez, no onboarding, sem tela para corrigir depois, e um
+valor CONHECIDO e incompatível esconde módulo (`routing`/`recurrence`/`quotes`) da interface para
+sempre. Copiar os valores (que são só o `not null` da linha genérica, não resposta de ninguém)
+apagaria módulo de quem precisa dele. Mutação: `server/services/onboarding.ts`, removida a
+condição `profissao.slug === SLUG_PROFISSAO_GENERICA ? {} : {...}` e gravado os quatro eixos
+incondicionalmente sempre que há profissão — exatamente o defeito que o comentário do próprio
+arquivo descreve. Guarda reprovou corretamente: `os eixos são gravados sem passar pela condição
+da genérica: expected false to be true`. Restaurado com `git checkout --`, confirmado grep
+(condição de volta). `tests/unit` inteiro (283/2461) verde depois.
