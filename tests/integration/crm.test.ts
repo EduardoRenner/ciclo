@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 
+import { Temporal } from '@js-temporal/polyfill'
 import { createClient } from '@supabase/supabase-js'
 import dotenv from 'dotenv'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
@@ -391,28 +392,41 @@ describe('clube de assinatura', () => {
     async () => {
       const cliente = await criarCliente(svc, tenantId, { name: 'Assinante do Limite', tags: [], marketingOptIn: false })
       const plano = await criarPlano(svc, tenantId, { name: 'Plano 2x', priceCents: 8_000, sessionsPerMonth: 2, active: true })
-      // `billingDay` = hoje, pro ciclo atual cobrir "agora" sem depender de qual dia o teste roda.
-      const hoje = new Date()
-      await assinar(svc, tenantId, cliente.id, { planId: plano.id, billingDay: hoje.getUTCDate() }, 'America/Sao_Paulo')
+      /*
+       * `billingDay` tem que ser o dia LOCAL (fuso do tenant), não o dia UTC — é o que
+       * `assinaturaAtiva`/`janelaDeCobranca` usam de verdade (`Temporal.Now.instant().
+       * toZonedDateTimeISO(timezone)`). `new Date().getUTCDate()` divergia do dia local em
+       * América/São Paulo (UTC-3) durante 00h-03h UTC: o teste ancorava o ciclo num dia que,
+       * no fuso do tenant, ainda não tinha começado — as visitas caíam FORA da janela e
+       * `visitasNoCiclo` vinha 0. Medido: falhou na CI rodando às 00h39 UTC (21h39 em SP).
+       */
+      const hojeLocal = Temporal.Now.zonedDateTimeISO('America/Sao_Paulo').toPlainDate()
+      await assinar(svc, tenantId, cliente.id, { planId: plano.id, billingDay: hojeLocal.day }, 'America/Sao_Paulo')
 
       // Ainda sem visita: 2 de 2 restantes, não excedeu.
       const antes = await assinaturaAtiva(svc, tenantId, cliente.id, 'America/Sao_Paulo')
       expect(antes).toMatchObject({ restantes: 2, excedeuLimite: false })
 
-      // 3 atendimentos concluídos HOJE — passa do limite de 2.
+      // 3 atendimentos concluídos HOJE (10h, 11h, 12h NO FUSO DO TENANT) — passa do limite de 2.
       for (let i = 0; i < 3; i++) {
-        const inicio = new Date()
-        inicio.setUTCHours(10 + i, 0, 0, 0)
+        const inicio = Temporal.ZonedDateTime.from({
+          timeZone: 'America/Sao_Paulo',
+          year: hojeLocal.year,
+          month: hojeLocal.month,
+          day: hojeLocal.day,
+          hour: 10 + i,
+        }).toInstant()
+        const fim = inicio.add({ minutes: 30 })
         const { error: erroAg } = await svc.from('appointments').insert({
           tenant_id: tenantId,
           client_id: cliente.id,
           professional_id: profissionalId,
           service_id: servicoId,
-          starts_at: inicio.toISOString(),
-          ends_at: new Date(inicio.getTime() + 30 * 60_000).toISOString(),
+          starts_at: inicio.toString(),
+          ends_at: fim.toString(),
           status: 'done',
           price_cents: 5000,
-          completed_at: inicio.toISOString(),
+          completed_at: inicio.toString(),
         })
         if (erroAg) throw new Error(`seed de agendamento falhou: ${erroAg.message}`)
       }
