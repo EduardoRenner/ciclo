@@ -8575,3 +8575,17 @@ suíte volta a 4/4.
 
 **Nenhum achado.** Décimo dos 16 módulos de dinheiro confirmados por mutação real. Restam 6:
 `billing/mercado-pago.ts`, `agenda/ainda-conta-como-receita.ts`, `text/sem-amostra.ts`.
+
+---
+
+## 2026-09-17 · Loop noturno (docs/67), item 15 · dinheiro: ainda-conta-como-receita.ts — mutado, correto
+
+**Medido:** `agenda/ainda-conta-como-receita.ts` — o "previsto do dia" não pode contar
+`pending` com hora vencida (achado real de 03/09, 19 linhas em produção na época).
+
+**Mutação ao vivo:** invertida a condição `status !== 'pending'` para `=== 'pending'` (faria
+`pending` nunca decair, e `confirmed`/`arrived`/`done` decairem por hora — o oposto do que a regra
+de negócio exige). 5 de 9 casos reprovaram. Restaurado, suíte volta a 9/9.
+
+**Nenhum achado.** Décimo-primeiro dos 16 módulos de dinheiro confirmados por mutação real.
+Restam 5: `billing/mercado-pago.ts`, `text/sem-amostra.ts`.
