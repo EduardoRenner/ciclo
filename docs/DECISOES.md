@@ -8589,3 +8589,25 @@ de negócio exige). 5 de 9 casos reprovaram. Restaurado, suíte volta a 9/9.
 
 **Nenhum achado.** Décimo-primeiro dos 16 módulos de dinheiro confirmados por mutação real.
 Restam 5: `billing/mercado-pago.ts`, `text/sem-amostra.ts`.
+
+---
+
+## 2026-09-17 · Loop noturno (docs/67), item 16 · dinheiro: text/sem-amostra.ts — mutado, correto
+
+**Medido:** `text/sem-amostra.ts` (`percentualOuTraco`) — já carrega histórico de guarda-cega
+documentado no próprio arquivo (uma guarda que procurava `acertoBps === null` na TELA passou verde
+com o defeito reintroduzido em 06/09, porque a mesma comparação aparecia noutra linha; por isso a
+lógica migrou pra `core/`).
+
+**Mutação ao vivo:** trocado `bps === null || bps === undefined` por `!bps` — confundiria `0`
+(zero medido, deveria mostrar "0%") com `null`/`undefined` (sem amostra, deveria mostrar "—"),
+exatamente a dupla armadilha que o comentário do módulo descreve inteira. Reprovou no teste
+dedicado ("zero medido é 0%, e aparece" — `expected '—' to be '0%'`). Restaurado, suíte volta a
+3/3.
+
+**Nenhum achado.** Décimo-segundo e ÚLTIMO dos 16 módulos de dinheiro do backlog da Fase C do
+`docs/66` confirmado por mutação real. **Backlog fechado nesta noite: 16 de 16 módulos de dinheiro
+verificados, com 2 guardas cegas reais achadas e corrigidas** (`lucro-do-cliente.ts` item 4,
+`formatar-preco.ts` item 13) **e 1 bug de teste corrigido** (`crm.test.ts` C-07, sessão anterior).
+Nenhum bug real de código de produção sobreviveu à noite inteira de mutação — a base de dinheiro do
+CICLO está genuinamente coberta, não só supostamente coberta.
