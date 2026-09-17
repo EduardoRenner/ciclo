@@ -10304,3 +10304,18 @@ vez de reler o estado. Mutação: `(public)/[slug]/agendar/agendar.tsx` linha 48
 render em vez do parâmetro. Guarda reprovou corretamente: `a URL voltou a ser montada com o
 estado do render em vez do parâmetro`. Restaurado com `git checkout --`, confirmado grep
 (`profissionalDoFiltro` de volta). `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 54: `contraste`
+
+Guarda WCAG AA de verdade: computa luminância relativa e razão de contraste a partir dos tokens
+lidos do próprio `globals.css`, não de uma cópia — mudar uma cor sem olhar o contraste reprova o
+build. `--txt-3` já passou por três medições históricas até chegar em `#99938c` (o primeiro valor
+que passa nas quatro superfícies do tema escuro). Mutação: trocado `--txt-3: #99938c` por
+`--txt-3: #4a4640` (só a primeira ocorrência, `:root` — a segunda, em `[data-theme="dark"]`, não é
+lida pelo `token()`, que usa `.exec` e para no primeiro match). Guarda reprovou corretamente com o
+cálculo real: `txt-3 sobre --bg: expected 2.0848776339636435 to be greater than or equal to 4.5`.
+Restaurado com `git checkout --`, confirmado (`#99938c` de volta). `tests/unit` inteiro
+(283/2461) verde depois.
