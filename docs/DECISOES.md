@@ -9449,3 +9449,55 @@ virar takeover. Restaurado, confirmado `httpOnly: true` de volta na linha 40, á
 `tests/unit` inteiro (283/2461) verde depois. (`middleware.ts`, o segundo ponto que a mesma
 guarda cobre, não foi mutado nesta rodada — o mecanismo de checagem é idêntico linha por linha,
 e mutar os dois pontos do mesmo padrão não acrescenta confiança nova.)
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 5: `sw-nao-cacheia-tela-privada`
+
+Guarda que lê o `NUNCA_CACHEAR` de verdade do `public/sw.js` (o arquivo que o navegador baixa) e
+confere contra toda rota real do disco + os prefixos protegidos do `middleware.ts` — as três
+fontes lidas, nunca copiadas (o próprio docstring cita o incidente que isso existe para evitar:
+"o conserto de um job desta base deixou o irmão dele sem vigia por 5 dias" por causa de uma
+lista escrita à mão em vez de lida do disco).
+
+Mutação: removido `admin` da deny-list `NUNCA_CACHEAR` (mantendo os outros 8 prefixos). Guarda
+reprovou listando as **17 rotas exatas** de `/admin/*` que ficariam cacheáveis no service worker
+(hoje, orçamentos, estoque, config, etc.) — a auditoria completa do disco, não uma amostra.
+Restaurado com `git checkout --`, confirmado `admin` de volta na regex, árvore limpa.
+`tests/unit` inteiro (283/2461) verde depois.
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 6: `csp-nonce-exige-rota-dinamica`
+
+Guarda do incidente de 01/09/2026 (CSP com nonce + HTML cacheado bloqueou todo JavaScript de
+`/`, `/precos`, `/privacidade`, `/termos`, `/entrar` em produção, medido ao vivo). Mutação:
+`src/app/admin/layout.tsx`, trocado `export const dynamic = 'force-dynamic'` por `'auto'`.
+**Cuidado necessário nesta mutação:** a primeira tentativa só COMENTOU a linha (`//`) — e essa
+checagem específica lê o arquivo cru, sem tirar comentário, então o regex ainda casava com o
+texto comentado e a guarda passaria verde por acidente (mutação inválida, corrigida antes de
+concluir qualquer coisa). A segunda tentativa trocou o VALOR de verdade, e aí sim a guarda
+reprovou, citando o incidente completo na mensagem. Restaurado, confirmado
+`force-dynamic` de volta, árvore limpa. `tests/unit` inteiro (283/2461) verde depois.
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 7: `so-o-link-de-email-troca-a-senha`
+
+A guarda mais crítica desta rodada: previne takeover PERMANENTE de conta (achado real de
+2026-09-08 — sem a trava, cookie roubado de sessão comum trocava a senha e o `signOut({scope:
+'others'})` da mesma rota expulsava o dono de vez, sem o invasor nunca provar quem é). Mutação:
+removido o bloco `if (!veioDoLinkDeRecuperacao(sessao.metodos)) throw ...` inteiro de
+`src/app/api/v1/auth/password/reset/route.ts`. Guarda reprovou corretamente, citando o cenário
+completo de takeover na mensagem. Restaurado com `git checkout --`, confirmado o bloco de volta,
+árvore limpa. `tests/unit` inteiro (283/2461) verde depois.
+
+---
+
+## Resumo do loop de guardas-cegas até aqui (itens 1-7)
+
+Sete guardas de segurança/dinheiro/RLS mutadas e confirmadas AFIADAS, nenhuma cega: trava de
+plano no servidor (2 mecanismos), RLS de view (isolamento entre tenants), regra de lint contra
+vazamento de `service_role`, `httpOnly` do cookie de sessão, deny-list do service worker (17
+rotas do painel), e a trava contra takeover de conta via reset de senha. Todas restauradas,
+`tests/unit` inteiro verde depois de cada uma. Continuando o backlog do `docs/68` §6.
