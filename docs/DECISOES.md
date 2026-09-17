@@ -8239,3 +8239,35 @@ remover o `<PrestacaoTeaser>` de `hoje.tsx` (commit de checkpoint antes, `git ch
 casos, todos verdes. Typecheck e lint limpos. Build de produção pendente de confirmação via CI
 (local é lento nesta máquina, Windows cai pro SWC via WASM — `smart-app-control-build-lento`,
 memória).
+
+---
+
+## 2026-09-16 · Bug real achado ao investigar CI vermelha: teste C-07 usava dia UTC, não o fuso do tenant
+
+**Contexto:** a CI do commit do teaser de prestação de contas (Hoje) falhou em `crm.test.ts`,
+teste "C-07 — visita concluída no ciclo conta contra o limite". Confirmado que o commit em questão
+não toca nada de clube de assinatura — a falha era de um teste pré-existente, não relacionada.
+
+**Causa raiz, medida:** o teste ancorava `billingDay: new Date().getUTCDate()` e criava os
+agendamentos com `setUTCHours` — ambos usando o **dia calendário em UTC**. `assinaturaAtiva`/
+`janelaDeCobranca` (código de produção, correto) calculam a janela de cobrança no **fuso do
+tenant** (`Temporal.Now.instant().toZonedDateTimeISO(timezone)`). Durante a janela das 00h-03h UTC
+(21h-meianoite em América/São Paulo, UTC-3), o dia calendário diverge entre os dois: o teste
+ancorava o ciclo num dia que, no fuso do tenant, ainda não tinha começado, e os 3 agendamentos de
+teste (criados no dia UTC seguinte) caíam FORA da janela de cobrança — `visitasNoCiclo` vinha 0 em
+vez de 3. Reproduzido de verdade: a CI rodou às 00h39 UTC e a falha bateu exatamente com a hipótese;
+um rerun às 00h45 UTC (mesma janela) falhou do mesmo jeito, confirmando que não era flake de rede.
+
+**Não é bug de produção** — `assinaturaAtiva` já fazia a coisa certa desde sempre, calculando tudo
+no fuso do tenant via `Temporal`. O bug era só no SETUP do teste, que usou `Date`/UTC em vez de
+`Temporal` no fuso certo — a mesma classe de erro que `dia-do-salao-nao-e-utc.test.ts` existe pra
+prevenir no código de produção, só que aqui escapou pro próprio teste.
+
+**Corrigido:** `tests/integration/crm.test.ts` agora deriva `hojeLocal` via
+`Temporal.Now.zonedDateTimeISO('America/Sao_Paulo')` e monta os três agendamentos com
+`Temporal.ZonedDateTime.from({ timeZone: ..., year, month, day, hour })`, no mesmo fuso que o
+serviço real usa — elimina a divergência de dia independente da hora em que a CI rodar.
+
+**Não verificado localmente** — sem Docker/Supabase local nesta sessão, `test:integration` não
+roda nesta máquina (limitação já registrada em `docs/49`). Typecheck e lint do arquivo, limpos.
+Aguardando confirmação da CI.
