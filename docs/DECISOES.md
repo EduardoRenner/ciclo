@@ -10195,3 +10195,19 @@ Guarda reprovou corretamente: `o runbook manda mexer no vercel.json para lidar c
 expected [ Array(1) ] to deeply equal []`, com a linha exata mutada aparecendo na lista de
 suspeitas. Restaurado com `git checkout --`, confirmado grep (texto correto de volta).
 `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 48: `precos-nao-repete-icone`
+
+Guarda de HTML/renderização: a lista de planos usa `<symbol>`+`<use>` para não inlinar o SVG do
+ícone 24 vezes — a mesma armadilha de cascata das estrelas da página do salão. `fill="none"` tem
+que ficar em cada `<svg>` que USA, nunca no `<symbol>`: dentro do símbolo o atributo fica mais
+perto do `<path>` do que a classe do elemento externo, ganha na cascata CSS, e o ícone some ou
+inverte — foi assim que a primeira versão do conserto análogo (estrelas) renderizou 25 estrelas
+vazadas com typecheck, lint e suíte inteira verdes. Mutação: `(public)/precos/page.tsx`, removido
+`fill="none"` do primeiro `<svg aria-hidden ...>` (o do `ID_INCLUI`). Guarda reprovou
+corretamente: `expected '<svg aria-hidden viewBox="0 0 24 24" …' to match /fill="none"/`.
+Restaurado com `git checkout --`, confirmado grep (`fill="none"` de volta nos dois `<svg>`).
+`tests/unit` inteiro (283/2461) verde depois.
