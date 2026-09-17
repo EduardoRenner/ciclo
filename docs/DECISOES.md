@@ -8391,3 +8391,19 @@ verde, `tsc`/`eslint` limpos.
 essa mutação só CONFIRMOU. Esta é uma guarda que estava genuinamente cega — se o bug real tivesse
 sido introduzido em produção (ex.: um refactor que trocasse a variável por engano), a suíte não
 teria pego. É exatamente a classe de achado que a Fase A/C do `docs/66` existe pra caçar.
+
+---
+
+## 2026-09-17 · Loop noturno (docs/67), item 5 · dinheiro: custo-do-servico.ts — mutado, correto
+
+**Medido:** `comanda/custo-do-servico.ts` (docs/49 I-02, custo de insumo por serviço). Já carrega
+histórico de guarda-cega documentado no próprio arquivo (`materialIncerto`, achado em 06/09).
+
+**Mutação ao vivo:** trocado `avgCostCents <= 0` por `avgCostCents < 0` na detecção de produto sem
+custo registrado (mutação plausível: alguém "simplifica" achando que `< 0` já cobre "sem custo").
+3 dos 10 casos reprovaram corretamente, incluindo o teste que já existe especificamente pra essa
+fronteira (`avgCostCents: 0` no meio de produtos com custo real). Restaurado, `git status` idêntico
+ao commit, suíte volta a 10/10 verde.
+
+**Nenhum achado — guarda robusta, não cega.** Segundo dos 16 módulos de dinheiro confirmados por
+mutação real (o primeiro foi `taxa-por-forma.ts`, item 3). Restam 13.
