@@ -10319,3 +10319,19 @@ lida pelo `token()`, que usa `.exec` e para no primeiro match). Guarda reprovou 
 cálculo real: `txt-3 sobre --bg: expected 2.0848776339636435 to be greater than or equal to 4.5`.
 Restaurado com `git checkout --`, confirmado (`#99938c` de volta). `tests/unit` inteiro
 (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 55: `cn`
+
+Guarda de infraestrutura de estilo, comportamental de verdade (não varredura de texto): o
+`tailwind-merge` não conhece a escala tipográfica própria do CICLO (`numero`, `titulo`, `stat`,
+`corpo`, `secundario`, `label`, `overline`) e, sem registro explícito em `src/lib/utils.ts`,
+classifica `text-corpo` como COR em vez de tamanho — então qualquer `text-acc-2`/`text-txt-2` que
+viesse depois na mesma chamada de `cn()` apagava o tamanho da fonte, derrubando a hierarquia
+visual inteira para o tamanho herdado, com o CSS certo e a tela errada. Mutação: `src/lib/utils.ts`,
+removido `'secundario'` do array `ESCALA`. Guarda reprovou corretamente, e de um jeito que mostra o
+bug real acontecendo: `expected 'font-semibold text-acc-2' to contain 'text-secundario'` — o
+`tailwind-merge` de fato engoliu a classe de tamanho. Restaurado com `git checkout --`, confirmado
+(`'secundario'` de volta no array). `tests/unit` inteiro (283/2461) verde depois.
