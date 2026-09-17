@@ -9619,3 +9619,28 @@ cada tentativa). Mutação: `entrar/formulario.tsx`, adicionado `action={() => {
 pra impedir). Guarda reprovou corretamente com a mensagem completa do incidente. Restaurado com
 `git checkout --`, confirmado que o arquivo voltou ao estado original. `tests/unit` inteiro
 (283/2461) verde depois.
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 15: `erro-nao-manda-cliente-pro-admin`
+
+Guarda que varre TODO boundary (`error.tsx`, `global-error.tsx`, `not-found.tsx`, qualquer um
+novo) por `href="/admin`, prevenindo que o cliente do salão caia num link de login que não é
+dele quando o app quebra. Mutação: `src/app/global-error.tsx`, trocado `href="/"` por
+`href="/admin"` — exatamente o cenário que o próprio docstring da guarda antecipa ("um
+`href='/admin'` acrescentado a `global-error.tsx` amanhã passaria verde"). Guarda reprovou
+corretamente. Restaurado com `git checkout --`, árvore limpa. `tests/unit` inteiro (283/2461)
+verde depois.
+
+---
+
+## Resumo do loop de guardas-cegas até aqui (itens 1-15)
+
+Quinze guardas mutadas nesta rodada. Catorze confirmadas AFIADAS de primeira; uma
+(`seed-que-grava-telefone-grava-hash`, item 9) estava CEGA de verdade e foi corrigida com o
+mesmo rigor da guarda de segurança do loop de performance. Cobertura: trava de plano (2
+mecanismos), RLS de view, `service_role`, `httpOnly`, deny-list do service worker, takeover de
+conta, open redirect (2 mecanismos), dois seeds de hash de telefone, estado vazio com saída,
+rótulo de campo, foco visível, formulário que não apaga o digitado, e boundary de erro que não
+manda o cliente pro painel. Ainda restam ~107 das ~122 guardas do backlog do `docs/68` §6 para
+uma próxima rodada.
