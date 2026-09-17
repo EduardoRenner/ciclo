@@ -10025,3 +10025,22 @@ incondicionalmente sempre que há profissão — exatamente o defeito que o come
 arquivo descreve. Guarda reprovou corretamente: `os eixos são gravados sem passar pela condição
 da genérica: expected false to be true`. Restaurado com `git checkout --`, confirmado grep
 (condição de volta). `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 38: `hoje-nao-degrada-em-silencio`
+
+Guarda contra falha silenciosa: a tela "Hoje" tem `.catch()` de propósito nas consultas de CRM que
+a enriquecem — nunca derruba a tela mais aberta do app — mas cada `.catch()` precisa REGISTRAR a
+falha antes de devolver o padrão. Dói mais nesta tela porque `deveMostrarHeroiDoMotor` só mostra o
+herói do Motor quando `atribuicaoCount > 0`, e o `catch` da atribuição devolve `count: 0` — o
+MESMO valor de "não houve atribuição nenhuma". Sem log, uma falha transitória reverte a melhoria
+do F1 e a tela volta a abrir com "R$ 0,00" para sempre, sem ninguém saber. Mutação:
+`admin/hoje/page.tsx`, no `.catch()` de `centralDeAcoes`, removido o `console.warn(...)` e o
+parâmetro `erro`, deixando só `return { titulo: '', acoes: [] }`. Guarda reprovou corretamente em
+DUAS descrições — a que testa os dois primeiros `.catch()` de `hoje/page.tsx` por índice, e a que
+varre TODAS as telas que chamam `receitaAtribuidaAoCiclo`/`receitaPorCampanha` (a guarda "irmã" do
+mesmo arquivo, que nasceu porque o conserto original só cobriu um lugar): `expected false to be
+true` nas duas. Restaurado com `git checkout --`, confirmado grep (o `console.warn` e o evento
+`central_de_acoes_indisponivel` de volta). `tests/unit` inteiro (283/2461) verde depois.
