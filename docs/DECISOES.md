@@ -9069,3 +9069,14 @@ erro já existe na tela — sem isso, o clique deixaria de ser saída de recuper
 este componente (é Client Component sem harness de render, mesma lacuna já documentada em outras
 telas públicas). A prova real fica para depois do deploy: reabrir a mesma tela e repetir o clique,
 conferindo no Network que sobra **uma** requisição, não duas.
+
+**Atualização — prova real, com um desvio no caminho.** As duas primeiras conferências pós-deploy
+ainda mostravam duas requisições, e por um motivo que não era o código: o service worker deste
+navegador de teste (perfil persistente entre as várias iterações do loop) ainda estava ativo na
+versão do deploy ANTERIOR (`sw.js?v=be9cf7c…`, confirmado via `navigator.serviceWorker
+.getRegistrations()`), servindo o chunk JS antigo por trás do cache-first de `/_next/static/*` —
+mesmo a página HTML chegando fresca (`x-vercel-cache: MISS`). Depois de `unregister()` +
+`caches.delete()` + recarregar, o worker novo (`v=98716b1…`) assumiu e uma aba nova confirmou: UMA
+requisição na montagem, ZERO a mais ao tocar no serviço já selecionado. Conserto real, medido de
+verdade — o falso negativo era do ambiente de teste, não do código (o design do `sw.js`,
+`skipWaiting()`+`clients.claim()`, já está correto; não é achado novo).
