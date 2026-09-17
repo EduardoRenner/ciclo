@@ -9807,3 +9807,18 @@ o botão e o limitador só freia depois de já ter pago o custo. Mutação:
 reprovou corretamente na asserção de posição: `o limitador ficou depois do recálculo: expected
 1286 to be less than 826`. Restaurado com `git checkout --`, confirmado grep (limitador de volta
 antes de recomputarCiclosDoTenant). `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 27: `meu-plano-cancelar-e-um-clique`
+
+Guarda de billing/UX: `docs/18` Fase K manda "Cancelar" ter a mesma paridade de cliques que
+"Assinar" — um único `onClick`, sem modal de confirmação, sem `useTransition` (que derruba a tela
+inteira se a Action rejeitar no React 19) e SEMPRE com `Idempotency-Key`, porque um duplo-clique
+ou um retry de rede não pode disparar dois cancelamentos. Testada a asserção do cabeçalho de
+idempotência. Mutação: `admin/config/meu-plano/cancelar-assinatura.tsx` linha 24, removida a
+chave `'idempotency-key': crypto.randomUUID()` do objeto `headers` do `fetch`, deixando só
+`content-type` — a "simplificação" natural de quem mexe nesse trecho sem saber por que ela está
+lá. Guarda reprovou corretamente na asserção `/['"]idempotency-key['"]/i`. Restaurado com
+`git checkout --`, confirmado grep. `tests/unit` inteiro (283/2461) verde depois.
