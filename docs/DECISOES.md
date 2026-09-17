@@ -9775,3 +9775,19 @@ tem que ser gravado, não confundido com "não mexi nisso" — o bug natural é 
 por `entrada.reorderPoint ? {...} : {}` — exatamente esse bug natural. Guarda reprovou
 corretamente: o padrão `/reorderPoint\s*===\s*undefined/` parou de casar. Restaurado com
 `git checkout --`, confirmado grep. `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 25: `tela-que-desconta-produto-sabe-a-lacuna`
+
+Guarda de honestidade numérica: quatro telas afirmam que o número mostrado já desconta o custo
+do produto — mas depois da `0069` esse custo é zero até o dono registrar a primeira compra, e
+cada tela precisa CARREGAR o sinal da lacuna (`servicosSemMaterial`/`material_incerto`/
+`visitasSemMaterialConfiavel`), não só escrever a copy de um jeito. Mutação:
+`admin/caixa/caixa.tsx` — renomeado `servicosSemMaterial` para `qtdServicosSemMaterial` em todas
+as 5 ocorrências (tipo, destructure, 3 usos), apagando o identificador que a guarda procura em
+todo o arquivo. Guarda reprovou corretamente, apontando exatamente
+`src/app/admin/caixa/caixa.tsx`: `expected false to be true`. As outras três telas continuaram
+passando, como esperado — só a mutada quebrou. Restaurado com `git checkout --`, confirmado grep
+(5 ocorrências do nome original, 0 do renomeado). `tests/unit` inteiro (283/2461) verde depois.
