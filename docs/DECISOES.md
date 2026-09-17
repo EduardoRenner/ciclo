@@ -10389,3 +10389,19 @@ alguém o tivesse achado redundante com a explicação completa de `/admin/recup
 reprovou corretamente: `expect(hoje).toMatch(/<PrestacaoTeaser contas=\{prestacaoDeContas\}/)`
 falhou. Restaurado com `git checkout --`, confirmado grep (`<PrestacaoTeaser` de volta).
 `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 59: `lista-de-clientes-tem-como-chegar-no-resto`
+
+Guarda de "duas fontes de verdade que precisam concordar": a lista de clientes decide se mostra o
+botão "carregar mais" comparando o tamanho da página recebida contra `PAGINA` (a constante da
+TELA) — e esse número precisa ser exatamente o mesmo que o padrão de `limite` do SERVIÇO
+(`clientes.ts`). Medido historicamente: cabeçalho anunciava "437 na carteira", a lista trazia 50,
+e as outras 387 só existiam para quem soubesse o nome de cor. Se os dois números divergirem hoje,
+nenhum dá erro — o botão some cedo ou promete página que não existe para sempre. Mutação:
+`admin/clientes/lista.tsx`, trocado `const PAGINA = 50` por `const PAGINA = 100`, deixando de
+bater com o `?? 50` de `clientes.ts`. Guarda reprovou corretamente: `expected '100' to be '50'`.
+Restaurado com `git checkout --`, confirmado (`PAGINA = 50` de volta). `tests/unit` inteiro
+(283/2461) verde depois.
