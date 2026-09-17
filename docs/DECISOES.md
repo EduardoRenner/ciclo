@@ -9273,3 +9273,12 @@ arquivo (`recurso-pago-avisa-antes`, `toda-rota-travada-tem-tela-que-avisa`,
 `alvo-de-toque-tem-largura`, `falar-com-a-gente-tem-com-quem`,
 `precos-nunca-sozinho-no-app-nativo`) — nenhuma âncora nessas strings específicas. `tsc`,
 `eslint` e `tests/unit` (283/2461) verdes.
+
+**Quarta ocorrência, achada na varredura de `src/server`:** `custo-fixo.ts`, mensagem de
+validação Zod do MESMO campo cujo `aria-label` já foi corrigido acima —
+`horasPorMes: z.number().min(1, 'Informe quantas horas o salão fica aberto por mês.')...` — quem
+digitasse um valor inválido (0, ou negativo) via API veria a mesma palavra errada na mensagem de
+erro. Trocado por "negócio". Varredura completa de `src/server` por `salão` dentro de string
+(não comentário) não achou mais nenhuma ocorrência além de um `.describe()` de ferramenta do
+assistente de IA (metadata para o Gemini, nunca mostrado a um humano — não é achado). Escrito o
+plano completo desta frente em `docs/71-PLANO-AUDITORIA-COPY-INTERFACE.md`, a pedido do Eduardo.
