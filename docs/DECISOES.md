@@ -9597,3 +9597,25 @@ confirmação → restauração). Cobertura: trava de plano (2 mecanismos), RLS 
 lint contra `service_role`, `httpOnly` do cookie, deny-list do service worker, takeover de
 conta via reset de senha, open redirect no login (2 mecanismos), dois seeds de hash de
 telefone, estado vazio com saída, e rótulo de campo. Continuando o backlog do `docs/68` §6.
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 13: `foco-visivel-nao-e-apagado`
+
+Guarda de acessibilidade por teclado (WCAG 2.4.7): acha todo `outline-none` sem substituto no
+mesmo `className`. Mutação: `components/shell/assistente-flutuante.tsx`, removido
+`focus:border-acc-2` do campo de pergunta do assistente, deixando só `outline-none`. Guarda
+reprovou corretamente, apontando o arquivo e o trecho exato do `className`. Restaurado com
+`git checkout --`, árvore limpa. `tests/unit` inteiro (283/2461) verde depois.
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 14: `formulario-nao-apaga-o-que-foi-digitado`
+
+Guarda do incidente "a etapa de login está muito ruim" (React 19: `<form action={fn}>` reseta o
+formulário mesmo na FALHA — errar a senha limpava e-mail e senha, obrigando redigitar tudo a
+cada tentativa). Mutação: `entrar/formulario.tsx`, adicionado `action={() => {}}` na tag
+`<form>` (mantendo o `onSubmit` real ao lado, simulando a regressão exata que o guard existe
+pra impedir). Guarda reprovou corretamente com a mensagem completa do incidente. Restaurado com
+`git checkout --`, confirmado que o arquivo voltou ao estado original. `tests/unit` inteiro
+(283/2461) verde depois.
