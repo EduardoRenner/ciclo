@@ -8925,3 +8925,24 @@ lado profissional.
 
 **Nenhum achado.** Não submeti o formulário (criaria agendamento real em produção — fora do
 permitido sem autorização explícita). Seguindo pro fluxo de confirmação/cancelamento por token.
+
+---
+
+## 2026-09-17 · Loop cliente final, item 2 · confirmar/cancelar e avaliação por token — código verificado
+
+**Medido:** `confirmar/[token]/confirmar.tsx` e `avaliar/[token]/avaliar.tsx` — as duas telas mais
+sensíveis da experiência do cliente (decidir sobre o próprio agendamento, avaliar o atendimento).
+
+**Achados de qualidade já corrigidos, confirmados presentes:**
+- Confirmar: ação só dispara no toque (nunca ao abrir a página) — incidente de 19/08 já resolvido.
+- Confirmar: distingue falha de REDE (retry oferecido) de link recusado pelo servidor (sem retry,
+  orienta falar com quem atende) — não trata as duas igual.
+- Confirmar: botões se desabilitam um ao outro com `motivoDesabilitado` explicando por quê pro
+  leitor de tela (não só "indisponível" sem motivo).
+- Avaliar: `<label>` de verdade no campo de comentário (não só placeholder).
+- Avaliar: link de indicação SÓ aparece com nota ≥ 4 — **conferido no servidor**
+  (`NOTA_MINIMA_PARA_INDICAR = 4` em `avaliacoes.ts`), não só confiado no comentário do frontend.
+- Avaliar: copy do "indique um amigo" não promete valor em reais (decisão consciente, `docs/30`).
+
+**Nenhum achado novo.** As duas telas já passaram por auditoria própria documentada no código.
+Seguindo pros textos que o cliente recebe por WhatsApp (`mensagens-prontas.ts`).
