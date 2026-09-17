@@ -9992,3 +9992,19 @@ cobrem `sessaoAtual`: `not.toMatch(/sessaoAtual/)` e o teste parametrizado
 `a landing não lê dado por usuário: 'resolve a sessão que o middleware já resolveu'`. Restaurado
 com `git checkout --`, confirmado grep (import sumiu). `tests/unit` inteiro (283/2461) verde
 depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 36: `ordem-de-lista-nao-empata`
+
+Guarda de correção de dados: ordenar por `created_at` sem desempate devolve ordem INSTÁVEL quando
+várias linhas nascem no mesmo instante — garantido em importação/seed, improvável mas real entre
+pessoas de verdade. Medido em 04/09 no `dom-rocha`: dois `curl` seguidos na mesma página traziam
+comentários diferentes. Testado o caso de avaliações públicas, onde o empate muda QUAIS 5
+comentários aparecem. Mutação: `server/services/public-booking.ts`, removida a linha
+`.order('id', { ascending: false })` que desempata `.order('created_at', ...)` antes do
+`.limit(5)` — exatamente o defeito histórico. Guarda reprovou corretamente: `sem desempate, o
+limit(5) escolhe comentários diferentes a cada carregamento`, com o `.order('id')` ausente do
+trecho capturado. Restaurado com `git checkout --`, confirmado grep (desempate de volta).
+`tests/unit` inteiro (283/2461) verde depois.
