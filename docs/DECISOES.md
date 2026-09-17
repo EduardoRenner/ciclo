@@ -9411,3 +9411,41 @@ reprovou corretamente: `expected [] received ["profissionais"]`. Restaurado, ár
 
 Guarda não é cega — as duas metades reprovam de verdade. `tests/unit` inteiro (283/2461) verde
 depois de cada restauração.
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 2: `view-nao-fura-a-rls`
+
+A guarda mais crítica de isolamento entre tenants (a única desta base que, se cega, vaza dado de
+UM salão pro OUTRO — todos os outros achados de 2026-09-08 eram vazamento dentro do mesmo
+tenant). Mutação: `supabase/migrations/0001_initial.sql:798`, removido `with (security_invoker =
+true)` da declaração de `v_daily_cash`. Guarda reprovou corretamente: `expected [] received
+["0001_initial.sql → v_daily_cash"]`, com a mensagem certa sobre RLS furada. Restaurado com
+`git checkout --`, confirmado que a linha 798 voltou a ter `security_invoker = true`, árvore
+limpa. `tests/unit` inteiro (283/2461) verde depois.
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 3: `service-role-nao-escapa-por-colchete`
+
+Guarda diferente das anteriores: em vez de varrer código-fonte, testa a REGRA de ESLint
+(`eslint-rules/index.mjs`) diretamente via `RuleTester`. Mutação: removido o visitor `Literal`
+da regra `service-client-confinado` (o visitor que existe precisamente porque
+`process.env['SUPABASE_SERVICE_ROLE_KEY']` usa um `Literal`, não um `Identifier`, e por isso
+escapava da regra original). 2 dos 7 casos do teste reprovaram exatamente nos dois exemplos de
+colchete (`process.env['...']` e `mod['createServiceClient']`) — `expected 1, received 0`, nos
+dois lugares certos. Restaurado com `git checkout --`, confirmado o visitor de volta, árvore
+limpa. `tests/unit` inteiro (283/2461) verde depois.
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 4: `cookie-de-sessao-e-httponly`
+
+Guarda de sequestro de sessão: sem `httpOnly`, XSS vira takeover duradouro (o refresh token
+sobrevive ao fechar a aba). Mutação: `src/server/db/server-client.ts:40`, removido `httpOnly:
+true` de `cookieOptions` (mantendo `secure`/`sameSite`, simulando exatamente o descuido que o
+docstring da guarda descreve). Guarda reprovou corretamente com a mensagem completa sobre XSS
+virar takeover. Restaurado, confirmado `httpOnly: true` de volta na linha 40, árvore limpa.
+`tests/unit` inteiro (283/2461) verde depois. (`middleware.ts`, o segundo ponto que a mesma
+guarda cobre, não foi mutado nesta rodada — o mecanismo de checagem é idêntico linha por linha,
+e mutar os dois pontos do mesmo padrão não acrescenta confiança nova.)
