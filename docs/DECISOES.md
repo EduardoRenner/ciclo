@@ -10211,3 +10211,29 @@ vazadas com typecheck, lint e suíte inteira verdes. Mutação: `(public)/precos
 corretamente: `expected '<svg aria-hidden viewBox="0 0 24 24" …' to match /fill="none"/`.
 Restaurado com `git checkout --`, confirmado grep (`fill="none"` de volta nos dois `<svg>`).
 `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 49: `estrelas-nao-repetem-o-svg` ERA CEGA, corrigida
+
+Guarda da mesma família cascata-de-`fill` do item 48, mas para a tela do salão (`[slug]/secoes.tsx`)
+— duas estruturas `<symbol>`+`<use>` na mesma tela: a seta do serviço (`ID_SETA`) e a estrela da
+avaliação (`ID_ESTRELA`). Mutação: removida a linha `fill="none"` do `<svg>` que usa `ID_ESTRELA`
+(a estrela).
+
+**A guarda passou verde.** Raiz: o teste "o `<svg>` que usa o símbolo define `fill="none"`" (sob o
+describe "as estrelas...") fazia `src.indexOf('<use')` — o PRIMEIRO `<use` do arquivo inteiro, não
+o da estrela. A seta (`ID_SETA`) é declarada e usada ANTES da estrela no arquivo (linha ~269 contra
+~457), então `indexOf('<use')` sempre pegava o `<use>` da SETA, e `lastIndexOf('<svg', i)` pegava o
+`<svg>` da seta junto — um elemento que o teste nunca tocou e que estava correto por acidente.
+Mutar o `fill="none"` da ESTRELA de verdade nunca era visto por este teste específico. O teste
+irmão da seta, dois blocos abaixo no mesmo arquivo, já fazia certo (`indexOf('#${ID_SETA}')`) — a
+técnica existia, só não tinha sido aplicada aqui.
+
+**Conserto:** trocado `src.indexOf('<use')` por `src.indexOf('#${ID_ESTRELA}')`, ancorando no
+símbolo certo, com docstring explicando o achado. **Reprovação com a MESMA mutação ainda aplicada:**
+`expected ... to match /fill="none"/` recebendo o `<svg>` da estrela sem o atributo — confirmando
+o conserto antes de restaurar. `secoes.tsx` restaurado com `git checkout --`. O conserto da guarda
+(`estrelas-nao-repetem-o-svg.test.ts`) foi MANTIDO. `tests/unit` inteiro (283/2461) verde depois,
+com o conserto em vigor.

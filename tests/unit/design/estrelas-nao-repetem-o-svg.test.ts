@@ -72,8 +72,15 @@ describe('as estrelas da avaliação não repetem o SVG', () => {
   })
 
   it('o <svg> que usa o símbolo define fill="none" — é ele que a classe sobrepõe', () => {
+    /*
+     * `src.indexOf('<use')` pega o PRIMEIRO `<use` do arquivo — e é o da SETA (linha ~269), que
+     * vem antes do da estrela (linha ~457). O teste, sob o describe "estrelas", acabava conferindo
+     * o `<svg>` da seta, sempre correto por não ter sido tocado, e nunca o da estrela — mutar o
+     * `fill="none"` da estrela passava verde. Âncora no `#${ID_ESTRELA}`, como o teste irmão da
+     * seta já faz corretamente logo abaixo.
+     */
     const src = fonte()
-    const i = src.indexOf('<use')
+    const i = src.indexOf('#${ID_ESTRELA}')
     const svgQueUsa = src.slice(src.lastIndexOf('<svg', i), i)
     expect(svgQueUsa).toMatch(/fill="none"/)
   })
