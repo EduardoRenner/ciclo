@@ -10353,3 +10353,23 @@ próprio comentário do arquivo, duas linhas acima. Guarda reprovou corretamente
 arquivo mutado: `src/app/admin/clientes/[id]/ficha.tsx nao promete gasto nem faturamento` — as
 outras quatro telas continuaram passando. Restaurado com `git checkout --`, confirmado (rótulo
 `"Valor atendido"` de volta). `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 57: `agendamento-anuncia-mudanca`
+
+Guarda de acessibilidade (WCAG 4.1.3, Status Messages): a página de agendamento pública muda
+inteira sem trocar de rota (dia → horários, horário → resumo), e sem `aria-live` o leitor de tela
+não sabe. A guarda inteira tem 19 asserções, uma delas nascida de um achado DENTRO do próprio
+conserto: o texto anunciado testava "dia fechado" ANTES de "sem horários", enquanto o texto
+VISÍVEL só consulta `diasFechados` DENTRO do caso "zero horários" — com o dia fora do expediente
+padrão do SALÃO mas um profissional atendendo mesmo assim (`diasFechados` é o padrão, não a
+exceção por profissional), a tela mostrava 12 horários e o leitor de tela ouvia "o salão não
+abre". Mutação: `(public)/[slug]/agendar/agendar.tsx`, invertida a ordem do ternário — `diasFechados
+.has(dia)` avaliado ANTES de `slots.length === 0` — reproduzindo exatamente esse defeito histórico
+(uma das 8 mutações desta tela até agora — a mais precisa de todas, tocando 1 dos 5 ramos do
+ternário sem afetar os outros 18 testes). Guarda reprovou corretamente, só na asserção certa: `o
+anúncio testa "dia fechado" ANTES de "sem horários" ...: expected 264 to be less than 172` — as
+outras 18 continuaram verdes. Restaurado com `git checkout --`, confirmado (ordem original de
+volta). `tests/unit` inteiro (283/2461) verde depois.
