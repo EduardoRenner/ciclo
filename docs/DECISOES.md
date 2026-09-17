@@ -10373,3 +10373,19 @@ ternário sem afetar os outros 18 testes). Guarda reprovou corretamente, só na 
 anúncio testa "dia fechado" ANTES de "sem horários" ...: expected 264 to be less than 172` — as
 outras 18 continuaram verdes. Restaurado com `git checkout --`, confirmado (ordem original de
 volta). `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 58: `hoje-mostra-prestacao-de-contas`
+
+Guarda de diferencial de produto (`docs/45` §1.4, Blue Ocean): a prestação de contas do Motor de
+Ciclo é o único recurso que nenhum dos seis concorrentes pesquisados tem, marcado em `docs/48`
+como a fraqueza "Dono ENXERGA sem explicação? Não". Morava só em `/admin/recuperar` e no resumo de
+`/admin/mes`, telas que o dono abre por escolha — o teaser em `/admin/hoje` (a tela que se abre
+sozinha) é o que garante que ele apareça sem precisar procurar. Mutação: `admin/hoje/hoje.tsx`,
+trocado `<PrestacaoTeaser contas={prestacaoDeContas} />` por `{null}` — removendo o teaser como se
+alguém o tivesse achado redundante com a explicação completa de `/admin/recuperar`. Guarda
+reprovou corretamente: `expect(hoje).toMatch(/<PrestacaoTeaser contas=\{prestacaoDeContas\}/)`
+falhou. Restaurado com `git checkout --`, confirmado grep (`<PrestacaoTeaser` de volta).
+`tests/unit` inteiro (283/2461) verde depois.
