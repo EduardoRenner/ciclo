@@ -8848,3 +8848,20 @@ que o teste certo, e só ele, reagiu).
 **Nenhum achado.** Regra 11 do `CLAUDE.md` (nunca hard-delete de histórico) cumprida de fato,
 confirmada por dois métodos independentes, não só pela guarda existente. Backlog Fase A: 7 guardas
 antigas confirmadas nesta noite. Restam ~123.
+
+---
+
+## 2026-09-17 · Loop noturno (docs/67), item 30 · Fase I: toda-rota-passa-pelo-rota.ts — mutado, correto
+
+**Medido:** `toda-rota-passa-pelo-rota.test.ts` — a guarda mais estrutural da API (garante que toda
+rota herda teto de taxa, checagem de Origin, envelope de erro sem vazamento de mensagem crua do
+Postgres, e log com `request_id`). Nasceu de incidente real (01/09: `/api/health` vazava
+`error.message` cru do Postgres por estar fora do `rota()`).
+
+**Mutação ao vivo:** esvaziado `FORA_DO_ROTA` (a lista de exceções documentadas) — simula alguém
+removendo a justificativa de `/api/health` sem ele voltar a usar `rota()`. Reprovou em 2 dos 5
+casos, com a mensagem exata do incidente histórico. Restaurado, `pnpm test:unit` completo (283
+arquivos, 2461 casos) verde.
+
+**Nenhum achado.** Backlog Fase I (assert-vazio): 2 de 39 arquivos amostrados nesta noite
+(`indicacao-no-gratis.test.ts` item 22, este). Restam 37.
