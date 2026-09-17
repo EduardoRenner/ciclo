@@ -8865,3 +8865,26 @@ arquivos, 2461 casos) verde.
 
 **Nenhum achado.** Backlog Fase I (assert-vazio): 2 de 39 arquivos amostrados nesta noite
 (`indicacao-no-gratis.test.ts` item 22, este). Restam 37.
+
+---
+
+## 2026-09-17 · Loop noturno (docs/67), item 31 · Fase I: escrita-passa-por-idempotencia.ts — mutado, correto
+
+**Medido:** `escrita-passa-por-idempotencia.test.ts` — a guarda exaustiva da regra 6 do `CLAUDE.md`.
+Reconcilia exatamente o achado manual do item 2 desta noite (23 rotas sem `comIdempotencia`,
+verificadas uma a uma na hora) — aqui já existe uma guarda automática com a MESMA lista, motivo
+escrito por rota, e uma sub-lista `ONDE_REPETIR_CUSTA_DINHEIRO` que trava especificamente as rotas
+de dinheiro (`wallet/credit`, `wallet/debit`, `tickets/[id]/close`, `tickets/[id]/items`) contra
+entrarem na lista de isentas.
+
+**Mutação ao vivo:** removido `comIdempotencia(...)` de `wallet/debit/route.ts` — dinheiro sem
+proteção de duplicação. Reprovou em 2 dos 6 casos, incluindo a asserção dedicada "onde repetir
+custa dinheiro, a idempotência está lá". Restaurado, `pnpm test:unit` completo (283/2461) verde.
+
+**Achado de bônus:** o próprio arquivo documenta que a MEDIÇÃO MANUAL que motivou a guarda (52 de
+80 rotas protegidas) estava errada — o número real era 49 — porque a varredura por `grep` caiu na
+mesma armadilha nº 1 que a guarda existe pra evitar (casou com o COMENTÁRIO, não a chamada). Isso
+bate exatamente com a metodologia usada no item 2 desta noite; a guarda automática é mais confiável
+que a contagem manual que eu mesmo fiz.
+
+**Nenhum achado de bug.** Backlog Fase I: 3 de 39 arquivos amostrados. Restam 36.
