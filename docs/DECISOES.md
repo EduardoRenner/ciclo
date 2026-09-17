@@ -10092,3 +10092,16 @@ original. Guarda reprovou corretamente: `a checagem de vulnerabilidade tem que v
 invertida, um pacote chamado "network-qualquer-coisa" com falha alta é engolido como problema de
 rede: expected 709 to be less than 349`. Restaurado com `git checkout --`, confirmado grep (ordem
 de volta: vulnerabilidade antes de rede). `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 42: `seo-nao-apodrece`
+
+Guarda de SEO/segurança — "SEO é a área que apodrece mais calada: nada quebra, nada fica
+vermelho". Testado o bloqueio de indexação: `/admin` precisa continuar no `disallow` do
+`robots.ts` — é a primeira barreira, antes mesmo do crawler abrir a rota (a página em si já tem
+`robots: noindex` como defesa em profundidade, mas isso não protege quem só olha o
+`robots.txt`). Mutação: `src/app/robots.ts`, removido `'/admin'` do array `disallow`. Guarda
+reprovou corretamente: `/admin saiu do disallow do robots`. Restaurado com `git checkout --`,
+confirmado grep (`/admin` de volta). `tests/unit` inteiro (283/2461) verde depois.
