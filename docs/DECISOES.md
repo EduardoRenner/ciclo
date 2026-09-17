@@ -8451,3 +8451,17 @@ diferença de 673 = o `fixedCostCents` do caso de teste). Restaurado, suíte vol
 
 **Nenhum achado.** Quarto dos 16 módulos de dinheiro confirmados por mutação real. A cadeia
 completa (custo-fixo → sobra-explicada → tela) está genuinamente sem o defeito que a motivou.
+
+---
+
+## 2026-09-17 · Loop noturno (docs/67), item 8 · dinheiro: taxa-de-pagamento.ts — mutado, correto
+
+**Medido:** `comanda/taxa-de-pagamento.ts` (`calcularTaxaDaMaquininha`, base bps/10.000).
+
+**Mutação ao vivo:** trocado `/ 10_000` por `/ 100` (confusão bps↔percentual). 3 de 17 casos
+reprovaram (`expected 41880 to be 419`). Restaurado, suíte volta a 17/17.
+
+**Nenhum achado.** Quinto dos 16 módulos de dinheiro confirmados por mutação real. Restam 11:
+`caixa/concentracao.ts`, `comanda/totals.ts`, `loyalty/margem-do-clube.ts`,
+`loyalty/raio-x-de-recorrencia.ts`, `billing/mercado-pago.ts`, `pricing/formatar.ts`,
+`pricing/sinal.ts`, `agenda/ainda-conta-como-receita.ts`, `text/sem-amostra.ts`.
