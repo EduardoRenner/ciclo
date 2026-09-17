@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
 import PageHeader from '@/components/ui/page-header'
-import { contextoAtual } from '@/server/auth/tenant'
+import { contextoDoPainel } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { listarFicha, listarProdutosParaFicha } from '@/server/services/ficha-de-consumo'
 import { listarProdutosAtivos } from '@/server/services/estoque'
@@ -21,7 +21,7 @@ export default async function PaginaFichaDeConsumo({ params }: { params: Promise
   const { id } = await params
   if (!UUID.test(id)) notFound()
 
-  const ctx = await contextoAtual(new Request('https://interno/config/servicos/ficha', { headers: await headers() }))
+  const ctx = await contextoDoPainel(new Request('https://interno/config/servicos/ficha', { headers: await headers() }))
   const db = await criarClienteDoUsuario()
 
   const [servico, ficha, produtos, produtosDeRevenda] = await Promise.all([

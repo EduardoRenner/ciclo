@@ -1,4 +1,5 @@
 import { cookies } from 'next/headers'
+import { redirect } from 'next/navigation'
 
 import { cache } from 'react'
 
@@ -142,4 +143,33 @@ export async function contextoAtual(req: Request): Promise<Contexto> {
   }
 
   return { sessao, tenantId: unico.tenant_id, papel: unico.role, tenant: dadosDoTenant(unico.tenants) }
+}
+
+/**
+ * `contextoAtual` para toda `page.tsx` sob `/admin` — a versão que NÃO deixa `FORBIDDEN`
+ * (conta sem estabelecimento) virar erro na tela.
+ *
+ * **Por que isto precisava existir, e não bastava o conserto de `admin/layout.tsx` (16/09).** O
+ * layout já trata o próprio `FORBIDDEN` e redireciona pro `/onboarding` — mas cada `page.tsx`
+ * chama `contextoAtual` de NOVO (a mesma consulta, via `cache()` do React, mas o resultado é
+ * tratado ponto a ponto por cada arquivo). Em navegação client-side, o Next.js App Router pode
+ * buscar/renderizar o segmento da PÁGINA sem re-executar o LAYOUT que o navegador já tem montado
+ * — a página então lançava `FORBIDDEN` sem ninguém tratando, e caía no `admin/error.tsx`. Medido
+ * em produção: 1 ocorrência em `/admin/config`, NO DEPLOY que já tinha o conserto do layout
+ * (`docs/DECISOES.md`, 16/09). Não era mais o trap de 12 dias — `admin/error.tsx` tem saída real
+ * ("Ir para Hoje", navegação de página inteira, força o layout a rodar de novo) — mas era uma
+ * tela de erro confusa a mais, evitável.
+ *
+ * **Por que só `FORBIDDEN` sai daqui, e todo o resto sobe igual antes.** `TENANT_MISMATCH`
+ * (cookie de tenant inválido) e a validação de "escolha um estabelecimento" (múltiplos vínculos)
+ * não têm nada a ver com onboarding incompleto — redirecionar essas pra `/onboarding` mandaria
+ * gente com conta completa pra tela errada. Qualquer erro que não seja `FORBIDDEN` é relançado
+ * (`throw erro`), pro `admin/error.tsx` continuar cobrindo rede caída, banco fora do ar, etc. —
+ * exatamente como cobria antes desta função existir.
+ */
+export async function contextoDoPainel(req: Request): Promise<Contexto> {
+  return contextoAtual(req).catch((erro: unknown) => {
+    if (erro instanceof AppError && erro.code === 'FORBIDDEN') redirect('/onboarding')
+    throw erro
+  })
 }

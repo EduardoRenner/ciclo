@@ -1,7 +1,7 @@
 import { headers } from 'next/headers'
 import Link from 'next/link'
 
-import { contextoAtual } from '@/server/auth/tenant'
+import { contextoDoPainel } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { listarServicos } from '@/server/services/servicos'
 
@@ -30,7 +30,7 @@ export const metadata = { title: 'Quem você já atende' }
  * quanto tempo prever, e oferecê-lo aqui produziria um ciclo sem sentido.
  */
 export default async function PaginaQuemJaAtendo() {
-  const ctx = await contextoAtual(new Request('https://interno/clientes/ja-atendo', { headers: await headers() }))
+  const ctx = await contextoDoPainel(new Request('https://interno/clientes/ja-atendo', { headers: await headers() }))
   const db = await criarClienteDoUsuario()
   const servicos = await listarServicos(db, ctx.tenantId)
 

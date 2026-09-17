@@ -8,7 +8,7 @@ import { ehRequisicaoDoAppNativo } from '@/core/plataforma/nativo'
 import AlertBanner from '@/components/ui/alert-banner'
 import PageHeader from '@/components/ui/page-header'
 import { dinheiro } from '@/lib/formato'
-import { contextoAtual } from '@/server/auth/tenant'
+import { contextoDoPainel } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { contextoDePlano } from '@/server/services/planos'
 import { prestacaoDeContasDoMotor } from '@/server/services/previsao'
@@ -23,7 +23,7 @@ export const metadata = { title: "Recuperar receita" }
 
 export default async function PaginaRecuperar() {
   const cabecalhos = await headers()
-  const ctx = await contextoAtual(new Request('https://interno/recuperar', { headers: cabecalhos }))
+  const ctx = await contextoDoPainel(new Request('https://interno/recuperar', { headers: cabecalhos }))
   const db = await criarClienteDoUsuario()
   // T1.5 (docs/64 §0.2): a versão nativa não pode oferecer caminho pra pagar.
   const nativo = ehRequisicaoDoAppNativo(cabecalhos.get('user-agent'))

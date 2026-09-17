@@ -13,7 +13,7 @@ import Card from '@/components/ui/card'
 import PageHeader from '@/components/ui/page-header'
 import SectionHeader from '@/components/ui/section-header'
 import StatTile from '@/components/ui/stat-tile'
-import { contextoAtual } from '@/server/auth/tenant'
+import { contextoDoPainel } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { assuntoDeMudarDePlano, canalDeContato, textoDeMudarDePlano } from '@/lib/contato'
 import { CARTOES } from '@/lib/planos-cartoes'
@@ -72,7 +72,7 @@ export default async function PaginaMeuPlano() {
    */
   const nativo = ehRequisicaoDoAppNativo(cabecalhos.get('user-agent'))
 
-  const ctx = await contextoAtual(new Request('https://interno/meu-plano', { headers: cabecalhos }))
+  const ctx = await contextoDoPainel(new Request('https://interno/meu-plano', { headers: cabecalhos }))
   const db = await criarClienteDoUsuario()
 
   const [plano, profissionais, clientes, tenantRow] = await Promise.all([

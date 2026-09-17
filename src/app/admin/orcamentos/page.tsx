@@ -3,7 +3,7 @@ import { headers } from 'next/headers'
 import BloqueioPlano from '@/components/ui/bloqueio-plano'
 import { podeUsarModulo } from '@/core/billing/planos'
 import { ehRequisicaoDoAppNativo } from '@/core/plataforma/nativo'
-import { contextoAtual } from '@/server/auth/tenant'
+import { contextoDoPainel } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { listarOrcamentos } from '@/server/services/orcamentos'
 import { contextoDePlano } from '@/server/services/planos'
@@ -15,7 +15,7 @@ export const metadata = { title: "Orçamentos" }
 
 export default async function PaginaOrcamentos() {
   const cabecalhos = await headers()
-  const ctx = await contextoAtual(new Request('https://interno/orcamentos', { headers: cabecalhos }))
+  const ctx = await contextoDoPainel(new Request('https://interno/orcamentos', { headers: cabecalhos }))
   const db = await criarClienteDoUsuario()
   // T1.5 (docs/64 §0.2): a versão nativa não pode oferecer caminho pra pagar.
   const nativo = ehRequisicaoDoAppNativo(cabecalhos.get('user-agent'))

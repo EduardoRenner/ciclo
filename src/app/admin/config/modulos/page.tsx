@@ -2,7 +2,7 @@ import { headers } from 'next/headers'
 
 import PageHeader from '@/components/ui/page-header'
 import { ehRequisicaoDoAppNativo } from '@/core/plataforma/nativo'
-import { contextoAtual } from '@/server/auth/tenant'
+import { contextoDoPainel } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { listarModulos } from '@/server/services/modulos'
 
@@ -28,7 +28,7 @@ export const metadata = { title: 'Módulos' }
  */
 export default async function PaginaModulos() {
   const hdrs = await headers()
-  const ctx = await contextoAtual(new Request('https://interno/modulos', { headers: hdrs }))
+  const ctx = await contextoDoPainel(new Request('https://interno/modulos', { headers: hdrs }))
   const db = await criarClienteDoUsuario()
 
   const modulos = await listarModulos(db, ctx.tenantId)

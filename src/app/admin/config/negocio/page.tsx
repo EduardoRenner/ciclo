@@ -1,7 +1,7 @@
 import { headers } from 'next/headers'
 
 import { urlDaVitrine } from '@/core/text/vitrine'
-import { contextoAtual } from '@/server/auth/tenant'
+import { contextoDoPainel } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { lerTenant } from '@/server/services/site'
 
@@ -12,7 +12,7 @@ import PageHeader from '@/components/ui/page-header'
 export const metadata = { title: "Negócio" }
 
 export default async function PaginaNegocio() {
-  const ctx = await contextoAtual(new Request('https://interno/admin/config/negocio', { headers: await headers() }))
+  const ctx = await contextoDoPainel(new Request('https://interno/admin/config/negocio', { headers: await headers() }))
   const db = await criarClienteDoUsuario()
   const tenant = await lerTenant(db, ctx.tenantId)
 

@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation'
 import { podeUsarModulo } from '@/core/billing/planos'
 import { ehRequisicaoDoAppNativo } from '@/core/plataforma/nativo'
 import { avaliarPermissao } from '@/server/auth/rbac'
-import { contextoAtual } from '@/server/auth/tenant'
+import { contextoDoPainel } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { AppError } from '@/server/http/errors'
 import { fichaDoCliente } from '@/server/services/crm'
@@ -24,7 +24,7 @@ export const metadata = { title: "Cliente" }
 export default async function PaginaFicha({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const hdrs = await headers()
-  const ctx = await contextoAtual(new Request('https://interno/clientes', { headers: hdrs }))
+  const ctx = await contextoDoPainel(new Request('https://interno/clientes', { headers: hdrs }))
   const db = await criarClienteDoUsuario()
   const nativo = ehRequisicaoDoAppNativo(hdrs.get('user-agent'))
 

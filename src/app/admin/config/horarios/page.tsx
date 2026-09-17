@@ -2,7 +2,7 @@ import { headers } from 'next/headers'
 
 import EditorExpediente from '@/components/config/editor-expediente'
 import PageHeader from '@/components/ui/page-header'
-import { contextoAtual } from '@/server/auth/tenant'
+import { contextoDoPainel } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { listarExpediente } from '@/server/services/expediente'
 import { listarFolgas } from '@/server/services/folgas'
@@ -16,7 +16,7 @@ export const metadata = { title: "Horário de funcionamento" }
  * próprio cadastrado.
  */
 export default async function PaginaHorarios() {
-  const ctx = await contextoAtual(new Request('https://interno/admin/config/horarios', { headers: await headers() }))
+  const ctx = await contextoDoPainel(new Request('https://interno/admin/config/horarios', { headers: await headers() }))
   const db = await criarClienteDoUsuario()
 
   const [expediente, folgas] = await Promise.all([

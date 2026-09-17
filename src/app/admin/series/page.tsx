@@ -1,6 +1,6 @@
 import { headers } from 'next/headers'
 
-import { contextoAtual } from '@/server/auth/tenant'
+import { contextoDoPainel } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { listarSeries } from '@/server/services/recorrencia'
 
@@ -10,7 +10,7 @@ import PageHeader from '@/components/ui/page-header'
 export const metadata = { title: "Séries de recorrência" }
 
 export default async function PaginaSeries() {
-  const ctx = await contextoAtual(new Request('https://interno/series', { headers: await headers() }))
+  const ctx = await contextoDoPainel(new Request('https://interno/series', { headers: await headers() }))
   const db = await criarClienteDoUsuario()
 
   const series = await listarSeries(db, ctx.tenantId)

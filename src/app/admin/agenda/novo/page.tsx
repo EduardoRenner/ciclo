@@ -1,7 +1,7 @@
 import { headers } from 'next/headers'
 
 import { NOME_DO_PLANO, menorPlanoCom, podeUsarModulo } from '@/core/billing/planos'
-import { contextoAtual } from '@/server/auth/tenant'
+import { contextoDoPainel } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { contextoDePlano } from '@/server/services/planos'
 import { listarProfissionais } from '@/server/services/profissionais'
@@ -13,7 +13,7 @@ import PageHeader from '@/components/ui/page-header'
 export const metadata = { title: "Novo agendamento" }
 
 export default async function PaginaNovoAgendamento() {
-  const ctx = await contextoAtual(new Request('https://interno/agenda/novo', { headers: await headers() }))
+  const ctx = await contextoDoPainel(new Request('https://interno/agenda/novo', { headers: await headers() }))
   const db = await criarClienteDoUsuario()
 
   const [servicos, profissionais, plano] = await Promise.all([

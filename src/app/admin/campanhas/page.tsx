@@ -14,7 +14,7 @@ import { podeUsarModulo } from '@/core/billing/planos'
 import { ehRequisicaoDoAppNativo } from '@/core/plataforma/nativo'
 import { comMaiuscula, plural } from '@/core/text/vocabulario'
 import { dinheiro } from '@/lib/formato'
-import { contextoAtual } from '@/server/auth/tenant'
+import { contextoDoPainel } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { receitaAtribuidaAoCiclo, receitaPorCampanha } from '@/server/services/atribuicao'
 import { contextoDePlano } from '@/server/services/planos'
@@ -26,7 +26,7 @@ export const metadata = { title: "Campanhas" }
 
 export default async function PaginaCampanhas() {
   const cabecalhos = await headers()
-  const ctx = await contextoAtual(new Request('https://interno/campanhas', { headers: cabecalhos }))
+  const ctx = await contextoDoPainel(new Request('https://interno/campanhas', { headers: cabecalhos }))
   const db = await criarClienteDoUsuario()
   // T1.5 (docs/64 §0.2): a versão nativa não pode oferecer caminho pra pagar.
   const nativo = ehRequisicaoDoAppNativo(cabecalhos.get('user-agent'))

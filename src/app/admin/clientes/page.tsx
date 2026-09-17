@@ -11,7 +11,7 @@ import StatTile from '@/components/ui/stat-tile'
 import { dinheiro } from '@/lib/formato'
 import { APP_HOST } from '@/lib/app-url'
 import { comMaiuscula, plural } from '@/core/text/vocabulario'
-import { contextoAtual } from '@/server/auth/tenant'
+import { contextoDoPainel } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { listarClientes } from '@/server/services/clientes'
 import { contextoDePlano } from '@/server/services/planos'
@@ -25,7 +25,7 @@ export const metadata = { title: "Clientes" }
 
 export default async function PaginaClientes() {
   const hdrs = await headers()
-  const ctx = await contextoAtual(new Request('https://interno/clientes', { headers: hdrs }))
+  const ctx = await contextoDoPainel(new Request('https://interno/clientes', { headers: hdrs }))
   const db = await criarClienteDoUsuario()
   const nativo = ehRequisicaoDoAppNativo(hdrs.get('user-agent'))
 

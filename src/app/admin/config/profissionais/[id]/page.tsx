@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation'
 import BloqueioPlano from '@/components/ui/bloqueio-plano'
 import { podeUsarModulo } from '@/core/billing/planos'
 import { ehRequisicaoDoAppNativo } from '@/core/plataforma/nativo'
-import { contextoAtual } from '@/server/auth/tenant'
+import { contextoDoPainel } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { listarExpediente } from '@/server/services/expediente'
 import { listarFolgas } from '@/server/services/folgas'
@@ -20,7 +20,7 @@ export const metadata = { title: "Profissional" }
 export default async function PaginaExpediente({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const cabecalhos = await headers()
-  const ctx = await contextoAtual(new Request(`https://interno/config/profissionais/${id}`, { headers: cabecalhos }))
+  const ctx = await contextoDoPainel(new Request(`https://interno/config/profissionais/${id}`, { headers: cabecalhos }))
   const db = await criarClienteDoUsuario()
   // T1.5 (docs/64 §0.2): a versão nativa não pode oferecer caminho pra pagar.
   const nativo = ehRequisicaoDoAppNativo(cabecalhos.get('user-agent'))

@@ -1,6 +1,6 @@
 import { headers } from 'next/headers'
 
-import { contextoAtual } from '@/server/auth/tenant'
+import { contextoDoPainel } from '@/server/auth/tenant'
 import { listarProfissionais } from '@/server/services/profissionais'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 
@@ -10,7 +10,7 @@ import PageHeader from '@/components/ui/page-header'
 export const metadata = { title: "Novo orçamento" }
 
 export default async function PaginaNovoOrcamento() {
-  const ctx = await contextoAtual(new Request('https://interno/orcamentos/novo', { headers: await headers() }))
+  const ctx = await contextoDoPainel(new Request('https://interno/orcamentos/novo', { headers: await headers() }))
   const db = await criarClienteDoUsuario()
 
   const profissionais = await listarProfissionais(db, ctx.tenantId)

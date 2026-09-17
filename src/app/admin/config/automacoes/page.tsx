@@ -2,7 +2,7 @@ import { headers } from 'next/headers'
 
 import PageHeader from '@/components/ui/page-header'
 import { AUTOMACOES } from '@/core/automacoes/catalogo'
-import { contextoAtual } from '@/server/auth/tenant'
+import { contextoDoPainel } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { configDeAutomacoes } from '@/server/services/automacoes'
 
@@ -26,7 +26,7 @@ export const metadata = { title: 'Automações' }
  * do `schedule` (ver `docs/DECISOES.md`, 30/08). Aqui as duas coisas aparecem lado a lado.
  */
 export default async function PaginaAutomacoes() {
-  const ctx = await contextoAtual(new Request('https://interno/automacoes', { headers: await headers() }))
+  const ctx = await contextoDoPainel(new Request('https://interno/automacoes', { headers: await headers() }))
   const db = await criarClienteDoUsuario()
   const config = await configDeAutomacoes(db, ctx.tenantId)
 

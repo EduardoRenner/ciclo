@@ -9,7 +9,7 @@ import PageHeader from '@/components/ui/page-header'
 import { avaliarPermissao } from '@/server/auth/rbac'
 import { podeUsarModulo } from '@/core/billing/planos'
 import { ehRequisicaoDoAppNativo } from '@/core/plataforma/nativo'
-import { contextoAtual } from '@/server/auth/tenant'
+import { contextoDoPainel } from '@/server/auth/tenant'
 import { contextoDePlano } from '@/server/services/planos'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { listarAlertasDeEstoque } from '@/server/services/alertas-estoque'
@@ -26,7 +26,7 @@ export const metadata = { title: "Estoque" }
  */
 export default async function PaginaEstoque() {
   const cabecalhos = await headers()
-  const ctx = await contextoAtual(new Request('https://interno/estoque', { headers: cabecalhos }))
+  const ctx = await contextoDoPainel(new Request('https://interno/estoque', { headers: cabecalhos }))
   const db = await criarClienteDoUsuario()
   // T1.5 (docs/64 §0.2): a versão nativa não pode oferecer caminho pra pagar.
   const nativo = ehRequisicaoDoAppNativo(cabecalhos.get('user-agent'))

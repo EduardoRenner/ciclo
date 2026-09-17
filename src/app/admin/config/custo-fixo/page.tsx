@@ -1,7 +1,7 @@
 import { headers } from 'next/headers'
 
 import PageHeader from '@/components/ui/page-header'
-import { contextoAtual } from '@/server/auth/tenant'
+import { contextoDoPainel } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { lerCustoFixoDoTenant } from '@/server/services/custo-fixo'
 
@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Aluguel e contas' }
 
 export default async function PaginaCustoFixo() {
-  const ctx = await contextoAtual(new Request('https://interno/config/custo-fixo', { headers: await headers() }))
+  const ctx = await contextoDoPainel(new Request('https://interno/config/custo-fixo', { headers: await headers() }))
   const db = await criarClienteDoUsuario()
   const { custo, respondido } = await lerCustoFixoDoTenant(db, ctx.tenantId)
 

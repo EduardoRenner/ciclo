@@ -7,7 +7,7 @@ import EmptyState from '@/components/ui/empty-state'
 import Card from '@/components/ui/card'
 import PageHeader from '@/components/ui/page-header'
 import { RELATORIO_DA_EQUIPE, avaliarPermissao } from '@/server/auth/rbac'
-import { contextoAtual } from '@/server/auth/tenant'
+import { contextoDoPainel } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { concentracaoDoMes, resumoMensal, serieMensalDeLucro, taxaPorFormaDoMes } from '@/server/services/caixa'
 import { lerCustoFixoDoTenant } from '@/server/services/custo-fixo'
@@ -32,7 +32,7 @@ export const metadata = { title: 'O mês' }
  * o dono abre justamente para ter a visão rápida.
  */
 export default async function PaginaDoMes() {
-  const ctx = await contextoAtual(new Request('https://interno/mes', { headers: await headers() }))
+  const ctx = await contextoDoPainel(new Request('https://interno/mes', { headers: await headers() }))
   const db = await criarClienteDoUsuario()
 
   // Mesma trava do caixa (§3.3/§4.6): `professional` e `reception` não têm `report:read`. A RLS é

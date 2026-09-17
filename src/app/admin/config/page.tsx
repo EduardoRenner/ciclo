@@ -7,7 +7,7 @@ import Card from '@/components/ui/card'
 import PageHeader from '@/components/ui/page-header'
 import SectionHeader from '@/components/ui/section-header'
 import { NOME_DO_PLANO, type PlanoTier } from '@/core/billing/planos'
-import { contextoAtual } from '@/server/auth/tenant'
+import { contextoDoPainel } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { listarModulos } from '@/server/services/modulos'
 
@@ -115,7 +115,7 @@ export const metadata = { title: "Configurações" }
  * consertar os cinco casos e consertar a pergunta.
  */
 export default async function PaginaConfig() {
-  const ctx = await contextoAtual(new Request('https://interno/config', { headers: await headers() }))
+  const ctx = await contextoDoPainel(new Request('https://interno/config', { headers: await headers() }))
   const db = await criarClienteDoUsuario()
   const modulos = await listarModulos(db, ctx.tenantId)
 

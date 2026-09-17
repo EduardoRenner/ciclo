@@ -7,7 +7,7 @@ import EmptyState from '@/components/ui/empty-state'
 import Card from '@/components/ui/card'
 import PageHeader from '@/components/ui/page-header'
 import { RELATORIO_DA_EQUIPE, avaliarPermissao } from '@/server/auth/rbac'
-import { contextoAtual } from '@/server/auth/tenant'
+import { contextoDoPainel } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { concentracaoDoMes, fechamentoDiario, resumoMensal } from '@/server/services/caixa'
 import { extratoDeComissao } from '@/server/services/comissao'
@@ -47,7 +47,7 @@ export const metadata = { title: "Caixa" }
  * pergunta do produto que só dava para responder pelo banco.
  */
 export default async function PaginaCaixa({ searchParams }: { searchParams: Promise<{ dia?: string }> }) {
-  const ctx = await contextoAtual(new Request('https://interno/caixa', { headers: await headers() }))
+  const ctx = await contextoDoPainel(new Request('https://interno/caixa', { headers: await headers() }))
   const db = await criarClienteDoUsuario()
 
   // Dinheiro do negócio inteiro não é de todo papel: `professional` e `reception`

@@ -6,7 +6,7 @@ import { Temporal } from '@js-temporal/polyfill'
 
 import PageHeader from '@/components/ui/page-header'
 import { ehRequisicaoDoAppNativo } from '@/core/plataforma/nativo'
-import { contextoAtual } from '@/server/auth/tenant'
+import { contextoDoPainel } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { receitaAtribuidaAoCiclo } from '@/server/services/atribuicao'
 import { centralDeAcoes } from '@/server/services/crm'
@@ -31,7 +31,7 @@ export const metadata = { title: "Hoje" }
 
 export default async function PaginaHoje() {
   const hdrs = await headers()
-  const ctx = await contextoAtual(new Request('https://interno/hoje', { headers: hdrs }))
+  const ctx = await contextoDoPainel(new Request('https://interno/hoje', { headers: hdrs }))
   const db = await criarClienteDoUsuario()
   // T1.5 (docs/64 §0.2): a Central de Ações pode sugerir "plano-perto-do-teto", que aponta pra
   // /precos — dentro do app nativo isso não pode virar link. Ver central-de-acoes.tsx.

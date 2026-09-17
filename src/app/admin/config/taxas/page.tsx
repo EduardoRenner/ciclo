@@ -1,7 +1,7 @@
 import { headers } from 'next/headers'
 
 import PageHeader from '@/components/ui/page-header'
-import { contextoAtual } from '@/server/auth/tenant'
+import { contextoDoPainel } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { lerTaxasDoTenant } from '@/server/services/taxas-de-pagamento'
 
@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Taxa da maquininha' }
 
 export default async function PaginaTaxas() {
-  const ctx = await contextoAtual(new Request('https://interno/config/taxas', { headers: await headers() }))
+  const ctx = await contextoDoPainel(new Request('https://interno/config/taxas', { headers: await headers() }))
   const db = await criarClienteDoUsuario()
   const { taxas, respondida } = await lerTaxasDoTenant(db, ctx.tenantId)
 

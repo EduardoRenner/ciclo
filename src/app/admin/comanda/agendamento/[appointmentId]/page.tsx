@@ -6,7 +6,7 @@ import { redirect } from 'next/navigation'
 import Card from '@/components/ui/card'
 import EmptyState from '@/components/ui/empty-state'
 import PageHeader from '@/components/ui/page-header'
-import { contextoAtual } from '@/server/auth/tenant'
+import { contextoDoPainel } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { buscarTicketIdPorAgendamento } from '@/server/services/comanda'
 
@@ -32,7 +32,7 @@ export const metadata = { title: 'Comanda' }
  */
 export default async function RedirecionarParaComanda({ params }: { params: Promise<{ appointmentId: string }> }) {
   const { appointmentId } = await params
-  const ctx = await contextoAtual(new Request('https://interno/comanda', { headers: await headers() }))
+  const ctx = await contextoDoPainel(new Request('https://interno/comanda', { headers: await headers() }))
   const db = await criarClienteDoUsuario()
 
   const ticketId = await buscarTicketIdPorAgendamento(db, ctx.tenantId, appointmentId)

@@ -8,7 +8,7 @@ import EmptyState from '@/components/ui/empty-state'
 import PageHeader from '@/components/ui/page-header'
 import { dinheiro } from '@/lib/formato'
 import { avaliarPermissao } from '@/server/auth/rbac'
-import { contextoAtual } from '@/server/auth/tenant'
+import { contextoDoPainel } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { extratoDeComissao } from '@/server/services/comissao'
 import { AppError } from '@/server/http/errors'
@@ -26,7 +26,7 @@ export const metadata = { title: 'Minha comissão' }
  * do lado da API.
  */
 export default async function PaginaComissao() {
-  const ctx = await contextoAtual(new Request('https://interno/comissao', { headers: await headers() }))
+  const ctx = await contextoDoPainel(new Request('https://interno/comissao', { headers: await headers() }))
   const escopo = avaliarPermissao(ctx.papel, 'commission:read')
 
   if (!escopo) {

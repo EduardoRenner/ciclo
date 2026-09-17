@@ -2,7 +2,7 @@ import { Temporal } from '@js-temporal/polyfill'
 import { headers } from 'next/headers'
 
 import PageHeader from '@/components/ui/page-header'
-import { contextoAtual } from '@/server/auth/tenant'
+import { contextoDoPainel } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { listarAgendaDoDia } from '@/server/services/agendamentos'
 import { listarProfissionais } from '@/server/services/profissionais'
@@ -18,7 +18,7 @@ export default async function PaginaAgenda({
 }) {
   const { date, professionalId } = await searchParams
 
-  const ctx = await contextoAtual(new Request('https://interno/agenda', { headers: await headers() }))
+  const ctx = await contextoDoPainel(new Request('https://interno/agenda', { headers: await headers() }))
   const db = await criarClienteDoUsuario()
 
   // `docs/28` §8: o `timezone` chega no contexto, sem segunda ida ao banco.

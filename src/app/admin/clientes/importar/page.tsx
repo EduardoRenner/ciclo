@@ -1,6 +1,6 @@
 import { headers } from 'next/headers'
 
-import { contextoAtual } from '@/server/auth/tenant'
+import { contextoDoPainel } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { listarServicos } from '@/server/services/servicos'
 
@@ -21,7 +21,7 @@ export const metadata = { title: "Importar clientes" }
  * tempo prever, e oferecer um deles aqui produziria um ciclo sem sentido.
  */
 export default async function PaginaImportarClientes() {
-  const ctx = await contextoAtual(new Request('https://interno/clientes/importar', { headers: await headers() }))
+  const ctx = await contextoDoPainel(new Request('https://interno/clientes/importar', { headers: await headers() }))
   const db = await criarClienteDoUsuario()
   const servicos = await listarServicos(db, ctx.tenantId)
 

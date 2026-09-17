@@ -5,7 +5,7 @@ import { CATALOGO_DE_SERVICOS, destinoDoMaterial } from '@/core/comanda/completu
 import { custoFixoEstaConfigurado } from '@/core/comanda/custo-fixo'
 import { explicarSobra } from '@/core/comanda/sobra-explicada'
 import { avaliarPermissao } from '@/server/auth/rbac'
-import { contextoAtual } from '@/server/auth/tenant'
+import { contextoDoPainel } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { buscarComanda } from '@/server/services/comanda'
 import { listarProdutosAtivos } from '@/server/services/estoque'
@@ -21,7 +21,7 @@ export const metadata = { title: "Comanda" }
 
 export default async function PaginaComanda({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const ctx = await contextoAtual(new Request('https://interno/comanda', { headers: await headers() }))
+  const ctx = await contextoDoPainel(new Request('https://interno/comanda', { headers: await headers() }))
   const db = await criarClienteDoUsuario()
 
   const [{ ticket, items }, servicos, produtos, plano] = await Promise.all([

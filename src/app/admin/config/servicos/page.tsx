@@ -2,7 +2,7 @@ import { Temporal } from '@js-temporal/polyfill'
 
 import { avaliarPermissao } from '@/server/auth/rbac'
 import { comMaiuscula, plural } from '@/core/text/vocabulario'
-import { contextoAtual } from '@/server/auth/tenant'
+import { contextoDoPainel } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { margemDosServicos } from '@/server/services/caixa'
 import { listarServicos } from '@/server/services/servicos'
@@ -18,7 +18,7 @@ export const metadata = { title: "Serviços" }
  * no 4G). A interação — arquivar, reordenar — é do componente cliente.
  */
 export default async function PaginaServicos() {
-  const ctx = await contextoAtual(new Request('https://interno/config/servicos', { headers: await headers() }))
+  const ctx = await contextoDoPainel(new Request('https://interno/config/servicos', { headers: await headers() }))
   const db = await criarClienteDoUsuario()
   /*
    * `docs/50` L-06, critério 4: a margem por serviço é dinheiro do negócio, atrás de `report:read`
