@@ -10075,3 +10075,20 @@ Guarda reprovou corretamente, apontando exatamente a página mutada: `expected '
 src={wordmark} alt="CICLO" cla…' to match /sizes=/` — as outras três páginas continuaram passando.
 Restaurado com `git checkout --`, confirmado grep (`sizes="70px"` de volta). `tests/unit` inteiro
 (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 41: `ci-nao-reprova-por-rede`
+
+Guarda de infraestrutura: `pnpm audit` reprovou TRÊS PRs em 03/04-09 com `ERR_SOCKET_TIMEOUT` —
+timeout de rede não é vulnerabilidade, e vermelho por rede instável ensina a ignorar a CI. O passo
+do `ci.yml` classifica a saída, e a ORDEM das duas perguntas é o que protege: "achou
+vulnerabilidade?" tem que vir ANTES de "foi erro de rede?", senão um pacote cujo nome contém
+"network" com falha alta seria engolido como problema de transporte — a mutação da primeira versão
+deste próprio conserto reprovou o teste antes de subir. Mutação: `.github/workflows/ci.yml`,
+invertida a ordem dos dois blocos `if` (rede antes de vulnerabilidade) — exatamente o defeito
+original. Guarda reprovou corretamente: `a checagem de vulnerabilidade tem que vir primeiro —
+invertida, um pacote chamado "network-qualquer-coisa" com falha alta é engolido como problema de
+rede: expected 709 to be less than 349`. Restaurado com `git checkout --`, confirmado grep (ordem
+de volta: vulnerabilidade antes de rede). `tests/unit` inteiro (283/2461) verde depois.
