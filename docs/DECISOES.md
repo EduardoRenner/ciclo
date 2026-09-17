@@ -8435,3 +8435,19 @@ mais". Restaurado, idêntico ao commit, suíte volta a 17/17.
 `billing/mercado-pago.ts`, `pricing/formatar.ts`, `pricing/sinal.ts`,
 `agenda/ainda-conta-como-receita.ts`, `text/sem-amostra.ts`, `crm/lucro-do-cliente.ts` (já
 corrigido no item 4, mas vale reconferir só a parte não tocada).
+
+---
+
+## 2026-09-17 · Loop noturno (docs/67), item 7 · dinheiro: sobra-explicada.ts — mutado, correto
+
+**Medido:** `comanda/sobra-explicada.ts` (`explicarSobra`) — a função que resolve de vez a lição da
+memória `margem-de-contribuicao-com-nome-de-lucro`: o comentário do próprio arquivo cita o bug
+histórico exato ("um corte de R$ 45 com 40% de comissão 'sobrava' R$ 24,00 para quem paga R$ 3.500
+de aluguel") e a razão de existir é não deixar isso voltar.
+
+**Mutação ao vivo:** removido `- entrada.fixedCostCents` do cálculo de `sobraCents` — exatamente o
+bug histórico que a função existe para prevenir. Reprovou corretamente (`expected 3151 to be 2478`,
+diferença de 673 = o `fixedCostCents` do caso de teste). Restaurado, suíte volta a 17/17.
+
+**Nenhum achado.** Quarto dos 16 módulos de dinheiro confirmados por mutação real. A cadeia
+completa (custo-fixo → sobra-explicada → tela) está genuinamente sem o defeito que a motivou.
