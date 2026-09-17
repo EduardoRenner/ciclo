@@ -8207,3 +8207,35 @@ filtro/busca que muda conteúdo sem nenhum papel ARIA sinalizando).
 **Nenhum achado.** Amostra pequena (7 candidatos de um grep, não uma varredura exaustiva de todo
 padrão de troca de conteúdo) — não é garantia de cobertura total, mas nenhum caso do padrão que o
 `CLAUDE.md` documenta (filtro/busca mudando tela sem aviso, sem role nenhum) foi encontrado.
+
+---
+
+## 2026-09-16 · Prestação de contas do Motor ganha manchete em `/admin/hoje`
+
+**Pedido do Eduardo:** "queria incrementar algo no ciclo... le aquela super auditoria de pesquisa
+e ve oq daria pra fazer" — sem apontar um documento específico. Fui a `docs/45/47/48/49/52/53`
+(a família de pesquisa de vantagem competitiva) e medi, item por item, o que já existe versus o
+que a pesquisa recomendou. **Quase tudo já estava construído** (A/B/C/D-01 do `docs/53`, C1-C7 do
+`docs/48`, todos no ar). O único achado real: a prestação de contas do Motor (`docs/45` §1.4,
+"o único recurso que nenhum dos 6 concorrentes pesquisados tem") ficou **invisível** desde que foi
+construída — só morava em `/admin/recuperar` e no resumo de `/admin/mes`, telas que o dono abre
+por escolha, nunca na tela que abre sozinha.
+
+**Feito:** `src/app/admin/hoje/prestacao-teaser.tsx` — um card de uma linha ("O Motor acertou X%
+dos retornos previstos"), só quando `MINIMO_PARA_AFIRMAR` (8 previsões conferidas) for atingido,
+linkando pra `/admin/recuperar` (onde a explicação completa já mora — o teaser não duplica texto,
+só dá a manchete). Colocado no fim de `/admin/hoje`, depois de "Resto do dia" — deliberadamente
+sem competir com o herói de receita nem com a Central de Ações pelo topo da tela, dado o histórico
+desta tela de fragilidade a poluição (`hoje-nao-bloqueia-por-evento-de-funil`, `conserto pode ser
+pior que o defeito`, ambos em memória).
+
+`src/app/admin/hoje/page.tsx` busca `prestacaoDeContasDoMotor` no mesmo `Promise.all` das outras
+chamadas, com o mesmo `catch` que nunca derruba a tela mais importante do app — falha vira log,
+teaser simplesmente não aparece (indistinguível de "ainda sem histórico" para quem olha).
+
+**Guarda nova:** `tests/unit/design/hoje-mostra-prestacao-de-contas.test.ts`. Vista reprovando ao
+remover o `<PrestacaoTeaser>` de `hoje.tsx` (commit de checkpoint antes, `git checkout --` depois
+— procedimento do `CLAUDE.md` seguido à risca). `pnpm test:unit` completo: 282 arquivos, 2457
+casos, todos verdes. Typecheck e lint limpos. Build de produção pendente de confirmação via CI
+(local é lento nesta máquina, Windows cai pro SWC via WASM — `smart-app-control-build-lento`,
+memória).
