@@ -9857,3 +9857,20 @@ painel da carteira — a view continua, mas sem o filtro, os dois números volta
 reprovou corretamente: `os dois contadores precisam do mesmo filtro: expected 1 to be 2`.
 Restaurado com `git checkout --`, confirmado grep (1 ocorrência de volta). `tests/unit` inteiro
 (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 30: `precos-nao-promete-demais`
+
+Guarda de honestidade comercial: a página de preço não pode prometer mais do que o código libera
+— o cenário concreto que ela impede é "controle de estoque" anunciado no Essencial (R$ 49) quando
+o módulo só é liberado no Avançado, cliente paga, descobre, cancela e conta para o bairro (público
+que se conhece por ofício). Diferente da maioria das guardas testadas até aqui, esta não varre
+texto-fonte: importa `CARTOES` e `PLANOS` de verdade e compara dados. Mutação:
+`lib/planos-cartoes.ts`, acrescentado `{ texto: 'Controle de estoque', modulo: 'stock' }` ao
+`inclui` do cartão `essencial` (o mesmo item que já existe, legitimamente, no `avancado`) —
+reproduzindo exatamente o cenário do docstring. Guarda reprovou corretamente: `o cartão do
+essencial anuncia "Controle de estoque" (stock), que esse degrau não libera: expected false to be
+true`. Restaurado com `git checkout --`, confirmado grep (1 ocorrência, só no avançado).
+`tests/unit` inteiro (283/2461) verde depois.
