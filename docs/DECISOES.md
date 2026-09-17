@@ -9822,3 +9822,20 @@ chave `'idempotency-key': crypto.randomUUID()` do objeto `headers` do `fetch`, d
 `content-type` — a "simplificação" natural de quem mexe nesse trecho sem saber por que ela está
 lá. Guarda reprovou corretamente na asserção `/['"]idempotency-key['"]/i`. Restaurado com
 `git checkout --`, confirmado grep. `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 28: `script-nao-trunca-arquivo`
+
+Guarda de segurança de dados: nenhum script pode redirecionar (`>`) a saída de um comando direto
+para um arquivo versionado, porque o `>` do shell TRUNCA o destino ANTES de o comando rodar —
+reproduzido em 31/08, onde `supabase gen types` saiu com código 0 imprimindo um JSON de erro no
+stdout, e 3.590 linhas de `types.gen.ts` viraram 1. `scripts/gerar-types.mjs` existe para validar
+a saída ANTES de gravar. Testada a ordem: a escrita (`writeFileSync(DESTINO`) tem que vir DEPOIS
+das três checagens (tamanho, forma, conteúdo real). Mutação: movido o bloco
+`const antes = readFileSync(...); writeFileSync(DESTINO, saida)` para ANTES das três checagens —
+exatamente o defeito histórico do `db:types` original. Guarda reprovou corretamente na asserção
+de posição: `a escrita voltou a acontecer antes das checagens: expected 2155 to be greater than
+2497`. Restaurado com `git checkout --`, confirmado grep (checagens de volta antes da escrita).
+`tests/unit` inteiro (283/2461) verde depois.
