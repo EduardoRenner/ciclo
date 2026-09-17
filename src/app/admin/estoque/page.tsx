@@ -51,7 +51,11 @@ export default async function PaginaEstoque() {
   const timezone = ctx.tenant.timezone
   const hoje = Temporal.Now.instant().toZonedDateTimeISO(timezone).toPlainDate().toString()
 
-  const [{ data: produtos }, alertas] = await Promise.all([
+  // `contextoDePlano` não depende de `produtos`/`alertas` (só de `ctx.tenantId`, já
+  // conhecido) — antes rodava DEPOIS deste `Promise.all`, sozinho, inline no JSX. Achado do
+  // loop de performance: entrar aqui não muda o que `podeLancar` calcula, só quando a consulta
+  // parte — as três agora começam juntas.
+  const [{ data: produtos }, alertas, plano] = await Promise.all([
     db
       .from('products')
       // docs/62 Fase 1: `price_cents`/`is_retail` nunca eram buscados aqui, mesmo existindo desde
@@ -62,6 +66,7 @@ export default async function PaginaEstoque() {
       .is('deleted_at', null)
       .order('name'),
     listarAlertasDeEstoque(db, ctx.tenantId, hoje),
+    contextoDePlano(db, ctx.tenantId),
   ])
 
   const emAlerta = new Set(alertas.map((a) => a.productId))
@@ -78,7 +83,7 @@ export default async function PaginaEstoque() {
       />
       <ListaEstoque
         nativo={nativo}
-        podeLancar={podeUsarModulo(await contextoDePlano(db, ctx.tenantId), 'stock').estado === 'liberado'}
+        podeLancar={podeUsarModulo(plano, 'stock').estado === 'liberado'}
         produtos={(produtos ?? []).map((p) => ({
           id: p.id,
           nome: p.name,

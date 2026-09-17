@@ -9157,3 +9157,49 @@ para casar com a nova forma em vez da antiga — exigindo `podeVerLucro` colado 
 Reintroduzi o defeito de propósito (removi `podeVerLucro &&` da condição, deixando só a checagem
 de `ticket.status`) e confirmei que a guarda ATUALIZADA reprova com a mensagem certa antes de
 restaurar. Detalhe de como fiz isso abaixo. `tests/unit` inteiro (283/2461) verde depois.
+
+**CI do commit `f966b0c` fechou verde nos três jobs** (Qualidade, Banco e RLS, Segredos) —
+confirma que o refactor + a guarda atualizada também passam contra o banco de verdade.
+
+---
+
+## 2026-09-17 · Loop de performance, item 4 · `admin/clientes/[id]` e `fichaDoCliente` — checado, sem conserto
+
+Mesmo padrão candidato dos itens 2/3: `PaginaFicha` busca `cliente` (dentro de `fichaDoCliente`)
+antes de um `Promise.all` de 17 consultas que não dependem do resultado de `cliente`, só do
+`clientId`/`tenantId` que já são parâmetros. À primeira vista, o mesmo waterfall.
+
+**Por que não corrigi:** aqui a espera sequencial é uma troca deliberada, não um acidente. Se o
+cliente não existe (soft-delete entre a lista renderizar e o toque, ou URL errada), as 17
+consultas do lote — uma delas paginada (`buscarTudoPaginado`) — seriam trabalho jogado fora.
+Diferente dos itens 2/3, onde o resto do lote continuava útil mesmo no caminho excepcional (só
+`sobra`/`comissao` viravam `null`), aqui TUDO seria descartado. Falhar rápido antes de um lote
+grande é uma decisão de latência razoável, não um descuido — o custo extra no caminho comum
+(cliente existe, a maioria dos acessos) é uma consulta indexada por PK, provavelmente pequena
+comparada ao lote de 17.
+
+Além disso, `fichaDoCliente` é exatamente a função que a segunda metade da guarda
+`lucro-nao-vaza-para-quem-atende.test.ts` mais escrutina (regex de posição: `opcoes.podeVerLucro
+?` tem que aparecer nos 600 caracteres ANTES do `select('profit_cents')`) — o mesmo tipo de
+colisão do item 3, mas com um ganho menor e mais discutível para justificar o risco. Não toquei.
+
+Registrado, não corrigido: se o Eduardo quiser revisitar, a pergunta certa é medir (não estimar)
+a proporção real de acessos a ficha inexistente antes de trocar fail-fast por paralelo.
+
+---
+
+## 2026-09-17 · Loop de performance, item 5 · `admin/estoque/page.tsx` — `contextoDePlano` esperava o lote sem depender dele
+
+Mais óbvio que os itens 2/3: `podeLancar={podeUsarModulo(await contextoDePlano(db,
+ctx.tenantId), 'stock').estado === 'liberado'}` — o `await` estava solto DENTRO do JSX, DEPOIS do
+`Promise.all` de `produtos`/`alertas` já ter terminado, sem nenhuma razão (não depende de
+`produtos` nem `alertas`, só de `ctx.tenantId`, conhecido desde o início da função). Sem
+condicional, sem fail-fast, sem justificativa — diferente do item 4 (ficha), aqui não havia
+nenhum motivo pra não estar no mesmo lote.
+
+**Conserto:** `contextoDePlano(db, ctx.tenantId)` entrou no mesmo `Promise.all`, como terceiro
+item (`plano`). Verifiquei antes se algum guard test tocava a FORMA deste trecho — os dois que
+referenciam `estoque`/`podeLancar` (`recurso-pago-avisa-antes.test.ts`,
+`toda-rota-travada-tem-tela-que-avisa.test.ts`) checam `lista.tsx` (o `disabled={!podeLancar}` no
+componente cliente) e a rota (`exigirModulo` no servidor), nunca COMO `page.tsx` calcula o
+booleano — sem colisão desta vez. `tsc`, `eslint` e `tests/unit` (283/2461) verdes.
