@@ -8535,3 +8535,28 @@ suíte volta a 6/6.
 `loyalty/raio-x-de-recorrencia.ts`, `billing/mercado-pago.ts`, `pricing/formatar.ts`,
 `agenda/ainda-conta-como-receita.ts`, `text/sem-amostra.ts`, `comanda/custo-fixo.ts` (já feito,
 item 6), `crm/lucro-do-cliente.ts` (já feito, item 4).
+
+---
+
+## 2026-09-17 · Loop noturno (docs/67), item 13 · guarda cega REAL achada e corrigida — formatar-preco.ts
+
+**Contexto:** mutação ao vivo em `pricing/formatar.ts` (`porHora`, docs/09 G5 — modelos de preço
+por hora/visita/diária).
+
+**Achado, mutação confirmada:** revertida a ordem de `Math.ceil((duracaoMin * centsPorHora) / 60)`
+para a ordem antiga `Math.ceil((duracaoMin / 60) * centsPorHora)` — exatamente o bug de ponto
+flutuante que o PRÓPRIO comentário da função documenta, com o caso exato citado ("23 min a R$12/h
+dá 461, e o certo é 460"). **A suíte inteira (12 casos) passou** com o defeito. Causa: os dois
+casos que testam `hourly` com duração "feia" (61min/R$60,01 e 90min/R$60,00) coincidem no mesmo
+resultado inteiro com as duas ordens de cálculo — nenhum usava os números que o próprio comentário
+já tinha calculado como prova do bug.
+
+**Corrigido:** adicionado o caso exato do comentário (23 min, R$ 12/hora, espera 460). Mutado de
+novo com a guarda fortalecida: reprovou corretamente (`expected 461 to be 460`). Restaurado,
+`pnpm test:unit` completo (283 arquivos, 2461 casos) verde.
+
+**Padrão que se repete:** este é o SEGUNDO caso desta noite (depois de `lucro-do-cliente.ts`, item
+4) em que o comentário do código já sabia exatamente qual número provava o bug, e mesmo assim
+nenhum teste usava esse número. Vale registrar como lição de revisão: quando um comentário cita um
+caso numérico específico como prova de um bug passado, checar se ALGUM teste usa exatamente esses
+números — "o bug está documentado" não é o mesmo que "o bug está guardado".
