@@ -53,15 +53,25 @@ const TODOS = arquivos('src')
   .map((f) => f.split(String.fromCharCode(92)).join('/'))
   .filter((f) => !f.endsWith('types.gen.ts'))
 
+/*
+ * `semComentarios(f)` — `f` é o CAMINHO do arquivo, não o conteúdo dele. `semComentarios` só tira
+ * comentário de uma string qualquer; passar o caminho fazia as duas listas abaixo procurarem
+ * `consent_id:`/`mediaParaPortfolio(` dentro do texto do PATH, que nunca contém essas substrings —
+ * `ESCREVEM_CONSENT_ID` e `CHAMAM_O_PORTFOLIO` ficavam vazias sempre, para qualquer conteúdo real
+ * dos arquivos. Achado ao mutar: uma chamada de verdade a `mediaParaPortfolio(` acrescentada em
+ * `crm.ts` passou verde. O resto do arquivo já faz certo em `marcacaoDe` — o mesmo padrão, aplicado
+ * aqui.
+ */
+
 /** Quem GRAVA a coluna: `consent_id:` num objeto de insert/update, ou atribuicao de propriedade. */
 const ESCREVEM_CONSENT_ID = TODOS.filter((f) => {
-  const src = semComentarios(f)
+  const src = marcacaoDe(f)
   return src.includes(`${COLUNA}:`) || src.includes(`.${COLUNA} =`)
 })
 
 /** Quem CHAMA a funcao — a chamada com o parentese, nunca o nome solto (ele aparece na definicao,
  *  no `export` e neste proprio arquivo, que e a armadilha no 1 da tabela do CLAUDE.md). */
-const CHAMAM_O_PORTFOLIO = TODOS.filter((f) => f !== MEDIA).filter((f) => semComentarios(f).includes(`${FUNCAO}(`))
+const CHAMAM_O_PORTFOLIO = TODOS.filter((f) => f !== MEDIA).filter((f) => marcacaoDe(f).includes(`${FUNCAO}(`))
 
 describe('o portfólio não é ligado antes de existir consentimento gravado', () => {
   it('a leitura enxerga o projeto — a guarda não passa por não ter olhado nada', () => {

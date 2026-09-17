@@ -9938,3 +9938,40 @@ cliente.'` no fim de `src/app/admin/recuperar/recuperar.tsx` — fora de coment�
 `semComentarios` não a filtra. Guarda reprovou corretamente, apontando o arquivo e a palavra
 exatos: `"src/app/admin/recuperar/recuperar.tsx: aprende (aprende)"`. Restaurado com
 `git checkout --`, confirmado grep (linha sumiu). `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 34: `portfolio-nao-promete-foto` ERA CEGA, corrigida
+
+Guarda de mão dupla (TICKET-051): enquanto ninguém escreve `media.consent_id`, proíbe qualquer
+tela chamar `mediaParaPortfolio`; no dia em que alguém escrever a coluna, passa a exigir que a
+função continue cruzando com `consents.revoked_at`.
+
+**A guarda estava cega de um jeito mais grave que os itens 9 e 31: as duas listas centrais nunca
+liam conteúdo de arquivo nenhum.** `ESCREVEM_CONSENT_ID` e `CHAMAM_O_PORTFOLIO` faziam
+`semComentarios(f)` onde `f` é o CAMINHO do arquivo (`'src/server/services/crm.ts'`), não o
+arquivo lido — `semComentarios` só tira sintaxe de comentário de uma string, e aplicado a um path
+não muda nada. As duas listas checavam se as substrings `consent_id:`/`mediaParaPortfolio(`
+apareciam dentro do TEXTO DO CAMINHO, que nunca contém essas substrings — ficavam vazias sempre,
+para qualquer conteúdo real dos arquivos.
+
+**Descoberta:** ao mutar `crm.ts` acrescentando uma chamada real a `mediaParaPortfolio(`, a guarda
+passou verde. Investigando por que, achei que `ESCREVEM_CONSENT_ID` já não está mais vazia na
+prática — `media-upload.ts` já grava `consent_id: consentId` desde que este teste foi escrito, o
+que faz o ramo "ninguém escreve" (o que a chamada mutada deveria ter violado) já estar dormant por
+causa do estado real do código, não por causa do meu conserto. Confirmei o bug do extrator de
+verdade com uma asserção de sanidade temporária (`expect(CHAMAM_O_PORTFOLIO).toContain(...)`,
+removida depois de confirmar): antes do conserto, `CHAMAM_O_PORTFOLIO` não achava a chamada
+mutada em `crm.ts`; depois do conserto, achava.
+
+**Conserto:** trocado `semComentarios(f)` por `marcacaoDe(f)` (que já existe no próprio arquivo e
+lê+filtra o conteúdo de verdade) nas duas listas, com docstring explicando o achado.
+
+**Verificação do terceiro teste** (o que hoje está realmente ativo, dado que `ESCREVEM_CONSENT_ID`
+não é mais vazia): mutado `src/server/services/media.ts`, removida a coluna `revoked_at` do
+`.select()` e trocado o `.filter(...)` que checa revogação por `m.consents != null` — reprovou
+corretamente: `o portfólio parou de cruzar com consents.revoked_at ...: expected false to be
+true`. Restaurado com `git checkout --`. `crm.ts` também restaurado (a mutação de teste da
+chamada). O conserto do extrator (`portfolio-nao-promete-foto.test.ts`) foi MANTIDO, não
+revertido. `tests/unit` inteiro (283/2461) verde depois, com o conserto em vigor.
