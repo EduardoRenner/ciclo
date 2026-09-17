@@ -8611,3 +8611,33 @@ verificados, com 2 guardas cegas reais achadas e corrigidas** (`lucro-do-cliente
 `formatar-preco.ts` item 13) **e 1 bug de teste corrigido** (`crm.test.ts` C-07, sessão anterior).
 Nenhum bug real de código de produção sobreviveu à noite inteira de mutação — a base de dinheiro do
 CICLO está genuinamente coberta, não só supostamente coberta.
+
+---
+
+## 2026-09-17 · Loop noturno (docs/67), item 17 · funcionalidade: docs/50 L-01/L-02 — VERIFICADO, mutado, correto
+
+**Contexto:** varredura por critério de aceite marcado "guarda" em `docs/*-PLANO.md` que pudesse
+não ter sido cumprido (o padrão que achou bugs reais em T1.5/T-DEL no `docs/64`). `docs/50` L-01
+("as duas perguntas de que o Sobrou depende entram em Hoje") e L-02 (link direto até a resposta)
+pareciam não implementados numa primeira busca por string literal.
+
+**Medido de verdade:** ambos estão implementados, só com nomes diferentes dos da minha busca
+inicial — `core/comanda/completude-do-lucro.ts` (`acoesDeCompletude`) cobre L-01 por inteiro
+(as duas perguntas, título/descrição/href exatos do critério de aceite), e `destinoDoMaterial`
+no mesmo arquivo cobre L-02 (link direto pra ficha do serviço específico quando há só um
+incompleto, lista quando há vários). Consumido de verdade em `server/services/crm.ts:774`
+(`centralDeAcoes`).
+
+**Achado extra, de bônus:** o comentário do arquivo já documenta que a PRIMEIRA versão desta guarda
+tinha o mesmo defeito de `docs/66`/`docs/67` item 4/13 (guarda que espelha a fórmula em vez de
+testar o produto) — já corrigido antes desta sessão, com a lição certa aplicada: "o teste chama a
+MESMA função que a tela chama".
+
+**Mutação ao vivo, pra não confiar só no comentário:** trocado `if (!entrada.taxaRespondida)` por
+`if (true)` — a pergunta nunca mais sumiria, mesmo respondida. 3 de 12 casos reprovaram. Restaurado,
+suíte volta a 12/12.
+
+**Nenhum achado de bug.** Lição prática: buscar por string literal do critério de aceite (title/
+copy) é frágil — o código já reformula a mensagem várias vezes até o commit final. Buscar pela
+FUNÇÃO/CONCEITO (aqui, "quando a pergunta some" e "para onde ela leva") é o que realmente confirma
+se o critério foi cumprido.
