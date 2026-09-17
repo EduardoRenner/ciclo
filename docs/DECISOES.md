@@ -8306,3 +8306,18 @@ sério desta sessão. Fica registrado como o próximo passo real, não como pend
 `contextoDoPainel(req)` em `server/auth/tenant.ts` com o mesmo catch do layout, e trocar as 33
 chamadas uma a uma (ou por um codemod), com guarda de teste que varra e reprove qualquer `page.tsx`
 sob `/admin` que chame `contextoAtual(` sem passar pelo wrapper.
+
+---
+
+## 2026-09-17 · Loop noturno (docs/67), item 1 · service_role confinado — VERIFICADO, correto
+
+**Medido:** `grep -rl "SUPABASE_SERVICE_ROLE_KEY\|service_role" src/` achou 18 arquivos — todos com
+a string aparecendo em COMENTÁRIO explicando por que a leitura/escrita passa por `withTenant`/
+`withNovoTenant` (o wrapper sancionado), nenhum instancia cliente `service_role` direto.
+
+**Regra de lint confirmada real, não só documentada:** `eslint.config.mjs` tem o plugin customizado
+`ciclo/service-client-confinado` como `error`, desligado só em `tests/**`/`scripts/**` (que
+precisam de `service_role` pra montar cenário de dois tenants / rodar sem sessão). `eslint` já
+rodou limpo nesta sessão (Qualidade da CI também).
+
+**Nenhum achado.** Regra 2 do `CLAUDE.md` cumprida de fato, não só de intenção.
