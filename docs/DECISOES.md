@@ -8904,3 +8904,24 @@ apontando arquivo e motivo exatos ("estado de ambiente: a mesma entrada passa a 
 diferentes"). Restaurado, `pnpm test:unit` completo (283/2461) verde.
 
 **Nenhum achado.** Backlog Fase A: 8 guardas antigas confirmadas nesta noite. Restam ~122.
+
+---
+
+## 2026-09-17 · Loop cliente final, item 1 · página pública de agendamento — MEDIDO no navegador, correto
+
+**Contexto:** loop novo, foco na experiência do cliente final (quem agenda, quem recebe mensagem),
+a pedido do Eduardo, depois da noite anterior ter coberto sobretudo segurança/dinheiro/guardas do
+lado profissional.
+
+**Medido de verdade em produção** (`apple-review`, o tenant de demonstração real, mobile 375px):
+- Página pública (`/apple-review`) renderiza limpa: serviços, "quem atende", horário, contato.
+- Fluxo de agendamento (`/apple-review/agendar`): os 4 passos (serviço → profissional → dia →
+  horário) funcionam, dias fechados vêm com `aria-label` correto ("domingo, dia 20, fechado") —
+  não escondidos, marcados.
+- Formulário final mostra a copy exata validada por mutação na sessão anterior: "É por aqui que
+  quem vai te atender fala com você" (a versão honesta, sem `reminders` agendado) — confirmação de
+  que o que medi ontem por teste bate com o que está em produção de verdade.
+- Campo "Onde vai ser (opcional)" existe mesmo pra barbearia (`no_local`) — universal, não bug.
+
+**Nenhum achado.** Não submeti o formulário (criaria agendamento real em produção — fora do
+permitido sem autorização explícita). Seguindo pro fluxo de confirmação/cancelamento por token.
