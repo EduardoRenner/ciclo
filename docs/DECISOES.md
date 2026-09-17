@@ -9743,3 +9743,20 @@ estático enxergar. Confirmado via grep que a string apareceu antes de rodar a g
 reprovou corretamente: `expected [ Array(1) ] to deeply equal []`, apontando exatamente
 `"src/server/services/agendamentos.ts → appointments"`. Restaurado com `git checkout --`,
 confirmado via grep que a função sumiu. `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 23: `regua-do-ciclo-e-uma-so`
+
+Guarda de dinheiro/previsão: a régua efetiva do ciclo (`reguaEfetivaDias`, que prefere
+`cycle_days_observado` — a cadência medida da clientela real — a `cycle_days`, o palpite de
+catálogo) tem que sair de um lugar só; `recomputarCicloDeUmAtendimento` já teve o defeito de ler
+`cycle_days` cru, revertendo a previsão de quem concluiu um atendimento para o palpite de
+catálogo até o job noturno corrigir de novo na madrugada seguinte — o número oscilava sozinho, e
+nenhum lado individualmente "errava". Mutação: `server/services/ciclo.ts` linha 259, trocado
+`defaultCycleDays: reguaEfetivaDias(servico.data.cycle_days, servico.data.cycle_days_observado)`
+por `defaultCycleDays: servico.data.cycle_days` — exatamente o defeito histórico. Guarda reprovou
+corretamente: `expected [ Array(1) ] to deeply equal []`, apontando a chamada exata de
+`computeCycle` com a régua torta. Restaurado com `git checkout --`, confirmado grep. `tests/unit`
+inteiro (283/2461) verde depois.
