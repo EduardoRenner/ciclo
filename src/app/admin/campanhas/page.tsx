@@ -129,7 +129,7 @@ export default async function PaginaCampanhas() {
           nativo={nativo}
           className="mt-4"
           precisaDo="essencial"
-          acao="mandar a mesma mensagem para todas de uma vez"
+          acao="mandar a mesma mensagem para todos de uma vez"
           {...(totalClientes && totalClientes > 0
             ? { evidencia: { quantidade: totalClientes, substantivo: totalClientes === 1 ? 'cliente na sua base' : 'clientes na sua base' } }
             : {})}

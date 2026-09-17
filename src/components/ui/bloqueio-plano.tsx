@@ -37,7 +37,7 @@ type Props = {
    */
   precisaDo: Exclude<PlanoTier, 'gratis'>
   /**
-   * O que ela tentou fazer, na voz dela e por inteiro: "avisar todas de uma vez". A frase entra
+   * O que ela tentou fazer, na voz dela e por inteiro: "avisar todos de uma vez". A frase entra
    * em dois moldes diferentes ("Para {acao}, é preciso o X" e "No X você pode {acao}"), então
    * quem chama controla a redação — o componente não completa a frase por conta própria.
    */

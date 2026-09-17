@@ -124,7 +124,7 @@ function Conteudo({ icones }: { icones: { agenda: React.ReactNode; clientes: Rea
         <BloqueioPlano
           nativo={false}
           precisaDo="essencial"
-          acao="avisar todas de uma vez"
+          acao="avisar todos de uma vez"
           evidencia={{ quantidade: 23, substantivo: 'clientes esperando para voltar', valorCents: 184000 }}
           alternativa={<button type="button">Avisar uma de cada vez, de graça</button>}
         />

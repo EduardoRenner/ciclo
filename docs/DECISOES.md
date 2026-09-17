@@ -9282,3 +9282,31 @@ erro. Trocado por "negócio". Varredura completa de `src/server` por `salão` de
 (não comentário) não achou mais nenhuma ocorrência além de um `.describe()` de ferramenta do
 assistente de IA (metadata para o Gemini, nunca mostrado a um humano — não é achado). Escrito o
 plano completo desta frente em `docs/71-PLANO-AUDITORIA-COPY-INTERFACE.md`, a pedido do Eduardo.
+
+---
+
+## 2026-09-17 · Loop de copy e interface, item 2 · "todas" elíptico escapou da guarda de gênero
+
+Fase E do `docs/71` (inconsistência entre telas irmãs): `admin/campanhas/nova/page.tsx` diz
+"mandar a mesma mensagem para todo mundo de uma vez"; `admin/campanhas/page.tsx` — a LISTA, mesmo
+gate de plano, mesmo `BloqueioPlano` — dizia "...para **TODAS** de uma vez". A própria
+`bloqueio-plano.tsx` documenta no seu docstring o exemplo certo ("...para todos de uma vez",
+§M.1) e ainda assim a implementação real divergiu.
+
+**Por que a guarda `copy-nao-supoe-genero.test.ts` não pegou isto:** ela tem 7 padrões pra
+"supõe que quem é atendido é mulher", e todos exigem a palavra "cliente"/"amiga" perto do
+artigo/demonstrativo/indefinido. "Todas de uma vez" é ELÍPTICO — vale por "todas as clientes",
+sem dizer a palavra — e nenhum padrão cobria isso. O achado veio de comparação manual entre
+telas irmãs, não da guarda.
+
+**Conserto em duas partes**, matching a disciplina desta base pra guarda que fica cega:
+1. Copy: `campanhas/page.tsx` e o dev-only `dev/ui/vitrine.tsx` (mesma frase, achada na mesma
+   varredura) trocados de "todas" para "todos" — e o próprio comentário de `bloqueio-plano.tsx`
+   que citava a frase errada como exemplo também corrigido.
+2. Guarda: oitavo padrão adicionado a `SUPOE_MULHER` (`/\btodas\s+de\s+uma\s+vez\b/i`), com
+   escopo estreito de propósito (só esta construção exata — "todas as vezes"/"quase todas" sobre
+   COISA não podem cair aqui). Duas asserções novas no autoteste do detector: uma prova que a
+   frase real ("mandar... para todas de uma vez") é pega, outra prova que "todas as vezes" (sobre
+   coisa, não pessoa) e a frase já corrigida ("...para todos...") NÃO disparam.
+
+`tsc`, `eslint`, a suíte da guarda isolada (15/15) e `tests/unit` inteiro (283/2461) verdes.

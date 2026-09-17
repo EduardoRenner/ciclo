@@ -459,6 +459,24 @@ const SUPOE_MULHER = [
    * O adjetivo opcional no meio espelha o quarto padrao, pela mesma razao: 'uma primeira cliente'.
    */
   /\b(?:uma|numa|duma)\s+(?:[a-zà-ÿ]+as?\s+)?clientes?\b/i,
+  /*
+   * O oitavo padrão, achado no loop de copy/interface (17/09) comparando duas telas IRMÃS:
+   * `campanhas/nova/page.tsx` dizia "mandar a mesma mensagem para todo mundo de uma vez",
+   * `campanhas/page.tsx` — a lista, mesmo gate de plano — dizia "...para TODAS de uma vez". A
+   * própria `bloqueio-plano.tsx` documenta o exemplo certo no seu docstring ("...para todos de
+   * uma vez") e ainda assim a implementação real divergiu.
+   *
+   * Os sete padrões acima exigem a palavra "cliente"/"amiga" perto do artigo — aqui não há
+   * substantivo nenhum: "todas" é ELÍPTICO, valendo por "todas as clientes" sem dizer a palavra.
+   * Nenhum padrão anterior olha pra "todas" sozinha, e por isso a frase sobreviveu sem que a
+   * guarda notasse (achado por comparação manual entre telas, não pela guarda).
+   *
+   * Escopo estreito de propósito (só esta construção exata, não "todas" solta em qualquer
+   * frase): "todas as vezes", "quase todas" e outros usos legítimos de "todas" sobre COISA não
+   * podem cair aqui —o risco de alargar demais é a mesma armadilha que os comentários dos
+   * padrões 4 e 7 já descrevem.
+   */
+  /\btodas\s+de\s+uma\s+vez\b/i,
 ]
 
 /**
@@ -562,6 +580,11 @@ describe('a copy também não supõe que quem é ATENDIDO é mulher', () => {
       supoeMulherEm('Cadastre a primeira cliente para começar a marcar horários.'),
       'não pegou o artigo separado de "cliente" por um adjetivo',
     ).toBe(true)
+    // O oitavo padrão: "todas" elíptica, sem a palavra "cliente" ao lado.
+    expect(
+      supoeMulherEm('mandar a mesma mensagem para todas de uma vez'),
+      'não pegou o "todas" elíptico',
+    ).toBe(true)
 
     for (const certo of [
       'Quem o Motor de Ciclo identificou em atraso para voltar.',
@@ -575,6 +598,10 @@ describe('a copy também não supõe que quem é ATENDIDO é mulher', () => {
       'Essa ficha não está mais na sua lista.',
       // O conserto do fluxo de indicação: neutro dos dois lados.
       'Indique alguém. A pessoa agenda o primeiro horário por aqui.',
+      // "todas" sobre COISA, não sobre pessoa — o oitavo padrão não pode confundir os dois.
+      'O Motor de Ciclo acertou todas as vezes desde a última configuração.',
+      // O conserto do oitavo padrão: mesma frase, palavra neutra.
+      'mandar a mesma mensagem para todos de uma vez',
     ]) {
       expect(supoeMulherEm(certo), `acusou "${certo}", que está certo`).toBe(false)
     }
