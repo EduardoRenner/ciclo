@@ -8787,3 +8787,16 @@ guarda mutada. `get_deployment`/`list_deployments` confirma que o deploy mais re
 rodando em produção sem erro observado — inclusive a feature nova (teaser de prestação de contas
 em `/admin/hoje`) e o conserto de 33 páginas do painel, os dois com maior superfície de risco real
 desta sessão.
+
+---
+
+## 2026-09-17 · Loop noturno (docs/67), item 26 · Fase A: dominio-em-um-lugar-so.ts — mutado, correto
+
+**Medido:** `lib/app-url.ts` (`APP_HOST`) — fonte única de domínio, depois do achado histórico de
+`ciclo.app` (domínio nunca registrado) espalhado em 6 lugares.
+
+**Mutação ao vivo:** trocado `.replace(/\/$/, '')` por `+ '/'` em `APP_HOST` — reintroduz barra
+final. Reprovou (`expected 'seuciclo.com.br/' to be 'seuciclo.com.br'`). Restaurado, suíte volta
+a 283/283.
+
+**Nenhum achado.** Backlog Fase A: 4 guardas antigas confirmadas nesta noite. Restam ~126.
