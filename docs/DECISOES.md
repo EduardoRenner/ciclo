@@ -8517,3 +8517,21 @@ Restaurado, suíte volta a 11/11.
 do backlog da Fase C do `docs/66` já coberta nesta noite. Restam 8: `loyalty/raio-x-de-
 recorrencia.ts`, `billing/mercado-pago.ts`, `pricing/formatar.ts`, `pricing/sinal.ts`,
 `agenda/ainda-conta-como-receita.ts`, `text/sem-amostra.ts`.
+
+---
+
+## 2026-09-17 · Loop noturno (docs/67), item 12 · dinheiro: pricing/sinal.ts — mutado, correto
+
+**Medido:** `pricing/sinal.ts` (`sinalEmCentavos`, o valor do sinal mostrado antes de confirmar
+agendamento — consumido em `agendamentos.ts:criarAgendamento`, o `deposit_cents` congelado no
+nascimento do agendamento).
+
+**Mutação ao vivo:** trocado `Math.ceil` por `Math.floor` no cálculo percentual — contradiz o
+comentário explícito do código ("arredonda para cima: o piso é um mínimo, um centavo a menos que
+o mínimo não é o mínimo"). Reprovou no teste dedicado (`expected 1485 to be 1486`). Restaurado,
+suíte volta a 6/6.
+
+**Nenhum achado.** Nono dos 16 módulos de dinheiro confirmados por mutação real. Restam 7:
+`loyalty/raio-x-de-recorrencia.ts`, `billing/mercado-pago.ts`, `pricing/formatar.ts`,
+`agenda/ainda-conta-como-receita.ts`, `text/sem-amostra.ts`, `comanda/custo-fixo.ts` (já feito,
+item 6), `crm/lucro-do-cliente.ts` (já feito, item 4).
