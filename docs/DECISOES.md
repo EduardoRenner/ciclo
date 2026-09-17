@@ -10140,3 +10140,21 @@ nada mais", sem o ícone aqui). Guarda reprovou corretamente, apontando só o ar
 `confirmar.tsx termina o erro na mensagem ...: expected false to be true` — as outras três telas
 continuaram verdes. Restaurado com `git checkout --`, confirmado grep (`<ErroPublico` de volta).
 `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 45: `boundary-de-erro-tem-saida`
+
+Guarda de UX, terceira da família (`estado-vazio-tem-saida`, `erro-do-cliente-tem-saida`, esta).
+Em 2026-09-03 o Eduardo caiu no boundary do `/admin` e descreveu "ficou tudo travado e nem tem
+como sair" — a navegação lateral "continuava de pé" mas era saída IMPLÍCITA, e `reset()` sozinho
+re-renderiza com o mesmo estado quebrado quando o erro não é transitório. O conserto: navegação de
+PÁGINA INTEIRA (`<a href>`, não `<Link>`) porque só ela descarta o runtime quebrado — um `<Link>`
+faz navegação de cliente e pode cair no mesmo erro. Mutação: `admin/error.tsx`, trocado `<a
+href="/admin/hoje">` por `<Link href="/admin/hoje">` (abertura e fechamento) — exatamente o
+regresso que o comentário do arquivo nomeia como o erro a evitar. Guarda reprovou corretamente na
+asserção específica do painel: `o boundary do /admin voltou a escapar por <Link>, que reaproveita
+o estado quebrado: expected false to be true` — os testes genéricos (que aceitam `<Link>` em
+qualquer OUTRO boundary) continuaram passando, como esperado. Restaurado com `git checkout --`,
+confirmado grep (`<a>`/`</a>` de volta). `tests/unit` inteiro (283/2461) verde depois.
