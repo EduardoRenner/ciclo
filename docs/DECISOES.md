@@ -9388,3 +9388,26 @@ aqui — a região já está correta.
 
 Fase C fica sem achado nesta rodada (a única checagem possível sem credencial de admin — os
 filtros do painel em `admin/clientes`/`admin/agenda` continuam fora de alcance nesta sessão).
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas (retomando docs/68 §6) — item 1: `precos-tem-trava-no-servidor`
+
+Voltando ao backlog da noite autônoma (~122 guardas nunca mutadas nesta sessão). Prioridade
+dinheiro/RLS primeiro. `tests/unit/design/precos-tem-trava-no-servidor.test.ts` — confere que
+todo módulo vendido num degrau pago tem `exigirModulo` numa rota de escrita, e que todo recurso
+de teto DURO tem `exigirLimite`. Guarda de alto valor (nasceu de um achado real de 2026-08-26: 4
+de 8 módulos pagos não tinham trava nenhuma).
+
+**Mutação 1** (`exigirModulo`): removida a linha `await exigirModulo(db, ctx.tenantId,
+'campaigns')` de `src/app/api/v1/campaigns/route.ts`. Guarda reprovou corretamente:
+`expected [] received ["campaigns"]`. Restaurado com `git checkout --`, confirmado
+`grep -c` batendo com o original, árvore limpa.
+
+**Mutação 2** (`exigirLimite`): removida a linha `await exigirLimite(db, ctx.tenantId,
+'profissionais')` de `src/app/api/v1/professionals/route.ts` (única rota que chama
+`exigirLimite` no projeto inteiro — bate com o que o docstring da guarda já afirmava). Guarda
+reprovou corretamente: `expected [] received ["profissionais"]`. Restaurado, árvore limpa.
+
+Guarda não é cega — as duas metades reprovam de verdade. `tests/unit` inteiro (283/2461) verde
+depois de cada restauração.
