@@ -10044,3 +10044,19 @@ varre TODAS as telas que chamam `receitaAtribuidaAoCiclo`/`receitaPorCampanha` (
 mesmo arquivo, que nasceu porque o conserto original só cobriu um lugar): `expected false to be
 true` nas duas. Restaurado com `git checkout --`, confirmado grep (o `console.warn` e o evento
 `central_de_acoes_indisponivel` de volta). `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 39: `sentry-fora-do-caminho-critico`
+
+Guarda de performance + regra 9 do CLAUDE.md ("dado de saúde nunca em log, Sentry ou analytics").
+Testada a metade da saúde: `Sentry.init` em `src/instrumentation.ts` precisa passar `beforeSend` e
+`beforeSendTransaction` por `redigirEventoSentry` — sem isso, o primeiro erro que carregasse o
+corpo de uma requisição de anamnese/alergia levaria dado de saúde para fora da casa. Mutação:
+`src/instrumentation.ts`, trocado `beforeSend: (event) => redigirEventoSentry(event)` e o par de
+`beforeSendTransaction` por `(event) => event` — passagem direta, sem redação. Guarda reprovou
+corretamente: `src/instrumentation.ts não passa mais por redigirEventoSentry em beforeSend. Este
+produto guarda dado de saúde (anamnese, alergia)...`. Restaurado com `git checkout --`, confirmado
+grep (2 ocorrências de `redigirEventoSentry(event)` de volta). `tests/unit` inteiro (283/2461)
+verde depois.
