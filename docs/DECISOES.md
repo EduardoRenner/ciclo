@@ -9310,3 +9310,58 @@ telas irmãs, não da guarda.
    coisa, não pessoa) e a frase já corrigida ("...para todos...") NÃO disparam.
 
 `tsc`, `eslint`, a suíte da guarda isolada (15/15) e `tests/unit` inteiro (283/2461) verdes.
+
+---
+
+## 2026-09-17 · Loop de copy e interface, item 3 · achado significativo, NÃO corrigido — acento do dono sem piso de contraste
+
+**Fase B checada, sem achado:** dois estados de erro público forçados de propósito (token
+inválido em `/confirmar` via toque real no botão, e em `/lista-espera`) — os dois já usam
+`ErroPublico`, já têm `h1` único (confirmado via `document.querySelectorAll('h1,h2,h3')` no
+navegador), e o caso de "sem link de WhatsApp no texto de erro" que pareceu suspeito na medição
+tem justificativa explícita no próprio código (`erro-publico.tsx` linha 38-40: sem token válido
+não há como saber o WhatsApp de qual negócio, e link pra lugar nenhum é pior que frase útil).
+Nenhum achado nesta fase até agora.
+
+**Fase D (contraste), achado real e MEDIDO:** `tests/unit/design/contraste.test.ts` é rigoroso —
+mede WCAG AA nos dois temas, com Δ-luminância pra daltonismo, pra TODO token fixo do
+`globals.css`. Mas ele só lê o arquivo CSS estático; não alcança `--acc`/`--acc-2` na vitrine
+pública (`/[slug]`), que vêm de `tenants.settings.site.accent` — a ÚNICA cor do produto que o
+dono escolhe livremente, validada só por formato (`z.string().regex(/^#[0-9a-f]{6}$/i)`,
+`site.ts`), zero checagem de luminância ou contraste.
+
+`acc2` (usado como cor de TEXTO real — preço do serviço em `secoes.tsx:260`, estrela de
+avaliação, link "Como chegar", `agendar.tsx` preço do horário) é `misturarComBranco(acc, 0.3)` —
+sempre 30% mais claro que o que o dono escolheu, um fator FIXO que não olha o resultado.
+
+**Medido com a MESMA fórmula WCAG do teste existente**, para cores que um dono escolheria sem
+pensar em contraste — nenhuma delas é extrema, são as cores "profissionais" comuns:
+
+| Cor escolhida | contraste de `acc` (ícone) vs `--bg` | contraste de `acc2` (preço/estrela) vs `--bg` |
+|---|---|---|
+| `#1a2a4a` azul-marinho | 1.37:1 | 3.59:1 |
+| `#4a1a1a` vinho | 1.35:1 | 3.46:1 |
+| `#1a3a2a` verde-escuro | 1.57:1 | 3.94:1 |
+| `#2d2d2d` grafite | 1.42:1 | 3.72:1 |
+| `#0a3d62` azul-oceano | 1.73:1 | 4.12:1 |
+
+Todas as cinco ficam ABAIXO do piso de 4,5:1 que a casa mede e reprova pra QUALQUER outro token
+— e `acc` (usado em ícones de check) fica na faixa de 1,3-1,7:1, praticamente invisível. Confirmei
+que nenhum tenant de demonstração está no caso hoje (`apple-review` usa `#f0ebe3`, o "osso" padrão
+— claro, não escuro), então o defeito é latente, não visível ainda: mas é o primeiro dono que
+escolher um tom escuro "profissional" no seletor de cor de `admin/config/negocio` que vai ver o
+preço do próprio serviço quase invisível na própria página pública.
+
+**Por que não corrigi na hora:** três motivos, diferente dos achados de baixo risco desta rodada.
+(1) É decisão de PRODUTO, não só técnica — quanto clarear antes de deixar de parecer "a cor que o
+dono escolheu"? (2) Blast radius é a página pública de TODO tenant, a superfície mais visível do
+produto pro cliente final. (3) Não existe teste nenhum pra esse caminho ainda — eu estaria
+escrevendo a PRIMEIRA prova de uma invariante nova, que merece o mesmo cuidado que a mutação de
+guarda de segurança do loop de performance, não uma correção de 1 minuto.
+
+**Recomendação para quando for corrigido:** trocar o fator FIXO de `misturarComBranco(acc, 0.3)`
+por um fator ADAPTATIVO — clarear até `acc2` bater 4,5:1 contra `--bg` (a mesma função de
+luminância/contraste de `contraste.test.ts`, reaproveitada), com teto de segurança (ex.: 90% de
+mistura) pra nunca virar branco puro. Isso não muda NADA pra quem já escolheu uma cor clara (a
+maioria hoje) — só ativa pra quem escolher uma cor escura, que é exatamente o caso quebrado.
+Precisa de teste novo medindo o pior caso real, não só o feliz.
