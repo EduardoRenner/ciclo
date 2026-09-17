@@ -9501,3 +9501,49 @@ plano no servidor (2 mecanismos), RLS de view (isolamento entre tenants), regra 
 vazamento de `service_role`, `httpOnly` do cookie de sessão, deny-list do service worker (17
 rotas do painel), e a trava contra takeover de conta via reset de senha. Todas restauradas,
 `tests/unit` inteiro verde depois de cada uma. Continuando o backlog do `docs/68` §6.
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 8: `login-nao-manda-para-fora`
+
+Guarda de open redirect: `?proximo=` cru em `router.push` no login deixava
+`https://dominio/entrar?proximo=https://evil.com` autenticar de verdade e jogar a pessoa num
+clone no instante de maior confiança da sessão. Mutação: `verificar/formulario.tsx`, trocado
+`router.push(caminhoInternoSeguro(proximo))` por `router.push(proximo ?? '/admin/hoje')` —
+removendo a sanitização inline, deixando o valor da query string ir cru pro `push`. Guarda
+reprovou corretamente: `expected [] received ["proximo ?? '/admin/hoje'"]`. Restaurado,
+confirmado `caminhoInternoSeguro` de volta, árvore limpa.
+
+**Segunda mutação, o outro mecanismo do mesmo detector:** `entrar/formulario.tsx` usa o padrão
+"sanitiza na atribuição" (`const proximo = caminhoInternoSeguro(...)`, não inline no push) — um
+caminho de checagem diferente na mesma guarda (`sanitizadoNaOrigem`). Trocado para
+`const proximo = params.get('proximo') ?? '/admin/hoje'`. Guarda reprovou corretamente:
+`expected [] received ["semNegocio ? '/onboarding' : proximo"]` — pegou o `proximo` não mais
+sanitizado mesmo dentro de uma expressão ternária. Restaurado, árvore limpa. Os dois mecanismos
+de detecção da mesma guarda confirmados afiados. `tests/unit` inteiro (283/2461) verde depois de
+cada restauração.
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 9: `seed-que-grava-telefone-grava-hash` ERA CEGA, corrigida
+
+**A primeira guarda-cega real encontrada nesta rodada (itens 1-8 estavam todas afiadas).**
+Mutação: removida a linha `phone_hash: hashTelefone(...)` de `scripts/seed-demo-barbearia.mjs`
+(o mesmo defeito que já aconteceu DUAS vezes de verdade nesta base — 132 clientes num seed SQL,
+depois 134 clientes em 6 tenants de produção, incluindo os 44 do `dom-rocha`). A guarda passou
+VERDE com o defeito reintroduzido.
+
+**Causa raiz:** o arquivo também tem `COLUNAS_CLIENTE`, um array com o NOME das colunas pra
+projetar o payload final — `'phone_e164'` e `'phone_hash'` aparecem ali, soltos, sem valor
+nenhum ao lado (é só uma lista de chaves). O padrão `escreveHash` da guarda incluía
+`/'phone_hash'/` (bare, sem exigir contexto de atribuição), e essa string bate com o array de
+nomes de coluna mesmo quando a ATRIBUIÇÃO de verdade (`phone_hash: hashTelefone(...)`) não
+existe mais no objeto. Exatamente a armadilha nº 2 da tabela do `CLAUDE.md`: "casava com uma
+palavra da frase, devia casar com a frase".
+
+**Conserto:** os dois padrões bare (`/'phone_e164'/` e `/'phone_hash'/`) viraram `/'phone_e164'\s*:/`
+e `/'phone_hash'\s*:/` — exigindo que a string venha seguida de dois-pontos (chave de objeto de
+verdade, `{'phone_hash': valor}`), não apenas presente num array de nomes. Reapliquei a MESMA
+mutação (script ainda quebrado) contra a guarda CORRIGIDA: reprovou certo, `expected true
+received false`. Restaurado o script, guarda volta a passar (19/19) contra o código real.
+`tsc`, `eslint` e `tests/unit` inteiro (283/2461) verdes.

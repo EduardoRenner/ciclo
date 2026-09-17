@@ -47,11 +47,20 @@ describe('seed que grava telefone grava hash', () => {
     // casar com a explicação em vez do código é a armadilha nº 1 da tabela do CLAUDE.md.
     const src = semComentarios(readFileSync(join(DIR, arquivo), 'utf8'))
 
+    /*
+     * Achado no loop de guardas-cegas (17/09), por mutação: `seed-demo-barbearia.mjs` também tem
+     * `COLUNAS_CLIENTE`, um array com o NOME das colunas pra projetar o payload — e
+     * `'phone_e164'`/`'phone_hash'` aparecem ali, soltos, sem valor nenhum ao lado. O padrão bare
+     * `/'phone_hash'/` casava com essa string de qualquer jeito, mesmo depois de eu remover a
+     * ATRIBUIÇÃO de verdade (`phone_hash: hashTelefone(...)`) do objeto — a guarda ficava verde
+     * com o defeito reintroduzido. `\s*:` exige que a string venha seguida de dois-pontos (chave
+     * de objeto de verdade, `{'phone_hash': valor}`), não apenas presente num array de nomes.
+     */
     // Só interessa quem ESCREVE a coluna. Ler (`.select('phone_e164')`) ou filtrar não conta.
-    const escreveTelefone = /phone_e164\s*:/.test(src) || /'phone_e164'/.test(src) || /\binsert\b[\s\S]{0,400}?phone_e164/i.test(src)
+    const escreveTelefone = /phone_e164\s*:/.test(src) || /'phone_e164'\s*:/.test(src) || /\binsert\b[\s\S]{0,400}?phone_e164/i.test(src)
     if (!escreveTelefone) return
 
-    const escreveHash = /phone_hash\s*:/.test(src) || /'phone_hash'/.test(src) || /\bphone_hash\b\s*=/.test(src)
+    const escreveHash = /phone_hash\s*:/.test(src) || /'phone_hash'\s*:/.test(src) || /\bphone_hash\b\s*=/.test(src)
     expect(escreveHash, `${arquivo} grava phone_e164 sem phone_hash — reconhecimento morre e remarcar dá 500`).toBe(true)
   })
 })
