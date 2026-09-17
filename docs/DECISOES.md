@@ -9241,3 +9241,35 @@ Depois disso, um `awk` varrendo TODO `page.tsx` do projeto por um `await` solto 
 ocorrência, fora as óbvias (`await headers()`, `await params`, `await cookies()`,
 `await searchParams`, que não são candidatas). Os quatro achados desta rodada (itens 2, 3, 5, 6)
 eram as únicas instâncias deste padrão específico em todo o `src/app`.
+
+---
+
+## 2026-09-17 · Loop de copy e interface, item 1 · "salão" vazando pra profissão errada em 3 lugares
+
+**Medido por comparação, não suposição:** `vocabulario.ts` só troca 6 palavras por profissão
+(`cliente`, `atendimento`, `profissional`, `serviço`, `agenda`, `local`) — qualquer outra palavra
+fixa no texto vale para as 17 profissões igual. Grep por `salão` como texto de UI (não comentário)
+achou 3 ocorrências fora do padrão já estabelecido pelo resto da casa:
+
+1. **`admin/estoque/page.tsx`** — "Quem cuida das compras do salão vê esta tela." Comparado com as
+   3 telas IRMÃS (mesmo padrão de acesso negado): `admin/caixa`, `admin/comissao` e `admin/mes` já
+   usam "negócio" na mesma frase quase idêntica. Estoque era a única das quatro fora do padrão.
+2. **`admin/config/custo-fixo/editor.tsx`** — `aria-label="Quantas horas o salão fica aberto por
+   mês"`. Pior que o caso 1: o `<span>` visível ao lado já diz "Horas abertas no mês" sem
+   "salão" — só quem usa leitor de tela ouvia a palavra errada, exatamente a pessoa que mais
+   depende do rótulo estar certo.
+3. **`(public)/privacidade/page.tsx`** — "Cada salão só enxerga o próprio dado" e "isolamento por
+   salão", na política de privacidade PÚBLICA, lida por qualquer visitante independente da
+   profissão. A MESMA página já usa "negócio"/"conta" em pelo menos 6 outros lugares (linhas 99,
+   196, 203, 219, 223) — inconsistente com o resto do próprio arquivo, não só com a casa.
+
+A landing (`src/app/page.tsx:369-375`) já documenta em comentário que "salão" foi banido daquele
+botão especificamente por essa razão (`docs/20-COPY-PLANO.md §D.4`) — confirma que a casa já
+sabe do risco, só não tinha coberto os três lugares acima.
+
+**Conserto:** as 3 ocorrências trocadas por "negócio" (estoque, custo-fixo) ou "conta"
+(privacidade, para casar com o resto da mesma página). Guardas checadas antes de tocar em cada
+arquivo (`recurso-pago-avisa-antes`, `toda-rota-travada-tem-tela-que-avisa`,
+`alvo-de-toque-tem-largura`, `falar-com-a-gente-tem-com-quem`,
+`precos-nunca-sozinho-no-app-nativo`) — nenhuma âncora nessas strings específicas. `tsc`,
+`eslint` e `tests/unit` (283/2461) verdes.

@@ -17,7 +17,7 @@ const CANAL = canalDeContato('Oi! É sobre os meus dados no CICLO.')
  *   - "cifrado com chave que não fica junto do banco" → `VAULT_KEK`, `src/server/services/vault`;
  *   - "só quem tem permissão abre, e todo acesso fica registrado" → `vault_access_log`;
  *   - "o telefone é guardado embaralhado" → `PHONE_HASH_SALT`, `phone_hash`;
- *   - "cada salão só enxerga o próprio dado" → RLS com `force row level security` em toda tabela,
+ *   - "cada conta só enxerga o próprio dado" → RLS com `force row level security` em toda tabela,
  *     com teste de isolamento que quebra o build;
  *   - "dá para exportar e apagar" → `/api/v1/clients/[id]/data-export` e `.../erase`;
  *   - "quando você apaga, some da trilha também" → a eliminação alcança `audit_log` e
@@ -149,7 +149,7 @@ export default function Privacidade() {
             </li>
             <li>
               <strong className="font-semibold text-txt">Supabase</strong>, que hospeda o banco de
-              dados, com o mesmo isolamento por salão descrito na seção 4.
+              dados, com o mesmo isolamento por conta descrito na seção 4.
             </li>
           </ul>
         </section>
@@ -158,7 +158,7 @@ export default function Privacidade() {
           <h2>4. Como a gente protege</h2>
           <ul className="mt-2 list-disc pl-5">
             <li>
-              <strong className="font-semibold text-txt">Cada salão só enxerga o próprio dado.</strong>{' '}
+              <strong className="font-semibold text-txt">Cada conta só enxerga o próprio dado.</strong>{' '}
               O isolamento é feito no banco, não só na tela, e existe um teste automático que
               impede o sistema de subir se alguma tabela nova ficar de fora.
             </li>

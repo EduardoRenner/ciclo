@@ -39,7 +39,7 @@ export default async function PaginaEstoque() {
           <EmptyState
             icone={<Lock aria-hidden className="size-6" />}
             titulo="Você não tem acesso ao estoque"
-            descricao="Quem cuida das compras do salão vê esta tela. Peça ao dono se precisar."
+            descricao="Quem cuida das compras do negócio vê esta tela. Peça ao dono se precisar."
             acao={<Link href="/admin/hoje">Voltar para Hoje</Link>}
           />
         </Card>

@@ -121,7 +121,7 @@ export default function EditorCustoFixo({ inicial, respondido }: { inicial: Cust
             step="1"
             value={horas}
             onChange={(e) => setHoras(e.target.value)}
-            aria-label="Quantas horas o salão fica aberto por mês"
+            aria-label="Quantas horas o negócio fica aberto por mês"
             className="h-12 w-28 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-right text-corpo tabular text-txt"
           />
         </label>
