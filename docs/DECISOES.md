@@ -8815,3 +8815,19 @@ próprio de mutação.
 9900] to deeply equal [4900, 9900, 17900]`). Restaurado, suíte volta a 283/283.
 
 **Nenhum achado.** Backlog Fase A: 5 guardas antigas confirmadas nesta noite. Restam ~125.
+
+---
+
+## 2026-09-17 · Loop noturno (docs/67), item 28 · Fase A: lgpd-nao-promete-automatismo.ts — mutado, correto
+
+**Medido:** `lgpd-nao-promete-automatismo.test.ts` — liga o FAQ público (G92) ao estado real de
+`ROTAS_AGENDADAS`. Área de maior risco legal do produto (LGPD, dado de saúde) tocada esta noite
+além do vault (item já verificado madura em rodada anterior).
+
+**Mutação ao vivo:** adicionado `lgpd-retention` a `ROTAS_AGENDADAS` — simula o dia em que a
+anonimização automática for ligada sem o FAQ ser atualizado junto. Reprovou com a mensagem certa
+("lgpd-retention entrou no on.schedule... o FAQ precisa dizer isso"). Restaurado, suíte volta a
+283/283 (a mutação também não quebrou as outras guardas que leem `ROTAS_AGENDADAS`, confirmando
+que o teste certo, e só ele, reagiu).
+
+**Nenhum achado.** Backlog Fase A: 6 guardas antigas confirmadas nesta noite. Restam ~124.
