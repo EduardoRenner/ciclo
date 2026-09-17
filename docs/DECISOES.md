@@ -8465,3 +8465,20 @@ reprovaram (`expected 41880 to be 419`). Restaurado, suíte volta a 17/17.
 `caixa/concentracao.ts`, `comanda/totals.ts`, `loyalty/margem-do-clube.ts`,
 `loyalty/raio-x-de-recorrencia.ts`, `billing/mercado-pago.ts`, `pricing/formatar.ts`,
 `pricing/sinal.ts`, `agenda/ainda-conta-como-receita.ts`, `text/sem-amostra.ts`.
+
+---
+
+## 2026-09-17 · Loop noturno (docs/67), item 9 · dinheiro: comanda/totals.ts — mutado, correto
+
+**Medido:** `comanda/totals.ts` — `calcularTotalItem`, `calcularComissaoItem`, `calcularTotaisComanda`
+e `calcularSobraDaComanda` (a função que grava `tickets.profit_cents`, o número final de "Sobrou").
+
+**Mutação ao vivo:** removido `- entrada.discountCents` de `calcularSobraDaComanda` — o bug
+histórico documentado no próprio comentário (comanda de R$ 100 com R$ 20 de desconto: "sobrava"
+mais do que "entrava"). 4 de 20 casos reprovaram, incluindo um teste dedicado especificamente a
+"a tela do atendimento e o valor GRAVADO são o mesmo número" (`expected 4854 to be 6354`).
+Restaurado, suíte volta a 20/20.
+
+**Nenhum achado.** Sexto dos 16 módulos de dinheiro confirmados por mutação real — e o mais
+crítico até agora, por ser a função que escreve o valor final no banco (`tickets.profit_cents`),
+consumida tanto no fechamento quanto na tela ao vivo (o teste cruzado confirma as duas batem).
