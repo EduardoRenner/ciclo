@@ -9726,3 +9726,20 @@ Guarda reprovou corretamente: `AssertionError: o preço do serviço é formatado
 exatamente 1 (a linha do serviço). Se o campo mudou de nome, atualize este guarda junto.:
 expected 2 to be 1`. Restaurado com `git checkout --`, confirmado grep voltando a 1. `tests/unit`
 inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 22: `nunca-delete-o-que-e-historico`
+
+Guarda da inviolável nº 11 do CLAUDE.md: agendamento, movimento de estoque e registro de
+auditoria nunca são apagados por `.delete()` no código do app — usa-se estado/compensação. A
+guarda tem 6 asserções (2 pisos de controle positivo + 4 sobre o comportamento real); testada a
+principal, que varre `src/**/*.ts(x)` atrás de qualquer `.delete()` encadeado a `.from('<tabela
+de histórico>')`. Mutação: acrescentada uma função nova no fim de
+`src/server/services/agendamentos.ts` (`_mutacaoTesteDeleteHistorico`) fazendo
+`db.from('appointments').delete().eq('id', id)` — nunca chamada por ninguém, só para o extrator
+estático enxergar. Confirmado via grep que a string apareceu antes de rodar a guarda. Guarda
+reprovou corretamente: `expected [ Array(1) ] to deeply equal []`, apontando exatamente
+`"src/server/services/agendamentos.ts → appointments"`. Restaurado com `git checkout --`,
+confirmado via grep que a função sumiu. `tests/unit` inteiro (283/2461) verde depois.
