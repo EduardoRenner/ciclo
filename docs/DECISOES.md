@@ -8271,3 +8271,38 @@ serviço real usa — elimina a divergência de dia independente da hora em que 
 **Não verificado localmente** — sem Docker/Supabase local nesta sessão, `test:integration` não
 roda nesta máquina (limitação já registrada em `docs/49`). Typecheck e lint do arquivo, limpos.
 Aguardando confirmação da CI.
+
+---
+
+## 2026-09-16 · Conserto do layout (FORBIDDEN→onboarding) não cobre as páginas filhas
+
+**Contexto:** investigando `get_runtime_errors` depois do conserto de `admin/layout.tsx` desta
+sessão (redireciona pro onboarding quando `contextoAtual` lança `FORBIDDEN`), achei 1 ocorrência
+NOVA do mesmo erro em `/admin/config`, no deploy `dpl_Akgy3p7sqdXpwYiZheFUqWqXAvGR` — que já É o
+deploy com o conserto do layout (commit `b9d7122`, confirmado via `get_deployment`).
+
+**Causa raiz:** o conserto só protege a chamada de `contextoAtual` DENTRO do layout. Todo `page.tsx`
+sob `/admin` faz a MESMA chamada de novo (`vinculosAtivos` é `cache()` do React, então é a mesma
+consulta reaproveitada — mas o resultado é tratado de novo, ponto a ponto, por cada arquivo). Medido:
+33 das 34 páginas chamam `contextoAtual(` sem `.catch` nenhum (só `campanhas/page.tsx`,
+`clientes/[id]/page.tsx` e `hoje/page.tsx` têm ALGUM `.catch` no arquivo, mas nenhum deles protege
+a própria chamada de `contextoAtual`, e sim chamadas subsequentes de outras funções).
+
+Em navegação client-side (o Next.js App Router pré-busca `<Link>` no viewport por padrão), o
+segmento da PÁGINA pode ser buscado/renderizado sem re-executar o LAYOUT (que o navegador já tem
+montado de uma navegação anterior) — a página então lança `FORBIDDEN` sem ninguém tratando, e cai
+no `admin/error.tsx`.
+
+**Por que não é o trap original de 12 dias, de novo:** `admin/error.tsx` tem o botão "Ir para Hoje"
+como `<a href>` (navegação de página INTEIRA, não `<Link>`) — isso força o layout a rodar do zero,
+que redireciona certo pro `/onboarding`. A pessoa vê uma tela de erro confusa a mais, mas **não
+fica presa**: tem saída de um clique, ao contrário do bug original (que não tinha saída nenhuma).
+
+**Não corrigido nesta rodada, de propósito:** o conserto sistemático certo é fazer toda página do
+painel usar um wrapper compartilhado (`contextoAtual` + o mesmo catch/redirect do layout) em vez de
+cada uma tratar por conta própria — refatorar 33 arquivos sem conseguir rodar `test:integration`
+nesta máquina (sem Docker/Supabase local) seria editar às cegas numa área que já causou o bug mais
+sério desta sessão. Fica registrado como o próximo passo real, não como pendência esquecida: criar
+`contextoDoPainel(req)` em `server/auth/tenant.ts` com o mesmo catch do layout, e trocar as 33
+chamadas uma a uma (ou por um codemod), com guarda de teste que varra e reprove qualquer `page.tsx`
+sob `/admin` que chame `contextoAtual(` sem passar pelo wrapper.
