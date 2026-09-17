@@ -10269,3 +10269,20 @@ ver=dono`}` por `href="/dom-rocha/agendar?ver=dono"` — o defeito exato que o c
 descreve. Guarda reprovou corretamente: `a home voltou a escrever um slug de tenant à mão ...:
 expected [ 'dom-rocha' ] to deeply equal []`. Restaurado com `git checkout --`, confirmado
 (`slugDeExemplo` de volta). `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 52: `pagina-do-admin-usa-contexto-do-painel`
+
+Guarda de resiliência: o conserto de `admin/layout.tsx` (redireciona pro onboarding quando
+`contextoAtual` lança `FORBIDDEN`, conta sem estabelecimento) só protegia o LAYOUT — toda
+`page.tsx` sob `/admin` chamava `contextoAtual` de novo, sem o mesmo tratamento, e em navegação
+client-side o Next.js pode buscar só o segmento da página sem re-executar o layout já montado,
+deixando o `FORBIDDEN` sem ninguém tratando. Medido em produção: 1 ocorrência em `/admin/config`,
+NO DEPLOY que já tinha o conserto do layout. `contextoDoPainel` é o wrapper com o tratamento
+embutido. Mutação: `admin/config/page.tsx`, trocado `contextoDoPainel(...)` por `contextoAtual
+(...)` diretamente — reproduzindo exatamente o incidente medido. Guarda reprovou corretamente,
+apontando o arquivo exato: `src/app/admin/config/page.tsx: chama contextoAtual() direto ...:
+expected [ 'src/app/admin/config/page.tsx' ] to deeply equal []`. Restaurado com `git checkout --`,
+confirmado grep (`contextoDoPainel` de volta). `tests/unit` inteiro (283/2461) verde depois.
