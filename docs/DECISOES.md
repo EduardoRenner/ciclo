@@ -9839,3 +9839,21 @@ exatamente o defeito histórico do `db:types` original. Guarda reprovou corretam
 de posição: `a escrita voltou a acontecer antes das checagens: expected 2155 to be greater than
 2497`. Restaurado com `git checkout --`, confirmado grep (checagens de volta antes da escrita).
 `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 29: `quantos-estao-sumindo-e-um-numero-so`
+
+Guarda de consistência: "quantas clientes estão sumindo" tem que ser UM número — historicamente
+três lugares contavam linhas de `client_cycles` (cliente × serviço) como se fossem clientes,
+chegando a mostrar 149 num salão com 55. A definição agora mora na view `v_clientes_a_recuperar`
+(0058) com filtro `ja_atrasado = true`, e os DOIS contadores restantes (Central de Ações, via
+`resumo_central_de_acoes` na migration 0089, e o topo da lista de clientes em `crm.ts`) têm que
+usar o MESMO filtro — a guarda conta ocorrências, não pergunta "existe em algum lugar?", porque
+a primeira versão ingênua (`toMatch`) deixava passar um dos dois contadores perdendo o filtro
+sozinho. Mutação: `server/services/crm.ts`, removido `.eq('ja_atrasado', true)` do contador do
+painel da carteira — a view continua, mas sem o filtro, os dois números voltam a divergir. Guarda
+reprovou corretamente: `os dois contadores precisam do mesmo filtro: expected 1 to be 2`.
+Restaurado com `git checkout --`, confirmado grep (1 ocorrência de volta). `tests/unit` inteiro
+(283/2461) verde depois.
