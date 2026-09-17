@@ -9203,3 +9203,26 @@ referenciam `estoque`/`podeLancar` (`recurso-pago-avisa-antes.test.ts`,
 `toda-rota-travada-tem-tela-que-avisa.test.ts`) checam `lista.tsx` (o `disabled={!podeLancar}` no
 componente cliente) e a rota (`exigirModulo` no servidor), nunca COMO `page.tsx` calcula o
 booleano — sem colisão desta vez. `tsc`, `eslint` e `tests/unit` (283/2461) verdes.
+
+---
+
+## 2026-09-17 · Loop de performance, item 6 · `admin/campanhas/nova/page.tsx` — mesmo padrão do item 5
+
+`const plano = await contextoDePlano(db, ctx.tenantId)` rodava sozinho DEPOIS do `Promise.all`
+que já busca `modelos`, `negocio` e o público de cada um dos 5 segmentos da campanha
+(`SEGMENTOS_CAMPANHA.map(...)`). `contextoDePlano` só depende de `ctx.tenantId` — nenhuma relação
+com o resto do lote. E aqui nem cabe o argumento de fail-fast do item 4: o público de cada
+segmento é usado tanto na tela liberada quanto na `BloqueioPlano` (mostra "X pessoas esperando no
+maior grupo" como evidência), então o lote NUNCA é trabalho descartado, mesmo no caminho
+bloqueado — não havia motivo nenhum para a espera sequencial.
+
+**Guarda checada antes:** `recurso-pago-avisa-antes.test.ts` tem um `describe` dedicado a esta
+página (parte do bloco "toda porta de entrada do fluxo pago checa o plano antes", que existe
+desde 2026-09-08 por um incidente documentado: só a LISTA de campanhas checava o plano, a página
+de CRIAR não, e dava pra montar a campanha inteira antes da recusa). As duas asserções desse
+`describe` só conferem que `podeUsarModulo([^)]*'campaigns')` e `BloqueioPlano` aparecem em
+algum lugar do arquivo — nenhuma âncora de posição, sem colisão ao mover `contextoDePlano` para
+dentro do `Promise.all`.
+
+**Conserto:** `contextoDePlano(db, ctx.tenantId)` entrou como terceiro item do `Promise.all`
+(`plano`), a linha solta depois saiu. `tsc`, `eslint` e `tests/unit` (283/2461) verdes.

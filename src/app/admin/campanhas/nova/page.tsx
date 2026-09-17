@@ -25,9 +25,15 @@ export default async function PaginaNovaCampanha() {
 
   // Os cinco públicos vêm resolvidos de uma vez: a tela precisa mostrar o tamanho de cada grupo
   // ANTES da escolha ("Sumiram · 11 pessoas"), senão a pessoa escolhe às cegas.
-  const [modelos, negocio, ...publicos] = await Promise.all([
+  //
+  // `plano` entra aqui — antes rodava DEPOIS deste `Promise.all`, sozinho: `contextoDePlano` só
+  // depende de `ctx.tenantId`, e o público de cada segmento é usado tanto na tela liberada
+  // quanto na `BloqueioPlano` (a evidência "X pessoas esperando"), então o lote nunca é
+  // dispensado — não havia motivo de fail-fast pra esperar.
+  const [modelos, negocio, plano, ...publicos] = await Promise.all([
     listarModelos(db, ctx.tenantId),
     db.from('tenants').select('name').eq('id', ctx.tenantId).single(),
+    contextoDePlano(db, ctx.tenantId),
     ...SEGMENTOS_CAMPANHA.map((s) => publicoDaCampanha(db, ctx.tenantId, s.valor)),
   ])
 
@@ -45,7 +51,6 @@ export default async function PaginaNovaCampanha() {
     O maior dos cinco públicos é a evidência com o dado DELA que o §M.1 pede — é exatamente o
     que o Essencial libera alcançar de uma vez.
   */
-  const plano = await contextoDePlano(db, ctx.tenantId)
   if (podeUsarModulo(plano, 'campaigns').estado !== 'liberado') {
     const maiorPublico = Math.max(0, ...Object.values(porSegmento).map((p) => p.length))
     return (
