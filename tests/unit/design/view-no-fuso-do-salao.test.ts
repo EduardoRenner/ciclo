@@ -3,6 +3,8 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
+import { sqlSemComentarios } from '../../helpers/fonte'
+
 /**
  * Data de view roda no fuso da SESSAO, e a sessao do PostgREST e UTC. Medido em producao em
  * 2026-08-31: `current_setting('TimeZone')` = 'UTC'.
@@ -83,11 +85,19 @@ describe('view nao corta o dia no fuso do servidor', () => {
        * Qualquer corte de data conta, nao so `now()`. `v_daily_cash` faz
        * `date_trunc('day', t.closed_at)` sobre uma coluna `timestamptz` — mesma classe, outra
        * forma, e a primeira versao desta guarda nao a pegava.
+       *
+       * Sem comentario antes de casar: a versao original testava `corpo` cru, e o comentario que
+       * EXPLICA o conserto (`-- ... at time zone ...`) contem a mesma frase que o conserto real —
+       * remover a conversao de verdade do SQL e deixar a prosa acima intacta passava verde. Achado
+       * ao mutar a 0049 (removido o segundo `at time zone` da `v_carteira_resumo`): a guarda nao
+       * reprovou, porque as quatro ocorrencias de "at time zone" nos comentarios das linhas 24-32
+       * bastavam para `converte` dar `true`. Mesma armadilha nº1 do CLAUDE.md, aplicada a SQL.
        */
-      const usaDataDaSessao = /current_date|current_timestamp|date_trunc\s*\(/i.test(corpo)
+      const semComentario = sqlSemComentarios(corpo)
+      const usaDataDaSessao = /current_date|current_timestamp|date_trunc\s*\(/i.test(semComentario)
       if (!usaDataDaSessao) return
 
-      const converte = /at\s+time\s+zone/i.test(corpo)
+      const converte = /at\s+time\s+zone/i.test(semComentario)
       if (converte) return
 
       expect(

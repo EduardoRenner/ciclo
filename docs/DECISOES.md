@@ -9874,3 +9874,34 @@ reproduzindo exatamente o cenário do docstring. Guarda reprovou corretamente: `
 essencial anuncia "Controle de estoque" (stock), que esse degrau não libera: expected false to be
 true`. Restaurado com `git checkout --`, confirmado grep (1 ocorrência, só no avançado).
 `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 31: `view-no-fuso-do-salao` ERA CEGA, corrigida
+
+Guarda contra a classe "data cortada no fuso do servidor (UTC) em vez do fuso do salão" — já
+achada quatro vezes neste projeto (`v_daily_cash` abandonada, `receitaAtribuidaAoCiclo`,
+`v_client_segments` na 0048, `v_carteira_resumo` na 0049). Mutação: `supabase/migrations/
+0049_novos_do_mes_no_fuso_do_salao.sql`, no filtro `novos_mes` da view `v_carteira_resumo`,
+trocado `c.created_at >= (date_trunc('month', now() at time zone t.timezone) at time zone
+t.timezone)` por `c.created_at >= date_trunc('month', now())` — exatamente o "jeito antigo" que o
+próprio comentário do arquivo documenta como o defeito histórico.
+
+**A guarda passou verde.** Raiz: `viewsDeclaradas()` lê o corpo da view SEM tirar comentários
+(diferente de quase toda guarda deste projeto), e o comentário que EXPLICA o conserto (linhas
+24-32, quatro ocorrências de "at time zone" comparando o jeito certo com o "ingênuo") continha a
+mesma frase que a checagem `converte = /at\s+time\s+zone/i.test(corpo)` procurava no CÓDIGO. Tirei
+a conversão real do SQL, deixei a prosa acima intacta, e a prosa sozinha bastava para `converte`
+dar `true` — armadilha nº1 do CLAUDE.md ("casa com o próprio comentário"), quarta vez que essa
+classe aparece nesta base (conforme o próprio docstring de `tests/helpers/fonte.ts`), agora numa
+guarda de SQL que não usava o `sqlSemComentarios` já existente para esse fim.
+
+**Conserto:** importado `sqlSemComentarios` de `tests/helpers/fonte.ts` e aplicado ao `corpo` antes
+das duas checagens (`usaDataDaSessao` e `converte`), com docstring explicando o achado.
+**Reprovação da guarda corrigida, com a MESMA mutação original ainda aplicada:** `v_carteira_resumo
+corta data no fuso da sessao (UTC) e nao converte para o fuso do tenant. ...: expected undefined to
+be defined` — confirmando que o conserto funciona antes de reverter a migration. Restaurada a
+migration com `git checkout --`, confirmado grep (SQL original de volta, com os dois `at time
+zone`). O conserto da guarda (`view-no-fuso-do-salao.test.ts`) foi MANTIDO, não revertido.
+`tests/unit` inteiro (283/2461) verde depois, com o conserto em vigor.
