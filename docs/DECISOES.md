@@ -9668,3 +9668,30 @@ comparar duas janelas diferentes como se fossem uma. Mutação: `atribuicao.ts`,
 `mensagensNaJanela: campanhas.length` do retorno de `receitaAtribuidaAoCiclo`. Guarda reprovou
 corretamente. Restaurado com `git checkout --`, árvore limpa. `tests/unit` inteiro (283/2461)
 verde depois.
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 18: `revogar-imagem-despublica-de-verdade`
+
+Guarda de LGPD/privacidade: revogar consentimento de uso de imagem tinha que tirar a foto do
+bucket PÚBLICO antes de apagar a linha que guarda o `storage_key` — na ordem errada, uma falha
+no Storage deixava o arquivo órfão e público para sempre (a linha que apontava pra ele já tinha
+sumido). Mutação: `consentimentos.ts`, `despublicarTudoDoCliente` — invertida a ordem real
+(`.delete()` de `portfolio_photos` movido pra ANTES de `storage.remove`), reintroduzindo o
+defeito histórico. Guarda reprovou corretamente na asserção de ORDEM (`expected 3356 to be less
+than 3123`); as outras duas asserções (presença das duas chamadas, `throw` na falha) continuaram
+passando, como esperado — só a ordem mudou. Restaurado com `git checkout --`, confirmado que o
+Storage volta a vir antes do delete. `tests/unit` inteiro (283/2461) verde depois.
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 19: `o-mes-compoe-nao-recalcula`
+
+Guarda contra segunda fonte de verdade: a tela do mês tem que COMPOR os cinco números que já
+existem em outras telas, nunca recalcular por conta própria (a mesma classe do achado do
+livro-caixa, onde pedido e caixa contavam o mesmo dinheiro duas vezes). Mutação:
+`admin/mes/resumo.tsx`, trocado `percentualOuTraco(motor.acertoBps)` por um ternário manual
+(`Math.round((motor.acertoBps ?? 0) / 100)}%`) — reintroduzindo exatamente o defeito histórico
+que a guarda documenta (zero medido virando indistinguível de "sem amostra"). Guarda reprovou
+corretamente na asserção que checa a chamada da função. Restaurado com `git checkout --`, árvore
+limpa. `tests/unit` inteiro (283/2461) verde depois.
