@@ -8723,3 +8723,22 @@ resposta de API não redireciona).
 
 **Fica para o Eduardo decidir:** manter (documentando o propósito) ou remover (com o `pnpm verify`
 confirmando que nada mais depende). Nenhuma ação tomada.
+
+---
+
+## 2026-09-17 · Loop noturno (docs/67), item 22 · indicacao-no-gratis.test.ts — mutado, correto
+
+**Medido:** `indicacao-no-gratis.test.ts` — guarda com posição relativa (checagem de módulo ANTES
+do primeiro lançamento em `loyalty_entries`), histórico de incidente real documentado (26/08: 11
+tenants sem `settings.loyalty` gravado, e `dom-rocha` acumulou 9 lançamentos em 263 atendimentos —
+a automação rodava sem ninguém ligar nada).
+
+**Mutação ao vivo:** removida a linha `if (podeUsarModulo(plano, 'loyalty').estado !== 'liberado')
+return` de `pontuarAtendimentoConcluido` — reproduz o incidente exato. Reprovou com a mensagem
+certa ("a checagem de loyalty sumiu... tenant do Grátis volta a pontuar sozinho"). Restaurado,
+`pnpm test:unit` completo (283 arquivos, 2461 casos) verde.
+
+**Nenhum achado.** Amostra de 3 dos 39 arquivos do backlog "assert-vazio" da Fase I (`docs/66`):
+este e mais dois lidos (`toda-rota-passa-pelo-rota.test.ts`, `modulos.test.ts`) — os outros dois
+não mutados por brevidade, mas a leitura não achou padrão de "passa vazio sem montar cenário".
+Backlog remanescente: 36 arquivos.
