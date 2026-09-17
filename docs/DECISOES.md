@@ -9226,3 +9226,18 @@ dentro do `Promise.all`.
 
 **Conserto:** `contextoDePlano(db, ctx.tenantId)` entrou como terceiro item do `Promise.all`
 (`plano`), a linha solta depois saiu. `tsc`, `eslint` e `tests/unit` (283/2461) verdes.
+
+---
+
+## 2026-09-17 · Loop de performance, item 7 · varredura final do padrão "await solto depois do lote"
+
+`admin/config/meu-plano/page.tsx`, `admin/config/planos/page.tsx` e `admin/orcamentos/page.tsx`
+lidos — os três JÁ colocam toda consulta independente no mesmo `Promise.all`, incluindo as
+condicionadas por permissão (`podeVerMargem ? margensDoClube(...) : Promise.resolve([])` em
+`config/planos`, o mesmo padrão que os itens 2/3 introduziram em `caixa`/`comanda`). Sem achado.
+
+Depois disso, um `awk` varrendo TODO `page.tsx` do projeto por um `await` solto entre o primeiro
+`Promise.all` e o próximo `return` (o sintoma exato dos itens 2, 3, 5 e 6) não achou mais nenhuma
+ocorrência, fora as óbvias (`await headers()`, `await params`, `await cookies()`,
+`await searchParams`, que não são candidatas). Os quatro achados desta rodada (itens 2, 3, 5, 6)
+eram as únicas instâncias deste padrão específico em todo o `src/app`.
