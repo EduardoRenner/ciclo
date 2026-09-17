@@ -9038,3 +9038,34 @@ prontas, orçamento nas duas direções, promessa pública não cumprida, telas 
 esgotado. Um bug real achado e corrigido (item 4, corrida em `transicaoPublica`). Relatório final
 em `docs/69-RELATORIO-LOOP-CLIENTE.md`. Parando por decisão própria — mesma lógica do `docs/68`
 §8: continuar sem próximo alvo concreto vira simular atividade.
+
+---
+
+## 2026-09-17 · Loop de performance, item 1 · busca de disponibilidade em dobro no agendamento público
+
+**Medido na rede** (não deduzido): abri `/apple-review/agendar` no navegador, cliquei no primeiro
+serviço da lista (o que já vem selecionado por padrão — `services[0]?.id` quando não há
+`?servico=`) e o Network mostrou **duas requisições idênticas**, a poucos milissegundos uma da
+outra: `GET /api/v1/public/apple-review/availability?serviceId=…&date=…` × 2, mesmo `serviceId`,
+mesma `date`. Não é StrictMode (produção, sem dev overlay) — é dois disparadores reais.
+
+**Causa:** `agendar.tsx` tem um `useEffect` de montagem que busca disponibilidade sozinha quando
+já existe um `serviceId` inicial (`services[0]` por padrão, ou `?servico=`/`?profissional=` já
+resolvidos pelo servidor) — comportamento correto e documentado ("carrega os horários do primeiro
+dia sozinho"). `escolherServico`/`escolherProfissional`, chamadas pelo clique no card, **sempre**
+disparavam `buscarDisponibilidade` de novo, mesmo quando o id escolhido já era o corrente. Quem
+toca no serviço/profissional já pré-selecionado — caminho comum: salão de um serviço só, ou
+simplesmente confirmar a primeira opção da lista — pagava a consulta em dobro: duas idas ao banco
+(`business_hours` + `time_off` + `appointments`, três tabelas por profissional) para o mesmo
+resultado.
+
+**Conserto:** `escolherServico`/`escolherProfissional` agora comparam o id novo contra o atual
+antes de buscar — só refazem a busca quando algo de fato mudou. `&& !erro` na comparação
+preserva o clique como retentativa: se a busca automática falhou, tocar de novo no mesmo
+serviço/profissional continua tentando de novo, em vez de calar porque "nada mudou" (a região de
+erro já existe na tela — sem isso, o clique deixaria de ser saída de recuperação).
+
+**Verificado:** `tsc`, `eslint` e `tests/unit` (283/2461) verdes — nenhum teste unitário exercita
+este componente (é Client Component sem harness de render, mesma lacuna já documentada em outras
+telas públicas). A prova real fica para depois do deploy: reabrir a mesma tela e repetir o clique,
+conferindo no Network que sobra **uma** requisição, não duas.

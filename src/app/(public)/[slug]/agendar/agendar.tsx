@@ -553,16 +553,28 @@ export default function Agendar({
   const profissionalExpandido = !escolhaProfissionalFeita || edicaoProfissional;
 
   function escolherServico(id: string) {
+    /*
+      Medido na rede em 17/09: tocar o serviço já selecionado (o padrão da tela, `services[0]`,
+      ou o de `?servico=`) disparava DUAS buscas idênticas de disponibilidade — a automática do
+      `useEffect` de montagem (linha abaixo) e esta, uma atrás da outra, para o mesmo serviço e
+      o mesmo dia. É o caminho mais comum da tela: quem só tem um serviço, ou confirma o primeiro
+      da lista, sempre pagava a busca em dobro.
+
+      `!erro` mantém o clique como saída de recuperação: se a busca automática falhou, tocar de
+      novo no mesmo serviço continua tentando de novo, em vez de calar porque "nada mudou".
+    */
+    const jaEraEsse = id === serviceId && !erro;
     setServiceId(id);
+    setEscolhaServicoFeita(true);
+    setEdicaoServico(false);
+    rolarPara(professionals.length > 1 ? passoProfissionalRef : passoDiaRef);
+    if (jaEraEsse) return;
     setSlots(null);
     setSlotEscolhido(null);
     // Trocar de serviço troca o que "leva junto" significa — a marcação do serviço anterior não
     // pode sobreviver e virar interesse num produto que nem apareceu na tela.
     setQuerLevarProduto(false);
     buscarDisponibilidade(dia, id);
-    setEscolhaServicoFeita(true);
-    setEdicaoServico(false);
-    rolarPara(professionals.length > 1 ? passoProfissionalRef : passoDiaRef);
   }
 
   function escolherHorario(s: Slot) {
@@ -572,11 +584,16 @@ export default function Agendar({
   }
 
   function escolherProfissional(id: string | null) {
+    // Mesmo raciocínio de `escolherServico`: tocar "Tanto faz" (ou o profissional de
+    // `?profissional=`) quando ele já é o filtro atual repetia a busca que a montagem já tinha
+    // feito. `!erro` preserva o clique como retentativa quando a automática falhou.
+    const jaEraEsse = id === professionalId && !erro;
     setProfessionalId(id);
-    buscarDisponibilidade(dia, undefined, id);
     setEscolhaProfissionalFeita(true);
     setEdicaoProfissional(false);
     rolarPara(passoDiaRef);
+    if (jaEraEsse) return;
+    buscarDisponibilidade(dia, undefined, id);
   }
 
   function confirmar() {
