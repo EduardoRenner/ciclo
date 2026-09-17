@@ -8499,3 +8499,21 @@ diferentes". Restaurado, suíte volta a 12/12.
 `caixa/concentracao.ts`, `loyalty/raio-x-de-recorrencia.ts`, `billing/mercado-pago.ts`,
 `pricing/formatar.ts`, `pricing/sinal.ts`, `agenda/ainda-conta-como-receita.ts`,
 `text/sem-amostra.ts`, `crm/lucro-do-cliente.ts` (parte não tocada no item 4).
+
+---
+
+## 2026-09-17 · Loop noturno (docs/67), item 11 · dinheiro: caixa/concentracao.ts — mutado, correto
+
+**Medido:** `caixa/concentracao.ts` (docs/48 C7, "62% do seu lucro depende do Rafa" — rateio de
+lucro por profissional, base do mecanismo de sobra de arredondamento reusado por
+`taxa-por-forma.ts` e `margem-do-servico.ts`).
+
+**Mutação ao vivo:** removida a linha que credita a sobra de arredondamento à maior fatia em
+`ratearLucroDaComanda`. Reprovou exatamente no teste dedicado a essa invariante ("a soma das
+fatias é exatamente o lucro da comanda, mesmo com arredondamento" — `expected +0 to be 1`).
+Restaurado, suíte volta a 11/11.
+
+**Nenhum achado.** Oitavo dos 16 módulos de dinheiro confirmados por mutação real — mais da metade
+do backlog da Fase C do `docs/66` já coberta nesta noite. Restam 8: `loyalty/raio-x-de-
+recorrencia.ts`, `billing/mercado-pago.ts`, `pricing/formatar.ts`, `pricing/sinal.ts`,
+`agenda/ainda-conta-como-receita.ts`, `text/sem-amostra.ts`.
