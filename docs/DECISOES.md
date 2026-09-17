@@ -9019,3 +9019,22 @@ para a CI (`pnpm test:integration` roda lá, com banco de verdade) no próximo p
 já existente) continua passando: a segunda chamada sequencial lê o status já mudado
 (`approved`) e cai no `if (quote.status === alvo) return quote` **antes** de tocar o código
 alterado — o comportamento sequencial não muda, só o concorrente.
+
+**Atualização:** CI do commit `9aa785d` fechou verde nos três jobs, incluindo "Banco e RLS"
+(onde `pnpm test:integration` roda contra banco de verdade) — o teste de concorrência passou
+com o conserto aplicado. Prova real obtida, só não localmente nesta sessão.
+
+---
+
+## 2026-09-17 · Loop cliente final — encerrado, relatório em docs/69
+
+Itens 5, 6 e 7 desta rodada: `error.tsx`/`not-found.tsx` (boundaries da raiz, cobrem toda rota
+pública) e a copy de "você vai receber confirmação por WhatsApp" em `agendar.tsx` — todos já
+corrigidos em sessões anteriores, com histórico documentado no próprio código e guarda dedicada
+onde fazia sentido (`agendamento-publico-nao-promete-demais.test.ts`). Sem achado novo.
+
+Escopo do loop (agendamento público, confirmar/cancelar, avaliar, lista de espera, mensagens
+prontas, orçamento nas duas direções, promessa pública não cumprida, telas de erro públicas)
+esgotado. Um bug real achado e corrigido (item 4, corrida em `transicaoPublica`). Relatório final
+em `docs/69-RELATORIO-LOOP-CLIENTE.md`. Parando por decisão própria — mesma lógica do `docs/68`
+§8: continuar sem próximo alvo concreto vira simular atividade.
