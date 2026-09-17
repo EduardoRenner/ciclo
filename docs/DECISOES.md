@@ -9547,3 +9547,53 @@ verdade, `{'phone_hash': valor}`), não apenas presente num array de nomes. Reap
 mutação (script ainda quebrado) contra a guarda CORRIGIDA: reprovou certo, `expected true
 received false`. Restaurado o script, guarda volta a passar (19/19) contra o código real.
 `tsc`, `eslint` e `tests/unit` inteiro (283/2461) verdes.
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 10: `seed-demo-nao-deixa-hash-nulo` (a guarda irmã) — afiada
+
+O arquivo em si já documenta duas cegueiras achadas e corrigidas em sessões anteriores
+("delimitado pelo fim real da lista de colunas", "duas guardas cegas no mesmo arquivo, as duas
+pela mesma causa") — sinal de que já passou por mutação cuidadosa antes. Uma checagem pontual:
+mutação em `scripts/seed-demo-carteira.sql`, removido `phone_hash` da lista de colunas do
+PRIMEIRO `insert into clients` (linha 199, o mesmo insert que a guarda mede). Guarda reprovou
+corretamente, mostrando a lista de colunas sem `phone_hash`. Restaurado, árvore limpa.
+`tests/unit` inteiro (283/2461) verde depois. Não mutei as outras 11 asserções deste arquivo —
+já documentadas como mutation-tested em rodadas anteriores.
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 11: `estado-vazio-tem-saida`
+
+Guarda que varre TODO `<EmptyState>` de `src/app` e exige que `acao` seja um Link/Button de
+verdade (nasceu do achado de 31/08: a tela de Recuperar receita virou o botão central da barra e
+seu vazio só tinha `<span>Volte mais tarde</span>`, satisfazendo o tipo sem cumprir nada).
+Mutação: `admin/clientes/lista.tsx`, trocado `acao={<Link href="/admin/clientes/nova">Cadastrar
+{vocabulario.cliente}</Link>}` por `acao={<span>Cadastre mais tarde</span>}` — exatamente o
+padrão do achado original. Guarda reprovou corretamente: `expected undefined to be defined`, no
+arquivo certo. Restaurado, árvore limpa. `tests/unit` inteiro (283/2461) verde depois.
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 12: `todo-campo-tem-rotulo`
+
+Varredura de todo `<input>` cru em `src/app`+`src/components` por rótulo associado
+(`<label>`/`id`+`htmlFor`/`aria-label`). Mutação: `admin/config/profissionais/lista.tsx`,
+removido `id={ID_LINK_CONVITE}` do campo do link de convite — o mesmo campo que o próprio
+docstring da guarda cita como o ÚNICO defeito real achado na auditoria original (2026-09-08,
+tinha um `<p>` fazendo as vezes de rótulo sem associação nenhuma). Guarda reprovou
+corretamente: `["src/app/admin/config/profissionais/lista.tsx:498 (type=text)"]`. Restaurado
+com `git checkout --`, confirmado via `git diff --stat` que o arquivo voltou byte-a-byte ao
+estado do HEAD. `tests/unit` inteiro (283/2461) verde depois.
+
+---
+
+## Resumo do loop de guardas-cegas até aqui (itens 1-12)
+
+Doze guardas mutadas. Onze confirmadas AFIADAS de primeira. Uma (`seed-que-grava-telefone-
+grava-hash`, item 9) estava CEGA de verdade — corrigida com o mesmo rigor da guarda de
+segurança do loop de performance (mutação → achado → conserto do padrão → remutação →
+confirmação → restauração). Cobertura: trava de plano (2 mecanismos), RLS de view, regra de
+lint contra `service_role`, `httpOnly` do cookie, deny-list do service worker, takeover de
+conta via reset de senha, open redirect no login (2 mecanismos), dois seeds de hash de
+telefone, estado vazio com saída, e rótulo de campo. Continuando o backlog do `docs/68` §6.
