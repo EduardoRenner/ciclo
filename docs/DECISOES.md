@@ -10105,3 +10105,20 @@ vermelho". Testado o bloqueio de indexação: `/admin` precisa continuar no `dis
 `robots.txt`). Mutação: `src/app/robots.ts`, removido `'/admin'` do array `disallow`. Guarda
 reprovou corretamente: `/admin saiu do disallow do robots`. Restaurado com `git checkout --`,
 confirmado grep (`/admin` de volta). `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 43: `barra-flutuante-nao-cobre-o-fim-da-lista`
+
+Guarda de interface, família `consertar-a-pergunta-nao-o-caso`: a `ActionBar` é `fixed` e flutua
+sobre o conteúdo — medido a 390px, seu topo fica a 146px do fundo da tela, mas o `pb` padrão do
+layout do admin só reserva 92px, deixando ~54px de lista permanentemente atrás de um cartão quase
+opaco. `ficha.tsx` já tinha consertado isso com `pb-20`; `recuperar.tsx` (o botão CENTRAL da barra
+de abas) ficou com o mesmo defeito até ganhar o mesmo conserto — e esta guarda existe para a
+PRÓXIMA tela, não só as duas de hoje. Mutação: `admin/recuperar/recuperar.tsx` linha 159, removida
+a classe condicional `itensSelecionados.length > 0 ? 'pb-20' : undefined` do `<div>` raiz,
+deixando `<div>` puro. Guarda reprovou corretamente: `recuperar.tsx rende uma ActionBar e não
+reserva folga no fim ...: expected false to be true` — `ficha.tsx` continuou passando, como
+esperado. Restaurado com `git checkout --`, confirmado grep (`pb-20` de volta). `tests/unit`
+inteiro (283/2461) verde depois.
