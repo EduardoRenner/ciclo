@@ -8560,3 +8560,18 @@ novo com a guarda fortalecida: reprovou corretamente (`expected 461 to be 460`).
 nenhum teste usava esse número. Vale registrar como lição de revisão: quando um comentário cita um
 caso numérico específico como prova de um bug passado, checar se ALGUM teste usa exatamente esses
 números — "o bug está documentado" não é o mesmo que "o bug está guardado".
+
+---
+
+## 2026-09-17 · Loop noturno (docs/67), item 14 · dinheiro: raio-x-de-recorrencia.ts — mutado, correto
+
+**Medido:** `loyalty/raio-x-de-recorrencia.ts` (docs/60 C-03, cenários de adoção do clube por
+percentual fixo — nunca estima adesão real, decisão de produto documentada).
+
+**Mutação ao vivo:** trocado `Math.floor` por `Math.ceil` no arredondamento de assinantes
+estimados — contradiz o comentário explícito ("nunca promete mais gente do que a conta bate").
+Reprovou no teste dedicado (`expected 3 to be 2`, 30% de 7 = 2,1 → devia truncar pra 2). Restaurado,
+suíte volta a 4/4.
+
+**Nenhum achado.** Décimo dos 16 módulos de dinheiro confirmados por mutação real. Restam 6:
+`billing/mercado-pago.ts`, `agenda/ainda-conta-como-receita.ts`, `text/sem-amostra.ts`.
