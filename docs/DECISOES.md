@@ -9125,3 +9125,35 @@ se algum tenant cruza esse teto — não tenho acesso a produção para contar l
 volume seria estimar, não medir (proibido). Fica registrado para quando houver uma conta real
 grande o bastante para checar, ou para o Eduardo decidir se vale investir numa agregação em SQL
 (count/média no banco em vez de trazer as linhas pro Node) independente do volume de hoje.
+
+---
+
+## 2026-09-17 · Loop de performance, item 3 · `admin/comanda/[id]` tinha o mesmo waterfall — e uma guarda de segurança colidiu com o conserto
+
+Mesma classe do item 2: `sobra` (o cartão "Sobrou" da comanda) só depende de `ticket`/`items`
+(`buscarComanda`), mas esperava as outras três consultas do lote (`listarServicos`,
+`listarProdutosAtivos`, `contextoDePlano`) terminarem antes de sequer começar suas próprias duas
+consultas (`lerTaxasDoTenant` + `tenants.settings`). Mesmo conserto: `buscarComanda` virou
+`comandaPromise`, `sobra`/`destinoDaFicha` viraram `sobraPromise` encadeada nela (`.then()`),
+ambas reaproveitadas — nunca chamadas duas vezes — dentro do mesmo `Promise.all` final.
+
+**A parte que importa mais que o ganho de performance:** o refactor mudou a FORMA do código de
+`const sobra = podeVerLucro && (...) ? await (...) : null` para um `if` de retorno antecipado
+dentro do `.then()`, e isso quebrou `tests/unit/design/lucro-nao-vaza-para-quem-atende.test.ts` —
+a guarda que existe porque comissão/lucro é dado sensível DENTRO do salão (o profissional
+comissionado abre a mesma tela, `comanda:own`) e já vazou uma vez antes (achado em 2026-09-09,
+citado no próprio docstring da guarda). A guarda casava com a FORMA antiga do código
+(`const sobra = ... : null`), não com a permissão em si.
+
+Não ajustei a guarda só para fazer passar. Reli o docstring inteiro (explica os DOIS caminhos de
+vazamento — a porta do servidor e a janela do cliente — e cita o incidente histórico de
+2026-09-09), tracei manualmente que a propriedade de segurança continua verdadeira no código novo
+(`if (!(podeVerLucro && ticket.status ∈ {closed,paid})) return { sobra: null, ... }` é a MESMA
+condição, só invertida em guarda de retorno em vez de ternário), e reescrevi o regex da guarda
+para casar com a nova forma em vez da antiga — exigindo `podeVerLucro` colado no `!(` que leva ao
+`return { sobra: null`, não apenas a palavra solta em algum lugar do arquivo.
+
+**Mutação, não só leitura — a regra do CLAUDE.md não é opcional para guarda de segurança.**
+Reintroduzi o defeito de propósito (removi `podeVerLucro &&` da condição, deixando só a checagem
+de `ticket.status`) e confirmei que a guarda ATUALIZADA reprova com a mensagem certa antes de
+restaurar. Detalhe de como fiz isso abaixo. `tests/unit` inteiro (283/2461) verde depois.

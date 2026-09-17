@@ -47,12 +47,17 @@ describe('o lucro do atendimento não chega a quem não pode ver', () => {
     const src = semComentarios(PAGINA)
     expect(/avaliarPermissao\(\s*ctx\.papel\s*,\s*'report:read'\s*\)/.test(src), 'a página não confere `report:read`').toBe(true)
 
-    // A atribuição inteira, não só a presença da variável: dar o nome `podeVerLucro` a uma
-    // constante e não usá-la na decisão é exatamente o falso verde que esta guarda existe para
-    // evitar.
-    const atribuicao = /const sobra\s*=[\s\S]*?:\s*null/.exec(src)
-    expect(atribuicao?.[0], 'a página não calcula mais `sobra` — guarda a revisar').toBeDefined()
-    expect(/podeVerLucro\s*&&/.test(atribuicao![0]), 'a sobra é calculada sem depender de `podeVerLucro`').toBe(true)
+    /*
+      Loop de performance (2026-09-17): `sobra` deixou de ser uma atribuição-ternário direta e
+      passou a vir de `sobraPromise` (encadeada em `comandaPromise`, para não esperar as outras
+      consultas do lote que nada têm a ver com ela — mesmo achado de `admin/caixa/page.tsx`). A
+      trava de permissão virou um retorno antecipado: `if (!(podeVerLucro && …)) return { sobra:
+      null, … }`. A guarda casa com ESSA forma agora — o `!(` colado em `podeVerLucro` é o que
+      garante que a negação da permissão é o que leva ao `sobra: null`, não uma coincidência de
+      nomes soltos no arquivo.
+    */
+    const guarda = /if\s*\(\s*!\(\s*podeVerLucro[\s\S]{0,200}?\)\s*\)\s*\{\s*return\s*\{\s*sobra:\s*null/.exec(src)
+    expect(guarda?.[0], 'a página não calcula mais `sobra` com a trava de `podeVerLucro` — guarda a revisar').toBeDefined()
   })
 
   it('a tela cliente não lê nenhum número de lucro direto do ticket', () => {
