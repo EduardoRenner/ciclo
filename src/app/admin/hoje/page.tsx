@@ -11,6 +11,7 @@ import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { receitaAtribuidaAoCiclo } from '@/server/services/atribuicao'
 import { centralDeAcoes } from '@/server/services/crm'
 import { registrarPrimeiraOcorrencia } from '@/server/services/product-events'
+import { prestacaoDeContasDoMotor } from '@/server/services/previsao'
 import { listarParaRecuperar } from '@/server/services/recuperar-receita'
 import { resumoDeHoje } from '@/server/services/resumo-hoje'
 
@@ -43,7 +44,9 @@ export default async function PaginaHoje() {
   const desde = mesAtual.toPlainDate({ day: 1 }).toString()
   const ate = mesAtual.toPlainDate({ day: mesAtual.daysInMonth }).toString()
 
-  const [resumo, acoes, atribuicao, emRisco] = await Promise.all([
+  const hoje = Temporal.Now.zonedDateTimeISO(timezone).toPlainDate().toString()
+
+  const [resumo, acoes, atribuicao, emRisco, prestacaoDeContas] = await Promise.all([
     resumoDeHoje(db, ctx.tenantId, timezone),
     /*
       Nunca derruba "Hoje": um resumo de CRM que falhar vira lista vazia, não erro na tela mais
@@ -89,6 +92,13 @@ export default async function PaginaHoje() {
     listarParaRecuperar(db, ctx.tenantId, { limit: 1 }).catch((erro: unknown) => {
       console.warn(JSON.stringify({ level: 'warn', event: 'receita_em_risco_indisponivel' }), erro)
       return { totalValueCents: 0, totalProfitCents: 0, count: 0, items: [] }
+    }),
+    // docs/45 §1.4: a manchete, não a explicação (essa mora em /admin/recuperar). Mesmo `catch`
+    // das outras chamadas — sem amostra suficiente `acertoBps` já vem `null` e o teaser não
+    // desenha nada, então uma falha aqui é indistinguível de "ainda sem histórico" para quem olha.
+    prestacaoDeContasDoMotor(db, ctx.tenantId, hoje).catch((erro: unknown) => {
+      console.warn(JSON.stringify({ level: 'warn', event: 'prestacao_de_contas_indisponivel' }), erro)
+      return { conferidas: 0, acertos: 0, acertoBps: null, emAberto: 0, detalhe: { voltouAntes: 0, voltouNaJanela: 0, voltouDepois: 0, naoVoltou: 0 }, erroMedianoDias: null }
     }),
   ])
 
@@ -147,6 +157,7 @@ export default async function PaginaHoje() {
         atribuicao={atribuicao}
         emRisco={{ totalCents: emRisco.totalValueCents, count: emRisco.count }}
         site={ctx.tenant.slug ? { slug: ctx.tenant.slug, nome: ctx.tenant.name } : null}
+        prestacaoDeContas={prestacaoDeContas}
       >
         <CentralDeAcoes dados={acoes} nativo={nativo} />
       </Hoje>

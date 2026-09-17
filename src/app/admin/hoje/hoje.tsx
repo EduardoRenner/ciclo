@@ -17,8 +17,10 @@ import { aplicarVariaveis, linkWhatsApp } from '@/lib/mensagens'
 
 import DetalheAgendamento from '../agenda/detalhe'
 import CompartilharSite from './compartilhar'
+import PrestacaoTeaser from './prestacao-teaser'
 
 import type { EstadoAgendamento } from '@/core/scheduling/state'
+import type { PrestacaoDeContas } from '@/core/cycle/prestacao-de-contas'
 import type { LinhaAgendaDia } from '@/server/services/agendamentos'
 import type { ReceitaAtribuida } from '@/server/services/atribuicao'
 import type { LinhaHoje, ResumoHoje } from '@/server/services/resumo-hoje'
@@ -170,6 +172,7 @@ export default function Hoje({
   atribuicao,
   emRisco,
   site,
+  prestacaoDeContas,
   children,
 }: {
   resumo: ResumoHoje
@@ -178,6 +181,8 @@ export default function Hoje({
   emRisco: { totalCents: number; count: number }
   /** docs/62 Fase A2: `null` só quando o tenant ainda não tem slug (não deveria acontecer em /admin, mas o tipo permite). */
   site: { slug: string; nome: string } | null
+  /** docs/45 §1.4: a manchete do único recurso que nenhum concorrente pesquisado tem. */
+  prestacaoDeContas: PrestacaoDeContas
   children?: React.ReactNode
 }) {
   const atualizarDepois = useAtualizarDepois()
@@ -492,6 +497,8 @@ export default function Hoje({
           )}
         </section>
       ) : null}
+
+      <PrestacaoTeaser contas={prestacaoDeContas} />
 
       <Sheet aberto={!!selecionado} aoFechar={(aberto) => !aberto && setSelecionado(null)} titulo="Agendamento">
         {selecionado ? (
