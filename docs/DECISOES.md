@@ -8407,3 +8407,31 @@ ao commit, suíte volta a 10/10 verde.
 
 **Nenhum achado — guarda robusta, não cega.** Segundo dos 16 módulos de dinheiro confirmados por
 mutação real (o primeiro foi `taxa-por-forma.ts`, item 3). Restam 13.
+
+---
+
+## 2026-09-17 · Loop noturno (docs/67), item 6 · dinheiro: custo-fixo.ts — mutado, correto
+
+**Medido:** `comanda/custo-fixo.ts` (o custo de hora de cadeira — aluguel/luz/software rateado por
+hora e por posto de atendimento). Confirmado que está genuinamente ligado ponta a ponta:
+`server/services/comanda.ts:321` chama `custoFixoDoAtendimento(lerCustoFixo(tenant.settings),
+duracaoTotalMin)`, e `core/comanda/sobra-explicada.ts` (`explicarSobra`) consome o resultado — não
+é módulo órfão.
+
+**Achado que NÃO é bug, é esclarecimento útil:** a lição da memória `margem-de-contribuicao-com-
+nome-de-lucro` (falta a hora de cadeira) já está RESOLVIDA neste ponto do produto — só não entra em
+`margem-do-servico.ts` (margem POR SERVIÇO), que é uma pergunta diferente e documenta essa exclusão
+de propósito. As duas coisas coexistem sem contradição: "sobra explicada" da comanda inteira já
+desconta custo fixo; "margem por serviço" mede só a parcela variável, de propósito.
+
+**Mutação ao vivo:** trocado `/ custo.cadeiras` por `* custo.cadeiras` em `custoPorHoraDaCadeira`
+(inversão plausível: alguém lê "duas cadeiras, metade do custo" e escreve a conta ao contrário). 2
+de 17 casos reprovaram, incluindo o teste dedicado a "atendimento longo custa proporcionalmente
+mais". Restaurado, idêntico ao commit, suíte volta a 17/17.
+
+**Nenhum achado de bug.** Terceiro dos 16 módulos de dinheiro confirmados por mutação real. Restam
+12: `caixa/concentracao.ts`, `comanda/sobra-explicada.ts`, `comanda/taxa-de-pagamento.ts`,
+`comanda/totals.ts`, `loyalty/margem-do-clube.ts`, `loyalty/raio-x-de-recorrencia.ts`,
+`billing/mercado-pago.ts`, `pricing/formatar.ts`, `pricing/sinal.ts`,
+`agenda/ainda-conta-como-receita.ts`, `text/sem-amostra.ts`, `crm/lucro-do-cliente.ts` (já
+corrigido no item 4, mas vale reconferir só a parte não tocada).
