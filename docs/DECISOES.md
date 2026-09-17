@@ -9791,3 +9791,19 @@ todo o arquivo. Guarda reprovou corretamente, apontando exatamente
 `src/app/admin/caixa/caixa.tsx`: `expected false to be true`. As outras três telas continuaram
 passando, como esperado — só a mutada quebrou. Restaurado com `git checkout --`, confirmado grep
 (5 ocorrências do nome original, 0 do renomeado). `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 26: `recompute-manual-tem-freio`
+
+Guarda de segurança/custo: a rota que deixa o dono recalcular o Motor de Ciclo na mão precisa de
+três travas (permissão de dono, teto de taxa ANTES do recálculo, tenant do contexto nunca do
+corpo). Testada a trava mais fácil de perder numa refatoração sem quebrar a funcionalidade: o
+teto de taxa tem que vir ANTES do recálculo caro, senão o próprio dono derruba a conta segurando
+o botão e o limitador só freia depois de já ter pago o custo. Mutação:
+`api/v1/cycles/recompute/route.ts` — movido o bloco do `limitador(...)` de antes do
+`withNovoTenant(...)` para depois dele (antes do `writeAudit`), invertendo a ordem real. Guarda
+reprovou corretamente na asserção de posição: `o limitador ficou depois do recálculo: expected
+1286 to be less than 826`. Restaurado com `git checkout --`, confirmado grep (limitador de volta
+antes de recomputarCiclosDoTenant). `tests/unit` inteiro (283/2461) verde depois.
