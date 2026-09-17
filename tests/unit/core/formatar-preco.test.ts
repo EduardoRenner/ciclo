@@ -58,6 +58,16 @@ describe('estimativaParaDuracao', () => {
     expect(estimativaParaDuracao({ pricingModel: 'hourly', priceCents: 6001, hourlyRateCents: null, halfDayPriceCents: null }, 61)).toBe(6102)
   })
 
+  /*
+   * O caso exato que o comentário de `porHora` documenta como prova do bug histórico — e que os
+   * outros dois casos acima não pegam, porque `(61×6001)/60` e `(61/60)×6001` arredondam pro MESMO
+   * inteiro por coincidência. Sem este caso a guarda passava mesmo com a ordem errada (dividir
+   * antes de multiplicar) de volta: achado mutando ao vivo no loop noturno de 2026-09-17.
+   */
+  it('23 min a R$ 12/hora dá R$ 4,60, nunca R$ 4,61 — a ordem multiplica antes de dividir', () => {
+    expect(estimativaParaDuracao({ pricingModel: 'hourly', priceCents: 1200, hourlyRateCents: null, halfDayPriceCents: null }, 23)).toBe(460)
+  })
+
   it('visit_hourly soma a taxa de visita à hora estimada', () => {
     expect(estimativaParaDuracao({ pricingModel: 'visit_hourly', priceCents: 8000, hourlyRateCents: 4000, halfDayPriceCents: null }, 60)).toBe(12000)
   })
