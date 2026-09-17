@@ -9905,3 +9905,19 @@ be defined` — confirmando que o conserto funciona antes de reverter a migratio
 migration com `git checkout --`, confirmado grep (SQL original de volta, com os dois `at time
 zone`). O conserto da guarda (`view-no-fuso-do-salao.test.ts`) foi MANTIDO, não revertido.
 `tests/unit` inteiro (283/2461) verde depois, com o conserto em vigor.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 32: `dia-no-fuso-do-salao`
+
+Guarda contra "hoje em UTC" (`new Date().toISOString().slice(0, 10)` ou variante com
+`Date.now()`) em vez do fuso do salão — o defeito histórico do `docs/15` A8: das 21h à meia-noite
+em Brasília o dono via "amanhã" na agenda, e o Motor de Ciclo comparava histórico (no fuso do
+salão) contra "hoje" em UTC, empurrando clientes de "due" para "late" um dia cedo demais. Mutação:
+acrescentada uma função nova no fim de `src/server/services/estoque.ts`
+(`_mutacaoTesteDiaEmUtc`) fazendo `return new Date().toISOString().slice(0, 10)` — nunca chamada
+por ninguém, só para o extrator estático enxergar (mesma técnica do item 22). Guarda reprovou
+corretamente, apontando exatamente o arquivo: `derivam o dia de agora em UTC:
+src\server\services\estoque.ts`. Restaurado com `git checkout --`, confirmado grep (função
+sumiu). `tests/unit` inteiro (283/2461) verde depois.
