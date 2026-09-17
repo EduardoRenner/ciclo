@@ -8366,3 +8366,28 @@ apontando a asserção errada. Restaurado, `git status` confirma estado idêntic
 **Nenhum achado — mas valor real:** esta era uma das guardas do backlog da Fase C (`docs/66`,
 "15 módulos ainda não auditados") — nunca tinha sido vista reprovando. Agora está confirmada.
 Restam 14 dos 16 módulos de dinheiro de `src/core` sem essa confirmação.
+
+---
+
+## 2026-09-17 · Loop noturno (docs/67), item 4 · guarda cega REAL achada e corrigida — lucro-do-cliente.ts
+
+**Contexto:** continuando o backlog de dinheiro do `docs/66` Fase C, mutação ao vivo em
+`crm/lucro-do-cliente.ts` (docs/48 C2, "quanto cada cliente deixa de lucro").
+
+**Achado, mutação confirmada:** trocado `entrada.comandas` por `entrada.visitas` no denominador de
+`lucroPorVisitaCents` (exatamente o bug que o PRÓPRIO comentário da função já nomeava como "o erro
+menos visível dos dois" — dividir pelo total de visitas quando parte não tem comanda fechada). A
+suíte inteira (7 casos) **passou** com o defeito. Causa: todos os 7 casos tinham `comandas ===
+visitas`, ou (o único caso com `comandas ≠ visitas`, "cobertura parcial") só conferia `cobertura`/
+`visitasSemComanda`, nunca `lucroPorVisitaCents`/`lucroAnualCents` — o valor de negócio de verdade.
+
+**Corrigido:** fortalecida a asserção do caso "cobertura parcial" (`comandas: 3, visitas: 10`) pra
+afirmar `lucroPorVisitaCents === 2_000` (não 600, o valor errado com o denominador trocado) e
+`lucroAnualCents` derivado dele. Mutado de novo com a guarda fortalecida: reprovou corretamente
+(`expected 600 to be 2000`). Restaurado, `pnpm test:unit` completo (283 arquivos, 2460 casos)
+verde, `tsc`/`eslint` limpos.
+
+**Por que isto importa mais que o de `taxa-por-forma.ts` (item 3):** aquele já estava correto,
+essa mutação só CONFIRMOU. Esta é uma guarda que estava genuinamente cega — se o bug real tivesse
+sido introduzido em produção (ex.: um refactor que trocasse a variável por engano), a suíte não
+teria pego. É exatamente a classe de achado que a Fase A/C do `docs/66` existe pra caçar.
