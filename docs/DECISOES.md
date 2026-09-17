@@ -9365,3 +9365,26 @@ luminância/contraste de `contraste.test.ts`, reaproveitada), com teto de segura
 mistura) pra nunca virar branco puro. Isso não muda NADA pra quem já escolheu uma cor clara (a
 maioria hoje) — só ativa pra quem escolher uma cor escura, que é exatamente o caso quebrado.
 Precisa de teste novo medindo o pior caso real, não só o feliz.
+
+---
+
+## 2026-09-17 · Loop de copy e interface, item 4 · Fase C checada — hipótese de silêncio no aria-live descartada por medição
+
+**Quase um falso achado, evitado por medir com `MutationObserver` em vez de ler o texto uma vez
+só.** Ao trocar de profissional no agendamento público (`apple-review/agendar`), a leitura ingênua
+(ler `[aria-live]` uma vez, depois de esperar) mostrou o MESMO texto antes e depois ("4 horários
+livres em quinta-feira, 17 de setembro") — parecia que quem usa leitor de tela não recebia
+nenhum aviso de que a troca de profissional tinha efeito, já que os horários específicos mudaram
+(17:30/17:45 novos) mas a CONTAGEM coincidiu.
+
+Antes de registrar isso como achado, armei um `MutationObserver` no próprio nó antes de clicar —
+e ele capturou DUAS mutações reais: `"Buscando horários."` em t=118238ms, depois `"4 horários
+livres em quinta-feira, 17 de setembro."` em t=118756ms (~518ms depois). O estado intermediário
+("Buscando horários.") É uma mutação de texto genuína, que qualquer leitor de tela observando a
+região `aria-live="polite"` anuncia — mesmo que o texto FINAL coincida com o de antes da troca.
+Não é silêncio; é o mesmo padrão de "medição ingênua dá falso positivo" já documentado nesta
+base (a hipótese do `toque-48` em `/termos`/`/privacidade`, a auditoria de 24/09). Nenhum achado
+aqui — a região já está correta.
+
+Fase C fica sem achado nesta rodada (a única checagem possível sem credencial de admin — os
+filtros do painel em `admin/clientes`/`admin/agenda` continuam fora de alcance nesta sessão).
