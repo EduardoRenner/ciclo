@@ -8321,3 +8321,30 @@ precisam de `service_role` pra montar cenário de dois tenants / rodar sem sess�
 rodou limpo nesta sessão (Qualidade da CI também).
 
 **Nenhum achado.** Regra 2 do `CLAUDE.md` cumprida de fato, não só de intenção.
+
+---
+
+## 2026-09-17 · Loop noturno (docs/67), item 2 · Idempotency-Key em rotas de escrita — VERIFICADO, correto
+
+**Medido:** das 87 rotas de escrita (`POST`/`PUT`/`PATCH`/`DELETE`) sob `src/app/api/v1`, 58 usam
+`comIdempotencia` explicitamente. Das 23 que não usam, a maioria é auth (login/logout/MFA/senha —
+não é criação de registro de negócio), IA (assistente), ou ação de token único (cancelar/confirmar/
+reivindicar — o próprio token é a proteção). Duas mereciam checagem por criarem registro de
+negócio sem o wrapper:
+
+1. **`public/[slug]/book`** (agendamento público — o de maior risco de duplicação por clique
+   duplo): protegido pela constraint de exclusão do banco (`appointments_no_overlap`, dispara
+   `23P01`), tratado em `criarAgendamento` (`agendamentos.ts`) convertendo em `SLOT_TAKEN` com
+   alternativas — exatamente o padrão que a tabela de armadilhas do `CLAUDE.md` recomenda em vez de
+   `SELECT` antes do `INSERT`. Um double-submit pro MESMO horário é rejeitado pelo banco, não
+   silenciosamente duplicado.
+2. **`onboarding`** (criação de tenant): protegido pela constraint `unique` de `tenants.slug` —
+   `onboarding.ts:119-124` já documenta e trata explicitamente a corrida de dois cadastros
+   simultâneos pelo mesmo endereço, devolvendo erro de validação limpo em vez de duplicar.
+
+**Nenhum achado.** As duas rotas de maior risco real (dinheiro/negócio, sem token de proteção)
+usam constraint de banco como mecanismo equivalente ao Idempotency-Key — decisão de design válida,
+já demonstrada correta por comentário e por teste de exclusão de agendamento existente. Não
+verificado nesta rodada: `clients/import` (importação em massa via CSV) e `clients/[id]/media`
+(upload) — risco menor (duplicar clientes/mídia é inconveniente, não perda de dinheiro ou
+integridade), fica como item de baixa prioridade pra próxima rodada.
