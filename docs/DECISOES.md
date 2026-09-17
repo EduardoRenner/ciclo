@@ -8773,3 +8773,17 @@ real "expired" aparecendo cru em inglês numa tela em português.
 Reprovou com o diff exato mostrando a lacuna. Restaurado, suíte volta a 283/283.
 
 **Nenhum achado.** Backlog Fase A: 3 guardas antigas confirmadas nesta noite. Restam ~127.
+
+---
+
+## 2026-09-17 · Loop noturno (docs/67), item 25 · produção — confirmação de saúde após 24 deploys
+
+**Medido:** `get_runtime_errors` (janela de 4h) devolveu ZERO erros — cobrindo todos os deploys
+desta noite, do conserto sistêmico de `contextoDoPainel` (item sistêmico, 33 páginas) até a última
+guarda mutada. `get_deployment`/`list_deployments` confirma que o deploy mais recente em produção
+(`dpl_AwoEAW5CcHP9rSFTvnJJV43x3Aik`) bate exatamente com o commit mais recente (item 24).
+
+**Nenhum achado.** Toda mudança de código desta noite (não só as de teste/mutação restaurada) está
+rodando em produção sem erro observado — inclusive a feature nova (teaser de prestação de contas
+em `/admin/hoje`) e o conserto de 33 páginas do painel, os dois com maior superfície de risco real
+desta sessão.
