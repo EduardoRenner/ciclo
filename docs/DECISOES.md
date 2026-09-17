@@ -8800,3 +8800,18 @@ final. Reprovou (`expected 'seuciclo.com.br/' to be 'seuciclo.com.br'`). Restaur
 a 283/283.
 
 **Nenhum achado.** Backlog Fase A: 4 guardas antigas confirmadas nesta noite. Restam ~126.
+
+---
+
+## 2026-09-17 · Loop noturno (docs/67), item 27 · Fase A: preco-em-um-lugar-so.ts — mutado, correto
+
+**Medido:** `preco-em-um-lugar-so.test.ts` (docs/18 §L, fonte única de nome/preço de plano) — já
+madura, com incidente próprio documentado (medido 05/09, varredura que devolvia zero arquivos
+passava verde). Verificação adicional na checagem de coerência da escada de preços, sem histórico
+próprio de mutação.
+
+**Mutação ao vivo:** invertidos os preços de `equipe` (R$99) e `avancado` (R$179) em
+`PRECO_MENSAL_CENTS` — quebra a regra "pagos são crescentes". Reprovou (`expected [4900, 17900,
+9900] to deeply equal [4900, 9900, 17900]`). Restaurado, suíte volta a 283/283.
+
+**Nenhum achado.** Backlog Fase A: 5 guardas antigas confirmadas nesta noite. Restam ~125.
