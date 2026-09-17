@@ -9921,3 +9921,20 @@ por ninguém, só para o extrator estático enxergar (mesma técnica do item 22)
 corretamente, apontando exatamente o arquivo: `derivam o dia de agora em UTC:
 src\server\services\estoque.ts`. Restaurado com `git checkout --`, confirmado grep (função
 sumiu). `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 33: `motor-de-ciclo-nao-e-ia`
+
+Guarda de honestidade de produto: o Motor de Ciclo é mediana de intervalos, determinístico, "sem
+ML" (`compute.ts`) — chamar isso de "aprende" empresta vocabulário de IA a uma conta de mediana,
+e num público que confia dado de SAÚDE ao software, ser pego exagerando custa mais que o exagero
+rende. A guarda varre `src/app`, `src/core`, `src/server` e `src/components` inteiros (não só a
+home) porque a auditoria de 2026-09-08 achou a palavra sobrevivendo em cinco telas internas depois
+de a home ser limpa — "guarda cega de RAIZ": a varredura não olhava onde o defeito podia nascer.
+Mutação: acrescentada a linha `const _mutacaoTesteIa = 'O Motor de Ciclo aprende o ritmo de cada
+cliente.'` no fim de `src/app/admin/recuperar/recuperar.tsx` — fora de comentário, then o
+`semComentarios` não a filtra. Guarda reprovou corretamente, apontando o arquivo e a palavra
+exatos: `"src/app/admin/recuperar/recuperar.tsx: aprende (aprende)"`. Restaurado com
+`git checkout --`, confirmado grep (linha sumiu). `tests/unit` inteiro (283/2461) verde depois.
