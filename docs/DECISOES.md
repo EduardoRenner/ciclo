@@ -8742,3 +8742,21 @@ certa ("a checagem de loyalty sumiu... tenant do Grátis volta a pontuar sozinho
 este e mais dois lidos (`toda-rota-passa-pelo-rota.test.ts`, `modulos.test.ts`) — os outros dois
 não mutados por brevidade, mas a leitura não achou padrão de "passa vazio sem montar cenário".
 Backlog remanescente: 36 arquivos.
+
+---
+
+## 2026-09-17 · Loop noturno (docs/67), item 23 · Fase A do docs/66: papel-tem-um-rotulo-so.ts — mutado, correto
+
+**Contexto:** continuando o backlog de guardas antigas nunca mutadas nesta rodada (Fase A do
+`docs/66`, ~130 restantes). Escolhida `core/auth/rotulo-do-papel.ts` por não ter histórico próprio
+de mutação documentado (diferente de `cofre-nao-vaza-para-quem-nao-pode.test.ts`, também
+verificada nesta iteração e já madura, 3 achados anteriores documentados — não remutada por já ter
+evidência).
+
+**Mutação ao vivo:** removida a entrada `finance: 'Financeiro'` de `ROTULO_DO_PAPEL` — simula
+exatamente o cenário que a guarda existe pra pegar (papel novo no `rbac` sem rótulo). Reprovou em
+2 dos 6 casos, com mensagem certa. Restaurado, suíte volta a 283/283.
+
+**Nenhum achado.** Backlog da Fase A: 2 guardas antigas confirmadas nesta noite
+(`cofre-nao-vaza-para-quem-nao-pode` já madura, `papel-tem-um-rotulo-so` mutada agora). Restam
+~128.
