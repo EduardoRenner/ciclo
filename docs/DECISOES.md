@@ -10122,3 +10122,21 @@ deixando `<div>` puro. Guarda reprovou corretamente: `recuperar.tsx rende uma Ac
 reserva folga no fim ...: expected false to be true` — `ficha.tsx` continuou passando, como
 esperado. Restaurado com `git checkout --`, confirmado grep (`pb-20` de volta). `tests/unit`
 inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 44: `erro-do-cliente-tem-saida`
+
+Guarda de UX pública: quatro telas (`confirmar`, `avaliar`, `lista-espera`, `orcamento`) tinham o
+mesmo defeito medido em 2026-09-03 — estado de erro mostrava ícone/título/mensagem e nada mais,
+sem distinguir link recusado (4xx, sem saída útil) de rede caída (5xx, "tentar de novo" resolveria).
+Quem cai nisso é a CLIENTE do salão, num link de WhatsApp: o horário fica sem confirmação, o salão
+acha que ela ignorou. A guarda ITERA a lista derivada (nasceu porque o conserto original só cobriu
+`/confirmar`). Mutação: `(public)/confirmar/[token]/confirmar.tsx`, trocado o `<ErroPublico
+titulo="Não deu certo" mensagem={mensagem} .../>` inteiro por um `<div><p>Não deu certo</p>
+<p>{mensagem}</p></div>` — exatamente o defeito original ("ícone, título, a mensagem da rota, e
+nada mais", sem o ícone aqui). Guarda reprovou corretamente, apontando só o arquivo mutado:
+`confirmar.tsx termina o erro na mensagem ...: expected false to be true` — as outras três telas
+continuaram verdes. Restaurado com `git checkout --`, confirmado grep (`<ErroPublico` de volta).
+`tests/unit` inteiro (283/2461) verde depois.
