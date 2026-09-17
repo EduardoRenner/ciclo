@@ -9080,3 +9080,48 @@ mesmo a página HTML chegando fresca (`x-vercel-cache: MISS`). Depois de `unregi
 requisição na montagem, ZERO a mais ao tocar no serviço já selecionado. Conserto real, medido de
 verdade — o falso negativo era do ambiente de teste, não do código (o design do `sw.js`,
 `skipWaiting()`+`clients.claim()`, já está correto; não é achado novo).
+
+---
+
+## 2026-09-17 · Loop de performance, item 2 · `/admin/caixa` esperava sete consultas que nada tinham a ver com comissão
+
+**Lido no código** (sem tenant real com sessão de admin nesta sessão para medir na rede — a
+limitação de sempre: nenhuma conta de produção auditada disponível). `admin/caixa/page.tsx`
+buscava 8 coisas num `Promise.all` (diário, mensal, lista de profissionais, atendimentos do dia,
+taxas, concentração do mês, material do catálogo, custo fixo) e SÓ DEPOIS de aquele `await`
+inteiro terminar começava a extrair a comissão de cada profissional — que só depende da LISTA de
+profissionais, um dos oito. Concentração do mês e material do catálogo não têm nada a ver com
+comissão, mas atrasavam ela mesmo assim: se qualquer um dos outros sete for a consulta mais lenta
+do lote, a extração de comissão span nunca começa antes disso, mesmo que a lista de profissionais
+já tivesse chegado.
+
+**Por que é achado e não suposição vazia:** é a MESMA classe de problema que o próprio código já
+nomeou e corrigiu uma vez, em `agendamentos.ts` (aqui é serialização por dependência falsa; lá era
+duplicação — defeitos primos, não o mesmo). E é o oposto exato do elogio que o comentário do
+`docs/48` C7 já fazia sobre este mesmo bloco ("latência somada: zero") — o elogio valia pras
+outras sete, não pra comissão, que ficava fora da soma.
+
+**Conserto:** a consulta de profissionais virou uma promise própria (`comissoesPromise`),
+`.then()` encadeado nela mesma para computar a comissão — sem um segundo `await` que pedisse a
+lista de novo (isso reintroduziria a classe de bug do item 1, pedido em dobro). Ela entra no MESMO
+`Promise.all` das outras sete, então todas as nove começam juntas; a comissão só espera,
+internamente, pela ÚNICA consulta de que depende de verdade.
+
+**Verificado:** `tsc`, `eslint` e `tests/unit` (283/2461) verdes. `tests/integration/caixa.test.ts`
+não rodou (sem Supabase local nesta sessão — mesma limitação de sempre) mas essa suíte testa
+`resumoMensal`/`fechamentoDiario`/etc., não a página em si; o valor final computado por
+`comissoesPromise` é bit-a-bit o mesmo de antes (mesma consulta, mesmo mapeamento, só reordenado
+no tempo) — o risco real do refactor era pedir a lista de profissionais duas vezes, e a estrutura
+com `.then()` numa promise única e reaproveitada no `Promise.all` elimina esse risco por
+construção, não por sorte. Sem conta de admin real para medir o antes/depois na rede.
+
+**Achado relacionado, registrado e NÃO corrigido (precisa de dado real, não de código):**
+`prestacaoDeContasDoMotor` (`src/server/services/previsao.ts:199`) usa `buscarTudoPaginado` sobre
+`cycle_predictions` dos últimos 12 meses — página de 1000 linhas, sequencial (cada página espera a
+anterior, porque só se sabe se tem mais depois de ver a primeira vir cheia). Roda em TODO
+carregamento de "Hoje", a tela mais visitada do painel. Se algum tenant real acumular mais de 1000
+previsões em 12 meses, "Hoje" paga uma ida a mais ao banco, em série, só para esse card. Não sei
+se algum tenant cruza esse teto — não tenho acesso a produção para contar linhas, e simular o
+volume seria estimar, não medir (proibido). Fica registrado para quando houver uma conta real
+grande o bastante para checar, ou para o Eduardo decidir se vale investir numa agregação em SQL
+(count/média no banco em vez de trazer as linhas pro Node) independente do volume de hoje.

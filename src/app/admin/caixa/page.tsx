@@ -83,10 +83,43 @@ export default async function PaginaCaixa({ searchParams }: { searchParams: Prom
   const inicioDoDia = dia.toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant().toString()
   const fimDoDia = dia.add({ days: 1 }).toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant().toString()
 
-  const [diario, mensal, profissionais, atendimentos, taxas, concentracao, material, custoFixo] = await Promise.all([
+  const inicioDoMes = `${mes}-01`
+  const fimDoMes = Temporal.PlainDate.from(inicioDoMes).add({ months: 1 }).subtract({ days: 1 }).toString()
+
+  /*
+    Medido no código (sem tenant real pra medir na rede nesta sessão — ver docs/DECISOES.md):
+    `comissoes` só depende da LISTA de profissionais, não das outras sete consultas do lote
+    abaixo. Na versão anterior, `profissionais` entrava no `Promise.all` e `comissoes` só
+    começava DEPOIS do `await` inteiro terminar — ou seja, esperava o material do catálogo e a
+    concentração do mês (que não têm nada a ver com comissão) mesmo que a lista de profissionais
+    já tivesse chegado há tempos. `.then()` encadeado nesta única consulta, e não um segundo
+    `await` separado, evita pedir a lista duas vezes: o `Promise.all` de baixo entra com ESTA
+    MESMA promise (via `comissoesPromise`), nunca a refaz.
+
+    Comissão é do papel `finance`/`owner`, não de quem só lê relatório — quem não alcança vê o
+    caixa sem esta seção, em vez de ver 403 na tela inteira.
+  */
+  const comissoesPromise = avaliarPermissao(ctx.papel, 'commission:read')
+    ? db
+        .from('professionals')
+        .select('id, display_name')
+        .eq('tenant_id', ctx.tenantId)
+        .eq('active', true)
+        .order('display_name')
+        .then(({ data }) =>
+          Promise.all(
+            (data ?? []).map(async (p) => ({
+              id: p.id,
+              nome: p.display_name,
+              totalCents: (await extratoDeComissao(db, ctx.tenantId, p.id, timezone, inicioDoMes, fimDoMes)).totalCents,
+            })),
+          ),
+        )
+    : Promise.resolve([])
+
+  const [diario, mensal, atendimentos, taxas, concentracao, material, custoFixo, comissoes] = await Promise.all([
     fechamentoDiario(db, ctx.tenantId, timezone, dia.toString()),
     resumoMensal(db, ctx.tenantId, timezone, mes),
-    db.from('professionals').select('id, display_name').eq('tenant_id', ctx.tenantId).eq('active', true).order('display_name'),
     db
       .from('appointments')
       .select('price_cents')
@@ -109,24 +142,10 @@ export default async function PaginaCaixa({ searchParams }: { searchParams: Prom
     avaliarPermissao(ctx.papel, RELATORIO_DA_EQUIPE) ? concentracaoDoMes(db, ctx.tenantId, timezone, mes) : null,
     medirMaterialDoCatalogo(db, ctx.tenantId),
     lerCustoFixoDoTenant(db, ctx.tenantId),
+    comissoesPromise,
   ])
 
   const atendidoCents = (atendimentos.data ?? []).reduce((soma, a) => soma + a.price_cents, 0)
-
-  const inicioDoMes = `${mes}-01`
-  const fimDoMes = Temporal.PlainDate.from(inicioDoMes).add({ months: 1 }).subtract({ days: 1 }).toString()
-
-  // Comissão é do papel `finance`/`owner`, não de quem só lê relatório — quem
-  // não alcança vê o caixa sem esta seção, em vez de ver 403 na tela inteira.
-  const comissoes = avaliarPermissao(ctx.papel, 'commission:read')
-    ? await Promise.all(
-        (profissionais.data ?? []).map(async (p) => ({
-          id: p.id,
-          nome: p.display_name,
-          totalCents: (await extratoDeComissao(db, ctx.tenantId, p.id, timezone, inicioDoMes, fimDoMes)).totalCents,
-        })),
-      )
-    : []
 
   return (
     <Caixa
