@@ -10405,3 +10405,19 @@ nenhum dá erro — o botão some cedo ou promete página que não existe para s
 bater com o `?? 50` de `clientes.ts`. Guarda reprovou corretamente: `expected '100' to be '50'`.
 Restaurado com `git checkout --`, confirmado (`PAGINA = 50` de volta). `tests/unit` inteiro
 (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 60: `onboarding-conta-os-campos-certos`
+
+Guarda que amarra copy a comportamento: o H1 do onboarding afirma "Três respostas e sua página
+está no ar" — número contável, verificável, e que vira falso no dia em que alguém acrescentar um
+quarto campo sem voltar ao H1 (a mesma classe do "menos de três minutos" que `home-nao-promete-
+demais` já teve que caçar). A guarda amarra as duas pontas: conta `rotulo=` no formulário (todo
+campo do design system tem rótulo obrigatório) e compara contra o número escrito no H1. Mutação:
+`onboarding/formulario.tsx`, duplicado o primeiro `<Input rotulo="Nome do negócio" .../>` como um
+quarto campo (`rotulo="Apelido do negócio"`) — simulando exatamente o cenário que a guarda existe
+para pegar: campo novo entra, H1 não muda. Guarda reprovou corretamente: `o H1 promete "três
+respostas" e o formulário tem 4 campos ...: expected 4 to be 3`. Restaurado com `git checkout --`,
+confirmado (3 campos de volta). `tests/unit` inteiro (283/2461) verde depois.
