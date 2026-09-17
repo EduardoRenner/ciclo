@@ -10237,3 +10237,19 @@ símbolo certo, com docstring explicando o achado. **Reprovação com a MESMA mu
 o conserto antes de restaurar. `secoes.tsx` restaurado com `git checkout --`. O conserto da guarda
 (`estrelas-nao-repetem-o-svg.test.ts`) foi MANTIDO. `tests/unit` inteiro (283/2461) verde depois,
 com o conserto em vigor.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 50: `logo-do-salao-nao-e-cortado`
+
+Guarda de composição (não de descuido): o logo do salão sobe sobre a capa por margem negativa
+(`-mt-14`), e se a `<section>` que o contém tiver `overflow-hidden`, o logo é cortado — medido em
+produção em 2026-09-04, 70% do logo invisível por mais de um mês. As duas linhas (margem negativa,
+`overflow-hidden`) eram corretas isoladamente e escritas em momentos diferentes; só a COMBINAÇÃO
+quebrava, e só ficou visível quando as contas de demonstração ganharam logo. Mutação:
+`(public)/[slug]/secoes.tsx`, acrescentado `overflow-hidden` à className da `<section>` que contém
+o logo — o defeito histórico exato. Guarda reprovou corretamente: `expected '<section
+className="relative -mx-[var…' not to match /overflow-hidden/`. Restaurado com `git checkout --`,
+confirmado (className de volta sem `overflow-hidden`). `tests/unit` inteiro (283/2461) verde
+depois.
