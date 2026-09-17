@@ -8946,3 +8946,26 @@ sensíveis da experiência do cliente (decidir sobre o próprio agendamento, ava
 
 **Nenhum achado novo.** As duas telas já passaram por auditoria própria documentada no código.
 Seguindo pros textos que o cliente recebe por WhatsApp (`mensagens-prontas.ts`).
+
+---
+
+## 2026-09-17 · Loop cliente final, item 3 · mensagens-prontas + lista-espera/[token] — verificados
+
+**Medido — `mensagens-prontas.ts`/`lib/mensagens.ts`:**
+- Substituição de variável vazia vira string vazia, nunca `{{chave}}` crua na mensagem que o
+  cliente recebe.
+- `{{valor}}` sempre chega pré-formatado em reais (`dinheiro.format(cents/100)`, conferido nos 2
+  call sites que passam `valor`) — nunca centavos crus.
+- `precisaDeAgendamento()` existe pra UI esconder/explicar modelo que usa `{{data}}/{{hora}}/
+  {{servico}}` quando não há agendamento no contexto — evita "no dia às ." na tela.
+
+**Medido — `lista-espera/[token]`:** essa tela dispara a reivindicação de encaixe (POST) SOZINHA
+ao abrir — diferente de `confirmar/[token]`, que foi deliberadamente mudado pra exigir toque
+(incidente de 19/08). Investiguei se isso é uma regressão do mesmo tipo: **não é**. A razão é
+estrutural — encaixe de lista de espera é por ordem de chegada, então a AÇÃO É a abertura do link,
+não uma segunda decisão. Verificado que a chamada mora só no `useEffect` do client component
+(`'use client'`), nunca no `page.tsx` (Server Component) — um crawler de preview de link
+(WhatsApp, etc.) que só lê o HTML inicial não executa esse `useEffect` e não consome o encaixe por
+engano. Arquitetura já é segura contra esse risco por desenho, não por sorte.
+
+**Nenhum achado.** Seguindo pra `orcamento/[token]`.
