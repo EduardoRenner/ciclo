@@ -10421,3 +10421,19 @@ quarto campo (`rotulo="Apelido do negócio"`) — simulando exatamente o cenári
 para pegar: campo novo entra, H1 não muda. Guarda reprovou corretamente: `o H1 promete "três
 respostas" e o formulário tem 4 campos ...: expected 4 to be 3`. Restaurado com `git checkout --`,
 confirmado (3 campos de volta). `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 61: `orcamento-mostra-erro`
+
+Guarda comportamental (chama a função real `telaDoOrcamento`, não varredura de texto): medido no
+ar em 2026-08-27, token inválido em `/orcamento/{token}` — a API respondeu 404 em ~400ms com a
+mensagem certa, mas a tela ficou em "Carregando orçamento…" por mais de 15s. Causa: o ramo
+`estado === 'carregando' || !dados` vinha ANTES do ramo de erro, e `!dados` é sempre verdadeiro
+quando `estado === 'erro'` (erro É o caso em que dados nunca chegou) — o ramo de erro ficava
+inalcançável, com typecheck feliz e testes verdes. Mutação: `(public)/orcamento/[token]/
+orcamento.tsx`, invertida a ordem das duas primeiras linhas de `telaDoOrcamento` — exatamente o
+defeito de produção. Guarda reprovou corretamente: `expected 'carregando' to be 'erro'`.
+Restaurado com `git checkout --`, confirmado (ordem original — erro primeiro — de volta).
+`tests/unit` inteiro (283/2461) verde depois.
