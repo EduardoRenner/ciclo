@@ -8760,3 +8760,16 @@ exatamente o cenário que a guarda existe pra pegar (papel novo no `rbac` sem r�
 **Nenhum achado.** Backlog da Fase A: 2 guardas antigas confirmadas nesta noite
 (`cofre-nao-vaza-para-quem-nao-pode` já madura, `papel-tem-um-rotulo-so` mutada agora). Restam
 ~128.
+
+---
+
+## 2026-09-17 · Loop noturno (docs/67), item 24 · Fase A: estado-do-banco-tem-rotulo.ts — mutado, correto
+
+**Medido:** `estado-do-banco-tem-rotulo.test.ts` — lê o enum real das migrations e compara com a
+união de literais `EstadoAgendamento`/`EstadoCiclo` no código, nas duas direções. Nasceu do bug
+real "expired" aparecendo cru em inglês numa tela em português.
+
+**Mutação ao vivo:** removido `'expired'` de `EstadoAgendamento` — reproduz o bug original.
+Reprovou com o diff exato mostrando a lacuna. Restaurado, suíte volta a 283/283.
+
+**Nenhum achado.** Backlog Fase A: 3 guardas antigas confirmadas nesta noite. Restam ~127.
