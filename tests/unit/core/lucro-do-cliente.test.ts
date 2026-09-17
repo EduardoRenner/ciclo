@@ -16,6 +16,17 @@ describe('lucroDoCliente', () => {
     const r = lucroDoCliente({ lucroCents: 6_000, comandas: 3, visitas: 10, cicloPessoalDias: 21 })
     expect(r.cobertura).toBe('parcial')
     expect(r.visitasSemComanda).toBe(7)
+    /*
+     * A guarda que faltava: `lucroPorVisitaCents` tem que sair de `lucroCents / comandas`
+     * (6_000 / 3 = 2_000), NUNCA de `lucroCents / visitas` (6_000 / 10 = 600) — dividir pelo
+     * total de visitas quando a maioria não tem comanda fechada produz uma média artificialmente
+     * baixa e uma projeção anual errada PARA MENOS, o erro que o comentário da função chama de
+     * "menos visível dos dois". Sem esta asserção, os 7 casos deste arquivo tinham `comandas ===
+     * visitas` (ou só conferiam `visitasSemComanda`) — a guarda passava mesmo com o denominador
+     * trocado, achado mutando ao vivo no loop noturno de 2026-09-17.
+     */
+    expect(r.lucroPorVisitaCents).toBe(2_000)
+    expect(r.lucroAnualCents).toBe(Math.round(2_000 * (365 / 21)))
   })
 
   it('sem comanda nenhuma não há lucro por visita — e nem NaN', () => {
