@@ -198,6 +198,34 @@ describe('aprovar/recusar por link', () => {
     expect(json2.data.status).toBe('approved')
   })
 
+  it(
+    'aprovar e recusar ao mesmo tempo (link aberto em dois aparelhos): só um vence, o outro é erro',
+    async () => {
+      const { quote, token } = await criarOrcamento(svc, tenantId, userId, {
+        clientId,
+        professionalId,
+        items: [{ description: 'Item', qty: 1, unitPriceCents: 1000 }],
+        validUntil: null,
+        message: null,
+      })
+
+      // Simultâneas de verdade: é a janela entre ler `status = 'sent'` e escrever o alvo que o
+      // `.eq('status', 'sent')` do UPDATE fecha (mesma correção de `transicaoSimples()` em
+      // `agendamentos.ts`). Em série as duas já eram recusadas — a segunda cai no
+      // `if (quote.status === alvo) return quote` ou no `INVALID_TRANSITION` antes de chegar aqui.
+      const [rAprovar, rRecusar] = await Promise.all([aprovarPorToken(req('approve', token), ctx(token)), recusarPorToken(req('reject', token), ctx(token))])
+
+      const statuses = [rAprovar.status, rRecusar.status].sort()
+      expect(statuses, 'uma decisão vence (200), a outra chega tarde demais (422) — nunca as duas 200').toEqual([200, 422])
+
+      // A consequência de verdade: o banco tem UM estado, não o que a última escrita por acaso pisou.
+      const linha = await svc.from('quotes').select('status').eq('id', quote.id).single()
+      const quemVenceu = rAprovar.status === 200 ? 'approved' : 'rejected'
+      expect(linha.data?.status).toBe(quemVenceu)
+    },
+    30_000,
+  )
+
   it('aprovar um orçamento já recusado é erro de verdade, não idempotência silenciosa', async () => {
     const { token } = await criarOrcamento(svc, tenantId, userId, {
       clientId,

@@ -8969,3 +8969,53 @@ não uma segunda decisão. Verificado que a chamada mora só no `useEffect` do c
 engano. Arquitetura já é segura contra esse risco por desenho, não por sorte.
 
 **Nenhum achado.** Seguindo pra `orcamento/[token]`.
+
+---
+
+## 2026-09-17 · Loop cliente final, item 4 · orçamento/[token] — bug real de corrida, corrigido
+
+Lido `orcamento/[token]/orcamento.tsx` inteiro: já bem construído, com histórico documentado
+(erro-antes-de-carregando corrigido em 27/08, retry só para 5xx/rede, nunca para token
+recusado). Sem achado ali.
+
+**Achado em `src/server/services/orcamentos.ts`, `transicaoPublica()`** (usada por aprovar e
+recusar orçamento pelo link público): fazia ler-decidir-escrever — `SELECT status`, checa se é
+`'sent'`, depois `UPDATE` **sem `.eq('status', 'sent')`** de volta. Exatamente o defeito que este
+mesmo projeto já achou e consertou em `transicaoSimples()` (`agendamentos.ts`), com o comentário
+"a máquina de estados só vale se a transição for atômica" — a diferença é que aqui não tinha o
+conserto.
+
+Cenário real: o link do orçamento vai por WhatsApp e pode ser aberto em mais de um aparelho ao
+mesmo tempo (encaminhado para outra pessoa decidir junto, ou reaberto sem perceber que já tinha
+decidido). Duas requisições opostas (aprovar + recusar) que leem `status: sent` antes de
+qualquer escrita passavam as duas pela checagem, e a **segunda a escrever ganhava calado** — o
+banco ficava com um estado, mas a equipe recebia as duas notificações (`notificarEquipe`),
+incluindo uma que não correspondia mais à linha salva.
+
+Nunca visto em produção (não há relato nem erro de runtime associado) — achado por inspeção
+comparativa com o padrão já corrigido em `agendamentos.ts`, não por sintoma. Severidade MÉDIA:
+sem impacto de dinheiro (aprovar/recusar não cria comanda nem agendamento por si — isso é
+`converterOrcamentoEmAgendamento`, ação manual do painel, não afetada), mas gera notificação
+falsa para a equipe e um estado final ambíguo do ponto de vista de quem recebeu as duas mensagens.
+
+**Conserto:** `.eq('status', 'sent')` no `UPDATE`, igual ao padrão de `agendamentos.ts`. Quando a
+corrida é perdida (0 linhas afetadas), reconfere o estado atual em vez de supor: se o outro clique
+já foi pro MESMO alvo, devolve como sucesso idempotente (mesma filosofia que já existia para
+duplo-clique sequencial); se foi pro alvo oposto, `INVALID_TRANSITION` — quem perdeu a corrida
+precisa saber que não vingou.
+
+**Teste novo:** `tests/integration/orcamentos.test.ts`, caso "aprovar e recusar ao mesmo tempo" —
+`Promise.all` disparando aprovar e recusar de verdade em paralelo (mesmo padrão já usado em
+`tests/integration/comanda.test.ts` para `fecharComanda`), afirma que os dois status HTTP são
+`[200, 422]` (nunca os dois 200) e que o banco reflete quem venceu.
+
+**Sobre ver a guarda reprovar (regra do CLAUDE.md) — só parcial nesta sessão:** sem
+Docker/Supabase local disponível agora (mesma limitação do `docs/67` §6), não consegui rodar
+`pnpm test:integration` nem antes nem depois do conserto. O que FOI verificado nesta sessão:
+`tsc --noEmit` limpo, `eslint` limpo nos dois arquivos, e a suíte `tests/unit` inteira (283
+arquivos, 2461 testes) verde — nenhum teste unitário toca `transicaoPublica`. A prova real fica
+para a CI (`pnpm test:integration` roda lá, com banco de verdade) no próximo push — se reprovar,
+é a primeira coisa a olhar. Raciocínio de por que o teste de duplo-clique sequencial (linha 184,
+já existente) continua passando: a segunda chamada sequencial lê o status já mudado
+(`approved`) e cai no `if (quote.status === alvo) return quote` **antes** de tocar o código
+alterado — o comportamento sequencial não muda, só o concorrente.

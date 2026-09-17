@@ -177,14 +177,35 @@ async function transicaoPublica(
   // Mesmo motivo da linha acima (§S7/P5, `docs/36`): `quote.tenant_id` é o da própria linha, só
   // torna explícito o que já era verdade — e sobrevive se um refactor futuro trocar como `quote`
   // é buscado.
+  //
+  // `.eq('status', 'sent')` no próprio UPDATE — mesma correção de `transicaoSimples()` em
+  // `agendamentos.ts` (comentário lá: "a máquina de estados só vale se a transição for atômica").
+  // O link do orçamento vai por WhatsApp e pode ser aberto em mais de um aparelho ao mesmo tempo
+  // (encaminhado, ou o casal decidindo junto): sem o filtro aqui, aprovar num aparelho e recusar
+  // no outro no mesmo instante passavam os dois pela checagem acima (os dois liam `status: sent`
+  // antes de qualquer escrita), e o SEGUNDO update ganhava calado — a equipe recebia as duas
+  // notificações, mas o banco só guardava uma. Achado no loop de experiência do cliente, nunca
+  // visto em produção; corrigido antes de acontecer.
   const { data: atualizado, error: erroUpdate } = await db
     .from('quotes')
     .update(camposExtra)
     .eq('id', quote.id)
     .eq('tenant_id', quote.tenant_id)
+    .eq('status', 'sent')
     .select('*')
-    .single()
+    .maybeSingle()
   if (erroUpdate) throw new AppError('INTERNAL', { cause: erroUpdate })
+
+  if (!atualizado) {
+    // Perdeu a corrida: outra aba/aparelho decidiu primeiro. Reconfere o estado atual em vez de
+    // supor — se o outro clique já levou pro mesmo alvo (raro, mas possível com o mesmo botão em
+    // duas abas), a resposta é idempotente igual à checagem do topo da função; se foi pro alvo
+    // oposto, quem clicou agora precisa saber que não vingou.
+    const { data: atual, error: erroAtual } = await db.from('quotes').select('*').eq('id', quote.id).eq('tenant_id', quote.tenant_id).single()
+    if (erroAtual) throw new AppError('INTERNAL', { cause: erroAtual })
+    if (atual.status === alvo) return atual
+    throw new AppError('INVALID_TRANSITION', { message: 'Esse orçamento não está mais esperando resposta.' })
+  }
 
   await notificarEquipe(db, quote.tenant_id, notificacao).catch(() => {
     // best-effort — igual ao resto do produto (mensageria.ts), notificação nunca trava a resposta do cliente
