@@ -8690,3 +8690,15 @@ em `NOME_DO_PLANO`, `ROTAS_AGENDADAS`) está genuinamente funcionando aqui, não
 Também confirmado por leitura: a tela de sucesso do agendamento público (`agendar.tsx`) já usa o
 botão de WhatsApp corretamente como AÇÃO de quem clica, não como promessa de envio automático —
 distinção que o próprio código documenta ter aprendido da vez anterior.
+
+---
+
+## 2026-09-17 · Loop noturno (docs/67), item 20 · copy: gênero pressuposto — VERIFICADO, verde
+
+**Medido:** `copy-nao-supoe-genero.test.ts` (598 linhas) — guarda já madura, com histórico de 3+
+achados reais documentados no próprio arquivo (incluindo um que a própria sessão de auditoria
+cometeu e corrigiu: reescrever pra feminino em vez de neutro). Rodada limpa: 15/15 verde.
+
+**Nenhum achado.** Guarda já tem mutação documentada no histórico do arquivo; não repetida agora
+por já ter evidência de funcionar (regra de bom senso: não gastar orçamento remutando o que já foi
+visto reprovando por outro motivo válido, quando o arquivo já documenta isso).
