@@ -10158,3 +10158,22 @@ asserção específica do painel: `o boundary do /admin voltou a escapar por <Li
 o estado quebrado: expected false to be true` — os testes genéricos (que aceitam `<Link>` em
 qualquer OUTRO boundary) continuaram passando, como esperado. Restaurado com `git checkout --`,
 confirmado grep (`<a>`/`</a>` de volta). `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 46: `precos-compara-com-honestidade`
+
+Guarda de honestidade comercial (`docs/43` eixo 3): a seção "O preço não sobe quando você cresce"
+em `/precos` é a única página do produto que fala do modelo de negócio de terceiros, e por isso
+tem uma trava que nenhuma outra seção precisa — o contrapeso não pode sumir. A seção diz que quem
+cobra comissão entrega uma vitrine que o CICLO não entrega; sem essa admissão, o argumento vira
+propaganda em vez de comparação honesta, e é exatamente o tipo de frase que uma revisão de copy
+corta por "soar negativo" sem perceber o custo. Mutação: `(public)/precos/page.tsx`, removida a
+cláusula "O CICLO não tem vitrine e não traz cliente de lugar nenhum" e a frase final "Se o que
+você procura é alugar a clientela de um marketplace, o CICLO não é isso" — mantendo só a primeira
+metade (o que a comissão custa), que sozinha é o defeito que a guarda existe para pegar. Guarda
+reprovou corretamente nas duas asserções: o contrapeso ("o contrapeso saiu: a seção afirma o custo
+do modelo de comissão sem dizer...") e "para quem o CICLO não serve". Restaurado com
+`git checkout --`, confirmado grep (as duas frases de volta). `tests/unit` inteiro (283/2461)
+verde depois.
