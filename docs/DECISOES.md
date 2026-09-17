@@ -8888,3 +8888,19 @@ bate exatamente com a metodologia usada no item 2 desta noite; a guarda automát
 que a contagem manual que eu mesmo fiz.
 
 **Nenhum achado de bug.** Backlog Fase I: 3 de 39 arquivos amostrados. Restam 36.
+
+---
+
+## 2026-09-17 · Loop noturno (docs/67), item 32 · Fase A: core-nao-conhece-o-mundo.ts — mutado, correto
+
+**Medido:** `core-nao-conhece-o-mundo.test.ts` — regra invíolavel nº 5 do `CLAUDE.md` (`core/`
+sem I/O, sem import de `server/`/`app/`/`components/`). Guarda arquitetural que protege a página
+pública do salão de carregar peso de servidor sem necessidade (já aconteceu de verdade: `sharp`,
+19,2MB, quase vazou pro pacote público via `media-upload.ts`).
+
+**Mutação ao vivo:** injetado `process.env.NODE_ENV` em `core/text/sem-amostra.ts` (um dos 16
+módulos de dinheiro já auditados nesta noite, item 16 — reaproveitado por ser pequeno). Reprovou
+apontando arquivo e motivo exatos ("estado de ambiente: a mesma entrada passa a dar saídas
+diferentes"). Restaurado, `pnpm test:unit` completo (283/2461) verde.
+
+**Nenhum achado.** Backlog Fase A: 8 guardas antigas confirmadas nesta noite. Restam ~122.
