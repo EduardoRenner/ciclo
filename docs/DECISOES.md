@@ -8348,3 +8348,21 @@ já demonstrada correta por comentário e por teste de exclusão de agendamento 
 verificado nesta rodada: `clients/import` (importação em massa via CSV) e `clients/[id]/media`
 (upload) — risco menor (duplicar clientes/mídia é inconveniente, não perda de dinheiro ou
 integridade), fica como item de baixa prioridade pra próxima rodada.
+
+---
+
+## 2026-09-17 · Loop noturno (docs/67), item 3 · dinheiro: taxa-por-forma.ts — mutado, correto
+
+**Medido:** `caixa/taxa-por-forma.ts` (docs/53 A-01, "o que a forma de pagamento custou") — lido por
+inteiro, separa taxa REAL (congelada, `fee_cents` do fechamento) de taxa CONTRAFACTUAL (hipotética,
+percentual de hoje sobre o volume total do mês), com comentário explícito nunca apresentar a
+segunda como "o que você pagou".
+
+**Mutação ao vivo:** trocado `volumeTotalCents` por `linha.totalCents` no cálculo do contrafactual
+(bug plausível: usar o volume DA PRÓPRIA forma em vez do volume TOTAL do mês). A suíte
+(`taxa-por-forma.test.ts`) reprovou corretamente (`expected 1047 to be 1326`), com mensagem clara
+apontando a asserção errada. Restaurado, `git status` confirma estado idêntico ao commit.
+
+**Nenhum achado — mas valor real:** esta era uma das guardas do backlog da Fase C (`docs/66`,
+"15 módulos ainda não auditados") — nunca tinha sido vista reprovando. Agora está confirmada.
+Restam 14 dos 16 módulos de dinheiro de `src/core` sem essa confirmação.
