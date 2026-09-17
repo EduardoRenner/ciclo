@@ -10286,3 +10286,21 @@ embutido. Mutação: `admin/config/page.tsx`, trocado `contextoDoPainel(...)` po
 apontando o arquivo exato: `src/app/admin/config/page.tsx: chama contextoAtual() direto ...:
 expected [ 'src/app/admin/config/page.tsx' ] to deeply equal []`. Restaurado com `git checkout --`,
 confirmado grep (`contextoDoPainel` de volta). `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 53: `agendar-consulta-o-profissional-escolhido`
+
+Guarda da família `setstate-seguido-de-funcao-que-rele`: a escolha do profissional no agendamento
+público consultava a agenda da pessoa ERRADA — `setProfessionalId(p.id)` seguido de
+`buscarDisponibilidade(dia)` lia `professionalId` do CLOSURE do render corrente, que ainda é o
+ANTERIOR (setState não muda a variável já capturada). Medido em produção com três barbeiros: tocar
+em Léo depois de Diego buscava a agenda do Diego. O conserto passa o valor novo explicitamente
+(`profissionalDoFiltro = novoProfissional === undefined ? professionalId : novoProfissional`) em
+vez de reler o estado. Mutação: `(public)/[slug]/agendar/agendar.tsx` linha 480, trocado
+`if (profissionalDoFiltro) params.set("professionalId", profissionalDoFiltro)` por
+`if (professionalId) params.set("professionalId", professionalId)` — voltando a ler o estado do
+render em vez do parâmetro. Guarda reprovou corretamente: `a URL voltou a ser montada com o
+estado do render em vez do parâmetro`. Restaurado com `git checkout --`, confirmado grep
+(`profissionalDoFiltro` de volta). `tests/unit` inteiro (283/2461) verde depois.
