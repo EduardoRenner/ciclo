@@ -10253,3 +10253,19 @@ o logo — o defeito histórico exato. Guarda reprovou corretamente: `expected '
 className="relative -mx-[var…' not to match /overflow-hidden/`. Restaurado com `git checkout --`,
 confirmado (className de volta sem `overflow-hidden`). `tests/unit` inteiro (283/2461) verde
 depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 51: `vitrine-da-home-nao-e-literal`
+
+Guarda de "prova de produto": em 2026-09-03 o botão "Ver uma página de exemplo" da landing apontava
+para `/dom-rocha` em `href` literal — 404 em produção, porque a demonstração migrou para os seis
+tenants de `scripts/seed-demo-6-negocios.mjs` e o link ficou no antigo. Nenhuma guarda de código
+podia pegar isso: o defeito estava na DISTÂNCIA entre código e banco, não no código em si. O
+conserto faz a home perguntar ao servidor (`slugDeDemonstracaoNoAr()`); esta guarda proíbe voltar
+a datilografar um slug. Mutação: `src/app/page.tsx`, trocado `href={`/${slugDeExemplo}/agendar?
+ver=dono`}` por `href="/dom-rocha/agendar?ver=dono"` — o defeito exato que o comentário do arquivo
+descreve. Guarda reprovou corretamente: `a home voltou a escrever um slug de tenant à mão ...:
+expected [ 'dom-rocha' ] to deeply equal []`. Restaurado com `git checkout --`, confirmado
+(`slugDeExemplo` de volta). `tests/unit` inteiro (283/2461) verde depois.
