@@ -10587,3 +10587,19 @@ do `.update(...)` sobre `client_cycles` — a checagem de linhas afetadas que se
 guardas exatos: `src/server/services/recuperar-receita.ts [guarda: client_id, service_id]`.
 Restaurado com `git checkout --`, confirmado (`.select('client_id')` de volta). `tests/unit`
 inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 70: `actions-fixadas`
+
+Guarda de supply-chain (achado S14, auditoria 23/08/2026): toda action de terceiro no CI precisa
+ser fixada por SHA de commit, nunca tag/branch — tag é ponteiro móvel que quem controla o
+repositório da action pode reapontar, e o runner passaria a executar código arbitrário sobre este
+repositório. O achado mais grave da auditoria: `supabase/setup-cli@v1` não era nem tag, era um
+BRANCH (`refs/heads/v1`), que se move a cada push — pior que tag, com a mesma cara de versão fixa.
+Mutação: `.github/workflows/ci.yml` linha 43, trocado `actions/checkout@11d5960a...# v4` por
+`actions/checkout@v4` — a ref móvel original que o achado S14 corrigiu. Guarda reprovou
+corretamente, apontando arquivo e linha exatos: `ci.yml:43 → - uses: actions/checkout@v4`.
+Restaurado com `git checkout --`, confirmado (SHA completo com comentário de volta). `tests/unit`
+inteiro (283/2461) verde depois.
