@@ -1,7 +1,7 @@
 'use client'
 
 import { CalendarDays, Home, Plus, Users } from 'lucide-react'
-import Link from 'next/link'
+import Link, { useLinkStatus } from 'next/link'
 import { usePathname } from 'next/navigation'
 
 import IconeAnel from '@/components/ui/icone-anel'
@@ -82,7 +82,7 @@ export default function TabBar({ hrefFab = HREF_DO_CENTRO }: Props) {
               'transition duration-[var(--dur-1)] ease-[var(--ease-ios)] hover:brightness-110 active:scale-[.92]',
             )}
           >
-            <IconeAnel aria-hidden className="size-7 lg:size-5" />
+            <IconeDoFab />
             {/*
               Na coluna lateral o botão tem 207px de largura e trazia só o "+"
               encostado na esquerda — medido. Os quatro destinos logo abaixo
@@ -101,6 +101,19 @@ export default function TabBar({ hrefFab = HREF_DO_CENTRO }: Props) {
       </div>
     </nav>
   )
+}
+
+/**
+ * `useLinkStatus` só funciona dentro de um filho do `<Link>` (lê contexto que
+ * o próprio Link fornece) — por isso é um componente à parte, não uma
+ * variável no meio do FAB. `pending` fica `true` do clique até a rota de
+ * destino terminar de carregar: gira de verdade enquanto espera, não por um
+ * tempo fixo torcido para "parecer certo". Mesmo `animate-spin` de
+ * `recuperar.tsx` (o botão "Atualizar" da própria tela que este ícone abre).
+ */
+function IconeDoFab() {
+  const { pending } = useLinkStatus()
+  return <IconeAnel aria-hidden className={cn('size-7 lg:size-5', pending && 'animate-spin')} />
 }
 
 function ItemAba({ aba, ativa }: { aba: Aba; ativa: boolean }) {

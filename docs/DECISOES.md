@@ -13304,3 +13304,39 @@ zera) contra Postgres real via CI. `tsc`/`eslint` limpos, `tests/unit` inteiro (
 ("armadilhas conhecidas", linha "Reconhecer receita de pacote na venda"): clube, pacote, e — via
 `caixa.ts`/`resumo-hoje.ts`, já confirmados corretos — o fluxo de comanda normal. Não sobrou um
 quarto mecanismo óbvio para checar.
+
+---
+
+## 2026-09-18 · Ícone do uróboros (botão "Recuperar receita") estava girado ~14° errado
+
+Achado do Eduardo, direto ("tá meio torta pra baixo"), com o design de referência anexado
+(`Redesign de logo uróboros c.pdf`). O traçado de `IconeAnel` (`src/components/ui/icone-anel.tsx`)
+nasceu no redesenho do uróboros (commit `95efc97`, 26/08) com uma rotação a mais que o arquivo de
+design não tinha — visível principalmente no FAB "Recuperar receita" da tab-bar, onde o ícone é
+grande o bastante para o olho notar.
+
+**Medido, não estimado a olho.** Abri o PDF com `pymupdf` (instalado nesta sessão) e extraí as
+coordenadas vetoriais exatas do desenho de referência — não uma leitura visual aproximada. Ajustei
+um círculo aos pontos do anel (`numpy.linalg.lstsq`) e comparei cinco pontos correspondentes entre
+o traçado atual e o de referência (início do arco, fim do arco, as três pontas do triângulo da
+seta). As cinco diferenças de ângulo bateram entre 13,95° e 14,99° (média 14,22°) — uma
+CONSISTÊNCIA que só uma rotação pura explica, confirmada pelas proporções de raio de cada ponta da
+seta serem idênticas nos dois traçados (1,403/1,150/0,608). Não era a forma que estava errada, era
+só o ângulo.
+
+**Corrigido**: as coordenadas do `path`/`polygon` em `icone-anel.tsx` são o traçado original girado
+−14,22° em torno do centro do `viewBox` (100,100), calculado precisamente (não arredondado a
+olho). Verificado visualmente no navegador (landing `/`, que usa o mesmo componente, mais uma
+réplica isolada da classe real do FAB) contra o PDF de referência — bate.
+
+**Junto, no mesmo pedido**: animação de girar no clique do FAB "Recuperar receita"
+(`tab-bar.tsx`), usando `useLinkStatus()` do Next 15 (não um `setTimeout`/CSS de duração fixa) —
+gira de verdade enquanto a navegação está pendente, para quando a rota carregar rápido ou devagar,
+igual ao `animate-spin` já usado no botão "Atualizar" da própria tela `/admin/recuperar` e no
+`Button` genérico (`carregando`). `useLinkStatus` só funciona num componente FILHO do `<Link>` —
+por isso virou um subcomponente (`IconeDoFab`), não uma variável solta.
+
+`tsc`/`eslint` limpos, `tests/unit` inteiro (290/2517) verde — não havia teste algum tocando o
+traçado do ícone ou o FAB, então nada quebrou nem precisou de teste novo (é aparência, não regra
+de negócio). Verificação visual feita no navegador, como manda o `CLAUDE.md` para mudança que a
+pessoa VÊ.
