@@ -13021,3 +13021,14 @@ mutation-tested. O teste de integração existente (`tests/integration/ciclo.tes
 `value_at_risk_cents === 3900`) serve de guarda indireta contra regressão: com poucos client_cycles
 por teste (bem abaixo do piso de 8), a tabela calibrada deve continuar idêntica à padrão — CI
 confirma contra Postgres real.
+
+
+---
+
+## 2026-09-18 · Mutação verificada — algumEstadoFoiCalibrado (docs/73 T4 pt.2)
+
+Removido `estado !== 'on_track' &&` da checagem. Guarda reprovou corretamente: `expected true to be
+false` — uma tabela com `on_track` alterado manualmente (cenário que não deveria acontecer na
+prática, mas o teste guarda contra ele) passou a contar como "calibração ativa", quando `on_track`
+nunca calibra por definição (quem está em dia não tem receita em risco, não é uma média que se
+meça). Restaurado com `git checkout --`, confirmado. `tests/unit` inteiro (288/2501) verde depois.
