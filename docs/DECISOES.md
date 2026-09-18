@@ -10944,3 +10944,22 @@ filtro errado chegou até a consulta real: `a retenção não pode olhar respons
 respondida também precisa vencer: expected true to be false`. Restaurado com `git checkout --`,
 confirmado (filtro de `vencidas` de volta só com `.lt('created_at', ...)`). `tests/unit` inteiro
 (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 90: `cron-confere-se-o-trabalho-aconteceu`
+
+Guarda do job `vigia` do `cron.yml`, que existe porque HTTP 200 não é prova de que o trabalho
+aconteceu (25-26/08: `tenantsProcessados: 0` por dois dias e meio, job verde o tempo todo). Testada
+a propriedade mais cara das quatro que a guarda protege: o passo precisa ler o VEREDITO geral
+(`jq -r '.ok // false'`), não uma lista fixa de chaves — até 05/09 ele lia só duas das dez
+checagens de `verificarSaude`, e as outras oito podiam ficar vermelhas seis vezes por dia com o
+job verde (inclusive a de `schema`, criada no mesmo dia para gritar quando o banco está atrás do
+código). Mutação: `.github/workflows/cron.yml`, trocado `jq -r '.ok // false'` por `jq -r
+'.checks.recomputeCycles.ok // false'` — voltando a ler só uma chave em vez do veredito agregado,
+reproduzindo exatamente o defeito pré-05/09. Guarda reprovou corretamente, só na asserção certa —
+as outras quatro (needs: seguros, leitura das duas chaves de heartbeat, exit 1, tratamento de chave
+ausente) continuaram verdes: `expect(blocoDoVigia()).toMatch(/jq -r '\.ok \/\/ false'/)` falhou.
+Restaurado com `git checkout --`, confirmado grep (`.ok // false` de volta). `tests/unit` inteiro
+(283/2461) verde depois.
