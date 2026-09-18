@@ -11405,3 +11405,18 @@ mesmo arquivo (histórico da decisão) corretamente não dispararam a guarda —
 `semComentarios` distingue prosa explicativa de código real. Restaurado com `git checkout --`,
 confirmado (`descricao="Você decide..."` de volta na linha 49). `tests/unit` inteiro (283/2461)
 verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 115: `estado-do-banco-tem-rotulo`
+
+Guarda de tradução: `appointment_status` tem SETE valores no banco (`create type` na migration);
+`ROTULO_STATUS` da ficha da cliente traduzia só seis — faltava `expired`, estado alcançável de
+verdade na máquina de estados — e o `?? h.status` mostrava a palavra inglesa crua "expired" numa
+tela inteira em português. O TypeScript só conhece a UNIÃO local, nunca o enum do banco; esta
+guarda costura os dois lados de verdade, lendo o `create type` das migrations. Mutação:
+`core/scheduling/state.ts`, removido `| 'expired'` de `EstadoAgendamento` — reproduzindo
+exatamente o buraco original. Guarda reprovou corretamente, mostrando o diff exato: `- "expired",`
+faltando no array ordenado comparado contra o enum do banco. Restaurado com `git checkout --`,
+confirmado (`| 'expired'` de volta na linha 2). `tests/unit` inteiro (283/2461) verde depois.
