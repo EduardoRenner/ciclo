@@ -13224,3 +13224,15 @@ assinantes, não só filtrar o que já existe, e essa é uma decisão de produto
 não uma correção mecânica como as duas anteriores.
 
 **Deixado para revisão futura.** Nenhum código mudou nesta superfície.
+
+**Varredura desta causa-raiz encerrada.** Checados também `caixa.ts` e `resumo-hoje.ts` — os dois
+outros lugares óbvios que somam dinheiro de atendimento. Nenhum dos dois tem o bug: `caixa.ts` soma
+`tickets.total_cents` (comanda FECHADA de verdade — visita de assinante nunca gera uma, então já
+fica de fora sozinha); `resumo-hoje.ts` soma `appointments.price_cents`, mas o card é "Atendido
+hoje" (valor de tabela do que foi ATENDIDO, não dinheiro) — renomeado de "Faturado hoje" numa
+correção anterior (31/08) exatamente para não prometer receita. Um assinante atendido hoje TEM,
+de fato, R$X de serviço de tabela entregue — a métrica de workload continua certa pra ele, ao
+contrário de `value_at_risk`/`receita atribuída`, que são explicitamente promessas de DINHEIRO.
+Os quatro achados desta causa-raiz (client_cycles, atribuicao.ts, no-show-score/assinanteDoClube,
+LTV documentado) esgotam os lugares que somam `appointments.price_cents`/`services.price_cents`
+fora do fluxo de comanda nesta base.
