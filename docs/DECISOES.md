@@ -10514,3 +10514,24 @@ volta). `tests/unit` inteiro (283/2461) verde depois.
 
 Início da cobertura de `tests/unit/server/` (design/ esgotado: 90/90, um já coberto na sessão
 overnight anterior).
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 66: `consulta-filtra-tenant`
+
+Guarda de segurança multi-tenant, a mais abrangente já testada nesta rodada: `withTenant`/
+`withNovoTenant` emprestam `service_role`, que IGNORA A RLS por completo — o isolamento entre
+salões, para toda consulta ali dentro, depende inteiramente de alguém ter lembrado de escrever
+`.eq('tenant_id', ...)`. A guarda varre TODO `src/server/**/*.ts` (não um arquivo, o diretório
+inteiro) atrás de `.from('<tabela>')` sem `tenant_id` na mesma cadeia, com uma lista fechada
+(`JUSTIFICADAS`) das 12 exceções auditadas uma por uma (token HMAC, cron global, id já validado
+contra o tenant por uma consulta anterior) — cada uma com motivo escrito, e a CONTAGEM importa:
+uma segunda consulta sem filtro no mesmo arquivo/tabela já JUSTIFICADO também reprova. Mutação:
+`server/services/notas.ts`, `listarNotas` — removido `.eq('tenant_id', tenantId)` da consulta a
+`client_notes`, deixando só `.eq('client_id', clientId)`. Esta é uma mutação real e explorável: com
+`service_role`, um `clientId` de outro tenant (adivinhável ou vazado) passaria a devolver as
+anotações internas da cliente de outro salão. Guarda reprovou corretamente, apontando arquivo e
+tabela exatos: `src/server/services/notas.ts::client_notes (1x) — consulta NOVA sem filtro de
+tenant`. Restaurado com `git checkout --`, confirmado (`.eq('tenant_id', tenantId)` de volta).
+`tests/unit` inteiro (283/2461) verde depois.
