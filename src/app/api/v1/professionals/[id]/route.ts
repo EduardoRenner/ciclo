@@ -7,6 +7,7 @@ import { AppError } from '@/server/http/errors'
 import { rota } from '@/server/http/handler'
 import { comIdempotencia } from '@/server/http/idempotency'
 import { atualizarProfissional, desativarProfissional, EsquemaProfissionalParcial } from '@/server/services/profissionais'
+import { exigirModulo } from '@/server/services/planos'
 
 type Ctx = { params: Promise<{ id: string }> }
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -24,6 +25,16 @@ export const PATCH = rota(async (req, params, requestId) => {
   const id = await idValidado(params)
   const entrada = await lerCorpo(req, EsquemaProfissionalParcial)
   const db = await criarClienteDoUsuario()
+
+  /*
+   * `compModel`/`commissionBps` fazem parte do que o cartão do Equipe vende (`planos-cartoes.ts`)
+   * — comissão só faz sentido para PAGAR outra pessoa, e é o mesmo raciocínio condicional de
+   * `business-hours/route.ts`: travar a rota inteira travaria renomear o próprio profissional (cor,
+   * avatar), que não é feature paga. Só o campo de comissão exige o módulo.
+   */
+  if (entrada.compModel !== undefined || entrada.commissionBps !== undefined) {
+    await exigirModulo(db, ctx.tenantId, 'team')
+  }
 
   const profissional = await comIdempotencia(
     req,

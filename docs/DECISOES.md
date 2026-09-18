@@ -12731,3 +12731,39 @@ para o comportamento pré-05/09 que o próprio docstring documenta como o defeit
 reprovou corretamente: `expected false to be true` — um `paused: 'sim'` malformado voltou a liberar
 o envio em vez de pausar por segurança. Restaurado com `git checkout --`, confirmado (`return {
 paused: true }` com o `console.warn` de volta). `tests/unit` inteiro (284/2465) verde depois.
+
+
+---
+
+## 2026-09-18 · Achado MÉDIO, não corrigido — `routing` e `documents` aparecem como módulo real na tela, sem feature nenhuma atrás
+
+**Contexto.** Extensão da varredura que achou o buraco do `club`: para cada um dos 17 módulos de
+`CATALOGO`, conferi se existe `exigirModulo` em alguma rota de escrita. Dois módulos deram zero
+ocorrências, igual ao `club` antes do conserto — `routing` ("Deslocamento e rota", libera no
+Essencial) e `documents` ("Documentos e contratos", libera no Avançado). Investiguei os dois a
+fundo (agente dedicado) antes de tratar como o mesmo buraco.
+
+**Diferença do achado do `club`: aqui não existe feature NENHUMA por trás, então `exigirModulo`
+não é o conserto — não há rota de escrita para travar.** Busca no repo inteiro pelas duas chaves
+como string literal só aparece em `core/billing/planos.ts` (catálogo/tiers), na migration
+`0041_modules_catalogo.sql` (linhas de catálogo), nos próprios testes do catálogo, e em
+`docs/09-PLATAFORMA.md`, que rotula `documents` como `| desligado | futuro |` e separa endereço
+(P2.5, construído, universal e grátis de propósito — `appointments.address`) de rota/geocodificação
+(P9, "caro e adiado de propósito", nada implementado). Nenhum `src/core/routing/`, nenhuma tabela
+de documento/contrato em migration nenhuma, nenhum `BloqueioPlano` para nenhum dos dois.
+
+**O que É real: a tela `/admin/config/modulos` (`listarModulos`/`Modulos`) lista TODOS os módulos
+do `CATALOGO` que passam pelo filtro de eixo, com interruptor ligado/desligado — inclusive
+`routing` e `documents`, para quem está no plano que os libera.** Um tenant Avançado pagando de
+verdade vê "Documentos e contratos" com interruptor funcional (liga, desliga, grava em
+`tenant_modules` — `definirModulo` não distingue "módulo com feature" de "módulo decorativo"); um
+tenant Essencial com `onde: vai_ate`/`hibrido` vê "Deslocamento e rota" do mesmo jeito. Ligar o
+interruptor não quebra nada, mas também não FAZ nada — não existe tela, rota nem comportamento que
+mude. É a promessa da tela de módulos ("ligue só o que você usa") sendo descumprida ao contrário:
+não falta trava, falta produto atrás do nome.
+
+**Por que não corrigi.** Três saídas possíveis, e nenhuma é técnica: (1) construir a feature de
+verdade — fora de escopo de uma sessão; (2) tirar os dois do `CATALOGO` até terem implementação —
+decisão de produto sobre o que anunciar como "em breve" vs esconder; (3) marcar como "em breve" na
+própria tela de módulos, sem interruptor funcional — mudança de UI que precisa de critério do
+Eduardo sobre o que comunicar a quem já paga pelo Avançado. Registrado para decisão, não ação.
