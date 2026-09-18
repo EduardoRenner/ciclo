@@ -12642,3 +12642,18 @@ tempo: o específico da comanda (`expected { href: ... } to equal null`) e o agr
 saída" não é cego, mesmo sendo uma varredura ampla sobre uma lista fixa de rotas. Restaurado com
 `git checkout --`, confirmado (regra de volta na linha 34). `tests/unit` inteiro (284/2465) verde
 depois.
+
+
+---
+
+## 2026-09-18 · Loop assert-vazio — item 154: `confirmacao-token` (re-verificação)
+
+Guarda de segurança (TICKET-030): link de confirmação de agendamento sem login, mesmo mecanismo
+HMAC de `token-assinado.ts` (assinatura, adulteração, escopo e segredo trocado já mutation-testados
+no item 130 `seguranca-segredos`). O que faltava confirmar aqui era a constante DE NEGÓCIO própria
+deste arquivo — `VALIDADE_HORAS = 72` — e não só o mecanismo genérico por trás dela.
+
+Mutação: `server/services/confirmacao-token.ts`, trocado `VALIDADE_HORAS = 72` por `96`. Guarda
+reprovou corretamente: `expected '7fd4b18c-...' to be null` — um token gerado 73h antes (que devia
+estar vencido) continuou válido. Restaurado com `git checkout --`, confirmado (`72` de volta na
+linha 13). `tests/unit` inteiro (284/2465) verde depois.
