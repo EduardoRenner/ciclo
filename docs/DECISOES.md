@@ -11053,3 +11053,21 @@ registro contábil: o valor dela é ser o que o número ERA na época. Reescreve
 exatamente isso, e o defeito seria invisível.: expected [ Array(1) ] to deeply equal []` com
 `"src\server\services\caixa.ts: .upsert("`. Restaurado com `git checkout --`, confirmado
 (`.insert({` de volta na linha 339). `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 95: `dia-do-salao-nao-e-utc`
+
+Guarda de dinheiro/fuso: a auditoria de 2026-08-28 achou a conta de dia-em-UTC escrita à mão em
+`comissao.ts` e `atribuicao.ts`, ao lado de `caixa.ts` que já contava certo — comanda fechada
+depois das 21h em Brasília saía do mês trabalhado e reaparecia no seguinte, e o extrato de comissão
+aparece na MESMA TELA que o caixa. Mutação: `comissao.ts`, `extratoDeComissao`, trocado o `fim`
+calculado via `Temporal...toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant()`
+(meia-noite do dia SEGUINTE no fuso do salão) por um literal `` `${ate}T23:59:59` `` — reproduzindo
+exatamente a segunda forma do defeito que o próprio docstring do arquivo documenta como corrigida
+na auditoria (fim por aproximação, sem fechar o intervalo semiaberto). Guarda reprovou
+corretamente: `estes arquivos montam o limite de um período concatenando a data com um instante em
+UTC. [...]: expected [ 'src/server/services/comissao.ts' ] to deeply equal []`. Restaurado com `git
+checkout --`, confirmado (`toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant()`
+de volta nas linhas 61 e 64). `tests/unit` inteiro (283/2461) verde depois.
