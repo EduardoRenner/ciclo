@@ -11989,3 +11989,55 @@ CLIENTE FINAL vê ou consegue fazer — coerente com "nunca apaga nada" sendo te
 coerente com o produto não querer que um QR code ou link antigo pare de funcionar de forma confusa
 só porque o dono decidiu esconder uma tela de configuração que não usa mais. Fecha a incerteza que
 a varredura anterior deixou em aberto — resposta medida, não suposta.
+
+
+---
+
+## 2026-09-18 · Achado ALTO, não corrigido — consumir pacote e debitar carteira são inalcançáveis (capacidade morta)
+
+**Contexto:** investigando "capacidade morta" (rota sem chamador), o mesmo padrão já registrado
+para `cash/daily`/`cash/summary` no `docs/68`. Varredura de todas as rotas de `/api/v1` sem
+referência em `src/app` encontrou, entre outras já conhecidas, duas rotas de DINHEIRO:
+`POST /api/v1/packages/[id]/use` (consumir uma sessão de pacote) e `POST /api/v1/wallet/debit`
+(debitar saldo da carteira).
+
+**Medido, com cuidado extra por ser achado de dinheiro:**
+1. `debitarCarteira`/`consumirSessao` (`server/services/pacotes.ts`) só são chamados pelas duas
+   rotas acima — nenhum outro caminho no código as invoca.
+2. Zero referência a essas duas rotas em `src/app` inteiro (`grep -rn` sem resultado).
+3. O componente que mostra pacotes/carteira na ficha (`admin/clientes/[id]/pacotes-carteira.tsx`)
+   só tem DOIS `fetch`: `POST /api/v1/packages` (vender) e `POST /api/v1/wallet/credit` (creditar)
+   — nenhum terceiro botão para consumir/debitar.
+4. O seletor de forma de pagamento no fechamento da comanda (`core/comanda/taxa-de-pagamento.ts`)
+   EXCLUI deliberadamente `club`/`package`/`voucher` das cinco formas escolhíveis — com o motivo
+   escrito: "são dinheiro que entrou ANTES, por outro caminho — quem os fechar aqui estaria
+   CONTANDO DUAS VEZES". Este é raciocínio de contabilidade CORRETO (mesma classe do achado
+   `livro-caixa-fonte-unica` já registrado nesta base) — a exclusão em si não é o bug.
+5. `concluirAgendamento` (`agendamentos.ts`) chama `pontuarAtendimentoConcluido` (fidelidade) na
+   conclusão do atendimento, mas NUNCA chama `consumirSessao` nem `debitarCarteira` — o caminho
+   "automático" que existe para pontos de fidelidade não existe para pacote/carteira.
+
+**O paradoxo que isto revela:** o comentário de `pacotes-carteira.tsx` (escrito no TICKET-091,
+`docs/12` achado #14, "o último 'servidor pronto, tela ausente'") afirma como fato: "Consumir
+acontece na comanda". Não acontece — nem pelo seletor de forma de pagamento (excluído de propósito,
+item 4 acima) nem por nenhum outro caminho (itens 1-3 e 5). A exclusão do item 4 está CERTA (evita
+contar duas vezes); o que nunca foi construído é o mecanismo ALTERNATIVO de registrar "usei uma
+sessão do pacote" ou "gastei R$X da carteira" sem inflar a receita da comanda — TICKET-091 resolveu
+a metade "vender/creditar" do par e a auditoria de então acreditou, incorretamente, que a metade
+"consumir/debitar" já existia em outro lugar.
+
+**Impacto real:** um salão que vende um pacote de 10 sessões, ou credita fiado/cortesia na
+carteira, não tem como marcar sessão como usada nem descontar da carteira através do produto — o
+contador `used_sessions`/`restantes` (mostrado na ficha, e usado para alertar vencimento em
+`pacotesAVencerEmBreve`) fica parado para sempre, e o saldo de carteira só cresce, nunca diminui
+pelo uso normal.
+
+**Por que não corrigi às cegas.** O jeito CERTO de registrar consumo sem contar receita duas vezes
+não é óbvio — precisa de decisão de produto: um botão separado na comanda por item ("Cobrir com
+pacote X" em vez de cobrar preço)? Um botão na própria ficha ("Usar 1 sessão", sem vínculo com
+comanda nenhuma)? Os dois têm implicações diferentes em relatório e em `ticket_items`/`payments`.
+Implementar uma escolha errada seria pior que não implementar — o mesmo raciocínio que barrou o
+conserto do achado de double-submit (entrada anterior desta sessão).
+
+**Severidade ALTA** (dinheiro real que o cliente pagou e o salão não consegue operacionalizar), mas
+**registrado, não corrigido** — exige decisão de UX do Eduardo antes de qualquer código.
