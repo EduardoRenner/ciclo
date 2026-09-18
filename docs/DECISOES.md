@@ -11525,3 +11525,21 @@ classe de drift que a guarda existe para pegar. Guarda reprovou corretamente: `e
 'appointment:read' to be 'appointment:create'`. Restaurado com `git checkout --`, confirmado
 (`permissao: 'appointment:create'` de volta na linha 340). `tests/unit` inteiro (283/2461) verde
 depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 122: `cartao-nunca-fica-em-branco`
+
+Guarda do incidente de 2026-08-30: o cartão de confirmação do assistente procurava uma LISTA FIXA
+de seis chaves minúsculas escritas quando `preparar_agendamento` era a única ferramenta — as três
+seguintes devolveram `Cliente`, `Telefone`, `Anotação` (capitalizadas), JavaScript diferencia
+maiúscula, todas as buscas davam `undefined`, e o `<dl>` saía com ZERO filhos. O dono via
+"Confirmar" sobre uma caixa vazia: proposta certa, JSON certo, testes verdes, e em branco só o
+pedaço que uma pessoa tinha que julgar antes de clicar. Mutação: `core/assistente/resumo.ts`,
+`linhasDoResumo`, removido o segundo laço (`for (const [chave, valor] of Object.entries(resumo))`)
+que faz toda chave NÃO conhecida entrar com o próprio nome de rótulo — voltando a só a lista fixa
+`CONHECIDAS` (seis chaves) decidir o que vira linha. Guarda reprovou corretamente em 5 dos 8 casos,
+incluindo o mais direto: `chave que a lista fixa não conhece continua aparecendo` — `expected [] to
+deeply equal [ 'Cliente', 'Anotação' ]`. Restaurado com `git checkout --`, confirmado (segundo laço
+de volta, linhas 46-52). `tests/unit` inteiro (283/2461) verde depois.
