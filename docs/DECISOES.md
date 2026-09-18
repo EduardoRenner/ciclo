@@ -11284,3 +11284,22 @@ mesma técnica dos itens 22/32/88/91. Guarda reprovou corretamente, apontando o 
 `pack não sabe quanto aquele salão paga no produto: [...]: expected [ Array(1) ] to deeply equal
 []` com `"0091_produto_sugerido_do_servico.sql"`. Restaurado com `git checkout --`, confirmado
 (`grep -c avg_cost_cents` = 0 no arquivo). `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 108: `pack-nao-inventa-ciclo`
+
+Guarda do Motor de Ciclo/dinheiro: `cycle_days: 0` no pack ("sem retorno natural" — orçamento,
+avaliação, tatuagem, retoque) precisa virar 21 (o `default` da coluna, "não sei o ciclo"), nunca 1.
+A 0008 resolvia com `greatest(cycle_days, 1)`, que não estoura constraint mas afirma "volte
+amanhã": medido, isso inflava verticais inteiras (tattoo, hair) para dentro de "Chamar de volta"
+permanentemente, distorcendo o número de dinheiro que sustenta o preço do produto. A 0063 trocou
+para 21. Mutação: `supabase/migrations/0063_ciclo_sem_ciclo_nao_e_um_dia.sql`, dentro da definição
+VIGENTE de `apply_vertical_pack` (a última `create or replace` na ordem das migrations), trocado o
+`case when coalesce(cycle_days, 0) < 1 then 21 else cycle_days end` de volta para
+`greatest((item->>'cycle_days')::int, 1)` — reproduzindo exatamente o defeito da 0008 que a 0063
+corrigiu. Guarda reprovou corretamente: `expect(trecho).not.toContain('greatest(...)')` falhou,
+apontando o trecho inteiro do `insert into services`. Restaurado com `git checkout --`, confirmado
+(`case when coalesce(...) < 1 then 21` de volta na linha 63). `tests/unit` inteiro (283/2461) verde
+depois.
