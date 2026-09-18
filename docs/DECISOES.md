@@ -12878,3 +12878,42 @@ adicionadas (`avaliacoes.ts::appointments`, `ciclo.ts::client_cycles`, `orcament
 filtradas"), disparando a checagem de justificativa órfã — um segundo caminho de detecção pegando o
 mesmo defeito por um ângulo diferente. Restaurado com `git checkout --`, confirmado. `tests/unit`
 inteiro (287/2475) verde depois.
+
+
+---
+
+## 2026-09-18 · CORRIGIDO — `services.cycle_days_observado_em` escrita desde a 0065 sem NUNCA ter sido lida
+
+Varredura autônoma (agente dedicado) de colunas adicionadas nas migrations mais recentes sem
+leitor nem escritor em `src/`. Achado: `cycle_days_observado_em` (migration 0065) é escrita em
+`previsao.ts` (`registrarPrevisoes`) desde a criação da coluna, mas nunca esteve na `COLUNAS` de
+`servicos.ts`, então a tela de serviços nunca soube QUANDO a cadência foi medida — só quantas
+voltas a sustentam. O próprio comentário da migration já avisava: "`amostra` e `medido_em` não são
+metadado decorativo... é o que separa 'medi 30 com 8 voltas na semana passada' de 'medi 30 com 400
+voltas em um ano'". Os outros dois irmãos (`cycle_days_observado`, `cycle_days_observado_amostra`)
+sempre foram lidos e renderizados; só a recência ficou pela metade.
+
+**Corrigido:** `cycle_days_observado_em` entrou na `COLUNAS` de `servicos.ts`; `reguaDoServico`
+ganhou dois parâmetros opcionais (`observadoEm`, `agora`, ambos com default que preserva o
+comportamento antigo) e usa `diasDesde` (já mutation-testado, `core/tempo/dia.ts`) para acrescentar
+"há N dias"/"hoje" à frase de procedência — ex.: `"medido em 24 voltas há 17 dias · mais espaçado
+que os 21d configurados"`. `lista.tsx` (tela `/admin/config/servicos`) passa o novo campo nas duas
+chamadas e no objeto de "serviço recém-criado" (que continua `null`, corretamente — serviço novo
+não tem medição nenhuma).
+
+**Nota sobre ferramenta:** `npx prettier` reformatou os três arquivos com aspas duplas e
+ponto-e-vírgula — o projeto não tem Prettier configurado (nenhum devDependency, nenhum
+`.prettierrc`), só ESLint. Revertido via `git checkout --` e as edições refeitas à mão, no estilo
+do projeto (aspas simples, sem `;`). Registrado para não repetir: `npx prettier`/`pnpm exec
+prettier` NÃO deve ser usado nesta base sem antes confirmar que existe config — aqui não existe.
+
+Mutação: `regua-do-servico.ts`, trocado `const quando = recencia(observadoEm, agora)` por `const
+quando = ''` (com `void agora` para não sobrar variável não usada). Guarda reprovou corretamente,
+com 4 falhas — as quatro asserções que dependiam de "há N dias"/"hoje" na frase, incluindo a exata
+(`toBe('confirmado por 40 voltas há 17 dias')` → recebeu só `'confirmado por 40 voltas'`).
+Restaurado com `git checkout --`, confirmado. `tests/unit` inteiro (287/2480) verde depois.
+
+**Nota de verificação:** mudança de UI (`lista.tsx`), mas sem Docker/Supabase local disponível
+nesta sessão (indisponibilidade crônica já registrada), não foi possível renderizar a tela de
+verdade no navegador. Verificação feita por tipo (`tsc --noEmit`), lint (`eslint`) e os 14 testes
+comportamentais de `regua-do-servico.test.ts`, incluindo os 5 novos casos de recência.
