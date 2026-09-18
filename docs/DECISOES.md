@@ -12225,3 +12225,20 @@ fluxo não serve em outro: expected '1f7a2c68-60c0-4cad-9dff-d0e06327ccca' to be
 `lista_espera` validou como se fosse de `orcamento`. Restaurado com `git checkout --`, confirmado
 (`if (escopoRecebido !== escopo) return null` de volta na linha 69). `tests/unit` inteiro
 (284/2465) verde depois.
+
+
+---
+
+## 2026-09-18 · Loop assert-vazio — item 131: `captcha-nao-falha-em-silencio`
+
+Guarda de segurança (G100, booking público): `verificarCaptcha` falha ABERTO de propósito quando
+não consegue verificar (indisponibilidade, sem segredo) — decisão correta, documentada. O que a
+guarda protege é diferente: uma REPROVAÇÃO de verdade do provedor (`success: false`, o captcha
+respondeu e disse que o token é inválido) tem que RECUSAR, não passar — senão a camada inteira
+deixa de existir silenciosamente, sem exceção, sem log, "captcha aprovando 100%".
+
+Mutação: `server/services/captcha.ts`, trocado `return success` por `return true` incondicional no
+caminho onde o provedor respondeu com sucesso — reproduzindo exatamente o cenário "provedor
+funcionando, mas a decisão dele é ignorada". Guarda reprovou corretamente: `provedor respondeu e
+reprovou: recusa, e sem aviso nenhum: expected true to be false`. Restaurado com `git checkout --`,
+confirmado (`return success` de volta na linha 27). `tests/unit` inteiro (284/2465) verde depois.
