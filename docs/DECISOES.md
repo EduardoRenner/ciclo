@@ -12657,3 +12657,19 @@ Mutação: `server/services/confirmacao-token.ts`, trocado `VALIDADE_HORAS = 72`
 reprovou corretamente: `expected '7fd4b18c-...' to be null` — um token gerado 73h antes (que devia
 estar vencido) continuou válido. Restaurado com `git checkout --`, confirmado (`72` de volta na
 linha 13). `tests/unit` inteiro (284/2465) verde depois.
+
+
+---
+
+## 2026-09-18 · Loop assert-vazio — item 155: `mfa`
+
+Guarda de segurança CRÍTICA: remover o segundo fator (2FA) exige `aal2` — não basta sessão comum de
+senha. "Desligar a própria proteção não pode ser mais fácil do que usá-la": só chega em `aal2` quem
+acabou de provar o fator, então quem remove já demonstrou ser dono dele. Sem essa trava, uma sessão
+de senha vazada (sem o segundo fator) bastaria para desligar o 2FA da vítima.
+
+Mutação: `app/api/v1/auth/mfa/factors/[id]/route.ts`, removido `await exigirAal2()` do início do
+`DELETE`. Guarda reprovou corretamente: `expected 200 to be 401` — uma sessão só com `aal1`
+(senha, sem segundo fator provado) conseguiu remover o fator MFA, quando devia receber
+`MFA_REQUIRED`. Restaurado com `git checkout --`, confirmado (`await exigirAal2()` de volta na
+linha 16). `tests/unit` inteiro (284/2465) verde depois.
