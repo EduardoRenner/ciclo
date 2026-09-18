@@ -10836,3 +10836,21 @@ banco tossisse, o telefone de uma cliente sairia por um endpoint anônimo. Muta�
 corretamente: `expected [ 'detail: error.message' ] to deeply equal []`. Restaurado com
 `git checkout --`, confirmado grep (`falhaSemVazar('banco', error)` de volta). `tests/unit`
 inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 84: `motor-de-ciclo-observavel`
+
+Guarda comportamental (chama `verificarSaude` de verdade com banco encenado): nos dias 25 e 26/08,
+`recompute-cycles` devolveu `{"tenantsProcessados":0}` em TODOS os disparos — dez seguidos — com
+HTTP 200, e o `cron.yml` só confere o código de status. Dois dias sem o Motor de Ciclo (o
+diferencial que sustenta o preço do produto) rodar, sem nenhum sinal. A distinção central: o
+heartbeat só pode provar TRABALHO, não CHAMADA — "a rota foi chamada" já era verdade nos dez
+disparos zerados; registrar incondicionalmente reproduziria o mesmo defeito numa camada nova.
+Mutação: `api/cron/recompute-cycles/route.ts`, removido o `if (processados > 0)` que envolve
+`registrarHeartbeat(svc, 'recompute_cycles')`, deixando o heartbeat disparar sempre — mesmo com
+zero tenants processados. Guarda reprovou corretamente: `o heartbeat de recompute_cycles precisa
+ficar DENTRO de if (processados > 0) ...: expected false to be true`. Restaurado com
+`git checkout --`, confirmado grep (guarda condicional de volta). `tests/unit` inteiro (283/2461)
+verde depois.
