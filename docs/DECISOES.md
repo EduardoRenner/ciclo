@@ -11756,3 +11756,39 @@ com Docker/Supabase local disponível, para rodar `test:rls` antes de confiar):*
    sobre isso). Precisa de desenho deliberado, não só copiar-colar.
 
 Nenhuma das duas opções foi implementada nesta sessão — registrado para decisão/conserto futuro.
+
+
+---
+
+## 2026-09-18 · Correção sobre o achado anterior (clients/import e clients/[id]/media)
+
+A entrada anterior desta sessão ("Achado MÉDIO, não corrigido") tratou a ausência de
+`comIdempotencia` nessas duas rotas como lacuna não examinada. Não é: `tests/unit/design/
+escrita-passa-por-idempotencia.test.ts` já lista as duas em `ISENTAS`, com motivo escrito —
+"multipart fora da fila offline" para as duas, mais "e a importação já pula telefone repetido" só
+para `clients/import`. A régua da própria guarda é explícita: a questão não é "escreve no banco?",
+é "quem pode repetir a chamada?" — como a fila offline do PWA (`lib/offline/api-client.ts`) só
+embala JSON, o que sobra nessas rotas é o toque duplo humano, e isso já é coberto pelo botão
+desabilitado durante `carregando`/`pendente` (confirmado nesta sessão: `components/ui/button.tsx`
+combina `disabled={disabled || carregando}`).
+
+**O que sobrevive do achado, com essa moldura corrigida:** o "toque duplo humano" não é o único
+jeito de repetir uma chamada. Uma resposta que não chega por rede ruim (o cenário que este produto
+cita explicitamente, "4G ruim de subsolo") deixa a ESCRITA já ter acontecido no servidor enquanto o
+cliente vê falha e tenta de novo — não é um segundo toque no mesmo estado, é uma ação deliberada
+sobre um estado AMBÍGUO, o problema clássico que idempotência resolve e que "desabilitar o botão
+enquanto carrega" não cobre (o botão já reabilitou, mostrando erro). Para `clients/import`, o
+mitigante "já pula telefone repetido" é REAL mas parcial: só protege linha com telefone (índice
+único parcial `clients_unique_phone ... where phone_e164 is not null`); linha sem telefone segue
+sem proteção nenhuma sob esse cenário específico. Para `clients/[id]/media` não há mitigante
+funcional nenhum além do "é humano" — nenhuma verificação de conteúdo/recência antes de gravar.
+
+**Isto não é um oversight que a guarda deixou passar — é o próprio raciocínio documentado da
+`ISENTAS` tendo um caso de borda (retry depois de falha aparente, não clique duplo) que talvez
+valha reexaminar, principalmente pro upload de foto, que não tem sequer o mitigante parcial que a
+importação tem. Fica registrado como refinamento do achado anterior, não como achado novo
+independente — mesma severidade MÉDIA, mesmo motivo de não corrigir (troca de client RLS→
+service_role sem `test:rls` disponível). Se o Eduardo confirmar que o risco residual (retry de
+rede específico, não clique duplo) é aceitável do jeito que está — para `clients/import`
+especialmente, dado o mitigante parcial — a `ISENTAS` já está correta como está, e não há mais o
+que fazer aqui além de talvez anotar essa distinção no motivo escrito da lista.
