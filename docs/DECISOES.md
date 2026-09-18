@@ -12343,3 +12343,19 @@ comentário do teste descreve. Guarda reprovou corretamente: `expected
 '9c86fd5d-f934-44b4-8e9d-5cd586cc348e' to be null` — um token de avaliação validou como token de
 indicação. Restaurado com `git checkout --`, confirmado (`const ESCOPO = 'indicacao'` de volta na
 linha 12). `tests/unit` inteiro (284/2465) verde depois.
+
+
+---
+
+## 2026-09-18 · Loop assert-vazio — item 137: `hoje-heroi-do-motor`
+
+Guarda de UI/dado (docs/62 Fase A): `linkWhatsAppDoProximo` nunca inventa contato quando o cliente
+não tem telefone cadastrado — o ícone de WhatsApp no card "A seguir" precisa sumir, não apontar
+para um número qualquer. `escolherHeroi` (a outra metade do arquivo, decisão pura da manchete da
+home) já tinha cobertura de borda extensa e não corria risco de guarda cega.
+
+Mutação: `app/admin/hoje/hoje.tsx`, `linkWhatsAppDoProximo`, trocado o fallback `agendamento.clients
+?.phone_e164 ?? null` por `?? '5511999999999'` — um número qualquer no lugar do `null`. Guarda
+reprovou corretamente: `expected 'https://wa.me/5511999999999?text=Oi%2…' to be null`. Restaurado
+com `git checkout --`, confirmado (`?? null` de volta na linha 53). `tests/unit` inteiro
+(284/2465) verde depois.
