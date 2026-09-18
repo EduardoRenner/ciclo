@@ -11961,3 +11961,31 @@ explícito para a próxima sessão: adicionar `if (entrada.compModel !== undefin
 entrada.commissionBps !== undefined) await exigirModulo(db, ctx.tenantId, 'team')` em
 `src/app/api/v1/professionals/[id]/route.ts`, PATCH, com guarda mutada nos dois lados (campo de
 comissão travado, campo de nome/cor continua livre).
+
+
+---
+
+## 2026-09-18 · Verificado, correto — desligar módulo pelo dono não derruba rota pública (por desenho)
+
+**Contexto:** terceiro item da varredura de coerência módulo↔tela, marcado como "não verificado com
+certeza" no relatório inicial: será que desligar o módulo `public_page` (interruptor do dono, tela
+`admin/config/modulos`) desativa a página pública `/{slug}` de verdade?
+
+**Medido.** `src/app/admin/config/modulos/page.tsx` documenta a semântica explicitamente: "Ligue só
+o que você usa. Desligar esconde da interface, e nunca apaga nada." — e o comentário do componente
+confirma as três camadas de precedência (`docs/18` §D.5): eixo esconde da lista, plano mostra
+cadeado, dono desliga reversível. Em nenhum lugar isso promete desativar rota pública.
+
+Conferido em código, não só no texto: `server/services/public-booking.ts`, `(public)/[slug]/
+page.tsx`, `(public)/[slug]/agendar/page.tsx` — zero chamada a `podeUsarModulo`/`exigirModulo`/
+`desligadosPeloDono`. Comparado com OUTRO módulo com componente público, para saber se é falha
+isolada do `public_page` ou padrão consistente: `api/v1/public/[slug]/quote-request/route.ts` e
+`api/v1/public/[slug]/book/route.ts` (módulos `quotes`/booking) também têm zero checagem do
+interruptor do dono nas rotas públicas correspondentes.
+
+**Não é achado.** É desenho consistente em pelo menos dois módulos distintos: `desligadosPeloDono`
+existe para tirar a seção/config do PAINEL do dono (decluttering), nunca para derrubar o que o
+CLIENTE FINAL vê ou consegue fazer — coerente com "nunca apaga nada" sendo texto literal da tela, e
+coerente com o produto não querer que um QR code ou link antigo pare de funcionar de forma confusa
+só porque o dono decidiu esconder uma tela de configuração que não usa mais. Fecha a incerteza que
+a varredura anterior deixou em aberto — resposta medida, não suposta.
