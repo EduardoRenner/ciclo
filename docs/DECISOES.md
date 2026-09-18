@@ -10728,3 +10728,23 @@ literal, sem espaço) não reconhece como a atribuição real. Guarda reprovou c
 exatamente o arquivo mutado entre todas as rotas: `src/app/api/v1/onboarding/route.ts`. Restaurado
 com `git checkout --`, confirmado grep (`= rota(` sem espaço de volta). `tests/unit` inteiro
 (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 78: `motor-de-ciclo-um-tenant-nao-derruba-o-laco`
+
+Guarda contra `await` solto num laço de cron (a mesma classe descrita na memória do projeto): até
+2026-09-10, o primeiro tenant com dado malformado (fuso que `dataLocalDe` não parseia,
+atendimento sem serviço) lançava, o laço inteiro abortava, e todo tenant depois dele ficava sem
+recálculo do Motor de Ciclo — neste disparo e em todos os outros, até alguém consertar aquele
+tenant. O diferencial que sustenta o preço do produto parava para quase todo mundo por causa de
+um. A guarda varre as três rotas que rodam o laço (`recompute-cycles`, `segments`,
+`stock-alerts`) checando que o `try` vem ANTES da chamada do serviço, não depois. Mutação:
+`api/cron/recompute-cycles/route.ts`, movido o `try {` para depois do `await
+recomputarCiclosDoTenant(...)`, deixando a chamada real desprotegida (só `processados++` fica
+dentro do try) — reproduzindo exatamente o defeito histórico. Guarda reprovou corretamente,
+isolando a falha só na rota mutada: `o try vem DEPOIS da chamada — não protege nada: expected 153
+to be less than 51` — as outras duas rotas (`segments`, `stock-alerts`) continuaram verdes.
+Restaurado com `git checkout --`, confirmado (try antes do await de volta). `tests/unit` inteiro
+(283/2461) verde depois.
