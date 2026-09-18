@@ -12446,3 +12446,22 @@ vez de `null`; em `margem-do-servico.test.ts`, `expected 'comissao' to be null` 
 "apontar culpado num serviço saudável fabrica um problema". Restaurado com `git checkout --`,
 confirmado (`&& margemBps < PISO_DE_MARGEM_BPS` de volta na linha 154). `tests/unit` inteiro
 (284/2465) verde depois.
+
+
+---
+
+## 2026-09-18 · Loop assert-vazio — item 143: `calibracao-do-ciclo`
+
+Guarda de dinheiro (docs/45 §1.4): `calibrarCiclo` troca a régua fixa de catálogo (`cycle_days`
+padrão 21) pela cadência REAL medida por salão — e é ela que decide quem entra na lista de
+recuperação e quanto dinheiro o produto diz estar em risco. Dos "três freios" documentados no
+próprio arquivo, o terceiro (volta no mesmo dia não conta como retorno — corte e barba no mesmo
+atendimento não descreve cadência) é o que o comentário do teste já avisa ser "o mais fácil de
+perder num refactor".
+
+Mutação: `core/cycle/calibracao.ts`, trocado `.filter((dias) => dias > 0)` por `.filter((dias) =>
+dias >= 0)` — deixando intervalos de ZERO dias (mesmo-dia) entrarem na amostra. Guarda reprovou
+corretamente: `expected 'ok' to be 'amostra_insuficiente'` — 8 voltas no mesmo dia passaram a
+calibrar a régua, quando deveriam ser descartadas por completo (amostra zero). Restaurado com `git
+checkout --`, confirmado (`dias > 0` de volta na linha 95). `tests/unit` inteiro (284/2465) verde
+depois.
