@@ -12395,3 +12395,19 @@ da linha descreve. Guarda reprovou corretamente no primeiro payload perigoso da 
 ../../../admin/config: expected '/api/v1/appointments/../../../admin/c…' to be null` — o path
 traversal atravessou direto para a URL. Restaurado com `git checkout --`, confirmado (`&&
 UUID.test(id)` de volta na linha 20). `tests/unit` inteiro (284/2465) verde depois.
+
+
+---
+
+## 2026-09-18 · Loop assert-vazio — item 140: `motor-de-precificacao`
+
+Guarda de dinheiro (CICLO Clube · C-02, docs/60): `sugerirPlanos` nunca inventa preço do nada — cada
+sugestão de plano nasce de cadência que a base de clientes REALMENTE tem. Base vazia não pode gerar
+"planos de exemplo": seria precificar sem dado nenhum por trás.
+
+Mutação: `core/loyalty/motor-de-precificacao.ts`, trocado `if (clientes.length === 0) return []` por
+um retorno fixo de um plano fantasma (`1x por mês`, R$ 50, `clientesNaFaixa: 0`) — reproduzindo
+exatamente o defeito que o comentário do arquivo descreve evitar ("virar 'gera sempre 3 planos de
+exemplo'"). Guarda reprovou corretamente: `expected [] to equal [ { …(4) } ]` (base vazia devolveu
+um plano). Restaurado com `git checkout --`, confirmado (`return []` de volta na linha 41).
+`tests/unit` inteiro (284/2465) verde depois.
