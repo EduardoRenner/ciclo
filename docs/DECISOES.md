@@ -11420,3 +11420,17 @@ guarda costura os dois lados de verdade, lendo o `create type` das migrations. M
 exatamente o buraco original. Guarda reprovou corretamente, mostrando o diff exato: `- "expired",`
 faltando no array ordenado comparado contra o enum do banco. Restaurado com `git checkout --`,
 confirmado (`| 'expired'` de volta na linha 2). `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 116: `modulos-catalogo` (módulo órfão)
+
+Guarda de dinheiro/empacotamento: todo módulo em `CATALOGO` (core) precisa ser liberado por ALGUM
+plano — módulo que nenhum degrau libera é erro de empacotamento (a tela mostra, ninguém consegue
+comprar) ou funcionalidade morta, nas duas hipóteses defeito. Mutação: `core/billing/planos.ts`,
+removido `'documents'` de `PROPRIOS.avancado.modulos` (o plano mais alto), deixando `documents` no
+`CATALOGO` sem nenhum plano que o libere. Guarda reprovou corretamente: `documents não é liberado
+nem no plano mais alto: expected false to be true`. Restaurado com `git checkout --`, confirmado
+(`'documents'` de volta em `PROPRIOS.avancado.modulos`, linha 141). `tests/unit` inteiro
+(283/2461) verde depois.
