@@ -10963,3 +10963,23 @@ as outras quatro (needs: seguros, leitura das duas chaves de heartbeat, exit 1, 
 ausente) continuaram verdes: `expect(blocoDoVigia()).toMatch(/jq -r '\.ok \/\/ false'/)` falhou.
 Restaurado com `git checkout --`, confirmado grep (`.ok // false` de volta). `tests/unit` inteiro
 (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 91: `rpc-existe`
+
+Guarda de dinheiro/deploy: `db.rpc('nome')` é conferido pelo TypeScript contra `types.gen.ts` —
+um ARQUIVO gerado, não o banco de verdade. Uma migration que não subiu (ou nome digitado errado)
+passa build e typecheck limpos e só quebra em produção, na primeira chamada real — é a mesma classe
+do achado que motivou `debitar_carteira` (nota do achado S11 em `pacotes.ts`). A guarda varre
+`src/**/*.ts(x)` atrás de toda chamada `.rpc('literal')` e cruza cada nome contra `create function`
+em `supabase/migrations/*.sql`. Mutação: acrescentada ao fim de `server/services/pacotes.ts` uma
+função nunca chamada (`_mutacaoTesteRpcOrfa`) invocando `db.rpc('funcao_que_nao_existe_no_banco')`
+— mesma técnica dos itens 22/32/88 para guardas que varrem a árvore inteira sem um alvo único.
+Guarda reprovou corretamente, apontando arquivo e nome exatos: `RPC sem função correspondente em
+supabase/migrations. O typecheck não pega isto: o nome é conferido contra types.gen.ts, que é
+arquivo, não banco. Deployar assim quebra a rota em produção, não no build.: expected [ Array(1) ]
+to deeply equal []` com `"funcao_que_nao_existe_no_banco (chamada em
+src\server\services\pacotes.ts)"`. Restaurado com `git checkout --`, confirmado
+(`_mutacaoTesteRpcOrfa` sumiu, `grep -c` = 0). `tests/unit` inteiro (283/2461) verde depois.
