@@ -10785,3 +10785,23 @@ asserção de renderização). Guarda reprovou corretamente, apontando só a pá
 `src/app/(public)/[slug]/agendar/page.tsx não mostra o aviso de demonstração ...: expected false
 to be true` — a página de perfil continuou passando. Restaurado com `git checkout --`, confirmado
 (`ehDemonstracao(slug) ?` de volta). `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 81: `sinal-prometido-chega-em-quem-atende`
+
+Guarda de dinheiro (achado 2026-09-03, mesma classe de `fee_cents`/`media.consent_id`/
+`tenants.plan`/`clients.referred_by`): a página pública mostra "este horário pede um sinal de
+R$ X" mas `appointments.deposit_cents` nunca era escrito — quem atende via só o preço, não sabia
+que um sinal tinha sido pedido, e não cobrava. A guarda tem dois níveis: o campo é gravado, E é
+CALCULADO (`sinalEmCentavos({precoCents, depositBps, depositMinCents})`), nunca um valor fixo —
+guardar um número fixo satisfaria a primeira checagem e ainda assim não guardaria nada de real.
+Mutação: `server/services/agendamentos.ts`, trocado o cálculo inteiro por `deposit_cents: 0,` —
+exatamente o cenário "sinalEmCentavos solto no arquivo... com deposit_cents: 0 no insert" que o
+próprio docstring da guarda descreve como a armadilha nº1 do CLAUDE.md. Guarda reprovou
+corretamente, distinguindo os dois níveis como projetado: a primeira asserção ("grava
+deposit_cents") continuou passando (o campo existe), só a segunda ("é calculado, não fixo")
+reprovou: `o sinal virou valor fixo no insert: expected false to be true`. Restaurado com
+`git checkout --`, confirmado grep (`sinalEmCentavos({...})` de volta). `tests/unit` inteiro
+(283/2461) verde depois.
