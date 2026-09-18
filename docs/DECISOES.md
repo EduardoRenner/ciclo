@@ -10535,3 +10535,22 @@ anotações internas da cliente de outro salão. Guarda reprovou corretamente, a
 tabela exatos: `src/server/services/notas.ts::client_notes (1x) — consulta NOVA sem filtro de
 tenant`. Restaurado com `git checkout --`, confirmado (`.eq('tenant_id', tenantId)` de volta).
 `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 67: `rota-publica-tem-limite`
+
+Guarda de segurança (auditoria 31/08/2026): 9 das 11 rotas de `api/v1/public/` não tinham limite
+próprio, e o teto global do `rota()` é `somenteMemoria` (não conta entre instâncias serverless).
+Testada a sub-guarda mais afiada: o balde do MFA (`mfa/verify`) precisa ser chaveado por
+`sessao.userId`, não por IP — quem chega ali já tem a senha (`aal1`), e um código de 6 dígitos sem
+teto por conta vira força bruta trivial (1.000.000 de combinações) se o atacante troca de proxy a
+cada bloqueio. Mutação: `api/v1/auth/mfa/verify/route.ts`, trocada a chave do limitador de
+`` `mfa-verify:user:${sessao.userId}` `` para `` `mfa-verify:${req.headers.get('x-forwarded-for') ?? 'sem-ip'}` ``
+— reproduzindo exatamente a vulnerabilidade que a guarda documenta (IP é grátis para o atacante
+trocar). Guarda reprovou corretamente, isolando a falha na sub-asserção certa (a genérica "chama o
+limitador" continuou passando, como devia — a chamada existe, só a chave mudou): `a chave do
+limitador do MFA parou de usar sessao.userId ...: expected false to be true`. Restaurado com
+`git checkout --`, confirmado (`sessao.userId` de volta). `tests/unit` inteiro (283/2461) verde
+depois.
