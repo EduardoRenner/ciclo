@@ -11369,3 +11369,20 @@ corretamente em dois pontos: `usa a função de decisão em vez de decidir no JS
 (`FRASE_DA_CAUSA[` sumiu) e `não voltou a cravar a frase de conexão no JSX` — `expected true to be
 false`. Restaurado com `git checkout --`, confirmado (`{FRASE_DA_CAUSA[causa]}` de volta na linha
 78). `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 113: `servico-sob-orcamento` (filtro de SEO)
+
+Guarda de SEO/dinheiro: `dadosEstruturadosDoSalao` só pode marcar como `Offer` (JSON-LD, o que o
+Google usa para mostrar preço no resultado de busca) um serviço `pricingModel === 'fixed'` com
+`priceCents > 0` — serviço sob orçamento (`quote`) nunca pode virar oferta com preço inventado, que
+é onde a mentira custa mais caro (resultado de busca público). Mutação:
+`core/seo/dados-estruturados.ts`, removida a parte `&& s.priceCents !== null && s.priceCents > 0`
+do filtro `comPrecoFixo`, deixando só `pricingModel === 'fixed'` — reproduzindo o risco de um
+serviço de preço fechado cadastrado com `priceCents: 0` (ou `null`) aparecer como `Offer` com
+`price: "0.00"`. Guarda reprovou corretamente: `o filtro do schema.org afrouxou: serviço sem preço
+fechado pode virar Offer com preço inventado: expected false to be true`. Restaurado com `git
+checkout --`, confirmado (filtro completo de volta na linha 123). `tests/unit` inteiro (283/2461)
+verde depois.
