@@ -4,12 +4,14 @@ import { createClient } from '@supabase/supabase-js'
 import dotenv from 'dotenv'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
+import { LIMIAR_ALERTA_AGENDA } from '@/core/risk/no-show-score'
+import { MINIMO_PARA_AFIRMAR } from '@/core/risk/precisao-do-score'
 import { criarAgendamento } from '@/server/services/agendamentos'
 import { criarProfissional } from '@/server/services/profissionais'
 import { definirExpediente } from '@/server/services/expediente'
 import { executarOnboarding } from '@/server/services/onboarding'
 import { criarServico } from '@/server/services/servicos'
-import { calcularScoreDeRisco } from '@/server/services/risco'
+import { calcularScoreDeRisco, precisaoDoScoreDoTenant } from '@/server/services/risco'
 
 import type { Database } from '@/server/db/types.gen'
 
@@ -143,6 +145,124 @@ describe('calcularScoreDeRisco', () => {
       expect(r.features.primeiraVisita).toBe(false)
     },
     30_000,
+  )
+
+  it(
+    'assinante ativo do clube reduz o score em 0,15 (2026-09-18: antes ficava sempre false)',
+    async () => {
+      const cliente = await svc.from('clients').insert({ tenant_id: tenantId, name: 'Assinante do Risco' }).select('id').single()
+      const clientId = cliente.data!.id
+
+      const plano = await svc
+        .from('subscription_plans')
+        .insert({ tenant_id: tenantId, name: 'Plano do Risco', price_cents: 9900, sessions_per_month: 4 })
+        .select('id')
+        .single()
+      await svc.from('client_subscriptions').insert({
+        tenant_id: tenantId,
+        client_id: clientId,
+        plan_id: plano.data!.id,
+        billing_day: 5,
+        status: 'active',
+      })
+
+      const semAssinatura = await calcularScoreDeRisco(svc, tenantId, TZ, {
+        clientId: (await svc.from('clients').insert({ tenant_id: tenantId, name: 'Não Assinante do Risco' }).select('id').single()).data!
+          .id,
+        startsAt: `${DIA}T10:00:00-03:00`,
+        agora: `${DIA}T09:00:00-03:00`,
+      })
+
+      const comAssinatura = await calcularScoreDeRisco(svc, tenantId, TZ, {
+        clientId,
+        startsAt: `${DIA}T10:00:00-03:00`,
+        agora: `${DIA}T09:00:00-03:00`,
+      })
+
+      expect(comAssinatura.features.assinanteDoClube).toBe(true)
+      expect(semAssinatura.features.assinanteDoClube).toBe(false)
+      expect(semAssinatura.score - comAssinatura.score).toBeCloseTo(0.15, 5)
+    },
+    30_000,
+  )
+})
+
+describe('precisaoDoScoreDoTenant', () => {
+  it(
+    'separa taxa de falta de alto e baixo risco pelo mesmo limiar da agenda',
+    async () => {
+      const marca = randomUUID().slice(0, 8)
+      const { data: userData } = await svc.auth.admin.createUser({
+        email: `precisao-${marca}@ciclo.test`,
+        password: randomUUID(),
+        email_confirm: true,
+        user_metadata: { full_name: 'Dona da Precisão' },
+      })
+      usuarios.push(userData!.user!.id)
+      const { tenant: tenantPrecisao } = await executarOnboarding(svc, {
+        userId: userData!.user!.id,
+        businessName: 'Salão da Precisão',
+        vertical: 'barber',
+        slug: `precisao-${marca}`,
+        timezone: TZ,
+      })
+      tenants.push(tenantPrecisao.id)
+
+      const prof = await criarProfissional(svc, tenantPrecisao.id, {
+        displayName: 'Barbeiro da Precisão',
+        compModel: 'owner',
+        commissionBps: 0,
+        rentCents: 0,
+        acceptsOnline: true,
+      })
+      const serv = await criarServico(svc, tenantPrecisao.id, {
+        name: 'Corte da Precisão',
+        description: null,
+        durationMin: 60,
+        bufferBeforeMin: 0,
+        bufferAfterMin: 0,
+        priceCents: 5000,
+        pricingModel: 'fixed',
+        cycleDays: 21,
+        depositBps: 0,
+        depositMinCents: 0,
+        parallelCapacity: 1,
+        requiresAnamnesis: false,
+        bookableOnline: true,
+        categoryId: null,
+      })
+
+      const linhas = [
+        ...Array.from({ length: MINIMO_PARA_AFIRMAR }, () => ({ score: LIMIAR_ALERTA_AGENDA, status: 'no_show' as const })),
+        ...Array.from({ length: MINIMO_PARA_AFIRMAR }, () => ({ score: LIMIAR_ALERTA_AGENDA - 0.1, status: 'done' as const })),
+      ]
+      for (const [i, l] of linhas.entries()) {
+        const cliente = await svc
+          .from('clients')
+          .insert({ tenant_id: tenantPrecisao.id, name: `Cliente Precisão ${i}` })
+          .select('id')
+          .single()
+        await svc.from('appointments').insert({
+          tenant_id: tenantPrecisao.id,
+          client_id: cliente.data!.id,
+          professional_id: prof.id,
+          service_id: serv.id,
+          starts_at: new Date(Date.now() - (i + 1) * 86_400_000).toISOString(),
+          ends_at: new Date(Date.now() - (i + 1) * 86_400_000 + 3_600_000).toISOString(),
+          status: l.status,
+          price_cents: 5000,
+          no_show_score: l.score,
+        })
+      }
+
+      const hoje = new Date().toISOString().slice(0, 10)
+      const p = await precisaoDoScoreDoTenant(svc, tenantPrecisao.id, hoje)
+      expect(p.altoRiscoConferidos).toBe(MINIMO_PARA_AFIRMAR)
+      expect(p.taxaDeFaltaAltoRiscoBps).toBe(10_000)
+      expect(p.baixoRiscoConferidos).toBe(MINIMO_PARA_AFIRMAR)
+      expect(p.taxaDeFaltaBaixoRiscoBps).toBe(0)
+    },
+    60_000,
   )
 })
 

@@ -13094,3 +13094,32 @@ funciona"). Os dois reprovaram corretamente quando mutados; restaurados, `tests/
 **Ainda sem chamador em `server/`** — ler `appointments` (score + status resolvido) e alimentar
 esta função é o próximo passo, se o Eduardo priorizar. Sem essa leitura, não há como saber hoje se
 o score realmente separa quem falta — só que a MEDIÇÃO, quando alguém rodar, será honesta.
+
+---
+
+## 2026-09-18 · precisaoDoScoreDoTenant + achado separado: assinanteDoClube nunca lia o clube de verdade
+
+Fechou o "ainda sem chamador" acima: `server/services/risco.ts` ganhou
+`precisaoDoScoreDoTenant(db, tenantId, hoje)`, lendo `appointments` resolvidos (`done`/`no_show`)
+dos últimos 12 meses com `no_show_score` gravado — mesmo motivo de janela de
+`previsoesRecentesDoTenant` (`previsao.ts`): a tabela cresce para sempre, a pergunta é "funciona
+HOJE". Ainda sem chamador em UI — fica queryável, à espera de decisão sobre onde mostrar (nota de
+transparência perto do limiar de alerta na agenda, análogo ao que T4 fez para o Motor de Ciclo).
+
+**Achado separado, encontrado ao reler `calcularScoreDeRisco` para montar a leitura acima:**
+`assinanteDoClube` estava hardcoded `false`, com um comentário dizendo que "clube de assinatura...
+não existe ainda". O comentário é de antes do CICLO Clube nascer (`server/services/clube.ts`,
+`client_subscriptions`) e nunca foi atualizado — capacidade morta em produção não é morta (mesmo
+padrão de `producao-atras-do-codigo` na memória: o schema e o serviço existiam, só o código que os
+lê não sabia). Todo assinante ativo estava perdendo os -0,15 que `computeNoShowScore` já prevê para
+quem paga mensalidade, inflando o score de risco (e, acima de `LIMIAR_ALERTA_AGENDA`, o alerta
+visual na agenda) de gente com o MENOR motivo para faltar do salão. `pagouSinal` continua `false`
+de propósito — sinal existe no schema mas ainda não é cobrado de fato, não há o que ler.
+
+**Corrigido** com uma consulta a mais em `client_subscriptions` (`status = 'active'`), mesmo padrão
+de `faltasAnteriores`/`atendimentosConcluidos` já usados na função. Provado com dois testes de
+integração novos em `tests/integration/risco.test.ts`, contra Postgres real via CI:
+`assinanteDoClube` diferencia quem tem assinatura ativa (score 0,15 menor), e
+`precisaoDoScoreDoTenant` separa corretamente alto/baixo risco por `LIMIAR_ALERTA_AGENDA` com
+amostra igual ao piso (`MINIMO_PARA_AFIRMAR`). `tsc`/`eslint` limpos, `tests/unit` inteiro
+(289 arquivos/2510 testes) verde.
