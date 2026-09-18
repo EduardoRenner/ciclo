@@ -12917,3 +12917,21 @@ Restaurado com `git checkout --`, confirmado. `tests/unit` inteiro (287/2480) ve
 nesta sessão (indisponibilidade crônica já registrada), não foi possível renderizar a tela de
 verdade no navegador. Verificação feita por tipo (`tsc --noEmit`), lint (`eslint`) e os 14 testes
 comportamentais de `regua-do-servico.test.ts`, incluindo os 5 novos casos de recência.
+
+
+---
+
+## 2026-09-18 · Verificado, correto — `tickets.fee_bps` e demais colunas sem leitor são provisão contábil, não bug
+
+Mesma varredura de colunas sem leitor (migration 0065 em diante). `tickets.fee_bps` (0066) é
+escrita em `comanda.ts` (`fecharComanda`) e nunca lida — mas de propósito: é o percentual da
+maquininha CONGELADO no fechamento, para auditoria futura, e o cabeçalho da 0066 já diz isso
+("registro contábil, não view"). `feeBps` mostrado em `admin/mes/resumo.tsx` é deliberadamente a
+taxa de HOJE (`tenants.settings.payment_fees_bps`), não a congelada — comparar as duas é o produto
+(quanto a taxa mudou desde então), não um bug de uma ficar sem uso.
+
+`product_events.meta` (0088), `cycle_predictions.predicted_at` (0064) e `monthly_profit.frozen_at`
+(0071) — mesma categoria: provisão de auditoria/instrumentação, nunca lida por app, lida fora de
+banda (funil, suporte). Nenhuma ação necessária.
+
+`types.gen.ts` conferido em sincronia com todas as migrations até a 0091.
