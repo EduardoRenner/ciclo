@@ -10872,3 +10872,20 @@ a ser cobrado. Guarda reprovou corretamente em DUAS asserções comportamentais 
 `verificarSaude` com banco encenado): `reminders parado há 8h` e `nunca rodou` ambos derrubaram
 `r.ok` para `false`, quando deveriam continuar `true`. Restaurado com `git checkout --`,
 confirmado (lógica original de volta). `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 86: `saude-ok-cobre-toda-checagem`
+
+Guarda contra a "segunda lista": até 05/09/2026 o veredito `ok` de `/api/health` era um `&&`
+escrito à mão, uma parcela por checagem — o TypeScript não percebe quando essa segunda lista fica
+curta, e a própria guarda documenta ter nascido CEGA uma vez (a primeira versão testava o `every`
+do PRÓPRIO teste, nunca o veredito real de `verificarSaude`). Mutação: `server/services/health.ts`,
+trocado `ok: Object.values(checks).every((c) => c.ok)` por um `&&` manual esquecendo justamente a
+parcela `schema` — reproduzindo o defeito histórico exato. Guarda reprovou corretamente nas DUAS
+asserções, cada uma pegando uma metade do problema: a comportamental (`schema vermelha com
+veredito verde — o topo mente para quem lê`, com `verificarSaude` real derrubando `schema.ok` mas
+o topo continuando `true`) e a de forma (`o ok voltou a ser uma lista à mão`). Restaurado com
+`git checkout --`, confirmado (`Object.values(checks).every(...)` de volta). `tests/unit` inteiro
+(283/2461) verde depois.
