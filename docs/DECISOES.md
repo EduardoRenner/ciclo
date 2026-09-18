@@ -10889,3 +10889,22 @@ veredito verde — o topo mente para quem lê`, com `verificarSaude` real derrub
 o topo continuando `true`) e a de forma (`o ok voltou a ser uma lista à mão`). Restaurado com
 `git checkout --`, confirmado (`Object.values(checks).every(...)` de volta). `tests/unit` inteiro
 (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 87: `saude-nao-alarma-por-lixo`
+
+Guarda irmã de `saude-vigia-so-o-que-roda`, achado mais reusável da super auditoria: "um conserto
+certo, aplicado num lugar só". Medido em 30/08: `/api/health` em 503 com "1 job(s) parado(s)", sem
+defeito nenhum — a fila tinha 20+ jobs de tipo `teste_saude`/`seed` (resíduo de fixture despejado
+pela suíte, `.env.local` apontando pra produção) que nenhum handler processa, então falhavam e
+eram recontados como "parados" indefinidamente. `semHandlerRegistrado` é a distinção: job de tipo
+CONHECIDO parado é alarme de verdade; job sem handler é lixo — aparece no relatório nomeado, mas
+não pinta o endpoint de vermelho. Mutação: `server/services/job-queue.ts`, `semHandlerRegistrado`
+trocada para `return false` sempre. Guarda reprovou corretamente em três frentes: a contagem
+inflada por lixo (`"2 job(s) parado(s)"` em vez de 1), a distinção da função isolada
+(`semHandlerRegistrado(...)` deixou de reconhecer o próprio erro que ela existe para reconhecer),
+e por consequência o cenário de convivência lixo+trabalho real. Restaurado com `git checkout --`,
+confirmado (`lastError.startsWith(ERRO_SEM_HANDLER)` de volta). `tests/unit` inteiro (283/2461)
+verde depois.
