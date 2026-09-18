@@ -44,7 +44,7 @@ export async function recomputarCiclosDoTenant(db: Cliente, tenantId: string, ti
   // chamadas `.range()` separadas — paginar "às cegas" pode pular ou repetir
   // linha entre uma página e outra. Foi assim que o teste de 10 mil clientes
   // pegou isto: `processados` variava a cada execução (1000, depois 7902).
-  const [concluidos, futuros, servicos, probabilidade, assinaturasAtivas] = await Promise.all([
+  const [concluidos, futuros, servicos, probabilidade, assinaturasAtivas, pacotesComSaldo] = await Promise.all([
     buscarTudoPaginado(() =>
       db
         .from('appointments')
@@ -75,8 +75,31 @@ export async function recomputarCiclosDoTenant(db: Cliente, tenantId: string, ti
     buscarTudoPaginado(() =>
       db.from('client_subscriptions').select('client_id').eq('tenant_id', tenantId).eq('status', 'active').order('id'),
     ),
+    /*
+      Mesma causa-raiz, terceiro mecanismo de pagamento não-avulso (`docs/DECISOES.md` 2026-09-18,
+      achado seguinte): pacote com sessão sobrando. `expires_on` filtrado no banco (vencido não
+      conta); `used_sessions < total_sessions` filtrado abaixo em memória — não há operador do
+      PostgREST para comparar coluna com coluna (`used_sessions.lt.total_sessions` não existe).
+    */
+    buscarTudoPaginado(() =>
+      db
+        .from('packages')
+        .select('client_id, service_id, total_sessions, used_sessions')
+        .eq('tenant_id', tenantId)
+        .or(`expires_on.is.null,expires_on.gte.${today}`)
+        .order('id'),
+    ),
   ])
   const assinantesAtivos = new Set(assinaturasAtivas.map((a) => a.client_id))
+  /*
+    Pacote é POR SERVIÇO (diferente de assinatura, que cobre o tenant inteiro) — a chave inclui
+    `service_id`, igual à combinação que `client_cycles` já usa. `remainingSessions > 0` é a mesma
+    condição de `PacoteComSaldo` (`server/services/pacotes.ts`), sem trazer a função inteira (que
+    também calcula vencimento em dias, que este uso não precisa).
+  */
+  const combinacoesComPacote = new Set(
+    pacotesComSaldo.filter((p) => p.used_sessions < p.total_sessions).map((p) => `${p.client_id}:${p.service_id}`),
+  )
 
   /*
     A régua EFETIVA: a medida quando existe, a configurada quando não.
@@ -170,8 +193,15 @@ export async function recomputarCiclosDoTenant(db: Cliente, tenantId: string, ti
       inventar precisão que não existe. O ESTADO (`due`/`late`/...) continua calculado normalmente:
       o valor de lembrar o assinante de usar o que já paga continua existindo, só o dinheiro "em
       risco" — que para ele não é dinheiro de venda avulsa — é que não é.
+
+      Mesmo raciocínio, terceiro mecanismo (`docs/DECISOES.md` 2026-09-18, achado seguinte): quem
+      tem PACOTE com sessão sobrando NESTE serviço também não gera venda avulsa na próxima visita —
+      ela consome o crédito já pago (`consumirSessao`, `server/services/pacotes.ts`). Diferente da
+      assinatura (cobre o tenant inteiro), pacote é por `(cliente, serviço)` — a MESMA granularidade
+      de `client_cycles` — então aqui a checagem é mais precisa, não uma aproximação.
     */
-    const precoEfetivo = assinantesAtivos.has(clientId) ? 0 : (precoPorServico.get(serviceId) ?? 0)
+    const semVendaAvulsa = assinantesAtivos.has(clientId) || combinacoesComPacote.has(chave)
+    const precoEfetivo = semVendaAvulsa ? 0 : (precoPorServico.get(serviceId) ?? 0)
 
     linhas.push({
       tenant_id: tenantId,
@@ -235,7 +265,7 @@ export async function recomputarCicloDeUmAtendimento(
   combinacao: Combinacao,
   today: string,
 ): Promise<void> {
-  const [concluidos, futuros, servico, assinatura] = await Promise.all([
+  const [concluidos, futuros, servico, assinatura, pacotes] = await Promise.all([
     db
       .from('appointments')
       .select('starts_at, professional_id')
@@ -261,11 +291,22 @@ export async function recomputarCicloDeUmAtendimento(
       .eq('tenant_id', tenantId)
       .eq('client_id', combinacao.clientId)
       .eq('status', 'active'),
+    // Mesmo motivo, terceiro mecanismo (`docs/DECISOES.md` 2026-09-18): pacote com sessão sobrando
+    // NESTE serviço. `used_sessions < total_sessions` não tem operador PostgREST — comparado em
+    // memória abaixo, sobre no máximo um punhado de linhas por (cliente, serviço).
+    db
+      .from('packages')
+      .select('total_sessions, used_sessions')
+      .eq('tenant_id', tenantId)
+      .eq('client_id', combinacao.clientId)
+      .eq('service_id', combinacao.serviceId)
+      .or(`expires_on.is.null,expires_on.gte.${today}`),
   ])
   if (concluidos.error) throw new AppError('INTERNAL', { cause: concluidos.error })
   if (futuros.error) throw new AppError('INTERNAL', { cause: futuros.error })
   if (servico.error) throw new AppError('INTERNAL', { cause: servico.error })
   if (assinatura.error) throw new AppError('INTERNAL', { cause: assinatura.error })
+  if (pacotes.error) throw new AppError('INTERNAL', { cause: pacotes.error })
   if (!servico.data) return
 
   const history = (concluidos.data ?? [])
@@ -307,7 +348,8 @@ export async function recomputarCicloDeUmAtendimento(
     hasFutureAppointment: (futuros.count ?? 0) > 0,
   })
 
-  const precoEfetivo = (assinatura.count ?? 0) > 0 ? 0 : servico.data.price_cents
+  const temPacoteComSaldo = (pacotes.data ?? []).some((p) => p.used_sessions < p.total_sessions)
+  const precoEfetivo = (assinatura.count ?? 0) > 0 || temPacoteComSaldo ? 0 : servico.data.price_cents
 
   const { error } = await db.from('client_cycles').upsert(
     {

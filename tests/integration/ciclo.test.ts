@@ -328,6 +328,126 @@ describe('recomputarCiclosDoTenant — assinante do clube', () => {
   )
 })
 
+/**
+ * `docs/DECISOES.md` 2026-09-18, achado seguinte ao do clube: pacote com sessão sobrando NESTE
+ * serviço também não gera venda avulsa — a próxima visita consome o crédito já pago. Diferente da
+ * assinatura (cobre o tenant inteiro), pacote é por (cliente, serviço) — mesma granularidade de
+ * `client_cycles`, checagem mais precisa que a do clube.
+ */
+describe('recomputarCiclosDoTenant — pacote com sessão sobrando', () => {
+  it(
+    'pacote com sessão sobrando: state continua "late", mas value_at_risk e profit_at_risk zeram',
+    async () => {
+      const cliente = await criarCliente('Pacote Atrasada')
+      await inserirAtendimentoConcluido(cliente, 30) // mesmo cenário do teste base: 30 dias, late
+
+      const { error } = await svc.from('packages').insert({
+        tenant_id: tenantId,
+        client_id: cliente,
+        service_id: servicoId,
+        total_sessions: 5,
+        used_sessions: 2,
+        paid_cents: 25_000,
+      })
+      if (error) throw error
+
+      await recomputarCiclosDoTenant(svc, tenantId, TZ, new Date().toISOString().slice(0, 10))
+
+      const linha = await svc
+        .from('client_cycles')
+        .select('state, value_at_risk_cents, profit_at_risk_cents')
+        .eq('tenant_id', tenantId)
+        .eq('client_id', cliente)
+        .single()
+      expect(linha.data?.state).toBe('late')
+      expect(linha.data?.value_at_risk_cents).toBe(0)
+      expect(linha.data?.profit_at_risk_cents).toBe(0)
+    },
+    30_000,
+  )
+
+  it(
+    'pacote ESGOTADO (sem sessão sobrando) volta a contar venda avulsa normalmente',
+    async () => {
+      const cliente = await criarCliente('Pacote Esgotado Atrasada')
+      await inserirAtendimentoConcluido(cliente, 30)
+
+      const { error } = await svc.from('packages').insert({
+        tenant_id: tenantId,
+        client_id: cliente,
+        service_id: servicoId,
+        total_sessions: 5,
+        used_sessions: 5,
+        paid_cents: 25_000,
+      })
+      if (error) throw error
+
+      await recomputarCiclosDoTenant(svc, tenantId, TZ, new Date().toISOString().slice(0, 10))
+
+      const linha = await svc.from('client_cycles').select('value_at_risk_cents').eq('tenant_id', tenantId).eq('client_id', cliente).single()
+      // Mesma conta do teste base (6000 × 0,65 = 3900): esgotado não é "com saldo", preço volta a valer.
+      expect(linha.data?.value_at_risk_cents).toBe(3900)
+    },
+    30_000,
+  )
+
+  it(
+    'pacote VENCIDO com sessão sobrando volta a contar venda avulsa normalmente',
+    async () => {
+      const cliente = await criarCliente('Pacote Vencido Atrasada')
+      await inserirAtendimentoConcluido(cliente, 30)
+
+      const { error } = await svc.from('packages').insert({
+        tenant_id: tenantId,
+        client_id: cliente,
+        service_id: servicoId,
+        total_sessions: 5,
+        used_sessions: 1,
+        paid_cents: 25_000,
+        expires_on: '2020-01-01',
+      })
+      if (error) throw error
+
+      await recomputarCiclosDoTenant(svc, tenantId, TZ, new Date().toISOString().slice(0, 10))
+
+      const linha = await svc.from('client_cycles').select('value_at_risk_cents').eq('tenant_id', tenantId).eq('client_id', cliente).single()
+      expect(linha.data?.value_at_risk_cents).toBe(3900)
+    },
+    30_000,
+  )
+
+  it(
+    'caminho síncrono (recomputarCicloDeUmAtendimento) também zera para pacote com saldo',
+    async () => {
+      const cliente = await criarCliente('Pacote Recalcula na Hora')
+      await inserirAtendimentoConcluido(cliente, 30)
+
+      const { error } = await svc.from('packages').insert({
+        tenant_id: tenantId,
+        client_id: cliente,
+        service_id: servicoId,
+        total_sessions: 3,
+        used_sessions: 1,
+        paid_cents: 15_000,
+      })
+      if (error) throw error
+
+      await recomputarCicloDeUmAtendimento(svc, tenantId, TZ, { clientId: cliente, serviceId: servicoId }, new Date().toISOString().slice(0, 10))
+
+      const linha = await svc
+        .from('client_cycles')
+        .select('state, value_at_risk_cents, profit_at_risk_cents')
+        .eq('tenant_id', tenantId)
+        .eq('client_id', cliente)
+        .single()
+      expect(linha.data?.state).toBe('late')
+      expect(linha.data?.value_at_risk_cents).toBe(0)
+      expect(linha.data?.profit_at_risk_cents).toBe(0)
+    },
+    30_000,
+  )
+})
+
 describe('recomputarCiclosDoTenant — performance', () => {
   it(
     '10 mil clientes recalculam em menos de 60s',

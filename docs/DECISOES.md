@@ -13269,3 +13269,38 @@ Docker/infra não é mais o bloqueio: a ferramenta está pronta, só falta algu�
 (ex.: um script one-off, ou uma rota administrativa futura) e ler os números.
 
 `tsc`/`eslint` limpos, `tests/unit` inteiro (290 arquivos/2517 testes) verde.
+
+---
+
+## 2026-09-18 · Terceiro mecanismo de pagamento não-avulso: pacote com sessão sobrando
+
+Mesma causa-raiz de "assinatura do clube ignorada" (fechada mais cedo hoje), mas um mecanismo que
+eu não tinha checado ainda: **pacote** (`packages`, `paid_cents` cobrado na venda, sessão consumida
+depois via `consumirSessao`). `criarAgendamento` grava `appointments.price_cents` como o preço de
+CATÁLOGO sempre, sem saber se o cliente tem sessão de pacote sobrando para aquele serviço — mesmo
+category error do clube, propagado aos mesmos dois lugares: `value_at_risk_cents`/`profit_at_risk_cents`
+(`client_cycles`) e `receitaAtribuidaAoCiclo`/`receitaPorCampanha` (o banner "Motor trouxe R$X").
+
+**Por que pacote é uma checagem MAIS precisa que assinatura, não uma aproximação a mais.**
+Assinatura cobre o tenant inteiro (qualquer serviço) — a checagem usa status atual como proxy
+honesto, documentado como tal. Pacote é por `(cliente, serviço)`, a MESMA granularidade que
+`client_cycles`/`value_at_risk_cents` já usam — `used_sessions < total_sessions` e não vencido é um
+sinal direto, não uma aproximação sobre outra coisa.
+
+**Corrigido nos mesmos quatro pontos do achado do clube:** os dois caminhos que escrevem
+`client_cycles` (`recomputarCiclosDoTenant`, `recomputarCicloDeUmAtendimento`) e as duas funções de
+atribuição (`receitaAtribuidaAoCiclo`, `receitaPorCampanha`) — `packages` filtrado por
+`expires_on is null or expires_on >= hoje` no banco, e `used_sessions < total_sessions` em memória
+(PostgREST não compara coluna com coluna). Mesma decisão de LTV do achado anterior: `clients.ltv_cents`
+NÃO foi tocado por consumir pacote pela mesma razão de não zerar por assinatura — é uma venda que
+JÁ aconteceu (o pacote foi pago), diferente de `value_at_risk`, que é uma venda FUTURA hipotética.
+
+**Provado com sete testes de integração novos** (quatro em `tests/integration/ciclo.test.ts`: saldo
+zera, esgotado volta ao normal, vencido volta ao normal, caminho síncrono isolado; três em
+`tests/integration/atribuicao.test.ts`: saldo zera nas duas funções de atribuição, esgotado não
+zera) contra Postgres real via CI. `tsc`/`eslint` limpos, `tests/unit` inteiro (290/2517) verde.
+
+**Varredura de pagamento não-avulso agora cobre os TRÊS mecanismos que o `CLAUDE.md` já documentava
+("armadilhas conhecidas", linha "Reconhecer receita de pacote na venda"): clube, pacote, e — via
+`caixa.ts`/`resumo-hoje.ts`, já confirmados corretos — o fluxo de comanda normal. Não sobrou um
+quarto mecanismo óbvio para checar.

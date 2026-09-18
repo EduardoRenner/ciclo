@@ -92,7 +92,9 @@ export async function receitaAtribuidaAoCiclo(
   const inicioBuscaInstante = Temporal.PlainDate.from(inicioBusca).toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant().toString()
   const fimBuscaInstante = Temporal.PlainDate.from(ate).add({ days: 1 }).toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant().toString()
 
-  const [mensagens, agendamentos, assinaturasAtivas] = await Promise.all([
+  const hoje = Temporal.Now.plainDateISO().toString()
+
+  const [mensagens, agendamentos, assinaturasAtivas, pacotesComSaldo] = await Promise.all([
     db
       .from('messages')
       .select('client_id, sent_at, campaign_id')
@@ -103,7 +105,7 @@ export async function receitaAtribuidaAoCiclo(
       .lt('sent_at', fimBuscaInstante),
     db
       .from('appointments')
-      .select('id, client_id, created_at, price_cents, clients(name)')
+      .select('id, client_id, service_id, created_at, price_cents, clients(name)')
       .eq('tenant_id', tenantId)
       .eq('status', 'done')
       .gte('created_at', inicioBuscaInstante)
@@ -116,12 +118,23 @@ export async function receitaAtribuidaAoCiclo(
       mensalidade, mesmo que a campanha tenha de fato motivado a volta.
     */
     db.from('client_subscriptions').select('client_id').eq('tenant_id', tenantId).eq('status', 'active'),
+    // Mesma classe, terceiro mecanismo (`docs/DECISOES.md` 2026-09-18, achado seguinte): pacote
+    // com sessão sobrando, por (cliente, serviço) — mesma granularidade de `ciclo.ts`.
+    db
+      .from('packages')
+      .select('client_id, service_id, total_sessions, used_sessions')
+      .eq('tenant_id', tenantId)
+      .or(`expires_on.is.null,expires_on.gte.${hoje}`),
   ])
   if (mensagens.error) throw new AppError('INTERNAL', { cause: mensagens.error })
   if (agendamentos.error) throw new AppError('INTERNAL', { cause: agendamentos.error })
   if (assinaturasAtivas.error) throw new AppError('INTERNAL', { cause: assinaturasAtivas.error })
+  if (pacotesComSaldo.error) throw new AppError('INTERNAL', { cause: pacotesComSaldo.error })
 
   const assinantesAtivos = new Set((assinaturasAtivas.data ?? []).map((a) => a.client_id))
+  const combinacoesComPacote = new Set(
+    (pacotesComSaldo.data ?? []).filter((p) => p.used_sessions < p.total_sessions).map((p) => `${p.client_id}:${p.service_id}`),
+  )
 
   const campanhas: CampanhaEnviada[] = (mensagens.data ?? [])
     .filter((m): m is { client_id: string; sent_at: string; campaign_id: string | null } => m.client_id !== null && m.sent_at !== null)
@@ -133,11 +146,12 @@ export async function receitaAtribuidaAoCiclo(
     if (!ag.client_id) continue
     const cliente = ag.clients as { name: string } | null
     nomePorCliente.set(ag.client_id, cliente?.name ?? '')
+    const semVendaAvulsa = assinantesAtivos.has(ag.client_id) || combinacoesComPacote.has(`${ag.client_id}:${ag.service_id}`)
     elegiveis.push({
       id: ag.id,
       clientId: ag.client_id,
       createdAt: Temporal.Instant.from(ag.created_at),
-      valueCents: assinantesAtivos.has(ag.client_id) ? 0 : ag.price_cents,
+      valueCents: semVendaAvulsa ? 0 : ag.price_cents,
     })
   }
 
@@ -190,17 +204,29 @@ export type ResultadoPorCampanha = { bookedCount: number; revenueCents: number }
  * durante a transição custaria mais do que vale.
  */
 export async function receitaPorCampanha(db: Cliente, tenantId: string): Promise<Map<string, ResultadoPorCampanha>> {
-  const [mensagens, agendamentos, assinaturasAtivas] = await Promise.all([
+  const hoje = Temporal.Now.plainDateISO().toString()
+
+  const [mensagens, agendamentos, assinaturasAtivas, pacotesComSaldo] = await Promise.all([
     db.from('messages').select('client_id, sent_at, campaign_id').eq('tenant_id', tenantId).eq('kind', 'campaign').eq('status', 'sent').not('campaign_id', 'is', null),
-    db.from('appointments').select('id, client_id, created_at, price_cents').eq('tenant_id', tenantId).eq('status', 'done'),
+    db.from('appointments').select('id, client_id, service_id, created_at, price_cents').eq('tenant_id', tenantId).eq('status', 'done'),
     // Mesmo motivo de `receitaAtribuidaAoCiclo`, acima: assinante ativo não gera venda avulsa.
     db.from('client_subscriptions').select('client_id').eq('tenant_id', tenantId).eq('status', 'active'),
+    // Mesmo motivo, terceiro mecanismo: pacote com sessão sobrando, por (cliente, serviço).
+    db
+      .from('packages')
+      .select('client_id, service_id, total_sessions, used_sessions')
+      .eq('tenant_id', tenantId)
+      .or(`expires_on.is.null,expires_on.gte.${hoje}`),
   ])
   if (mensagens.error) throw new AppError('INTERNAL', { cause: mensagens.error })
   if (agendamentos.error) throw new AppError('INTERNAL', { cause: agendamentos.error })
   if (assinaturasAtivas.error) throw new AppError('INTERNAL', { cause: assinaturasAtivas.error })
+  if (pacotesComSaldo.error) throw new AppError('INTERNAL', { cause: pacotesComSaldo.error })
 
   const assinantesAtivos = new Set((assinaturasAtivas.data ?? []).map((a) => a.client_id))
+  const combinacoesComPacote = new Set(
+    (pacotesComSaldo.data ?? []).filter((p) => p.used_sessions < p.total_sessions).map((p) => `${p.client_id}:${p.service_id}`),
+  )
 
   const campanhas: CampanhaEnviada[] = (mensagens.data ?? [])
     .filter((m): m is { client_id: string; sent_at: string; campaign_id: string } => m.client_id !== null && m.sent_at !== null && m.campaign_id !== null)
@@ -212,7 +238,7 @@ export async function receitaPorCampanha(db: Cliente, tenantId: string): Promise
       id: ag.id,
       clientId: ag.client_id,
       createdAt: Temporal.Instant.from(ag.created_at),
-      valueCents: assinantesAtivos.has(ag.client_id) ? 0 : ag.price_cents,
+      valueCents: assinantesAtivos.has(ag.client_id) || combinacoesComPacote.has(`${ag.client_id}:${ag.service_id}`) ? 0 : ag.price_cents,
     }))
 
   const resultado = new Map<string, ResultadoPorCampanha>()

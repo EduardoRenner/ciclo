@@ -118,6 +118,13 @@ async function criarAssinaturaAtiva(clientId: string) {
   if (error) throw error
 }
 
+async function criarPacoteComSaldo(clientId: string, usedSessions: number, totalSessions: number) {
+  const { error } = await svc
+    .from('packages')
+    .insert({ tenant_id: tenantId, client_id: clientId, service_id: servicoId, total_sessions: totalSessions, used_sessions: usedSessions, paid_cents: 20_000 })
+  if (error) throw error
+}
+
 async function criarAgendamentoConcluido(clientId: string, createdAtIso: string, priceCents: number) {
   const inicio = new Date(createdAtIso)
   const { data, error } = await svc
@@ -200,6 +207,43 @@ describe('receitaAtribuidaAoCiclo', () => {
     },
     30_000,
   )
+
+  /*
+    `docs/DECISOES.md` 2026-09-18, achado seguinte ao do clube: pacote com sessão sobrando também
+    não gera venda avulsa — a visita consome o crédito já pago.
+  */
+  it(
+    'pacote com sessão sobrando: entra na contagem, mas contribui zero pro total',
+    async () => {
+      const cliente = await criarCliente('Pacote Voltou Depois da Campanha')
+      await criarPacoteComSaldo(cliente, 1, 5)
+      await criarCampanhaEnviada(cliente, '2026-08-01T13:00:00Z')
+      const agendamentoId = await criarAgendamentoConcluido(cliente, '2026-08-05T13:00:00Z', 9_000)
+
+      const resultado = await receitaAtribuidaAoCiclo(svc, tenantId, TZ, '2026-08-01', '2026-08-31')
+
+      const item = resultado.items.find((i) => i.appointmentId === agendamentoId)
+      expect(item).toBeDefined()
+      expect(item?.valueCents).toBe(0)
+    },
+    30_000,
+  )
+
+  it(
+    'pacote ESGOTADO não zera — volta a contar venda avulsa normalmente',
+    async () => {
+      const cliente = await criarCliente('Pacote Esgotado Voltou Depois da Campanha')
+      await criarPacoteComSaldo(cliente, 5, 5)
+      await criarCampanhaEnviada(cliente, '2026-08-01T13:00:00Z')
+      const agendamentoId = await criarAgendamentoConcluido(cliente, '2026-08-05T13:00:00Z', 9_000)
+
+      const resultado = await receitaAtribuidaAoCiclo(svc, tenantId, TZ, '2026-08-01', '2026-08-31')
+
+      const item = resultado.items.find((i) => i.appointmentId === agendamentoId)
+      expect(item?.valueCents).toBe(9_000)
+    },
+    30_000,
+  )
 })
 
 describe('registrarCampanha + receitaPorCampanha (migration 0054)', () => {
@@ -263,6 +307,21 @@ describe('registrarCampanha + receitaPorCampanha (migration 0054)', () => {
       const cliente = await criarCliente('Assinante da Campanha')
       await criarAssinaturaAtiva(cliente)
       const campanha = await registrarCampanha(svc, tenantId, { name: 'Campanha Assinante 0054', segment: 'teste', template: 'Y', clientIds: [cliente] })
+
+      await criarAgendamentoConcluido(cliente, new Date(Date.now() + 3_600_000).toISOString(), 9_000)
+
+      const resultado = await receitaPorCampanha(svc, tenantId)
+      expect(resultado.get(campanha.id)).toEqual({ bookedCount: 1, revenueCents: 0 })
+    },
+    30_000,
+  )
+
+  it(
+    'pacote com sessão sobrando conta como agendamento trazido, mas com receita zero',
+    async () => {
+      const cliente = await criarCliente('Pacote da Campanha')
+      await criarPacoteComSaldo(cliente, 2, 5)
+      const campanha = await registrarCampanha(svc, tenantId, { name: 'Campanha Pacote 0054', segment: 'teste', template: 'Z', clientIds: [cliente] })
 
       await criarAgendamentoConcluido(cliente, new Date(Date.now() + 3_600_000).toISOString(), 9_000)
 
