@@ -10453,3 +10453,17 @@ externo, exatamente onde o rubber-band aparece. Guarda reprovou corretamente: `s
 cobre o rubber-band do celular no tema claro` (o regex `/html,body\{background:/` não casou mais).
 Restaurado com `git checkout --`, confirmado grep (`html,body{background:` de volta). `tests/unit`
 inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 63: `seed-imagens-cobre-demos`
+
+Guarda de duas cópias da mesma lista: `scripts/seed-demo-imagens.mjs` roda fora do app (Node puro,
+sem loader de TS) e não pode importar `SLUGS_DE_DEMONSTRACAO_PARA_TESTE` de `demonstracao.ts` —
+mantém uma cópia própria. Cópia sem guarda é cópia que envelhece: um tenant de demonstração novo
+esquecido no script fica sem logo/capa/avatar na página que a cliente abre, e nada reclama.
+Mutação: `scripts/seed-demo-imagens.mjs`, removido `'dom-rocha'` do array
+`SLUGS_DE_DEMONSTRACAO`. Guarda reprovou corretamente, mostrando o diff exato de que slug sumiu
+(`- "dom-rocha"`). Restaurado com `git checkout --`, confirmado grep (`'dom-rocha'` de volta).
+`tests/unit` inteiro (283/2461) verde depois.
