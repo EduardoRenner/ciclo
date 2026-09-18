@@ -12802,3 +12802,20 @@ route.ts` (POST, vender pacote). Guarda reprovou corretamente: `expected '...' t
 foram mutadas) continuaram passando, confirmando que a guarda testa cada rota de forma independente
 e não é cega a uma remoção pontual. Restaurado com `git checkout --`, confirmado (`action:
 'package.sell'` de volta). `tests/unit` inteiro (286/2472) verde depois.
+
+
+---
+
+## 2026-09-18 · Mutação verificada — webhook-mp-muda-plano-com-trilha
+
+Guarda nova (item acima, `audit_log` em `processarWebhookMP`) mutada: removido o bloco inteiro do
+insert em `audit_log` (comentário, `db.from('audit_log').insert(...)`, `if (erroAudit)`). Guarda
+reprovou corretamente: `expected false to be true` — a asserção que confere `audit_log` +
+`action: 'tenant.plan.change'` dentro do bloco de `processarWebhookMP` não achou nenhum dos dois.
+Restaurado com `git checkout --`, confirmado (`audit_webhook_mp_falhou` de volta, 1 ocorrência).
+`tests/unit` inteiro (287/2474) verde depois.
+
+**Nota da varredura, sem novo achado:** conferido também `iniciarAssinatura`/`cancelarAssinatura`
+(mesmo arquivo) — as duas são acionadas pelo dono clicando em "Assinar"/"Cancelar", e as rotas que
+as chamam (`billing/assinar`, `billing/cancelar`) JÁ gravam `writeAudit` no nível da rota. Só o
+caminho sem `Request` de pessoa (o webhook) estava descoberto.
