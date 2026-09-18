@@ -11352,3 +11352,20 @@ reprovou corretamente em dois pontos: `estes segmentos existem como rota e NÃO 
 varredura do filesystem) e `ehRotaDoProduto('precos')` passou a devolver `false`. Restaurado com
 `git checkout --`, confirmado (`'precos'` de volta na linha 38). `tests/unit` inteiro (283/2461)
 verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 112: `tela-quebrada-diz-a-causa`
+
+Guarda do incidente de 2026-09-10 (e repetido em produção em 04/09, `docs/62`): o boundary de
+`/admin` dizia SEMPRE "Pode ter sido a conexão", mesmo quando o banco estava atrás do código
+(schema parcial, `PGRST205`) — mensagem que aponta a causa errada gasta o tempo de quem tenta
+consertar. `admin/error.tsx` precisa consultar `/api/health`, decidir a causa via
+`causaDaFalhaDaTela` e renderizar `FRASE_DA_CAUSA[causa]`, nunca um texto cravado. Mutação:
+`src/app/admin/error.tsx`, trocado `{FRASE_DA_CAUSA[causa]}` pelo literal fixo `"Pode ter sido a
+conexão. Tente de novo."` — reproduzindo exatamente o texto do incidente. Guarda reprovou
+corretamente em dois pontos: `usa a função de decisão em vez de decidir no JSX`
+(`FRASE_DA_CAUSA[` sumiu) e `não voltou a cravar a frase de conexão no JSX` — `expected true to be
+false`. Restaurado com `git checkout --`, confirmado (`{FRASE_DA_CAUSA[causa]}` de volta na linha
+78). `tests/unit` inteiro (283/2461) verde depois.
