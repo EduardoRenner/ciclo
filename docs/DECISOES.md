@@ -11543,3 +11543,23 @@ que faz toda chave NÃO conhecida entrar com o próprio nome de rótulo — volt
 incluindo o mais direto: `chave que a lista fixa não conhece continua aparecendo` — `expected [] to
 deeply equal [ 'Cliente', 'Anotação' ]`. Restaurado com `git checkout --`, confirmado (segundo laço
 de volta, linhas 46-52). `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 123: `resposta-rapida-nao-diz-livre-o-que-esta-fechado`
+
+Guarda de `consertar-a-pergunta-nao-o-caso`: `hojeHorarioVagoAmanha` responde "Tenho horário vago
+amanhã?". O conserto de 30/08 tratou o dia sem expediente COM agendamentos, pondo `if
+(!temExpediente)` DEPOIS do early return de "nenhum agendamento" — e deixou o caso mais comum de
+todos (domingo fechado E zero marcações) caindo no ramo antigo, respondendo "Sim, amanhã sua
+agenda está totalmente livre." O dono promete horário num dia em que o salão não abre. As duas
+frases estão certas cada uma no seu mundo — o defeito é a ORDEM em que as perguntas são feitas.
+Mutação: `server/assistente/respostas-rapidas.ts`, `hojeHorarioVagoAmanha`, invertida a ordem:
+`if (resumo.appointments.length === 0)` (retornando "totalmente livre") movido para ANTES de `if
+(!resumo.temExpediente)` — reproduzindo exatamente o defeito de 30/08. Guarda reprovou
+corretamente em 3 pontos: a ordem (`expected 531 to be greater than 604`), o texto do dia sem
+expediente que parou de dizer "fechada", e "totalmente livre" que passou a vir antes da checagem
+de expediente. Restaurado com `git checkout --`, confirmado (`!resumo.temExpediente` de volta
+antes de `appointments.length === 0`, linhas 140/141/153). `tests/unit` inteiro (283/2461) verde
+depois.
