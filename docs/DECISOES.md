@@ -11335,3 +11335,20 @@ entrada.items)` — reproduzindo exatamente o defeito descrito. Guarda reprovou 
 `expect(laco).toMatch(/jaEnviado\.has\(item\.clientId\)/)` falhou, com o laço inteiro (sem a trava)
 no diff. Restaurado com `git checkout --`, confirmado (`jaEnviado` de volta nas linhas 184, 187 e
 188). `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 111: `slugs-reservados-cobrem-as-rotas`
+
+Guarda do incidente de 2026-09-03: um salão que escolhesse o slug de uma rota do produto (`precos`,
+`orcamento`, `termos`...) ficava com a página pública inacessível PARA SEMPRE, sem erro nenhum — a
+rota estática ganha de `[slug]` no roteamento. Faltavam seis segmentos na lista escrita à mão, e a
+guarda existe para DERIVAR os segmentos do sistema de arquivos em vez de confiar na lista. Mutação:
+`core/tenants/slugs-reservados.ts`, removido `'precos'` de `SLUGS_RESERVADOS` — reproduzindo
+exatamente a classe do defeito medido (rota real sem entrada na lista), e `precos` é justamente o
+segmento que o próprio teste usa como controle positivo (vem de dentro do grupo `(public)`). Guarda
+reprovou corretamente em dois pontos: `estes segmentos existem como rota e NÃO estão reservados` (a
+varredura do filesystem) e `ehRotaDoProduto('precos')` passou a devolver `false`. Restaurado com
+`git checkout --`, confirmado (`'precos'` de volta na linha 38). `tests/unit` inteiro (283/2461)
+verde depois.
