@@ -12673,3 +12673,21 @@ Mutação: `app/api/v1/auth/mfa/factors/[id]/route.ts`, removido `await exigirAa
 (senha, sem segundo fator provado) conseguiu remover o fator MFA, quando devia receber
 `MFA_REQUIRED`. Restaurado com `git checkout --`, confirmado (`await exigirAal2()` de volta na
 linha 16). `tests/unit` inteiro (284/2465) verde depois.
+
+
+---
+
+## 2026-09-18 · Loop assert-vazio — item 156: `modulos`
+
+Guarda de dinheiro/dados (docs/18 §L.2): desligar um módulo que o plano já não libera não pode
+gravar NADA em `tenant_modules` — a tela mostra cadeado, não interruptor, então só a API direta
+chega aqui. Gravar "o dono desligou" para algo que ele nunca viu é guardar uma decisão que ninguém
+tomou, e ela morderia no dia em que ele subisse de degrau: o módulo apareceria desligado sem
+explicação de quando isso "aconteceu".
+
+Mutação: `server/services/modulos.ts`, removido o guard-clause `if (!entrada.ligado &&
+veredito.estado === 'bloqueado_pelo_plano') { return listarModulos(db, tenantId) }`. Guarda
+reprovou corretamente: `expected [] to equal [ { tipo: 'upsert', linha: { ligado: false, modulo:
+'campaigns', origem: 'dono', ... } } ]` — desligar um módulo bloqueado pelo plano passou a gravar
+uma linha fantasma. Restaurado com `git checkout --`, confirmado (guard-clause de volta na linha
+101). `tests/unit` inteiro (284/2465) verde depois.
