@@ -100,6 +100,21 @@ describe('processarWebhookMP', () => {
       expect(resultado).toEqual({ resultado: 'plano_atualizado', tenantId, plano: 'essencial' })
       const { data } = await svc.from('tenants').select('plan').eq('id', tenantId).single()
       expect(data!.plan).toBe('essencial')
+
+      // Achado em 2026-09-18: o webhook mudava o plano sem NENHUMA linha em audit_log — só o cron
+      // irmão (expirarGracaVencida, mesmo arquivo) gravava. Prova contra Postgres de verdade que o
+      // insert direto (mesmo padrão do cron, sem `Request` de pessoa) realmente grava.
+      const { data: trilha } = await svc
+        .from('audit_log')
+        .select('action, entity, entity_id, after')
+        .eq('tenant_id', tenantId)
+        .eq('action', 'tenant.plan.change')
+        .order('created_at', { ascending: false })
+        .limit(1)
+      expect(trilha, 'processarWebhookMP não gravou audit_log ao mudar o plano').toHaveLength(1)
+      expect(trilha![0]!.entity).toBe('tenants')
+      expect(trilha![0]!.entity_id).toBe(tenantId)
+      expect(trilha![0]!.after).toMatchObject({ para: 'essencial', por: 'webhook_mercado_pago' })
     },
     30_000,
   )
