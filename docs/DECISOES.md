@@ -12955,3 +12955,27 @@ definição, não é uma média que se meça).
 
 Restaurado com `git checkout --` nos dois casos, confirmado. `tests/unit` inteiro (288/2488)
 verde depois.
+
+
+---
+
+## 2026-09-18 · Mutação verificada — calibrarProbabilidadeDeResolvidas (docs/73 T3 pt.1)
+
+Dois invariantes mutados.
+
+**Classificação por estado na resolução (o caso central do recurso):** trocado
+`estadoPorAtraso(atrasoNaVolta)` por `'due'` fixo. Guarda reprovou corretamente: `expected +0 to be
+0.5` — o caso "8 voltaram 35 dias atrasadas (deveriam contar em `lost`), 8 nunca voltaram (também
+`lost`)" deixou de produzir 50% em `lost`, porque as 8 que voltaram passaram a contar em `due`. É
+exatamente o defeito que este recurso existe para não ter: sem a classificação certa, o dado mais
+valioso (gente que "já era perdida" e ainda assim voltou) simplesmente desaparece.
+
+**Janela de espera para previsões não resolvidas:** removida a checagem `diasEntre(...) >
+JANELA_DE_ESPERA_DIAS`, todo não-resolvido virou `lost`/`voltou: false` incondicionalmente. Guarda
+reprovou corretamente: `lost` calibrado caiu de `0.12` (padrão) para `0` — o teste "ainda dentro da
+janela fica fora da amostra" veio com 50 previsões recentes viradas em "não voltou" prematuro, o
+viés que o comentário do código avisa: "inflaria a taxa de não-conversão com gente que ainda pode
+aparecer amanhã".
+
+Restaurado com `git checkout --` nos dois casos, confirmado. `tests/unit` inteiro (288/2494) verde
+depois.
