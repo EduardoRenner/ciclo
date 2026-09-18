@@ -11667,3 +11667,21 @@ cega encontrada ali. Varredura recursiva confirma: todos os quatro diretórios d
 varredura de texto identificados nesta rodada com o procedimento de mutação completo. Seis guardas
 genuinamente cegas encontradas e corrigidas na rodada inteira: itens 9 (sessão anterior), 31, 34,
 49, 64 (design/), 93 (server/, agrega-lendo-tudo), 124 (assistente/, assistente-escreve-como-gente).
+
+
+---
+
+## 2026-09-18 · Loop de guardas-cegas — item 129: `dek-nao-fica-residente`
+
+Guarda de segurança/criptografia de maior prioridade: §8 promete que a DEK em claro vive "só em
+memória, por tenant, com EXPIRAÇÃO" — mas a expiração só impedia o USO (`dekDoTenant` conferia
+`expiresAt` antes de devolver), nada TIRAVA a entrada do `Map`. A DEK de um tenant que parasse de
+ser acessado ficava residente EM CLARO até o processo morrer, muito além dos 5 minutos do §8, num
+cofre que guarda dado de saúde. `soltarDeksVencidas` varre TODOS os tenants a cada acesso —
+justamente porque a entrada ociosa é a que ninguém mais toca para expulsar. Mutação:
+`server/crypto/vault.ts`, `dekDoTenant`, removida a chamada `soltarDeksVencidas(Date.now())` do
+início da função — reproduzindo exatamente o defeito: expiração continua impedindo o USO, mas
+nada mais varre o `Map`. Guarda reprovou corretamente: `ler o tenant B solta a DEK vencida do
+tenant A: expected 2 to be 1` — a DEK vencida do tenant A ficou residente junto da nova do tenant
+B. Restaurado com `git checkout --`, confirmado (`soltarDeksVencidas(Date.now())` de volta na
+linha 60). `tests/unit` inteiro (283/2461) verde depois.
