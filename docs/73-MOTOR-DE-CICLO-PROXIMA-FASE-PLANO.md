@@ -207,7 +207,7 @@ separada deste documento, se o Eduardo quiser priorizá-la.
 | T1 | Medir: agrupar previsões resolvidas por estado-no-momento-do-atraso e comparar com `PROBABILIDADE_POR_ESTADO` atual, por tenant e global | nada | Número real ao lado do palpite, para pelo menos os tenants de demonstração com histórico suficiente | ✅ 2026-09-18 |
 | T2 | Calcular probabilidade por estado a partir de `cycle_predictions` resolvidas, com piso de amostra e fallback para a tabela global | T1 | Tenant com amostra insuficiente continua usando a tabela fixa; tenant com amostra suficiente usa a medida; guarda mutation-tested nos dois casos | ✅ 2026-09-18 |
 | T3 | Trocar `valorEmRiscoCents`/`lucroEmRiscoCents` para consultar a probabilidade calibrada em vez da constante | T2 | `tests/unit/core/valor-em-risco.test.ts` (criar, se não existir) cobre o caminho calibrado e o caminho de fallback | ✅ 2026-09-18 — provado contra Postgres real em CI (`tests/integration/ciclo.test.ts`) |
-| T4 | Expor a procedência da probabilidade na tela "Recuperar receita" (mesmo padrão de `regua-do-servico.ts`: o número calibrado, e de onde veio) | T3 | Frase visível, nunca "acurácia X%" como manchete — segue o veto do `docs/46` Fase 3 | ⏸ pausado — ver §5 |
+| T4 | Expor a procedência da probabilidade na tela "Recuperar receita" (mesmo padrão de `regua-do-servico.ts`: o número calibrado, e de onde veio) | T3 | Frase visível, nunca "acurácia X%" como manchete — segue o veto do `docs/46` Fase 3 | ✅ 2026-09-18 — `prestacao.tsx`/`page.tsx`, sem manchete numérica |
 | T5 | ~~Amostra de histórico na ficha do cliente~~ — já existia (`ritmo-do-cliente.ts`, "Maduro") | — | — | ✅ já estava feito antes deste plano |
 | T5b | Amostra de histórico na LISTA "Recuperar receita" (não só na ficha): coluna nova em `client_cycles` (`sample_size`), escrita pelo recompute, exposta em `v_recover_revenue` | migration + T3 | Guarda mutation-tested para a escrita; `test:rls`/`test:integration` verdes contra banco real | ⏸ bloqueado — precisa de Docker/Supabase local ou revisão do Eduardo para aplicar migration com segurança |
 | T6 | Medição de oscilação de régua mês a mês, por tenant real (F3) | nada, mas depois de T1-T5 por prioridade | Relatório objetivo: oscilou ou não, com números — decide se T7 existe | não iniciado |
@@ -253,6 +253,27 @@ um NÚMERO que a tela principal do produto mostra (mesmo que só meses depois do
    da sessão, significa que a revisão humana precisa acontecer OLHANDO o que já está em `main`
    (este documento, `docs/DECISOES.md`, e o diff dos commits), não através de um PR formal.
 
-**O que fica para quando o Eduardo revisar (ou quando Docker local voltar):** T4 e T5, na mesma
-ordem e com o mesmo critério de aceite já escritos acima. T6 (medição de oscilação) pode rodar
+**Atualização 2026-09-18, mais tarde na mesma sessão:** a instrução operante passou a ser "não
+para, continua aprimorando tudo" — T4 foi construído e provado (tipo + lint + `tests/unit` +
+mutation-test da nova regra `algumEstadoFoiCalibrado`), commitado e com CI verde. A pausa do §5
+segue válida para T5b (migration, bloqueada por falta de Docker/revisão) e F3 (precisa de dado de
+produção) — essas continuam exigindo o Eduardo ou infraestrutura que esta sessão não tem. O que
+NÃO precisava de nenhum dos dois (tipo/lint/teste comportamental bastam) seguiu construído.
+
+**Trabalho em paralelo no "outro diferencial" (§5.4, fora deste documento, registrado em
+`docs/DECISOES.md` 2026-09-18):** mesma varredura de "constante nunca calibrada" aplicada a
+`core/risk/no-show-score.ts` — achou dois problemas reais. (1) `computeNoShowScore` também nunca
+foi medido contra falta de verdade; `core/risk/precisao-do-score.ts` + `precisaoDoScoreDoTenant`
+provam se `LIMIAR_ALERTA_AGENDA` separa quem falta de quem não falta, mesmo espírito de T1/T2 aqui.
+Ainda sem UI — a agenda é tela de alto tráfego (abre dezenas de vezes por dia por salão) e a leitura
+é uma consulta agregada de 12 meses; o mesmo motivo que manteve a calibração fora do caminho
+síncrono de `recomputarCicloDeUmAtendimento` (T3) vale aqui, e não há tela de baixo tráfego óbvia
+para hospedar a frase (não existe "config de risco" dedicada nesta base). Decisão: deixar
+queryável, documentado, sem forçar um lugar ruim na UI. (2) Achado separado, não relacionado à
+calibração: `assinanteDoClube` estava hardcoded `false` com comentário desatualizado
+("clube não existe ainda") — corrigido para ler `client_subscriptions` de verdade, com dois testes
+de integração novos provando contra Postgres real.
+
+**O que fica para quando o Eduardo revisar (ou quando Docker local voltar):** T5b e F3 (migration e
+dado de produção, nessa ordem). T6 (medição de oscilação) pode rodar
 antes disso, quando houver acesso a dado de produção real — é medição, não mudança de comportamento.
