@@ -11386,3 +11386,22 @@ serviço de preço fechado cadastrado com `priceCents: 0` (ou `null`) aparecer c
 fechado pode virar Offer com preço inventado: expected false to be true`. Restaurado com `git
 checkout --`, confirmado (filtro completo de volta na linha 123). `tests/unit` inteiro (283/2461)
 verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 114: `automacoes-nao-prometem-autonomia`
+
+Guarda de copy honesta: a tela de Automações dizia "O que o CICLO faz sozinho por você" quando
+4 das 6 automações do catálogo têm teto no nível 1 ou 2 — não agem sozinhas, por desenho, e cada
+teto tem motivo escrito (ex: "um erro que atinge 46 clientes é a reputação do salão"). Enquanto a
+maioria tiver teto, o cabeçalho não pode prometer autonomia. Mutação: `src/app/admin/config/
+automacoes/page.tsx`, trocada a prop `descricao` de "Você decide o quanto cada uma pode fazer sem
+passar por você..." para "O CICLO faz sozinho por você o que der..." — reproduzindo exatamente a
+frase original que motivou a correção. Guarda reprovou corretamente: `[...] promete autonomia, mas
+4 das 6 automações têm teto e não agem sozinhas. Termos: faz sozinh[oa]: expected [ 'faz
+sozinh[oa]' ] to deeply equal []`. As duas ocorrências de "faz sozinho" em COMENTÁRIOS de prosa no
+mesmo arquivo (histórico da decisão) corretamente não dispararam a guarda — confirma que
+`semComentarios` distingue prosa explicativa de código real. Restaurado com `git checkout --`,
+confirmado (`descricao="Você decide..."` de volta na linha 49). `tests/unit` inteiro (283/2461)
+verde depois.
