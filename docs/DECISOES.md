@@ -10692,3 +10692,20 @@ condição inline reintroduzindo a lógica antiga por contador — mesma classe 
 TICKET-063. Guarda reprovou corretamente: `a decisão de creditar indicação sumiu` (o texto
 `deveCreditarIndicacao(` não aparece mais no arquivo). Restaurado com `git checkout --`,
 confirmado grep (chamada de volta). `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 76: `plano-tem-escritor`
+
+Guarda de billing (L-6, `docs/31`), a QUINTA coluna desta base achada "lida por todo mundo,
+escrita por ninguém" (depois de `fee_cents`, `media.consent_id`, `clients.referred_by`). O caso é
+o mais caro dos quatro: até alguém PAGAR, tudo parece funcionar, porque todo tenant nasce `gratis`.
+`scripts/promover-tenant.mjs` é o único escritor de `tenants.plan`. Testada a checagem de update
+de zero linhas (a mesma classe já registrada em memória do projeto — "UPDATE de zero linhas não é
+erro"): no supabase-js um update sem match devolve `error: null`, e sem checar `!depois` o script
+diria "promovido!" no console sem ter mudado nada no banco. Mutação: `scripts/promover-tenant.mjs`,
+removido o bloco `if (!depois) { ... }` inteiro. Guarda reprovou corretamente: `promover-tenant.mjs
+não confere se o update alcançou alguma linha ...: expected false to be true`. Restaurado com
+`git checkout --`, confirmado grep (`if (!depois)` de volta). `tests/unit` inteiro (283/2461)
+verde depois.
