@@ -12411,3 +12411,17 @@ exatamente o defeito que o comentário do arquivo descreve evitar ("virar 'gera 
 exemplo'"). Guarda reprovou corretamente: `expected [] to equal [ { …(4) } ]` (base vazia devolveu
 um plano). Restaurado com `git checkout --`, confirmado (`return []` de volta na linha 41).
 `tests/unit` inteiro (284/2465) verde depois.
+
+
+---
+
+## 2026-09-18 · Loop assert-vazio — item 141: `estoque-alertas`
+
+Guarda de estoque (§5.6): `calcularDiasDeCobertura` devolve `null` quando não há consumo médio
+diário — "não dá pra prever quando 'nunca acaba'". Sem essa checagem, consumo zero vira divisão por
+zero, e `Infinity` dias de cobertura é um número que passaria despercebido por muito tempo na tela
+antes de alguém notar que está errado.
+
+Mutação: `core/estoque/alertas.ts`, removida a guarda `if (consumoMedioDiario <= 0) return null`.
+Guarda reprovou corretamente: `expected Infinity to be null`. Restaurado com `git checkout --`,
+confirmado (guarda de volta na linha 8). `tests/unit` inteiro (284/2465) verde depois.
