@@ -11913,3 +11913,16 @@ protege:
 
 `tests/unit` inteiro (284/2465) verde depois de cada restauração e no estado final. Árvore de
 trabalho limpa. Guarda nasce com prova de que reprova nos três jeitos certos, não só afirmada.
+
+
+---
+
+## 2026-09-18 · CI confirmou o conserto do `club` contra banco de verdade
+
+Complemento à entrada "CORRIGIDO — Assinatura e clube sem trava de plano nenhuma": o push do
+commit `584d4ae` (mais a documentação de mutação em `94543d9`) fechou CI verde nos três jobs,
+`Banco e RLS` incluído — que sobe um Supabase efêmero de verdade, aplica todas as 91 migrations e
+roda o teste de isolamento multi-tenant e o teste de integração de onboarding contra banco real.
+Isso não é um teste de integração NOVO para as duas rotas corrigidas (nenhum existe, como já
+registrado), mas é a confirmação de que a mudança não quebrou nenhuma migration, nenhuma RLS e
+nenhum teste de integração existente — o limite de verificação real desta sessão sem Docker local.
