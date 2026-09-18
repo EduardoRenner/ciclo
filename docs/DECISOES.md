@@ -11319,3 +11319,19 @@ enum sem catálogo correspondente). Guarda reprovou corretamente em dois pontos:
 existem no enum e não têm catálogo: hair` e `pack semeado para vertical inexistente: hair_typo`.
 Restaurado com `git checkout --`, confirmado (`'hair','Cabelo',null,` de volta na linha 38).
 `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 110: `quem-recuperar` (dedupe de envio em lote)
+
+Guarda de mensageria/WhatsApp: `enviarParaRecuperar` precisa de uma mensagem por PESSOA no lote,
+nunca uma por (cliente × serviço) — a trava de 7 dias lê `last_campaign_at` de `client_cycles`, que
+é POR SERVIÇO, então duas linhas da mesma cliente têm as duas nulas, as duas passam, e uma cliente
+atrasada em três serviços recebia TRÊS WhatsApp ao mesmo tempo com o botão "marcar todas". Mutação:
+`server/services/recuperar-receita.ts`, removido o `Set` `jaEnviado` inteiro (a declaração, o
+`.has(item.clientId)` que pula, e o `.add(item.clientId)` que registra) do laço `for (const item of
+entrada.items)` — reproduzindo exatamente o defeito descrito. Guarda reprovou corretamente:
+`expect(laco).toMatch(/jaEnviado\.has\(item\.clientId\)/)` falhou, com o laço inteiro (sem a trava)
+no diff. Restaurado com `git checkout --`, confirmado (`jaEnviado` de volta nas linhas 184, 187 e
+188). `tests/unit` inteiro (283/2461) verde depois.
