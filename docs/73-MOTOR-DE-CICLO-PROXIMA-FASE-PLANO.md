@@ -210,7 +210,7 @@ separada deste documento, se o Eduardo quiser priorizá-la.
 | T4 | Expor a procedência da probabilidade na tela "Recuperar receita" (mesmo padrão de `regua-do-servico.ts`: o número calibrado, e de onde veio) | T3 | Frase visível, nunca "acurácia X%" como manchete — segue o veto do `docs/46` Fase 3 | ✅ 2026-09-18 — `prestacao.tsx`/`page.tsx`, sem manchete numérica |
 | T5 | ~~Amostra de histórico na ficha do cliente~~ — já existia (`ritmo-do-cliente.ts`, "Maduro") | — | — | ✅ já estava feito antes deste plano |
 | T5b | Amostra de histórico na LISTA "Recuperar receita" (não só na ficha): coluna nova em `client_cycles` (`sample_size`), escrita pelo recompute, exposta em `v_recover_revenue` | migration + T3 | Guarda mutation-tested para a escrita; `test:rls`/`test:integration` verdes contra banco real | ⏸ bloqueado — precisa de Docker/Supabase local ou revisão do Eduardo para aplicar migration com segurança |
-| T6 | Medição de oscilação de régua mês a mês, por tenant real (F3) | nada, mas depois de T1-T5 por prioridade | Relatório objetivo: oscilou ou não, com números — decide se T7 existe | não iniciado |
+| T6 | Medição de oscilação de régua mês a mês, por tenant real (F3) | nada, mas depois de T1-T5 por prioridade | Relatório objetivo: oscilou ou não, com números — decide se T7 existe | ✅ ferramenta pronta (`oscilacaoDaReguaDoTenant`), 2026-09-18 — ⏸ falta rodar contra tenant real, bloqueado por acesso a produção |
 | T7 | Amortecimento entre calibrações (condicional ao resultado de T6) | T6 confirmando o problema | A definir no momento, se T6 confirmar | não iniciado |
 
 T4 em diante é onde uma mudança de UI aparece — cada um passa pela verificação de navegador

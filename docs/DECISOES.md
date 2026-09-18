@@ -13236,3 +13236,36 @@ contrário de `value_at_risk`/`receita atribuída`, que são explicitamente prom
 Os quatro achados desta causa-raiz (client_cycles, atribuicao.ts, no-show-score/assinanteDoClube,
 LTV documentado) esgotam os lugares que somam `appointments.price_cents`/`services.price_cents`
 fora do fluxo de comanda nesta base.
+
+---
+
+## 2026-09-18 · Ferramenta de medição pro F3/T6 (docs/73) — oscilação da régua
+
+Causa nova, não mais a assinatura do clube. `docs/73` F3 identificou um risco NUNCA MEDIDO: a régua
+efetiva de um serviço (`reguaEfetivaDias`) pode, em teoria, pular de um valor calibrado para outro
+entre uma noite e a seguinte, sem amortecimento — mas isso era leitura de código, não incidente
+confirmado, e o `docs/46` já rejeitou construir suavização sem sintoma medido primeiro (mesma classe
+de erro do candidato A rejeitado: mecanismo bonito sem problema real por trás).
+
+**Construído sem precisar de acesso a produção nem de Docker local:** `core/cycle/oscilacao-da-
+regua.ts` (`medirOscilacaoDaRegua`, puro, 7 testes de unidade) mais `server/services/previsao.ts`
+(`oscilacaoDaReguaDoTenant`, lê `cycle_predictions` — que já grava `default_cycle_days` por previsão
+desde a `0064`, o dado sempre esteve lá, só faltava a função que olha a série no tempo). Comprime
+valores repetidos antes de medir salto, para não confundir volume de agendamento (várias linhas por
+noite) com mudança de régua de verdade. Devolve o número cru — nenhum "é grave" embutido, a régua de
+interpretação é decisão de quem lê o resultado, não deste código.
+
+**Sem chamador em UI, de propósito.** É ferramenta de diagnóstico para responder a pergunta que T6
+faz ("a régua já oscilou, com números"), não caminho de produto — a resposta é para quem decide se
+T7 (o amortecimento em si) existe, não para a tela de um dono de salão. Provado com dois testes de
+integração novos (`tests/integration/ciclo.test.ts`) contra Postgres real: agrupa por serviço e mede
+o salto certo entre linhas inseridas direto (não via recálculo — simular uma régua que MUDOU de
+verdade exigiria orquestrar vários recálculos com padrões de visita diferentes, que este teste não
+precisa provar); serviço sem previsão nenhuma não aparece no mapa.
+
+**Ainda falta:** rodar `oscilacaoDaReguaDoTenant` contra tenants REAIS e ler o resultado — isso
+continua exigindo acesso a produção que esta sessão não tem. Mas a construção que dependia de
+Docker/infra não é mais o bloqueio: a ferramenta está pronta, só falta alguém com acesso invocá-la
+(ex.: um script one-off, ou uma rota administrativa futura) e ler os números.
+
+`tsc`/`eslint` limpos, `tests/unit` inteiro (290 arquivos/2517 testes) verde.

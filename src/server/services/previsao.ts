@@ -1,6 +1,7 @@
 import { calibrarCiclo, type PrevisaoResolvida } from '@/core/cycle/calibracao'
 import { calibrarProbabilidadeDeResolvidas } from '@/core/cycle/calibrar-probabilidade'
 import { VERSAO_DO_MOTOR, type EstadoCiclo } from '@/core/cycle/compute'
+import { medirOscilacaoDaRegua, type OscilacaoDaRegua } from '@/core/cycle/oscilacao-da-regua'
 import { prestacaoDeContas, type PrestacaoDeContas, type PrevisaoAuditada } from '@/core/cycle/prestacao-de-contas'
 import { PROBABILIDADE_POR_ESTADO } from '@/core/cycle/valor-em-risco'
 import { buscarTudoPaginado } from '@/server/db/paginar'
@@ -268,4 +269,37 @@ export async function resumoDoMotorDoTenant(db: Cliente, tenantId: string, hoje:
     prestacao: prestacaoDeContas(linhas, hoje),
     probabilidade: calibrarProbabilidadeDeResolvidas(linhas, hoje, PROBABILIDADE_POR_ESTADO),
   }
+}
+
+/**
+ * `docs/73` F3/T6 — o passo de MEDIÇÃO que a suavização entre calibrações precisa antes de
+ * justificar construção (`core/cycle/oscilacao-da-regua.ts` tem o raciocínio completo). Ferramenta
+ * de diagnóstico, não caminho de produto: sem chamador em UI de propósito — a pergunta que ela
+ * responde ("a régua deste tenant já pulou de um valor pra outro?") é para quem decide se T7
+ * existe, não para a tela de um dono de salão.
+ *
+ * SEM janela de 12 meses, ao contrário de `previsoesRecentesDoTenant`: ali a pergunta é "o Motor
+ * está acertando HOJE" (um recorte recente é a resposta certa); aqui a pergunta é "a régua já
+ * oscilou alguma vez" — um recorte de 12 meses esconderia exatamente a deriva lenta que F3 existe
+ * para achar. `calibrarServicos` (`server/services/ciclo.ts`) já lê `cycle_predictions` sem janela
+ * pelo mesmo motivo.
+ */
+export async function oscilacaoDaReguaDoTenant(db: Cliente, tenantId: string): Promise<Map<string, OscilacaoDaRegua>> {
+  const linhas = await buscarTudoPaginado(() =>
+    db.from('cycle_predictions').select('service_id, predicted_at, default_cycle_days').eq('tenant_id', tenantId).order('id'),
+  )
+
+  const porServico = new Map<string, { predictedAt: string; defaultCycleDays: number }[]>()
+  for (const l of linhas) {
+    const lista = porServico.get(l.service_id) ?? []
+    lista.push({ predictedAt: l.predicted_at, defaultCycleDays: l.default_cycle_days })
+    porServico.set(l.service_id, lista)
+  }
+
+  const resultado = new Map<string, OscilacaoDaRegua>()
+  for (const [serviceId, pontos] of porServico) {
+    const medida = medirOscilacaoDaRegua(pontos)
+    if (medida) resultado.set(serviceId, medida)
+  }
+  return resultado
 }

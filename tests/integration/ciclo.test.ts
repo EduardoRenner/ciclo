@@ -9,7 +9,7 @@ import { criarServico } from '@/server/services/servicos'
 import { executarOnboarding } from '@/server/services/onboarding'
 import { concluirAgendamento, confirmarAgendamento, criarAgendamento, marcarChegada } from '@/server/services/agendamentos'
 import { recomputarCiclosDoTenant, recomputarCicloDeUmAtendimento } from '@/server/services/ciclo'
-import { prestacaoDeContasDoMotor } from '@/server/services/previsao'
+import { prestacaoDeContasDoMotor, oscilacaoDaReguaDoTenant } from '@/server/services/previsao'
 
 import type { Database } from '@/server/db/types.gen'
 
@@ -403,4 +403,73 @@ describe('prestação de contas do Motor', () => {
     },
     60_000,
   )
+})
+
+/**
+ * `docs/73` F3/T6. O teste de unidade de `medirOscilacaoDaRegua` já prova a aritmética — este
+ * prova só a ponta que só o banco prova: que `oscilacaoDaReguaDoTenant` lê `cycle_predictions` de
+ * verdade, agrupa por `service_id` e ordena por `predicted_at` antes de medir. As linhas são
+ * inseridas direto (não via `recomputarCiclosDoTenant`) de propósito: simular uma régua que MUDOU
+ * de verdade entre calibrações exigiria orquestrar vários recálculos com padrões de visita
+ * diferentes — o que este teste não precisa provar, só que a leitura está certa.
+ */
+describe('oscilacaoDaReguaDoTenant', () => {
+  it(
+    'agrupa por serviço e mede o maior salto entre calibrações sucessivas',
+    async () => {
+      const cliente = await criarCliente('Vai Virar Ponto de Régua')
+
+      const linhas = [
+        { last_visit_on: '2026-01-01', predicted_at: '2026-01-01T03:00:00Z', default_cycle_days: 21 },
+        { last_visit_on: '2026-02-01', predicted_at: '2026-02-01T03:00:00Z', default_cycle_days: 21 },
+        { last_visit_on: '2026-03-01', predicted_at: '2026-03-01T03:00:00Z', default_cycle_days: 35 }, // salto de 14
+        { last_visit_on: '2026-04-01', predicted_at: '2026-04-01T03:00:00Z', default_cycle_days: 21 }, // salto de 14
+      ]
+      const { error } = await svc.from('cycle_predictions').insert(
+        linhas.map((l) => ({
+          tenant_id: tenantId,
+          client_id: cliente,
+          service_id: servicoId,
+          last_visit_on: l.last_visit_on,
+          predicted_on: l.last_visit_on,
+          predicted_at: l.predicted_at,
+          personal_cycle_days: l.default_cycle_days,
+          default_cycle_days: l.default_cycle_days,
+          algo_version: 1,
+        })),
+      )
+      if (error) throw error
+
+      const resultado = await oscilacaoDaReguaDoTenant(svc, tenantId)
+      const medida = resultado.get(servicoId)
+
+      expect(medida).toBeDefined()
+      expect(medida?.amostras).toBeGreaterThanOrEqual(4)
+      expect(medida?.trocas).toBeGreaterThanOrEqual(2)
+      expect(medida?.maiorSaltoDias).toBe(14)
+    },
+    30_000,
+  )
+
+  it('serviço sem nenhuma previsão não aparece no mapa — não inventa medida sem amostra', async () => {
+    const outroServico = await criarServico(svc, tenantId, {
+      name: 'Serviço Sem Previsão do Ciclo',
+      description: null,
+      durationMin: 30,
+      bufferBeforeMin: 0,
+      bufferAfterMin: 0,
+      priceCents: 3000,
+      pricingModel: 'fixed',
+      cycleDays: 14,
+      depositBps: 0,
+      depositMinCents: 0,
+      parallelCapacity: 1,
+      requiresAnamnesis: false,
+      bookableOnline: true,
+      categoryId: null,
+    })
+
+    const resultado = await oscilacaoDaReguaDoTenant(svc, tenantId)
+    expect(resultado.has(outroServico.id)).toBe(false)
+  })
 })
