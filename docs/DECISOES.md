@@ -11200,3 +11200,21 @@ corretamente em dois pontos: `visits_count` reapareceu no arquivo (`not.toContai
 falhou) e a chamada a `deveCreditarIndicacao(` sumiu (`toContain('deveCreditarIndicacao(')`
 falhou). Restaurado com `git checkout --`, confirmado (chamada original de volta na linha 203).
 `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 103: `capacidade-paralela-o-banco-recusa`
+
+Guarda de RLS/concorrência (achado da auditoria de 2026-08-28): a constraint `appointments_no_overlap`
+(`exclude using gist (professional_id with =, period with &&)`, migration 0001) proíbe QUALQUER
+sobreposição do mesmo profissional — o banco não sabe contar `parallel_capacity`. A guarda é de mão
+dupla: enquanto isso for verdade, o formulário não pode oferecer o campo, E a constraint não pode
+sumir nem mudar de forma, porque sem ela a corrida de agendamento volta (cliente marcada em dobro).
+Mutação: `supabase/migrations/0001_initial.sql`, trocado `period with &&` por
+`tsrange(starts_at, ends_at) with &&` na cláusula `exclude using gist` — simulando um refactor que
+muda a expressão de sobreposição sem tocar no nome da constraint nem removê-la, exatamente o "mudou
+de forma" que o comentário da guarda cita como perigo tanto quanto o desaparecimento. Guarda
+reprovou corretamente: `appointments_no_overlap sumiu ou mudou de forma — sem ela, a corrida de
+agendamento volta: expected false to be true`. Restaurado com `git checkout --`, confirmado
+(`period with &&` de volta na linha 289). `tests/unit` inteiro (283/2461) verde depois.
