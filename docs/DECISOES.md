@@ -13391,3 +13391,31 @@ para exatamente este caso ("sem profissional conhecido, zero... a ordem não dep
 contra Postgres real via CI: `value_at_risk_cents`/`profit_at_risk_cents` gravados de verdade
 (coincidem, prova que não é o default); assinante ativo importado zera os dois; pacote com sessão
 sobrando importado zera os dois. `tsc`/`eslint` limpos, `tests/unit` inteiro (290/2517) verde.
+
+---
+
+## 2026-09-18 · Achado sem código — "dia mais parado" só existe em /admin/mes, e por quê fica assim
+
+Missão de auditoria ampla ("transformar o CICLO num SaaS excepcional"). `diaMaisOciosoDoTenant`
+(`server/services/ociosidade.ts`, `docs/53` D-01) já responde exatamente o exemplo que o próprio
+pedido cita — "quinta-feira está abaixo da média" — mas só é chamado em `/admin/mes/page.tsx`,
+nunca em `/admin/hoje`, a tela mais aberta do produto. Um dono só descobre o padrão do dia parado
+se for procurar no resumo mensal.
+
+**Verifiquei se dava para simplesmente chamar a função também em `centralDeAcoes` (`crm.ts`) —
+não dá, com segurança, hoje.** `centralDeAcoes` já teve um problema de performance MEDIDO nesta
+mesma função, no mesmo lugar: o comentário da linha 638 registra que antes da `0089` ela
+respondia por "2-4x o tempo dos outros três ramos de `/admin/hoje`", com quatro idas de rede
+separadas ao PostgREST — e a correção foi consolidar as quatro numa RPC só
+(`resumo_central_de_acoes`). `diaMaisOciosoDoTenant` faz DUAS consultas próprias
+(`business_hours` + `appointments` de 8 semanas) que não estão nessa RPC. Adicionar a chamada
+aqui reintroduziria exatamente a classe de regressão que a `0089` já mediu e consertou — na
+mesma tela, pelo mesmo motivo.
+
+**O caminho certo, quando houver Docker/Supabase local ou revisão do Eduardo para aplicar
+migration com segurança:** estender `resumo_central_de_acoes` (a função Postgres da `0089`) para
+devolver também "hoje é o dia mais parado?" como um boolean calculado dentro da mesma RPC — zero
+round-trip a mais, mesmo padrão de consolidação já usado ali. Até lá, fica só em `/admin/mes`, e
+isso é a escolha mais simples que não arrisca a tela mais visitada do produto — mesma régua do
+`CLAUDE.md` para decisão sem informação suficiente (aqui, sem Docker para testar a migration).
+Nenhum código mudou nesta superfície.
