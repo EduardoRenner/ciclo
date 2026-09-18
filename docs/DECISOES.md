@@ -12513,3 +12513,21 @@ montagem de `situacao`. Guarda reprovou corretamente: `expected 'veio faz -4 dia
 data futura vazou como contagem negativa, exatamente o defeito que o comentário do arquivo cita.
 Restaurado com `git checkout --`, confirmado (`if (desde >= 0)` de volta na linha 74). `tests/unit`
 inteiro (284/2465) verde depois.
+
+
+---
+
+## 2026-09-18 · Loop assert-vazio — item 147: `attribution-compute`
+
+Guarda de dinheiro CRÍTICA (TICKET-039): `atribuirReceita` liga campanha de recuperação a receita —
+o primeiro agendamento que o cliente cria depois de receber uma campanha, dentro da janela, é o que
+ela "trouxe". Uma campanha só pode reivindicar agendamento do MESMO cliente que a recebeu; sem esse
+isolamento, uma campanha sem candidato próprio poderia reivindicar o agendamento de QUALQUER outro
+cliente da base, inflando a receita atribuída ao Motor de Ciclo com dinheiro que não veio dele.
+
+Mutação: `core/attribution/compute.ts`, trocado `porCliente.get(campanha.clientId) ?? []` por `??
+agendamentos` — quando o cliente da campanha não tem candidato na lista, cai para TODOS os
+agendamentos de TODOS os clientes. Guarda reprovou corretamente: `expected [] to equal [ { …(5) } ]`
+— a campanha de um cliente reivindicou o agendamento de outro que nunca a recebeu. Restaurado com
+`git checkout --`, confirmado (`?? []` de volta na linha 58). `tests/unit` inteiro (284/2465) verde
+depois.
