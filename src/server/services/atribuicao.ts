@@ -92,7 +92,7 @@ export async function receitaAtribuidaAoCiclo(
   const inicioBuscaInstante = Temporal.PlainDate.from(inicioBusca).toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant().toString()
   const fimBuscaInstante = Temporal.PlainDate.from(ate).add({ days: 1 }).toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant().toString()
 
-  const [mensagens, agendamentos] = await Promise.all([
+  const [mensagens, agendamentos, assinaturasAtivas] = await Promise.all([
     db
       .from('messages')
       .select('client_id, sent_at, campaign_id')
@@ -108,9 +108,20 @@ export async function receitaAtribuidaAoCiclo(
       .eq('status', 'done')
       .gte('created_at', inicioBuscaInstante)
       .lt('created_at', fimBuscaInstante),
+    /*
+      `docs/DECISOES.md` 2026-09-18, mesma classe do achado em `ciclo.ts`: `appointments.price_cents`
+      congela o preço de CATÁLOGO na criação, mesmo para quem tem assinatura ativa do clube — cuja
+      visita não gera aquela venda avulsa (`server/services/clube.ts`). Sem este filtro, "o Motor
+      trouxe R$X este mês" contaria como receita NOVA uma visita que o assinante já tinha pago via
+      mensalidade, mesmo que a campanha tenha de fato motivado a volta.
+    */
+    db.from('client_subscriptions').select('client_id').eq('tenant_id', tenantId).eq('status', 'active'),
   ])
   if (mensagens.error) throw new AppError('INTERNAL', { cause: mensagens.error })
   if (agendamentos.error) throw new AppError('INTERNAL', { cause: agendamentos.error })
+  if (assinaturasAtivas.error) throw new AppError('INTERNAL', { cause: assinaturasAtivas.error })
+
+  const assinantesAtivos = new Set((assinaturasAtivas.data ?? []).map((a) => a.client_id))
 
   const campanhas: CampanhaEnviada[] = (mensagens.data ?? [])
     .filter((m): m is { client_id: string; sent_at: string; campaign_id: string | null } => m.client_id !== null && m.sent_at !== null)
@@ -122,7 +133,12 @@ export async function receitaAtribuidaAoCiclo(
     if (!ag.client_id) continue
     const cliente = ag.clients as { name: string } | null
     nomePorCliente.set(ag.client_id, cliente?.name ?? '')
-    elegiveis.push({ id: ag.id, clientId: ag.client_id, createdAt: Temporal.Instant.from(ag.created_at), valueCents: ag.price_cents })
+    elegiveis.push({
+      id: ag.id,
+      clientId: ag.client_id,
+      createdAt: Temporal.Instant.from(ag.created_at),
+      valueCents: assinantesAtivos.has(ag.client_id) ? 0 : ag.price_cents,
+    })
   }
 
   const inicioJanela = Temporal.PlainDate.from(desde).toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant()
@@ -174,12 +190,17 @@ export type ResultadoPorCampanha = { bookedCount: number; revenueCents: number }
  * durante a transição custaria mais do que vale.
  */
 export async function receitaPorCampanha(db: Cliente, tenantId: string): Promise<Map<string, ResultadoPorCampanha>> {
-  const [mensagens, agendamentos] = await Promise.all([
+  const [mensagens, agendamentos, assinaturasAtivas] = await Promise.all([
     db.from('messages').select('client_id, sent_at, campaign_id').eq('tenant_id', tenantId).eq('kind', 'campaign').eq('status', 'sent').not('campaign_id', 'is', null),
     db.from('appointments').select('id, client_id, created_at, price_cents').eq('tenant_id', tenantId).eq('status', 'done'),
+    // Mesmo motivo de `receitaAtribuidaAoCiclo`, acima: assinante ativo não gera venda avulsa.
+    db.from('client_subscriptions').select('client_id').eq('tenant_id', tenantId).eq('status', 'active'),
   ])
   if (mensagens.error) throw new AppError('INTERNAL', { cause: mensagens.error })
   if (agendamentos.error) throw new AppError('INTERNAL', { cause: agendamentos.error })
+  if (assinaturasAtivas.error) throw new AppError('INTERNAL', { cause: assinaturasAtivas.error })
+
+  const assinantesAtivos = new Set((assinaturasAtivas.data ?? []).map((a) => a.client_id))
 
   const campanhas: CampanhaEnviada[] = (mensagens.data ?? [])
     .filter((m): m is { client_id: string; sent_at: string; campaign_id: string } => m.client_id !== null && m.sent_at !== null && m.campaign_id !== null)
@@ -187,7 +208,12 @@ export async function receitaPorCampanha(db: Cliente, tenantId: string): Promise
 
   const elegiveis: AgendamentoElegivel[] = (agendamentos.data ?? [])
     .filter((ag): ag is typeof ag & { client_id: string } => ag.client_id !== null)
-    .map((ag) => ({ id: ag.id, clientId: ag.client_id, createdAt: Temporal.Instant.from(ag.created_at), valueCents: ag.price_cents }))
+    .map((ag) => ({
+      id: ag.id,
+      clientId: ag.client_id,
+      createdAt: Temporal.Instant.from(ag.created_at),
+      valueCents: assinantesAtivos.has(ag.client_id) ? 0 : ag.price_cents,
+    }))
 
   const resultado = new Map<string, ResultadoPorCampanha>()
   for (const a of atribuirReceita(campanhas, elegiveis)) {

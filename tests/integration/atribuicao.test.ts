@@ -105,6 +105,19 @@ async function criarCampanhaEnviada(clientId: string, sentAtIso: string, campaig
   if (error) throw error
 }
 
+async function criarAssinaturaAtiva(clientId: string) {
+  const plano = await svc
+    .from('subscription_plans')
+    .insert({ tenant_id: tenantId, name: 'Plano da Atribuição', price_cents: 9_900, sessions_per_month: 4 })
+    .select('id')
+    .single()
+  if (plano.error) throw plano.error
+  const { error } = await svc
+    .from('client_subscriptions')
+    .insert({ tenant_id: tenantId, client_id: clientId, plan_id: plano.data.id, billing_day: 5, status: 'active' })
+  if (error) throw error
+}
+
 async function criarAgendamentoConcluido(clientId: string, createdAtIso: string, priceCents: number) {
   const inicio = new Date(createdAtIso)
   const { data, error } = await svc
@@ -165,6 +178,28 @@ describe('receitaAtribuidaAoCiclo', () => {
     },
     30_000,
   )
+
+  /*
+    `docs/DECISOES.md` 2026-09-18: assinante ativo não gera a venda avulsa que `price_cents`
+    supõe. Conta como retorno (a campanha funcionou), mas contribui R$0 — nunca "o Motor trouxe"
+    dinheiro que já estava garantido pela mensalidade.
+  */
+  it(
+    'assinante ativo do clube: entra na contagem, mas contribui zero pro total',
+    async () => {
+      const cliente = await criarCliente('Assinante Voltou Depois da Campanha')
+      await criarAssinaturaAtiva(cliente)
+      await criarCampanhaEnviada(cliente, '2026-08-01T13:00:00Z')
+      const agendamentoId = await criarAgendamentoConcluido(cliente, '2026-08-05T13:00:00Z', 9_000)
+
+      const resultado = await receitaAtribuidaAoCiclo(svc, tenantId, TZ, '2026-08-01', '2026-08-31')
+
+      const item = resultado.items.find((i) => i.appointmentId === agendamentoId)
+      expect(item).toBeDefined()
+      expect(item?.valueCents).toBe(0)
+    },
+    30_000,
+  )
 })
 
 describe('registrarCampanha + receitaPorCampanha (migration 0054)', () => {
@@ -218,6 +253,21 @@ describe('registrarCampanha + receitaPorCampanha (migration 0054)', () => {
 
       const resultado = await receitaPorCampanha(svc, tenantId)
       expect(resultado.has(campanha.id)).toBe(false)
+    },
+    30_000,
+  )
+
+  it(
+    'assinante ativo do clube conta como agendamento trazido, mas com receita zero',
+    async () => {
+      const cliente = await criarCliente('Assinante da Campanha')
+      await criarAssinaturaAtiva(cliente)
+      const campanha = await registrarCampanha(svc, tenantId, { name: 'Campanha Assinante 0054', segment: 'teste', template: 'Y', clientIds: [cliente] })
+
+      await criarAgendamentoConcluido(cliente, new Date(Date.now() + 3_600_000).toISOString(), 9_000)
+
+      const resultado = await receitaPorCampanha(svc, tenantId)
+      expect(resultado.get(campanha.id)).toEqual({ bookedCount: 1, revenueCents: 0 })
     },
     30_000,
   )

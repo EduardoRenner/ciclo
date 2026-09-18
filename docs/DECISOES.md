@@ -13166,3 +13166,35 @@ assinatura CANCELADA volta a contar a venda avulsa normalmente (mesma conta do t
 existente, 3900 centavos); e o caminho síncrono, chamado diretamente (não via `concluirAgendamento`,
 que sempre produz `on_track` e mascararia o desconto atrás do zero que o próprio estado já dá),
 prova o mesmo desconto isoladamente. `tsc`/`eslint` limpos, `tests/unit` inteiro (289/2510) verde.
+
+---
+
+## 2026-09-18 · Mesmo achado, segunda superfície — "O Motor trouxe R$X" também contava assinante
+
+Quarto achado da noite, mesma causa-raiz do anterior (`client_cycles`), agora na outra tela que
+`appointments.price_cents` alimenta: `server/services/atribuicao.ts`. `receitaAtribuidaAoCiclo`
+soma quanto o Motor "trouxe" no mês (banner no topo de `/admin/recuperar`) e `receitaPorCampanha`
+soma por campanha — as DUAS usam `appointments.price_cents`, e nenhuma sabia que um assinante ativo
+não gera aquela venda avulsa (mesmo motivo do achado anterior: `price_cents` é o preço de CATÁLOGO
+congelado na criação, `criarAgendamento` nunca checa assinatura).
+
+**Por que a superfície é diferente e por que o RISCO é mais estreito que o achado anterior.**
+`client_cycles` recalcula para TODA combinação (cliente, serviço) toda noite — qualquer assinante
+atrasado inflava o número, sempre. Aqui só acontece se as TRÊS coisas alinharem: o assinante
+aparece na lista "Recuperar receita" (continua aparecendo — só o dinheiro zerou, não a presença),
+alguém manda campanha pra ele, e ele volta dentro da janela de 30 dias. Estreito, mas real, e o
+mesmo `docs/48` §Fase 3 se aplica: "R$X" não pode incluir dinheiro que não é novo.
+
+**Escopo da correção — deliberadamente não tocou em `appointments.price_cents`.** Cogitei corrigir
+na ORIGEM (a coluna em si), mas `price_cents` alimenta dezenas de outros lugares (extrato do
+profissional, "quanto tem agendado", comanda) com significados legítimos que não são este —
+mudar o que a coluna SIGNIFICA para todo o produto é decisão arquitetural grande demais para
+decidir sozinho esta noite, e cabe no mesmo tipo de pausa que T5b/migration já tinha. A correção
+ficou só nas DUAS funções de atribuição: zera `valueCents` (não `price_cents` da linha) para quem
+tem assinatura ATIVA hoje — mesma simplificação consciente do achado anterior (usa status atual,
+não status na data do agendamento; para a janela curta destas duas funções — 30-60 dias — a
+aproximação é honesta o bastante, e documentada como tal).
+
+**Provado com dois testes de integração novos** em `tests/integration/atribuicao.test.ts`, contra
+Postgres real via CI: assinante ativo continua contando como retorno (a campanha funcionou) mas
+contribui zero ao total, nas duas funções. `tsc`/`eslint` limpos, `tests/unit` inteiro verde.
