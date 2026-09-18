@@ -10554,3 +10554,18 @@ limitador" continuou passando, como devia — a chamada existe, só a chave mudo
 limitador do MFA parou de usar sessao.userId ...: expected false to be true`. Restaurado com
 `git checkout --`, confirmado (`sessao.userId` de volta). `tests/unit` inteiro (283/2461) verde
 depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 68: `trilha-nao-guarda-dado-eliminado`
+
+Guarda da regra 9 do CLAUDE.md, testando comportamento real (`redigirParaTrilha` chamada de
+verdade, não lista conferida contra si mesma): `POST /api/v1/clients` grava a linha inteira da
+cliente em `audit_log.after`, e `clients.preferences` tem campo `alergia` em SEIS das sete
+verticais — dado de saúde que não pode entrar em trilha por engano. Mutação:
+`server/audit/write.ts`, removido `'preferences'` do `Set` `REDIGIR`. Guarda reprovou
+corretamente, mostrando o vazamento real: `expected { alergia: 'acetona, resina', …(1) } to be
+'[redigido]'` — o texto verdadeiro de uma alergia apareceria sem redação em `audit_log`, legível
+por `owner`/`manager`/`finance`. Restaurado com `git checkout --`, confirmado (`'preferences'` de
+volta no `Set`). `tests/unit` inteiro (283/2461) verde depois.
