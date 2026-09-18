@@ -10926,3 +10926,21 @@ fora de `paginar.ts` — nunca invocada, só para o extrator estático enxergar 
 itens 22/32/88). Guarda reprovou corretamente, apontando o arquivo exato: `expected [
 'src\server\services\caixa.ts' ] to deeply equal []`. Restaurado com `git checkout --`, confirmado
 (função sumiu). `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 89: `faxina-de-idempotencia`
+
+Guarda de LGPD art. 6, testada com um DB encenado que captura os filtros reais das duas passadas
+de limpeza: `idempotency_keys.response_body` guarda o corpo da resposta, e o corpo de `POST
+/api/v1/clients` É a cliente — nome, telefone, CPF, endereço. A faxina de RETENÇÃO (30 dias) tem
+que olhar só a idade, nunca `response_status` — uma chave RESPONDIDA também precisa vencer, senão
+o dado pessoal de cliente ativa fica retido para sempre "para deduplicar um reenvio que nunca vai
+vir". Mutação: `server/http/idempotency.ts`, acrescentado `.is('response_status', null)` ao filtro
+de `vencidas` — misturando a lógica da faxina de ÓRFÃS (que corretamente olha `response_status`)
+com a de retenção (que não deve). Guarda reprovou corretamente, com o DB encenado provando que o
+filtro errado chegou até a consulta real: `a retenção não pode olhar response_status: chave
+respondida também precisa vencer: expected true to be false`. Restaurado com `git checkout --`,
+confirmado (filtro de `vencidas` de volta só com `.lt('created_at', ...)`). `tests/unit` inteiro
+(283/2461) verde depois.
