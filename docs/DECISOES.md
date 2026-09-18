@@ -12531,3 +12531,20 @@ agendamentos de TODOS os clientes. Guarda reprovou corretamente: `expected [] to
 — a campanha de um cliente reivindicou o agendamento de outro que nunca a recebeu. Restaurado com
 `git checkout --`, confirmado (`?? []` de volta na linha 58). `tests/unit` inteiro (284/2465) verde
 depois.
+
+
+---
+
+## 2026-09-18 · Loop assert-vazio — item 148: `recorte-da-lista`
+
+Guarda de UX/honestidade (lista de recuperação): num salão com 300 clientes em risco, o topo
+anuncia o total mas a lista mostra só 200 — `recorteDaLista` existe para declarar o corte em voz
+alta em vez de deixar a pessoa achar que cobriu R$ 15.000 quando cobriu uns R$ 11.000. O teste
+defensivo garante que `count`/`items` divergindo ao contrário (tela mostrando MAIS que o total, um
+bug de outra camada) nunca produz uma frase absurda.
+
+Mutação: `core/ciclo/recorte-da-lista.ts`, trocado `if (mostrados >= total) return null` por `===`
+— perdendo o caso `mostrados > total`. Guarda reprovou corretamente: a função produziu `"Mostrando
+200 de 150, as de maior valor. Filtre por situação para chegar as outras -50."` em vez de `null` —
+um aviso de recorte com contagem NEGATIVA. Restaurado com `git checkout --`, confirmado (`>=` de
+volta na linha 20). `tests/unit` inteiro (284/2465) verde depois.
