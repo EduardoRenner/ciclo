@@ -1,7 +1,7 @@
 import { calibrarCiclo, type PrevisaoResolvida } from '@/core/cycle/calibracao'
 import { calibrarProbabilidadeDeResolvidas } from '@/core/cycle/calibrar-probabilidade'
 import { VERSAO_DO_MOTOR, type EstadoCiclo } from '@/core/cycle/compute'
-import { prestacaoDeContas, type PrestacaoDeContas } from '@/core/cycle/prestacao-de-contas'
+import { prestacaoDeContas, type PrestacaoDeContas, type PrevisaoAuditada } from '@/core/cycle/prestacao-de-contas'
 import { PROBABILIDADE_POR_ESTADO } from '@/core/cycle/valor-em-risco'
 import { buscarTudoPaginado } from '@/server/db/paginar'
 import { AppError } from '@/server/http/errors'
@@ -192,25 +192,23 @@ export async function calibrarServicos(db: Cliente, tenantId: string, cicloEfeti
 }
 
 /**
- * `docs/48` C5 — quanto o Motor acertou, medido contra o que ele mesmo disse antes de saber.
+ * A leitura que `prestacaoDeContasDoMotor` e `probabilidadeCalibradaDoTenant` compartilham —
+ * extraída em `docs/73` T4 para as duas nunca fazerem a MESMA consulta duas vezes na mesma
+ * abertura de `/admin/recuperar`. Antes da extração, cada uma lia `cycle_predictions` por conta
+ * própria; chamar as duas na mesma página dobraria a consulta mais cara da tela sem motivo.
  *
- * Lê `cycle_predictions` inteiro do tenant, e não só as resolvidas: contar acerto apenas sobre
- * quem voltou é viés de sobrevivência, e faria a nota subir quanto pior o Motor fosse. Ver
- * `core/cycle/prestacao-de-contas.ts`.
+ * Só os últimos 12 meses, e o corte tem dois motivos.
+ *
+ * O prático: esta consulta roda em toda abertura de `/admin/recuperar`, e a tabela é append-only
+ * — uma linha por visita, para sempre. Sem teto, a tela mais usada do produto ficaria mais lenta
+ * a cada mês de uso, para sempre.
+ *
+ * O honesto, que é o que decide: `algo_version` existe justamente porque comparar previsão de
+ * eras diferentes do Motor mistura coisas diferentes. Uma janela móvel de um ano responde "o
+ * Motor está acertando HOJE", que é a pergunta que o dono faz; a série inteira responderia "a
+ * média de todas as versões que já rodaram aqui", que não ajuda ninguém a decidir nada.
  */
-export async function prestacaoDeContasDoMotor(db: Cliente, tenantId: string, hoje: string): Promise<PrestacaoDeContas> {
-  /*
-    Só os últimos 12 meses, e o corte tem dois motivos.
-
-    O prático: esta consulta roda em toda abertura de `/admin/recuperar`, e a tabela é append-only
-    — uma linha por visita, para sempre. Sem teto, a tela mais usada do produto ficaria mais lenta
-    a cada mês de uso, para sempre.
-
-    O honesto, que é o que decide: `algo_version` existe justamente porque comparar previsão de
-    eras diferentes do Motor mistura coisas diferentes. Uma janela móvel de um ano responde "o
-    Motor está acertando HOJE", que é a pergunta que o dono faz; a série inteira responderia "a
-    média de todas as versões que já rodaram aqui", que não ajuda ninguém a decidir nada.
-  */
+async function previsoesRecentesDoTenant(db: Cliente, tenantId: string, hoje: string): Promise<PrevisaoAuditada[]> {
   const desde = new Date(Date.parse(`${hoje}T12:00:00Z`) - 365 * 86_400_000).toISOString().slice(0, 10)
 
   const linhas = await buscarTudoPaginado(() =>
@@ -221,10 +219,18 @@ export async function prestacaoDeContasDoMotor(db: Cliente, tenantId: string, ho
       .gte('predicted_on', desde)
       .order('id'),
   )
-  return prestacaoDeContas(
-    linhas.map((l) => ({ predictedOn: l.predicted_on, actualReturnOn: l.actual_return_on })),
-    hoje,
-  )
+  return linhas.map((l) => ({ predictedOn: l.predicted_on, actualReturnOn: l.actual_return_on }))
+}
+
+/**
+ * `docs/48` C5 — quanto o Motor acertou, medido contra o que ele mesmo disse antes de saber.
+ *
+ * Lê `cycle_predictions` inteiro do tenant, e não só as resolvidas: contar acerto apenas sobre
+ * quem voltou é viés de sobrevivência, e faria a nota subir quanto pior o Motor fosse. Ver
+ * `core/cycle/prestacao-de-contas.ts`.
+ */
+export async function prestacaoDeContasDoMotor(db: Cliente, tenantId: string, hoje: string): Promise<PrestacaoDeContas> {
+  return prestacaoDeContas(await previsoesRecentesDoTenant(db, tenantId, hoje), hoje)
 }
 
 /**
@@ -233,28 +239,33 @@ export async function prestacaoDeContasDoMotor(db: Cliente, tenantId: string, ho
  * neste tenant, em vez do palpite fixo `PROBABILIDADE_POR_ESTADO` (`valor-em-risco.ts`) que nunca
  * mudou desde o lançamento.
  *
- * Mesma consulta, mesma janela de 12 meses e o mesmo motivo (`prestacaoDeContasDoMotor`, acima) —
- * as duas leituras de `cycle_predictions` precisam concordar sobre o que é "período recente",
- * senão a acurácia e a probabilidade contariam eras diferentes do Motor sem ninguém perceber.
+ * Mesma consulta, mesma janela de 12 meses e o mesmo motivo (`previsoesRecentesDoTenant`, acima)
+ * — as duas leituras de `cycle_predictions` precisam concordar sobre o que é "período recente",
+ * senão a acurácia e a probabilidade contariam eras diferentes do Motor sem ninguém perceber. É
+ * por isso que as duas agora compartilham a mesma função de leitura, em vez de duas cópias da
+ * mesma consulta que poderiam divergir na janela um dia.
  *
  * Nunca lança e nunca falha o recálculo: um tenant novo, sem amostra suficiente em nenhum estado,
  * recebe de volta a própria `PROBABILIDADE_POR_ESTADO` inalterada — `calibrarProbabilidadeDeResolvidas`
  * já garante isso via `MINIMO_POR_ESTADO`.
  */
 export async function probabilidadeCalibradaDoTenant(db: Cliente, tenantId: string, hoje: string): Promise<Record<EstadoCiclo, number>> {
-  const desde = new Date(Date.parse(`${hoje}T12:00:00Z`) - 365 * 86_400_000).toISOString().slice(0, 10)
+  return calibrarProbabilidadeDeResolvidas(await previsoesRecentesDoTenant(db, tenantId, hoje), hoje, PROBABILIDADE_POR_ESTADO)
+}
 
-  const linhas = await buscarTudoPaginado(() =>
-    db
-      .from('cycle_predictions')
-      .select('predicted_on, actual_return_on')
-      .eq('tenant_id', tenantId)
-      .gte('predicted_on', desde)
-      .order('id'),
-  )
-  return calibrarProbabilidadeDeResolvidas(
-    linhas.map((l) => ({ predictedOn: l.predicted_on, actualReturnOn: l.actual_return_on })),
-    hoje,
-    PROBABILIDADE_POR_ESTADO,
-  )
+/**
+ * `docs/73` T4 — para a tela "Recuperar receita", que precisa das DUAS perguntas ao mesmo tempo
+ * (acurácia da data E probabilidade calibrada), numa consulta só em vez de duas.
+ */
+export type ResumoDoMotor = {
+  prestacao: PrestacaoDeContas
+  probabilidade: Record<EstadoCiclo, number>
+}
+
+export async function resumoDoMotorDoTenant(db: Cliente, tenantId: string, hoje: string): Promise<ResumoDoMotor> {
+  const linhas = await previsoesRecentesDoTenant(db, tenantId, hoje)
+  return {
+    prestacao: prestacaoDeContas(linhas, hoje),
+    probabilidade: calibrarProbabilidadeDeResolvidas(linhas, hoje, PROBABILIDADE_POR_ESTADO),
+  }
 }
