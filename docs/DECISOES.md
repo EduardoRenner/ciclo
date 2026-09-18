@@ -10655,3 +10655,22 @@ como último recurso. Mutação: `server/services/trilha-cofre.ts`, invertida a 
 sobre o nome vivo. Guarda reprovou corretamente na asserção de ordem: `o instantâneo não é
 consultado: expected 31 to be greater than 46`. Restaurado com `git checkout --`, confirmado
 (ordem original — vivo primeiro — de volta). `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 74: `lgpd-cobertura`
+
+Guarda de LGPD art. 18 VI (achado S15, auditoria 23/08/2026): a eliminação do titular precisa
+alcançar TODO dado pessoal, mas a lista de tratamento (`TRATAMENTO_NA_ELIMINACAO`) é escrita à
+mão em `lgpd.ts` — CPF, endereço e contato de emergência sobreviveram à eliminação por meses
+porque as colunas foram acrescentadas depois, sem nada apontando para lá. A guarda lê as
+MIGRATIONS diretamente (não o banco), varrendo toda tabela ligada a `clients` atrás de coluna de
+tipo textual, e reprova se alguma não tiver tratamento declarado. Mutação, desta vez sem tocar
+código existente: criado um arquivo de migration temporário e descartável
+(`9999_mutacao_teste_lgpd_cobertura.sql`, fora da numeração real) com `alter table public.clients
+add column if not exists nota_temporaria_teste text` — simulando exatamente o cenário que a
+guarda existe para pegar: coluna pessoal nova sem tratamento declarado. Guarda reprovou
+corretamente: `expected [ 'clients.nota_temporaria_teste' ] to deeply equal []`. Arquivo removido
+com `rm` (não `git checkout --`, por ser novo/untracked), confirmado `git status` limpo.
+`tests/unit` inteiro (283/2461) verde depois.
