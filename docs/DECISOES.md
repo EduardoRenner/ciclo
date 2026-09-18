@@ -10805,3 +10805,18 @@ deposit_cents") continuou passando (o campo existe), só a segunda ("é calculad
 reprovou: `o sinal virou valor fixo no insert: expected false to be true`. Restaurado com
 `git checkout --`, confirmado grep (`sinalEmCentavos({...})` de volta). `tests/unit` inteiro
 (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 82: `previsao-guarda-o-que-previu`
+
+Guarda comportamental (fake DB captura a INTENÇÃO real da chamada, não varredura de texto): o único
+ativo do produto que o tempo protege (`docs/45` §1.6) é a previsão gravada ANTES do resultado —
+`ignoreDuplicates: true` no upsert é o que torna o job diário barato E honesto: sem ele,
+`recompute-cycles` (que roda todo dia) reescreveria a previsão de ontem com a de hoje, e a linha
+sobreviveria mentindo que o Motor previu, no dia da visita, uma data que só calculou meses depois.
+Mutação: `server/services/previsao.ts`, removida a opção `ignoreDuplicates: true` do
+`.upsert(..., { onConflict: ... })`. Guarda reprovou corretamente através do fake DB que grava a
+chamada real: `expected undefined to be true`. Restaurado com `git checkout --`, confirmado grep
+(`ignoreDuplicates: true,` de volta). `tests/unit` inteiro (283/2461) verde depois.
