@@ -12242,3 +12242,27 @@ caminho onde o provedor respondeu com sucesso — reproduzindo exatamente o cen�
 funcionando, mas a decisão dele é ignorada". Guarda reprovou corretamente: `provedor respondeu e
 reprovou: recusa, e sem aviso nenhum: expected true to be false`. Restaurado com `git checkout --`,
 confirmado (`return success` de volta na linha 27). `tests/unit` inteiro (284/2465) verde depois.
+
+
+---
+
+## 2026-09-18 · Loop assert-vazio — item 132: `cofre-trilha`
+
+Guarda de LGPD (trilha de acesso ao cofre — `vault_access_log`, quem abriu a ficha de saúde de qual
+cliente, quando, de qual IP). `registrarAcessoAoCofre` existe porque os três chamadores originais
+(anamnese, exportação de dados, mídia) faziam o `insert` solto, sem olhar o `error` de retorno — o
+supabase-js não lança em erro de banco. Uma recusa do Postgres deixava o acesso ao dado de saúde sem
+registro nenhum, em silêncio — mesmo defeito e mesmo dia do `writeAudit`.
+
+Mutação: `server/services/cofre-trilha.ts`, removida a destruturação `const { error } =` do `insert`
+e todo o bloco `if (error) { console.error(...) }` que segue, reproduzindo exatamente o defeito
+histórico. Guarda reprovou corretamente, com 2 falhas:
+```
+registrarAcessoAoCofre > recusa do banco NÃO passa em silêncio
+AssertionError: expected 'undefined' to contain 'cofre_trilha_falhou'
+
+registrarAcessoAoCofre > o alarme não carrega dado de saúde — só identificadores (regra 9 do CLAUDE.md)
+AssertionError: expected 'undefined' to contain '11111111-1111-4111-8111-111111111111'
+```
+Restaurado com `git checkout --`, confirmado (`cofre_trilha_falhou` de volta, `grep -c` → 1).
+`tests/unit` inteiro (284/2465) verde depois.
