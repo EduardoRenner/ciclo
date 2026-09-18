@@ -12819,3 +12819,34 @@ Restaurado com `git checkout --`, confirmado (`audit_webhook_mp_falhou` de volta
 (mesmo arquivo) — as duas são acionadas pelo dono clicando em "Assinar"/"Cancelar", e as rotas que
 as chamam (`billing/assinar`, `billing/cancelar`) JÁ gravam `writeAudit` no nível da rota. Só o
 caminho sem `Request` de pessoa (o webhook) estava descoberto.
+
+
+---
+
+## 2026-09-18 · Achado BAIXO, não corrigido — rotas públicas por token não deixam trilha da ação da cliente
+
+**Contexto:** mesma varredura de auditoria que achou os gaps de `packages`/`wallet`/webhook do MP.
+As rotas públicas sem sessão — `public/appointments/confirm/[token]`, `public/appointments/cancel/
+[token]`, `public/quotes/[token]/approve`, `public/quotes/[token]/reject`, `public/waitlist/claim/
+[token]` — mudam estado (`quotes.status`, `appointments.status`) a partir de um link assinado que a
+cliente final recebe por WhatsApp, sem nenhuma linha em `audit_log`.
+
+**Por que a severidade é BAIXA, e por que não tratei como o mesmo achado do webhook do MP:**
+1. **Sem dinheiro se movendo diretamente.** `aprovarOrcamentoPublico` só muda `quotes.status` para
+   `'approved'` — o orçamento só vira comanda cobrável num passo SEPARADO e autenticado
+   (`POST /api/v1/quotes/[id]/convert`, `converterOrcamentoEmAgendamento`), que JÁ grava
+   `writeAudit` no nível da rota. O mesmo vale para confirmação/cancelamento de agendamento: muda
+   status, não valor.
+2. **`verificarTokenAssinado` já prova quem tinha o link** — a garantia de segurança (só quem
+   recebeu o WhatsApp consegue agir) já existe; o que falta é só o REGISTRO histórico de quando
+   isso aconteceu, não uma trava.
+3. É um padrão SISTÊMICO em 5 rotas com o mesmo desenho, não um bug pontual — decidir se ações
+   anônimas (sem `actorId`) merecem entrar em `audit_log`, e com que rótulo, é uma escolha de
+   design consistente para as cinco de uma vez, não um conserto avulso numa sessão autônoma.
+
+**Se um dia isto virar prioridade:** o padrão já está estabelecido nesta mesma sessão —
+`processarWebhookMP`/`expirarGracaVencida` (`assinatura-mp.ts`) mostram o formato de insert direto
+em `audit_log` para caminhos sem `Request` de pessoa autenticada; aqui HÁ `Request` (dá para tirar
+IP/user-agent), então o caminho mais natural seria `writeAudit` com `actorId: null, actorRole:
+null` nas cinco rotas, ação nomeada por caso (`quote.approve_public`, `appointment.confirm_public`,
+etc).
