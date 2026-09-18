@@ -11236,3 +11236,17 @@ meio: a última está lá e ainda assim é vermelho" — `expected true to be fa
 contagem, não só o nome da última migration, é o que detecta o buraco no meio. Restaurado com `git
 checkout --`, confirmado (`MIGRATIONS_ESPERADAS = 91` de volta na linha 22). `tests/unit` inteiro
 (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 105: `convite-do-ciclo`
+
+Guarda de dinheiro/promessa: o convite B2B (`docs/30` §3) não pode oferecer a recompensa
+(`docs/18` §13.1, um mês grátis para quem indica e quem entra) porque `billing_credits` não
+existe — um mês grátis prometido e não entregue custa mais que a indicação inteira vale. Mutação:
+`src/app/admin/config/meu-plano/page.tsx`, adicionado `temRecompensa: true` às duas chamadas de
+`textoDoConviteDoCiclo` — reproduzindo exatamente o interruptor que a guarda existe para manter
+desligado. Guarda reprovou corretamente: `src/app/admin/config/meu-plano/page.tsx promete prêmio
+que o produto não concede: expected true to be false`. Restaurado com `git checkout --`,
+confirmado (`temRecompensa` ausente do arquivo). `tests/unit` inteiro (283/2461) verde depois.
