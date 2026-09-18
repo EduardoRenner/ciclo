@@ -8,7 +8,7 @@ import { criarProfissional } from '@/server/services/profissionais'
 import { criarServico } from '@/server/services/servicos'
 import { executarOnboarding } from '@/server/services/onboarding'
 import { concluirAgendamento, confirmarAgendamento, criarAgendamento, marcarChegada } from '@/server/services/agendamentos'
-import { recomputarCiclosDoTenant } from '@/server/services/ciclo'
+import { recomputarCiclosDoTenant, recomputarCicloDeUmAtendimento } from '@/server/services/ciclo'
 import { prestacaoDeContasDoMotor } from '@/server/services/previsao'
 
 import type { Database } from '@/server/db/types.gen'
@@ -208,6 +208,121 @@ describe('recomputarCiclosDoTenant', () => {
       // Sem chamar recomputarCiclosDoTenant — só concluir já deve ter criado a linha.
       const linha = await svc.from('client_cycles').select('state').eq('tenant_id', tenantId).eq('client_id', cliente).single()
       expect(linha.data).not.toBeNull()
+    },
+    30_000,
+  )
+})
+
+/**
+ * `docs/DECISOES.md` 2026-09-18. Assinante ativo do CICLO Clube não paga avulso — `value_at_risk`/
+ * `profit_at_risk` usando `services.price_cents` para ele contaria uma venda que nunca ia
+ * acontecer. O ESTADO (`late`/`due`/...) continua calculado normalmente; só o dinheiro zera.
+ */
+describe('recomputarCiclosDoTenant — assinante do clube', () => {
+  it(
+    'assinante ativo: state continua "late", mas value_at_risk e profit_at_risk zeram',
+    async () => {
+      const cliente = await criarCliente('Assinante Atrasada')
+      await inserirAtendimentoConcluido(cliente, 30) // mesmo cenário do teste base: 30 dias, late
+
+      const plano = await svc
+        .from('subscription_plans')
+        .insert({ tenant_id: tenantId, name: 'Plano do Ciclo', price_cents: 9900, sessions_per_month: 2 })
+        .select('id')
+        .single()
+      await svc.from('client_subscriptions').insert({
+        tenant_id: tenantId,
+        client_id: cliente,
+        plan_id: plano.data!.id,
+        billing_day: 5,
+        status: 'active',
+      })
+
+      await recomputarCiclosDoTenant(svc, tenantId, TZ, new Date().toISOString().slice(0, 10))
+
+      const linha = await svc
+        .from('client_cycles')
+        .select('state, value_at_risk_cents, profit_at_risk_cents')
+        .eq('tenant_id', tenantId)
+        .eq('client_id', cliente)
+        .single()
+      expect(linha.data?.state).toBe('late')
+      expect(linha.data?.value_at_risk_cents).toBe(0)
+      expect(linha.data?.profit_at_risk_cents).toBe(0)
+    },
+    30_000,
+  )
+
+  it(
+    'assinatura CANCELADA volta a contar venda avulsa normalmente',
+    async () => {
+      const cliente = await criarCliente('Ex-Assinante Atrasada')
+      await inserirAtendimentoConcluido(cliente, 30)
+
+      const plano = await svc
+        .from('subscription_plans')
+        .insert({ tenant_id: tenantId, name: 'Plano Cancelado do Ciclo', price_cents: 9900, sessions_per_month: 2 })
+        .select('id')
+        .single()
+      await svc.from('client_subscriptions').insert({
+        tenant_id: tenantId,
+        client_id: cliente,
+        plan_id: plano.data!.id,
+        billing_day: 5,
+        status: 'canceled',
+      })
+
+      await recomputarCiclosDoTenant(svc, tenantId, TZ, new Date().toISOString().slice(0, 10))
+
+      const linha = await svc
+        .from('client_cycles')
+        .select('value_at_risk_cents')
+        .eq('tenant_id', tenantId)
+        .eq('client_id', cliente)
+        .single()
+      // Mesma conta do teste base (6000 × 0,65 = 3900): cancelada não é ativa, preço volta a valer.
+      expect(linha.data?.value_at_risk_cents).toBe(3900)
+    },
+    30_000,
+  )
+
+  it(
+    'caminho síncrono (recomputarCicloDeUmAtendimento) também zera para assinante ativo',
+    async () => {
+      /*
+        Chamado direto (não via `concluirAgendamento`) de propósito: concluir sempre torna o
+        último visitado "hoje", e daí `computeCycle` prevê a próxima visita no futuro e o estado
+        vira SEMPRE `on_track` — que já zera o valor por conta do estado (`PROBABILIDADE_POR_ESTADO.
+        on_track = 0`), sem exercitar o desconto do assinante nenhum. Para provar o desconto de
+        verdade, precisa do mesmo cenário "atrasado" do teste em lote — 30 dias atrás, ciclo 21.
+      */
+      const cliente = await criarCliente('Assinante Recalcula na Hora')
+      await inserirAtendimentoConcluido(cliente, 30)
+
+      const plano = await svc
+        .from('subscription_plans')
+        .insert({ tenant_id: tenantId, name: 'Plano Síncrono do Ciclo', price_cents: 9900, sessions_per_month: 2 })
+        .select('id')
+        .single()
+      await svc.from('client_subscriptions').insert({
+        tenant_id: tenantId,
+        client_id: cliente,
+        plan_id: plano.data!.id,
+        billing_day: 5,
+        status: 'active',
+      })
+
+      await recomputarCicloDeUmAtendimento(svc, tenantId, TZ, { clientId: cliente, serviceId: servicoId }, new Date().toISOString().slice(0, 10))
+
+      const linha = await svc
+        .from('client_cycles')
+        .select('state, value_at_risk_cents, profit_at_risk_cents')
+        .eq('tenant_id', tenantId)
+        .eq('client_id', cliente)
+        .single()
+      expect(linha.data?.state).toBe('late')
+      expect(linha.data?.value_at_risk_cents).toBe(0)
+      expect(linha.data?.profit_at_risk_cents).toBe(0)
     },
     30_000,
   )

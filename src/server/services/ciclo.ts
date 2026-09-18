@@ -44,7 +44,7 @@ export async function recomputarCiclosDoTenant(db: Cliente, tenantId: string, ti
   // chamadas `.range()` separadas — paginar "às cegas" pode pular ou repetir
   // linha entre uma página e outra. Foi assim que o teste de 10 mil clientes
   // pegou isto: `processados` variava a cada execução (1000, depois 7902).
-  const [concluidos, futuros, servicos, probabilidade] = await Promise.all([
+  const [concluidos, futuros, servicos, probabilidade, assinaturasAtivas] = await Promise.all([
     buscarTudoPaginado(() =>
       db
         .from('appointments')
@@ -67,7 +67,16 @@ export async function recomputarCiclosDoTenant(db: Cliente, tenantId: string, ti
     // `docs/73` F1: a chance de retorno por estado, calibrada com o histórico deste tenant —
     // continua igual à tabela global até o tenant acumular amostra suficiente por estado.
     probabilidadeCalibradaDoTenant(db, tenantId, today),
+    /*
+      `docs/DECISOES.md` 2026-09-18: quem tem assinatura ATIVA do CICLO Clube não gera a venda
+      avulsa que `value_at_risk_cents`/`profit_at_risk_cents` supõem — o índice parcial
+      `client_subscriptions_uma_ativa` (0019) já garante no máximo uma linha por cliente aqui.
+    */
+    buscarTudoPaginado(() =>
+      db.from('client_subscriptions').select('client_id').eq('tenant_id', tenantId).eq('status', 'active').order('id'),
+    ),
   ])
+  const assinantesAtivos = new Set(assinaturasAtivas.map((a) => a.client_id))
 
   /*
     A régua EFETIVA: a medida quando existe, a configurada quando não.
@@ -152,6 +161,18 @@ export async function recomputarCiclosDoTenant(db: Cliente, tenantId: string, ti
       defaultCycleDays,
     })
 
+    /*
+      `docs/DECISOES.md` 2026-09-18: assinante ativo não paga avulso, então o preço de catálogo
+      nunca seria cobrado dele de novo — usar `services.price_cents` aqui contaria uma venda que
+      não ia acontecer. Zero, não um número menor "estimado": não há como saber, sem duplicar a
+      lógica de `janelaDeCobranca`/sessão-do-mês do clube, se esta visita específica cairia dentro
+      do plano ou como excedente avulso — e a regra 5.3 do `CLAUDE.md`/`docs/48` §Fase 3 proíbe
+      inventar precisão que não existe. O ESTADO (`due`/`late`/...) continua calculado normalmente:
+      o valor de lembrar o assinante de usar o que já paga continua existindo, só o dinheiro "em
+      risco" — que para ele não é dinheiro de venda avulsa — é que não é.
+    */
+    const precoEfetivo = assinantesAtivos.has(clientId) ? 0 : (precoPorServico.get(serviceId) ?? 0)
+
     linhas.push({
       tenant_id: tenantId,
       client_id: clientId,
@@ -161,10 +182,10 @@ export async function recomputarCiclosDoTenant(db: Cliente, tenantId: string, ti
       predicted_on: resultado.predictedDate.toString(),
       late_days: Math.trunc(resultado.lateDays),
       state: resultado.state,
-      value_at_risk_cents: valorEmRiscoCents(precoPorServico.get(serviceId) ?? 0, resultado.state, probabilidade),
+      value_at_risk_cents: valorEmRiscoCents(precoEfetivo, resultado.state, probabilidade),
       profit_at_risk_cents: lucroEmRiscoCents(
         lucroEsperadoCents({
-          priceCents: precoPorServico.get(serviceId) ?? 0,
+          priceCents: precoEfetivo,
           // Quem atendeu por último naquele serviço é a melhor aposta de quem vai atender de novo.
           commissionBps: comissaoPor(ultimoProfissionalPorCombinacao.get(chave) ?? null, serviceId),
           materialCents: materialPorServico.get(serviceId) ?? 0,
@@ -214,7 +235,7 @@ export async function recomputarCicloDeUmAtendimento(
   combinacao: Combinacao,
   today: string,
 ): Promise<void> {
-  const [concluidos, futuros, servico] = await Promise.all([
+  const [concluidos, futuros, servico, assinatura] = await Promise.all([
     db
       .from('appointments')
       .select('starts_at, professional_id')
@@ -230,10 +251,21 @@ export async function recomputarCicloDeUmAtendimento(
       .eq('service_id', combinacao.serviceId)
       .in('status', ['pending', 'confirmed', 'arrived']),
     db.from('services').select('cycle_days, cycle_days_observado, price_cents').eq('id', combinacao.serviceId).maybeSingle(),
+    // Mesmo motivo do job noturno (`docs/DECISOES.md` 2026-09-18): assinante ativo não gera venda
+    // avulsa. Consulta indexada por `client_subscriptions_uma_ativa` (0019) — tão barata quanto a
+    // contagem de `futuros` acima, sem o custo que já manteve a calibração de probabilidade fora
+    // deste caminho síncrono (comentário abaixo).
+    db
+      .from('client_subscriptions')
+      .select('id', { head: true, count: 'exact' })
+      .eq('tenant_id', tenantId)
+      .eq('client_id', combinacao.clientId)
+      .eq('status', 'active'),
   ])
   if (concluidos.error) throw new AppError('INTERNAL', { cause: concluidos.error })
   if (futuros.error) throw new AppError('INTERNAL', { cause: futuros.error })
   if (servico.error) throw new AppError('INTERNAL', { cause: servico.error })
+  if (assinatura.error) throw new AppError('INTERNAL', { cause: assinatura.error })
   if (!servico.data) return
 
   const history = (concluidos.data ?? [])
@@ -275,6 +307,8 @@ export async function recomputarCicloDeUmAtendimento(
     hasFutureAppointment: (futuros.count ?? 0) > 0,
   })
 
+  const precoEfetivo = (assinatura.count ?? 0) > 0 ? 0 : servico.data.price_cents
+
   const { error } = await db.from('client_cycles').upsert(
     {
       tenant_id: tenantId,
@@ -285,10 +319,10 @@ export async function recomputarCicloDeUmAtendimento(
       predicted_on: resultado.predictedDate.toString(),
       late_days: Math.trunc(resultado.lateDays),
       state: resultado.state,
-      value_at_risk_cents: valorEmRiscoCents(servico.data.price_cents, resultado.state),
+      value_at_risk_cents: valorEmRiscoCents(precoEfetivo, resultado.state),
       profit_at_risk_cents: lucroEmRiscoCents(
         lucroEsperadoCents({
-          priceCents: servico.data.price_cents,
+          priceCents: precoEfetivo,
           commissionBps: comissaoPor(ultimoProfissional, combinacao.serviceId),
           materialCents: materialPorServico.get(combinacao.serviceId) ?? 0,
         }),

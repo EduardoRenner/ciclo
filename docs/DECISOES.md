@@ -13123,3 +13123,46 @@ integração novos em `tests/integration/risco.test.ts`, contra Postgres real vi
 `precisaoDoScoreDoTenant` separa corretamente alto/baixo risco por `LIMIAR_ALERTA_AGENDA` com
 amostra igual ao piso (`MINIMO_PARA_AFIRMAR`). `tsc`/`eslint` limpos, `tests/unit` inteiro
 (289 arquivos/2510 testes) verde.
+
+---
+
+## 2026-09-18 · Achado — assinante do clube contava venda avulsa que nunca ia acontecer
+
+Terceiro achado da mesma varredura da noite, agora no PRÓPRIO Motor de Ciclo (`server/services/
+ciclo.ts`), não no no-show-score. `value_at_risk_cents`/`profit_at_risk_cents` — os números que
+ORDENAM a fila de "Recuperar receita" e somam o "R$X em risco" anunciado na tela — sempre usaram
+`services.price_cents` (o preço de catálogo, avulso), para QUALQUER cliente, sem checar se ele tem
+assinatura ativa do CICLO Clube.
+
+**Por que é um erro de categoria, não só uma imprecisão.** `server/services/clube.ts` já registra
+(comentário de `margensDoClube`): "a visita de assinante não passa por comanda, já está paga pela
+mensalidade". Um assinante ativo NÃO gera a venda avulsa de `services.price_cents` — se ele não
+voltar neste ciclo, o salão não perde aquele dinheiro (a mensalidade continua entrando) e também
+não ganharia aquele dinheiro se ele voltasse (não é assim que ele paga). Mostrar "R$60 em risco"
+para um cliente cujo próximo atendimento nunca ia gerar R$60 de jeito nenhum inventa um número —
+exatamente o que `docs/48` §Fase 3 proíbe.
+
+**Escopo da correção, deliberadamente simples.** `subscription_plans` não é por serviço (é sessões
+por mês, qualquer serviço) — saber se UMA visita específica cairia dentro do plano ou como
+excedente avulso exigiria replicar a lógica de janela de cobrança/contagem de sessão que
+`raio-x-de-recorrencia.ts`/`margem-do-clube.ts` já têm, com o risco de as duas cópias divergirem
+(a mesma armadilha de "duas cópias da mesma fórmula"). Decisão: qualquer cliente com assinatura
+ATIVA (`client_subscriptions.status = 'active'`) zera o dinheiro em risco para TODOS os seus
+serviços — simples, honesto, e errado apenas na direção conservadora (pode subestimar um pouco o
+excedente avulso de quem estoura o plano com frequência, nunca superestimar). O ESTADO
+(`due`/`late`/`at_risk`/`lost`) continua calculado normalmente — o valor de lembrar o assinante
+de usar o que já paga não muda, só o "dinheiro em risco" que não é dinheiro de venda avulsa.
+
+**Corrigido nos DOIS caminhos que escrevem `client_cycles`:** `recomputarCiclosDoTenant` (job
+noturno, consulta em lote via `client_subscriptions_uma_ativa`, índice parcial da `0019`) e
+`recomputarCicloDeUmAtendimento` (caminho síncrono de concluir atendimento — consulta indexada de
+uma linha, tão barata quanto a contagem de `futuros` que já existia ali; ao contrário da
+calibração de probabilidade do `docs/73` T3, que ficou de fora do caminho síncrono por custo, esta
+consulta é trivial o bastante para entrar nos dois lugares).
+
+**Provado com três testes de integração novos** em `tests/integration/ciclo.test.ts`, contra
+Postgres real via CI: assinante ativo em atraso mantém `state = 'late'` mas zera os dois valores;
+assinatura CANCELADA volta a contar a venda avulsa normalmente (mesma conta do teste-base já
+existente, 3900 centavos); e o caminho síncrono, chamado diretamente (não via `concluirAgendamento`,
+que sempre produz `on_track` e mascararia o desconto atrás do zero que o próprio estado já dá),
+prova o mesmo desconto isoladamente. `tsc`/`eslint` limpos, `tests/unit` inteiro (289/2510) verde.

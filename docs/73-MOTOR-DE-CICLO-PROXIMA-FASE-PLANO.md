@@ -274,6 +274,17 @@ calibração: `assinanteDoClube` estava hardcoded `false` com comentário desatu
 ("clube não existe ainda") — corrigido para ler `client_subscriptions` de verdade, com dois testes
 de integração novos provando contra Postgres real.
 
+**Achado, desta vez DENTRO do próprio Motor de Ciclo (`docs/DECISOES.md` 2026-09-18, terceiro da
+noite):** `value_at_risk_cents`/`profit_at_risk_cents` — os números que ORDENAM "Recuperar receita"
+e somam o "R$X em risco" anunciado na tela — sempre usaram `services.price_cents` (venda avulsa)
+mesmo para clientes com assinatura ATIVA do CICLO Clube, que não geram essa venda avulsa (o
+comentário de `margensDoClube` já dizia isso: "a visita de assinante não passa por comanda"). Um
+assinante em atraso mostrava dinheiro "em risco" que nunca ia existir daquele jeito. Corrigido nos
+dois caminhos que escrevem `client_cycles` (job noturno e o síncrono de concluir atendimento);
+zera o valor para qualquer assinante ativo, mantém o ESTADO (o lembrete de usar o que já paga
+continua valendo). Três testes de integração novos provam os dois caminhos e o caso de assinatura
+cancelada (volta a contar normal) contra Postgres real em CI.
+
 **O que fica para quando o Eduardo revisar (ou quando Docker local voltar):** T5b e F3 (migration e
 dado de produção, nessa ordem). T6 (medição de oscilação) pode rodar
 antes disso, quando houver acesso a dado de produção real — é medição, não mudança de comportamento.
