@@ -26,7 +26,11 @@ const PROMPT = promptDeSistema('2026-09-03')
 
 describe('o prompt de sistema manda escrever como gente', () => {
   it('proíbe o travessão, que é a marca registrada de texto gerado', () => {
-    expect(/travess[ãa]o|—/.test(PROMPT), 'o prompt não diz nada sobre travessão').toBe(true)
+    // Sem `|—` solto: o próprio PROMPT usa travessão em prosa legítima noutras frases (pontuação
+    // normal, não instrução de estilo) — `/travess[ãa]o|—/` passava verde mesmo com a regra
+    // apagada, porque o caractere sobrevivia em qualquer sentença ao redor. Casa só com a
+    // PALAVRA "travessão", que só aparece na frase que proíbe usá-lo.
+    expect(/travess[ãa]o/.test(PROMPT), 'o prompt não diz nada sobre travessão').toBe(true)
   })
 
   it('proíbe a abertura de cortesia antes da resposta', () => {

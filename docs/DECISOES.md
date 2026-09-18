@@ -11563,3 +11563,27 @@ expediente que parou de dizer "fechada", e "totalmente livre" que passou a vir a
 de expediente. Restaurado com `git checkout --`, confirmado (`!resumo.temExpediente` de volta
 antes de `appointments.length === 0`, linhas 140/141/153). `tests/unit` inteiro (283/2461) verde
 depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 124: `assistente-escreve-como-gente` **ERA CEGA, corrigida**
+
+Guarda de copy do assistente de IA: o prompt de sistema precisa proibir travessão ("—"), a marca
+registrada de texto gerado. Mutação: `server/services/assistente.ts`, removida a frase "Nada de
+travessão (—) separando ideias: use vírgula, dois-pontos ou ponto final" do bloco "Como escrever" —
+a regra desaparece por completo. Guarda passou verde. **Cega.**
+
+Causa raiz: `expect(/travess[ãa]o|—/.test(PROMPT)).toBe(true)` — o `|—` solto casa com QUALQUER
+caractere de travessão em QUALQUER lugar do prompt, e o próprio PROMPT usa travessão em prosa
+legítima noutras frases (pontuação normal, não instrução de estilo): linha 35, "Responda só com
+base no que as ferramentas devolverem — nunca invente número..." Ironia à parte (o prompt que
+instrui o modelo a não usar travessão usa travessão na própria instrução, para outra coisa), o
+caractere sobrevivia à mutação e a asserção nunca notou que a REGRA tinha sumido.
+
+Conserto: remover o `|—` e casar só com a PALAVRA "travessão", que só aparece na frase que proíbe
+usá-lo — nenhuma outra sentença do prompt menciona a palavra. Reaplicada a MESMA mutação original
+contra a guarda corrigida: reprovou corretamente (`o prompt não diz nada sobre travessão: expected
+false to be true`). Restaurado `server/services/assistente.ts` com `git checkout --`, confirmado
+(frase de volta na linha 42). Guarda corrigida rodada de novo contra o código restaurado: verde.
+`tests/unit` inteiro (283/2461) verde depois, só o teste da guarda alterado no diff.
