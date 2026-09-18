@@ -11071,3 +11071,20 @@ corretamente: `estes arquivos montam o limite de um período concatenando a data
 UTC. [...]: expected [ 'src/server/services/comissao.ts' ] to deeply equal []`. Restaurado com `git
 checkout --`, confirmado (`toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant()`
 de volta nas linhas 61 e 64). `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 96: `cron-cobre-os-fusos`
+
+Guarda de mensageria/cron: o passo 4 do rodapé do `cron.yml` é a ÚNICA instrução que o dono do
+produto vai seguir para ligar `campaigns` (descomentar linhas) — até 26/08 a receita era `0 12 * *
+*`, alcançando só UTC-2, e campanha ligaria para ninguém com job verde. A guarda confere que as
+quatro linhas comentadas da receita cobrem os quatro fusos do Brasil na hora local que `campaigns`
+exige. Mutação: `.github/workflows/cron.yml`, removida a linha `- cron: '10 13 * * *'    #
+campaigns — 10h local em UTC-3` do rodapé comentado — UTC-3 é `America/Sao_Paulo`, o fuso de
+praticamente todos os tenants reais desta base. Guarda reprovou corretamente: `a receita do passo 4
+sugere 12, 14, 15 UTC, e campaigns exige hora local 10; esses fusos ficariam sem campanha nenhuma
+no dia em que alguém descomentar: expected [ 'America/Sao_Paulo' ] to deeply equal []`. Restaurado
+com `git checkout --`, confirmado (linha UTC-3 de volta). `tests/unit` inteiro (283/2461) verde
+depois.
