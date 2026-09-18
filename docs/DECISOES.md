@@ -12585,3 +12585,22 @@ reprovou corretamente no teste "PISO": `expected 'confirmar' to be null` — uma
 horário foi processada como confirmação de agendamento. Restaurado com `git checkout --`,
 confirmado (`.has(normalizado)` de volta nas linhas 41-42). `tests/unit` inteiro (284/2465) verde
 depois.
+
+
+---
+
+## 2026-09-18 · Loop assert-vazio — item 151: `url-da-vitrine`
+
+Guarda de segurança (migration 0051): `urlDaVitrine` monta o endereço público da imagem de vitrine
+(logo, capa) a partir da chave `{tenantId}/{uuid}.webp` guardada no banco. O bucket `vitrine` é
+público; `media` é PRIVADO — guarda foto de cliente. Errar o nome do bucket não dá erro nenhum: dá
+imagem quebrada na melhor hipótese, e a chave de um objeto privado sendo montada como se fosse
+pública na pior. O teste já nasceu com o cuidado de "casar com o defeito, não com o nome da
+função" (linha 27 do docstring).
+
+Mutação: `core/text/vitrine.ts`, trocado `const BUCKET = 'vitrine'` por `const BUCKET = 'media'` —
+reproduzindo exatamente a troca que o comentário avisa nunca acontecer. Guarda reprovou
+corretamente, com 3 falhas: a URL montada passou a apontar para `/public/media/` em vez de
+`/public/vitrine/`, capturado tanto pelo teste positivo quanto pelo teste "nunca aponta para o
+bucket privado". Restaurado com `git checkout --`, confirmado (`const BUCKET = 'vitrine'` de volta
+na linha 30). `tests/unit` inteiro (284/2465) verde depois.
