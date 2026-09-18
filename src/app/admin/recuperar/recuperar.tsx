@@ -280,8 +280,24 @@ export default function RecuperarReceita({
                     </p>
                   </div>
                   <div className="shrink-0 text-right">
-                    <p className="tabular text-corpo font-bold text-acc-2">{dinheiro.format(item.valueCents / 100)}</p>
-                    <p className="tabular text-label text-txt-3">{dinheiro.format(item.profitCents / 100)} de lucro</p>
+                    {/*
+                      `docs/DECISOES.md` 2026-09-18: assinante do clube e pacote com sessão sobrando
+                      zeram os dois valores de propósito (a próxima visita não gera venda avulsa) —
+                      e depois desse conserto, R$0,00 deixou de ser um caso raro. Sem esta ressalva,
+                      "R$0,00 de lucro" ao lado de um botão "Avisar" lê como número quebrado, não
+                      como informação — a mesma lição do "estado incompleto honesto" em
+                      `prestacao.tsx`. Não afirma qual dos dois motivos é (assinante, pacote, ou uma
+                      probabilidade calibrada genuinamente perto de zero): a tela não sabe qual, e
+                      inventar um dos dois seria menos honesto que dizer "sem valor avulso".
+                    */}
+                    {item.valueCents === 0 && item.profitCents === 0 ? (
+                      <p className="text-label text-txt-3">Sem valor avulso</p>
+                    ) : (
+                      <>
+                        <p className="tabular text-corpo font-bold text-acc-2">{dinheiro.format(item.valueCents / 100)}</p>
+                        <p className="tabular text-label text-txt-3">{dinheiro.format(item.profitCents / 100)} de lucro</p>
+                      </>
+                    )}
                     <Button
                       variante="ghost"
                       tamanho="sm"

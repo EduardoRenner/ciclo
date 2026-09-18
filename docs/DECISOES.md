@@ -13340,3 +13340,25 @@ por isso virou um subcomponente (`IconeDoFab`), não uma variável solta.
 traçado do ícone ou o FAB, então nada quebrou nem precisou de teste novo (é aparência, não regra
 de negócio). Verificação visual feita no navegador, como manda o `CLAUDE.md` para mudança que a
 pessoa VÊ.
+
+---
+
+## 2026-09-18 · Achado de acompanhamento: "R$0,00 de lucro" virou comum, e parecia quebrado
+
+Efeito colateral direto dos dois consertos de hoje em `ciclo.ts` (assinante do clube e pacote com
+sessão sobrando zerando `value_at_risk_cents`/`profit_at_risk_cents`): antes desses consertos,
+R$0,00 num item da lista "Recuperar receita" era um caso raro (serviço grátis, ou probabilidade
+calibrada genuinamente perto de zero). Depois, é um caso COMUM — qualquer assinante ou dono de
+pacote atrasado agora mostra R$0,00 nos dois campos, do lado de um botão "Avisar". Sem contexto,
+isso lê como número quebrado, não como informação — mesma lição do "estado incompleto honesto" já
+aplicada em `prestacao.tsx` (T4).
+
+**Corrigido em `src/app/admin/recuperar/recuperar.tsx`**: quando `valueCents` E `profitCents` são
+os dois zero, o cartão mostra "Sem valor avulso" em vez de "R$0,00 / R$0,00 de lucro". Não afirma
+QUAL dos motivos é (assinante, pacote, ou probabilidade calibrada perto de zero) — a tela não sabe
+qual dos três, distinguir exigiria plumbing novo até a view `v_recover_revenue`, fora de escopo
+para um ajuste de clareza. "Sem valor avulso" é verdadeiro nos três casos, sem inventar o motivo.
+
+Mudança client-side pura, sem teste novo (não havia guarda tocando este trecho), verificada
+visualmente no navegador com uma réplica das classes reais do cartão. `tsc`/`eslint` limpos,
+`tests/unit` inteiro verde.
