@@ -10437,3 +10437,19 @@ orcamento.tsx`, invertida a ordem das duas primeiras linhas de `telaDoOrcamento`
 defeito de produção. Guarda reprovou corretamente: `expected 'carregando' to be 'erro'`.
 Restaurado com `git checkout --`, confirmado (ordem original — erro primeiro — de volta).
 `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 62: `tema-alcanca-o-body`
+
+Guarda de CSS/tema: o tema claro vive num `<div data-theme>` embrulhado pelo `admin/layout.tsx`,
+não no `<html>` — mas variável CSS não sobe para o ancestral, então `<body>` (acima do wrapper)
+ficava escuro nas bordas mesmo com "Claro" escolhido (rubber-band do celular). O conserto tem três
+peças; testada a terceira: `admin/layout` emite um `<style>` inline que estende a cor ao
+`html`/`body`. Mutação: `admin/layout.tsx`, trocado `` `html,body{background:${corDeFundo}}` ``
+por `` `body{background:${corDeFundo}}` `` — removendo a cobertura do `<html>`, o ancestral mais
+externo, exatamente onde o rubber-band aparece. Guarda reprovou corretamente: `sumiu o <style> que
+cobre o rubber-band do celular no tema claro` (o regex `/html,body\{background:/` não casou mais).
+Restaurado com `git checkout --`, confirmado grep (`html,body{background:` de volta). `tests/unit`
+inteiro (283/2461) verde depois.
