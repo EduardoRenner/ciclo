@@ -11181,3 +11181,22 @@ Com este item fecha o backlog de `tests/unit/server/` identificado nesta rodada 
 processados (itens 65-101), quatro guardas genuinamente cegas encontradas e corrigidas (31, 34, 49,
 64 em `design/`, e 93 `agrega-lendo-tudo` em `server/`). Próximo: `tests/unit/core/` e
 `tests/unit/assistente/`.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 102: `bonus-de-indicacao-paga-uma-vez`
+
+Guarda de dinheiro (`tests/unit/core/`, irmã do item 75 em `server/`, mesma classe de defeito
+protegida por um arquivo de teste diferente): o bônus de indicação era decidido por
+`clients.visits_count === 0`, contador escrito só pelo cron `segments` uma vez por dia — duas
+conclusões da mesma cliente no mesmo dia (corte e barba marcados separados) pagavam o bônus duas
+vezes, para ela e para quem indicou. `deveCreditarIndicacao` decide contra o LIVRO-RAZÃO
+(`loyalty_entries`), não contra o contador. Mutação: `server/services/fidelidade.ts`, trocada a
+chamada `deveCreditarIndicacao({ bonusPoints, referredBy, bonusJaCreditado: (count ?? 0) > 0 })`
+por uma condição inline `config.referralBonusPoints > 0 && cliente.referred_by &&
+cliente.visits_count === 0` — reproduzindo exatamente o defeito histórico. Guarda reprovou
+corretamente em dois pontos: `visits_count` reapareceu no arquivo (`not.toContain('visits_count')`
+falhou) e a chamada a `deveCreditarIndicacao(` sumiu (`toContain('deveCreditarIndicacao(')`
+falhou). Restaurado com `git checkout --`, confirmado (chamada original de volta na linha 203).
+`tests/unit` inteiro (283/2461) verde depois.
