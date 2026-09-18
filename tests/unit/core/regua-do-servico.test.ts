@@ -53,6 +53,43 @@ describe('a régua do serviço diz o que usa e de onde veio', () => {
     expect(reguaDoServico(21, 30, null)).toEqual({ diasEmUso: 30, procedencia: null })
     expect(reguaDoServico(21, 30, 0)).toEqual({ diasEmUso: 30, procedencia: null })
   })
+
+  /**
+   * `cycle_days_observado_em` (migration 0065) — achado em 2026-09-18, coluna escrita desde a
+   * criação sem nenhum leitor: "8 voltas na semana passada" e "8 voltas em um ano" são confiança
+   * bem diferente, e a coluna existia só para isso.
+   */
+  describe('a recência da medição, quando a coluna vem preenchida', () => {
+    const agora = new Date('2026-09-18T12:00:00Z')
+
+    it('sem observadoEm (dado anterior a este conserto): a frase funciona sem recência', () => {
+      const regua = reguaDoServico(21, 30, 24, null, agora)
+      expect(regua.procedencia).not.toContain('há')
+      expect(regua.procedencia).not.toContain('hoje')
+    })
+
+    it('medido hoje diz "hoje", não "há 0 dias"', () => {
+      const regua = reguaDoServico(21, 30, 24, '2026-09-18T08:00:00Z', agora)
+      expect(regua.procedencia).toContain('hoje')
+      expect(regua.procedencia).not.toContain('há 0')
+    })
+
+    it('medido há mais de um dia concorda no plural', () => {
+      const regua = reguaDoServico(21, 30, 24, '2026-09-01T12:00:00Z', agora)
+      expect(regua.procedencia).toContain('há 17 dias')
+    })
+
+    it('medido ontem concorda no singular', () => {
+      const regua = reguaDoServico(21, 30, 24, '2026-09-17T08:00:00Z', agora)
+      expect(regua.procedencia).toContain('há 1 dia')
+      expect(regua.procedencia).not.toContain('1 dias')
+    })
+
+    it('a confirmação do palpite também leva a recência', () => {
+      const regua = reguaDoServico(21, 21, 40, '2026-09-01T12:00:00Z', agora)
+      expect(regua.procedencia).toBe('confirmado por 40 voltas há 17 dias')
+    })
+  })
 })
 
 /**

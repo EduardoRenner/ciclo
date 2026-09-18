@@ -1,3 +1,5 @@
+import { diasDesde } from '@/core/tempo/dia'
+
 /**
  * O que a tela diz sobre a régua de um serviço — a configurada, a medida, e a diferença.
  *
@@ -41,26 +43,47 @@ function voltas(quantas: number): string {
 }
 
 /**
- * `observado` e `amostra` vêm de `services.cycle_days_observado*`, e são nulos até haver base.
+ * `services.cycle_days_observado_em` (migration 0065): "8 voltas na semana passada" e "8 voltas em
+ * um ano" são confiança bem diferente, e a coluna existia desde a 0065 sem NUNCA ter sido lida —
+ * achado em 2026-09-18, varredura de coluna sem leitor. `null` acontece com dado anterior a este
+ * conserto; a frase de procedência funciona sem a recência, só mais curta.
+ */
+function recencia(quando: string | null, agora: Date): string {
+  if (!quando) return ''
+  const dias = diasDesde(quando, agora)
+  return dias === 0 ? ' hoje' : ` há ${dias === 1 ? '1 dia' : `${dias} dias`}`
+}
+
+/**
+ * `observado`/`amostra`/`observadoEm` vêm de `services.cycle_days_observado*`, e são nulos até
+ * haver base.
  *
  * `amostra` ausente com `observado` presente não deveria acontecer — as três colunas são escritas
  * juntas — mas dado torto não pode virar frase quebrada na tela de quem paga: sem a amostra, a
  * medição é usada e a procedência fica de fora, porque afirmar "medido em N voltas" sem saber o N
  * seria pior que não afirmar nada.
  */
-export function reguaDoServico(cycleDays: number, observado: number | null, amostra: number | null): ReguaDoServico {
+export function reguaDoServico(
+  cycleDays: number,
+  observado: number | null,
+  amostra: number | null,
+  observadoEm: string | null = null,
+  agora: Date = new Date(),
+): ReguaDoServico {
   if (observado === null) return { diasEmUso: cycleDays, procedencia: null }
   if (amostra === null || amostra <= 0) return { diasEmUso: observado, procedencia: null }
+
+  const quando = recencia(observadoEm, agora)
 
   if (observado === cycleDays) {
     // A medição confirmou o palpite. Vale dizer: é a única vez em que o dono descobre que o
     // número que ele nunca escolheu está certo.
-    return { diasEmUso: observado, procedencia: `confirmado por ${voltas(amostra)}` }
+    return { diasEmUso: observado, procedencia: `confirmado por ${voltas(amostra)}${quando}` }
   }
 
   const direcao = observado > cycleDays ? 'mais espaçado' : 'mais curto'
   return {
     diasEmUso: observado,
-    procedencia: `medido em ${voltas(amostra)} · ${direcao} que os ${cycleDays}d configurados`,
+    procedencia: `medido em ${voltas(amostra)}${quando} · ${direcao} que os ${cycleDays}d configurados`,
   }
 }

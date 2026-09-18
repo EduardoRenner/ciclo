@@ -25,6 +25,7 @@ type Servico = ServicoEditavel & {
   /** A cadência MEDIDA (migration 0065). Nula até haver amostra — nunca sobrescreve `cycle_days`. */
   cycle_days_observado: number | null
   cycle_days_observado_amostra: number | null
+  cycle_days_observado_em: string | null
 }
 
 export default function ListaServicos({
@@ -95,7 +96,14 @@ export default function ListaServicos({
     */
     setServicos((atual) => [
       ...atual,
-      { ...servico, active: true, position: atual.length, cycle_days_observado: null, cycle_days_observado_amostra: null },
+      {
+        ...servico,
+        active: true,
+        position: atual.length,
+        cycle_days_observado: null,
+        cycle_days_observado_amostra: null,
+        cycle_days_observado_em: null,
+      },
     ])
   }
 
@@ -164,7 +172,11 @@ export default function ListaServicos({
                     hourlyRateCents: s.hourly_rate_cents,
                     halfDayPriceCents: s.half_day_price_cents,
                   })}{' '}
-                  · volta em {reguaDoServico(s.cycle_days, s.cycle_days_observado, s.cycle_days_observado_amostra).diasEmUso}d
+                  · volta em{' '}
+                  {
+                    reguaDoServico(s.cycle_days, s.cycle_days_observado, s.cycle_days_observado_amostra, s.cycle_days_observado_em)
+                      .diasEmUso
+                  }d
                 </p>
                 {/*
                   A procedência da régua, quando existe.
@@ -175,7 +187,12 @@ export default function ListaServicos({
                   que está em uso, de onde veio e quantas voltas sustentam a medida.
                 */}
                 {(() => {
-                  const { procedencia } = reguaDoServico(s.cycle_days, s.cycle_days_observado, s.cycle_days_observado_amostra)
+                  const { procedencia } = reguaDoServico(
+                    s.cycle_days,
+                    s.cycle_days_observado,
+                    s.cycle_days_observado_amostra,
+                    s.cycle_days_observado_em,
+                  )
                   return procedencia ? <p className="mt-0.5 text-label text-txt-3">{procedencia}</p> : null
                 })()}
                 {/*
