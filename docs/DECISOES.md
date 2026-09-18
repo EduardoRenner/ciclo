@@ -11642,3 +11642,28 @@ reproduzindo exatamente "contar antes, não depois". Guarda reprovou corretament
 ser relida DEPOIS da drenagem — contar antes mede o que ia subir, não o que ficou: expected -1 to
 be greater than 2539`. Restaurado com `git checkout --`, confirmado (leitura de volta depois da
 drenagem, linha 68). `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-18 · Loop de guardas-cegas — item 128: `service-worker` (versionamento do cache)
+
+Guarda comportamental de verdade: carrega o `public/sw.js` REAL num sandbox `vm` (não uma
+reimplementação que poderia divergir), fechando a causa raiz do "layout roxo que volta"
+(`docs/13`). O bug original: `CACHE_VERSAO` era a string fixa `ciclo-v2`, que parou de mudar 15h
+antes do redesign tirar o roxo — `activate` só apaga cache com nome DIFERENTE do atual, e como o
+nome nunca mudava sozinho, ninguém com cache antigo era limpo por nenhum deploy seguinte. Mutação:
+`public/sw.js`, `CACHE_VERSAO` trocada de `` `ciclo-${VERSAO}` `` (derivado de `?v=<build>` na URL
+do worker) para o literal fixo `'ciclo-v2'` — reproduzindo exatamente o bug de produção de 19/08.
+Guarda reprovou corretamente em 5 dos 12 casos (todo o bloco de versionamento e um teste de
+Cache-Control), incluindo `expected [ 'ciclo-v2' ] to deeply equal [ 'ciclo-dev' ]`. Restaurado com
+`git checkout --`, confirmado (`` const VERSAO = new URL(...).searchParams.get('v') || 'dev' `` e
+`` CACHE_VERSAO = \`ciclo-${VERSAO}\` `` de volta nas linhas 15-16). `tests/unit` inteiro
+(283/2461) verde depois.
+
+Com este item fecha `tests/unit/shell/` — 4 candidatos processados (itens 125-128), nenhuma guarda
+cega encontrada ali. Varredura recursiva confirma: todos os quatro diretórios de topo de
+`tests/unit/` (`design/`, `server/`, `core/`, `assistente/`, `shell/`) têm agora os candidatos de
+varredura de texto identificados nesta rodada com o procedimento de mutação completo. Seis guardas
+genuinamente cegas encontradas e corrigidas na rodada inteira: itens 9 (sessão anterior), 31, 34,
+49, 64 (design/), 93 (server/, agrega-lendo-tudo), 124 (assistente/, assistente-escreve-como-gente).
