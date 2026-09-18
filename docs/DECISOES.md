@@ -12204,3 +12204,24 @@ mesma tentativa às cegas: se o Eduardo quiser `test:rls`/`test:integration`/nav
 disponíveis de novo, o crash `0x40010004` do backend do Docker Desktop é a pista concreta a seguir
 (reinstalar, atualizar WSL2, ou trocar de motor de virtualização) — não é algo que uma sessão de
 código consiga resolver sozinha.
+
+
+---
+
+## 2026-09-18 · Loop assert-vazio (docs/68 backlog) — item 130: `seguranca-segredos`
+
+Retomando o backlog explícito do `docs/68` §6 ("testes assert-vazio, mutei 3 de 39"). Guarda de
+segurança CRÍTICA, comportamental (exercita `compararSegredo`/`gerarTokenAssinado`/
+`verificarTokenAssinado` de verdade, achados S1/S2 de `docs/16-AUDITORIA-SEGURANCA.md`): quatro
+famílias de link entregues por WhatsApp (confirmação, avaliação, lista de espera, orçamento) usam
+o MESMO mecanismo HMAC, e `escopo` entra na assinatura para um token de um fluxo nunca validar em
+outro — sem isso, o token de "confirme sua avaliação" (baixo risco) poderia ser reutilizado para
+"aprovar orçamento" (vira comanda cobrável) ou "cancelar agendamento alheio".
+
+Mutação: `server/services/token-assinado.ts`, `verificarTokenAssinado`, removida a linha `if
+(escopoRecebido !== escopo) return null` — reproduzindo uma vulnerabilidade real de falsificação de
+token entre fluxos. Guarda reprovou corretamente: `escopo continua preso à assinatura — token de um
+fluxo não serve em outro: expected '1f7a2c68-60c0-4cad-9dff-d0e06327ccca' to be null` — um token de
+`lista_espera` validou como se fosse de `orcamento`. Restaurado com `git checkout --`, confirmado
+(`if (escopoRecebido !== escopo) return null` de volta na linha 69). `tests/unit` inteiro
+(284/2465) verde depois.
