@@ -11488,3 +11488,23 @@ Guarda reprovou corretamente: `a regra de dia da semana voltou a ler o dia em UT
 diff completo até `getUTCDay()`). Restaurado com `git checkout --`, confirmado
 (`diaDaSemanaNoFuso(slot.timezone, ...)` de volta na linha 159). `tests/unit` inteiro (283/2461)
 verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 120: `contexto-do-modelo-nao-leva-saude`
+
+Guarda de LGPD/segurança de maior prioridade: `docs/26` §2, regra inviolável — "Dado de saúde
+nunca entra no contexto [do assistente de IA]. `vault`, `health_records` e anamnese ficam fora,
+POR CONSTRUÇÃO." Achado em 2026-09-09: `resumo_de_hoje` devolvia o retorno inteiro de
+`resumoDeHoje`, e cada linha carrega `clients.health_records[].has_alert` — o booleano ia com o
+NOME da pessoa para o Gemini, terceiro externo. `semDadoDeSaude` filtra os três lugares onde o
+sinal aparece (`nextClient`, `alerts`, `restOfDay`). Mutação: `server/assistente/ferramentas.ts`,
+o `executar` de `resumo_de_hoje` trocado de `semDadoDeSaude(await resumoDeHoje(...))` para
+`await resumoDeHoje(...)` sem o filtro — reproduzindo literalmente o defeito de 09/09, e a própria
+guarda documenta que os oito testes que exercitam só a FUNÇÃO `semDadoDeSaude` passavam verdes com
+essa mutação (guarda de função ≠ guarda de uso, mesma armadilha da Unidade 5c). Guarda reprovou
+corretamente: `o executar de resumo_de_hoje devolve o resumo SEM passar por semDadoDeSaude: o
+sinal de saúde volta a ir para o modelo junto com o nome da pessoa.: expected false to be true`.
+Restaurado com `git checkout --`, confirmado (`semDadoDeSaude(await resumoDeHoje(...))` de volta
+na linha 239). `tests/unit` inteiro (283/2461) verde depois.
