@@ -11607,3 +11607,22 @@ Este é o primeiro item de `tests/unit/shell/`, diretório não identificado na 
 desta rodada (só apareceu numa varredura recursiva mais ampla ao fim do backlog de
 core/assistente). Mais três candidatos identificados ali: `fila-nao-descarta-em-silencio`,
 `sair-da-conta`, `service-worker`.
+
+
+---
+
+## 2026-09-18 · Loop de guardas-cegas — item 126: `fila-nao-descarta-em-silencio`
+
+Guarda do achado da auditoria de 2026-08-28, família "descarta em silêncio": §4.2.5 diz "409 marca
+o item como precisa da sua atenção. Nunca descarta em silêncio" — mas qualquer 4xx definitivo
+(400, 402, 404, 422) fazia `drenarFilaPendente` chamar `removerMutacao` e emitir um evento
+`descartada` que o único assinante usava APENAS para sumir com o card de conflito. Ninguém era
+avisado. Se a drenagem recebesse 404 (serviço apagado) depois de perder rede, a mutação sumia — a
+cliente aparecia para um horário que não existe. Mutação: `lib/offline/api-client.ts`,
+`drenarFilaPendente`, a leitura `const mutacao = fila.find((m) => m.id === id) ?? null` removida e
+o evento emitido como `{ tipo: 'descartada', id, mutacao: null }` fixo — reproduzindo exatamente
+"o evento leva só o id (ou mutacao: null)", o defeito que a tela não teria como mostrar. Guarda
+reprovou corretamente: `o evento de descarte voltou a levar só o id (ou um mutacao: null) — a tela
+fica sem o que mostrar: expected false to be true`. Restaurado com `git checkout --`, confirmado
+(`const mutacao = fila.find(...)` de volta antes do `removerMutacao`, linhas 70-72). `tests/unit`
+inteiro (283/2461) verde depois.
