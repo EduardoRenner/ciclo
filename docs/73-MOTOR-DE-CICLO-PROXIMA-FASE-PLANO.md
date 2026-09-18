@@ -96,6 +96,22 @@ continua igual). O risco real é inflar a UI com estatística que ninguém lê (
 Fase 3 avisa: *"a tela nunca mostra 'acurácia de 78%' como manchete"*) — então a frase precisa
 nascer como CONSEQUÊNCIA ("é por isso que o Motor ainda não está confiante"), não como número solto.
 
+**Achado ao começar T5, 2026-09-18: a ficha já tem isso — a lista não.** `core/ciclo/
+ritmo-do-cliente.ts` (marcado "Maduro" no §0) já calcula `procedencia` ("medido em N voltas") e a
+ficha do cliente (`admin/clientes/[id]/ficha.tsx`) já exibe. **O que falta é diferente do T5
+original**: a tela "Recuperar receita" (`recuperar.tsx`, a lista, não a ficha individual) mostra
+"Nd de atraso" sem NENHUMA confiança — nem para um cliente com 2 visitas nem para um com 40.
+
+Por que isso não dá para construir esta noite: `ItemRecuperar`/`v_recover_revenue` não expõem
+quantidade de visitas por combinação (cliente, serviço) — só `personal_cycle_days`, que é o
+RESULTADO calibrado, não a AMOSTRA que o sustenta. Fechar isso exigiria uma coluna nova em
+`client_cycles` (ex.: `sample_size`, escrita por `recomputarCiclosDoTenant` a partir de
+`history.length`, que a função já calcula) — uma MIGRATION. Esta sessão não tem Docker/Supabase
+local (indisponibilidade crônica já registrada) para aplicar e validar uma migration com
+segurança — `test:rls`/`test:integration` precisam de banco de verdade, e `pnpm db:types` precisa
+rodar contra ele depois. Registrado como **T5-revisado**, abaixo, para quando Docker local voltar
+ou o Eduardo revisar.
+
 **Custo estimado `[E]`:** 1-2 tickets, depois de F1 (compartilha a mesma leitura de amostra).
 
 ---
@@ -192,7 +208,8 @@ separada deste documento, se o Eduardo quiser priorizá-la.
 | T2 | Calcular probabilidade por estado a partir de `cycle_predictions` resolvidas, com piso de amostra e fallback para a tabela global | T1 | Tenant com amostra insuficiente continua usando a tabela fixa; tenant com amostra suficiente usa a medida; guarda mutation-tested nos dois casos | ✅ 2026-09-18 |
 | T3 | Trocar `valorEmRiscoCents`/`lucroEmRiscoCents` para consultar a probabilidade calibrada em vez da constante | T2 | `tests/unit/core/valor-em-risco.test.ts` (criar, se não existir) cobre o caminho calibrado e o caminho de fallback | ✅ 2026-09-18 — provado contra Postgres real em CI (`tests/integration/ciclo.test.ts`) |
 | T4 | Expor a procedência da probabilidade na tela "Recuperar receita" (mesmo padrão de `regua-do-servico.ts`: o número calibrado, e de onde veio) | T3 | Frase visível, nunca "acurácia X%" como manchete — segue o veto do `docs/46` Fase 3 | ⏸ pausado — ver §5 |
-| T5 | Amostra de histórico na ficha do cliente (F2): frase de confiança ao lado da data prevista | T2 (reaproveita leitura) | `ritmo-do-cliente.ts` ganha o dado sem quebrar os testes existentes | ⏸ pausado — ver §5 |
+| T5 | ~~Amostra de histórico na ficha do cliente~~ — já existia (`ritmo-do-cliente.ts`, "Maduro") | — | — | ✅ já estava feito antes deste plano |
+| T5b | Amostra de histórico na LISTA "Recuperar receita" (não só na ficha): coluna nova em `client_cycles` (`sample_size`), escrita pelo recompute, exposta em `v_recover_revenue` | migration + T3 | Guarda mutation-tested para a escrita; `test:rls`/`test:integration` verdes contra banco real | ⏸ bloqueado — precisa de Docker/Supabase local ou revisão do Eduardo para aplicar migration com segurança |
 | T6 | Medição de oscilação de régua mês a mês, por tenant real (F3) | nada, mas depois de T1-T5 por prioridade | Relatório objetivo: oscilou ou não, com números — decide se T7 existe | não iniciado |
 | T7 | Amortecimento entre calibrações (condicional ao resultado de T6) | T6 confirmando o problema | A definir no momento, se T6 confirmar | não iniciado |
 
