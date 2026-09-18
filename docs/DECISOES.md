@@ -12094,3 +12094,22 @@ em nenhum outro lugar do produto para replicar com segurança.
 do lado de quem gera o link), **registrado, não corrigido** — precisa de decisão do Eduardo: é
 prioridade agora, ou o convite deveria sair de circulação (esconder o botão/fluxo) até a página
 existir, para não continuar mandando gente para um link morto?
+
+
+---
+
+## 2026-09-18 · Verificado — mais duas rotas na mesma categoria já registrada (`cash/daily`/`summary`)
+
+Completando a varredura de "capacidade morta" (rotas sem chamador): `GET /api/v1/cycle/attribution`
+e `GET /api/v1/vault/access-log` também não têm chamador em `src/app`/`src/components` — mas, ao
+contrário do achado do convite (entrada anterior), a FUNCIONALIDADE por trás das duas está viva e
+em uso: `receitaAtribuidaAoCiclo` é chamada direto (Server Component) por `admin/campanhas`,
+`admin/hoje` e `admin/recuperar`; `listarTrilhaDoCofre` é chamada direto por `admin/config/cofre/
+page.tsx` (a tela "visível para o dono" que o comentário da rota promete, e existe de verdade). As
+duas rotas HTTP são só um wrapper redundante que ninguém precisa, no mesmo padrão já registrado no
+`docs/68` para `cash/daily`/`cash/summary` — mesma pergunta pendente (manter como API
+pública/futura, documentando o propósito, ou remover com `pnpm verify` confirmando que nada mais
+depende). Não é achado novo de severidade própria; soma à mesma decisão pendente do Eduardo.
+
+`cycle/attribution`, `vault/access-log`, `cash/daily`, `cash/summary`: quatro rotas GET na mesma
+situação, todas seguras (não fazem escrita, não vazam RLS), todas esperando a mesma decisão.
