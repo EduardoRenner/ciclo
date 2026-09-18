@@ -12623,3 +12623,22 @@ da lista em vez de ser recusado. Guarda reprovou corretamente: `executar` da fer
 foi chamado mesmo o modelo tendo pedido `ferramenta_que_nao_existe` — `expect(executar).not
 .toHaveBeenCalled()` falhou com 1 chamada registrada. Restaurado com `git checkout --`, confirmado
 (`.find(...)` sem fallback de volta na linha 208). `tests/unit` inteiro (284/2465) verde depois.
+
+
+---
+
+## 2026-09-18 · Loop assert-vazio — item 153: `navegacao`
+
+Guarda de UX (PWA `standalone` sem botão de voltar do navegador): `paiDaRota` mapeia toda rota de
+`/admin` de volta para algum destino, e o teste final ("nenhuma rota de /admin fica sem saída")
+varre TODAS as rotas conhecidas de uma vez — um checador agregado, além dos testes individuais por
+rota. Valia confirmar que o agregado reprova de verdade, não só os testes específicos.
+
+Mutação: `components/shell/navegacao.ts`, removida a regra `{ prefixo: '/admin/comanda', pai: {
+href: '/admin/agenda', rotulo: 'Agenda' } }` — reproduzindo um beco sem saída real na tela da
+comanda (PWA instalado, sem `ArrowLeft` próprio ali). Guarda reprovou em DOIS testes ao mesmo
+tempo: o específico da comanda (`expected { href: ... } to equal null`) e o agregado (`expected [
+'/admin/comanda/abc' ] to deeply equal []`) — confirmando que o checador de "nenhuma rota fica sem
+saída" não é cego, mesmo sendo uma varredura ampla sobre uma lista fixa de rotas. Restaurado com
+`git checkout --`, confirmado (regra de volta na linha 34). `tests/unit` inteiro (284/2465) verde
+depois.
