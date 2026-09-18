@@ -13198,3 +13198,29 @@ aproximação é honesta o bastante, e documentada como tal).
 **Provado com dois testes de integração novos** em `tests/integration/atribuicao.test.ts`, contra
 Postgres real via CI: assinante ativo continua contando como retorno (a campanha funcionou) mas
 contribui zero ao total, nas duas funções. `tsc`/`eslint` limpos, `tests/unit` inteiro verde.
+
+---
+
+## 2026-09-18 · Achado — LTV (`clients.ltv_cents`) tem o mesmo problema, mas "zerar" NÃO é a correção
+
+Terceira superfície da mesma causa-raiz (`appointments.price_cents` somado sem saber de assinatura
+do clube), desta vez em `server/services/crm.ts` (ficha do cliente, cálculo ao vivo) e
+`server/services/segmentos.ts` (cron diário que escreve `clients.ltv_cents`, usado por
+`v_client_segments` — as listas inteligentes "ticket alto"/"primeira visita sem retorno" — e para
+ORDENAR quem recebe campanha por `ltv_cents desc` em `crm.ts` `alvosDeCampanha`).
+
+**Registrado, e DELIBERADAMENTE NÃO corrigido esta noite — diferente dos dois achados
+anteriores.** Nos dois casos de cima, "zerar a contribuição do assinante" era a correção honesta e
+conservadora: o valor em risco de uma venda avulsa que não ia acontecer é mesmo zero, sem
+ambiguidade. Aqui não é. LTV pretende responder "quanto este cliente já valeu para o negócio" — e
+um assinante ativo VALE, só que paga por outro caminho (mensalidade, que hoje não é registrada em
+`payments`/`tickets` nenhuma, por causa do mesmo motivo de `margensDoClube`: "a visita de assinante
+não passa por comanda"). Zerar a contribuição dele SUBESTIMARIA o LTV de exatamente os clientes
+mais fiéis — o oposto do problema anterior — e os despriorizaria em `ltv_cents desc`, quando
+provavelmente deveriam ser candidatos a campanha de UPSELL ou retenção, não os últimos da fila.
+A pergunta certa ("quanto o assinante já pagou, no total, incluindo mensalidade") não tem hoje uma
+fonte de dado para responder — corrigir aqui exigiria decidir um NOVO cálculo de LTV para
+assinantes, não só filtrar o que já existe, e essa é uma decisão de produto que cabe ao Eduardo,
+não uma correção mecânica como as duas anteriores.
+
+**Deixado para revisão futura.** Nenhum código mudou nesta superfície.
