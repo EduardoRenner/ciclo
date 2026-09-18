@@ -11508,3 +11508,20 @@ corretamente: `o executar de resumo_de_hoje devolve o resumo SEM passar por semD
 sinal de saúde volta a ir para o modelo junto com o nome da pessoa.: expected false to be true`.
 Restaurado com `git checkout --`, confirmado (`semDadoDeSaude(await resumoDeHoje(...))` de volta
 na linha 239). `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 121: `permissao-igual-a-da-rota`
+
+Guarda de segurança do assistente de IA: uma ferramenta `preparar_*` precisa exigir a MESMA
+permissão que a rota que EXECUTA depois — senão o assistente monta a proposta, o cartão aparece, o
+dono confirma, e leva 403. O erro não aparece em teste nenhum porque as duas metades estão certas
+sozinhas; só a distância entre elas está errada. A guarda lê a permissão do ARQUIVO DA ROTA, não
+uma cópia escrita no teste. Mutação: `server/assistente/ferramentas.ts`, a ferramenta
+`preparar_agendamento` trocada de `permissao: 'appointment:create'` (a mesma que `POST
+/api/v1/appointments` exige) para `permissao: 'appointment:read'` — reproduzindo exatamente a
+classe de drift que a guarda existe para pegar. Guarda reprovou corretamente: `expected
+'appointment:read' to be 'appointment:create'`. Restaurado com `git checkout --`, confirmado
+(`permissao: 'appointment:create'` de volta na linha 340). `tests/unit` inteiro (283/2461) verde
+depois.
