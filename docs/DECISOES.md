@@ -12285,3 +12285,23 @@ semiaberto). Guarda reprovou corretamente, com 2 falhas: a que afirma "nenhum fi
 (`expected [ Array(1) ] to deeply equal []`) e a de paginação da segunda página, cuja faixa também
 se deslocou. Restaurado com `git checkout --`, confirmado (`.lt('tickets.closed_at', fim)` de volta
 na linha 82). `tests/unit` inteiro (284/2465) verde depois.
+
+
+---
+
+## 2026-09-18 · Loop assert-vazio — item 134: `fidelidade-automacao`
+
+Guarda de dinheiro/plano: `pontuarAtendimentoConcluido` é o "buraco que as travas de rota não
+alcançam" — roda de dentro de `concluirAgendamento` (ação do plano grátis), não atrás de rota de
+fidelidade nenhuma, e a config nasce LIGADA (`CONFIG_PADRAO.pointsPerReal: 1`). Medido em produção
+em 2026-08-26: nenhum dos 11 tenants tinha `settings.loyalty` gravado, e mesmo assim `dom-rocha`
+acumulou 9 lançamentos em 263 atendimentos concluídos. O teste já nasceu com a guarda contra o
+próprio detector explícita no comentário (linha 74-77: "sem esta asserção, o teste abaixo passaria
+por engano"), mutado mesmo assim por rigor do procedimento.
+
+Mutação: `server/services/fidelidade.ts`, linha 154, removido o `if (podeUsarModulo(plano,
+'loyalty').estado !== 'liberado') return` (trocado por `void plano`) — reproduzindo exatamente o
+achado de produção. Guarda reprovou corretamente, com 2 falhas: tenant `gratis` voltou a pontuar
+(`expected [ { …(5) } ] to deeply equal []`) e tenant que desligou fidelidade explicitamente também
+voltou a pontuar. Restaurado com `git checkout --`, confirmado (checagem de volta na linha 154).
+`tests/unit` inteiro (284/2465) verde depois.
