@@ -11926,3 +11926,38 @@ roda o teste de isolamento multi-tenant e o teste de integração de onboarding 
 Isso não é um teste de integração NOVO para as duas rotas corrigidas (nenhum existe, como já
 registrado), mas é a confirmação de que a mudança não quebrou nenhuma migration, nenhuma RLS e
 nenhum teste de integração existente — o limite de verificação real desta sessão sem Docker local.
+
+
+---
+
+## 2026-09-18 · Achado BAIXO, não corrigido — `PATCH /api/v1/professionals/[id]` aceita comissão sem checar `team`
+
+**Contexto:** segunda metade da varredura sistemática de coerência módulo↔tela (a primeira gerou o
+conserto do `club`, entrada anterior).
+
+**Medido.** `team` ("Equipe e comissão") é gated em UM ponto: `professionals/[id]/business-hours/
+route.ts:55`, e só condicionalmente (`if (professionalId !== null) await exigirModulo(...)`) —
+horário POR profissional exige o módulo, horário padrão do tenant não. `PATCH /api/v1/professionals
+/[id]` (`profissionais.ts`, `EsquemaProfissionalParcial = EsquemaProfissional.partial()`) aceita
+`compModel`/`commissionBps` no mesmo corpo que nome, cor, avatar — sem nenhuma checagem de módulo,
+condicional ou não.
+
+**Por que a severidade é BAIXA, não MÉDIA/ALTA como o achado do `club`:**
+1. **Sem caminho de UI.** Nenhuma tela do painel edita `compModel`/`commissionBps` hoje (grep em
+   `admin/config/profissionais/{lista,formulario}.tsx`: zero ocorrência) — só alcançável por
+   chamada direta à API, não pelo produto que uma pessoa realmente usa.
+2. **O teto de `maxProfissionais` já limita o impacto prático.** `gratis` e `essencial` têm
+   `maxProfissionais: 1` (`core/billing/planos.ts`) — só o `equipe`/`avancado` permitem mais de um
+   profissional. Comissão faz sentido para PAGAR outra pessoa; um tenant travado em 1 profissional
+   configurando comissão nele mesmo não desbloqueia nada de verdade.
+
+**Por que não corrigi.** `EsquemaProfissionalParcial` é o schema de update do professional
+INTEIRO — nome, cor, avatar E comissão no mesmo corpo. Gatear a rota inteira travaria renomear o
+próprio profissional sem o módulo `team`, o que não faz sentido (nome não é feature paga). O
+conserto certo é um gate CONDICIONAL, só quando `compModel`/`commissionBps` vêm no corpo — mesmo
+padrão do `professionalId !== null` em `business-hours/route.ts` — mas é o tipo de mudança
+cirúrgica que merece atenção dedicada, não um anexo apressado ao conserto do `club`. Backlog
+explícito para a próxima sessão: adicionar `if (entrada.compModel !== undefined ||
+entrada.commissionBps !== undefined) await exigirModulo(db, ctx.tenantId, 'team')` em
+`src/app/api/v1/professionals/[id]/route.ts`, PATCH, com guarda mutada nos dois lados (campo de
+comissão travado, campo de nome/cor continua livre).
