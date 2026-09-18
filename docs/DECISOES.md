@@ -11218,3 +11218,21 @@ de forma" que o comentário da guarda cita como perigo tanto quanto o desapareci
 reprovou corretamente: `appointments_no_overlap sumiu ou mudou de forma — sem ela, a corrida de
 agendamento volta: expected false to be true`. Restaurado com `git checkout --`, confirmado
 (`period with &&` de volta na linha 289). `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 104: `schema-esperado-bate-com-o-disco`
+
+Guarda do incidente de 2026-09-05: `supabase/migrations/` não entra no bundle da Vercel, então
+`core/schema/versao.ts` mantém uma CÓPIA manual (`MIGRATIONS_ESPERADAS`, `ULTIMA_MIGRATION`) do que
+existe no disco — e cópia sem guarda apodrece. Em 05/09, as migrations `0059-0061` estavam no
+`main` com código dependente no ar e nenhuma aplicada em produção; nada ficou vermelho porque CI e
+os 1.750 testes de então rodavam contra um Supabase local que sempre aplica o disco. Mutação:
+`core/schema/versao.ts`, `MIGRATIONS_ESPERADAS` decrementada de `91` para `90` — reproduzindo
+exatamente "criou migration nova e esqueceu de atualizar a constante", a causa raiz do incidente.
+Guarda reprovou corretamente em 4 dos 8 casos, incluindo o mais fino ("banco ATRÁS com buraco no
+meio: a última está lá e ainda assim é vermelho" — `expected true to be false`), provando que a
+contagem, não só o nome da última migration, é o que detecta o buraco no meio. Restaurado com `git
+checkout --`, confirmado (`MIGRATIONS_ESPERADAS = 91` de volta na linha 22). `tests/unit` inteiro
+(283/2461) verde depois.
