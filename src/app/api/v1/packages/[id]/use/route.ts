@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { writeAudit } from '@/server/audit/write'
 import { exigirPermissao } from '@/server/auth/rbac'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
@@ -14,7 +15,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-
 
 const Esquema = z.object({ appointmentId: z.uuid().nullish() })
 
-export const POST = rota(async (req, params) => {
+export const POST = rota(async (req, params, requestId) => {
   const ctx = await contextoAtual(req)
   exigirPermissao(ctx.papel, 'comanda:own')
 
@@ -24,7 +25,23 @@ export const POST = rota(async (req, params) => {
   const entrada = await lerCorpo(req, Esquema)
   const db = await criarClienteDoUsuario()
 
-  return comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/packages/${id}/use` }, () =>
+  const resultado = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/packages/${id}/use` }, () =>
     consumirSessao(db, ctx.tenantId, id, entrada.appointmentId ?? null),
   )
+
+  await writeAudit(
+    {
+      tenantId: ctx.tenantId,
+      actorId: ctx.sessao.userId,
+      actorRole: ctx.papel,
+      action: 'package.use',
+      entity: 'packages',
+      entityId: id,
+      after: resultado,
+      requestId,
+    },
+    req,
+  )
+
+  return resultado
 })

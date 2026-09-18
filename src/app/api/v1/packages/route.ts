@@ -1,3 +1,4 @@
+import { writeAudit } from '@/server/audit/write'
 import { exigirPermissao } from '@/server/auth/rbac'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
@@ -18,12 +19,30 @@ export const GET = rota(async (req) => {
   return listarPacotesDoCliente(db, ctx.tenantId, clientId)
 })
 
-export const POST = rota(async (req) => {
+export const POST = rota(async (req, _ctx, requestId) => {
   const ctx = await contextoAtual(req)
   exigirPermissao(ctx.papel, 'comanda:own')
 
   const entrada = await lerCorpo(req, EsquemaVenderPacote)
   const db = await criarClienteDoUsuario()
 
-  return comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: '/api/v1/packages' }, () => venderPacote(db, ctx.tenantId, entrada))
+  const pacote = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: '/api/v1/packages' }, () =>
+    venderPacote(db, ctx.tenantId, entrada),
+  )
+
+  await writeAudit(
+    {
+      tenantId: ctx.tenantId,
+      actorId: ctx.sessao.userId,
+      actorRole: ctx.papel,
+      action: 'package.sell',
+      entity: 'packages',
+      entityId: pacote.id,
+      after: pacote,
+      requestId,
+    },
+    req,
+  )
+
+  return pacote
 })
