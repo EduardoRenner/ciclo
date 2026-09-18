@@ -11125,3 +11125,19 @@ o `git diff` completo aparecendo na mensagem (arquivo inteiro por causa do multi
 asserção certa: `expect(CRM).toContain('Math.round(ltvCents / visitas)')` falhou. Restaurado com
 `git checkout --`, confirmado (`ticketMedioCents: visitas > 0 ? Math.round(ltvCents / visitas) :
 0` de volta na linha 327). `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 99: `pedido-de-orcamento` (isolamento de tenant)
+
+Guarda de RLS/segurança: o pedido de orçamento público (`docs/40` fase 2) resolve o serviço
+indicado contra o catálogo do PRÓPRIO tenant — aceitar um id qualquer deixaria o pedido apontar
+para serviço de outro salão, um vazamento de tenant no caminho mais exposto do produto (formulário
+sem autenticação). Mutação: `server/services/pedido-de-orcamento.ts`, removida
+`.eq('tenant_id', tenant.id)` da consulta a `services`, deixando `id`, `pricing_model`, `active` e
+`deleted_at` como únicos filtros — reproduzindo exatamente o vazamento entre tenants que o
+comentário do próprio código descreve como proibido. Guarda reprovou corretamente: `o pedido aceita
+serviço de outro salão: expected 'from(\'services\')...' to contain "eq('tenant_id', tenant.id)"`.
+Restaurado com `git checkout --`, confirmado (`.eq('tenant_id', tenant.id)` de volta na linha 70).
+`tests/unit` inteiro (283/2461) verde depois.
