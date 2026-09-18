@@ -1,7 +1,8 @@
 import { Temporal } from '@js-temporal/polyfill'
 
 import { computeCycle } from '@/core/cycle/compute'
-import { valorEmRiscoCents } from '@/core/cycle/valor-em-risco'
+import { custoDoServico } from '@/core/comanda/custo-do-servico'
+import { lucroEmRiscoCents, lucroEsperadoCents, valorEmRiscoCents } from '@/core/cycle/valor-em-risco'
 import { AppError } from '@/server/http/errors'
 
 import type { Database } from '@/server/db/types.gen'
@@ -91,21 +92,67 @@ export async function preverEPersistirCiclos(
 
   if (!escolhido) return { comDataInformada: pessoas.length, jaDevendoVoltar, cyclesGravados: 0 }
 
+  /*
+    `docs/DECISOES.md` 2026-09-18: mesma causa-raiz do achado em `ciclo.ts` (assinante do clube e
+    pacote com sessão sobrando não geram venda avulsa) — faltava aqui, a terceira porta que escreve
+    `client_cycles` (a docstring deste arquivo já avisa: DUAS portas de entrada, uma fórmula só —
+    esta checagem também precisa estar nas duas, e agora está, porque mora na função compartilhada).
+
+    E um segundo achado, mais simples: `profit_at_risk_cents` nunca era escrito aqui — a coluna tem
+    `default 0` (`0067`), então todo cliente importado nascia com "lucro em risco" zerado até o job
+    noturno recalcular. Como `docs/48` C3 ordena a fila de "Recuperar receita" por LUCRO, não
+    receita, um salão que acabasse de importar a base via planilha ou "já atendo de memória" via
+    ver a lista inteira na ordem errada até a madrugada seguinte — justamente no primeiro dia de
+    uso, quando mais importa causar boa impressão. Comissão entra como 0 (sem profissional
+    conhecido para clientes recém-importados, sem histórico de atendimento no CICLO) — mesma
+    "hipótese mais conservadora" já documentada em `comissaoDeCadaProfissional` (`ciclo.ts`), não
+    uma decisão nova.
+  */
+  const [materialDoServico, assinaturasAtivas, pacotesComSaldo] = await Promise.all([
+    db.from('service_products').select('qty, products(avg_cost_cents)').eq('tenant_id', tenantId).eq('service_id', escolhido.id),
+    db.from('client_subscriptions').select('client_id').eq('tenant_id', tenantId).eq('status', 'active'),
+    db
+      .from('packages')
+      .select('client_id, total_sessions, used_sessions')
+      .eq('tenant_id', tenantId)
+      .eq('service_id', escolhido.id)
+      .or(`expires_on.is.null,expires_on.gte.${hoje.toString()}`),
+  ])
+  if (materialDoServico.error) throw new AppError('INTERNAL', { cause: materialDoServico.error })
+  if (assinaturasAtivas.error) throw new AppError('INTERNAL', { cause: assinaturasAtivas.error })
+  if (pacotesComSaldo.error) throw new AppError('INTERNAL', { cause: pacotesComSaldo.error })
+
+  const materialCents = custoDoServico(
+    (materialDoServico.data ?? []).map((l) => ({ qty: l.qty, avgCostCents: l.products?.avg_cost_cents ?? 0 })),
+    1,
+  ).custoCents
+  const assinantesAtivos = new Set(assinaturasAtivas.data.map((a) => a.client_id))
+  const clientesComPacote = new Set(
+    pacotesComSaldo.data.filter((p) => p.used_sessions < p.total_sessions).map((p) => p.client_id),
+  )
+
   let cyclesGravados = 0
   for (let i = 0; i < calculados.length; i += TAMANHO_DO_LOTE) {
     const lote = calculados.slice(i, i + TAMANHO_DO_LOTE)
     const { error: erroCiclo } = await db.from('client_cycles').upsert(
-      lote.map((c) => ({
-        tenant_id: tenantId,
-        client_id: c.clientId,
-        service_id: escolhido.id,
-        personal_cycle_days: c.resultado.personalCycleDays,
-        last_visit_on: c.ultimaVisita.toString(),
-        predicted_on: c.resultado.predictedDate.toString(),
-        late_days: c.resultado.lateDays,
-        state: c.resultado.state,
-        value_at_risk_cents: valorEmRiscoCents(escolhido.price_cents ?? 0, c.resultado.state),
-      })),
+      lote.map((c) => {
+        const precoEfetivo = assinantesAtivos.has(c.clientId) || clientesComPacote.has(c.clientId) ? 0 : (escolhido.price_cents ?? 0)
+        return {
+          tenant_id: tenantId,
+          client_id: c.clientId,
+          service_id: escolhido.id,
+          personal_cycle_days: c.resultado.personalCycleDays,
+          last_visit_on: c.ultimaVisita.toString(),
+          predicted_on: c.resultado.predictedDate.toString(),
+          late_days: c.resultado.lateDays,
+          state: c.resultado.state,
+          value_at_risk_cents: valorEmRiscoCents(precoEfetivo, c.resultado.state),
+          profit_at_risk_cents: lucroEmRiscoCents(
+            lucroEsperadoCents({ priceCents: precoEfetivo, commissionBps: 0, materialCents }),
+            c.resultado.state,
+          ),
+        }
+      }),
       { onConflict: 'tenant_id,client_id,service_id' },
     )
     /*

@@ -13362,3 +13362,32 @@ para um ajuste de clareza. "Sem valor avulso" é verdadeiro nos três casos, sem
 Mudança client-side pura, sem teste novo (não havia guarda tocando este trecho), verificada
 visualmente no navegador com uma réplica das classes reais do cartão. `tsc`/`eslint` limpos,
 `tests/unit` inteiro verde.
+
+---
+
+## 2026-09-18 · Terceira porta de `client_cycles` estava sem a checagem — e sem `profit_at_risk_cents`
+
+Generalizando a varredura de hoje: `server/services/ciclo-de-quem-ja-atende.ts` (`preverEPersistir
+Ciclos`) é uma TERCEIRA função que escreve `client_cycles`, além das duas em `ciclo.ts` que já
+ganharam a checagem de assinante/pacote. A própria docstring do arquivo já avisava o risco — "há
+DUAS portas de entrada para a mesma base... duplicar esta fórmula seria criar duas definições
+divergindo" — mas a checagem nova de hoje entrou só em `ciclo.ts`, deixando esta terceira porta
+para trás. Compartilhada pelas duas portas de importação (planilha e "já atendo de memória"), então
+um fix aqui cobre as duas de uma vez.
+
+**Achado maior, encontrado ao ler o arquivo para aplicar o mesmo conserto**: `profit_at_risk_cents`
+nunca era escrito aqui — a coluna tem `default 0` (`0067`), e o `upsert` simplesmente omitia o
+campo. Todo cliente recém-importado (planilha OU memória) nascia com "lucro em risco" zerado até o
+job noturno recalcular. Como `docs/48` C3 ordena "Recuperar receita" por LUCRO, não receita, um
+salão que acabasse de importar a base via CSV ou "já atendo de memória" via a lista inteira na
+ordem errada até a madrugada seguinte — no primeiro dia de uso, o pior momento para isso acontecer.
+
+**Comissão entra como 0**, não estimada: cliente recém-importado não tem histórico de atendimento
+no CICLO, então não há profissional conhecido para buscar a comissão dele. Não é uma decisão nova
+— é a MESMA "hipótese mais conservadora" que `comissaoDeCadaProfissional` (`ciclo.ts`) já documenta
+para exatamente este caso ("sem profissional conhecido, zero... a ordem não depende dela").
+
+**Provado com três testes de integração novos** em `tests/integration/quem-ja-atendo.test.ts`,
+contra Postgres real via CI: `value_at_risk_cents`/`profit_at_risk_cents` gravados de verdade
+(coincidem, prova que não é o default); assinante ativo importado zera os dois; pacote com sessão
+sobrando importado zera os dois. `tsc`/`eslint` limpos, `tests/unit` inteiro (290/2517) verde.

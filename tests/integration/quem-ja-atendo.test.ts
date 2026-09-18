@@ -293,3 +293,109 @@ describe('retornos: quem já tem ficha e voltou, sem reabrir o cadastro', () => 
     30_000,
   )
 })
+
+/**
+ * `docs/DECISOES.md` 2026-09-18. `profit_at_risk_cents` nunca era escrito aqui (coluna com
+ * `default 0` — `0067`), então todo cliente importado nascia com "lucro em risco" zerado até o
+ * job noturno recalcular; e a checagem de assinante/pacote (`ciclo.ts`) faltava nesta terceira
+ * porta que escreve `client_cycles`.
+ */
+describe('preverEPersistirCiclos grava o dinheiro certo (não só o estado)', () => {
+  async function clienteExistente(nome: string) {
+    const { data, error } = await svc
+      .from('clients')
+      .insert({ tenant_id: tenantId, name: nome, source: 'memoria', last_visit_at: '2026-01-01' })
+      .select('id')
+      .single()
+    if (error || !data) throw new Error(`seed de cliente falhou: ${error?.message}`)
+    return data.id
+  }
+
+  it(
+    'value_at_risk_cents e profit_at_risk_cents são gravados de verdade (não ficam 0 por padrão)',
+    async () => {
+      const marca = randomUUID().slice(0, 6)
+      const r = await cadastrarQuemJaAtendo(svc, tenantId, {
+        serviceId,
+        pessoas: [{ nome: `Vai Ter Lucro ${marca}`, telefone: telefoneNovo(), quando: 'faz-tempo' }],
+      })
+      expect(r.previsao?.cyclesGravados).toBe(1)
+
+      const { data: cliente } = await svc.from('clients').select('id').eq('tenant_id', tenantId).eq('name', `Vai Ter Lucro ${marca}`).single()
+      const { data: ciclo } = await svc
+        .from('client_cycles')
+        .select('value_at_risk_cents, profit_at_risk_cents')
+        .eq('tenant_id', tenantId)
+        .eq('client_id', cliente!.id)
+        .single()
+
+      expect(ciclo?.value_at_risk_cents, 'venda avulsa em risco não pode ficar 0 pra quem não é assinante/pacote').toBeGreaterThan(0)
+      /*
+        Sem material configurado nem profissional conhecido (comissão 0, hipótese conservadora),
+        lucro esperado = preço — os dois números coincidem, e é isso que prova que a coluna nova
+        está sendo escrita de verdade, não caindo no default.
+      */
+      expect(ciclo?.profit_at_risk_cents).toBe(ciclo?.value_at_risk_cents)
+    },
+    30_000,
+  )
+
+  it(
+    'assinante ativo importado via "retornos": value_at_risk e profit_at_risk zeram',
+    async () => {
+      const marca = randomUUID().slice(0, 6)
+      const clientId = await clienteExistente(`Assinante Importada ${marca}`)
+
+      const plano = await svc
+        .from('subscription_plans')
+        .insert({ tenant_id: tenantId, name: 'Plano da Memória', price_cents: 9_900, sessions_per_month: 4 })
+        .select('id')
+        .single()
+      await svc.from('client_subscriptions').insert({ tenant_id: tenantId, client_id: clientId, plan_id: plano.data!.id, billing_day: 5, status: 'active' })
+
+      const r = await cadastrarQuemJaAtendo(svc, tenantId, { serviceId, retornos: [{ clientId, quando: 'faz-tempo' }] })
+      expect(r.previsao?.cyclesGravados).toBe(1)
+
+      const { data: ciclo } = await svc
+        .from('client_cycles')
+        .select('value_at_risk_cents, profit_at_risk_cents')
+        .eq('tenant_id', tenantId)
+        .eq('client_id', clientId)
+        .single()
+      expect(ciclo?.value_at_risk_cents).toBe(0)
+      expect(ciclo?.profit_at_risk_cents).toBe(0)
+    },
+    30_000,
+  )
+
+  it(
+    'pacote com sessão sobrando importado via "retornos": value_at_risk e profit_at_risk zeram',
+    async () => {
+      const marca = randomUUID().slice(0, 6)
+      const clientId = await clienteExistente(`Pacote Importada ${marca}`)
+
+      const { error } = await svc.from('packages').insert({
+        tenant_id: tenantId,
+        client_id: clientId,
+        service_id: serviceId,
+        total_sessions: 5,
+        used_sessions: 1,
+        paid_cents: 20_000,
+      })
+      if (error) throw error
+
+      const r = await cadastrarQuemJaAtendo(svc, tenantId, { serviceId, retornos: [{ clientId, quando: 'faz-tempo' }] })
+      expect(r.previsao?.cyclesGravados).toBe(1)
+
+      const { data: ciclo } = await svc
+        .from('client_cycles')
+        .select('value_at_risk_cents, profit_at_risk_cents')
+        .eq('tenant_id', tenantId)
+        .eq('client_id', clientId)
+        .single()
+      expect(ciclo?.value_at_risk_cents).toBe(0)
+      expect(ciclo?.profit_at_risk_cents).toBe(0)
+    },
+    30_000,
+  )
+})
