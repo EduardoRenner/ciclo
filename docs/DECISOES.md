@@ -11250,3 +11250,20 @@ existe — um mês grátis prometido e não entregue custa mais que a indicaçã
 desligado. Guarda reprovou corretamente: `src/app/admin/config/meu-plano/page.tsx promete prêmio
 que o produto não concede: expected true to be false`. Restaurado com `git checkout --`,
 confirmado (`temRecompensa` ausente do arquivo). `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 106: `material-incerto-mora-num-lugar-so`
+
+Guarda de dinheiro/confiabilidade (mesma classe do defeito histórico de `fee_cents`, coluna que
+três lugares liam e nada escrevia por meses): `materialIncerto` precisa nascer JUNTO do custo em
+`adicionarItemComanda` e ser GRAVADO no `ticket_items`, senão a coluna nasce sempre falsa e toda
+comanda anuncia material conferido mesmo quando o custo é inventado. A própria guarda documenta que
+nasceu depois de uma mutação `material_incerto: materialIncerto` → `material_incerto: false` passar
+verde sem ela. Mutação: `server/services/comanda.ts`, reaplicada exatamente essa troca no INSERT de
+`ticket_items`. Guarda reprovou corretamente: `o item é lançado sem gravar a ressalva calculada.
+Com \`false\` fixo (ou sem a coluna) toda comanda passa a anunciar material conferido, que é o
+defeito de \`fee_cents\` de volta.: expected false to be true`. Restaurado com `git checkout --`,
+confirmado (`material_incerto: materialIncerto` de volta na linha 202). `tests/unit` inteiro
+(283/2461) verde depois.
