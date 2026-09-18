@@ -12377,3 +12377,21 @@ Motor voltou a ser aba de canto" (`expected [ Array(5) ] to not include '/admin/
 `hrefDaAbaAtiva('/admin/recuperar')` deixou de ser `null` porque a nova aba passou a casar por
 igualdade. Restaurado com `git checkout --`, confirmado (`ABAS` de volta com 4 entradas).
 `tests/unit` inteiro (284/2465) verde depois.
+
+
+---
+
+## 2026-09-18 · Loop assert-vazio — item 139: `acoes-nao-viram-url-arbitraria`
+
+Guarda de segurança CRÍTICA (docs/26 §4.3, docs/33 §2.1): a proposta de ação do assistente nasce de
+um objeto que passou pelo MODELO, que lê nome de cliente — campo que o cliente final preenche num
+agendamento público. Se a URL de destino aceitasse esse id sem validar, o destino da requisição
+seria influenciável por texto de terceiro — travessia de caminho, redirect embutido. Por isso o
+formato da URL é fixo no código, e só o id — validado como UUID — entra na string.
+
+Mutação: `core/assistente/acoes.ts`, `concluir_atendimento`, removida a checagem `&& UUID.test(id)`
+(mantido só `typeof id === 'string'`) — reproduzindo exatamente a vulnerabilidade que o comentário
+da linha descreve. Guarda reprovou corretamente no primeiro payload perigoso da lista: `passou:
+../../../admin/config: expected '/api/v1/appointments/../../../admin/c…' to be null` — o path
+traversal atravessou direto para a URL. Restaurado com `git checkout --`, confirmado (`&&
+UUID.test(id)` de volta na linha 20). `tests/unit` inteiro (284/2465) verde depois.
