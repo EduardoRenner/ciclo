@@ -12324,3 +12324,22 @@ de cliente eliminada ainda geraria convite. Guarda reprovou corretamente: `expec
 indicação estruturalmente quebrado, não só uma decisão errada. Restaurado com `git checkout --`,
 confirmado (`!!agendamento!.client_id` de volta na linha 99). `tests/unit` inteiro (284/2465) verde
 depois.
+
+
+---
+
+## 2026-09-18 · Loop assert-vazio — item 136: `indicacao-token`
+
+Guarda de segurança (I-1, `docs/30-INDICACAO-PLANO.md` §4.1): token de indicação usa o mesmo HMAC
+de `token-assinado.ts` (já mutation-testado no item 130, pela checagem genérica de `escopo`), mas
+esta guarda protege algo mais específico — que a constante `ESCOPO` de `indicacao.ts` seja
+DIFERENTE da de `avaliacoes.ts`. Sem isso, qualquer link de avaliação em circulação (que a cliente
+já tem em mãos, por já o ter usado) também validaria como convite de indicação, atribuindo o
+`appointmentId` a `referred_by` em vez de um `client_id`.
+
+Mutação: `server/services/indicacao.ts`, trocado `const ESCOPO = 'indicacao'` por `const ESCOPO =
+'avaliacao_atendimento'` (igual ao de `avaliacoes.ts`) — reproduzindo exatamente a colisão que o
+comentário do teste descreve. Guarda reprovou corretamente: `expected
+'9c86fd5d-f934-44b4-8e9d-5cd586cc348e' to be null` — um token de avaliação validou como token de
+indicação. Restaurado com `git checkout --`, confirmado (`const ESCOPO = 'indicacao'` de volta na
+linha 12). `tests/unit` inteiro (284/2465) verde depois.
