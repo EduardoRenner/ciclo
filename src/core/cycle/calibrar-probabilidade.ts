@@ -100,3 +100,20 @@ export function calibrarProbabilidadeDeResolvidas(
 
   return calibrarProbabilidadePorEstado(desfechos, tabelaPadrao)
 }
+
+/**
+ * `docs/73` T4 — a tela "Recuperar receita" precisa saber SE a calibração está ativa, sem
+ * precisar entender a tabela inteira. `true` quando pelo menos um estado (fora `on_track`, que
+ * nunca calibra) já tem amostra suficiente e divergiu do padrão global.
+ *
+ * Devolve um booleano, não uma frase pronta: o rótulo em português de cada estado mora na camada
+ * de UI (`RUBRICA_ESTADO`, `recuperar.tsx`), e `core/` não pode conhecer esse vocabulário (regra 5
+ * do `CLAUDE.md`). Quem decide COMO dizer isso é quem já tem os rótulos — esta função só decide
+ * SE há algo para dizer.
+ */
+export function algumEstadoFoiCalibrado(
+  calibrada: Record<EstadoCiclo, number>,
+  tabelaPadrao: Record<EstadoCiclo, number> = PROBABILIDADE_POR_ESTADO,
+): boolean {
+  return (Object.keys(tabelaPadrao) as EstadoCiclo[]).some((estado) => estado !== 'on_track' && calibrada[estado] !== tabelaPadrao[estado])
+}

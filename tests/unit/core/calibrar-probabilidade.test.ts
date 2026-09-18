@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
-import { calibrarProbabilidadeDeResolvidas, calibrarProbabilidadePorEstado, MINIMO_POR_ESTADO } from '@/core/cycle/calibrar-probabilidade'
+import {
+  algumEstadoFoiCalibrado,
+  calibrarProbabilidadeDeResolvidas,
+  calibrarProbabilidadePorEstado,
+  MINIMO_POR_ESTADO,
+} from '@/core/cycle/calibrar-probabilidade'
 import { JANELA_DE_ESPERA_DIAS, type PrevisaoAuditada } from '@/core/cycle/prestacao-de-contas'
 import { PROBABILIDADE_POR_ESTADO } from '@/core/cycle/valor-em-risco'
 
@@ -137,5 +142,33 @@ describe('calibrarProbabilidadeDeResolvidas', () => {
     const padraoCustom = { on_track: 0, due: 0.5, late: 0.5, at_risk: 0.5, lost: 0.5 }
     const calibrado = calibrarProbabilidadeDeResolvidas([], HOJE, padraoCustom)
     expect(calibrado).toEqual(padraoCustom)
+  })
+})
+
+/**
+ * `docs/73` T4: a tela "Recuperar receita" só sabe SE tem algo novo para dizer — o rótulo em
+ * português de cada estado é vocabulário de UI, e `core/` não pode conhecê-lo (regra 5).
+ */
+describe('algumEstadoFoiCalibrado', () => {
+  it('tabela idêntica ao padrão: nada foi calibrado', () => {
+    expect(algumEstadoFoiCalibrado(PROBABILIDADE_POR_ESTADO)).toBe(false)
+  })
+
+  it('um estado diferente do padrão: já calibrou', () => {
+    const calibrada = { ...PROBABILIDADE_POR_ESTADO, late: 0.4 }
+    expect(algumEstadoFoiCalibrado(calibrada)).toBe(true)
+  })
+
+  it('on_track diferente do padrão não conta — nunca calibra por definição', () => {
+    // Não deveria acontecer na prática (algumEstadoFoiCalibrado nunca calibra on_track sozinha),
+    // mas se alguém passar uma tabela manualmente com on_track alterado, isso não é "calibração".
+    const calibrada = { ...PROBABILIDADE_POR_ESTADO, on_track: 0.1 }
+    expect(algumEstadoFoiCalibrado(calibrada)).toBe(false)
+  })
+
+  it('aceita tabela padrão custom para comparar contra', () => {
+    const padraoCustom = { on_track: 0, due: 0.5, late: 0.5, at_risk: 0.5, lost: 0.5 }
+    expect(algumEstadoFoiCalibrado(padraoCustom, padraoCustom)).toBe(false)
+    expect(algumEstadoFoiCalibrado({ ...padraoCustom, lost: 0.2 }, padraoCustom)).toBe(true)
   })
 })
