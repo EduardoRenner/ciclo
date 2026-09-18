@@ -186,15 +186,15 @@ separada deste documento, se o Eduardo quiser priorizá-la.
 
 ## 3 · Tickets, em ordem de construção
 
-| # | Ticket | Depende de | Critério de aceite |
-|---|---|---|---|
-| T1 | Medir: agrupar previsões resolvidas por estado-no-momento-do-atraso e comparar com `PROBABILIDADE_POR_ESTADO` atual, por tenant e global | nada | Número real ao lado do palpite, para pelo menos os tenants de demonstração com histórico suficiente |
-| T2 | Calcular probabilidade por estado a partir de `cycle_predictions` resolvidas, com piso de amostra e fallback para a tabela global | T1 | Tenant com amostra insuficiente continua usando a tabela fixa; tenant com amostra suficiente usa a medida; guarda mutation-tested nos dois casos |
-| T3 | Trocar `valorEmRiscoCents`/`lucroEmRiscoCents` para consultar a probabilidade calibrada em vez da constante | T2 | `tests/unit/core/valor-em-risco.test.ts` (criar, se não existir) cobre o caminho calibrado e o caminho de fallback |
-| T4 | Expor a procedência da probabilidade na tela "Recuperar receita" (mesmo padrão de `regua-do-servico.ts`: o número calibrado, e de onde veio) | T3 | Frase visível, nunca "acurácia X%" como manchete — segue o veto do `docs/46` Fase 3 |
-| T5 | Amostra de histórico na ficha do cliente (F2): frase de confiança ao lado da data prevista | T2 (reaproveita leitura) | `ritmo-do-cliente.ts` ganha o dado sem quebrar os testes existentes |
-| T6 | Medição de oscilação de régua mês a mês, por tenant real (F3) | nada, mas depois de T1-T5 por prioridade | Relatório objetivo: oscilou ou não, com números — decide se T7 existe |
-| T7 | Amortecimento entre calibrações (condicional ao resultado de T6) | T6 confirmando o problema | A definir no momento, se T6 confirmar |
+| # | Ticket | Depende de | Critério de aceite | Status |
+|---|---|---|---|---|
+| T1 | Medir: agrupar previsões resolvidas por estado-no-momento-do-atraso e comparar com `PROBABILIDADE_POR_ESTADO` atual, por tenant e global | nada | Número real ao lado do palpite, para pelo menos os tenants de demonstração com histórico suficiente | ✅ 2026-09-18 |
+| T2 | Calcular probabilidade por estado a partir de `cycle_predictions` resolvidas, com piso de amostra e fallback para a tabela global | T1 | Tenant com amostra insuficiente continua usando a tabela fixa; tenant com amostra suficiente usa a medida; guarda mutation-tested nos dois casos | ✅ 2026-09-18 |
+| T3 | Trocar `valorEmRiscoCents`/`lucroEmRiscoCents` para consultar a probabilidade calibrada em vez da constante | T2 | `tests/unit/core/valor-em-risco.test.ts` (criar, se não existir) cobre o caminho calibrado e o caminho de fallback | ✅ 2026-09-18 — provado contra Postgres real em CI (`tests/integration/ciclo.test.ts`) |
+| T4 | Expor a procedência da probabilidade na tela "Recuperar receita" (mesmo padrão de `regua-do-servico.ts`: o número calibrado, e de onde veio) | T3 | Frase visível, nunca "acurácia X%" como manchete — segue o veto do `docs/46` Fase 3 | ⏸ pausado — ver §5 |
+| T5 | Amostra de histórico na ficha do cliente (F2): frase de confiança ao lado da data prevista | T2 (reaproveita leitura) | `ritmo-do-cliente.ts` ganha o dado sem quebrar os testes existentes | ⏸ pausado — ver §5 |
+| T6 | Medição de oscilação de régua mês a mês, por tenant real (F3) | nada, mas depois de T1-T5 por prioridade | Relatório objetivo: oscilou ou não, com números — decide se T7 existe | não iniciado |
+| T7 | Amortecimento entre calibrações (condicional ao resultado de T6) | T6 confirmando o problema | A definir no momento, se T6 confirmar | não iniciado |
 
 T4 em diante é onde uma mudança de UI aparece — cada um passa pela verificação de navegador
 quando o Docker/Supabase local estiver disponível (indisponibilidade crônica registrada
@@ -212,3 +212,30 @@ desta sessão já vem fazendo.
 - Não propõe comparação entre tenants nem benchmark de mercado — o `docs/46` já rejeitou esse eixo
   (candidato A) porque o fosso cresceria a favor de quem tem mais base, e o CICLO não tem.
 - Não propõe mexer no F0 (ligar WhatsApp automático) — decisão do Eduardo, fora deste documento.
+
+---
+
+## 5 · Checkpoint, 2026-09-18 — por que T4/T5 pausaram
+
+T1-T3 estão em `main`, provados contra Postgres real em CI (não só unitariamente): a probabilidade
+de retorno por estado passa a se calibrar por tenant, com o mesmo piso de amostra e a mesma
+filosofia de rollout autolimitado que a régua já usa desde o `docs/46`. Nenhum tenant existente
+muda de comportamento até acumular histórico — mas T3 é a primeira mudança desta rodada que altera
+um NÚMERO que a tela principal do produto mostra (mesmo que só meses depois do deploy).
+
+**Por que parei antes de T4/T5, em vez de seguir direto:**
+1. Todo trabalho desta sessão foi direto para `main` (sem branch de PR) — é o padrão que a sessão
+   inteira já vinha usando para achado-e-conserto de bug. T3 é qualitativamente diferente: não é
+   consertar algo quebrado, é mudar o CRITÉRIO de um número que o dono vê. Vale uma pausa para
+   revisão antes de empilhar T4 (UI) em cima.
+2. T4 e T5 são mudança de tela, e esta sessão não tem Docker/Supabase local disponível
+   (indisponibilidade crônica já registrada) — verificação visual de verdade não é possível agora.
+   Construir T4/T5 "às cegas" (só tipo + lint + teste comportamental) empilharia uma SEGUNDA
+   categoria de risco (UI não vista) em cima da primeira (número recém-calibrado).
+3. Não existe branch separado para abrir PR — commitar T1-T3 direto em `main`, como todo o resto
+   da sessão, significa que a revisão humana precisa acontecer OLHANDO o que já está em `main`
+   (este documento, `docs/DECISOES.md`, e o diff dos commits), não através de um PR formal.
+
+**O que fica para quando o Eduardo revisar (ou quando Docker local voltar):** T4 e T5, na mesma
+ordem e com o mesmo critério de aceite já escritos acima. T6 (medição de oscilação) pode rodar
+antes disso, quando houver acesso a dado de produção real — é medição, não mudança de comportamento.
