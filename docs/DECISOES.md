@@ -12711,3 +12711,23 @@ página cheia (filtro quebrado) parou de estourar e passou a devolver 100.000 li
 de lançar erro — `expect(buscarTudoPaginado(consultaBase)).rejects.toThrow()` falhou. Restaurado
 com `git checkout --`, confirmado (o `throw` de volta nas linhas 49-51). `tests/unit` inteiro
 (284/2465) verde depois.
+
+
+---
+
+## 2026-09-18 · Loop assert-vazio — item 158: `site` (mensageria/paused)
+
+Guarda de confiabilidade CRÍTICA, assimetria deliberada (mudou de lado em 2026-09-05):
+`lerMensageria` trata "ausente/vazio" e "presente e torto" de jeitos OPOSTOS. `messaging` ausente
+nunca pausou nada — `paused: false` é o padrão certo. Mas `paused` PRESENTE com valor não-booleano
+(alguém gravou algo torto) é diferente: o produto não sabe o que o dono pediu, e as duas saídas não
+custam igual — não enviar é reclamável e reversível; enviar sem querer fala com a cliente do salão
+e não tem desfazer. Medido antes do conserto: os três casos malformados devolviam `paused: false`
+— o freio falhava ABERTO, reativando a automação de mensagens sem o dono saber.
+
+Mutação: `server/services/site.ts`, `lerMensageria`, trocado `return { paused: true }` (com o
+`console.warn` de alarme) por `return MENSAGERIA_PADRAO` (`paused: false`) — revertendo exatamente
+para o comportamento pré-05/09 que o próprio docstring documenta como o defeito medido. Guarda
+reprovou corretamente: `expected false to be true` — um `paused: 'sim'` malformado voltou a liberar
+o envio em vez de pausar por segurança. Restaurado com `git checkout --`, confirmado (`return {
+paused: true }` com o `console.warn` de volta). `tests/unit` inteiro (284/2465) verde depois.
