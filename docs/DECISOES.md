@@ -12266,3 +12266,22 @@ AssertionError: expected 'undefined' to contain '11111111-1111-4111-8111-1111111
 ```
 Restaurado com `git checkout --`, confirmado (`cofre_trilha_falhou` de volta, `grep -c` → 1).
 `tests/unit` inteiro (284/2465) verde depois.
+
+
+---
+
+## 2026-09-18 · Loop assert-vazio — item 133: `extrato-de-comissao`
+
+Guarda de dinheiro (achado da auditoria de 2026-08-28): o extrato de comissão que o profissional
+confere para saber quanto recebe. Três defeitos históricos numa linha só — dia em UTC em vez do
+fuso do salão (comanda fechada à noite sumia do mês trabalhado), `<= 23:59:59` deixando uma fresta
+de menos de um segundo sem dono, e paginação ausente cortando o total em silêncio no teto de 1000
+linhas do PostgREST. O teste já era comportamental (banco encenado que captura os filtros reais da
+query), não varredura de texto — mutação feita para confirmar mesmo assim.
+
+Mutação: `server/services/comissao.ts`, trocado `.lt('tickets.closed_at', fim)` por
+`.lte('tickets.closed_at', fim)` — reproduzindo o defeito #2 (intervalo fechado em vez de
+semiaberto). Guarda reprovou corretamente, com 2 falhas: a que afirma "nenhum filtro usa `lte`"
+(`expected [ Array(1) ] to deeply equal []`) e a de paginação da segunda página, cuja faixa também
+se deslocou. Restaurado com `git checkout --`, confirmado (`.lt('tickets.closed_at', fim)` de volta
+na linha 82). `tests/unit` inteiro (284/2465) verde depois.
