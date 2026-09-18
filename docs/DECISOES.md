@@ -13065,3 +13065,32 @@ dois guardas sistêmicos que escaneiam essas duas telas por essa chamada).
 já documenta isso) — a verificação de UI segue o mesmo padrão já usado nesta sessão para outras
 telas sem Docker local: tipo, lint e a lógica pura por trás já provada. Verificação visual de
 verdade fica pendente até Docker/Supabase local estar disponível, ou revisão do Eduardo.
+
+
+---
+
+## 2026-09-18 · Achado — computeNoShowScore nunca foi medido contra falta de verdade
+
+Mesma varredura do Motor de Ciclo (docs/73), aplicada a um segundo mecanismo do produto:
+`core/risk/no-show-score.ts` (§5.4) decide `no_show_score` com pesos escolhidos à mão — nunca
+calibrados. O score gate duas decisões reais: `LIMIAR_SINAL_OBRIGATORIO` (exige sinal do cliente) e
+`LIMIAR_ALERTA_AGENDA` (alerta visual na agenda). O próprio docstring do arquivo já avisava o
+motivo de gravar `no_show_score`/`risk_features` em `appointments`: "para um dia treinar o modelo
+de verdade com dado real, não descartados" — esse dia nunca chegou.
+
+**Escopo deliberadamente contido, diferente do Motor de Ciclo.** Recalibrar os PESOS da fórmula
+seria treinar um modelo de verdade (regressão ou parecido) — o `docs/73` já registrou a régua
+"não propõe IA/ML em lugar do algoritmo determinístico", e vale igual aqui. O que foi construído é
+só a METADE barata e honesta: `core/risk/precisao-do-score.ts` prova SE o corte que já existe
+(`LIMIAR_ALERTA_AGENDA`) separa quem falta de quem não falta, medindo a taxa de falta real dos dois
+lados — sem mexer em peso nenhum da fórmula. Mesmo espírito de `prestacaoDeContas` (C5): a prova,
+não a promessa.
+
+**Mutation-tested:** piso de amostra (8, mesmo padrão de `MINIMO_PARA_AFIRMAR`) e a direção da
+comparação em `scoreSeparaQuemFalta` (`>` estrito, não `>=` — um empate não pode virar "o score
+funciona"). Os dois reprovaram corretamente quando mutados; restaurados, `tests/unit` inteiro
+(289/2510) verde.
+
+**Ainda sem chamador em `server/`** — ler `appointments` (score + status resolvido) e alimentar
+esta função é o próximo passo, se o Eduardo priorizar. Sem essa leitura, não há como saber hoje se
+o score realmente separa quem falta — só que a MEDIÇÃO, quando alguém rodar, será honesta.
