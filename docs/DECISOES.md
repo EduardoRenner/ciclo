@@ -12497,3 +12497,19 @@ aconteceu há dias, a função voltou a devolver os dois lembretes (`confirmatio
 de `[]` — exatamente o cenário "job parado reaparece mandando mensagem fora de hora". Restaurado
 com `git checkout --`, confirmado (guard-clause de volta na linha 66). `tests/unit` inteiro
 (284/2465) verde depois.
+
+
+---
+
+## 2026-09-18 · Loop assert-vazio — item 146: `ritmo-do-cliente`
+
+Guarda de UX/honestidade (docs/48 C4): `last_visit_on` sai do `starts_at` de um atendimento
+concluído, e é possível concluir um atendimento com data futura (adiantar o fechamento no fim do
+expediente). "Veio faz -2 dias" na ficha de quem paga não é aceitável — a linha precisa sumir, não
+mostrar contagem negativa.
+
+Mutação: `core/ciclo/ritmo-do-cliente.ts`, removido o guard-clause `if (desde >= 0)` que protege a
+montagem de `situacao`. Guarda reprovou corretamente: `expected 'veio faz -4 dias' to be null` — a
+data futura vazou como contagem negativa, exatamente o defeito que o comentário do arquivo cita.
+Restaurado com `git checkout --`, confirmado (`if (desde >= 0)` de volta na linha 74). `tests/unit`
+inteiro (284/2465) verde depois.
