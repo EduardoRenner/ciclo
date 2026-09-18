@@ -12604,3 +12604,22 @@ corretamente, com 3 falhas: a URL montada passou a apontar para `/public/media/`
 `/public/vitrine/`, capturado tanto pelo teste positivo quanto pelo teste "nunca aponta para o
 bucket privado". Restaurado com `git checkout --`, confirmado (`const BUCKET = 'vitrine'` de volta
 na linha 30). `tests/unit` inteiro (284/2465) verde depois.
+
+
+---
+
+## 2026-09-18 · Loop assert-vazio — item 152: `assistente-laco`
+
+Guarda de segurança CRÍTICA (docs/26 §6, ticket A8): `executarLaco` procura a ferramenta chamada
+pelo modelo SÓ dentro de `disponiveis` (a lista já filtrada por RBAC + módulo do plano), nunca num
+catálogo mais amplo — é a segunda camada de trava, "mesmo que o modelo alucine o nome de uma
+ferramenta real mas fora do alcance deste papel/plano, ela não está nesta lista". Sem isso, um nome
+alucinado ou fora de alcance poderia acabar executando QUALQUER outra ferramenta disponível, não a
+que foi pedida.
+
+Mutação: `server/services/assistente.ts`, linha 208, trocado `disponiveis.find((f) => f.nome ===
+resposta.nome)` por `... ?? disponiveis[0]` — um nome que não bate cai para a primeira ferramenta
+da lista em vez de ser recusado. Guarda reprovou corretamente: `executar` da ferramenta "permitida"
+foi chamado mesmo o modelo tendo pedido `ferramenta_que_nao_existe` — `expect(executar).not
+.toHaveBeenCalled()` falhou com 1 chamada registrada. Restaurado com `git checkout --`, confirmado
+(`.find(...)` sem fallback de volta na linha 208). `tests/unit` inteiro (284/2465) verde depois.
