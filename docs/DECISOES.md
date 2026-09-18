@@ -10638,3 +10638,20 @@ leitura de saúde passa a procurar outra chave. Guarda reprovou corretamente: `n
 chama checarHeartbeat para "recompute_segments" — o sinal é gravado e ninguém lê`. Restaurado com
 `git checkout --`, confirmado grep (`'recompute_segments'` de volta). `tests/unit` inteiro
 (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 73: `trilha-do-cofre-sobrevive-a-saida-do-profissional`
+
+Guarda de LGPD: a trilha do cofre resolvia o nome de quem acessou dado de saúde ao LER (join com
+`profiles`), perdendo o ator quando o profissional saía do salão — rotatividade de equipe é o caso
+normal, não exceção, então a trilha ficava anônima exatamente no cenário em que alguém iria
+consultá-la. `vault_access_log.actor_label` existe desde a `0001` e nunca era escrito. A ordem de
+leitura é a decisão: nome VIVO primeiro (`nomeDoAtor.get`, identidade é a mesma pessoa mesmo que
+tenha mudado de nome), instantâneo (`actor_label`) só quando o perfil sumiu, "Usuário removido"
+como último recurso. Mutação: `server/services/trilha-cofre.ts`, invertida a ordem —
+`l.actor_label ?? nomeDoAtor.get(l.actor_id) ?? 'Usuário removido'` — priorizando o instantâneo
+sobre o nome vivo. Guarda reprovou corretamente na asserção de ordem: `o instantâneo não é
+consultado: expected 31 to be greater than 46`. Restaurado com `git checkout --`, confirmado
+(ordem original — vivo primeiro — de volta). `tests/unit` inteiro (283/2461) verde depois.
