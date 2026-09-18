@@ -10674,3 +10674,21 @@ guarda existe para pegar: coluna pessoal nova sem tratamento declarado. Guarda r
 corretamente: `expected [ 'clients.nota_temporaria_teste' ] to deeply equal []`. Arquivo removido
 com `rm` (não `git checkout --`, por ser novo/untracked), confirmado `git status` limpo.
 `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 75: `indicacao-tem-escritor`
+
+Guarda de dinheiro/fidelidade (TICKET-063): o bônus de indicação pagava DUAS VEZES quando a mesma
+cliente concluía dois atendimentos antes do cron diário rodar — a condição original comparava
+`visits_count === 0`, mas esse contador só muda uma vez por dia (job `segments`, com 5-6h de
+atraso medido), então continuava `0` na segunda conclusão do mesmo dia. Corte e barba marcados
+separadamente bastam. O conserto troca o contador (que depende de cron) por uma pergunta ao
+LIVRO-RAZÃO (`deveCreditarIndicacao`, idempotente por construção: se o lançamento existe, o bônus
+já foi pago). Mutação: `server/services/fidelidade.ts`, substituída a chamada
+`deveCreditarIndicacao({ bonusPoints, referredBy, bonusJaCreditado: (count ?? 0) > 0 })` por uma
+condição inline reintroduzindo a lógica antiga por contador — mesma classe do defeito de
+TICKET-063. Guarda reprovou corretamente: `a decisão de creditar indicação sumiu` (o texto
+`deveCreditarIndicacao(` não aparece mais no arquivo). Restaurado com `git checkout --`,
+confirmado grep (chamada de volta). `tests/unit` inteiro (283/2461) verde depois.
