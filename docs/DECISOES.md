@@ -12767,3 +12767,25 @@ verdade — fora de escopo de uma sessão; (2) tirar os dois do `CATALOGO` até 
 decisão de produto sobre o que anunciar como "em breve" vs esconder; (3) marcar como "em breve" na
 própria tela de módulos, sem interruptor funcional — mudança de UI que precisa de critério do
 Eduardo sobre o que comunicar a quem já paga pelo Avançado. Registrado para decisão, não ação.
+
+
+---
+
+## 2026-09-18 · Mutação verificada — comissao-do-profissional-tem-trava-no-servidor
+
+Guarda nova (item acima, o conserto do backlog explícito de `PATCH /api/v1/professionals/[id]`)
+mutada nos DOIS lados, como o backlog pedia.
+
+**Lado 1 — trava ausente:** removido o `if (...) { await exigirModulo(...) }` inteiro. Guarda
+reprovou corretamente nas 2 asserções que dependem da chamada existir: `expected false to be true`
+(chamada ausente) e `expected -1 to be greater than -1` (nem achou a chamada para isolar o if).
+
+**Lado 2 — trava incondicional (o defeito espelhado):** trocado o `if` condicional por `await
+exigirModulo(db, ctx.tenantId, 'team')` solto, sem condição. Guarda reprovou corretamente na
+asserção que confere o `if`: `não achei um if antes da chamada — a trava parece incondicional`. Uma
+trava incondicional aqui travaria renomear o próprio profissional (nome, cor, avatar) sem o módulo
+`team` — pior que o buraco original, porque nome não é feature paga.
+
+Restaurado com `git checkout --` nos dois casos, confirmado (`if (entrada.compModel !== undefined
+|| entrada.commissionBps !== undefined) { await exigirModulo(...) }` de volta). `tests/unit`
+inteiro (285/2468) verde depois.
