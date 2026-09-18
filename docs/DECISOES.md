@@ -10908,3 +10908,21 @@ inflada por lixo (`"2 job(s) parado(s)"` em vez de 1), a distinção da função
 e por consequência o cenário de convivência lixo+trabalho real. Restaurado com `git checkout --`,
 confirmado (`lastError.startsWith(ERRO_SEM_HANDLER)` de volta). `tests/unit` inteiro (283/2461)
 verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 88: `paginacao-mora-num-lugar-so`
+
+Guarda de dinheiro/paginação: o PostgREST corta em `max_rows = 1000` e NÃO erra — devolve as
+primeiras mil e cala. `buscarTudoPaginado` (o único lugar autorizado a chamar `.range(`) existe
+porque um tenant com 10 mil atendimentos perdia 90% deles em silêncio. Mesmo com o helper
+existindo, em 05/09 ainda havia duas cópias do laço escritas à mão (`caixa.ts`, `comissao.ts`),
+ambas somando DINHEIRO, com a paginação certa mas sem TETO (`for (;;)` preso para sempre numa
+consulta que sempre devolve página cheia). A guarda é sobre o LUGAR — cópia nova nasce sem teto
+justamente porque quem copia copia a parte que entende. Mutação: acrescentada uma função nova no
+fim de `server/services/caixa.ts` (`_mutacaoTestePaginacao`) chamando `.range(0, 999)` direto,
+fora de `paginar.ts` — nunca invocada, só para o extrator estático enxergar (mesma técnica dos
+itens 22/32/88). Guarda reprovou corretamente, apontando o arquivo exato: `expected [
+'src\server\services\caixa.ts' ] to deeply equal []`. Restaurado com `git checkout --`, confirmado
+(função sumiu). `tests/unit` inteiro (283/2461) verde depois.
