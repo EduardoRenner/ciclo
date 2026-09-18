@@ -11626,3 +11626,19 @@ reprovou corretamente: `o evento de descarte voltou a levar só o id (ou um muta
 fica sem o que mostrar: expected false to be true`. Restaurado com `git checkout --`, confirmado
 (`const mutacao = fila.find(...)` de volta antes do `removerMutacao`, linhas 70-72). `tests/unit`
 inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-18 · Loop de guardas-cegas — item 127: `sair-da-conta` (contagem depois da drenagem)
+
+Guarda do achado de 2026-08-25 (S9 continuado): antes do conserto, uma recepcionista que marcasse
+doze atendimentos sem rede e saísse perdia os doze sem uma palavra. A contagem que decide o aviso
+precisa reler a fila DEPOIS de tentar drenar — é exatamente o que não subiu, seja porque estava
+offline, seja porque o envio falhou no meio. Contar antes mede o que ia subir, não o que ficou.
+Mutação: `admin/config/sair.tsx`, `sair()`, movida a leitura `listarMutacoes().then(...)` (que
+monta `leitura` e decide `oQueAvisar`) de DEPOIS de `drenarFilaPendente()` para ANTES —
+reproduzindo exatamente "contar antes, não depois". Guarda reprovou corretamente: `a fila precisa
+ser relida DEPOIS da drenagem — contar antes mede o que ia subir, não o que ficou: expected -1 to
+be greater than 2539`. Restaurado com `git checkout --`, confirmado (leitura de volta depois da
+drenagem, linha 68). `tests/unit` inteiro (283/2461) verde depois.
