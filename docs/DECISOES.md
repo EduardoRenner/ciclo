@@ -11141,3 +11141,21 @@ comentário do próprio código descreve como proibido. Guarda reprovou corretam
 serviço de outro salão: expected 'from(\'services\')...' to contain "eq('tenant_id', tenant.id)"`.
 Restaurado com `git checkout --`, confirmado (`.eq('tenant_id', tenant.id)` de volta na linha 70).
 `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 100: `sharp-so-onde-precisa`
+
+Guarda de latência (`docs/28` §7): o `sharp` carrega 19,2 MB de libvips nativo, e enquanto
+`fazerUploadMedia` morava junto das consultas em `media.ts`, qualquer import daquele arquivo
+arrastava o binário — `/admin/hoje` chegava a 23,4 MB contra mediana de 1,8 MB por rota, 1.870 ms
+de cold start. A guarda não procura a string `sharp` num arquivo (passaria cega com o defeito de
+volta); ela anda o grafo de imports de verdade a partir de cada entrada. Mutação:
+`server/services/crm.ts`, trocado o import de `listarMediaDoCliente` de `@/server/services/media`
+(só consultas) para `@/server/services/media-upload` (que importa `sharp` diretamente na linha 3)
+— reproduzindo exatamente o elo que causava o bundle de 23,4 MB. Guarda reprovou corretamente em
+6 dos 7 casos de `it.each(SEM_SHARP)`, cada um apontando o caminho exato: `chegou no sharp via
+/server/services/crm.ts` (e daí `/admin/hoje/page.tsx`, `/admin/clientes/page.tsx`, etc, todas as
+entradas que passam por `crm.ts`). Restaurado com `git checkout --`, confirmado (import de volta
+para `@/server/services/media`, sem `media-upload`). `tests/unit` inteiro (283/2461) verde depois.
