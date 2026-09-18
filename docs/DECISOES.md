@@ -11088,3 +11088,22 @@ sugere 12, 14, 15 UTC, e campaigns exige hora local 10; esses fusos ficariam sem
 no dia em que alguém descomentar: expected [ 'America/Sao_Paulo' ] to deeply equal []`. Restaurado
 com `git checkout --`, confirmado (linha UTC-3 de volta). `tests/unit` inteiro (283/2461) verde
 depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 97: `http` (CSRF · verificação de Origin)
+
+Guarda de segurança, comportamental (não varredura de texto — exercita `rota()` de verdade): a
+V2/V3 documentadas no docstring de `origemValida` em `handler.ts` — Origin presente e diferente do
+`Host` **desta própria requisição** é recusado, mas a primeira versão comparava contra
+`NEXT_PUBLIC_APP_URL` fixo e quebrou o booking público na hora (preview local em porta diferente,
+preview da Vercel com subdomínio dinâmico, custom domain). Mutação: `server/http/handler.ts`,
+`origemValida`, trocado `const host = req.headers.get('x-forwarded-host') ?? req.headers.get('host')`
+por um literal fixo `const host = 'app.ciclo.test'` — reproduzindo exatamente o defeito da V2 que a
+V3 corrigiu. Guarda reprovou corretamente em dois pontos: o teste que prova "funciona em qualquer
+domínio que o Next esteja servindo de verdade" (preview `localhost:4321`) — `expected 200 to be
+403` — e o teste "sem header Host, a checagem não trava a escrita" — `expected 403 to be 200`
+(com host fixo, `!host` nunca é verdadeiro, então o fallback de segurança some). Restaurado com
+`git checkout --`, confirmado (`req.headers.get('x-forwarded-host') ?? req.headers.get('host')` de
+volta na linha 48). `tests/unit` inteiro (283/2461) verde depois.
