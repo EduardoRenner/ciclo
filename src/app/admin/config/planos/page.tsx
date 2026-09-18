@@ -53,6 +53,13 @@ export default async function PaginaPlanos() {
    * acontecendo é o que gera a pressão de upgrade. O que o Equipe vende é o automático.
    */
   const bloqueado = podeUsarModulo(plano, 'loyalty').estado !== 'liberado'
+  /*
+   * `POST /api/v1/subscription-plans` e `POST /api/v1/clients/[id]/subscription` exigem o módulo
+   * `club` (Avançado). Sem esta trava, qualquer tenant criava e vendia "Planos mensais" de graça —
+   * a mesma classe de buraco que a auditoria de 26/08 achou em Comanda, Equipe, Fidelidade e
+   * Recorrência (`docs/23` §7), só que nesta aqui ninguém tinha olhado ainda.
+   */
+  const bloqueadoClube = podeUsarModulo(plano, 'club').estado !== 'liberado'
 
   return (
     <>
@@ -73,7 +80,16 @@ export default async function PaginaPlanos() {
       <EditorFidelidade inicial={lerConfigFidelidade(negocio.data?.settings)} bloqueado={bloqueado} />
       <div className="mt-7">
         <p className="mb-3 text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">Planos mensais</p>
-        <EditorPlanos iniciais={planos} />
+        {bloqueadoClube ? (
+          <BloqueioPlano
+            nativo={nativo}
+            className="mb-4"
+            precisaDo="avancado"
+            acao="vender assinatura mensal de atendimento, com cobrança recorrente do cliente"
+            alternativa={<Link href="/admin/clientes">Continuar cobrando por atendimento avulso</Link>}
+          />
+        ) : null}
+        <EditorPlanos iniciais={planos} bloqueado={bloqueadoClube} />
         {receitaContratadaCents !== null ? <ReceitaContratada cents={receitaContratadaCents} /> : null}
       </div>
 

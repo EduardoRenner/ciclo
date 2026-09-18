@@ -128,6 +128,7 @@ export default function Ficha({
   servicos,
   linkIndicacao,
   mostrarPaywallFidelidade,
+  bloqueadoClube,
   podeOrcamento,
   nativo,
 }: {
@@ -151,6 +152,8 @@ export default function Ficha({
   linkIndicacao: string | null
   /** I-9, `docs/30-INDICACAO-PLANO.md` §5.3 gatilho 2: o degrau atual não tem `loyalty`. */
   mostrarPaywallFidelidade: boolean
+  /** `club` fora do degrau. Trava o botão "Assinar plano" — mesma checagem que a rota já faz. */
+  bloqueadoClube: boolean
   /** `quotes` liberado neste degrau. Ver o comentário em `page.tsx`. */
   podeOrcamento: boolean
   /** T1.5 (docs/64 §0.2): `ehRequisicaoDoAppNativo`, calculado no servidor em `page.tsx`. */
@@ -580,6 +583,7 @@ export default function Ficha({
             planos={planos}
             config={configFidelidade}
             timezone={timezone}
+            bloqueadoClube={bloqueadoClube}
           />
           <PacotesCarteira
             clientId={cliente.id}

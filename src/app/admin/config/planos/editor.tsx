@@ -15,7 +15,14 @@ import { dinheiro } from '@/lib/formato'
 
 type Plano = { id: string; name: string; price_cents: number; sessions_per_month: number | null; benefits: string | null; active: boolean }
 
-export default function EditorPlanos({ iniciais }: { iniciais: Plano[] }) {
+export default function EditorPlanos({
+  iniciais,
+  bloqueado = false,
+}: {
+  iniciais: Plano[]
+  /** `club` fora do degrau. A oferta completa está na página; aqui trava o Criar. */
+  bloqueado?: boolean
+}) {
   const mostrarToast = useToast()
   const [planos, setPlanos] = useState(iniciais)
   const [criando, setCriando] = useState(false)
@@ -142,7 +149,13 @@ export default function EditorPlanos({ iniciais }: { iniciais: Plano[] }) {
             </p>
           ) : null}
 
-          <Button largura="cheia" carregando={pendente} onClick={salvar}>
+          <Button
+            largura="cheia"
+            carregando={pendente}
+            disabled={bloqueado}
+            motivoDesabilitado="Assinatura e clube fazem parte do plano Avançado."
+            onClick={salvar}
+          >
             Criar plano
           </Button>
         </div>

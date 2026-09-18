@@ -23,6 +23,13 @@ type Props = {
   config: ConfigFidelidade
   /** Fuso do salao: a data de inicio precisa bater com a que o servidor grava. */
   timezone: string
+  /**
+   * `club` fora do degrau. `planos` só existe aqui se o tenant já criou algum enquanto tinha o
+   * módulo — cair de plano não apaga o que já existe (regra 5.1) — então sem esta trava um
+   * tenant que desceu de degrau veria "Assinar plano" funcionando até o clique, onde
+   * `POST /api/v1/clients/[id]/subscription` recusaria com `PLAN_LIMIT`.
+   */
+  bloqueadoClube: boolean
 }
 
 /**
@@ -30,7 +37,7 @@ type Props = {
  * dedicada a isso). Os dois vivem juntos aqui porque resolvem a mesma pergunta do dono: "como eu
  * faço esse cliente voltar todo mês".
  */
-export default function Fidelidade({ clientId, pontosIniciais, assinaturaInicial, planos, config, timezone }: Props) {
+export default function Fidelidade({ clientId, pontosIniciais, assinaturaInicial, planos, config, timezone, bloqueadoClube }: Props) {
   const mostrarToast = useToast()
   const [pendente, iniciarTransicao] = useTransition()
 
@@ -254,7 +261,12 @@ export default function Fidelidade({ clientId, pontosIniciais, assinaturaInicial
                   <Repeat className="size-5 shrink-0 text-txt-3" />
                   <p className="text-corpo">Sem assinatura</p>
                 </div>
-                <Button variante="secondary" onClick={() => setAssinando(true)}>
+                <Button
+                  variante="secondary"
+                  onClick={() => setAssinando(true)}
+                  disabled={bloqueadoClube}
+                  motivoDesabilitado="Assinatura e clube fazem parte do plano Avançado."
+                >
                   Assinar plano
                 </Button>
               </div>

@@ -6,6 +6,7 @@ import { lerCorpo } from '@/server/http/body'
 import { rota } from '@/server/http/handler'
 import { comIdempotencia } from '@/server/http/idempotency'
 import { criarPlano, EsquemaPlano, listarPlanos } from '@/server/services/fidelidade'
+import { exigirModulo } from '@/server/services/planos'
 
 export const GET = rota(async (req) => {
   const ctx = await contextoAtual(req)
@@ -22,6 +23,11 @@ export const POST = rota(async (req, _params, requestId) => {
 
   const entrada = await lerCorpo(req, EsquemaPlano)
   const db = await criarClienteDoUsuario()
+
+  // §D.2: "Assinatura e clube" é módulo do plano Avançado. Sem esta trava, qualquer tenant grátis
+  // criava plano mensal de assinatura de cliente à vontade — a mesma classe de buraco que a
+  // auditoria de 26/08 achou em Comanda, Equipe, Fidelidade e Recorrência (`docs/23` §7).
+  await exigirModulo(db, ctx.tenantId, 'club')
 
   const plano = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: '/api/v1/subscription-plans' }, () =>
     criarPlano(db, ctx.tenantId, entrada),

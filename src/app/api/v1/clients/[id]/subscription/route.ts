@@ -7,6 +7,7 @@ import { AppError } from '@/server/http/errors'
 import { rota } from '@/server/http/handler'
 import { comIdempotencia } from '@/server/http/idempotency'
 import { assinar, assinaturaAtiva, cancelarAssinatura, EsquemaAssinatura } from '@/server/services/fidelidade'
+import { exigirModulo } from '@/server/services/planos'
 
 type Ctx = { params: Promise<{ id: string }> }
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -24,6 +25,10 @@ export const POST = rota(async (req, params, requestId) => {
   const id = await idValidado(params)
   const entrada = await lerCorpo(req, EsquemaAssinatura)
   const db = await criarClienteDoUsuario()
+
+  // §D.2, regra 5.1: cair de plano trava CRIAR, nunca esconde o que já existe — por isso a
+  // trava fica só aqui (assinar), nunca no DELETE (cancelar) logo abaixo.
+  await exigirModulo(db, ctx.tenantId, 'club')
 
   const assinatura = await comIdempotencia(
     req,

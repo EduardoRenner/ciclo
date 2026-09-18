@@ -11825,3 +11825,67 @@ multipart do projeto, não uma exceção isolada.
 via `lerCorpo`/`lerJson`, ou valida manualmente o único tipo que Zod não cobre bem (`File`
 multipart), de forma consistente nas três rotas que fazem isso. Regra 7 do `CLAUDE.md` ("Zod na
 borda. Toda entrada validada antes de tocar no banco") íntegra em toda a superfície de `/api/v1`.
+
+
+---
+
+## 2026-09-18 · CORRIGIDO — "Assinatura e clube" sem trava de plano nenhuma, em nenhuma camada
+
+**Contexto:** investigando o item do `docs/68` §6 "Mapear módulo↔tela sistematicamente (coerência
+`exigirModulo`)", nunca antes iniciado por escopo maior. Delegado a uma varredura sistemática de
+todos os 17 módulos de `CATALOGO` contra as telas/rotas que implementam cada um.
+
+**Achado, verificado linha a linha antes de confiar:** o módulo `club` ("Assinatura e clube",
+liberado só no plano Avançado, R$179/mês — o diferencial do degrau mais caro) não tinha trava
+NENHUMA, em NENHUMA camada:
+
+1. `POST /api/v1/subscription-plans` (criar plano mensal) — só `exigirPermissao(ctx.papel,
+   'service:update')`, sem `exigirModulo`.
+2. `POST /api/v1/clients/[id]/subscription` (assinar um cliente num plano) — só `exigirPermissao
+   (ctx.papel, 'client:update')`, sem `exigirModulo`.
+3. `admin/config/planos/page.tsx` — `bloqueado` computado só para `'loyalty'`, aplicado só a
+   `EditorFidelidade`. `EditorPlanos` (o editor de "Planos mensais", CRUD do clube) renderiza sem
+   NENHUM prop de bloqueio.
+4. `admin/clientes/[id]/fidelidade.tsx` — botão "Assinar plano" sem checagem nenhuma.
+
+Qualquer tenant em QUALQUER plano (inclusive Grátis) criava planos de assinatura mensal e assinava
+clientes neles, de graça, tanto pelo painel quanto por chamada direta à API — a funcionalidade que
+justifica o preço do degrau mais caro do produto estava disponível de graça para todo mundo.
+
+**Por que a guarda existente (`precos-tem-trava-no-servidor.test.ts`) não pegou isto:** ela lê
+`CARTOES` (`src/lib/planos-cartoes.ts`, os cartões de `/precos`) para decidir quais módulos são
+"vendidos como pagos" — e `club` nunca foi listado nos cartões. A funcionalidade existe de verdade
+em `CATALOGO`/`PLANOS` (só o Avançado libera), mas nunca foi ANUNCIADA na página de preço. A guarda
+está certa no que faz (proteger a promessa da página de preço); o buraco estava um nível abaixo,
+onde a página de preço nunca chegou a prometer nada.
+
+**Corrigido, nas quatro camadas:**
+1. `src/app/api/v1/subscription-plans/route.ts` — `exigirModulo(db, ctx.tenantId, 'club')` antes
+   de `criarPlano`.
+2. `src/app/api/v1/clients/[id]/subscription/route.ts` — mesma trava no `POST` (assinar); o
+   `DELETE` (cancelar) continua livre de propósito, regra 5.1 (cair de plano nunca esconde o que
+   já existe, só trava CRIAR mais).
+3. `src/app/admin/config/planos/page.tsx` — `bloqueadoClube = podeUsarModulo(plano, 'club').estado
+   !== 'liberado'`, novo `BloqueioPlano` (`precisaDo="avancado"`) ao lado de "Planos mensais",
+   `EditorPlanos` recebe `bloqueado`.
+4. `src/app/admin/config/planos/editor.tsx` — botão "Criar plano" desabilitado quando `bloqueado`.
+5. `src/app/admin/clientes/[id]/page.tsx` → `ficha.tsx` → `fidelidade.tsx` — mesma trava propagada
+   até o botão "Assinar plano" (cobre o tenant que caiu de degrau e ainda tem `planos` antigos).
+
+**Guarda nova, mutada de verdade:** `tests/unit/design/assinatura-de-clube-tem-trava-no-servidor.
+test.ts` — lê `CATALOGO`/`PLANOS` diretamente (não a página de preço), então não depende da
+marketing estar em dia com o que o produto vende. Confere as duas rotas E que o `DELETE` continua
+sem trava. Mutação: reverti as duas chamadas `exigirModulo(..., 'club')` para o estado original
+(sem a trava) — guarda reprovou nos dois pontos certos; restaurado, guarda verde de novo (detalhe
+completo do ciclo de mutação na entrada seguinte, junto do restante do procedimento padrão).
+
+**Verificação disponível nesta sessão:** `tsc --noEmit` limpo, `eslint` limpo nos 7 arquivos
+tocados, `tests/unit` inteiro (284/2465) verde. **Sem Docker/Supabase local**: não foi possível
+rodar `test:integration`/`test:rls` para confirmar contra banco de verdade — nenhum teste de
+integração existente toca estas duas rotas pela camada HTTP (`crm.test.ts` chama `criarPlano`/
+`assinar` como funções de serviço direto, sem passar pelo `exigirModulo` que vive no `route.ts`,
+então não haveria colisão), e escrever infraestrutura NOVA de teste de integração autenticado
+(sessão via cookie) não tinha precedente nenhum no projeto — risco de escrever um teste tão às
+cegas quanto o buraco que motivou esta entrada. A prova de que a trava funciona fica com a CI
+("Qualidade" cobre `tsc`/`eslint`/`tests/unit`; não há job que exercite estas rotas contra banco).
+Registrado como limite real de verificação desta sessão, não como afirmação de cobertura completa.
