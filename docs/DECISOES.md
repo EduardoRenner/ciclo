@@ -12850,3 +12850,31 @@ em `audit_log` para caminhos sem `Request` de pessoa autenticada; aqui HÁ `Requ
 IP/user-agent), então o caminho mais natural seria `writeAudit` com `actorId: null, actorRole:
 null` nas cinco rotas, ação nomeada por caso (`quote.approve_public`, `appointment.confirm_public`,
 etc).
+
+
+---
+
+## 2026-09-18 · Mutação verificada — consulta-filtra-tenant (a própria guarda estava cega)
+
+Guarda de segurança CRÍTICA `consulta-filtra-tenant.test.ts` (auditoria de 31/08/2026) tinha um
+defeito autorregistrado por uma sessão anterior como comentário em `whatsapp-inbound.ts`, nunca
+corrigido: o detector checava `trecho.includes('tenant_id')` — substring solta na cadeia inteira —
+e `.select('tenant_id, appointment_id, ...')` contém a palavra sem filtrar por ela. A consulta
+cross-tenant de `processarMensagemRecebida` (CONFIRMAR/CANCELAR por WhatsApp) ficava invisível à
+guarda que existe justamente para catalogar esse tipo de consulta.
+
+**Corrigido:** extraída a checagem para uma função nomeada `temFiltroDeTenant(trecho)`, que exige a
+CHAMADA (`.eq('tenant_id', ...)`) ou a CHAVE de objeto (`tenant_id: valor`, usada em insert/update),
+nunca a palavra solta. A correção revelou 5 consultas antes invisíveis — todas auditadas e
+legítimas (mesmas duas classes já registradas: id vindo de token HMAC próprio já verificado, ou
+insert/upsert de array montado em variável) — agora em `JUSTIFICADAS`.
+
+**Mutação:** revertido `temFiltroDeTenant` para o `trecho.includes('tenant_id')` antigo. Guarda
+reprovou corretamente em DOIS testes: o novo teste direto (`não confunde SELECIONAR... `: `expected
+true to be false`) e, mais interessante, o teste de "entrada obsoleta" (`entrada de JUSTIFICADAS
+que não corresponde a nenhuma consulta real`) — porque a versão cega faz as 4 entradas recém-
+adicionadas (`avaliacoes.ts::appointments`, `ciclo.ts::client_cycles`, `orcamentos.ts::quotes`,
+`previsao.ts::cycle_predictions`) DESAPARECEREM de `ACHADOS` (a versão antiga as via como "já
+filtradas"), disparando a checagem de justificativa órfã — um segundo caminho de detecção pegando o
+mesmo defeito por um ângulo diferente. Restaurado com `git checkout --`, confirmado. `tests/unit`
+inteiro (287/2475) verde depois.
