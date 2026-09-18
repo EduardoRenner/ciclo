@@ -12151,3 +12151,34 @@ client da rota para trocar. Risco genuinamente menor — mesma classe do que já
 **`clients/import` continua sem correção** — o risco de troca de RLS→service_role ali é real (a
 rota grava PII de cliente em massa, com o `db` passado explicitamente por toda a função), e
 continua exigindo `test:rls` antes de confiar. Backlog inalterado para essa rota especificamente.
+
+
+---
+
+## 2026-09-18 · Verificado, correto — toque-48 nas páginas públicas estáticas, medido ao vivo
+
+**Contexto:** `docs/67` §4.3 pede ampliar a amostra de `toque-48` além das duas páginas já medidas
+em sessão anterior (`/termos`, `/privacidade`). Sem Docker/Supabase local, telas autenticadas
+continuam fora de alcance (confirmado: `/admin/hoje` redireciona para `/entrar` sem sessão), mas as
+páginas públicas SEM dado de tenant sobem normalmente com `pnpm dev` puro, e eu tinha subestimado
+isso mais cedo na sessão. Abri o servidor local e medi de verdade em vez de deixar a interface como
+"bloqueada por completo".
+
+**Medido, sondagem ponto a ponto (`elementFromPoint`, a receita do docstring de `alvo-de-toque-
+tem-48`), viewport 390×844:**
+
+- `/cadastro` (o local do bug ORIGINAL, já corrigido em sessão anterior): "Termos de uso" e
+  "Política de Privacidade" — 5 pontos por link (centro + 4 cantos), 10/10 tocáveis no próprio
+  link. Confirma de novo, com medição fresca, que o padrão `flex flex-wrap ... gap-x-2` resolveu.
+- `/termos`: rodapé "Política de Privacidade" · "Preços" — **não é `flex` com `gap`** (é
+  `text-center` com um `<span>` separador, o padrão que o `CLAUDE.md` cita como perigoso). Mesmo
+  assim, 10/10 pontos tocáveis nos dois links: a combinação de rótulos curtos + `mx-2` no separador
+  deixa espaço suficiente para o `::after` de 48px do primeiro não alcançar o segundo. Confirma a
+  conclusão do `docs/68` ("descartada por medição real"), com medição nova e independente.
+- `/privacidade`: mesmo padrão, mesma checagem, mesmo resultado — "Termos de uso" e "Preços" 100%
+  tocáveis.
+
+**Nenhum achado novo.** As páginas públicas testáveis sem sessão continuam corretas. O que segue
+fora de alcance — `admin/clientes/[id]/ficha.tsx` (4 usos), `resolucao-de-fila.tsx` (3),
+`onboarding/formulario.tsx`, `admin/config/profissionais/formulario.tsx`, `fotos.tsx` — exige
+sessão autenticada de verdade, que continua precisando de Docker/Supabase local nesta máquina.
