@@ -10569,3 +10569,21 @@ corretamente, mostrando o vazamento real: `expected { alergia: 'acetona, resina'
 '[redigido]'` — o texto verdadeiro de uma alergia apareceria sem redação em `audit_log`, legível
 por `owner`/`manager`/`finance`. Restaurado com `git checkout --`, confirmado (`'preferences'` de
 volta no `Set`). `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 69: `update-com-guarda-confere-linhas`
+
+Guarda de dinheiro/CRM, mesma mecânica de `consulta-filtra-tenant`: no supabase-js, um `.update()`
+que não casa linha nenhuma devolve `error: null` — sucesso falso. Perigoso quando o `where` carrega
+guarda além da identidade (`tenant_id`+`id`). O caso que originou a guarda (05/09/2026):
+`recuperar-receita.ts` gravava `last_campaign_at` depois do envio da campanha; zero linhas ali —
+corrida com `recompute_cycles`, que reescreve `client_cycles` seis vezes por dia — significa que a
+trava de 7 dias fica cega, e a mesma cliente recebe "sentimos sua falta" de novo no lote seguinte,
+sem erro, sem log. Mutação: `server/services/recuperar-receita.ts`, removido o `.select('client_id')`
+do `.update(...)` sobre `client_cycles` — a checagem de linhas afetadas que segue (`carimbadas
+?.length ?? 0`) perde sua fonte de verdade. Guarda reprovou corretamente, apontando arquivo e
+guardas exatos: `src/server/services/recuperar-receita.ts [guarda: client_id, service_id]`.
+Restaurado com `git checkout --`, confirmado (`.select('client_id')` de volta). `tests/unit`
+inteiro (283/2461) verde depois.
