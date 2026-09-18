@@ -12182,3 +12182,25 @@ tem-48`), viewport 390×844:**
 fora de alcance — `admin/clientes/[id]/ficha.tsx` (4 usos), `resolucao-de-fila.tsx` (3),
 `onboarding/formulario.tsx`, `admin/config/profissionais/formulario.tsx`, `fotos.tsx` — exige
 sessão autenticada de verdade, que continua precisando de Docker/Supabase local nesta máquina.
+
+
+---
+
+## 2026-09-18 · Nota de ambiente — Docker Desktop crasha cronicamente nesta máquina, não é falta de tentativa
+
+Toda sessão recente registrou "sem Docker/Supabase local" como limite de verificação
+(`test:rls`/`test:integration` fora de alcance). Hoje tentei ativamente destravar: Docker Desktop
+está instalado (versão 29.7.2), a distro WSL `docker-desktop` inicia manualmente (`wsl -d docker-
+desktop`), mas o daemon nunca chega a responder no pipe (`dockerDesktopLinuxEngine`) depois de ~10
+minutos de espera e múltiplas tentativas.
+
+Os logs (`AppData/Local/Docker/log/host/Docker Desktop.exe.log`) mostram o mesmo crash
+(`exit status 0x40010004`) se repetindo em 10/09, 14/09 (três vezes), 16/09 — ou seja, não é
+falha de hoje, é uma instabilidade crônica de pelo menos uma semana e meia. O lançamento de hoje
+(18/09 11:18) não terminou de subir nem crashou de forma logada no tempo que esperei.
+
+**Não é um achado de código, é um registro de ambiente**, para a próxima sessão não repetir a
+mesma tentativa às cegas: se o Eduardo quiser `test:rls`/`test:integration`/navegador autenticado
+disponíveis de novo, o crash `0x40010004` do backend do Docker Desktop é a pista concreta a seguir
+(reinstalar, atualizar WSL2, ou trocar de motor de virtualização) — não é algo que uma sessão de
+código consiga resolver sozinha.
