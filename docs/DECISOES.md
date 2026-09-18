@@ -10748,3 +10748,22 @@ isolando a falha só na rota mutada: `o try vem DEPOIS da chamada — não prote
 to be less than 51` — as outras duas rotas (`segments`, `stock-alerts`) continuaram verdes.
 Restaurado com `git checkout --`, confirmado (try antes do await de volta). `tests/unit` inteiro
 (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 79: `cron-sobrevive-a-atraso`
+
+Guarda da TERCEIRA tentativa de consertar a mesma falha: o `schedule` do GitHub Actions é
+best-effort, e o atraso medido nesta base é de HORAS, não minutos (5-6,5h medido em 30/08, contra
+56min em 25/08). Qualquer filtro de hora local nas rotas agendadas (`recompute-cycles`,
+`segments`) é refém desse atraso — igualdade exata derrubou o Motor em 25/08, janela de 3h
+derrubou de novo em 30/08. A lição codificada: a saída não é uma janela maior, é a rota NÃO
+depender da hora do disparo (o filtro nessas rotas é economia de processamento, nunca corretude —
+upsert por PK). Mutação: `api/cron/segments/route.ts`, acrescentado `if (!dentroDaJanela
+(horaLocalDe(tenant.timezone, agora), 3)) continue` logo no início do laço — reintroduzindo
+exatamente o padrão que já custou caro duas vezes. Guarda reprovou corretamente, isolando a falha
+só na rota mutada: `segments voltou a filtrar por hora local ...: expected true to be false` — as
+rotas de conveniência (`campaigns`, `stock-alerts`, que DEVEM filtrar) continuaram passando.
+Restaurado com `git checkout --`, confirmado (filtro removido). `tests/unit` inteiro (283/2461)
+verde depois.
