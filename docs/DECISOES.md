@@ -10619,3 +10619,22 @@ cliente excluída há segundos, e NENHUM teste reprovava" antes desta guarda exi
 essa mutação histórica, reaplicada. Guarda reprovou corretamente: `sumiu o filtro de carência —
 anonimizaria quem foi excluída agora`. Restaurado com `git checkout --`, confirmado grep
 (`.lt('deleted_at', limite)` de volta). `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 72: `todo-cron-agendado-tem-heartbeat`
+
+Guarda contra "alarme permanentemente aceso" (a mesma classe do `src/core/cron/agendadas.ts`): em
+26/08 o Motor de Ciclo passou DOIS DIAS sem processar tenant nenhum, com HTTP 200 e job verde —
+`send_reminders` tinha heartbeat, o Motor não. O conserto olhou o job que falhou, não a pergunta
+"quais jobs agendados ninguém observa?" — cinco dias depois, `segments` continuava rodando 6x/dia
+sem vigilância. A guarda testa as DUAS pontas de cada rota agendada: ela GRAVA o heartbeat com a
+chave certa, e `/api/health` LÊ essa mesma chave — divergência silenciosa entre gravação e leitura
+deixa a saúde falsamente verde para sempre. Mutação: `server/services/health.ts`, trocado o `kind`
+do heartbeat de `recompute_segments` para `recompute-segments` (underscore→hífen) na chamada de
+`checarHeartbeat` — o mapa (`ROTA_DO_HEARTBEAT`) continua prometendo `recompute_segments`, mas a
+leitura de saúde passa a procurar outra chave. Guarda reprovou corretamente: `nada em health.ts
+chama checarHeartbeat para "recompute_segments" — o sinal é gravado e ninguém lê`. Restaurado com
+`git checkout --`, confirmado grep (`'recompute_segments'` de volta). `tests/unit` inteiro
+(283/2461) verde depois.
