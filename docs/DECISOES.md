@@ -11470,3 +11470,21 @@ decide o aviso (depois da chamada a `drenarFilaPendente()`) trocada do padrão d
 exatamente "não sei" virando "zero". Guarda reprovou corretamente: `a contagem voltou a usar
 catch(() => []) — "não sei" virou zero de novo`. Restaurado com `git checkout --`, confirmado
 (`listarMutacoes().then(...)` de volta na linha 68). `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 119: `dia-do-salao` (fila de espera, dia da semana)
+
+Guarda de fuso: `lista-espera.ts` casava a preferência de dia da semana com `new
+Date(slot.startsAt).getUTCDay()`, comentário dizendo "aproximação; refinar no TICKET-057 se DST
+virar problema" — mas o Brasil não tem horário de verão desde 2019, o problema real é o
+deslocamento fixo de -3h. Medido: vaga de segunda 21:00 em São Paulo lida como TERÇA, sábado 22:00
+como DOMINGO — quem pedia "só segundas" não recebia a vaga de segunda à noite, e quem pedia "só
+terças" recebia por engano. Mutação: `server/services/lista-espera.ts`, trocado
+`diaDaSemanaNoFuso(slot.timezone, new Date(slot.startsAt))` de volta para `new
+Date(slot.startsAt).getUTCDay()` — reproduzindo exatamente o defeito medido antes do conserto.
+Guarda reprovou corretamente: `a regra de dia da semana voltou a ler o dia em UTC` (mostrando o
+diff completo até `getUTCDay()`). Restaurado com `git checkout --`, confirmado
+(`diaDaSemanaNoFuso(slot.timezone, ...)` de volta na linha 159). `tests/unit` inteiro (283/2461)
+verde depois.
