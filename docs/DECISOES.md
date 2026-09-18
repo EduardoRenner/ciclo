@@ -12465,3 +12465,17 @@ corretamente: `expected 'ok' to be 'amostra_insuficiente'` — 8 voltas no mesmo
 calibrar a régua, quando deveriam ser descartadas por completo (amostra zero). Restaurado com `git
 checkout --`, confirmado (`dias > 0` de volta na linha 95). `tests/unit` inteiro (284/2465) verde
 depois.
+
+
+---
+
+## 2026-09-18 · Loop assert-vazio — item 144: `comparacao-com-costume`
+
+Guarda de dinheiro/UI (docs/62 Fase B): "R$ 240 hoje é bom ou ruim?" compara com a média do MESMO
+dia da semana — e quando essa média é zero (salão sempre fechou nesse dia), dividir por zero
+devolveria `Infinity`/`NaN`, os dois piores números pra mostrar na tela.
+
+Mutação: `core/ciclo/comparacao-com-costume.ts`, removida a guarda `if (mediaCents <= 0) return
+null`. Guarda reprovou corretamente: `expected { percentual: Infinity } to be null`. Restaurado com
+`git checkout --`, confirmado (guarda de volta na linha 31). `tests/unit` inteiro (284/2465) verde
+depois.
