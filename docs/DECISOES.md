@@ -13032,3 +13032,36 @@ false` — uma tabela com `on_track` alterado manualmente (cenário que não dev
 prática, mas o teste guarda contra ele) passou a contar como "calibração ativa", quando `on_track`
 nunca calibra por definição (quem está em dia não tem receita em risco, não é uma média que se
 meça). Restaurado com `git checkout --`, confirmado. `tests/unit` inteiro (288/2501) verde depois.
+
+
+---
+
+## 2026-09-18 · CORRIGIDO — Motor de Ciclo (docs/73 T4): a tela "Recuperar receita" diz quando a calibração está ativa
+
+Fecha T4 do plano do Motor de Ciclo. A tela já recebe (desde T3) os valores calibrados via
+`client_cycles.value_at_risk_cents`/`profit_at_risk_cents`, escritos pelo job noturno — mas nada na
+tela dizia que isso tinha mudado. T4 é só a transparência: uma frase curta no card de "prestação de
+contas" quando `algumEstadoFoiCalibrado` (já mutation-tested) confirma que pelo menos um estado saiu
+do palpite fixo.
+
+**Seguindo o veto explícito do `docs/46` Fase 3** ("a tela nunca mostra 'acurácia de 78%' como
+manchete"): a frase não mostra NENHUM percentual — diz a consequência ("quem vale mais a pena chamar
+de volta já leva em conta o histórico real deste salão"), não a estatística. O rótulo em português
+de cada estado (`RUBRICA_ESTADO`, `recuperar.tsx`) NÃO foi importado para `core/` — a função pura
+(`algumEstadoFoiCalibrado`) devolve só um booleano, e quem decide como dizer isso é a camada que já
+tem o vocabulário.
+
+**Refatoração que acompanhou (T4 pt.1):** `prestacaoDeContasDoMotor` e a nova
+`probabilidadeCalibradaDoTenant` liam `cycle_predictions` cada uma por conta própria, com a mesma
+consulta e a mesma janela de 12 meses — duplicação real, e risco de as duas janelas divergirem num
+refactor futuro sem ninguém notar. Extraída `previsoesRecentesDoTenant` como leitura compartilhada,
+e `resumoDoMotorDoTenant` como o ponto de entrada da tela "Recuperar receita" (as duas perguntas,
+uma consulta só). As duas funções antigas mantiveram a assinatura exata — `admin/hoje/page.tsx` e
+`admin/mes/page.tsx`, que só usam `prestacaoDeContasDoMotor`, continuam intocados (confirmado pelos
+dois guardas sistêmicos que escaneiam essas duas telas por essa chamada).
+
+**Verificação:** `tsc --noEmit` e `eslint` limpos; `algumEstadoFoiCalibrado` já mutation-tested
+(item anterior). Este projeto não tem harness de render de componente (`hoje-heroi-do-motor.test.ts`
+já documenta isso) — a verificação de UI segue o mesmo padrão já usado nesta sessão para outras
+telas sem Docker local: tipo, lint e a lógica pura por trás já provada. Verificação visual de
+verdade fica pendente até Docker/Supabase local estar disponível, ou revisão do Eduardo.

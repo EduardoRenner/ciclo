@@ -10,7 +10,19 @@ import { MINIMO_PARA_AFIRMAR, TOLERANCIA_DIAS, type PrestacaoDeContas } from '@/
  * ela mora AQUI, embaixo da lista que a previsão produziu, e não numa tela de relatório: o lugar
  * onde a pessoa decide se acredita no número é o lugar onde ela usa o número.
  */
-export default function PrestacaoDeContasDoMotor({ contas }: { contas: PrestacaoDeContas }) {
+export default function PrestacaoDeContasDoMotor({
+  contas,
+  probabilidadeCalibrada,
+}: {
+  contas: PrestacaoDeContas
+  /**
+   * `docs/73` T4: `true` quando `algumEstadoFoiCalibrado` (`core/cycle/calibrar-probabilidade.ts`)
+   * já achou amostra suficiente para trocar o palpite fixo de "chance de voltar" pelo que este
+   * salão de fato vive. Opcional para não obrigar toda chamada existente a passar o dado — quem
+   * não passa nada simplesmente não vê a linha.
+   */
+  probabilidadeCalibrada?: boolean
+}) {
   if (contas.conferidas === 0 && contas.emAberto === 0) return null
 
   const percentual = contas.acertoBps === null ? null : Math.round(contas.acertoBps / 100)
@@ -58,6 +70,17 @@ export default function PrestacaoDeContasDoMotor({ contas }: { contas: Prestacao
         <p className="text-label text-txt-3">
           {contas.emAberto} {contas.emAberto === 1 ? 'previsão ainda pode' : 'previsões ainda podem'} se confirmar; não entram na conta.
         </p>
+      ) : null}
+
+      {/*
+        `docs/73` F1/T4 — a consequência, não a estatística. `docs/46` Fase 3 é explícito: a tela
+        nunca mostra "acurácia de 78%" como manchete, mostra o que muda pra quem lê. Aqui o número
+        calibrado em si (um percentual por estado) não aparece — só o fato de que ele já mudou o
+        que a lista abaixo prioriza, que é a única coisa que importa pra quem está decidindo pra
+        quem mandar mensagem hoje.
+      */}
+      {probabilidadeCalibrada ? (
+        <p className="text-label text-txt-3">Quem vale mais a pena chamar de volta já leva em conta o histórico real deste salão.</p>
       ) : null}
     </Card>
   )

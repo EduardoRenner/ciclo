@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { headers } from 'next/headers'
 import { Temporal } from '@js-temporal/polyfill'
 
+import { algumEstadoFoiCalibrado } from '@/core/cycle/calibrar-probabilidade'
 import { podeUsarCapacidade } from '@/core/billing/planos'
 import { ehRequisicaoDoAppNativo } from '@/core/plataforma/nativo'
 import AlertBanner from '@/components/ui/alert-banner'
@@ -11,7 +12,7 @@ import { dinheiro } from '@/lib/formato'
 import { contextoDoPainel } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { contextoDePlano } from '@/server/services/planos'
-import { prestacaoDeContasDoMotor } from '@/server/services/previsao'
+import { resumoDoMotorDoTenant } from '@/server/services/previsao'
 import { medirMaterialDoCatalogo } from '@/server/services/ficha-de-consumo'
 import { listarParaRecuperar } from '@/server/services/recuperar-receita'
 import { receitaAtribuidaAoCiclo } from '@/server/services/atribuicao'
@@ -45,7 +46,7 @@ export default async function PaginaRecuperar() {
    * São `head: true` com `count: 'exact'`: não trazem linha nenhuma, só o número, e vão no mesmo
    * `Promise.all` que já existia — custo de latência zero contra o que a tela já pagava.
    */
-  const [lista, atribuicao, plano, clientes, ciclos, concluidos, contasDoMotor, material] = await Promise.all([
+  const [lista, atribuicao, plano, clientes, ciclos, concluidos, resumoDoMotor, material] = await Promise.all([
     listarParaRecuperar(db, ctx.tenantId),
     receitaAtribuidaAoCiclo(db, ctx.tenantId, timezone, desde, ate),
     contextoDePlano(db, ctx.tenantId),
@@ -63,11 +64,12 @@ export default async function PaginaRecuperar() {
       .eq('tenant_id', ctx.tenantId)
       .eq('status', 'done'),
     /*
-      `docs/48` C5. Lê `cycle_predictions` (append-only desde a `0064`) e devolve o quanto o Motor
-      acertou contra o que ele mesmo disse ANTES de saber. Entra no mesmo `Promise.all` — latência
+      `docs/48` C5 + `docs/73` T4. Lê `cycle_predictions` (append-only desde a `0064`) UMA vez e
+      devolve as duas perguntas que ela sabe responder: quanto o Motor acertou (prestação de
+      contas) e a chance de retorno calibrada por estado. Entra no mesmo `Promise.all` — latência
       somada: zero.
     */
-    prestacaoDeContasDoMotor(db, ctx.tenantId, Temporal.Now.zonedDateTimeISO(timezone).toPlainDate().toString()),
+    resumoDoMotorDoTenant(db, ctx.tenantId, Temporal.Now.zonedDateTimeISO(timezone).toPlainDate().toString()),
     /*
       A lacuna do material, no mesmo `Promise.all`. Ela não é enfeite nesta tela: o lucro é o que
       ORDENA a fila, e sem custo de produto uma coloração parece tão lucrativa quanto um corte do
@@ -111,7 +113,7 @@ export default async function PaginaRecuperar() {
         </AlertBanner>
       ) : null}
 
-      <PrestacaoDeContasDoMotor contas={contasDoMotor} />
+      <PrestacaoDeContasDoMotor contas={resumoDoMotor.prestacao} probabilidadeCalibrada={algumEstadoFoiCalibrado(resumoDoMotor.probabilidade)} />
 
       <RecuperarReceita
         inicial={lista}
