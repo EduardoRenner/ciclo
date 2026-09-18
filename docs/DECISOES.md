@@ -12789,3 +12789,16 @@ trava incondicional aqui travaria renomear o próprio profissional (nome, cor, a
 Restaurado com `git checkout --` nos dois casos, confirmado (`if (entrada.compModel !== undefined
 || entrada.commissionBps !== undefined) { await exigirModulo(...) }` de volta). `tests/unit`
 inteiro (285/2468) verde depois.
+
+
+---
+
+## 2026-09-18 · Mutação verificada — dinheiro-de-pacote-e-carteira-tem-trilha
+
+Guarda nova (item acima, `writeAudit` em `packages`/`wallet/credit`/`wallet/debit`/`packages/[id]/
+use`) mutada num dos quatro representantes. Removido o bloco `writeAudit` inteiro de `packages/
+route.ts` (POST, vender pacote). Guarda reprovou corretamente: `expected '...' to match
+/action:\s*'package.sell'/` — a asserção específica dessa rota reprovou, as outras três (que não
+foram mutadas) continuaram passando, confirmando que a guarda testa cada rota de forma independente
+e não é cega a uma remoção pontual. Restaurado com `git checkout --`, confirmado (`action:
+'package.sell'` de volta). `tests/unit` inteiro (286/2472) verde depois.
