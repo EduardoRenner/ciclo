@@ -11434,3 +11434,22 @@ removido `'documents'` de `PROPRIOS.avancado.modulos` (o plano mais alto), deixa
 nem no plano mais alto: expected false to be true`. Restaurado com `git checkout --`, confirmado
 (`'documents'` de volta em `PROPRIOS.avancado.modulos`, linha 141). `tests/unit` inteiro
 (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 117: `eixo-so-compara-valor-que-existe`
+
+Guarda que protege exatamente o defeito real que a motivou: `quotes` comparava `inicio ===
+'orcamento'` desde a migration 0023 — mas `'orcamento'` é valor do eixo `cobranca`, não de
+`inicio` (que só aceita `direto | solicitacao | orcamento_antes`). A comparação nunca dava
+verdadeira, e o módulo Orçamento sumia da interface justamente para quem começava por orçamento —
+passou despercebido porque os dois únicos tenants com eixo preenchido em produção eram `direto`.
+Mutação: `core/billing/planos.ts`, `CONDICAO_DE_EIXO.quotes`, trocado `valores: ['orcamento_antes']`
+por `valores: ['orcamento']` — reproduzindo literalmente o defeito original (o `as` cast em
+`CONDICAO_DE_EIXO_PARA_GUARDA` permite o valor impossível escapar da rigidez de tipo que normalmente
+recusaria isto no `tsc`, mas o vitest transpila sem checar tipos). Guarda reprovou corretamente:
+`Comparação que nunca dá verdadeira: [...]: expected [ Array(1) ] to deeply equal []` com
+`"quotes: compara inicio === \"orcamento\", mas a coluna só aceita direto | solicitacao |
+orcamento_antes"`. Restaurado com `git checkout --`, confirmado (`valores: ['orcamento_antes']` de
+volta na linha 311). `tests/unit` inteiro (283/2461) verde depois.
