@@ -12479,3 +12479,21 @@ Mutação: `core/ciclo/comparacao-com-costume.ts`, removida a guarda `if (mediaC
 null`. Guarda reprovou corretamente: `expected { percentual: Infinity } to be null`. Restaurado com
 `git checkout --`, confirmado (guarda de volta na linha 31). `tests/unit` inteiro (284/2465) verde
 depois.
+
+
+---
+
+## 2026-09-18 · Loop assert-vazio — item 145: `reminders-schedule`
+
+Guarda de confiabilidade (§7, H109): `lembretesDevidos` não pode reenviar pedido de confirmação nem
+lembrete para um agendamento que JÁ COMEÇOU — o caso concreto é o job de 15 em 15 minutos que ficou
+parado alguns dias e volta a rodar depois do fato, varrendo agendamentos já ocorridos. O próprio
+comentário do arquivo registra que uma versão anterior deste texto dizia o OPOSTO do comportamento
+certo e quase motivou um conserto errado.
+
+Mutação: `core/reminders/schedule.ts`, removido o guard-clause `if (Temporal.Instant.compare(agora,
+inicio.toInstant()) >= 0) return []`. Guarda reprovou corretamente: para um agendamento que já
+aconteceu há dias, a função voltou a devolver os dois lembretes (`confirmation` +`reminder`) em vez
+de `[]` — exatamente o cenário "job parado reaparece mandando mensagem fora de hora". Restaurado
+com `git checkout --`, confirmado (guard-clause de volta na linha 66). `tests/unit` inteiro
+(284/2465) verde depois.
