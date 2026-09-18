@@ -11792,3 +11792,36 @@ service_role sem `test:rls` disponível). Se o Eduardo confirmar que o risco res
 rede específico, não clique duplo) é aceitável do jeito que está — para `clients/import`
 especialmente, dado o mitigante parcial — a `ISENTAS` já está correta como está, e não há mais o
 que fazer aqui além de talvez anotar essa distinção no motivo escrito da lista.
+
+
+---
+
+## 2026-09-18 · Verificado, correto — cobertura de Zod na borda em `/api/v1`
+
+**Contexto:** `docs/67-PLANO-NOTURNO-AUTONOMO.md` §4.1 lista "Novo endpoint de API sem `rota()`, sem
+Zod na borda, ou sem `Idempotency-Key` em escrita" como item a conferir. A parte de
+`Idempotency-Key` já tem guarda dedicada (`escrita-passa-por-idempotencia.test.ts`, mutada em
+sessão anterior). A parte de Zod nunca tinha sido varrida sistematicamente.
+
+**Medido.** Todas as rotas de `src/app/api/v1/**/route.ts` que exportam `POST`/`PUT`/`PATCH`/
+`DELETE` (mesmo universo de "mutantes" da guarda de idempotência), checadas contra os dois helpers
+que este projeto usa para validar entrada (`lerCorpo(req, Esquema)` e `lerJson(Esquema, dado)`,
+`src/server/http/body.ts`) mais `.parse(`/`.safeParse(` direto. Primeira passada com grep pegou só
+`lerJson(` e devolveu 80+ "sem Zod" — falso positivo grosseiro: a convenção real da maioria das
+rotas é `lerCorpo(`, que eu tinha esquecido de incluir. Corrigido o grep, sobraram 23 candidatas.
+
+Das 23, conferidas uma a uma: **22 não leem corpo nenhum** (`grep -c "req.json()\|req.formData()\|
+await req\."` = 0 em cada) — são transições de estado por parâmetro de URL só (`appointments/[id]/
+arrive`, `/complete`, `/confirm`, `/no-show`, `tickets/[id]/cancel`, `media/[id]/publish`,
+`public/appointments/{cancel,confirm}/[token]`, `public/quotes/[token]/approve`, `auth/logout`,
+`account` DELETE, etc.) — Zod não tem o que validar sem corpo. **1 lê corpo sem os helpers de
+Zod**: `clients/import/preview/route.ts` — mas é `multipart/form-data` (mesmo padrão de
+`clients/import` e `clients/[id]/media`, já confirmados isentos na guarda de idempotência pelo
+mesmo motivo): valida o `File` manualmente (`instanceof File`, tamanho) porque Zod não tem o que
+fazer com um objeto `File` de verdade — é o padrão estabelecido e consistente nas três rotas
+multipart do projeto, não uma exceção isolada.
+
+**Nenhum achado.** Toda rota de escrita de `/api/v1` ou não tem corpo (nada a validar), ou valida
+via `lerCorpo`/`lerJson`, ou valida manualmente o único tipo que Zod não cobre bem (`File`
+multipart), de forma consistente nas três rotas que fazem isso. Regra 7 do `CLAUDE.md` ("Zod na
+borda. Toda entrada validada antes de tocar no banco") íntegra em toda a superfície de `/api/v1`.
