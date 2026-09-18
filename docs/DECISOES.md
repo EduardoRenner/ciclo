@@ -11453,3 +11453,20 @@ recusaria isto no `tsc`, mas o vitest transpila sem checar tipos). Guarda reprov
 `"quotes: compara inicio === \"orcamento\", mas a coluna só aceita direto | solicitacao |
 orcamento_antes"`. Restaurado com `git checkout --`, confirmado (`valores: ['orcamento_antes']` de
 volta na linha 311). `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 118: `nao-sei-nao-e-zero`
+
+Guarda offline: sair da conta apaga a fila offline do aparelho, e a tela avisa quantas mutações não
+subiram antes de descartar — mas a contagem vinha de `listarMutacoes().catch(() => [])`, que
+transforma "não consegui LER a fila" em "a fila está VAZIA". A proteção se desligava sozinha
+justamente quando IndexedDB falha de verdade (janela anônima, armazenamento cheio, base
+corrompida), e o trabalho ia embora em silêncio. Mutação: `admin/config/sair.tsx`, a leitura que
+decide o aviso (depois da chamada a `drenarFilaPendente()`) trocada do padrão de três estados
+(`.then(sucesso, falha)` distinguindo `ok: true`/`ok: false`) de volta para
+`listarMutacoes().catch(() => [])` seguido de `{ ok: true, quantidade: ... }` — reproduzindo
+exatamente "não sei" virando "zero". Guarda reprovou corretamente: `a contagem voltou a usar
+catch(() => []) — "não sei" virou zero de novo`. Restaurado com `git checkout --`, confirmado
+(`listarMutacoes().then(...)` de volta na linha 68). `tests/unit` inteiro (283/2461) verde depois.
