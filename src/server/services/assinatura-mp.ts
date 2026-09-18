@@ -192,6 +192,17 @@ export async function processarWebhookMP(
     .eq('id', tenantId)
   if (erroUpdate) throw new AppError('INTERNAL', { cause: erroUpdate })
 
+  // Insert direto, não `writeAudit`: o webhook do MP não tem `Request` de pessoa nenhuma para
+  // tirar IP/user-agent — mesma exceção documentada em `expirarGracaVencida`, logo abaixo.
+  const { error: erroAudit } = await db.from('audit_log').insert({
+    tenant_id: tenantId,
+    action: 'tenant.plan.change',
+    entity: 'tenants',
+    entity_id: tenantId,
+    after: { de: planoVigente, para: decisao.plano, por: 'webhook_mercado_pago' } as never,
+  })
+  if (erroAudit) console.error(JSON.stringify({ level: 'error', event: 'audit_webhook_mp_falhou', tenantId }), erroAudit)
+
   return { resultado: 'plano_atualizado', tenantId, plano: decisao.plano }
 }
 
