@@ -10493,3 +10493,24 @@ o `toContain('supabase/.temp')` falhou de verdade, confirmando o conserto antes 
 `eslint.config.mjs` restaurado com `git checkout --`. O conserto da guarda
 (`verify-sobrevive-ao-banco-local.test.ts`) foi MANTIDO. `tests/unit` inteiro (283/2461) verde
 depois, com o conserto em vigor.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 65 (primeiro de tests/unit/server/): `teste-nao-toca-producao`
+
+Guarda da inviolável nº 1 do CLAUDE.md ("nunca toque produção direto"), a mais crítica da base:
+`.env.local` desta máquina aponta para o projeto de PRODUÇÃO, e `pnpm test:rls`/`test:integration`
+abrem o Supabase com `SUPABASE_SERVICE_ROLE_KEY` — seguir o `CLAUDE.md` à risca (rodar
+`pnpm verify` antes de commitar) criaria tenant, usuário, agendamento e comanda no banco que
+atende cliente pagante. A proteção real é `tests/setup/so-banco-local.ts`, pendurada via
+`vitest.banco.config.ts`; sem o `--config` no script do `package.json`, a trava simplesmente não
+carrega. Mutação: `package.json`, removido `--config vitest.banco.config.ts` do script `test:rls`
+— reproduzindo o defeito exato que a auditoria de 2026-08-28 encontrou. Guarda reprovou
+corretamente: `test:rls não passa mais por vitest.banco.config.ts: sem ela, pnpm verify na máquina
+de quem tem .env.local apontando para produção escreve no banco de cliente pagante com a chave de
+serviço`. Restaurado com `git checkout --`, confirmado (`--config vitest.banco.config.ts` de
+volta). `tests/unit` inteiro (283/2461) verde depois.
+
+Início da cobertura de `tests/unit/server/` (design/ esgotado: 90/90, um já coberto na sessão
+overnight anterior).
