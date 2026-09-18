@@ -11004,3 +11004,34 @@ medido em produção em 2026-08-26 (`dom-rocha` com 9 lançamentos em 263 atendi
 checagem de módulo ficou DEPOIS do primeiro lançamento: expected 4314 to be less than 4081`.
 Restaurado com `git checkout --`, confirmado (checagem de volta antes do bloco `pointsPerReal`,
 linha 154). `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 93: `agrega-lendo-tudo` **ERA CEGA, corrigida**
+
+Guarda de dinheiro/agregação: `docs/CLAUDE.md` chama de "armadilha do TICKET-036" — o PostgREST
+corta em `max_rows = 1000` sem erro, e quem soma/conta em cima disso entrega número errado com cara
+de certo. A própria guarda cita que em 31/08 quase foi reintroduzida ao trocar `visits_count`
+desnormalizado por contagem em tempo real sem paginação.
+
+Mutação: `server/services/crm.ts`, a consulta de `appointments` que alimenta visitas/valor/faltas
+da ficha da cliente (`.select('price_cents, starts_at, status, service_id')`) trocada de
+`buscarTudoPaginado(() => db...)` para um `.select()` solto com `.then((r) => r.data ?? [])` —
+exatamente o defeito de 31/08. Guarda passou verde. **Cega.**
+
+Causa raiz: `expect(crm).toContain('buscarTudoPaginado(')` varre o ARQUIVO inteiro, não a consulta
+específica. `buscarTudoPaginado(` continua no arquivo por dois outros motivos honestos — a linha de
+`import` no topo, e um segundo leitor (`consultarSegmento`, mais abaixo) que nunca foi tocado. A
+mutação removeu a paginação exatamente de onde importava e a guarda não notou, porque a palavra
+que ela procura sobrevivia em outro lugar do mesmo arquivo por acidente.
+
+Conserto: ancorar na string de colunas desta consulta específica
+(`"select('price_cents, starts_at, status, service_id')"`), achar a vírgula mais próxima ANTES dela
+(o separador do elemento anterior do `Promise.all`) e conferir que `buscarTudoPaginado(` aparece só
+nesse trecho — não em qualquer lugar do arquivo. Reaplicada a MESMA mutação original contra a
+guarda corrigida: reprovou corretamente, apontando o trecho exato (`',\r\n...db\r\n .from(...)
+.'` em vez de `buscarTudoPaginado(`). Restaurado `server/services/crm.ts` com `git checkout --`,
+confirmado (ambos os `buscarTudoPaginado(` originais de volta, linhas 198 e 253). Guarda corrigida
+rodada de novo contra o código restaurado: verde. `tests/unit` inteiro (283/2461) verde depois, só
+o teste da guarda alterado no diff.

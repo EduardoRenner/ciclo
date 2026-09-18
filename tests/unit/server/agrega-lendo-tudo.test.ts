@@ -34,8 +34,19 @@ describe('quem agrega no Node le todas as linhas', () => {
   })
 
   it('as metricas da ficha leem paginado', () => {
+    // `toContain('buscarTudoPaginado(')` solto casava com QUALQUER uso no arquivo — o import no
+    // topo, ou o segundo leitor mais abaixo — mesmo que a consulta de visitas/valor/faltas tivesse
+    // voltado a ser um `.select()` solto. Ancora na string de colunas desta consulta especifica e
+    // confere que o `buscarTudoPaginado(` que a envolve e o do ELEMENTO anterior do `Promise.all`
+    // (a virgula mais proxima antes dela), nao um em outro lugar do arquivo.
     const crm = semComentarios(readFileSync(join('src', 'server', 'services', 'crm.ts'), 'utf8'))
-    expect(crm, 'a consulta que alimenta visitas/valor/faltas voltou a nao paginar').toContain('buscarTudoPaginado(')
+    const ancora = "select('price_cents, starts_at, status, service_id')"
+    const posAncora = crm.indexOf(ancora)
+    expect(posAncora, 'nao achei a consulta que alimenta visitas/valor/faltas').toBeGreaterThan(-1)
+
+    const posElementoAnterior = crm.lastIndexOf(',', posAncora)
+    const trecho = crm.slice(posElementoAnterior, posAncora)
+    expect(trecho, 'a consulta que alimenta visitas/valor/faltas voltou a nao paginar').toContain('buscarTudoPaginado(')
   })
 
   it('o helper de paginacao mora num lugar so', () => {
