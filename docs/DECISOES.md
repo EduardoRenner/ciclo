@@ -12566,3 +12566,22 @@ exatamente o defeito histórico que o próprio docstring documenta. Guarda repro
 7 falhas: apelidos com prefixo `https://` ou `instagram.com/` deixaram de resolver (`expected null
 to be 'barbeariadomrocha'`), e `urlDoInstagram` voltou a duplicar o domínio. Restaurado com `git
 checkout --`, confirmado (as duas linhas de volta). `tests/unit` inteiro (284/2465) verde depois.
+
+
+---
+
+## 2026-09-18 · Loop assert-vazio — item 150: `palavra-de-acao`
+
+Guarda de confiabilidade CRÍTICA (webhook de entrada do WhatsApp): `acaoDoTexto` reconhece só duas
+palavras contra um vocabulário fechado, comparação estrita, NUNCA regex de prefixo — o próprio
+docstring explica por quê, citando o achado irmão desta base (`regex-pt-br-w-nao-casa-acento`) e o
+caso concreto: "confirmar às 15h seria possível?" é uma PERGUNTA que usa a palavra, não uma
+confirmação. Se um prefixo bastasse, o cliente seria confirmado por engano ao só perguntar horário.
+
+Mutação: `core/mensageria/palavra-de-acao.ts`, trocado `CONFIRMAR.has(normalizado)` /
+`CANCELAR.has(normalizado)` por `normalizado.startsWith('confirma')` / `.startsWith('cancela')` —
+reproduzindo exatamente o regex de prefixo que o comentário do arquivo avisa nunca usar. Guarda
+reprovou corretamente no teste "PISO": `expected 'confirmar' to be null` — uma pergunta sobre
+horário foi processada como confirmação de agendamento. Restaurado com `git checkout --`,
+confirmado (`.has(normalizado)` de volta nas linhas 41-42). `tests/unit` inteiro (284/2465) verde
+depois.
