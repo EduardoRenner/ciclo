@@ -12691,3 +12691,23 @@ reprovou corretamente: `expected [] to equal [ { tipo: 'upsert', linha: { ligado
 'campaigns', origem: 'dono', ... } } ]` — desligar um módulo bloqueado pelo plano passou a gravar
 uma linha fantasma. Restaurado com `git checkout --`, confirmado (guard-clause de volta na linha
 101). `tests/unit` inteiro (284/2465) verde depois.
+
+
+---
+
+## 2026-09-18 · Loop assert-vazio — item 157: `paginar`
+
+Guarda de dinheiro CRÍTICA (armadilha do TICKET-036): `buscarTudoPaginado` protege `caixa`,
+`comissao`, `segmentos`, a ficha da cliente e o saldo de fidelidade ao mesmo tempo — um defeito
+aqui erra nos cinco de uma vez. O teto de 100 páginas existe como a INVERSÃO do defeito original:
+lá o risco era CALAR (PostgREST corta em 1000 sem avisar), aqui é NÃO PARAR (consulta sem filtro
+rodando para sempre). Errar de propósito no teto, em vez de devolver o que já juntou, evita a pior
+forma do defeito: um total somado sobre 100 mil de 300 mil linhas é redondo, plausível e não
+denuncia nada.
+
+Mutação: `server/db/paginar.ts`, trocado o `throw new AppError('INTERNAL', ...)` do teto de páginas
+por um `return tudo` silencioso. Guarda reprovou corretamente: uma consulta que sempre devolve
+página cheia (filtro quebrado) parou de estourar e passou a devolver 100.000 linhas parciais em vez
+de lançar erro — `expect(buscarTudoPaginado(consultaBase)).rejects.toThrow()` falhou. Restaurado
+com `git checkout --`, confirmado (o `throw` de volta nas linhas 49-51). `tests/unit` inteiro
+(284/2465) verde depois.
