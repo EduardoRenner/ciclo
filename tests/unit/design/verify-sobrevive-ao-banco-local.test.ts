@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs'
 
 import { describe, expect, it } from 'vitest'
 
+import { semComentarios } from '../../helpers/fonte'
+
 /**
  * O `CLAUDE.md` manda subir o banco local antes do `pnpm dev`. O `supabase start` escreve o
  * bootstrap do edge runtime em `supabase/.temp/`, e esse diretório estava no `.gitignore` desde
@@ -40,9 +42,15 @@ describe('pnpm verify sobrevive ao banco local rodando', () => {
     /*
       Só este é cobrado do ESLint, e a assimetria é deliberada: `supabase/.temp` é o único que o
       `supabase start` enche de `.ts`. Cobrar `.branches` aqui seria guarda sem defeito por trás.
+
+      Sem comentário antes de casar: a versão original testava `ESLINT` cru com `toContain`, e o
+      comentário que EXPLICA este próprio ignore cita a string entre crases ("mesma classe de
+      ruído que `supabase/.temp/**` já resolveu acima", linha abaixo do array) — remover a entrada
+      de verdade do array `ignores` e deixar os dois comentários intactos passava verde. Achado ao
+      mutar. `semComentarios` tira a prosa antes de procurar a entrada real.
     */
     expect(
-      ESLINT,
+      semComentarios(ESLINT),
       'o `supabase start` escreve .ts em supabase/.temp; sem este ignore, `pnpm verify` reprova em ' +
         'toda máquina que seguiu o setup do CLAUDE.md, e a CI não avisa porque lint e banco rodam ' +
         'em jobs separados.',

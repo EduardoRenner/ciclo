@@ -10467,3 +10467,29 @@ Mutação: `scripts/seed-demo-imagens.mjs`, removido `'dom-rocha'` do array
 `SLUGS_DE_DEMONSTRACAO`. Guarda reprovou corretamente, mostrando o diff exato de que slug sumiu
 (`- "dom-rocha"`). Restaurado com `git checkout --`, confirmado grep (`'dom-rocha'` de volta).
 `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 64: `verify-sobrevive-ao-banco-local` ERA CEGA, corrigida
+
+Guarda contra falso-verde de máquina local: `supabase start` escreve código minificado de terceiro
+em `supabase/.temp/`, e sem esse diretório no ignore do ESLint, `pnpm verify` reprova em qualquer
+máquina que siga o setup documentado no CLAUDE.md — a CI nunca vê, porque `lint` e `supabase start`
+rodam em jobs separados. Medido: 154 erros de lint em código que não é do projeto.
+
+Mutação: `eslint.config.mjs`, removida a entrada real `"supabase/.temp/**",` do array `ignores`.
+
+**A guarda passou verde.** Raiz: o teste fazia `expect(ESLINT).toContain('supabase/.temp')` sobre
+o arquivo CRU, sem tirar comentário — e o comentário de OUTRA entrada do mesmo array (a de
+`android/`/`ios/`, algumas linhas abaixo) cita a string entre crases: *"mesma classe de ruído que
+`supabase/.temp/**` já resolveu acima"*. Essa prosa sozinha bastava para o `toContain` passar,
+mesmo com a entrada real apagada. Armadilha nº1 do CLAUDE.md, numa guarda que existe justamente
+para proteger contra falso-verde.
+
+**Conserto:** importado `semComentarios` de `tests/helpers/fonte.ts` e aplicado ao `ESLINT` antes
+da checagem, com docstring explicando o achado. **Reprovação com a MESMA mutação ainda aplicada:**
+o `toContain('supabase/.temp')` falhou de verdade, confirmando o conserto antes de restaurar.
+`eslint.config.mjs` restaurado com `git checkout --`. O conserto da guarda
+(`verify-sobrevive-ao-banco-local.test.ts`) foi MANTIDO. `tests/unit` inteiro (283/2461) verde
+depois, com o conserto em vigor.
