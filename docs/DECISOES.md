@@ -10820,3 +10820,19 @@ Mutação: `server/services/previsao.ts`, removida a opção `ignoreDuplicates: 
 `.upsert(..., { onConflict: ... })`. Guarda reprovou corretamente através do fake DB que grava a
 chamada real: `expected undefined to be true`. Restaurado com `git checkout --`, confirmado grep
 (`ignoreDuplicates: true,` de volta). `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 83: `health-nao-eco-erro-do-banco`
+
+Guarda de segurança (achado S8): `/api/health` é o único endpoint da base sem autenticação e sem
+passar pelo `rota()` — texto que sai dele é texto público. `error.message` do Postgres carrega
+nome de tabela, coluna, constraint e, num erro de unicidade, o VALOR que colidiu (`Key
+(phone_e164)=(+5511...) already exists`) — cinco checagens devolviam isso cru; no dia em que o
+banco tossisse, o telefone de uma cliente sairia por um endpoint anônimo. Mutação:
+`server/services/health.ts`, `checarBanco` trocado de `falhaSemVazar('banco', error)` para
+`{ ok: false, detail: error.message }` — o vazamento exato do achado S8. Guarda reprovou
+corretamente: `expected [ 'detail: error.message' ] to deeply equal []`. Restaurado com
+`git checkout --`, confirmado grep (`falhaSemVazar('banco', error)` de volta). `tests/unit`
+inteiro (283/2461) verde depois.
