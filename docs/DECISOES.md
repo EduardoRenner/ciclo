@@ -11267,3 +11267,20 @@ Com \`false\` fixo (ou sem a coluna) toda comanda passa a anunciar material conf
 defeito de \`fee_cents\` de volta.: expected false to be true`. Restaurado com `git checkout --`,
 confirmado (`material_incerto: materialIncerto` de volta na linha 202). `tests/unit` inteiro
 (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 107: `pack-nao-semeia-custo`
+
+Guarda de dinheiro (medida em 2026-09-06): `apply_vertical_pack` semeava produtos do catálogo já
+com `avg_cost_cents` preenchido (0057, tintura a R$ 22,00) — um salão novo fechava a primeira
+comanda com material "conferido" sem ter comprado nada, sem ressalva na tela. A 0069 zerou o
+catálogo e a guarda existe para impedir que o pack SEGUINTE reintroduza o mesmo padrão a partir
+dali. Mutação: acrescentado ao fim de `supabase/migrations/0091_produto_sugerido_do_servico.sql`
+(a migration mais recente) um `update products set data = '[{"avg_cost_cents":2200}]'::jsonb where
+false` — código morto (nunca casa nenhuma linha), só para o extrator estático da guarda enxergar,
+mesma técnica dos itens 22/32/88/91. Guarda reprovou corretamente, apontando o arquivo exato:
+`pack não sabe quanto aquele salão paga no produto: [...]: expected [ Array(1) ] to deeply equal
+[]` com `"0091_produto_sugerido_do_servico.sql"`. Restaurado com `git checkout --`, confirmado
+(`grep -c avg_cost_cents` = 0 no arquivo). `tests/unit` inteiro (283/2461) verde depois.
