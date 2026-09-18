@@ -11587,3 +11587,23 @@ contra a guarda corrigida: reprovou corretamente (`o prompt não diz nada sobre 
 false to be true`). Restaurado `server/services/assistente.ts` com `git checkout --`, confirmado
 (frase de volta na linha 42). Guarda corrigida rodada de novo contra o código restaurado: verde.
 `tests/unit` inteiro (283/2461) verde depois, só o teste da guarda alterado no diff.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 125: `botao-do-assistente-sai-do-caminho`
+
+Guarda de UX (medida no navegador em 2026-09-03): o botão flutuante do assistente é arrastável, e
+arrasto precisa "engolir" o clique — soltar em outro canto depois de arrastar não pode abrir o
+painel, senão arrastar o botão vira ação acidental que também dispara a ação de toque. Mutação:
+`components/shell/assistente-flutuante.tsx`, o `onPointerUp` trocado de `if (aoSoltar(e))
+e.preventDefault()` para uma chamada solta `aoSoltar(e)` sem o `preventDefault` condicional —
+reproduzindo exatamente "soltar depois de arrastar volta a abrir o assistente". Guarda reprovou
+corretamente: `soltar o botão depois de arrastar voltou a abrir o assistente: expected false to be
+true`. Restaurado com `git checkout --`, confirmado (`if (aoSoltar(e)) e.preventDefault()` de
+volta na linha 713). `tests/unit` inteiro (283/2461) verde depois.
+
+Este é o primeiro item de `tests/unit/shell/`, diretório não identificado na varredura original
+desta rodada (só apareceu numa varredura recursiva mais ampla ao fim do backlog de
+core/assistente). Mais três candidatos identificados ali: `fila-nao-descarta-em-silencio`,
+`sair-da-conta`, `service-worker`.
