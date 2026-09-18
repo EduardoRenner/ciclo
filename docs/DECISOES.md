@@ -11889,3 +11889,27 @@ então não haveria colisão), e escrever infraestrutura NOVA de teste de integr
 cegas quanto o buraco que motivou esta entrada. A prova de que a trava funciona fica com a CI
 ("Qualidade" cobre `tsc`/`eslint`/`tests/unit`; não há job que exercite estas rotas contra banco).
 Registrado como limite real de verificação desta sessão, não como afirmação de cobertura completa.
+
+
+---
+
+## 2026-09-18 · Mutação verificada — `assinatura-de-clube-tem-trava-no-servidor`
+
+Ciclo de mutação completo da guarda nova criada na entrada anterior, nas três frentes que ela
+protege:
+
+1. **`subscription-plans/route.ts`**: removida a chamada `await exigirModulo(db, ctx.tenantId,
+   'club')` (import mantido, só a chamada). Guarda reprovou: `src/app/api/v1/subscription-plans/
+   route.ts não chama exigirModulo(db, ctx.tenantId, 'club') [...]: expected false to be true`.
+   Restaurado com `git checkout --`, confirmado (chamada de volta na linha 30).
+2. **`clients/[id]/subscription/route.ts` (POST)**: mesma remoção. Guarda reprovou:
+   `src/app/api/v1/clients/[id]/subscription/route.ts não chama exigirModulo(...) [...]: expected
+   false to be true`. Restaurado, confirmado (chamada de volta na linha 31, só no `POST`).
+3. **`clients/[id]/subscription/route.ts` (DELETE)**: o controle NEGATIVO — acrescentada
+   `exigirModulo(db, ctx.tenantId, 'club')` também no `DELETE` (cancelar), reproduzindo o erro
+   oposto (travar o cancelamento, que a regra 5.1 proíbe). Guarda reprovou: `o DELETE (cancelar)
+   ganhou uma trava de módulo — cair de plano não pode impedir cancelar o que já existe: expected
+   true to be false`. Restaurado, confirmado (`DELETE` sem `exigirModulo`, só o `POST` tem).
+
+`tests/unit` inteiro (284/2465) verde depois de cada restauração e no estado final. Árvore de
+trabalho limpa. Guarda nasce com prova de que reprova nos três jeitos certos, não só afirmada.
