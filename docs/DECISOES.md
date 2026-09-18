@@ -11159,3 +11159,25 @@ volta); ela anda o grafo de imports de verdade a partir de cada entrada. Mutaç�
 /server/services/crm.ts` (e daí `/admin/hoje/page.tsx`, `/admin/clientes/page.tsx`, etc, todas as
 entradas que passam por `crm.ts`). Restaurado com `git checkout --`, confirmado (import de volta
 para `@/server/services/media`, sem `media-upload`). `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 101: `suite-de-banco-confere-o-schema`
+
+Guarda da guarda: a trava de "banco atrás do código" mora em `tests/setup/banco-em-dia.ts` e só
+chega às suítes de banco porque `vitest.banco.config.ts` a pendura em `setupFiles` — tirar essa
+linha desliga a proteção inteira SEM nenhum teste ficar vermelho, e o sintoma de estar desligada é
+justamente tudo continuar verde. É o incidente medido de 2026-09-10: banco local com 80 migrations
+aplicadas contra 83 no disco, e `pnpm verify` (com `test:rls`) passou inteiro no verde sobre
+políticas que ainda não existiam. Mutação: `vitest.banco.config.ts`, removida a linha
+`fileURLToPath(new URL('./tests/setup/banco-em-dia.ts', import.meta.url))` do array `setupFiles` —
+reproduzindo exatamente o incidente. Guarda reprovou corretamente em dois pontos: `${CONFIG} parou
+de carregar ${SETUP}` e `sumiu a trava de schema: expected -1 to be greater than -1`. Restaurado
+com `git checkout --`, confirmado (linha de `banco-em-dia.ts` de volta no array). `tests/unit`
+inteiro (283/2461) verde depois.
+
+Com este item fecha o backlog de `tests/unit/server/` identificado nesta rodada — 37 candidatos
+processados (itens 65-101), quatro guardas genuinamente cegas encontradas e corrigidas (31, 34, 49,
+64 em `design/`, e 93 `agrega-lendo-tudo` em `server/`). Próximo: `tests/unit/core/` e
+`tests/unit/assistente/`.
