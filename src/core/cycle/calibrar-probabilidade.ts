@@ -1,4 +1,5 @@
-import type { EstadoCiclo } from '@/core/cycle/compute'
+import { estadoPorAtraso, type EstadoCiclo } from '@/core/cycle/compute'
+import { diasEntre, JANELA_DE_ESPERA_DIAS, type PrevisaoAuditada } from '@/core/cycle/prestacao-de-contas'
 import { PROBABILIDADE_POR_ESTADO } from '@/core/cycle/valor-em-risco'
 
 /**
@@ -61,4 +62,41 @@ export function calibrarProbabilidadePorEstado(
     resultado[estado] = c.voltou / c.total
   }
   return resultado
+}
+
+/**
+ * A ponte entre `cycle_predictions` cru e `calibrarProbabilidadePorEstado`: recebe as mesmas
+ * linhas que `prestacaoDeContas` já lê (`predictedOn`/`actualReturnOn`) e classifica cada uma pelo
+ * ESTADO que ela tinha ao ser resolvida — não pelo estado de hoje, que já é outra pergunta.
+ *
+ * Resolvida (`actualReturnOn` presente): o atraso na volta vira estado via `estadoPorAtraso`, e
+ * conta como conversão. Alguém que voltou 35 dias atrasada — depois de já ter passado pela faixa
+ * que hoje mostraria "perdida" — é exatamente o dado que falta para responder "de quem chega a
+ * 'perdida', quantos ainda voltam?".
+ *
+ * Não resolvida: só conta como "não voltou" quando já passou de `JANELA_DE_ESPERA_DIAS` sem
+ * volta — mesma régua de `prestacaoDeContas`, para as duas leituras nunca divergirem sobre o
+ * que é uma previsão "decidida". Quem ainda está dentro da janela é indeterminado e fica de fora:
+ * contar como erro agora inflaria a taxa de "não voltou" com gente que ainda pode aparecer amanhã.
+ */
+export function calibrarProbabilidadeDeResolvidas(
+  previsoes: readonly PrevisaoAuditada[],
+  hoje: string,
+  tabelaPadrao: Record<EstadoCiclo, number> = PROBABILIDADE_POR_ESTADO,
+): Record<EstadoCiclo, number> {
+  const desfechos: DesfechoPorEstado[] = []
+
+  for (const p of previsoes) {
+    if (p.actualReturnOn) {
+      const atrasoNaVolta = diasEntre(p.predictedOn, p.actualReturnOn)
+      desfechos.push({ estado: estadoPorAtraso(atrasoNaVolta), voltou: true })
+      continue
+    }
+    if (diasEntre(p.predictedOn, hoje) > JANELA_DE_ESPERA_DIAS) {
+      desfechos.push({ estado: 'lost', voltou: false })
+    }
+    // Ainda dentro da janela, sem volta: outcome indeterminado, fica fora da amostra.
+  }
+
+  return calibrarProbabilidadePorEstado(desfechos, tabelaPadrao)
 }

@@ -40,7 +40,14 @@ function mediana(valores: number[]): number {
   return ordenados[meio]!
 }
 
-function estadoPorAtraso(lateDays: number): EstadoCiclo {
+/**
+ * Exportada desde `docs/73` T3: `calibrar-probabilidade.ts` reaplica a MESMA régua de atraso →
+ * estado sobre o atraso que a previsão tinha ao ser resolvida (não ao ser calculada hoje), para
+ * calibrar `PROBABILIDADE_POR_ESTADO`. Uma segunda cópia desta função divergiria da primeira na
+ * primeira mudança de faixa — a mesma armadilha de "duas cópias da mesma fórmula" já registrada
+ * nesta base.
+ */
+export function estadoPorAtraso(lateDays: number): EstadoCiclo {
   if (lateDays < -3) return 'on_track'
   if (lateDays <= 0) return 'due'
   if (lateDays <= 10) return 'late'

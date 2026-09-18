@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { calibrarProbabilidadePorEstado, MINIMO_POR_ESTADO } from '@/core/cycle/calibrar-probabilidade'
+import { calibrarProbabilidadeDeResolvidas, calibrarProbabilidadePorEstado, MINIMO_POR_ESTADO } from '@/core/cycle/calibrar-probabilidade'
+import { JANELA_DE_ESPERA_DIAS, type PrevisaoAuditada } from '@/core/cycle/prestacao-de-contas'
 import { PROBABILIDADE_POR_ESTADO } from '@/core/cycle/valor-em-risco'
 
 /**
@@ -75,5 +76,66 @@ describe('calibrarProbabilidadePorEstado', () => {
     const congelado = { ...padraoCustom }
     calibrarProbabilidadePorEstado(repetir(20, () => desfecho('due', true)), padraoCustom)
     expect(padraoCustom).toEqual(congelado)
+  })
+})
+
+/**
+ * A ponte entre `cycle_predictions` cru (as mesmas linhas que `prestacaoDeContas` já lê) e a
+ * calibração por estado. O caso que justifica o arquivo inteiro: alguém que volta 35 dias
+ * atrasada — depois de já ter passado pela faixa que hoje mostraria "perdida" — é o dado que
+ * falta para responder "de quem chega a 'perdida', quantos ainda voltam?".
+ */
+describe('calibrarProbabilidadeDeResolvidas', () => {
+  const HOJE = '2026-06-01'
+
+  function previsao(predictedOn: string, actualReturnOn: string | null): PrevisaoAuditada {
+    return { predictedOn, actualReturnOn }
+  }
+
+  it('resolvida no dia certo (atraso 0) vira estado due, e conta como conversão', () => {
+    const previsoes = repetir(MINIMO_POR_ESTADO, () => previsao('2026-01-01', '2026-01-01'))
+    const calibrado = calibrarProbabilidadeDeResolvidas(previsoes, HOJE)
+    expect(calibrado.due).toBe(1)
+  })
+
+  it('quem volta 35 dias atrasada conta em LOST, mesmo tendo voltado — o caso central do recurso', () => {
+    // 8 voltaram 35 dias atrasadas (estado lost na hora da volta), 8 nunca voltaram e já
+    // passaram da janela de espera (também lost). A calibrada não é nem 0% nem 100%: é 50%.
+    const previsoes = [
+      ...repetir(MINIMO_POR_ESTADO, () => previsao('2026-01-01', '2026-02-05')), // 35 dias atrasada, voltou
+      ...repetir(MINIMO_POR_ESTADO, () => previsao('2026-01-01', null)), // nunca voltou
+    ]
+    const calibrado = calibrarProbabilidadeDeResolvidas(previsoes, HOJE)
+    expect(calibrado.lost).toBe(0.5)
+  })
+
+  it('não resolvida mas já passou da janela de espera conta como não-voltou (lost)', () => {
+    const passouDaJanela = new Date(Date.parse('2026-01-01T12:00:00Z') + (JANELA_DE_ESPERA_DIAS + 1) * 86_400_000)
+      .toISOString()
+      .slice(0, 10)
+    const previsoes = repetir(MINIMO_POR_ESTADO, () => previsao('2026-01-01', null))
+    const calibrado = calibrarProbabilidadeDeResolvidas(previsoes, passouDaJanela)
+    expect(calibrado.lost).toBe(0)
+  })
+
+  it('não resolvida e ainda dentro da janela fica FORA da amostra — outcome indeterminado', () => {
+    // 15 dias depois da data prevista: ainda dentro de JANELA_DE_ESPERA_DIAS (30). Se isto
+    // entrasse na amostra como "não voltou", inflaria a taxa de não-conversão com gente que
+    // ainda pode aparecer amanhã.
+    const aindaNaJanela = new Date(Date.parse('2026-01-01T12:00:00Z') + 15 * 86_400_000).toISOString().slice(0, 10)
+    const previsoes = repetir(50, () => previsao('2026-01-01', null))
+    const calibrado = calibrarProbabilidadeDeResolvidas(previsoes, aindaNaJanela)
+    // Sem nenhum desfecho decidido, a tabela inteira continua igual ao padrão.
+    expect(calibrado).toEqual(PROBABILIDADE_POR_ESTADO)
+  })
+
+  it('lista vazia devolve o padrão', () => {
+    expect(calibrarProbabilidadeDeResolvidas([], HOJE)).toEqual(PROBABILIDADE_POR_ESTADO)
+  })
+
+  it('aceita tabela padrão custom, do mesmo jeito que calibrarProbabilidadePorEstado', () => {
+    const padraoCustom = { on_track: 0, due: 0.5, late: 0.5, at_risk: 0.5, lost: 0.5 }
+    const calibrado = calibrarProbabilidadeDeResolvidas([], HOJE, padraoCustom)
+    expect(calibrado).toEqual(padraoCustom)
   })
 })

@@ -72,7 +72,12 @@ export type PrestacaoDeContas = {
   erroMedianoDias: number | null
 }
 
-function diasEntre(de: string, ate: string): number {
+/**
+ * Exportada desde `docs/73` T3: `calibrar-probabilidade.ts` precisa da MESMA conta de dias entre
+ * duas datas para classificar o atraso na resolução. Duplicar a fórmula é como esta base já
+ * divergiu antes — ver `estadoPorAtraso` em `compute.ts`.
+ */
+export function diasEntre(de: string, ate: string): number {
   // Datas puras em UTC ao meio-dia: sem hora, não há fuso nem horário de verão para errar.
   return Math.round((Date.parse(`${ate}T12:00:00Z`) - Date.parse(`${de}T12:00:00Z`)) / 86_400_000)
 }
