@@ -10603,3 +10603,19 @@ Mutação: `.github/workflows/ci.yml` linha 43, trocado `actions/checkout@11d596
 corretamente, apontando arquivo e linha exatos: `ci.yml:43 → - uses: actions/checkout@v4`.
 Restaurado com `git checkout --`, confirmado (SHA completo com comentário de volta). `tests/unit`
 inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 71: `lgpd-nao-promete-automatismo`
+
+Guarda de LGPD/destrutivo irreversível: o job `lgpd-retention` fica de propósito FORA do
+`on.schedule` do cron.yml (decisão do dono, não efeito colateral de deploy), mas quando roda
+precisa de três filtros exatos — cliente já excluída (`deleted_at` preenchido), já passou da
+carência de 30 dias (`lt('deleted_at', limite)`) e ainda não anonimizada. O próprio docstring
+registra: "provado por mutação: apagar a linha do filtro de carência deixa a rota anonimizar
+cliente excluída há segundos, e NENHUM teste reprovava" antes desta guarda existir. Mutação:
+`api/cron/lgpd-retention/route.ts`, removido `.lt('deleted_at', limite)` da consulta — exatamente
+essa mutação histórica, reaplicada. Guarda reprovou corretamente: `sumiu o filtro de carência —
+anonimizaria quem foi excluída agora`. Restaurado com `git checkout --`, confirmado grep
+(`.lt('deleted_at', limite)` de volta). `tests/unit` inteiro (283/2461) verde depois.
