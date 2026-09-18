@@ -12548,3 +12548,21 @@ Mutação: `core/ciclo/recorte-da-lista.ts`, trocado `if (mostrados >= total) re
 200 de 150, as de maior valor. Filtre por situação para chegar as outras -50."` em vez de `null` —
 um aviso de recorte com contagem NEGATIVA. Restaurado com `git checkout --`, confirmado (`>=` de
 volta na linha 20). `tests/unit` inteiro (284/2465) verde depois.
+
+
+---
+
+## 2026-09-18 · Loop assert-vazio — item 149: `instagram-vira-apelido`
+
+Guarda de UX/SEO (medido em 2026-08-31): o campo "Instagram" é texto livre, e o formulário só
+tirava o `@` inicial. Três dos cinco jeitos naturais de preencher (colar `https://instagram.com/
+nome`, `instagram.com/nome`, `www.instagram.com/nome/`) produziam link quebrado com o domínio
+repetido — `https://instagram.com/https://instagram.com/nome`. O mesmo valor alimenta o `sameAs` do
+JSON-LD, onde marcação inválida pode desqualificar o resultado rico da página inteira.
+
+Mutação: `core/text/instagram.ts`, `apelidoDoInstagram`, removidas as linhas `s =
+s.replace(/^https?:\/\//i, '')` e `s = s.replace(/^instagram\.com\//i, '')` — reproduzindo
+exatamente o defeito histórico que o próprio docstring documenta. Guarda reprovou corretamente, com
+7 falhas: apelidos com prefixo `https://` ou `instagram.com/` deixaram de resolver (`expected null
+to be 'barbeariadomrocha'`), e `urlDoInstagram` voltou a duplicar o domínio. Restaurado com `git
+checkout --`, confirmado (as duas linhas de volta). `tests/unit` inteiro (284/2465) verde depois.
