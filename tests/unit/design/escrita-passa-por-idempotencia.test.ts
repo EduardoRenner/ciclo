@@ -118,7 +118,6 @@ const ISENTAS: { rota: string; porque: string }[] = [
   //    `idempotency-key`. Estas rotas são chamadas por `fetch` direto, nunca são reenviadas
   //    sozinhas, e o que sobra é o toque duplo humano.
   { rota: 'clients/import', porque: 'multipart fora da fila offline; e a importação já pula telefone repetido' },
-  { rota: 'clients/[id]/media', porque: 'multipart fora da fila offline' },
   { rota: 'tenant/vitrine', porque: 'multipart fora da fila offline' },
   { rota: 'tenant/vitrine/entidade', porque: 'multipart fora da fila offline' },
 

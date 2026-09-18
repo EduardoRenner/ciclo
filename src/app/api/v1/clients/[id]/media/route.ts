@@ -5,6 +5,7 @@ import { EsquemaUploadMedia, fazerUploadMedia } from '@/server/services/media-up
 import { AppError } from '@/server/http/errors'
 import { lerJson } from '@/server/http/body'
 import { rota } from '@/server/http/handler'
+import { comIdempotencia } from '@/server/http/idempotency'
 
 type Ctx = { params: Promise<{ id: string }> }
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -24,7 +25,19 @@ export const GET = rota(async (req, params) => {
   return listarMediaDoCliente(ctx.tenantId, id)
 })
 
-/** `POST .../media multipart → strip EXIF, bucket privado` (§2.7). */
+/**
+ * `POST .../media multipart → strip EXIF, bucket privado` (§2.7).
+ *
+ * Achado em 2026-09-18: fora da fila offline (que só embala JSON), o único jeito de repetir esta
+ * chamada era o toque duplo humano — já coberto pelo botão desabilitado durante o envio. O que
+ * faltava é o cenário que Idempotency-Key existe para cobrir: rede ruim que derruba a RESPOSTA
+ * depois de a escrita já ter acontecido, e a pessoa tenta de novo vendo "falhou". Sem chave, cada
+ * tentativa cria uma foto nova — a mesma imagem duplicada na lista, sem dedupe nenhum.
+ *
+ * Risco de trocar o client (RLS→service_role) não se aplica aqui: `fazerUploadMedia` já resolve o
+ * próprio `db` via `withTenant` por dentro, e esta rota nunca cria um `db` seu — `comIdempotencia`
+ * só embrulha a chamada, sem mudar quem fala com o banco.
+ */
 export const POST = rota(async (req, params) => {
   const ctx = await contextoAtual(req)
   exigirPermissao(ctx.papel, 'client:update')
@@ -48,5 +61,7 @@ export const POST = rota(async (req, params) => {
   })
 
   const buffer = Buffer.from(await arquivo.arrayBuffer())
-  return fazerUploadMedia(ctx.tenantId, entrada, { buffer, createdBy: ctx.sessao.userId })
+  return comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/clients/${id}/media` }, () =>
+    fazerUploadMedia(ctx.tenantId, entrada, { buffer, createdBy: ctx.sessao.userId }),
+  )
 })

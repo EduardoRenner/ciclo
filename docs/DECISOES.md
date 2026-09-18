@@ -12113,3 +12113,41 @@ depende). Não é achado novo de severidade própria; soma à mesma decisão pen
 
 `cycle/attribution`, `vault/access-log`, `cash/daily`, `cash/summary`: quatro rotas GET na mesma
 situação, todas seguras (não fazem escrita, não vazam RLS), todas esperando a mesma decisão.
+
+
+---
+
+## 2026-09-18 · CORRIGIDO (parcial) — `clients/[id]/media` ganhou Idempotency-Key
+
+**Contexto:** revisão do achado anterior "clients/import e clients/[id]/media sem Idempotency-Key"
+(entrada de mais cedo hoje). Reexaminando o motivo de não ter corrigido, percebi que tinha
+generalizado o risco das DUAS rotas como se fosse o mesmo — não é.
+
+**A diferença que eu tinha perdido.** `clients/import/route.ts` cria seu próprio `db` via
+`criarClienteDoUsuario()` (client `anon` + sessão, RLS como proteção real) e passa esse `db` para
+`importarClientes`. Envolver essa rota em `comIdempotencia` trocaria esse client pelo
+`service_role` que `comIdempotencia` cria internamente via `withTenant` — troca de modelo de
+segurança, risco real sem `test:rls`.
+
+`clients/[id]/media/route.ts` é diferente: a rota NUNCA cria um `db` — ela só repassa `ctx.tenantId`
+para `fazerUploadMedia`, que já resolve o PRÓPRIO `db` via `withTenant` por dentro, independente de
+quem chama. `comIdempotencia` embrulhando a chamada não troca client nenhum, porque não havia
+client da rota para trocar. Risco genuinamente menor — mesma classe do que já é seguro em
+`wallet/credit`, `tickets/[id]/close` etc., todos atrás de `comIdempotencia` sem drama de RLS.
+
+**Corrigido:**
+1. `src/app/api/v1/clients/[id]/media/route.ts` — `POST` envolvido em `comIdempotencia(req, {
+   tenantId, endpoint }, () => fazerUploadMedia(...))`.
+2. `src/app/admin/clientes/[id]/fotos.tsx` — o único chamador (`subir()`) passa a mandar
+   `idempotency-key: crypto.randomUUID()` no header, sem tocar no `content-type` (FormData define
+   o boundary sozinho — sobrescrever quebraria o multipart).
+3. `tests/unit/design/escrita-passa-por-idempotencia.test.ts` — `clients/[id]/media` saiu de
+   `ISENTAS`. Confirmado via mutação: recolocar a entrada na lista com a rota já protegida faz o
+   teste "a lista de isentas não guarda nome que já se protegeu" reprovar (`expected [ Array(1) ]
+   to deeply equal []`); removida de novo, guarda verde.
+
+`tsc --noEmit` limpo, `eslint` limpo, `tests/unit` inteiro (284/2465) verde.
+
+**`clients/import` continua sem correção** — o risco de troca de RLS→service_role ali é real (a
+rota grava PII de cliente em massa, com o `db` passado explicitamente por toda a função), e
+continua exigindo `test:rls` antes de confiar. Backlog inalterado para essa rota especificamente.

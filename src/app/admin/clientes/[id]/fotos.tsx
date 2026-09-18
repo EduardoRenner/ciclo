@@ -61,7 +61,13 @@ export default function Fotos({ clientId, fotos: fotosIniciais, consentimentoIma
       if (fase) form.append('phase', fase)
       if (comConsentId) form.append('consentId', comConsentId)
 
-      const r = await fetch(`/api/v1/clients/${clientId}/media`, { method: 'POST', body: form })
+      // Sem `content-type` manual: `fetch` com `FormData` como corpo define o boundary sozinho, e
+      // sobrescrever isso quebra o multipart. `idempotency-key` é o header extra, não json.
+      const r = await fetch(`/api/v1/clients/${clientId}/media`, {
+        method: 'POST',
+        headers: { 'idempotency-key': crypto.randomUUID() },
+        body: form,
+      })
       // A rota devolve a linha CRUA de `media` (snake_case, sem `publicada` — esse campo só existe
       // no join de `listarMediaDoCliente`). Nunca confiar essa forma como se fosse `Foto`: uma
       // foto recém-subida nunca está publicada, então o valor é conhecido sem round-trip nenhum.
