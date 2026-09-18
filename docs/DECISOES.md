@@ -11035,3 +11035,21 @@ guarda corrigida: reprovou corretamente, apontando o trecho exato (`',\r\n...db\
 confirmado (ambos os `buscarTudoPaginado(` originais de volta, linhas 198 e 253). Guarda corrigida
 rodada de novo contra o código restaurado: verde. `tests/unit` inteiro (283/2461) verde depois, só
 o teste da guarda alterado no diff.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 94: `serie-mensal-e-append-only`
+
+Guarda de dinheiro/fosso (`docs/46`): `monthly_profit` é o registro do que o lucro do mês ERA na
+época, e reescrever uma linha apaga exatamente isso — a tela continuaria mostrando uma série
+plausível, tornando o defeito invisível. O próprio docstring da guarda já avisa que `upsert` com
+`ignoreDuplicates: true` produz o mesmo SQL do `insert` hoje, e fica proibido mesmo assim, porque
+trocar essa opção para `false` é uma palavra e o diff não parece perigoso. Mutação: `caixa.ts`,
+o único escritor de `monthly_profit`, trocado `.insert({` por `.upsert({` — reproduzindo
+literalmente o caso que o comentário da guarda descreve como proibido. Guarda reprovou
+corretamente, em dois pontos (o positivo conhecido também caiu, coerente): `a série mensal é
+registro contábil: o valor dela é ser o que o número ERA na época. Reescrever um mês apaga
+exatamente isso, e o defeito seria invisível.: expected [ Array(1) ] to deeply equal []` com
+`"src\server\services\caixa.ts: .upsert("`. Restaurado com `git checkout --`, confirmado
+(`.insert({` de volta na linha 339). `tests/unit` inteiro (283/2461) verde depois.
