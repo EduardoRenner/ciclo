@@ -10767,3 +10767,21 @@ só na rota mutada: `segments voltou a filtrar por hora local ...: expected true
 rotas de conveniência (`campaigns`, `stock-alerts`, que DEVEM filtrar) continuaram passando.
 Restaurado com `git checkout --`, confirmado (filtro removido). `tests/unit` inteiro (283/2461)
 verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 80: `demonstracao-fora-do-indice`
+
+Guarda dos "seis caminhos para o mundo" de um tenant de demonstração: sitemap, robots, aviso
+visível (perfil E agendar), lembretes e campanhas — todos precisam concordar que a conta não é
+real. Achado em 2026-09-03 abrindo a página, não lendo código: o aviso existia só em `/{slug}`, e
+`/{slug}/agendar` (para onde o próprio CTA "Agendar horário" aponta, e onde quem chega por print
+ou link direto cai primeiro) ficou sem aviso — a mesma armadilha de `recurso-pago-avisa-antes`,
+consertar o caso em vez da pergunta. Mutação: `(public)/[slug]/agendar/page.tsx`, trocado
+`{ehDemonstracao(slug) ? (...) : null}` por `{false ? (...) : null}` — o aviso nunca mais
+renderiza, mas o import e o resto do arquivo continuam intactos (mutação cirúrgica, isolando só a
+asserção de renderização). Guarda reprovou corretamente, apontando só a página mutada:
+`src/app/(public)/[slug]/agendar/page.tsx não mostra o aviso de demonstração ...: expected false
+to be true` — a página de perfil continuou passando. Restaurado com `git checkout --`, confirmado
+(`ehDemonstracao(slug) ?` de volta). `tests/unit` inteiro (283/2461) verde depois.
