@@ -67,10 +67,27 @@ const JUSTIFICADAS: { arquivo: string; tabela: string; quantas: number; porque: 
     porque: 'busca pelo appointment_id que veio de token HMAC de escopo próprio, já verificado',
   },
   {
+    arquivo: 'src/server/services/avaliacoes.ts',
+    tabela: 'appointments',
+    quantas: 2,
+    porque:
+      'dadosParaAvaliar e registrarAvaliacao buscam pelo mesmo appointmentId que veio do token HMAC de avaliação, já ' +
+      'verificado antes de chegar aqui — achado em 2026-09-18 ao corrigir o detector para checagem por CHAMADA, não ' +
+      'palavra solta (ver comentário do detector, abaixo)',
+  },
+  {
     arquivo: 'src/server/services/ciclo.ts',
     tabela: 'services',
     quantas: 1,
     porque: 'serviceId vem de uma combinação montada a partir de linhas já filtradas por tenant',
+  },
+  {
+    arquivo: 'src/server/services/ciclo.ts',
+    tabela: 'client_cycles',
+    quantas: 1,
+    porque:
+      'upsert de array montado em variável (`linhas.push({ tenant_id: tenantId, ... })`) — cada objeto leva tenant_id, ' +
+      'que a varredura não enxerga de dentro da variável. Mesma classe do achado de fidelidade.ts::loyalty_entries.',
   },
   {
     arquivo: 'src/server/services/fidelidade.ts',
@@ -93,11 +110,14 @@ const JUSTIFICADAS: { arquivo: string; tabela: string; quantas: number; porque: 
   {
     arquivo: 'src/server/services/whatsapp-inbound.ts',
     tabela: 'messages',
-    quantas: 1,
+    quantas: 2,
     porque:
-      'webhook de status de entrega (T-01): o correlato é o provider_id (id da mensagem na Meta, globalmente único), ' +
-      'e a autorização já foi provada pela assinatura HMAC em parseWebhook — não existe tenant de contexto ANTES desta ' +
-      'consulta, é ela quem descobre a qual tenant a mensagem pertence',
+      'processarStatusDeEntrega (T-01): o correlato é o provider_id (id da mensagem na Meta, globalmente único), e a ' +
+      'autorização já foi provada pela assinatura HMAC em parseWebhook. processarMensagemRecebida (CONFIRMAR/CANCELAR ' +
+      'por WhatsApp): o correlato é o telefone de quem respondeu, cruzado com uma mensagem que FOI ENVIADA para esse ' +
+      'telefone (kind reminder/confirmation) — nenhum dos dois tem tenant de contexto antes da consulta, é ela quem ' +
+      'descobre a qual tenant a mensagem pertence. A segunda ficou invisível ao detector até 2026-09-18 porque ' +
+      '`.select(\'tenant_id, ...\')` continha a palavra "tenant_id" sem filtrar por ela — ver comentário do detector.',
   },
   {
     arquivo: 'src/server/services/lembretes.ts',
@@ -122,6 +142,22 @@ const JUSTIFICADAS: { arquivo: string; tabela: string; quantas: number; porque: 
     tabela: 'quote_items',
     quantas: 1,
     porque: 'itens do orçamento cujo quoteId já foi conferido contra o tenant',
+  },
+  {
+    arquivo: 'src/server/services/orcamentos.ts',
+    tabela: 'quotes',
+    quantas: 2,
+    porque:
+      'orcamentoPublico e resolverOrcamentoPublico buscam pelo mesmo quoteId, que vem de verificarTokenOrcamento — o ' +
+      'token HMAC é a própria autorização, não há tenant de contexto antes de decodificá-lo',
+  },
+  {
+    arquivo: 'src/server/services/previsao.ts',
+    tabela: 'cycle_predictions',
+    quantas: 1,
+    porque:
+      'registrarPrevisoes faz upsert de array montado em variável (`linhas.map(p => ({ tenant_id: tenantId, ... }))`) — ' +
+      'mesma classe de ciclo.ts::client_cycles',
   },
   {
     arquivo: 'src/server/services/recuperar-receita.ts',
@@ -182,6 +218,25 @@ function fimDaCadeia(codigo: string, inicio: number): number {
   return codigo.length
 }
 
+/**
+ * A CHAMADA de filtro (`.eq('tenant_id', ...)`) OU a CHAVE de objeto num `.insert`/`.update`
+ * (`tenant_id: tenantId`) — nunca a palavra solta na cadeia. Achado em 2026-09-18,
+ * autorregistrado como comentário em `whatsapp-inbound.ts`: `.select('tenant_id, ...')` também
+ * contém a palavra "tenant_id" (como STRING, sem os dois-pontos de chave de objeto), e a
+ * checagem antiga (`trecho.includes('tenant_id')`) marcava a consulta como filtrada só por
+ * SELECIONAR a coluna, sem filtrar por ela — a mesma classe de guarda cega que
+ * `agrega-lendo-tudo`/`assistente-escreve-como-gente` já tiveram nesta base.
+ *
+ * `tenant_id\s*:` sozinho NÃO casa com `.select('tenant_id, appointment_id')` (vírgula, não
+ * dois-pontos) — é essa a distinção que separa "citou a coluna" de "usou como filtro ou como
+ * campo do insert". Exportada como função nomeada (não regex solta repetida no teste) para o
+ * teste de mutação exercitar exatamente o que o detector roda — nunca uma segunda cópia da
+ * mesma fórmula que pode divergir da primeira.
+ */
+function temFiltroDeTenant(trecho: string): boolean {
+  return /\.eq\(\s*['"]tenant_id['"]|tenant_id\s*:/.test(trecho)
+}
+
 function consultasSemFiltroDeTenant(): { arquivo: string; tabela: string; linha: number }[] {
   const arquivos = execSync('git ls-files "src/server/**/*.ts"', { encoding: 'utf8' }).split('\n').filter(Boolean)
   const achados: { arquivo: string; tabela: string; linha: number }[] = []
@@ -196,8 +251,7 @@ function consultasSemFiltroDeTenant(): { arquivo: string; tabela: string; linha:
       if (SEM_COLUNA_TENANT.has(tabela)) continue
 
       const trecho = codigo.slice(m.index, fimDaCadeia(codigo, m.index))
-
-      if (!trecho.includes('tenant_id')) {
+      if (!temFiltroDeTenant(trecho)) {
         achados.push({ arquivo, tabela, linha: codigo.slice(0, m.index).split('\n').length })
       }
     }
@@ -211,6 +265,15 @@ describe('o leitor desta guarda', () => {
   it('enxerga o código do servidor — senão passa vazia', () => {
     const total = execSync('git ls-files "src/server/**/*.ts"', { encoding: 'utf8' }).split('\n').filter(Boolean)
     expect(total.length, 'nenhum arquivo de servidor encontrado').toBeGreaterThan(40)
+  })
+
+  it('não confunde SELECIONAR a coluna tenant_id com FILTRAR por ela', () => {
+    // O achado de 2026-09-18: `.select('tenant_id, ...')` contém a palavra "tenant_id" sem
+    // filtrar por ela. `.eq('tenant_id', ...)` filtra; `tenant_id: valor` num insert/update é o
+    // campo sendo gravado, também vale como scoping.
+    expect(temFiltroDeTenant(".select('tenant_id, appointment_id, sent_at')"), 'select sozinho não é filtro').toBe(false)
+    expect(temFiltroDeTenant(".eq('tenant_id', tenantId)"), 'eq deveria contar como filtro').toBe(true)
+    expect(temFiltroDeTenant('.insert({ tenant_id: tenantId, client_id: id })'), 'chave de insert deveria contar').toBe(true)
   })
 
   it('não confunde bucket de Storage com tabela', () => {
