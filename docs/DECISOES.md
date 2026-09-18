@@ -12305,3 +12305,22 @@ achado de produção. Guarda reprovou corretamente, com 2 falhas: tenant `gratis
 (`expected [ { …(5) } ] to deeply equal []`) e tenant que desligou fidelidade explicitamente também
 voltou a pontuar. Restaurado com `git checkout --`, confirmado (checagem de volta na linha 154).
 `tests/unit` inteiro (284/2465) verde depois.
+
+
+---
+
+## 2026-09-18 · Loop assert-vazio — item 135: `avaliacoes-indicacao`
+
+Guarda de LGPD/orquestração (I-3, `docs/30-INDICACAO-PLANO.md` §2.5/§4.4): o convite de indicação
+só nasce quando a nota é boa (≥4), o tenant tem `slug` e — o ponto mais sensível — o agendamento
+tem cliente vinculado. `client_id` pode ser nulo quando a cliente foi eliminada (LGPD art. 18 VI)
+depois de deixar a avaliação: sem cliente não há para quem indicar.
+
+Mutação: `server/services/avaliacoes.ts`, função interna `comIndicacao`, removido `&&
+!!agendamento!.client_id` da condição `podeIndicar` — reproduzindo o cenário em que uma avaliação
+de cliente eliminada ainda geraria convite. Guarda reprovou corretamente: `expected { slug:
+'dom-rocha', …(1) } to be null` — e o token gerado pelo código mutado revelou o efeito concreto:
+`gerarTokenIndicacao(null)` produziu um token com `.null.` embutido no payload assinado, um link de
+indicação estruturalmente quebrado, não só uma decisão errada. Restaurado com `git checkout --`,
+confirmado (`!!agendamento!.client_id` de volta na linha 99). `tests/unit` inteiro (284/2465) verde
+depois.
