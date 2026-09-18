@@ -11107,3 +11107,21 @@ domínio que o Next esteja servindo de verdade" (preview `localhost:4321`) — `
 (com host fixo, `!host` nunca é verdadeiro, então o fallback de segurança some). Restaurado com
 `git checkout --`, confirmado (`req.headers.get('x-forwarded-host') ?? req.headers.get('host')` de
 volta na linha 48). `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 98: `metricas-da-ficha-ao-vivo`
+
+Guarda de dinheiro/ficha da cliente: métricas vinham de `clients.visits_count`/`ltv_cents`,
+colunas desnormalizadas cujo único escritor é o cron `segments` (5-6h de atraso medido) — concluir
+um atendimento às 14h e abrir a ficha mostrava o número de ontem, e é com esse número que se decide
+cobrar sinal. Mutação: `server/services/crm.ts`, `fichaDoCliente`, `ticketMedioCents` trocado de
+`visitas > 0 ? Math.round(ltvCents / visitas) : 0` (denominador ao vivo, das linhas recém-lidas)
+para `cliente.visits_count > 0 ? Math.round(ltvCents / cliente.visits_count) : 0` (denominador da
+coluna desnormalizada) — reproduzindo a classe exata do defeito: numerador ao vivo dividido por
+denominador defasado, "média e total discordam na mesma tela". Guarda reprovou corretamente, com
+o `git diff` completo aparecendo na mensagem (arquivo inteiro por causa do multiline match) e a
+asserção certa: `expect(CRM).toContain('Math.round(ltvCents / visitas)')` falhou. Restaurado com
+`git checkout --`, confirmado (`ticketMedioCents: visitas > 0 ? Math.round(ltvCents / visitas) :
+0` de volta na linha 327). `tests/unit` inteiro (283/2461) verde depois.
