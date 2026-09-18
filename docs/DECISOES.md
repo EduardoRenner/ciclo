@@ -12359,3 +12359,21 @@ Mutação: `app/admin/hoje/hoje.tsx`, `linkWhatsAppDoProximo`, trocado o fallbac
 reprovou corretamente: `expected 'https://wa.me/5511999999999?text=Oi%2…' to be null`. Restaurado
 com `git checkout --`, confirmado (`?? null` de volta na linha 53). `tests/unit` inteiro
 (284/2465) verde depois.
+
+
+---
+
+## 2026-09-18 · Loop assert-vazio — item 138: `tabs`
+
+Guarda de UX (31/08): o Motor de Ciclo virou botão CENTRAL (`HREF_DO_CENTRO`) por ser o slot que o
+polegar alcança sem reposicionar a mão — e não pode voltar a ser aba de canto por engano. O
+comentário do próprio arquivo já avisa: "se alguém devolver o Motor para a lista de abas, ele volta
+para o canto". Três asserções protegem essa invariante ao mesmo tempo.
+
+Mutação: `components/shell/tabs.ts`, adicionada uma 5ª entrada em `ABAS` — `{ href:
+'/admin/recuperar', rotulo: 'Motor', icone: 'Anel' }` — reproduzindo exatamente a regressão
+descrita. Guarda reprovou corretamente, com 3 falhas: a contagem de 4 destinos (`Array(5)`), "o
+Motor voltou a ser aba de canto" (`expected [ Array(5) ] to not include '/admin/recuperar'`), e
+`hrefDaAbaAtiva('/admin/recuperar')` deixou de ser `null` porque a nova aba passou a casar por
+igualdade. Restaurado com `git checkout --`, confirmado (`ABAS` de volta com 4 entradas).
+`tests/unit` inteiro (284/2465) verde depois.
