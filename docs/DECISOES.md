@@ -12425,3 +12425,24 @@ antes de alguém notar que está errado.
 Mutação: `core/estoque/alertas.ts`, removida a guarda `if (consumoMedioDiario <= 0) return null`.
 Guarda reprovou corretamente: `expected Infinity to be null`. Restaurado com `git checkout --`,
 confirmado (guarda de volta na linha 8). `tests/unit` inteiro (284/2465) verde depois.
+
+
+---
+
+## 2026-09-18 · Loop assert-vazio — item 142: `frase-da-margem` (+ `margem-do-servico`)
+
+Guarda de dinheiro/CLAUDE.md regra 3 (docs/50 L-06): a "parcela dominante" (comissão/produto/taxa)
+só pode aparecer quando a margem do serviço está ABAIXO do piso de 30% (`PISO_DE_MARGEM_BPS`).
+Acima disso, o serviço está saudável e apontar um "vilão" fabricaria um problema — a mesma linha
+que separa nomear a alavanca (permitido) de empurrar o dono a agir, que é precificação automática
+disfarçada. Uma mutação só nesta checagem reprovou DOIS arquivos ao mesmo tempo: `frase-da-margem`
+(a frase que a tela mostra) e `margem-do-servico` (o cálculo que a alimenta) — cobertos juntos.
+
+Mutação: `core/caixa/margem-do-servico.ts`, linha 154, removida a condição `&& margemBps <
+PISO_DE_MARGEM_BPS` do cálculo de `parcelaDominante` (mantido só o mínimo de atendimentos e receita
+positiva). Guarda reprovou corretamente nos dois arquivos: em `frase-da-margem.test.ts`, um serviço
+saudável (margem de 85%) passou a receber `"A comissão leva 10% do que este serviço fatura."` em
+vez de `null`; em `margem-do-servico.test.ts`, `expected 'comissao' to be null` com a mensagem
+"apontar culpado num serviço saudável fabrica um problema". Restaurado com `git checkout --`,
+confirmado (`&& margemBps < PISO_DE_MARGEM_BPS` de volta na linha 154). `tests/unit` inteiro
+(284/2465) verde depois.
