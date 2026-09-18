@@ -12041,3 +12041,56 @@ conserto do achado de double-submit (entrada anterior desta sessão).
 
 **Severidade ALTA** (dinheiro real que o cliente pagou e o salão não consegue operacionalizar), mas
 **registrado, não corrigido** — exige decisão de UX do Eduardo antes de qualquer código.
+
+
+---
+
+## 2026-09-18 · Achado ALTO, não corrigido — convite de equipe leva a um link que não existe
+
+**Contexto:** verificando os candidatos remanescentes da varredura de "capacidade morta"
+(`memberships/accept` sem chamador). A investigação inicial parecia apontar para o mesmo padrão já
+registrado (rota sem tela) — a medição foi mais longe e achou algo mais sério: não é só a rota de
+ACEITAR que está sem tela, é a PÁGINA INTEIRA de destino do link de convite que não existe.
+
+**Medido, com cuidado por afetar onboarding de equipe (Equipe/Avançado, tenant pagante):**
+
+1. `admin/config/profissionais/lista.tsx` (UI real, ativamente mantida — fix de UX em 2026-09-08,
+   "convite de equipe para de apagar o que foi digitado e de mentir que copiou") chama `POST /api/
+   v1/memberships/invite`, recebe `{ invite, link }` e apresenta o link para o DONO copiar e
+   mandar manualmente (decisão registrada em `f166aad`, 05/09: falta credencial de mensageria +
+   portão do `docs/25` F0 — correta, não é o que está em jogo aqui).
+2. O `link` devolvido pela rota (`memberships/invite/route.ts`) é literalmente
+   `` `${APP_URL}/convite/${token}` ``.
+3. **Não existe rota `/convite` em `src/app`** — `find src/app -maxdepth 2 -type d` lista todos os
+   segmentos de primeiro nível do app: nenhum se chama `convite`. Não é erro de busca: `src/core/
+   tenants/slugs-reservados.ts` já RESERVA o slug `'convite'` explicitamente sob o comentário
+   "Rotas planejadas, sem pasta ainda" — o próprio código confirma que a página não foi construída.
+4. `POST /api/v1/memberships/accept` (o que a página que falta deveria chamar) existe, funciona,
+   tem `exigirSessao`/`writeAudit` corretos — mas zero referência em `src/app` ou `src/components`.
+
+**Linha do tempo, para calibrar a severidade:** a UI de convite (`profissionais/lista.tsx`) existe
+desde pelo menos 19/08 e recebeu um CONSERTO DE UX em 08/09 (corrigindo o botão "Copiar link" para
+não mentir que copiou). A reserva do slug em `slugs-reservados.ts` já existia em 03/09. Ou seja:
+por pelo menos duas semanas, o produto tem estado ativamente polindo a experiência de COPIAR o
+link, sem que o link, ao ser aberto, leve a lugar nenhum — o tipo de gap que passa despercebido
+porque quem testa é sempre o DONO gerando o link (que funciona, copia, e a tela mostra sucesso);
+ninguém testou do lado de quem RECEBE e clica.
+
+**Impacto real:** todo tenant Equipe/Avançado que tenta adicionar um membro à equipe pelo convite
+embutido do produto — o caminho que a tela oferece, sem alternativa nenhuma visível — manda um link
+que dá 404 (ou cai na página pública `/[slug]` se `convite` colidir com o catch-all de slug, o que
+é ainda mais confuso: a pessoa convidada veria a VITRINE do salão, não um convite).
+
+**Por que não corrigi.** Construir a página `/convite/[token]/page.tsx` do zero (formulário,
+estados de carregando/erro/expirado, o que acontece se a pessoa já tem conta vs. não tem,
+integração com `POST /api/v1/memberships/accept`) é implementação de feature nova, não um conserto
+de 1-2 arquivos — e o slug já reservado sugere que build faz parte de um escopo maior que alguém
+decidiu não priorizar ainda (por trás de F0/credencial de mensageria, ou por outro motivo que não
+está registrado). Não é a mesma classe de risco do achado do `club` (onde a correção era aplicar um
+padrão já existente e testado em outro lugar) — aqui não há padrão de página de aceite de convite
+em nenhum outro lugar do produto para replicar com segurança.
+
+**Severidade ALTA** (funcionalidade central de onboarding de equipe, com UI enganosamente completa
+do lado de quem gera o link), **registrado, não corrigido** — precisa de decisão do Eduardo: é
+prioridade agora, ou o convite deveria sair de circulação (esconder o botão/fluxo) até a página
+existir, para não continuar mandando gente para um link morto?
