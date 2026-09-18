@@ -11685,3 +11685,74 @@ nada mais varre o `Map`. Guarda reprovou corretamente: `ler o tenant B solta a D
 tenant A: expected 2 to be 1` — a DEK vencida do tenant A ficou residente junto da nova do tenant
 B. Restaurado com `git checkout --`, confirmado (`soltarDeksVencidas(Date.now())` de volta na
 linha 60). `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-18 · Achado MÉDIO, não corrigido — `clients/import` e `clients/[id]/media` sem Idempotency-Key
+
+**Contexto:** item de backlog explícito do `docs/69` §6 ("clients/import, clients/[id]/media — risco
+de duplicação em double-submit — herdado do docs/68, ainda não verificado"). Investigado a fundo
+nesta sessão, depois de fechar o backlog de guardas-cegas do `docs/68` §6.
+
+**Medido.** `src/app/api/v1/clients/import/route.ts` e `src/app/api/v1/clients/[id]/media/route.ts`
+são as ÚNICAS duas rotas de escrita multipart do projeto (junto com `tenant/vitrine/*`) e as duas
+NÃO chamam `comIdempotencia` — violação literal da regra 6 do `CLAUDE.md` ("Escrita sempre por
+`/api/v1` com `Idempotency-Key`"). Confirmado por comparação: `tenant/vitrine/route.ts` também é
+multipart e TAMBÉM não usa `comIdempotencia` — mas ali há um comentário explícito explicando por
+quê é seguro (`storageKey` novo a cada chamada SUBSTITUI o logo/capa anterior — "repetir a
+requisição é idempotente por construção... sem duplicar registro em lugar nenhum"). Não existe
+comentário equivalente em `clients/import` nem em `clients/[id]/media`, e a checagem confirma que a
+ausência NÃO é segura nos dois casos:
+
+1. **`clients/import`** (`server/services/importacao-clientes.ts`): dedup roda ANTES da escrita —
+   consulta `hashesExistentes` por `.eq('tenant_id', tenantId).in('phone_hash', ...)`, depois insere.
+   Duas submissões concorrentes do MESMO arquivo (duas abas, ou um retry de rede depois de timeout
+   aparente) leem o mesmo estado "antes" e as duas passam a checagem. Para linha COM telefone, o
+   índice único parcial `clients_unique_phone (tenant_id, phone_e164) where phone_e164 is not null
+   and deleted_at is null` (migration 0001) segura a segunda escrita com `23505`, capturado
+   linha-a-linha (`server/services/importacao-clientes.ts:347-349`). Para linha SEM telefone
+   (`phone_e164 is null`), o índice único não se aplica — **zero proteção**, duplica de verdade.
+2. **`clients/[id]/media`** (`server/services/media-upload.ts`, `fazerUploadMedia`): `storageKey =
+   \`${tenantId}/${randomUUID()}.webp\`` — chave NOVA a cada chamada, sem hash de conteúdo, sem
+   checagem de foto recente igual. Ao contrário da vitrine (um logo, uma capa: sempre existe UM
+   slot que a nova chave substitui), fotos do cliente são uma LISTA que cresce (`media`, append-only
+   por desenho — CLAUDE.md regra 11, nunca deletar). Duas submissões concorrentes da MESMA foto
+   criam DOIS registros de mídia distintos, ambos com a foto de verdade, sem dedup nenhum.
+
+**Do lado do cliente:** confirmado que o double-CLIQUE já é bloqueado — o componente `Button`
+(`components/ui/button.tsx`) combina `disabled={disabled || carregando}` internamente, e as duas
+telas (`admin/clientes/importar/importador.tsx`, `admin/clientes/[id]/fotos.tsx`) passam
+`carregando={pendente}`/`carregando={carregando}` corretamente. O que sobra é exatamente o que
+Idempotency-Key existe para cobrir: duas abas, um retry de rede/proxy depois de timeout aparente
+(sem resposta recebida, mas a escrita já aconteceu no servidor) — cenário real neste produto, que o
+próprio `CLAUDE.md` cita (4G ruim de subsolo) e que a fila offline (`apiFetch`) já trata para
+formulários JSON, mas os dois uploads multipart aqui NÃO passam por `apiFetch`/fila offline (`fetch`
+cru nas duas telas).
+
+**Por que não corrigi às cegas.** `comIdempotencia` chama `withTenant(tenantId, callback)`
+internamente — um client `service_role`, que BYPASSA RLS por desenho (`with-tenant.ts`, regra 2 do
+CLAUDE.md) e depende só de filtro explícito `.eq('tenant_id', ...)` em toda consulta. As duas rotas
+hoje usam `criarClienteDoUsuario()` — client `anon` + cookie de sessão, onde RLS é a camada de
+proteção real (`server-client.ts`, achado da auditoria de 08/09 sobre `httpOnly`). Trocar o cliente
+de escrita removeria RLS como camada de defesa num caminho de PII de cliente (nome, telefone,
+e-mail em massa) e numa mídia (foto) — sem `pnpm test:rls` disponível nesta sessão (sem Docker),
+não dá para confirmar que a troca não abre uma brecha de isolamento entre tenants. Um bug de
+duplicata é recuperável (a pessoa apaga a linha extra); um bug de RLS não é.
+
+**Severidade: MÉDIA.** Não é vazamento entre tenants, não é perda de dado, não é dinheiro. É
+duplicata de registro dentro do MESMO tenant, num cenário de rede ruim ou uso em duas abas — irritante,
+não catastrófico, e recuperável manualmente (apagar a linha/foto extra).
+
+**Backlog explícito, com os dois caminhos de conserto possíveis para a próxima sessão (idealmente
+com Docker/Supabase local disponível, para rodar `test:rls` antes de confiar):**
+1. Envolver as duas rotas em `comIdempotencia`, migrando `importarClientes`/`fazerUploadMedia` para
+   o client `withTenant` que `comIdempotencia` já fornece — e rodar `test:rls` antes de confiar,
+   porque RLS deixa de proteger o caminho.
+2. Alternativa mais estreita: manter o client `criarClienteDoUsuario()` e escrever uma versão de
+   `comIdempotencia` (ou um helper novo) que aceite um client já pronto em vez de criar o seu via
+   `withTenant` — evita a troca de modelo de segurança, mas é uma segunda implementação da mesma
+   ideia (risco documentado de "duas cópias da mesma fórmula" — `docs/DECISOES.md` já tem entrada
+   sobre isso). Precisa de desenho deliberado, não só copiar-colar.
+
+Nenhuma das duas opções foi implementada nesta sessão — registrado para decisão/conserto futuro.
