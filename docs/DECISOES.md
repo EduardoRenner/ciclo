@@ -12935,3 +12935,23 @@ taxa de HOJE (`tenants.settings.payment_fees_bps`), não a congelada — compara
 banda (funil, suporte). Nenhuma ação necessária.
 
 `types.gen.ts` conferido em sincronia com todas as migrations até a 0091.
+
+
+---
+
+## 2026-09-18 · Mutação verificada — calibrarProbabilidadePorEstado (docs/73 T1-T2)
+
+Guarda nova mutada nos dois invariantes que sustentam o mecanismo.
+
+**Piso de amostra:** removido `if (c.total < MINIMO_POR_ESTADO) continue`. Guarda reprovou
+corretamente, com 2 falhas: o teste de "amostra abaixo do piso" (`expected 1 to be 0.5`) e o
+teste de fallback com tabela padrão custom, ambos calibrando sobre 3-7 casos quando deveriam
+manter o padrão.
+
+**`on_track` nunca calibra:** removido `if (d.estado === 'on_track') continue`. Guarda reprovou
+corretamente: `expected 1 to be +0` — 50 desfechos "on_track, voltou" calibrariam a probabilidade
+de on_track para 100%, uma afirmação sem sentido (quem está em dia não tem receita em risco por
+definição, não é uma média que se meça).
+
+Restaurado com `git checkout --` nos dois casos, confirmado. `tests/unit` inteiro (288/2488)
+verde depois.
