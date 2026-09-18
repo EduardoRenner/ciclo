@@ -10709,3 +10709,22 @@ removido o bloco `if (!depois) { ... }` inteiro. Guarda reprovou corretamente: `
 não confere se o update alcançou alguma linha ...: expected false to be true`. Restaurado com
 `git checkout --`, confirmado grep (`if (!depois)` de volta). `tests/unit` inteiro (283/2461)
 verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 77: `toda-rota-passa-pelo-rota`
+
+Guarda arquitetural de maior escopo já testada: `rota()` concentra quatro defesas (teto global de
+120/min por IP, conferência de `Origin` contra CSRF, envelope de erro que prende `INTERNAL` na
+mensagem canônica, `request_id` + log sem PII) — quem escreve a própria `Response` fica fora das
+quatro DE UMA VEZ, em silêncio. Não é hipótese: na auditoria de 01/09/2026, `/api/health` era a
+única rota fora do `rota()` e a única vazando `error.message` cru do Postgres, sem autenticação e
+sem teto de taxa. A guarda varre TODAS as 80+ rotas versionadas de `src/app/api` (via `git
+ls-files`) contra uma lista fechada de exceções com motivo escrito. Mutação:
+`api/v1/onboarding/route.ts`, acrescentado um espaço entre `rota` e `(` (`= rota (async...` em vez
+de `= rota(async...`) — sintaxe JS igualmente válida, mas que o detector (ancorado em `rota\(`
+literal, sem espaço) não reconhece como a atribuição real. Guarda reprovou corretamente, apontando
+exatamente o arquivo mutado entre todas as rotas: `src/app/api/v1/onboarding/route.ts`. Restaurado
+com `git checkout --`, confirmado grep (`= rota(` sem espaço de volta). `tests/unit` inteiro
+(283/2461) verde depois.
