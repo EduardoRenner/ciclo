@@ -5,7 +5,7 @@ import { computeCycle } from '@/core/cycle/compute'
 import { custoDoServico } from '@/core/comanda/custo-do-servico'
 import { lucroEmRiscoCents, lucroEsperadoCents, valorEmRiscoCents } from '@/core/cycle/valor-em-risco'
 import { buscarTudoPaginado } from '@/server/db/paginar'
-import { calibrarServicos, registrarPrevisoes, resolverPrevisoes, type PrevisaoParaRegistrar } from '@/server/services/previsao'
+import { calibrarServicos, probabilidadeCalibradaDoTenant, registrarPrevisoes, resolverPrevisoes, type PrevisaoParaRegistrar } from '@/server/services/previsao'
 import { AppError } from '@/server/http/errors'
 
 import type { Database } from '@/server/db/types.gen'
@@ -44,7 +44,7 @@ export async function recomputarCiclosDoTenant(db: Cliente, tenantId: string, ti
   // chamadas `.range()` separadas — paginar "às cegas" pode pular ou repetir
   // linha entre uma página e outra. Foi assim que o teste de 10 mil clientes
   // pegou isto: `processados` variava a cada execução (1000, depois 7902).
-  const [concluidos, futuros, servicos] = await Promise.all([
+  const [concluidos, futuros, servicos, probabilidade] = await Promise.all([
     buscarTudoPaginado(() =>
       db
         .from('appointments')
@@ -64,6 +64,9 @@ export async function recomputarCiclosDoTenant(db: Cliente, tenantId: string, ti
     buscarTudoPaginado(() =>
       db.from('services').select('id, cycle_days, cycle_days_observado, price_cents').eq('tenant_id', tenantId).order('id'),
     ),
+    // `docs/73` F1: a chance de retorno por estado, calibrada com o histórico deste tenant —
+    // continua igual à tabela global até o tenant acumular amostra suficiente por estado.
+    probabilidadeCalibradaDoTenant(db, tenantId, today),
   ])
 
   /*
@@ -158,7 +161,7 @@ export async function recomputarCiclosDoTenant(db: Cliente, tenantId: string, ti
       predicted_on: resultado.predictedDate.toString(),
       late_days: Math.trunc(resultado.lateDays),
       state: resultado.state,
-      value_at_risk_cents: valorEmRiscoCents(precoPorServico.get(serviceId) ?? 0, resultado.state),
+      value_at_risk_cents: valorEmRiscoCents(precoPorServico.get(serviceId) ?? 0, resultado.state, probabilidade),
       profit_at_risk_cents: lucroEmRiscoCents(
         lucroEsperadoCents({
           priceCents: precoPorServico.get(serviceId) ?? 0,
@@ -167,6 +170,7 @@ export async function recomputarCiclosDoTenant(db: Cliente, tenantId: string, ti
           materialCents: materialPorServico.get(serviceId) ?? 0,
         }),
         resultado.state,
+        probabilidade,
       ),
       computed_at: new Date().toISOString(),
     })
@@ -242,6 +246,16 @@ export async function recomputarCicloDeUmAtendimento(
     Mesma conta de lucro esperado do job noturno, pelo mesmo motivo da régua logo abaixo: as duas
     funções escrevem a MESMA linha de `client_cycles`, e uma delas escrever menos colunas que a
     outra deixa o número velho na tabela com cara de recém-calculado.
+
+    O que NÃO é igual, de propósito: `value_at_risk_cents`/`profit_at_risk_cents` aqui usam a
+    tabela PADRÃO de `PROBABILIDADE_POR_ESTADO`, não a calibrada do tenant (`docs/73` F1). Esta
+    função roda `await`ada dentro de concluir um atendimento — ação síncrona que a pessoa está
+    esperando — e ler `cycle_predictions` de novo aqui repetiria a consulta mais cara da tela
+    "Recuperar receita" num caminho sensível a latência, pelo mesmo motivo que já mordeu esta
+    base (`docs/70`, "Hoje bloqueava por evento de funil"). A diferença que isso produz é
+    cosmética — poucos centavos de estimativa — e o job noturno (`recomputarCiclosDoTenant`)
+    recalibra todo mundo de qualquer forma na madrugada seguinte. Não é o mesmo risco da régua
+    (que decide DATA e ESTADO, visíveis e capazes de oscilar) — é só o valor estimado ao lado.
   */
   const [materialPorServico, comissaoPor] = await Promise.all([
     materialDeCadaServico(db, tenantId, [combinacao.serviceId]),

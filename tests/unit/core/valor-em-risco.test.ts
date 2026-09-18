@@ -67,6 +67,21 @@ describe('valor em risco = preço × chance de voltar', () => {
       expect(p, `${estado} prometeria mais do que o serviço custa`).toBeLessThanOrEqual(1)
     }
   })
+
+  /**
+   * `docs/73` T3: quem já tem a tabela calibrada do tenant (`probabilidadeCalibradaDoTenant`)
+   * pode passar ela aqui. Sem o terceiro argumento, nada muda — é o que garante que os tenants
+   * que ainda não acumularam amostra continuam exatamente como sempre estiveram.
+   */
+  it('sem tabela custom, usa a global — nenhum chamador antigo muda de comportamento', () => {
+    expect(valorEmRiscoCents(6_000, 'late')).toBe(valorEmRiscoCents(6_000, 'late', PROBABILIDADE_POR_ESTADO))
+  })
+
+  it('com tabela custom, usa a probabilidade calibrada em vez da global', () => {
+    const calibrada = { ...PROBABILIDADE_POR_ESTADO, late: 0.4 } // medido, não o padrão de 0,65
+    expect(valorEmRiscoCents(10_000, 'late', calibrada)).toBe(4_000)
+    expect(valorEmRiscoCents(10_000, 'late')).not.toBe(4_000) // o padrão continua diferente
+  })
 })
 
 /**
@@ -110,5 +125,11 @@ describe('lucroEmRiscoCents', () => {
 
   it('estado desconhecido não vira valor cheio', () => {
     expect(lucroEmRiscoCents(10_000, 'inventado')).toBe(0)
+  })
+
+  it('com tabela custom, usa a probabilidade calibrada em vez da global', () => {
+    const calibrada = { ...PROBABILIDADE_POR_ESTADO, lost: 0.3 } // medido, não o padrão de 0,12
+    expect(lucroEmRiscoCents(10_000, 'lost', calibrada)).toBe(3_000)
+    expect(lucroEmRiscoCents(10_000, 'lost')).toBe(1_200) // o padrão continua o mesmo de sempre
   })
 })

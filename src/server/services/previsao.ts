@@ -1,6 +1,8 @@
 import { calibrarCiclo, type PrevisaoResolvida } from '@/core/cycle/calibracao'
-import { VERSAO_DO_MOTOR } from '@/core/cycle/compute'
+import { calibrarProbabilidadeDeResolvidas } from '@/core/cycle/calibrar-probabilidade'
+import { VERSAO_DO_MOTOR, type EstadoCiclo } from '@/core/cycle/compute'
 import { prestacaoDeContas, type PrestacaoDeContas } from '@/core/cycle/prestacao-de-contas'
+import { PROBABILIDADE_POR_ESTADO } from '@/core/cycle/valor-em-risco'
 import { buscarTudoPaginado } from '@/server/db/paginar'
 import { AppError } from '@/server/http/errors'
 
@@ -222,5 +224,37 @@ export async function prestacaoDeContasDoMotor(db: Cliente, tenantId: string, ho
   return prestacaoDeContas(
     linhas.map((l) => ({ predictedOn: l.predicted_on, actualReturnOn: l.actual_return_on })),
     hoje,
+  )
+}
+
+/**
+ * `docs/73` F1/T3 — a outra pergunta que `cycle_predictions` sabe responder, ao lado da acurácia
+ * da DATA (`prestacaoDeContasDoMotor`, acima): qual é a chance real de retorno por ESTADO, medida
+ * neste tenant, em vez do palpite fixo `PROBABILIDADE_POR_ESTADO` (`valor-em-risco.ts`) que nunca
+ * mudou desde o lançamento.
+ *
+ * Mesma consulta, mesma janela de 12 meses e o mesmo motivo (`prestacaoDeContasDoMotor`, acima) —
+ * as duas leituras de `cycle_predictions` precisam concordar sobre o que é "período recente",
+ * senão a acurácia e a probabilidade contariam eras diferentes do Motor sem ninguém perceber.
+ *
+ * Nunca lança e nunca falha o recálculo: um tenant novo, sem amostra suficiente em nenhum estado,
+ * recebe de volta a própria `PROBABILIDADE_POR_ESTADO` inalterada — `calibrarProbabilidadeDeResolvidas`
+ * já garante isso via `MINIMO_POR_ESTADO`.
+ */
+export async function probabilidadeCalibradaDoTenant(db: Cliente, tenantId: string, hoje: string): Promise<Record<EstadoCiclo, number>> {
+  const desde = new Date(Date.parse(`${hoje}T12:00:00Z`) - 365 * 86_400_000).toISOString().slice(0, 10)
+
+  const linhas = await buscarTudoPaginado(() =>
+    db
+      .from('cycle_predictions')
+      .select('predicted_on, actual_return_on')
+      .eq('tenant_id', tenantId)
+      .gte('predicted_on', desde)
+      .order('id'),
+  )
+  return calibrarProbabilidadeDeResolvidas(
+    linhas.map((l) => ({ predictedOn: l.predicted_on, actualReturnOn: l.actual_return_on })),
+    hoje,
+    PROBABILIDADE_POR_ESTADO,
   )
 }

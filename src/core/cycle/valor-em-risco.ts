@@ -33,8 +33,13 @@ export const PROBABILIDADE_POR_ESTADO: Record<EstadoCiclo, number> = {
   lost: 0.12,
 }
 
-export function valorEmRiscoCents(priceCents: number, state: string): number {
-  const probabilidade = PROBABILIDADE_POR_ESTADO[state as EstadoCiclo] ?? 0
+/**
+ * `tabela` é opcional e por padrão é a constante global — `docs/73` F1/T3: um chamador que já tem
+ * a tabela calibrada do tenant (`probabilidadeCalibradaDoTenant`) passa ela aqui; quem não tem
+ * (ou é um tenant sem amostra suficiente em nenhum estado) continua exatamente como antes.
+ */
+export function valorEmRiscoCents(priceCents: number, state: string, tabela: Record<EstadoCiclo, number> = PROBABILIDADE_POR_ESTADO): number {
+  const probabilidade = tabela[state as EstadoCiclo] ?? 0
   // "sempre arredondado para baixo" — nunca prometer mais do que entrega.
   return Math.floor(priceCents * probabilidade)
 }
@@ -71,8 +76,12 @@ export function lucroEsperadoCents(entrada: EntradaLucroEsperado): number {
  * de R$ 80 sem comissão nenhuma; ordenar por receita põe o primeiro no topo, e o dono gasta o
  * WhatsApp do dia com quem vale menos.
  */
-export function lucroEmRiscoCents(lucroEsperadoCents: number, state: string): number {
-  const probabilidade = PROBABILIDADE_POR_ESTADO[state as EstadoCiclo] ?? 0
+export function lucroEmRiscoCents(
+  lucroEsperadoCents: number,
+  state: string,
+  tabela: Record<EstadoCiclo, number> = PROBABILIDADE_POR_ESTADO,
+): number {
+  const probabilidade = tabela[state as EstadoCiclo] ?? 0
   // Mesmo piso do `valorEmRiscoCents`: arredondar para baixo, nunca prometer mais do que entrega.
   return Math.floor(lucroEsperadoCents * probabilidade)
 }

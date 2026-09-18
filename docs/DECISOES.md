@@ -12979,3 +12979,45 @@ aparecer amanhã".
 
 Restaurado com `git checkout --` nos dois casos, confirmado. `tests/unit` inteiro (288/2494) verde
 depois.
+
+
+---
+
+## 2026-09-18 · CORRIGIDO — Motor de Ciclo (docs/73 T3): valor/lucro em risco usam a probabilidade calibrada do tenant
+
+Fecha a metade que faltava do D+E (`docs/46`): até aqui só a DATA prevista se autocalibrava por
+tenant; a CHANCE de retorno por estado (`PROBABILIDADE_POR_ESTADO`) era fixa desde o lançamento
+para todo salão.
+
+**O que mudou:** `valorEmRiscoCents`/`lucroEmRiscoCents` ganharam um terceiro parâmetro opcional
+(`tabela`, default a constante global — zero mudança para quem não passa nada).
+`probabilidadeCalibradaDoTenant` (`server/services/previsao.ts`) lê `cycle_predictions` do tenant
+(mesma janela de 12 meses e mesmo motivo de `prestacaoDeContasDoMotor`) e devolve a tabela
+calibrada. `recomputarCiclosDoTenant` (o job noturno, todo tenant, toda noite) passa a usar a
+calibrada.
+
+**O que deliberadamente NÃO mudou, e por quê:**
+- `recomputarCicloDeUmAtendimento` (roda `await`ado dentro de concluir um atendimento, ação
+  síncrona que a pessoa está esperando) continua na tabela padrão — ler `cycle_predictions` de
+  novo ali repetiria a consulta mais cara da tela "Recuperar receita" num caminho sensível a
+  latência, o mesmo tipo de risco já medido em `docs/70` ("Hoje bloqueava por evento de funil").
+  A diferença que isso produz é cosmética (poucos centavos de estimativa) e o job noturno recalibra
+  todo mundo de qualquer forma. Comentário deixado no código para a próxima sessão não reabrir a
+  pergunta sem contexto.
+- `ciclo-de-quem-ja-atende.ts` (importação inicial de clientes existentes) não foi tocado: no
+  momento em que ele roda, `cycle_predictions` daquele tenant está vazia por definição (é a
+  PRIMEIRA vez que o Motor vê aquele salão) — calibrar ali seria ler o banco para sempre receber
+  de volta a própria tabela padrão, sem benefício nenhum.
+
+**Segurança do rollout:** o piso de amostra (`MINIMO_POR_ESTADO = 8`, por estado, por tenant) faz
+o comportamento ficar byte-idêntico ao de hoje para QUALQUER tenant que ainda não acumulou 8+
+previsões resolvidas naquele estado — na prática, todo tenant real, por meses (mesma estimativa de
+"2-3 meses de uso" já registrada no `docs/46` para a calibração da régua). Nenhum tenant existente
+muda de comportamento com este deploy.
+
+**Verificação:** `tests/unit/core/valor-em-risco.test.ts` cobre os dois caminhos (com e sem tabela
+custom) e `tests/unit/core/calibrar-probabilidade.test.ts` já tinha os invariantes centrais
+mutation-tested. O teste de integração existente (`tests/integration/ciclo.test.ts`, asserção fixa
+`value_at_risk_cents === 3900`) serve de guarda indireta contra regressão: com poucos client_cycles
+por teste (bem abaixo do piso de 8), a tabela calibrada deve continuar idêntica à padrão — CI
+confirma contra Postgres real.
