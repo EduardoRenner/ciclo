@@ -10983,3 +10983,24 @@ arquivo, não banco. Deployar assim quebra a rota em produção, não no build.:
 to deeply equal []` com `"funcao_que_nao_existe_no_banco (chamada em
 src\server\services\pacotes.ts)"`. Restaurado com `git checkout --`, confirmado
 (`_mutacaoTesteRpcOrfa` sumiu, `grep -c` = 0). `tests/unit` inteiro (283/2461) verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 92: `indicacao-no-gratis`
+
+Guarda de dinheiro/planos, `docs/30-INDICACAO-PLANO.md` §5.2, decisão do Eduardo em 29/08: o LAÇO
+de indicação (link/booking público) é de graça, mas a AUTOMAÇÃO (crédito de pontos) é paga — só o
+plano Equipe tem `loyalty`. A guarda tem quatro asserções; testada a mais fina, a ordem: a checagem
+`podeUsarModulo(plano, 'loyalty')` tem que vir ANTES do primeiro `lancamentos.push`, porque a
+função nunca lança em caso de módulo ausente (decide sem lançar) — se algum lançamento for montado
+antes da checagem, o CAMINHO fica certo hoje (o `return` ainda existe) mas QUALQUER refactor que
+mova a montagem do array para antes do primeiro uso passa a compartilhar estado calculado sem a
+trava. Mutação: `server/services/fidelidade.ts`, `pontuarAtendimentoConcluido`, movida a linha `if
+(podeUsarModulo(plano, 'loyalty').estado !== 'liberado') return` de antes do bloco `pointsPerReal`
+para depois dele (imediatamente antes do bloco `referralBonusPoints`) — reproduzindo o defeito
+medido em produção em 2026-08-26 (`dom-rocha` com 9 lançamentos em 263 atendimentos sem
+`settings.loyalty` gravado), na forma "checagem tarde demais". Guarda reprovou corretamente: `a
+checagem de módulo ficou DEPOIS do primeiro lançamento: expected 4314 to be less than 4081`.
+Restaurado com `git checkout --`, confirmado (checagem de volta antes do bloco `pointsPerReal`,
+linha 154). `tests/unit` inteiro (283/2461) verde depois.
