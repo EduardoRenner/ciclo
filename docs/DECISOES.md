@@ -10854,3 +10854,21 @@ zero tenants processados. Guarda reprovou corretamente: `o heartbeat de recomput
 ficar DENTRO de if (processados > 0) ...: expected false to be true`. Restaurado com
 `git checkout --`, confirmado grep (guarda condicional de volta). `tests/unit` inteiro (283/2461)
 verde depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 85: `saude-vigia-so-o-que-roda`
+
+Guarda "irmã" de `motor-de-ciclo-observavel`, para o defeito OPOSTO: o alarme que toca sempre.
+Medido em produção em 26/08: `/api/health` devolvia 503 permanente por `send_reminders` estar sem
+execução há 454 min — mas `reminders` está fora do `schedule` DE PROPÓSITO. Um alarme permanente é
+indistinguível de nenhum alarme: no dia em que o Motor de Ciclo parasse de verdade, o 503 não
+mudaria de cor. `heartbeatVigiado` decide se vale cobrar execução recente de um heartbeat — kind
+desconhecido é vigiado (padrão seguro é alarmar), mas rota comprovadamente fora do agendador
+(`reminders`, `campaigns`) sai da vigilância. Mutação: `core/cron/agendadas.ts`, `heartbeatVigiado`
+trocada para `return true` sempre, sem checar `ROTA_DO_HEARTBEAT`/`rodaSozinha` — todo kind volta
+a ser cobrado. Guarda reprovou corretamente em DUAS asserções comportamentais reais (chamando
+`verificarSaude` com banco encenado): `reminders parado há 8h` e `nunca rodou` ambos derrubaram
+`r.ok` para `false`, quando deveriam continuar `true`. Restaurado com `git checkout --`,
+confirmado (lógica original de volta). `tests/unit` inteiro (283/2461) verde depois.
