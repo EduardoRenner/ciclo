@@ -11303,3 +11303,19 @@ corrigiu. Guarda reprovou corretamente: `expect(trecho).not.toContain('greatest(
 apontando o trecho inteiro do `insert into services`. Restaurado com `git checkout --`, confirmado
 (`case when coalesce(...) < 1 then 21` de volta na linha 63). `tests/unit` inteiro (283/2461) verde
 depois.
+
+
+---
+
+## 2026-09-17 · Loop de guardas-cegas — item 109: `vertical-pack-tem-catalogo`
+
+Guarda do incidente de 02/09: o enum `vertical_pack` prometia nove verticais desde a 0001/0031, e
+só seis tinham catálogo semeado (`hair`, `tattoo`, `general` não tinham) — e a 0008 ensinava o
+onboarding a TOLERAR pack ausente, de propósito, então quem escolhia "cabelo" criava a conta com
+sucesso e caía num app com ZERO serviço, sem erro nenhum. Mutação: `supabase/migrations/
+0057_packs_hair_tattoo_general.sql`, trocado o literal `'hair'` por `'hair_typo'` no primeiro
+`insert into vertical_packs values (` — reproduzindo exatamente a lacuna medida (uma vertical do
+enum sem catálogo correspondente). Guarda reprovou corretamente em dois pontos: `estas verticais
+existem no enum e não têm catálogo: hair` e `pack semeado para vertical inexistente: hair_typo`.
+Restaurado com `git checkout --`, confirmado (`'hair','Cabelo',null,` de volta na linha 38).
+`tests/unit` inteiro (283/2461) verde depois.
