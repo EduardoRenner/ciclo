@@ -122,7 +122,10 @@ describe('tela de recurso pago avisa antes do toque', () => {
     it.each(PAGINAS_DE_UM_MODULO)('$arquivo ($modulo) checa o módulo e mostra BloqueioPlano', ({ arquivo, modulo }) => {
       const fonte = semComentarios(readFileSync(arquivo, 'utf8'))
       expect(fonte, `${arquivo} parou de checar o módulo '${modulo}'`).toMatch(new RegExp(`podeUsarModulo\\([^)]*'${modulo}'\\)`))
-      expect(fonte, `${arquivo}: sumiu o BloqueioPlano — a recusa virou beco`).toContain('BloqueioPlano')
+      // `<BloqueioPlano`, nao a palavra solta: o `import BloqueioPlano from '...'` continua no
+      // arquivo mesmo depois de apagar o USO em JSX -- quase passou cego por causa disso, pego
+      // so por rodar a mutacao de verdade (armadilha n. 1 da tabela do CLAUDE.md).
+      expect(fonte, `${arquivo}: sumiu o <BloqueioPlano> — a recusa virou beco`).toContain('<BloqueioPlano')
     })
 
     /**
