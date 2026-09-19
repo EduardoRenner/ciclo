@@ -34,31 +34,49 @@ const PAGINAS = [
   join('src', 'app', '(public)', 'precos', 'page.tsx'),
   join('src', 'app', '(public)', 'privacidade', 'page.tsx'),
   join('src', 'app', '(public)', 'termos', 'page.tsx'),
+  // Achados em 2026-09-19 (auditoria de Web Experience): a guarda só cobria estas quatro páginas
+  // — `selo.tsx` (telas de auth) e `topbar.tsx` (TODA tela /admin/*, o maior alcance dos seis usos)
+  // ficaram de fora, sem `sizes`, sem ninguém notar, porque nada aqui olhava pra eles. Achado por
+  // inspeção manual da aba de rede, não por esta guarda — motivo exato de estendê-la agora.
+  join('src', 'components', 'shell', 'selo.tsx'),
+  join('src', 'components', 'shell', 'topbar.tsx'),
 ]
 
-/** O `<Image>` do wordmark, delimitado pelo fim real da tag — nunca por janela de caracteres. */
-function tagDoWordmark(arquivo: string): string {
+/**
+ * Todas as tags `<Image>` que renderizam o wordmark (variável começando em `wordmark`, cobre tanto
+ * `wordmark` quanto `wordmarkClaro` — `topbar.tsx` alterna os dois por tema e tem os DOIS na mesma
+ * página). Antes disto a busca pegava só a primeira ocorrência por arquivo: bastava achar uma tag e
+ * o resto do arquivo ficava fora do radar — era exatamente esse ponto cego que deixou a segunda
+ * `<Image>` de `topbar.tsx` sem cobertura se essa fosse a única mudança feita aqui.
+ */
+function tagsDoWordmark(arquivo: string): string[] {
   const src = semComentarios(readFileSync(arquivo, 'utf8'))
-  const i = src.indexOf('<Image src={wordmark}')
-  if (i === -1) throw new Error(`${arquivo} não renderiza mais o wordmark — a guarda perdeu o alvo`)
-  return src.slice(i, src.indexOf('>', i))
+  const tags: string[] = []
+  const regex = /<Image src=\{wordmark\w*\}/g
+  for (const m of src.matchAll(regex)) {
+    const fim = src.indexOf('>', m.index)
+    tags.push(src.slice(m.index, fim))
+  }
+  if (tags.length === 0) throw new Error(`${arquivo} não renderiza mais o wordmark — a guarda perdeu o alvo`)
+  return tags
 }
 
 describe('a imagem da marca diz de que tamanho ela é', () => {
-  it('a guarda alcança as quatro páginas onde o wordmark aparece', () => {
-    // Piso afirmado por NOME: uma lista que encolhe em silêncio protege menos do que parece, e
-    // aqui isso passaria despercebido porque as outras três continuariam verdes.
-    expect(PAGINAS).toHaveLength(4)
-    for (const p of PAGINAS) expect(tagDoWordmark(p).length).toBeGreaterThan(0)
+  it('a guarda alcança as seis páginas/componentes onde o wordmark aparece, em sete tags', () => {
+    // Piso afirmado por NOME e por CONTAGEM: uma lista que encolhe em silêncio protege menos do
+    // que parece — 4 arquivos com 1 tag cada + selo.tsx (1) + topbar.tsx (2, claro e escuro).
+    expect(PAGINAS).toHaveLength(6)
+    const total = PAGINAS.reduce((soma, p) => soma + tagsDoWordmark(p).length, 0)
+    expect(total).toBe(7)
   })
 
-  it.each(PAGINAS)('%s declara sizes, senão o navegador baixa a variante de 1200 px', (arquivo) => {
-    expect(tagDoWordmark(arquivo)).toMatch(/sizes=/)
+  it.each(PAGINAS)('%s declara sizes em TODA tag, senão o navegador baixa a variante mais larga', (arquivo) => {
+    for (const tag of tagsDoWordmark(arquivo)) expect(tag).toMatch(/sizes=/)
   })
 
   it('a landing mantém o priority — é ela que paga o preload', () => {
     // Se o `priority` sair, o `sizes` continua certo mas o motivo de urgência muda; a guarda
     // deixaria de descrever a realidade e vale saber pela reprovação, não por leitura.
-    expect(tagDoWordmark(PAGINAS[0]!)).toMatch(/priority/)
+    expect(tagsDoWordmark(PAGINAS[0]!)[0]).toMatch(/priority/)
   })
 })
