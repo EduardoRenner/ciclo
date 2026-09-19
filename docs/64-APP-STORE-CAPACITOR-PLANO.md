@@ -23,8 +23,8 @@
 | **T-DEL** (exclusão de conta) | ✅ Feito — commit `e6a633b` |
 | **T-DEMO** (conta de demonstração) | ✅ **Feito 16/09** — tenant `apple-review` (barbearia, 12 clientes, 59 agendamentos) criado em produção via `seed-tenant-teste.mjs`, rodado pelo Eduardo (chave de produção não pode passar pela sessão de IA — bloqueado pelo próprio Claude Code, ver `docs/DECISOES.md`). Login: `revisor-apple@ciclo.app`, senha combinada fora do repositório. Sem expiração. Falta só confirmar visualmente que entra, e preencher "App Review Information" quando o iOS existir (T0). |
 | **T-AND** (scaffold Android) | ✅ **Destravado nesta rodada** — commits `aa17e7f`+`2b9048c`+`f061c18`. JDK 21 e Android SDK command-line tools instalados nesta máquina (JDK via .zip portátil, não MSI — o instalador pediu UAC que a sessão não interativa não conseguiu conceder). `android/` gerado por `npx cap add android`, `./gradlew assembleDebug` builda com sucesso, ícone/splash reais gerados por `@capacitor/assets`. **Primeiro app nativo de verdade que compila neste projeto.** |
-| **T0** (decisão Mac/CI pro iOS) | 🔴 Bloqueado — só o Eduardo decide |
-| **T2** (ícone/splash) | ✅ Feito pro Android (dentro do T-AND) — iOS segue esperando T0/`ios/` existir |
+| **T0** (decisão Mac/CI pro iOS) | 🔴 Bloqueado pra BUILD/assinatura/TestFlight — só o Eduardo decide. **Deixou de bloquear o scaffold** (ver 19/09 abaixo) |
+| **T2** (ícone/splash) | ✅ Feito pro Android (dentro do T-AND) **e agora pro iOS também** (19/09) |
 | **T3** (push nativo) | Não iniciado — precisa de conta Apple (T5)/Firebase, ambos fora do alcance desta sessão |
 | **T4** (ajustes 4.2) | 🟡 Em andamento — status bar nativa (commit `8ac1a7a`) e indicador de conexão offline (mesmo commit, corrigido em `f061c18`) prontos; haptics/share já vinham de rodada anterior. **Achado no emulador:** a StatusBar não muda de cor de verdade — Capacitor 8 parece ter trocado o mecanismo por um plugin interno novo (`SystemBars`), ver `docs/DECISOES.md` 2026-09-15. Falta corrigir isso, biometria, e o resto da lista de candidatos |
 | **T6** (teste em dispositivo real) | 🟡 **Começado pro Android, sem login** — emulador `ciclo_test` (Pixel 6, API 34) criado e rodando nesta sessão: app abre, carrega `seuciclo.com.br` de verdade, navega entre `/entrar`↔`/recuperar-senha`, formulário valida campo vazio. Nenhuma conta criada (produção intocada). Falta tudo que precisa de login (T-DEMO) e o lado iOS inteiro (T0) |
@@ -45,6 +45,60 @@ app depois de alguém publicar em produção e abrir de novo — não existe "te
 lado nativo com essa arquitetura. A correção da StatusBar (abaixo) é o primeiro exemplo real disso:
 código corrigido por leitura do source do plugin, mas sem confirmação visual porque não foi
 publicado ainda. Ver `docs/DECISOES.md` 2026-09-15 pros dois registros.
+
+---
+
+## -1 · Atualização 19/09: `npx cap add ios` FUNCIONA NO WINDOWS — não é o bloqueio que o §1.2 dizia
+
+**A premissa de 15/09 estava incompleta, não errada — mas incompleta o bastante pra mudar o
+plano.** §1.2 (abaixo) dizia "build e assinatura de app iOS exigem Xcode, que só roda em macOS" e
+generalizava isso pro scaffold inteiro, incluindo T0 como bloqueio de TUDO relacionado a iOS.
+Testado agora, direto: `npx cap add ios` **completou com sucesso nesta máquina Windows**, gerou
+`ios/App/App.xcodeproj/project.pbxproj`, `AppDelegate.swift`, `Info.plist`, storyboards — um
+projeto Xcode real. `npx cap sync ios` também funciona (copia assets, resolve plugins Swift
+Package Manager). `npx @capacitor/assets generate --ios` também funciona — ícone 1024×1024 sem
+canal alfa (`mode: RGB`, conferido com Pillow) e splash claro/escuro gerados a partir do mesmo
+`resources/icon.png`/`resources/splash.png` que o Android já usava.
+
+**O que continua precisando de Mac, sem exceção:** `xcodebuild`, abrir o projeto no Xcode.app,
+gerar certificado/provisioning profile, rodar em simulador ou dispositivo, arquivar (`.ipa`),
+TestFlight. Ou seja, T0/T5/T6/T7 continuam bloqueados exatamente como estavam. **O que deixou de
+estar bloqueado: T1 (scaffold) e T2 (ícone/splash) para iOS** — que o plano original tratava como
+"esperando T0" por presumir (sem testar) que TUDO relacionado a `ios/` precisava de macOS.
+
+**Feito nesta sessão, sem macOS:**
+- `ios/` gerado e commitado (26 arquivos de fonte, `.gitignore` do Capacitor exclui `Pods/`/`build/`
+  corretamente — conferido com `git add -n` antes de commitar).
+- `server.url`/`cleartext`/`appendUserAgent` (T1.5) confirmados herdados corretamente no
+  `ios/App/App/capacitor.config.json` gerado — a mesma detecção de app nativo que já bloqueia
+  cobrança no Android vale pro iOS sem nenhum código novo.
+- Ícone/splash gerados (T2), sem canal alfa (armadilha que o próprio T2 já citava).
+- `CFBundleDisplayName` já nasce "CICLO" pelo scaffold padrão — critério de aceite #3 do T2 já
+  cumprido sem edição.
+- `ITSAppUsesNonExemptEncryption = false` adicionado ao `Info.plist` (T7 item novo, não estava na
+  lista original): o CICLO só usa HTTPS padrão (nenhuma criptografia própria), que é uso ISENTO
+  segundo a fonte oficial (developer.apple.com/documentation/security/complying-with-encryption-
+  export-regulations, "the use of encryption that's built into the operating system... is
+  exempt") — sem essa chave, o App Store Connect pergunta isso em TODA submissão. Plist validado
+  com `plistlib` do Python depois da edição (achei e corrigi um `--` dentro de comentário XML, que
+  quebra o parser — conferido antes de assumir que o arquivo estava certo).
+- `tsc`, `eslint .`, `pnpm build`, `tests/unit` (290/2517) rodados de novo com `ios/` presente —
+  tudo verde, confirmando o critério de aceite #4 do T1 (nenhum arquivo de `ios/` é varrido pelas
+  ferramentas do Next), que já tinha sido preparado preventivamente em `eslint.config.mjs` desde a
+  rodada do Android, mesmo sem `ios/` existir ainda naquela época.
+
+**O que fica registrado como incerto, de propósito, em vez de resolvido às cegas:** `PrivacyInfo.
+xcprivacy` (manifesto de privacidade, T7 item 5). A documentação oficial da Apple
+(developer.apple.com/documentation/bundleresources/privacy-manifest-files) deixa claro que a
+exigência depende de quais "required reason APIs" o binário FINAL usa — e isso é verificado pelo
+próprio Xcode no momento do archive, contra o binário compilado, não pelo código-fonte lido. Não
+existe `PrivacyInfo.xcprivacy` em nenhum dos três plugins instalados (`@capacitor/haptics`,
+`@capacitor/share`, `@capacitor/status-bar` — conferido, nenhum arquivo desse nome em
+`node_modules/@capacitor`), mas o Capacitor core em si pode precisar de um a nível de app
+dependendo de como o `WKWebView`/bridge usa APIs do sistema — isso só se confirma dentro do Xcode.
+**Não escrevi esse arquivo às cegas**: um manifesto incorreto pode ser pior que a ausência dele.
+Fica para quando T0 destravar e alguém puder abrir o projeto no Xcode e ver o aviso real (Xcode
+avisa no archive se faltar).
 
 ---
 
@@ -452,10 +506,14 @@ comprar/pedir emprestado um Mac.
 
 ---
 
-### T1 · Scaffold do Capacitor sobre o Next.js `[FEITO 2026-09-15]`
+### T1 · Scaffold do Capacitor sobre o Next.js `[FEITO 2026-09-15, iOS completado 2026-09-19]`
 
 **Objetivo.** `npx cap init` configurado, apontando para o build estático/SSR do Next existente,
 sem quebrar o deploy web atual.
+
+**Nota 19/09:** em 15/09 este ticket cobria só `capacitor.config.ts` + `android/` — `ios/` não
+existia, e o plano presumia que precisava de Mac pra gerar. Não precisa: `npx cap add ios` rodou
+neste Windows sem erro (ver `## -1` no topo do documento). `ios/` existe agora, commitado.
 
 **Critério de aceite.**
 1. `@capacitor/core`, `@capacitor/cli`, `@capacitor/ios` instalados como dependência do projeto,
@@ -687,9 +745,13 @@ schema, não da política publicada. Quem for preencher o formulário do Play Co
 
 ---
 
-### T2 · Ícone, splash screen e identidade nativa (iOS — Android tem o espelho em T-AND item 4)
+### T2 · Ícone, splash screen e identidade nativa (iOS — Android tem o espelho em T-AND item 4) `[FEITO 2026-09-19]`
 
 **Objetivo.** O app abre com a marca do CICLO, não com o ícone genérico do Capacitor.
+
+**Status 19/09:** feito, sem precisar de Mac — `npx @capacitor/assets generate --ios` funciona no
+Windows. Os três critérios abaixo estão cumpridos; só falta CONFIRMAR visualmente dentro do Xcode
+(T0), que é diferente de "não foi feito".
 
 **Critério de aceite.**
 1. Ícone gerado nos tamanhos que a Apple exige (1024×1024 fonte, o resto derivado por
