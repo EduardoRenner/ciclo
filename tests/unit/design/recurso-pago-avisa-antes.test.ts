@@ -101,4 +101,79 @@ describe('tela de recurso pago avisa antes do toque', () => {
     const rota = semComentarios(readFileSync(join('src', 'app', 'api', 'v1', 'inventory', 'entries', 'route.ts'), 'utf8'))
     expect(rota, 'a rota de entrada de estoque parou de exigir o modulo').toContain("exigirModulo(db, ctx.tenantId, 'stock')")
   })
+
+  /*
+   * 2026-09-19: `docs/23` §7 (26/08) já tinha achado e consertado a MESMA classe em Orçamentos,
+   * Equipe, Fidelidade, Clube e Comanda — só que esta guarda nunca foi estendida pra proteger
+   * essas correções. Achado generalizando o achado do wordmark cego (mesma sessão): guarda com
+   * lista curada e nome "toda porta de entrada" convida à mesma pergunta — a lista bate com o
+   * universo real de `grep -rn "podeUsarModulo(" src/`?
+   *
+   * Cada arquivo abaixo foi lido à mão e confirmado correto ANTES de escrever o teste — não é
+   * suposição de que "deve estar certo porque outros estão".
+   */
+  describe('página inteira avisa antes do módulo pago, não só o botão final', () => {
+    /** As duas com UM só módulo — checar e mostrar o aviso no mesmo arquivo, sem ambiguidade. */
+    const PAGINAS_DE_UM_MODULO = [
+      { arquivo: join('src', 'app', 'admin', 'orcamentos', 'page.tsx'), modulo: 'quotes' },
+      { arquivo: join('src', 'app', 'admin', 'config', 'profissionais', '[id]', 'page.tsx'), modulo: 'team' },
+    ]
+
+    it.each(PAGINAS_DE_UM_MODULO)('$arquivo ($modulo) checa o módulo e mostra BloqueioPlano', ({ arquivo, modulo }) => {
+      const fonte = semComentarios(readFileSync(arquivo, 'utf8'))
+      expect(fonte, `${arquivo} parou de checar o módulo '${modulo}'`).toMatch(new RegExp(`podeUsarModulo\\([^)]*'${modulo}'\\)`))
+      expect(fonte, `${arquivo}: sumiu o BloqueioPlano — a recusa virou beco`).toContain('BloqueioPlano')
+    })
+
+    /**
+     * `config/planos/page.tsx` checa DOIS módulos (loyalty e club) no MESMO arquivo, cada um com
+     * seu próprio `<BloqueioPlano>`. Tentar delimitar "a região de cada módulo" pela distância até
+     * a PRÓXIMA chamada de `podeUsarModulo(` não funciona aqui: as duas chamadas ficam juntas no
+     * topo da função (as duas variáveis são calculadas antes de qualquer JSX), então a "região do
+     * loyalty" fatiada dessa forma pega só a linha da variável seguinte, nunca chega no JSX de
+     * baixo onde o `BloqueioPlano` de verdade mora — reprovava mesmo com o código certo (visto
+     * reprovar ao escrever esta guarda, antes deste comentário existir).
+     *
+     * Por contagem em vez de posição: se QUALQUER um dos dois `<BloqueioPlano>` for apagado, a
+     * contagem cai de 2 para 1 e a guarda reprova — não diz qual sumiu, mas não deixa passar.
+     */
+    it('config/planos/page.tsx checa loyalty E club, com dois BloqueioPlano (um por módulo)', () => {
+      const arquivo = join('src', 'app', 'admin', 'config', 'planos', 'page.tsx')
+      const fonte = semComentarios(readFileSync(arquivo, 'utf8'))
+      expect(fonte, `${arquivo} parou de checar o módulo 'loyalty'`).toMatch(/podeUsarModulo\([^)]*'loyalty'\)/)
+      expect(fonte, `${arquivo} parou de checar o módulo 'club'`).toMatch(/podeUsarModulo\([^)]*'club'\)/)
+      const ocorrencias = fonte.match(/<BloqueioPlano/g) ?? []
+      expect(
+        ocorrencias.length,
+        `${arquivo}: esperava 2 <BloqueioPlano> (um pra loyalty, um pra club), achei ${ocorrencias.length} — ` +
+          'um dos dois avisos sumiu.',
+      ).toBe(2)
+    })
+  })
+
+  /*
+   * Comanda não tem `BloqueioPlano` de propósito (ver comentário de `comanda/[id]/page.tsx`: "a
+   * comanda é a tela que mostra o que o Essencial faz", banner sumiria com isso) — só o botão
+   * travado com `motivoDesabilitado`, mesmo padrão do Estoque, mas o CÁLCULO do módulo está em
+   * `page.tsx` (Server Component) e a RENDERIZAÇÃO em `comanda.tsx` (Client Component), arquivos
+   * diferentes — por isso não cabe no laço de `TELAS_COM_ESCRITA_DE_MODULO` acima, que assume os
+   * dois no mesmo arquivo.
+   */
+  describe('comanda: item trava sem o módulo register, com motivo', () => {
+    const CALCULO = join('src', 'app', 'admin', 'comanda', '[id]', 'page.tsx')
+    const RENDER = join('src', 'app', 'admin', 'comanda', '[id]', 'comanda.tsx')
+
+    it(`${CALCULO} ainda calcula a partir do módulo register`, () => {
+      const fonte = semComentarios(readFileSync(CALCULO, 'utf8'))
+      expect(fonte, `${CALCULO} parou de checar o módulo register`).toMatch(/podeUsarModulo\([^)]*'register'\)/)
+    })
+
+    it(`${RENDER}: botão de Adicionar trava e diz por quê`, () => {
+      const fonte = semComentarios(readFileSync(RENDER, 'utf8'))
+      const i = fonte.indexOf('disabled={!podeLancarItem}')
+      expect(i, `${RENDER}: não achei o botão travado por podeLancarItem`).toBeGreaterThan(-1)
+      const bloco = fonte.slice(i, fonte.indexOf('>', fonte.indexOf('onClick', i)))
+      expect(bloco, `${RENDER}: o botão trava sem explicar o motivo`).toContain('motivoDesabilitado')
+    })
+  })
 })
