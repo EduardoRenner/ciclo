@@ -13489,3 +13489,32 @@ que a versão anterior da função `tagDoWordmark` tinha), vi os 2 testes espera
 mensagem certa, restaurei via `git checkout --`.
 
 `tests/unit` (290/2519, 2 testes a mais) verde depois da restauração.
+
+---
+
+## 2026-09-19 · Guarda "recurso-pago-avisa-antes" também estava incompleta — e quase nasceu cega de novo
+
+Continuação da mesma varredura de "guarda cega": `grep -rn "podeUsarModulo(" src/` mostrou 8
+checagens de módulo pago em 7 páginas, mas a guarda `recurso-pago-avisa-antes.test.ts` só protegia
+2 (`stock`, `campaigns`). `docs/23` §7 (26/08) já tinha achado e consertado a mesma classe de
+defeito (recusa só no fim, trabalho jogado fora) em Orçamentos (`quotes`), Equipe (`team`),
+Fidelidade (`loyalty`), Clube (`club`) e Comanda (`register`) — código já correto, confirmado lendo
+cada arquivo à mão antes de escrever qualquer asserção. Só a guarda nunca foi estendida.
+
+Estendida para os 5. `recurrence` (agenda/novo, padrão checkbox+span, estrutura diferente dos
+outros) e os 3 checks de `clientes/[id]` (loyalty+club+quotes, passados por prop até dois níveis de
+componente-filho) ficaram de fora de propósito — também confirmados corretos por leitura, mas
+escrever uma asserção robusta pra cada exigiria mais tempo do que este ciclo comportava sem virar
+achado forçado. Registrado como pendência, não como "feito".
+
+**Mutação encontrou defeito na própria guarda.** Ao reintroduzir os 4 defeitos (removendo o
+`<BloqueioPlano>` de `orcamentos`/`team`/`config-planos` e o `disabled+motivoDesabilitado` de
+`comanda`), 2 dos 4 passaram verdes mesmo com o defeito presente: `toContain('BloqueioPlano')`
+casava com a linha `import BloqueioPlano from '...'`, que continua no arquivo mesmo depois de
+apagar o USO em JSX — armadilha nº1 da própria tabela do `CLAUDE.md`, cometida ao escrever a guarda
+que cita essa mesma tabela no comentário ao lado. Só pega porque a mutação rodou de verdade.
+Corrigido para `toContain('<BloqueioPlano')` (a tag, não o nome solto); a checagem de `config/planos`
+já usava `/< BloqueioPlano/g` corretamente desde o commit anterior. As 4 mutações reprovaram depois
+do ajuste, restaurado via `git checkout --`.
+
+`tsc`/`eslint` limpos, `pnpm build` e `tests/unit` (290/2524) verdes.

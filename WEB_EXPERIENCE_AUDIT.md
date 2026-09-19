@@ -108,6 +108,25 @@ Sem isso a "guarda estendida" seria só uma lista mais longa sem prova de que pr
 
 ---
 
+## 3.3 · Generalizando de novo: `recurso-pago-avisa-antes` tinha o mesmo buraco, e a extensão quase nasceu cega também
+
+Mesma pergunta aplicada a outra guarda: `recurso-pago-avisa-antes.test.ts` só protegia 2 das 8
+checagens de módulo pago que existem no código (`grep -rn "podeUsarModulo(" src/`). As outras 5 —
+Orçamentos, Equipe, Fidelidade, Clube, Comanda — já tinham sido corrigidas em `docs/23` §7 (26/08),
+código confirmado correto por leitura manual de cada arquivo, só sem proteção contra regressão.
+Estendi a guarda para essas 5 (deixei `recurrence` e as 3 checagens de `clientes/[id]` como
+pendência explícita — formato de código diferente o suficiente para merecer atenção própria, não
+uma extensão apressada).
+
+Ao rodar a mutação obrigatória, **2 das 4 asserções passaram verdes mesmo com o `<BloqueioPlano>`
+removido de verdade** — `toContain('BloqueioPlano')` casava com a linha `import BloqueioPlano from
+'...'` que sobra no arquivo. Só a mutação de verdade pegou; sem ela esta extensão teria sido
+entregue como "guarda", protegendo menos do que parecia. Corrigido para `toContain('<BloqueioPlano')`.
+
+`tests/unit` (290/2524) verde depois da correção e da restauração.
+
+---
+
 ## 4 · O que não foi encontrado, apesar de procurado com afinco
 
 - Bug de navegação/formulário nos fluxos testados manualmente (cadastro, login, FAQ).
