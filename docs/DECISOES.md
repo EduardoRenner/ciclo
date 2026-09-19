@@ -13447,3 +13447,27 @@ outras 4 páginas. Não afirmo ter medido o download menor de verdade; fica regi
 pendência (Network tab de navegador real) em vez de "feito" sem prova.
 
 `tsc`/`eslint` limpos, `pnpm build` e `tests/unit` (290/2517) verdes.
+
+---
+
+## 2026-09-19 · Segunda instância do mesmo achado: print de exemplo em `/agendar` sem `sizes`
+
+Continuação da varredura acima. Generalizei o achado (`grep -rln "next/image" src/ --include="*.tsx"`
+nos 8 arquivos que usam o componente) em vez de considerar o ticket fechado depois do primeiro
+conserto — mesmo método já usado nesta base para achar as 3 instâncias do bug de clube/pacote em
+`client_cycles`.
+
+`secoes.tsx` foi falso positivo (grep casou `fill` de SVG, não a prop `fill` do `next/image` — o
+arquivo não importa `next/image`). `painel-do-dono-exemplo.tsx` (print real de conta demo, mostrado
+em `/{slug}/agendar`) era instância real: `width={750} height={ALTURA_DO_PRINT}
+className="block h-auto w-full"`, sem `sizes`. Diferença do primeiro achado: aqui a imagem já é
+genuinamente responsiva (não um tamanho fixo pequeno) — o container é que trava a largura. Confirmado
+em `agendar/page.tsx` linha 73: `<main className="mx-auto min-h-dvh max-w-[560px] px-[18px] py-8">`
+envolve o componente inteiro, então a imagem nunca passa de ~524px de largura CSS em nenhuma tela,
+incluindo monitor largo — sem `sizes`, o Next ainda assume 100vw e pede o candidato mais largo do
+`deviceSizes` de qualquer forma.
+
+Corrigido: `sizes="(min-width: 560px) 524px, calc(100vw - 36px)"` — reflete o teto real do container
+(560px menos os 2×18px de padding) e ainda escala corretamente abaixo do breakpoint.
+
+`tsc`/`eslint` limpos, `pnpm build` e `tests/unit` (290/2517) verdes.

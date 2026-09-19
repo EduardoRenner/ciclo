@@ -73,6 +73,21 @@ um Chrome/Safari real) fica registrada como pendência, não como feito.
 
 ---
 
+## 3.1 · Segunda instância do mesmo achado, por generalização
+
+Depois de corrigir a seção 3, generalizei a busca (`grep -rln "next/image" src/ --include="*.tsx"`)
+para os 8 arquivos que usam `next/image` no projeto, em vez de considerar o achado isolado.
+`secoes.tsx` foi falso positivo (grep casou `fill` de SVG). `painel-do-dono-exemplo.tsx`
+(print real de conta demo em `/{slug}/agendar`) era instância real, mas de um tipo diferente:
+imagem já responsiva (`width={750} height={...} className="block h-auto w-full"`), sem `sizes`. O
+container que a envolve (`agendar/page.tsx`, `max-w-[560px] px-[18px]`) trava a largura em ~524px em
+qualquer tela — sem `sizes`, o Next ainda assumia 100vw e pedia o candidato mais largo do
+`deviceSizes`. Corrigido com `sizes="(min-width: 560px) 524px, calc(100vw - 36px)"`.
+
+`tsc`/`eslint` limpos, `pnpm build` e `tests/unit` (290/2517) verdes.
+
+---
+
 ## 4 · O que não foi encontrado, apesar de procurado com afinco
 
 - Bug de navegação/formulário nos fluxos testados manualmente (cadastro, login, FAQ).

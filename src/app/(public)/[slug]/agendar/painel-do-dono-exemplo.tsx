@@ -150,6 +150,12 @@ export default function PainelDoDonoExemplo({ slug }: { slug: string }) {
           width={750}
           height={ALTURA_DO_PRINT}
           className="block h-auto w-full"
+          // Sem `sizes`, o next/image assume 100vw e pede o balde mais largo do `deviceSizes` em
+          // qualquer monitor grande — mas o container (`agendar/page.tsx`) trava em
+          // `max-w-[560px] px-[18px]`, então a imagem nunca passa de ~524px de largura CSS, em
+          // tela nenhuma. Mesmo achado de `selo.tsx`/`topbar.tsx` (docs/DECISOES.md 2026-09-19),
+          // versão "container com teto", não "tamanho fixo pequeno".
+          sizes="(min-width: 560px) 524px, calc(100vw - 36px)"
           // Sempre prioritário, não só na aba inicial: é a ÚNICA imagem montada por vez (a `key`
           // troca com a aba), então "lazy" nunca ajuda aqui — só atrasa o único conteúdo da aba
           // que a pessoa acabou de abrir, esperando um IntersectionObserver que não tem por quê
