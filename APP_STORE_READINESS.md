@@ -114,6 +114,7 @@ npx vitest run tests/unit — PASS (290 arquivos, 2517 testes)
 | `PrivacyInfo.xcprivacy` ausente/incompleto | MÉDIO | Privacy manifest files (Apple, 2024+) | Precisa de Xcode pra confirmar o que o binário realmente usa | A confirmar com Mac |
 | Push nativo não implementado | MÉDIO | Diretriz 4.2 (capacidade nativa) | T3, depende de conta Apple (T5) | Recomendado, não bloqueador — já há 3 capacidades nativas (haptics/share/status bar) além do offline |
 | Face ID não implementado | BAIXO | — | Decisão consciente, ver §3 | Não — melhoria futura |
+| Sem Universal Links (`apple-app-site-association`) — link de e-mail/WhatsApp abre no Safari, não no app | BAIXO | Associated Domains (Apple) | Arquivo AASA em `/.well-known/` + capability no Xcode | Não — precisa do Team ID (só existe depois de T5), não implementável agora sem arriscar arquivo incorreto |
 | Build/assinatura/TestFlight | BLOQUEIO EXTERNO | — | Precisa de Mac (T0) | Decisão do Eduardo |
 
 ---
@@ -126,7 +127,8 @@ npx vitest run tests/unit — PASS (290 arquivos, 2517 testes)
 3. **Confirmar visualmente no Xcode**: ícone/splash renderizando certo, `PrivacyInfo.xcprivacy`
    necessário ou não, biometria (se for implementada depois).
 4. **Push nativo (T3)**: certificado APNs (precisa de T5) + projeto Firebase (Android).
-5. **Teste em dispositivo físico + TestFlight (T6)** antes de qualquer submissão pra revisão
+5. **Universal Links** — precisa do Team ID (T5) pra gerar `apple-app-site-association` correto.
+6. **Teste em dispositivo físico + TestFlight (T6)** antes de qualquer submissão pra revisão
    pública.
 
 ---
