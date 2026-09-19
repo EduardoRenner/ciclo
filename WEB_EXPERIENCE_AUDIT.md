@@ -88,6 +88,26 @@ qualquer tela — sem `sizes`, o Next ainda assumia 100vw e pedia o candidato ma
 
 ---
 
+## 3.2 · A guarda existente do wordmark era cega justamente para o achado da seção 3
+
+Este projeto já tinha um teste-guarda para este exato bug
+(`tests/unit/design/imagem-da-marca-diz-o-tamanho.test.ts`, de 2026-09-04) — mas ele só cobria as 4
+páginas que já estavam corretas (`page.tsx`, `precos`, `privacidade`, `termos`). `selo.tsx` e
+`topbar.tsx` nunca entraram na lista, e foi exatamente por isso que ficaram sem `sizes` sem ninguém
+notar até a inspeção manual desta rodada — o próprio `CLAUDE.md` deste projeto documenta esse padrão
+("guarda cega", achados de 2026-08-25) e ele se repetiu aqui.
+
+Estendi a guarda para os 6 arquivos (7 tags — `topbar.tsx` tem duas, tema claro e escuro) e apliquei
+o procedimento de mutação obrigatório do `CLAUDE.md`: commitei a guarda estendida primeiro, depois
+removi `sizes` de `selo.tsx` **e** da segunda tag de `topbar.tsx` (a `wordmarkClaro`, para provar que
+a busca generalizada realmente varre todas as tags do arquivo, não só a primeira), rodei a suíte e
+vi os 2 testes esperados reprovarem com a mensagem certa, depois restaurei via `git checkout --`.
+Sem isso a "guarda estendida" seria só uma lista mais longa sem prova de que protege algo.
+
+`tests/unit` (290 arquivos, 2519 testes, 2 a mais que antes) verde depois da restauração.
+
+---
+
 ## 4 · O que não foi encontrado, apesar de procurado com afinco
 
 - Bug de navegação/formulário nos fluxos testados manualmente (cadastro, login, FAQ).

@@ -13471,3 +13471,21 @@ Corrigido: `sizes="(min-width: 560px) 524px, calc(100vw - 36px)"` — reflete o 
 (560px menos os 2×18px de padding) e ainda escala corretamente abaixo do breakpoint.
 
 `tsc`/`eslint` limpos, `pnpm build` e `tests/unit` (290/2517) verdes.
+
+---
+
+## 2026-09-19 · Guarda do wordmark era cega justamente para o achado desta rodada
+
+`tests/unit/design/imagem-da-marca-diz-o-tamanho.test.ts` (2026-09-04) já existia para este bug, mas
+só cobria as 4 páginas que já tinham `sizes` certo — `selo.tsx` e `topbar.tsx` nunca entraram na
+lista, e foi por isso que ficaram sem `sizes` sem ninguém notar. Mesmo padrão de "guarda cega" já
+documentado no `CLAUDE.md` (achados de 2026-08-25), agora com um exemplo novo.
+
+Estendida para os 6 arquivos (7 tags — `topbar.tsx` tem duas, `wordmark` e `wordmarkClaro`).
+Procedimento de mutação do `CLAUDE.md` seguido à risca: commitei a guarda antes de mutar, removi
+`sizes` de `selo.tsx` e da SEGUNDA tag de `topbar.tsx` (a `wordmarkClaro`, prova de que a busca
+generalizada varre todas as tags do arquivo, não só a primeira — esse era justamente o ponto cego
+que a versão anterior da função `tagDoWordmark` tinha), vi os 2 testes esperados reprovarem com a
+mensagem certa, restaurei via `git checkout --`.
+
+`tests/unit` (290/2519, 2 testes a mais) verde depois da restauração.
