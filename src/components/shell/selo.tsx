@@ -20,7 +20,15 @@ import wordmark from '../../../public/marca/ciclo-wordmark-aqua.png'
  * prontos do redesenho e a fonte do wordmark (Helvetica Neue Bold) não é a
  * do resto do app — não faz sentido recriar em tipo do sistema. `next/image`
  * porque é asset estático local; sem domínio remoto para configurar.
+ *
+ * `sizes="160px"`: sem isso, o `next/image` não sabe que o CSS (`h-16 w-auto`)
+ * encolhe a imagem pra ~157px de largura (64px de altura × proporção 2,46:1
+ * do arquivo fonte, 1102×448) e pedia o balde mais largo do `deviceSizes`
+ * (3840px) — medido na aba de rede: `/cadastro`/`/entrar`/`/onboarding`
+ * (as três telas que usam este componente) carregavam uma imagem de 3840px
+ * de largura pra mostrar 157px. `page.tsx` (landing) já tinha o mesmo
+ * conserto (`sizes="70px"` pro símbolo pequeno, h-7) — faltava aqui.
  */
 export default function Selo() {
-  return <Image src={wordmark} alt="CICLO" priority className="h-16 w-auto" />
+  return <Image src={wordmark} alt="CICLO" priority sizes="160px" className="h-16 w-auto" />
 }

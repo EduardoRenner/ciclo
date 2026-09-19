@@ -73,9 +73,15 @@ export default function Topbar() {
 
                 Dois arquivos: o "iclo" do wordmark padrão é quase branco e some no
                 tema claro. O CSS (`globals.css`, `.marca-no-escuro`/`.marca-no-claro`)
-                mostra um por vez conforme o `data-theme` do wrapper. */}
-            <Image src={wordmark} alt="CICLO" className="marca-no-escuro h-7 w-auto" />
-            <Image src={wordmarkClaro} alt="" aria-hidden className="marca-no-claro h-7 w-auto" />
+                mostra um por vez conforme o `data-theme` do wrapper.
+
+                `sizes="70px"`: mesmo conserto de `selo.tsx` — sem isso o `next/image`
+                pedia o balde de 3840px do `deviceSizes` pra mostrar ~69px (h-7 × a
+                proporção 2,46:1 do arquivo fonte). Medido na aba de rede em toda tela
+                `/admin/*` (esta barra aparece em todas), agora bate com o mesmo `h-7`
+                que `page.tsx` (landing) já tinha corrigido. */}
+            <Image src={wordmark} alt="CICLO" sizes="70px" className="marca-no-escuro h-7 w-auto" />
+            <Image src={wordmarkClaro} alt="" aria-hidden sizes="70px" className="marca-no-claro h-7 w-auto" />
           </div>
 
           {/*

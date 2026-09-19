@@ -13419,3 +13419,31 @@ round-trip a mais, mesmo padrão de consolidação já usado ali. Até lá, fica
 isso é a escolha mais simples que não arrisca a tela mais visitada do produto — mesma régua do
 `CLAUDE.md` para decisão sem informação suficiente (aqui, sem Docker para testar a migration).
 Nenhum código mudou nesta superfície.
+
+---
+
+## 2026-09-19 · Wordmark sem `sizes` pedia balde de 3840px pra mostrar ~70-160px
+
+Missão de auditoria de Web Experience. `selo.tsx` (telas de auth) e `topbar.tsx` (TODA tela
+`/admin/*`) renderizavam `ciclo-wordmark-aqua.png` (fonte 1102×448) via `next/image` sem a prop
+`sizes` — sem ela, o Next trata a imagem como podendo precisar de até 100vw e serve o maior
+candidato do `deviceSizes` (3840px) pra uma logo de ~28-64px de altura. `page.tsx` (landing),
+`precos/page.tsx`, `privacidade/page.tsx` e `termos/page.tsx` já tinham o conserto certo
+(`sizes="70px"`) — inconsistência entre 6 usos do mesmo wordmark, achada inspecionando a aba de
+rede durante navegação manual.
+
+Corrigido: `sizes="160px"` em `selo.tsx` (h-16), `sizes="70px"` nas duas instâncias de
+`topbar.tsx` (h-7, mesmo tamanho que `page.tsx` já usava). `topbar.tsx` é a barra fixa em toda
+tela logada — maior alcance de qualquer conserto de performance desta rodada.
+
+**Limite da verificação, registrado com honestidade:** tentei confirmar visualmente que o
+navegador passa a baixar um candidato menor. `page.tsx`, já correto ANTES desta sessão, também
+resolveu `currentSrc` pro candidato de 3840px no navegador sandboxed desta sessão — ou seja,
+código já correto mostra o mesmo comportamento aqui, o que aponta pra uma particularidade do
+algoritmo de seleção de `srcset` deste navegador de teste específico, não um defeito no código.
+Conferi os atributos HTML (`sizes`, `srcset`, `imagesizes` do preload) byte a byte contra a
+documentação oficial do `next/image` — estão corretos e batem com o padrão que já funciona nas
+outras 4 páginas. Não afirmo ter medido o download menor de verdade; fica registrado como
+pendência (Network tab de navegador real) em vez de "feito" sem prova.
+
+`tsc`/`eslint` limpos, `pnpm build` e `tests/unit` (290/2517) verdes.
