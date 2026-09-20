@@ -428,7 +428,7 @@ export default function Ficha({
       />
 
       {aba === 'resumo' ? (
-        <div className="mt-4">
+        <div id="painel-resumo" role="tabpanel" aria-label="Resumo" tabIndex={0} className="mt-4">
           <div className="grid grid-cols-2 gap-3">
             {/*
               Era "Já gastou", e prometia mais do que sabe: o valor sai do `price_cents` DO
@@ -583,7 +583,7 @@ export default function Ficha({
       ) : null}
 
       {aba === 'fidelidade' ? (
-        <div className="mt-4">
+        <div id="painel-fidelidade" role="tabpanel" aria-label="Fidelidade" tabIndex={0} className="mt-4">
           <Fidelidade
             clientId={cliente.id}
             pontosIniciais={pontos}
@@ -604,7 +604,7 @@ export default function Ficha({
       ) : null}
 
       {aba === 'ficha' ? (
-        <div className="mt-4">
+        <div id="painel-ficha" role="tabpanel" aria-label="Ficha" tabIndex={0} className="mt-4">
           <Notas clientId={cliente.id} iniciais={notasRegistradas} />
           <Saude clientId={cliente.id} saude={saude} consentimentos={consentimentos} />
           <Fotos
@@ -623,7 +623,7 @@ export default function Ficha({
       ) : null}
 
       {aba === 'historico' ? (
-        <div className="mt-4">
+        <div id="painel-historico" role="tabpanel" aria-label="Histórico" tabIndex={0} className="mt-4">
       <section className="mt-3">
         <SectionHeader icone={<Scissors className="size-3.5" />}>Atendimentos ({historico.length})</SectionHeader>
         {historico.length === 0 ? (

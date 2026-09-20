@@ -699,3 +699,32 @@ tocar validação de entrada em toda rota de API com parâmetro `[id]`.
   plano vs. `Set` tipado por enum do banco) — mais baixo valor/mais risco de tocar do que os dois
   consertados, deixados como estão (mesmo critério do BL-02 para `TAMANHO_IV`/`TAMANHO_PAGINA`).
   `cancelarAssinatura` (BL-29) segue fora de escopo — toca cobrança.
+
+---
+
+### BL-31 · Ficha do cliente: `role="tablist"` sem `role="tabpanel"` correspondente — FEITO
+
+- **Problema:** as quatro seções da ficha do cliente (Resumo/Histórico/Fidelidade/Ficha) usam
+  `<Segmented>` — um `role="tablist"`/`role="tab"` de verdade, com `aria-selected` e navegação por
+  setas, construído especificamente para resolver a mesma armadilha do CLAUDE.md ("trocar conteúdo
+  sem trocar de rota e não avisar"). Mas o conteúdo de cada aba (`{aba === 'resumo' ? <div
+  className="mt-4">...} `) era um `<div>` comum, sem `role="tabpanel"`. Metade do padrão WAI-ARIA de
+  Tabs estava implementada — a lista de abas se anuncia certo, mas o PAINEL que troca de conteúdo a
+  cada clique não se identifica pra tecnologia assistiva como a região que acabou de mudar.
+- **Por que é o mesmo risco que o CLAUDE.md já nomeia, por um caminho diferente:** a armadilha do
+  CLAUDE.md fala de filtro/busca sem estrutura semântica nenhuma (remédio: `aria-live`). Aqui a
+  estrutura semântica CERTA já existia (tabs de verdade, não filtro solto) — só ficou pela metade.
+  O remédio certo para tabs incompletas é `role="tabpanel"`, não `aria-live` (duas fontes de
+  anúncio concorrentes causariam o oposto do que a armadilha original tenta evitar).
+- **Conserto:** `role="tabpanel"`, `id` estável e `aria-label` (nome da própria aba) nos quatro
+  `<div>` de conteúdo; `tabIndex={0}` para o foco por teclado alcançar o painel depois da tablist,
+  prática padrão do WAI-ARIA APG para tabpanel.
+- **Escopo deliberadamente NÃO ampliado:** `aria-controls`/`aria-labelledby` cruzando tab↔painel
+  exigiria plumbing de IDs pela `Segmented` (componente compartilhado, também usado pelo seletor de
+  tema em `seletor-de-tema.tsx` — um controle de escolha única com efeito imediato, não uma troca
+  de painel, onde `aria-controls` apontando pra um painel inexistente seria pior que omitir).
+  `role="tabpanel"` sozinho já resolve o anúncio de mudança de região, que era a lacuna real.
+- **Verificação:** `tsc`/`eslint`/`pnpm test:unit` (292/2531) verdes. Sem verificação visual em
+  navegador — Docker indisponível nesta sessão (confirmado: `docker ps` falha), e a mudança é
+  aditiva (só atributos ARIA/id/tabIndex em `<div>`s já existentes, sem tocar lógica de estado ou
+  classe visual) — mudança de baixo risco pela natureza, não por falta de tentativa de verificar.
