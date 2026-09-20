@@ -33,6 +33,7 @@
  *    job que estoura é pior que um job que não corrige.
  */
 
+import { mediana } from '@/core/cycle/compute'
 import { diasEntre } from '@/core/cycle/prestacao-de-contas'
 
 /** Uma previsão já resolvida: a visita que a originou e a volta que de fato aconteceu. */
@@ -72,13 +73,6 @@ export const DESVIO_MINIMO_DIAS = 3
 
 const CICLO_MINIMO = 1
 const CICLO_MAXIMO = 365
-
-function mediana(valores: number[]): number {
-  const ordenados = [...valores].sort((a, b) => a - b)
-  const meio = Math.floor(ordenados.length / 2)
-  if (ordenados.length % 2 === 0) return (ordenados[meio - 1]! + ordenados[meio]!) / 2
-  return ordenados[meio]!
-}
 
 /**
  * `cicloAtual` é o que o serviço usa hoje. Devolver `diasMedidos: null` quer dizer "continue com o

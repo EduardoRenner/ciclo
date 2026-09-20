@@ -24,6 +24,8 @@
  * pessoa ainda pode aparecer amanhã.
  */
 
+import { mediana } from '@/core/cycle/compute'
+
 /** Uma previsão do `cycle_predictions`, do jeito que ela é lida. */
 export type PrevisaoAuditada = {
   /** `YYYY-MM-DD` que o Motor disse. */
@@ -80,13 +82,6 @@ export type PrestacaoDeContas = {
 export function diasEntre(de: string, ate: string): number {
   // Datas puras em UTC ao meio-dia: sem hora, não há fuso nem horário de verão para errar.
   return Math.round((Date.parse(`${ate}T12:00:00Z`) - Date.parse(`${de}T12:00:00Z`)) / 86_400_000)
-}
-
-function mediana(valores: number[]): number {
-  const ordenados = [...valores].sort((a, b) => a - b)
-  const meio = Math.floor(ordenados.length / 2)
-  if (ordenados.length % 2 === 0) return (ordenados[meio - 1]! + ordenados[meio]!) / 2
-  return ordenados[meio]!
 }
 
 export function prestacaoDeContas(previsoes: readonly PrevisaoAuditada[], hoje: string): PrestacaoDeContas {

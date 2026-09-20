@@ -33,7 +33,12 @@ export type ResultadoComputeCycle = {
   state: EstadoCiclo
 }
 
-function mediana(valores: number[]): number {
+/**
+ * Exportada desde esta sessão: `prestacao-de-contas.ts` e `calibracao.ts` tinham cada uma a sua
+ * própria cópia, byte a byte idêntica — a mesma classe de "duas cópias da mesma fórmula" já
+ * registrada nesta base para `diasEntre`/`estadoPorAtraso`.
+ */
+export function mediana(valores: number[]): number {
   const ordenados = [...valores].sort((a, b) => a - b)
   const meio = Math.floor(ordenados.length / 2)
   if (ordenados.length % 2 === 0) return (ordenados[meio - 1]! + ordenados[meio]!) / 2

@@ -465,3 +465,18 @@
   Sem risco de import circular (nenhum dos dois arquivos importava nada antes).
 - **Verificação:** `tsc`/`eslint`/`pnpm test:unit` (292/2530) verdes — comportamento idêntico
   confirmado pelos testes existentes de `calibracao.ts` continuando a passar.
+
+---
+
+### BL-22 · `mediana` triplicada em compute.ts/prestacao-de-contas.ts/calibracao.ts — FEITO
+
+- **Problema:** mesma classe do BL-21, achada na mesma varredura — a função `mediana` (ordena e
+  pega o valor central, com média dos dois centrais em lista par) existia em TRÊS lugares
+  (`compute.ts`, `prestacao-de-contas.ts`, `calibracao.ts`), byte a byte idênticas nas três.
+- **Conserto:** exportada de `compute.ts` (o arquivo mais fundamental do módulo, já fonte de
+  `estadoPorAtraso` para os outros dois); `prestacao-de-contas.ts` e `calibracao.ts` importam em
+  vez de reimplementar. Sem risco de import circular — `compute.ts` não importa nada dos outros
+  dois (só `Temporal`), e a cadeia final é `compute.ts` ← `prestacao-de-contas.ts` ← `calibracao.ts`,
+  um DAG limpo.
+- **Verificação:** `tsc`/`eslint`/`pnpm test:unit` (292/2530) verdes — comportamento idêntico
+  confirmado pelos testes existentes das três funções continuando a passar sem alteração.
