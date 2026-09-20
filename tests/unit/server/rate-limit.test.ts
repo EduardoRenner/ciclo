@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { chavesEmMemoriaParaTeste, limitador } from '@/server/services/rate-limit'
+import { chavesEmMemoriaParaTeste, limitador, limitarComUpstash } from '@/server/services/rate-limit'
 
 describe('limitador (fallback em memória, sem Upstash configurado)', () => {
   afterEach(() => vi.restoreAllMocks())
@@ -105,5 +105,48 @@ describe('a memória do limitador não cresce para sempre', () => {
       (await limitador(chave, { limite: 5, janelaSegundos: 60, somenteMemoria: true })).permitido,
       'a chave viva foi despejada e voltou a permitir — o limite ficou contornável enchendo o mapa',
     ).toBe(false)
+  })
+})
+
+/**
+ * Achado ao varrer todo `await fetch(` sem `.ok` correspondente na base (mesma classe de BL-08/09/
+ * 11/12): nem `incr` nem `expire` checavam a resposta do Upstash. Sem checar, um erro que ainda
+ * devolve JSON válido (`{"error": "..."}` em vez de `{"result": N}`) virava `contagem: undefined`,
+ * e `undefined <= limite` é `false` — TODA requisição passava a ser recusada, em vez de cair pro
+ * Postgres como o resto deste arquivo documenta ser a intenção.
+ */
+describe('limitarComUpstash — checagem de .ok', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('incr não-ok lança — é isso que faz o chamador cair pro Postgres, não recusar tudo', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401 })))
+
+    await expect(limitarComUpstash('chave', 5, 60, 'https://upstash.test', 'token-errado')).rejects.toThrow(/Upstash incr/)
+  })
+
+  it('incr ok devolve permitido/restante certos, sem precisar de expire', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ result: 3 }), { status: 200 })))
+
+    const r = await limitarComUpstash('chave', 5, 60, 'https://upstash.test', 'token')
+    expect(r).toEqual({ permitido: true, restante: 2 })
+  })
+
+  it('incr ok mas expire falha: NÃO lança e devolve o resultado do incr — não pode contar a mesma requisição duas vezes', async () => {
+    const chamadas: string[] = []
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) => {
+        if (url.includes('/incr/')) {
+          chamadas.push('incr')
+          return new Response(JSON.stringify({ result: 1 }), { status: 200 })
+        }
+        chamadas.push('expire')
+        return new Response('erro interno', { status: 500 })
+      }),
+    )
+
+    const r = await limitarComUpstash('chave', 5, 60, 'https://upstash.test', 'token')
+    expect(r).toEqual({ permitido: true, restante: 4 })
+    expect(chamadas).toEqual(['incr', 'expire']) // prova que o expire foi de fato tentado
   })
 })

@@ -105,7 +105,12 @@ async function limitarNoPostgres(chave: string, limite: number, janelaSegundos: 
   })
 }
 
-async function limitarComUpstash(
+/**
+ * Exportada só para teste: testar via `limitador()` misturaria este caminho com o fallback real
+ * pro Postgres (que exige banco de verdade, indisponível no ambiente de unit test) — o throw que
+ * este fix acrescenta ficaria provado só indiretamente, pelo comportamento do fallback seguinte.
+ */
+export async function limitarComUpstash(
   chave: string,
   limite: number,
   janelaSegundos: number,
@@ -117,12 +122,29 @@ async function limitarComUpstash(
   const incr = await fetch(`${url}/incr/${encodeURIComponent(chave)}`, {
     headers: { Authorization: `Bearer ${token}` },
   })
+  /*
+   * Sem checar `.ok`, um erro do Upstash (token errado, quota, 5xx) que ainda devolve JSON válido
+   * — `{"error": "..."}`, sem o campo `result` — passava pelo `as { result: number }` como
+   * `contagem: undefined`. `undefined <= limite` é `false` em JS, então TODA requisição virava
+   * `permitido: false`: em vez de cair no Postgres (o fallback que este arquivo inteiro existe
+   * para explicar), o rate limiter passava a recusar 100% do tráfego da rota. Lançar aqui é o que
+   * faz o `catch` de `limitador()` de fato entrar e cair pro Postgres, como já era a intenção.
+   */
+  if (!incr.ok) throw new Error(`Upstash incr devolveu ${incr.status}`)
   const { result: contagem } = (await incr.json()) as { result: number }
 
   if (contagem === 1) {
-    await fetch(`${url}/expire/${encodeURIComponent(chave)}/${janelaSegundos}`, {
+    /*
+     * Diferente do `incr` acima: aqui NÃO lança em falha. `permitido`/`restante` já saíram certos
+     * do `incr`, que já aconteceu de verdade em Upstash — lançar agora jogaria essa contagem fora
+     * e cairia pro Postgres, contando a MESMA requisição duas vezes em dois lugares. O risco real
+     * de silenciar isto é a chave nunca ganhar TTL (fica presa em Upstash até alguém apagar à
+     * mão) — pior que isso seria descartar uma contagem que já é válida.
+     */
+    const exp = await fetch(`${url}/expire/${encodeURIComponent(chave)}/${janelaSegundos}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
+    if (!exp.ok) console.warn(JSON.stringify({ level: 'warn', event: 'upstash_expire_falhou', status: exp.status }))
   }
 
   return { permitido: contagem <= limite, restante: Math.max(0, limite - contagem) }
