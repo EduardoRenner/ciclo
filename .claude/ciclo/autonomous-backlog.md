@@ -116,6 +116,25 @@
 
 ---
 
+### BL-07 · `required` do `MoneyInput` nunca disparava — produto/serviço podia salvar a R$ 0,00 — FEITO
+
+- **Problema:** `MoneyInput` sempre renderiza texto não-vazio ("0,00"), então `required` do HTML
+  nunca ativa. 3 usos afetados: preço de produto de revenda, preço principal de serviço, valor da
+  hora (`visit_hourly`), meia diária. Nem cliente nem servidor bloqueavam valor zero.
+- **Evidência:** lido `money-input.tsx`, os 2 formulários, e os schemas Zod correspondentes
+  (`estoque.ts`, `servicos.ts`) — confirmado `min(0)`/`!= null`, nunca exigência de valor positivo.
+- **Impacto potencial:** médio — produto vendido de graça em toda comanda futura, ou serviço
+  reservável de graça em toda reserva, até o dono perceber (sem aviso nenhum no caminho).
+- **Cuidado tomado:** não confundir com a "cortesia" documentada em `comanda.ts`, que é sobre
+  override manual (`unitPriceCents`) no momento da venda, não sobre o preço padrão do catálogo —
+  a trava nova é só no cadastro, a cortesia pontual continua igual.
+- **Fix:** validação explícita no cliente nos dois formulários, mesmo padrão do campo "nome"
+  (`nome.trim().length < 2`) já usado nos mesmos arquivos. Commit `0a53f5b0`.
+- **Verificação:** `tsc`/`eslint`/`pnpm build`/`tests/unit` (290/2524) verdes.
+- **Status:** `feito` (2026-09-20).
+
+---
+
 ## Descartadas
 
 - **Hipótese de double-booking em `reivindicarEncaixe`** (2026-09-20) — investigada a fundo, não é

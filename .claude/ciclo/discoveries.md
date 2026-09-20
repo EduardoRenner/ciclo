@@ -167,3 +167,37 @@ mesma cultura de "aviso escrito onde o próximo vai procurar" já usada nesta ba
 inventar uma guarda frágil só para ter uma.
 
 `tsc`/`eslint`/`pnpm build`/`tests/unit` (290/2524) verdes — mudança é só comentário.
+
+---
+
+## 2026-09-20 · Corrigido: `required` do `MoneyInput` nunca funcionou — preço zero passava sem aviso
+
+Continuando a investigação por churn (produto novo de revenda, `docs/62` Fase 1, commit `a958d2c7`):
+`MoneyInput` (`src/components/ui/money-input.tsx`) formata `centavos` como texto SEMPRE —
+`(0/100).toLocaleString(...)` vira `"0,00"`, nunca uma string vazia. Isso quer dizer que o atributo
+HTML `required`, passado via `{...props}` para o `<input>` por baixo, **nunca dispara**: o campo
+nunca está "vazio" do ponto de vista do navegador, só mostra um valor que parece zero.
+
+Achei 3 usos de `MoneyInput ... required` na base — todos silenciosamente sem proteção nenhuma:
+`estoque/lista.tsx` (preço de venda do produto de revenda) e `servicos/formulario.tsx` (preço
+principal, valor da hora de `visit_hourly`, meia diária). Confirmei que o schema Zod do SERVIDOR
+também só exige presença (`priceCents: z.int().min(0)`, `!= null` no `.refine()`), nunca valor
+positivo — então não havia trava nenhuma, nem cliente nem servidor, contra salvar um produto
+vendável ou um serviço reservável a R$ 0,00 por esquecimento.
+
+**Diferença importante que quase me fez consertar errado:** `comanda.ts` tem um comentário
+explícito dizendo que preço zero É uma decisão válida — "cortesia decidida na hora" — mas isso é
+sobre `unitPriceCents` (override MANUAL no momento da venda), não sobre o preço PADRÃO do catálogo.
+Nada na base sugere que um serviço reservável ou o preço-padrão de um produto deveriam poder nascer
+gratuitos por padrão. A trava que adicionei é só no CATÁLOGO/CADASTRO; a cortesia pontual na
+comanda continua funcionando exatamente como antes.
+
+**Fix:** validação explícita no cliente, antes do envio, nos dois formulários — mesmo padrão já
+usado nos mesmos arquivos para o campo "nome". Não mexi em `MoneyInput` (component compartilhado,
+mudar o comportamento dele afetaria todo uso, incluindo onde zero É válido) nem no schema do
+servidor (mudar `min(0)` para `min(1)` quebraria a cortesia manual da comanda, que passa
+`unitPriceCents: 0` de propósito).
+
+`tsc`/`eslint`/`pnpm build`/`tests/unit` (290/2524) verdes. Sem preview local (Docker
+indisponível) — mudança é validação de estado local antes do fetch, mesmo formato de código já
+testado manualmente nesta base (`nome.trim().length < 2`).
