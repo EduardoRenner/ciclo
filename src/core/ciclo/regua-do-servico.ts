@@ -38,7 +38,8 @@ export type ReguaDoServico = {
   procedencia: string | null
 }
 
-function voltas(quantas: number): string {
+/** Também usada por `ritmo-do-cliente.ts` — exportada para não duplicar a mesma frase duas vezes. */
+export function voltas(quantas: number): string {
   return quantas === 1 ? '1 volta' : `${quantas} voltas`
 }
 

@@ -1,5 +1,7 @@
 import { Temporal } from '@js-temporal/polyfill'
 
+import { voltas } from '@/core/ciclo/regua-do-servico'
+
 /**
  * O que o `docs/48` chama de C4, dito com todas as letras: *"o João vem a cada 18 dias, está há
  * 31"*.
@@ -50,10 +52,6 @@ const AMOSTRA_PEQUENA = 3
 
 function dias(quantos: number): string {
   return quantos === 1 ? '1 dia' : `${quantos} dias`
-}
-
-function voltas(quantas: number): string {
-  return quantas === 1 ? '1 volta' : `${quantas} voltas`
 }
 
 export function ritmoDoCliente(entrada: EntradaRitmo): RitmoDoCliente {

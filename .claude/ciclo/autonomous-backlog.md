@@ -480,3 +480,18 @@
   um DAG limpo.
 - **Verificação:** `tsc`/`eslint`/`pnpm test:unit` (292/2530) verdes — comportamento idêntico
   confirmado pelos testes existentes das três funções continuando a passar sem alteração.
+
+---
+
+### BL-23 · `voltas()` duplicada em regua-do-servico.ts/ritmo-do-cliente.ts — FEITO
+
+- **Problema:** mesma classe do BL-21/BL-22, achada varrendo `src/core` inteiro por nomes de função
+  repetidos — `voltas(quantas: number): string` (pluralização "1 volta"/"N voltas") idêntica nos
+  dois arquivos. Menor severidade que `mediana`/`diasEntre` (é só texto, não conta dinheiro nem
+  data), mas o mesmo risco: um ajuste de copy (este projeto se cobra muito sobre consistência de
+  texto — gênero, tom) feito num lugar só diverge do outro em silêncio.
+- **Conserto:** exportada de `regua-do-servico.ts`; `ritmo-do-cliente.ts` importa. Sem risco de
+  import circular (nenhum dos dois importava o outro).
+- **De carona:** conferido se `dias(quantos)`, a função vizinha em `ritmo-do-cliente.ts`, também
+  estava duplicada em algum lugar — não estava, ficou como está.
+- **Verificação:** `tsc`/`eslint`/`pnpm test:unit` (292/2530) verdes.
