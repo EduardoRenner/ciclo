@@ -48,8 +48,12 @@ export default function AlternadorDeExemplo({
         ))}
       </div>
 
-      <div hidden={aba !== "cliente"}>{visaoCliente}</div>
-      <div hidden={aba !== "dono"}>{visaoDono}</div>
+      <div id="painel-exemplo-cliente" role="tabpanel" aria-label="O que quem agenda vê" tabIndex={0} hidden={aba !== "cliente"}>
+        {visaoCliente}
+      </div>
+      <div id="painel-exemplo-dono" role="tabpanel" aria-label="O que você vê" tabIndex={0} hidden={aba !== "dono"}>
+        {visaoDono}
+      </div>
     </div>
   );
 }

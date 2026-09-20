@@ -242,37 +242,41 @@ export default function Comanda({
           ) : null}
 
           {(tipoItem === 'servico' || produtos.length === 0) && servicos.length > 0 ? (
-            <label className="flex flex-col gap-1">
-              <span className="text-label font-semibold text-txt-2">Serviço</span>
-              <select
-                value={servicoId}
-                onChange={(e) => setServicoId(e.target.value)}
-                className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo text-txt"
-              >
-                {servicos.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name} · {dinheiro.format(s.price_cents / 100)}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <div id="painel-item-servico" role="tabpanel" aria-label="Serviço" tabIndex={0}>
+              <label className="flex flex-col gap-1">
+                <span className="text-label font-semibold text-txt-2">Serviço</span>
+                <select
+                  value={servicoId}
+                  onChange={(e) => setServicoId(e.target.value)}
+                  className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo text-txt"
+                >
+                  {servicos.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name} · {dinheiro.format(s.price_cents / 100)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
           ) : null}
 
           {(tipoItem === 'produto' || servicos.length === 0) && produtos.length > 0 ? (
-            <label className="flex flex-col gap-1">
-              <span className="text-label font-semibold text-txt-2">Produto</span>
-              <select
-                value={produtoId}
-                onChange={(e) => setProdutoId(e.target.value)}
-                className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo text-txt"
-              >
-                {produtos.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} · {dinheiro.format(p.price_cents / 100)}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <div id="painel-item-produto" role="tabpanel" aria-label="Produto" tabIndex={0}>
+              <label className="flex flex-col gap-1">
+                <span className="text-label font-semibold text-txt-2">Produto</span>
+                <select
+                  value={produtoId}
+                  onChange={(e) => setProdutoId(e.target.value)}
+                  className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo text-txt"
+                >
+                  {produtos.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} · {dinheiro.format(p.price_cents / 100)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
           ) : null}
 
           <label className="flex flex-col gap-1">

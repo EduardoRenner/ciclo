@@ -728,3 +728,28 @@ tocar validação de entrada em toda rota de API com parâmetro `[id]`.
   navegador — Docker indisponível nesta sessão (confirmado: `docker ps` falha), e a mudança é
   aditiva (só atributos ARIA/id/tabIndex em `<div>`s já existentes, sem tocar lógica de estado ou
   classe visual) — mudança de baixo risco pela natureza, não por falta de tentativa de verificar.
+
+---
+
+### BL-32 · Mesmo `tablist` sem `tabpanel` (BL-31), mais duas instâncias — FEITO
+
+- **Problema:** ampliando a varredura de `role="tablist"` para o restante de `src` (BL-31 cobriu
+  só a ficha do cliente), achei o MESMO padrão incompleto em mais dois lugares, cada um reimplementando
+  o widget de tabs à mão (nenhum dos dois usa o `<Segmented>` compartilhado):
+  - `admin/comanda/[id]/comanda.tsx` — alternador "Serviço"/"Produto" ao adicionar item na comanda.
+    Os dois painéis eram `<label>` envolvendo um `<select>` — não dava pra pôr `role="tabpanel"`
+    direto no `<label>` (um elemento com papel nativo de rótulo ganhando um `role` de painel é
+    semântica conflitante), então cada painel ganhou um `<div>` novo por fora do `<label>`.
+  - `(public)/[slug]/agendar/alternador-de-exemplo.tsx` — alternador "O que quem agenda vê"/"O que
+    você vê" nas seis vitrines de demonstração pública. Painéis já eram `<div hidden={...}>`
+    (os dois montados o tempo todo, só a visibilidade alterna — decisão documentada no próprio
+    arquivo para não perder estado nem re-disparar busca de disponibilidade) — só faltava o
+    `role="tabpanel"`.
+- **Conserto:** mesmo padrão do BL-31 nos dois — `role="tabpanel"`, `id` estável, `aria-label` com
+  o nome da própria aba, `tabIndex={0}`.
+- **Verificação:** `tsc`/`eslint`/`pnpm test:unit` (292/2531) verdes. Mesma ressalva do BL-31 —
+  Docker indisponível, mudança aditiva de baixo risco.
+- **Escopo fechado:** com estes dois + a ficha do cliente (BL-31), toda ocorrência de
+  `role="tablist"` em `src` (fora de `Segmented`, que já está correto) agora tem `tabpanel`
+  correspondente. `grep -rl 'role="tablist"' src` confirma: só as 3 já corrigidas + `segmented.tsx`
+  (o componente-fonte, que não declara painel nenhum — cada consumidor declara o seu).
