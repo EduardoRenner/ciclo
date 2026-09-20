@@ -615,3 +615,51 @@ função, achada ampliando a varredura para `const [A-Z_]+ =`.
 **A consolidação real do UUID (BL-27 + BL-28) alcança agora 41 arquivos importando de uma fonte só**
 — a maior duplicação de constante encontrada nesta base até aqui, e a que mais valia a pena por
 tocar validação de entrada em toda rota de API com parâmetro `[id]`.
+
+---
+
+### BL-29 · `audit/write.ts` gravava IP forjável na trilha — a própria pessoa auditada podia mentir sobre o IP — FEITO
+
+- **Problema:** achado ampliando a varredura de "duas cópias da mesma fórmula" (BL-21–28) para
+  funções com o mesmo NOME em `src/server` inteiro. `server/http/ip.ts` tem um `ipDe` reescrito
+  pela auditoria de segurança de 2026-08-23 (achado S6) especificamente porque a versão antiga lia
+  o **primeiro** elemento de `X-Forwarded-For` — valor que quem chama CONTROLA quando um proxy
+  confiável está no caminho (ele anexa o IP real ao FIM, não ao início). `server/audit/write.ts`
+  tinha sua própria cópia de `ipDe`, com exatamente essa lógica antiga e vulnerável, nunca
+  atualizada quando `http/ip.ts` foi corrigido.
+- **Por que é mais grave que os achados anteriores desta classe:** o `ipDe` de `audit/write.ts` não
+  é só usado internamente por `writeAudit` (a trilha de TODA mutação relevante, regra 9 do
+  CLAUDE.md) — é importado diretamente por quatro rotas para os eventos mais sensíveis do produto:
+  abertura de ficha do cofre de saúde (`clients/[id]/vault`), consentimentos LGPD, exportação de
+  dado pessoal (`data-export`) e geração de URL assinada de mídia. Em todos os quatro, alguém
+  fazendo o próprio acesso auditado podia forjar o IP que ficaria gravado como "quem acessou de
+  onde" — o cenário exato que uma investigação de vazamento de dado de saúde precisaria confiar.
+- **Por que os dois `ipDe` não podiam simplesmente virar um só:** `http/ip.ts` devolve `string`
+  (fallback `'sem-ip'`, pensado para virar chave de balde no limitador); `audit/write.ts` devolve
+  `string | null` porque `audit_log.ip` — e as colunas equivalentes em `vault`/`consentimentos`/
+  `lgpd`/`media`, todas `inet` — são nullable, e `'sem-ip'` não é sintaxe válida de `inet` (teria
+  quebrado TODA gravação de trilha sem IP, silenciosamente, pelo próprio `catch` que a função tem
+  para não derrubar a operação).
+- **Conserto:** extraída `ipConfiavelOuNulo()` em `http/ip.ts` — mesma cadeia de prioridade
+  (`x-vercel-forwarded-for` → `x-real-ip` → último de `x-forwarded-for` → `null`), devolvendo
+  `null` em vez de `'sem-ip'`. `ipDe` de `http/ip.ts` virou `ipConfiavelOuNulo(req) ?? 'sem-ip'`
+  (comportamento inalterado, mesmos 7 testes de `ip.test.ts` continuam verdes sem tocar). `ipDe` de
+  `audit/write.ts` virou um repasse direto para `ipConfiavelOuNulo`.
+- **Teste existente afirmava o bug como correto:** `audit.test.ts` tinha
+  `'pega o IP da pessoa, não o do proxy'` esperando o PRIMEIRO elemento de XFF — a mesma crença
+  errada que a auditoria S6 já tinha desmentido para o limitador, nunca propagada para este teste.
+  Reescrito para esperar o ÚLTIMO elemento (o confiável), com um segundo caso novo cobrindo que
+  ausência de header grava `null`, não `'sem-ip'`.
+- **Mutação verificada:** commitei o conserto, reintroduzi a lógica antiga em `audit/write.ts`, o
+  teste reescrito reprovou mostrando exatamente `expected '201.10.0.7' to be '10.0.0.2'` (o forjável
+  contra o confiável), restaurei via `git checkout --`, confirmado 7/7 verdes de novo.
+- **De carona, mesma varredura por nome repetido:** `profissionalDoTenant` (assinatura idêntica,
+  corpo byte a byte idêntico) estava triplicada em `agendamentos.ts`/`orcamentos.ts`/
+  `recorrencia.ts` — consolidada na primeira (já era a fonte de `resolverCliente`/
+  `profissionalDoTenant` para as outras duas, sem risco de import circular). `servicoDoTenant`
+  (2 cópias) foi CONFERIDO e descartado como falso positivo — mesmo nome, `select` de colunas
+  genuinamente diferente por necessidade de cada chamador (`recorrencia.ts` não usa depósito/buffer
+  de agendamento). `cancelarAssinatura` (2 cópias, `assinatura-mp.ts`/`fidelidade.ts`) não foi
+  tocado nesta rodada — toca cobrança/assinatura, fora do que este agente decide sozinho sem
+  aprovação explícita (mesmo critério da missão de crescimento).
+- **Verificação completa:** `tsc`/`eslint`/`pnpm test:unit` (292/2531) verdes.
