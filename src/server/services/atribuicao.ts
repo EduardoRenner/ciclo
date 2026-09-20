@@ -10,6 +10,42 @@ type Cliente = SupabaseClient<Database>
 
 const JANELA_DIAS = 30
 
+type ElegibilidadeDeVendaAvulsa = {
+  assinantesAtivos: Set<string>
+  combinacoesComPacote: Set<string>
+}
+
+/**
+ * Mesma classe de `ciclo.ts` (`docs/DECISOES.md` 2026-09-18): assinante ativo do clube e cliente
+ * com sessão de pacote sobrando não geram venda avulsa — o agendamento deles conta na atribuição
+ * de receita com valor zero, não com o `price_cents` de catálogo. Compartilhada entre
+ * `receitaAtribuidaAoCiclo` e `receitaPorCampanha`, que fazem exatamente a mesma pergunta sobre
+ * janelas diferentes de agendamentos.
+ *
+ * Chamada de dentro do `Promise.all` do chamador, não com `await` isolado antes dele — as duas
+ * buscas daqui já rodam em paralelo entre si, e mantê-la como mais um braço do `Promise.all` de
+ * fora preserva o paralelismo com `messages`/`appointments` também.
+ */
+async function elegibilidadeDeVendaAvulsa(db: Cliente, tenantId: string, hoje: string): Promise<ElegibilidadeDeVendaAvulsa> {
+  const [assinaturasAtivas, pacotesComSaldo] = await Promise.all([
+    db.from('client_subscriptions').select('client_id').eq('tenant_id', tenantId).eq('status', 'active'),
+    db
+      .from('packages')
+      .select('client_id, service_id, total_sessions, used_sessions')
+      .eq('tenant_id', tenantId)
+      .or(`expires_on.is.null,expires_on.gte.${hoje}`),
+  ])
+  if (assinaturasAtivas.error) throw new AppError('INTERNAL', { cause: assinaturasAtivas.error })
+  if (pacotesComSaldo.error) throw new AppError('INTERNAL', { cause: pacotesComSaldo.error })
+
+  return {
+    assinantesAtivos: new Set((assinaturasAtivas.data ?? []).map((a) => a.client_id)),
+    combinacoesComPacote: new Set(
+      (pacotesComSaldo.data ?? []).filter((p) => p.used_sessions < p.total_sessions).map((p) => `${p.client_id}:${p.service_id}`),
+    ),
+  }
+}
+
 export type ItemReceitaAtribuida = {
   appointmentId: string
   clientId: string
@@ -94,7 +130,14 @@ export async function receitaAtribuidaAoCiclo(
 
   const hoje = Temporal.Now.plainDateISO().toString()
 
-  const [mensagens, agendamentos, assinaturasAtivas, pacotesComSaldo] = await Promise.all([
+  /*
+    `docs/DECISOES.md` 2026-09-18, mesma classe do achado em `ciclo.ts`: `appointments.price_cents`
+    congela o preço de CATÁLOGO na criação, mesmo para quem tem assinatura ativa do clube ou pacote
+    com sessão sobrando — cuja visita não gera aquela venda avulsa (`server/services/clube.ts`).
+    Sem isso, "o Motor trouxe R$X este mês" contaria como receita NOVA uma visita que já tinha sido
+    paga por outro mecanismo, mesmo que a campanha tenha de fato motivado a volta.
+  */
+  const [mensagens, agendamentos, elegibilidade] = await Promise.all([
     db
       .from('messages')
       .select('client_id, sent_at, campaign_id')
@@ -110,31 +153,12 @@ export async function receitaAtribuidaAoCiclo(
       .eq('status', 'done')
       .gte('created_at', inicioBuscaInstante)
       .lt('created_at', fimBuscaInstante),
-    /*
-      `docs/DECISOES.md` 2026-09-18, mesma classe do achado em `ciclo.ts`: `appointments.price_cents`
-      congela o preço de CATÁLOGO na criação, mesmo para quem tem assinatura ativa do clube — cuja
-      visita não gera aquela venda avulsa (`server/services/clube.ts`). Sem este filtro, "o Motor
-      trouxe R$X este mês" contaria como receita NOVA uma visita que o assinante já tinha pago via
-      mensalidade, mesmo que a campanha tenha de fato motivado a volta.
-    */
-    db.from('client_subscriptions').select('client_id').eq('tenant_id', tenantId).eq('status', 'active'),
-    // Mesma classe, terceiro mecanismo (`docs/DECISOES.md` 2026-09-18, achado seguinte): pacote
-    // com sessão sobrando, por (cliente, serviço) — mesma granularidade de `ciclo.ts`.
-    db
-      .from('packages')
-      .select('client_id, service_id, total_sessions, used_sessions')
-      .eq('tenant_id', tenantId)
-      .or(`expires_on.is.null,expires_on.gte.${hoje}`),
+    elegibilidadeDeVendaAvulsa(db, tenantId, hoje),
   ])
   if (mensagens.error) throw new AppError('INTERNAL', { cause: mensagens.error })
   if (agendamentos.error) throw new AppError('INTERNAL', { cause: agendamentos.error })
-  if (assinaturasAtivas.error) throw new AppError('INTERNAL', { cause: assinaturasAtivas.error })
-  if (pacotesComSaldo.error) throw new AppError('INTERNAL', { cause: pacotesComSaldo.error })
 
-  const assinantesAtivos = new Set((assinaturasAtivas.data ?? []).map((a) => a.client_id))
-  const combinacoesComPacote = new Set(
-    (pacotesComSaldo.data ?? []).filter((p) => p.used_sessions < p.total_sessions).map((p) => `${p.client_id}:${p.service_id}`),
-  )
+  const { assinantesAtivos, combinacoesComPacote } = elegibilidade
 
   const campanhas: CampanhaEnviada[] = (mensagens.data ?? [])
     .filter((m): m is { client_id: string; sent_at: string; campaign_id: string | null } => m.client_id !== null && m.sent_at !== null)
@@ -206,27 +230,17 @@ export type ResultadoPorCampanha = { bookedCount: number; revenueCents: number }
 export async function receitaPorCampanha(db: Cliente, tenantId: string): Promise<Map<string, ResultadoPorCampanha>> {
   const hoje = Temporal.Now.plainDateISO().toString()
 
-  const [mensagens, agendamentos, assinaturasAtivas, pacotesComSaldo] = await Promise.all([
+  // Mesmo motivo de `receitaAtribuidaAoCiclo`, acima: assinante ativo do clube ou com sessão de
+  // pacote sobrando não gera venda avulsa.
+  const [mensagens, agendamentos, elegibilidade] = await Promise.all([
     db.from('messages').select('client_id, sent_at, campaign_id').eq('tenant_id', tenantId).eq('kind', 'campaign').eq('status', 'sent').not('campaign_id', 'is', null),
     db.from('appointments').select('id, client_id, service_id, created_at, price_cents').eq('tenant_id', tenantId).eq('status', 'done'),
-    // Mesmo motivo de `receitaAtribuidaAoCiclo`, acima: assinante ativo não gera venda avulsa.
-    db.from('client_subscriptions').select('client_id').eq('tenant_id', tenantId).eq('status', 'active'),
-    // Mesmo motivo, terceiro mecanismo: pacote com sessão sobrando, por (cliente, serviço).
-    db
-      .from('packages')
-      .select('client_id, service_id, total_sessions, used_sessions')
-      .eq('tenant_id', tenantId)
-      .or(`expires_on.is.null,expires_on.gte.${hoje}`),
+    elegibilidadeDeVendaAvulsa(db, tenantId, hoje),
   ])
   if (mensagens.error) throw new AppError('INTERNAL', { cause: mensagens.error })
   if (agendamentos.error) throw new AppError('INTERNAL', { cause: agendamentos.error })
-  if (assinaturasAtivas.error) throw new AppError('INTERNAL', { cause: assinaturasAtivas.error })
-  if (pacotesComSaldo.error) throw new AppError('INTERNAL', { cause: pacotesComSaldo.error })
 
-  const assinantesAtivos = new Set((assinaturasAtivas.data ?? []).map((a) => a.client_id))
-  const combinacoesComPacote = new Set(
-    (pacotesComSaldo.data ?? []).filter((p) => p.used_sessions < p.total_sessions).map((p) => `${p.client_id}:${p.service_id}`),
-  )
+  const { assinantesAtivos, combinacoesComPacote } = elegibilidade
 
   const campanhas: CampanhaEnviada[] = (mensagens.data ?? [])
     .filter((m): m is { client_id: string; sent_at: string; campaign_id: string } => m.client_id !== null && m.sent_at !== null && m.campaign_id !== null)

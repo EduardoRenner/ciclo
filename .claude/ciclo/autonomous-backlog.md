@@ -814,3 +814,29 @@ tocar validação de entrada em toda rota de API com parâmetro `[id]`.
   alias exportado e nunca importado — mas não é duplicação, é só um export desnecessário (baixo
   valor de mexer, sem risco de divergência associado). Deixado como está.
 - **Verificação:** `tsc`/`eslint`/`pnpm test:unit` (292/2531) verdes.
+
+---
+
+### BL-35 · `atribuicao.ts`: cálculo de "quem não gera venda avulsa" duplicado em duas funções — FEITO
+
+- **Método:** `jscpd` (detector de código copiado por CONTEÚDO, não por nome — diferente de todas
+  as varreduras anteriores desta sessão, que comparavam identificadores) apontou um clone de 29
+  linhas dentro do próprio `atribuicao.ts`: `receitaAtribuidaAoCiclo` e `receitaPorCampanha` cada
+  uma buscava `client_subscriptions`/`packages` e construía os mesmos dois `Set` (assinante ativo
+  do clube; combinação cliente+serviço com sessão de pacote sobrando) — com comentário numa delas
+  dizendo literalmente "Mesmo motivo de `receitaAtribuidaAoCiclo`, acima" em vez de importar.
+- **Por que importa (dinheiro, não só estilo):** as duas funções alimentam números que o dono vê
+  na tela de campanhas — "o CICLO trouxe R$X este mês" e o total por campanha — e a regra "quem
+  não gera venda avulsa" já teve um mecanismo NOVO chegar depois do primeiro (pacote com sessão
+  sobrando, `docs/DECISOES.md` 2026-09-18, "achado seguinte" ao de assinatura). Se um QUARTO
+  mecanismo chegar, hoje precisaria de duas edições sincronizadas manualmente; divergência aqui
+  significa um cartão de campanha contando como receita nova uma visita que outro cartão já sabe
+  que não é.
+- **Conserto:** extraída `elegibilidadeDeVendaAvulsa(db, tenantId, hoje)` — as duas buscas mais a
+  construção dos dois `Set`s. Chamada como um braço a mais do `Promise.all` de cada função
+  (não um `await` isolado antes dele), para não transformar duas buscas que rodavam em paralelo
+  com `messages`/`appointments` em uma cadeia serial — mesmo grau de paralelismo de antes.
+- **Verificação:** `tsc`/`eslint`/`pnpm test:unit` (292/2531) verdes. Sem teste de integração
+  específico rodado (`tests/integration/atribuicao.test.ts` precisa de Docker/Supabase local,
+  indisponível nesta sessão) — mudança é extração mecânica, comportamento idêntico linha a linha,
+  revisada manualmente contra o código original antes de commitar.
