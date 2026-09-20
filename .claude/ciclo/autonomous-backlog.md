@@ -446,3 +446,22 @@
   fake corrigido, o código antigo reprovou com a mensagem certa: só 1 tentativa de UPDATE (devia
   ser 2), resultado final incorreto. Restaurado o código, teste voltou a passar.
 - **Verificação completa:** `tsc`/`eslint`/`pnpm test:unit` (292/2530) verdes.
+
+---
+
+### BL-21 · `calibracao.ts` reimplementava `diasEntre`, já exportada de `prestacao-de-contas.ts` — FEITO
+
+- **Problema:** `src/core/cycle/calibracao.ts` tinha sua própria função privada `diasEntre`, byte a
+  byte idêntica à já exportada em `prestacao-de-contas.ts` — que por sua vez já tem o docstring
+  explícito "Exportada desde docs/73 T3: `calibrar-probabilidade.ts` precisa da MESMA conta... Duplicar
+  a fórmula é como esta base já divergiu antes". `calibrar-probabilidade.ts` importa corretamente;
+  `calibracao.ts` (nome parecido, arquivo diferente, provavelmente mais antigo) ficou de fora dessa
+  consolidação.
+- **Por que vale consertar mesmo sem bug hoje:** as duas implementações são idênticas AGORA — não é
+  um bug de comportamento, é o próprio risco que a "duas cópias da mesma fórmula" nomeia: se alguém
+  corrigir um caso de borda numa cópia, a outra mantém o comportamento antigo em silêncio, e cada
+  teste isolado continua verde porque nenhum dos dois testa contra o outro.
+- **Conserto:** removida a `diasEntre` privada de `calibracao.ts`; importa a de `prestacao-de-contas.ts`.
+  Sem risco de import circular (nenhum dos dois arquivos importava nada antes).
+- **Verificação:** `tsc`/`eslint`/`pnpm test:unit` (292/2530) verdes — comportamento idêntico
+  confirmado pelos testes existentes de `calibracao.ts` continuando a passar.

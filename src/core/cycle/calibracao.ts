@@ -33,6 +33,8 @@
  *    job que estoura é pior que um job que não corrige.
  */
 
+import { diasEntre } from '@/core/cycle/prestacao-de-contas'
+
 /** Uma previsão já resolvida: a visita que a originou e a volta que de fato aconteceu. */
 export type PrevisaoResolvida = {
   /** `YYYY-MM-DD` da visita que originou a previsão. */
@@ -76,11 +78,6 @@ function mediana(valores: number[]): number {
   const meio = Math.floor(ordenados.length / 2)
   if (ordenados.length % 2 === 0) return (ordenados[meio - 1]! + ordenados[meio]!) / 2
   return ordenados[meio]!
-}
-
-function diasEntre(de: string, ate: string): number {
-  // Datas puras (`YYYY-MM-DD`) em UTC: sem hora, não há fuso nem horário de verão para errar.
-  return Math.round((Date.parse(`${ate}T12:00:00Z`) - Date.parse(`${de}T12:00:00Z`)) / 86_400_000)
 }
 
 /**
