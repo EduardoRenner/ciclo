@@ -139,3 +139,31 @@ progresso.
 `tsc`/`eslint`/`pnpm build`/`tests/unit` (290/2524, incluindo `orcamento-mostra-erro.test.ts`)
 verdes. Sem preview local (Docker indisponível) — mudança de estado local, sem novo endpoint nem
 lógica de servidor, risco baixo.
+
+---
+
+## 2026-09-20 · `ATUALIZADO_EM` de privacidade/termos: risco confirmado, sem guarda automática viável
+
+Continuando a investigação por churn: `privacidade/page.tsx` teve um bug real e confirmado (commit
+`e428ec1a`, 16/09) — o conteúdo mudou (nomeou os processadores de dado) e a constante
+`ATUALIZADO_EM` ficou presa em "30 de agosto", achado só verificando a página PUBLICADA, não pelo
+build passar. `termos/page.tsx` tem a MESMA constante solta, mesmo risco — checado o histórico
+desde 30/08 e confirmado que seu conteúdo de fato não mudou ainda (só CSS/performance/a11y tocaram
+o arquivo), então a data lá está correta hoje, mas por sorte de calendário, não por proteção.
+
+Considerei escrever uma guarda de varredura (padrão estabelecido desta base), mas esbarrei num
+limite real: o defeito é "conteúdo mudou SEM a data acompanhar" — uma comparação entre DUAS versões
+do arquivo (antes/depois), não uma propriedade de UMA versão isolada. Um teste Vitest lê só o
+snapshot atual; não tem como saber se o texto abaixo é "o mesmo de sempre" ou "acabou de mudar" sem
+comparar contra git (fora do padrão de guarda deste projeto) ou aceitar uma janela de "data ficou
+velha há N dias" (temporal, não-determinística, dispara mesmo quando nada mudou). Nenhuma das duas
+options se encaixa no padrão de guarda estabelecido aqui sem introduzir uma classe nova de
+fragilidade.
+
+**Ação tomada, proporcional ao risco:** comentário no ponto exato da constante, nas DUAS páginas,
+contando o incidente real e pedindo para mudar a data na MESMA alteração que muda o texto —
+mesma cultura de "aviso escrito onde o próximo vai procurar" já usada nesta base (ex.:
+`toque-48`, `card.tsx`). Não é proteção automática, é o que o problema realmente comporta sem
+inventar uma guarda frágil só para ter uma.
+
+`tsc`/`eslint`/`pnpm build`/`tests/unit` (290/2524) verdes — mudança é só comentário.

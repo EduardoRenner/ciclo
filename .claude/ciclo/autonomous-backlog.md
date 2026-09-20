@@ -99,6 +99,23 @@
 
 ---
 
+### BL-06 · `ATUALIZADO_EM` (privacidade/termos) sem proteção contra ficar velho de novo — mitigado
+
+- **Problema:** `privacidade/page.tsx` já teve exatamente este bug (data presa depois do conteúdo
+  mudar, commit `e428ec1a`). `termos/page.tsx` tem a mesma constante solta, mesmo risco estrutural
+  (hoje correta, mas sem proteção).
+- **Por que não virou guarda automática:** o defeito é uma comparação ENTRE VERSÕES do arquivo
+  (conteúdo mudou, data não), não uma propriedade de uma versão isolada — não cabe no padrão de
+  guarda de varredura desta base sem introduzir fragilidade nova (dependência de git dentro do
+  teste, ou uma janela temporal não-determinística).
+- **Mitigação:** comentário no ponto exato da constante, nas duas páginas, contando o incidente e
+  pedindo para mudar a data na mesma alteração que muda o texto. Commit `72663f46`.
+- **Status:** `feito`, com ressalva — é aviso, não trava. Se um dia este projeto ganhar um passo de
+  CI que compara diffs de arquivo (fora do padrão Vitest atual), vale revisitar como guarda de
+  verdade.
+
+---
+
 ## Descartadas
 
 - **Hipótese de double-booking em `reivindicarEncaixe`** (2026-09-20) — investigada a fundo, não é
