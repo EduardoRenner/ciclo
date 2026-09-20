@@ -97,3 +97,44 @@ garantida pela ausência de escrita no código, não por instrução de prompt.
 
 Sem achado — registrado porque é a peça mais sensível do produto (dado de saúde + ação autônoma de
 IA) e vale confirmar que continua correta, não assumir.
+
+---
+
+## 2026-09-20 · Missão de crescimento — retorno ao código depois da pesquisa de mercado, 12 achados
+
+Depois da fase de pesquisa (growth-map/funnel/market-intelligence/growth-opportunities, ver
+`docs/DECISOES.md`), a sessão voltou a ler código sistematicamente. Doze achados reais, em duas
+famílias:
+
+**Seis conserto de comportamento (BL-15 a BL-20):**
+1. `verificarCaptcha` tratava status de erro do provedor como reprovação silenciosa (não caía no
+   `catch` que já loga indisponibilidade).
+2. `job-queue.ts`: `finish_job(done)` falhando depois de um handler bem-sucedido reexecutava o
+   job — latente (`HANDLERS` vazio hoje), mas alcançável no primeiro handler real.
+3-4. `lembretes.ts`/`recuperar-receita.ts`: item com erro abortava o lote inteiro de envio —
+   mesma classe já corrigida em `recompute-cycles`/`segments`/`campanhas`/`stock-alerts`, essas
+   duas ficaram de fora da varredura anterior.
+5. `resolverCliente` (o caminho de criação de cliente mais usado do produto): corrida de
+   criação por telefone novo não tratava `23505` — inconsistente com o `23P01` do mesmo arquivo.
+6. `estoque.ts`: `stock_qty`/`avg_cost_cents` perdiam escrita em corrida (ler-somar-escrever sem
+   CAS), duplicado em duas funções independentes.
+
+**Seis consolidações de "mesma fórmula duplicada" (BL-21 a BL-26)**, achadas varrendo `src/core`,
+`src/server` e `src/app` por nome de função repetido: `diasEntre` (2 cópias), `mediana` (3 cópias),
+`voltas()` (2 cópias), `weekdayPg` (4 cópias — a maior), `mesCorrente` (2 implementações
+DIFERENTES que já podiam ter divergido), `horaLocal` (3 cópias, uma com assinatura
+deliberadamente diferente). Descartados como falso positivo na mesma varredura: `paraColunas` e
+`traduzirErro` (mesmo nome, corpos diferentes por entidade — padrão repetido por design).
+
+**Por que a segunda família rendeu tanto:** a primeira consolidação (`resolverCliente`, achado 5)
+levou a comparar com o padrão irmão já correto (`criarAgendamento`'s `23P01`), e isso puxou o fio
+de "que outras fórmulas pequenas existem em mais de um lugar" — uma classe de achado diferente de
+bug-hunting tradicional (não é comportamento errado hoje, é risco de divergência futura), mais
+barata de achar (grep por nome) e mais barata de consertar (mover código, sem lógica nova) que os
+achados de corrida.
+
+Toda extensa varredura de segurança/confiabilidade file-por-file (CSP, webhooks, rate limit, MFA,
+exclusão de conta, cofre/KEK, service worker, middleware, core do Motor de Ciclo) não achou mais
+nada além destes doze — consistente com a nota de ritmo anterior: a superfície de alto risco já
+estava bem coberta, e o valor novo veio de uma classe de busca diferente (fórmula duplicada), não
+de mais leitura linha a linha.
