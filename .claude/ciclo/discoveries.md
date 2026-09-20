@@ -402,3 +402,28 @@ Reintroduzi o defeito exato (removi o `if (!incr.ok) throw`) e vi o teste reprov
 `git checkout --`.
 
 `tsc`/`eslint`/`pnpm build`/`tests/unit` (290/2527) verdes.
+
+---
+
+## 2026-09-20 · Corrigido: `apagarBancoOffline()` falhando era 100% silencioso no logout/exclusão
+
+Varredura de uma classe adjacente à de BL-08/09/11/12/13: em vez de "fetch sem `.ok`", busquei
+`.catch(() => {})` / `.catch(() => undefined)` / `catch {}` em `src/**/*.{ts,tsx}` — ~20
+ocorrências. A maioria é legítima (localStorage, Share nativo, StatusBar, parse de corpo JSON,
+diagnóstico best-effort) — verificadas uma a uma, não descartadas por amostragem.
+
+**Uma era real:** `apagarBancoOffline().catch(() => undefined)`, em `admin/config/sair.tsx` e
+`admin/config/excluir-conta/formulario.tsx`. `apagarBancoOffline` (`lib/offline/db.ts`) é a limpeza
+do achado de segurança S9 — apaga o IndexedDB que guarda CORPO de mutações pendentes (nome,
+telefone, dados de agendamento) para não vazar de uma pessoa pra próxima num tablet de balcão
+compartilhado. Uma falha dessa limpeza específica (rara — `indexedDB.deleteDatabase` só rejeita em
+erro genuíno; bloqueio por outra aba já resolve como sucesso DENTRO da própria função) sumia sem
+deixar rastro nenhum.
+
+**Por que vale consertar mesmo sendo raro:** é exatamente a classe de coisa que este projeto já se
+cobrou por várias vezes ("catch que descarta — tem que contar e avisar"), e o dado em jogo aqui é
+PII num aparelho compartilhado, não um detalhe cosmético. Não dá pra bloquear o logout esperando
+essa limpeza (a sessão já foi encerrada no servidor, não sobra tela pra avisar a pessoa) — o fix é
+`console.warn` estruturado, mesmo padrão já usado em `upstash_indisponivel`/`hcaptcha_indisponivel`.
+
+`tsc`/`eslint`/`pnpm build`/`tests/unit` (290/2527) verdes.

@@ -227,6 +227,20 @@
 
 ---
 
+### BL-14 · `apagarBancoOffline()` falhando era 100% silencioso — FEITO
+
+- **Problema:** `.catch(() => undefined)` em `sair.tsx`/`excluir-conta/formulario.tsx` descartava
+  sem rastro uma falha da limpeza de segurança S9 (PII de mutações pendentes num tablet
+  compartilhado).
+- **Método:** varredura de `.catch(() => {})`/`.catch(() => undefined)`/`catch {}` em toda a base
+  (~20 ocorrências), cada uma verificada individualmente — só esta tinha dado sensível em jogo.
+- **Fix:** `console.warn` estruturado nos dois lugares, mesmo padrão de `upstash_indisponivel`.
+  Commit `2f586143`.
+- **Verificação:** `tsc`/`eslint`/`pnpm build`/`tests/unit` (290/2527) verdes.
+- **Status:** `feito` (2026-09-20).
+
+---
+
 ## Descartadas
 
 - **Hipótese de double-booking em `reivindicarEncaixe`** (2026-09-20) — investigada a fundo, não é
