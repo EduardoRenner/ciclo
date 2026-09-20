@@ -161,6 +161,23 @@
 
 ---
 
+### BL-10 · Drenagem concorrente da fila offline — FEITO (confiança média, não verificado ao vivo)
+
+- **Problema:** `drenarFilaPendente()` alcançável por dois caminhos independentes (`online`,
+  backoff), só o LAÇO de retry tinha mutex, não a drenagem em si — reconexão + retry agendado no
+  mesmo instante podia mandar a mesma mutação duas vezes.
+- **Confiança:** média — plausível e não testável ao vivo nesta sessão (arquivo já documenta
+  dependência de browser real, sem jsdom). `Idempotency-Key` do servidor provavelmente já absorve,
+  mas o cliente não deveria criar a corrida mesmo assim.
+- **Fix:** `drenagemEmAndamento`, mutex na própria função. Rastreado: nenhuma mutação fica perdida,
+  só adiada até o mutex liberar. Commit `5af14929`.
+- **Verificação:** `tsc`/`eslint`/`pnpm build`/`tests/unit` (290/2524) verdes. Sem teste novo
+  (arquivo sem cobertura automatizada por desenho).
+- **Status:** `feito` (2026-09-20), pendência: confirmar ao vivo (DevTools → Network → Offline)
+  numa sessão com acesso a esse tipo de teste.
+
+---
+
 ## Descartadas
 
 - **Hipótese de double-booking em `reivindicarEncaixe`** (2026-09-20) — investigada a fundo, não é

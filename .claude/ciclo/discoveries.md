@@ -270,3 +270,33 @@ primeiro tenant testado):
 Confirma o conserto funcionando nas duas direções em produção, não só nos testes. Produto de teste
 ("Teste QA validacao preco") ficou no catálogo de demonstração do Salão Encanto — tela
 administrativa, não alcança o storefront público, risco de deixar como está é baixo.
+
+---
+
+## 2026-09-20 · Corrigido (confiança média, não verificado ao vivo): drenagem concorrente da fila offline
+
+`src/lib/offline/api-client.ts` (fila de mutações offline, TICKET-055/`01-ESPEC §4.2`) tem dois
+caminhos INDEPENDENTES que chamam `drenarFilaPendente()`: o listener de `online` e
+`tentarNovamenteComBackoff` (retry com backoff 2s/5s/15s). O mutex já existente
+(`tentativaEmAndamento`) só protegia o LAÇO de retry — nunca a própria `drenarFilaPendente()`.
+Reconectar bem no instante em que um retry agendado também dispara faria as duas passadas lerem a
+MESMA lista de `listarMutacoes()` (IndexedDB) antes de qualquer uma remover algo, e mandar cada
+mutação pendente duas vezes ao mesmo tempo — exatamente o cenário central deste produto (tablet de
+balcão, 4G instável de subsolo).
+
+**Por que a confiança é média, não alta:** o `Idempotency-Key` do servidor provavelmente absorve o
+reenvio sem duplicar dado — não é um caminho confirmado como gerando corrupção real, é uma corrida
+que o cliente não deveria criar mesmo assim (mesma régua de "duas fontes da mesma verdade" que este
+projeto já aplica noutros lugares). Não consegui reproduzir a corrida ao vivo: o próprio arquivo já
+documenta que depende de IndexedDB/fetch de browser real, sem jsdom neste projeto, e que os
+consertos anteriores aqui (ex.: o achado de 401/403 descartando mutação de sessão vencida,
+2026-08-28) só foram verificados manualmente via DevTools → Network → Offline — a mesma limitação
+se aplica a este.
+
+**Fix:** `drenagemEmAndamento`, mutex próprio em `drenarFilaPendente()`, mesmo padrão de
+`tentativaEmAndamento`. Rastreei o caminho de uma mutação que chega bem no meio de uma drenagem em
+andamento: ela não se perde — a chamada que encontra o mutex ocupado simplesmente não remove nada,
+e o próprio laço de backoff (ou o próximo evento `online`) tenta de novo depois.
+
+`tsc`/`eslint`/`pnpm build`/`tests/unit` (290/2524) verdes. Sem teste novo — este arquivo não tem
+teste automatizado por desenho (a lógica testável mora em `core/offline/queue.ts`, já coberta).
