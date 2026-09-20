@@ -25,3 +25,25 @@ falha (sem `onAtualizado()`, a transição termina sem atualizar `resumo`, e o v
 **Por que registrar mesmo sem achado:** confirma que a área de maior risco (pagamento) e o padrão
 mais novo/arriscado (estado otimista) desta semana estão corretos — não é "não procurei", é
 "procurei e está certo". Poupa a próxima sessão de reabrir a mesma suspeita.
+
+---
+
+## 2026-09-20 · Generalização do achado BL-07 e checagem da Central de Ações — sem novo achado
+
+Duas checagens depois de consertar `MoneyInput`:
+
+1. **Os outros 3 componentes de input customizados** (`input.tsx`, `phone-input.tsx`, `select.tsx`)
+   não compartilham o defeito do `MoneyInput` — todos eles ficam genuinamente vazios quando o
+   estado do chamador começa vazio (string `''`), então `required` nativo funciona normalmente
+   neles. O defeito era específico do `MoneyInput` formatar `centavos` como texto SEMPRE ("0,00"),
+   não um padrão do design system.
+
+2. **`central-de-acoes.tsx` + `centralDeAcoes` (`crm.ts`)** — lidos de ponta a ponta (as 6 consultas
+   paralelas, os 6 cards de ação, a trava de `report:read`, o card de cobrança bloqueado no app
+   nativo). Sem achado; já tem histórico de bugs reais corrigidos e documentados inline (limiar de
+   pontos que ignorava o prêmio configurável, "147 clientes sumindo" que contava linha em vez de
+   cliente). `acoesDeCompletude` — que o próprio código cita como já tendo tido uma guarda "cega"
+   (espelhava a fórmula no teste em vez de chamar a função real) — está corrigida: o teste atual
+   importa e chama a função de verdade.
+
+Sem mudança de código nesta rodada; confirma que a área investigada está correta.
