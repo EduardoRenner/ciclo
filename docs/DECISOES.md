@@ -13576,3 +13576,18 @@ arquivo `comissao.test.ts`/`crm.test.ts`/`estoque.test.ts` citados nominalmente 
 existem mais com esse nome exato — provavelmente renomeados/divididos desde então). Não tentei
 adivinhar o restante da lista original; o valor deste item foi cobrir especificamente a área de
 maior risco (dinheiro), não fechar a contagem.
+
+---
+
+## 2026-09-20 · Loop assert-vazio, continuação — 2 arquivos de RLS/sessão conferidos, sem achado
+
+- `lgpd-cobertura.test.ts`: guarda exemplar — tem seu PRÓPRIO teste de "o leitor de migrations
+  ainda enxerga as colunas do achado S15" antes de confiar em qualquer lista vazia derivada, exatamente
+  o padrão "guarde contra o próprio detector" do `CLAUDE.md`. Os três `toEqual([])` (cobertura
+  completa, sem fantasma, `preserva` sempre com motivo) partem de `SENSIVEIS`, provado não-vazio
+  (≥10 tabelas) na primeira `describe`.
+- `session.test.ts`: `metodos: []` é o fallback documentado quando o Supabase não informa o campo
+  — teste do comportamento real de ausência-de-dado-upstream, não guarda cega.
+- `consulta-filtra-tenant.test.ts`: já coberto (item de 18/09, "Mutação verificada"), não repetido.
+
+Backlog assert-vazio: 6 arquivos money/RLS-críticos conferidos nesta sessão (20/09), todos limpos.
