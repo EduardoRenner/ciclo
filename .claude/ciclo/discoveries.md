@@ -231,3 +231,22 @@ fazer.
 
 `tsc`/`eslint`/`pnpm build`/`tests/unit` (290/2524, incluindo as duas guardas de copy que
 inicialmente reprovaram) verdes.
+
+---
+
+## 2026-09-20 · Generalização do BL-08: mesma classe em `ficha.tsx`, causa diferente
+
+Depois de consertar `campanhas/nova.tsx`, busquei o mesmo padrão (`href={link ?? '#'}`) na base e
+achei mais 2 instâncias em `admin/clientes/[id]/ficha.tsx` — "Indicar" (convite de indicação) e
+"Mensagem" (modelo pronto). A CAUSA aqui é diferente da campanha (lá era o `onClick` disparando
+incondicional; aqui os botões que abrem essas seções só checavam `!cliente.phoneE164`, ausência de
+telefone — não se `linkWhatsApp()` de fato produzia um link). Telefone PRESENTE mas com menos de 10
+dígitos (dado corrompido/incompleto, ex.: importação malfeita) passava pela checagem fraca,
+habilitava os botões, e tocar neles abria nada enquanto a folha fechava como se tivesse dado certo.
+
+Menor alcance que a campanha (afeta só quem tem telefone corrompido nesse cliente específico, não
+um disparo em massa), mas a mesma classe de "sucesso fingido" que este projeto trata como sério.
+`telefoneUtilizavel = linkWhatsApp(cliente.phoneE164, '') !== null` centraliza a checagem
+VERDADEIRA (a mesma função que decide se abre algo) nos dois lugares, substituindo o proxy fraco.
+
+`tsc`/`eslint`/`pnpm build`/`tests/unit` (290/2524) verdes.

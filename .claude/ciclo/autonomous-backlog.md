@@ -150,6 +150,17 @@
 
 ---
 
+### BL-09 · `ficha.tsx`: "Indicar"/"Mensagem" habilitados com telefone inválido (não só ausente) — FEITO
+
+- **Problema:** mesma classe de BL-08, causa diferente — checagem usava `!cliente.phoneE164`
+  (ausência), não se `linkWhatsApp()` de fato produzia link. Telefone corrompido/curto passava,
+  botão habilitava, toque abria nada, folha fechava como se tivesse funcionado.
+- **Fix:** `telefoneUtilizavel` centraliza a checagem real nos dois botões. Commit `ff65d3b4`.
+- **Verificação:** `tsc`/`eslint`/`pnpm build`/`tests/unit` (290/2524) verdes.
+- **Status:** `feito` (2026-09-20).
+
+---
+
 ## Descartadas
 
 - **Hipótese de double-booking em `reivindicarEncaixe`** (2026-09-20) — investigada a fundo, não é
