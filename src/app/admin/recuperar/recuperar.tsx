@@ -82,6 +82,7 @@ export default function RecuperarReceita({
   temAtendimentosConcluidos: boolean
 }) {
   const vocabulario = useVocabulario()
+  const mostrarToast = useToast()
   const [filtro, setFiltro] = useState<Estado | 'all'>('all')
   const [lista, setLista] = useState(inicial)
   const [carregando, setCarregando] = useState(false)
@@ -96,6 +97,13 @@ export default function RecuperarReceita({
     try {
       const qs = valor === 'all' ? '' : `?state=${valor}`
       const r = await fetch(`/api/v1/cycle/recover${qs}`)
+      // Sem checar `r.ok`, um 401/500 caía direto em `json.data` undefined e `if (json.data)`
+      // simplesmente não fazia nada — a lista antiga continuava na tela, sem aviso nenhum de que o
+      // filtro não trocou. `BotaoRecalcular`, no mesmo arquivo, já usa toast pra isto.
+      if (!r.ok) {
+        mostrarToast({ tom: 'erro', titulo: 'Não consegui atualizar a lista', descricao: 'Tente trocar o filtro de novo.' })
+        return
+      }
       const json = (await r.json()) as { data?: ListaRecuperar }
       if (json.data) setLista(json.data)
     } finally {
@@ -126,6 +134,17 @@ export default function RecuperarReceita({
           mode: 'template',
         }),
       })
+      /*
+       * Sem checar `r.ok`, uma falha (401/500) caía nos mesmos `??` de baixo e virava
+       * `resumoDoEnvio(0, [])` — a MESMA frase de "não tinha ninguém pra mandar", quando na
+       * verdade a requisição nem foi processada. A pessoa lia como se tivesse dado certo e não
+       * tentava de novo.
+       */
+      if (!r.ok) {
+        const corpo = (await r.json().catch(() => null)) as { error?: { message?: string } } | null
+        mostrarToast({ tom: 'erro', titulo: 'Não consegui enviar', descricao: corpo?.error?.message ?? 'Tente de novo.' })
+        return
+      }
       const json = (await r.json()) as { data?: { queued: number; skipped: { clientId: string; reason: string }[] } }
       setAviso(resumoDoEnvio(json.data?.queued ?? 0, (json.data?.skipped ?? []).map((s) => s.reason)))
       setSelecionados(new Set())

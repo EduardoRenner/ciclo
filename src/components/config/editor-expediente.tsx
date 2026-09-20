@@ -149,9 +149,19 @@ export default function EditorExpediente({
   }
 
   function removerFolga(id: string) {
+    const anterior = folgas
     setFolgas((atual) => atual.filter((f) => f.id !== id))
     iniciarTransicao(async () => {
-      await fetch(`/api/v1/time-off/${id}`, { method: 'DELETE', headers: { 'idempotency-key': crypto.randomUUID() } })
+      try {
+        const r = await fetch(`/api/v1/time-off/${id}`, { method: 'DELETE', headers: { 'idempotency-key': crypto.randomUUID() } })
+        // Sem isto, a folga sumia da tela otimisticamente e ficava assim pra sempre mesmo se o
+        // servidor recusasse — sem try/catch nenhum antes, nem falha de rede revertia. A folga
+        // continuava bloqueando horário no banco enquanto a tela mostrava agenda livre.
+        if (!r.ok) throw new Error('remoção recusada pelo servidor')
+      } catch {
+        setFolgas(anterior)
+        mostrarToast({ tom: 'erro', titulo: 'Não consegui remover a folga', descricao: 'Tente de novo em instantes.' })
+      }
     })
   }
 

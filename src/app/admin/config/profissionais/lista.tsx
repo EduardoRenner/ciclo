@@ -163,13 +163,19 @@ export default function ListaProfissionais({
 
       try {
 
-        await fetch(`/api/v1/professionals/${id}`, {
+        const r = await fetch(`/api/v1/professionals/${id}`, {
 
           method: 'DELETE',
 
           headers: { 'idempotency-key': crypto.randomUUID() },
 
         })
+
+        // A atualização otimista já marcou `active: false` na tela antes desta resposta chegar.
+        // Sem checar `r.ok`, um 401/403/500 (que não lança, só o erro de rede lança) deixava a
+        // UI mostrando "inativo" com o profissional continuando ATIVO no servidor — bookable,
+        // visível no site público, a pessoa administrando achando que já tinha resolvido.
+        if (!r.ok) throw new Error('desativação recusada pelo servidor')
 
       } catch {
 
