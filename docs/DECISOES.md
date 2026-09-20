@@ -13518,3 +13518,35 @@ já usava `/< BloqueioPlano/g` corretamente desde o commit anterior. As 4 mutaç
 do ajuste, restaurado via `git checkout --`.
 
 `tsc`/`eslint` limpos, `pnpm build` e `tests/unit` (290/2524) verdes.
+
+---
+
+## 2026-09-20 · Refinamento — `clients/import`/`clients/[id]/media` sem Idempotency-Key: a "opção 2" também esbarra em RLS
+
+Retomando o achado MÉDIO de 18/09 (não corrigido, backlog explícito com duas opções de conserto).
+Antes de tentar implementar a opção 2 ("manter o client `criarClienteDoUsuario()` e escrever uma
+versão de `comIdempotencia` que aceite um client já pronto, evitando a troca de modelo de
+segurança"), conferi se ela de fato evita o problema que bloqueou a opção 1.
+
+**Não evita.** `idempotency_keys` (migration `0001_initial.sql`, linhas 765-772) tem RLS
+`enable` + `force` e **nenhuma política** — comentário explícito no schema: "tabelas de
+infraestrutura: nenhum acesso via cliente (só service_role)... sem políticas = ninguém lê pelo
+cliente. Intencional." Isso significa que o client `anon`+sessão (`criarClienteDoUsuario()`) não
+consegue ler nem escrever nesta tabela em NENHUMA circunstância, com ou sem um helper novo — RLS
+forçado sem política bloqueia toda linha, sempre. Qualquer versão de `comIdempotencia` que aceite
+esse client, por mais bem desenhada que seja no código TypeScript, precisaria de uma política RLS
+nova em `idempotency_keys` para o client de sessão conseguir gravar a própria reserva — que é
+exatamente a mesma categoria de mudança (alterar superfície de RLS) que bloqueou a opção 1 e que
+exige `pnpm test:rls` para confiar.
+
+**Conclusão:** as duas opções do backlog de 18/09 convergem no mesmo bloqueio. Não há caminho de
+conserto para este achado que NÃO toque RLS de alguma forma — a única variável é ONDE (política
+nova em `idempotency_keys`, ou trocar para `service_role` via `withTenant`), não SE. Sem Docker/
+Supabase local nesta sessão (mesmo bloqueio já registrado hoje em outras verificações), não
+implementei nenhuma das duas. Fica mais preciso para a próxima sessão com `test:rls` disponível:
+qualquer conserto aqui é, por natureza, uma mudança de RLS, e deve seguir o procedimento normal de
+migration + política + teste de isolamento antes do merge — não uma alternativa "sem risco" como a
+opção 2 parecia sugerir.
+
+Severidade continua MÉDIA, sem mudança: duplicata recuperável manualmente, não vazamento entre
+tenants, não perda de dado, não dinheiro.
