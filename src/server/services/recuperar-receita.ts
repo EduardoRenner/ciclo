@@ -187,107 +187,119 @@ export async function enviarParaRecuperar(
     if (jaEnviado.has(item.clientId)) continue
     jaEnviado.add(item.clientId)
 
-    const { data: linha, error: erroCiclo } = await db
-      .from('client_cycles')
-      .select('last_campaign_at, state, value_at_risk_cents')
-      .eq('tenant_id', tenantId)
-      .eq('client_id', item.clientId)
-      .eq('service_id', item.serviceId)
-      .maybeSingle()
-    if (erroCiclo) throw new AppError('INTERNAL', { cause: erroCiclo })
-    if (!linha) continue // já não está mais em risco (concluiu, cancelou) — nada a enviar
-
-    if (!dentroDaJanela) {
-      skipped.push({ clientId: item.clientId, reason: 'fora_de_janela' })
-      continue
-    }
-    const dentroDosSeteDias =
-      linha.last_campaign_at !== null &&
-      agora.since(Temporal.Instant.from(linha.last_campaign_at)).total('days') < DIAS_ENTRE_CAMPANHAS
-    if (dentroDosSeteDias) {
-      skipped.push({ clientId: item.clientId, reason: 'rate_limited' })
-      continue
-    }
-
-    const { data: cliente, error: erroCliente } = await db
-      .from('clients')
-      .select('name, phone_e164, email, whatsapp_opt_out')
-      .eq('id', item.clientId)
-      .single()
-    if (erroCliente) throw new AppError('INTERNAL', { cause: erroCliente })
-    if (cliente.whatsapp_opt_out || !cliente.phone_e164) {
-      skipped.push({ clientId: item.clientId, reason: 'opt_out' })
-      continue
-    }
-
-    const { data: servico, error: erroServico } = await db.from('services').select('name').eq('id', item.serviceId).single()
-    if (erroServico) throw new AppError('INTERNAL', { cause: erroServico })
-
-    const resultado = await enviarComFallback(db, {
-      tenantId,
-      clientId: item.clientId,
-      kind: 'campaign',
-      template: entrada.templateId ?? 'recover_client',
-      params: { name: cliente.name, service: servico.name },
-      fallbackSubject: `Sentimos sua falta, ${cliente.name}!`,
-      fallbackBody: `Já faz um tempo desde seu último ${servico.name}. Vamos marcar um novo horário?`,
-      whatsappTo: cliente.phone_e164,
-      emailTo: cliente.email,
-    }, provider)
-
-    if (resultado.status === 'sent') {
-      /*
-       * `select()` no fim do `update` não é enfeite: é o que transforma "não gravou" em algo que
-       * alguém pode ver.
-       *
-       * No supabase-js, um `update` que não casa linha nenhuma devolve `error: null` — sucesso,
-       * zero linhas. E aqui isso é o pior momento possível para um sucesso falso: **a mensagem já
-       * saiu**. Sem `last_campaign_at`, a trava de 7 dias lá em cima não tem o que ler, e a mesma
-       * cliente entra de novo no próximo lote, recebendo "sentimos sua falta" outra vez.
-       *
-       * A linha existe (foi lida com o mesmo trio de chaves algumas linhas acima), então zero é
-       * corrida com o `recompute_cycles`, que reescreve `client_cycles` seis vezes por dia. É raro
-       * — e é exatamente o tipo de raro que ninguém descobre olhando, porque não há erro para
-       * olhar. Quem paga é o salão, na conversa com a cliente.
-       *
-       * Não dá para desfazer o envio, e inventar a linha seria criar um ciclo que o Motor não
-       * calculou. O que dá é deixar rastro — ver a decisão de contagem logo abaixo do `if`.
-       */
-      const { data: carimbadas, error: erroUpdate } = await db
+    // Isolado por cliente, e não um `await` solto no laço: sem isto, um erro transitório de banco
+    // (qualquer um dos `throw AppError` abaixo) aborta o lote inteiro — os clientes seguintes
+    // deste disparo nem são tentados. Mesma classe já corrigida em recompute-cycles/segments/
+    // campanhas/stock-alerts/lembretes.
+    try {
+      const { data: linha, error: erroCiclo } = await db
         .from('client_cycles')
-        .update({ last_campaign_at: new Date().toISOString() })
+        .select('last_campaign_at, state, value_at_risk_cents')
         .eq('tenant_id', tenantId)
         .eq('client_id', item.clientId)
         .eq('service_id', item.serviceId)
-        .select('client_id')
-      if (erroUpdate) throw new AppError('INTERNAL', { cause: erroUpdate })
+        .maybeSingle()
+      if (erroCiclo) throw new AppError('INTERNAL', { cause: erroCiclo })
+      if (!linha) continue // já não está mais em risco (concluiu, cancelou) — nada a enviar
 
-      if ((carimbadas?.length ?? 0) === 0) {
-        console.error(JSON.stringify({
-          level: 'error',
-          event: 'recuperar_carimbo_nao_gravou',
-          detalhe: 'mensagem enviada e last_campaign_at NAO gravado — a trava de 7 dias fica cega para esta ficha',
-          tenantId,
-          clientId: item.clientId,
-          serviceId: item.serviceId,
-        }))
+      if (!dentroDaJanela) {
+        skipped.push({ clientId: item.clientId, reason: 'fora_de_janela' })
+        continue
       }
-      /*
-       * Conta como enviada mesmo quando o carimbo falhou, e isto é decisão, não descuido: a
-       * mensagem SAIU. Dizer "falha de envio" para a dona seria mentir na direção mais cara —
-       * ela reenviaria, e o reenvio é justamente o dano que a trava de 7 dias existe para
-       * impedir. O conserto viraria o defeito, com uma volta a mais.
-       *
-       * A tela mostra o que aconteceu com a cliente; o carimbo perdido é problema operacional, e
-       * o lugar dele é o log acima.
-       */
-      queued++
-    } else {
-      // Falha de entrega de verdade (WhatsApp, push e e-mail indisponíveis). §2.4 só definia dois
-      // motivos e este caía em `rate_limited` "por ser o mais próximo" — mas próximo não é igual:
-      // "tentar de novo" é a ação certa para um limite de taxa e é a ação ERRADA aqui, onde
-      // tentar de novo falha de novo até alguém configurar o transporte. A linha correspondente
-      // em `messages` já nasce `failed` com o erro dos três canais.
+      const dentroDosSeteDias =
+        linha.last_campaign_at !== null &&
+        agora.since(Temporal.Instant.from(linha.last_campaign_at)).total('days') < DIAS_ENTRE_CAMPANHAS
+      if (dentroDosSeteDias) {
+        skipped.push({ clientId: item.clientId, reason: 'rate_limited' })
+        continue
+      }
+
+      const { data: cliente, error: erroCliente } = await db
+        .from('clients')
+        .select('name, phone_e164, email, whatsapp_opt_out')
+        .eq('id', item.clientId)
+        .single()
+      if (erroCliente) throw new AppError('INTERNAL', { cause: erroCliente })
+      if (cliente.whatsapp_opt_out || !cliente.phone_e164) {
+        skipped.push({ clientId: item.clientId, reason: 'opt_out' })
+        continue
+      }
+
+      const { data: servico, error: erroServico } = await db.from('services').select('name').eq('id', item.serviceId).single()
+      if (erroServico) throw new AppError('INTERNAL', { cause: erroServico })
+
+      const resultado = await enviarComFallback(db, {
+        tenantId,
+        clientId: item.clientId,
+        kind: 'campaign',
+        template: entrada.templateId ?? 'recover_client',
+        params: { name: cliente.name, service: servico.name },
+        fallbackSubject: `Sentimos sua falta, ${cliente.name}!`,
+        fallbackBody: `Já faz um tempo desde seu último ${servico.name}. Vamos marcar um novo horário?`,
+        whatsappTo: cliente.phone_e164,
+        emailTo: cliente.email,
+      }, provider)
+
+      if (resultado.status === 'sent') {
+        /*
+         * `select()` no fim do `update` não é enfeite: é o que transforma "não gravou" em algo que
+         * alguém pode ver.
+         *
+         * No supabase-js, um `update` que não casa linha nenhuma devolve `error: null` — sucesso,
+         * zero linhas. E aqui isso é o pior momento possível para um sucesso falso: **a mensagem já
+         * saiu**. Sem `last_campaign_at`, a trava de 7 dias lá em cima não tem o que ler, e a mesma
+         * cliente entra de novo no próximo lote, recebendo "sentimos sua falta" outra vez.
+         *
+         * A linha existe (foi lida com o mesmo trio de chaves algumas linhas acima), então zero é
+         * corrida com o `recompute_cycles`, que reescreve `client_cycles` seis vezes por dia. É raro
+         * — e é exatamente o tipo de raro que ninguém descobre olhando, porque não há erro para
+         * olhar. Quem paga é o salão, na conversa com a cliente.
+         *
+         * Não dá para desfazer o envio, e inventar a linha seria criar um ciclo que o Motor não
+         * calculou. O que dá é deixar rastro — ver a decisão de contagem logo abaixo do `if`.
+         */
+        const { data: carimbadas, error: erroUpdate } = await db
+          .from('client_cycles')
+          .update({ last_campaign_at: new Date().toISOString() })
+          .eq('tenant_id', tenantId)
+          .eq('client_id', item.clientId)
+          .eq('service_id', item.serviceId)
+          .select('client_id')
+        if (erroUpdate) throw new AppError('INTERNAL', { cause: erroUpdate })
+
+        if ((carimbadas?.length ?? 0) === 0) {
+          console.error(JSON.stringify({
+            level: 'error',
+            event: 'recuperar_carimbo_nao_gravou',
+            detalhe: 'mensagem enviada e last_campaign_at NAO gravado — a trava de 7 dias fica cega para esta ficha',
+            tenantId,
+            clientId: item.clientId,
+            serviceId: item.serviceId,
+          }))
+        }
+        /*
+         * Conta como enviada mesmo quando o carimbo falhou, e isto é decisão, não descuido: a
+         * mensagem SAIU. Dizer "falha de envio" para a dona seria mentir na direção mais cara —
+         * ela reenviaria, e o reenvio é justamente o dano que a trava de 7 dias existe para
+         * impedir. O conserto viraria o defeito, com uma volta a mais.
+         *
+         * A tela mostra o que aconteceu com a cliente; o carimbo perdido é problema operacional, e
+         * o lugar dele é o log acima.
+         */
+        queued++
+      } else {
+        // Falha de entrega de verdade (WhatsApp, push e e-mail indisponíveis). §2.4 só definia dois
+        // motivos e este caía em `rate_limited` "por ser o mais próximo" — mas próximo não é igual:
+        // "tentar de novo" é a ação certa para um limite de taxa e é a ação ERRADA aqui, onde
+        // tentar de novo falha de novo até alguém configurar o transporte. A linha correspondente
+        // em `messages` já nasce `failed` com o erro dos três canais.
+        skipped.push({ clientId: item.clientId, reason: 'falha_de_envio' })
+      }
+    } catch (erro) {
+      console.error(
+        JSON.stringify({ level: 'error', event: 'recuperar_cliente_falhou', tenantId, clientId: item.clientId }),
+        erro,
+      )
       skipped.push({ clientId: item.clientId, reason: 'falha_de_envio' })
     }
   }

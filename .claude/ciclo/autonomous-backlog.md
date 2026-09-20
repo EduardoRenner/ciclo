@@ -348,3 +348,31 @@
   `eslint`/`pnpm test:unit` (291/2529) verdes — sem regressão no caminho feliz existente.
 
 `tsc`/`eslint`/`pnpm test:unit` (291/2529) verdes.
+
+---
+
+### BL-18 · `enviarParaRecuperar`: cliente com erro abortava o lote de recuperação inteiro — FEITO
+
+- **Problema:** mesma classe do BL-17, terceira instância — `for (const item of entrada.items)`
+  em `src/server/services/recuperar-receita.ts` tinha várias `throw new AppError(...)` (falha de
+  leitura de `client_cycles`/`clients`/`services`) e a chamada de `enviarComFallback` sem nenhum
+  `try/catch` ao redor. Um erro transitório num cliente do lote de recuperação abortava os
+  seguintes — em produção manual (`POST` da tela "Recuperar receita"), um dono clicando "mandar
+  para os 40" perderia o resto do lote silenciosamente no primeiro erro.
+- **Achado colateral valioso:** este arquivo JÁ resolve, com muito cuidado, o problema mais difícil
+  que registrei como não corrigido no BL-17 (envio real seguido de falha ao GRAVAR o carimbo
+  anti-duplicata) — em vez de deixar a ambiguidade se resolver sozinha, ele conta a mensagem como
+  enviada mesmo se o `update` de `last_campaign_at` não gravar nenhuma linha, loga
+  `recuperar_carimbo_nao_gravou` para investigação humana, e EXPLICITAMENTE decide não mentir pro
+  dono dizendo "falhou" (o que causaria reenvio manual = duplicata de verdade). Vale usar como
+  referência de desenho se um dia o achado do BL-17 for resolvido.
+- **Conserto:** `try/catch` por cliente ao redor do corpo inteiro do laço, preservando exatamente
+  os `skipped.push`/`continue` já existentes para os casos legítimos (fora de janela, rate limited,
+  opt-out) — só a exceção genuína (erro de banco/rede) cai no novo `catch`, contada como
+  `falha_de_envio` e logada com `recuperar_cliente_falhou`.
+- **Cuidado na implementação:** a primeira tentativa extraiu o corpo para uma função auxiliar, o
+  que quebrava os `continue` (inválidos fora de um laço) — revertido e refeito como `try {}` inline
+  dentro do próprio `for`, preservando toda a lógica original sem reescrevê-la.
+- **Verificação:** `tests/integration/recuperar-receita.test.ts` precisa de Docker/Supabase local
+  (indisponível nesta sessão). `tsc`/`eslint`/`pnpm test:unit` (291/2529) verdes — mudança é aditiva
+  (só um `try/catch` em volta do que já existia), sem alterar nenhum caminho feliz existente.
