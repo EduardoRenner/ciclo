@@ -1,4 +1,4 @@
-import type { Temporal } from '@js-temporal/polyfill'
+import { Temporal } from '@js-temporal/polyfill'
 
 /**
  * O dia do calendario num fuso, como `AAAA-MM-DD`.
@@ -55,6 +55,21 @@ export function diaDaSemanaNoFuso(timezone: string, quando: Date): number {
  */
 export function diaDaquiA(timezone: string, dias: number, quando: Date = new Date()): string {
   return diaNoFuso(timezone, new Date(quando.getTime() + dias * 86_400_000))
+}
+
+/**
+ * `AAAA-MM` do mês corrente no fuso do tenant — o que `resumoMensal` espera quando ninguém pede um
+ * mês específico.
+ *
+ * Existia em duas versões independentes (`server/assistente/ferramentas.ts` e
+ * `respostas-rapidas.ts`, mesmo nome, mesmo propósito, implementações diferentes: uma via
+ * `Intl.DateTimeFormat` + `.replace('/', '-')`, outra via `Temporal` direto) — hoje concordam para
+ * a mesma entrada, mas duas fórmulas independentes para a mesma pergunta são exatamente o risco
+ * que este arquivo já existe para evitar. Consolidada aqui pela via `Temporal`, mais direta.
+ */
+export function mesAtual(timezone: string, agora: Temporal.Instant = Temporal.Now.instant()): string {
+  const hoje = agora.toZonedDateTimeISO(timezone).toPlainDate()
+  return `${hoje.year}-${String(hoje.month).padStart(2, '0')}`
 }
 
 /**

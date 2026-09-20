@@ -1,6 +1,7 @@
 import { Temporal } from '@js-temporal/polyfill'
 
 import type { ModuloKey } from '@/core/billing/planos'
+import { mesAtual } from '@/core/tempo/dia'
 import { dinheiro } from '@/lib/formato'
 import { listarAgendaDoDia } from '@/server/services/agendamentos'
 import { resumoDeHoje } from '@/server/services/resumo-hoje'
@@ -63,11 +64,6 @@ function formatarHora(iso: string, timezone: string): string {
 
 function formatarDataCurta(data: Temporal.PlainDate): string {
   return `${String(data.day).padStart(2, '0')}/${String(data.month).padStart(2, '0')}`
-}
-
-function mesCorrente(timezone: string): string {
-  const hoje = Temporal.Now.instant().toZonedDateTimeISO(timezone).toPlainDate()
-  return `${hoje.year}-${String(hoje.month).padStart(2, '0')}`
 }
 
 /** "A, B e C" — nunca "A, B, C" sem conectivo antes do último, que é como se fala em português. */
@@ -221,7 +217,7 @@ async function recuperarSumidos60(ctx: ContextoRapido): Promise<RespostaRapida> 
 }
 
 async function caixaFaturamentoMes(ctx: ContextoRapido): Promise<RespostaRapida> {
-  const resumo = await resumoMensal(ctx.db, ctx.tenantId, ctx.timezone, mesCorrente(ctx.timezone))
+  const resumo = await resumoMensal(ctx.db, ctx.tenantId, ctx.timezone, mesAtual(ctx.timezone))
   return { resposta: `Você faturou ${dinheiro.format(resumo.revenueCents / 100)} neste mês, até agora.`, ferramentasUsadas: ['faturamento_do_periodo'] }
 }
 
@@ -244,7 +240,7 @@ async function caixaFaturamentoMes(ctx: ContextoRapido): Promise<RespostaRapida>
 */
 async function caixaSobrouMes(ctx: ContextoRapido): Promise<RespostaRapida> {
   const [resumo, taxas] = await Promise.all([
-    resumoMensal(ctx.db, ctx.tenantId, ctx.timezone, mesCorrente(ctx.timezone)),
+    resumoMensal(ctx.db, ctx.tenantId, ctx.timezone, mesAtual(ctx.timezone)),
     lerTaxasDoTenant(ctx.db, ctx.tenantId),
   ])
   const descontado = taxas.respondida ? 'material, taxa da maquininha e comissão' : 'material e comissão'

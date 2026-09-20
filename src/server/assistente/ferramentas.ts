@@ -2,6 +2,7 @@ import { Temporal } from '@js-temporal/polyfill'
 import { z } from 'zod'
 
 import type { ModuloKey } from '@/core/billing/planos'
+import { mesAtual } from '@/core/tempo/dia'
 import { avaliarPermissao, type Papel } from '@/server/auth/rbac'
 import { listarAgendamentos } from '@/server/services/agendamentos'
 import { listarProdutosAtivos } from '@/server/services/estoque'
@@ -82,12 +83,6 @@ const EsquemaData = z.object({
     .optional(),
 })
 
-/** `YYYY-MM` do mês corrente no fuso do tenant, sem depender de `new Date()` no chamador. */
-function mesCorrente(timezone: string): string {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: timezone, year: 'numeric', month: '2-digit' })
-    .format(new Date())
-    .replace('/', '-')
-}
 
 /**
  * Exportada: `assistente.ts` reusa para ancorar o prompt de sistema com a data de hoje.
@@ -278,7 +273,7 @@ export const FERRAMENTAS: Ferramenta[] = [
     permissao: 'report:read',
     modulo: 'register',
     executar: async (ctx, args: z.infer<typeof EsquemaMes> | Record<string, never>) =>
-      resumoMensal(ctx.db, ctx.tenantId, ctx.timezone, 'mes' in args && args.mes ? args.mes : mesCorrente(ctx.timezone)),
+      resumoMensal(ctx.db, ctx.tenantId, ctx.timezone, 'mes' in args && args.mes ? args.mes : mesAtual(ctx.timezone)),
   }),
   apagarTipo({
     nome: 'ocupacao_do_dia',

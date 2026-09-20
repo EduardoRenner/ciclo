@@ -516,3 +516,23 @@
 **As quatro consolidações desta rodada (BL-21 a BL-24) fecham a varredura de "mesma fórmula
 duplicada" iniciada ao investigar `resolverCliente` — de `src/core` e `src/server` inteiros, só
 essas quatro funções tinham cópias idênticas.**
+
+---
+
+### BL-25 · `mesCorrente` divergente entre ferramentas.ts e respostas-rapidas.ts — FEITO
+
+- **Problema:** variante do BL-21/22/23/24, achada checando os últimos candidatos da varredura —
+  `mesCorrente(timezone)` existia em `server/assistente/ferramentas.ts` (via `Intl.DateTimeFormat`
+  + `.replace('/', '-')`) e `respostas-rapidas.ts` (via `Temporal` direto). Mesmo nome, mesmo
+  propósito, **implementações DIFERENTES** — pior que os achados anteriores (que eram cópias
+  idênticas, ainda não divergidas): aqui já eram duas fórmulas independentes desde o início,
+  concordando hoje por sorte de entrada, não por garantia.
+- **Descartados como falsos positivos na mesma varredura:** `paraColunas` (3 arquivos) e
+  `traduzirErro` (2-3 arquivos) — mesmo NOME, mas corpos genuinamente diferentes por entidade
+  (campos de cliente vs. profissional vs. serviço; mensagem de "telefone" vs. "nome do serviço").
+  É o mesmo PADRÃO arquitetural repetido por design, não a mesma fórmula duplicada.
+- **Conserto:** `mesAtual` exportada de `core/tempo/dia.ts` (relógio injetável, mesmo padrão de
+  `diaNoFuso`), usando a via `Temporal` (mais direta que `Intl.DateTimeFormat` + substituição de
+  string). Os dois arquivos agora importam.
+- **Verificação:** `tsc`/`eslint`/`pnpm test:unit` (292/2530) verdes — testado manualmente com
+  `node -e` que as duas fórmulas concordam para a data de hoje antes de escolher qual manter.
