@@ -13591,3 +13591,20 @@ maior risco (dinheiro), não fechar a contagem.
 - `consulta-filtra-tenant.test.ts`: já coberto (item de 18/09, "Mutação verificada"), não repetido.
 
 Backlog assert-vazio: 6 arquivos money/RLS-críticos conferidos nesta sessão (20/09), todos limpos.
+
+---
+
+## 2026-09-20 · Verificado — `pnpm audit`, 6 vulnerabilidades moderadas, todas em devDependency não empacotada
+
+`pnpm audit --prod`: limpo, nenhuma vulnerabilidade em dependência de produção. `pnpm audit`
+(inclui dev): 6 moderadas, todas em `hono` (parseBody/query-parser), alcançadas só via
+`shadcn > @modelcontextprotocol/sdk > hono` — `shadcn` é `devDependency` (`package.json` linha 65),
+uma CLI usada localmente para gerar componentes, nunca importada pelo código do app nem
+empacotada pelo `next build`. Risco real: próximo de zero — não é código que roda em produção nem
+que um visitante do CICLO consegue alcançar.
+
+**Não corrigido:** forçar uma versão de `hono` via `pnpm.overrides` sem testar se a CLI do `shadcn`
+continua funcionando seria trocar um risco teórico (dev-only, inalcançável) por um risco real
+(quebrar a ferramenta de scaffolding) sem benefício de segurança em produção. Registrado — revisitar
+quando `shadcn` atualizar a própria dependência do MCP SDK, ou se algum dia este pacote migrar para
+uso em produção (não é o caso hoje).
