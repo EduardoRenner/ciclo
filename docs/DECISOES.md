@@ -13550,3 +13550,29 @@ opção 2 parecia sugerir.
 
 Severidade continua MÉDIA, sem mudança: duplicata recuperável manualmente, não vazamento entre
 tenants, não perda de dado, não dinheiro.
+
+---
+
+## 2026-09-20 · Loop assert-vazio, retomado — 4 arquivos de dinheiro conferidos, sem achado
+
+Continuando o backlog do `docs/66`/`docs/68` (39 arquivos, ~32 já cobertos pelos itens 130-158),
+priorizando as três áreas nomeadas na entrada original (comissão/CRM/estoque) e o que delas existe
+hoje: `completude-do-lucro.test.ts`, `margem-do-servico.test.ts`, `sobra-explicada.test.ts` — os
+três núcleos do cálculo de "Sobrou" que a memória deste projeto já registrou como historicamente
+frágil ("Lucro ignora o desconto", "Margem de contribuição com nome de lucro").
+
+**Sem achado — os três já seguem o padrão correto:**
+- `completude-do-lucro.test.ts`: primeiro teste prova que `TUDO_FALTANDO` devolve 3 itens (não
+  vazio) antes de qualquer asserção vazia depender disso; cada `toEqual([])` posterior vem de um
+  cenário explicitamente respondido campo a campo.
+- `margem-do-servico.test.ts`: o caso "abaixo do piso" prova, com `toHaveLength(MINIMO_DE_
+  ATENDIMENTOS - 1)`, que a entrada tem dado real (não vazia) antes de confirmar que o piso a
+  exclui — distingue "excluído por amostra insuficiente" de "vazio porque nada foi montado".
+- `sobra-explicada.test.ts`: todo `toEqual([])` de `lacunas`/`detalhes` parte de `COMPLETA` (objeto
+  com valores reais preenchidos), nunca de entrada vazia.
+
+Backlog remanescente estimado: a lista original de 40 não é mais reconstituível com precisão (o
+arquivo `comissao.test.ts`/`crm.test.ts`/`estoque.test.ts` citados nominalmente em 16/09 não
+existem mais com esse nome exato — provavelmente renomeados/divididos desde então). Não tentei
+adivinhar o restante da lista original; o valor deste item foi cobrir especificamente a área de
+maior risco (dinheiro), não fechar a contagem.
