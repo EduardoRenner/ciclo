@@ -376,3 +376,37 @@
 - **Verificação:** `tests/integration/recuperar-receita.test.ts` precisa de Docker/Supabase local
   (indisponível nesta sessão). `tsc`/`eslint`/`pnpm test:unit` (291/2529) verdes — mudança é aditiva
   (só um `try/catch` em volta do que já existia), sem alterar nenhum caminho feliz existente.
+
+---
+
+### BL-19 · `resolverCliente`: corrida de criação de cliente por telefone novo não tratava `23505` — FEITO
+
+- **Problema:** no caminho de criação de cliente (`resolverCliente`, `src/server/services/
+  agendamentos.ts`), a checagem "telefone já existe?" e o `insert` que cria o registro novo não
+  são atômicos. Duas requisições quase simultâneas para o MESMO telefone AINDA NÃO cadastrado
+  (toque duplo, duas abas, retry de rede depois de timeout aparente — os mesmos cenários já
+  discutidos para `clients/import`/`clients/[id]/media`) passam as duas pela checagem `existente`
+  (nenhuma viu a outra ainda), e a SEGUNDA a chegar no `insert` esbarra em `clients_unique_phone`
+  (`tenant_id, phone_e164`, migration 0001) com `23505` — que o código tratava como erro genérico
+  `AppError('INTERNAL')`, derrubando um AGENDAMENTO de verdade por causa de uma corrida inofensiva
+  (a cliente já existe, criada pela outra requisição no mesmo instante).
+- **Por que é grave:** é o caminho de escrita mais importante do produto — toda criação de
+  agendamento (público e admin) passa por aqui. E o mesmo arquivo JÁ trata a corrida análoga para
+  conflito de horário (`23P01` em `criarAgendamento`, poucas linhas abaixo) — só esta ficou de
+  fora, apesar de `importacao-clientes.ts` já tratar a MESMA constraint (`23505` de
+  `clients_unique_phone`) corretamente há tempos. Inconsistência entre dois lugares que deviam
+  seguir a mesma regra.
+- **Conserto:** `23505` não gera mais `AppError('INTERNAL')` — reconsulta por `phone_hash` (a
+  cliente que a OUTRA requisição acabou de criar) e devolve o id dela. Só erro genuíno de banco
+  continua caindo em `INTERNAL`.
+- **Verificação:** `tsc`/`eslint`/`pnpm test:unit` (291/2529) verdes — a única guarda existente
+  para `resolverCliente` (`indicacao-tem-escritor.test.ts`) é um scan estático da chamada de
+  `referred_by`, que este conserto não toca. `resolverCliente` não é exportada e não tem teste
+  comportamental dedicado; construir um mock de `db` para reproduzir a corrida exigiria simular
+  duas chamadas concorrentes contra o mesmo `insert`, mais complexo que o padrão `fakeDb` já usado
+  neste projeto — verificado por leitura cuidadosa e analogia direta com o padrão já estabelecido
+  (`23P01` no mesmo arquivo, `23505` em `importacao-clientes.ts`), não por teste novo.
+- **Achado nesta mesma varredura:** revisão completa do pipeline de agendamento público (rota →
+  `criarAgendamentoPublico` → `criarAgendamento` → `resolverCliente`) — todo o resto já trata bem
+  corridas e revalidação (produto sugerido revalidado no servidor, score de risco com fallback,
+  push não-bloqueante). Este era o único ponto sem a mesma disciplina.

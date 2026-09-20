@@ -139,8 +139,31 @@ export async function resolverCliente(
     })
     .select('id')
     .single()
-  if (erroCriar) throw new AppError('INTERNAL', { cause: erroCriar })
-  return criado.id
+
+  if (!erroCriar) return criado.id
+
+  /*
+   * 23505 = `clients_unique_phone` (tenant_id, phone_e164). O `existente` acima não achou
+   * NADA porque ninguém tinha commitado ainda — duas requisições concorrentes para o MESMO
+   * telefone novo (toque duplo, duas abas, retry de rede depois de timeout aparente) chegam
+   * juntas na checagem, as duas passam, e a segunda esbarra na constraint só na escrita.
+   *
+   * A cliente já existe (a outra requisição acabou de criá-la) — errar aqui derrubaria um
+   * agendamento de verdade por causa de uma corrida inofensiva. Mesmo raciocínio de
+   * `criarAgendamento` (23P01) e de `importacao-clientes.ts` para esta mesma constraint.
+   */
+  if (erroCriar.code !== '23505') throw new AppError('INTERNAL', { cause: erroCriar })
+
+  const { data: ganhou, error: erroReconsulta } = await db
+    .from('clients')
+    .select('id')
+    .eq('tenant_id', tenantId)
+    .eq('phone_hash', hash)
+    .is('deleted_at', null)
+    .maybeSingle()
+  if (erroReconsulta) throw new AppError('INTERNAL', { cause: erroReconsulta })
+  if (!ganhou) throw new AppError('INTERNAL', { cause: erroCriar })
+  return ganhou.id
 }
 
 type ServicoAgendavel = {
