@@ -57,3 +57,24 @@ Depois de BL-08/BL-09, `grep -rn "linkWhatsApp(" src --include="*.tsx"` achou 7 
 mais as duas instâncias já corrigidas de `ficha.tsx`) já usam o padrão certo —
 `{link ? <a href={link}>...</a> : null}`, sem fallback `#` nem efeito colateral incondicional.
 Confirma que a classe de defeito está fechada nesta base, não só nos dois lugares corrigidos.
+
+---
+
+## 2026-09-20 · Caixa (fechamento diário/mensal) e automações — checados, sem achado
+
+Lidos `admin/caixa/page.tsx` (busca de dados, permissões `report:read`/`commission:read`/
+`RELATORIO_DA_EQUIPE`), `caixa.tsx` (confirmado que `atendidoCents` só alimenta o texto do estado
+vazio, nunca aparece como receita), `server/services/caixa.ts` (`somarTickets`/`fechamentoDiario`/
+`resumoMensal` — soma em memória de colunas já calculadas por ticket, limite de fuso horário
+tratado com `Temporal`, paginação com teto documentado) e `config/automacoes/automacoes.tsx`
+(dial otimista com rollback, selo "roda de verdade" separado de "nível escolhido"). Sem achado em
+nenhum.
+
+**Nota de ritmo:** depois de ~10 ciclos consecutivos desta missão cobrindo praticamente toda
+superfície de alto risco (pagamento, WhatsApp, formulários de dinheiro, guardas de varredura,
+optimistic UI, caixa), a taxa de achados novos por leitura estática caiu bastante — 6 achados reais
+consertados nesta sessão (2 de imagem, 1 de estado de carregamento, 2 de validação de dinheiro, 2
+de link do WhatsApp que mentia sucesso), e as últimas 2-3 rodadas de leitura não acharam nada novo.
+Não é sinal de parar — é sinal de que a próxima rodada de valor provavelmente vem de outra fonte
+(teste ao vivo com dado real, ou uma área ainda não tocada como PWA/offline/push), não de reler mais
+arquivos de admin ao acaso.
