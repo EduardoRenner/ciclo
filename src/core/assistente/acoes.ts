@@ -8,7 +8,7 @@
  * da proposta vem só o id, e ele é validado como UUID antes de entrar na string. É a mesma ideia
  * da régua do `docs/33 §2.1` aplicada ao transporte: limitar o que a coisa ALCANÇA.
  */
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+import { UUID } from '@/core/text/uuid'
 
 type MontarRota = (dados: Record<string, unknown>) => string | null
 

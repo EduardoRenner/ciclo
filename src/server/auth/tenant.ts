@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { cache } from 'react'
 
 import { resolverVocabulario, type Vocabulario } from '@/core/text/vocabulario'
+import { UUID } from '@/core/text/uuid'
 import { exigirSessao, type Sessao } from '@/server/auth/session'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { AppError } from '@/server/http/errors'
@@ -52,8 +53,6 @@ export type Contexto = {
    */
   tenant: DadosDoTenant
 }
-
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 /**
  * A revalidação de membership da FAQ C27 continua acontecendo em toda requisição — o que mudou é

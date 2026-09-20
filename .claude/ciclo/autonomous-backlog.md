@@ -558,3 +558,27 @@ essas quatro funções tinham cópias idênticas.**
 **Seis consolidações nesta rodada (BL-21 a BL-26).** A varredura por nome de função repetido
 cobriu `src/core`, `src/server` e `src/app` inteiros — sem mais candidatos remanescentes com corpo
 idêntico ou propósito divergente encontrado.
+
+---
+
+### BL-27 · regex `UUID` quintuplicada em 5 arquivos, um deles security-critical — FEITO
+
+- **Problema:** varredura ampliada para CONSTANTES (não só funções) — `const UUID = /.../i` (o
+  mesmo regex de UUID v4) existia, byte a byte idêntico, em CINCO arquivos:
+  `core/assistente/acoes.ts`, `server/auth/tenant.ts`, `server/db/filtro.ts`,
+  `server/db/with-tenant.ts`, `server/http/idempotency.ts`. Nenhum importava dos outros.
+- **Por que importa mais que as consolidações anteriores:** `server/db/filtro.ts` é o arquivo da
+  auditoria de segurança de 31/08/2026 que existe especificamente para impedir injeção na
+  gramática de filtro do PostgREST — o UUID regex ali é a última trava antes de um valor virar
+  string de consulta. Ter cinco cópias independentes desse regex específico é o pior lugar para
+  esta classe de risco: uma correção de segurança num deles (ex.: aceitar também UUID v7) não
+  alcançaria os outros quatro.
+- **Conserto:** exportado de `core/text/uuid.ts` (novo arquivo pequeno, mesmo padrão de
+  `core/text/normalizar.ts` — que por sua vez já documenta um "duas cópias da mesma regra"
+  anterior, `onboarding/formulario.tsx` tinha copiado `normalizar`). Fica em `core/` porque um dos
+  cinco chamadores (`acoes.ts`) também é `core/` — regra 5 do CLAUDE.md impede `core/` importar de
+  `server/`, então o inverso (server importando de core) é o único caminho possível.
+- **Verificação:** `tsc`/`eslint`/`pnpm test:unit` (292/2530) verdes.
+
+**Sétima consolidação da rodada (BL-21 a BL-27)** — a primeira sobre uma CONSTANTE em vez de uma
+função, achada ampliando a varredura para `const [A-Z_]+ =`.

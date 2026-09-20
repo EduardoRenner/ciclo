@@ -3,10 +3,9 @@ import { createHash } from 'node:crypto'
 import type { Database } from '@/server/db/types.gen'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
+import { UUID } from '@/core/text/uuid'
 import { withTenant } from '@/server/db/with-tenant'
 import { AppError } from '@/server/http/errors'
-
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 /**
  * A chave é do cliente e `idempotency_keys.key` é chave primária **global**. Sem
