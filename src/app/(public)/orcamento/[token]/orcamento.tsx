@@ -59,6 +59,16 @@ export default function Orcamento({ token }: { token: string }) {
    */
   const [podeTentarDeNovo, setPodeTentarDeNovo] = useState(false)
   const [tentativa, setTentativa] = useState(0)
+  /**
+   * `aprovar`/`recusar` reaproveitavam `estado('carregando')` enquanto o POST estava em voo — e
+   * `telaDoOrcamento` trata QUALQUER `'carregando'` como "mostra só o texto de carregamento",
+   * porque é esse mesmo estado que cobre a carga inicial da página. Resultado: apertar "Aprovar
+   * orçamento" fazia os itens e o total (a única prova do que está sendo aprovado) sumirem da
+   * tela, substituídos por "Carregando orçamento…" — bem na decisão de maior custo das quatro
+   * telas públicas (fechar negócio). `pendente`, separado de `estado`, deixa o conteúdo visível e
+   * usa o spinner do próprio `Button` — o mesmo padrão que `/avaliar` já usa corretamente.
+   */
+  const [pendente, setPendente] = useState(false)
 
   /** Recarrega o orçamento em vez de repetir aprovar/recusar: a decisão volta para ela. */
   function tentarDeNovo() {
@@ -88,11 +98,12 @@ export default function Orcamento({ token }: { token: string }) {
   }, [token, tentativa])
 
   function aprovar() {
-    setEstado('carregando')
+    setPendente(true)
     fetch(`/api/v1/public/quotes/${token}/approve`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' })
       .then(async (r) => {
         const json = (await r.json()) as { error?: { message: string } }
         if (!r.ok) {
+          setPendente(false)
           setMensagemErro(json.error?.message ?? 'Não consegui aprovar esse orçamento.')
           setPodeTentarDeNovo(r.status >= 500)
           setEstado('erro')
@@ -101,6 +112,7 @@ export default function Orcamento({ token }: { token: string }) {
         setEstado('aprovado')
       })
       .catch(() => {
+        setPendente(false)
         setMensagemErro('Não consegui falar com o servidor.')
         setPodeTentarDeNovo(true)
         setEstado('erro')
@@ -108,7 +120,7 @@ export default function Orcamento({ token }: { token: string }) {
   }
 
   function recusar() {
-    setEstado('carregando')
+    setPendente(true)
     fetch(`/api/v1/public/quotes/${token}/reject`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -117,6 +129,7 @@ export default function Orcamento({ token }: { token: string }) {
       .then(async (r) => {
         const json = (await r.json()) as { error?: { message: string } }
         if (!r.ok) {
+          setPendente(false)
           setMensagemErro(json.error?.message ?? 'Não consegui recusar esse orçamento.')
           setPodeTentarDeNovo(r.status >= 500)
           setEstado('erro')
@@ -125,6 +138,7 @@ export default function Orcamento({ token }: { token: string }) {
         setEstado('recusado')
       })
       .catch(() => {
+        setPendente(false)
         setMensagemErro('Não consegui falar com o servidor.')
         setPodeTentarDeNovo(true)
         setEstado('erro')
@@ -214,19 +228,19 @@ export default function Orcamento({ token }: { token: string }) {
       {estado === 'recusando' ? (
         <div className="mt-5 flex flex-col gap-2.5">
           <Textarea rotulo="Por quê? (opcional)" value={motivoRecusa} onChange={(e) => setMotivoRecusa(e.target.value)} />
-          <Button largura="cheia" variante="secondary" onClick={recusar}>
+          <Button largura="cheia" variante="secondary" onClick={recusar} carregando={pendente}>
             Confirmar recusa
           </Button>
-          <Button largura="cheia" variante="secondary" onClick={() => setEstado('pronto')}>
+          <Button largura="cheia" variante="secondary" onClick={() => setEstado('pronto')} disabled={pendente}>
             Voltar
           </Button>
         </div>
       ) : (
         <div className="mt-5 flex flex-col gap-2.5">
-          <Button largura="cheia" onClick={aprovar}>
+          <Button largura="cheia" onClick={aprovar} carregando={pendente}>
             Aprovar orçamento
           </Button>
-          <Button largura="cheia" variante="secondary" onClick={() => setEstado('recusando')}>
+          <Button largura="cheia" variante="secondary" onClick={() => setEstado('recusando')} disabled={pendente}>
             Recusar
           </Button>
         </div>
