@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { sinalEmCentavos } from '@/core/pricing/sinal'
 import { availableSlots, type IntervaloExpediente, type IntervaloOcupado } from '@/core/scheduling/available-slots'
 import { transicaoValida, type EstadoAgendamento } from '@/core/scheduling/state'
+import { weekdayPg } from '@/core/tempo/dia'
 import { recomputarCicloDeUmAtendimento } from '@/server/services/ciclo'
 import { lerConfiguracoesAgenda } from '@/server/services/configuracoes-agenda'
 import { pontuarAtendimentoConcluido } from '@/server/services/fidelidade'
@@ -201,11 +202,6 @@ async function profissionalDoTenant(db: Cliente, tenantId: string, professionalI
     .maybeSingle()
   if (error) throw new AppError('INTERNAL', { cause: error })
   if (!data) throw AppError.validacao({ professionalId: 'Esse profissional não está mais disponível.' })
-}
-
-/** Postgres/`business_hours.weekday`: 0 = domingo. `Temporal.dayOfWeek`: 1 = segunda … 7 = domingo. */
-function weekdayPg(dia: Temporal.PlainDate): number {
-  return dia.dayOfWeek % 7
 }
 
 /**

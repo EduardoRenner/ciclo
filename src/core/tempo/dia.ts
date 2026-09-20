@@ -1,3 +1,5 @@
+import type { Temporal } from '@js-temporal/polyfill'
+
 /**
  * O dia do calendario num fuso, como `AAAA-MM-DD`.
  *
@@ -62,4 +64,18 @@ export function diaDaquiA(timezone: string, dias: number, quando: Date = new Dat
  */
 export function diasDesde(isoAntigo: string, agora: Date = new Date()): number {
   return Math.max(0, Math.floor((agora.getTime() - new Date(isoAntigo).getTime()) / 86_400_000))
+}
+
+/**
+ * A mesma conversão de `dayOfWeek` para a convenção de `business_hours.weekday`
+ * (0 domingo … 6 sábado), mas a partir de um `Temporal.PlainDate` já resolvido — sem fuso a
+ * decidir, porque `PlainDate` não carrega hora.
+ *
+ * Existia como cópia idêntica em quatro arquivos (`agendamentos.ts`, `public-booking.ts`,
+ * `ociosidade.ts`, `core/recurrence/gerar-ocorrencias.ts`) — cada comentário citando os outros
+ * sem nenhum importar de fato. Consolidada aqui, ao lado de `diaDaSemanaNoFuso`, que resolve a
+ * mesma pergunta a partir de `Date`+fuso em vez de `PlainDate`.
+ */
+export function weekdayPg(dia: Temporal.PlainDate): number {
+  return dia.dayOfWeek % 7
 }

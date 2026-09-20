@@ -9,6 +9,7 @@ import type { ModeloDePreco } from '@/core/pricing/formatar'
 import { resolverVocabulario, type Vocabulario } from '@/core/text/vocabulario'
 import { sinalEmCentavos } from '@/core/pricing/sinal'
 import { primeiroNome } from '@/core/text/nome'
+import { weekdayPg } from '@/core/tempo/dia'
 import { urlDaVitrine } from '@/core/text/vitrine'
 import { withNovoTenant } from '@/server/db/with-tenant'
 import { listarExpediente } from '@/server/services/expediente'
@@ -293,10 +294,6 @@ function misturarComBranco(hex: string, fator: number): string {
   const canal = (h: string) => Math.round(parseInt(h, 16) + (255 - parseInt(h, 16)) * fator)
   const hex2 = (n: number) => n.toString(16).padStart(2, '0')
   return `#${hex2(canal(m[1]!))}${hex2(canal(m[2]!))}${hex2(canal(m[3]!))}`
-}
-
-function weekdayPg(dia: Temporal.PlainDate): number {
-  return dia.dayOfWeek % 7
 }
 
 /** "quinta, 14:30" no fuso do TENANT — nunca fatiar o ISO em UTC direto (armadilha conhecida). */

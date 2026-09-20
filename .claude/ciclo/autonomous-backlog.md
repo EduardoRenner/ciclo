@@ -495,3 +495,24 @@
 - **De carona:** conferido se `dias(quantos)`, a função vizinha em `ritmo-do-cliente.ts`, também
   estava duplicada em algum lugar — não estava, ficou como está.
 - **Verificação:** `tsc`/`eslint`/`pnpm test:unit` (292/2530) verdes.
+
+---
+
+### BL-24 · `weekdayPg` quadruplicada — a maior duplicação achada nesta varredura — FEITO
+
+- **Problema:** mesma classe do BL-21/22/23 — `weekdayPg(dia: Temporal.PlainDate)` (converte
+  `dayOfWeek` de `Temporal` para a convenção `0=domingo…6=sábado` que `business_hours.weekday`
+  usa) existia em QUATRO arquivos: `agendamentos.ts`, `public-booking.ts`, `ociosidade.ts` (com um
+  cast extra para o tipo `Weekday`) e `core/recurrence/gerar-ocorrencias.ts`. Cada cópia tinha um
+  comentário citando as OUTRAS pelo nome ("mesma convenção de agendamentos.ts") — o padrão já
+  reconhecia a duplicação havia tempo, só nunca virou import de verdade.
+- **Conserto:** exportada de `core/tempo/dia.ts`, ao lado de `diaDaSemanaNoFuso` (que resolve a
+  mesma pergunta a partir de `Date`+fuso em vez de `PlainDate` já resolvido — os dois cobrem
+  entradas diferentes da mesma convenção, cada um mantido separado). Os quatro arquivos agora
+  importam em vez de reimplementar. Em `ociosidade.ts`, o cast `as Weekday` saiu — o único uso é
+  numa comparação `!==`, onde `number` compara direto com o literal union sem cast.
+- **Verificação:** `tsc`/`eslint`/`pnpm test:unit` (292/2530) verdes.
+
+**As quatro consolidações desta rodada (BL-21 a BL-24) fecham a varredura de "mesma fórmula
+duplicada" iniciada ao investigar `resolverCliente` — de `src/core` e `src/server` inteiros, só
+essas quatro funções tinham cópias idênticas.**

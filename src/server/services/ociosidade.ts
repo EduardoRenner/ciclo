@@ -1,17 +1,13 @@
 import { Temporal } from '@js-temporal/polyfill'
 
 import { diaMaisOcioso, type DiaOcioso, type Weekday } from '@/core/agenda/ociosidade'
+import { weekdayPg } from '@/core/tempo/dia'
 import { AppError } from '@/server/http/errors'
 
 import type { Database } from '@/server/db/types.gen'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 type Cliente = SupabaseClient<Database>
-
-/** Mesma convenção de `agendamentos.ts`: Postgres `weekday` 0 = domingo … `Temporal.dayOfWeek` 1 = segunda … 7 = domingo. */
-function weekdayPg(dia: Temporal.PlainDate): Weekday {
-  return (dia.dayOfWeek % 7) as Weekday
-}
 
 /** Status que significam "a cadeira teve gente" num dia já encerrado — mesmo conjunto de `CONTAM_COMO_RECEITA` em `agendamentos.ts`. */
 const OCUPOU_A_CADEIRA = new Set(['pending', 'confirmed', 'arrived', 'done'])

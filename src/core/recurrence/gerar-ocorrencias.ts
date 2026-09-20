@@ -1,12 +1,6 @@
 import { Temporal } from '@js-temporal/polyfill'
 
-/**
- * Mesma convenção de `business_hours.weekday`/`weekdayPg` em agendamentos.ts:
- * 0 = domingo … 6 = sábado. `Temporal.PlainDate.dayOfWeek` é 1 = segunda … 7 = domingo.
- */
-function weekdayPg(dia: Temporal.PlainDate): number {
-  return dia.dayOfWeek % 7
-}
+import { weekdayPg } from '@/core/tempo/dia'
 
 export type RegraRecorrencia =
   | { tipo: 'semanal'; weekday: number; intervaloSemanas: number }
