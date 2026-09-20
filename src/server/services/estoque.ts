@@ -82,6 +82,9 @@ export async function estornarBaixaDaComanda(db: Cliente, tenantId: string, tick
 
 type EntradaMovimento = { productId: string; kind: Database['public']['Enums']['stock_move_type']; qty: number; source: string; sourceId?: string; unitCostCents?: number; note?: string }
 
+/** Tentativas da CAS abaixo antes de desistir — contenção real neste ponto é rajada, não constante. */
+const MAX_TENTATIVAS_ESTOQUE = 5
+
 async function registrarMovimento(db: Cliente, tenantId: string, entrada: EntradaMovimento): Promise<void> {
   const { data: produto, error: erroProduto } = await db.from('products').select('stock_qty, avg_cost_cents').eq('tenant_id', tenantId).eq('id', entrada.productId).maybeSingle()
   if (erroProduto) throw new AppError('INTERNAL', { cause: erroProduto })
@@ -99,12 +102,45 @@ async function registrarMovimento(db: Cliente, tenantId: string, entrada: Entrad
   })
   if (erroInsert) throw new AppError('INTERNAL', { cause: erroInsert })
 
-  const { error: erroUpdate } = await db
-    .from('products')
-    .update({ stock_qty: produto.stock_qty + entrada.qty })
-    .eq('tenant_id', tenantId)
-    .eq('id', entrada.productId)
-  if (erroUpdate) throw new AppError('INTERNAL', { cause: erroUpdate })
+  /*
+   * O movimento acima já está gravado e correto — é o `stock_qty` (número cacheado em `products`,
+   * fonte da leitura rápida da lista/alerta) que precisa somar o delta sem perder a corrida.
+   *
+   * Ler-somar-escrever sem `.eq('stock_qty', ...)` no UPDATE é o mesmo defeito que `transicaoSimples`/
+   * o fechamento de comanda já evitam noutro lugar: duas comandas fechando ao mesmo tempo,
+   * consumindo o MESMO produto (ex.: o mesmo xampu em dois cortes do dia), liam o mesmo `stock_qty`
+   * e a segunda escrita apagava o desconto da primeira — o estoque ficava CONTADO A MENOS do que
+   * realmente saiu, silenciosamente, porque nenhuma das duas escritas dava erro.
+   *
+   * CAS com retry, não migration: uma função `UPDATE ... SET stock_qty = stock_qty + x` no banco
+   * seria mais direta, mas exige nova migration + `pnpm test:rls` para confiar (indisponível nesta
+   * sessão). Isto resolve a corrida inteiramente em código de aplicação, sem tocar schema.
+   */
+  let stockAtual = produto.stock_qty
+  for (let tentativa = 1; tentativa <= MAX_TENTATIVAS_ESTOQUE; tentativa++) {
+    const { data: atualizado, error: erroUpdate } = await db
+      .from('products')
+      .update({ stock_qty: stockAtual + entrada.qty })
+      .eq('tenant_id', tenantId)
+      .eq('id', entrada.productId)
+      .eq('stock_qty', stockAtual)
+      .select('stock_qty')
+      .maybeSingle()
+    if (erroUpdate) throw new AppError('INTERNAL', { cause: erroUpdate })
+    if (atualizado) return
+
+    // Perdeu a corrida: outra escrita mudou `stock_qty` entre a leitura e este UPDATE. Relê o
+    // valor de verdade e tenta de novo com ele — o movimento em `stock_moves` já está gravado e
+    // correto, só o total cacheado precisa alcançar o valor certo.
+    const { data: relido, error: erroReler } = await db.from('products').select('stock_qty').eq('tenant_id', tenantId).eq('id', entrada.productId).maybeSingle()
+    if (erroReler) throw new AppError('INTERNAL', { cause: erroReler })
+    if (!relido) throw new AppError('NOT_FOUND')
+    stockAtual = relido.stock_qty
+  }
+
+  // Contenção extrema e improvável (5 tentativas seguidas perdendo a corrida no mesmo produto) —
+  // o movimento já está gravado; falhar aqui é visível (alarma, não corrompe em silêncio).
+  throw new AppError('INTERNAL', { cause: new Error(`stock_qty de ${entrada.productId} não estabilizou após ${MAX_TENTATIVAS_ESTOQUE} tentativas`) })
 }
 
 export const EsquemaEntradaEstoque = z.object({
@@ -138,16 +174,9 @@ export type EntradaEstoqueManual = z.infer<typeof EsquemaEntradaEstoque>
  * dia (nenhum outro fluxo desta base sabe QUANTO custou o produto).
  */
 export async function registrarEntradaEstoque(db: Cliente, tenantId: string, entrada: EntradaEstoqueManual) {
-  const { data: produto, error } = await db.from('products').select('stock_qty, avg_cost_cents').eq('tenant_id', tenantId).eq('id', entrada.productId).maybeSingle()
+  const { data: produtoInicial, error } = await db.from('products').select('stock_qty, avg_cost_cents').eq('tenant_id', tenantId).eq('id', entrada.productId).maybeSingle()
   if (error) throw new AppError('INTERNAL', { cause: error })
-  if (!produto) throw new AppError('NOT_FOUND')
-
-  const novoCustoMedio = calcularNovoCustoMedio({
-    estoqueAtualQty: produto.stock_qty,
-    custoMedioAtualCents: produto.avg_cost_cents,
-    qtyEntrada: entrada.qty,
-    custoUnitarioEntradaCents: entrada.unitCostCents,
-  })
+  if (!produtoInicial) throw new AppError('NOT_FOUND')
 
   const { error: erroInsert } = await db.from('stock_moves').insert({
     tenant_id: tenantId,
@@ -160,20 +189,48 @@ export async function registrarEntradaEstoque(db: Cliente, tenantId: string, ent
   })
   if (erroInsert) throw new AppError('INTERNAL', { cause: erroInsert })
 
-  const { data: produtoAtualizado, error: erroUpdate } = await db
-    .from('products')
-    .update({
-      stock_qty: produto.stock_qty + entrada.qty,
-      avg_cost_cents: novoCustoMedio,
-      ...(entrada.reorderPoint === undefined ? {} : { reorder_point: entrada.reorderPoint }),
+  /*
+   * Mesma corrida de `registrarMovimento`, agravada aqui: além de `stock_qty`, o
+   * ler-somar-escrever também decide `avg_cost_cents` a partir do mesmo par de valores lidos —
+   * uma segunda escrita concorrente (outra entrada manual, ou uma comanda fechando e consumindo
+   * este produto ao mesmo tempo) não só perderia quantidade, corromperia o CUSTO MÉDIO com um
+   * cálculo feito sobre um estoque que já não é o de verdade.
+   *
+   * CAS com retry, recalculando `novoCustoMedio` a cada tentativa com o valor relido — não basta
+   * repetir o UPDATE com o número velho, a fórmula em si depende do estado antes dela.
+   */
+  let produto = produtoInicial
+  for (let tentativa = 1; tentativa <= MAX_TENTATIVAS_ESTOQUE; tentativa++) {
+    const novoCustoMedio = calcularNovoCustoMedio({
+      estoqueAtualQty: produto.stock_qty,
+      custoMedioAtualCents: produto.avg_cost_cents,
+      qtyEntrada: entrada.qty,
+      custoUnitarioEntradaCents: entrada.unitCostCents,
     })
-    .eq('tenant_id', tenantId)
-    .eq('id', entrada.productId)
-    .select('*')
-    .single()
-  if (erroUpdate) throw new AppError('INTERNAL', { cause: erroUpdate })
 
-  return produtoAtualizado
+    const { data: produtoAtualizado, error: erroUpdate } = await db
+      .from('products')
+      .update({
+        stock_qty: produto.stock_qty + entrada.qty,
+        avg_cost_cents: novoCustoMedio,
+        ...(entrada.reorderPoint === undefined ? {} : { reorder_point: entrada.reorderPoint }),
+      })
+      .eq('tenant_id', tenantId)
+      .eq('id', entrada.productId)
+      .eq('stock_qty', produto.stock_qty)
+      .eq('avg_cost_cents', produto.avg_cost_cents)
+      .select('*')
+      .maybeSingle()
+    if (erroUpdate) throw new AppError('INTERNAL', { cause: erroUpdate })
+    if (produtoAtualizado) return produtoAtualizado
+
+    const { data: relido, error: erroReler } = await db.from('products').select('stock_qty, avg_cost_cents').eq('tenant_id', tenantId).eq('id', entrada.productId).maybeSingle()
+    if (erroReler) throw new AppError('INTERNAL', { cause: erroReler })
+    if (!relido) throw new AppError('NOT_FOUND')
+    produto = relido
+  }
+
+  throw new AppError('INTERNAL', { cause: new Error(`stock_qty/avg_cost_cents de ${entrada.productId} não estabilizou após ${MAX_TENTATIVAS_ESTOQUE} tentativas`) })
 }
 
 /**
