@@ -188,46 +188,68 @@ export default function NovaCampanha({
               })
               const link = linkWhatsApp(alvo.phoneE164, texto)
               const jaFoi = enviados.has(alvo.id)
+              /*
+                `link` vem `null` quando o telefone está ausente ou tem menos de 10 dígitos
+                (`linkWhatsApp`). Antes disto, o card virava `href="#"` — não abria nada, mas o
+                `onClick` marcava `enviados` do mesmo jeito: o dono via o check verde, o contador
+                descia, e a rota de registro recebia o `clientId` como se a mensagem tivesse
+                saído. Ninguém foi avisado, e o registro da campanha mentia sobre quem foi
+                alcançado. Sem telefone utilizável, o card fica sem toque, com o motivo escrito —
+                mesmo padrão dos segmentos vazios logo acima.
+              */
+              const conteudoDoCard = (
+                <Card
+                  className={`transition-colors ${jaFoi ? 'opacity-55' : link ? 'hover:border-acc/40 hover:bg-surface-2' : 'opacity-55'}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-corpo font-semibold">{alvo.name}</p>
+                      {/*
+                        Era "já gastou R$ X" / "ainda não gastou". Duas imprecisões numa linha:
+                        o valor vem de `clients.ltv_cents`, que soma o PREÇO DE TABELA dos
+                        atendimentos concluídos — não enxerga desconto dado na comanda nem item
+                        extra — e é escrito só pelo cron diário. Como sinal para decidir quem
+                        chamar de volta, os dois limites são aceitáveis: é ranking, não fatura.
+                        Já "gastou" não era: afirma o que uma pessoa com nome na tela pagou.
+
+                        "ainda não gastou" virou "ainda sem atendimento", que descreve o
+                        REGISTRO em vez da pessoa — com o cron atrasado, uma cliente atendida
+                        hoje ainda aparece zerada, e dizer que ela "não gastou" seria errado
+                        sobre ela; dizer que não há atendimento registrado é sempre verdade.
+                      */}
+                      <p className="text-secundario text-txt-3">
+                        {link === null
+                          ? 'Sem telefone válido para WhatsApp'
+                          : alvo.ltvCents > 0
+                            ? `${dinheiro.format(alvo.ltvCents / 100)} em atendimentos`
+                            : 'ainda sem atendimento'}
+                      </p>
+                    </div>
+                    {jaFoi ? (
+                      <Check className="size-5 shrink-0 text-ok" />
+                    ) : link ? (
+                      <Send className="size-4 shrink-0 text-acc-2" />
+                    ) : null}
+                  </div>
+                </Card>
+              )
               return (
                 <li key={alvo.id}>
-                  <a
-                    href={link ?? '#'}
-                    target="_blank"
-                    rel="noreferrer"
-                    onClick={() => setEnviados((s) => new Set(s).add(alvo.id))}
-                    className="block"
-                  >
-                    <Card className={`transition-colors ${jaFoi ? 'opacity-55' : 'hover:border-acc/40 hover:bg-surface-2'}`}>
-                      <div className="flex items-center gap-3">
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-corpo font-semibold">{alvo.name}</p>
-                          {/*
-                            Era "já gastou R$ X" / "ainda não gastou". Duas imprecisões numa linha:
-                            o valor vem de `clients.ltv_cents`, que soma o PREÇO DE TABELA dos
-                            atendimentos concluídos — não enxerga desconto dado na comanda nem item
-                            extra — e é escrito só pelo cron diário. Como sinal para decidir quem
-                            chamar de volta, os dois limites são aceitáveis: é ranking, não fatura.
-                            Já "gastou" não era: afirma o que uma pessoa com nome na tela pagou.
-
-                            "ainda não gastou" virou "ainda sem atendimento", que descreve o
-                            REGISTRO em vez da pessoa — com o cron atrasado, uma cliente atendida
-                            hoje ainda aparece zerada, e dizer que ela "não gastou" seria errado
-                            sobre ela; dizer que não há atendimento registrado é sempre verdade.
-                          */}
-                          <p className="text-secundario text-txt-3">
-                            {alvo.ltvCents > 0
-                              ? `${dinheiro.format(alvo.ltvCents / 100)} em atendimentos`
-                              : 'ainda sem atendimento'}
-                          </p>
-                        </div>
-                        {jaFoi ? (
-                          <Check className="size-5 shrink-0 text-ok" />
-                        ) : (
-                          <Send className="size-4 shrink-0 text-acc-2" />
-                        )}
-                      </div>
-                    </Card>
-                  </a>
+                  {link ? (
+                    <a
+                      href={link}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={() => setEnviados((s) => new Set(s).add(alvo.id))}
+                      className="block"
+                    >
+                      {conteudoDoCard}
+                    </a>
+                  ) : (
+                    <div title="Sem telefone válido para WhatsApp. Corrija o telefone dessa pessoa para incluir no disparo.">
+                      {conteudoDoCard}
+                    </div>
+                  )}
                 </li>
               )
             })}
