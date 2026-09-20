@@ -178,6 +178,21 @@
 
 ---
 
+### BL-11 · Desativar push não conferia sucesso do servidor — FEITO
+
+- **Problema:** `desativar()` não checava `resposta.ok` do `DELETE /api/v1/push/subscriptions`
+  (ao contrário de `ativar()`, que já checava). 401/403/500 não lança — passava batido, servidor
+  continuava com a inscrição salva, UI dizia "desativado". Terceira instância da classe de
+  "sucesso fingido" (BL-08, BL-09, agora aqui).
+- **Confirmado antes de decidir:** a rota é idempotente (`DELETE ... WHERE` sem erro em 0 linhas
+  afetadas), então a checagem não cria falso-positivo pro caminho normal.
+- **Fix:** `if (!resposta.ok) throw` antes de `unsubscribe()`, mesma forma de `ativar()`. Commit
+  `0483d2d2`.
+- **Verificação:** `tsc`/`eslint`/`pnpm build`/`tests/unit` (290/2524) verdes.
+- **Status:** `feito` (2026-09-20).
+
+---
+
 ## Descartadas
 
 - **Hipótese de double-booking em `reivindicarEncaixe`** (2026-09-20) — investigada a fundo, não é

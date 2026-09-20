@@ -300,3 +300,31 @@ e o próprio laço de backoff (ou o próximo evento `online`) tenta de novo depo
 
 `tsc`/`eslint`/`pnpm build`/`tests/unit` (290/2524) verdes. Sem teste novo — este arquivo não tem
 teste automatizado por desenho (a lógica testável mora em `core/offline/queue.ts`, já coberta).
+
+---
+
+## 2026-09-20 · Corrigido: desativar notificação push não conferia se o servidor apagou de verdade
+
+`src/app/admin/config/notificacoes/ativar.tsx`: `desativar()` chamava
+`DELETE /api/v1/push/subscriptions` e seguia direto para `inscricao.unsubscribe()` (navegador) +
+`setEstado('suportado')` (UI diz "desativado"), sem checar `resposta.ok`. `ativar()`, ao lado, JÁ
+fazia essa checagem corretamente — a assimetria entre os dois é o que chamou atenção.
+
+`fetch()` só lança exceção para falha de REDE (sem conexão, DNS, CORS) — uma resposta HTTP 401,
+403 ou 500 do servidor resolve normalmente com `ok: false`, sem lançar nada. Sem o `if
+(!resposta.ok)`, qualquer uma dessas falhas passava batido: a inscrição continuava salva em
+`push_subscriptions`, o servidor seguiria mandando push pro aparelho, e a pessoa via "desativado"
+na tela — a mesma classe de "sucesso fingido" de BL-08/BL-09, terceira instância nesta sessão.
+
+**Confirmado antes de decidir a forma do fix:** `removerInscricaoPush` (`server/services/push.ts`)
+é um `DELETE ... WHERE` simples — zero linhas afetadas não é erro no Postgres, então a rota é
+idempotente e sempre devolve 200 pra quem já tinha desativado antes. Isso significa que checar
+`resposta.ok` não cria um falso-positivo de erro pro caminho normal — só pega falha de verdade
+(sessão vencida, erro interno).
+
+**Fix:** `if (!resposta.ok) throw ...` antes de `unsubscribe()`, mesma forma de `ativar()`. Ordem
+importa: se o servidor não confirmar, o navegador NÃO cancela a inscrição local — evita o estado
+pior (servidor pensa que está ativo, navegador já cancelou, e reativar criaria uma segunda
+inscrição órfã).
+
+`tsc`/`eslint`/`pnpm build`/`tests/unit` (290/2524) verdes.
