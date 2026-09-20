@@ -86,6 +86,19 @@
 
 ---
 
+### BL-05 · Aprovar/recusar orçamento apagava a tela inteira durante o envio — FEITO
+
+- **Problema:** `aprovar()`/`recusar()` reaproveitavam `estado('carregando')` — o mesmo estado da
+  carga inicial — enquanto o POST estava em voo. `telaDoOrcamento` mostrava só "Carregando
+  orçamento…", apagando itens e total durante a decisão de maior custo das quatro telas públicas.
+- **Fix:** estado `pendente` separado, spinner no próprio `Button` (mesmo padrão de `/avaliar`).
+  Commit `f427a156`.
+- **Verificação:** `tsc`/`eslint`/`pnpm build`/`tests/unit` (290/2524, incluindo o guard existente
+  `orcamento-mostra-erro.test.ts`, intocado) verdes.
+- **Status:** `feito` (2026-09-20).
+
+---
+
 ## Descartadas
 
 - **Hipótese de double-booking em `reivindicarEncaixe`** (2026-09-20) — investigada a fundo, não é

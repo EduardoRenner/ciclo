@@ -117,3 +117,25 @@ confirmada por clique. Adicionado `onFocus`/`onBlur` espelhando os mesmos handle
 e de baixo risco: `tsc`/`eslint` limpos, `pnpm build` e `tests/unit` (290/2524) verdes. Não foi
 possível verificar visualmente ao vivo (sem servidor local — Docker indisponível nesta sessão), mas
 a mudança é mecânica (dois handlers a mais, espelhando dois já existentes e testados).
+
+---
+
+## 2026-09-20 · Corrigido: aprovar/recusar orçamento apagava a tela inteira durante o envio
+
+`src/app/(public)/orcamento/[token]/orcamento.tsx`: `aprovar()`/`recusar()` reaproveitavam
+`setEstado('carregando')` enquanto o POST estava em voo. `telaDoOrcamento` (função pura, já
+guardada por `orcamento-mostra-erro.test.ts`) trata QUALQUER `'carregando'` como "mostra só o texto
+de carregamento" — é o mesmo estado que cobre a carga inicial da página. Resultado: apertar "Aprovar
+orçamento" fazia os itens e o total (a única prova do que está sendo aprovado) sumirem da tela,
+substituídos por "Carregando orçamento…" — na decisão de MAIOR custo das quatro telas públicas
+(fechar negócio), segundo o próprio comentário do arquivo.
+
+O padrão correto já existe no irmão `/avaliar` (`Button carregando={estado === 'enviando'}`, spinner
+dentro do botão, conteúdo continua visível). Apliquei o mesmo: `pendente`, um estado booleano
+separado de `estado`, mantém o conteúdo na tela e usa o spinner do próprio `Button`. Não toquei em
+`telaDoOrcamento` nem no guard existente — a mudança é só em como `aprovar`/`recusar` reportam
+progresso.
+
+`tsc`/`eslint`/`pnpm build`/`tests/unit` (290/2524, incluindo `orcamento-mostra-erro.test.ts`)
+verdes. Sem preview local (Docker indisponível) — mudança de estado local, sem novo endpoint nem
+lógica de servidor, risco baixo.
