@@ -582,3 +582,36 @@ idêntico ou propósito divergente encontrado.
 
 **Sétima consolidação da rodada (BL-21 a BL-27)** — a primeira sobre uma CONSTANTE em vez de uma
 função, achada ampliando a varredura para `const [A-Z_]+ =`.
+
+---
+
+### BL-28 · continuação do BL-27 — o mesmo regex `UUID` estava em MAIS 36 arquivos, não só 5 — FEITO
+
+- **Problema:** o BL-27 corrigiu 5 ocorrências, mas parou aí sem medir o total — uma varredura mais
+  ampla (`grep -rohE "= /[^/]{15,}/[a-z]*" src | sort | uniq -c`) mostrou **37 ocorrências** do
+  mesmo regex de UUID no total. As 32 que faltavam eram quase todas rotas de API sob
+  `src/app/api/v1/**/[id]/**/route.ts` — cada handler de rota dinâmica (`arrive`, `complete`,
+  `confirm`, `no-show`, `cancel`, `close`, `route.ts` da entidade, etc.) redefinia `const UUID =
+  /^[0-9a-f]{8}-.../i` localmente para validar o parâmetro de URL antes de chamar o serviço, mais
+  uma em `admin/config/servicos/[id]/ficha/page.tsx`. 36 arquivos ao todo (contando o de teste já
+  corrigido manualmente antes desta rodada).
+- **Por que era pior do que parecia:** BL-27 já tinha nomeado `filtro.ts` como o caso mais sensível
+  (regex de UUID é a trava contra injeção na gramática `.or()` do PostgREST) — mas o MESMO regex
+  reimplementado 32+ vezes a mais, todas fazendo a mesma checagem de borda ("este `id` da URL é um
+  UUID de verdade?"), é a superfície de divergência que a consolidação do BL-27 deveria ter fechado
+  por completo e não fechou.
+- **Método:** confirmado com `grep -c` que cada um dos 36 arquivos tinha EXATAMENTE UMA ocorrência,
+  no formato idêntico byte a byte — seguro para automatizar. Script de uso único
+  (`consolidar-uuid.mjs`, não versionado, scratchpad) removeu a linha `const UUID = ...` e inseriu
+  `import { UUID } from '@/core/text/uuid'` após o último import de cada arquivo.
+- **Armadilha achada rodando o script:** 17 dos 35 arquivos processados na primeira passada ficaram
+  com a constante local **e** o import novo ao mesmo tempo — o `replace` do script buscava a linha
+  terminada em `\n`, mas esses 17 arquivos usam terminador `\r\n` (mistura de finais de linha já
+  conhecida deste projeto). Corrigido com uma segunda passada usando regex tolerante a `\r?\n`.
+  Confirmado por `grep` que nenhum arquivo sob `src/` (fora `core/text/uuid.ts`, a fonte) ainda
+  define o regex localmente.
+- **Verificação:** `tsc`/`eslint`/`pnpm test:unit` (292/2530) verdes nos 36 arquivos consolidados.
+
+**A consolidação real do UUID (BL-27 + BL-28) alcança agora 41 arquivos importando de uma fonte só**
+— a maior duplicação de constante encontrada nesta base até aqui, e a que mais valia a pena por
+tocar validação de entrada em toda rota de API com parâmetro `[id]`.

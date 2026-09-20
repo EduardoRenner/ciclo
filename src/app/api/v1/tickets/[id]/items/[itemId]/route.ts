@@ -5,9 +5,9 @@ import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { removerItemComanda } from '@/server/services/comanda'
 import { AppError } from '@/server/http/errors'
 import { rota } from '@/server/http/handler'
+import { UUID } from '@/core/text/uuid'
 
 type Ctx = { params: Promise<{ id: string; itemId: string }> }
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 export const DELETE = rota(async (req, params, requestId) => {
   const ctx = await contextoAtual(req)

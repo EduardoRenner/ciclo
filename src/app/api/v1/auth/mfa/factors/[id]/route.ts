@@ -2,9 +2,9 @@ import { exigirAal2 } from '@/server/auth/session'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { AppError } from '@/server/http/errors'
 import { rota } from '@/server/http/handler'
+import { UUID } from '@/core/text/uuid'
 
 type Ctx = { params: Promise<{ id: string }> }
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 /**
  * Remover o segundo fator exige `aal2` (não só sessão comum) — mesmo raciocínio de "trocar

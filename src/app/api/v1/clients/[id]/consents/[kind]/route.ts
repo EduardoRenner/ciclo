@@ -5,9 +5,9 @@ import { revogarConsentimento, TIPOS_CONSENTIMENTO_CLIENTE } from '@/server/serv
 import { AppError } from '@/server/http/errors'
 import { rota } from '@/server/http/handler'
 import { comIdempotencia } from '@/server/http/idempotency'
+import { UUID } from '@/core/text/uuid'
 
 type Ctx = { params: Promise<{ id: string; kind: string }> }
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 export const DELETE = rota(async (req, params) => {
   const ctx = await contextoAtual(req)

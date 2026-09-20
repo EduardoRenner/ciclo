@@ -6,9 +6,9 @@ import { withTenant } from '@/server/db/with-tenant'
 import { exportarDadosDoCliente } from '@/server/services/lgpd'
 import { AppError } from '@/server/http/errors'
 import { rota } from '@/server/http/handler'
+import { UUID } from '@/core/text/uuid'
 
 type Ctx = { params: Promise<{ id: string }> }
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 /** §2.7 `GET .../data-export → JSON (direito de acesso/portabilidade)`. */
 export const GET = rota(async (req, params) => {
