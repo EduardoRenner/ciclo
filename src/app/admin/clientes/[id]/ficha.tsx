@@ -255,6 +255,14 @@ export default function Ficha({
       )
     : ''
   const linkWhatsAppIndicacao = linkIndicacao ? linkWhatsApp(cliente.phoneE164, textoIndicacao) : null
+  /*
+   * `!cliente.phoneE164` só pega telefone AUSENTE — `linkWhatsApp` também devolve `null` para
+   * telefone PRESENTE mas com menos de 10 dígitos (dado corrompido/incompleto). Os dois botões que
+   * usavam só a checagem de ausência ficavam habilitados com um telefone inválido, e o toque
+   * abria nada (`href="#"`) enquanto o resto da tela seguia como se tivesse funcionado — mesma
+   * classe do achado em `campanhas/nova.tsx`, aqui pela checagem fraca em vez do onClick incondicional.
+   */
+  const telefoneUtilizavel = linkWhatsApp(cliente.phoneE164, '') !== null
 
   function salvar() {
     setErro(null)
@@ -483,8 +491,8 @@ export default function Ficha({
               largura="cheia"
               className="mt-2"
               onClick={() => setIndicando(true)}
-              disabled={!cliente.phoneE164}
-              motivoDesabilitado="Cadastre o telefone na ficha para poder mandar o convite."
+              disabled={!telefoneUtilizavel}
+              motivoDesabilitado="Cadastre um telefone válido na ficha para poder mandar o convite."
             >
               <Share2 className="size-4" />
               Indicar
@@ -685,8 +693,11 @@ export default function Ficha({
           <p className="text-corpo text-bad">
             Pediu para não receber mensagens. Respeite o pedido.
           </p>
-        ) : !cliente.phoneE164 ? (
-          <p className="text-corpo text-txt-2">Sem telefone cadastrado. Toque no lápis para adicionar.</p>
+        ) : !telefoneUtilizavel ? (
+          <p className="text-corpo text-txt-2">
+            {cliente.phoneE164 ? 'Telefone cadastrado não parece válido.' : 'Sem telefone cadastrado.'} Toque no lápis para
+            {cliente.phoneE164 ? ' corrigir' : ' adicionar'}.
+          </p>
         ) : (
           <div className="grid gap-2">
             {modelos.map((m) => {
