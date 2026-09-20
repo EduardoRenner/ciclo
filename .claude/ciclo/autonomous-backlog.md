@@ -74,6 +74,20 @@
 
 ---
 
+### BL-04 · Prévia de estrelas em `/avaliar` sem paridade de teclado — FEITO
+
+- **Problema:** `onMouseEnter`/`onMouseLeave` davam prévia visual ao passar o mouse pelas estrelas;
+  navegação por teclado (Tab) não tinha equivalente.
+- **Fix:** `onFocus`/`onBlur` espelhando os handlers de mouse. Commit `e6f841dc`.
+- **Verificação:** `tsc`/`eslint`/`pnpm build`/`tests/unit` (290/2524) verdes. Sem preview local
+  (Docker indisponível) — mudança mecânica de baixo risco, dois handlers a mais espelhando dois já
+  testados.
+- **Status:** `feito` (2026-09-20).
+
+---
+
 ## Descartadas
 
-*(nenhuma ainda)*
+- **Hipótese de double-booking em `reivindicarEncaixe`** (2026-09-20) — investigada a fundo, não é
+  bug real: `appointments_no_overlap` (constraint do banco) já serializa a única colisão possível
+  para este fluxo. Ver `discoveries.md`.

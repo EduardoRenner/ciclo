@@ -78,3 +78,42 @@ sem handler nenhum de JS precisar tratar isso, e o botão de teste falhou da mes
 evento nativo de ativação — não é um defeito do código do CICLO. Não virou item de backlog: é uma
 limitação conhecida da ferramenta de teste, registrada aqui para a próxima sessão não repetir a
 investigação do zero.
+
+---
+
+## 2026-09-20 · `reivindicarEncaixe` (lista de espera): hipótese de double-booking investigada e descartada
+
+Ao ler `src/server/services/lista-espera.ts`, `reivindicarEncaixe` fez soar um alarme: checa
+`entrada.fulfilled_at` num `SELECT` separado, cria o agendamento, e só DEPOIS marca `fulfilled_at`
+com um `.update()` sem condição (`WHERE fulfilled_at IS NULL`) — diferente do padrão que
+`resolverPrevisoes` (`previsao.ts`) usa corretamente (`.is('resolved_at', null)` + contar linhas
+afetadas). `reivindicar.tsx` dispara a reivindicação sozinha, ao abrir a página, sem
+`Idempotency-Key` — parecia a receita clássica pra dois toques/duas abas criarem dois agendamentos
+pro mesmo encaixe.
+
+**Investigação mais funda derrubou a hipótese.** O token carrega profissional+horário FIXOS
+(`OfertaEncaixe`), então duas chamadas concorrentes para o MESMO token tentam criar agendamento no
+MESMO slot exato — e é exatamente o que `appointments_no_overlap` (constraint do banco, código
+`23P01`) existe para impedir. `criarAgendamento` já trata esse código e devolve `SLOT_TAKEN` de
+forma limpa (`agendamentos.ts` L387-400), não um 500. Comparei com o padrão irmão
+(`/confirmar/[token]`, `route.ts` L30-32): também não usa `Idempotency-Key`, e também faz
+"checar-depois-agir" — a diferença é que ali a ação (mudar `status` pra `confirmed`) é
+naturalmente idempotente por repetição, e aqui (criar linha nova) não seria, SE não fosse a
+constraint de exclusão cobrindo justamente este caso.
+
+**Conclusão:** não é um bug de integridade de dado — o pior cenário real é uma aba "perdedora" numa
+corrida rara (duplo toque, duas abas) ver uma mensagem de erro genérica enquanto a outra aba já
+reservou com sucesso. Nenhum agendamento duplicado é possível pra este fluxo específico. Não virou
+item de backlog — registrado aqui porque a investigação valeu a pena (confirma uma propriedade real
+do sistema) mesmo sem virar código, e para a próxima sessão não repetir a mesma suspeita do zero.
+
+---
+
+## 2026-09-20 · Corrigido: prévia das estrelas em `/avaliar` não existia para teclado
+
+`onMouseEnter`/`onMouseLeave` davam a prévia de quantas estrelas seriam marcadas ao passar o mouse
+(`notaEmFoco`); tabulando pelas estrelas via teclado, essa prévia não existia — só a nota já
+confirmada por clique. Adicionado `onFocus`/`onBlur` espelhando os mesmos handlers. Mudança pequena
+e de baixo risco: `tsc`/`eslint` limpos, `pnpm build` e `tests/unit` (290/2524) verdes. Não foi
+possível verificar visualmente ao vivo (sem servidor local — Docker indisponível nesta sessão), mas
+a mudança é mecânica (dois handlers a mais, espelhando dois já existentes e testados).
