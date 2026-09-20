@@ -753,3 +753,43 @@ tocar validação de entrada em toda rota de API com parâmetro `[id]`.
   `role="tablist"` em `src` (fora de `Segmented`, que já está correto) agora tem `tabpanel`
   correspondente. `grep -rl 'role="tablist"' src` confirma: só as 3 já corrigidas + `segmented.tsx`
   (o componente-fonte, que não declara painel nenhum — cada consumidor declara o seu).
+
+---
+
+### BL-33 · Foto de serviço/profissional: backend pronto desde a 0052, sem escritor na UI — identificado, NÃO implementado
+
+- **Problema:** `fazerUploadDaEntidade` (`server/services/vitrine-upload.ts`) e a rota
+  `POST /api/v1/tenant/vitrine/entidade` fazem upload de foto de serviço/profissional
+  (reencode WebP, redimensiona, remove EXIF, troca a chave antiga só depois da nova estar
+  gravada, guarda contra `UPDATE` de zero linhas) — código completo e bem escrito. A página
+  pública (`(public)/[slug]/secoes.tsx`) já lê e EXIBE `s.imageUrl`/`p.photoUrl` condicionalmente.
+  Mas **não existe nenhum `<input type="file">` em lugar nenhum do painel para service/professional**
+  — varrido `grep -rln 'type="file"' src/app/admin`: só client (`fotos.tsx`), CSV
+  (`importador.tsx`) e logo/capa do negócio (`imagens.tsx`). Nenhum dos formulários de
+  `servicos/formulario.tsx`/`profissionais/formulario.tsx` tem campo de foto.
+- **Por que é exatamente a classe que este projeto já nomeou:** a própria migration 0052
+  (`supabase/migrations/0052_foto_de_servico_e_profissional.sql`) diz, sobre a coluna QUE ELA
+  MESMA criava: *"é a mesma classe de `fee_cents`, `media.consent_id`, `clients.referred_by` e
+  `tenants.plan` — coluna que todo mundo lê e ninguém escreve."* A 0052 resolveu o problema até a
+  CAMADA DE DADOS (chave em vez de URL, bucket certo, renomeou `avatar_url` → `photo_key` para
+  dizer a verdade) e construiu o serviço de upload — mas o escritor nunca chegou na UI, então a
+  coluna continua 100% vazia hoje, só que um andar mais alto: não falta mais o mecanismo, falta o
+  botão.
+- **Confirmado, não suposto:** os dois `<img alt="">` que a varredura de acessibilidade desta
+  sessão (BL-31/32) já tinha lido em `secoes.tsx` (linhas 245/322) são precisamente este branch —
+  hoje sempre cai no `else` (sem imagem), para todo tenant, porque `imageUrl`/`photoUrl` nunca tem
+  como nascer preenchido.
+- **Por que não implementei a UI autonomamente:** diferente das consolidações e consertos desta
+  sessão (mudança cirúrgica em código já existente, poucas linhas, comportamento óbvio), isto é
+  construir uma tela nova — campo de upload + preview + estado de erro em DOIS formulários
+  existentes. Mesmo de baixo risco (sem dinheiro, sem segurança, só aditivo, com
+  `imagens.tsx`/`CampoDeImagem` como referência pronta pra adaptar), é decisão de escopo de
+  produto ("vale a pena agora?"), não um bug a corrigir — mesmo critério que manteve o BL-01
+  como `identificado` em vez de `feito` nesta mesma sessão.
+- **Esforço estimado para quem pegar:** baixo-médio. `CampoDeImagem` de `imagens.tsx` já resolve
+  90% do padrão (FormData, toast de erro, `window.location.reload()`); a adaptação para entidade
+  precisa só trocar o endpoint (`/api/v1/tenant/vitrine/entidade` com `tipo`+`id` no FormData em
+  vez de só `tipo`) e decidir ONDE cada formulário mostra o campo.
+- **Status:** `identificado` (2026-09-20). Decisão de produto pendente com o Eduardo: vale
+  priorizar a UI de foto de serviço/profissional agora (o próprio 0052 cita Fresha/Booksy como
+  referência de mercado que já tem isso)?
