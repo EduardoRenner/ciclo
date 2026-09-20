@@ -53,27 +53,47 @@ async function enviarMutacao(mutacao: Mutacao): Promise<ResultadoEnvio> {
   }
 }
 
-/** Roda a fila inteira uma vez. Conflito FICA na fila (§4.2.5: "nunca descarta em silêncio") — só sincronizada/descartada saem do IndexedDB. */
+let drenagemEmAndamento = false
+
+/**
+ * Roda a fila inteira uma vez. Conflito FICA na fila (§4.2.5: "nunca descarta em silêncio") — só
+ * sincronizada/descartada saem do IndexedDB.
+ *
+ * `drenagemEmAndamento` evita duas passadas concorrentes: o listener de `online` (abaixo) e
+ * `tentarNovamenteComBackoff` chamam esta função por caminhos INDEPENDENTES, e o mutex que já
+ * existia (`tentativaEmAndamento`) só protegia o LAÇO de retry, não a drenagem em si — reconectar
+ * bem no instante em que um retry agendado também dispara faria as duas passadas lerem a MESMA
+ * fila do IndexedDB antes de qualquer uma remover algo, e mandar cada mutação pendente duas vezes
+ * ao mesmo tempo. O `Idempotency-Key` do servidor deve absorver o reenvio, mas depender só disso
+ * aqui seria a mesma classe de "duas fontes da mesma verdade" que este projeto evita — o cliente
+ * não devia CRIAR a corrida só porque o servidor pode aguentar.
+ */
 export async function drenarFilaPendente(): Promise<void> {
-  const fila = await listarMutacoes()
-  if (fila.length === 0) return
+  if (drenagemEmAndamento) return
+  drenagemEmAndamento = true
+  try {
+    const fila = await listarMutacoes()
+    if (fila.length === 0) return
 
-  const resultado = await drenarFila(fila, enviarMutacao)
+    const resultado = await drenarFila(fila, enviarMutacao)
 
-  for (const id of resultado.sincronizadas) {
-    await removerMutacao(id)
-    emitir({ tipo: 'sincronizada', id })
-  }
-  for (const id of resultado.descartadas) {
-    // A mutação é lida ANTES de sair do IndexedDB: depois do `removerMutacao` não há mais o que
-    // mostrar, e o aviso viraria "alguma coisa falhou".
-    const mutacao = fila.find((m) => m.id === id) ?? null
-    await removerMutacao(id)
-    emitir({ tipo: 'descartada', id, mutacao })
-  }
-  for (const id of resultado.conflitos) {
-    const mutacao = fila.find((m) => m.id === id)
-    if (mutacao) emitir({ tipo: 'conflito', mutacao })
+    for (const id of resultado.sincronizadas) {
+      await removerMutacao(id)
+      emitir({ tipo: 'sincronizada', id })
+    }
+    for (const id of resultado.descartadas) {
+      // A mutação é lida ANTES de sair do IndexedDB: depois do `removerMutacao` não há mais o que
+      // mostrar, e o aviso viraria "alguma coisa falhou".
+      const mutacao = fila.find((m) => m.id === id) ?? null
+      await removerMutacao(id)
+      emitir({ tipo: 'descartada', id, mutacao })
+    }
+    for (const id of resultado.conflitos) {
+      const mutacao = fila.find((m) => m.id === id)
+      if (mutacao) emitir({ tipo: 'conflito', mutacao })
+    }
+  } finally {
+    drenagemEmAndamento = false
   }
 }
 
