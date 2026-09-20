@@ -106,20 +106,39 @@ export async function processarLote(
   for (const job of jobs ?? []) {
     const handler = handlers[job.kind]
 
+    let sucesso = true
+    let mensagem = ''
     try {
       if (!handler) throw new Error(`${ERRO_SEM_HANDLER} "${job.kind}".`)
       await handler(job as Job)
-      const { error: erroFim } = await db.rpc('finish_job', { p_id: job.id, p_status: 'done' })
-      if (erroFim) throw erroFim
-      processados++
     } catch (erro) {
-      const desfecho = decidirDesfecho(job.attempts, job.max_attempts)
-      const mensagem = erro instanceof Error ? erro.message : String(erro)
-      const { error: erroFim } = await db.rpc('finish_job', { p_id: job.id, p_status: desfecho, p_error: mensagem })
-      if (erroFim) throw new AppError('INTERNAL', { cause: erroFim })
-      if (desfecho === 'dead') mortos++
-      else falharam++
+      sucesso = false
+      mensagem = erro instanceof Error ? erro.message : String(erro)
     }
+
+    if (sucesso) {
+      const { error: erroFim } = await db.rpc('finish_job', { p_id: job.id, p_status: 'done' })
+      if (erroFim) {
+        // O trabalho JÁ aconteceu — cair no ramo de falha marcaria `failed`/`dead` e reexecutaria
+        // um handler que já rodou (mensagem duplicada, cobrança duplicada, o que o handler for).
+        // Isto não é falha do job, é falha de CONTABILIDADE: loga alto e não toca no status, que
+        // fica em `running` — vira "job parado" para a vigilância, que é o desfecho seguro (alguém
+        // humano confere) em vez de reexecutar uma ação não-idempotente às cegas.
+        console.error(
+          JSON.stringify({ level: 'error', event: 'job_concluido_sem_registro', jobId: job.id, kind: job.kind }),
+          erroFim,
+        )
+        continue
+      }
+      processados++
+      continue
+    }
+
+    const desfecho = decidirDesfecho(job.attempts, job.max_attempts)
+    const { error: erroFim } = await db.rpc('finish_job', { p_id: job.id, p_status: desfecho, p_error: mensagem })
+    if (erroFim) throw new AppError('INTERNAL', { cause: erroFim })
+    if (desfecho === 'dead') mortos++
+    else falharam++
   }
 
   return { processados, falharam, mortos }
