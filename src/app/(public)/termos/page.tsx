@@ -34,6 +34,9 @@ export const metadata = {
   description: 'As regras de uso do CICLO: o que a gente entrega, o que você garante, como funciona o pagamento e como cancelar.',
 }
 
+// `/privacidade` já ficou parada numa data velha depois de um commit mudar o conteúdo de verdade
+// sem tocar na constante irmã — achado só verificando a página publicada, não pelo build passar
+// (2026-09-16). Mudou o texto abaixo? Mude esta linha junto, na MESMA mudança.
 const ATUALIZADO_EM = '30 de agosto de 2026'
 
 export default function Termos() {

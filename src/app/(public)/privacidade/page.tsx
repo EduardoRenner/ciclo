@@ -40,6 +40,9 @@ export const metadata = {
   description: 'Que dados o CICLO guarda, por quê, por quanto tempo, e o que você pode pedir a qualquer momento.',
 }
 
+// Já ficou parada em "30 de agosto" depois de um commit mudar o conteúdo de verdade (nomear os
+// processadores de dado) sem tocar aqui — achado só verificando a página publicada, não pelo build
+// passar. Mudou o texto abaixo? Mude esta linha junto, na MESMA mudança.
 const ATUALIZADO_EM = '16 de setembro de 2026'
 
 export default function Privacidade() {
