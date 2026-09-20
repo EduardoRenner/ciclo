@@ -248,6 +248,16 @@ async function plantarOcorrencias(
   }
 
   if (novasGeradas > 0) {
+    /*
+     * Ler-somar-escrever sem CAS — hoje seguro porque `plantarOcorrencias` só tem UM chamador
+     * (`criarSerie`, uma vez por série, síncrono). Não é o mesmo risco de `estoque.ts`/
+     * `consumirSessao` porque não há hoje nenhum caminho que chame isto duas vezes concorrentes
+     * para a MESMA série — mas se a extensão automática de horizonte mencionada no docstring de
+     * `plantarOcorrencias` nascer um dia (um cron rodando para várias séries, ou plantio manual
+     * concorrente com o cron), este UPDATE precisa do mesmo `.eq('ocorrencias_geradas', ...)` que
+     * `estoque.ts`/`consumirSessao` já usam — do jeito que está hoje, perderia contagem em
+     * silêncio exatamente como `stock_qty` perdia antes do conserto desta sessão.
+     */
     const { error } = await db
       .from('appointment_series')
       .update({ ocorrencias_geradas: serie.ocorrencias_geradas + novasGeradas })
