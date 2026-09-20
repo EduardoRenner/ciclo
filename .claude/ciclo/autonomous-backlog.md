@@ -410,3 +410,39 @@
   `criarAgendamentoPublico` → `criarAgendamento` → `resolverCliente`) — todo o resto já trata bem
   corridas e revalidação (produto sugerido revalidado no servidor, score de risco com fallback,
   push não-bloqueante). Este era o único ponto sem a mesma disciplina.
+
+---
+
+### BL-20 · `registrarMovimento`/`registrarEntradaEstoque`: ler-somar-escrever perdia corrida em `stock_qty`/`avg_cost_cents` — FEITO
+
+- **Problema:** duas cópias independentes da mesma lógica (`registrarMovimento`, usada por baixa/
+  estorno de comanda; `registrarEntradaEstoque`, usada por entrada manual) liam `stock_qty`
+  (a segunda também `avg_cost_cents`), calculavam o novo valor em JavaScript, e escreviam de volta
+  com `.update({ stock_qty: lido + delta })` **sem nenhum filtro sobre o valor lido** — clássico
+  ler-somar-escrever sem trava. Duas escritas concorrentes no MESMO produto (duas comandas
+  fechando ao mesmo tempo consumindo o mesmo xampu; uma entrada manual concorrente com uma
+  comanda fechando) liam o mesmo estado inicial, e a segunda escrita **sobrescrevia** a primeira
+  silenciosamente — nenhuma das duas dava erro, o número só ficava errado. Em
+  `registrarEntradaEstoque` o estrago era maior: `avg_cost_cents` também é calculado a partir do
+  mesmo snapshot obsoleto, corrompendo o custo médio do produto, não só a contagem.
+- **Achado da classe "duas cópias da mesma fórmula"** (já nomeada neste projeto): as duas funções
+  tinham o mesmo defeito, de forma independente.
+- **Por que não é apenas teórico:** o `stock_moves` (ledger append-only) sempre grava certo — cada
+  movimento individual é correto. É o `products.stock_qty`/`avg_cost_cents` CACHEADO (o número que
+  a lista/alerta de estoque de fato mostra) que diverge silenciosamente do que o ledger somaria.
+- **Conserto:** CAS com retry (até 5 tentativas) em ambas — `.eq('stock_qty', valorLido)` (e, na
+  segunda, também `.eq('avg_cost_cents', valorLido)`) no próprio UPDATE; se não casar (outra
+  escrita venceu a corrida), relê o valor de verdade e tenta de novo, recalculando
+  `avg_cost_cents` sobre o valor relido — não bastaria reenviar o mesmo número calculado antes.
+  Puro código de aplicação, sem migration: uma função `UPDATE ... SET x = x + delta` atômica no
+  banco seria mais direta, mas exige nova migration + `pnpm test:rls` para confiar (indisponível
+  nesta sessão sem Docker).
+- **Mutação verificada com rigor extra:** o teste novo (`estoque-nao-perde-corrida.test.ts`) usa um
+  fake de `db` que reproduz a corrida deterministicamente (1ª leitura devolve snapshot obsoleto,
+  estado de verdade do fake já é outro). Primeira tentativa: o fake falhou com um erro de forma
+  (`.single is not a function`) porque o código antigo não usa `.maybeSingle()` — ajustei o fake
+  para aceitar as DUAS formas de chamada (com e sem filtro de CAS) e reproduzir o UPDATE...WHERE
+  real (sem filtro extra, sempre casa — é exatamente por isso que o defeito é silencioso). Com o
+  fake corrigido, o código antigo reprovou com a mensagem certa: só 1 tentativa de UPDATE (devia
+  ser 2), resultado final incorreto. Restaurado o código, teste voltou a passar.
+- **Verificação completa:** `tsc`/`eslint`/`pnpm test:unit` (292/2530) verdes.

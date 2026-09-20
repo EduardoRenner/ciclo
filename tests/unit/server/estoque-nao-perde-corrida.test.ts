@@ -35,23 +35,30 @@ function fakeDbComCorrida() {
   function cadeiaDeUpdate(valores: Record<string, unknown>) {
     const registro: { filtros: [string, unknown][] } = { filtros: [] }
     chamadasUpdate.push(registro)
+    function resolver() {
+      const stockQtyEsperado = registro.filtros.find((f) => f[0] === 'stock_qty')?.[1]
+      const custoEsperado = registro.filtros.find((f) => f[0] === 'avg_cost_cents')?.[1]
+      // Réplica do UPDATE...WHERE real: sem filtro em `stock_qty`/`avg_cost_cents` (código sem
+      // CAS), o `WHERE tenant_id = x AND id = y` sempre casa a linha — é exatamente por isso que
+      // o defeito é silencioso, a escrita "funciona" e sobrescreve sem avisar. Com o filtro
+      // (código com CAS), só casa se o valor ainda for o que foi lido.
+      const temFiltroDeCas = stockQtyEsperado !== undefined || custoEsperado !== undefined
+      const casou = !temFiltroDeCas || (stockQtyEsperado === estadoDeVerdade.stock_qty && custoEsperado === estadoDeVerdade.avg_cost_cents)
+      if (!casou) return { data: null, error: null }
+      estadoDeVerdade.stock_qty = valores.stock_qty as number
+      estadoDeVerdade.avg_cost_cents = (valores.avg_cost_cents as number | undefined) ?? estadoDeVerdade.avg_cost_cents
+      return { data: { ...estadoDeVerdade, id: 'produto-1' }, error: null }
+    }
     const cadeia = {
       eq: (coluna: string, valor: unknown) => {
         registro.filtros.push([coluna, valor])
         return cadeia
       },
       select: () => ({
-        maybeSingle: () => {
-          const stockQtyEsperado = registro.filtros.find((f) => f[0] === 'stock_qty')?.[1]
-          const custoEsperado = registro.filtros.find((f) => f[0] === 'avg_cost_cents')?.[1]
-          // CAS: só "grava" se os filtros baterem com o estado de verdade — exatamente como
-          // `.eq('stock_qty', x)` no banco real só casa a linha que ainda está em `x`.
-          const casou = stockQtyEsperado === estadoDeVerdade.stock_qty && custoEsperado === estadoDeVerdade.avg_cost_cents
-          if (!casou) return Promise.resolve({ data: null, error: null })
-          estadoDeVerdade.stock_qty = valores.stock_qty as number
-          estadoDeVerdade.avg_cost_cents = valores.avg_cost_cents as number
-          return Promise.resolve({ data: { ...estadoDeVerdade, id: 'produto-1' }, error: null })
-        },
+        maybeSingle: () => Promise.resolve(resolver()),
+        // `.single()` do código antigo (sem CAS): sempre casa, então nunca teria o `null` que
+        // faria `.single()` do supabase-js lançar — não precisa simular esse lado.
+        single: () => Promise.resolve(resolver()),
       }),
     }
     return cadeia
