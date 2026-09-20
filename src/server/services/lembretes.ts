@@ -137,23 +137,34 @@ export async function enviarLembretesPendentes(
     const token = gerarTokenConfirmacao(p.appointmentId)
     const linkConfirmacao = `${appUrl}/confirmar/${token}`
 
-    const resultado = await enviarComFallback(
-      db,
-      {
-        tenantId: p.tenantId,
-        clientId: p.clientId,
-        appointmentId: p.appointmentId,
-        kind: p.kind,
-        template: p.template,
-        params: { link: linkConfirmacao },
-        fallbackSubject: p.fallbackSubject,
-        fallbackBody: `${p.fallbackBody}\n\n${linkConfirmacao}`,
-        whatsappTo: p.whatsappTo,
-        emailTo: p.emailTo,
-      },
-      provider,
-    )
-    if (resultado.status === 'sent') enviados++
+    // Isolado por item, e não um `await` solto no laço: sem isto, um agendamento com dado
+    // malformado (ou um erro transitório de banco/provedor) derruba o resto do lote — os
+    // lembretes seguintes deste tick não são sequer tentados, mesmo raciocínio já aplicado a
+    // recompute-cycles/segments/campanhas (um item ruim não pode calar o produto para os outros).
+    try {
+      const resultado = await enviarComFallback(
+        db,
+        {
+          tenantId: p.tenantId,
+          clientId: p.clientId,
+          appointmentId: p.appointmentId,
+          kind: p.kind,
+          template: p.template,
+          params: { link: linkConfirmacao },
+          fallbackSubject: p.fallbackSubject,
+          fallbackBody: `${p.fallbackBody}\n\n${linkConfirmacao}`,
+          whatsappTo: p.whatsappTo,
+          emailTo: p.emailTo,
+        },
+        provider,
+      )
+      if (resultado.status === 'sent') enviados++
+    } catch (erro) {
+      console.error(
+        JSON.stringify({ level: 'error', event: 'lembrete_falhou', tenantId: p.tenantId, appointmentId: p.appointmentId, kind: p.kind }),
+        erro,
+      )
+    }
   }
 
   return { enviados }

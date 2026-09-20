@@ -308,3 +308,43 @@
   coberto, mesmo a lógica estando correta na revisão.
 
 `tsc`/`eslint`/`pnpm test:unit` (291/2529) verdes.
+
+---
+
+### BL-17 · `enviarLembretesPendentes`: item ruim abortava o lote inteiro — FEITO (parcial, achado maior registrado)
+
+- **Problema:** o laço de `enviarLembretesPendentes` (`src/server/services/lembretes.ts`) não
+  isolava cada envio — um `await enviarComFallback(...)` solto, sem `try/catch`. Um erro num item
+  (dado malformado, blip transitório de banco/provedor) abortava o lote inteiro: os lembretes
+  seguintes do MESMO tick não eram sequer tentados. Mesma classe já corrigida em `recompute-cycles`/
+  `segments`/`campanhas`/`stock-alerts` (todos com `try` por item) — esta rota ficou de fora da
+  varredura anterior porque não tem laço por TENANT, tem laço por ENVIO.
+- **Conserto:** `try/catch` por item, log estruturado (`lembrete_falhou`) e segue para o próximo —
+  mesmo padrão das quatro rotas irmãs.
+- **Achado maior, NÃO corrigido — registrado para decisão futura:** ao investigar, encontrei que
+  `registrar()` (`server/services/mensageria.ts`) pode lançar `AppError('INTERNAL')` se o `insert`
+  em `messages` falhar por qualquer motivo que não seja `23505` (duplicata) — e isso acontece
+  DEPOIS de `provider.sendTemplate(...)` já ter enviado a mensagem de verdade. Como
+  `identificarLembretesPendentes` decide "pendente" pela AUSÊNCIA de linha em `messages`, uma
+  falha de escrita depois de um envio bem-sucedido faz o MESMO lembrete ser reenviado no próximo
+  tick de 15min — mensagem duplicada para a cliente de verdade. É a mesma classe do BL-16
+  (job-queue), mas mais grave: lá o efeito é reexecutar um handler interno; aqui é reenviar uma
+  mensagem que a cliente final já recebeu.
+- **Por que não corrigi às cegas:** consertar direito exige decidir COMO garantir atomicidade
+  entre "enviar" (chamada de rede a um provedor externo) e "registrar" (escrita local) — duas
+  operações que não podem ser transacionais juntas por natureza. Not é um `try/catch` a mais; é
+  desenho (ex.: escrever a INTENÇÃO antes de enviar e confirmar depois, ou retry robusto só do
+  `insert` com backoff antes de desistir). Implementar uma escolha errada aqui é pior que não
+  implementar — mesmo raciocínio já aplicado ao achado de idempotência do `clients/import`.
+- **Severidade real hoje: latente, não ao vivo.** `reminders` não está em `ROTAS_AGENDADAS`
+  (`src/core/cron/agendadas.ts`) — a rota só dispara via `workflow_dispatch`, nunca sozinha em
+  produção. Mas ao contrário do BL-16 (handler nenhum registrado), aqui o CÓDIGO que enviaria
+  mensagem de verdade já existe e é chamado sempre que a rota roda manualmente — o risco é mais
+  próximo do que parece.
+- **Verificação:** só manual/leitura — `tests/integration/lembretes.test.ts` precisa de Docker/
+  Supabase local (indisponível nesta sessão) para rodar de verdade, e o dependency chain de
+  `enviarComFallback` (checagem de demo, rate-limiter via RPC, insert em `messages`) é grande
+  demais para mockar com confiança numa sessão sem poder validar contra o schema real. `tsc`/
+  `eslint`/`pnpm test:unit` (291/2529) verdes — sem regressão no caminho feliz existente.
+
+`tsc`/`eslint`/`pnpm test:unit` (291/2529) verdes.
