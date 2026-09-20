@@ -47,3 +47,13 @@ Duas checagens depois de consertar `MoneyInput`:
    importa e chama a função de verdade.
 
 Sem mudança de código nesta rodada; confirma que a área investigada está correta.
+
+---
+
+## 2026-09-20 · Varredura de fechamento: todos os usos de `linkWhatsApp` conferidos
+
+Depois de BL-08/BL-09, `grep -rn "linkWhatsApp(" src --include="*.tsx"` achou 7 usos no total. Os
+2 já corrigidos; os outros 5 (`[slug]/orcamento/pedido.tsx`, `[slug]/secoes.tsx`, `hoje.tsx`,
+mais as duas instâncias já corrigidas de `ficha.tsx`) já usam o padrão certo —
+`{link ? <a href={link}>...</a> : null}`, sem fallback `#` nem efeito colateral incondicional.
+Confirma que a classe de defeito está fechada nesta base, não só nos dois lugares corrigidos.
