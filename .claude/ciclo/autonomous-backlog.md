@@ -246,3 +246,32 @@
 - **Hipótese de double-booking em `reivindicarEncaixe`** (2026-09-20) — investigada a fundo, não é
   bug real: `appointments_no_overlap` (constraint do banco) já serializa a única colisão possível
   para este fluxo. Ver `discoveries.md`.
+
+---
+
+### BL-15 · `verificarCaptcha`: status de erro do provedor virava "reprovação normal", sem aviso — FEITO
+
+- **Problema:** o arquivo já tinha sido corrigido uma vez (auditoria 2026-08-28) para não engolir em
+  silêncio uma indisponibilidade da hCaptcha — mas só no caminho de EXCEÇÃO (`fetch` rejeita:
+  timeout, DNS, rede caída). `fetch` não lança em status HTTP de erro: um 5xx com corpo JSON válido
+  passava direto pelo `try`, `success` saía `undefined` (falsy), e a função devolvia `false` pelo
+  mesmo caminho de "o provedor respondeu e reprovou o token" — sem cair no `catch`, sem logar
+  `hcaptcha_indisponivel`. Uma indisponibilidade prolongada do provedor que responde 500 COM corpo
+  em vez de derrubar a conexão bloquearia agendamento público de verdade, calada — exatamente a
+  classe de defeito que este mesmo arquivo já se cobrou de consertar, só que reaberta por um caminho
+  que a correção anterior não cobria.
+- **Evidência:** `src/server/services/captcha.ts`; teste novo (`captcha-nao-falha-em-silencio.test.ts`,
+  5º caso) reproduziu com `fetch` mockado devolvendo `new Response(JSON.stringify({message:'...'}),
+  {status:503})` — falhou mostrando `expected undefined to be true` antes do conserto.
+- **Conserto:** `if (!r.ok) throw new Error(...)` logo após o fetch, antes de ler o JSON — empurra
+  este caso para o `catch` já existente, que já faz a coisa certa (loga `hcaptcha_indisponivel` e
+  deixa passar).
+- **Mutação:** commitei antes, reintroduzi o defeito (removi o `if (!r.ok) throw`), vi o novo teste
+  reprovar mostrando exatamente `expected undefined to be true`, restaurei via `git checkout --`.
+- **Como achei:** varredura heurística "arquivos com `await fetch` e menos `.ok` que fetches" —
+  mesma técnica de BL-12/13, reaplicada num tick de manutenção sem PR/CI pendente para investigar.
+  Os outros dois candidatos (`api-client.ts`, `assistente-flutuante.tsx`) eram falsos positivos: o
+  primeiro classifica por `status` numérico direto (`classificarResposta`, já testado e correto), o
+  segundo tem outro fetch que legitimamente não precisa de `.ok` (verificado antes de descartar).
+
+`tsc`/`eslint`/`pnpm test:unit` (290/2528) verdes.

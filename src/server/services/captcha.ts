@@ -23,6 +23,10 @@ export async function verificarCaptcha(token: string | undefined): Promise<boole
       body: new URLSearchParams({ secret, response: token }),
       signal: AbortSignal.timeout(3000),
     })
+    // `fetch` não lança em status de erro — um 5xx com corpo JSON válido passava direto para o
+    // `success` abaixo, saía `undefined` (falsy) e virava "reprovação normal" sem aviso nenhum.
+    // Força esse caso a cair no `catch`, que já é o caminho certo (loga e deixa passar).
+    if (!r.ok) throw new Error(`hcaptcha respondeu ${r.status}`)
     const { success } = (await r.json()) as { success: boolean }
     return success
   } catch (erro) {

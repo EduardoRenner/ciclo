@@ -69,4 +69,29 @@ describe('verificarCaptcha deixa passar quando não dá para verificar — mas c
     expect(await verificarCaptcha(undefined)).toBe(false)
     expect(chamou).not.toHaveBeenCalled()
   })
+
+  /*
+   * O terceiro caso que faltava: o provedor RESPONDE (sem exceção — `fetch` não lança em status de
+   * erro), mas com um 5xx e um corpo qualquer. `r.json()` não lança se o corpo for JSON válido, e
+   * `success` sai `undefined` — que é falsy, então a função devolvia `false` (recusa) pelo mesmo
+   * caminho de "reprovação normal", sem nenhum aviso. Uma indisponibilidade prolongada do provedor
+   * que responde 500 com corpo (em vez de derrubar a conexão) bloquearia agendamento público de
+   * verdade, calada — exatamente o defeito que este arquivo já corrigiu uma vez, só que no caminho
+   * de exceção, não neste.
+   */
+  it('provedor respondeu com erro de servidor: trata como indisponível, não como reprovação', async () => {
+    process.env.HCAPTCHA_SECRET = 'segredo-de-teste'
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ message: 'internal error' }), { status: 503 }),
+    )
+
+    expect(
+      await verificarCaptcha('token-qualquer'),
+      'status de erro do provedor não é reprovação de token — não pode bloquear o agendamento',
+    ).toBe(true)
+    expect(
+      avisos.join(' '),
+      'status de erro do provedor ficou em silêncio, disfarçado de reprovação normal',
+    ).toContain('hcaptcha_indisponivel')
+  })
 })
