@@ -201,3 +201,33 @@ servidor (mudar `min(0)` para `min(1)` quebraria a cortesia manual da comanda, q
 `tsc`/`eslint`/`pnpm build`/`tests/unit` (290/2524) verdes. Sem preview local (Docker
 indisponível) — mudança é validação de estado local antes do fetch, mesmo formato de código já
 testado manualmente nesta base (`nome.trim().length < 2`).
+
+---
+
+## 2026-09-20 · Corrigido: telefone inválido marcava cliente como "enviado" na campanha, sem abrir nada
+
+`src/app/admin/campanhas/nova/nova.tsx`: cada card de cliente virava um `<a href={link ?? '#'}>`,
+onde `link = linkWhatsApp(alvo.phoneE164, texto)`. `linkWhatsApp` (`lib/mensagens.ts`) devolve
+`null` quando o telefone está ausente ou tem menos de 10 dígitos — mas o `onClick` do card
+`setEnviados((s) => new Set(s).add(alvo.id))` disparava DE QUALQUER FORMA, mesmo quando o `href`
+era o `#` inofensivo que não abre nada.
+
+Resultado: um clique num cliente com telefone ruim mostrava o check verde, descia o contador
+"X/N enviadas", e — se o dono clicasse "Registrar campanha" depois — `clientIds` no
+`POST /api/v1/campaigns` incluía esse cliente como alcançado, quando NENHUMA mensagem saiu. O
+registro da campanha ficava com dado falso, e o dono achava que tinha contatado alguém que nunca
+recebeu nada.
+
+**Fix:** quando `link` é `null`, o card vira uma `div` sem toque (não mais `<a>`), com o texto
+secundário trocado para "Sem telefone válido para WhatsApp" (a MESMA linha que normalmente mostra o
+LTV — sempre visível, não só um `title`) e um `title` com a instrução de correção. `enviados` nunca
+ganha esse `clientId`.
+
+**Achado incidental, e vale registrar:** ao escrever o texto do `title`, dois guardas de copy já
+existentes (`copy-nao-supoe-genero`, `copy-sem-travessao`) reprovaram — eu tinha escrito "a cliente"
+(gênero implícito) e um travessão (marca de texto gerado por IA que este projeto proíbe
+explicitamente). Corrigido antes de commitar; as guardas fizeram exatamente o que existem para
+fazer.
+
+`tsc`/`eslint`/`pnpm build`/`tests/unit` (290/2524, incluindo as duas guardas de copy que
+inicialmente reprovaram) verdes.

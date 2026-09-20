@@ -135,6 +135,21 @@
 
 ---
 
+### BL-08 · Telefone inválido marcava cliente como "enviado" em campanha, sem abrir WhatsApp — FEITO
+
+- **Problema:** `linkWhatsApp` devolve `null` para telefone ausente/inválido; o `onClick` do card
+  marcava o cliente como enviado mesmo assim (`href="#"` não abre nada, mas o estado local não
+  sabia disso). Campanha registrada incluía o cliente como alcançado sem nenhuma mensagem ter saído.
+- **Fix:** card vira `div` sem toque quando `link` é `null`, com motivo visível (mesma linha do
+  LTV) e `title`. Commit `fac7a35d`.
+- **Achado incidental:** duas guardas de copy (`copy-nao-supoe-genero`, `copy-sem-travessao`)
+  pegaram erros reais no texto que escrevi (gênero implícito, travessão) — corrigido antes de
+  commitar.
+- **Verificação:** `tsc`/`eslint`/`pnpm build`/`tests/unit` (290/2524) verdes.
+- **Status:** `feito` (2026-09-20).
+
+---
+
 ## Descartadas
 
 - **Hipótese de double-booking em `reivindicarEncaixe`** (2026-09-20) — investigada a fundo, não é
