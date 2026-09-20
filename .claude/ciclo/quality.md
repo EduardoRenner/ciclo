@@ -78,3 +78,22 @@ de link do WhatsApp que mentia sucesso), e as últimas 2-3 rodadas de leitura n�
 Não é sinal de parar — é sinal de que a próxima rodada de valor provavelmente vem de outra fonte
 (teste ao vivo com dado real, ou uma área ainda não tocada como PWA/offline/push), não de reler mais
 arquivos de admin ao acaso.
+
+---
+
+## 2026-09-20 · Segurança do assistente de IA (ações + contexto) — checada, exemplar
+
+Lidos `core/assistente/acoes.ts` (mapa fechado de 5 ações → rota, IDs validados como UUID antes de
+entrar na URL — nenhuma rota vem do modelo, só o nome da ação e o dado, evitando exatamente o
+`docs/26 §4.3`) e os 9 arquivos de guarda em `tests/unit/assistente/` (65 testes, todos verdes).
+
+Destaque: `contexto-do-modelo-nao-leva-saude.test.ts` documenta ter encontrado e consertado sua
+PRÓPRIA guarda cega — a primeira versão testava só a função pura `semDadoDeSaude`, não o `executar`
+da ferramenta `resumo_de_hoje` de verdade, e mutando (tirando a chamada do filtro) os testes
+antigos continuavam verdes. A versão atual tem um segundo describe block que varre o SOURCE pra
+confirmar que a ferramenta de fato chama o filtro, além de confirmar por varredura que nenhuma
+ferramenta do assistente tem `.insert/update/upsert/delete/rpc(` — a regra "propõe, não escreve"
+garantida pela ausência de escrita no código, não por instrução de prompt.
+
+Sem achado — registrado porque é a peça mais sensível do produto (dado de saúde + ação autônoma de
+IA) e vale confirmar que continua correta, não assumir.
