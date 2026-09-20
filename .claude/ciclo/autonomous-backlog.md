@@ -536,3 +536,25 @@ essas quatro funções tinham cópias idênticas.**
   string). Os dois arquivos agora importam.
 - **Verificação:** `tsc`/`eslint`/`pnpm test:unit` (292/2530) verdes — testado manualmente com
   `node -e` que as duas fórmulas concordam para a data de hoje antes de escolher qual manter.
+
+---
+
+### BL-26 · `horaLocal` triplicada em agenda.tsx/hoje.tsx/agendar.tsx — FEITO
+
+- **Problema:** mesma varredura, ampliada para `src/app` (não só `src/core`/`src/server`) —
+  `horaLocal` formatando `HH:MM` existia em três telas. `admin/agenda/agenda.tsx` e
+  `admin/hoje/hoje.tsx` eram idênticas (sem `timezone`, correto: são telas internas, o fuso do
+  navegador da profissional já é o do salão). `[slug]/agendar/agendar.tsx` tinha assinatura
+  diferente (com `timezone` explícito) — correto também: é a página PÚBLICA, vista de qualquer
+  fuso, e o certo é mostrar no fuso do SALÃO, não no de quem está olhando.
+- **Conserto:** consolidada em `lib/formato.ts` — o arquivo que já é o destino estabelecido para
+  esta classe de achado (`dinheiro`/`formatarTelefone` já tinham o mesmo histórico, documentado
+  nos próprios comentários do arquivo). `timezone` virou parâmetro opcional: omitido, usa o fuso
+  do runtime (cobre as duas telas internas); explícito, cobre a pública.
+- **Verificação:** `tsc`/`eslint`/`pnpm test:unit` (292/2530) verdes. Sem verificação visual em
+  navegador — é refatoração pura (código movido, sem mudança de lógica), e o servidor de dev
+  precisa de Supabase local (Docker indisponível nesta sessão).
+
+**Seis consolidações nesta rodada (BL-21 a BL-26).** A varredura por nome de função repetido
+cobriu `src/core`, `src/server` e `src/app` inteiros — sem mais candidatos remanescentes com corpo
+idêntico ou propósito divergente encontrado.

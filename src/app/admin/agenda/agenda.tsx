@@ -15,7 +15,7 @@ import FilterRow from '@/components/ui/filter-row'
 import Sheet from '@/components/ui/sheet'
 import StatTile from '@/components/ui/stat-tile'
 import { useAtualizarDepois } from '@/lib/atualizar-depois'
-import { dinheiro } from '@/lib/formato'
+import { dinheiro, horaLocal } from '@/lib/formato'
 import { cn } from '@/lib/utils'
 
 import DetalheAgendamento from './detalhe'
@@ -46,10 +46,6 @@ function semanaDe(dia: string): string[] {
     dt.setUTCDate(domingo.getUTCDate() + i)
     return paraISO(dt)
   })
-}
-
-function horaLocal(iso: string): string {
-  return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
 }
 
 export default function Agenda({

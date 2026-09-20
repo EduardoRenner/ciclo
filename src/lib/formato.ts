@@ -32,3 +32,14 @@ export function mascaraTelefone(entrada: string): string {
   if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`
   return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`
 }
+
+/**
+ * "14:30" a partir de um `timestamptz`. Estava copiada em `admin/agenda/agenda.tsx` e
+ * `admin/hoje/hoje.tsx` (sem `timezone` — telas internas, o fuso do navegador da profissional já
+ * é o do salão) e divergia em forma de `[slug]/agendar/agendar.tsx` (com `timezone` explícito — a
+ * página pública pode ser vista de qualquer fuso, e ali o certo é o do SALÃO, não o de quem olha).
+ * `timezone` opcional cobre os dois: omitido, o `Intl` usa o fuso do runtime.
+ */
+export function horaLocal(iso: string, timezone?: string): string {
+  return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: timezone })
+}

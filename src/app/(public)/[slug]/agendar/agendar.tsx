@@ -15,7 +15,7 @@ import Input from "@/components/ui/input";
 import PhoneInput from "@/components/ui/phone-input";
 import { textoDoCanalDeConfirmacao } from "@/core/messaging/promessa";
 import { montarIcs, type EventoIcs } from "@/core/scheduling/ics";
-import { dinheiro, duracao } from "@/lib/formato";
+import { dinheiro, duracao, horaLocal } from "@/lib/formato";
 import {
   lerReconhecimentoLocal,
   salvarReconhecimentoLocal,
@@ -102,14 +102,6 @@ function agoraEmMinutos(timezone: string): number {
 function paraMinutos(hhmm: string): number {
   const [h, m] = hhmm.split(":");
   return Number(h) * 60 + Number(m);
-}
-
-function horaLocal(iso: string, timezone: string): string {
-  return new Date(iso).toLocaleTimeString("pt-BR", {
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: timezone,
-  });
 }
 
 /** Sentinela de "a pessoa fechou a faixa que estava aberta" — distinto de `null`, que é "ainda não mexeu". */

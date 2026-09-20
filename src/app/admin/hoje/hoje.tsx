@@ -12,7 +12,7 @@ import SectionHeader from '@/components/ui/section-header'
 import Sheet from '@/components/ui/sheet'
 import StatTile from '@/components/ui/stat-tile'
 import { useAtualizarDepois } from '@/lib/atualizar-depois'
-import { dinheiro } from '@/lib/formato'
+import { dinheiro, horaLocal } from '@/lib/formato'
 import { aplicarVariaveis, linkWhatsApp } from '@/lib/mensagens'
 
 import DetalheAgendamento from '../agenda/detalhe'
@@ -25,9 +25,6 @@ import type { LinhaAgendaDia } from '@/server/services/agendamentos'
 import type { ReceitaAtribuida } from '@/server/services/atribuicao'
 import type { LinhaHoje, ResumoHoje } from '@/server/services/resumo-hoje'
 
-function horaLocal(iso: string): string {
-  return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-}
 
 /**
  * docs/62 Fase B: frase sem citar o dia da semana por nome — o dado vem calculado no servidor
