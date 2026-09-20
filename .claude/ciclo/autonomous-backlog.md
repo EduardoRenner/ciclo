@@ -193,6 +193,22 @@
 
 ---
 
+### BL-12 · Varredura completa de "fetch sem .ok" — 3 novas instâncias, todas FEITAS
+
+- **Método:** `grep` de todo `await fetch(` em `src/**/*.tsx` (50 arquivos), comparado com
+  contagem de `.ok` no mesmo arquivo. 4 candidatos, 1 falso positivo (confirmado lendo, não
+  descartado por suposição), 3 reais.
+- **Achados:** `recuperar.tsx` `trocarFiltro()` (falha silenciosa) e `enviar()` (falha parece
+  sucesso vazio); `profissionais/lista.tsx` `desativar()` (otimista, só reverte em erro de rede);
+  `editor-expediente.tsx` `removerFolga()` (pior caso — nem try/catch existia).
+- **Fix:** checagem de `r.ok` + reversão de estado + toast de erro nos quatro, mesmo padrão já
+  usado em `BotaoRecalcular`. Commit `b81bff89`.
+- **Verificação:** `tsc`/`eslint`/`pnpm build`/`tests/unit` (290/2524) verdes.
+- **Status:** `feito` (2026-09-20). Varredura desta classe específica agora completa — não há
+  mais candidato com `fetch > .ok` no projeto.
+
+---
+
 ## Descartadas
 
 - **Hipótese de double-booking em `reivindicarEncaixe`** (2026-09-20) — investigada a fundo, não é

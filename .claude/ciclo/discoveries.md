@@ -328,3 +328,39 @@ pior (servidor pensa que está ativo, navegador já cancelou, e reativar criaria
 inscrição órfã).
 
 `tsc`/`eslint`/`pnpm build`/`tests/unit` (290/2524) verdes.
+
+---
+
+## 2026-09-20 · Varredura sistemática da classe "fetch sem checar .ok" acha 3 novas instâncias
+
+Depois de achar a mesma classe 3 vezes em locais diferentes (BL-08, BL-09, BL-11), fiz a varredura
+completa: todo `await fetch(` em `src/**/*.tsx` (50 arquivos), comparando a contagem de `await
+fetch(` com a de `.ok` no mesmo arquivo — 4 candidatos onde `fetch > ok`.
+
+**1 falso positivo:** `assistente-flutuante.tsx` — dois `fetch` (ternário `condição ? await fetch(A)
+: await fetch(B)`) compartilham a MESMA variável `r` e o MESMO `if (!r.ok)` logo abaixo; a terceira
+chamada (já lida nesta sessão, `confirmarProposta`) também checa `.ok` corretamente. Contagem simples
+não capturou o compartilhamento — confirmado lendo o código, não descartado por suposição.
+
+**3 achados reais, todos corrigidos:**
+
+1. **`admin/recuperar/recuperar.tsx`, `trocarFiltro()`** — trocar o filtro e a requisição falhar
+   (401/500) não avisava nada: a lista antiga ficava na tela, sem toast, sem indicação de que o
+   filtro não mudou.
+2. **`admin/recuperar/recuperar.tsx`, `enviar()`** — envio de campanha de recuperação em lote:
+   falha de verdade caía nos mesmos `??` que uma resposta de sucesso vazia, virando
+   `resumoDoEnvio(0, [])` — a MESMA frase de "ninguém pra mandar" que "a requisição nem foi
+   processada". Ninguém saberia que precisava tentar de novo.
+3. **`admin/config/profissionais/lista.tsx`, `desativar()`** — atualização OTIMISTA (`active:
+   false` na tela antes da resposta) só revertia em erro de REDE (`catch`); um 401/403/500 do
+   servidor (que não lança) deixava a UI mostrando "inativo" com o profissional continuando ATIVO
+   de verdade — reservável, visível no site público.
+4. **`components/config/editor-expediente.tsx`, `removerFolga()`** — o pior caso: nem `try/catch`
+   existia. Folga sumia da tela otimisticamente e ficava assim para sempre mesmo se o servidor
+   recusasse, continuando a bloquear horário de verdade no banco enquanto a agenda parecia livre.
+
+Todos os quatro ganharam a mesma forma de conserto: checar `r.ok`, reverter o estado (quando
+otimista) e mostrar toast de erro — mesmo padrão já usado corretamente em `BotaoRecalcular`
+(mesmo arquivo de `recuperar.tsx`) e nos consertos anteriores desta classe.
+
+`tsc`/`eslint`/`pnpm build`/`tests/unit` (290/2524) verdes.
