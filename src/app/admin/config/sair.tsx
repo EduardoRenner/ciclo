@@ -79,7 +79,18 @@ export default function SairDaConta() {
       const resposta = await fetch('/api/v1/auth/logout', { method: 'POST' })
       if (!resposta.ok) throw new Error('logout falhou')
 
-      await apagarBancoOffline().catch(() => undefined)
+      /*
+       * `apagarBancoOffline` é a limpeza que existe pra não deixar nome/telefone/agendamento de
+       * quem está saindo no IndexedDB de um tablet de balcão compartilhado (achado S9). Quase
+       * nunca falha de verdade (`indexedDB.deleteDatabase` só rejeita em erro genuíno; bloqueio
+       * por outra aba já resolve como sucesso dentro do próprio `apagarBancoOffline`) — mas se
+       * falhar, a sessão já foi encerrada no servidor e não há mais tela pra avisar a pessoa. O
+       * `console.warn` é o que sobra pra não ser 100% silencioso — mesmo padrão de
+       * `upstash_indisponivel`/`hcaptcha_indisponivel` nesta base.
+       */
+      await apagarBancoOffline().catch((erro: unknown) =>
+        console.warn(JSON.stringify({ level: 'warn', event: 'apagar_banco_offline_falhou', origem: 'sair' }), erro),
+      )
 
       // `replace`, não `push`: o botão "voltar" não pode devolver a tela autenticada de quem
       // acabou de sair. E `refresh()` para o middleware reavaliar a sessão já encerrada.

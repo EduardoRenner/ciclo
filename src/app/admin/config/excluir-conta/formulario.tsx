@@ -65,7 +65,18 @@ export default function FormularioExcluirConta() {
           return
         }
 
-        await apagarBancoOffline().catch(() => undefined)
+        /*
+         * `apagarBancoOffline` é a limpeza que existe pra não deixar nome/telefone/agendamento de
+         * quem está saindo no IndexedDB de um tablet de balcão compartilhado (achado S9). Quase
+         * nunca falha de verdade (`indexedDB.deleteDatabase` só rejeita em erro genuíno; bloqueio
+         * por outra aba já resolve como sucesso dentro do próprio `apagarBancoOffline`) — mas se
+         * falhar, a conta já foi apagada no servidor e não há mais tela pra avisar a pessoa. O
+         * `console.warn` é o que sobra pra não ser 100% silencioso — mesmo padrão de
+         * `upstash_indisponivel`/`hcaptcha_indisponivel` nesta base.
+         */
+        await apagarBancoOffline().catch((erro: unknown) =>
+          console.warn(JSON.stringify({ level: 'warn', event: 'apagar_banco_offline_falhou', origem: 'excluir-conta' }), erro),
+        )
         // `location.href`, não `router.push`: a sessão já não existe mais no servidor, e o Next
         // não pode devolver nenhuma tela autenticada depois disso — mesmo raciocínio de `sair.tsx`.
         window.location.href = '/entrar'
