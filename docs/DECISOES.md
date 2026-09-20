@@ -13608,3 +13608,24 @@ continua funcionando seria trocar um risco teórico (dev-only, inalcançável) p
 (quebrar a ferramenta de scaffolding) sem benefício de segurança em produção. Registrado — revisitar
 quando `shadcn` atualizar a própria dependência do MCP SDK, ou se algum dia este pacote migrar para
 uso em produção (não é o caso hoje).
+
+---
+
+## 2026-09-20 · Loop assert-vazio, mais 3 arquivos conferidos, sem achado (lote)
+
+- `available-slots.test.ts`: os dois `toEqual([])` (serviço maior que a janela; data além de
+  `maxAdvanceDays`) são casos de fronteira, cada um pareado com o teste do lado oposto (janela do
+  tamanho exato gera 1 slot; exatamente no limite ainda vale) — fronteira testada dos dois lados.
+- `previsao-guarda-o-que-previu.test.ts`: guarda o mecanismo do moat (histórico append-only da
+  previsão). Toda asserção de `updates`/`upserts` vazio parte de um cenário de previsão ABERTA real
+  (`aberta`, fixture populada) com histórico específico desenhado para não fechar por um motivo de
+  negócio nomeado (mesmo dia não fecha, sem visita posterior fica aberto, sem histórico carregado
+  não é tocado) — nunca "nada foi montado".
+- `quem-recuperar.test.ts`: o caso vazio de exclusão (`quemRecuperar([linha('ana', ...)],
+  new Set(['ana']))`) usa entrada REAL com o único cliente presente excluído — não é entrada vazia,
+  é filtro provado. Pareado com o teste oposto ("quem não tem ciclo em dia continua aparecendo").
+
+Backlog assert-vazio: 9 arquivos conferidos nesta sessão (20/09), todos limpos. Padrão consistente
+em toda a base: quase todo `toEqual([])`/`toHaveLength(0)` prova o caso positivo primeiro, ou usa
+entrada real filtrada — não "vazio porque nada foi montado". Encerrando esta frente por enquanto
+(retorno decrescente após 9 arquivos sem achado) — retomar se surgir motivo específico.
