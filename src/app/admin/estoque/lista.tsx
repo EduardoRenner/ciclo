@@ -433,6 +433,16 @@ function FormularioProduto({
       setErro('Dê um nome ao produto.')
       return
     }
+    // `MoneyInput` nunca fica vazio de verdade (sempre mostra "0,00" formatado), então o
+    // `required` do HTML nunca dispara — quem toca no toggle e esquece de digitar o preço salvava
+    // um produto de revenda a R$ 0,00 sem aviso nenhum, virando item grátis em toda comanda futura
+    // até alguém perceber e editar. O schema do servidor (EsquemaProduto) só exige `priceCents !=
+    // null`, não `> 0` — zero é um valor válido lá (é o que permite dar cortesia manual na
+    // comanda), então a trava certa é aqui, não na borda.
+    if (isRetail && precoCents <= 0) {
+      setErro('Defina um preço de venda maior que zero, ou desmarque "Vende para cliente".')
+      return
+    }
     setErro(null)
 
     const pontoDigitado = pontoDePedido.trim() === '' ? undefined : Number(pontoDePedido.replace(',', '.'))

@@ -77,6 +77,26 @@ export default function FormularioServico({ aberto, aoFechar, servico, aoSalvar 
   const editando = !!servico
 
   function enviar(formData: FormData) {
+    /*
+     * `MoneyInput` nunca fica vazio de verdade (sempre mostra "0,00" formatado), então o
+     * `required` da prop nunca dispara — quem troca o modelo de preço e esquece de digitar um
+     * valor salvava o serviço a R$ 0,00, cobrável de graça em toda reserva futura. O schema do
+     * servidor só exige presença (`!= null`), não valor positivo — zero é `int().min(0)`, válido
+     * pro tipo — então a trava real precisa estar aqui, do mesmo jeito que os outros formulários
+     * desta base já travam o que o `required` do HTML não alcança.
+     */
+    if (modeloDePreco !== 'quote' && precoCentavos <= 0) {
+      setErro('Defina um preço maior que zero.')
+      return
+    }
+    if (modeloDePreco === 'visit_hourly' && valorHoraCentavos <= 0) {
+      setErro('Defina um valor da hora maior que zero.')
+      return
+    }
+    if (modeloDePreco === 'daily' && temMeiaDiaria && meiaDiariaCentavos <= 0) {
+      setErro('Defina um valor de meia diária maior que zero, ou desmarque "Também cobra meia diária".')
+      return
+    }
     setErro(null)
 
     const corpo = {
