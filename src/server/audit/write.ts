@@ -1,4 +1,5 @@
 import { withTenant } from '@/server/db/with-tenant'
+import { ipConfiavelOuNulo } from '@/server/http/ip'
 
 import type { Papel } from '@/server/auth/rbac'
 
@@ -61,10 +62,19 @@ export function redigirParaTrilha(valor: unknown, profundidade = 0): unknown {
   return saida
 }
 
-/** Primeiro IP do `X-Forwarded-For` — o da pessoa; os seguintes são proxies. */
+/**
+ * IP de quem chamou, para gravar na trilha.
+ *
+ * Reaproveita a cadeia de confiança de `server/http/ip.ts` (auditoria de segurança, achado S6) —
+ * este arquivo tinha sua própria versão, que lia o **primeiro** elemento de `X-Forwarded-For`. É
+ * justamente o valor que quem chama CONTROLA quando há um proxy confiável no caminho (ele
+ * acrescenta o IP real ao final, não ao início): a trilha de auditoria — incluindo acesso ao
+ * cofre de saúde, exportação e apagamento de dado pessoal (LGPD) — registrava um IP que a própria
+ * pessoa auditada podia forjar, tornando a trilha inútil para investigação exatamente nos eventos
+ * mais sensíveis que ela existe para cobrir.
+ */
 export function ipDe(req: Request): string | null {
-  const encaminhado = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
-  return encaminhado || req.headers.get('x-real-ip') || null
+  return ipConfiavelOuNulo(req)
 }
 
 /**

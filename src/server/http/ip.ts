@@ -17,6 +17,18 @@
  * dele (a rota só traduz o 429). Isto aqui protege o agendamento público e o teto global.
  */
 export function ipDe(req: Request): string {
+  return ipConfiavelOuNulo(req) ?? 'sem-ip'
+}
+
+/**
+ * A mesma cadeia de confiança de {@link ipDe}, mas devolvendo `null` em vez de `'sem-ip'`.
+ *
+ * Existe separada porque as trilhas de auditoria e acesso (`audit_log.ip`, `anamnesis_access_log`,
+ * etc.) gravam em coluna `inet` **nullable** — `'sem-ip'` não é sintaxe válida de `inet`, e cairia
+ * silenciosamente no `catch` que essas trilhas têm justamente para não derrubar a operação que
+ * originou o registro. `null` é o valor correto para "não deu para saber o IP" nessas colunas.
+ */
+export function ipConfiavelOuNulo(req: Request): string | null {
   const daBorda = req.headers.get('x-vercel-forwarded-for')?.trim()
   if (daBorda) return daBorda
 
@@ -30,5 +42,5 @@ export function ipDe(req: Request): string {
     if (ultimo) return ultimo
   }
 
-  return 'sem-ip'
+  return null
 }

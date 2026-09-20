@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 import { orcamentoExpirado, totalDoItem, totalDoOrcamento } from '@/core/orcamento/calcular'
 import { notificarEquipe } from '@/server/services/mensageria'
-import { resolverCliente } from '@/server/services/agendamentos'
+import { profissionalDoTenant, resolverCliente } from '@/server/services/agendamentos'
 import { gerarTokenOrcamento, verificarTokenOrcamento } from '@/server/services/orcamento-token'
 import { AppError } from '@/server/http/errors'
 
@@ -31,19 +31,6 @@ export const EsquemaCriarOrcamento = z
   .refine((d) => d.clientId ?? d.clientDraft, { message: 'Informe o cliente já cadastrado ou os dados dele.', path: ['clientId'] })
 
 type EntradaCriarOrcamento = z.infer<typeof EsquemaCriarOrcamento>
-
-async function profissionalDoTenant(db: Cliente, tenantId: string, professionalId: string): Promise<void> {
-  const { data, error } = await db
-    .from('professionals')
-    .select('id')
-    .eq('id', professionalId)
-    .eq('tenant_id', tenantId)
-    .eq('active', true)
-    .is('deleted_at', null)
-    .maybeSingle()
-  if (error) throw new AppError('INTERNAL', { cause: error })
-  if (!data) throw AppError.validacao({ professionalId: 'Esse profissional não está mais disponível.' })
-}
 
 /**
  * Nasce direto em `sent` (não `draft`) — o painel não tem uma tela de rascunho separada nesta

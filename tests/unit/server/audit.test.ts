@@ -57,10 +57,21 @@ describe('writeAudit', () => {
     })
   })
 
-  it('pega o IP da pessoa, não o do proxy', async () => {
+  it('pega o IP confiável da cadeia (achado S6), não o primeiro elemento de XFF', async () => {
+    // O primeiro valor de X-Forwarded-For é forjável por quem chama; o ÚLTIMO é o que a
+    // infraestrutura anexou. `ipDe` tinha sua PRÓPRIA versão desatualizada aqui — pegava o
+    // primeiro elemento, o valor que a própria pessoa auditada podia forjar, deixando a trilha
+    // (incluindo acesso ao cofre de saúde e exportação/apagamento de dado pessoal) sem valor de
+    // investigação real. BL-29 trocou pela mesma cadeia de `server/http/ip.ts`.
     const linhas = capturar()
     await writeAudit(BASE, req({ 'x-forwarded-for': '201.10.0.7, 10.0.0.1, 10.0.0.2' }))
-    expect(linhas[0]?.ip).toBe('201.10.0.7')
+    expect(linhas[0]?.ip).toBe('10.0.0.2')
+  })
+
+  it('sem header nenhum grava null, não uma string inválida para a coluna inet', async () => {
+    const linhas = capturar()
+    await writeAudit(BASE, req())
+    expect(linhas[0]?.ip).toBeNull()
   })
 
   it('redige dado de saúde e segredo, em qualquer profundidade', async () => {

@@ -191,7 +191,7 @@ async function servicoDoTenant(db: Cliente, tenantId: string, serviceId: string)
   return data
 }
 
-async function profissionalDoTenant(db: Cliente, tenantId: string, professionalId: string): Promise<void> {
+export async function profissionalDoTenant(db: Cliente, tenantId: string, professionalId: string): Promise<void> {
   const { data, error } = await db
     .from('professionals')
     .select('id')

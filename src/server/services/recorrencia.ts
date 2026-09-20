@@ -4,7 +4,7 @@ import { z } from 'zod'
 
 import { descreverRegra } from '@/core/recurrence/descrever'
 import { ocorrenciaConflitaComFolga, proximasDatas, type LimiteSerie, type RegraRecorrencia } from '@/core/recurrence/gerar-ocorrencias'
-import { resolverCliente } from '@/server/services/agendamentos'
+import { profissionalDoTenant, resolverCliente } from '@/server/services/agendamentos'
 import { AppError } from '@/server/http/errors'
 
 import type { Database } from '@/server/db/types.gen'
@@ -87,19 +87,6 @@ async function servicoDoTenant(db: Cliente, tenantId: string, serviceId: string)
   if (error) throw new AppError('INTERNAL', { cause: error })
   if (!data) throw AppError.validacao({ serviceId: 'Esse serviço não está mais disponível.' })
   return data
-}
-
-async function profissionalDoTenant(db: Cliente, tenantId: string, professionalId: string): Promise<void> {
-  const { data, error } = await db
-    .from('professionals')
-    .select('id')
-    .eq('id', professionalId)
-    .eq('tenant_id', tenantId)
-    .eq('active', true)
-    .is('deleted_at', null)
-    .maybeSingle()
-  if (error) throw new AppError('INTERNAL', { cause: error })
-  if (!data) throw AppError.validacao({ professionalId: 'Esse profissional não está mais disponível.' })
 }
 
 type ResultadoOcorrencia = { data: string; status: 'agendada' | 'pulada_folga' | 'pulada_conflito' }
