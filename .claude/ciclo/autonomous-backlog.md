@@ -793,3 +793,24 @@ tocar validação de entrada em toda rota de API com parâmetro `[id]`.
 - **Status:** `identificado` (2026-09-20). Decisão de produto pendente com o Eduardo: vale
   priorizar a UI de foto de serviço/profissional agora (o próprio 0052 cita Fresha/Booksy como
   referência de mercado que já tem isso)?
+
+---
+
+### BL-34 · `MotivoPulado` duplicado entre `resumo-do-envio.ts` e `recuperar-receita.ts` — FEITO
+
+- **Método:** `ts-prune` (varredura de exportações nunca importadas) apontou `MotivoPulado`
+  (`core/ciclo/resumo-do-envio.ts`) como não usada por ninguém — mas ela EXISTE, só que
+  `server/services/recuperar-receita.ts` tinha sua PRÓPRIA redeclaração local, `type MotivoPulado
+  = 'opt_out' | 'rate_limited' | 'fora_de_janela' | 'falha_de_envio'`, byte a byte idêntica.
+- **Por que não era só coincidência de nome:** os dois arquivos têm docstrings quase parafraseando
+  um ao outro sobre a MESMA lição — "motivo errado é pior que motivo nenhum" — e os dois citam
+  nominalmente `cartao-de-confirmacao-em-branco` como o defeito irmão que este tipo existe para
+  evitar. É o mesmo conceito, descoberto/nomeado duas vezes, nunca ligado por import.
+- **Conserto:** `recuperar-receita.ts` importa `MotivoPulado` de `core/ciclo/resumo-do-envio.ts`
+  (direção correta pela regra 5 do CLAUDE.md — `server/` importando de `core/`) em vez de
+  redeclarar. Docstring local mantida (explica um ângulo complementar: por que são QUATRO motivos,
+  não dois) — só a declaração do tipo virou import.
+- **Achado incidental do mesmo `ts-prune`:** `EntradaFechamentoComanda` (`comanda.ts`) é um type
+  alias exportado e nunca importado — mas não é duplicação, é só um export desnecessário (baixo
+  valor de mexer, sem risco de divergência associado). Deixado como está.
+- **Verificação:** `tsc`/`eslint`/`pnpm test:unit` (292/2531) verdes.

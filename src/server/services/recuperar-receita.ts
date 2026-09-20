@@ -4,6 +4,7 @@ import { z } from 'zod'
 import type { MessagingProvider } from '@/server/providers/messaging/types'
 import { WhatsAppCloudProvider } from '@/server/providers/messaging/whatsapp'
 import { quemRecuperar } from '@/core/ciclo/quem-recuperar'
+import type { MotivoPulado } from '@/core/ciclo/resumo-do-envio'
 import { enviarComFallback } from '@/server/services/mensageria'
 import { AppError } from '@/server/http/errors'
 
@@ -130,8 +131,10 @@ export type EntradaEnviarRecuperar = z.infer<typeof EsquemaEnviarRecuperar>
  * Motivo que a tela não sabe nomear é pior que motivo nenhum: manda a pessoa consertar o que não
  * está quebrado. Esta é a mesma família do `cartao-de-confirmacao-em-branco` — a origem ganha um
  * caso, a apresentação continua lendo a lista velha e afirma com confiança.
+ *
+ * O tipo é importado de `core/ciclo/resumo-do-envio.ts`, não redeclarado — é o mesmo motivo, e
+ * duas cópias divergem no dia em que um dos dois ganhar um quinto valor.
  */
-type MotivoPulado = 'opt_out' | 'rate_limited' | 'fora_de_janela' | 'falha_de_envio'
 
 export type ResultadoEnviarRecuperar = {
   queued: number
