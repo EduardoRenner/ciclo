@@ -275,3 +275,36 @@
   segundo tem outro fetch que legitimamente não precisa de `.ok` (verificado antes de descartar).
 
 `tsc`/`eslint`/`pnpm test:unit` (290/2528) verdes.
+
+---
+
+### BL-16 · `processarLote`: `finish_job(done)` falhando após handler bem-sucedido reexecutava o job — FEITO
+
+- **Problema:** o `catch` de `processarLote` tratava "handler falhou" e "handler rodou com sucesso
+  mas `finish_job('done')` falhou depois" como o MESMO caso — o segundo cenário caía no mesmo
+  `throw`/`catch`, marcava o job `failed`/`dead` via `decidirDesfecho`, e ele seria reexecutado na
+  próxima passada, rodando de novo um handler que JÁ tinha completado com sucesso (mensagem
+  duplicada, cobrança duplicada, dependendo do handler).
+- **Por que importa mesmo sem handler real hoje:** `HANDLERS` (`src/app/api/cron/jobs/route.ts`)
+  está vazio em produção — bug latente, não alcançável ainda. Mas o comentário do próprio arquivo
+  já nomeia `send_reminders` como o próximo handler esperado, e mensagem duplicada é exatamente a
+  classe de defeito que este produto trata com mais cuidado em todo outro lugar (WhatsApp,
+  MercadoPago). Vale consertar ANTES do primeiro handler real chegar, não depois de um incidente.
+- **Evidência:** `src/server/services/job-queue.ts`; teste novo
+  (`job-queue-nao-reexecuta-apos-sucesso.test.ts`) com fake de `db.rpc` (a integração real precisa
+  de Docker/Supabase local, indisponível nesta sessão) reproduziu o cenário exato: handler roda uma
+  vez, `finish_job('done')` falha — o código antigo lançava `AppError('INTERNAL')` não-capturado ao
+  tentar a segunda chamada de `finish_job` (com status de falha), que TAMBÉM falhava no mock.
+- **Conserto:** separa o resultado do handler (sucesso/falha) da gravação do resultado. Sucesso com
+  falha de gravação não vira `failed`/`dead` — loga `job_concluido_sem_registro` e deixa o job em
+  `running` (vira "job parado" para a vigilância existente, desfecho seguro que pede conferência
+  humana, em vez de reexecutar uma ação não-idempotente às cegas).
+- **Mutação:** commitei antes, reverti para o código antigo, confirmei que o novo teste reprova
+  (mostrando o `AppError` não-capturado que o código antigo produz neste cenário exato), restaurei
+  via `git checkout --`, confirmado.
+- **Limitação desta verificação:** só testado a nível de unidade (fake de `db.rpc`) — o teste de
+  integração real (`tests/integration/job-queue.test.ts`) não pôde rodar nesta sessão (sem Docker).
+  Vale rodar `pnpm test:integration` numa sessão com Supabase local antes de considerar 100%
+  coberto, mesmo a lógica estando correta na revisão.
+
+`tsc`/`eslint`/`pnpm test:unit` (291/2529) verdes.
