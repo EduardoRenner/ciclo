@@ -172,6 +172,11 @@ export default function Avaliar({ token }: { token: string }) {
             onClick={() => setNota(valor)}
             onMouseEnter={() => setNotaEmFoco(valor)}
             onMouseLeave={() => setNotaEmFoco(0)}
+            // Sem isto, o preview ao passar o mouse (`notaEmFoco`) só existe pra quem usa mouse —
+            // tabulando pelas estrelas, o teclado nunca via a prévia de quantas ia marcar, só a
+            // nota já confirmada. Mesmo par mouse/teclado que `onMouseEnter`/`onMouseLeave` já dava.
+            onFocus={() => setNotaEmFoco(valor)}
+            onBlur={() => setNotaEmFoco(0)}
             className="grid size-12 place-items-center"
           >
             <Star
