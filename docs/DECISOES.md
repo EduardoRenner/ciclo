@@ -13629,3 +13629,25 @@ Backlog assert-vazio: 9 arquivos conferidos nesta sessão (20/09), todos limpos.
 em toda a base: quase todo `toEqual([])`/`toHaveLength(0)` prova o caso positivo primeiro, ou usa
 entrada real filtrada — não "vazio porque nada foi montado". Encerrando esta frente por enquanto
 (retorno decrescente após 9 arquivos sem achado) — retomar se surgir motivo específico.
+
+---
+
+## 2026-09-20 · Verificado — cobertura de rate limit em rotas públicas/auth, um gap BAIXO sem correção
+
+Varredura das rotas públicas (`public/**`) e de auth (`auth/**`) por chamada a `limitar*`/
+`rateLimit`/`limiteDeTaxa`. Só uma rota sem: `auth/password/reset/route.ts` (troca de senha em si,
+depois do link de recuperação). A irmã `auth/password/forgot` (pedir o e-mail) tem
+`limitarRotaPublica('senha-esqueci', { limite: 5, janelaSegundos: 600 })`.
+
+**Por que a severidade é BAIXA, não um bug a corrigir às cegas:** `reset` exige `exigirSessao()` +
+`veioDoLinkDeRecuperacao(sessao.metodos)` — só aceita uma sessão cujo `amr` prove que veio do OTP
+do e-mail (`otp`/`totp`), nunca uma sessão comum roubada. Ou seja, quem chega aqui sem rate limit
+já teve que provar posse do e-mail para conseguir a sessão em primeiro lugar — a barreira cara
+(provar identidade) já foi paga antes deste endpoint. O que falta é só defesa-em-profundidade
+contra alguém martelando o próprio endpoint depois de autenticado (DoS de baixo impacto), não uma
+rota de brute-force aberta a qualquer um.
+
+**Não corrigido:** adicionar rate limit aqui sem confirmar o efeito colateral em gente legítima
+(reset por engano de senha fraca, tentando de novo) e sem uma janela clara — é ajuste de UX tanto
+quanto de segurança, diferente do achado do captcha (reprodução determinística, sem ambiguidade de
+produto). Registrado como observação, não como pendência.
