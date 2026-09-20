@@ -663,3 +663,39 @@ tocar validação de entrada em toda rota de API com parâmetro `[id]`.
   tocado nesta rodada — toca cobrança/assinatura, fora do que este agente decide sozinho sem
   aprovação explícita (mesmo critério da missão de crescimento).
 - **Verificação completa:** `tsc`/`eslint`/`pnpm test:unit` (292/2531) verdes.
+
+---
+
+### BL-30 · `MINIMO_PARA_AFIRMAR` e o teto do assistente, duplicados COM comentário apontando um pro outro — FEITO
+
+- **Problema (parte 1):** `MINIMO_PARA_AFIRMAR = 8` existia em `core/cycle/prestacao-de-contas.ts`
+  e `core/risk/precisao-do-score.ts`, cada um com um comentário citando o OUTRO pelo nome ("Mesmo
+  piso de MINIMO_PARA_AFIRMAR") — mesmo padrão do BL-24 (`weekdayPg`): a duplicação já era
+  reconhecida em texto, só nunca virou import de verdade. É o piso estatístico mínimo abaixo do
+  qual o produto se recusa a afirmar um percentual (precisão do Motor de Ciclo e precisão do score
+  de risco de falta) — os dois usam a MESMA regra de "amostra pequena demais para significar
+  algo", cada um com seu próprio número solto.
+- **Problema (parte 2, achado na mesma varredura de constantes repetidas):** `LIMITE_POR_TENANT_DIA`
+  e `LIMITE_POR_USUARIO_HORA` (teto de uso do assistente de IA) duplicados entre
+  `api/v1/assistant/route.ts` e `api/v1/assistant/rapido/route.ts` — com o MESMO valor, a MESMA
+  chave de balde no limitador (`assistant:tenant:<id>`/`assistant:usuario:<id>`, ou seja, as duas
+  rotas já somam no mesmo balde por desenho) e, de novo, um comentário num apontando pro outro
+  ("Mesmo teto do `/api/v1/assistant` principal").
+- **Por que consertar mesmo sem bug ativo:** exatamente o argumento do BL-21 — as duas cópias são
+  idênticas HOJE. O risco é o de sempre: ajustar o teto do assistente (ou o piso estatístico) num
+  lugar só, no futuro, sem lembrar do comentário que aponta pra cópia.
+- **Conserto:** `MINIMO_PARA_AFIRMAR` exportado de `prestacao-de-contas.ts` (a direção que o
+  próprio comentário de `precisao-do-score.ts` já indicava); dois testes que importavam a
+  constante de `precisao-do-score.ts` (`tests/unit/core/precisao-do-score.test.ts`,
+  `tests/integration/risco.test.ts`) atualizados para importar da fonte nova. `LIMITE_POR_TENANT_DIA`/
+  `LIMITE_POR_USUARIO_HORA` movidos para `server/assistente/limites-de-uso.ts` (novo arquivo
+  pequeno, mesmo padrão de `core/text/uuid.ts` do BL-27 — não havia módulo compartilhado natural
+  entre as duas rotas antes disso); as duas rotas importam.
+- **Verificação:** `tsc`/`eslint`/`pnpm test:unit` (292/2531) verdes.
+- **Descartados nesta mesma varredura de constantes:** `ESTADOS_VALIDOS`, `RESPOSTA_HONEYPOT`,
+  `TIMEOUT_MS`, `TAMANHO_MAXIMO`, `VALIDADE_HORAS` — mesmo nome, valores/propósitos genuinamente
+  diferentes por chamador (confirmado lendo cada um, não por suposição). `ACENTO_PADRAO` e
+  `VERTICAIS_LEGADAS` têm sobreposição parcial mas formatos diferentes (string vs. objeto; `Set`
+  plano vs. `Set` tipado por enum do banco) — mais baixo valor/mais risco de tocar do que os dois
+  consertados, deixados como estão (mesmo critério do BL-02 para `TAMANHO_IV`/`TAMANHO_PAGINA`).
+  `cancelarAssinatura` (BL-29) segue fora de escopo — toca cobrança.

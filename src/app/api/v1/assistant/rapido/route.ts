@@ -10,16 +10,11 @@ import { lerCorpo } from '@/server/http/body'
 import { exigirModulo } from '@/server/services/planos'
 import { limitador } from '@/server/services/rate-limit'
 import { IDS_RESPOSTA_RAPIDA, PERMISSAO_POR_ID, respostaRapida } from '@/server/assistente/respostas-rapidas'
+import { LIMITE_POR_TENANT_DIA, LIMITE_POR_USUARIO_HORA } from '@/server/assistente/limites-de-uso'
 
 const EsquemaPedido = z.object({
   id: z.enum(IDS_RESPOSTA_RAPIDA),
 })
-
-// Mesmo teto do `/api/v1/assistant` principal (docs/26 §4.4) — mesmo sem chamar o Gemini, ainda
-// é consulta ao banco por clique, e o botão de sugestão pode ser martelado igual a um campo de
-// texto livre.
-const LIMITE_POR_TENANT_DIA = { limite: 60, janelaSegundos: 86_400 }
-const LIMITE_POR_USUARIO_HORA = { limite: 20, janelaSegundos: 3_600 }
 
 /**
  * `POST /api/v1/assistant/rapido`. Atalho SEM Gemini para as sugestões prontas que já têm

@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
+import { MINIMO_PARA_AFIRMAR } from '@/core/cycle/prestacao-de-contas'
 import { LIMIAR_ALERTA_AGENDA } from '@/core/risk/no-show-score'
-import { MINIMO_PARA_AFIRMAR, precisaoDoScore, scoreSeparaQuemFalta, type DesfechoDoScore } from '@/core/risk/precisao-do-score'
+import { precisaoDoScore, scoreSeparaQuemFalta, type DesfechoDoScore } from '@/core/risk/precisao-do-score'
 
 /**
  * `docs/DECISOES.md` 2026-09-18: `computeNoShowScore` nunca foi medido contra falta de verdade.

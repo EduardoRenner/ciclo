@@ -1,3 +1,4 @@
+import { MINIMO_PARA_AFIRMAR } from '@/core/cycle/prestacao-de-contas'
 import { LIMIAR_ALERTA_AGENDA } from '@/core/risk/no-show-score'
 
 /**
@@ -24,10 +25,6 @@ export type DesfechoDoScore = {
   /** `status === 'no_show'` — só agendamentos já resolvidos (done ou no_show) entram aqui. */
   houveFalta: boolean
 }
-
-/** Mesmo piso de `MINIMO_PARA_AFIRMAR` (`prestacao-de-contas.ts`) — abaixo disso, o percentual
- *  descreve o acaso, não o comportamento real de quem agenda. */
-export const MINIMO_PARA_AFIRMAR = 8
 
 export type PrecisaoDoScore = {
   /** Quantos agendamentos, marcados de ALTO risco, entraram na conta. */

@@ -9,6 +9,7 @@ import { lerCorpo } from '@/server/http/body'
 import { exigirModulo } from '@/server/services/planos'
 import { limitador } from '@/server/services/rate-limit'
 import { perguntarAoAssistente } from '@/server/services/assistente'
+import { LIMITE_POR_TENANT_DIA, LIMITE_POR_USUARIO_HORA } from '@/server/assistente/limites-de-uso'
 import { GeminiProvider } from '@/server/providers/ai/gemini'
 import { ErroDeInferencia } from '@/server/providers/ai/types'
 
@@ -22,11 +23,6 @@ const EsquemaPergunta = z.object({
 // absoluto, bem acima do padrão da plataforma (10s) sem isto. Piso alto de propósito: é melhor
 // a função esperar do que morrer antes do timeout interno conseguir agir e devolver 503 correto.
 export const maxDuration = 60
-
-// docs/26-AGENTE-IA-PLANO.md §4.4: teto por tenant e por usuário, para conter abuso — não para
-// conter custo normal (a R$ 0,004/pergunta o custo em si não justifica limite nenhum).
-const LIMITE_POR_TENANT_DIA = { limite: 60, janelaSegundos: 86_400 }
-const LIMITE_POR_USUARIO_HORA = { limite: 20, janelaSegundos: 3_600 }
 
 const provider = new GeminiProvider()
 
