@@ -82,11 +82,18 @@ export default function AtivarPush() {
       const registro = await navigator.serviceWorker.ready
       const inscricao = await registro.pushManager.getSubscription()
       if (inscricao) {
-        await fetch('/api/v1/push/subscriptions', {
+        // `ativar()` checa `resposta.ok` antes de dar por feito; isto aqui não checava — um 401/
+        // 403/500 do servidor não lança (só falha de rede lança), então a inscrição continuava
+        // salva no banco e o servidor seguiria mandando push para um dispositivo que acabou de
+        // ouvir "desativado" na tela. `unsubscribe()` só roda DEPOIS de confirmar que o servidor
+        // apagou de verdade — senão o navegador cancela e o registro salvo fica orfão sem ninguém
+        // saber, e a próxima tentativa de reativar cria uma segunda inscrição.
+        const resposta = await fetch('/api/v1/push/subscriptions', {
           method: 'DELETE',
           headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
           body: JSON.stringify({ endpoint: inscricao.endpoint }),
         })
+        if (!resposta.ok) throw new Error('Não conseguimos desativar no servidor. Tente de novo.')
         await inscricao.unsubscribe()
       }
       setEstado('suportado')
