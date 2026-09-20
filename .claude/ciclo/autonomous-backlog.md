@@ -204,8 +204,26 @@
 - **Fix:** checagem de `r.ok` + reversão de estado + toast de erro nos quatro, mesmo padrão já
   usado em `BotaoRecalcular`. Commit `b81bff89`.
 - **Verificação:** `tsc`/`eslint`/`pnpm build`/`tests/unit` (290/2524) verdes.
-- **Status:** `feito` (2026-09-20). Varredura desta classe específica agora completa — não há
-  mais candidato com `fetch > .ok` no projeto.
+- **Status:** `feito` (2026-09-20) para `.tsx`. Varredura de `.ts` achou mais um caso — ver BL-13.
+
+---
+
+### BL-13 · `limitarComUpstash` sem checar `.ok` (latente — Upstash não provisionado) — FEITO
+
+- **Problema:** BL-12 só cobriu `.tsx`. Estendendo a `.ts`, achei `rate-limit.ts`: `incr`/`expire`
+  do Upstash sem checar `.ok` — erro com JSON válido virava `contagem: undefined`, e `undefined <=
+  limite` é `false`, recusando TODO tráfego em vez de cair pro Postgres (a intenção documentada
+  extensivamente no arquivo, achado de segurança S4).
+- **Por que latente, não ativo:** `UPSTASH_REDIS_REST_URL`/`TOKEN` não provisionados em produção
+  hoje (auditoria do próprio arquivo, 23/08) — mas é o caminho "preferencial" documentado pra
+  quando for provisionado.
+- **Fix:** `incr` lança em falha (aciona o fallback já existente). `expire` NÃO lança — só loga —
+  porque `incr` já aconteceu de verdade em Upstash; lançar contaria a mesma requisição duas vezes.
+- **Testado e mutation-testado:** `limitarComUpstash` exportada só pra teste (mesmo padrão de
+  `chavesEmMemoriaParaTeste`). 3 testes novos com `fetch` mockado. Reintroduzi o defeito exato e vi
+  o teste reprovar (`{permitido: false, restante: NaN}`) antes de restaurar. Commit `f20cea52`.
+- **Verificação:** `tsc`/`eslint`/`pnpm build`/`tests/unit` (290/2527) verdes.
+- **Status:** `feito` (2026-09-20). Varredura de "fetch sem `.ok`" agora completa em `.tsx` E `.ts`.
 
 ---
 

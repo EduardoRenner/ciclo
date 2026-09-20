@@ -364,3 +364,41 @@ otimista) e mostrar toast de erro — mesmo padrão já usado corretamente em `B
 (mesmo arquivo de `recuperar.tsx`) e nos consertos anteriores desta classe.
 
 `tsc`/`eslint`/`pnpm build`/`tests/unit` (290/2524) verdes.
+
+---
+
+## 2026-09-20 · BL-12 estendida a .ts: `limitarComUpstash` também não checava `.ok` (latente)
+
+A varredura de "fetch sem `.ok`" (BL-12) só tinha coberto `.tsx`. Rodando a mesma comparação em
+`.ts` (`grep -rl "await fetch(" src --include="*.ts"`), achei mais 3 candidatos: `lib/offline/
+api-client.ts` (falso positivo — usa `classificarResposta(status)`, mais sofisticado que `.ok`, já
+corrigido/revisado tick passado), `server/services/captcha.ts` (falso positivo — lê `success` do
+corpo da hCaptcha, que é o sinal certo; falha de rede já cai num `catch` bem documentado), e
+**`server/services/rate-limit.ts`, `limitarComUpstash`** — real.
+
+Nem `incr` nem `expire` (API REST do Upstash) checavam a resposta. Um erro que ainda devolve JSON
+válido (`{"error": "..."}`, sem `result`) virava `contagem: undefined`, e `undefined <= limite` é
+`false` em JS — toda requisição passaria a ser RECUSADA, em vez de cair pro Postgres, que é a
+intenção documentada extensivamente neste mesmo arquivo (achado de segurança S4, "Upstash →
+Postgres → memória").
+
+**Por que é sério mesmo sendo latente:** `UPSTASH_REDIS_REST_URL`/`TOKEN` não estão provisionados
+em produção hoje (o próprio arquivo documenta isso, auditoria de 23/08) — então `limitarComUpstash`
+nunca roda de verdade agora. Mas é exatamente o caminho "preferencial" que a documentação do
+arquivo defende para quando Upstash for provisionado — sem o conserto, ativar Upstash um dia
+introduziria silenciosamente "recusa 100% do tráfego" na primeira falha transitória da API deles.
+
+**Fix, com cuidado no `expire`:** `incr` lança em falha (dispara o fallback já existente em
+`limitador()`). `expire` NÃO lança — `incr` já tinha acontecido de verdade em Upstash, então
+lançar jogaria essa contagem fora e cairia pro Postgres, contando a MESMA requisição duas vezes;
+só loga um aviso.
+
+**Testado, mutation-testado:** `limitarComUpstash` exportada só pra teste (mesmo padrão de
+`chavesEmMemoriaParaTeste`, já existente no arquivo) — testar via `limitador()` misturaria com o
+fallback real pro Postgres, que exige banco de verdade (indisponível neste ambiente). 3 testes
+novos com `fetch` mockado (`vi.stubGlobal`, mesmo padrão de `mercado-pago-cliente.test.ts`).
+Reintroduzi o defeito exato (removi o `if (!incr.ok) throw`) e vi o teste reprovar mostrando
+`{ permitido: false, restante: NaN }` — a manifestação exata prevista — antes de restaurar via
+`git checkout --`.
+
+`tsc`/`eslint`/`pnpm build`/`tests/unit` (290/2527) verdes.
