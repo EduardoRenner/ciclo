@@ -250,3 +250,23 @@ um disparo em massa), mas a mesma classe de "sucesso fingido" que este projeto t
 VERDADEIRA (a mesma função que decide se abre algo) nos dois lugares, substituindo o proxy fraco.
 
 `tsc`/`eslint`/`pnpm build`/`tests/unit` (290/2524) verdes.
+
+---
+
+## 2026-09-20 · BL-07 verificado ao vivo em produção — funciona nas duas direções
+
+Sem Docker nesta sessão para testar localmente, o conserto de `estoque/lista.tsx` (BL-07) só tinha
+verificação estática (tsc/eslint/build/vitest). Testei ao vivo contra produção, login
+`dono-demo-salao-encanto@ciclo.app` (plano `avancado`, sem a trava de módulo que bloqueava o
+primeiro tenant testado):
+
+1. Abri "Novo produto", preenchi nome, liguei "Vende para cliente (revenda)", deixei o preço no
+   padrão "0,00" e cliquei "Cadastrar produto". A tela mostrou o erro
+   ("Defina um preço de venda maior que zero...") e `read_network_requests` confirmou **zero**
+   chamadas a `/api/v1/products` — bloqueado antes de qualquer rede, como desenhado.
+2. Digitei um preço real (R$ 29,90) e cliquei de novo: `POST /api/v1/products → 200`, produto
+   criado normalmente.
+
+Confirma o conserto funcionando nas duas direções em produção, não só nos testes. Produto de teste
+("Teste QA validacao preco") ficou no catálogo de demonstração do Salão Encanto — tela
+administrativa, não alcança o storefront público, risco de deixar como está é baixo.
