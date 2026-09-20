@@ -427,3 +427,45 @@ essa limpeza (a sessão já foi encerrada no servidor, não sobra tela pra avisa
 `console.warn` estruturado, mesmo padrão já usado em `upstash_indisponivel`/`hcaptcha_indisponivel`.
 
 `tsc`/`eslint`/`pnpm build`/`tests/unit` (290/2527) verdes.
+
+---
+
+## 2026-09-20 · Vercel MCP (`get_runtime_errors`) abriu uma fonte de evidência nova — dois achados, resolução diferente
+
+Durante a missão de crescimento/mercado, testei o conector Vercel já disponível na sessão contra o
+projeto `ciclo` (`prj_Ba2E6fVCLnkDSZi1Y5G7zUb3kHV7`). `get_web_analytics` retornou "Tool not found"
+de forma consistente (schema mismatch do lado do servidor MCP — não investiguei mais a fundo, não é
+o objetivo da sessão). `get_runtime_errors` funcionou e trouxe 7 dias de erros de produção
+agrupados — uma fonte de evidência que este projeto não vinha consultando.
+
+**Achado 1 — resolvido, sem ação necessária.** Cluster de `FORBIDDEN "Sua conta ainda não tem um
+estabelecimento"` vazando como erro não tratado em `/admin/config` e `/admin/hoje` (count=4,
+users=2, primeiro 2026-09-03, último 2026-09-16). `src/server/auth/tenant.ts` já documenta esse
+EXATO defeito e a correção (`contextoDoPainel`, comentário datado de 16/09). Confirmei que **as
+duas rotas do cluster já usam `contextoDoPainel`**, e uma varredura (`grep -rl "contextoAtual"
+src/app/admin --include="page.tsx"`) não achou mais nenhum `page.tsx` sob `/admin` usando a versão
+antiga sem a proteção. Zero ocorrências novas nos 4 dias seguintes (verificado via
+`get_runtime_logs`, últimas 24h, vazio). Fechado — o conserto já estava completo antes desta sessão
+chegar nele.
+
+**Achado 2 — aberto, evidência insuficiente para consertar sem especular.** Cluster de
+`AppError INTERNAL "Algo deu errado do nosso lado"` na página pública `/[slug]/agendar` — a tela
+onde a cliente de um salão marca horário. count=20, users=10 (dez pessoas DIFERENTES, não uma só
+tentando de novo), 2026-09-09 a 2026-09-16, sem recorrência nos 4 dias seguintes. `perfilPublico`
+(`src/server/services/public-booking.ts`) é a função por trás da página, e joga qualquer erro do
+Supabase (5 queries em paralelo) direto em `AppError('INTERNAL', {cause})` — então a causa real fica
+só no `[cause]`, que o `get_runtime_errors` trunca para `[Object]`, e os logs detalhados de 09-09 a
+09-16 já saíram da janela de retenção (Hobby/Pro: 1h–1 dia) quando fui olhar. **Hipótese descartada
+com evidência:** não é o latência cross-region Vercel↔Supabase que o comentário antigo do arquivo
+sugeria — `vercel.json` já fixa `regions: ["gru1"]`, junto do Supabase em `sa-east-1`, desde antes
+desta sessão (o comentário citando `iad1` estava desatualizado; corrigido nesta sessão). Sem a causa
+real, não fiz nenhuma mudança de código aqui — inventar um "conserto" para uma falha não
+caracterizada seria o mesmo erro que este projeto já se cobrou de evitar (`CLAUDE.md`, "verde não é
+prova" vale nos dois sentidos: não afirmar consertado, mas também não afirmar causa sem prova).
+**Registrado para quem tiver os logs a tempo:** a próxima vez que isso recorrer, `get_runtime_logs`
+com `since` recente (dentro de 24h) e `requestPath`/`query` filtrando `/agendar` deve trazer o
+`[cause]` completo antes que a retenção expire.
+
+`.claude/ciclo/growth-opportunities.md`/`funnel.md`/`market-intelligence.md`/`experiments.md`
+(missão de crescimento) documentam o resto do que essa mesma sessão pesquisou — este achado é o
+único item de bug-hunting que a pesquisa de mercado produziu de lambuja.

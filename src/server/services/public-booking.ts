@@ -335,8 +335,9 @@ export async function disponibilidadePublica(
 
     /*
      * Serviço e profissionais em paralelo: os dois só dependem de `tenant`, e nenhum do outro.
-     * Em série eram duas idas ao banco somadas — e a função roda longe dele (Supabase em
-     * sa-east-1, Vercel no padrão `iad1`), então cada salto custa a travessia inteira.
+     * Em série eram duas idas ao banco somadas, e cada uma soma o RTT inteiro até o Supabase —
+     * mesmo com a função hoje na mesma região dele (`vercel.json` já fixa `regions: ["gru1"]`,
+     * junto do Supabase em `sa-east-1` — ver memória "Vercel · região junto do banco").
      *
      * A ORDEM DAS CHECAGENS ABAIXO É A DE ANTES, de propósito: erro de infraestrutura do serviço,
      * depois "serviço não agendável", depois erro dos profissionais. Paralelizar muda quando as
