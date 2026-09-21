@@ -909,3 +909,39 @@ tocar validação de entrada em toda rota de API com parâmetro `[id]`.
   dela não havia caminho nenhum até este commit. O conserto em `clientes/lista.tsx` (mantido,
   verificado) resolve especificamente a segunda lacuna.
 - **Verificação:** `tsc`/`eslint`/`pnpm test:unit` (292/2531) verdes (já reportado ao pushar).
+
+---
+
+### BL-38 · Cadastro: confirmação de e-mail era beco sem saída — sem reenvio, sem lembrar o e-mail — FEITO
+
+- **Problema:** `POST /api/v1/auth/signup` usa `db.auth.signUp()` do Supabase, que por padrão
+  exige clicar num link de confirmação por e-mail antes de a sessão existir — um GATE forte antes
+  de a pessoa conseguir ver qualquer coisa do produto, logo depois de já ter dado nome, e-mail,
+  telefone e senha. A tela de espera (`cadastro/formulario.tsx`) dizia só "Mandamos um link...
+  Abra a mensagem e clique nele" e parava aí: sem reenviar, sem lembrar QUAL e-mail foi usado
+  (se a pessoa digitou errado, não tinha como saber pra corrigir), sem mencionar spam. Quem não
+  recebesse a mensagem (digitou errado, provedor filtrou, demorou) só tinha a opção de recarregar
+  a página e recomeçar o cadastro inteiro.
+- **Por que este achado ficou de fora do escopo "trocar":** desligar a confirmação de e-mail por
+  completo é decisão de conta no painel do Supabase (Authentication → Email), fora do código —
+  mesma categoria do login social já registrado (`ciclo-login-social-bloqueado-supabase`, memória
+  do projeto). Não é algo que este agente decide ou implementa sozinho. O que ERA implementável
+  sem essa decisão: melhorar a experiência de quem já está esperando o e-mail.
+- **Conserto:**
+  - `POST /api/v1/auth/signup/resend` (novo) — reenvia via `db.auth.resend({ type: 'signup',
+    email })`, com a MESMA disciplina de dois baldes de `auth/password/forgot` (por IP via
+    `limitarRotaPublica`, por e-mail com hash via `limitador`) — um script batendo aqui queimaria
+    a cota de confirmação do PROJETO INTEIRO no Supabase, o mesmo risco já documentado naquela
+    rota (auditoria de 31/08/2026). `EsquemaEsqueciSenha` reaproveitado (mesmo formato `{ email
+    }`) em vez de duplicar o schema.
+  - `cadastro/formulario.tsx` — guarda o e-mail usado em estado, mostra-o na tela de espera,
+    acrescenta "Confira também a caixa de spam" e um botão "Reenviar e-mail" com seu próprio
+    `carregando`, usando `useToast` para o resultado (mesmo padrão de feedback do resto do app).
+  - **Achado pela própria guarda do projeto:** `tests/unit/design/escrita-passa-por-idempotencia.
+    test.ts` reprovou a rota nova por não estar na lista de isentas de `Idempotency-Key` nem usar
+    `comIdempotencia` — corretamente, é a mesma regra que já cobre `auth/signup`/`auth/password/
+    forgot`. Adicionada à lista `ISENTAS` com o motivo exato: "sem tenant; reenviar de novo só
+    manda o mesmo link, e o balde por e-mail é a trava" — mesma razão de `password/forgot`.
+    Observei o teste reprovar ANTES do ajuste e passar DEPOIS, satisfazendo a disciplina de
+    teste-guarda do CLAUDE.md organicamente (não precisei mutar de propósito).
+- **Verificação:** `tsc`/`eslint`/`pnpm test:unit` (292/2531) verdes.

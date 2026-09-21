@@ -90,6 +90,7 @@ const ISENTAS: { rota: string; porque: string }[] = [
   { rota: 'auth/login', porque: 'não há tenant ainda; a sessão é o que decide qual será' },
   { rota: 'auth/logout', porque: 'derrubar sessão duas vezes deixa o mesmo estado: sem sessão' },
   { rota: 'auth/signup', porque: 'não há tenant ainda; o e-mail único no Supabase Auth é a trava' },
+  { rota: 'auth/signup/resend', porque: 'sem tenant; reenviar de novo só manda o mesmo link, e o balde por e-mail é a trava' },
   { rota: 'auth/password/forgot', porque: 'sem tenant, e o balde de e-mail é a trava (o limite é do PROJETO)' },
   { rota: 'auth/password/reset', porque: 'sem tenant; o token de recuperação só serve uma vez' },
   { rota: 'auth/mfa/enroll', porque: 'sem tenant; o fator repetido é descartado pelo Supabase Auth' },

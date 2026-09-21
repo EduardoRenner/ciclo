@@ -6,23 +6,28 @@ import { useState } from 'react'
 import Button from '@/components/ui/button'
 import Input from '@/components/ui/input'
 import PhoneInput from '@/components/ui/phone-input'
+import { useToast } from '@/components/ui/toast'
 
 export default function FormularioCadastro() {
+  const mostrarToast = useToast()
   const [telefone, setTelefone] = useState('')
   const [pendente, setPendente] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
   const [enviado, setEnviado] = useState(false)
+  const [emailEnviado, setEmailEnviado] = useState('')
+  const [reenviando, setReenviando] = useState(false)
 
   async function enviar(formData: FormData) {
     setPendente(true)
     setErro(null)
     try {
+      const email = String(formData.get('email') ?? '')
       const resposta = await fetch('/api/v1/auth/signup', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           fullName: formData.get('fullName'),
-          email: formData.get('email'),
+          email,
           phone: formData.get('phone'),
           password: formData.get('password'),
         }),
@@ -33,6 +38,7 @@ export default function FormularioCadastro() {
         setErro(primeiroCampo ?? json.error?.message ?? 'Não consegui criar sua conta.')
         return
       }
+      setEmailEnviado(email)
       setEnviado(true)
     } catch {
       setErro('Não consegui falar com o servidor. Tente de novo.')
@@ -41,11 +47,45 @@ export default function FormularioCadastro() {
     }
   }
 
+  /*
+   * F0 da missão de onboarding (2026-09-21): a tela dizia "abra a mensagem e clique nele" e
+   * parava aí — sem reenvio, sem lembrar qual e-mail foi usado, sem mencionar spam. Quem digitou
+   * o e-mail errado, ou cujo provedor demorou/filtrou a mensagem, não tinha o que fazer além de
+   * recarregar a página e recomeçar o cadastro inteiro — a primeira etapa depois de dar nome,
+   * e-mail, telefone e senha virando um beco sem saída.
+   */
+  async function reenviar() {
+    setReenviando(true)
+    try {
+      const resposta = await fetch('/api/v1/auth/signup/resend', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email: emailEnviado }),
+      })
+      if (!resposta.ok) {
+        mostrarToast({ tom: 'erro', titulo: 'Não consegui reenviar agora', descricao: 'Confira sua conexão e tente de novo.' })
+        return
+      }
+      mostrarToast({ tom: 'ok', titulo: 'E-mail reenviado' })
+    } catch {
+      mostrarToast({ tom: 'erro', titulo: 'Não consegui falar com o servidor', descricao: 'Confira sua conexão e tente de novo.' })
+    } finally {
+      setReenviando(false)
+    }
+  }
+
   if (enviado) {
     return (
-      <p className="max-w-sm text-center text-corpo text-txt">
-        Quase lá! Mandamos um link de confirmação para o seu e-mail. Abra a mensagem e clique nele para continuar.
-      </p>
+      <div className="flex max-w-sm flex-col items-center gap-3 text-center">
+        <p className="text-corpo text-txt">
+          Quase lá! Mandamos um link de confirmação para <span className="font-semibold">{emailEnviado}</span>. Abra a mensagem e clique nele
+          para continuar.
+        </p>
+        <p className="text-secundario text-txt-2">Não chegou? Confira também a caixa de spam ou lixo eletrônico.</p>
+        <Button type="button" variante="secondary" carregando={reenviando} onClick={() => void reenviar()}>
+          Reenviar e-mail
+        </Button>
+      </div>
     )
   }
 
