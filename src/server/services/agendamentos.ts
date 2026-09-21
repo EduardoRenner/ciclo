@@ -632,25 +632,11 @@ export async function remarcarAgendamento(
 
 /** DELETE da API é semântico (regra 11: nunca apaga linha de agendamento) — sempre um UPDATE de status. */
 export async function cancelarAgendamento(db: Cliente, tenantId: string, id: string, entrada: z.infer<typeof EsquemaCancelar>) {
-  const atual = await buscarAgendamento(db, tenantId, id)
-  exigirTransicao(atual.status as EstadoAgendamento, 'canceled')
-
-  const { data, error } = await db
-    .from('appointments')
-    .update({
-      status: 'canceled',
-      canceled_at: new Date().toISOString(),
-      canceled_by: entrada.canceledBy,
-      cancel_reason: entrada.reason ?? null,
-    })
-    .eq('id', id)
-    .eq('tenant_id', tenantId)
-    .eq('status', atual.status)
-    .select(COLUNAS)
-    .maybeSingle()
-  if (error) throw new AppError('INTERNAL', { cause: error })
-  if (!data) throw new AppError('INVALID_TRANSITION', { message: 'Esse agendamento mudou de estado enquanto você decidia. Recarregue a agenda.' })
-  return data
+  return transicaoSimples(db, tenantId, id, 'canceled', {
+    canceled_at: new Date().toISOString(),
+    canceled_by: entrada.canceledBy,
+    cancel_reason: entrada.reason ?? null,
+  })
 }
 
 async function transicaoSimples(

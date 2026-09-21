@@ -13,6 +13,23 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 type Cliente = SupabaseClient<Database>
 
+/** `month` no formato `YYYY-MM` → janela `[inicio, fim)` em instante UTC, no fuso do tenant. */
+function janelaDoMes(timezone: string, month: string): { inicio: string; fim: string } {
+  const [ano, mes] = month.split('-').map(Number)
+  if (!ano || !mes) throw AppError.validacao({ month: 'Use o formato AAAA-MM.' })
+
+  const anoMes = Temporal.PlainYearMonth.from({ year: ano, month: mes })
+  const inicio = anoMes.toPlainDate({ day: 1 }).toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant().toString()
+  const fim = anoMes
+    .toPlainDate({ day: 1 })
+    .add({ months: 1 })
+    .toZonedDateTime({ timeZone: timezone, plainTime: '00:00' })
+    .toInstant()
+    .toString()
+
+  return { inicio, fim }
+}
+
 export type ResumoCaixa = {
   ticketsCount: number
   revenueCents: number
@@ -90,18 +107,7 @@ export async function fechamentoDiario(db: Cliente, tenantId: string, timezone: 
 
 /** `GET /cash/summary?month=` — `month` no formato `YYYY-MM`. */
 export async function resumoMensal(db: Cliente, tenantId: string, timezone: string, month: string): Promise<ResumoCaixa & { month: string }> {
-  const [ano, mes] = month.split('-').map(Number)
-  if (!ano || !mes) throw AppError.validacao({ month: 'Use o formato AAAA-MM.' })
-
-  const anoMes = Temporal.PlainYearMonth.from({ year: ano, month: mes })
-  const inicio = anoMes.toPlainDate({ day: 1 }).toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant().toString()
-  const fim = anoMes
-    .toPlainDate({ day: 1 })
-    .add({ months: 1 })
-    .toZonedDateTime({ timeZone: timezone, plainTime: '00:00' })
-    .toInstant()
-    .toString()
-
+  const { inicio, fim } = janelaDoMes(timezone, month)
   const resumo = await somarTickets(db, tenantId, inicio, fim)
   return { month, ...resumo }
 }
@@ -113,17 +119,7 @@ export async function resumoMensal(db: Cliente, tenantId: string, timezone: stri
  * `calcularTaxaDoMes`, puro — aqui só busca e entrega.
  */
 export async function taxaPorFormaDoMes(db: Cliente, tenantId: string, timezone: string, month: string): Promise<TaxaDoMes> {
-  const [ano, mes] = month.split('-').map(Number)
-  if (!ano || !mes) throw AppError.validacao({ month: 'Use o formato AAAA-MM.' })
-
-  const anoMes = Temporal.PlainYearMonth.from({ year: ano, month: mes })
-  const inicio = anoMes.toPlainDate({ day: 1 }).toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant().toString()
-  const fim = anoMes
-    .toPlainDate({ day: 1 })
-    .add({ months: 1 })
-    .toZonedDateTime({ timeZone: timezone, plainTime: '00:00' })
-    .toInstant()
-    .toString()
+  const { inicio, fim } = janelaDoMes(timezone, month)
 
   const [tickets, tenant] = await Promise.all([
     buscarTudoPaginado(() =>

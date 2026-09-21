@@ -840,3 +840,35 @@ tocar validação de entrada em toda rota de API com parâmetro `[id]`.
   específico rodado (`tests/integration/atribuicao.test.ts` precisa de Docker/Supabase local,
   indisponível nesta sessão) — mudança é extração mecânica, comportamento idêntico linha a linha,
   revisada manualmente contra o código original antes de commitar.
+
+---
+
+### BL-36 · Mais dois clones do `jscpd`: `janelaDoMes` (caixa.ts) e `cancelarAgendamento` reimplementando `transicaoSimples` — FEITO
+
+- **`caixa.ts`:** `resumoMensal` e `taxaPorFormaDoMes` tinham a mesma sequência byte a byte —
+  parsear `month` (`AAAA-MM`), validar, e computar `inicio`/`fim` em instante UTC no fuso do
+  tenant. Extraída `janelaDoMes(timezone, month)`, privada ao arquivo (a duplicação não passava
+  da fronteira deste módulo, então não virou `core/`).
+- **`agendamentos.ts`:** achado mais valioso dos dois. `cancelarAgendamento` reimplementava, linha
+  a linha, o MESMO update CAS (`.eq('status', atual.status)`) que `transicaoSimples` — a função
+  logo abaixo dela no mesmo arquivo, que já existe justamente para isto e já recebe
+  `camposExtra: Record<string, unknown>` para os campos específicos de cada transição
+  (`confirmarAgendamento`/`marcarChegada` já a usam). `cancelarAgendamento` nunca tinha sido
+  migrada para o padrão comum.
+- **Por que a segunda importa mais que a primeira:** `transicaoSimples` tem o comentário extenso
+  sobre POR QUE o CAS no próprio `UPDATE` existe — a corrida "concluir" num aparelho e "faltou" no
+  outro simultaneamente. `cancelarAgendamento` já tinha essa proteção (o `.eq('status', ...)`
+  estava lá, correto) — mas se algum dia alguém precisasse ENDURECER essa proteção (outro campo na
+  cláusula, um retry, um log), corrigiria `transicaoSimples` e a cópia em `cancelarAgendamento`
+  continuaria com o comportamento antigo, sem ninguém perceber. Agora `cancelarAgendamento` é
+  `return transicaoSimples(db, tenantId, id, 'canceled', { canceled_at, canceled_by, cancel_reason })`.
+- **Verificação:** `tsc`/`eslint`/`pnpm test:unit` (292/2531) verdes, revisão manual linha a linha
+  confirmando comportamento idêntico antes de commitar (`buscarAgendamento`+`exigirTransicao`
+  dentro de `transicaoSimples` são exatamente as mesmas chamadas que `cancelarAgendamento` fazia
+  antes de inline).
+- **Descartados na mesma varredura `jscpd`:** `clientes.ts`/`segmentos.ts` (paginação por cursor —
+  boilerplate genérico do Supabase, não regra de negócio, baixo valor/risco de generalizar
+  tipagem); `profissionais.ts`/`servicos.ts` (mesmo padrão de `profissionalDoTenant`/
+  `servicoDoTenant` — "arquivar por entidade" com nome de tabela e mensagem diferentes por
+  propósito; genericizar quebraria a inferência de tipo do supabase-js sobre nome de coluna, o
+  mesmo trade-off que `vitrine-upload.ts` já documenta explicitamente).
