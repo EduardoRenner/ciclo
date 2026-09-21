@@ -239,10 +239,13 @@ export default function ListaClientes({ iniciais }: { iniciais: ClienteLinha[] }
 
             "Já atendo" vem ANTES do CSV, não depois: `ja-atendo/page.tsx` já documenta que é a
             porta para quem NÃO tem planilha — a maioria (barbeiro, manicure, depiladora têm a
-            base nos contatos do celular, não numa lista). Até esta correção, essa página só era
-            alcançável digitando a URL de cabeça — nenhum link do painel levava a ela. Sem trazer
-            a data da última visita de quem já é cliente, o Motor de Ciclo nasce vazio e passa
-            meses sem o que prever, mesmo para quem já atende gente há anos.
+            base nos contatos do celular, não numa lista). Antes desta correção o único link para
+            lá era o card de "Primeiros passos" (`server/services/crm.ts`, `PRIMEIROS_PASSOS`),
+            que só aparece numa janela estreita — conta 100% virgem, sem NENHUM cliente nem
+            agendamento. Qualquer ação antes de trazer a base antiga (cadastrar um cliente de
+            teste, marcar um horário) fecha essa janela pra sempre. Este link cobre o que fica de
+            fora dela — sem a data da última visita, o Motor de Ciclo nasce vazio e passa meses
+            sem o que prever, mesmo para quem já atende gente há anos.
           */}
           {!segmento && !termo ? (
             <div className="mt-3 flex flex-col gap-1 text-center text-secundario text-txt-2">
