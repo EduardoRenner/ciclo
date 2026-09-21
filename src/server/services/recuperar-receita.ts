@@ -6,6 +6,7 @@ import { WhatsAppCloudProvider } from '@/server/providers/messaging/whatsapp'
 import { quemRecuperar } from '@/core/ciclo/quem-recuperar'
 import type { MotivoPulado } from '@/core/ciclo/resumo-do-envio'
 import { enviarComFallback } from '@/server/services/mensageria'
+import { registrarEvento } from '@/server/services/product-events'
 import { AppError } from '@/server/http/errors'
 
 import type { Database } from '@/server/db/types.gen'
@@ -306,6 +307,13 @@ export async function enviarParaRecuperar(
       skipped.push({ clientId: item.clientId, reason: 'falha_de_envio' })
     }
   }
+
+  /*
+   * G-05b (docs/60): "recuperacao_enviada" agregado por disparo, mesmo raciocínio de
+   * `cliente_voltou` (BL-40) — um evento por CHAMADA desta função, não um por cliente do lote,
+   * que já pode ter dezenas de itens.
+   */
+  if (queued > 0) await registrarEvento(db, tenantId, 'recuperacao_enviada', { queued })
 
   return { queued, skipped }
 }

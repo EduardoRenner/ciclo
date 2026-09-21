@@ -1013,3 +1013,36 @@ tocar validação de entrada em toda rota de API com parâmetro `[id]`.
   que fecha alguma previsão, e a migration 0088 já documenta os quatro eventos G-05b como
   "repetíveis" (sem constraint de unicidade no schema).
 - **Verificação:** `tsc`/`eslint`/`pnpm test:unit` (292/2531) verdes.
+
+---
+
+### BL-41 · `recuperacao_enviada` (G-05b) — terceiro evento, agregado por disparo — FEITO
+
+- **Terceiro dos quatro eventos G-05b.** Marca quando um disparo de "Recuperar receita" de fato
+  envia mensagem — ação explícita do dono (não um cron), então o volume por chamada é o tamanho
+  do lote que ele mesmo escolheu na tela, nunca 10 mil de uma vez como o job noturno do BL-40.
+- **Mesmo padrão de agregação do BL-40, adaptado ao formato daqui:** `enviarParaRecuperar` já
+  isola cada cliente do lote com `try/catch` próprio (BL-18, corrigido nesta mesma sessão) e
+  devolve `queued` (contagem agregada) no fim. Um evento por CHAMADA da função, não por cliente do
+  lote — mesmo raciocínio do BL-40, aplicado a uma função com volume por natureza bem menor (a
+  tela não deixa marcar mais que a lista visível de quem está em risco).
+- **Sem hook na EsquemaEnviarRecuperar (tipo/schema) nem mudança de contrato:** o evento é
+  side-effect puro, gravado depois do laço e antes do `return` — o formato da resposta
+  (`{ queued, skipped }`) que a tela já lê não muda em nada.
+- **`onboarding_ok`, o quarto evento G-05b, DELIBERADAMENTE não implementado nesta rodada:**
+  `docs/60` só nomeia os quatro numa lista de uma linha, sem especificar o que distingue
+  `onboarding_ok` de `conta_criada` (que já grava no fim do MESMO fluxo, `executarOnboarding`).
+  Duas leituras possíveis e sem como escolher entre elas sem inventar: (a) é o mesmo evento com
+  nome antigo, esquecido na lista quando `conta_criada` foi escolhido no G-05a; (b) é um marco
+  DIFERENTE — "onboarding de verdade pronto" (tem serviço, tem forma de agendar), não só "tenant
+  nasceu". Implementar qualquer uma das duas seria uma aposta, não uma leitura — registrado para
+  decisão do Eduardo em vez de escolhido às cegas.
+- **Verificação:** `tsc`/`eslint`/`pnpm test:unit` (292/2531) verdes. Sem teste unitário para
+  `enviarParaRecuperar` nesta base (só integração, que precisa de Docker) — verificado que a
+  mudança não altera nenhum contrato existente, só adiciona o `registrarEvento` no fim.
+
+**Três dos quatro eventos G-05b concluídos nesta sessão (BL-39, BL-40, BL-41).** Com G-05a
+(`conta_criada`, `motor_viu_valor`) já em produção desde 16/09, a instrumentação do funil agora
+cobre: conta criada → base antiga trazida → Motor mostrou valor → previsão confirmada (cliente
+voltou) → campanha de recuperação disparada. Falta só `onboarding_ok`, deliberadamente represado
+por ambiguidade de especificação.
