@@ -1046,3 +1046,34 @@ tocar validação de entrada em toda rota de API com parâmetro `[id]`.
 cobre: conta criada → base antiga trazida → Motor mostrou valor → previsão confirmada (cliente
 voltou) → campanha de recuperação disparada. Falta só `onboarding_ok`, deliberadamente represado
 por ambiguidade de especificação.
+
+---
+
+### BL-42 · Observação (não implementada): `writeAudit` roda de novo em toda repetição idempotente
+
+- **Achado numa segunda leitura do próprio BL-39** (revisão deliberada do trabalho recém-commitado,
+  não um bug relatado por ninguém). Em toda rota que combina `comIdempotencia` + `writeAudit` — e
+  são pelo menos 49 no projeto (`grep` conta) — o `writeAudit` fica FORA do closure que
+  `comIdempotencia` protege. Numa repetição com a mesma `Idempotency-Key` (fila offline reenviando,
+  toque duplo numa rede ruim), `comIdempotencia` devolve a resposta CACHEADA sem executar a ação de
+  novo — mas o código depois dela roda igual, porque o valor de retorno não distingue "execução
+  fresca" de "cache hit". `writeAudit` grava uma linha NOVA na trilha a cada repetição, com os
+  MESMOS dados, descrevendo uma ação que só aconteceu uma vez.
+- **Por que não é urgente:** o que `comIdempotencia` existe para proteger — a AÇÃO em si (criar
+  cliente, mover dinheiro, fechar comanda) — continua protegida corretamente; é só o REGISTRO da
+  trilha que duplica, não o fato. Não é a regra 11 do CLAUDE.md (que proíbe APAGAR trilha, não
+  proíbe duplicar) e não afeta nenhum saldo, contagem de negócio ou dado que o dono vê. O prejuízo é
+  só para quem um dia precisar investigar "quantas vezes isso aconteceu" olhando `audit_log` — a
+  contagem ficaria inflada pelos retries, não pelas ações de verdade.
+- **Por que não implementei um conserto:** a superfície é de 49 rotas, não uma. Mover `writeAudit`
+  para DENTRO do closure de `comIdempotencia` em uma ou duas rotas deixaria essas diferentes das
+  outras 47 — inconsistência pior que o problema original, e cada movimentação precisa conferir se
+  `writeAudit` dentro do closure não interage mal com o próprio mecanismo de cache de resposta
+  (`response_body` grava o que a função de dentro devolve — gravar auditoria lá dentro mudaria O
+  QUE fica cacheado, não só onde o código roda). É trabalho de revisão deliberada, rota por rota,
+  não um `sed` em massa.
+- **Status:** registrado, não implementado. Acionável como um item de arquitetura numa sessão
+  futura com tempo dedicado a revisar as 49 rotas uma a uma — ou como decisão consciente de aceitar
+  o comportamento atual (auditoria com duplicata rara em retry é um trade-off, não necessariamente
+  um defeito, dependendo de quão seriamente a trilha é usada para contagem exata versus só "o que
+  aconteceu, aproximadamente quando").
