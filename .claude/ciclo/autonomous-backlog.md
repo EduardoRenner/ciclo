@@ -1206,3 +1206,65 @@ lista.)
 - **Status:** registrado, não implementado. Achado por comparação direta dos dois arquivos de teste
   de integração linha a linha — não é uma suspeita, é uma contagem: 3 asserções de dinheiro num
   lado, 0 no outro, para a mesma função.
+
+---
+
+### BL-48 · Arquivar um serviço não tira as previsões dele da lista de recuperação (nem do alerta do Hoje)
+
+- **Achado, com a cadeia completa:**
+  1. `arquivarServico` (`servicos.ts:209-222`) — a ÚNICA forma de "apagar" um serviço no produto
+     (`services.id` tem FK `on delete restrict` a partir de `ticket_items`; hard-delete quebraria
+     comanda antiga) — só grava `active: false`. Nunca toca `client_cycles`.
+  2. `recomputarCiclosDoTenant` (`ciclo.ts:66`), o job noturno, lê `services` SEM filtrar
+     `active` (`db.from('services').select(...).eq('tenant_id', tenantId).order('id')`) — um
+     serviço arquivado continua dentro de `cycleDaysPorServico`/`precoPorServico`, então toda
+     madrugada o job recalcula `late_days`, `state`, `value_at_risk_cents`, `profit_at_risk_cents`
+     de novo para qualquer cliente com histórico naquele serviço, PARA SEMPRE — o mesmo raciocínio
+     de "cliente nunca some da lista" que `docs/58`/`quem-recuperar.ts` já resolveram para OUTRO
+     eixo (serviço ativo do cliente), mas este eixo (serviço ativo do CATÁLOGO) ficou de fora.
+  3. `v_recover_revenue` (`0067_lucro_em_risco.sql`, herdado sem mudança de `0001_initial.sql`) faz
+     `join services s on s.id = cc.service_id` sem NENHUM filtro de `active`/`deleted_at` — ao
+     contrário do `join clients c on c.id = cc.client_id and c.deleted_at is null`, na MESMA view,
+     três linhas acima. A tela "Recuperar receita" mostra o nome do serviço arquivado e manda a
+     profissional "chamar de volta" para algo que o catálogo não vende mais.
+  4. `v_clientes_a_recuperar` (`0058_view_clientes_a_recuperar.sql`), que alimenta o cartão de
+     alerta do "Hoje" (`centralDeAcoes`/`painelDaCarteira`, `crm.ts`) e o selo da lista de clientes,
+     é PIOR: nem chega a fazer `join services`, então nem dá para filtrar ali sem redesenhar a
+     view. Ela agrega direto de `client_cycles` — `max(value_at_risk_cents)`, `max(late_days)`,
+     `bool_or(state in (...))` — então um cliente que só está "atrasado" num serviço arquivado
+     infla o NÚMERO da tela inicial ("N clientes sumindo · R$ X em risco") sem sequer aparecer como
+     linha explicável em lugar nenhum.
+  5. Confirmado alcançável de verdade: `arquivarServico` está pendurado numa rota `DELETE` real
+     (`src/app/api/v1/services/[id]/route.ts:68`), e `listarServicos` já filtra `active: true` por
+     padrão em todo outro lugar do produto (`servicos.ts:132`) — confirma que "arquivado" já
+     significa "não oferecemos mais" em todo o resto do produto, só não neste eixo.
+- **Por que não é o `deleted_at` morto (investigação que descartei antes de escrever isto):**
+  `services.deleted_at` existe na tabela desde a `0001` mas NUNCA tem escritor em código nenhum
+  (`grep -rln "deleted_at:" src/` só acha `clientes.ts`/`lgpd.ts`/`media.ts` — nunca `servicos.ts`).
+  Filtrar por `deleted_at` nas views seria proteção morta, sem efeito hoje. O eixo que realmente
+  importa é `active`, que É escrito de verdade (`arquivarServico`) e É o mecanismo real de "não
+  oferecemos mais" usado no resto do produto.
+- **Por que registrar em vez de corrigir agora:** o conserto CORRETO tem três partes, e fazer só uma
+  deixa o estado pior do que o de hoje — a mesma armadilha de `conserto-pode-ser-pior-que-o-defeito`
+  já registrada nesta base:
+  1. filtrar `services` por `active` no job noturno (TypeScript puro, testável sem Docker) — MAS
+     sozinho isto só PARA de atualizar as linhas de serviço arquivado; elas continuam existindo em
+     `client_cycles` e continuam aparecendo nas duas views, só que agora com `late_days`/`state`
+     CONGELADOS no valor do dia em que o serviço foi arquivado, em vez de errados-mas-atualizados —
+     estritamente pior para quem lê a tela;
+  2. uma migration em `v_recover_revenue` acrescentando `and s.active` ao `join services` (mecânica,
+     não muda a lista de colunas, `create or replace view` aceita);
+  3. redesenhar `v_clientes_a_recuperar` para também excluir clientes cujo ÚNICO estado não-on_track
+     seja de serviço arquivado — hoje ela nem tem `services` no escopo, então isto é mudança de
+     forma da view, não só de filtro, e é a parte mais arriscada das três.
+  Nenhuma das três dá para validar sem Postgres real: `supabase db lint`, `test:rls` e
+  `test:integration` (que a CI roda, mas esta sessão não tem Docker local) são o que prova que uma
+  `create or replace view` não quebrou RLS nem o formato que `v_recover_revenue`/
+  `v_clientes_a_recuperar` prometem a quem já lê — e as duas alimentam os NÚMEROS de dinheiro das
+  duas telas de maior tráfego do produto (Hoje, Recuperar receita). Fazer isso "às cegas" seria a
+  mesma categoria de risco que o `docs/73` §5 já nomeou para adiar T4/T5b: mudança de UI/view sem
+  verificação visual nem banco real por trás.
+- **Status:** registrado, não implementado. Bug real e alcançável (não hipotético): qualquer salão
+  que arquive um serviço com clientes atrasados nele começa a ver esse serviço "fantasma" na lista
+  de recuperação e no alerta do Hoje, sem prazo de expiração. Para quando o Eduardo revisar ou
+  Docker local voltar — junta-se a T5b/F3/T6 do `docs/73` na mesma fila de bloqueio.
