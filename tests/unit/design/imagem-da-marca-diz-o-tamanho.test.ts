@@ -62,14 +62,15 @@ function tagsDoWordmark(arquivo: string): string[] {
 }
 
 describe('a imagem da marca diz de que tamanho ela é', () => {
-  it('a guarda alcança as seis páginas/componentes onde o wordmark aparece, em oito tags', () => {
+  it('a guarda alcança as seis páginas/componentes onde o wordmark aparece, em nove tags', () => {
     // Piso afirmado por NOME e por CONTAGEM: uma lista que encolhe em silêncio protege menos do
-    // que parece — 4 arquivos com 1 tag cada + selo.tsx (2, claro e escuro, desde 2026-09-21 —
-    // `/onboarding` passou a forçar tema claro e a versão única do wordmark sumia contra o fundo
-    // claro) + topbar.tsx (2, claro e escuro).
+    // que parece — page.tsx (2, claro e escuro, desde 2026-09-21 — a home passou a forçar tema
+    // claro e a versão única do wordmark sumia contra o fundo claro) + 3 arquivos com 1 tag cada
+    // (precos/privacidade/termos, continuam escuros) + selo.tsx (2, mesmo motivo da home) +
+    // topbar.tsx (2, claro e escuro do painel).
     expect(PAGINAS).toHaveLength(6)
     const total = PAGINAS.reduce((soma, p) => soma + tagsDoWordmark(p).length, 0)
-    expect(total).toBe(8)
+    expect(total).toBe(9)
   })
 
   it.each(PAGINAS)('%s declara sizes em TODA tag, senão o navegador baixa a variante mais larga', (arquivo) => {

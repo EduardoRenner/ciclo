@@ -7,6 +7,7 @@ import { slugDeDemonstracaoNoAr } from '@/server/services/demonstracao'
 import IconeAnel from '@/components/ui/icone-anel'
 
 import wordmark from '../../public/marca/ciclo-wordmark-aqua.png'
+import wordmarkClaro from '../../public/marca/ciclo-wordmark-aqua-claro.png'
 
 import type { Metadata } from 'next'
 
@@ -261,10 +262,33 @@ export default async function Home() {
     'px-5 text-corpo font-semibold text-txt transition duration-[var(--dur-1)] hover:bg-surface-3 active:scale-[.97]'
 
   return (
-    <main className="mx-auto min-h-dvh max-w-[720px] px-[var(--gutter)] pb-16">
+    /*
+      `data-theme="light"` — 2026-09-21, pedido direto do Eduardo: a home nasceu escura junto com o
+      resto da "frente de casa" (identidade de marca deliberada, `app/layout.tsx`), decisão revisada
+      igual às outras telas sem sessão (`tela-publica.tsx`). `--tabbar-h`/`--sidebar-w` zerados pelo
+      mesmo motivo de lá — não há painel aqui. O `<style>` cobre o rubber-band do celular.
+
+      `color`/`background` explícitos aqui, e não só a variável CSS: `body` (em `layout.tsx`) já
+      declara `color: var(--txt)` — e `color` é herdado, não recalculado. O `body` fica ACIMA deste
+      `<div>` na árvore, então o `--txt` dele resolve pelo `:root` escuro (o `<div>` é descendente,
+      não ancestral) — a cor congela escura ali e desce por herança pra tudo que não tiver a própria
+      classe de cor. Medido ao vivo: o `<h1>` (sem `text-txt` — nunca precisou, a página inteira
+      sempre foi escura) saía quase branco sobre fundo claro, ilegível. Redeclarar aqui reinicia a
+      herança a partir do `<div>`, com o `--txt` certo — mesmo mecanismo que faria FALTA em qualquer
+      elemento futuro desta página que não nomeie a própria cor.
+    */
+    <div
+      data-theme="light"
+      style={{ '--tabbar-h': '0px', '--sidebar-w': '0px', color: 'var(--txt)', background: 'var(--bg)' } as React.CSSProperties}
+    >
+      <style dangerouslySetInnerHTML={{ __html: 'html,body{background:#faf8f5}' }} />
+      <main className="mx-auto min-h-dvh max-w-[720px] px-[var(--gutter)] pb-16">
       <header className="flex items-center justify-between gap-3 py-5">
-        {/* `priority` herdado do lockup do herói, que saiu: agora esta é a única marca da dobra. */}
-        <Image src={wordmark} alt="CICLO" sizes="70px" priority className="h-7 w-auto" />
+        {/* `priority` herdado do lockup do herói, que saiu: agora esta é a única marca da dobra.
+            Dois arquivos, mesmo mecanismo de `topbar.tsx`/`selo.tsx`: o "iclo" do wordmark padrão
+            é quase branco e some contra fundo claro. */}
+        <Image src={wordmark} alt="CICLO" sizes="70px" priority className="marca-no-escuro h-7 w-auto" />
+        <Image src={wordmarkClaro} alt="" aria-hidden sizes="70px" priority className="marca-no-claro h-7 w-auto" />
         {/*
           O header desta página tem UM link, e a razão é de conversão, não de gosto (`docs/38` §3).
           Havia dois competindo com o CTA primário na dobra, e um deles ("Preços") aponta para uma
@@ -560,6 +584,7 @@ export default async function Home() {
           CICLO · para quem atende com hora marcada
         </span>
       </footer>
-    </main>
+      </main>
+    </div>
   )
 }

@@ -63,3 +63,33 @@ describe('o tema do wrapper alcança o que está acima dele', () => {
     }
   })
 })
+
+/**
+ * A MESMA armadilha, achada de novo em 2026-09-21 — desta vez em três wrappers que usam
+ * `data-theme="light"` inline (`style={{...}}`), não uma regra de CSS com id como `#raiz-do-tema`.
+ * `TelaPublica` (`/entrar`, `/cadastro`, `/onboarding`), a home (`app/page.tsx`) e `[slug]/layout.tsx`
+ * (a página pública de agendamento) todas passaram a forçar tema claro a pedido do Eduardo — e as
+ * três precisaram do MESMO par `color`/`background` explícito no wrapper, pela mesma razão: `body`
+ * (`app/layout.tsx`) já declara `color: var(--txt)`, herdado e não recalculado, e como o wrapper é
+ * DESCENDENTE de `body` (não ancestral), a variável reescrita lá dentro não sobe — sem redeclarar,
+ * a subárvore inteira herda a cor escura já computada no `body`. Medido ao vivo: o `<h1>` da home e
+ * de `/entrar`/`/cadastro` saíam quase brancos sobre fundo claro antes deste conserto.
+ */
+describe('a mesma armadilha, em wrappers com style inline em vez de #raiz-do-tema', () => {
+  const ARQUIVOS = [
+    'src/components/shell/tela-publica.tsx',
+    'src/app/page.tsx',
+    'src/app/(public)/[slug]/layout.tsx',
+  ]
+
+  it.each(ARQUIVOS)('%s redeclara color E background no wrapper de data-theme="light"', (caminho) => {
+    const fonte = readFileSync(caminho, 'utf8')
+    expect(fonte, `${caminho} perdeu o data-theme="light"`).toMatch(/data-theme="light"/)
+    expect(
+      fonte,
+      `${caminho}: sem \`color: 'var(--txt)'\` no style do wrapper, texto sem classe de cor própria ` +
+        'herda o escuro já computado no body — a mesma armadilha do #raiz-do-tema, documentada acima.',
+    ).toMatch(/color:\s*['"]var\(--txt\)['"]/)
+    expect(fonte, `${caminho}: mesmo raciocínio, agora para \`background\`.`).toMatch(/background:\s*['"]var\(--bg\)['"]/)
+  })
+})

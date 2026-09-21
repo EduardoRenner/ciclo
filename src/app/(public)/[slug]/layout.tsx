@@ -14,6 +14,19 @@ import { perfilPublico } from '@/server/services/public-booking'
  * gambiarra. Sem `await`, esta rota seria candidata a página estática — e o
  * nonce do CSP por requisição nunca bateria com o do build (bug já corrigido
  * uma vez em produção, ver `docs/DECISOES.md`).
+ *
+ * `data-theme="light"` — 2026-09-21, pedido direto do Eduardo (a página pública de agendamento,
+ * "Barbearia Dom Estilo" de exemplo, veio como prova). Mesmo mecanismo de `tela-publica.tsx`/
+ * `app/page.tsx`: `color`/`background` explícitos porque `body` já declara `color: var(--txt)`,
+ * herdado (não recalculado) — sem redeclarar aqui, qualquer elemento de `agendar.tsx` sem a
+ * própria classe de cor herdaria o `--txt` escuro do `body` em vez do claro deste wrapper.
+ *
+ * **Não verificado ao vivo nesta sessão** — esta rota depende de tenant real (`perfilPublico`),
+ * e Docker/Supabase local está indisponível. `agendar.tsx` tem 1352 linhas e é a página pública
+ * mais complexa do produto (fluxo de agendamento multi-etapa, calendário, seleção de serviço);
+ * o mecanismo é o mesmo já provado nas outras três telas, mas o Eduardo deveria conferir esta
+ * especificamente antes de considerar fechado, pelo tamanho e por ser a única das quatro com
+ * cliente de verdade do outro lado.
  */
 export const dynamic = 'force-dynamic'
 
@@ -43,15 +56,19 @@ export default async function LayoutSlug({
 
   return (
     <div
+      data-theme="light"
       style={
         {
           '--acc': acc,
           '--acc-2': acc2,
           '--acc-soft': `color-mix(in srgb, ${acc} 16%, transparent)`,
           '--on-acc': corDeContraste(acc),
+          color: 'var(--txt)',
+          background: 'var(--bg)',
         } as React.CSSProperties
       }
     >
+      <style dangerouslySetInnerHTML={{ __html: 'html,body{background:#faf8f5}' }} />
       {children}
     </div>
   )
