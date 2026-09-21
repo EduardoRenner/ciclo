@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { canalDeContato } from '@/lib/contato'
 
 import wordmark from '../../../../public/marca/ciclo-wordmark-aqua.png'
+import wordmarkClaro from '../../../../public/marca/ciclo-wordmark-aqua-claro.png'
 
 const CANAL = canalDeContato('Oi! É sobre os meus dados no CICLO.')
 
@@ -47,10 +48,15 @@ const ATUALIZADO_EM = '16 de setembro de 2026'
 
 export default function Privacidade() {
   return (
-    <main className="mx-auto min-h-dvh max-w-[720px] px-[var(--gutter)] pb-16">
+    // `data-theme="light"` (2026-09-21) — mesmo conserto de `app/page.tsx`/`tela-publica.tsx`. Ver
+    // `tema-alcanca-o-body.test.ts` para o porquê do `color`/`background` explícitos no wrapper.
+    <div data-theme="light" style={{ '--tabbar-h': '0px', '--sidebar-w': '0px', color: 'var(--txt)', background: 'var(--bg)' } as React.CSSProperties}>
+      <style dangerouslySetInnerHTML={{ __html: 'html,body{background:#faf8f5}' }} />
+      <main className="mx-auto min-h-dvh max-w-[720px] px-[var(--gutter)] pb-16">
       <header className="flex items-center justify-between py-5">
         <Link href="/" aria-label="CICLO, início">
-          <Image src={wordmark} alt="CICLO" sizes="70px" className="h-7 w-auto" />
+          <Image src={wordmark} alt="CICLO" sizes="70px" className="marca-no-escuro h-7 w-auto" />
+          <Image src={wordmarkClaro} alt="" aria-hidden sizes="70px" className="marca-no-claro h-7 w-auto" />
         </Link>
         <Link
           href="/entrar"
@@ -275,6 +281,7 @@ export default function Privacidade() {
           Preços
         </Link>
       </footer>
-    </main>
+      </main>
+    </div>
   )
 }

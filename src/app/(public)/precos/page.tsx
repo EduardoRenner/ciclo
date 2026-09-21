@@ -8,6 +8,7 @@ import { canalDeContato } from '@/lib/contato'
 import { CARTOES } from '@/lib/planos-cartoes'
 
 import wordmark from '../../../../public/marca/ciclo-wordmark-aqua.png'
+import wordmarkClaro from '../../../../public/marca/ciclo-wordmark-aqua-claro.png'
 
 import type { Metadata } from 'next'
 
@@ -131,10 +132,15 @@ export default function Precos() {
     'bg-surface-2 px-5 text-corpo font-semibold text-txt transition duration-[var(--dur-1)] hover:bg-surface-3 active:scale-[.97]'
 
   return (
-    <main className="mx-auto min-h-dvh max-w-[720px] px-[var(--gutter)] pb-16">
+    // `data-theme="light"` (2026-09-21) — mesmo conserto de `app/page.tsx`/`tela-publica.tsx`. Ver
+    // `tema-alcanca-o-body.test.ts` para o porquê do `color`/`background` explícitos no wrapper.
+    <div data-theme="light" style={{ '--tabbar-h': '0px', '--sidebar-w': '0px', color: 'var(--txt)', background: 'var(--bg)' } as React.CSSProperties}>
+      <style dangerouslySetInnerHTML={{ __html: 'html,body{background:#faf8f5}' }} />
+      <main className="mx-auto min-h-dvh max-w-[720px] px-[var(--gutter)] pb-16">
       <header className="flex items-center justify-between gap-3 py-5">
         <Link href="/" className="toque-48 flex items-center">
-          <Image src={wordmark} alt="CICLO" sizes="70px" className="h-7 w-auto" />
+          <Image src={wordmark} alt="CICLO" sizes="70px" className="marca-no-escuro h-7 w-auto" />
+          <Image src={wordmarkClaro} alt="" aria-hidden sizes="70px" className="marca-no-claro h-7 w-auto" />
         </Link>
         <Link
           href="/entrar"
@@ -368,6 +374,7 @@ export default function Precos() {
           Voltar para o início
         </Link>
       </footer>
-    </main>
+      </main>
+    </div>
   )
 }

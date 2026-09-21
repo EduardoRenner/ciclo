@@ -5,6 +5,7 @@ import { precoDoPlano } from '@/core/billing/planos'
 import { canalDeContato } from '@/lib/contato'
 
 import wordmark from '../../../../public/marca/ciclo-wordmark-aqua.png'
+import wordmarkClaro from '../../../../public/marca/ciclo-wordmark-aqua-claro.png'
 
 const CANAL = canalDeContato('Oi! Tenho uma dúvida sobre os termos de uso do CICLO.')
 
@@ -17,9 +18,22 @@ const CANAL = canalDeContato('Oi! Tenho uma dúvida sobre os termos de uso do CI
  * a cobrança é combinada direto em vez de descrever um fluxo de assinatura automática — ela não
  * existe, e um contrato que promete o que o software não faz é pior que a ausência dele.
  *
- * O aviso do topo é deliberado: este texto foi escrito por quem conhece o sistema, não por
- * advogado. Ele é honesto e serve para operar, mas precisa de revisão jurídica antes do primeiro
- * pagante — está listado no §6 do `docs/31`.
+ * **Achado em 2026-09-21, revisando esta página:** o comentário original dizia "o aviso do topo é
+ * deliberado" — mas não existe aviso nenhum renderizado na página, em lugar nenhum. Ou ele nunca
+ * chegou a ser implementado (só planejado aqui no comentário), ou saiu num commit que não atualizou
+ * este texto junto — a mesma classe de comentário desatualizado já achada várias vezes nesta base.
+ * Corrigido removendo a afirmação falsa, não recriando o aviso: a essa altura, com o produto
+ * cobrando de verdade, um banner permanente "isto não foi revisado por advogado" prejudicaria mais
+ * do que ajudaria — e nunca foi essa a intenção original (`docs/31` §6 trata isso como item de
+ * pré-lançamento, a resolver antes do primeiro pagante, não como aviso permanente ao público).
+ *
+ * **Isto continua valendo, e vale reafirmar aqui:** quem escreveu — e ampliou, em 2026-09-21, com
+ * os itens 8–14 (propriedade do sistema, limitação de responsabilidade, serviços de terceiros,
+ * indenização, força maior, disposições gerais) — não é advogado. O texto segue honesto sobre o que
+ * o produto faz e incorpora práticas comuns de contrato de SaaS, mas o Brasil tem proteção forte ao
+ * consumidor (CDC) e o item 15 já reconhece isso — cláusula de limitação de responsabilidade que
+ * tentasse afastar direito garantido por lei simplesmente não vale, mesmo escrita. **Revisão por
+ * advogado brasileiro antes de depender destes termos numa disputa real continua recomendada.**
  */
 /**
  * ISR: o HTML e igual para todo visitante e so muda em deploy (copy institucional, preco de tabela).
@@ -37,14 +51,21 @@ export const metadata = {
 // `/privacidade` já ficou parada numa data velha depois de um commit mudar o conteúdo de verdade
 // sem tocar na constante irmã — achado só verificando a página publicada, não pelo build passar
 // (2026-09-16). Mudou o texto abaixo? Mude esta linha junto, na MESMA mudança.
-const ATUALIZADO_EM = '30 de agosto de 2026'
+const ATUALIZADO_EM = '21 de setembro de 2026'
 
 export default function Termos() {
   return (
-    <main className="mx-auto min-h-dvh max-w-[720px] px-[var(--gutter)] pb-16">
+    // `data-theme="light"` (2026-09-21) — mesmo conserto de `app/page.tsx`/`tela-publica.tsx`,
+    // pelo mesmo motivo: `body` já declara `color: var(--txt)`, herdado e não recalculado, então o
+    // wrapper (descendente de body) precisa redeclarar `color`/`background` para a subárvore não
+    // herdar o escuro já computado. Ver `tema-alcanca-o-body.test.ts`.
+    <div data-theme="light" style={{ '--tabbar-h': '0px', '--sidebar-w': '0px', color: 'var(--txt)', background: 'var(--bg)' } as React.CSSProperties}>
+      <style dangerouslySetInnerHTML={{ __html: 'html,body{background:#faf8f5}' }} />
+      <main className="mx-auto min-h-dvh max-w-[720px] px-[var(--gutter)] pb-16">
       <header className="flex items-center justify-between py-5">
         <Link href="/" aria-label="CICLO, início">
-          <Image src={wordmark} alt="CICLO" sizes="70px" className="h-7 w-auto" />
+          <Image src={wordmark} alt="CICLO" sizes="70px" className="marca-no-escuro h-7 w-auto" />
+          <Image src={wordmarkClaro} alt="" aria-hidden sizes="70px" className="marca-no-claro h-7 w-auto" />
         </Link>
         <Link
           href="/entrar"
@@ -172,7 +193,70 @@ export default function Termos() {
         </section>
 
         <section>
-          <h2>8. Mudanças nestes termos</h2>
+          <h2>8. Propriedade do sistema</h2>
+          <p>
+            O CICLO (o software, o código, o nome, a marca e o design das telas) é propriedade de
+            quem mantém o sistema. Ao criar uma conta, você recebe uma licença para usar o serviço
+            enquanto durar sua assinatura, não a compra do sistema.
+          </p>
+          <p>
+            Isso não muda o que o item 3 já disse: o que você cadastra (clientes, agendamentos,
+            histórico) continua seu. A licença aqui é sobre o SOFTWARE que exibe e processa esses
+            dados, não sobre os dados em si.
+          </p>
+        </section>
+
+        <section>
+          <h2>9. O que a gente não garante</h2>
+          <p>
+            O CICLO é entregue como está, funcionando do jeito que você pode ver e testar hoje. A
+            gente não promete que ele nunca vai ter um erro, nem que serve para um uso que a gente
+            não descreveu aqui ou na página de preços.
+          </p>
+          <p>
+            Nossa responsabilidade por qualquer problema com o serviço fica limitada ao que você
+            pagou pelo CICLO nos últimos 12 meses, e se você está no plano Grátis, é esse mesmo
+            valor: zero. A gente não responde por lucro deixado de ganhar, por dano indireto, nem
+            por prejuízo causado por mau uso do sistema ou por sua senha vazada por descuido seu.
+            Nada aqui tira o direito que a lei brasileira já garante e que este contrato não pode
+            afastar; essa limitação vale só para o que a lei permite limitar.
+          </p>
+        </section>
+
+        <section>
+          <h2>10. Serviços de terceiros</h2>
+          <p>
+            O CICLO depende de serviços de outras empresas para funcionar por completo: envio de
+            mensagem por WhatsApp, processamento de pagamento (quando estiver ligado), hospedagem e
+            banco de dados. Se um desses serviços parar, mudar as regras dele ou ficar fora do ar, o
+            CICLO pode ficar limitado até a gente ajustar. Não é algo que controlamos sozinhos, e
+            avisamos quando descobrirmos um problema desses.
+          </p>
+        </section>
+
+        <section>
+          <h2>11. Se o uso da sua conta gerar problema com terceiro</h2>
+          <p>
+            O item 3 já disse: você decide o que cadastrar sobre seus clientes, e a autorização
+            deles é responsabilidade sua. Se esse cadastro, uma mensagem que você mandou pelo
+            sistema, ou qualquer outro uso que você fez da sua conta gerar reclamação, multa ou
+            processo de terceiro contra a gente, você assume essa responsabilidade, porque a gente
+            só processa o que você mandou guardar.
+          </p>
+        </section>
+
+        <section>
+          <h2>12. Fora do nosso controle</h2>
+          <p>
+            Queda de internet em larga escala, decisão de governo, greve, ou falha geral de um
+            serviço de terceiro que usamos (item 10) podem atrasar ou impedir o CICLO de funcionar
+            sem que isso seja quebra deste contrato da nossa parte. Assim que o motivo passar, a
+            gente retoma.
+          </p>
+        </section>
+
+        <section>
+          <h2>13. Mudanças nestes termos</h2>
           <p>
             Se estes termos mudarem, a data no topo muda junto e a gente avisa dentro do sistema.
             Continuar usando depois disso significa que você concorda com a versão nova.
@@ -180,7 +264,21 @@ export default function Termos() {
         </section>
 
         <section>
-          <h2>9. Lei e foro</h2>
+          <h2>14. Se alguma parte deste contrato virar inválida</h2>
+          <p>
+            Se algum destes itens for considerado inválido por um juiz, os outros continuam
+            valendo normalmente: a invalidade de um item não derruba o contrato inteiro.
+          </p>
+          <p>
+            A gente pode transferir este contrato para outra empresa se o CICLO for vendido ou
+            passar a ser mantido por outra empresa do mesmo grupo; avisamos antes de isso valer. Sua
+            conta é sua, e transferir o acesso dela para outra pessoa ou negócio sem combinar com a
+            gente já é o que o item 4 proíbe.
+          </p>
+        </section>
+
+        <section>
+          <h2>15. Lei e foro</h2>
           <p>
             Estes termos seguem a lei brasileira. Qualquer discussão que não der para resolver
             conversando fica no foro do domicílio do assinante, como manda o Código de Defesa do
@@ -189,7 +287,7 @@ export default function Termos() {
         </section>
 
         <section>
-          <h2>10. Falar com a gente</h2>
+          <h2>16. Falar com a gente</h2>
           {/*
             Dizia "pelo mesmo canal em que você contratou". Não existe esse canal: todo mundo entra
             sozinho pelo cadastro do Grátis, então a cláusula mandava o assinante para um lugar que
@@ -220,6 +318,7 @@ export default function Termos() {
           Preços
         </Link>
       </footer>
-    </main>
+      </main>
+    </div>
   )
 }
