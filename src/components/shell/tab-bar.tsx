@@ -3,6 +3,7 @@
 import { CalendarDays, Home, Plus, Users } from 'lucide-react'
 import Link, { useLinkStatus } from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 import IconeAnel from '@/components/ui/icone-anel'
 import { cn } from '@/lib/utils'
@@ -103,17 +104,41 @@ export default function TabBar({ hrefFab = HREF_DO_CENTRO }: Props) {
   )
 }
 
+/** Piso de visibilidade do giro — ver o porquê no comentário de `IconeDoFab` abaixo. */
+const GIRO_MINIMO_MS = 500
+
 /**
  * `useLinkStatus` só funciona dentro de um filho do `<Link>` (lê contexto que
  * o próprio Link fornece) — por isso é um componente à parte, não uma
  * variável no meio do FAB. `pending` fica `true` do clique até a rota de
- * destino terminar de carregar: gira de verdade enquanto espera, não por um
- * tempo fixo torcido para "parecer certo". Mesmo `animate-spin` de
- * `recuperar.tsx` (o botão "Atualizar" da própria tela que este ícone abre).
+ * destino terminar de carregar.
+ *
+ * **Revisado em 2026-09-21, a pedido do Eduardo.** A versão anterior ligava `animate-spin`
+ * direto no `pending` cru — "gira de verdade enquanto espera, não por um tempo fixo torcido para
+ * parecer certo". Na prática isso fazia o giro sumir: o `<Link>` para `/admin/recuperar` já está
+ * prefetchado (fica sempre visível na barra), então a navegação resolve com o payload já em cache
+ * — `pending` vira `true` e `false` rápido demais para o olho notar, e a marca só parecia girar no
+ * SEGUNDO clique (quando algo já tinha invalidado o cache do prefetch e a navegação de fato
+ * esperou rede). O ícone é a marca do produto no momento de maior intenção (a pessoa foi atrás do
+ * Motor de Ciclo) — ele precisa girar de forma confiável, não só quando a rede está lenta o
+ * bastante para dar tempo. Aqui o giro nunca é mais CURTO que `pending`: se a navegação demorar de
+ * verdade, ele continua até `pending` resolver — só o mínimo de visibilidade é garantido, não um
+ * teto.
  */
 function IconeDoFab() {
   const { pending } = useLinkStatus()
-  return <IconeAnel aria-hidden className={cn('size-7 lg:size-5', pending && 'animate-spin')} />
+  const [girando, setGirando] = useState(false)
+
+  useEffect(() => {
+    if (pending) {
+      setGirando(true)
+      return
+    }
+    const tempo = setTimeout(() => setGirando(false), GIRO_MINIMO_MS)
+    return () => clearTimeout(tempo)
+  }, [pending])
+
+  return <IconeAnel aria-hidden className={cn('size-7 lg:size-5', girando && 'animate-spin')} />
 }
 
 function ItemAba({ aba, ativa }: { aba: Aba; ativa: boolean }) {
