@@ -988,3 +988,28 @@ tocar validação de entrada em toda rota de API com parâmetro `[id]`.
 - **Verificação:** `tsc`/`eslint`/`pnpm test:unit` (292/2531) verdes. Sem verificação ao vivo em
   produção (não é este agente que decide isso) — o efeito só é observável quando alguém consultar
   `product_events` depois do deploy.
+
+---
+
+### BL-40 · `cliente_voltou` (G-05b) — agregado por rodada, não por previsão — FEITO
+
+- **Segundo dos quatro eventos G-05b**, depois de `base_importada` (BL-39). `cliente_voltou` marca
+  quando uma previsão do Motor se confirma — o cliente voltou de verdade, no prazo previsto ou
+  fora dele. É o evento mais direto para medir se o Motor está funcionando, não só se foi visto.
+- **Cuidado que mudou a implementação:** o hook óbvio seria dentro do laço que fecha cada previsão
+  (`resolverPrevisoes`, `previsao.ts`) — mas `recomputarCiclosDoTenant` já documenta processar até
+  10 mil clientes por tenant em menos de 60s (TICKET-036), rodando toda madrugada para TODO
+  tenant. Um `product_events.insert` por previsão fechada multiplicaria a escrita desse job
+  exatamente onde ele já foi otimizado para não pesar. `resolverPrevisoes` já devolve a CONTAGEM
+  agregada (`fechadas`) — só que o valor de retorno estava sendo descartado no chamador
+  (`await resolverPrevisoes(...)`, sem capturar). Capturado o retorno; um evento por RODADA (não
+  por previsão), só quando `fechadas > 0`.
+- **Verificação de que o caminho síncrono (por-atendimento) não precisava do mesmo cuidado:**
+  conferido que `recomputarCicloDeUmAtendimento` (o recálculo em tempo real ao concluir um
+  agendamento) nunca toca `cycle_predictions`/`resolverPrevisoes` — só `client_cycles`, uma tabela
+  diferente. Não existe caminho de alta frequência que esta mudança pudesse atingir.
+- **`registrarEvento`, não `registrarPrimeiraOcorrencia`:** ao contrário de `base_importada`
+  (marco de uma vez), `cliente_voltou` é repetível por natureza — acontece de novo a cada rodada
+  que fecha alguma previsão, e a migration 0088 já documenta os quatro eventos G-05b como
+  "repetíveis" (sem constraint de unicidade no schema).
+- **Verificação:** `tsc`/`eslint`/`pnpm test:unit` (292/2531) verdes.

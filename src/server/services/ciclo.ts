@@ -6,6 +6,7 @@ import { custoDoServico } from '@/core/comanda/custo-do-servico'
 import { lucroEmRiscoCents, lucroEsperadoCents, valorEmRiscoCents } from '@/core/cycle/valor-em-risco'
 import { buscarTudoPaginado } from '@/server/db/paginar'
 import { calibrarServicos, probabilidadeCalibradaDoTenant, registrarPrevisoes, resolverPrevisoes, type PrevisaoParaRegistrar } from '@/server/services/previsao'
+import { registrarEvento } from '@/server/services/product-events'
 import { AppError } from '@/server/http/errors'
 
 import type { Database } from '@/server/db/types.gen'
@@ -247,7 +248,17 @@ export async function recomputarCiclosDoTenant(db: Cliente, tenantId: string, ti
     perderia o caso do cliente que voltou no mesmo dia em que a previsão anterior seria escrita.
   */
   await registrarPrevisoes(db, tenantId, previsoes)
-  await resolverPrevisoes(db, tenantId, datasPorCombinacao)
+
+  /*
+   * G-05b (docs/60): "cliente_voltou" agregado, não um evento por previsão fechada. Este job
+   * processa até 10 mil clientes por tenant em menos de 60s (TICKET-036) — um `product_events`
+   * a mais por LAÇO acrescentaria uma escrita por resolução, multiplicada por todo tenant que
+   * roda esta rotina toda madrugada. `resolverPrevisoes` já devolve a contagem agregada; um
+   * evento por RODADA (não por previsão) é o único formato que não pesa no orçamento do job.
+   */
+  const fechadas = await resolverPrevisoes(db, tenantId, datasPorCombinacao)
+  if (fechadas > 0) await registrarEvento(db, tenantId, 'cliente_voltou', { fechadas })
+
   await calibrarServicos(db, tenantId, cycleDaysPorServico)
 
   return linhas.length
