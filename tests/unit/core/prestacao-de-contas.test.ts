@@ -61,6 +61,18 @@ describe('prestacaoDeContas', () => {
     expect(r.conferidas).toBe(0)
   })
 
+  it(`o limite de ${JANELA_DE_ESPERA_DIAS} dias: exatamente no limite ainda é aberto, um dia depois já é erro`, () => {
+    // HOJE = '2026-09-06'. predictedOn 30 dias antes cai exatamente no limite (diasEntre = 30, não > 30).
+    const noLimite = prestacaoDeContas([prevista('2026-08-07', null)], HOJE)
+    expect(noLimite.emAberto).toBe(1)
+    expect(noLimite.detalhe.naoVoltou).toBe(0)
+
+    // Um dia antes disso, diasEntre = 31 > 30: já virou erro.
+    const passouDoLimite = prestacaoDeContas([prevista('2026-08-06', null)], HOJE)
+    expect(passouDoLimite.emAberto).toBe(0)
+    expect(passouDoLimite.detalhe.naoVoltou).toBe(1)
+  })
+
   /**
    * `null` não é zero: zero se lê como "o Motor erra sempre". Enquanto não há amostra, a tela tem
    * que dizer que ainda está aprendendo — a mesma regra da procedência da régua e do ritmo.
