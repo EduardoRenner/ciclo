@@ -756,43 +756,37 @@ tocar validação de entrada em toda rota de API com parâmetro `[id]`.
 
 ---
 
-### BL-33 · Foto de serviço/profissional: backend pronto desde a 0052, sem escritor na UI — identificado, NÃO implementado
+### BL-33 · Foto de serviço/profissional — CLAIM ORIGINAL ERRADA, a UI já existe — CORRIGIDO
 
-- **Problema:** `fazerUploadDaEntidade` (`server/services/vitrine-upload.ts`) e a rota
-  `POST /api/v1/tenant/vitrine/entidade` fazem upload de foto de serviço/profissional
-  (reencode WebP, redimensiona, remove EXIF, troca a chave antiga só depois da nova estar
-  gravada, guarda contra `UPDATE` de zero linhas) — código completo e bem escrito. A página
-  pública (`(public)/[slug]/secoes.tsx`) já lê e EXIBE `s.imageUrl`/`p.photoUrl` condicionalmente.
-  Mas **não existe nenhum `<input type="file">` em lugar nenhum do painel para service/professional**
-  — varrido `grep -rln 'type="file"' src/app/admin`: só client (`fotos.tsx`), CSV
-  (`importador.tsx`) e logo/capa do negócio (`imagens.tsx`). Nenhum dos formulários de
-  `servicos/formulario.tsx`/`profissionais/formulario.tsx` tem campo de foto.
-- **Por que é exatamente a classe que este projeto já nomeou:** a própria migration 0052
-  (`supabase/migrations/0052_foto_de_servico_e_profissional.sql`) diz, sobre a coluna QUE ELA
-  MESMA criava: *"é a mesma classe de `fee_cents`, `media.consent_id`, `clients.referred_by` e
-  `tenants.plan` — coluna que todo mundo lê e ninguém escreve."* A 0052 resolveu o problema até a
-  CAMADA DE DADOS (chave em vez de URL, bucket certo, renomeou `avatar_url` → `photo_key` para
-  dizer a verdade) e construiu o serviço de upload — mas o escritor nunca chegou na UI, então a
-  coluna continua 100% vazia hoje, só que um andar mais alto: não falta mais o mecanismo, falta o
-  botão.
-- **Confirmado, não suposto:** os dois `<img alt="">` que a varredura de acessibilidade desta
-  sessão (BL-31/32) já tinha lido em `secoes.tsx` (linhas 245/322) são precisamente este branch —
-  hoje sempre cai no `else` (sem imagem), para todo tenant, porque `imageUrl`/`photoUrl` nunca tem
-  como nascer preenchido.
-- **Por que não implementei a UI autonomamente:** diferente das consolidações e consertos desta
-  sessão (mudança cirúrgica em código já existente, poucas linhas, comportamento óbvio), isto é
-  construir uma tela nova — campo de upload + preview + estado de erro em DOIS formulários
-  existentes. Mesmo de baixo risco (sem dinheiro, sem segurança, só aditivo, com
-  `imagens.tsx`/`CampoDeImagem` como referência pronta pra adaptar), é decisão de escopo de
-  produto ("vale a pena agora?"), não um bug a corrigir — mesmo critério que manteve o BL-01
-  como `identificado` em vez de `feito` nesta mesma sessão.
-- **Esforço estimado para quem pegar:** baixo-médio. `CampoDeImagem` de `imagens.tsx` já resolve
-  90% do padrão (FormData, toast de erro, `window.location.reload()`); a adaptação para entidade
-  precisa só trocar o endpoint (`/api/v1/tenant/vitrine/entidade` com `tipo`+`id` no FormData em
-  vez de só `tipo`) e decidir ONDE cada formulário mostra o campo.
-- **Status:** `identificado` (2026-09-20). Decisão de produto pendente com o Eduardo: vale
-  priorizar a UI de foto de serviço/profissional agora (o próprio 0052 cita Fresha/Booksy como
-  referência de mercado que já tem isso)?
+- **CORREÇÃO INTEGRAL (2026-09-21):** a versão original deste item dizia que não existia
+  `<input type="file">` em lugar nenhum do painel para service/professional, e registrava uma
+  "decisão de produto pendente com o Eduardo" sobre construir a UI. **Isso é falso.** A UI existe,
+  completa e funcional, desde antes desta sessão: `src/components/config/upload-de-foto.tsx`
+  (`UploadDeFoto`) — upload com preview local, botão de trocar/remover, `multipart/form-data` para
+  `/api/v1/tenant/vitrine/entidade` (a rota que a versão original já tinha achado correta) — está
+  importado e renderizado em AMBOS os formulários citados como "sem campo de foto":
+  `servicos/formulario.tsx:257` (`<UploadDeFoto tipo="service" .../>`) e
+  `profissionais/formulario.tsx:107` (`<UploadDeFoto tipo="professional" .../>`).
+- **Causa raiz do erro, e é a MESMA de duas outras correções desta sessão (BL-37, e ver a nota
+  geral abaixo):** a varredura original rodou `grep -rln 'type="file"' src/app/admin` — escopada
+  só a `src/app/admin`. `UploadDeFoto` mora em `src/components/config/`, uma pasta de componente
+  COMPARTILHADO fora da árvore `app/admin`. Os dois formulários não têm `<input type="file">`
+  DIRETO porque importam um componente que tem — o mesmo tipo de lacuna de busca que já tinha
+  corrigido o achado do já-atendo (BL-37: `grep` sobre `src/app` não alcança `server/`; aqui,
+  `grep` sobre `src/app/admin` não alcança `src/components/`).
+- **Por que isto é mais grave que a correção do BL-37:** lá, o achado original estava PARCIALMENTE
+  certo (havia uma lacuna real, só menor). Aqui, o achado original estava CATEGORICAMENTE errado —
+  não havia lacuna nenhuma para decidir. Registrar "decisão de produto pendente" sobre algo que já
+  está pronto arrisca fazer alguém (o Eduardo, ou uma sessão futura) gastar tempo decidindo ou
+  RECONSTRUINDO o que já existe.
+- **Lição registrada para o resto desta sessão e sessões futuras:** ao afirmar "X não existe em
+  lugar nenhum da UI", a varredura por `<input type="file">`/`Link`/import precisa cobrir `src`
+  INTEIRO (`app/`, `components/`, `server/`), nunca só a sub-árvore mais óbvia — mesmo quando o
+  resultado parece completo. As três vezes que isso mordeu nesta sessão (BL-33, BL-37, e o
+  `--include="*.ts"` que escondeu `motor_viu_valor` num grep do BL-39) têm a mesma forma: escopo de
+  busca estreito demais, lido como resultado completo.
+- **Nada a implementar.** A funcionalidade já está no ar. Se HOUVER algo a verificar, é se ela
+  funciona corretamente em produção (fora do escopo de leitura de código).
 
 ---
 
