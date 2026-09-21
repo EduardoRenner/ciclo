@@ -1170,3 +1170,39 @@ lista.)
 - **Status:** registrado, não implementado. Achado por leitura cuidadosa comparando o que o
   benchmark REALMENTE constrói contra o que ele é citado como provando — não por medição direta
   (impossível nesta sessão).
+
+---
+
+### BL-47 · As "duas portas" do Motor não têm a mesma cobertura de dinheiro
+
+- **Achado:** `ciclo-de-quem-ja-atende.ts` (`preverEPersistirCiclos`) é a fórmula ÚNICA e
+  compartilhada que grava `client_cycles` para duas portas de entrada diferentes — a planilha
+  (`importacao-clientes.ts`) e a memória (`quem-ja-atendo.ts`). O próprio docstring do arquivo
+  avisa: *"Duplicar esta fórmula seria criar duas definições do mesmo cálculo, cada uma com a sua
+  guarda, divergindo com as duas suítes verdes. Já aconteceu nesta base."* — e cita `docs/
+  DECISOES.md` 2026-09-18 como o precedente: `profit_at_risk_cents` e a regra de preço-zero para
+  assinante/pacote foram corrigidos nesta MESMA função justamente por já terem divergido entre
+  portas antes.
+- **A assimetria medida:** `tests/integration/quem-ja-atendo.test.ts` tem um describe inteiro
+  (`'preverEPersistirCiclos grava o dinheiro certo (não só o estado)'`, 3 casos) provando
+  `profit_at_risk_cents`, o zeramento para assinante ativo e o zeramento para pacote com saldo —
+  tudo isso passando pela porta "memória" (`cadastrarQuemJaAtendo`). `tests/integration/
+  importacao-clientes.test.ts` tem o describe equivalente ('a base importada entra no Motor de
+  Ciclo') mas seu `select` só pede `state, last_visit_on, value_at_risk_cents, service_id` —
+  **`profit_at_risk_cents` nunca é lido nem afirmado pela porta CSV**, e nenhum caso ali testa
+  cliente assinante ou com pacote sobrando importado por planilha.
+- **Por que isto importa apesar de ser a MESMA função:** hoje as duas portas realmente chamam
+  `preverEPersistirCiclos` (confirmado por grep — nenhuma cópia local do cálculo em nenhuma das
+  duas), então não há divergência ativa agora. O risco é de regressão silenciosa: se um dia alguém
+  mexer em `importacao-clientes.ts` (ex.: um pré-processamento do CSV que perde o `client_id` antes
+  de chamar a função compartilhada, ou uma refatoração que separa as portas "só para o caso CSV")
+  quebrar especificamente o cálculo de lucro ou a isenção de assinante/pacote NA PORTA CSV, a suíte
+  de `importacao-clientes.test.ts` continuaria toda verde — ela nunca olha para essas colunas.
+- **Por que registrar em vez de corrigir:** o teste que falta é de integração (precisa de Supabase
+  local para gravar `client_subscriptions`/`packages` de verdade e ler `client_cycles` de volta) —
+  indisponível nesta sessão sem Docker. Adicionar as asserções certas (`profit_at_risk_cents` e os
+  dois casos de preço zerado, espelhando exatamente os três casos que já existem em `quem-ja-
+  atendo.test.ts`) é mecânico e de baixo risco, mas só é verificável com o banco real.
+- **Status:** registrado, não implementado. Achado por comparação direta dos dois arquivos de teste
+  de integração linha a linha — não é uma suspeita, é uma contagem: 3 asserções de dinheiro num
+  lado, 0 no outro, para a mesma função.
