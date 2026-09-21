@@ -202,8 +202,23 @@ export const TRATAMENTO_NA_ELIMINACAO: Record<string, Record<string, string>> = 
   },
 }
 
-/** Tabelas cuja linha inteira some: nenhuma delas guarda registro fiscal. */
-const TABELAS_APAGADAS = ['client_notes', 'waitlist', 'portfolio_photos'] as const
+/**
+ * Tabelas cuja linha inteira some: nenhuma delas guarda registro fiscal.
+ *
+ * `client_cycles` entrou aqui em 2026-09-21 (auditoria do Motor de Ciclo, `BL-48` em
+ * `.claude/ciclo/autonomous-backlog.md`): é estado COMPUTADO pelo job noturno, nunca o registro de
+ * auditoria (`cycle_predictions`, append-only, protegido por RLS até de service_role via política
+ * — este DELETE aqui não toca nela). Sem esta linha, uma cliente eliminada continuava "atrasada
+ * para voltar" para sempre: o job recalculava `late_days`/`value_at_risk_cents` frescos todo dia
+ * para "Cliente eliminada", e `v_clientes_a_recuperar` (que não tem `clients` no escopo, então não
+ * dava para filtrar do lado da view) inflava o alerta do "Hoje" com uma cliente que já não existe.
+ * `DELETE` em `client_cycles` é bloqueado por RLS para o cliente de SESSÃO
+ * (`tests/rls/append-only-nao-se-apaga.test.ts`, "client_cycles: DELETE não passa") — mas
+ * `eliminarCliente` roda sempre com `service_role` (`withTenant`/`withNovoTenant` nas duas
+ * chamadas, `erase/route.ts` e `lgpd-retention/route.ts`), que ignora RLS por desenho. Não é burlar
+ * a trava: é o mesmo caminho elevado que o produto já usa para toda eliminação.
+ */
+const TABELAS_APAGADAS = ['client_notes', 'waitlist', 'portfolio_photos', 'client_cycles'] as const
 
 /**
  * `POST .../erase 🔐`, §critério: "apaga cofre e mídia de verdade e preserva o registro fiscal

@@ -1296,3 +1296,28 @@ lugar nenhum): o serviço arquivado e a cliente eliminada são dois gatilhos dif
 mesmo buraco de desenho — "esta view nunca filtra por nada além de `client_cycles.state`, porque
 nunca teve outra tabela no escopo." Resolver um sem o outro deixaria o segundo sintoma vivo com a
 mesma cara de consertado.
+
+**Consertado, mesma sessão, 2026-09-21 — só o gatilho da eliminação LGPD.** Diferente do serviço
+arquivado, este lado tinha um conserto SEM view/migration: `client_cycles` entrou em
+`TABELAS_APAGADAS` (`lgpd.ts`), a mesma lista que já apaga `client_notes`/`waitlist`/
+`portfolio_photos` pela linha inteira. Verificado ANTES de escrever, não depois — quase virou o
+mesmo erro que este documento descreve (conserto que parece funcionar e não funciona):
+`tests/rls/append-only-nao-se-apaga.test.ts` (`describe('0082 · client_cycles...')`, "client_cycles:
+DELETE não passa") prova que um `DELETE` em `client_cycles` é bloqueado por RLS para o cliente de
+SESSÃO — um `.delete()` ali dentro de `arquivarServico` (que usa `criarClienteDoUsuario()`, sessão)
+teria devolvido sucesso com ZERO linhas, silenciosamente, exatamente a armadilha que o próprio
+comentário daquele arquivo de teste nomeia. Mas `eliminarCliente` roda SEMPRE com `service_role`
+(`withTenant`/`withNovoTenant`, confirmado nas duas chamadas: `erase/route.ts` e
+`lgpd-retention/route.ts`) — RLS não se aplica, o `DELETE` funciona de verdade. `tsc`/`eslint`/
+`pnpm test:unit` (292/2532) verdes; sem `test:rls`/`test:integration` (Docker indisponível), mas a
+mudança não altera nenhuma política nem tabela, só adiciona um `DELETE` extra num caminho que já é
+service_role — CI confirma ao vivo no push.
+
+**O que continua em aberto:** o gatilho do serviço arquivado (`arquivarServico`, sessão) não tem
+este atalho — precisaria elevar a UMA chamada específica para `service_role` dentro de uma função
+que hoje só usa o `db` de sessão (padrão que existe em outras partes da base, ex. `media.ts`,
+`portfolio.ts`, mas não tentado aqui ainda por prudência: é uma mudança mais delicada que a de
+`eliminarCliente`, que já usa service_role NA FUNÇÃO INTEIRA). E `v_clientes_a_recuperar` continua
+sem `clients`/`services` no escopo — então mesmo com o conserto de hoje, uma cliente eliminada
+enquanto o alerta do Hoje ainda não recalculou (ou um serviço arquivado, gatilho 1) ainda pode
+aparecer até a próxima leitura. As duas migrations de view seguem bloqueadas por falta de Docker.
