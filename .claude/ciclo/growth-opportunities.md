@@ -217,7 +217,7 @@
 
 ---
 
-## GO-6 · Sem re-engajamento automático para quem cria conta e não termina o onboarding
+## GO-6 · Sem re-engajamento automático — onboarding abandonado, e depois, dono inativo
 
 - **Problema:** confirmada, na missão de onboarding/ativação (2026-09-20/21), a ausência de
   qualquer mecanismo automático que traga de volta quem criou conta (às vezes até confirmou o
@@ -247,6 +247,18 @@
 - **Recomendação:** **não implementar agora.** Registrar e esperar GO-0 confirmar que esta borda
   específica (conta criada, onboarding abandonado) tem volume que justifique o esforço — construir
   a cadência errada, sem dado, é pior que não ter nenhuma.
+- **Adendo (2026-09-21):** o mesmo vazio existe um degrau adiante, para quem JÁ terminou o
+  onboarding e é dono ativo. `notificarEquipe` (`mensageria.ts`) é o único push que chega ao
+  DONO (não ao cliente final) — confirmado lendo os dois únicos chamadores em todo `src`:
+  `orcamentos.ts` (orçamento novo) e `public-booking.ts` (agendamento público novo). Os dois são
+  REATIVOS, disparados por uma ação do cliente. Não existe nenhum push PROATIVO — "bom dia, você
+  tem 4 atendimentos hoje", "3 orçamentos parados esperando resposta" — que traga de volta quem
+  não abre o app por hábito. Mesma classe de gap do problema principal desta entrada (falta
+  mecanismo agendado que puxa a pessoa de volta), só numa etapa mais adiante do funil
+  (retenção do dono ativo, não conversão do cadastro abandonado) — registrado aqui em vez de
+  como GO separado porque a causa raiz e a decisão de implementar são as mesmas: falta cron
+  agendado + decisão de cadência, e `ROTAS_AGENDADAS` confirma que HOJE só `recompute-cycles`/
+  `segments` rodam sozinhas — nenhuma rota de mensageria roda sem alguém disparar manualmente.
 - **Status:** registrado, 2026-09-21, bloqueado pela mesma dependência de GO-0/GO-3/GO-4.
 
 ---
