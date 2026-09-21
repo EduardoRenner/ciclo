@@ -5,6 +5,7 @@ import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { lerCorpo } from '@/server/http/body'
 import { rota } from '@/server/http/handler'
 import { comIdempotencia } from '@/server/http/idempotency'
+import { registrarPrimeiraOcorrencia } from '@/server/services/product-events'
 import { cadastrarQuemJaAtendo, EsquemaQuemJaAtendo } from '@/server/services/quem-ja-atendo'
 
 /**
@@ -31,6 +32,18 @@ export const POST = rota(async (req, _params, requestId) => {
   const resultado = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: '/api/v1/clients/ja-atendo' }, () =>
     cadastrarQuemJaAtendo(db, ctx.tenantId, entrada),
   )
+
+  /*
+   * G-05b (docs/60): "base_importada" ainda represado, até este par (G-05a) provar que
+   * `product_events` grava em produção de verdade — confirmado em 2026-09-16 (`docs/DECISOES.md`,
+   * "Banco de produção em dia"). Marco de UMA vez por tenant: só conta o PRIMEIRO lote de verdade
+   * (`cadastrados > 0`), não a manutenção semanal de "retornos" nem um envio vazio.
+   */
+  if (resultado.cadastrados > 0) {
+    // `await`, não fire-and-forget: função serverless pode ser encerrada assim que a resposta sai,
+    // e uma promise solta corre o risco de nunca terminar de escrever — mesma razão de `conta_criada`.
+    await registrarPrimeiraOcorrencia(db, ctx.tenantId, 'base_importada', { via: 'ja_atendo', cadastrados: resultado.cadastrados })
+  }
 
   await writeAudit(
     {

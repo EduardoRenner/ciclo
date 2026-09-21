@@ -39,6 +39,21 @@
 - **Dependências:** acesso a credenciais de produção (`SUPABASE_SERVICE_ROLE_KEY` real).
 - **Status:** **bloqueado por acesso, não por trabalho pendente** — a única ação que falta em todo
   este documento é alguém com acesso configurado rodar um script que já existe.
+- **Atualização (2026-09-21, missão de onboarding/ativação):** achado investigando outra coisa —
+  existe uma SEGUNDA via de instrumentação, além do script, e mais simples ainda. `product_events`
+  (migration `0088`, `docs/60` G-05a) já grava dois eventos em produção: `conta_criada` (fim do
+  onboarding, `onboarding.ts`) e `motor_viu_valor` (primeira vez que `/admin/hoje` mostra
+  atribuição do Motor — o AHA MOMENT desta missão, com `registrarPrimeiraOcorrencia` garantindo
+  que é a PRIMEIRA ocorrência, não repetida). `docs/DECISOES.md` (2026-09-16, "Banco de produção
+  em dia") confirma que as migrations `0088-0091` estão aplicadas em produção — a preocupação que
+  o próprio `docs/60`/`docs/63` registravam ("ainda não aplicada") já foi resolvida antes desta
+  missão. Consequência prática: há aproximadamente 5 dias de dado real de `product_events` já
+  acumulado em produção, consultável com um `SELECT` simples — mais rápido que rodar o script
+  completo de `metricas-ativacao.mjs`, para quem só quer uma primeira resposta de "quantas contas
+  criadas viraram 'o Motor mostrou valor'" antes de rodar a medição inteira. G-05b (os outros 4
+  eventos: `base_importada`, `recuperacao_enviada`, `cliente_voltou`, `onboarding_ok`) continua sem
+  implementar — oportunidade de extensão de BAIXO risco, porque o padrão (`registrarEvento`/
+  `registrarPrimeiraOcorrencia`, nunca lança, já em produção) está provado com os dois primeiros.
 
 ---
 

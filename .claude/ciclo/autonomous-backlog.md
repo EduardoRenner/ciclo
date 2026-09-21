@@ -945,3 +945,46 @@ tocar validação de entrada em toda rota de API com parâmetro `[id]`.
     Observei o teste reprovar ANTES do ajuste e passar DEPOIS, satisfazendo a disciplina de
     teste-guarda do CLAUDE.md organicamente (não precisei mutar de propósito).
 - **Verificação:** `tsc`/`eslint`/`pnpm test:unit` (292/2531) verdes.
+
+---
+
+### BL-39 · `base_importada` (G-05b) implementado nas duas portas de entrada da base antiga — FEITO
+
+- **Contexto (achado maior que o código em si):** investigando `executarOnboarding`, achei
+  `registrarEvento(svc, tenant.id, 'conta_criada', ...)` — e isso revelou `product_events`
+  (migration `0088`, `docs/60` G-05a), uma tabela de instrumentação de funil HOMEGROWN que
+  `funnel.md` (pesquisa desta mesma sessão, fase anterior) não tinha creditado — aquele documento
+  conferiu corretamente que não há SDK de analytics de TERCEIRO (PostHog/GA/etc.), mas não achou
+  este mecanismo próprio. Confirmado por leitura: DOIS eventos já gravam em produção —
+  `conta_criada` (fim do onboarding) e `motor_viu_valor` (primeira vez que `/admin/hoje` mostra
+  atribuição do Motor — o AHA MOMENT desta missão). `docs/DECISOES.md` (2026-09-16, "Banco de
+  produção em dia") confirma que a migration `0088` está aplicada em produção — a preocupação que
+  o próprio `docs/60` registrava ("ainda não aplicada") já foi resolvida antes desta missão.
+  Detalhe registrado em `growth-opportunities.md` GO-0.
+- **Conserto/extensão:** dos quatro eventos G-05b represados (`base_importada`,
+  `recuperacao_enviada`, `cliente_voltou`, `onboarding_ok`), implementado o que mais responde
+  diretamente à hipótese do GO-4 ("quem usa `ja-atendo`/`importar` ativa o Motor mais rápido —
+  precisa medir"): `base_importada`, nas DUAS portas de entrada da base antiga —
+  `clients/ja-atendo/route.ts` (só quando `cadastrados > 0`, não dispara na manutenção semanal de
+  "retornos" nem em envio vazio) e `clients/import/route.ts` (CSV, só quando `imported > 0`) —
+  `meta: { via: 'ja_atendo' | 'csv', ... }` distingue qual porta foi usada, sem misturar os dois
+  em um evento genérico.
+- **`registrarPrimeiraOcorrencia`, não `registrarEvento`:** marco de UMA vez por tenant — o
+  primeiro lote de verdade, não toda vez que a tela é usada depois.
+- **`await`, não fire-and-forget:** ao contrário do `motor_viu_valor` em `/admin/hoje` (que usa
+  `after()` do Next.js por estar no caminho crítico de renderização da tela mais aberta do
+  produto), estas duas rotas não têm a mesma pressão de latência — e uma função serverless pode
+  encerrar assim que a resposta sai, deixando uma promise solta sem terminar de escrever. Mesmo
+  padrão de `conta_criada` (também `await`).
+- **RLS conferida antes de implementar, não suposta:** `product_events_insert` (migration 0088)
+  permite `insert` para quem `has_tenant(tenant_id)` — o client de SESSÃO do usuário (`db`, não
+  `svc`/service_role) já grava sem problema, diferente de `conta_criada` que precisa de
+  service_role por rodar ANTES de existir membership.
+- **Efeito colateral seguro de idempotência:** as duas rotas retentam via `Idempotency-Key`
+  (`ja-atendo` com `comIdempotencia`, `import` na lista `ISENTAS` por ser multipart) — numa
+  repetição, o código depois do envelope roda de novo e chama `registrarPrimeiraOcorrencia` de
+  novo, mas a própria função já é seguro-para-repetir (confere ocorrência prévia antes de
+  inserir), então não duplica o evento.
+- **Verificação:** `tsc`/`eslint`/`pnpm test:unit` (292/2531) verdes. Sem verificação ao vivo em
+  produção (não é este agente que decide isso) — o efeito só é observável quando alguém consultar
+  `product_events` depois do deploy.

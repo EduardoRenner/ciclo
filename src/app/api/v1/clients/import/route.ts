@@ -6,6 +6,7 @@ import { lerJson } from '@/server/http/body'
 import { AppError } from '@/server/http/errors'
 import { rota } from '@/server/http/handler'
 import { EsquemaMapeamento, importarClientes } from '@/server/services/importacao-clientes'
+import { registrarPrimeiraOcorrencia } from '@/server/services/product-events'
 
 const TAMANHO_MAXIMO = 5 * 1024 * 1024
 
@@ -32,6 +33,15 @@ export const POST = rota(async (req, _ctx, requestId) => {
   const db = await criarClienteDoUsuario()
 
   const resultado = await importarClientes(db, ctx.tenantId, texto, mapeamento)
+
+  /*
+   * G-05b (docs/60): mesmo marco de `clients/ja-atendo/route.ts` — "base_importada" pela outra
+   * porta de entrada (CSV em vez de digitado de memória). `registrarPrimeiraOcorrencia` garante
+   * que só a PRIMEIRA importação de verdade conta, não uma correção posterior.
+   */
+  if (resultado.imported > 0) {
+    await registrarPrimeiraOcorrencia(db, ctx.tenantId, 'base_importada', { via: 'csv', importados: resultado.imported })
+  }
 
   await writeAudit(
     {
