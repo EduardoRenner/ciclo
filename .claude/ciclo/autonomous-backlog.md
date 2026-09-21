@@ -1268,3 +1268,31 @@ lista.)
   que arquive um serviço com clientes atrasados nele começa a ver esse serviço "fantasma" na lista
   de recuperação e no alerta do Hoje, sem prazo de expiração. Para quando o Eduardo revisar ou
   Docker local voltar — junta-se a T5b/F3/T6 do `docs/73` na mesma fila de bloqueio.
+
+**Adendo, mesma sessão — o mesmo defeito tem um SEGUNDO gatilho independente, não só serviço arquivado.**
+
+`eliminarCliente` (`lgpd.ts:222-389`, `POST .../erase`, o botão real de "esquecer esta cliente" da
+ficha) redige e anonimiza a cliente (`name: 'Cliente eliminada'`, `deleted_at: agora`) mas — igual
+ao `arquivarServico` — nunca toca `client_cycles`. Conferido: `grep -n "client_cycles"
+lgpd.ts` não acha nada, `TABELAS_APAGADAS` (`client_notes`, `waitlist`, `portfolio_photos`) não
+inclui `client_cycles`, e não existe FK `on delete cascade` nem trigger em nenhuma migration
+ligando as duas tabelas — nem faria diferença, porque a linha de `clients` **sobrevive** (LGPD aqui
+é redação, não `DELETE`; o vínculo técnico com `appointments`/`payments` precisa sobreviver pela
+obrigação fiscal, conforme o próprio docstring do arquivo). O job noturno lê `appointments` sem
+filtrar `clients.deleted_at`, então continua computando `client_cycles` fresco para "Cliente
+eliminada" indefinidamente, do mesmo jeito exato do serviço arquivado.
+
+**A assimetria entre as duas views agora fica mais nítida ainda:** `v_recover_revenue` JÁ filtra
+`c.deleted_at is null` no join com `clients` — então uma cliente eliminada corretamente SOME da
+lista "Recuperar receita". Mas `v_clientes_a_recuperar` (o alerta do Hoje) não tem `clients` no
+escopo nenhum, então ela continua contando essa cliente eliminada no "N clientes sumindo · R$X em
+risco" — **as duas telas voltam a se contradizer uma à outra**, o mesmo sintoma exato que motivou
+criar `v_clientes_a_recuperar` na `0058` (*"o alarme da tela inicial levava para uma lista que
+mostrava outro número"*), só que por uma causa nova.
+
+Isto não é um BL-49 separado — é a MESMA correção, item 3 da lista de três partes acima
+(redesenhar `v_clientes_a_recuperar` para ter um filtro de exclusão que hoje ela não tem em
+lugar nenhum): o serviço arquivado e a cliente eliminada são dois gatilhos diferentes para o
+mesmo buraco de desenho — "esta view nunca filtra por nada além de `client_cycles.state`, porque
+nunca teve outra tabela no escopo." Resolver um sem o outro deixaria o segundo sintoma vivo com a
+mesma cara de consertado.
