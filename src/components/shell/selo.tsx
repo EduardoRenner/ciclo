@@ -1,6 +1,7 @@
 import Image from 'next/image'
 
 import wordmark from '../../../public/marca/ciclo-wordmark-aqua.png'
+import wordmarkClaro from '../../../public/marca/ciclo-wordmark-aqua-claro.png'
 
 /**
  * Marca do CICLO — o uróboros: anel aberto com cabeça de seta, lê `C` num
@@ -28,7 +29,19 @@ import wordmark from '../../../public/marca/ciclo-wordmark-aqua.png'
  * (as três telas que usam este componente) carregavam uma imagem de 3840px
  * de largura pra mostrar 157px. `page.tsx` (landing) já tinha o mesmo
  * conserto (`sizes="70px"` pro símbolo pequeno, h-7) — faltava aqui.
+ *
+ * Dois arquivos, mesmo mecanismo do `topbar.tsx`: o "iclo" do wordmark padrão é quase branco e
+ * some contra fundo claro — medido ao vivo forçando `/entrar` para `[data-theme="light"]`, achado
+ * ao preparar `/onboarding` para ficar sempre clara (`onboarding/layout.tsx`). Até então nenhuma
+ * tela que usa `Selo` tinha tema claro, então o segundo arquivo (`ciclo-wordmark-aqua-claro.png`,
+ * já existia no repo) nunca tinha sido ligado aqui. O CSS (`globals.css`,
+ * `.marca-no-escuro`/`.marca-no-claro`) mostra um por vez conforme o `data-theme` do ancestral.
  */
 export default function Selo() {
-  return <Image src={wordmark} alt="CICLO" priority sizes="160px" className="h-16 w-auto" />
+  return (
+    <>
+      <Image src={wordmark} alt="CICLO" priority sizes="160px" className="marca-no-escuro h-16 w-auto" />
+      <Image src={wordmarkClaro} alt="" aria-hidden priority sizes="160px" className="marca-no-claro h-16 w-auto" />
+    </>
+  )
 }
