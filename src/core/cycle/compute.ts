@@ -75,6 +75,7 @@ export function computeCycle(entrada: EntradaComputeCycle): ResultadoComputeCycl
     return { personalCycleDays: defaultCycleDays, predictedDate: today, lateDays: 0, state: 'on_track' }
   }
 
+  // 1. gaps = diferenças em dias entre atendimentos consecutivos.
   const gapsBrutos: number[] = []
   for (let i = 1; i < history.length; i++) {
     gapsBrutos.push(history[i]!.date.since(history[i - 1]!.date).total('days'))
@@ -96,11 +97,14 @@ export function computeCycle(entrada: EntradaComputeCycle): ResultadoComputeCycl
   // 4. clamp entre 0,5× e 2,5× o padrão — um outlier não pode esticar o ciclo pra sempre.
   personalCycleDays = Math.min(Math.max(personalCycleDays, 0.5 * defaultCycleDays), 2.5 * defaultCycleDays)
 
+  // 5. predictedDate = último atendimento + personalCycleDays.
   const ultimoAtendimento = history[history.length - 1]!.date
   const predictedDate = ultimoAtendimento.add({ days: Math.round(personalCycleDays) })
+  // 6. lateDays = hoje − predictedDate.
   const lateDays = today.since(predictedDate).total('days')
 
-  // 8. agendamento futuro já marcado: não incomodar quem já vai voltar.
+  // 7. estado, pelas faixas de `estadoPorAtraso` — 8. agendamento futuro já marcado: não
+  // incomodar quem já vai voltar (sobrepõe o resultado do passo 7).
   const state = entrada.hasFutureAppointment ? 'on_track' : estadoPorAtraso(lateDays)
 
   return { personalCycleDays, predictedDate, lateDays, state }
