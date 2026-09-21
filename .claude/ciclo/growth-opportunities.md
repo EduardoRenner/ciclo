@@ -217,6 +217,40 @@
 
 ---
 
+## GO-6 · Sem re-engajamento automático para quem cria conta e não termina o onboarding
+
+- **Problema:** confirmada, na missão de onboarding/ativação (2026-09-20/21), a ausência de
+  qualquer mecanismo automático que traga de volta quem criou conta (às vezes até confirmou o
+  e-mail) mas nunca respondeu as três perguntas do onboarding. A pessoa simplesmente some do funil,
+  sem nenhum toque do produto.
+- **Evidência:** `ROTAS_AGENDADAS` (`core/cron/agendadas.ts`) confirma só `recompute-cycles` e
+  `segments` rodam sozinhas em produção — `campaigns`/`reminders`, os únicos mecanismos de
+  mensagem automática que existem no código, são `workflow_dispatch` (manual), e nenhum dos dois
+  tem lógica voltada para "conta criada, onboarding não terminado" de qualquer forma — são para
+  CLIENTE FINAL de um tenant já operando, não para o PRÓPRIO dono no meio do cadastro.
+- **Segmento:** todos.
+- **Etapa do funil:** signup → onboarding (a mesma borda que BL-37/BL-38 já mexeram, por outro
+  lado da fricção).
+- **Impacto potencial:** desconhecido sem GO-0 — mas é a classe de intervenção com o ROI mais bem
+  documentado do mercado de onboarding (e-mail de "você começou algo, volte") justamente por
+  travar num ponto de decisão já demonstrado (a pessoa criou conta, então já cruzou a barreira de
+  confiança inicial).
+- **Esforço estimado:** médio-alto — não é um `console.warn` a mais. Precisa de: um cron novo
+  (ou estender um existente) que identifique contas sem `memberships` ativa N horas depois do
+  cadastro, um template de e-mail, trilha de opt-out, e decisão de produto sobre CADÊNCIA (quantos
+  e-mails, com que intervalo) — a mesma classe de decisão que `docs/25` F0 passo 4 já deixou para
+  o dono do produto no caso de `reminders` (mensagem automática para gente real).
+- **Risco:** baixo-médio técnico, mas real do lado de produto/LGPD — mandar e-mail para alguém que
+  desistiu do cadastro é uma decisão de tom e frequência que erra fácil para o lado do spam.
+- **Confiança:** média — o gap em si é fato (confirmado por leitura de código); que ele CAUSA perda
+  de conversão relevante é hipótese razoável, não medida (depende de GO-0 para virar decisão).
+- **Recomendação:** **não implementar agora.** Registrar e esperar GO-0 confirmar que esta borda
+  específica (conta criada, onboarding abandonado) tem volume que justifique o esforço — construir
+  a cadência errada, sem dado, é pior que não ter nenhuma.
+- **Status:** registrado, 2026-09-21, bloqueado pela mesma dependência de GO-0/GO-3/GO-4.
+
+---
+
 ## Agrupamento por área (visão consolidada)
 
 | Área | Oportunidades |
