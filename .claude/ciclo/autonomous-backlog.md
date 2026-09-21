@@ -1318,3 +1318,43 @@ implementar. Revertido imediatamente ao ver o job vermelho; `main` está verde d
 (`9bf0d1b8`). O gatilho da eliminação LGPD volta ao estado "registrado, não implementado", igual
 ao do serviço arquivado — as duas partes precisam da mesma investigação com Postgres local antes de
 qualquer novo commit tocando `client_cycles`.
+
+---
+
+### BL-49 · CRÍTICO, CONSERTADO · `/cadastro` derrubava para TODO MUNDO desde a BL-38
+
+- **O que era:** `cadastro/formulario.tsx` (BL-38, "reenviar e-mail de confirmação", commit
+  `07212490`, mais cedo NESTA sessão) chama `useToast()` incondicionalmente no topo do componente.
+  `useToast()` lança de propósito quando não há `<ToastProvider>` na árvore ("nunca some calado",
+  `toast.tsx:18`). **Nenhuma tela sem sessão (`/`, `/entrar`, `/cadastro`, `/onboarding`) embrulha
+  em `ToastProvider`** — só `admin/layout.tsx` faz isso. Resultado: a PRIMEIRA renderização de
+  `/cadastro`, em produção, para qualquer visitante, lançava e caía no `error.tsx` ("Algo saiu do
+  lugar"). O formulário de criar conta nunca aparecia. Confirmado reproduzido: aberto localmente
+  (`pnpm dev`, sem Supabase — o erro não depende de rede/banco, é puro erro de árvore de
+  componentes React) e o boundary de erro capturou exatamente essa mensagem, apontando
+  `<FormularioCadastro>`.
+- **Por que ninguém pegou antes:** `tsc`/`eslint`/`pnpm test:unit` não renderizam a árvore React de
+  verdade (nenhum usa React Testing Library nesta base) — os três ficaram verdes o tempo todo desde
+  a BL-38. `tests/integration` cobriria isto SE existisse um teste que abrisse `/cadastro` de
+  verdade, mas a família de testes desta base é majoritariamente API/banco, não renderização de
+  página. Achado só ao abrir a tela no navegador — o mesmo motivo que motivou a sessão a manter o
+  hábito de verificação visual sempre que Docker permite.
+- **Conserto:** `TelaPublica` (`components/shell/tela-publica.tsx`), o shell compartilhado pelas
+  quatro telas sem sessão, agora embrulha `{children}` em `<ToastProvider>` — fecha a CLASSE do
+  defeito (qualquer tela sem sessão que ganhar um `useToast()` no futuro já funciona), não só o
+  caso encontrado. Efeito colateral corrigido no mesmo commit: o viewport do toast (`toast.tsx`)
+  supõe o chrome do painel (`--tabbar-h`, `--sidebar-w`) que não existe fora do `/admin` — zerado
+  no mesmo wrapper via CSS custom property (`style={{ '--tabbar-h': '0px', '--sidebar-w': '0px' }}`,
+  padrão já usado em `[slug]/layout.tsx`), senão o aviso nasceria com folga de sobra no celular e
+  deslocado 232px da centralização no monitor.
+- **Verificação:** ao vivo no navegador — `/cadastro` volta a renderizar o formulário completo;
+  `/entrar` e `/` continuam idênticos (sem regressão, wrapper extra é transparente). `tsc`/`eslint`/
+  `pnpm test:unit` (292/2532) verdes. CI verde no push (commit `31979eda`).
+- **Impacto estimado:** desde o deploy de `07212490` (mais cedo nesta mesma sessão) até este
+  conserto, `/cadastro` esteve inacessível para qualquer visitante novo tentando criar conta —
+  provavelmente **zero cadastros novos possíveis nesse intervalo**, sem nenhum alarme, porque não
+  existe monitoramento de "a página de conversão renderiza de verdade" nesta base (o mesmo
+  vocabulário de "verde não é prova" já registrado no `CLAUDE.md`, agora numa tela em vez de num
+  job). Não dá para saber quanto tempo o deploy real ficou assim sem checar o histórico de deploys
+  da Vercel contra o horário do commit — fora do alcance desta sessão.
+- **Status:** feito.
