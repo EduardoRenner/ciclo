@@ -882,38 +882,30 @@ tocar validação de entrada em toda rota de API com parâmetro `[id]`.
 > BL-N; achados de pesquisa pura (sem código) ficam também espelhados em `growth-opportunities.md`
 > quando se conectam a uma oportunidade já registrada lá.
 
-### BL-37 · `/admin/clientes/ja-atendo` — a porta pra maioria do público, sem NENHUM link no painel — FEITO (parcial)
+### BL-37 · `/admin/clientes/ja-atendo` — alcançável só na janela estrita de "conta 100% virgem", não depois — FEITO, achado original corrigido
 
-- **Problema:** `/admin/clientes/ja-atendo` é a tela que deixa o dono trazer quem já atende, com a
-  data da última visita, SEM planilha — a própria página documenta no código ser "a porta da base
-  para quem NÃO tem planilha — que é a MAIORIA do público do produto" (barbeiro, manicure,
-  depiladora têm a clientela nos contatos do celular, não numa lista). Sem essa data, o Motor de
-  Ciclo nasce vazio e passa 2-3 meses (`docs/46`) esperando cada cliente voltar pela segunda vez
-  antes de prever qualquer coisa — o "vale da morte" entre ativação e retenção que `growth-
-  opportunities.md` GO-4 já tinha registrado como hipótese.
-- **Causa raiz, não suposta — confirmada:** `grep -rn "ja-atendo" src/app` mostrou ZERO ocorrências
-  fora da própria pasta da página. Nenhum `Link`, nenhum botão, nenhuma menção em `clientes/
-  lista.tsx`, `hoje.tsx`, `onboarding/`, em lugar nenhum. Só alcançável digitando a URL de cabeça.
-  Em contraste, `/admin/clientes/importar` (CSV, a porta para a MINORIA que já tem planilha) está
-  linkada em `clientes/lista.tsx` desde o F2 (`docs/25`). A cadastro de cliente único
-  (`/admin/clientes/nova`) também não captura data de última visita — confirmado lendo o
-  formulário — então `ja-atendo` era genuinamente o ÚNICO caminho sem planilha, e ele não existia
-  na prática.
-- **Por que isto fecha a hipótese do GO-4 em vez de só confirmá-la:** o GO-4 já apontava "aumentar
-  a taxa de quem usa `ja-atendo`" como a alavanca certa — mas isto não era um problema de destaque
-  de copy (que instrumentação/A-B testing resolveria) e sim um link que nunca existiu. Nenhum
-  evento de analytics apontaria essa causa — só leitura de código achou.
-- **Conserto (parcial — ver pendência abaixo):** link adicionado ao estado vazio de `clientes/
-  lista.tsx`, ANTES do link de CSV (mesma ordem de prioridade que o próprio `ja-atendo/page.tsx`
-  já estabelece no rodapé dele: "a outra porta, no rodapé e não no topo"). Markup em dois `<p>`
-  (não `<br />` — único uso do padrão em todo `src/app`, corrigido antes de commitar para não
-  introduzir um precedente novo sozinho).
-- **Pendência, não implementada nesta rodada:** o nudge mais valioso seria no PRIMEIRO carregamento
-  de `/admin/hoje` logo após o onboarding — é literalmente a primeira tela que a pessoa vê. Não
-  implementado porque exigiria um sinal novo ("tenant nunca teve nenhum cliente") que
-  `resumoDeHoje` (`server/services/resumo-hoje.ts`) não calcula hoje, e essa função já foi
-  corrigida uma vez por regressão de latência (`docs/28-LATENCIA-DE-CLIQUE-PLANO.md`, achado
-  "Hoje bloqueava por evento de funil") — adicionar uma consulta nova ali sem poder medir o
-  impacto ao vivo (Docker indisponível nesta sessão) é risco desnecessário para um `/loop` que
-  já tem alternativa mais segura. Registrado para uma sessão com ambiente local disponível.
-- **Verificação:** `tsc`/`eslint`/`pnpm test:unit` (292/2531) verdes.
+- **CORREÇÃO sobre a primeira versão desta entrada:** eu tinha escrito "zero links em lugar
+  nenhum do painel", baseado em `grep -rn "ja-atendo" src/app` — que só varre `src/app`. A conta
+  estava errada: `server/services/crm.ts` (`PRIMEIROS_PASSOS`, dentro de `centralDeAcoes`) **já
+  linka `ja-atendo`** desde 2026-09-11, com a MESMA razão que eu tinha acabado de redescobrir
+  sozinho ("planilha é a minoria... a ordem segue a proporção do público"). Achado real, mas menor
+  e mais preciso do que a versão original dizia — registrando a correção em vez de deixar a
+  reivindicação inflada no histórico (a mesma disciplina de "medir, não estimar" que este projeto
+  já se cobra em outros achados).
+- **O que É verdade, confirmado lendo `centralDeAcoes` até o fim:** o card "Traga quem você já
+  atende" (→ `ja-atendo`) só aparece quando `clientes.count === 0 && agendamentos.count === 0` —
+  a condição exata de "conta 100% virgem" (linha 666 de `crm.ts`). No instante em que QUALQUER
+  cliente ou agendamento existe (inclusive um cliente de teste cadastrado por engano, ou o
+  primeiro agendamento marcado antes de importar o resto da base), essa condição vira falsa PARA
+  SEMPRE — `PRIMEIROS_PASSOS` nunca mais aparece na Central de Ações daquele tenant, mesmo que a
+  pessoa ainda não tenha trazido o resto da clientela antiga. Fora dessa janela estreita, o link
+  que eu adicionei em `clientes/lista.tsx` (estado vazio da LISTA de clientes, independente de
+  haver agendamento) é hoje o único caminho de descoberta — genuinamente novo, não redundante com
+  o que já existia.
+- **Por que a versão corrigida ainda é um achado válido, só mais estreito:** `docs/46` continua
+  valendo (2-3 meses de espera sem dado histórico) e o `growth-opportunities.md` GO-4 continua
+  parcialmente aberto — a alavanca "aumentar a taxa de quem usa `ja-atendo`" tinha DUAS lacunas,
+  não uma: a janela de "conta virgem" é frágil (qualquer ação antes de importar a fecha), e fora
+  dela não havia caminho nenhum até este commit. O conserto em `clientes/lista.tsx` (mantido,
+  verificado) resolve especificamente a segunda lacuna.
+- **Verificação:** `tsc`/`eslint`/`pnpm test:unit` (292/2531) verdes (já reportado ao pushar).
