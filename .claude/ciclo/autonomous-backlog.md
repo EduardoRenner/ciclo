@@ -1133,3 +1133,40 @@ lista.)
   nunca uma chamada real com mock) — nenhum quebra com a reordenação de execução, só com mudança
   no TEXTO das linhas que eles casam, que não mudou.
 - **Verificação:** `tsc`/`eslint`/`pnpm test:unit` (292/2531) verdes.
+
+---
+
+### BL-46 · Observação (não implementada): `resolverPrevisoes` nunca lote — e o benchmark de "10 mil/60s" não prova o contrário
+
+- **Achado:** `resolverPrevisoes` (`previsao.ts`) fecha cada previsão resolvida com um `UPDATE`
+  POR LINHA, dentro de um `for`, nunca em lote — ao contrário de `registrarPrevisoes`, a função
+  logo acima no MESMO arquivo, que faz upsert em lotes de 1000. Motivo arquitetural genuíno, não
+  descuido: cada linha fechada tem um `actual_return_on` DIFERENTE (a data real daquele retorno
+  específico), e o `.update()` do PostgREST/supabase-js só aplica o MESMO valor a todas as linhas
+  que casam um filtro — não existe "update em lote com valor por linha" nessa API sem uma RPC
+  (função no Postgres que recebe um array e faz o update dentro do banco).
+- **Por que registrar em vez de corrigir:** implementar a correção de verdade (RPC bulk-update)
+  exige migration nova + `pnpm test:rls` para confiar — indisponível nesta sessão sem Docker. Uma
+  RPC mal desenhada aqui é pior que o padrão atual: `resolverPrevisoes` já tem CAS por linha
+  (`.eq('id', aberta.id).is('resolved_at', null)`, comentado com cuidado) contra corrida entre
+  execuções simultâneas — uma versão em lote precisaria preservar exatamente essa garantia, e não
+  dá pra verificar isso sem banco de verdade.
+- **O achado mais importante não é a arquitetura, é o que o benchmark PROVA:** `tests/integration/
+  ciclo.test.ts` ("10 mil clientes recalculam em menos de 60s", citado em `TICKET-036` e repetido
+  em pelo menos três comentários deste projeto como prova de escala) cria 10.000 clientes, CADA UM
+  com exatamente UM agendamento concluído, todos novos. Ou seja: é a PRIMEIRA execução para cada
+  um — não existe `cycle_predictions` aberta prévia para `resolverPrevisoes` encontrar e fechar.
+  **O laço `for` por linha que este achado aponta como possível gargalo não é exercitado pelo
+  benchmark que "prova" que o job aguenta 10 mil clientes.** O número "<60s" é real e válido para
+  o caminho de ESCRITA NOVA (`registrarPrevisoes`, já em lote) — não diz nada sobre o caminho de
+  RESOLUÇÃO em um tenant com muitas previsões abrindo e fechando ao mesmo tempo (ex.: depois de uma
+  campanha de recuperação bem-sucedida, muita gente volta na mesma semana).
+- **Recomendação para quem pegar isto com Docker disponível:** (1) medir `resolverPrevisoes`
+  isoladamente com N previsões abertas simultâneas antes de decidir se vale a RPC; (2) se valer,
+  desenhar a RPC preservando o CAS por linha (não um `UPDATE ... WHERE id = ANY(...)` simples, que
+  perderia a proteção contra corrida); (3) considerar se o cenário realista (quantas previsões
+  resolvem no MESMO dia, para o MESMO tenant) sequer chega perto de importar na escala atual do
+  produto (~12 tenants, por achado anterior desta sessão).
+- **Status:** registrado, não implementado. Achado por leitura cuidadosa comparando o que o
+  benchmark REALMENTE constrói contra o que ele é citado como provando — não por medição direta
+  (impossível nesta sessão).
