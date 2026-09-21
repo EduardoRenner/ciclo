@@ -1358,3 +1358,32 @@ qualquer novo commit tocando `client_cycles`.
   job). Não dá para saber quanto tempo o deploy real ficou assim sem checar o histórico de deploys
   da Vercel contra o horário do commit — fora do alcance desta sessão.
 - **Status:** feito.
+
+---
+
+### BL-50 · Observação (não implementada): aceite dos termos não tem versão rastreável por conta
+
+- **Achado, ao revisar `/termos` (pedido do Eduardo, BL feito nesta mesma sessão):** a página
+  afirma "ao criar uma conta, você concorda com estes termos" — aceite implícito pelo ato de
+  contratar, decisão já documentada no próprio arquivo (`termos/page.tsx`: "a lei brasileira aceita
+  o aceite pelo próprio ato de contratar quando os termos estão à vista, e uma caixa a mais num
+  formulário de quatro campos é atrito que não protege ninguém"). Essa decisão contra checkbox
+  continua válida — não é o achado.
+- **O que falta, e é mais estreito do que parece:** `tenants.created_at` existe (`0001_initial.sql`)
+  e dá o carimbo de "quando esta conta nasceu" — a evidência mínima de aceite JÁ existe. O que não
+  existe é ligação explícita entre esse carimbo e QUAL VERSÃO dos termos estava no ar naquele dia.
+  `ATUALIZADO_EM` (`termos/page.tsx`) é só uma string legível ("21 de setembro de 2026"), sem
+  histórico versionado em banco — reconstruir "o que os termos diziam quando a conta X nasceu"
+  hoje exige cruzar `tenants.created_at` com `git log`/`git blame` de `termos/page.tsx`, à mão.
+  Funciona, mas não é uma consulta, é uma investigação manual.
+- **Por que registrar em vez de corrigir:** a solução completa (uma tabela `terms_versions` com
+  `vigente_desde`, e talvez uma coluna em `tenants` gravando qual versão estava ativa no momento do
+  cadastro) é migration — mesma categoria de mudança que esta sessão inteira tem evitado sem
+  Postgres real para provar contra RLS/`test:integration`. Não é urgente: hoje só existe UMA versão
+  dos termos desde que a página nasceu (30/08) mais a ampliação de hoje (21/09) — o histórico do git
+  já cobre o caso real, só não de forma consultável.
+- **Quando isto passa a importar de verdade:** na terceira ou quarta mudança de termos, quando "o
+  que valia quando o Fulano assinou" deixar de ser uma pergunta hipotética. Vale revisitar então,
+  não antes — construir versionamento para um problema que ainda não aconteceu seria a mesma classe
+  de erro já registrada nesta base para suavização de régua sem sintoma medido.
+- **Status:** registrado, não implementado.
