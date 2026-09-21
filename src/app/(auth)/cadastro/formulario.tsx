@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import Button from '@/components/ui/button'
 import Input from '@/components/ui/input'
@@ -16,6 +16,19 @@ export default function FormularioCadastro() {
   const [enviado, setEnviado] = useState(false)
   const [emailEnviado, setEmailEnviado] = useState('')
   const [reenviando, setReenviando] = useState(false)
+  const confirmacaoRef = useRef<HTMLParagraphElement>(null)
+
+  /*
+   * O formulário inteiro é substituído pela confirmação sem trocar de rota — a mesma armadilha do
+   * CLAUDE.md ("trocar conteúdo sem avisar quem usa leitor de tela"), só que numa transição ÚNICA
+   * (submeter uma vez), não repetida como filtro/busca. Para uma troca única com conteúdo novo
+   * relevante — e agora um botão "Reenviar e-mail" que ninguém acha sem ver a tela — mover o foco
+   * para a mensagem é o padrão certo (o leitor de tela anuncia o texto ao focar), não uma região
+   * `aria-live` (essa é para atualização passiva; aqui a pessoa acabou de agir).
+   */
+  useEffect(() => {
+    if (enviado) confirmacaoRef.current?.focus()
+  }, [enviado])
 
   async function enviar(formData: FormData) {
     setPendente(true)
@@ -77,7 +90,7 @@ export default function FormularioCadastro() {
   if (enviado) {
     return (
       <div className="flex max-w-sm flex-col items-center gap-3 text-center">
-        <p className="text-corpo text-txt">
+        <p ref={confirmacaoRef} tabIndex={-1} className="text-corpo text-txt">
           Quase lá! Mandamos um link de confirmação para <span className="font-semibold">{emailEnviado}</span>. Abra a mensagem e clique nele
           para continuar.
         </p>

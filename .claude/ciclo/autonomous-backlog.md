@@ -1077,3 +1077,30 @@ por ambiguidade de especificação.
   o comportamento atual (auditoria com duplicata rara em retry é um trade-off, não necessariamente
   um defeito, dependendo de quão seriamente a trilha é usada para contagem exata versus só "o que
   aconteceu, aproximadamente quando").
+
+---
+
+### BL-43 · Cadastro: confirmação substituía o formulário sem avisar quem usa leitor de tela — FEITO
+
+- **Achado numa segunda leitura do próprio BL-38** (revisão deliberada, não relatado por ninguém).
+  Quando `enviado` vira `true`, o formulário inteiro (nome/e-mail/telefone/senha) é substituído
+  pela mensagem de confirmação — sem troca de rota, sem `aria-live`, sem mover foco. Quem usa
+  leitor de tela e acabou de submeter o cadastro não é avisado que algo mudou na tela, e só
+  descobriria o novo botão "Reenviar e-mail" (BL-38) se tabulasse até ele por acaso.
+- **Por que não é a mesma receita de `aria-live` do CLAUDE.md:** a armadilha documentada é sobre
+  conteúdo que muda REPETIDAMENTE (filtro, busca) enquanto a pessoa seria continua na mesma tela
+  interagindo. Aqui é uma transição ÚNICA depois de uma ação explícita (submeter) — o padrão certo
+  é mover o FOCO para o conteúdo novo (o leitor de tela anuncia o texto ao focar), não uma região
+  passiva. Verificado que não existe precedente deste padrão específico no projeto antes de
+  escolher a técnica (`ref` + `tabIndex={-1}` + `focus()` em `useEffect`) — é padrão comum e de
+  baixo risco, mesmo sem precedente local.
+- **Cuidado no CSS:** a primeira versão tirava o `outline` do elemento focado (`outline-none`) —
+  reconsiderado antes de commitar: quem usa teclado+leitor de tela ao mesmo tempo (combinação
+  comum, não hipotética) perde a pista visual de onde o foco foi. Mantido o outline padrão.
+- **Verificação:** `tsc`/`eslint`/`pnpm test:unit` (292/2531) verdes. Sem verificação em navegador
+  real (Docker indisponível) — mudança aditiva de baixo risco (só `ref`/`tabIndex`/`useEffect`,
+  sem tocar lógica existente).
+
+**Segunda vez nesta sessão que reler o próprio trabalho recém-commitado (BL-42, BL-43) achou algo
+que a implementação original não tinha coberto** — confirma que vale a pena a "segunda iteração"
+que a missão original pediu, não só a primeira passada.
