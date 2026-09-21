@@ -50,10 +50,21 @@
   missão. Consequência prática: há aproximadamente 5 dias de dado real de `product_events` já
   acumulado em produção, consultável com um `SELECT` simples — mais rápido que rodar o script
   completo de `metricas-ativacao.mjs`, para quem só quer uma primeira resposta de "quantas contas
-  criadas viraram 'o Motor mostrou valor'" antes de rodar a medição inteira. G-05b (os outros 4
-  eventos: `base_importada`, `recuperacao_enviada`, `cliente_voltou`, `onboarding_ok`) continua sem
-  implementar — oportunidade de extensão de BAIXO risco, porque o padrão (`registrarEvento`/
-  `registrarPrimeiraOcorrencia`, nunca lança, já em produção) está provado com os dois primeiros.
+  criadas viraram 'o Motor mostrou valor'" antes de rodar a medição inteira.
+- **Atualização 2 (2026-09-21, mesma missão):** G-05b implementado — três dos quatro eventos
+  represados agora gravam em produção: `base_importada` (BL-39), `cliente_voltou` (BL-40),
+  `recuperacao_enviada` (BL-41). Falta só `onboarding_ok`, deliberadamente represado por
+  ambiguidade de especificação (ver BL-41, nota completa). A instrumentação do funil cobre agora
+  CINCO dos SEIS eventos planejados em `docs/60`.
+- **Oportunidade nova, ainda não puxada:** `scripts/metricas-ativacao.mjs` (a ferramenta já
+  "pronta, testada, documentada" que este GO-0 recomenda rodar) NÃO usa `product_events` —
+  deriva ativação/retenção só das tabelas de negócio (`tenants`/`appointments`/`cycle_predictions`).
+  As duas fontes são complementares, não concorrentes: `product_events` dá o INSTANTE exato de
+  cada marco (bom para "quanto tempo entre X e Y"), as tabelas de negócio dão o ESTADO atual (bom
+  para "quantos estão em tal condição hoje"). Cruzá-las deixaria a medição mais precisa — mas não
+  mexi no script: é uma ferramenta já validada, e eu não tenho como rodá-la contra produção para
+  confirmar que uma mudança não quebra nada. Registrado para quem for rodar o script pela primeira
+  vez considerar essa extensão, não para implementar às cegas.
 
 ---
 
