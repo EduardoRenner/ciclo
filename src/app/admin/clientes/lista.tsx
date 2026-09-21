@@ -236,14 +236,29 @@ export default function ListaClientes({ iniciais }: { iniciais: ClienteLinha[] }
             que o primeiro cliente é cadastrado. Aqui é onde quem tem uma lista pronta realmente
             procura "adicionar clientes". Só na busca vazia de verdade — filtro/busca sem
             resultado não tem nada a ver com importar uma planilha nova.
+
+            "Já atendo" vem ANTES do CSV, não depois: `ja-atendo/page.tsx` já documenta que é a
+            porta para quem NÃO tem planilha — a maioria (barbeiro, manicure, depiladora têm a
+            base nos contatos do celular, não numa lista). Até esta correção, essa página só era
+            alcançável digitando a URL de cabeça — nenhum link do painel levava a ela. Sem trazer
+            a data da última visita de quem já é cliente, o Motor de Ciclo nasce vazio e passa
+            meses sem o que prever, mesmo para quem já atende gente há anos.
           */}
           {!segmento && !termo ? (
-            <p className="mt-3 text-center text-secundario text-txt-2">
-              Já tem uma lista pronta?{' '}
-              <Link href="/admin/clientes/importar" className="font-semibold text-acc-2 underline underline-offset-2">
-                Importe uma planilha
-              </Link>
-            </p>
+            <div className="mt-3 flex flex-col gap-1 text-center text-secundario text-txt-2">
+              <p>
+                Já atende gente, mas não tem planilha?{' '}
+                <Link href="/admin/clientes/ja-atendo" className="font-semibold text-acc-2 underline underline-offset-2">
+                  Traga quem você já atende
+                </Link>
+              </p>
+              <p>
+                Já tem uma lista pronta?{' '}
+                <Link href="/admin/clientes/importar" className="font-semibold text-acc-2 underline underline-offset-2">
+                  Importe uma planilha
+                </Link>
+              </p>
+            </div>
           ) : null}
         </>
       ) : (

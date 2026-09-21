@@ -176,7 +176,19 @@
   usou `ja-atendo`/`importar` vs. quem não usou.
 - **Métrica de sucesso:** diferença mensurável entre os dois grupos.
 - **Dependências:** GO-0.
-- **Status:** hipótese registrada, aguardando GO-0 para virar decisão em vez de palpite.
+- **Status:** **causa raiz encontrada e corrigida, 2026-09-20/21** (missão de onboarding/ativação,
+  pedido direto do Eduardo). A hipótese acima já apontava a alavanca certa — "aumentar a TAXA de
+  quem usa `ja-atendo`" — mas a causa de a taxa ser baixa não era falta de destaque na copy: era
+  que `/admin/clientes/ja-atendo` **não tinha NENHUM link em lugar nenhum do painel**. A própria
+  página já dizia, no próprio código, ser "a porta da base para quem NÃO tem planilha — que é a
+  MAIORIA do público do produto" — e ainda assim só era alcançável digitando a URL de cabeça.
+  `admin/clientes/importar` (a porta para a MINORIA, quem já tem CSV) estava linkada de
+  `clientes/lista.tsx`; `ja-atendo` não estava em lugar nenhum. Corrigido: link adicionado ao
+  estado vazio de `clientes/lista.tsx`, ANTES do link de CSV (mesma prioridade que o docstring da
+  própria página já estabelecia). Ver `.claude/ciclo/autonomous-backlog.md` BL-37 para a mudança
+  completa. GO-0 continua sendo o próximo passo para MEDIR o efeito — este achado não substitui a
+  instrumentação, só remove um bloqueio mecânico que a instrumentação, sozinha, não teria explicado
+  (a taxa seria baixa por um motivo que nenhum evento de analytics apontaria: a porta não existia).
 
 ---
 

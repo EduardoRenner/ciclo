@@ -872,3 +872,48 @@ tocar validação de entrada em toda rota de API com parâmetro `[id]`.
   `servicoDoTenant` — "arquivar por entidade" com nome de tabela e mensagem diferentes por
   propósito; genericizar quebraria a inferência de tipo do supabase-js sobre nome de coluna, o
   mesmo trade-off que `vitrine-upload.ts` já documenta explicitamente).
+
+---
+
+## Missão de onboarding/ativação/retenção (pedido direto do Eduardo, 2026-09-20)
+
+> Mudança de missão: da caça a bugs/refatoração para investigar e melhorar a jornada de
+> onboarding → ativação → retenção → conversão. Achados registrados aqui seguem o mesmo formato
+> BL-N; achados de pesquisa pura (sem código) ficam também espelhados em `growth-opportunities.md`
+> quando se conectam a uma oportunidade já registrada lá.
+
+### BL-37 · `/admin/clientes/ja-atendo` — a porta pra maioria do público, sem NENHUM link no painel — FEITO (parcial)
+
+- **Problema:** `/admin/clientes/ja-atendo` é a tela que deixa o dono trazer quem já atende, com a
+  data da última visita, SEM planilha — a própria página documenta no código ser "a porta da base
+  para quem NÃO tem planilha — que é a MAIORIA do público do produto" (barbeiro, manicure,
+  depiladora têm a clientela nos contatos do celular, não numa lista). Sem essa data, o Motor de
+  Ciclo nasce vazio e passa 2-3 meses (`docs/46`) esperando cada cliente voltar pela segunda vez
+  antes de prever qualquer coisa — o "vale da morte" entre ativação e retenção que `growth-
+  opportunities.md` GO-4 já tinha registrado como hipótese.
+- **Causa raiz, não suposta — confirmada:** `grep -rn "ja-atendo" src/app` mostrou ZERO ocorrências
+  fora da própria pasta da página. Nenhum `Link`, nenhum botão, nenhuma menção em `clientes/
+  lista.tsx`, `hoje.tsx`, `onboarding/`, em lugar nenhum. Só alcançável digitando a URL de cabeça.
+  Em contraste, `/admin/clientes/importar` (CSV, a porta para a MINORIA que já tem planilha) está
+  linkada em `clientes/lista.tsx` desde o F2 (`docs/25`). A cadastro de cliente único
+  (`/admin/clientes/nova`) também não captura data de última visita — confirmado lendo o
+  formulário — então `ja-atendo` era genuinamente o ÚNICO caminho sem planilha, e ele não existia
+  na prática.
+- **Por que isto fecha a hipótese do GO-4 em vez de só confirmá-la:** o GO-4 já apontava "aumentar
+  a taxa de quem usa `ja-atendo`" como a alavanca certa — mas isto não era um problema de destaque
+  de copy (que instrumentação/A-B testing resolveria) e sim um link que nunca existiu. Nenhum
+  evento de analytics apontaria essa causa — só leitura de código achou.
+- **Conserto (parcial — ver pendência abaixo):** link adicionado ao estado vazio de `clientes/
+  lista.tsx`, ANTES do link de CSV (mesma ordem de prioridade que o próprio `ja-atendo/page.tsx`
+  já estabelece no rodapé dele: "a outra porta, no rodapé e não no topo"). Markup em dois `<p>`
+  (não `<br />` — único uso do padrão em todo `src/app`, corrigido antes de commitar para não
+  introduzir um precedente novo sozinho).
+- **Pendência, não implementada nesta rodada:** o nudge mais valioso seria no PRIMEIRO carregamento
+  de `/admin/hoje` logo após o onboarding — é literalmente a primeira tela que a pessoa vê. Não
+  implementado porque exigiria um sinal novo ("tenant nunca teve nenhum cliente") que
+  `resumoDeHoje` (`server/services/resumo-hoje.ts`) não calcula hoje, e essa função já foi
+  corrigida uma vez por regressão de latência (`docs/28-LATENCIA-DE-CLIQUE-PLANO.md`, achado
+  "Hoje bloqueava por evento de funil") — adicionar uma consulta nova ali sem poder medir o
+  impacto ao vivo (Docker indisponível nesta sessão) é risco desnecessário para um `/loop` que
+  já tem alternativa mais segura. Registrado para uma sessão com ambiente local disponível.
+- **Verificação:** `tsc`/`eslint`/`pnpm test:unit` (292/2531) verdes.
