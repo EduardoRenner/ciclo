@@ -1098,3 +1098,38 @@ por ambiguidade de especificação.
 **Segunda vez nesta sessão que reler o próprio trabalho recém-commitado (BL-42, BL-43) achou algo
 que a implementação original não tinha coberto** — confirma que vale a pena a "segunda iteração"
 que a missão original pediu, não só a primeira passada.
+
+---
+
+## Missão noturna do Motor de Ciclo (pedido direto do Eduardo, 2026-09-21)
+
+> Mudança de missão: da amplitude (onboarding/ativação/growth) para profundidade — o algoritmo
+> central que sustenta o preço do produto. Ordem: ler contra `docs/01-ESPEC-TECNICA.md §5.3` e os
+> testes já existentes antes de mexer; nunca mudar peso/clamp/janela da fórmula sem medir e sem
+> aprovação explícita; registrar "sem achado" quando for o caso, não inventar bug pra ter o que
+> fazer.
+
+(BL-44, o primeiro achado desta missão — comentários numerados de `computeCycle` completados —
+já está registrado como entrada própria, ordem cronológica normal, um pouco acima nesta mesma
+lista.)
+
+### BL-45 · `recomputarCiclosDoTenant`: duas buscas independentes rodavam em série, não em paralelo — FEITO
+
+- **Achado:** lendo `ciclo.ts` linha a linha contra o spec (item 4 da missão — auditoria de
+  eficiência, medir não estimar), achei `materialDeCadaServico`/`comissaoDeCadaProfissional`
+  chamadas em dois `await` SEPARADOS, um depois do outro — na MESMA função que já tem um
+  `Promise.all` de seis buscas, com comentário explícito (`TICKET-036`) sobre processar 10 mil
+  clientes por tenant em menos de 60s.
+- **Por que é seguro paralelizar:** as duas funções não compartilham estado, nenhuma lê o
+  resultado da outra — `materialDeCadaServico` depende só de `servicos` (já resolvido antes),
+  `comissaoDeCadaProfissional` só de `db`/`tenantId`. Confirmado lendo as DUAS implementações
+  inteiras antes de mexer, não supondo pela assinatura.
+- **Conserto:** as duas chamadas viraram `Promise.all([...])`. Reduz a LATÊNCIA CRÍTICA do job em
+  aproximadamente o tempo da mais rápida das duas (elas passam a rodar sobrepostas, não
+  empilhadas) — em cada rodada, para cada tenant.
+- **Verificado que nenhum teste depende da ORDEM de chamada:** dos quatro arquivos de teste que
+  mencionam essas funções/a função que as chama, um é integração (não roda sem Docker) e os três
+  restantes são guardas de FONTE (`readFileSync` + regex/`indexOf` contra o texto do arquivo,
+  nunca uma chamada real com mock) — nenhum quebra com a reordenação de execução, só com mudança
+  no TEXTO das linhas que eles casam, que não mudou.
+- **Verificação:** `tsc`/`eslint`/`pnpm test:unit` (292/2531) verdes.

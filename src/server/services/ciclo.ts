@@ -118,9 +118,16 @@ export async function recomputarCiclosDoTenant(db: Cliente, tenantId: string, ti
     `docs/48` C3: a fila de recuperação passa a ser ordenada por LUCRO. As duas peças que faltavam
     — material da ficha de consumo e comissão de quem costuma atender — só passaram a existir com
     a `I-02`/`0066`; até então o material valia zero para todo serviço de todo tenant.
+
+    As duas buscas não dependem uma da outra — só de `servicos`, já resolvido acima — e rodavam em
+    `await` separados, uma depois da outra, na MESMA função que otimiza as seis primeiras buscas
+    exatamente para não fazer isso (comentário de `TICKET-036` acima). `Promise.all` aqui é o
+    mesmo raciocínio aplicado ao que tinha ficado de fora.
   */
-  const materialPorServico = await materialDeCadaServico(db, tenantId, servicos.map((s) => s.id))
-  const comissaoPor = await comissaoDeCadaProfissional(db, tenantId)
+  const [materialPorServico, comissaoPor] = await Promise.all([
+    materialDeCadaServico(db, tenantId, servicos.map((s) => s.id)),
+    comissaoDeCadaProfissional(db, tenantId),
+  ])
 
   const temFuturoPorCombinacao = new Set(futuros.filter((a) => a.client_id).map((a) => `${a.client_id}:${a.service_id}`))
 
