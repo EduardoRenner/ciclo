@@ -1296,3 +1296,25 @@ lugar nenhum): o serviço arquivado e a cliente eliminada são dois gatilhos dif
 mesmo buraco de desenho — "esta view nunca filtra por nada além de `client_cycles.state`, porque
 nunca teve outra tabela no escopo." Resolver um sem o outro deixaria o segundo sintoma vivo com a
 mesma cara de consertado.
+
+**Tentativa de conserto, 2026-09-21 (commit `f6f46acf`) — revertida pela CI (commit `9bf0d1b8`).**
+Tentei fechar só o gatilho da eliminação LGPD adicionando `client_cycles` a `TABELAS_APAGADAS`
+(`lgpd.ts`), sob a hipótese verificada de que `eliminarCliente` roda sempre com `service_role`
+(confirmado: as duas chamadas usam `withTenant`/`withNovoTenant`) e que a ausência de política de
+`DELETE` em `client_cycles` (`0082_rls_capacidade_morta_lote_2.sql`) só bloqueia o cliente de
+SESSÃO — não service_role. **A hipótese sobre a SESSÃO estava certa; a hipótese sobre service_role
+estava errada.** A CI (`Banco e RLS`, job real contra Postgres) reprovou 5 testes em
+`lgpd.test.ts`, todos com o MESMO erro: `eliminarCliente` lançava `AppError('INTERNAL')` na
+primeira iteração de `TABELAS_APAGADAS` que chegava em `client_cycles` — um erro de Postgres de
+verdade, não "zero linhas em silêncio". `client_cycles` tem `force row level security`
+(`0001_initial.sql`, aplicado a TODA a lista `tenant_tables`, `client_cycles` incluída) — e,
+diferente do que o comentário da própria `0082` presumia ("barrado por RLS devolve zero linhas em
+silêncio"), a combinação de `force row level security` + nenhuma política para `DELETE` bloqueou a
+operação com erro real para o client usado no teste, não com um no-op silencioso. Não cheguei à
+causa exata (se é `force row level security` interagindo com o role usado pelos testes de forma
+diferente de `service_role` em produção, ou algo mais específico do ambiente de CI) — **e essa é
+exatamente a media que só Postgres real prova**, a razão original para registrar isto sem
+implementar. Revertido imediatamente ao ver o job vermelho; `main` está verde de novo
+(`9bf0d1b8`). O gatilho da eliminação LGPD volta ao estado "registrado, não implementado", igual
+ao do serviço arquivado — as duas partes precisam da mesma investigação com Postgres local antes de
+qualquer novo commit tocando `client_cycles`.
