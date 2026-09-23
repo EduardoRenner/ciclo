@@ -30,9 +30,9 @@
    o app de e-mail aberto antes de começar.
 
 4. **O momento que vende:** em "Quem eu já atendo", cadastrem juntos 10 a 20 clientes com a
-   última data aproximada (caderno, WhatsApp, memória) **e escolham o serviço** (ex.: corte) —
-   sem serviço o Motor só mostra uma prévia e não passa a acompanhar ninguém
-   (`preverEPersistirCiclos`). Com serviço, a lista de atrasados aparece na hora.
+   última data aproximada (caderno, WhatsApp, memória). **Confira o serviço** — vem o primeiro
+   do catálogo já escolhido; troque se o grosso da clientela for outro (ex.: corte + barba). É o
+   ritmo desse serviço que o Motor usa. A lista de atrasados aparece na hora.
 
 5. **Primeira mensagem na sua frente:** ele escolhe um nome da lista e manda pelo WhatsApp dele,
    com o texto pronto. Uma basta.
