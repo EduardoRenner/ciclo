@@ -350,6 +350,15 @@ Mais recente embaixo. Cada linha diz o que foi medido, não só o que foi feito.
 | 16 | Placar: shebang tirado — isolado o teste passava, na suíte inteira dava `SyntaxError` na linha 1 | suíte completa |
 | 16 | Conta nova abria a ficha sem nenhuma mensagem pronta: a releitura depois do seed caía na memoização de `fetch` do Next (mesma URL → resposta vazia da 1ª leitura) | log no dev: "depois do seed 0" → "10"; isolado (sem Next) o defeito não aparece, por isso a integração passava |
 | 16 | Ficha: "Sumiu, chamar de volta" passa a contar para o Motor (mesma rota do "Chamar"); cliente sem telefone abre o seletor de contatos em vez de "toque no lápis" | integração 11/11; medido a 390 px |
+| 17 | Funil de conta nova andado no navegador (calculadora → cadastro → onboarding → Hoje → "Já atendo"): atribuição chegou em `conta_criada.meta.origem` (primeiro toque `instagram` venceu o `calculadora` do botão) | linha lida no banco local |
+| 17 | **Defeito do Motor:** quem entrava pelo "Já atendo" ou pela planilha EM DIA nunca virava atrasado — o recálculo noturno só lia atendimentos concluídos, e a ficha congelava no estado do dia do cadastro. Agora lê `client_cycles.last_visit_on` quando é mais nova que o último atendimento; a data aproximada não entra na trilha de previsões | integração: 90 dias depois vira atrasado e chega em `v_clientes_a_recuperar`; 4 mutações reprovadas (uma delas pegou guarda cega: a regra "mais nova" não tinha teste — idempotência reforçada, ritmo 23 → 16 com o defeito) |
+| 17 | Resultado do "Já atendo" e da planilha quando ninguém está atrasado (o caso de quem aceita o padrão "Uns 15 dias" num corte de 21): era só "2 pessoas cadastradas", agora "Ninguém atrasado por enquanto — o primeiro deve voltar daqui a 6 dias (29/09)", data gravada pelo Motor | unidade 5/5; medido a 375 px; "1 pessoas cadastradas" corrigido de carona |
+
+> **Efeito em produção quando for ao ar (rodada 17):** toda ficha que entrou por memória ou planilha
+> e ficou congelada será recalculada na primeira madrugada — parte dela pode aparecer de uma vez em
+> Recuperar. É o comportamento certo, mas é um salto visível. Tenants de demonstração com
+> `client_cycles` semeado sem atendimento passam a envelhecer com o tempo; não pude conferir se
+> existem (sem leitura de produção nesta sessão).
 
 **O que continua em aberto e é do Eduardo:**
 
