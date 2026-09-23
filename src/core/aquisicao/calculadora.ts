@@ -38,7 +38,8 @@ export type ResultadoCalculadora = {
 
 export const LIMITES = {
   clientesSumidos: { min: 1, max: 500 },
-  ticketCents: { min: 100, max: 100_000 },
+  // R$ 10 mil: tatuagem, micropigmentação e harmonização passam de R$ 1.000 por sessão sem esforço.
+  ticketCents: { min: 100, max: 1_000_000 },
   retornoDias: { min: 7, max: 180 },
 } as const
 

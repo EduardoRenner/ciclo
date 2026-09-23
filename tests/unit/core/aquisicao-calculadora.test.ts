@@ -1,6 +1,9 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+
 import { describe, expect, it } from 'vitest'
 
-import { calcularParado } from '@/core/aquisicao/calculadora'
+import { LIMITES, calcularParado } from '@/core/aquisicao/calculadora'
 
 describe('calcularParado (docs/82 §8)', () => {
   it('8 clientes, R$ 35, voltando a cada 30 dias', () => {
@@ -41,3 +44,18 @@ describe('calcularParado (docs/82 §8)', () => {
     expect(calcularParado(entrada)).toBeNull()
   })
 })
+
+describe('toda entrada que calcularParado recusa tem frase na tela (revisão 2026-09-23)', () => {
+  it('ticket de tatuagem (R$ 1.500) entra na conta', () => {
+    expect(calcularParado({ clientesSumidos: 3, ticketCents: 150_000, retornoDias: 60 })).not.toBeNull()
+  })
+
+  it('a tela tem um ramo de erro para o mínimo E o máximo de cada limite', () => {
+    const tela = readFileSync(join(__dirname, '..', '..', '..', 'src/app/(public)/calculadora/calculadora.tsx'), 'utf8')
+    for (const campo of Object.keys(LIMITES)) {
+      expect(tela, `falta erro de mínimo para ${campo}`).toContain(`LIMITES.${campo}.min`)
+      expect(tela, `falta erro de máximo para ${campo}`).toContain(`LIMITES.${campo}.max`)
+    }
+  })
+})
+

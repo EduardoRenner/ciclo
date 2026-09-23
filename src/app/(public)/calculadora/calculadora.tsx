@@ -30,9 +30,20 @@ export default function Calculadora() {
 
   const resultado = calcularParado({ clientesSumidos: clientes, ticketCents, retornoDias: retorno })
 
+  // Cada limite de `calcularParado` precisa de uma frase aqui: um valor fora da faixa que não vira
+  // erro faz o resultado sumir com a tela dizendo "preencha os três números" — os três preenchidos.
   const erroClientes =
-    clientes < LIMITES.clientesSumidos.min ? 'Pense em pelo menos um cliente que sumiu.' : undefined
-  const erroTicket = ticketCents < LIMITES.ticketCents.min ? 'Digite quanto um cliente gasta por visita.' : undefined
+    clientes < LIMITES.clientesSumidos.min
+      ? 'Pense em pelo menos um cliente que sumiu.'
+      : clientes > LIMITES.clientesSumidos.max
+        ? `Até ${LIMITES.clientesSumidos.max}. Esta conta é de quem você lembra de cabeça.`
+        : undefined
+  const erroTicket =
+    ticketCents < LIMITES.ticketCents.min
+      ? 'Digite quanto um cliente gasta por visita.'
+      : ticketCents > LIMITES.ticketCents.max
+        ? `Até ${reais.format(LIMITES.ticketCents.max / 100)} por visita.`
+        : undefined
   const erroRetorno =
     retorno < LIMITES.retornoDias.min || retorno > LIMITES.retornoDias.max
       ? `Use um número entre ${LIMITES.retornoDias.min} e ${LIMITES.retornoDias.max} dias.`
