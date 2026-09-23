@@ -309,3 +309,24 @@ oferta/preço, não produto.
 Visitar, conversar, cobrar por Pix, fechar com parceiro e postar. Nenhuma linha de código
 substitui as primeiras 30 conversas — e todo o resto deste documento só existe para que elas
 rendam o máximo e deixem rastro medido.
+
+---
+
+## 16 · Registro de execução
+
+Mais recente embaixo. Cada linha diz o que foi medido, não só o que foi feito.
+
+| Rodada | O quê | Prova |
+|---|---|---|
+| 1 | Atribuição de origem (§6): cookie de primeiro toque, selo e convite com `?origem=&ref=` | cadastro local por `?origem=visita&ref=parceiro-teste` gravou a origem no `conta_criada`; 5 mutações reprovadas |
+| 1 | Placar (§13) | SQL executado no banco local; controle positivo mostrou a linha `visita / parceiro-teste` |
+| 2 | Calculadora pública (§8) em `/calculadora`, estática | build: `○ /calculadora` 3,98 kB; conta conferida no navegador a 390 px; "R$ 426 × 8 = R$ 3.407" pego na tela e corrigido |
+| 3 | Origem sobrevive ao link de confirmação aberto em outro navegador (`user_metadata`) | cadastro com cookie de convite + onboarding sem cookie → origem no `conta_criada` |
+| 3 | Kit de visita + modelo de planilha | promessa "a lista aparece na hora" conferida no código (`preverEPersistirCiclos`) |
+| 4 | Conta nova: 1º passo virou "Traga quem você já atende" | teste de integração afirma a ordem; mutação reprovada |
+| 4 | Serviço padrão da base trazida: mais atendido, ou ritmo mediano (era "Barba · 14 dias" por ordem alfabética) | tela a 390 px mostra "Corte · 21 dias"; mutação reprovada |
+| 4 | Recuperar: cliente sem telefone ganha "Chamar" (`wa.me` sem número → seletor de contatos do dono) | "Avisar" nessa pessoa terminava em "sem telefone cadastrado"; toque de 48 px sondado; guarda + mutação |
+| 4 | "seu último barba": texto de recuperação reescrito ("último horário de {serviço}") | teste com serviço feminino |
+
+**O que continua em aberto e é do Eduardo:** confirmar a cidade (§5); empurrar/abrir PR desta
+branch; as visitas.
