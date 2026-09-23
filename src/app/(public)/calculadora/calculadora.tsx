@@ -51,9 +51,10 @@ export default function Calculadora() {
 
   // A região viva existe sempre e o texto sai do MESMO resultado que desenha o número grande —
   // nascer junto com o conteúdo não é anunciado pelo leitor de tela (armadilha do CLAUDE.md).
+  const semResultado = erroClientes || erroTicket || erroRetorno ? 'Corrija o campo marcado para ver a conta.' : 'Preencha os três números para ver a conta.'
   const anuncio = resultado
     ? `${reais.format(resultado.paradoPorMesCents / 100)} por mês, ${reais.format(resultado.paradoPorAnoCents / 100)} por ano.`
-    : 'Preencha os três números para ver a conta.'
+    : semResultado
 
   return (
     <div className="flex flex-col gap-6">
@@ -123,7 +124,7 @@ export default function Calculadora() {
             </p>
           </>
         ) : (
-          <p className="mt-1 text-corpo text-txt-3">Preencha os três números acima.</p>
+          <p className="mt-1 text-corpo text-txt-3">{semResultado}</p>
         )}
 
         <p className="mt-4 text-corpo text-txt">
