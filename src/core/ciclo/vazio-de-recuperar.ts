@@ -66,7 +66,7 @@ export function vazioDeRecuperar(
     return {
       titulo: 'Diga quando foi o último atendimento de cada um',
       descricao:
-        'Suas fichas já estão aqui. Conte de memória quando cada pessoa veio pela última vez — não precisa ser exato — e o Motor começa hoje, sem esperar a agenda.',
+        'Suas fichas já estão aqui. Conte de memória quando cada pessoa veio pela última vez (não precisa ser exato) e o Motor começa hoje, sem esperar a agenda.',
       acaoRotulo: 'Dizer quando vieram',
       acaoHref: '/admin/clientes/ja-atendo',
     }

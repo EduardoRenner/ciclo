@@ -35,7 +35,7 @@ export function acaoDoMotor(estado: {
       chave: 'motor-sem-ultima-visita',
       titulo: 'Diga quando cada pessoa veio pela última vez',
       descricao:
-        'Suas fichas ainda não têm a última visita, então o Motor não sabe quem está sumindo. De memória, sem precisar ser exato — ele começa hoje.',
+        'Suas fichas ainda não têm a última visita, então o Motor não sabe quem está sumindo. Diga de memória, sem precisar ser exato, e ele começa hoje.',
       href: '/admin/clientes/ja-atendo',
       tom: 'info',
     }

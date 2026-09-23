@@ -221,12 +221,12 @@ const PERGUNTAS = [
     */
     pergunta: 'Eu já tenho minha lista de clientes. Dá para trazer?',
     resposta:
-      'Dá, de uma planilha: nome, telefone, e-mail e etiquetas. E se a sua planilha tiver a data da última visita, traga essa coluna também: é ela que faz a lista de quem sumiu nascer cheia no primeiro dia, em vez de você esperar as pessoas voltarem para o CICLO ter o que calcular.',
+      'Dá, e não precisa de planilha. Cole a lista (do bloco de notas ou de uma conversa) ou escreva os nomes, com mais ou menos quando cada pessoa veio pela última vez. Vale de memória, não precisa ser exato. No Android, dá para escolher direto dos contatos. Tem planilha? Importe o arquivo, com a coluna da última visita. É essa data que faz a lista de quem sumiu nascer cheia no primeiro dia.',
   },
   {
     pergunta: 'Em quanto tempo a lista de quem sumiu fica útil?',
     resposta:
-      'Se você importar a data da última visita, já na primeira tela. Sem essa data, o CICLO precisa ver cada pessoa voltar duas ou três vezes para saber o ritmo dela. Até lá a lista começa vazia e vai enchendo conforme você atende.',
+      'No mesmo dia, se você disser quando cada pessoa veio pela última vez. Sem essa data, o CICLO precisa ver cada pessoa voltar duas ou três vezes para saber o ritmo dela, e a lista começa vazia e vai enchendo conforme você atende.',
   },
   {
     /*

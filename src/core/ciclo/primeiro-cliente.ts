@@ -13,6 +13,6 @@ export function mensagemDeClienteCadastrado(ehPrimeiro: boolean): { titulo: stri
 
   return {
     titulo: 'Cliente cadastrado',
-    descricao: 'O primeiro da casa — marque o horário para o Motor de Ciclo começar a acompanhar o retorno.',
+    descricao: 'O primeiro da casa. Marque o horário para o Motor de Ciclo começar a acompanhar o retorno.',
   }
 }

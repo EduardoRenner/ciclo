@@ -61,7 +61,7 @@ export function acoesDeCompletude(entrada: EntradaDeCompletude): AcaoDeCompletud
       chave: 'completude-taxa',
       titulo: 'Você ainda não disse quanto a maquininha cobra',
       descricao:
-        'Sem isso o "Sobrou" de cada atendimento sai maior do que é. Se você só recebe em dinheiro e Pix, salve com zero — a pergunta não volta.',
+        'Sem isso o "Sobrou" de cada atendimento sai maior do que é. Se você só recebe em dinheiro e Pix, salve com zero e a pergunta não volta.',
       href: '/admin/config/taxas',
       tom: 'info',
     })

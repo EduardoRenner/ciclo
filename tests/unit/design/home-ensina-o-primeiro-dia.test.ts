@@ -48,4 +48,19 @@ describe('a home ensina o primeiro dia', () => {
     expect(calculadora, 'nenhum link para a calculadora').toBeGreaterThan(-1)
     expect(calculadora, 'a calculadora só aparece depois da primeira dobra').toBeLessThan(primeiraSecao)
   })
+
+  it('a FAQ não diz que só dá para trazer a lista por planilha', () => {
+    /*
+      Rodada 22: "Dá, de uma planilha" e "Se você importar a data" — a planilha é a minoria deste
+      público (barbeiro e manicure têm a clientela nos contatos e na cabeça). A resposta tem que
+      oferecer o caminho sem arquivo, e dizer que a data de memória vale.
+    */
+    const inicio = copy.indexOf('const PERGUNTAS')
+    const relativo = copy.slice(inicio).search(/\r?\n\]/)
+    const faq = copy.slice(inicio, relativo === -1 ? copy.length : inicio + relativo)
+    expect(faq.match(/pergunta:/g)?.length, 'extrator da FAQ não achou as perguntas').toBeGreaterThanOrEqual(3)
+    expect(faq).not.toMatch(/Dá, de uma planilha/)
+    expect(faq).toMatch(/Cole a lista/)
+    expect(faq, 'tem que dizer que lembrar de cabeça basta').toMatch(/de memória/)
+  })
 })
