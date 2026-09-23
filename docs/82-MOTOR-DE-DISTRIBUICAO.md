@@ -385,3 +385,15 @@ Mais recente embaixo. Cada linha diz o que foi medido, não só o que foi feito.
 
 1. As visitas — só o Eduardo pode fazer.
 2. Revisar o [PR #126](https://github.com/EduardoRenner/ciclo/pull/126) e decidir se funde para `main`.
+
+**Loop pausado aqui em 2026-09-23, de propósito.** Antes de propor mais código, li a pesquisa de
+crescimento já feita (`.claude/ciclo/growth-opportunities.md`, GO-0 a GO-6) para não repetir
+trabalho: toda oportunidade de maior impacto que restava (GO-0 medição, GO-2 `reminders`, GO-3/GO-4
+tempo de ativação, GO-6 re-engajamento automático do dono) já esbarrava, na própria pesquisa, em
+acesso a produção ou em decisão de negócio — nunca em falta de ideia. GO-6 em particular pediria um
+cron novo de mensagem automática (push "bom dia, você tem N atendimentos hoje" ou e-mail de
+onboarding abandonado), e isso contraria a trava que este projeto respeita desde antes desta missão:
+nunca ligar envio automático sem autorização explícita do Eduardo (`ciclo-manutencao-noturna-loop`,
+`docs/25` F0 passo 4). Não construí — registrar e esperar é a decisão certa aqui, não inventar
+trabalho. O loop volta quando houver dado novo (visitas reais) ou uma decisão do Eduardo que destrave
+uma das opções acima.
