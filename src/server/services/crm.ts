@@ -643,11 +643,12 @@ export async function centralDeAcoes(db: Cliente, tenantId: string, papel?: Pape
   const podeVerLucro = papel !== undefined && avaliarPermissao(papel, 'report:read') !== null
 
   /*
-    Janela de um dia antes do "hoje" em UTC: o dia do salão é no máximo um a menos que o de UTC
-    nos fusos do Brasil, e o fuso só chega com `tenantSettings`, no mesmo `Promise.all`. O corte
-    exato (`>= hoje do salão`) é feito depois, em memória, sobre no máximo cinco linhas.
+    Janela de dois dias antes do "hoje" em UTC: o fuso do salão só chega com `tenantSettings`, no
+    mesmo `Promise.all`, e o dia dele pode estar um atrás do de UTC. O corte exato (`>= hoje do
+    salão`) é feito depois, em memória. Ele importa: `on_track` também cobre quem está atrasado
+    mas já remarcou, com volta prevista no PASSADO — sem o corte, a frase seria "volta hoje".
   */
-  const ontemUtc = Temporal.Now.plainDateISO('UTC').subtract({ days: 1 }).toString()
+  const desdeUtc = Temporal.Now.plainDateISO('UTC').subtract({ days: 2 }).toString()
   const [resumo, resgataveis, orcamentos, ctxPlano, tenantSettings, material, ciclos, proximas] = await Promise.all([
     // `resumo_central_de_acoes` (0089): as quatro contagens que eram quatro idas de rede separadas
     // (clientes, agendamentos, v_clientes_a_recuperar, v_client_segments) viraram uma função só —
@@ -674,9 +675,9 @@ export async function centralDeAcoes(db: Cliente, tenantId: string, papel?: Pape
       .select('predicted_on')
       .eq('tenant_id', tenantId)
       .eq('state', 'on_track')
-      .gte('predicted_on', ontemUtc)
+      .gte('predicted_on', desdeUtc)
       .order('predicted_on')
-      .limit(5),
+      .limit(10),
   ])
   if (resumo.error) throw new AppError('INTERNAL', { cause: resumo.error })
   const clientes = { count: resumo.data?.clientes ?? 0 }

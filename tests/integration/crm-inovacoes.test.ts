@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 
+import { Temporal } from '@js-temporal/polyfill'
 import { createClient } from '@supabase/supabase-js'
 import dotenv from 'dotenv'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
@@ -331,6 +332,24 @@ describe('central de ações', () => {
 
       // 2. Todo mundo em dia: o Motor diz que está de olho e quando o próximo volta.
       await cadastrarQuemJaAtendo(svc, tenant.id, { serviceId: servico!.id, pessoas: [{ nome: 'Veio Semana Passada', quando: 'semana' }] })
+      /*
+        E uma ficha `on_track` com volta prevista ONTEM — é o estado de quem atrasou mas já remarcou
+        (`computeCycle` com agendamento futuro). Ela não é "o próximo": sem o corte pela data do
+        salão, a frase diria "deve voltar hoje".
+      */
+      const remarcou = await svc.from('clients').insert({ tenant_id: tenant.id, name: 'Atrasou Mas Remarcou' }).select('id').single()
+      const ontemNoSalao = Temporal.Now.plainDateISO('America/Sao_Paulo').subtract({ days: 1 }).toString()
+      const { error: erroCiclo } = await svc.from('client_cycles').insert({
+        tenant_id: tenant.id,
+        client_id: remarcou.data!.id,
+        service_id: servico!.id,
+        personal_cycle_days: 21,
+        last_visit_on: Temporal.Now.plainDateISO('America/Sao_Paulo').subtract({ days: 22 }).toString(),
+        predicted_on: ontemNoSalao,
+        late_days: 1,
+        state: 'on_track',
+      })
+      if (erroCiclo) throw erroCiclo
       const emDia = await centralDeAcoes(svc, tenant.id, 'owner')
       const chaves = emDia.acoes.map((a) => a.chave)
       expect(chaves, 'com ciclo gravado não devia mais pedir a última visita').not.toContain('motor-sem-ultima-visita')
