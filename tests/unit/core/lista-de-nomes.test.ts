@@ -31,6 +31,14 @@ describe('lerListaDeNomes — a lista que o dono já tem no bloco de notas ou no
     ])
   })
 
+  it('telefone no começo da linha com DDD e hífen não vira marcador de lista (revisão 2026-09-23)', () => {
+    expect(lerListaDeNomes('49-99999-0001 Marcos\n1-Rafael\n2.Dona Alzira')).toEqual([
+      { nome: 'Marcos', telefone: '49999990001' },
+      { nome: 'Rafael', telefone: '' },
+      { nome: 'Dona Alzira', telefone: '' },
+    ])
+  })
+
   it('número curto não é telefone: "Corte 2" continua sendo nome', () => {
     expect(lerListaDeNomes('João 2\nAna da rua 15')).toEqual([
       { nome: 'João 2', telefone: '' },

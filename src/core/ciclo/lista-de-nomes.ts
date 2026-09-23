@@ -14,8 +14,14 @@ export type PessoaDaLista = { nome: string; telefone: string }
 export const MAX_DA_LISTA = 200
 const MAX_NOME = 120
 
-/** Marcador de lista no começo da linha: "1.", "2)", "10 -", "-", "•", "*". */
-const MARCADOR = /^\s*(?:\d{1,3}\s*[.)-]|[-•*·–])\s*/
+/**
+ * Marcador de lista no começo da linha: "1.", "2)", "10 -", "-", "•", "*".
+ *
+ * O `(?!\d)` depois do número não é enfeite: sem ele "49-99999-0001 Marcos" perdia o DDD como se
+ * fosse o item 49 da lista, o telefone sobrava com 9 dígitos (recusado) e a pessoa entrava com
+ * nome "99999-0001 Marcos" (revisão de 2026-09-23).
+ */
+const MARCADOR = /^\s*(?:\d{1,3}\s*[.)-](?!\d)|[-•*·–])\s*/
 /** Candidato a telefone: começa e termina em dígito, com espaço, parêntese, ponto ou traço no meio. */
 const CANDIDATO_A_TELEFONE = /\+?\(?\d[\d\s().-]*\d/g
 const SEPARADOR_NAS_PONTAS = /^[\s\-–—:,;|/]+|[\s\-–—:,;|/]+$/g

@@ -647,8 +647,13 @@ export async function centralDeAcoes(db: Cliente, tenantId: string, papel?: Pape
     mesmo `Promise.all`, e o dia dele pode estar um atrás do de UTC. O corte exato (`>= hoje do
     salão`) é feito depois, em memória. Ele importa: `on_track` também cobre quem está atrasado
     mas já remarcou, com volta prevista no PASSADO — sem o corte, a frase seria "volta hoje".
+
+    Revisão de 2026-09-23: a janela era de 2 dias com `limit(10)`, e 10 remarcados com volta nesses
+    dias esgotavam o lote antes de chegar a qualquer data futura — a frase sumia num salão cheio.
+    Nenhum fuso fica mais de 1 dia atrás do UTC, então a janela começa em UTC−1 (só um dia de
+    remarcados cabe nela) e o teto sobe para 50.
   */
-  const desdeUtc = Temporal.Now.plainDateISO('UTC').subtract({ days: 2 }).toString()
+  const desdeUtc = Temporal.Now.plainDateISO('UTC').subtract({ days: 1 }).toString()
   const [resumo, resgataveis, orcamentos, ctxPlano, tenantSettings, material, ciclos, proximas] = await Promise.all([
     // `resumo_central_de_acoes` (0089): as quatro contagens que eram quatro idas de rede separadas
     // (clientes, agendamentos, v_clientes_a_recuperar, v_client_segments) viraram uma função só —
@@ -677,7 +682,7 @@ export async function centralDeAcoes(db: Cliente, tenantId: string, papel?: Pape
       .eq('state', 'on_track')
       .gte('predicted_on', desdeUtc)
       .order('predicted_on')
-      .limit(10),
+      .limit(50),
   ])
   if (resumo.error) throw new AppError('INTERNAL', { cause: resumo.error })
   const clientes = { count: resumo.data?.clientes ?? 0 }

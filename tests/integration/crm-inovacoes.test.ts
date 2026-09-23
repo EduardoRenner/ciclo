@@ -337,18 +337,29 @@ describe('central de ações', () => {
         (`computeCycle` com agendamento futuro). Ela não é "o próximo": sem o corte pela data do
         salão, a frase diria "deve voltar hoje".
       */
-      const remarcou = await svc.from('clients').insert({ tenant_id: tenant.id, name: 'Atrasou Mas Remarcou' }).select('id').single()
+      /*
+        ONZE, não uma (revisão de 2026-09-23): a busca trazia só 10 linhas a partir de 2 dias atrás,
+        e dez remarcados com volta ontem esgotavam o lote antes de chegar à data futura — a frase
+        sumia num salão cheio. Com uma só, esse defeito passava verde.
+      */
       const ontemNoSalao = Temporal.Now.plainDateISO('America/Sao_Paulo').subtract({ days: 1 }).toString()
-      const { error: erroCiclo } = await svc.from('client_cycles').insert({
-        tenant_id: tenant.id,
-        client_id: remarcou.data!.id,
-        service_id: servico!.id,
-        personal_cycle_days: 21,
-        last_visit_on: Temporal.Now.plainDateISO('America/Sao_Paulo').subtract({ days: 22 }).toString(),
-        predicted_on: ontemNoSalao,
-        late_days: 1,
-        state: 'on_track',
-      })
+      const { data: remarcados, error: erroRemarcados } = await svc
+        .from('clients')
+        .insert(Array.from({ length: 11 }, (_, i) => ({ tenant_id: tenant.id, name: `Atrasou Mas Remarcou ${i + 1}` })))
+        .select('id')
+      if (erroRemarcados) throw erroRemarcados
+      const { error: erroCiclo } = await svc.from('client_cycles').insert(
+        remarcados!.map((r) => ({
+          tenant_id: tenant.id,
+          client_id: r.id,
+          service_id: servico!.id,
+          personal_cycle_days: 21,
+          last_visit_on: Temporal.Now.plainDateISO('America/Sao_Paulo').subtract({ days: 22 }).toString(),
+          predicted_on: ontemNoSalao,
+          late_days: 1,
+          state: 'on_track' as const,
+        })),
+      )
       if (erroCiclo) throw erroCiclo
       const emDia = await centralDeAcoes(svc, tenant.id, 'owner')
       const chaves = emDia.acoes.map((a) => a.chave)
