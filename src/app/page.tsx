@@ -136,18 +136,26 @@ const RECURSOS = [
   },
 ]
 
+/*
+  `docs/82` §16 rodada 21: o terceiro passo era "Atenda. O resto o CICLO acompanha" — o caminho de
+  semanas, em que a lista enche conforme cada pessoa volta duas ou três vezes. O caminho de um dia
+  é trazer quem já atende com a última vez de memória (`/admin/clientes/ja-atendo`), e é o que a
+  visita, o onboarding e a aba Hoje ensinam; a porta de entrada era a única que ensinava a esperar.
+  Guardado por `tests/unit/design/home-ensina-o-primeiro-dia.test.ts`.
+*/
 const PASSOS = [
   {
     titulo: 'Crie a conta e diga o que você faz',
     texto: 'O catálogo da sua profissão já vem pronto: serviços, duração e preço sugerido. Você ajusta o que quiser.',
   },
   {
-    titulo: 'Compartilhe seu link',
-    texto: 'Sua página fica no ar na hora, com seus serviços, horário de funcionamento e contato.',
+    titulo: 'Traga quem você já atende',
+    texto:
+      'Cole a lista ou escreva os nomes, com mais ou menos quando cada pessoa veio pela última vez. Quem já passou do tempo de voltar aparece na lista no mesmo dia.',
   },
   {
-    titulo: 'Atenda. O resto o CICLO acompanha',
-    texto: 'Cada atendimento concluído alimenta o ciclo daquela pessoa, e é assim que o sistema sabe quem está para voltar.',
+    titulo: 'Compartilhe seu link',
+    texto: 'Sua página fica no ar na hora. Cada atendimento concluído afina o ritmo de cada pessoa, e a lista fica mais certeira.',
   },
 ]
 
@@ -425,6 +433,18 @@ export default async function Home() {
             </Link>
           ) : null}
         </div>
+        {/*
+          `docs/82` §8 e rodada 21: a calculadora responde em dinheiro à pergunta do próprio `h1`, e
+          só aparecia no rodapé. Uma linha, abaixo dos botões — não disputa com "Criar minha conta":
+          quem ainda não quer conta faz a conta, e o fim da calculadora leva ao cadastro com
+          `?origem=calculadora`.
+        */}
+        <p className="mt-4 text-secundario text-txt-2">
+          Ainda não quer criar conta?{' '}
+          <Link href="/calculadora" className="font-semibold text-acc-2 underline underline-offset-2">
+            Veja quanto os clientes que sumiram custam por mês
+          </Link>
+        </p>
         {/*
           TICKET-UX16: pedido direto do usuário foi tirar o preço do topo, "para não assustar" —
           reverte a decisão anterior (comentário removido dizia "o preço aparece já na primeira
