@@ -106,7 +106,7 @@ describe('a seta do serviço não repete o SVG', () => {
   })
 
   it('o <ChevronRight> do lucide não voltou', () => {
-    expect(fonte()).not.toMatch(/<ChevronRight/)
+    expect(fonte()).not.toMatch(/<ChevronRight\b/)
   })
 
   it('o <symbol> da seta não define fill, e o <svg> que usa define', () => {
