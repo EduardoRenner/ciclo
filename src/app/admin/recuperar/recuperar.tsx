@@ -155,6 +155,26 @@ export default function RecuperarReceita({
     }
   }
 
+  /*
+    `docs/82` §7: o toque em "Chamar" abre o WhatsApp do dono numa aba nova e, em paralelo, anota a
+    chamada — é o que faz a volta dessa pessoa contar em "O Motor de Ciclo trouxe". Falha aqui não
+    pode travar a conversa que já abriu: vira aviso, e o dono segue no WhatsApp.
+  */
+  async function anotarChamada(item: ItemRecuperar) {
+    try {
+      const r = await fetch('/api/v1/cycle/recover/manual', {
+        method: 'POST',
+        keepalive: true,
+        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+        body: JSON.stringify({ clientId: item.clientId, serviceId: item.serviceId }),
+      })
+      if (!r.ok) throw new Error(String(r.status))
+      mostrarToast({ tom: 'ok', titulo: 'Anotado', descricao: `Se ${item.name.split(' ')[0]} marcar, a volta conta para o Motor de Ciclo.` })
+    } catch {
+      mostrarToast({ tom: 'erro', titulo: 'Não consegui anotar a chamada', descricao: 'A mensagem no WhatsApp não muda. Só esta volta pode não aparecer no que o Motor trouxe.' })
+    }
+  }
+
   const recorte = recorteDaLista(lista.count, lista.items.length)
   const itensSelecionados = lista.items.filter((i) => selecionados.has(chave(i)))
   // O bloqueio só aparece quando ela realmente pediu o lote. Com uma cliente marcada o caminho
@@ -353,6 +373,7 @@ export default function RecuperarReceita({
                         target="_blank"
                         rel="noreferrer"
                         aria-label={`Chamar ${item.name} pelo seu WhatsApp`}
+                        onClick={() => void anotarChamada(item)}
                         className="toque-48 -mr-2 mt-0.5 inline-flex h-10 items-center px-2 text-label font-semibold text-acc-2 transition active:scale-[.97]"
                       >
                         Chamar

@@ -318,3 +318,75 @@ export async function enviarParaRecuperar(
 
   return { queued, skipped }
 }
+
+export const EsquemaChamadaManual = z.object({ clientId: z.string().uuid(), serviceId: z.string().uuid() })
+export type EntradaChamadaManual = z.infer<typeof EsquemaChamadaManual>
+
+/**
+ * O dono tocou em "Chamar" e abriu o PRÓPRIO WhatsApp com o texto pronto (`docs/82` §7).
+ *
+ * Sem este registro o caminho grátis não deixava rastro: "O Motor de Ciclo trouxe R$ X" e a
+ * prestação de contas contam só mensagens em `messages`, então quem recuperava clientes pelo
+ * próprio WhatsApp nunca via o número — nem o convite de colega que só aparece com ele.
+ *
+ * `sent` pelo mesmo motivo que as campanhas por `wa.me` já gravam `sent` (`crm.ts`): quem apertou
+ * foi a pessoa, no WhatsApp dela. O que o sistema não sabe — se ela de fato mandou — ele não finge
+ * saber, e a atribuição só conta quando a cliente MARCA depois, então um toque sem envio não vira
+ * receita de ninguém. O carimbo `last_campaign_at` entra junto: é ele que impede a mesma pessoa de
+ * voltar à lista de "chamar" amanhã como se ninguém tivesse falado com ela.
+ */
+export async function registrarChamadaManual(
+  db: Cliente,
+  tenantId: string,
+  entrada: EntradaChamadaManual,
+): Promise<{ registrada: boolean }> {
+  const { data: linha, error: erroCiclo } = await db
+    .from('client_cycles')
+    .select('client_id')
+    .eq('tenant_id', tenantId)
+    .eq('client_id', entrada.clientId)
+    .eq('service_id', entrada.serviceId)
+    .maybeSingle()
+  if (erroCiclo) throw new AppError('INTERNAL', { cause: erroCiclo })
+  // Sem ciclo não há o que recuperar — e sem esta checagem qualquer par de UUIDs do próprio
+  // tenant viraria "mensagem de recuperação" enviada.
+  if (!linha) return { registrada: false }
+
+  const agora = new Date().toISOString()
+  const { error: erroMensagem } = await db.from('messages').insert({
+    tenant_id: tenantId,
+    client_id: entrada.clientId,
+    channel: 'whatsapp',
+    kind: 'campaign',
+    status: 'sent',
+    template: 'recover_manual',
+    sent_at: agora,
+  })
+  if (erroMensagem) throw new AppError('INTERNAL', { cause: erroMensagem })
+
+  // Zero linhas aqui é corrida com o `recompute_cycles` (a linha foi lida logo acima) — mesmo caso
+  // e mesma decisão do envio automático: a mensagem já foi anotada, então vira log, não erro.
+  const { data: carimbadas, error: erroCarimbo } = await db
+    .from('client_cycles')
+    .update({ last_campaign_at: agora })
+    .eq('tenant_id', tenantId)
+    .eq('client_id', entrada.clientId)
+    .eq('service_id', entrada.serviceId)
+    .select('client_id')
+  if (erroCarimbo) throw new AppError('INTERNAL', { cause: erroCarimbo })
+  if ((carimbadas?.length ?? 0) === 0) {
+    console.error(
+      JSON.stringify({
+        level: 'error',
+        event: 'recuperar_carimbo_nao_gravou',
+        detalhe: 'chamada manual anotada e last_campaign_at NAO gravado',
+        tenantId,
+        clientId: entrada.clientId,
+        serviceId: entrada.serviceId,
+      }),
+    )
+  }
+
+  await registrarEvento(db, tenantId, 'recuperacao_enviada', { via: 'manual' })
+  return { registrada: true }
+}
