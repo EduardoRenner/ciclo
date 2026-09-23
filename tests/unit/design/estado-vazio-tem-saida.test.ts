@@ -144,9 +144,25 @@ describe('o vazio de Recuperar receita fala a verdade das QUATRO situacoes', () 
     expect(v.titulo, 'precisa dizer que quem nao rodou foi o Motor').toMatch(/Motor/i)
   })
 
-  it('sem atendimento concluido: continua pedindo o primeiro atendimento', () => {
-    // O contrario do de cima. Sem os dois lados, trocar a condicao por `true` fixo passaria.
-    expect(vazioDeRecuperar(true, false, false).titulo).toMatch(/atendimento/i)
+  it('sem atendimento concluido: manda dizer de memoria quando cada um veio, nao esperar o proximo', () => {
+    /*
+      Ate a rodada 18 do docs/82 esta frase era "O Motor comeca no primeiro atendimento concluido" —
+      semanas de espera para uma conta que ja tem as fichas. O "Ja atendo" poe essa gente no Motor
+      HOJE, com a ultima vez respondida de memoria. E o contrario do caso de cima: sem os dois
+      lados, trocar a condicao por `true` fixo passaria.
+    */
+    const v = vazioDeRecuperar(true, false, false)
+    expect(v.acaoHref, 'mandou esperar a agenda em vez de trazer a base').toBe('/admin/clientes/ja-atendo')
+    expect(v.titulo).toMatch(/atendimento/i)
+    expect(`${v.titulo} ${v.descricao}`, 'voltou a pedir o primeiro atendimento').not.toMatch(/primeiro atendimento/i)
+  })
+
+  it('tudo em dia, com data: diz quando o proximo volta', () => {
+    const v = vazioDeRecuperar(true, true, true, false, 'daqui a 6 dias (29/09)')
+    expect(v.titulo).toBe('Todo mundo em dia')
+    expect(v.descricao).toContain('daqui a 6 dias (29/09)')
+    // Sem data (ninguem em dia com volta futura), a frase antiga continua de pe, sem buraco.
+    expect(vazioDeRecuperar(true, true, true).descricao).not.toMatch(/undefined|null/)
   })
 
   it('nao promete prazo que depende de agendador externo', () => {

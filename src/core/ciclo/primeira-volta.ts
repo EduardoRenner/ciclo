@@ -23,14 +23,22 @@ export type PrimeiraVolta = { titulo: string; descricao: string }
  * do arquivo, e mandar "adicione com Um mês" apontaria para um campo que aquela tela não tem.
  */
 export function primeiraVolta(proximaVolta: string, hoje: Temporal.PlainDate, porta: 'memoria' | 'planilha' = 'memoria'): PrimeiraVolta {
-  const data = Temporal.PlainDate.from(proximaVolta)
-  const dias = hoje.until(data, { largestUnit: 'day' }).days
-  const diaMes = `${String(data.day).padStart(2, '0')}/${String(data.month).padStart(2, '0')}`
-  const quando = dias <= 0 ? 'hoje' : dias === 1 ? 'amanhã' : `daqui a ${dias} dias (${diaMes})`
+  const quando = quandoVolta(proximaVolta, hoje)
   return {
     titulo: 'Ninguém atrasado por enquanto',
     descricao:
       `O primeiro deve voltar ${quando}. Se passar do tempo, aparece no Hoje para você chamar.` +
       (porta === 'memoria' ? ' Lembrou de alguém que sumiu faz mais tempo? Adicione com "Um mês" ou mais.' : ''),
   }
+}
+
+/**
+ * "hoje", "amanhã" ou "daqui a 6 dias (29/09)". Mora aqui e é exportada porque a aba Recuperar,
+ * quando está todo mundo em dia, diz a mesma coisa com a mesma conta (`vazio-de-recuperar.ts`).
+ */
+export function quandoVolta(proximaVolta: string, hoje: Temporal.PlainDate): string {
+  const data = Temporal.PlainDate.from(proximaVolta)
+  const dias = hoje.until(data, { largestUnit: 'day' }).days
+  const diaMes = `${String(data.day).padStart(2, '0')}/${String(data.month).padStart(2, '0')}`
+  return dias <= 0 ? 'hoje' : dias === 1 ? 'amanhã' : `daqui a ${dias} dias (${diaMes})`
 }

@@ -57,6 +57,7 @@ export default function RecuperarReceita({
   temClientes,
   temCiclos,
   temAtendimentosConcluidos,
+  quandoOProximoVolta,
   servicosSemMaterial,
 }: {
   inicial: ListaRecuperar
@@ -77,10 +78,12 @@ export default function RecuperarReceita({
   servicosSemMaterial: number
   /** Existe alguma ficha de cliente neste salão. */
   temClientes: boolean
-  /** O Motor já calculou algum ciclo — precisa de atendimento CONCLUÍDO, não só de ficha. */
+  /** O Motor já calculou algum ciclo — precisa de uma última visita (atendimento concluído ou informada), não só de ficha. */
   temCiclos: boolean
   /** Separa "ainda nao atendeu ninguem" de "atendeu e o Motor nao processou". */
   temAtendimentosConcluidos: boolean
+  /** "daqui a 6 dias (29/09)" — só para o vazio de "todo mundo em dia"; `null` quando não há. */
+  quandoOProximoVolta: string | null
 }) {
   const vocabulario = useVocabulario()
   const mostrarToast = useToast()
@@ -310,6 +313,7 @@ export default function RecuperarReceita({
             temClientes={temClientes}
             temCiclos={temCiclos}
             temAtendimentosConcluidos={temAtendimentosConcluidos}
+            quandoOProximoVolta={quandoOProximoVolta}
           />
         </Card>
       ) : (
@@ -450,14 +454,22 @@ function EmptyStateDeRecuperar({
   temClientes,
   temCiclos,
   temAtendimentosConcluidos,
+  quandoOProximoVolta,
 }: {
   temClientes: boolean
   temCiclos: boolean
   temAtendimentosConcluidos: boolean
+  quandoOProximoVolta: string | null
 }) {
   // `canalDeContato` devolve `null` quando nao ha WhatsApp nem e-mail configurado. E o que
   // decide se a frase pode mandar falar com a gente ou tem que calar.
-  const v = vazioDeRecuperar(temClientes, temCiclos, temAtendimentosConcluidos, canalDeContato(ASSUNTO_MOTOR_PARADO) !== null)
+  const v = vazioDeRecuperar(
+    temClientes,
+    temCiclos,
+    temAtendimentosConcluidos,
+    canalDeContato(ASSUNTO_MOTOR_PARADO) !== null,
+    quandoOProximoVolta,
+  )
   return (
     <EmptyState
       icone={<IconeAnel aria-hidden className="size-6" />}
