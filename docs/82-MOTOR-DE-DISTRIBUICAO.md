@@ -337,7 +337,7 @@ Mais recente embaixo. Cada linha diz o que foi medido, não só o que foi feito.
 | 10 | Verificação ampla: lint inteiro, RLS 210/210, integração 410/411 | a falha que sobra (`job-queue`, contagem de `finish_job` sob contenção) é pré-existente e já diagnosticada |
 | 11 | "Chamar" manual passa a contar para o Motor (mensagem `sent`, carimbo, `recuperacao_enviada`) | integração 7/7 + mutação; clique no app registrou a linha |
 | 11 | Placar ganha `mandou_mensagem` | controle positivo local |
-| 12 | Guarda cega antiga achada: `estrelas-nao-repetem-o-svg` tinha `` virado backspace (0x08) | mutação: versão antiga verde com o defeito, nova reprova; guarda nova contra byte de controle em `src/`/`tests/` |
+| 12 | Guarda cega antiga achada: `estrelas-nao-repetem-o-svg` tinha `\b` virado backspace (0x08) | mutação: versão antiga verde com o defeito, nova reprova; guarda nova contra byte de controle em `src/`/`tests/` |
 | 12 | Cartão A6 com QR (`material/cartao-a6.html`) | renderizado; QR **não** lido por câmera |
 | 13 | `code-review` (high) da branch: 8 achados, 8 corrigidos | prefetch de `<Link>` gravava origem sem clique (header conferido no Next instalado); calculadora sumia acima do teto; chamada manual sem opt-out nem trava de 7 dias; "mais atendido" contava cancelados; origem malformada virava convite; convite no pico sumia em dia com receita |
 
