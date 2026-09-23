@@ -1,0 +1,579 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kit de visita</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* Paper de campo — pedra quente, não o creme puro genérico; o teal é o próprio acento do CICLO. */
+    --paper: #f2efe4;
+    --paper-2: #eae5d5;
+    --ink: #22241f;
+    --ink-soft: #4b4a3f;
+    --muted: #6d6656;
+    --rule: #d7d0bd;
+    --accent: #0d8577;
+    --accent-strong: #0a5f56;
+    --accent-soft: #dcefe9;
+    --warn: #9a5a2c;
+    --warn-soft: #f1e2d2;
+    --bubble: #dcefe9;
+    --bubble-2: #eae5d5;
+    --shadow: 0 1px 2px rgba(34,36,31,.06), 0 8px 24px -12px rgba(34,36,31,.18);
+    color-scheme: light;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #191a16;
+      --paper-2: #212219;
+      --ink: #ece7d8;
+      --ink-soft: #cbc5b2;
+      --muted: #a39c88;
+      --rule: #34322a;
+      --accent: #35c2ae;
+      --accent-strong: #7fe0d0;
+      --accent-soft: #17332e;
+      --warn: #d99a5c;
+      --warn-soft: #2c2017;
+      --bubble: #17332e;
+      --bubble-2: #212219;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #191a16;
+    --paper-2: #212219;
+    --ink: #ece7d8;
+    --ink-soft: #cbc5b2;
+    --muted: #a39c88;
+    --rule: #34322a;
+    --accent: #35c2ae;
+    --accent-strong: #7fe0d0;
+    --accent-soft: #17332e;
+    --warn: #d99a5c;
+    --warn-soft: #2c2017;
+    --bubble: #17332e;
+    --bubble-2: #212219;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { background: var(--paper); }
+  body {
+    margin: 0;
+    color: var(--ink);
+    font-family: "Work Sans", ui-sans-serif, system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 28px 20px 64px;
+  }
+
+  /* ---------- cabeçalho ---------- */
+  .eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 12px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--accent-strong);
+    margin: 0 0 10px;
+  }
+  .eyebrow .dot { width: 6px; height: 6px; border-radius: 999px; background: var(--accent); flex: none; }
+
+  h1 {
+    font-family: "Fraunces", ui-serif, Georgia, serif;
+    font-optical-sizing: auto;
+    font-weight: 600;
+    font-size: clamp(28px, 8vw, 38px);
+    line-height: 1.08;
+    letter-spacing: -0.01em;
+    margin: 0 0 10px;
+    text-wrap: balance;
+  }
+
+  .lede {
+    margin: 0 0 22px;
+    color: var(--ink-soft);
+    max-width: 60ch;
+  }
+  .lede code, code {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: .92em;
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: .05em .35em;
+  }
+
+  /* ---------- separador tipo talão ---------- */
+  .perf {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 30px 0 20px;
+  }
+  .perf::before, .perf::after {
+    content: "";
+    height: 1px;
+    flex: 1;
+    background: repeating-linear-gradient(to right, var(--rule) 0 6px, transparent 6px 11px);
+  }
+  .perf .hole { width: 5px; height: 5px; border-radius: 999px; background: var(--rule); flex: none; }
+
+  section { margin: 0 0 8px; }
+
+  h2 {
+    font-family: "Fraunces", ui-serif, Georgia, serif;
+    font-weight: 600;
+    font-size: 21px;
+    letter-spacing: -0.01em;
+    margin: 0 0 14px;
+    text-wrap: balance;
+  }
+  .h2-note { font-family: "Work Sans"; font-weight: 400; font-size: 13px; color: var(--muted); }
+
+  /* ---------- checklist ---------- */
+  .checklist { list-style: none; margin: 0 0 6px; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+  .checklist li { display: flex; align-items: flex-start; gap: 12px; }
+  .checklist .box {
+    flex: none;
+    width: 20px; height: 20px;
+    margin-top: 2px;
+    border: 1.6px solid var(--muted);
+    border-radius: 5px;
+    background: var(--paper-2);
+  }
+  .checklist p { margin: 0; }
+  .checklist strong { color: var(--ink); }
+
+  .whenrow {
+    display: flex;
+    gap: 6px;
+    margin: 14px 0 4px;
+    flex-wrap: wrap;
+  }
+  .day {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 12.5px;
+    letter-spacing: .02em;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--rule);
+    color: var(--muted);
+    background: var(--paper-2);
+  }
+  .day.go { border-color: var(--accent); color: var(--accent-strong); background: var(--accent-soft); font-weight: 600; }
+  .day.no { color: var(--muted); text-decoration: line-through; opacity: .55; }
+  .whencap { margin: 6px 0 0; font-size: 13.5px; color: var(--muted); }
+
+  /* ---------- os 10 minutos ---------- */
+  .steps { position: relative; margin: 0; padding: 0; list-style: none; }
+  .steps::before {
+    content: "";
+    position: absolute;
+    left: 19px; top: 6px; bottom: 6px;
+    width: 1.5px;
+    background: var(--rule);
+  }
+  .step { position: relative; padding: 0 0 26px 54px; }
+  .step:last-child { padding-bottom: 0; }
+  .stepnum {
+    position: absolute;
+    left: 0; top: -2px;
+    width: 40px; height: 40px;
+    border-radius: 999px;
+    background: var(--paper);
+    border: 1.5px solid var(--accent);
+    color: var(--accent-strong);
+    font-family: "Fraunces", serif;
+    font-weight: 600;
+    font-size: 17px;
+    display: grid;
+    place-items: center;
+  }
+  .step h3 {
+    margin: 2px 0 6px;
+    font-family: "Work Sans";
+    font-weight: 700;
+    font-size: 15.5px;
+    letter-spacing: .01em;
+  }
+  .step p { margin: 0 0 10px; color: var(--ink-soft); }
+  .step p:last-child { margin-bottom: 0; }
+
+  .say {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--ink);
+    background: var(--accent-soft);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    padding: 10px 14px;
+    margin: 0 0 10px;
+  }
+  .say + .say { margin-top: -4px; }
+
+  /* ---------- na volta ---------- */
+  .fork { display: flex; flex-direction: column; gap: 12px; margin-top: 4px; }
+  .branch {
+    border-radius: 12px;
+    padding: 14px 16px;
+    box-shadow: var(--shadow);
+    background: var(--paper-2);
+  }
+  .branch.yes { border-left: 3px solid var(--accent); }
+  .branch.no { border-left: 3px solid var(--muted); }
+  .branch .tag {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 11px;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--accent-strong);
+    display: block;
+    margin-bottom: 6px;
+  }
+  .branch.no .tag { color: var(--muted); }
+  .branch p { margin: 0 0 8px; }
+  .branch p:last-child { margin-bottom: 0; }
+  .pricepill {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    padding: 3px 10px;
+    font-size: 13px;
+    margin: 2px 4px 2px 0;
+  }
+  .pricepill b { font-family: "Fraunces", serif; font-size: 15px; color: var(--accent-strong); }
+
+  /* ---------- o que anotar ---------- */
+  .fields {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin: 0 0 14px;
+  }
+  .field {
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 8px 10px;
+  }
+  .field .k {
+    display: block;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 10.5px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .field .v { font-size: 13.5px; color: var(--ink-soft); }
+  .field.wide { grid-column: 1 / -1; }
+  .field.hi { border-color: var(--accent); background: var(--accent-soft); }
+  .field.hi .k { color: var(--accent-strong); }
+
+  .banlist { margin: 10px 0 0; padding-left: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  .banlist li { color: var(--ink-soft); font-size: 14.5px; }
+  .banlist b { color: var(--ink); }
+
+  /* ---------- mensagens (bolhas) ---------- */
+  .chatcard {
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    border-radius: 14px;
+    padding: 14px 14px 16px;
+    box-shadow: var(--shadow);
+    margin-bottom: 14px;
+  }
+  .chatcard:last-child { margin-bottom: 0; }
+  .chatwho {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--muted);
+    margin: 0 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .chatwho .avatar {
+    width: 20px; height: 20px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: var(--paper);
+    font-family: "Fraunces", serif;
+    font-size: 11px;
+    font-weight: 700;
+    display: grid;
+    place-items: center;
+    flex: none;
+  }
+  .bubble {
+    background: var(--bubble);
+    border-radius: 14px 14px 14px 3px;
+    padding: 10px 13px;
+    font-size: 14px;
+    line-height: 1.5;
+    max-width: 92%;
+    color: var(--ink);
+  }
+  .bubble .var { color: var(--accent-strong); font-weight: 600; }
+  .bubble .link {
+    display: block;
+    margin-top: 6px;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 12px;
+    color: var(--accent-strong);
+    word-break: break-all;
+  }
+  .chatcaption { margin: 10px 0 0; font-size: 12.5px; color: var(--muted); }
+
+  .refnote {
+    margin-top: 16px;
+    font-size: 13.5px;
+    color: var(--muted);
+  }
+  .refnote code { color: var(--ink-soft); }
+
+  /* ---------- aviso final ---------- */
+  .warnbar {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    background: var(--warn-soft);
+    border: 1px solid color-mix(in srgb, var(--warn) 35%, var(--rule));
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-top: 8px;
+  }
+  .warnbar .mark {
+    font-family: "Fraunces", serif;
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--warn);
+    flex: none;
+    line-height: 1.3;
+  }
+  .warnbar p { margin: 0; color: var(--ink-soft); font-size: 14.5px; }
+  .warnbar strong { color: var(--ink); }
+
+  footer {
+    margin-top: 40px;
+    padding-top: 16px;
+    border-top: 1px solid var(--rule);
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 11.5px;
+    letter-spacing: .03em;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  @media (max-width: 420px) {
+    .fields { grid-template-columns: 1fr; }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    section { animation: rise .5s ease-out both; }
+    section:nth-of-type(2) { animation-delay: .03s; }
+    section:nth-of-type(3) { animation-delay: .06s; }
+    section:nth-of-type(4) { animation-delay: .09s; }
+    section:nth-of-type(5) { animation-delay: .12s; }
+    @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow"><span class="dot"></span>CICLO · kit de visita</div>
+  <h1>Uma página para levar no bolso</h1>
+  <p class="lede">Complementa o roteiro longo do <code>docs/56</code> com o que ele não tinha: os
+    links que medem, a calculadora como abertura, e o que anotar depois.</p>
+
+  <div class="perf"><span class="hole"></span></div>
+
+  <section>
+    <h2>Antes de sair</h2>
+    <ul class="checklist">
+      <li><span class="box"></span><p>Celular carregado, com <code>seuciclo.com.br/calculadora</code>
+        e <code>seuciclo.com.br/cadastro?origem=visita</code> salvos.</p></li>
+      <li><span class="box"></span><p>Cartões impressos (A6, frente e verso — QR da calculadora com
+        <code>?origem=visita</code>). Deixe um no balcão de quem não quis conversar agora: o QR conta
+        no placar. <strong>Leia o QR com o celular antes de imprimir o lote</strong> — foi gerado por
+        script e não passou por câmera.</p></li>
+      <li><span class="box"></span><p>A planilha de leads aberta. 5 a 8 negócios por saída, todos num
+        raio que dá pra fazer a pé.</p></li>
+    </ul>
+    <div class="whenrow">
+      <span class="day no">Sáb</span>
+      <span class="day no">Dom</span>
+      <span class="day no">Seg AM</span>
+      <span class="day go">Seg PM</span>
+      <span class="day go">Ter PM</span>
+      <span class="day no">Qua</span>
+      <span class="day no">Qui</span>
+      <span class="day no">Sex</span>
+    </div>
+    <p class="whencap">Fim de tarde de segunda ou começo de tarde de terça — os horários com menos
+      cliente na cadeira.</p>
+  </section>
+
+  <div class="perf"><span class="hole"></span></div>
+
+  <section>
+    <h2>Os 10 minutos</h2>
+    <ol class="steps">
+      <li class="step">
+        <span class="stepnum">1</span>
+        <h3>Abertura — pergunta, não apresentação</h3>
+        <p class="say">"Posso te fazer uma conta de um minuto? Quantos clientes que vinham sempre
+          pararam de vir — os que você lembra de cabeça?"</p>
+        <p>Abra a calculadora <strong>no celular dele</strong> e deixe ele digitar os três números. O
+          número que aparece é dele, não seu.</p>
+      </li>
+      <li class="step">
+        <span class="stepnum">2</span>
+        <h3>A virada</h3>
+        <p>Leia em voz alta a linha de baixo do resultado:</p>
+        <p class="say">"E essa conta é só de quem você lembrou."</p>
+        <p class="say">"E quem você não lembra?"</p>
+        <p>Espere a resposta. Não fale de sistema ainda.</p>
+      </li>
+      <li class="step">
+        <span class="stepnum">3</span>
+        <h3>Mostrar, não explicar</h3>
+        <p class="say">"Quer ver quem são, pelo nome? Leva cinco minutos e é grátis."</p>
+        <p>Cadastro pelo link <code>?origem=visita</code>. <strong>O e-mail de confirmação chega no
+          celular dele</strong> — deixe o app de e-mail aberto antes de começar.</p>
+      </li>
+      <li class="step">
+        <span class="stepnum">4</span>
+        <h3>O momento que vende</h3>
+        <p>Em "Quem eu já atendo", cadastrem juntos 10 a 20 clientes com a última data aproximada
+          (caderno, WhatsApp, memória). <strong>Confira o serviço</strong> — vem o de ritmo do meio do
+          catálogo já escolhido; troque se o grosso da clientela for outro (ex.: corte + barba). É o
+          ritmo desse serviço que o Motor usa.</p>
+        <p><strong>Não digite nome por nome:</strong> "Colar uma lista" aceita um nome por linha
+          (telefone junto, se tiver) — copie de uma conversa ou do bloco de notas dele. Cole
+          <strong>primeiro quem ele não vê faz tempo</strong>, com "Um mês" ou "Uns 2 meses", e depois
+          o resto: é a primeira lista que enche a tela de atrasados. No Android, "Escolher dos
+          contatos" traz os nomes da agenda do celular.</p>
+      </li>
+      <li class="step">
+        <span class="stepnum">5</span>
+        <h3>Primeira mensagem na sua frente</h3>
+        <p>Ele escolhe um nome da lista e manda pelo WhatsApp dele, com o texto pronto. Uma basta.</p>
+      </li>
+      <li class="step">
+        <span class="stepnum">6</span>
+        <h3>Saída</h3>
+        <p class="say">"Volto daqui a 10 dias pra gente ver quem voltou."</p>
+        <p>Marque a data na planilha.</p>
+      </li>
+    </ol>
+  </section>
+
+  <div class="perf"><span class="hole"></span></div>
+
+  <section>
+    <h2>Na volta <span class="h2-note">10 a 14 dias depois</span></h2>
+    <p class="say">"Quantos dos que você chamou voltaram?"</p>
+    <div class="fork">
+      <div class="branch yes">
+        <span class="tag">Voltou alguém</span>
+        <p>Oferta de fundador:
+          <span class="pricepill">Essencial <b>R$49</b>/mês</span>
+          <span class="pricepill">travado <b>pra sempre</b></span>
+          nos primeiros 15. Pix mensal combinado.</p>
+        <p class="say">"Conhece mais alguém aqui perto que vive perdendo cliente sem saber?"</p>
+        <p>Mande o convite de "Meu plano" pelo WhatsApp dele — já sai com o <code>ref</code> dele,
+          conta no placar.</p>
+      </div>
+      <div class="branch no">
+        <span class="tag">Ninguém voltou</span>
+        <p>Não force. Pergunte por que não mandou (quase sempre: esqueceu). Combine 10 minutos por
+          semana olhando a lista juntos.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="perf"><span class="hole"></span></div>
+
+  <section>
+    <h2>O que anotar</h2>
+    <div class="fields">
+      <div class="field"><span class="k">Negócio</span><span class="v">nome · bairro · cadeiras</span></div>
+      <div class="field"><span class="k">Instagram</span><span class="v">@ do perfil</span></div>
+      <div class="field hi"><span class="k">Sistema atual</span><span class="v">caderno / WhatsApp /
+        papel / app — é o concorrente real</span></div>
+      <div class="field"><span class="k">Status</span><span class="v">visitado → cadastrado → pagou</span></div>
+      <div class="field hi"><span class="k">Objeção</span><span class="v">a frase de recusa, literal</span></div>
+      <div class="field wide hi"><span class="k">Frase do dono</span><span class="v">como ELE descreve
+        o problema, nas palavras dele — vira copy do mês seguinte</span></div>
+    </div>
+    <ul class="banlist">
+      <li><b>Nunca</b> nome ou telefone de cliente final na planilha — isso fica no CICLO dele.</li>
+    </ul>
+  </section>
+
+  <div class="perf"><span class="hole"></span></div>
+
+  <section>
+    <h2>Mensagens prontas</h2>
+
+    <div class="chatcard">
+      <p class="chatwho"><span class="avatar">R</span>Para representante de cosmético/barbearia — parceiro</p>
+      <div class="bubble">Oi, <span class="var">[nome]</span>! Tô fazendo um sistema aqui de
+        <span class="var">[cidade]</span> que mostra pro barbeiro/salão quem parou de voltar, pelo
+        nome. É grátis pra começar. Você visita esse pessoal toda semana — topa mandar a calculadora
+        pra eles? Se alguém virar cliente pago, te passo R$50 por conta.
+        <span class="link">seuciclo.com.br/calculadora?origem=parceiro&amp;ref=[seu-codigo]</span></div>
+    </div>
+
+    <div class="chatcard">
+      <p class="chatwho"><span class="avatar">C</span>Para contador</p>
+      <div class="bubble">Oi, <span class="var">[nome]</span>! Muitos dos seus clientes de salão e
+        barbearia não sabem quanto perdem com cliente que some. Fiz uma calculadora grátis pra isso.
+        Se fizer sentido mandar pra eles, conversamos sobre uma comissão.
+        <span class="link">seuciclo.com.br/calculadora?origem=parceiro&amp;ref=[codigo]</span></div>
+    </div>
+
+    <p class="refnote">Story/bio do Instagram: <code>?origem=instagram</code> na bio,
+      <code>?origem=conteudo&amp;ref=[nome-do-post]</code> em cada post. O código do parceiro/post é
+      qualquer palavra em minúsculas com hífen — <code>maria-cosmeticos</code>,
+      <code>reel-conta-do-barbeiro</code>.</p>
+  </section>
+
+  <section style="margin-top: 26px;">
+    <div class="warnbar">
+      <span class="mark">!</span>
+      <p><strong>Nunca prometa:</strong> WhatsApp que manda sozinho, cobrança automática, data de
+        nada. "Hoje você manda com um toque" é a frase verdadeira.</p>
+    </div>
+  </section>
+
+  <footer>docs/82 §14 · roteiro completo em docs/56 §3</footer>
+
+</div>
+</body>
+</html>
