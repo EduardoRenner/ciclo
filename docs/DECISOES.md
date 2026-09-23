@@ -13651,3 +13651,11 @@ rota de brute-force aberta a qualquer um.
 (reset por engano de senha fraca, tentando de novo) e sem uma janela clara — é ajuste de UX tanto
 quanto de segurança, diferente do achado do captcha (reprodução determinística, sem ambiguidade de
 produto). Registrado como observação, não como pendência.
+
+2026-09-23 · De onde vem cada conta nova? · Origem lida do LINK (`?origem=`/`utm_source` + `?ref=`),
+guardada em cookie httpOnly de primeira parte por 60 dias, primeiro toque vence, gravada no `meta`
+do `conta_criada` (`product_events`) — sem migration nova e sem analytics de terceiro · O produto
+não sabia de onde vinha ninguém: o selo "Feito com CICLO" e o convite de colega apontavam para a
+raiz sem marca. Sem atribuição, o plano de 30 dias do `docs/82` não consegue escolher canal. Ficou
+no evento e não no tenant porque é pergunta do CICLO sobre si mesmo, não dado do negócio; e o
+`registrarEvento` nunca lança, então uma produção sem a 0088 perde a origem mas não o cadastro.
