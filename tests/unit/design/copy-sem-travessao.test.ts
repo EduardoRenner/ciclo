@@ -77,6 +77,19 @@ const FORA_DO_CORE: Record<string, string> = {
 }
 const CORE = rastrear('src/core/**/*.ts').filter((a) => !a.endsWith('.test.ts') && !(a in FORA_DO_CORE))
 
+/*
+ * Rodada 26: `src/server/services` também monta frase de tela — o primeiro passo do "Hoje" (`crm.ts`),
+ * o bloqueio da exclusão de conta (`conta.ts`), o recado da comanda, as mensagens do Zod que o
+ * formulário mostra. Ali, diferente de `core`, convive muito texto que ninguém lê na tela: erro
+ * interno, log, diagnóstico. A linha só conta se não tiver uma dessas marcas.
+ */
+const FORA_DOS_SERVICOS: Record<string, string> = {
+  'src/server/services/assistente.ts': 'prompt do assistente',
+  'src/server/services/health.ts': 'diagnóstico de /api/health',
+}
+const MARCA_DE_TEXTO_INTERNO = /throw new Error\(|console\.|detalhe:|detail:|cause:/
+const SERVICOS = rastrear('src/server/services/*.ts').filter((a) => !a.endsWith('.test.ts') && !(a in FORA_DOS_SERVICOS))
+
 type Achado = { arquivo: string; linha: number; texto: string }
 
 function travessoes(arquivos: string[], apenasMensagem = false): Achado[] {
@@ -104,6 +117,10 @@ describe('o leitor deste teste', () => {
      */
     for (const obrigatorio of ['src/app/error.tsx', 'src/app/page.tsx', 'src/app/admin/agenda/detalhe.tsx']) {
       expect(TELAS, `${obrigatorio} saiu do alcance da guarda`).toContain(obrigatorio)
+    }
+    // Pisos por nome para `services`: onde o travessão foi achado na rodada 26.
+    for (const obrigatorio of ['src/server/services/crm.ts', 'src/server/services/conta.ts', 'src/server/services/custo-fixo.ts']) {
+      expect(SERVICOS, `${obrigatorio} saiu do alcance da guarda`).toContain(obrigatorio)
     }
     // Os mesmos pisos por nome para `core`: onde o travessão foi achado na rodada 22.
     for (const obrigatorio of ['src/core/ciclo/vazio-de-recuperar.ts', 'src/core/ciclo/acao-do-motor.ts', 'src/core/ciclo/resumo-do-envio.ts']) {
@@ -157,6 +174,15 @@ describe('a copy do produto não tem travessão', () => {
       achados.map((a) => `${a.arquivo}:${a.linha}: ${a.texto}`),
       'copy montada em `core/` chega na tela igual à do `.tsx`. Se o arquivo não é copy, ponha em ' +
         'FORA_DO_CORE com o motivo.',
+    ).toEqual([])
+  })
+
+  it('nenhuma frase de `server/services` que a tela mostra tem travessão', () => {
+    const achados = travessoes(SERVICOS).filter((a) => !MARCA_DE_TEXTO_INTERNO.test(a.texto))
+    expect(
+      achados.map((a) => `${a.arquivo}:${a.linha}: ${a.texto}`),
+      'frase de serviço que volta para a tela. Se for texto interno, ele precisa de uma das marcas de ' +
+        'MARCA_DE_TEXTO_INTERNO na mesma linha; se o arquivo inteiro não é copy, FORA_DOS_SERVICOS.',
     ).toEqual([])
   })
 

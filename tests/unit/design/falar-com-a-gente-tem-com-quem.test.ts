@@ -47,6 +47,15 @@ const DECISORES_PUROS: { arquivo: string; chamadores: string[] }[] = [
     arquivo: join('src', 'core', 'ciclo', 'vazio-de-recuperar.ts'),
     chamadores: [join('src', 'app', 'admin', 'recuperar', 'recuperar.tsx')],
   },
+  /*
+    Rodada 26 do `docs/82`: o bloqueio da exclusão de conta dizia "fale com o suporte para
+    transferir" sem canal nenhum. O conserto é o mesmo desenho: a frase vive em `core/` e recebe a
+    decisão; quem consulta o canal é o serviço que monta o bloqueio (e a tela mostra o botão).
+  */
+  {
+    arquivo: join('src', 'core', 'auth', 'bloqueio-de-titular.ts'),
+    chamadores: [join('src', 'server', 'services', 'conta.ts')],
+  },
 ]
 
 function arquivos(dir: string): string[] {
@@ -217,7 +226,10 @@ describe('o decisor puro isenta o arquivo, não a regra', () => {
 
   it('a lista de decisores puros é uma só, e nomeada', () => {
     // Afirmar a lista inteira obriga quem acrescentar um nome a mexer aqui e escrever o porquê.
-    expect(DECISORES_PUROS.map((d) => d.arquivo)).toEqual([join('src', 'core', 'ciclo', 'vazio-de-recuperar.ts')])
+    expect(DECISORES_PUROS.map((d) => d.arquivo)).toEqual([
+      join('src', 'core', 'ciclo', 'vazio-de-recuperar.ts'),
+      join('src', 'core', 'auth', 'bloqueio-de-titular.ts'),
+    ])
   })
 })
 

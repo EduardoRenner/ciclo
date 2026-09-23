@@ -600,7 +600,7 @@ const PRIMEIROS_PASSOS: AcaoSugerida[] = [
     */
     titulo: 'Traga quem você já atende',
     descricao:
-      'Escreva os nomes e diga mais ou menos quando cada pessoa veio pela última vez — não precisa ser exato. É o que faz a lista de quem sumiu nascer cheia hoje, em vez de esperar cada cliente voltar duas ou três vezes.',
+      'Escreva os nomes e diga mais ou menos quando cada pessoa veio pela última vez, sem precisar ser exato. É o que faz a lista de quem sumiu nascer cheia hoje, em vez de esperar cada cliente voltar duas ou três vezes.',
     href: '/admin/clientes/ja-atendo',
     tom: 'info',
   },

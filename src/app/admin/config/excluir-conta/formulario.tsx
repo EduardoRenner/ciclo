@@ -9,6 +9,7 @@ import Card from '@/components/ui/card'
 import Sheet from '@/components/ui/sheet'
 import { useToast } from '@/components/ui/toast'
 import { rotuloDoPapel } from '@/core/auth/rotulo-do-papel'
+import { ASSUNTO_TRANSFERIR_TITULARIDADE, canalDeContato } from '@/lib/contato'
 import { drenarFilaPendente } from '@/lib/offline/api-client'
 import { apagarBancoOffline, listarMutacoes } from '@/lib/offline/db'
 
@@ -98,6 +99,7 @@ export default function FormularioExcluirConta() {
   }
 
   const { vinculos, bloqueios } = situacao
+  const canalDeTransferencia = canalDeContato(ASSUNTO_TRANSFERIR_TITULARIDADE)
   const negocios = vinculos.length
 
   return (
@@ -128,12 +130,23 @@ export default function FormularioExcluirConta() {
         ) : null}
 
         {bloqueios.length > 0 ? (
-          bloqueios.map((motivo, i) => (
-            <p key={i} role="alert" className="flex items-start gap-2 rounded-[var(--radius-sm)] bg-surface-2 p-3 text-secundario text-txt">
-              <AlertTriangle aria-hidden className="mt-0.5 size-4 shrink-0 text-warn" />
-              <span>{motivo}</span>
-            </p>
-          ))
+          <>
+            {bloqueios.map((motivo, i) => (
+              <p key={i} role="alert" className="flex items-start gap-2 rounded-[var(--radius-sm)] bg-surface-2 p-3 text-secundario text-txt">
+                <AlertTriangle aria-hidden className="mt-0.5 size-4 shrink-0 text-warn" />
+                <span>{motivo}</span>
+              </p>
+            ))}
+            {/*
+              O "fale com a gente" do bloqueio só existe quando há canal (`bloqueioDeTitularSemSucessor`),
+              e aí o caminho vem junto. Sem canal, nem a frase nem o botão aparecem.
+            */}
+            {canalDeTransferencia ? (
+              <a href={canalDeTransferencia.href} target="_blank" rel="noreferrer" className="flex min-h-12 items-center font-semibold text-acc-2">
+                {canalDeTransferencia.rotulo}
+              </a>
+            ) : null}
+          </>
         ) : (
           <Button variante="danger" onClick={() => setConfirmando(true)}>
             <Trash2 aria-hidden className="size-4" />
