@@ -1,3 +1,6 @@
+import { cookies } from 'next/headers'
+
+import { COOKIE_ORIGEM, lerOrigem, serializarOrigem } from '@/core/aquisicao/origem'
 import { exigirSenhaForte } from '@/server/auth/password'
 import { EsquemaCadastro } from '@/server/auth/schemas'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
@@ -19,6 +22,11 @@ export const POST = rota(async (req) => {
 
   await exigirSenhaForte(password)
 
+  // docs/82 §6: a origem vai junto com a conta. O link de confirmação costuma abrir em OUTRO
+  // navegador (o do app de e-mail), sem o cookie — sem isto a atribuição se perdia justo no caminho
+  // mais comum do celular. Relida por `lerOrigem`: só entra o que já passou pelo filtro.
+  const origem = lerOrigem((await cookies()).get(COOKIE_ORIGEM)?.value)
+
   const db = await criarClienteDoUsuario()
   const { error } = await db.auth.signUp({
     email,
@@ -26,7 +34,7 @@ export const POST = rota(async (req) => {
     options: {
       // A trigger `on_auth_user_created` (migration 0006) lê estes campos para
       // montar a linha de `profiles`.
-      data: { full_name: fullName, phone },
+      data: { full_name: fullName, phone, ...(origem ? { origem: serializarOrigem(origem) } : {}) },
       // Sem isso, o link do e-mail de confirmação usa o Site URL configurado
       // no painel do Supabase — que aponta pra localhost até alguém trocar lá.
       // `NEXT_PUBLIC_APP_URL` já é a variável certa (é o que o resto do app usa

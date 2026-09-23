@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { NextRequest } from 'next/server'
 
-import { lerOrigem, linkComOrigem, origemDaUrl, serializarOrigem } from '@/core/aquisicao/origem'
+import { lerOrigem, linkComOrigem, origemDaUrl, primeiroToque, serializarOrigem } from '@/core/aquisicao/origem'
 import { origemParaGravar } from '@/middleware'
 
 const HOJE = '2026-09-23'
@@ -123,5 +123,31 @@ describe('origemParaGravar (middleware)', () => {
   it('grava em qualquer tela de entrada, não só na raiz', () => {
     expect(origemParaGravar(req('/cadastro?origem=visita'), HOJE)).not.toBeNull()
     expect(origemParaGravar(req('/precos?utm_source=instagram'), HOJE)).not.toBeNull()
+  })
+})
+
+describe('primeiroToque (conta × navegador)', () => {
+  const conta = { canal: 'convite' as const, ref: 'dom-rocha', em: '2026-09-10' }
+  const navegador = { canal: 'google' as const, ref: null, em: '2026-09-20' }
+
+  it('link de confirmação aberto em outro navegador: sem cookie, vale a origem da conta', () => {
+    expect(primeiroToque(conta, null)).toEqual(conta)
+  })
+
+  it('conta sem origem (cadastro antigo ou sem link): vale o cookie', () => {
+    expect(primeiroToque(null, navegador)).toEqual(navegador)
+  })
+
+  it('as duas existem: a mais antiga ganha', () => {
+    expect(primeiroToque(conta, navegador)).toEqual(conta)
+    expect(primeiroToque({ ...conta, em: '2026-09-25' }, navegador)).toEqual(navegador)
+  })
+
+  it('empate de data fica com a da conta, registrada no momento do cadastro', () => {
+    expect(primeiroToque(conta, { ...navegador, em: conta.em })).toEqual(conta)
+  })
+
+  it('nenhuma: sem origem', () => {
+    expect(primeiroToque(null, null)).toBeNull()
   })
 })

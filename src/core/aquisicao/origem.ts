@@ -129,3 +129,17 @@ export function linkComOrigem(base: string, canal: Canal, ref?: string | null): 
   if (refLimpo) url.searchParams.set('ref', refLimpo)
   return relativo ? `${url.pathname}${url.search}` : url.toString()
 }
+
+/**
+ * Entre duas origens lidas de lugares diferentes, a do primeiro toque.
+ *
+ * Existe por causa do e-mail de confirmação: no celular, o link dele costuma abrir no navegador do
+ * app de e-mail, que não tem o cookie de quem se cadastrou. Por isso o cadastro também grava a
+ * origem na conta (`user_metadata`), e o onboarding compara as duas — a mais antiga ganha; empate
+ * fica com a da conta, que é a registrada no momento da decisão.
+ */
+export function primeiroToque(daConta: Origem | null, doNavegador: Origem | null): Origem | null {
+  if (!daConta) return doNavegador
+  if (!doNavegador) return daConta
+  return doNavegador.em < daConta.em ? doNavegador : daConta
+}

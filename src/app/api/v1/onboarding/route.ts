@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers'
 
-import { COOKIE_ORIGEM, lerOrigem } from '@/core/aquisicao/origem'
+import { COOKIE_ORIGEM, lerOrigem, primeiroToque } from '@/core/aquisicao/origem'
 import { exigirSessao } from '@/server/auth/session'
 import { EsquemaOnboarding } from '@/server/auth/schemas'
 import { withNovoTenant } from '@/server/db/with-tenant'
@@ -18,9 +18,10 @@ const VERTICAIS_LEGADAS = new Set(['barber', 'nails', 'lashes', 'brows', 'waxing
 export const POST = rota(async (req, _ctx, requestId) => {
   const sessao = await exigirSessao()
   const dados = await lerCorpo(req, EsquemaOnboarding)
-  // docs/82 §6 — o primeiro toque gravado pelo middleware. `lerOrigem` descarta o que não fechar:
-  // cookie é entrada do navegador, e uma origem inválida vira "sem origem", nunca erro de cadastro.
-  const origem = lerOrigem((await cookies()).get(COOKIE_ORIGEM)?.value)
+  // docs/82 §6 — o primeiro toque, do cookie deste navegador ou da conta (gravado no cadastro, para
+  // sobreviver ao link de confirmação aberto em outro navegador). `lerOrigem` descarta o que não
+  // fechar: os dois lados são escritos pelo usuário, e origem inválida vira "sem origem", nunca erro.
+  const origem = primeiroToque(lerOrigem(sessao.origemNoCadastro), lerOrigem((await cookies()).get(COOKIE_ORIGEM)?.value))
 
   const { tenant } = await withNovoTenant(async (svc) => {
     // docs/09-PLATAFORMA.md P4: `tenants.vertical` continua `not null` (0001) — toda profissão
