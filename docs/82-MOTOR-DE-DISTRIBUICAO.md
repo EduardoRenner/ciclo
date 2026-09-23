@@ -90,6 +90,8 @@ e voltou). Não cadastro, não visita, não seguidor.
 | **Curso de barbeiro / escola de beleza** | forma quem vai abrir negócio — o público sem sistema | R$ 0 (aula grátis) |
 | **Associação Empresarial / CDL de Maravilha** ([aemaravilha.com.br](https://www.aemaravilha.com.br/)) | eventos, lista de associados, credibilidade local | anuidade (só se valer) |
 | **Google Maps** | quem busca "barbearia perto" acha o negócio — e o dono olha a ficha | R$ 0 |
+| **Imprensa local** (Novoeste, Razão, Conexão; rádios Alternativa FM e Difusora 90.3) | cidade pequena publica pauta local; vira prova social na visita | R$ 0 — `runbooks/pauta-para-imprensa-local.md`, só com ≥ 3 negócios usando |
+| **SENAC-SC / SESC-SC** (curso de barbeiro; o do SESC é gratuito) | turma que vai abrir negócio, sem sistema ainda | R$ 0 (aula grátis) |
 
 **Não é canal agora:** anúncio pago (CAC-teto ~R$ 100 contra ticket de R$ 49 — `docs/55`),
 Reddit, TikTok nacional, marketplace. Ficam fora até existir conversão medida.
