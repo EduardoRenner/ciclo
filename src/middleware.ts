@@ -23,7 +23,8 @@ const PREFIXOS_PROTEGIDOS = ['/admin', '/onboarding']
  * em toda resposta, e o Next.js volta a poder cachear o HTML. O resto do site (`/admin`,
  * `/onboarding`, `(auth)`, `[slug]`, `/api`) continua na CSP com nonce + `force-dynamic`.
  */
-const ROTAS_DE_CONTEUDO_ESTATICO = new Set(['/', '/precos', '/privacidade', '/termos'])
+// `/calculadora` (docs/82 §8): a conta roda no navegador, não lê sessão nem recebe credencial.
+const ROTAS_DE_CONTEUDO_ESTATICO = new Set(['/', '/precos', '/privacidade', '/termos', '/calculadora'])
 
 /** Ver `ROTAS_DE_CONTEUDO_ESTATICO`. Exportada para a guarda. */
 export function rotaDeConteudoEstatico(pathname: string): boolean {

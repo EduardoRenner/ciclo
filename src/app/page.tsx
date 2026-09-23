@@ -570,6 +570,11 @@ export default async function Home() {
           Preços
         </Link>
         <span aria-hidden>·</span>
+        {/* docs/82 §8: ferramenta grátis — rodapé para quem ainda não quer criar conta. */}
+        <Link href="/calculadora" className="toque-48 -mx-2 px-2 font-semibold text-txt-2 underline underline-offset-2">
+          Calculadora
+        </Link>
+        <span aria-hidden>·</span>
         <Link href="/termos" className="toque-48 -mx-2 px-2 font-semibold text-txt-2 underline underline-offset-2">
           Termos
         </Link>

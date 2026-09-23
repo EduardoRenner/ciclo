@@ -45,8 +45,9 @@ describe('a CSP em duas faixas: nonce só onde o HTML é dinâmico', () => {
     expect(csp).toMatch(/strict-dynamic/)
   })
 
-  it('só as quatro páginas de conteúdo — nada que leia sessão, tenant ou credencial', () => {
-    for (const rota of ['/', '/precos', '/privacidade', '/termos']) {
+  it('só as páginas de conteúdo — nada que leia sessão, tenant ou credencial', () => {
+    // `/calculadora` (docs/82 §8): a conta roda no navegador, sem sessão e sem credencial.
+    for (const rota of ['/', '/precos', '/privacidade', '/termos', '/calculadora']) {
       expect(rotaDeConteudoEstatico(rota), `${rota} devia ser servida sem nonce`).toBe(true)
     }
     // As que PRECISAM de nonce: recebem input ou dependem de quem pede.

@@ -41,6 +41,7 @@ const SEGMENTOS_PUBLICOS_CONHECIDOS = new Set([
   'lista-espera', // token da fila de espera
   'orcamento', // token de um orçamento
   'precos', // institucional do CICLO
+  'calculadora', // institucional do CICLO: ferramenta grátis, não lista ninguém (docs/82 §8)
   'privacidade', // institucional do CICLO
   'termos', // institucional do CICLO
 ])
