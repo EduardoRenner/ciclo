@@ -13,7 +13,10 @@ import Sheet from '@/components/ui/sheet'
 import StatTile from '@/components/ui/stat-tile'
 import { useAtualizarDepois } from '@/lib/atualizar-depois'
 import { dinheiro, horaLocal } from '@/lib/formato'
-import { aplicarVariaveis, linkWhatsApp } from '@/lib/mensagens'
+import { aplicarVariaveis, linkWhatsApp, linkWhatsAppCompartilhar } from '@/lib/mensagens'
+import { APP_URL } from '@/lib/app-url'
+import { linkComOrigem } from '@/core/aquisicao/origem'
+import { textoDoConviteDoCiclo } from '@/core/billing/convite-do-ciclo'
 
 import DetalheAgendamento from '../agenda/detalhe'
 import CompartilharSite from './compartilhar'
@@ -345,6 +348,29 @@ export default function Hoje({
           />
         )}
       </Link>
+
+      {/*
+        `docs/82` §11: o convite de colega morava só em "Meu plano", e lá ele fica — mas o momento em
+        que alguém indica é o momento em que acabou de ganhar. Aparece SÓ com o herói "o Motor
+        trouxe": aí não disputa espaço com a tarefa do dia, é a própria prova que o convite cita. Uma
+        linha, sem prêmio (não há como pagar um — `convite-do-ciclo.ts`), e o link já leva quem
+        indicou (`?origem=convite&ref=`), para a indicação aparecer no placar.
+      */}
+      {heroi === 'motor_trouxe' && site ? (
+        <p className="-mt-3 mb-6 text-secundario text-txt-2">
+          Conhece alguém do ramo que também perde cliente sem saber?{' '}
+          <a
+            href={linkWhatsAppCompartilhar(
+              textoDoConviteDoCiclo({ nomeDoNegocio: site.nome, url: linkComOrigem(APP_URL, 'convite', site.slug) }),
+            )}
+            target="_blank"
+            rel="noreferrer"
+            className="font-semibold text-acc-2 underline underline-offset-2"
+          >
+            Mandar o CICLO
+          </a>
+        </p>
+      ) : null}
 
       {temBloqueioDeEstoque ? secaoEstoque : null}
 

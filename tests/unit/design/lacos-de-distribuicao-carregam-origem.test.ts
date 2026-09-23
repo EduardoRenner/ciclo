@@ -44,4 +44,14 @@ describe('laços de distribuição carregam origem', () => {
       expect(argumentos).not.toMatch(/url:\s*APP_URL\s*[,}]/)
     }
   })
+
+  it('o convite no pico ("o Motor trouxe", em Hoje) leva origem=convite e o slug do negócio', () => {
+    const fonte = ler('src/app/admin/hoje/hoje.tsx')
+    const chamadas = fonte.split('textoDoConviteDoCiclo(').slice(1)
+    expect(chamadas.length, 'o convite sumiu de hoje.tsx — atualize esta guarda').toBeGreaterThan(0)
+    for (const chamada of chamadas) {
+      const argumentos = chamada.slice(0, chamada.indexOf('})'))
+      expect(argumentos).toContain("linkComOrigem(APP_URL, 'convite', site.slug)")
+    }
+  })
 })
