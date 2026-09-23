@@ -1,6 +1,8 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+import { COOKIE_ORIGEM, VALIDADE_ORIGEM_SEGUNDOS, origemDaUrl, serializarOrigem } from '@/core/aquisicao/origem'
+
 /**
  * Prefixos do app do profissional — as pastas de `src/app/admin/`. A lista é
  * explícita porque o contrário não funciona aqui: o site público mora na raiz
@@ -197,6 +199,39 @@ function aplicarCabecalhosDeSeguranca(resposta: NextResponse, csp: string, semCa
   if (semCache) resposta.headers.set('Cache-Control', 'private, no-store, max-age=0, must-revalidate')
 }
 
+/**
+ * `docs/82` §6 — o valor do cookie de origem a gravar nesta visita, ou `null`.
+ *
+ * Só grava quando o link diz de onde a pessoa veio (`?origem=`, `?ref=`, `?utm_source=`) e ainda
+ * não existe origem guardada: primeiro toque vence (`core/aquisicao/origem.ts`). `/api` fica de
+ * fora — quem chama API é o próprio app, não uma pessoa chegando por um link.
+ */
+export function origemParaGravar(req: NextRequest, hoje: string): string | null {
+  const caminho = req.nextUrl.pathname
+  if (caminho === '/api' || caminho.startsWith('/api/')) return null
+  if (req.cookies.get(COOKIE_ORIGEM)) return null
+  const origem = origemDaUrl(req.nextUrl.searchParams, hoje)
+  return origem ? serializarOrigem(origem) : null
+}
+
+/** A data de hoje no fuso do Brasil, `AAAA-MM-DD` — rótulo do primeiro toque, não aritmética. */
+function hojeNoBrasil(): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date())
+}
+
+function gravarOrigem(resposta: NextResponse, valor: string | null): NextResponse {
+  if (valor) {
+    resposta.cookies.set(COOKIE_ORIGEM, valor, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: VALIDADE_ORIGEM_SEGUNDOS,
+    })
+  }
+  return resposta
+}
+
 export async function middleware(req: NextRequest) {
   // Rota de conteúdo estático não leva nonce — ver `ROTAS_DE_CONTEUDO_ESTATICO`.
   const nonce = rotaDeConteudoEstatico(req.nextUrl.pathname)
@@ -205,6 +240,7 @@ export async function middleware(req: NextRequest) {
   const csp = cabecalhosDeSeguranca(nonce)
   const protegida = exigeSessao(req.nextUrl.pathname)
   const semCache = naoCacheavel(req.nextUrl.pathname)
+  const origem = origemParaGravar(req, hojeNoBrasil())
 
   const requestHeaders = new Headers(req.headers)
   // `x-nonce` só quando há nonce: o layout raiz lê este header e, se achar, injeta o atributo
@@ -225,16 +261,16 @@ export async function middleware(req: NextRequest) {
     hoje.pathname = '/admin/hoje'
     const redirecionamento = NextResponse.redirect(hoje)
     aplicarCabecalhosDeSeguranca(redirecionamento, csp, semCache)
-    return redirecionamento
+    return gravarOrigem(redirecionamento, origem)
   }
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  if (!url || !anon) return resposta
+  if (!url || !anon) return gravarOrigem(resposta, origem)
   // Rota de API e rota de conteúdo estático já saem daqui com CSP e cache aplicados — o que elas
   // não pagam mais é a ida de rede ao servidor de auth (a de API refaz a pergunta no
   // `contextoAtual`; a estática não tem sessão a servir).
-  if (!precisaRenovarSessao(req.nextUrl.pathname)) return resposta
+  if (!precisaRenovarSessao(req.nextUrl.pathname)) return gravarOrigem(resposta, origem)
 
   const db = createServerClient(url, anon, {
     // Mesma razão de `server-client.ts`: o default do `@supabase/ssr` é `httpOnly: false`, e é
@@ -267,10 +303,10 @@ export async function middleware(req: NextRequest) {
     entrar.searchParams.set('proximo', req.nextUrl.pathname)
     const redirecionamento = NextResponse.redirect(entrar)
     aplicarCabecalhosDeSeguranca(redirecionamento, csp, semCache)
-    return redirecionamento
+    return gravarOrigem(redirecionamento, origem)
   }
 
-  return resposta
+  return gravarOrigem(resposta, origem)
 }
 
 export const config = {
