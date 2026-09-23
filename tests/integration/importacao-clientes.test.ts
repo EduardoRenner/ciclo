@@ -182,7 +182,7 @@ describe('importarClientes — previsão (F2/ticket 13, docs/25-ESTRATEGIA-E-EXE
       expect(resultado.imported).toBe(1)
       // `cyclesGravados: 0` não é detalhe de forma: este caso importa SEM escolher serviço, e a
       // afirmação é que nesse caminho a previsão continua sendo só prévia de tela (2026-09-10).
-      expect(resultado.previsao).toEqual({ comDataInformada: 1, jaDevendoVoltar: 1, cyclesGravados: 0 })
+      expect(resultado.previsao).toEqual({ comDataInformada: 1, jaDevendoVoltar: 1, cyclesGravados: 0, proximaVolta: null })
     },
     30_000,
   )
@@ -199,7 +199,9 @@ describe('importarClientes — previsão (F2/ticket 13, docs/25-ESTRATEGIA-E-EXE
       const resultado = await importarClientes(svc, tenantId, csv, { name: 'Nome', phone: 'Telefone', lastVisit: 'UltimaVisita' })
 
       expect(resultado.imported).toBe(1)
-      expect(resultado.previsao).toEqual({ comDataInformada: 1, jaDevendoVoltar: 0, cyclesGravados: 0 })
+      // `proximaVolta`: quem veio ontem está em dia, então a tela tem uma data para dizer — e ela é futura.
+      expect(resultado.previsao).toMatchObject({ comDataInformada: 1, jaDevendoVoltar: 0, cyclesGravados: 0 })
+      expect((resultado.previsao?.proximaVolta ?? '') > new Date().toISOString().slice(0, 10), 'a primeira volta de quem veio ontem devia ser futura').toBe(true)
     },
     30_000,
   )
