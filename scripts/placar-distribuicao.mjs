@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Placar de distribuição — `docs/82` §13, a versão que roda sem painel.
  *
