@@ -329,7 +329,7 @@ Mais recente embaixo. Cada linha diz o que foi medido, não só o que foi feito.
 | 4 | "seu último barba": texto de recuperação reescrito ("último horário de {serviço}") | teste com serviço feminino |
 
 | 5 | Convite de colega no pico: linha abaixo do herói "O Motor de Ciclo trouxe", atribuída | simulado no banco local (mensagem + agendamento concluído ontem) → herói e convite na tela |
-| 5 | Texto do convite dizia "aqui do Barbearia …" → "do meu negócio, {nome}" | teste com nome feminino; o `b` do teste virou backspace no heredoc e foi pego no byte |
+| 5 | Texto do convite dizia "aqui do Barbearia …" → "do meu negócio, {nome}" | teste com nome feminino; o `\b` do teste virou backspace no heredoc e foi pego no byte |
 | 6 | 8 roteiros de conteúdo com `ref` por peça (`roteiros-de-conteudo.md`) | — |
 | 7 | Recuperar: ressalvas viraram `<details>` + uma linha; "cada uma… ela" → "cada pessoa" | a 390 px o primeiro nome aparece sem rolar |
 | 8 | Tela "confira seu e-mail" ganha "Abrir o Gmail/Outlook/…" | teste da função; **não** verificado no navegador (exigiria criar conta digitando senha) |
