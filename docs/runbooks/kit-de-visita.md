@@ -34,9 +34,13 @@
    o app de e-mail aberto antes de começar.
 
 4. **O momento que vende:** em "Quem eu já atendo", cadastrem juntos 10 a 20 clientes com a
-   última data aproximada (caderno, WhatsApp, memória). **Confira o serviço** — vem o primeiro
-   do catálogo já escolhido; troque se o grosso da clientela for outro (ex.: corte + barba). É o
-   ritmo desse serviço que o Motor usa. A lista de atrasados aparece na hora.
+   última data aproximada (caderno, WhatsApp, memória). **Confira o serviço** — vem o de ritmo
+   do meio do catálogo já escolhido; troque se o grosso da clientela for outro (ex.: corte +
+   barba). É o ritmo desse serviço que o Motor usa. A lista de atrasados aparece na hora.
+   **Não digite nome por nome:** "Colar uma lista" aceita um nome por linha (telefone junto, se
+   tiver) — copie de uma conversa ou do bloco de notas dele. Cole **primeiro quem ele não vê faz
+   tempo**, com "Um mês" ou "Uns 2 meses", e depois o resto: é a primeira lista que enche a tela
+   de atrasados. No Android, "Escolher dos contatos" traz os nomes da agenda do celular.
 
 5. **Primeira mensagem na sua frente:** ele escolhe um nome da lista e manda pelo WhatsApp dele,
    com o texto pronto. Uma basta.
