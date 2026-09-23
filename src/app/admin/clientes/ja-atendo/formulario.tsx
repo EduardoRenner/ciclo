@@ -19,6 +19,12 @@ type ClienteEncontrado = { id: string; name: string; phone_e164: string | null }
 type Retorno = { clientId: string; nome: string; quando: QuandoFoi }
 type Resultado = {
   cadastrados: number
+  /**
+   * Quantas fichas existentes entraram por "quem já tem ficha e voltou" — contado na tela, porque a
+   * rota só devolve os cadastros novos. Sem isto, marcar só quem já tinha ficha terminava em
+   * "0 pessoas cadastradas", como se nada tivesse acontecido (medido, docs/82 rodada 18).
+   */
+  atualizados: number
   jaExistiam: string[]
   previsao: { comDataInformada: number; jaDevendoVoltar: number; cyclesGravados: number; proximaVolta: string | null } | null
 }
@@ -76,9 +82,9 @@ export default function FormularioQuemJaAtendo({ servicos, servicoPadrao, temCli
             retornos: retornos.map((rt) => ({ clientId: rt.clientId, quando: rt.quando })),
           }),
         })
-        const json = (await r.json()) as { data?: Resultado; error?: { message: string } }
+        const json = (await r.json()) as { data?: Omit<Resultado, 'atualizados'>; error?: { message: string } }
         if (!r.ok) throw new Error(json.error?.message ?? 'Não consegui salvar.')
-        setResultado(json.data!)
+        setResultado({ ...json.data!, atualizados: retornos.length })
         setPessoas(INICIAIS)
         setRetornos([])
         mostrarToast({ tom: 'ok', titulo: 'Pronto', descricao: `${total} ${total === 1 ? 'pessoa atualizada' : 'pessoas atualizadas'} no Motor.` })
@@ -137,7 +143,16 @@ export default function FormularioQuemJaAtendo({ servicos, servicoPadrao, temCli
 
         <Card>
           <p className="text-corpo font-semibold">
-            {resultado.cadastrados} {resultado.cadastrados === 1 ? 'pessoa cadastrada' : 'pessoas cadastradas'}
+            {[
+              resultado.cadastrados > 0 || resultado.atualizados === 0
+                ? `${resultado.cadastrados} ${resultado.cadastrados === 1 ? 'pessoa cadastrada' : 'pessoas cadastradas'}`
+                : null,
+              resultado.atualizados > 0
+                ? `${resultado.atualizados} ${resultado.atualizados === 1 ? 'ficha atualizada' : 'fichas atualizadas'}`
+                : null,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
           </p>
           {resultado.jaExistiam.length > 0 ? (
             <p className="mt-1 text-secundario text-txt-2">
