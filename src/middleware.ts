@@ -210,9 +210,20 @@ function aplicarCabecalhosDeSeguranca(resposta: NextResponse, csp: string, semCa
 export function origemParaGravar(req: NextRequest, hoje: string): string | null {
   const caminho = req.nextUrl.pathname
   if (caminho === '/api' || caminho.startsWith('/api/')) return null
+  // Prefetch não é visita: o App Router pré-carrega todo <Link> visível, e o selo da página de cada
+  // salão é um <Link> com `?origem=selo`. Sem isto, a cliente final que só rolou até o rodapé
+  // ganhava o cookie — e anos de "primeiro toque" errado no placar (revisão de 2026-09-23).
+  if (ehPrefetch(req)) return null
   if (req.cookies.get(COOKIE_ORIGEM)) return null
   const origem = origemDaUrl(req.nextUrl.searchParams, hoje)
   return origem ? serializarOrigem(origem) : null
+}
+
+/** Pré-carregamento do Next (`Next-Router-Prefetch`) ou do navegador (`Sec-Purpose`/`Purpose`). */
+function ehPrefetch(req: NextRequest): boolean {
+  if (req.headers.get('next-router-prefetch')) return true
+  const proposito = `${req.headers.get('sec-purpose') ?? ''} ${req.headers.get('purpose') ?? ''}`
+  return /prefetch|prerender/i.test(proposito)
 }
 
 /** A data de hoje no fuso do Brasil, `AAAA-MM-DD` — rótulo do primeiro toque, não aritmética. */

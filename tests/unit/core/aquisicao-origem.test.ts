@@ -12,10 +12,11 @@ function params(qs: string): URLSearchParams {
 }
 
 /** Um `NextRequest` de mentira com só o que `origemParaGravar` toca. */
-function req(caminhoEQuery: string, cookies: Record<string, string> = {}): NextRequest {
+function req(caminhoEQuery: string, cookies: Record<string, string> = {}, cabecalhos: Record<string, string> = {}): NextRequest {
   const url = new URL(caminhoEQuery, 'https://seuciclo.com.br')
   return {
     nextUrl: url,
+    headers: new Headers(cabecalhos),
     cookies: { get: (nome: string) => (nome in cookies ? { name: nome, value: cookies[nome] } : undefined) },
   } as unknown as NextRequest
 }
@@ -118,6 +119,19 @@ describe('origemParaGravar (middleware)', () => {
 
   it('não grava em /api — quem chama API é o app, não uma pessoa chegando por link', () => {
     expect(origemParaGravar(req('/api/v1/public/dom-rocha/availability?origem=selo'), HOJE)).toBeNull()
+  })
+
+  it.each([
+    [{ 'next-router-prefetch': '1' }],
+    [{ 'sec-purpose': 'prefetch' }],
+    [{ purpose: 'prefetch' }],
+    [{ 'sec-purpose': 'prefetch;prerender' }],
+  ])('prefetch não é visita (%o): o <Link> do selo visível no rodapé não pode gravar origem', (cabecalhos) => {
+    expect(origemParaGravar(req('/?origem=selo&ref=dom-rocha', {}, cabecalhos), HOJE)).toBeNull()
+  })
+
+  it('navegação de verdade por <Link> (RSC, sem prefetch) grava', () => {
+    expect(origemParaGravar(req('/?origem=selo&ref=dom-rocha&_rsc=abc', {}, { rsc: '1' }), HOJE)).not.toBeNull()
   })
 
   it('grava em qualquer tela de entrada, não só na raiz', () => {
