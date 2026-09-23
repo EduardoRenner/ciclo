@@ -6,7 +6,7 @@ import { rota } from '@/server/http/handler'
 
 vi.mock('@/server/db/server-client', () => ({ criarClienteDoUsuario: vi.fn() }))
 
-type Usuario = { id: string; email: string } | null
+type Usuario = { id: string; email: string; user_metadata?: Record<string, unknown> } | null
 
 /** Cliente de mentira com só o que a sessão consulta. */
 function clienteCom(usuario: Usuario, aal: string | null = 'aal1', metodos: string[] = []) {
@@ -51,7 +51,18 @@ describe('sessaoAtual', () => {
       email: 'bruna@salao.test',
       aal: 'aal2',
       metodos: ['oauth', 'totp'],
+      origemNoCadastro: null,
     })
+  })
+
+  it('docs/82 §6: devolve a origem gravada na conta no cadastro, crua (quem lê saneia)', async () => {
+    comSessao({ id: 'u-1', email: 'bruna@salao.test', user_metadata: { origem: 'canal=convite&em=2026-09-23' } }, 'aal1')
+    expect((await sessaoAtual())?.origemNoCadastro).toBe('canal=convite&em=2026-09-23')
+  })
+
+  it('origem que não é texto na metadata vira null, não objeto estranho', async () => {
+    comSessao({ id: 'u-1', email: 'bruna@salao.test', user_metadata: { origem: { canal: 'x' } } }, 'aal1')
+    expect((await sessaoAtual())?.origemNoCadastro).toBeNull()
   })
 
   it('métodos vira lista vazia quando o Supabase não informa', async () => {
