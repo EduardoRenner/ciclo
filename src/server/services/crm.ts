@@ -571,15 +571,14 @@ export type CentralDeAcoes = {
  * Conta recém-criada não tem cliente, não tem ciclo e não tem aniversariante — então a central
  * nascia vazia e a tela principal do produto abria muda, sem dizer o que fazer primeiro. Estes
  * três passos são a sequência mínima até o primeiro atendimento entrar na agenda.
+ *
+ * **"Traga quem você já atende" vem primeiro** (`docs/82` §7, 2026-09-23). Era o segundo, depois
+ * de "Confira seus serviços" — mas o catálogo já nasce preenchido pela profissão e a tela de quem
+ * já atende vem com o serviço escolhido, então conferir preço antes não destrava nada. Trazer a
+ * base é o único passo que faz a lista de quem sumiu aparecer NO MESMO DIA — o momento em que o
+ * dono entende o produto. A única conta real que chegou a produção parou com zero cliente.
  */
 const PRIMEIROS_PASSOS: AcaoSugerida[] = [
-  {
-    chave: 'inicio-servicos',
-    titulo: 'Confira seus serviços e preços',
-    descricao: 'O catálogo da sua profissão já veio preenchido. Ajuste preço e duração para o que você cobra de verdade.',
-    href: '/admin/config/servicos',
-    tom: 'info',
-  },
   {
     chave: 'inicio-clientes',
     /*
@@ -601,6 +600,13 @@ const PRIMEIROS_PASSOS: AcaoSugerida[] = [
     descricao:
       'Escreva os nomes e diga mais ou menos quando cada pessoa veio pela última vez — não precisa ser exato. É o que faz a lista de quem sumiu nascer cheia hoje, em vez de esperar cada cliente voltar duas ou três vezes.',
     href: '/admin/clientes/ja-atendo',
+    tom: 'info',
+  },
+  {
+    chave: 'inicio-servicos',
+    titulo: 'Confira seus serviços e preços',
+    descricao: 'O catálogo da sua profissão já veio preenchido. Ajuste preço e duração para o que você cobra de verdade.',
+    href: '/admin/config/servicos',
     tom: 'info',
   },
   {

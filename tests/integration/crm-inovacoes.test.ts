@@ -287,6 +287,10 @@ describe('central de ações', () => {
       const central = await centralDeAcoes(svc, tenant.id)
       expect(central.titulo).toBe('Primeiros passos')
       expect(central.acoes.map((a) => a.chave)).toContain('inicio-agenda')
+      // docs/82 §7: o primeiro passo é o que faz a lista de quem sumiu aparecer no mesmo dia.
+      // Conferir serviço antes não destrava nada — o catálogo já nasce preenchido.
+      expect(central.acoes[0]?.chave).toBe('inicio-clientes')
+      expect(central.acoes[0]?.href).toBe('/admin/clientes/ja-atendo')
     },
     60_000,
   )
