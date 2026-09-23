@@ -345,6 +345,8 @@ Mais recente embaixo. Cada linha diz o que foi medido, não só o que foi feito.
 
 | 14 | Copy pública varrida por "único/nenhum concorrente" (a Zenoti já prevê cadência pessoal) | nenhuma alegação pública; todas as ocorrências são comentário |
 | 14 | Link de agendamento de conta nova ganha prévia com imagem (`/[slug]/previa`, 1200×630, nome e cor do negócio) | antes: sem `og:image`, cartão só texto no WhatsApp; PNG gerado conferido, meta tags na página, mutação reprovada, build `ƒ /[slug]/previa` |
+| 15 | Mapa local: imprensa (3 jornais, 2 rádios) e formação (SENAC/SESC) + `pauta-para-imprensa-local.md` | pesquisa com fonte; pauta só com ≥ 3 negócios usando |
+| 15 | Placar por script (`node scripts/placar-distribuicao.mjs`), testado, sincronizado com o SQL | rodar achou furo no filtro das duas versões (`origem-e2e2-*` passava); mutação reprovada |
 
 **O que continua em aberto e é do Eduardo:**
 
