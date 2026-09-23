@@ -328,5 +328,26 @@ Mais recente embaixo. Cada linha diz o que foi medido, não só o que foi feito.
 | 4 | Recuperar: cliente sem telefone ganha "Chamar" (`wa.me` sem número → seletor de contatos do dono) | "Avisar" nessa pessoa terminava em "sem telefone cadastrado"; toque de 48 px sondado; guarda + mutação |
 | 4 | "seu último barba": texto de recuperação reescrito ("último horário de {serviço}") | teste com serviço feminino |
 
-**O que continua em aberto e é do Eduardo:** confirmar a cidade (§5); empurrar/abrir PR desta
-branch; as visitas.
+| 5 | Convite de colega no pico: linha abaixo do herói "O Motor de Ciclo trouxe", atribuída | simulado no banco local (mensagem + agendamento concluído ontem) → herói e convite na tela |
+| 5 | Texto do convite dizia "aqui do Barbearia …" → "do meu negócio, {nome}" | teste com nome feminino; o `` do teste virou backspace no heredoc e foi pego no byte |
+| 6 | 8 roteiros de conteúdo com `ref` por peça (`roteiros-de-conteudo.md`) | — |
+| 7 | Recuperar: ressalvas viraram `<details>` + uma linha; "cada uma… ela" → "cada pessoa" | a 390 px o primeiro nome aparece sem rolar |
+| 8 | Tela "confira seu e-mail" ganha "Abrir o Gmail/Outlook/…" | teste da função; **não** verificado no navegador (exigiria criar conta digitando senha) |
+| 9 | `/cadastro?origem=calculadora` continua a frase do botão ("Vamos achar quem sumiu, pelo nome") | HTML servido conferido nos dois casos |
+| 10 | Verificação ampla: lint inteiro, RLS 210/210, integração 410/411 | a falha que sobra (`job-queue`, contagem de `finish_job` sob contenção) é pré-existente e já diagnosticada |
+| 11 | "Chamar" manual passa a contar para o Motor (mensagem `sent`, carimbo, `recuperacao_enviada`) | integração 7/7 + mutação; clique no app registrou a linha |
+| 11 | Placar ganha `mandou_mensagem` | controle positivo local |
+
+**O que continua em aberto e é do Eduardo:**
+
+1. Confirmar a cidade (§5).
+2. Empurrar/abrir PR desta branch (`distribuicao/motor-de-distribuicao`, nascida de `origin/main`).
+3. **Decisão nova — quem paga o "Avisar".** Produção tem `WHATSAPP_*` configurado desde ~13/09, então
+   "Avisar" num cliente COM telefone sai pelo número do CICLO, como template de recuperação —
+   categoria marketing, ~R$ 0,31 por mensagem, pago pelo CICLO, e sem teto por plano no envio de um
+   por vez. Isso contraria a regra já registrada ("nunca empacotar WhatsApp ilimitado em nenhum
+   preço") e ainda manda a mensagem de um número que a cliente não conhece. O caminho que esta
+   rodada criou ("Chamar", `wa.me` pelo WhatsApp do próprio dono, grátis e pessoal) poderia ser o
+   padrão também para quem tem telefone, com "Avisar pelo sistema" como opção paga. Não mudei:
+   é decisão de preço e de canal.
+4. As visitas.
