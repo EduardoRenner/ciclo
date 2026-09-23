@@ -1,6 +1,7 @@
 'use client'
 
-import { Plus, Search, Sparkles, X } from 'lucide-react'
+import { Temporal } from '@js-temporal/polyfill'
+import { CalendarClock, Plus, Search, Sparkles, X } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useState, useTransition } from 'react'
 
@@ -8,6 +9,7 @@ import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import Input from '@/components/ui/input'
 import { useToast } from '@/components/ui/toast'
+import { primeiraVolta } from '@/core/ciclo/primeira-volta'
 import { QUANDO_FOI, type QuandoFoi } from '@/core/ciclo/quando-foi-a-ultima-vez'
 
 export type ServicoComRitmo = { id: string; nome: string; cycleDays: number }
@@ -18,7 +20,7 @@ type Retorno = { clientId: string; nome: string; quando: QuandoFoi }
 type Resultado = {
   cadastrados: number
   jaExistiam: string[]
-  previsao: { comDataInformada: number; jaDevendoVoltar: number; cyclesGravados: number } | null
+  previsao: { comDataInformada: number; jaDevendoVoltar: number; cyclesGravados: number; proximaVolta: string | null } | null
 }
 
 const LINHA_VAZIA: Pessoa = { nome: '', telefone: '', quando: 'quinzena' }
@@ -89,6 +91,7 @@ export default function FormularioQuemJaAtendo({ servicos, servicoPadrao, temCli
   if (resultado) {
     const p = resultado.previsao
     const noMotor = (p?.cyclesGravados ?? 0) > 0
+    const volta = p && p.jaDevendoVoltar === 0 && noMotor && p.proximaVolta ? primeiraVolta(p.proximaVolta, Temporal.Now.plainDateISO()) : null
     return (
       <div className="flex flex-col gap-4">
         {/*
@@ -112,6 +115,24 @@ export default function FormularioQuemJaAtendo({ servicos, servicoPadrao, temCli
               </div>
             </Card>
           </Link>
+        ) : null}
+
+        {/*
+          O outro lado da mesma recompensa, e o caso MAIS comum: a linha nasce em "Uns 15 dias" e o
+          corte volta a cada 21, então quem aceita o padrão cadastra todo mundo em dia. Sem este
+          cartão a tela dizia só "2 pessoas cadastradas" e a aba Recuperar, "Todo mundo em dia" —
+          medido no navegador, docs/82 §16 rodada 17.
+        */}
+        {volta ? (
+          <Card className="border-acc-2/40 bg-acc-soft">
+            <div className="flex items-start gap-3">
+              <CalendarClock aria-hidden className="mt-0.5 size-6 shrink-0 text-acc-2" />
+              <div>
+                <p className="text-corpo font-semibold text-acc-2">{volta.titulo}</p>
+                <p className="mt-1 text-secundario text-txt-2">{volta.descricao}</p>
+              </div>
+            </div>
+          </Card>
         ) : null}
 
         <Card>

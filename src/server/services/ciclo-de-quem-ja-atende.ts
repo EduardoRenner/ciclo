@@ -45,6 +45,16 @@ export type PrevisaoDaBase = {
    * mentindo. Os dois números vêm do MESMO cálculo; só este prova que ele sobreviveu à requisição.
    */
   cyclesGravados: number
+  /**
+   * `AAAA-MM-DD` de quando o primeiro que está EM DIA deve voltar — o menor `predicted_on` entre os
+   * `on_track`. `null` quando ninguém está em dia.
+   *
+   * Existe para a tela ter o que dizer quando ninguém está atrasado: a linha nasce em "Uns 15 dias",
+   * o corte de barbearia volta a cada 21, e quem aceitava o padrão via só "2 pessoas cadastradas"
+   * enquanto `/admin/recuperar` dizia "Todo mundo em dia" (docs/82 §16, rodada 17). A data sai do
+   * mesmo `computeCycle` que vai para `client_cycles`, não de uma conta paralela no navegador.
+   */
+  proximaVolta: string | null
 }
 
 /**
@@ -89,8 +99,10 @@ export async function preverEPersistirCiclos(
     resultado: computeCycle({ history: [{ date: c.ultimaVisita }], defaultCycleDays: cicloDoServico, today: hoje }),
   }))
   const jaDevendoVoltar = calculados.filter((c) => c.resultado.state !== 'on_track').length
+  const emDia = calculados.filter((c) => c.resultado.state === 'on_track').map((c) => c.resultado.predictedDate)
+  const proximaVolta = emDia.length > 0 ? emDia.reduce((a, b) => (Temporal.PlainDate.compare(a, b) <= 0 ? a : b)).toString() : null
 
-  if (!escolhido) return { comDataInformada: pessoas.length, jaDevendoVoltar, cyclesGravados: 0 }
+  if (!escolhido) return { comDataInformada: pessoas.length, jaDevendoVoltar, cyclesGravados: 0, proximaVolta }
 
   /*
     `docs/DECISOES.md` 2026-09-18: mesma causa-raiz do achado em `ciclo.ts` (assinante do clube e
@@ -170,5 +182,5 @@ export async function preverEPersistirCiclos(
     cyclesGravados += lote.length
   }
 
-  return { comDataInformada: pessoas.length, jaDevendoVoltar, cyclesGravados }
+  return { comDataInformada: pessoas.length, jaDevendoVoltar, cyclesGravados, proximaVolta }
 }
