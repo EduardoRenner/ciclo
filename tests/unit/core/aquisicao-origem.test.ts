@@ -38,6 +38,10 @@ describe('origemDaUrl (docs/82 §6)', () => {
     expect(origemDaUrl(params('ref=parceiro-joao'), HOJE)).toEqual({ canal: 'convite', ref: 'parceiro-joao', em: HOJE })
   })
 
+  it('canal mal formado com ref vira `outro`, não indicação de colega (revisão 2026-09-23)', () => {
+    expect(origemDaUrl(params('origem=Instagram%20Stories&ref=maria-cosmeticos'), HOJE)).toEqual({ canal: 'outro', ref: 'maria-cosmeticos', em: HOJE })
+  })
+
   it('canal bem-formado fora da lista vira `outro`, não uma chave nova no placar', () => {
     expect(origemDaUrl(params('origem=tiktok'), HOJE)?.canal).toBe('outro')
   })

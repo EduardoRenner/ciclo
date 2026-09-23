@@ -42,6 +42,8 @@ export default async function PaginaQuemJaAtendo() {
       .from('appointments')
       .select('service_id')
       .eq('tenant_id', ctx.tenantId)
+      // Só atendimento feito: cancelado, falta e horário futuro não dizem qual é o grosso da casa.
+      .eq('status', 'done')
       .order('starts_at', { ascending: false })
       .limit(1000),
     db.from('clients').select('id', { count: 'exact', head: true }).eq('tenant_id', ctx.tenantId).is('deleted_at', null),

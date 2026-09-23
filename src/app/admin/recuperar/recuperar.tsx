@@ -14,7 +14,7 @@ import Card from '@/components/ui/card'
 import Chip from '@/components/ui/chip'
 import EmptyState from '@/components/ui/empty-state'
 import { ASSUNTO_MOTOR_PARADO, canalDeContato } from '@/lib/contato'
-import { linkWhatsAppCompartilhar, textoDeVolta } from '@/lib/mensagens'
+import { linkWhatsAppCompartilhar, primeiroNome, textoDeVolta } from '@/lib/mensagens'
 import FilterRow from '@/components/ui/filter-row'
 import IconeAnel from '@/components/ui/icone-anel'
 import Skeleton from '@/components/ui/skeleton'
@@ -169,7 +169,14 @@ export default function RecuperarReceita({
         body: JSON.stringify({ clientId: item.clientId, serviceId: item.serviceId }),
       })
       if (!r.ok) throw new Error(String(r.status))
-      mostrarToast({ tom: 'ok', titulo: 'Anotado', descricao: `Se ${item.name.split(' ')[0]} marcar, a volta conta para o Motor de Ciclo.` })
+      const json = (await r.json()) as { data?: { registrada: boolean; motivo?: string } }
+      const primeiro = primeiroNome(item.name)
+      if (json.data?.registrada) {
+        mostrarToast({ tom: 'ok', titulo: 'Anotado', descricao: `Se ${primeiro} marcar, a volta conta para o Motor de Ciclo.` })
+      } else if (json.data?.motivo === 'ja_chamada') {
+        // A conversa abriu do mesmo jeito; o que não acontece é contar duas vezes na mesma semana.
+        mostrarToast({ tom: 'aviso', titulo: 'Já anotado nesta semana', descricao: `A chamada anterior de ${primeiro} continua valendo para o Motor.` })
+      }
     } catch {
       mostrarToast({ tom: 'erro', titulo: 'Não consegui anotar a chamada', descricao: 'A mensagem no WhatsApp não muda. Só esta volta pode não aparecer no que o Motor trouxe.' })
     }
@@ -356,7 +363,9 @@ export default function RecuperarReceita({
                       primeiro contato com a lista. O contato dela já está no celular do dono, pelo
                       nome: `wa.me` sem número abre o seletor do próprio WhatsApp com o texto pronto.
                     */}
-                    {item.phone ? (
+                    {item.optOut && !item.phone ? (
+                      <p className="mt-1 text-label text-txt-3">Pediu para não receber</p>
+                    ) : item.phone ? (
                       <Button
                         variante="ghost"
                         tamanho="sm"

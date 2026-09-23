@@ -47,8 +47,13 @@ export function aplicarVariaveis(corpo: string, variaveis: VariaveisMensagem): s
   return corpo.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, chave: string) => {
     const valor = variaveis[chave as keyof VariaveisMensagem]
     if (valor == null) return ''
-    return chave === 'nome' ? String(valor).trim().split(/\s+/)[0]! : String(valor)
+    return chave === 'nome' ? primeiroNome(String(valor)) : String(valor)
   })
+}
+
+/** Só o primeiro nome, sem espaço sobrando — a mesma regra para mensagem, toast e texto de volta. */
+export function primeiroNome(nome: string): string {
+  return nome.trim().split(/\s+/)[0] ?? ''
 }
 
 /**
@@ -112,7 +117,7 @@ export function saidaDeContato(
  * Sem "sentimos sua falta": no WhatsApp pessoal isso soa como disparo em massa.
  */
 export function textoDeVolta({ nome, servico }: { nome: string; servico: string }): string {
-  const primeiro = nome.trim().split(/\s+/)[0] ?? ''
+  const primeiro = primeiroNome(nome)
   const saudacao = primeiro ? `Oi, ${primeiro}!` : 'Oi!'
   // "seu último HORÁRIO DE {serviço}", nunca "seu último {serviço}": metade do catálogo de beleza é
   // feminino (barba, escova, manutenção, depilação) e "seu último barba" sai na voz do dono.

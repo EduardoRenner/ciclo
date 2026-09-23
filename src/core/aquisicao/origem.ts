@@ -82,9 +82,13 @@ function paraCanal(valor: string | null): Canal | null {
  */
 export function origemDaUrl(params: URLSearchParams, hoje: string): Origem | null {
   const ref = sanear(params.get('ref'))
-  const canal = paraCanal(sanear(params.get('origem')) ?? sanear(params.get('utm_source')))
+  const bruto = params.get('origem') ?? params.get('utm_source')
+  const canal = paraCanal(sanear(bruto))
   if (!canal && !ref) return null
-  return { canal: canal ?? 'convite', ref, em: FORMATO_DATA.test(hoje) ? hoje : '1970-01-01' }
+  // Canal escrito mas mal formado ("Instagram Stories") é `outro`, não indicação: só um link SEM
+  // canal nenhum, com `ref`, é o atalho de convite.
+  const padrao: Canal = bruto?.trim() ? 'outro' : 'convite'
+  return { canal: canal ?? padrao, ref, em: FORMATO_DATA.test(hoje) ? hoje : '1970-01-01' }
 }
 
 /** Valor do cookie. `URLSearchParams` escapa o que precisar — mas `sanear` já não deixou passar nada. */

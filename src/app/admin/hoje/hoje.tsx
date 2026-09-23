@@ -352,11 +352,12 @@ export default function Hoje({
       {/*
         `docs/82` §11: o convite de colega morava só em "Meu plano", e lá ele fica — mas o momento em
         que alguém indica é o momento em que acabou de ganhar. Aparece SÓ com o herói "o Motor
-        trouxe": aí não disputa espaço com a tarefa do dia, é a própria prova que o convite cita. Uma
+        trouxe" este mês: aí não disputa espaço com a tarefa do dia, é a própria prova que o convite cita. Uma
         linha, sem prêmio (não há como pagar um — `convite-do-ciclo.ts`), e o link já leva quem
         indicou (`?origem=convite&ref=`), para a indicação aparecer no placar.
       */}
-      {heroi === 'motor_trouxe' && site ? (
+      {/* Pela ATRIBUIÇÃO, não pelo herói: em dia com receita o herói é "Atendido hoje" (revisão 2026-09-23). */}
+      {atribuicao.count > 0 && site ? (
         <p className="-mt-3 mb-6 text-secundario text-txt-2">
           Conhece alguém do ramo que também perde cliente sem saber?{' '}
           <a

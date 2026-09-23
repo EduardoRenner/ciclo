@@ -339,11 +339,32 @@ describe('registrarChamadaManual (docs/82 §7)', () => {
     expect(eventos?.some((e) => (e.meta as { via?: string }).via === 'manual')).toBe(true)
   }, 30_000)
 
+  it('a mesma pessoa chamada de novo na mesma semana não conta duas vezes (revisão 2026-09-23)', async () => {
+    const clientId = await criarClienteEmCiclo('Chamada Repetida', { state: 'late', valueAtRiskCents: 5_000 })
+    expect(await registrarChamadaManual(svc, tenantId, { clientId, serviceId: servicoId })).toEqual({ registrada: true })
+    expect(await registrarChamadaManual(svc, tenantId, { clientId, serviceId: servicoId })).toEqual({ registrada: false, motivo: 'ja_chamada' })
+
+    const { count } = await svc.from('messages').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId).eq('client_id', clientId)
+    expect(count).toBe(1)
+  }, 30_000)
+
+  it('quem pediu para não receber não vira mensagem enviada', async () => {
+    const clientId = await criarClienteEmCiclo('Pediu Parar', { state: 'late', valueAtRiskCents: 5_000, optOut: true })
+    expect(await registrarChamadaManual(svc, tenantId, { clientId, serviceId: servicoId })).toEqual({ registrada: false, motivo: 'opt_out' })
+
+    const { count } = await svc.from('messages').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId).eq('client_id', clientId)
+    expect(count).toBe(0)
+
+    // E a lista já avisa a tela, para ela nem oferecer o "Chamar".
+    const lista = await listarParaRecuperar(svc, tenantId)
+    expect(lista.items.find((i) => i.clientId === clientId)?.optOut).toBe(true)
+  }, 30_000)
+
   it('sem ciclo daquela pessoa naquele serviço, não inventa mensagem', async () => {
     const clientId = await criarClienteEmCiclo('Sem Esse Servico', { state: 'late', valueAtRiskCents: 5_000 })
     const outroServico = randomUUID()
 
-    expect(await registrarChamadaManual(svc, tenantId, { clientId, serviceId: outroServico })).toEqual({ registrada: false })
+    expect(await registrarChamadaManual(svc, tenantId, { clientId, serviceId: outroServico })).toEqual({ registrada: false, motivo: 'sem_ciclo' })
     const { count } = await svc.from('messages').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId).eq('client_id', clientId)
     expect(count).toBe(0)
   }, 30_000)
