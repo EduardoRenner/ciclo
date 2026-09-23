@@ -1,14 +1,16 @@
 'use client'
 
 import { Temporal } from '@js-temporal/polyfill'
-import { CalendarClock, Plus, Search, Sparkles, X } from 'lucide-react'
+import { CalendarClock, ClipboardList, Contact, Plus, Search, Sparkles, X } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useState, useTransition } from 'react'
 
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import Input from '@/components/ui/input'
+import Textarea from '@/components/ui/textarea'
 import { useToast } from '@/components/ui/toast'
+import { lerListaDeNomes, MAX_DA_LISTA, pessoasDosContatos, type ContatoDoCelular, type PessoaDaLista } from '@/core/ciclo/lista-de-nomes'
 import { primeiraVolta } from '@/core/ciclo/primeira-volta'
 import { QUANDO_FOI, type QuandoFoi } from '@/core/ciclo/quando-foi-a-ultima-vez'
 
@@ -55,6 +57,59 @@ export default function FormularioQuemJaAtendo({ servicos, servicoPadrao, temCli
 
   const preenchidas = pessoas.filter((p) => p.nome.trim() !== '')
   const total = preenchidas.length + retornos.length
+
+  /*
+    docs/82 §14 semana 2, "importar do caderno mais rápido": na visita, digitar quinze nomes com o
+    dono olhando é onde a conta morre antes de ver o Motor. Duas portas para trazer a lista de uma
+    vez — colar (qualquer celular) e o seletor de contatos (Chrome no Android; o iPhone não tem a
+    API, e o botão simplesmente não aparece). As linhas vazias dão lugar às novas; quem já foi
+    escrito à mão fica, e nome repetido não entra duas vezes.
+  */
+  const [colando, setColando] = useState(false)
+  const [textoColado, setTextoColado] = useState('')
+  const [quandoColado, setQuandoColado] = useState<QuandoFoi>('quinzena')
+  const [temContatos, setTemContatos] = useState(false)
+  useEffect(() => {
+    // Detectado depois de montar: no servidor não existe `navigator`, e decidir no render daria
+    // uma tela diferente na hidratação.
+    setTemContatos('contacts' in navigator && 'ContactsManager' in window)
+  }, [])
+  const daLista = lerListaDeNomes(textoColado)
+
+  function trazer(novas: PessoaDaLista[], quando: QuandoFoi) {
+    const escritas = pessoas.filter((p) => p.nome.trim() !== '')
+    const ja = new Set(escritas.map((p) => p.nome.trim().toLocaleLowerCase('pt-BR')))
+    const somadas = novas
+      .filter((n) => !ja.has(n.nome.toLocaleLowerCase('pt-BR')))
+      .map((n) => ({ nome: n.nome, telefone: n.telefone, quando }))
+    const juntas = [...escritas, ...somadas].slice(0, MAX_DA_LISTA)
+    setPessoas(juntas.length > 0 ? juntas : INICIAIS)
+    return juntas.length - escritas.length
+  }
+
+  function colar() {
+    const trazidas = trazer(daLista, quandoColado)
+    setColando(false)
+    setTextoColado('')
+    mostrarToast({ tom: 'ok', titulo: `${trazidas} ${trazidas === 1 ? 'pessoa na lista' : 'pessoas na lista'}`, descricao: 'Confira e toque em "Pôr no Motor".' })
+  }
+
+  async function escolherDosContatos() {
+    try {
+      const nav = navigator as Navigator & { contacts: { select(campos: string[], opcoes: { multiple: boolean }): Promise<ContatoDoCelular[]> } }
+      const contatos = await nav.contacts.select(['name', 'tel'], { multiple: true })
+      if (contatos.length === 0) return
+      const trazidas = trazer(pessoasDosContatos(contatos), 'quinzena')
+      mostrarToast({
+        tom: 'ok',
+        titulo: `${trazidas} ${trazidas === 1 ? 'pessoa trazida' : 'pessoas trazidas'} dos contatos`,
+        descricao: 'Ajuste a "Última vez" de cada uma antes de pôr no Motor.',
+      })
+    } catch {
+      // Recusar a permissão ou fechar o seletor cai aqui; nada foi descartado, a lista continua igual.
+      mostrarToast({ tom: 'erro', titulo: 'Não consegui abrir os contatos', descricao: 'Cole a lista ou escreva os nomes abaixo.' })
+    }
+  }
 
   function mudar(indice: number, campo: keyof Pessoa, valor: string) {
     setPessoas((atual) => atual.map((p, i) => (i === indice ? { ...p, [campo]: valor } : p)))
@@ -237,6 +292,55 @@ export default function FormularioQuemJaAtendo({ servicos, servicoPadrao, temCli
         <span className="text-label font-semibold text-txt-2">
           {temClientes ? 'Ou gente nova, que ainda não tem ficha' : 'Quem você atende e quando veio pela última vez'}
         </span>
+
+        {colando ? (
+          <Card className="flex flex-col gap-3">
+            <Textarea
+              rotulo="Cole a lista, um nome por linha"
+              ajuda="Do bloco de notas ou de uma conversa. Telefone na mesma linha entra junto."
+              value={textoColado}
+              onChange={(e) => setTextoColado(e.target.value)}
+              rows={6}
+              placeholder={'Marcos - 49 99999-0001\nRafael\nDona Alzira'}
+            />
+            <label className="flex flex-col gap-1">
+              <span className="text-label font-semibold text-txt-2">Quando essas pessoas vieram, mais ou menos?</span>
+              <select
+                value={quandoColado}
+                onChange={(e) => setQuandoColado(e.target.value as QuandoFoi)}
+                className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo text-txt"
+              >
+                {QUANDO_FOI.map((q) => (
+                  <option key={q.valor} value={q.valor}>
+                    {q.rotulo}
+                  </option>
+                ))}
+              </select>
+              <span className="text-secundario text-txt-3">Dá para mudar uma por uma depois. Quem sumiu faz tempo, cole numa lista separada.</span>
+            </label>
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={colar} disabled={daLista.length === 0} motivoDesabilitado="Cole pelo menos um nome.">
+                {daLista.length === 0 ? 'Pôr na lista' : `Pôr ${daLista.length} na lista`}
+              </Button>
+              <Button variante="ghost" onClick={() => setColando(false)}>
+                Cancelar
+              </Button>
+            </div>
+          </Card>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            <Button variante="secondary" onClick={() => setColando(true)}>
+              <ClipboardList aria-hidden className="size-4" />
+              Colar uma lista
+            </Button>
+            {temContatos ? (
+              <Button variante="secondary" onClick={escolherDosContatos}>
+                <Contact aria-hidden className="size-4" />
+                Escolher dos contatos
+              </Button>
+            ) : null}
+          </div>
+        )}
         {pessoas.map((pessoa, i) => (
           <Card key={i} className="flex flex-col gap-2">
             <div className="flex items-end gap-2">
