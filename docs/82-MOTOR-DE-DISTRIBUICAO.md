@@ -364,6 +364,7 @@ Mais recente embaixo. Cada linha diz o que foi medido, não só o que foi feito.
 | 22 | **Guarda cega de raiz:** `copy-sem-travessao` varria só `.tsx` e rotas, mas a copy do vazio de Recuperar, das ações do Hoje, do resumo do envio e da completude mora em `src/core`. Medido: 8 frases de tela com travessão lá (4 delas escritas por mim nas rodadas 17–19, verdes). Corrigidas; `core` entra na varredura com exceções por nome (prompt do assistente, diagnóstico de schema, regex) e piso por nome | mutação: travessão de volta no vazio de Recuperar → reprova |
 | 23 | `code-review` (high) das rodadas 14–22: 6 achados. Corrigidos: "o próximo deve voltar" do Hoje sumia com 10+ remarcados (janela de 2 dias, teto 10 → UTC−1, teto 50); "Colar uma lista" comia o DDD de `49-99999-0001 Marcos`. Descartados com motivo: data "órfã" no recálculo (inalcançável: `done` é terminal, sem mesclagem), retorno fora da trilha (data é tão aproximada quanto a de memória). Registrados: leitura inteira de `client_cycles` no recálculo (reduzir pede migration) e duas consultas do "próximo" (unificar põe uma ida de rede em série no Hoje) | teste do Hoje passou de 1 para 11 remarcados; 2 mutações reprovadas; `origin/main` conferido: 0 commits atrás |
 | 24 | **Branch pronta para PR.** Verificação inteira de uma vez: typecheck, lint, unidade 2.658/2.658, RLS 210/210, integração 420/420 (sem nem o intermitente do `job-queue`), build. `origin/main` 0 commits à frente. Merge simulado (`git merge-tree`) **limpo** com `loop/integracao-final`, `loop/rodada-31-*` e `loop/rodada-27-*`; conflita só com `resgate/sinal-e-travessoes` (03/09) e `feat/quem-voce-ja-atende` (11/09), antigas e já incorporadas à `main` por squash | saída dos comandos nesta sessão |
+| 25 | **Decisão do Eduardo, confirmada:** "Chamar" (WhatsApp DO PRÓPRIO DONO) vira o caminho padrão de um-a-um para TODO cliente, com ou sem telefone — não só quem chegou sem número. O "Avisar" por linha (que desde ~13/09 saía pelo número pago da Meta) foi removido; `/api/v1/cycle/recover/send` agora exige `envio_em_lote` sempre, não só com `items.length > 1`. Não é decisão nova do zero: `docs/18` §D.2 já dizia "no grátis, a pessoa manda uma a uma pelo `wa.me`" — o código tinha divergido disso quando `WHATSAPP_*` entrou na Vercel. `docs/DECISOES.md` registra o realinhamento | guarda reescrita (`recuperar-sem-telefone-tem-saida.test.ts`): mutação que reintroduz `enviar([item])` reprova em 2 dos 3 casos; typecheck/lint limpos |
 
 > **Efeito em produção quando for ao ar (rodada 17):** toda ficha que entrou por memória ou planilha
 > e ficou congelada será recalculada na primeira madrugada — parte dela pode aparecer de uma vez em
@@ -371,16 +372,14 @@ Mais recente embaixo. Cada linha diz o que foi medido, não só o que foi feito.
 > `client_cycles` semeado sem atendimento passam a envelhecer com o tempo; não pude conferir se
 > existem (sem leitura de produção nesta sessão).
 
-**O que continua em aberto e é do Eduardo:**
+**Decidido pelo Eduardo em 2026-09-23 (os três itens que estavam em aberto):**
 
-1. Confirmar a cidade (§5).
-2. Empurrar/abrir PR desta branch (`distribuicao/motor-de-distribuicao`, nascida de `origin/main`).
-3. **Decisão nova — quem paga o "Avisar".** Produção tem `WHATSAPP_*` configurado desde ~13/09, então
-   "Avisar" num cliente COM telefone sai pelo número do CICLO, como template de recuperação —
-   categoria marketing, ~R$ 0,31 por mensagem, pago pelo CICLO, e sem teto por plano no envio de um
-   por vez. Isso contraria a regra já registrada ("nunca empacotar WhatsApp ilimitado em nenhum
-   preço") e ainda manda a mensagem de um número que a cliente não conhece. O caminho que esta
-   rodada criou ("Chamar", `wa.me` pelo WhatsApp do próprio dono, grátis e pessoal) poderia ser o
-   padrão também para quem tem telefone, com "Avisar pelo sistema" como opção paga. Não mudei:
-   é decisão de preço e de canal.
-4. As visitas.
+1. **Cidade confirmada: Maravilha/SC** (§5).
+2. **Autorizado enviar a branch e abrir o PR** — feito nesta rodada.
+3. **"Chamar" é o padrão, "Avisar pelo sistema" vira só a alavanca paga de mandar em lote** —
+   implementado nesta rodada (linha 25 da tabela acima).
+
+**O que continua em aberto:**
+
+1. As visitas — só o Eduardo pode fazer.
+2. Revisar o PR aberto e decidir se funde para `main`.

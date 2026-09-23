@@ -66,6 +66,7 @@ export function textoDoEnvioAutomatico(
     ? 'Ligado. Lembrete de agendamento e campanha de recuperação saem sozinhos, no horário certo.'
     : // Sem afirmar disparo automático, e sem virar silêncio: o dono precisa saber que a mensagem
       // depende dele hoje, ou vai esperar por um envio que não vem. O caminho real é tocar em
-      // "Avisar" (tela Recuperar) ou "Mensagem" (ficha da cliente), que abrem o WhatsApp.
-      'Liberado, mas o disparo é seu: a mensagem vai quando você toca em "Avisar", pelo WhatsApp.'
+      // "Chamar" (tela Recuperar) ou "Mensagem" (ficha da cliente), que abrem o WhatsApp DELE —
+      // "Avisar" virou o nome do envio pago pelo sistema, não deste caminho (docs/82 §11).
+      'Liberado, mas o disparo é seu: a mensagem vai quando você toca em "Chamar", pelo seu WhatsApp.'
 }

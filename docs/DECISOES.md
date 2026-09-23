@@ -13659,3 +13659,12 @@ não sabia de onde vinha ninguém: o selo "Feito com CICLO" e o convite de coleg
 raiz sem marca. Sem atribuição, o plano de 30 dias do `docs/82` não consegue escolher canal. Ficou
 no evento e não no tenant porque é pergunta do CICLO sobre si mesmo, não dado do negócio; e o
 `registrarEvento` nunca lança, então uma produção sem a 0088 perde a origem mas não o cadastro.
+
+2026-09-23 · Quem paga o "Avisar"? · "Chamar" (WhatsApp DO PRÓPRIO DONO, `wa.me`, grátis, sem
+depender de credencial) vira o caminho padrão de um-a-um para TODO cliente, com ou sem telefone
+salvo. `/api/v1/cycle/recover/send` (envio pelo número da Meta que o CICLO paga) passa a exigir
+`envio_em_lote` sempre — não só quando `items.length > 1` · Decisão do Eduardo, confirmada em
+sessão. Não é invenção nova: `docs/18-MONETIZACAO-PLANO.md` §D.2 já dizia "no grátis, a pessoa
+manda uma a uma pelo `wa.me`" — o código tinha divergido disso desde que `WHATSAPP_*` entrou na
+Vercel (~13/09), quando o botão "Avisar" de cada linha passou a chamar o sistema pago em vez do
+WhatsApp do dono. Este commit realinha o código com a decisão já registrada, não cria uma nova.

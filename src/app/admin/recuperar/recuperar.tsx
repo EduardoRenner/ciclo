@@ -14,7 +14,7 @@ import Card from '@/components/ui/card'
 import Chip from '@/components/ui/chip'
 import EmptyState from '@/components/ui/empty-state'
 import { ASSUNTO_MOTOR_PARADO, canalDeContato } from '@/lib/contato'
-import { linkWhatsAppCompartilhar, primeiroNome, textoDeVolta } from '@/lib/mensagens'
+import { linkWhatsApp, linkWhatsAppCompartilhar, primeiroNome, textoDeVolta } from '@/lib/mensagens'
 import FilterRow from '@/components/ui/filter-row'
 import IconeAnel from '@/components/ui/icone-anel'
 import Skeleton from '@/components/ui/skeleton'
@@ -187,9 +187,14 @@ export default function RecuperarReceita({
 
   const recorte = recorteDaLista(lista.count, lista.items.length)
   const itensSelecionados = lista.items.filter((i) => selecionados.has(chave(i)))
-  // O bloqueio só aparece quando ela realmente pediu o lote. Com uma cliente marcada o caminho
-  // grátis atende, e mostrar oferta de plano ali seria vender no meio de uma tarefa que funciona.
-  const bloqueado = !podeEnviarEmLote && itensSelecionados.length > 1
+  /*
+    Decisão de 2026-09-23 (`docs/82` §11): esta barra só faz uma coisa — mandar pelo número do
+    CICLO, que é dinheiro real por mensagem. O caminho grátis, um a um, para sempre, é "Chamar" em
+    cada linha (o WhatsApp do PRÓPRIO dono) e não passa por aqui — então marcar até uma cliente e
+    tocar nesta barra já é pedir o recurso pago, com ou sem plano. Era `> 1`, de quando esta rota
+    era o único jeito de avisar alguém.
+  */
+  const bloqueado = !podeEnviarEmLote && itensSelecionados.length > 0
   const valorSelecionadoCents = itensSelecionados.reduce((soma, i) => soma + i.valueCents, 0)
 
   /*
@@ -361,28 +366,32 @@ export default function RecuperarReceita({
                       </>
                     )}
                     {/*
-                      `docs/82` §7, medido em 2026-09-23: quem traz a base de memória ("Quem você já
-                      atende") deixa o WhatsApp em branco — o campo é opcional de propósito. "Avisar"
-                      nessa pessoa terminava em "sem telefone cadastrado", um beco sem saída no
-                      primeiro contato com a lista. O contato dela já está no celular do dono, pelo
-                      nome: `wa.me` sem número abre o seletor do próprio WhatsApp com o texto pronto.
+                      `docs/82` §7/§11 do plano — decisão de 2026-09-23: "Chamar" (o WhatsApp DO
+                      PRÓPRIO DONO, grátis, sem depender de credencial) virou o caminho padrão para
+                      todo mundo, com ou sem telefone salvo. Antes, quem tinha telefone caía em
+                      "Avisar" — a mensagem saía pelo número do CICLO, categoria marketing paga por
+                      mensagem (~R$0,31), sem teto nenhum no plano Grátis, e chegava de um número que
+                      a cliente não conhece. "Avisar pelo sistema" continua existindo, mas só como a
+                      alavanca PAGA de chamar todo mundo de uma vez (`ActionBar` mais abaixo,
+                      `envio_em_lote`) — nunca mais como a ação de um clique por pessoa.
+
+                      Opt-out bloqueia os dois caminhos igual: quem pediu para não receber não pode
+                      ganhar nem o "Avisar" pelo sistema nem o "Chamar" manual (o servidor também
+                      recusa, `registrarChamadaManual`) — mostrar o botão aqui seria prometer um
+                      toque que não faz nada.
+
+                      Com telefone válido, o wa.me já abre endereçado à pessoa (`linkWhatsApp`); sem
+                      telefone (a base trazida de memória, campo opcional de propósito), cai no
+                      seletor de contato do próprio WhatsApp do dono (`linkWhatsAppCompartilhar`).
                     */}
-                    {item.optOut && !item.phone ? (
+                    {item.optOut ? (
                       <p className="mt-1 text-label text-txt-3">Pediu para não receber</p>
-                    ) : item.phone ? (
-                      <Button
-                        variante="ghost"
-                        tamanho="sm"
-                        className="-mr-2 mt-0.5 px-2"
-                        disabled={enviando}
-                        onClick={() => enviar([item])}
-                        motivoDesabilitado="Aguarde o envio em andamento terminar."
-                      >
-                        Avisar
-                      </Button>
                     ) : (
                       <a
-                        href={linkWhatsAppCompartilhar(textoDeVolta({ nome: item.name, servico: item.serviceName }))}
+                        href={
+                          linkWhatsApp(item.phone, textoDeVolta({ nome: item.name, servico: item.serviceName })) ??
+                          linkWhatsAppCompartilhar(textoDeVolta({ nome: item.name, servico: item.serviceName }))
+                        }
                         target="_blank"
                         rel="noreferrer"
                         aria-label={`Chamar ${item.name} pelo seu WhatsApp`}
@@ -409,9 +418,10 @@ export default function RecuperarReceita({
         {bloqueado ? (
           /*
             §M.1: a peça de conversão mais importante do produto aparece AQUI, no momento em que
-            ela marcou oito clientes e tocou para avisar — não numa página de preço que ela teria
-            de ir procurar. Por isso leva o número e o valor DELA, e por isso o caminho grátis
-            (avisar uma de cada vez, pelo botão de cada linha) fica escrito e continua valendo.
+            ela marcou clientes e tocou para avisar pelo sistema — não numa página de preço que ela
+            teria de ir procurar. Por isso leva o número e o valor DELA, e por isso o caminho
+            grátis (o botão "Chamar" de cada linha, sem marcar nada) fica escrito e continua
+            valendo — só que agora ele é a resposta pra QUALQUER seleção, não só pra mais de uma.
 
             Sem as bordas próprias: a ActionBar já é o cartão.
           */
@@ -419,7 +429,7 @@ export default function RecuperarReceita({
             nativo={nativo}
             className="border-0 bg-transparent p-1 shadow-none"
             precisaDo="essencial"
-            acao="avisar todo mundo de uma vez"
+            acao="avisar pelo sistema, sem abrir o WhatsApp"
             evidencia={{
               quantidade: itensSelecionados.length,
               substantivo: 'na lista, esperando para voltar',
@@ -427,7 +437,7 @@ export default function RecuperarReceita({
             }}
             alternativa={
               <button type="button" onClick={() => setSelecionados(new Set())}>
-                Avisar uma de cada vez, de graça
+                Chame pelo seu WhatsApp, de graça, tocando em &ldquo;Chamar&rdquo; em cada linha
               </button>
             }
           />
