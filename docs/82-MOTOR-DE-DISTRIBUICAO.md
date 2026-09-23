@@ -347,6 +347,9 @@ Mais recente embaixo. Cada linha diz o que foi medido, não só o que foi feito.
 | 14 | Link de agendamento de conta nova ganha prévia com imagem (`/[slug]/previa`, 1200×630, nome e cor do negócio) | antes: sem `og:image`, cartão só texto no WhatsApp; PNG gerado conferido, meta tags na página, mutação reprovada, build `ƒ /[slug]/previa` |
 | 15 | Mapa local: imprensa (3 jornais, 2 rádios) e formação (SENAC/SESC) + `pauta-para-imprensa-local.md` | pesquisa com fonte; pauta só com ≥ 3 negócios usando |
 | 15 | Placar por script (`node scripts/placar-distribuicao.mjs`), testado, sincronizado com o SQL | rodar achou furo no filtro das duas versões (`origem-e2e2-*` passava); mutação reprovada |
+| 16 | Placar: shebang tirado — isolado o teste passava, na suíte inteira dava `SyntaxError` na linha 1 | suíte completa |
+| 16 | Conta nova abria a ficha sem nenhuma mensagem pronta: a releitura depois do seed caía na memoização de `fetch` do Next (mesma URL → resposta vazia da 1ª leitura) | log no dev: "depois do seed 0" → "10"; isolado (sem Next) o defeito não aparece, por isso a integração passava |
+| 16 | Ficha: "Sumiu, chamar de volta" passa a contar para o Motor (mesma rota do "Chamar"); cliente sem telefone abre o seletor de contatos em vez de "toque no lápis" | integração 11/11; medido a 390 px |
 
 **O que continua em aberto e é do Eduardo:**
 
