@@ -7,6 +7,10 @@
 
 - Celular carregado, com `seuciclo.com.br/calculadora` e `seuciclo.com.br/cadastro?origem=visita`
   salvos.
+- Cartões impressos: `material/cartao-a6.html` (A6, frente e verso; QR da calculadora com
+  `?origem=visita`). Deixe um no balcão de quem não quis conversar agora — o QR conta no placar.
+  **Leia o QR com o celular antes de imprimir o lote**: foi gerado por script e não passou por
+  câmera.
 - A planilha de leads aberta (`leads-modelo.csv` nesta pasta). 5 a 8 negócios por saída, todos
   num raio que dá para fazer a pé.
 - Horário: fim de tarde de segunda ou começo de tarde de terça. Nunca sábado.
