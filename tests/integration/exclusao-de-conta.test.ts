@@ -104,6 +104,14 @@ describe('excluirPropriaConta: a ação mais destrutiva do produto', () => {
 
       const situacao = await situacaoDaConta(svc, donoId)
       expect(situacao.bloqueios.length, 'dono de tenant com equipe deveria vir com bloqueio').toBeGreaterThan(0)
+      /*
+        Rodada 26/28 do docs/82: a frase mandava "fale com o suporte" sem existir canal nenhum. O
+        ambiente local não tem WHATSAPP_CONTATO/EMAIL_CONTATO configurado (mesmo estado de
+        produção antes de o Eduardo ligar um canal), então o bloqueio real hoje NÃO pode prometer
+        conversa — o teste prova isso contra a função de verdade, não contra uma cópia da regra.
+      */
+      expect(situacao.bloqueios[0], 'sem canal configurado, a frase não pode prometer suporte').not.toMatch(/suporte|fale com|a gente/i)
+      expect(situacao.bloqueios[0]).toMatch(/assumir como titular/)
 
       await expect(excluirPropriaConta(svc, donoId)).rejects.toMatchObject({ code: 'VALIDATION_ERROR' } satisfies Partial<AppError>)
 
