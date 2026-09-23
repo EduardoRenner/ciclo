@@ -4,6 +4,10 @@
 > ou pelo MCP (`execute_sql`). Uma vez por semana, no mesmo dia, e o resultado vai para o
 > relatório do mês.
 
+**Sem painel à mão:** `node scripts/placar-distribuicao.mjs` imprime o mesmo funil e "quem trouxe
+quem", lendo do banco para onde o `.env.local` aponta (a primeira linha da saída diz qual). As
+duas versões excluem os mesmos prefixos — há teste que confere.
+
 ## Quem NÃO entra na conta
 
 Contas de demonstração, revisão de loja e resíduo de teste. Sem este filtro o placar mente: os 6
@@ -15,7 +19,7 @@ create temporary view contas_reais as
 select t.*
 from tenants t
 where t.deleted_at is null
-  and t.slug !~ '^(demo-|apple-review|teste-|origem-e2e-)'
+  and t.slug !~ '^(demo-|apple-review|teste-|origem-e2e)'
   and t.slug !~ '^(health|alertas-estoque|recuperar|clientes|risco|teste|pe)-[0-9a-f]{6,}$';
 ```
 
