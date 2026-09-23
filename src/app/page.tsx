@@ -439,12 +439,13 @@ export default async function Home() {
           quem ainda não quer conta faz a conta, e o fim da calculadora leva ao cadastro com
           `?origem=calculadora`.
         */}
-        <p className="mt-4 text-secundario text-txt-2">
-          Ainda não quer criar conta?{' '}
-          <Link href="/calculadora" className="font-semibold text-acc-2 underline underline-offset-2">
-            Veja quanto os clientes que sumiram custam por mês
-          </Link>
-        </p>
+        {/* A linha inteira é o alvo (≥ 48 px): um link inline de duas linhas media 34. */}
+        <Link href="/calculadora" className="mt-2 flex min-h-12 items-center text-secundario text-txt-2">
+          <span>
+            Ainda não quer criar conta?{' '}
+            <span className="font-semibold text-acc-2 underline underline-offset-2">Veja quanto os clientes que sumiram custam por mês</span>
+          </span>
+        </Link>
         {/*
           TICKET-UX16: pedido direto do usuário foi tirar o preço do topo, "para não assustar" —
           reverte a decisão anterior (comentário removido dizia "o preço aparece já na primeira
