@@ -327,7 +327,12 @@ export async function enviarParaRecuperar(
   return { queued, skipped }
 }
 
-export const EsquemaChamadaManual = z.object({ clientId: z.string().uuid(), serviceId: z.string().uuid() })
+/**
+ * `serviceId` opcional: a lista de Recuperar sabe o serviço de cada linha, a ficha do cliente não —
+ * lá o dono escolhe o modelo "Sumiu, chamar de volta" para a PESSOA. Sem serviço, vale o ciclo mais
+ * atrasado dela; se nenhum estiver fora do ritmo, não é recuperação e nada é anotado.
+ */
+export const EsquemaChamadaManual = z.object({ clientId: z.string().uuid(), serviceId: z.string().uuid().optional() })
 export type EntradaChamadaManual = z.infer<typeof EsquemaChamadaManual>
 
 /**
@@ -349,14 +354,25 @@ export async function registrarChamadaManual(
   entrada: EntradaChamadaManual,
   agora: Temporal.Instant = Temporal.Now.instant(),
 ): Promise<{ registrada: boolean; motivo?: 'sem_ciclo' | 'opt_out' | 'ja_chamada' }> {
+  const consultaCiclo = entrada.serviceId
+    ? db
+        .from('client_cycles')
+        .select('client_id, service_id, last_campaign_at')
+        .eq('tenant_id', tenantId)
+        .eq('client_id', entrada.clientId)
+        .eq('service_id', entrada.serviceId)
+        .maybeSingle()
+    : db
+        .from('client_cycles')
+        .select('client_id, service_id, last_campaign_at')
+        .eq('tenant_id', tenantId)
+        .eq('client_id', entrada.clientId)
+        .neq('state', 'on_track')
+        .order('late_days', { ascending: false })
+        .limit(1)
+        .maybeSingle()
   const [{ data: linha, error: erroCiclo }, { data: cliente, error: erroCliente }] = await Promise.all([
-    db
-      .from('client_cycles')
-      .select('client_id, last_campaign_at')
-      .eq('tenant_id', tenantId)
-      .eq('client_id', entrada.clientId)
-      .eq('service_id', entrada.serviceId)
-      .maybeSingle(),
+    consultaCiclo,
     db.from('clients').select('whatsapp_opt_out').eq('tenant_id', tenantId).eq('id', entrada.clientId).maybeSingle(),
   ])
   if (erroCiclo) throw new AppError('INTERNAL', { cause: erroCiclo })
@@ -392,7 +408,7 @@ export async function registrarChamadaManual(
     .update({ last_campaign_at: agoraIso })
     .eq('tenant_id', tenantId)
     .eq('client_id', entrada.clientId)
-    .eq('service_id', entrada.serviceId)
+    .eq('service_id', linha.service_id)
     .select('client_id')
   if (erroCarimbo) throw new AppError('INTERNAL', { cause: erroCarimbo })
   if ((carimbadas?.length ?? 0) === 0) {
@@ -403,7 +419,7 @@ export async function registrarChamadaManual(
         detalhe: 'chamada manual anotada e last_campaign_at NAO gravado',
         tenantId,
         clientId: entrada.clientId,
-        serviceId: entrada.serviceId,
+        serviceId: linha.service_id,
       }),
     )
   }

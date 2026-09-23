@@ -360,6 +360,22 @@ describe('registrarChamadaManual (docs/82 §7)', () => {
     expect(lista.items.find((i) => i.clientId === clientId)?.optOut).toBe(true)
   }, 30_000)
 
+  it('pela ficha (sem serviço): anota no ciclo atrasado da pessoa', async () => {
+    const clientId = await criarClienteEmCiclo('Pela Ficha', { state: 'late', valueAtRiskCents: 5_000 })
+    expect(await registrarChamadaManual(svc, tenantId, { clientId })).toEqual({ registrada: true })
+
+    const { data: ciclo } = await svc.from('client_cycles').select('last_campaign_at').eq('tenant_id', tenantId).eq('client_id', clientId).single()
+    expect(ciclo?.last_campaign_at).not.toBeNull()
+  }, 30_000)
+
+  it('pela ficha, pessoa no ritmo não é recuperação: nada anotado', async () => {
+    const clientId = await criarClienteEmCiclo('No Ritmo', { state: 'on_track', valueAtRiskCents: 0 })
+    expect(await registrarChamadaManual(svc, tenantId, { clientId })).toEqual({ registrada: false, motivo: 'sem_ciclo' })
+
+    const { count } = await svc.from('messages').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId).eq('client_id', clientId)
+    expect(count).toBe(0)
+  }, 30_000)
+
   it('sem ciclo daquela pessoa naquele serviço, não inventa mensagem', async () => {
     const clientId = await criarClienteEmCiclo('Sem Esse Servico', { state: 'late', valueAtRiskCents: 5_000 })
     const outroServico = randomUUID()
