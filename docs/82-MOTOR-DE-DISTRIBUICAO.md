@@ -375,11 +375,13 @@ Mais recente embaixo. Cada linha diz o que foi medido, não só o que foi feito.
 **Decidido pelo Eduardo em 2026-09-23 (os três itens que estavam em aberto):**
 
 1. **Cidade confirmada: Maravilha/SC** (§5).
-2. **Autorizado enviar a branch e abrir o PR** — feito nesta rodada.
+2. **Autorizado enviar a branch e abrir o PR** — feito nesta rodada. **PR aberto:
+   [#126](https://github.com/EduardoRenner/ciclo/pull/126)**, `distribuicao/motor-de-distribuicao` →
+   `main`, 66 commits, `MERGEABLE`, sem auto-merge ligado (ninguém pediu).
 3. **"Chamar" é o padrão, "Avisar pelo sistema" vira só a alavanca paga de mandar em lote** —
    implementado nesta rodada (linha 25 da tabela acima).
 
 **O que continua em aberto:**
 
 1. As visitas — só o Eduardo pode fazer.
-2. Revisar o PR aberto e decidir se funde para `main`.
+2. Revisar o [PR #126](https://github.com/EduardoRenner/ciclo/pull/126) e decidir se funde para `main`.
