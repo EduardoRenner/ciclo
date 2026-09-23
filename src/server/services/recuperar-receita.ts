@@ -239,7 +239,8 @@ export async function enviarParaRecuperar(
         template: entrada.templateId ?? 'recover_client',
         params: { name: cliente.name, service: servico.name },
         fallbackSubject: `Sentimos sua falta, ${cliente.name}!`,
-        fallbackBody: `Já faz um tempo desde seu último ${servico.name}. Vamos marcar um novo horário?`,
+        // "último horário de X": serviço feminino (barba, escova) quebrava "seu último X".
+        fallbackBody: `Já faz um tempo desde seu último horário de ${servico.name.toLowerCase()}. Vamos marcar de novo?`,
         whatsappTo: cliente.phone_e164,
         emailTo: cliente.email,
       }, provider)

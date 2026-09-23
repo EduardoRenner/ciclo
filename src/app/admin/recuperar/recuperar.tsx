@@ -14,6 +14,7 @@ import Card from '@/components/ui/card'
 import Chip from '@/components/ui/chip'
 import EmptyState from '@/components/ui/empty-state'
 import { ASSUNTO_MOTOR_PARADO, canalDeContato } from '@/lib/contato'
+import { linkWhatsAppCompartilhar, textoDeVolta } from '@/lib/mensagens'
 import FilterRow from '@/components/ui/filter-row'
 import IconeAnel from '@/components/ui/icone-anel'
 import Skeleton from '@/components/ui/skeleton'
@@ -317,16 +318,35 @@ export default function RecuperarReceita({
                         <p className="tabular text-label text-txt-3">{dinheiro.format(item.profitCents / 100)} de lucro</p>
                       </>
                     )}
-                    <Button
-                      variante="ghost"
-                      tamanho="sm"
-                      className="-mr-2 mt-0.5 px-2"
-                      disabled={enviando}
-                      onClick={() => enviar([item])}
-                      motivoDesabilitado="Aguarde o envio em andamento terminar."
-                    >
-                      Avisar
-                    </Button>
+                    {/*
+                      `docs/82` §7, medido em 2026-09-23: quem traz a base de memória ("Quem você já
+                      atende") deixa o WhatsApp em branco — o campo é opcional de propósito. "Avisar"
+                      nessa pessoa terminava em "sem telefone cadastrado", um beco sem saída no
+                      primeiro contato com a lista. O contato dela já está no celular do dono, pelo
+                      nome: `wa.me` sem número abre o seletor do próprio WhatsApp com o texto pronto.
+                    */}
+                    {item.phone ? (
+                      <Button
+                        variante="ghost"
+                        tamanho="sm"
+                        className="-mr-2 mt-0.5 px-2"
+                        disabled={enviando}
+                        onClick={() => enviar([item])}
+                        motivoDesabilitado="Aguarde o envio em andamento terminar."
+                      >
+                        Avisar
+                      </Button>
+                    ) : (
+                      <a
+                        href={linkWhatsAppCompartilhar(textoDeVolta({ nome: item.name, servico: item.serviceName }))}
+                        target="_blank"
+                        rel="noreferrer"
+                        aria-label={`Chamar ${item.name} pelo seu WhatsApp`}
+                        className="toque-48 -mr-2 mt-0.5 inline-flex h-10 items-center px-2 text-label font-semibold text-acc-2 transition active:scale-[.97]"
+                      >
+                        Chamar
+                      </a>
+                    )}
                   </div>
                 </Card>
               </li>

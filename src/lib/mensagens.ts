@@ -104,3 +104,17 @@ export function saidaDeContato(
   if (telefone) return { canal: 'telefone', href: `tel:${telefone}`, rotulo: `Ligar para ${nomeDoSalao}` }
   return null
 }
+
+/**
+ * O texto de quem chama de volta pelo PRÓPRIO WhatsApp, na tela Recuperar (`docs/82` §7).
+ *
+ * Primeira pessoa e primeiro nome, como a dona escreveria — não é a mensagem do sistema, é a dela.
+ * Sem "sentimos sua falta": no WhatsApp pessoal isso soa como disparo em massa.
+ */
+export function textoDeVolta({ nome, servico }: { nome: string; servico: string }): string {
+  const primeiro = nome.trim().split(/\s+/)[0] ?? ''
+  const saudacao = primeiro ? `Oi, ${primeiro}!` : 'Oi!'
+  // "seu último HORÁRIO DE {serviço}", nunca "seu último {serviço}": metade do catálogo de beleza é
+  // feminino (barba, escova, manutenção, depilação) e "seu último barba" sai na voz do dono.
+  return `${saudacao} Faz um tempinho desde seu último horário de ${servico.toLowerCase()}. Quer marcar essa semana?`
+}
