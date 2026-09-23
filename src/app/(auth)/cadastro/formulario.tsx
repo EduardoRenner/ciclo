@@ -7,6 +7,7 @@ import Button from '@/components/ui/button'
 import Input from '@/components/ui/input'
 import PhoneInput from '@/components/ui/phone-input'
 import { useToast } from '@/components/ui/toast'
+import { caixaDeEntrada } from '@/core/auth/caixa-de-entrada'
 
 export default function FormularioCadastro() {
   const mostrarToast = useToast()
@@ -88,12 +89,25 @@ export default function FormularioCadastro() {
   }
 
   if (enviado) {
+    // `docs/82` §7: o degrau que mais perde cadastro self-serve. Provedor conhecido ganha o botão
+    // que já abre a caixa de entrada; desconhecido fica só com o texto.
+    const caixa = caixaDeEntrada(emailEnviado)
     return (
       <div className="flex max-w-sm flex-col items-center gap-3 text-center">
         <p ref={confirmacaoRef} tabIndex={-1} className="text-corpo text-txt">
           Quase lá! Mandamos um link de confirmação para <span className="font-semibold">{emailEnviado}</span>. Abra a mensagem e clique nele
           para continuar.
         </p>
+        {caixa ? (
+          <a
+            href={caixa.url}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex h-12 w-full items-center justify-center rounded-[var(--radius-sm)] bg-acc px-5 text-corpo font-semibold text-on-acc shadow-elevado transition active:scale-[.97]"
+          >
+            Abrir o {caixa.nome}
+          </a>
+        ) : null}
         <p className="text-secundario text-txt-2">Não chegou? Confira também a caixa de spam ou lixo eletrônico.</p>
         <Button type="button" variante="secondary" carregando={reenviando} onClick={() => void reenviar()}>
           Reenviar e-mail
