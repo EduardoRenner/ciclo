@@ -341,6 +341,9 @@ Mais recente embaixo. Cada linha diz o que foi medido, não só o que foi feito.
 | 12 | Cartão A6 com QR (`material/cartao-a6.html`) | renderizado; QR **não** lido por câmera |
 | 13 | `code-review` (high) da branch: 8 achados, 8 corrigidos | prefetch de `<Link>` gravava origem sem clique (header conferido no Next instalado); calculadora sumia acima do teto; chamada manual sem opt-out nem trava de 7 dias; "mais atendido" contava cancelados; origem malformada virava convite; convite no pico sumia em dia com receita |
 
+| 14 | Copy pública varrida por "único/nenhum concorrente" (a Zenoti já prevê cadência pessoal) | nenhuma alegação pública; todas as ocorrências são comentário |
+| 14 | Link de agendamento de conta nova ganha prévia com imagem (`/[slug]/previa`, 1200×630, nome e cor do negócio) | antes: sem `og:image`, cartão só texto no WhatsApp; PNG gerado conferido, meta tags na página, mutação reprovada, build `ƒ /[slug]/previa` |
+
 **O que continua em aberto e é do Eduardo:**
 
 1. Confirmar a cidade (§5).
