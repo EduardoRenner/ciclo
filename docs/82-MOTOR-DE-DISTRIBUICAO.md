@@ -377,7 +377,7 @@ Mais recente embaixo. Cada linha diz o que foi medido, não só o que foi feito.
 1. **Cidade confirmada: Maravilha/SC** (§5).
 2. **Autorizado enviar a branch e abrir o PR** — feito nesta rodada. **PR aberto:
    [#126](https://github.com/EduardoRenner/ciclo/pull/126)**, `distribuicao/motor-de-distribuicao` →
-   `main`, 66 commits, `MERGEABLE`, sem auto-merge ligado (ninguém pediu).
+   `main`, 66 commits. CI ficou verde (5/5 checks, `mergeStateStatus: CLEAN`); sem auto-merge ligado (ninguém pediu).
 3. **"Chamar" é o padrão, "Avisar pelo sistema" vira só a alavanca paga de mandar em lote** —
    implementado nesta rodada (linha 25 da tabela acima).
 
