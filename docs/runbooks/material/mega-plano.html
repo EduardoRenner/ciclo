@@ -1,0 +1,787 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Plano de distribuição</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #f2efe4;
+    --paper-2: #eae5d5;
+    --paper-3: #e2dcc8;
+    --ink: #22241f;
+    --ink-soft: #4b4a3f;
+    --muted: #6d6656;
+    --rule: #d7d0bd;
+    --accent: #0d8577;
+    --accent-strong: #0a5f56;
+    --accent-soft: #dcefe9;
+    --warn: #9a5a2c;
+    --warn-soft: #f1e2d2;
+    --bubble: #dcefe9;
+    --bubble-mine: #eae5d5;
+    --shadow: 0 1px 2px rgba(34,36,31,.06), 0 8px 24px -12px rgba(34,36,31,.2);
+    color-scheme: light;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #191a16; --paper-2: #212219; --paper-3: #282a20;
+      --ink: #ece7d8; --ink-soft: #cbc5b2; --muted: #a39c88; --rule: #34322a;
+      --accent: #35c2ae; --accent-strong: #7fe0d0; --accent-soft: #17332e;
+      --warn: #d99a5c; --warn-soft: #2c2017;
+      --bubble: #17332e; --bubble-mine: #282a20;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.55);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #191a16; --paper-2: #212219; --paper-3: #282a20;
+    --ink: #ece7d8; --ink-soft: #cbc5b2; --muted: #a39c88; --rule: #34322a;
+    --accent: #35c2ae; --accent-strong: #7fe0d0; --accent-soft: #17332e;
+    --warn: #d99a5c; --warn-soft: #2c2017;
+    --bubble: #17332e; --bubble-mine: #282a20;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.55);
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { background: var(--paper); }
+  body {
+    margin: 0; color: var(--ink);
+    font-family: "Work Sans", ui-sans-serif, system-ui, sans-serif;
+    font-size: 16px; line-height: 1.5; -webkit-font-smoothing: antialiased;
+  }
+  ::selection { background: var(--accent-soft); }
+
+  .wrap { max-width: 700px; margin: 0 auto; padding: 26px 20px 70px; }
+
+  .eyebrow {
+    display: flex; align-items: center; gap: 8px;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 12px; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--accent-strong); margin: 0 0 10px;
+  }
+  .eyebrow .dot { width: 6px; height: 6px; border-radius: 999px; background: var(--accent); flex: none; }
+
+  h1 {
+    font-family: "Fraunces", ui-serif, Georgia, serif;
+    font-optical-sizing: auto; font-weight: 600;
+    font-size: clamp(30px, 8vw, 42px); line-height: 1.06; letter-spacing: -0.01em;
+    margin: 0 0 10px; text-wrap: balance;
+  }
+  .lede { margin: 0 0 6px; color: var(--ink-soft); max-width: 60ch; font-size: 17px; }
+  .lede b { color: var(--ink); }
+
+  .northstar {
+    margin: 18px 0 4px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: var(--accent-soft);
+    border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--rule));
+    display: flex; gap: 12px; align-items: flex-start;
+  }
+  .northstar .mk { font-family: "Fraunces", serif; font-weight: 700; font-size: 20px; color: var(--accent-strong); flex: none; }
+  .northstar p { margin: 0; font-size: 14.5px; color: var(--ink-soft); }
+  .northstar strong { color: var(--ink); }
+
+  code {
+    font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: .9em;
+    background: var(--paper-2); border: 1px solid var(--rule); border-radius: 4px; padding: .05em .35em;
+    word-break: break-word;
+  }
+
+  /* nav de âncoras */
+  nav.jump {
+    display: flex; gap: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    margin: 22px 0 4px; padding-bottom: 4px; scrollbar-width: none;
+  }
+  nav.jump::-webkit-scrollbar { display: none; }
+  nav.jump a {
+    flex: none;
+    font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 12px;
+    color: var(--ink-soft); text-decoration: none;
+    background: var(--paper-2); border: 1px solid var(--rule); border-radius: 999px;
+    padding: 7px 12px; white-space: nowrap;
+  }
+  nav.jump a:hover, nav.jump a:focus-visible { border-color: var(--accent); color: var(--accent-strong); }
+
+  .perf { display: flex; align-items: center; gap: 6px; margin: 34px 0 20px; }
+  .perf::before, .perf::after {
+    content: ""; height: 1px; flex: 1;
+    background: repeating-linear-gradient(to right, var(--rule) 0 6px, transparent 6px 11px);
+  }
+  .perf .hole { width: 5px; height: 5px; border-radius: 999px; background: var(--rule); flex: none; }
+
+  section { margin: 0 0 8px; scroll-margin-top: 18px; }
+  .kicker {
+    font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 11.5px;
+    letter-spacing: .07em; text-transform: uppercase; color: var(--muted); margin: 0 0 6px;
+  }
+  h2 {
+    font-family: "Fraunces", ui-serif, Georgia, serif; font-weight: 600;
+    font-size: 23px; letter-spacing: -0.01em; margin: 0 0 6px; text-wrap: balance;
+  }
+  h3 {
+    font-family: "Work Sans"; font-weight: 700; font-size: 15.5px; letter-spacing: .01em; margin: 0 0 6px;
+  }
+  .sectionlede { margin: 0 0 16px; color: var(--ink-soft); max-width: 62ch; font-size: 14.5px; }
+
+  /* ---------- tabela de quem/onde ---------- */
+  .icprow {
+    display: grid; grid-template-columns: 1fr auto; gap: 10px 14px;
+    align-items: center; padding: 10px 0; border-bottom: 1px dashed var(--rule);
+  }
+  .icprow:last-child { border-bottom: none; }
+  .icprow .name { font-weight: 600; font-size: 14.5px; }
+  .icprow .name small { display: block; font-weight: 400; color: var(--muted); font-size: 12.5px; margin-top: 1px; }
+  .score {
+    font-family: "Fraunces", serif; font-weight: 700; font-size: 17px;
+    color: var(--accent-strong); background: var(--accent-soft);
+    border-radius: 8px; padding: 3px 10px; min-width: 40px; text-align: center;
+  }
+  .icprow.top .score { background: var(--accent); color: var(--paper); }
+
+  .tagrow { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 0; }
+  .tag {
+    font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 12px;
+    padding: 5px 10px; border-radius: 999px; border: 1px solid var(--rule);
+    color: var(--muted); background: var(--paper-2);
+  }
+  .tag.free { border-color: var(--accent); color: var(--accent-strong); background: var(--accent-soft); }
+
+  .citycard {
+    margin-top: 16px; padding: 14px 16px; border-radius: 12px;
+    background: var(--paper-2); border: 1px solid var(--rule);
+    display: flex; gap: 14px; align-items: baseline; flex-wrap: wrap;
+  }
+  .citycard .big { font-family: "Fraunces", serif; font-weight: 700; font-size: 19px; color: var(--ink); }
+  .citycard .stat { font-size: 13px; color: var(--muted); }
+  .citycard .stat b { font-family: "IBM Plex Mono", monospace; color: var(--ink-soft); }
+
+  /* ---------- canais: cabeçalho de cartão grande ---------- */
+  .channel { margin-bottom: 10px; }
+  .chanhead { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .chanbadge {
+    width: 40px; height: 40px; border-radius: 10px; flex: none;
+    background: var(--accent); color: var(--paper);
+    display: grid; place-items: center;
+    font-family: "Fraunces", serif; font-weight: 700; font-size: 17px;
+  }
+  .chanmeta { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+  .chanmeta b { color: var(--ink-soft); }
+
+  /* passos (visita) */
+  .steps { position: relative; margin: 0; padding: 0; list-style: none; }
+  .steps::before { content: ""; position: absolute; left: 17px; top: 4px; bottom: 4px; width: 1.5px; background: var(--rule); }
+  .step { position: relative; padding: 0 0 22px 48px; }
+  .step:last-child { padding-bottom: 0; }
+  .stepnum {
+    position: absolute; left: 0; top: -2px; width: 36px; height: 36px; border-radius: 999px;
+    background: var(--paper); border: 1.5px solid var(--accent); color: var(--accent-strong);
+    font-family: "Fraunces", serif; font-weight: 600; font-size: 15px;
+    display: grid; place-items: center;
+  }
+  .step h4 { margin: 2px 0 5px; font-family: "Work Sans"; font-weight: 700; font-size: 14.5px; }
+  .step p { margin: 0 0 8px; color: var(--ink-soft); font-size: 14px; }
+  .step p:last-child { margin-bottom: 0; }
+
+  .say {
+    font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 13.5px; line-height: 1.5;
+    color: var(--ink); background: var(--accent-soft); border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0; padding: 9px 13px; margin: 0 0 8px;
+  }
+
+  /* bolhas de chat (zap, parceiros) */
+  .chatcard {
+    background: var(--paper-2); border: 1px solid var(--rule); border-radius: 14px;
+    padding: 13px 13px 15px; box-shadow: var(--shadow); margin-bottom: 12px;
+  }
+  .chatcard:last-child { margin-bottom: 0; }
+  .chatwho {
+    font-size: 12px; font-weight: 600; color: var(--muted); margin: 0 0 9px;
+    display: flex; align-items: center; gap: 6px; justify-content: space-between;
+  }
+  .chatwho .who { display: flex; align-items: center; gap: 6px; }
+  .chatwho .avatar {
+    width: 19px; height: 19px; border-radius: 999px; background: var(--accent); color: var(--paper);
+    font-family: "Fraunces", serif; font-size: 10.5px; font-weight: 700; display: grid; place-items: center; flex: none;
+  }
+  .chatwho .when { font-family: "IBM Plex Mono", monospace; font-size: 10.5px; color: var(--muted); }
+  .bubble {
+    background: var(--bubble); border-radius: 13px 13px 13px 3px; padding: 9px 12px;
+    font-size: 13.5px; line-height: 1.48; max-width: 94%; color: var(--ink); margin-bottom: 6px;
+  }
+  .bubble:last-child { margin-bottom: 0; }
+  .bubble.mine { background: var(--bubble-mine); border-radius: 13px 13px 3px 13px; margin-left: auto; }
+  .bubble .var { color: var(--accent-strong); font-weight: 600; }
+  .bubble .link { display: block; margin-top: 5px; font-family: "IBM Plex Mono", monospace; font-size: 11.5px; color: var(--accent-strong); word-break: break-all; }
+
+  .rulebox {
+    margin-top: 10px; padding: 10px 13px; border-radius: 10px;
+    background: var(--paper-3); border: 1px solid var(--rule);
+  }
+  .rulebox .k { font-family: "IBM Plex Mono", monospace; font-size: 10.5px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 5px; }
+  .rulebox ul { margin: 0; padding-left: 18px; }
+  .rulebox li { font-size: 13px; color: var(--ink-soft); margin-bottom: 3px; }
+  .rulebox li:last-child { margin-bottom: 0; }
+
+  /* conteúdo: grade de cartões compactos */
+  .contentgrid { display: flex; flex-direction: column; gap: 10px; }
+  .ccard {
+    background: var(--paper-2); border: 1px solid var(--rule); border-radius: 12px;
+    padding: 12px 14px;
+  }
+  .ccard .chead {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px;
+  }
+  .ccard .fmt {
+    font-family: "IBM Plex Mono", monospace; font-size: 10.5px; letter-spacing: .04em; text-transform: uppercase;
+    color: var(--accent-strong); background: var(--accent-soft); border-radius: 6px; padding: 2px 7px; flex: none;
+  }
+  .ccard .wk { font-family: "IBM Plex Mono", monospace; font-size: 10.5px; color: var(--muted); }
+  .ccard .hook { font-weight: 700; font-size: 14px; margin: 0 0 4px; }
+  .ccard p { margin: 0 0 4px; font-size: 13px; color: var(--ink-soft); }
+  .ccard .ref { font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--muted); margin-top: 6px; display: block; }
+
+  /* placar */
+  .metricgrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 4px 0 14px; }
+  .metric { background: var(--paper-2); border: 1px solid var(--rule); border-radius: 10px; padding: 10px 12px; }
+  .metric .mv { font-family: "Fraunces", serif; font-weight: 700; font-size: 18px; color: var(--accent-strong); }
+  .metric .ml { font-size: 11.5px; color: var(--muted); }
+  .cmdbox {
+    font-family: "IBM Plex Mono", monospace; font-size: 12.5px; background: var(--ink); color: var(--paper);
+    border-radius: 10px; padding: 11px 14px; overflow-x: auto; white-space: nowrap;
+  }
+
+  /* plano de 30 dias */
+  .weekcard { display: flex; gap: 14px; padding: 14px 0; border-bottom: 1px dashed var(--rule); }
+  .weekcard:last-child { border-bottom: none; }
+  .wnum {
+    flex: none; width: 46px; height: 46px; border-radius: 10px; background: var(--paper-2);
+    border: 1px solid var(--rule); display: grid; place-items: center;
+    font-family: "Fraunces", serif; font-weight: 700; font-size: 13px; color: var(--muted); text-align: center; line-height: 1.1;
+  }
+  .weekcard.now .wnum { background: var(--accent); border-color: var(--accent); color: var(--paper); }
+  .wbody h4 { margin: 2px 0 6px; font-size: 14.5px; }
+  .wcol { display: grid; gap: 8px; margin-top: 6px; }
+  .wcol .lbl { font-family: "IBM Plex Mono", monospace; font-size: 10px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+  .wcol p { margin: 2px 0 0; font-size: 13.5px; color: var(--ink-soft); }
+
+  .critbox { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; }
+  .crit { border-left: 3px solid var(--rule); padding: 2px 0 2px 14px; }
+  .crit.go { border-color: var(--accent); }
+  .crit.stop { border-color: var(--warn); }
+  .crit .tag { font-family: "IBM Plex Mono", monospace; font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); display: block; margin-bottom: 3px; }
+  .crit.go .tag { color: var(--accent-strong); }
+  .crit.stop .tag { color: var(--warn); }
+  .crit p { margin: 0; font-size: 13.5px; color: var(--ink-soft); }
+
+  /* escala */
+  .scalepath { display: flex; align-items: center; gap: 10px; margin: 8px 0 18px; flex-wrap: wrap; }
+  .citychip {
+    display: flex; flex-direction: column; gap: 2px;
+    padding: 10px 14px; border-radius: 10px; background: var(--paper-2); border: 1px solid var(--rule);
+    min-width: 132px;
+  }
+  .citychip.active { border-color: var(--accent); background: var(--accent-soft); }
+  .citychip .cn { font-family: "Fraunces", serif; font-weight: 700; font-size: 15px; }
+  .citychip .cs { font-size: 11.5px; color: var(--muted); }
+  .arrow { color: var(--muted); font-size: 18px; flex: none; }
+
+  /* aviso final */
+  .warnbar {
+    display: flex; gap: 12px; align-items: flex-start; background: var(--warn-soft);
+    border: 1px solid color-mix(in srgb, var(--warn) 35%, var(--rule));
+    border-radius: 12px; padding: 14px 16px;
+  }
+  .warnbar .mark { font-family: "Fraunces", serif; font-weight: 700; font-size: 18px; color: var(--warn); flex: none; line-height: 1.3; }
+  .warnbar .warntext { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+  .warnbar p { margin: 0; color: var(--ink-soft); font-size: 14px; }
+  .warnbar strong { color: var(--ink); }
+
+  .linkgrid { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
+  .linkgrid a {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    text-decoration: none; color: var(--ink);
+    background: var(--paper-2); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 11px 14px; font-size: 13.5px;
+  }
+  .linkgrid a:hover, .linkgrid a:focus-visible { border-color: var(--accent); }
+  .linkgrid a b { font-weight: 600; }
+  .linkgrid a span { font-family: "IBM Plex Mono", monospace; font-size: 11.5px; color: var(--muted); }
+
+  footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--rule); font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 11.5px; letter-spacing: .03em; color: var(--muted); text-align: center; }
+
+  @media (max-width: 420px) { .metricgrid { grid-template-columns: 1fr; } }
+
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow"><span class="dot"></span>CICLO · plano de distribuição</div>
+  <h1>Como o CICLO ganha os primeiros clientes de verdade</h1>
+  <p class="lede">CICLO não tem problema de produto nem de canal — tem <b>zero conversas com dono de
+    salão</b>. Este plano junta os quatro jeitos de puxar essa conversa (visita, WhatsApp frio,
+    conteúdo, parceiros), como medir o que funciona, e quando repetir em outra cidade.</p>
+
+  <div class="northstar">
+    <span class="mk">→</span>
+    <p><strong>Métrica norte:</strong> contas <strong>reais</strong> que chegam a
+      <code>cliente_voltou</code> — uma cliente que o Motor apontou e voltou. Não cadastro, não
+      visita, não seguidor. Tudo abaixo existe só para fazer esse número crescer.</p>
+  </div>
+
+  <nav class="jump" aria-label="Ir para a seção">
+    <a href="#quem">Quem/onde</a>
+    <a href="#visita">Visita</a>
+    <a href="#zap">Zap frio</a>
+    <a href="#conteudo">Conteúdo</a>
+    <a href="#parceiros">Parceiros</a>
+    <a href="#indicacao">Indicação</a>
+    <a href="#placar">Placar</a>
+    <a href="#plano30">30 dias</a>
+    <a href="#escala">Escala</a>
+  </nav>
+
+  <div class="perf"><span class="hole"></span></div>
+
+  <!-- ===================== QUEM / ONDE ===================== -->
+  <section id="quem">
+    <p class="kicker">Alvo</p>
+    <h2>Quem procurar, e onde ele já está</h2>
+    <p class="sectionlede">Nota 1–5 em dor, frequência, capacidade de pagar, facilidade de achar,
+      ROI, concentração local, indicação, velocidade de venda e munição de venda pronta.</p>
+
+    <div class="icprow top">
+      <span class="name">Barbearia, 1–4 cadeiras<small>dono que corta — ciclo de ~21 dias, o Motor prova rápido</small></span>
+      <span class="score">43</span>
+    </div>
+    <div class="icprow">
+      <span class="name">Unhas / cílios solo<small>ciclo curtíssimo, indicação forte; R$49 pesa mais no bolso</small></span>
+      <span class="score">36</span>
+    </div>
+    <div class="icprow">
+      <span class="name">Salão de cabelo com equipe<small>vende pelo caixa/comissão, não pelo Motor — depois</small></span>
+      <span class="score">34</span>
+    </div>
+    <div class="icprow">
+      <span class="name">Estética facial/corporal<small>ciclo longo, Motor demora a provar valor</small></span>
+      <span class="score">27</span>
+    </div>
+
+    <div class="citycard">
+      <span class="big">Cidade 1 · Maravilha/SC</span>
+      <span class="stat">CNPJs de beleza ativos: <b>182–203</b></span>
+      <span class="stat">Negócios visitáveis a pé: <b>~70–110</b></span>
+      <span class="stat">Corte na região: <b>R$25–40</b></span>
+    </div>
+
+    <p class="sectionlede" style="margin-top:16px">Onde esse dono já está, sem inventar canal novo:</p>
+    <div class="tagrow">
+      <span class="tag free">o próprio salão</span>
+      <span class="tag free">Instagram do negócio</span>
+      <span class="tag">representante de cosmético</span>
+      <span class="tag">contador</span>
+      <span class="tag">curso de barbeiro (SENAC/SESC)</span>
+      <span class="tag">associação empresarial</span>
+      <span class="tag free">Google Maps</span>
+      <span class="tag">imprensa local</span>
+    </div>
+    <p class="sectionlede" style="margin-top:12px">Fora do plano por enquanto: anúncio pago (o CAC
+      não fecha contra R$49/mês), Reddit, TikTok nacional, marketplace.</p>
+  </section>
+
+  <div class="perf"><span class="hole"></span></div>
+
+  <!-- ===================== VISITA ===================== -->
+  <section id="visita" class="channel">
+    <div class="chanhead">
+      <span class="chanbadge">1</span>
+      <div>
+        <h2 style="margin-bottom:0">Visita presencial</h2>
+        <p class="chanmeta">Canal <b>principal</b> · conversão mais alta · fim de tarde de
+          segunda ou começo de tarde de terça, nunca sábado</p>
+      </div>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <span class="stepnum">1</span>
+        <h4>Abertura — pergunta, não apresentação</h4>
+        <p class="say">"Posso te fazer uma conta de um minuto? Quantos clientes que vinham sempre
+          pararam de vir — os que você lembra de cabeça?"</p>
+        <p>Abra a calculadora <strong>no celular dele</strong>. O número que aparece é dele, não seu.</p>
+      </li>
+      <li class="step">
+        <span class="stepnum">2</span>
+        <h4>A virada</h4>
+        <p class="say">"E essa conta é só de quem você lembrou."</p>
+        <p class="say">"E quem você não lembra?"</p>
+        <p>Espere a resposta. Não fale de sistema ainda.</p>
+      </li>
+      <li class="step">
+        <span class="stepnum">3</span>
+        <h4>Mostrar, não explicar</h4>
+        <p class="say">"Quer ver quem são, pelo nome? Leva cinco minutos e é grátis."</p>
+        <p>Cadastro por <code>?origem=visita</code>. O e-mail de confirmação chega no celular
+          dele — deixe o app de e-mail aberto antes de começar.</p>
+      </li>
+      <li class="step">
+        <span class="stepnum">4</span>
+        <h4>O momento que vende</h4>
+        <p>Em "Quem eu já atendo", cadastrem juntos 10–20 clientes com a última data aproximada.
+          <strong>Colar uma lista</strong> aceita um nome por linha — cole primeiro quem ele não vê
+          faz mais tempo. A lista de atrasados aparece na hora.</p>
+      </li>
+      <li class="step">
+        <span class="stepnum">5</span>
+        <h4>Primeira mensagem na sua frente</h4>
+        <p>Ele escolhe um nome e manda pelo WhatsApp dele, com o texto pronto. Uma basta.</p>
+      </li>
+      <li class="step">
+        <span class="stepnum">6</span>
+        <h4>Saída e retorno</h4>
+        <p class="say">"Volto daqui a 10 dias pra gente ver quem voltou."</p>
+        <p>Na volta: <em>"Quantos voltaram?"</em> Se voltou alguém → oferta de fundador, R$49 travado
+          pra sempre para os primeiros 15, Pix combinado, e peça indicação. Se ninguém voltou →
+          não force, combine revisar a lista juntos.</p>
+      </li>
+    </ol>
+  </section>
+
+  <div class="perf"><span class="hole"></span></div>
+
+  <!-- ===================== ZAP FRIO ===================== -->
+  <section id="zap" class="channel">
+    <div class="chanhead">
+      <span class="chanbadge">2</span>
+      <div>
+        <h2 style="margin-bottom:0">Prospecção fria por WhatsApp</h2>
+        <p class="chanmeta">Canal de <b>alcance</b> · fora do raio a pé, ou pra aquecer antes de bater
+          na porta · também é o que faz a cidade 2 dar certo <em>antes</em> de existir presença física lá</p>
+      </div>
+    </div>
+
+    <div class="chatcard">
+      <p class="chatwho">
+        <span class="who"><span class="avatar">Z</span>Primeira mensagem</span>
+        <span class="when">dia 0</span>
+      </p>
+      <div class="bubble mine">Oi! Vi o <span class="var">[Instagram/Google]</span> da
+        <span class="var">[nome do negócio]</span> aqui de <span class="var">[cidade]</span>. Rápido:
+        você sabe quantos clientes que vinham sempre pararam de vir, só de cabeça? Fiz uma
+        calculadora grátis que faz essa conta em 1 minuto, sem cadastro.
+        <span class="link">seuciclo.com.br/calculadora?origem=whatsapp&amp;ref=[nome-do-negocio]</span></div>
+    </div>
+
+    <div class="chatcard">
+      <p class="chatwho">
+        <span class="who"><span class="avatar">Z</span>Se não responder — uma vez só</span>
+        <span class="when">dia 3–4</span>
+      </p>
+      <div class="bubble mine">Oi de novo! Só rapidinho: essa calculadora mostra quanto um cliente
+        que sumiu vale por ano pro seu negócio. Leva 1 minuto, não pede nada. Se fizer sentido, um
+        dia desses posso passar aí pra te mostrar ao vivo.</div>
+    </div>
+
+    <div class="chatcard">
+      <p class="chatwho"><span class="who"><span class="avatar">Z</span>Se responder bem</span></p>
+      <div class="bubble mine">Boa! Se você tiver 10 minutos essa semana eu passo aí e a gente já
+        deixa isso rodando de graça no seu celular — sem compromisso.</div>
+      <p style="margin:8px 0 0;font-size:12.5px;color:var(--muted)">Sempre tente converter pra
+        visita (§1) — ela converte muito mais. Só siga 100% remoto se a distância não permitir.</p>
+    </div>
+
+    <div class="rulebox">
+      <span class="k">Regras</span>
+      <ul>
+        <li>Manual, uma pessoa por vez — nunca disparo em massa. É o WhatsApp pessoal do Eduardo,
+          igual ao "Chamar" do próprio produto: grátis, pessoal, sem automação.</li>
+        <li>Número vem de local público (Google Maps, bio do Instagram) — nunca lista comprada.</li>
+        <li>Uma segunda tentativa, no máximo, com ângulo diferente. Sem resposta, deixa quieto.</li>
+        <li>Sempre carrega <code>?origem=whatsapp&amp;ref=&lt;nome-do-negocio&gt;</code> — entra no
+          placar como qualquer outro canal.</li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="perf"><span class="hole"></span></div>
+
+  <!-- ===================== CONTEÚDO ===================== -->
+  <section id="conteudo" class="channel">
+    <div class="chanhead">
+      <span class="chanbadge">3</span>
+      <div>
+        <h2 style="margin-bottom:0">Conteúdo</h2>
+        <p class="chanmeta">Aquece o terreno antes da visita, nunca sozinho · todo post leva pra
+          calculadora com <code>ref</code> próprio · 2–3 posts/semana, stories todo dia de visita</p>
+      </div>
+    </div>
+
+    <div class="contentgrid">
+      <div class="ccard">
+        <div class="chead"><span class="fmt">Reel 20–30s</span><span class="wk">semana 1</span></div>
+        <p class="hook">"Barbeiro, faz essa conta comigo."</p>
+        <p>A conta ao vivo: 8 clientes × R$35 × todo mês = mais de R$3.400/ano parados. Fecha
+          perguntando quantos ELE lembrou.</p>
+        <span class="ref">ref=reel-conta-do-barbeiro</span>
+      </div>
+      <div class="ccard">
+        <div class="chead"><span class="fmt">Reel 20s</span><span class="wk">semana 1</span></div>
+        <p class="hook">"O cliente que mais te custa é o que você nem percebeu que sumiu."</p>
+        <p>Cliente que briga, você lembra. Cliente que some quieto, não.</p>
+        <span class="ref">ref=reel-quem-voce-nao-lembra</span>
+      </div>
+      <div class="ccard">
+        <div class="chead"><span class="fmt">Story + enquete</span><span class="wk">semana 1</span></div>
+        <p class="hook">"Como você marca horário hoje?" → Caderno/WhatsApp · Aplicativo</p>
+        <p>Bastidor e pesquisa ao mesmo tempo — quem responde é lead quente pra visita.</p>
+        <span class="ref">ref=story-enquete-agenda</span>
+      </div>
+      <div class="ccard">
+        <div class="chead"><span class="fmt">Story</span><span class="wk">semana 2</span></div>
+        <p class="hook">"De quanto em quanto tempo seu cliente fiel volta?"</p>
+        <p>Responde na caixinha, devolve a conta de quanto vale por ano — sem expor quem perguntou.</p>
+        <span class="ref">ref=story-caixinha-ritmo</span>
+      </div>
+      <div class="ccard">
+        <div class="chead"><span class="fmt">Reel — tela gravada</span><span class="wk">semana 2</span></div>
+        <p class="hook">"Escrevi três clientes de cabeça. Olha: dois já passaram da hora de voltar."</p>
+        <p>Produto em uso, conta de demonstração — nunca dado real.</p>
+        <span class="ref">ref=reel-lista-pelo-nome</span>
+      </div>
+      <div class="ccard">
+        <div class="chead"><span class="fmt">Reel 15s</span><span class="wk">semana 2</span></div>
+        <p class="hook">"O caderno te diz quem vem amanhã. Não te diz quem parou de vir."</p>
+        <p>Tela dividida, sem fala — caderno vs. lista de quem sumiu.</p>
+        <span class="ref">ref=reel-caderno-vs-lista</span>
+      </div>
+      <div class="ccard">
+        <div class="chead"><span class="fmt">Reel com o dono</span><span class="wk">semana 3</span></div>
+        <p class="hook">"Você toparia contar em 20s o que aconteceu com quem você chamou?"</p>
+        <p>Só depois do primeiro resultado real, com autorização por escrito. Marca o perfil dele.</p>
+        <span class="ref">ref=reel-primeiro-depoimento</span>
+      </div>
+      <div class="ccard">
+        <div class="chead"><span class="fmt">Carrossel</span><span class="wk">semanas 3–4</span></div>
+        <p class="hook">Ritmo médio de retorno das barbearias da cidade — "e o seu?"</p>
+        <p>Só com <strong>5+ contas reais</strong>. Dado que só o CICLO tem — o conteúdo mais forte
+          do plano, e fica melhor a cada conta nova.</p>
+        <span class="ref">ref=carrossel-ritmo-da-cidade</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="perf"><span class="hole"></span></div>
+
+  <!-- ===================== PARCEIROS ===================== -->
+  <section id="parceiros" class="channel">
+    <div class="chanhead">
+      <span class="chanbadge">4</span>
+      <div>
+        <h2 style="margin-bottom:0">Parceiros &amp; imprensa</h2>
+        <p class="chanmeta">Quem já visita o mesmo dono toda semana, ou fala pra cidade inteira de uma vez</p>
+      </div>
+    </div>
+
+    <div class="chatcard">
+      <p class="chatwho"><span class="who"><span class="avatar">R</span>Representante de cosmético/barbearia</span></p>
+      <div class="bubble mine">Oi, <span class="var">[nome]</span>! Tô fazendo um sistema aqui de
+        <span class="var">[cidade]</span> que mostra pro barbeiro/salão quem parou de voltar, pelo
+        nome. É grátis pra começar. Você visita esse pessoal toda semana — topa mandar a calculadora
+        pra eles? Se alguém virar cliente pago, te passo R$50 por conta.
+        <span class="link">seuciclo.com.br/calculadora?origem=parceiro&amp;ref=[seu-codigo]</span></div>
+    </div>
+
+    <div class="chatcard">
+      <p class="chatwho"><span class="who"><span class="avatar">C</span>Contador de MEI/ME</span></p>
+      <div class="bubble mine">Oi, <span class="var">[nome]</span>! Muitos dos seus clientes de salão
+        e barbearia não sabem quanto perdem com cliente que some. Fiz uma calculadora grátis pra isso.
+        Se fizer sentido mandar pra eles, conversamos sobre uma comissão.
+        <span class="link">seuciclo.com.br/calculadora?origem=parceiro&amp;ref=[codigo]</span></div>
+    </div>
+
+    <div class="chatcard">
+      <p class="chatwho"><span class="who"><span class="avatar">J</span>Pauta pra jornal/rádio local</span></p>
+      <div class="bubble mine">Oi, <span class="var">[nome]</span>! Sou o Eduardo, daqui de Maravilha.
+        Criei o CICLO, sistema pra barbearia e salão que mostra, pelo nome, quem parou de voltar. Já
+        tem <span class="var">[N real]</span> negócios daqui usando. Tem uma calculadora grátis que
+        qualquer um testa. Se render pauta, levo um dos donos pra contar como está sendo.</div>
+      <p style="margin:8px 0 0;font-size:12.5px;color:var(--muted)">Só mandar com ≥ 3 negócios
+        reais usando — <code>N</code> nunca arredondado pra cima. Novoeste, Jornal Razão, Jornal
+        Conexão, Alternativa FM, Rádio Difusora 90.3.</p>
+    </div>
+
+    <div class="rulebox">
+      <span class="k">Também vale</span>
+      <ul>
+        <li>SENAC-SC / SESC-SC (curso de barbeiro, o do SESC é grátis): oferecer aula de "gestão da
+          cadeira" pra turma que vai abrir negócio.</li>
+        <li>Associação Empresarial / CDL da cidade: eventos, lista de associados, credibilidade.</li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="perf"><span class="hole"></span></div>
+
+  <!-- ===================== INDICAÇÃO ===================== -->
+  <section id="indicacao">
+    <p class="kicker">Laço</p>
+    <h2>Indicação</h2>
+    <p class="sectionlede">Barbeiro conhece barbeiro do bairro ao lado — o laço mais barato que existe.</p>
+    <div class="rulebox">
+      <ul>
+        <li><strong>Já existe:</strong> convite de colega com o texto na voz do dono, agora
+          atribuído (<code>ref=&lt;slug&gt;</code>).</li>
+        <li><strong>Recompensa manual</strong> até existir crédito automático: 1 mês grátis pra quem
+          indica, quando o indicado pagar o 1º mês. Anotado à mão, conferido no placar — nunca
+          prometido na tela do produto antes de existir de verdade.</li>
+        <li><strong>Peça no momento certo:</strong> quando a volta da §1 fechar em venda —
+          "Conhece mais alguém aqui perto que vive perdendo cliente sem saber?"</li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="perf"><span class="hole"></span></div>
+
+  <!-- ===================== PLACAR ===================== -->
+  <section id="placar">
+    <p class="kicker">Medição</p>
+    <h2>O placar</h2>
+    <p class="sectionlede">Por canal e por <code>ref</code>: contas criadas, base importada, Motor
+      viu valor, cliente voltou, pagantes. Sem painel à mão, roda por linha de comando.</p>
+    <div class="metricgrid">
+      <div class="metric"><span class="mv">canal</span><span class="ml">visita · whatsapp · conteudo · parceiro</span></div>
+      <div class="metric"><span class="mv">ref</span><span class="ml">quem/o quê trouxe a conta</span></div>
+      <div class="metric"><span class="mv">base_importada</span><span class="ml">trouxe a clientela?</span></div>
+      <div class="metric"><span class="mv">cliente_voltou</span><span class="ml">a prova de verdade</span></div>
+    </div>
+    <div class="cmdbox">node scripts/placar-distribuicao.mjs</div>
+    <p class="sectionlede" style="margin-top:12px">Topo de funil (visitante anônimo da landing) não
+      é medido, por decisão — sem analytics de terceiro. Nesta fase, o topo do funil é presencial:
+      a planilha de leads conta as conversas que o banco não vê.</p>
+  </section>
+
+  <div class="perf"><span class="hole"></span></div>
+
+  <!-- ===================== 30 DIAS ===================== -->
+  <section id="plano30">
+    <p class="kicker">Cadência</p>
+    <h2>Plano de 30 dias</h2>
+    <p class="sectionlede">Canal principal: visita. Secundário: 1 representante como parceiro.
+      Conteúdo só como apoio — nunca sozinho.</p>
+
+    <div class="weekcard now">
+      <span class="wnum">SEM<br>1</span>
+      <div class="wbody">
+        <h4>Fundação</h4>
+        <div class="wcol">
+          <div><span class="lbl">Eduardo</span><p>Confirmar cidade · lista de 30 leads ICP A · bio do
+            Instagram com link de origem · 5 visitas.</p></div>
+        </div>
+      </div>
+    </div>
+    <div class="weekcard">
+      <span class="wnum">SEM<br>2</span>
+      <div class="wbody">
+        <h4>Volume</h4>
+        <div class="wcol">
+          <div><span class="lbl">Eduardo</span><p>10 visitas (meta: 8 contas com base importada na
+            hora) · conversar com 1 representante.</p></div>
+        </div>
+      </div>
+    </div>
+    <div class="weekcard">
+      <span class="wnum">SEM<br>3</span>
+      <div class="wbody">
+        <h4>Retorno</h4>
+        <div class="wcol">
+          <div><span class="lbl">Eduardo</span><p>Voltar nas contas da semana 1 ("quantos voltaram?")
+            · oferta de fundador · pedir indicação · 1º depoimento.</p></div>
+        </div>
+      </div>
+    </div>
+    <div class="weekcard">
+      <span class="wnum">SEM<br>4</span>
+      <div class="wbody">
+        <h4>Decisão</h4>
+        <div class="wcol">
+          <div><span class="lbl">Eduardo</span><p>Medir · decidir o canal que fica · escrever o
+            playbook da cidade.</p></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="critbox">
+      <div class="crit go"><span class="tag">Sucesso, fim do mês</span><p>≥15 contas reais com base
+        importada · ≥5 com <code>cliente_voltou</code> · ≥3 pagantes a R$49 · ≥1 conta por indicação.</p></div>
+      <div class="crit stop"><span class="tag">Mudar de rumo se</span><p>menos de 30% das visitadas
+        importarem base → é o onboarding, não o canal. Importam mas ninguém manda mensagem em 14
+        dias → é hábito, testar lembrete semanal. Anda tudo e ninguém paga → é oferta/preço.</p></div>
+    </div>
+  </section>
+
+  <div class="perf"><span class="hole"></span></div>
+
+  <!-- ===================== ESCALA ===================== -->
+  <section id="escala">
+    <p class="kicker">Depois de Maravilha</p>
+    <h2>Escala — cidade por cidade</h2>
+    <p class="sectionlede">Nunca expandir porque "parece promissor". Só com o playbook fechado e os
+      três critérios batidos:</p>
+    <div class="rulebox">
+      <ul>
+        <li>≥3 pagantes <strong>e</strong> ≥1 indicação espontânea <strong>e</strong> playbook
+          escrito (ICP, oferta, canal vencedor, taxa de conversão, principal objeção, melhor
+          parceiro).</li>
+      </ul>
+    </div>
+    <div class="scalepath">
+      <div class="citychip active"><span class="cn">Maravilha/SC</span><span class="cs">laboratório · visita a pé</span></div>
+      <span class="arrow">→</span>
+      <div class="citychip"><span class="cn">Chapecó</span><span class="cs">~55 km · 10× maior · mesmo perfil</span></div>
+      <span class="arrow">→</span>
+      <div class="citychip"><span class="cn">próxima</span><span class="cs">o playbook decide qual</span></div>
+    </div>
+    <p class="sectionlede">Em cidade 2 em diante, a visita a pé não escala sozinha — é aqui que o
+      <strong>zap frio (§2)</strong> e o <strong>conteúdo (§3)</strong> viram os canais primários,
+      abrindo caminho antes de qualquer presença física.</p>
+  </section>
+
+  <div class="perf"><span class="hole"></span></div>
+
+  <section>
+    <div class="warnbar">
+      <span class="mark">!</span>
+      <div class="warntext">
+        <p><strong>Nunca prometa:</strong> WhatsApp que manda sozinho, cobrança automática, data de
+          nada. "Hoje você manda com um toque" é a frase verdadeira.</p>
+        <p><strong>Nunca anote:</strong> nome ou telefone de cliente final na planilha de leads —
+          isso fica no CICLO de cada dono, não com você.</p>
+        <p><strong>Nunca gaste em anúncio</strong> nesta fase — o CAC não fecha contra R$49/mês.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="perf"><span class="hole"></span></div>
+
+  <section>
+    <p class="kicker">Atalhos</p>
+    <div class="linkgrid">
+      <a href="https://seuciclo.com.br/calculadora" target="_blank" rel="noreferrer"><b>Calculadora</b><span>/calculadora</span></a>
+      <a href="https://seuciclo.com.br/cadastro?origem=visita" target="_blank" rel="noreferrer"><b>Cadastro de visita</b><span>?origem=visita</span></a>
+    </div>
+  </section>
+
+  <footer>docs/82 · docs/56 §3 · docs/runbooks/kit-de-visita, roteiros-de-conteudo, pauta-para-imprensa-local, placar-de-distribuicao</footer>
+
+</div>
+</body>
+</html>
