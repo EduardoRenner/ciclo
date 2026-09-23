@@ -166,11 +166,24 @@ describe('recomputarCiclosDoTenant', () => {
     'idempotente: rodar duas vezes seguidas dá o mesmo resultado, sem duplicar linha',
     async () => {
       const cliente = await criarCliente('Roda Duas Vezes')
+      await inserirAtendimentoConcluido(cliente, 40)
       await inserirAtendimentoConcluido(cliente, 15)
 
       const hoje = new Date().toISOString().slice(0, 10)
+      const colunas = 'personal_cycle_days, last_visit_on, predicted_on, state, late_days'
       await recomputarCiclosDoTenant(svc, tenantId, TZ, hoje)
+      const primeira = await svc.from('client_cycles').select(colunas).eq('tenant_id', tenantId).eq('client_id', cliente).single()
       await recomputarCiclosDoTenant(svc, tenantId, TZ, hoje)
+      const segunda = await svc.from('client_cycles').select(colunas).eq('tenant_id', tenantId).eq('client_id', cliente).single()
+
+      /*
+        Rodada 17 (docs/82): o recálculo passou a LER `last_visit_on`, que ele mesmo escreve. Se a
+        leitura somasse a data mesmo quando ela é só o último atendimento, a 2ª rodada teria a
+        mesma visita duas vezes (intervalo zero) e o ritmo pessoal de todo mundo encolheria toda
+        madrugada. Dois atendimentos, e não um, porque com um só não há intervalo para distorcer.
+      */
+      expect(primeira.data, 'cenário não montado: a 1ª rodada não gravou').toBeTruthy()
+      expect(segunda.data).toEqual(primeira.data)
 
       const { count } = await svc
         .from('client_cycles')
