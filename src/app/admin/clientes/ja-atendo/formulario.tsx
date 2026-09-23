@@ -81,7 +81,7 @@ export default function FormularioQuemJaAtendo({ servicos, servicoPadrao, temCli
         setResultado(json.data!)
         setPessoas(INICIAIS)
         setRetornos([])
-        mostrarToast({ tom: 'ok', titulo: 'Pronto', descricao: `${total} pessoas atualizadas no Motor.` })
+        mostrarToast({ tom: 'ok', titulo: 'Pronto', descricao: `${total} ${total === 1 ? 'pessoa atualizada' : 'pessoas atualizadas'} no Motor.` })
       } catch (erro) {
         mostrarToast({ tom: 'erro', titulo: 'Não consegui salvar', descricao: (erro as Error).message })
       }
@@ -136,7 +136,9 @@ export default function FormularioQuemJaAtendo({ servicos, servicoPadrao, temCli
         ) : null}
 
         <Card>
-          <p className="text-corpo font-semibold">{resultado.cadastrados} pessoas cadastradas</p>
+          <p className="text-corpo font-semibold">
+            {resultado.cadastrados} {resultado.cadastrados === 1 ? 'pessoa cadastrada' : 'pessoas cadastradas'}
+          </p>
           {resultado.jaExistiam.length > 0 ? (
             <p className="mt-1 text-secundario text-txt-2">
               {resultado.jaExistiam.length === 1 ? 'Já tinha ficha' : 'Já tinham ficha'}: {resultado.jaExistiam.join(', ')}.

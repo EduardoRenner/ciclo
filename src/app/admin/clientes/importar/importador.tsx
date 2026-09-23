@@ -96,7 +96,7 @@ export default function Importador({ servicos }: { servicos: ServicoComRitmo[] }
         )
         const r = await enviarMultipart<Resultado>('/api/v1/clients/import', form)
         setResultado(r)
-        mostrarToast({ tom: 'ok', titulo: 'Importação concluída', descricao: `${r.imported} clientes importados.` })
+        mostrarToast({ tom: 'ok', titulo: 'Importação concluída', descricao: `${r.imported} ${r.imported === 1 ? 'cliente importado' : 'clientes importados'}.` })
       } catch (erro) {
         mostrarToast({ tom: 'erro', titulo: 'A importação falhou', descricao: (erro as Error).message })
       }
@@ -328,7 +328,9 @@ export default function Importador({ servicos }: { servicos: ServicoComRitmo[] }
               ) : null}
 
               <Card>
-                <p className="text-corpo font-semibold">{resultado.imported} clientes importados</p>
+                <p className="text-corpo font-semibold">
+                  {resultado.imported} {resultado.imported === 1 ? 'cliente importado' : 'clientes importados'}
+                </p>
                 {resultado.skipped.length > 0 ? (
                   <p className="mt-1 text-secundario text-warn">{resultado.skipped.length} não importadas (duplicata)</p>
                 ) : null}
