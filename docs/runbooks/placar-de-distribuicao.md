@@ -38,6 +38,7 @@ marco as (
   select tenant_id,
          bool_or(event_type = 'base_importada')  as importou,
          bool_or(event_type = 'motor_viu_valor') as viu_valor,
+         bool_or(event_type = 'recuperacao_enviada') as mandou_mensagem,
          bool_or(event_type = 'cliente_voltou')  as cliente_voltou
   from product_events
   group by tenant_id
@@ -46,6 +47,7 @@ select cr.canal,
        count(*)                                          as contas,
        count(*) filter (where m.importou)                as importaram_base,
        count(*) filter (where m.viu_valor)               as motor_viu_valor,
+       count(*) filter (where m.mandou_mensagem)         as mandou_mensagem,
        count(*) filter (where m.cliente_voltou)          as cliente_voltou,
        count(*) filter (where c.plan <> 'gratis')        as pagantes
 from criada cr
@@ -87,6 +89,9 @@ join contas_reais r on r.id = c.tenant_id;
 
 ## Como ler
 
+- `mandou_mensagem` conta os dois caminhos: o envio pelo sistema e o "Chamar" pelo WhatsApp do
+  próprio dono (este só desde 2026-09-23, `registrarChamadaManual`). É a métrica do `docs/56` §8:
+  de quem cadastrou, quantos mandaram pelo menos uma mensagem.
 - **Amostra pequena não é tendência.** Com menos de 10 contas num canal, o número descreve
   pessoas, não canal — leia as linhas uma a uma.
 - **A pergunta é qual canal traz conta que chega a `cliente_voltou`**, não qual traz mais
