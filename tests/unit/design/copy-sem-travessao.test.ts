@@ -90,6 +90,13 @@ const FORA_DOS_SERVICOS: Record<string, string> = {
 const MARCA_DE_TEXTO_INTERNO = /throw new Error\(|console\.|detalhe:|detail:|cause:/
 const SERVICOS = rastrear('src/server/services/*.ts').filter((a) => !a.endsWith('.test.ts') && !(a in FORA_DOS_SERVICOS))
 
+/*
+ * Rodada 27: `src/lib` também é copy — `planos-cartoes.ts` é o texto que a pessoa lê antes de pagar,
+ * na página de preço e em "Meu plano", e foi exatamente ali que a guarda irmã desta ficou cega uma
+ * vez (memória `guarda-cega-de-raiz`). Hoje sem nenhum travessão; a varredura é para continuar assim.
+ */
+const LIB = rastrear('src/lib/*.ts').filter((a) => !a.endsWith('.test.ts'))
+
 type Achado = { arquivo: string; linha: number; texto: string }
 
 function travessoes(arquivos: string[], apenasMensagem = false): Achado[] {
@@ -117,6 +124,9 @@ describe('o leitor deste teste', () => {
      */
     for (const obrigatorio of ['src/app/error.tsx', 'src/app/page.tsx', 'src/app/admin/agenda/detalhe.tsx']) {
       expect(TELAS, `${obrigatorio} saiu do alcance da guarda`).toContain(obrigatorio)
+    }
+    for (const obrigatorio of ['src/lib/planos-cartoes.ts', 'src/lib/mensagens.ts', 'src/lib/contato.ts']) {
+      expect(LIB, `${obrigatorio} saiu do alcance da guarda`).toContain(obrigatorio)
     }
     // Pisos por nome para `services`: onde o travessão foi achado na rodada 26.
     for (const obrigatorio of ['src/server/services/crm.ts', 'src/server/services/conta.ts', 'src/server/services/custo-fixo.ts']) {
@@ -183,6 +193,14 @@ describe('a copy do produto não tem travessão', () => {
       achados.map((a) => `${a.arquivo}:${a.linha}: ${a.texto}`),
       'frase de serviço que volta para a tela. Se for texto interno, ele precisa de uma das marcas de ' +
         'MARCA_DE_TEXTO_INTERNO na mesma linha; se o arquivo inteiro não é copy, FORA_DOS_SERVICOS.',
+    ).toEqual([])
+  })
+
+  it('nenhuma frase de `src/lib` (planos, mensagens prontas, contato) tem travessão', () => {
+    const achados = travessoes(LIB).filter((a) => !MARCA_DE_TEXTO_INTERNO.test(a.texto))
+    expect(
+      achados.map((a) => `${a.arquivo}:${a.linha}: ${a.texto}`),
+      'a copy dos planos e as mensagens prontas do WhatsApp são lidas pela pessoa como qualquer tela.',
     ).toEqual([])
   })
 
