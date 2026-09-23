@@ -26,8 +26,19 @@ const LINHA_VAZIA: Pessoa = { nome: '', telefone: '', quando: 'quinzena' }
 /** Três linhas abertas: uma só parece um formulário de cadastro avulso, e a tarefa aqui é em lote. */
 const INICIAIS = [LINHA_VAZIA, LINHA_VAZIA, LINHA_VAZIA]
 
-export default function FormularioQuemJaAtendo({ servicos }: { servicos: ServicoComRitmo[] }) {
-  const [serviceId, setServiceId] = useState(servicos[0]?.id ?? '')
+type Props = {
+  servicos: ServicoComRitmo[]
+  /** `core/cycle/servico-padrao-da-base.ts` — mais atendido, ou o de ritmo do meio. */
+  servicoPadrao: string | null
+  /**
+   * A conta já tem alguém cadastrado? Sem ninguém, a busca de "quem já tem ficha e voltou" não
+   * acha nada — era a primeira coisa que uma conta nova via, perguntando por fichas que não existem.
+   */
+  temClientes: boolean
+}
+
+export default function FormularioQuemJaAtendo({ servicos, servicoPadrao, temClientes }: Props) {
+  const [serviceId, setServiceId] = useState(servicoPadrao ?? servicos[0]?.id ?? '')
   const [pessoas, setPessoas] = useState<Pessoa[]>(INICIAIS)
   const [retornos, setRetornos] = useState<Retorno[]>([])
   const [resultado, setResultado] = useState<Resultado | null>(null)
@@ -153,7 +164,7 @@ export default function FormularioQuemJaAtendo({ servicos }: { servicos: Servico
         telefone outra vez. Fica ACIMA da lista de gente nova: quem volta toda semana usa isto mais
         que o cadastro inicial, que só acontece uma vez.
       */}
-      <BuscaDeRetorno jaAdicionados={retornos.map((r) => r.clientId)} aoEscolher={adicionarRetorno} />
+      {temClientes ? <BuscaDeRetorno jaAdicionados={retornos.map((r) => r.clientId)} aoEscolher={adicionarRetorno} /> : null}
 
       {retornos.length > 0 ? (
         <section className="flex flex-col gap-2">
@@ -185,7 +196,9 @@ export default function FormularioQuemJaAtendo({ servicos }: { servicos: Servico
       ) : null}
 
       <section className="flex flex-col gap-3">
-        <span className="text-label font-semibold text-txt-2">Ou gente nova, que ainda não tem ficha</span>
+        <span className="text-label font-semibold text-txt-2">
+          {temClientes ? 'Ou gente nova, que ainda não tem ficha' : 'Quem você atende e quando veio pela última vez'}
+        </span>
         {pessoas.map((pessoa, i) => (
           <Card key={i} className="flex flex-col gap-2">
             <div className="flex items-end gap-2">
