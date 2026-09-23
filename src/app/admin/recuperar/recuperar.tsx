@@ -196,17 +196,28 @@ export default function RecuperarReceita({
         <StatTile rotulo={comMaiuscula(plural(vocabulario.cliente))} valor={String(lista.count)} />
       </div>
 
-      <p className="mb-4 text-secundario text-txt-3">
-        Estimativa, não promessa: o preço do serviço de cada uma, multiplicado pela chance de ela voltar. Quanto mais
-        tempo sem aparecer, menor a chance, e por isso quem sumiu há mais tempo vale menos aqui. A ordem da lista segue o
-        <strong> lucro</strong>, o que sobra depois da comissão{servicosSemMaterial > 0 ? '' : ' e do produto'}, não o preço.
-      </p>
+      {/*
+        `docs/82` §7, medido em 2026-09-23 numa conta nova: esta é a tela a que o primeiro passo leva
+        ("Traga quem você já atende" → "Ver quem são"), e antes da lista vinham DOIS parágrafos de
+        ressalva — o método e a lacuna de custo — empurrando os nomes para fora da primeira tela do
+        celular. O método continua a um toque, com a frase que importa ("estimativa, não promessa")
+        visível no resumo. A lacuna de custo continua SEMPRE visível (`tela-que-desconta-produto-
+        sabe-a-lacuna`), só mais curta. E "cada uma… ela" virou "cada pessoa": numa barbearia a
+        clientela não é "ela".
+      */}
+      <details className="mb-3 text-secundario text-txt-3">
+        <summary className="cursor-pointer py-4 font-semibold text-txt-2">Estimativa, não promessa: como a conta é feita</summary>
+        <p className="pb-2">
+          O preço do serviço de cada pessoa, multiplicado pela chance de ela voltar. Quanto mais tempo sem aparecer, menor a
+          chance, e por isso quem sumiu há mais tempo vale menos aqui. A ordem da lista segue o <strong>lucro</strong>, o que
+          sobra depois da comissão{servicosSemMaterial > 0 ? '' : ' e do produto'}, não o preço.
+        </p>
+      </details>
 
       {servicosSemMaterial > 0 ? (
         <p className="mb-4 text-secundario text-txt-3">
-          O produto ainda não entra nesta conta: {servicosSemMaterial === 1 ? '1 serviço' : `${servicosSemMaterial} serviços`} sem o custo
-          registrado. Enquanto isso, um serviço que gasta material parece tão lucrativo quanto um que não gasta, e é a ordem desta lista que
-          fica errada.{' '}
+          {servicosSemMaterial === 1 ? '1 serviço está' : `${servicosSemMaterial} serviços estão`} sem o custo do material, então a
+          ordem da lista pode estar errada.{' '}
           <Link href="/admin/config/servicos" className="font-semibold text-acc-2">
             Completar o custo
           </Link>
