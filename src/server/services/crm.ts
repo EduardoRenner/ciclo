@@ -18,6 +18,8 @@ import { taxaEstaConfigurada } from '@/core/comanda/taxa-de-pagamento'
 import { avaliarPermissao } from '@/server/auth/rbac'
 
 import { buscarTudoPaginado } from '@/server/db/paginar'
+import { acaoDoMotor } from '@/core/ciclo/acao-do-motor'
+import { quandoVolta } from '@/core/ciclo/primeira-volta'
 import { ritmoDoCliente, type RitmoDoCliente } from '@/core/ciclo/ritmo-do-cliente'
 import { lucroDoCliente, type LucroDoCliente } from '@/core/crm/lucro-do-cliente'
 import { AppError } from '@/server/http/errors'
@@ -640,7 +642,13 @@ export async function centralDeAcoes(db: Cliente, tenantId: string, papel?: Pape
    */
   const podeVerLucro = papel !== undefined && avaliarPermissao(papel, 'report:read') !== null
 
-  const [resumo, resgataveis, orcamentos, ctxPlano, tenantSettings, material] = await Promise.all([
+  /*
+    Janela de um dia antes do "hoje" em UTC: o dia do salão é no máximo um a menos que o de UTC
+    nos fusos do Brasil, e o fuso só chega com `tenantSettings`, no mesmo `Promise.all`. O corte
+    exato (`>= hoje do salão`) é feito depois, em memória, sobre no máximo cinco linhas.
+  */
+  const ontemUtc = Temporal.Now.plainDateISO('UTC').subtract({ days: 1 }).toString()
+  const [resumo, resgataveis, orcamentos, ctxPlano, tenantSettings, material, ciclos, proximas] = await Promise.all([
     // `resumo_central_de_acoes` (0089): as quatro contagens que eram quatro idas de rede separadas
     // (clientes, agendamentos, v_clientes_a_recuperar, v_client_segments) viraram uma função só —
     // medido em produção (docs/28 §12), `centralDeAcoes` sozinha respondia por 2-4x o tempo dos
@@ -657,8 +665,18 @@ export async function centralDeAcoes(db: Cliente, tenantId: string, papel?: Pape
     // `settings` não vem em `contextoDePlano` (que seleciona só as colunas de plano) e o card de
     // fidelidade precisa do prêmio que o DONO configurou — ver `limiarPertoDoPremio` abaixo.
     // Mais uma consulta no mesmo `Promise.all`: paralela, sem round-trip serial a mais.
-    db.from('tenants').select('settings').eq('id', tenantId).maybeSingle(),
+    db.from('tenants').select('settings, timezone').eq('id', tenantId).maybeSingle(),
     podeVerLucro ? medirMaterialDoCatalogo(db, tenantId) : null,
+    // docs/82 rodada 19: o que o Motor tem a dizer quando ninguém está sumindo (`acaoDoMotor`).
+    db.from('client_cycles').select('client_id', { count: 'exact', head: true }).eq('tenant_id', tenantId),
+    db
+      .from('client_cycles')
+      .select('predicted_on')
+      .eq('tenant_id', tenantId)
+      .eq('state', 'on_track')
+      .gte('predicted_on', ontemUtc)
+      .order('predicted_on')
+      .limit(5),
   ])
   if (resumo.error) throw new AppError('INTERNAL', { cause: resumo.error })
   const clientes = { count: resumo.data?.clientes ?? 0 }
@@ -685,6 +703,22 @@ export async function centralDeAcoes(db: Cliente, tenantId: string, papel?: Pape
       tom: 'warn',
     })
   }
+
+  /*
+    Logo depois do alarme de "sumindo", e antes de tudo o mais: é o produto falando. Medido na
+    rodada 19 do docs/82 — sem isto, uma conta que acabou de pôr gente no Motor abria o "Hoje" com
+    três pendências de custo e nenhuma palavra sobre quem ela cadastrou. Se as consultas falharem,
+    `count`/`data` vêm vazios e a ação some — nunca derruba a tela.
+  */
+  const hojeNoSalao = Temporal.Now.plainDateISO(tenantSettings.data?.timezone ?? 'America/Sao_Paulo')
+  const proxima = (proximas.data ?? []).map((c) => c.predicted_on).find((d): d is string => d !== null && d >= hojeNoSalao.toString())
+  const doMotor = acaoDoMotor({
+    clientes: clientes.count ?? 0,
+    sumindo: totalEmRisco,
+    ciclos: ciclos.count ?? 0,
+    quandoOProximoVolta: proxima ? quandoVolta(proxima, hojeNoSalao) : null,
+  })
+  if (doMotor) acoes.push(doMotor)
 
   const totalAniversariantes = aniversariantes.count ?? 0
   if (totalAniversariantes > 0) {
