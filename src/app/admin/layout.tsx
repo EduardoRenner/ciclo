@@ -67,10 +67,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     return null
   })
   // Cookie `ciclo-tema` (o seletor em Configurações → Aparência grava): `claro` | `escuro` |
-  // ausente. O wrapper abaixo carrega isso como `data-theme`, e o CSS de `globals.css` decide a
-  // paleta a partir dali — no servidor, então não pisca. `sistema` deixa o `@media` resolver.
-  const temaSalvo = cabecalhos.get('cookie')?.match(/(?:^|;\s*)ciclo-tema=(claro|escuro)/)?.[1]
-  const dataTheme = temaSalvo === 'claro' ? 'light' : temaSalvo === 'escuro' ? 'dark' : 'sistema'
+  // `sistema` | ausente. O wrapper abaixo carrega isso como `data-theme`, e o CSS de `globals.css`
+  // decide a paleta a partir dali — no servidor, então não pisca.
+  //
+  // AUSENTE = CLARO (2026-09-23, pedido do Eduardo: "tudo no padrão claro"). Era `sistema`, e quem
+  // tinha o celular em escuro criava a conta numa tela clara e caía num painel escuro. `sistema`
+  // continua existindo, mas só quando a pessoa pede o Automático de propósito.
+  const temaSalvo = cabecalhos.get('cookie')?.match(/(?:^|;\s*)ciclo-tema=(claro|escuro|sistema)/)?.[1]
+  const dataTheme = temaSalvo === 'escuro' ? 'dark' : temaSalvo === 'sistema' ? 'sistema' : 'light'
 
   // O `<div>` abaixo pinta o próprio fundo; este `<style>` estende essa cor ao `<html>`/`<body>`
   // (ancestrais, fora do alcance da variável) para o rubber-band do celular não mostrar o escuro.

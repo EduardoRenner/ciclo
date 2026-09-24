@@ -9,14 +9,14 @@ import ToastProvider from '@/components/ui/toast'
  * A entrada em fade+slide (`tw-animate-css`) continua: é sinal de movimento
  * sem depender de cor.
  *
- * `data-theme="light"` entrou em 2026-09-21, pedido direto do Eduardo (com prova em screenshot):
- * o escuro nasceu como identidade de marca deliberada da "frente de casa" (ver `app/layout.tsx`),
- * mas a decisão foi revisada — quem chega em `/entrar`/`/cadastro`/`/onboarding` está preenchendo
- * campo de verdade, e a leitura ficou melhor clara. `/onboarding` tinha ganhado isso sozinha antes
- * (`onboarding/layout.tsx`, removido — este wrapper cobre o mesmo caso agora). A landing (`/`) não
- * usa este componente — tema dela em `app/page.tsx`, tratado à parte.
+ * **Tema: claro, sempre (2026-09-23).** O padrão do produto é claro (`docs/82` rodada 33, pedido do
+ * Eduardo: "tudo no padrão claro"): estas telas, a home, a página do salão, as telas de link do
+ * cliente e o painel sem escolha salva. Foi o salto entre uma tela clara e um painel escuro que
+ * motivou a decisão. Não lê o cookie `ciclo-tema` porque `error.tsx` e `not-found.tsx` também usam
+ * este componente, e `error.tsx` é client. A landing (`/`) não usa este componente, tema dela em
+ * `app/page.tsx`.
  *
- * `<style>` de fundo: `body`/`html` são ancestrais, fora do alcance da variável CSS — sem isto o
+ * `<style>` de fundo: `body`/`html` são ancestrais, fora do alcance da variável CSS. Sem isto o
  * rubber-band do celular mostra o escuro do `:root` por baixo do conteúdo claro.
  *
  * `color`/`background` explícitos no `style` do wrapper, não só a variável: `body` (`app/layout.tsx`)

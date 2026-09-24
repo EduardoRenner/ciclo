@@ -80,6 +80,7 @@ describe('o tema do wrapper alcança o que está acima dele', () => {
 describe('a mesma armadilha, em wrappers com style inline em vez de #raiz-do-tema', () => {
   const ARQUIVOS = [
     'src/components/shell/tela-publica.tsx',
+    'src/components/shell/tela-do-cliente.tsx',
     'src/app/page.tsx',
     'src/app/(public)/[slug]/layout.tsx',
     'src/app/(public)/precos/page.tsx',
@@ -96,5 +97,85 @@ describe('a mesma armadilha, em wrappers com style inline em vez de #raiz-do-tem
         'herda o escuro já computado no body — a mesma armadilha do #raiz-do-tema, documentada acima.',
     ).toMatch(/color:\s*['"]var\(--txt\)['"]/)
     expect(fonte, `${caminho}: mesmo raciocínio, agora para \`background\`.`).toMatch(/background:\s*['"]var\(--bg\)['"]/)
+  })
+})
+
+/**
+ * As telas que o CLIENTE FINAL abre por link (`/confirmar`, `/avaliar`, `/lista-espera`, `/orcamento`)
+ * não definiam tema nenhum e caíam no escuro do `:root`, mesmo com o aparelho em claro, enquanto a
+ * página do salão que ele acabou de usar (`/[slug]`) é clara. Quem recebe "confirme seu horário" no
+ * WhatsApp saía de uma página clara para uma escura, medido a 375 px com o sistema em claro
+ * (`docs/82` rodada 32). Elas passam pelo mesmo `TelaDoCliente`, claro como a página do salão.
+ *
+ * A guarda cobra o layout de CADA pasta, por nome: uma pasta nova de link de cliente nasce escura
+ * sem ninguém notar, e varrer "todas as pastas" passaria vazio se a lista de raízes ficasse velha.
+ */
+describe('as telas de link do cliente usam o mesmo tema da página do salão', () => {
+  const PASTAS = ['confirmar', 'avaliar', 'lista-espera', 'orcamento']
+
+  it.each(PASTAS)('/%s tem layout com TelaDoCliente', (pasta) => {
+    const caminho = `src/app/(public)/${pasta}/layout.tsx`
+    let fonte = ''
+    try {
+      fonte = readFileSync(caminho, 'utf8')
+    } catch {
+      fonte = ''
+    }
+    expect(fonte, `${caminho} não existe: a tela de ${pasta} cai no escuro do :root`).not.toBe('')
+    expect(fonte, `${caminho} não passa pelo TelaDoCliente`).toMatch(/<TelaDoCliente>/)
+  })
+
+  it('o componente é claro, como a página do salão', () => {
+    const codigo = readFileSync('src/components/shell/tela-do-cliente.tsx', 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ')
+    expect(codigo).toMatch(/data-theme="light"/)
+    expect(codigo).toMatch(/html,body\{background:#faf8f5\}/)
+  })
+})
+
+/**
+ * O PADRÃO É CLARO (`docs/82` rodada 33, pedido do Eduardo: "deixa tudo no padrão claro").
+ *
+ * Havia dois padrões convivendo: as telas públicas e de entrada eram claras, e o painel seguia o
+ * aparelho, então quem tinha o celular em escuro criava a conta numa tela clara e caía num painel
+ * escuro. Agora o painel, sem escolha salva, também é claro. Quem quiser escuro escolhe em
+ * Configurações (`escuro`) ou pede o automático (`sistema`).
+ *
+ * Cookie `ciclo-tema`: `claro` | `escuro` | `sistema`. AUSENTE = claro.
+ */
+describe('o painel é claro por padrão', () => {
+  it('layout do painel: cookie ausente vira light, não sistema', () => {
+    expect(
+      ADMIN_LAYOUT,
+      'sem cookie o painel voltou a seguir o aparelho: quem tem o celular em escuro cai num painel escuro depois de criar a conta numa tela clara',
+    ).toMatch(/temaSalvo === 'escuro' \? 'dark' : temaSalvo === 'sistema' \? 'sistema' : 'light'/)
+  })
+
+  it('layout do painel: o cookie aceita os três valores, incluindo o automático explícito', () => {
+    expect(ADMIN_LAYOUT).toMatch(/ciclo-tema=\(claro\|escuro\|sistema\)/)
+  })
+
+  it('seletor: sem cookie a pessoa aparece em "Claro", não em "Automático"', () => {
+    const seletor = readFileSync('src/components/shell/seletor-de-tema.tsx', 'utf8')
+    expect(seletor).toMatch(/ciclo-tema=\(claro\|escuro\|sistema\)/)
+    expect(seletor, 'o estado inicial do seletor precisa ser o padrão real do painel').toMatch(/useState<Escolha>\('claro'\)/)
+    expect(seletor).toMatch(/: 'claro'\s*\n\}/)
+  })
+
+  it.each(['src/components/shell/tela-publica.tsx', 'src/components/shell/tela-do-cliente.tsx'])(
+    '%s é claro no CÓDIGO, não só no comentário',
+    (caminho) => {
+      /*
+        O teste por arquivo lá em cima lê o texto inteiro, comentário incluído, e passou verde com
+        `TelaPublica` em `sistema`: o cabeçalho conta a história e cita `data-theme="light"`. Aqui só o
+        que executa.
+      */
+      const codigo = readFileSync(caminho, 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ')
+      expect(codigo, `${caminho} não cravou data-theme="light" no código`).toMatch(/data-theme="light"/)
+      expect(codigo, `${caminho} ainda tem data-theme="sistema" no código`).not.toMatch(/data-theme="sistema"/)
+    },
+  )
+
+  it('o fundo de html/body do painel cobre o padrão claro', () => {
+    expect(ADMIN_LAYOUT).toMatch(/dataTheme === 'light' \? '#faf8f5'/)
   })
 })

@@ -13,7 +13,8 @@ import Segmented from '@/components/ui/segmented'
  * escolha não pisca na próxima carga. Aqui a troca também é aplicada AO VIVO no mesmo `<div>`
  * (`#raiz-do-tema`), sem recarregar.
  *
- * Valores: `claro` | `escuro` | ausente (= automático, o `@media` do CSS decide).
+ * Valores: `claro` | `escuro` | `sistema` | ausente. **Ausente = claro** (`docs/82` rodada 33): o
+ * padrão do produto é claro, e o automático (que segue o aparelho) é uma escolha explícita.
  */
 
 type Escolha = 'sistema' | 'claro' | 'escuro'
@@ -39,24 +40,21 @@ const DATA_THEME: Record<Escolha, 'sistema' | 'light' | 'dark'> = {
 const UM_ANO = 60 * 60 * 24 * 365
 
 function lerCookie(): Escolha {
-  const m = document.cookie.match(/(?:^|;\s*)ciclo-tema=(claro|escuro)/)
-  return m ? (m[1] as Escolha) : 'sistema'
+  const m = document.cookie.match(/(?:^|;\s*)ciclo-tema=(claro|escuro|sistema)/)
+  return m ? (m[1] as Escolha) : 'claro'
 }
 
 function aplicar(escolha: Escolha) {
   document.getElementById('raiz-do-tema')?.setAttribute('data-theme', DATA_THEME[escolha])
-  if (escolha === 'sistema') {
-    document.cookie = `ciclo-tema=; path=/; max-age=0; samesite=lax`
-  } else {
-    document.cookie = `ciclo-tema=${escolha}; path=/; max-age=${UM_ANO}; samesite=lax`
-  }
+  // As três escolhas gravam cookie, o automático também: "sem cookie" agora significa claro.
+  document.cookie = `ciclo-tema=${escolha}; path=/; max-age=${UM_ANO}; samesite=lax`
 }
 
 export default function SeletorDeTema() {
-  // SSR não lê o cookie do lado do cliente; nasce em `sistema` e o efeito corrige. O wrapper do
-  // `admin/layout` já veio com o valor certo do servidor, então não há piscada — só o botão ativo
+  // SSR não lê o cookie do lado do cliente; nasce no padrão (claro) e o efeito corrige. O wrapper do
+  // `admin/layout` já veio com o valor certo do servidor, então não há piscada: só o botão ativo
   // se acerta um frame depois.
-  const [escolha, setEscolha] = useState<Escolha>('sistema')
+  const [escolha, setEscolha] = useState<Escolha>('claro')
 
   useEffect(() => {
     setEscolha(lerCookie())
@@ -73,7 +71,7 @@ export default function SeletorDeTema() {
       <div>
         <p className="text-corpo font-semibold">Tema</p>
         <p className="text-secundario text-txt-2">
-          No automático, segue o aparelho: claro se o sistema estiver no claro, escuro se estiver no escuro.
+          O padrão é claro. No automático, segue o aparelho: claro se o sistema estiver no claro, escuro se estiver no escuro.
         </p>
       </div>
       <Segmented segmentos={SEGMENTOS} valor={escolha} aoTrocar={trocar} rotulo="Tema do aplicativo" />
