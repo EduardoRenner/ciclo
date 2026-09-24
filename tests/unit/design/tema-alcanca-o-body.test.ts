@@ -79,7 +79,6 @@ describe('o tema do wrapper alcança o que está acima dele', () => {
  */
 describe('a mesma armadilha, em wrappers com style inline em vez de #raiz-do-tema', () => {
   const ARQUIVOS = [
-    'src/components/shell/tela-publica.tsx',
     'src/app/page.tsx',
     'src/app/(public)/[slug]/layout.tsx',
     'src/app/(public)/precos/page.tsx',
@@ -96,5 +95,41 @@ describe('a mesma armadilha, em wrappers com style inline em vez de #raiz-do-tem
         'herda o escuro já computado no body — a mesma armadilha do #raiz-do-tema, documentada acima.',
     ).toMatch(/color:\s*['"]var\(--txt\)['"]/)
     expect(fonte, `${caminho}: mesmo raciocínio, agora para \`background\`.`).toMatch(/background:\s*['"]var\(--bg\)['"]/)
+  })
+})
+
+/**
+ * `TelaPublica` (`/entrar`, `/cadastro`, `/onboarding`) deixou de forçar tema claro: a pessoa criava a
+ * conta numa tela clara e caía num painel escuro, e o salto lia como dois produtos diferentes
+ * (`docs/82` rodada 31, pedido do Eduardo). O painel segue "sistema" (ou a escolha salva); o shell de
+ * entrada agora segue o mesmo padrão, então os dois resolvem para o MESMO tema em qualquer aparelho.
+ *
+ * Continua valendo o par `color`/`background` explícito no wrapper (mesma armadilha da herança), e o
+ * fundo de `html`/`body` precisa acompanhar o tema resolvido, não ficar cravado num só.
+ */
+describe('TelaPublica segue o mesmo tema do painel', () => {
+  const fonte = readFileSync('src/components/shell/tela-publica.tsx', 'utf8')
+  // Só o que executa: o cabeçalho explica o passado e cita `data-theme="light"` de propósito.
+  const codigo = fonte.replace(/\/\*[\s\S]*?\*\//g, ' ')
+
+  it('não força claro', () => {
+    expect(codigo, 'TelaPublica voltou a cravar data-theme="light": o salto cadastro claro, painel escuro volta junto').not.toMatch(
+      /data-theme="light"/,
+    )
+  })
+
+  it('usa data-theme="sistema", igual ao padrão do painel', () => {
+    expect(codigo).toMatch(/data-theme="sistema"/)
+  })
+
+  it('redeclara color E background no wrapper (a herança do body é escura)', () => {
+    expect(codigo).toMatch(/color:\s*['"]var\(--txt\)['"]/)
+    expect(codigo).toMatch(/background:\s*['"]var\(--bg\)['"]/)
+  })
+
+  it('o fundo de html/body acompanha o tema do sistema, nas duas direções', () => {
+    expect(codigo, 'sem o fundo claro, o rubber-band do celular mostra o escuro sob a tela clara').toMatch(/#faf8f5/)
+    expect(codigo, 'sem o fundo escuro, o rubber-band mostra claro sob a tela escura').toMatch(/#0d0c0c/)
+    expect(codigo, 'a troca entre os dois tem que vir do @media, não de um valor fixo').toMatch(/prefers-color-scheme/)
   })
 })
