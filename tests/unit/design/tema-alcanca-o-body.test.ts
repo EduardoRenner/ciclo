@@ -79,6 +79,7 @@ describe('o tema do wrapper alcança o que está acima dele', () => {
  */
 describe('a mesma armadilha, em wrappers com style inline em vez de #raiz-do-tema', () => {
   const ARQUIVOS = [
+    'src/components/shell/tela-do-cliente.tsx',
     'src/app/page.tsx',
     'src/app/(public)/[slug]/layout.tsx',
     'src/app/(public)/precos/page.tsx',
@@ -131,5 +132,37 @@ describe('TelaPublica segue o mesmo tema do painel', () => {
     expect(codigo, 'sem o fundo claro, o rubber-band do celular mostra o escuro sob a tela clara').toMatch(/#faf8f5/)
     expect(codigo, 'sem o fundo escuro, o rubber-band mostra claro sob a tela escura').toMatch(/#0d0c0c/)
     expect(codigo, 'a troca entre os dois tem que vir do @media, não de um valor fixo').toMatch(/prefers-color-scheme/)
+  })
+})
+
+/**
+ * As telas que o CLIENTE FINAL abre por link (`/confirmar`, `/avaliar`, `/lista-espera`, `/orcamento`)
+ * não definiam tema nenhum e caíam no escuro do `:root`, mesmo com o aparelho em claro, enquanto a
+ * página do salão que ele acabou de usar (`/[slug]`) é clara. Quem recebe "confirme seu horário" no
+ * WhatsApp saía de uma página clara para uma escura, medido a 375 px com o sistema em claro
+ * (`docs/82` rodada 32). Elas passam pelo mesmo `TelaDoCliente`, claro como a página do salão.
+ *
+ * A guarda cobra o layout de CADA pasta, por nome: uma pasta nova de link de cliente nasce escura
+ * sem ninguém notar, e varrer "todas as pastas" passaria vazio se a lista de raízes ficasse velha.
+ */
+describe('as telas de link do cliente usam o mesmo tema da página do salão', () => {
+  const PASTAS = ['confirmar', 'avaliar', 'lista-espera', 'orcamento']
+
+  it.each(PASTAS)('/%s tem layout com TelaDoCliente', (pasta) => {
+    const caminho = `src/app/(public)/${pasta}/layout.tsx`
+    let fonte = ''
+    try {
+      fonte = readFileSync(caminho, 'utf8')
+    } catch {
+      fonte = ''
+    }
+    expect(fonte, `${caminho} não existe: a tela de ${pasta} cai no escuro do :root`).not.toBe('')
+    expect(fonte, `${caminho} não passa pelo TelaDoCliente`).toMatch(/<TelaDoCliente>/)
+  })
+
+  it('o componente é claro, como a página do salão', () => {
+    const codigo = readFileSync('src/components/shell/tela-do-cliente.tsx', 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ')
+    expect(codigo).toMatch(/data-theme="light"/)
+    expect(codigo).toMatch(/html,body\{background:#faf8f5\}/)
   })
 })
