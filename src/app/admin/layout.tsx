@@ -13,7 +13,7 @@ import TabBar from '@/components/shell/tab-bar'
 import TransicaoDeTela from '@/components/shell/transicao-de-tela'
 import Topbar from '@/components/shell/topbar'
 
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 
 /** Painel de trabalho, não vitrine — nunca deve aparecer numa busca (Gate 10). */
 export const metadata: Metadata = {
@@ -60,6 +60,26 @@ export const dynamic = 'force-dynamic'
  * — então checar o `code` antes de redirecionar não manda pro onboarding quem só precisa trocar de
  * aba ou escolher qual negócio usar.
  */
+/**
+ * Cor da barra do navegador no painel, pelo mesmo cookie `ciclo-tema` que decide o `data-theme` abaixo.
+ * Sem isto a barra ficaria clara (padrão do layout raiz) sobre um painel que a pessoa escolheu escuro.
+ * `sistema` volta a seguir o aparelho: só aí a barra troca por `prefers-color-scheme`.
+ */
+export async function generateViewport(): Promise<Viewport> {
+  const cabecalhos = await headers()
+  const escolha = cabecalhos.get('cookie')?.match(/(?:^|;\s*)ciclo-tema=(claro|escuro|sistema)/)?.[1]
+  if (escolha === 'escuro') return { themeColor: '#0d0c0c' }
+  if (escolha === 'sistema') {
+    return {
+      themeColor: [
+        { media: '(prefers-color-scheme: dark)', color: '#0d0c0c' },
+        { media: '(prefers-color-scheme: light)', color: '#faf8f5' },
+      ],
+    }
+  }
+  return { themeColor: '#faf8f5' }
+}
+
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const cabecalhos = await headers()
   const ctx = await contextoAtual(new Request('https://interno/admin', { headers: cabecalhos })).catch((erro: unknown) => {

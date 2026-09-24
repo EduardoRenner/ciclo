@@ -179,3 +179,36 @@ describe('o painel é claro por padrão', () => {
     expect(ADMIN_LAYOUT).toMatch(/dataTheme === 'light' \? '#faf8f5'/)
   })
 })
+
+/**
+ * A barra do navegador e a tela de abertura do app instalado também são "tema" (`docs/82` rodada 34).
+ *
+ * Com o produto claro por padrão, `themeColor` do layout raiz ainda mandava `#0d0c0c` para quem tem o
+ * aparelho em escuro (barra escura sobre página clara) e o `manifest.json` era escuro sempre (o app
+ * instalado abria escuro e piscava para claro). Além disso o comentário do layout jurava que o
+ * `seletor-de-tema` reescreve a `<meta theme-color>`, e o código dele nunca fez isso.
+ */
+describe('a barra do navegador e o app instalado acompanham o padrão claro', () => {
+  const RAIZ = readFileSync('src/app/layout.tsx', 'utf8')
+  const codigoRaiz = RAIZ.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^\s*\/\/.*$/gm, ' ')
+
+  it('layout raiz: themeColor é o claro, sem variante escura por aparelho', () => {
+    const bloco = codigoRaiz.slice(codigoRaiz.indexOf('themeColor'), codigoRaiz.indexOf('width:'))
+    expect(bloco, 'themeColor não achado: a guarda ficaria cega').toContain('#faf8f5')
+    expect(bloco, 'themeColor voltou a mandar barra escura para quem tem o aparelho em escuro').not.toContain('#0d0c0c')
+  })
+
+  it('manifest: abertura e barra do app instalado são claras', () => {
+    const m = JSON.parse(readFileSync('public/manifest.json', 'utf8')) as { background_color: string; theme_color: string }
+    expect(m.background_color).toBe('#faf8f5')
+    expect(m.theme_color).toBe('#faf8f5')
+  })
+
+  it('painel: quem escolheu Escuro (ou Automático) tem a barra escura, via generateViewport', () => {
+    expect(ADMIN_LAYOUT, 'sem generateViewport, quem escolheu Escuro fica com barra clara sobre painel escuro').toMatch(
+      /export async function generateViewport/,
+    )
+    expect(ADMIN_LAYOUT).toMatch(/'#0d0c0c'/)
+    expect(ADMIN_LAYOUT).toMatch(/'#faf8f5'/)
+  })
+})
