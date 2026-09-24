@@ -19,7 +19,13 @@ export type AtualizacaoDeStatus = {
   status: 'sent' | 'delivered' | 'read' | 'failed'
   error?: string
 }
-export type EventoWebhook = MensagemRecebida | AtualizacaoDeStatus
+/**
+ * Evento autêntico que este produto não usa: aprovação de template, alerta da conta, qualidade do
+ * número. Existe para o parse NÃO estourar nele; estourar vira 401 na rota, e 401 em evento legítimo
+ * faz a Meta reenviar e, com falhas seguidas, desativar a inscrição do webhook.
+ */
+export type EventoIgnorado = { kind: 'ignorado'; campo: string }
+export type EventoWebhook = MensagemRecebida | AtualizacaoDeStatus | EventoIgnorado
 
 export interface MessagingProvider {
   sendTemplate(i: EnvioTemplate): Promise<{ providerId: string }>

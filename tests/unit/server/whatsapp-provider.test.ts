@@ -126,9 +126,32 @@ describe('WhatsAppCloudProvider.parseWebhook — verificação de assinatura', (
     expect(evento).toMatchObject({ kind: 'status', status: 'failed' })
   })
 
-  it('payload sem mensagem nem status estoura, não devolve evento inventado', () => {
+  it('evento legítimo que não é mensagem nem status vira "ignorado", não erro', () => {
+    /*
+      Ao inscrever o webhook nos campos da conta (`message_template_status_update`, `account_alerts`,
+      `phone_number_quality_update`, `security`...), a Meta passa a mandar payloads SEM `messages` nem
+      `statuses`. Antes o parse estourava e a rota respondia 401 "Invalid signature" para evento
+      autêntico: a Meta reenvia e, com falhas seguidas, pode desativar a inscrição inteira.
+      Assinatura inválida continua sendo a ÚNICA recusa (teste mais acima).
+    */
+    const provider = new WhatsAppCloudProvider()
+    const raw = JSON.stringify({
+      entry: [{ changes: [{ field: 'message_template_status_update', value: { event: 'APPROVED', message_template_name: 'recover_client' } }] }],
+    })
+    const evento = provider.parseWebhook(raw, assinar(raw))
+    expect(evento).toEqual({ kind: 'ignorado', campo: 'message_template_status_update' })
+  })
+
+  it('payload sem campo nenhum também é ignorado, e nunca vira inbound nem status inventado', () => {
     const provider = new WhatsAppCloudProvider()
     const raw = JSON.stringify({ entry: [{ changes: [{ value: {} }] }] })
-    expect(() => provider.parseWebhook(raw, assinar(raw))).toThrow(/webhook/i)
+    const evento = provider.parseWebhook(raw, assinar(raw))
+    expect(evento.kind).toBe('ignorado')
+  })
+
+  it('evento ignorado ainda exige assinatura válida', () => {
+    const provider = new WhatsAppCloudProvider()
+    const raw = JSON.stringify({ entry: [{ changes: [{ field: 'account_alerts', value: {} }] }] })
+    expect(() => provider.parseWebhook(raw, 'sha256=' + '0'.repeat(64))).toThrow(/[Aa]ssinatura/)
   })
 })

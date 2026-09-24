@@ -100,6 +100,7 @@ export class WhatsAppCloudProvider implements MessagingProvider {
     const payload = JSON.parse(raw) as {
       entry?: {
         changes?: {
+          field?: string
           value?: {
             messages?: { from: string; text?: { body: string }; timestamp: string }[]
             statuses?: { id: string; status: string; errors?: { message: string }[] }[]
@@ -108,7 +109,8 @@ export class WhatsAppCloudProvider implements MessagingProvider {
       }[]
     }
 
-    const valor = payload.entry?.[0]?.changes?.[0]?.value
+    const mudanca = payload.entry?.[0]?.changes?.[0]
+    const valor = mudanca?.value
     const mensagem = valor?.messages?.[0]
     if (mensagem) {
       return {
@@ -131,6 +133,8 @@ export class WhatsAppCloudProvider implements MessagingProvider {
       }
     }
 
-    throw new Error('Webhook do WhatsApp sem mensagem nem status reconhecido.')
+    // A assinatura já foi conferida acima: daqui em diante o payload é AUTÊNTICO, só não é de um tipo
+    // que o produto usa. Recusar (401) seria tratar evento legítimo como forjado.
+    return { kind: 'ignorado', campo: mudanca?.field ?? 'desconhecido' }
   }
 }
