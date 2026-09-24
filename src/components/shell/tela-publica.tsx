@@ -9,18 +9,15 @@ import ToastProvider from '@/components/ui/toast'
  * A entrada em fade+slide (`tw-animate-css`) continua: é sinal de movimento
  * sem depender de cor.
  *
- * **Tema: segue o do painel (2026-09-23), não força claro.** Entre 2026-09-21 e 2026-09-23 este shell
- * cravava `data-theme="light"` (pedido do Eduardo: quem preenche campo lê melhor no claro). O efeito
- * colateral apareceu no fluxo inteiro: a pessoa criava a conta numa tela clara e caía num painel
- * escuro, porque o `admin/layout` usa `sistema` (ou a escolha salva em `ciclo-tema`) e o `:root` é
- * escuro. Agora usa `sistema` também: o `@media (prefers-color-scheme: light)` de `globals.css` decide,
- * e cadastro, onboarding e painel resolvem para o MESMO tema em qualquer aparelho. Não lê o cookie
- * porque `error.tsx` e `not-found.tsx` também usam este componente, e `error.tsx` é client. A landing
- * (`/`) não usa este componente — tema dela em `app/page.tsx`, tratado à parte.
+ * **Tema: claro, sempre (2026-09-23).** O padrão do produto é claro (`docs/82` rodada 33, pedido do
+ * Eduardo: "tudo no padrão claro"): estas telas, a home, a página do salão, as telas de link do
+ * cliente e o painel sem escolha salva. Foi o salto entre uma tela clara e um painel escuro que
+ * motivou a decisão. Não lê o cookie `ciclo-tema` porque `error.tsx` e `not-found.tsx` também usam
+ * este componente, e `error.tsx` é client. A landing (`/`) não usa este componente, tema dela em
+ * `app/page.tsx`.
  *
  * `<style>` de fundo: `body`/`html` são ancestrais, fora do alcance da variável CSS. Sem isto o
- * rubber-band do celular mostra a cor errada por baixo do conteúdo: o escuro do `:root` sob uma tela
- * clara. Como o tema agora é o do sistema, o `<style>` também troca pelo mesmo `@media`.
+ * rubber-band do celular mostra o escuro do `:root` por baixo do conteúdo claro.
  *
  * `color`/`background` explícitos no `style` do wrapper, não só a variável: `body` (`app/layout.tsx`)
  * já declara `color: var(--txt)`, e `color` é HERDADO — não recalculado a cada `var()`. `body` fica
@@ -50,14 +47,10 @@ import ToastProvider from '@/components/ui/toast'
 export default function TelaPublica({ children }: { children: React.ReactNode }) {
   return (
     <div
-      data-theme="sistema"
+      data-theme="light"
       style={{ '--tabbar-h': '0px', '--sidebar-w': '0px', color: 'var(--txt)', background: 'var(--bg)' } as React.CSSProperties}
     >
-      <style
-        dangerouslySetInnerHTML={{
-          __html: 'html,body{background:#0d0c0c}@media (prefers-color-scheme: light){html,body{background:#faf8f5}}',
-        }}
-      />
+      <style dangerouslySetInnerHTML={{ __html: 'html,body{background:#faf8f5}' }} />
       <ToastProvider>
         <main className="relative flex min-h-dvh flex-col items-center justify-center gap-6 overflow-hidden px-[18px] py-10">
           <div className="flex w-full animate-in flex-col items-center gap-6 fade-in slide-in-from-bottom-4 duration-500">

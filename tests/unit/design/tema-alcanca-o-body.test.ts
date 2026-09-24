@@ -79,6 +79,7 @@ describe('o tema do wrapper alcança o que está acima dele', () => {
  */
 describe('a mesma armadilha, em wrappers com style inline em vez de #raiz-do-tema', () => {
   const ARQUIVOS = [
+    'src/components/shell/tela-publica.tsx',
     'src/components/shell/tela-do-cliente.tsx',
     'src/app/page.tsx',
     'src/app/(public)/[slug]/layout.tsx',
@@ -96,42 +97,6 @@ describe('a mesma armadilha, em wrappers com style inline em vez de #raiz-do-tem
         'herda o escuro já computado no body — a mesma armadilha do #raiz-do-tema, documentada acima.',
     ).toMatch(/color:\s*['"]var\(--txt\)['"]/)
     expect(fonte, `${caminho}: mesmo raciocínio, agora para \`background\`.`).toMatch(/background:\s*['"]var\(--bg\)['"]/)
-  })
-})
-
-/**
- * `TelaPublica` (`/entrar`, `/cadastro`, `/onboarding`) deixou de forçar tema claro: a pessoa criava a
- * conta numa tela clara e caía num painel escuro, e o salto lia como dois produtos diferentes
- * (`docs/82` rodada 31, pedido do Eduardo). O painel segue "sistema" (ou a escolha salva); o shell de
- * entrada agora segue o mesmo padrão, então os dois resolvem para o MESMO tema em qualquer aparelho.
- *
- * Continua valendo o par `color`/`background` explícito no wrapper (mesma armadilha da herança), e o
- * fundo de `html`/`body` precisa acompanhar o tema resolvido, não ficar cravado num só.
- */
-describe('TelaPublica segue o mesmo tema do painel', () => {
-  const fonte = readFileSync('src/components/shell/tela-publica.tsx', 'utf8')
-  // Só o que executa: o cabeçalho explica o passado e cita `data-theme="light"` de propósito.
-  const codigo = fonte.replace(/\/\*[\s\S]*?\*\//g, ' ')
-
-  it('não força claro', () => {
-    expect(codigo, 'TelaPublica voltou a cravar data-theme="light": o salto cadastro claro, painel escuro volta junto').not.toMatch(
-      /data-theme="light"/,
-    )
-  })
-
-  it('usa data-theme="sistema", igual ao padrão do painel', () => {
-    expect(codigo).toMatch(/data-theme="sistema"/)
-  })
-
-  it('redeclara color E background no wrapper (a herança do body é escura)', () => {
-    expect(codigo).toMatch(/color:\s*['"]var\(--txt\)['"]/)
-    expect(codigo).toMatch(/background:\s*['"]var\(--bg\)['"]/)
-  })
-
-  it('o fundo de html/body acompanha o tema do sistema, nas duas direções', () => {
-    expect(codigo, 'sem o fundo claro, o rubber-band do celular mostra o escuro sob a tela clara').toMatch(/#faf8f5/)
-    expect(codigo, 'sem o fundo escuro, o rubber-band mostra claro sob a tela escura').toMatch(/#0d0c0c/)
-    expect(codigo, 'a troca entre os dois tem que vir do @media, não de um valor fixo').toMatch(/prefers-color-scheme/)
   })
 })
 
@@ -164,5 +129,53 @@ describe('as telas de link do cliente usam o mesmo tema da página do salão', (
     const codigo = readFileSync('src/components/shell/tela-do-cliente.tsx', 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ')
     expect(codigo).toMatch(/data-theme="light"/)
     expect(codigo).toMatch(/html,body\{background:#faf8f5\}/)
+  })
+})
+
+/**
+ * O PADRÃO É CLARO (`docs/82` rodada 33, pedido do Eduardo: "deixa tudo no padrão claro").
+ *
+ * Havia dois padrões convivendo: as telas públicas e de entrada eram claras, e o painel seguia o
+ * aparelho, então quem tinha o celular em escuro criava a conta numa tela clara e caía num painel
+ * escuro. Agora o painel, sem escolha salva, também é claro. Quem quiser escuro escolhe em
+ * Configurações (`escuro`) ou pede o automático (`sistema`).
+ *
+ * Cookie `ciclo-tema`: `claro` | `escuro` | `sistema`. AUSENTE = claro.
+ */
+describe('o painel é claro por padrão', () => {
+  it('layout do painel: cookie ausente vira light, não sistema', () => {
+    expect(
+      ADMIN_LAYOUT,
+      'sem cookie o painel voltou a seguir o aparelho: quem tem o celular em escuro cai num painel escuro depois de criar a conta numa tela clara',
+    ).toMatch(/temaSalvo === 'escuro' \? 'dark' : temaSalvo === 'sistema' \? 'sistema' : 'light'/)
+  })
+
+  it('layout do painel: o cookie aceita os três valores, incluindo o automático explícito', () => {
+    expect(ADMIN_LAYOUT).toMatch(/ciclo-tema=\(claro\|escuro\|sistema\)/)
+  })
+
+  it('seletor: sem cookie a pessoa aparece em "Claro", não em "Automático"', () => {
+    const seletor = readFileSync('src/components/shell/seletor-de-tema.tsx', 'utf8')
+    expect(seletor).toMatch(/ciclo-tema=\(claro\|escuro\|sistema\)/)
+    expect(seletor, 'o estado inicial do seletor precisa ser o padrão real do painel').toMatch(/useState<Escolha>\('claro'\)/)
+    expect(seletor).toMatch(/: 'claro'\s*\n\}/)
+  })
+
+  it.each(['src/components/shell/tela-publica.tsx', 'src/components/shell/tela-do-cliente.tsx'])(
+    '%s é claro no CÓDIGO, não só no comentário',
+    (caminho) => {
+      /*
+        O teste por arquivo lá em cima lê o texto inteiro, comentário incluído, e passou verde com
+        `TelaPublica` em `sistema`: o cabeçalho conta a história e cita `data-theme="light"`. Aqui só o
+        que executa.
+      */
+      const codigo = readFileSync(caminho, 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ')
+      expect(codigo, `${caminho} não cravou data-theme="light" no código`).toMatch(/data-theme="light"/)
+      expect(codigo, `${caminho} ainda tem data-theme="sistema" no código`).not.toMatch(/data-theme="sistema"/)
+    },
+  )
+
+  it('o fundo de html/body do painel cobre o padrão claro', () => {
+    expect(ADMIN_LAYOUT).toMatch(/dataTheme === 'light' \? '#faf8f5'/)
   })
 })
