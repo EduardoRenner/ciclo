@@ -41,7 +41,7 @@ export const BIOS_DO_INSTAGRAM = [
 ] as const
 
 export type LinkDaBio = {
-  chave: 'calculadora' | 'cadastro' | 'exemplo' | 'como-funciona' | 'precos'
+  chave: 'calculadora' | 'cadastro' | 'como-funciona' | 'exemplo'
   titulo: string
   descricao: string
   href: string
@@ -74,8 +74,15 @@ export function linksDaBio({ slugDeDemonstracao }: { slugDeDemonstracao: string 
       href: linkComOrigem('/cadastro', 'instagram'),
       principal: true,
     },
+    {
+      chave: 'como-funciona',
+      titulo: 'Como funciona',
+      descricao: 'O que o CICLO calcula e como você começa.',
+      href: linkComOrigem('/', 'instagram'),
+    },
   ]
 
+  // O exemplo fecha a lista. Sem preços na página (pedido do Eduardo): ela leva a conta e o cadastro, não a comparação.
   if (slugDeDemonstracao) {
     links.push({
       chave: 'exemplo',
@@ -84,21 +91,6 @@ export function linksDaBio({ slugDeDemonstracao }: { slugDeDemonstracao: string 
       href: linkComOrigem(`/${slugDeDemonstracao}/agendar?ver=dono`, 'instagram'),
     })
   }
-
-  links.push(
-    {
-      chave: 'como-funciona',
-      titulo: 'Como funciona',
-      descricao: 'O que o CICLO calcula e como você começa.',
-      href: linkComOrigem('/', 'instagram'),
-    },
-    {
-      chave: 'precos',
-      titulo: 'Quanto custa',
-      descricao: 'Os planos, com o que cada um inclui.',
-      href: linkComOrigem('/precos', 'instagram'),
-    },
-  )
 
   return links
 }

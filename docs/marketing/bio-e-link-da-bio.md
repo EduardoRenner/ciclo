@@ -17,9 +17,8 @@ Instagram (bio + posts + stories)
    └─ 1 link só: seuciclo.com.br/links?origem=instagram
         ├─ Quanto você deixou de faturar?   → /calculadora   (o gancho, sem cadastro)
         ├─ Criar minha conta                → /cadastro
-        ├─ Ver funcionando, sem cadastro    → página de exemplo (só aparece se há uma no ar)
         ├─ Como funciona                    → home
-        └─ Quanto custa                     → /precos
+        └─ Ver funcionando, sem cadastro    → página de exemplo (só aparece se há uma no ar)
 ```
 
 O gancho é a calculadora, porque é a única coisa que responde uma pergunta do dono antes de pedir

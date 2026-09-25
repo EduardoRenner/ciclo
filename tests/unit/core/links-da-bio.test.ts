@@ -48,6 +48,20 @@ describe('linksDaBio — a página que a bio do Instagram aponta', () => {
     expect(links[1]?.chave).toBe('cadastro')
   })
 
+  it('a ordem é calculadora, cadastro, como funciona, exemplo (o exemplo fica por último)', () => {
+    expect(links.map((l) => l.chave)).toEqual(['calculadora', 'cadastro', 'como-funciona', 'exemplo'])
+    // Sem demonstração no ar a ordem continua, só sem o exemplo.
+    expect(linksDaBio({ slugDeDemonstracao: null }).map((l) => l.chave)).toEqual(['calculadora', 'cadastro', 'como-funciona'])
+  })
+
+  it('não tem planos nem preço: a página leva a conta, não a comparação', () => {
+    for (const l of links) {
+      expect(l.chave, 'o cartão de preços voltou').not.toBe('precos')
+      expect(l.href, `${l.chave} aponta para a página de preços`).not.toContain('/precos')
+      expect(texto(l.titulo, l.descricao), `${l.chave} fala de plano ou preço`).not.toMatch(/plano|pre[cç]o|quanto custa/)
+    }
+  })
+
   it('só o destaque tem etiqueta, e ela diz por onde começar', () => {
     expect(links[0]?.selo).toBe('Comece por aqui')
     expect(links.filter((l) => l.selo), 'etiqueta em mais de um cartão dilui o "comece por aqui"').toHaveLength(1)
