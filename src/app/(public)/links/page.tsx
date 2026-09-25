@@ -1,4 +1,4 @@
-import { ArrowRight, Calculator, Info, Play, Tag, UserPlus } from 'lucide-react'
+import { ArrowRight, Calculator, Info, Play, UserPlus } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 
@@ -40,7 +40,6 @@ const ICONE: Record<LinkDaBio['chave'], typeof Calculator> = {
   cadastro: UserPlus,
   exemplo: Play,
   'como-funciona': Info,
-  precos: Tag,
 }
 
 export default async function PaginaDeLinks() {
