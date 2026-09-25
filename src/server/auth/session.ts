@@ -14,6 +14,11 @@ export type Sessao = {
    * logo depois do link de recuperação — trocar a senha — se guarda por aqui.
    */
   metodos: string[]
+  /**
+   * `docs/82` §6: a origem gravada na conta no cadastro (`user_metadata.origem`), crua. Quem lê
+   * passa por `lerOrigem` — metadata é escrita pelo próprio usuário e não merece confiança.
+   */
+  origemNoCadastro?: string | null
 }
 
 /**
@@ -45,6 +50,7 @@ export const sessaoAtual = cache(async function sessaoAtual(): Promise<Sessao | 
     email: data.user.email ?? '',
     aal: nivel?.currentLevel ?? 'aal1',
     metodos: (nivel?.currentAuthenticationMethods ?? []).map((m) => (typeof m === 'string' ? m : m.method)),
+    origemNoCadastro: typeof data.user.user_metadata?.origem === 'string' ? data.user.user_metadata.origem : null,
   }
 })
 

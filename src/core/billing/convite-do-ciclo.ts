@@ -52,7 +52,9 @@ export type EntradaDeConvite = {
  */
 export function textoDoConviteDoCiclo({ nomeDoNegocio, url, temRecompensa = false }: EntradaDeConvite): string {
   const abertura = nomeDoNegocio.trim()
-    ? `Oi! Eu uso o CICLO pra tocar a agenda e os clientes aqui do ${nomeDoNegocio.trim()}.`
+    ? // "do meu negócio, X" e não "aqui do X": o artigo concorda com "negócio", não com o nome — a
+      // versão antiga saía "aqui do Barbearia Origem" (medido na tela, 2026-09-23).
+      `Oi! Eu uso o CICLO pra tocar a agenda e os clientes do meu negócio, ${nomeDoNegocio.trim()}.`
     : 'Oi! Eu uso o CICLO pra tocar a agenda e os clientes aqui.'
 
   const produto =

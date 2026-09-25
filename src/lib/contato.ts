@@ -76,6 +76,9 @@ export function assuntoDeMudarDePlano(planoAtual: string): string {
  */
 export const ASSUNTO_MOTOR_PARADO = 'Oi! O Motor de Ciclo do meu CICLO não está recalculando as previsões.'
 
+/** Transferir a titularidade, que o app ainda não faz sozinho (`core/auth/bloqueio-de-titular.ts`). */
+export const ASSUNTO_TRANSFERIR_TITULARIDADE = 'Oi! Preciso transferir a titularidade do meu negócio no CICLO.'
+
 /**
  * A frase de "como se muda de plano" na tela Meu plano, nos dois estados do mundo.
  *

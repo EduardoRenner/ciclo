@@ -123,6 +123,14 @@ export default function Privacidade() {
               <strong className="font-semibold text-txt">De uso:</strong> registros técnicos de
               acesso e erro, para manter o sistema no ar e investigar problema.
             </li>
+            <li>
+              <strong className="font-semibold text-txt">De onde você chegou:</strong> se você abriu o
+              CICLO por um link de indicação, pelo selo na página de outro negócio ou por uma
+              divulgação nossa, um cookie do próprio CICLO guarda por até 60 dias o nome desse
+              caminho e de quem indicou, e nada mais. Se você criar uma conta, isso vai junto, para a
+              gente saber qual caminho traz quem usa. Não identifica você nem seu aparelho, e não tem
+              cookie de propaganda nem rastreador de outra empresa.
+            </li>
           </ul>
           <p>
             A gente <strong className="font-semibold text-txt">não</strong> pede nem guarda dado de

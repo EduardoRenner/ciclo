@@ -3,6 +3,7 @@ import Link from 'next/link'
 
 import { contextoDoPainel } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
+import { servicoPadraoDaBase } from '@/core/cycle/servico-padrao-da-base'
 import { listarServicos } from '@/server/services/servicos'
 
 import FormularioQuemJaAtendo from './formulario'
@@ -32,17 +33,42 @@ export const metadata = { title: 'Quem você já atende' }
 export default async function PaginaQuemJaAtendo() {
   const ctx = await contextoDoPainel(new Request('https://interno/clientes/ja-atendo', { headers: await headers() }))
   const db = await criarClienteDoUsuario()
-  const servicos = await listarServicos(db, ctx.tenantId)
+  // As três leituras são independentes: juntas, uma ida de rede em vez de três em série.
+  const [servicos, recentes, clientes] = await Promise.all([
+    listarServicos(db, ctx.tenantId),
+    // Os 1000 atendimentos mais recentes bastam para saber qual serviço é o grosso da casa — é um
+    // padrão de formulário, não um relatório. Sem histórico, cai no ritmo do meio.
+    db
+      .from('appointments')
+      .select('service_id')
+      .eq('tenant_id', ctx.tenantId)
+      // Só atendimento feito: cancelado, falta e horário futuro não dizem qual é o grosso da casa.
+      .eq('status', 'done')
+      .order('starts_at', { ascending: false })
+      .limit(1000),
+    db.from('clients').select('id', { count: 'exact', head: true }).eq('tenant_id', ctx.tenantId).is('deleted_at', null),
+  ])
+
+  // Falha de leitura aqui só piora o PADRÃO do formulário (volta a ser o do meio, e a busca aparece),
+  // nunca impede trazer a base — por isso não derruba a tela.
+  const atendimentos = new Map<string, number>()
+  for (const a of recentes.data ?? []) atendimentos.set(a.service_id, (atendimentos.get(a.service_id) ?? 0) + 1)
+  const temClientes = clientes.error ? true : (clientes.count ?? 0) > 0
 
   const comRitmo = servicos
     .filter((s) => (s.cycle_days ?? 0) > 0)
     .map((s) => ({ id: s.id, nome: s.name, cycleDays: s.cycle_days as number }))
+  const servicoPadrao = servicoPadraoDaBase(comRitmo.map((s) => ({ id: s.id, cycleDays: s.cycleDays, atendimentos: atendimentos.get(s.id) ?? 0 })))
 
   return (
     <>
       <PageHeader
         titulo="Quem você já atende"
-        descricao="Busque quem já tem ficha e voltou, ou escreva o nome de quem é novo. Não precisa ser exato na data."
+        descricao={
+          temClientes
+            ? 'Busque quem já tem ficha e voltou, ou escreva o nome de quem é novo. Não precisa ser exato na data.'
+            : 'Escreva o nome de quem você atende e mais ou menos quando veio pela última vez. Não precisa ser exato.'
+        }
       />
 
       {comRitmo.length === 0 ? (
@@ -55,7 +81,7 @@ export default async function PaginaQuemJaAtendo() {
         </p>
       ) : (
         <>
-          <FormularioQuemJaAtendo servicos={comRitmo} />
+          <FormularioQuemJaAtendo servicos={comRitmo} servicoPadrao={servicoPadrao} temClientes={temClientes} />
           {/*
             A outra porta, no rodapé e não no topo: quem tem planilha é a minoria, e oferecer as duas
             com o mesmo peso faria a maioria parar para escolher um caminho que não é dela.

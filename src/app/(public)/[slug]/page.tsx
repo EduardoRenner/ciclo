@@ -38,9 +38,15 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       url,
       type: 'website',
       locale: 'pt_BR',
-      images: perfil.coverUrl ?? perfil.logoUrl ?? undefined,
+      // Sem capa nem logo (toda conta nova), a prévia é gerada com o nome e a cor do negócio —
+      // antes saía `undefined` e o link ia para o WhatsApp como cartão só de texto (`previa/route.tsx`).
+      images: perfil.coverUrl ?? perfil.logoUrl ?? `/${perfil.slug}/previa`,
     },
-    twitter: { card: perfil.coverUrl ? 'summary_large_image' : 'summary', title: perfil.name, description: descricao },
+    twitter: {
+      card: perfil.coverUrl || !perfil.logoUrl ? 'summary_large_image' : 'summary',
+      title: perfil.name,
+      description: descricao,
+    },
   }
 }
 

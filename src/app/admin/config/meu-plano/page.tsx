@@ -2,6 +2,7 @@ import { ArrowRight, Check, Lock, Minus } from 'lucide-react'
 import Link from 'next/link'
 import { headers } from 'next/headers'
 
+import { linkComOrigem } from '@/core/aquisicao/origem'
 import { textoDeParaQueIndicar, textoDoConviteDoCiclo } from '@/core/billing/convite-do-ciclo'
 import { lerAssinatura } from '@/core/billing/mercado-pago'
 import { NOME_DO_PLANO, ORDEM_DOS_PLANOS, precoDoPlanoPorMes, verificarLimite } from '@/core/billing/planos'
@@ -107,6 +108,13 @@ export default async function PaginaMeuPlano() {
   // Leitura de variável de ambiente, não I/O — mesmo raciocínio de `AssistenteFlutuante` em
   // `admin/layout.tsx`. Sem a credencial do MP, o botão de assinar nem existe: regra 5.4.
   const cobrancaAutomatica = Boolean(process.env.MERCADOPAGO_ACCESS_TOKEN)
+
+  // docs/82 §6: o link leva quem indicou — sem isso uma conta que chega pelo convite é
+  // indistinguível de uma que chega do nada, e o laço de indicação nunca aparece no placar.
+  const convite = textoDoConviteDoCiclo({
+    nomeDoNegocio: ctx.tenant.name ?? '',
+    url: linkComOrigem(APP_URL, 'convite', ctx.tenant.slug),
+  })
 
   return (
     <>
@@ -276,10 +284,7 @@ export default async function PaginaMeuPlano() {
       <SectionHeader>Indicar o CICLO</SectionHeader>
       <Card className="mb-6">
         <p className="text-secundario text-txt-2">{textoDeParaQueIndicar()}</p>
-        <CompartilharConvite
-          texto={textoDoConviteDoCiclo({ nomeDoNegocio: ctx.tenant.name ?? '', url: APP_URL })}
-          hrefWhatsApp={linkWhatsAppCompartilhar(textoDoConviteDoCiclo({ nomeDoNegocio: ctx.tenant.name ?? '', url: APP_URL }))}
-        />
+        <CompartilharConvite texto={convite} hrefWhatsApp={linkWhatsAppCompartilhar(convite)} />
       </Card>
 
       {nativo ? null : (

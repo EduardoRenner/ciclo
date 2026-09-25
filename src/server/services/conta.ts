@@ -1,3 +1,5 @@
+import { bloqueioDeTitularSemSucessor } from '@/core/auth/bloqueio-de-titular'
+import { ASSUNTO_TRANSFERIR_TITULARIDADE, canalDeContato } from '@/lib/contato'
 import { AppError } from '@/server/http/errors'
 
 import type { Database } from '@/server/db/types.gen'
@@ -62,7 +64,7 @@ export async function situacaoDaConta(svc: Cliente, userId: string): Promise<Sit
     if (erroContagem) throw new AppError('INTERNAL', { cause: erroContagem })
     if ((count ?? 0) > 1) {
       bloqueios.push(
-        'Você é dona ou dono de um negócio com mais gente na equipe. Antes de excluir sua conta, alguém precisa assumir como titular — fale com o suporte para transferir.',
+        bloqueioDeTitularSemSucessor(canalDeContato(ASSUNTO_TRANSFERIR_TITULARIDADE) !== null),
       )
     }
   }

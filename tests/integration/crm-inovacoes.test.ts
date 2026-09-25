@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 
+import { Temporal } from '@js-temporal/polyfill'
 import { createClient } from '@supabase/supabase-js'
 import dotenv from 'dotenv'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
@@ -16,6 +17,7 @@ import {
 import { centralDeAcoes } from '@/server/services/crm'
 import { atualizarConfigFidelidade, extratoDePontos } from '@/server/services/fidelidade'
 import { executarOnboarding } from '@/server/services/onboarding'
+import { cadastrarQuemJaAtendo } from '@/server/services/quem-ja-atendo'
 import { criarProfissional } from '@/server/services/profissionais'
 import { criarServico } from '@/server/services/servicos'
 
@@ -287,6 +289,91 @@ describe('central de ações', () => {
       const central = await centralDeAcoes(svc, tenant.id)
       expect(central.titulo).toBe('Primeiros passos')
       expect(central.acoes.map((a) => a.chave)).toContain('inicio-agenda')
+      // docs/82 §7: o primeiro passo é o que faz a lista de quem sumiu aparecer no mesmo dia.
+      // Conferir serviço antes não destrava nada — o catálogo já nasce preenchido.
+      expect(central.acoes[0]?.chave).toBe('inicio-clientes')
+      expect(central.acoes[0]?.href).toBe('/admin/clientes/ja-atendo')
+    },
+    60_000,
+  )
+
+  it(
+    'depois dos primeiros passos o Motor continua aparecendo: sem última visita, de olho, ou sumindo',
+    async () => {
+      /*
+        docs/82 §16 rodada 19, medido no navegador: a conta pôs 2 pessoas no Motor (ninguém
+        atrasado) e o "Hoje" virou três pendências de custo — nenhuma palavra do Motor. E uma conta
+        com fichas mas sem última visita (cliente criado pela reserva ou pela ficha avulsa) nunca
+        era mandada para o "Já atendo", que é o que faz o Motor começar no mesmo dia.
+      */
+      const marca = randomUUID().slice(0, 8)
+      const { data: usuario, error } = await svc.auth.admin.createUser({
+        email: `motor-no-hoje-${marca}@ciclo.test`,
+        password: randomUUID(),
+        email_confirm: true,
+      })
+      if (error || !usuario.user) throw new Error(`seed falhou: ${error?.message}`)
+      usuarios.push(usuario.user.id)
+      const { tenant } = await executarOnboarding(svc, {
+        userId: usuario.user.id,
+        businessName: 'Barbearia do Motor no Hoje',
+        vertical: 'barber',
+        slug: `motor-no-hoje-${marca}`,
+        timezone: 'America/Sao_Paulo',
+      })
+      tenants.push(tenant.id)
+      const { data: servico } = await svc.from('services').select('id').eq('tenant_id', tenant.id).gt('cycle_days', 0).limit(1).single()
+
+      // 1. Ficha sem última visita: manda contar de memória, e vem antes das pendências de custo.
+      await svc.from('clients').insert({ tenant_id: tenant.id, name: 'Ficha Sem Data' })
+      const semData = await centralDeAcoes(svc, tenant.id, 'owner')
+      expect(semData.acoes[0]?.chave, 'sem ciclo nenhum, o primeiro item devia mandar dizer a última visita').toBe('motor-sem-ultima-visita')
+      expect(semData.acoes[0]?.href).toBe('/admin/clientes/ja-atendo')
+
+      // 2. Todo mundo em dia: o Motor diz que está de olho e quando o próximo volta.
+      await cadastrarQuemJaAtendo(svc, tenant.id, { serviceId: servico!.id, pessoas: [{ nome: 'Veio Semana Passada', quando: 'semana' }] })
+      /*
+        E uma ficha `on_track` com volta prevista ONTEM — é o estado de quem atrasou mas já remarcou
+        (`computeCycle` com agendamento futuro). Ela não é "o próximo": sem o corte pela data do
+        salão, a frase diria "deve voltar hoje".
+      */
+      /*
+        ONZE, não uma (revisão de 2026-09-23): a busca trazia só 10 linhas a partir de 2 dias atrás,
+        e dez remarcados com volta ontem esgotavam o lote antes de chegar à data futura — a frase
+        sumia num salão cheio. Com uma só, esse defeito passava verde.
+      */
+      const ontemNoSalao = Temporal.Now.plainDateISO('America/Sao_Paulo').subtract({ days: 1 }).toString()
+      const { data: remarcados, error: erroRemarcados } = await svc
+        .from('clients')
+        .insert(Array.from({ length: 11 }, (_, i) => ({ tenant_id: tenant.id, name: `Atrasou Mas Remarcou ${i + 1}` })))
+        .select('id')
+      if (erroRemarcados) throw erroRemarcados
+      const { error: erroCiclo } = await svc.from('client_cycles').insert(
+        remarcados!.map((r) => ({
+          tenant_id: tenant.id,
+          client_id: r.id,
+          service_id: servico!.id,
+          personal_cycle_days: 21,
+          last_visit_on: Temporal.Now.plainDateISO('America/Sao_Paulo').subtract({ days: 22 }).toString(),
+          predicted_on: ontemNoSalao,
+          late_days: 1,
+          state: 'on_track' as const,
+        })),
+      )
+      if (erroCiclo) throw erroCiclo
+      const emDia = await centralDeAcoes(svc, tenant.id, 'owner')
+      const chaves = emDia.acoes.map((a) => a.chave)
+      expect(chaves, 'com ciclo gravado não devia mais pedir a última visita').not.toContain('motor-sem-ultima-visita')
+      const deOlho = emDia.acoes.find((a) => a.chave === 'motor-de-olho')
+      expect(deOlho, 'ninguém atrasado e o Hoje não fala do Motor').toBeTruthy()
+      expect(deOlho!.descricao).toMatch(/daqui a \d+ dias \(\d{2}\/\d{2}\)/)
+      expect(emDia.acoes[0]?.chave, 'o Motor tem que vir antes das pendências de custo').toBe('motor-de-olho')
+
+      // 3. Alguém sumiu: o alarme antigo assume, e o "de olho" sai (senão diria "ninguém sumiu").
+      await cadastrarQuemJaAtendo(svc, tenant.id, { serviceId: servico!.id, pessoas: [{ nome: 'Sumiu Faz Tempo', quando: 'faz-tempo' }] })
+      const sumindo = (await centralDeAcoes(svc, tenant.id, 'owner')).acoes.map((a) => a.chave)
+      expect(sumindo).toContain('recuperar')
+      expect(sumindo).not.toContain('motor-de-olho')
     },
     60_000,
   )

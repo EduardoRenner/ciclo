@@ -1,13 +1,17 @@
 'use client'
 
-import { Plus, Search, Sparkles, X } from 'lucide-react'
+import { Temporal } from '@js-temporal/polyfill'
+import { CalendarClock, ClipboardList, Contact, Plus, Search, Sparkles, X } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useState, useTransition } from 'react'
 
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import Input from '@/components/ui/input'
+import Textarea from '@/components/ui/textarea'
 import { useToast } from '@/components/ui/toast'
+import { lerListaDeNomes, MAX_DA_LISTA, pessoasDosContatos, type ContatoDoCelular, type PessoaDaLista } from '@/core/ciclo/lista-de-nomes'
+import { primeiraVolta } from '@/core/ciclo/primeira-volta'
 import { QUANDO_FOI, type QuandoFoi } from '@/core/ciclo/quando-foi-a-ultima-vez'
 
 export type ServicoComRitmo = { id: string; nome: string; cycleDays: number }
@@ -17,8 +21,14 @@ type ClienteEncontrado = { id: string; name: string; phone_e164: string | null }
 type Retorno = { clientId: string; nome: string; quando: QuandoFoi }
 type Resultado = {
   cadastrados: number
+  /**
+   * Quantas fichas existentes entraram por "quem já tem ficha e voltou" — contado na tela, porque a
+   * rota só devolve os cadastros novos. Sem isto, marcar só quem já tinha ficha terminava em
+   * "0 pessoas cadastradas", como se nada tivesse acontecido (medido, docs/82 rodada 18).
+   */
+  atualizados: number
   jaExistiam: string[]
-  previsao: { comDataInformada: number; jaDevendoVoltar: number; cyclesGravados: number } | null
+  previsao: { comDataInformada: number; jaDevendoVoltar: number; cyclesGravados: number; proximaVolta: string | null } | null
 }
 
 const LINHA_VAZIA: Pessoa = { nome: '', telefone: '', quando: 'quinzena' }
@@ -26,8 +36,19 @@ const LINHA_VAZIA: Pessoa = { nome: '', telefone: '', quando: 'quinzena' }
 /** Três linhas abertas: uma só parece um formulário de cadastro avulso, e a tarefa aqui é em lote. */
 const INICIAIS = [LINHA_VAZIA, LINHA_VAZIA, LINHA_VAZIA]
 
-export default function FormularioQuemJaAtendo({ servicos }: { servicos: ServicoComRitmo[] }) {
-  const [serviceId, setServiceId] = useState(servicos[0]?.id ?? '')
+type Props = {
+  servicos: ServicoComRitmo[]
+  /** `core/cycle/servico-padrao-da-base.ts` — mais atendido, ou o de ritmo do meio. */
+  servicoPadrao: string | null
+  /**
+   * A conta já tem alguém cadastrado? Sem ninguém, a busca de "quem já tem ficha e voltou" não
+   * acha nada — era a primeira coisa que uma conta nova via, perguntando por fichas que não existem.
+   */
+  temClientes: boolean
+}
+
+export default function FormularioQuemJaAtendo({ servicos, servicoPadrao, temClientes }: Props) {
+  const [serviceId, setServiceId] = useState(servicoPadrao ?? servicos[0]?.id ?? '')
   const [pessoas, setPessoas] = useState<Pessoa[]>(INICIAIS)
   const [retornos, setRetornos] = useState<Retorno[]>([])
   const [resultado, setResultado] = useState<Resultado | null>(null)
@@ -36,6 +57,59 @@ export default function FormularioQuemJaAtendo({ servicos }: { servicos: Servico
 
   const preenchidas = pessoas.filter((p) => p.nome.trim() !== '')
   const total = preenchidas.length + retornos.length
+
+  /*
+    docs/82 §14 semana 2, "importar do caderno mais rápido": na visita, digitar quinze nomes com o
+    dono olhando é onde a conta morre antes de ver o Motor. Duas portas para trazer a lista de uma
+    vez — colar (qualquer celular) e o seletor de contatos (Chrome no Android; o iPhone não tem a
+    API, e o botão simplesmente não aparece). As linhas vazias dão lugar às novas; quem já foi
+    escrito à mão fica, e nome repetido não entra duas vezes.
+  */
+  const [colando, setColando] = useState(false)
+  const [textoColado, setTextoColado] = useState('')
+  const [quandoColado, setQuandoColado] = useState<QuandoFoi>('quinzena')
+  const [temContatos, setTemContatos] = useState(false)
+  useEffect(() => {
+    // Detectado depois de montar: no servidor não existe `navigator`, e decidir no render daria
+    // uma tela diferente na hidratação.
+    setTemContatos('contacts' in navigator && 'ContactsManager' in window)
+  }, [])
+  const daLista = lerListaDeNomes(textoColado)
+
+  function trazer(novas: PessoaDaLista[], quando: QuandoFoi) {
+    const escritas = pessoas.filter((p) => p.nome.trim() !== '')
+    const ja = new Set(escritas.map((p) => p.nome.trim().toLocaleLowerCase('pt-BR')))
+    const somadas = novas
+      .filter((n) => !ja.has(n.nome.toLocaleLowerCase('pt-BR')))
+      .map((n) => ({ nome: n.nome, telefone: n.telefone, quando }))
+    const juntas = [...escritas, ...somadas].slice(0, MAX_DA_LISTA)
+    setPessoas(juntas.length > 0 ? juntas : INICIAIS)
+    return juntas.length - escritas.length
+  }
+
+  function colar() {
+    const trazidas = trazer(daLista, quandoColado)
+    setColando(false)
+    setTextoColado('')
+    mostrarToast({ tom: 'ok', titulo: `${trazidas} ${trazidas === 1 ? 'pessoa na lista' : 'pessoas na lista'}`, descricao: 'Confira e toque em "Pôr no Motor".' })
+  }
+
+  async function escolherDosContatos() {
+    try {
+      const nav = navigator as Navigator & { contacts: { select(campos: string[], opcoes: { multiple: boolean }): Promise<ContatoDoCelular[]> } }
+      const contatos = await nav.contacts.select(['name', 'tel'], { multiple: true })
+      if (contatos.length === 0) return
+      const trazidas = trazer(pessoasDosContatos(contatos), 'quinzena')
+      mostrarToast({
+        tom: 'ok',
+        titulo: `${trazidas} ${trazidas === 1 ? 'pessoa trazida' : 'pessoas trazidas'} dos contatos`,
+        descricao: 'Ajuste a "Última vez" de cada uma antes de pôr no Motor.',
+      })
+    } catch {
+      // Recusar a permissão ou fechar o seletor cai aqui; nada foi descartado, a lista continua igual.
+      mostrarToast({ tom: 'erro', titulo: 'Não consegui abrir os contatos', descricao: 'Cole a lista ou escreva os nomes abaixo.' })
+    }
+  }
 
   function mudar(indice: number, campo: keyof Pessoa, valor: string) {
     setPessoas((atual) => atual.map((p, i) => (i === indice ? { ...p, [campo]: valor } : p)))
@@ -63,12 +137,12 @@ export default function FormularioQuemJaAtendo({ servicos }: { servicos: Servico
             retornos: retornos.map((rt) => ({ clientId: rt.clientId, quando: rt.quando })),
           }),
         })
-        const json = (await r.json()) as { data?: Resultado; error?: { message: string } }
+        const json = (await r.json()) as { data?: Omit<Resultado, 'atualizados'>; error?: { message: string } }
         if (!r.ok) throw new Error(json.error?.message ?? 'Não consegui salvar.')
-        setResultado(json.data!)
+        setResultado({ ...json.data!, atualizados: retornos.length })
         setPessoas(INICIAIS)
         setRetornos([])
-        mostrarToast({ tom: 'ok', titulo: 'Pronto', descricao: `${total} pessoas atualizadas no Motor.` })
+        mostrarToast({ tom: 'ok', titulo: 'Pronto', descricao: `${total} ${total === 1 ? 'pessoa atualizada' : 'pessoas atualizadas'} no Motor.` })
       } catch (erro) {
         mostrarToast({ tom: 'erro', titulo: 'Não consegui salvar', descricao: (erro as Error).message })
       }
@@ -78,6 +152,7 @@ export default function FormularioQuemJaAtendo({ servicos }: { servicos: Servico
   if (resultado) {
     const p = resultado.previsao
     const noMotor = (p?.cyclesGravados ?? 0) > 0
+    const volta = p && p.jaDevendoVoltar === 0 && noMotor && p.proximaVolta ? primeiraVolta(p.proximaVolta, Temporal.Now.plainDateISO()) : null
     return (
       <div className="flex flex-col gap-4">
         {/*
@@ -103,8 +178,37 @@ export default function FormularioQuemJaAtendo({ servicos }: { servicos: Servico
           </Link>
         ) : null}
 
+        {/*
+          O outro lado da mesma recompensa, e o caso MAIS comum: a linha nasce em "Uns 15 dias" e o
+          corte volta a cada 21, então quem aceita o padrão cadastra todo mundo em dia. Sem este
+          cartão a tela dizia só "2 pessoas cadastradas" e a aba Recuperar, "Todo mundo em dia" —
+          medido no navegador, docs/82 §16 rodada 17.
+        */}
+        {volta ? (
+          <Card className="border-acc-2/40 bg-acc-soft">
+            <div className="flex items-start gap-3">
+              <CalendarClock aria-hidden className="mt-0.5 size-6 shrink-0 text-acc-2" />
+              <div>
+                <p className="text-corpo font-semibold text-acc-2">{volta.titulo}</p>
+                <p className="mt-1 text-secundario text-txt-2">{volta.descricao}</p>
+              </div>
+            </div>
+          </Card>
+        ) : null}
+
         <Card>
-          <p className="text-corpo font-semibold">{resultado.cadastrados} pessoas cadastradas</p>
+          <p className="text-corpo font-semibold">
+            {[
+              resultado.cadastrados > 0 || resultado.atualizados === 0
+                ? `${resultado.cadastrados} ${resultado.cadastrados === 1 ? 'pessoa cadastrada' : 'pessoas cadastradas'}`
+                : null,
+              resultado.atualizados > 0
+                ? `${resultado.atualizados} ${resultado.atualizados === 1 ? 'ficha atualizada' : 'fichas atualizadas'}`
+                : null,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+          </p>
           {resultado.jaExistiam.length > 0 ? (
             <p className="mt-1 text-secundario text-txt-2">
               {resultado.jaExistiam.length === 1 ? 'Já tinha ficha' : 'Já tinham ficha'}: {resultado.jaExistiam.join(', ')}.
@@ -153,7 +257,7 @@ export default function FormularioQuemJaAtendo({ servicos }: { servicos: Servico
         telefone outra vez. Fica ACIMA da lista de gente nova: quem volta toda semana usa isto mais
         que o cadastro inicial, que só acontece uma vez.
       */}
-      <BuscaDeRetorno jaAdicionados={retornos.map((r) => r.clientId)} aoEscolher={adicionarRetorno} />
+      {temClientes ? <BuscaDeRetorno jaAdicionados={retornos.map((r) => r.clientId)} aoEscolher={adicionarRetorno} /> : null}
 
       {retornos.length > 0 ? (
         <section className="flex flex-col gap-2">
@@ -185,7 +289,58 @@ export default function FormularioQuemJaAtendo({ servicos }: { servicos: Servico
       ) : null}
 
       <section className="flex flex-col gap-3">
-        <span className="text-label font-semibold text-txt-2">Ou gente nova, que ainda não tem ficha</span>
+        <span className="text-label font-semibold text-txt-2">
+          {temClientes ? 'Ou gente nova, que ainda não tem ficha' : 'Quem você atende e quando veio pela última vez'}
+        </span>
+
+        {colando ? (
+          <Card className="flex flex-col gap-3">
+            <Textarea
+              rotulo="Cole a lista, um nome por linha"
+              ajuda="Do bloco de notas ou de uma conversa. Telefone na mesma linha entra junto."
+              value={textoColado}
+              onChange={(e) => setTextoColado(e.target.value)}
+              rows={6}
+              placeholder={'Marcos - 49 99999-0001\nRafael\nDona Alzira'}
+            />
+            <label className="flex flex-col gap-1">
+              <span className="text-label font-semibold text-txt-2">Quando essas pessoas vieram, mais ou menos?</span>
+              <select
+                value={quandoColado}
+                onChange={(e) => setQuandoColado(e.target.value as QuandoFoi)}
+                className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo text-txt"
+              >
+                {QUANDO_FOI.map((q) => (
+                  <option key={q.valor} value={q.valor}>
+                    {q.rotulo}
+                  </option>
+                ))}
+              </select>
+              <span className="text-secundario text-txt-3">Dá para mudar uma por uma depois. Quem sumiu faz tempo, cole numa lista separada.</span>
+            </label>
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={colar} disabled={daLista.length === 0} motivoDesabilitado="Cole pelo menos um nome.">
+                {daLista.length === 0 ? 'Pôr na lista' : `Pôr ${daLista.length} na lista`}
+              </Button>
+              <Button variante="ghost" onClick={() => setColando(false)}>
+                Cancelar
+              </Button>
+            </div>
+          </Card>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            <Button variante="secondary" onClick={() => setColando(true)}>
+              <ClipboardList aria-hidden className="size-4" />
+              Colar uma lista
+            </Button>
+            {temContatos ? (
+              <Button variante="secondary" onClick={escolherDosContatos}>
+                <Contact aria-hidden className="size-4" />
+                Escolher dos contatos
+              </Button>
+            ) : null}
+          </div>
+        )}
         {pessoas.map((pessoa, i) => (
           <Card key={i} className="flex flex-col gap-2">
             <div className="flex items-end gap-2">

@@ -18,6 +18,8 @@ import { taxaEstaConfigurada } from '@/core/comanda/taxa-de-pagamento'
 import { avaliarPermissao } from '@/server/auth/rbac'
 
 import { buscarTudoPaginado } from '@/server/db/paginar'
+import { acaoDoMotor } from '@/core/ciclo/acao-do-motor'
+import { quandoVolta } from '@/core/ciclo/primeira-volta'
 import { ritmoDoCliente, type RitmoDoCliente } from '@/core/ciclo/ritmo-do-cliente'
 import { lucroDoCliente, type LucroDoCliente } from '@/core/crm/lucro-do-cliente'
 import { AppError } from '@/server/http/errors'
@@ -571,15 +573,14 @@ export type CentralDeAcoes = {
  * Conta recém-criada não tem cliente, não tem ciclo e não tem aniversariante — então a central
  * nascia vazia e a tela principal do produto abria muda, sem dizer o que fazer primeiro. Estes
  * três passos são a sequência mínima até o primeiro atendimento entrar na agenda.
+ *
+ * **"Traga quem você já atende" vem primeiro** (`docs/82` §7, 2026-09-23). Era o segundo, depois
+ * de "Confira seus serviços" — mas o catálogo já nasce preenchido pela profissão e a tela de quem
+ * já atende vem com o serviço escolhido, então conferir preço antes não destrava nada. Trazer a
+ * base é o único passo que faz a lista de quem sumiu aparecer NO MESMO DIA — o momento em que o
+ * dono entende o produto. A única conta real que chegou a produção parou com zero cliente.
  */
 const PRIMEIROS_PASSOS: AcaoSugerida[] = [
-  {
-    chave: 'inicio-servicos',
-    titulo: 'Confira seus serviços e preços',
-    descricao: 'O catálogo da sua profissão já veio preenchido. Ajuste preço e duração para o que você cobra de verdade.',
-    href: '/admin/config/servicos',
-    tom: 'info',
-  },
   {
     chave: 'inicio-clientes',
     /*
@@ -599,8 +600,15 @@ const PRIMEIROS_PASSOS: AcaoSugerida[] = [
     */
     titulo: 'Traga quem você já atende',
     descricao:
-      'Escreva os nomes e diga mais ou menos quando cada pessoa veio pela última vez — não precisa ser exato. É o que faz a lista de quem sumiu nascer cheia hoje, em vez de esperar cada cliente voltar duas ou três vezes.',
+      'Escreva os nomes e diga mais ou menos quando cada pessoa veio pela última vez, sem precisar ser exato. É o que faz a lista de quem sumiu nascer cheia hoje, em vez de esperar cada cliente voltar duas ou três vezes.',
     href: '/admin/clientes/ja-atendo',
+    tom: 'info',
+  },
+  {
+    chave: 'inicio-servicos',
+    titulo: 'Confira seus serviços e preços',
+    descricao: 'O catálogo da sua profissão já veio preenchido. Ajuste preço e duração para o que você cobra de verdade.',
+    href: '/admin/config/servicos',
     tom: 'info',
   },
   {
@@ -634,7 +642,19 @@ export async function centralDeAcoes(db: Cliente, tenantId: string, papel?: Pape
    */
   const podeVerLucro = papel !== undefined && avaliarPermissao(papel, 'report:read') !== null
 
-  const [resumo, resgataveis, orcamentos, ctxPlano, tenantSettings, material] = await Promise.all([
+  /*
+    Janela de dois dias antes do "hoje" em UTC: o fuso do salão só chega com `tenantSettings`, no
+    mesmo `Promise.all`, e o dia dele pode estar um atrás do de UTC. O corte exato (`>= hoje do
+    salão`) é feito depois, em memória. Ele importa: `on_track` também cobre quem está atrasado
+    mas já remarcou, com volta prevista no PASSADO — sem o corte, a frase seria "volta hoje".
+
+    Revisão de 2026-09-23: a janela era de 2 dias com `limit(10)`, e 10 remarcados com volta nesses
+    dias esgotavam o lote antes de chegar a qualquer data futura — a frase sumia num salão cheio.
+    Nenhum fuso fica mais de 1 dia atrás do UTC, então a janela começa em UTC−1 (só um dia de
+    remarcados cabe nela) e o teto sobe para 50.
+  */
+  const desdeUtc = Temporal.Now.plainDateISO('UTC').subtract({ days: 1 }).toString()
+  const [resumo, resgataveis, orcamentos, ctxPlano, tenantSettings, material, ciclos, proximas] = await Promise.all([
     // `resumo_central_de_acoes` (0089): as quatro contagens que eram quatro idas de rede separadas
     // (clientes, agendamentos, v_clientes_a_recuperar, v_client_segments) viraram uma função só —
     // medido em produção (docs/28 §12), `centralDeAcoes` sozinha respondia por 2-4x o tempo dos
@@ -651,8 +671,18 @@ export async function centralDeAcoes(db: Cliente, tenantId: string, papel?: Pape
     // `settings` não vem em `contextoDePlano` (que seleciona só as colunas de plano) e o card de
     // fidelidade precisa do prêmio que o DONO configurou — ver `limiarPertoDoPremio` abaixo.
     // Mais uma consulta no mesmo `Promise.all`: paralela, sem round-trip serial a mais.
-    db.from('tenants').select('settings').eq('id', tenantId).maybeSingle(),
+    db.from('tenants').select('settings, timezone').eq('id', tenantId).maybeSingle(),
     podeVerLucro ? medirMaterialDoCatalogo(db, tenantId) : null,
+    // docs/82 rodada 19: o que o Motor tem a dizer quando ninguém está sumindo (`acaoDoMotor`).
+    db.from('client_cycles').select('client_id', { count: 'exact', head: true }).eq('tenant_id', tenantId),
+    db
+      .from('client_cycles')
+      .select('predicted_on')
+      .eq('tenant_id', tenantId)
+      .eq('state', 'on_track')
+      .gte('predicted_on', desdeUtc)
+      .order('predicted_on')
+      .limit(50),
   ])
   if (resumo.error) throw new AppError('INTERNAL', { cause: resumo.error })
   const clientes = { count: resumo.data?.clientes ?? 0 }
@@ -679,6 +709,22 @@ export async function centralDeAcoes(db: Cliente, tenantId: string, papel?: Pape
       tom: 'warn',
     })
   }
+
+  /*
+    Logo depois do alarme de "sumindo", e antes de tudo o mais: é o produto falando. Medido na
+    rodada 19 do docs/82 — sem isto, uma conta que acabou de pôr gente no Motor abria o "Hoje" com
+    três pendências de custo e nenhuma palavra sobre quem ela cadastrou. Se as consultas falharem,
+    `count`/`data` vêm vazios e a ação some — nunca derruba a tela.
+  */
+  const hojeNoSalao = Temporal.Now.plainDateISO(tenantSettings.data?.timezone ?? 'America/Sao_Paulo')
+  const proxima = (proximas.data ?? []).map((c) => c.predicted_on).find((d): d is string => d !== null && d >= hojeNoSalao.toString())
+  const doMotor = acaoDoMotor({
+    clientes: clientes.count ?? 0,
+    sumindo: totalEmRisco,
+    ciclos: ciclos.count ?? 0,
+    quandoOProximoVolta: proxima ? quandoVolta(proxima, hojeNoSalao) : null,
+  })
+  if (doMotor) acoes.push(doMotor)
 
   const totalAniversariantes = aniversariantes.count ?? 0
   if (totalAniversariantes > 0) {

@@ -20,6 +20,8 @@ export type ItemRecuperar = {
   serviceId: string
   name: string
   phone: string | null
+  /** Pediu para não receber mensagem (`whatsapp_opt_out`). A tela não oferece "Chamar" para ela. */
+  optOut: boolean
   serviceName: string
   state: EstadoCiclo
   lateDays: number
@@ -60,12 +62,17 @@ export async function listarParaRecuperar(
    * mês cortar o cabelo entrava na lista de "atrasadas para voltar" por causa de uma progressiva
    * que fez uma vez em março. Ver `core/ciclo/quem-recuperar.ts` para os números medidos.
    */
-  const [{ data, error }, { data: saudaveis, error: erroSaudaveis }] = await Promise.all([
+  const [{ data, error }, { data: saudaveis, error: erroSaudaveis }, { data: semMensagem, error: erroOptOut }] = await Promise.all([
     consulta,
     db.from('client_cycles').select('client_id').eq('tenant_id', tenantId).eq('state', 'on_track'),
+    // `v_recover_revenue` não traz o opt-out, e mudar a view pede migration. Quem pediu "PARAR" é
+    // pouca gente por salão: uma leitura curta no mesmo lote, sem ida de rede a mais em série.
+    db.from('clients').select('id').eq('tenant_id', tenantId).eq('whatsapp_opt_out', true),
   ])
   if (error) throw new AppError('INTERNAL', { cause: error })
   if (erroSaudaveis) throw new AppError('INTERNAL', { cause: erroSaudaveis })
+  if (erroOptOut) throw new AppError('INTERNAL', { cause: erroOptOut })
+  const optOuts = new Set((semMensagem ?? []).map((c) => c.id))
 
   // A view não declara FK nem `not null` para o PostgREST/gerador de tipos,
   // mas toda coluna aqui vem de `join`s obrigatórios sobre colunas `not null`
@@ -99,6 +106,7 @@ export async function listarParaRecuperar(
       serviceId: l.service_id!,
       name: l.client_name!,
       phone: l.phone_e164,
+      optOut: optOuts.has(l.client_id!),
       serviceName: l.service_name!,
       state: l.state!,
       lateDays: l.late_days!,
@@ -239,7 +247,8 @@ export async function enviarParaRecuperar(
         template: entrada.templateId ?? 'recover_client',
         params: { name: cliente.name, service: servico.name },
         fallbackSubject: `Sentimos sua falta, ${cliente.name}!`,
-        fallbackBody: `Já faz um tempo desde seu último ${servico.name}. Vamos marcar um novo horário?`,
+        // "último horário de X": serviço feminino (barba, escova) quebrava "seu último X".
+        fallbackBody: `Já faz um tempo desde seu último horário de ${servico.name.toLowerCase()}. Vamos marcar de novo?`,
         whatsappTo: cliente.phone_e164,
         emailTo: cliente.email,
       }, provider)
@@ -316,4 +325,105 @@ export async function enviarParaRecuperar(
   if (queued > 0) await registrarEvento(db, tenantId, 'recuperacao_enviada', { queued })
 
   return { queued, skipped }
+}
+
+/**
+ * `serviceId` opcional: a lista de Recuperar sabe o serviço de cada linha, a ficha do cliente não —
+ * lá o dono escolhe o modelo "Sumiu, chamar de volta" para a PESSOA. Sem serviço, vale o ciclo mais
+ * atrasado dela; se nenhum estiver fora do ritmo, não é recuperação e nada é anotado.
+ */
+export const EsquemaChamadaManual = z.object({ clientId: z.string().uuid(), serviceId: z.string().uuid().optional() })
+export type EntradaChamadaManual = z.infer<typeof EsquemaChamadaManual>
+
+/**
+ * O dono tocou em "Chamar" e abriu o PRÓPRIO WhatsApp com o texto pronto (`docs/82` §7).
+ *
+ * Sem este registro o caminho grátis não deixava rastro: "O Motor de Ciclo trouxe R$ X" e a
+ * prestação de contas contam só mensagens em `messages`, então quem recuperava clientes pelo
+ * próprio WhatsApp nunca via o número — nem o convite de colega que só aparece com ele.
+ *
+ * `sent` pelo mesmo motivo que as campanhas por `wa.me` já gravam `sent` (`crm.ts`): quem apertou
+ * foi a pessoa, no WhatsApp dela. O que o sistema não sabe — se ela de fato mandou — ele não finge
+ * saber, e a atribuição só conta quando a cliente MARCA depois, então um toque sem envio não vira
+ * receita de ninguém. O carimbo `last_campaign_at` entra junto: é ele que impede a mesma pessoa de
+ * voltar à lista de "chamar" amanhã como se ninguém tivesse falado com ela.
+ */
+export async function registrarChamadaManual(
+  db: Cliente,
+  tenantId: string,
+  entrada: EntradaChamadaManual,
+  agora: Temporal.Instant = Temporal.Now.instant(),
+): Promise<{ registrada: boolean; motivo?: 'sem_ciclo' | 'opt_out' | 'ja_chamada' }> {
+  const consultaCiclo = entrada.serviceId
+    ? db
+        .from('client_cycles')
+        .select('client_id, service_id, last_campaign_at')
+        .eq('tenant_id', tenantId)
+        .eq('client_id', entrada.clientId)
+        .eq('service_id', entrada.serviceId)
+        .maybeSingle()
+    : db
+        .from('client_cycles')
+        .select('client_id, service_id, last_campaign_at')
+        .eq('tenant_id', tenantId)
+        .eq('client_id', entrada.clientId)
+        .neq('state', 'on_track')
+        .order('late_days', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+  const [{ data: linha, error: erroCiclo }, { data: cliente, error: erroCliente }] = await Promise.all([
+    consultaCiclo,
+    db.from('clients').select('whatsapp_opt_out').eq('tenant_id', tenantId).eq('id', entrada.clientId).maybeSingle(),
+  ])
+  if (erroCiclo) throw new AppError('INTERNAL', { cause: erroCiclo })
+  if (erroCliente) throw new AppError('INTERNAL', { cause: erroCliente })
+  // Sem ciclo não há o que recuperar — e sem esta checagem qualquer par de UUIDs do próprio
+  // tenant viraria "mensagem de recuperação" enviada.
+  if (!linha) return { registrada: false, motivo: 'sem_ciclo' }
+  // As mesmas duas travas do envio pelo sistema (`enviarParaRecuperar`): quem pediu para não receber
+  // não vira "mensagem enviada", e a mesma pessoa chamada de novo dentro de 7 dias não conta duas
+  // vezes — senão cada toque repetido inflava o total de envios e rebaixava a taxa de acerto.
+  if (cliente?.whatsapp_opt_out) return { registrada: false, motivo: 'opt_out' }
+  const dentroDosSeteDias =
+    linha.last_campaign_at !== null &&
+    agora.since(Temporal.Instant.from(linha.last_campaign_at)).total('days') < DIAS_ENTRE_CAMPANHAS
+  if (dentroDosSeteDias) return { registrada: false, motivo: 'ja_chamada' }
+
+  const agoraIso = agora.toString()
+  const { error: erroMensagem } = await db.from('messages').insert({
+    tenant_id: tenantId,
+    client_id: entrada.clientId,
+    channel: 'whatsapp',
+    kind: 'campaign',
+    status: 'sent',
+    template: 'recover_manual',
+    sent_at: agoraIso,
+  })
+  if (erroMensagem) throw new AppError('INTERNAL', { cause: erroMensagem })
+
+  // Zero linhas aqui é corrida com o `recompute_cycles` (a linha foi lida logo acima) — mesmo caso
+  // e mesma decisão do envio automático: a mensagem já foi anotada, então vira log, não erro.
+  const { data: carimbadas, error: erroCarimbo } = await db
+    .from('client_cycles')
+    .update({ last_campaign_at: agoraIso })
+    .eq('tenant_id', tenantId)
+    .eq('client_id', entrada.clientId)
+    .eq('service_id', linha.service_id)
+    .select('client_id')
+  if (erroCarimbo) throw new AppError('INTERNAL', { cause: erroCarimbo })
+  if ((carimbadas?.length ?? 0) === 0) {
+    console.error(
+      JSON.stringify({
+        level: 'error',
+        event: 'recuperar_carimbo_nao_gravou',
+        detalhe: 'chamada manual anotada e last_campaign_at NAO gravado',
+        tenantId,
+        clientId: entrada.clientId,
+        serviceId: linha.service_id,
+      }),
+    )
+  }
+
+  await registrarEvento(db, tenantId, 'recuperacao_enviada', { via: 'manual' })
+  return { registrada: true }
 }

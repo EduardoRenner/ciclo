@@ -70,11 +70,20 @@ export async function listarModelos(db: Cliente, tenantId: string) {
     )
   if (erroSeed) throw new AppError('INTERNAL', { cause: erroSeed })
 
+  /*
+    A releitura PRECISA ser uma URL diferente da primeira. Em Server Component o Next memoiza
+    `fetch` GET idêntico dentro da mesma renderização, e o supabase-js é `fetch`: a mesma consulta
+    repetida devolvia a resposta da PRIMEIRA (vazia), com os modelos já gravados. Medido em
+    2026-09-23: toda conta nova abria a ficha pela primeira vez sem nenhuma mensagem pronta
+    (log: "primeira leitura 0, depois do seed 0"; na requisição seguinte, 10). O `order('slug')`
+    a mais só existe para mudar a URL — a ordem que vale continua sendo `position`.
+  */
   const { data: recem, error: erroRecem } = await db
     .from('message_templates')
     .select(COLUNAS)
     .eq('tenant_id', tenantId)
     .order('position')
+    .order('slug')
   if (erroRecem) throw new AppError('INTERNAL', { cause: erroRecem })
   return recem ?? []
 }

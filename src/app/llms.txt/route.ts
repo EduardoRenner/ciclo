@@ -56,6 +56,7 @@ Começa de graça, sem cartão. O preço fica na tela, sem "fale com vendas".
 
 - [Início](${base}/): o que é o produto e para quem
 - [Preços](${base}/precos): valor de cada plano e o que muda entre eles
+- [Calculadora](${base}/calculadora): quanto deixou de entrar com clientes que pararam de voltar, pelo ritmo de retorno do negócio (grátis, sem cadastro)
 - [Termos de uso](${base}/termos)
 - [Privacidade](${base}/privacidade): que dados o CICLO guarda e por quanto tempo (LGPD)
 

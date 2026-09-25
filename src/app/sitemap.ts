@@ -48,6 +48,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Preço é a única outra rota estática que vale indexar: é a pergunta que o público faz antes
     // de qualquer coisa, e a concorrência que esconde preço deixa esse espaço de busca vago.
     { url: `${base}/precos`, changeFrequency: 'monthly', priority: 0.7 },
+    // docs/82 §8: a calculadora responde uma busca real ("quanto perco com cliente que não volta")
+    // que os comparativos de sistema não disputam.
+    { url: `${base}/calculadora`, changeFrequency: 'monthly', priority: 0.6 },
     /*
       Tenant de demonstração fica FORA do sitemap: ele não é um negócio, e entregá-lo ao buscador
       como se fosse é o que permitia alguém achar a barbearia de exemplo no Google e marcar

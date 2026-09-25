@@ -3,6 +3,7 @@ import Link from 'next/link'
 
 import Badge from '@/components/ui/badge'
 import Card from '@/components/ui/card'
+import { linkComOrigem } from '@/core/aquisicao/origem'
 import { comMaiuscula, plural } from '@/core/text/vocabulario'
 import { formatarPreco } from '@/core/pricing/formatar'
 import { apelidoDoInstagram, urlDoInstagram } from '@/core/text/instagram'
@@ -545,11 +546,17 @@ export default function SecoesPublicas({ perfil }: { perfil: PerfilPublico }) {
         (§13.1 do 09-PLATAFORMA): selo feio faz o profissional pagar só para removê-lo e o laço
         fecha uma vez; selo bonito circula e traz gente. O rodapé inteiro desaparece quando o
         plano remove o selo — não fica um rodapé vazio ocupando altura no celular.
+
+        O link leva `origem=selo` e o slug deste negócio (`docs/82` §6): sem isso, quem chega pelo
+        selo é indistinguível de quem chega do nada, e o único canal grátis nunca aparece no placar.
       */}
       {perfil.mostrarSelo ? (
         <footer className="py-10 text-center text-label text-txt-3">
           Feito com{' '}
-          <Link href="/" className="toque-48 font-semibold text-acc-2 transition hover:brightness-110">
+          <Link
+            href={linkComOrigem('/', 'selo', perfil.slug)}
+            className="toque-48 font-semibold text-acc-2 transition hover:brightness-110"
+          >
             CICLO
           </Link>
         </footer>

@@ -8,7 +8,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import type { MessagingProvider } from '@/server/providers/messaging/types'
 import { criarServico } from '@/server/services/servicos'
 import { executarOnboarding } from '@/server/services/onboarding'
-import { enviarParaRecuperar, listarParaRecuperar } from '@/server/services/recuperar-receita'
+import { enviarParaRecuperar, listarParaRecuperar, registrarChamadaManual } from '@/server/services/recuperar-receita'
 
 import type { Database } from '@/server/db/types.gen'
 
@@ -318,3 +318,71 @@ describe('a fila de recuperação é ordenada por lucro, não por receita', () =
     90_000,
   )
 })
+
+describe('registrarChamadaManual (docs/82 §7)', () => {
+  it('o "Chamar" pelo WhatsApp do dono vira mensagem enviada, carimbo e evento de funil', async () => {
+    const clientId = await criarClienteEmCiclo('Chamada Manual', { state: 'late', valueAtRiskCents: 5_000 })
+
+    const resultado = await registrarChamadaManual(svc, tenantId, { clientId, serviceId: servicoId })
+    expect(resultado).toEqual({ registrada: true })
+
+    const { data: mensagens } = await svc.from('messages').select('kind, status, channel, template, sent_at').eq('tenant_id', tenantId).eq('client_id', clientId)
+    expect(mensagens).toHaveLength(1)
+    // É exatamente o formato que a atribuição conta (`atribuicao.ts`: kind campaign, status sent).
+    expect(mensagens?.[0]).toMatchObject({ kind: 'campaign', status: 'sent', channel: 'whatsapp', template: 'recover_manual' })
+    expect(mensagens?.[0]?.sent_at).not.toBeNull()
+
+    const { data: ciclo } = await svc.from('client_cycles').select('last_campaign_at').eq('tenant_id', tenantId).eq('client_id', clientId).single()
+    expect(ciclo?.last_campaign_at).not.toBeNull()
+
+    const { data: eventos } = await svc.from('product_events').select('meta').eq('tenant_id', tenantId).eq('event_type', 'recuperacao_enviada')
+    expect(eventos?.some((e) => (e.meta as { via?: string }).via === 'manual')).toBe(true)
+  }, 30_000)
+
+  it('a mesma pessoa chamada de novo na mesma semana não conta duas vezes (revisão 2026-09-23)', async () => {
+    const clientId = await criarClienteEmCiclo('Chamada Repetida', { state: 'late', valueAtRiskCents: 5_000 })
+    expect(await registrarChamadaManual(svc, tenantId, { clientId, serviceId: servicoId })).toEqual({ registrada: true })
+    expect(await registrarChamadaManual(svc, tenantId, { clientId, serviceId: servicoId })).toEqual({ registrada: false, motivo: 'ja_chamada' })
+
+    const { count } = await svc.from('messages').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId).eq('client_id', clientId)
+    expect(count).toBe(1)
+  }, 30_000)
+
+  it('quem pediu para não receber não vira mensagem enviada', async () => {
+    const clientId = await criarClienteEmCiclo('Pediu Parar', { state: 'late', valueAtRiskCents: 5_000, optOut: true })
+    expect(await registrarChamadaManual(svc, tenantId, { clientId, serviceId: servicoId })).toEqual({ registrada: false, motivo: 'opt_out' })
+
+    const { count } = await svc.from('messages').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId).eq('client_id', clientId)
+    expect(count).toBe(0)
+
+    // E a lista já avisa a tela, para ela nem oferecer o "Chamar".
+    const lista = await listarParaRecuperar(svc, tenantId)
+    expect(lista.items.find((i) => i.clientId === clientId)?.optOut).toBe(true)
+  }, 30_000)
+
+  it('pela ficha (sem serviço): anota no ciclo atrasado da pessoa', async () => {
+    const clientId = await criarClienteEmCiclo('Pela Ficha', { state: 'late', valueAtRiskCents: 5_000 })
+    expect(await registrarChamadaManual(svc, tenantId, { clientId })).toEqual({ registrada: true })
+
+    const { data: ciclo } = await svc.from('client_cycles').select('last_campaign_at').eq('tenant_id', tenantId).eq('client_id', clientId).single()
+    expect(ciclo?.last_campaign_at).not.toBeNull()
+  }, 30_000)
+
+  it('pela ficha, pessoa no ritmo não é recuperação: nada anotado', async () => {
+    const clientId = await criarClienteEmCiclo('No Ritmo', { state: 'on_track', valueAtRiskCents: 0 })
+    expect(await registrarChamadaManual(svc, tenantId, { clientId })).toEqual({ registrada: false, motivo: 'sem_ciclo' })
+
+    const { count } = await svc.from('messages').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId).eq('client_id', clientId)
+    expect(count).toBe(0)
+  }, 30_000)
+
+  it('sem ciclo daquela pessoa naquele serviço, não inventa mensagem', async () => {
+    const clientId = await criarClienteEmCiclo('Sem Esse Servico', { state: 'late', valueAtRiskCents: 5_000 })
+    const outroServico = randomUUID()
+
+    expect(await registrarChamadaManual(svc, tenantId, { clientId, serviceId: outroServico })).toEqual({ registrada: false, motivo: 'sem_ciclo' })
+    const { count } = await svc.from('messages').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId).eq('client_id', clientId)
+    expect(count).toBe(0)
+  }, 30_000)
+})
+

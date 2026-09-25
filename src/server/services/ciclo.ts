@@ -19,10 +19,11 @@ const TAMANHO_DO_LOTE = 1000
 
 
 /**
- * Um `(client_id, service_id)` só entra no cálculo se tiver pelo menos um
- * atendimento concluído — cliente que nunca veio para aquele serviço não tem
- * ciclo nenhum a acompanhar (mesma regra de `computeCycle` para histórico vazio,
- * só que aqui a linha nem chega a existir em vez de existir com estado neutro).
+ * Um `(client_id, service_id)` só entra no cálculo se tiver pelo menos uma visita
+ * conhecida — um atendimento concluído, ou a última vez informada na planilha ou de
+ * memória (`client_cycles.last_visit_on`). Cliente que nunca veio para aquele serviço
+ * não tem ciclo nenhum a acompanhar (mesma regra de `computeCycle` para histórico
+ * vazio, só que aqui a linha nem chega a existir em vez de existir com estado neutro).
  */
 type Combinacao = { clientId: string; serviceId: string }
 
@@ -45,7 +46,7 @@ export async function recomputarCiclosDoTenant(db: Cliente, tenantId: string, ti
   // chamadas `.range()` separadas — paginar "às cegas" pode pular ou repetir
   // linha entre uma página e outra. Foi assim que o teste de 10 mil clientes
   // pegou isto: `processados` variava a cada execução (1000, depois 7902).
-  const [concluidos, futuros, servicos, probabilidade, assinaturasAtivas, pacotesComSaldo] = await Promise.all([
+  const [concluidos, futuros, servicos, probabilidade, assinaturasAtivas, pacotesComSaldo, informadas] = await Promise.all([
     buscarTudoPaginado(() =>
       db
         .from('appointments')
@@ -89,6 +90,22 @@ export async function recomputarCiclosDoTenant(db: Cliente, tenantId: string, ti
         .eq('tenant_id', tenantId)
         .or(`expires_on.is.null,expires_on.gte.${today}`)
         .order('id'),
+    ),
+    /*
+      A última visita que o CICLO não viu acontecer: quem entrou pela planilha ou de memória
+      (`ciclo-de-quem-ja-atende.ts`) tem a data gravada em `client_cycles.last_visit_on` e nenhum
+      atendimento concluído. Sem ler esta coluna, o recálculo só enxergava quem tem atendimento, e
+      a ficha dessa gente congelava no estado do dia do cadastro — quem entrou "em dia" nunca
+      chegava a Recuperar (docs/82 §16, rodada 17).
+    */
+    buscarTudoPaginado(() =>
+      db
+        .from('client_cycles')
+        .select('client_id, service_id, last_visit_on')
+        .eq('tenant_id', tenantId)
+        .not('last_visit_on', 'is', null)
+        .order('client_id')
+        .order('service_id'),
     ),
   ])
   const assinantesAtivos = new Set(assinaturasAtivas.map((a) => a.client_id))
@@ -162,15 +179,28 @@ export async function recomputarCiclosDoTenant(db: Cliente, tenantId: string, ti
   const previsoes: PrevisaoParaRegistrar[] = []
   const datasPorCombinacao = new Map<string, string[]>()
 
-  for (const [chave, datas] of historicoPorCombinacao) {
+  const visitaInformada = new Map(informadas.map((c) => [`${c.client_id}:${c.service_id}`, c.last_visit_on!]))
+  const combinacoes = new Set([...historicoPorCombinacao.keys(), ...visitaInformada.keys()])
+
+  for (const chave of combinacoes) {
     const [clientId, serviceId] = chave.split(':') as [string, string]
     const defaultCycleDays = cycleDaysPorServico.get(serviceId)
     if (!defaultCycleDays) continue // serviço apagado/desconhecido — sem padrão, sem como calcular
 
-    const history = datas
+    const doAtendimento = (historicoPorCombinacao.get(chave) ?? [])
       .map((iso) => Temporal.Instant.from(iso).toZonedDateTimeISO(timezone).toPlainDate())
       .sort((a, b) => Temporal.PlainDate.compare(a, b))
-      .map((date) => ({ date }))
+    /*
+      A data informada só entra quando é MAIS NOVA que o último atendimento: para quem só tem
+      atendimento, `last_visit_on` é a própria data do último (gravada por este laço) e não soma
+      nada; para quem veio da memória, é a única visita; e para quem voltou e foi marcado em
+      "Já atendo" → retornos, é a volta que o atendimento não registrou.
+    */
+    const informada = visitaInformada.get(chave)
+    const ultimoAtendido = doAtendimento[doAtendimento.length - 1]
+    const somaInformada =
+      informada !== undefined && (!ultimoAtendido || Temporal.PlainDate.compare(Temporal.PlainDate.from(informada), ultimoAtendido) > 0)
+    const history = (somaInformada ? [...doAtendimento, Temporal.PlainDate.from(informada)] : doAtendimento).map((date) => ({ date }))
 
     const resultado = computeCycle({
       history,
@@ -180,17 +210,24 @@ export async function recomputarCiclosDoTenant(db: Cliente, tenantId: string, ti
     })
 
     const ultimaVisita = history[history.length - 1]!.date.toString()
-    datasPorCombinacao.set(chave, history.map((h) => h.date.toString()))
-    previsoes.push({
-      clientId,
-      serviceId,
-      lastVisitOn: ultimaVisita,
-      predictedOn: resultado.predictedDate.toString(),
-      // A tabela exige > 0, e o piso do ciclo pessoal é 0.5 do padrão: sem o `max`, um serviço de
-      // ciclo 1 produziria 0 e derrubaria o cron inteiro por violação de constraint.
-      personalCycleDays: Math.max(1, Math.round(resultado.personalCycleDays)),
-      defaultCycleDays,
-    })
+    /*
+      A trilha de previsões (`docs/46`) mede o acerto do Motor e calibra a régua: só entra com data
+      que um atendimento REGISTROU. "Uns 15 dias" de memória é aproximado por desenho
+      (`quando-foi-a-ultima-vez.ts`) e mediria o palpite da pessoa, não o Motor.
+    */
+    if (doAtendimento.length > 0) datasPorCombinacao.set(chave, doAtendimento.map((d) => d.toString()))
+    if (!somaInformada) {
+      previsoes.push({
+        clientId,
+        serviceId,
+        lastVisitOn: ultimaVisita,
+        predictedOn: resultado.predictedDate.toString(),
+        // A tabela exige > 0, e o piso do ciclo pessoal é 0.5 do padrão: sem o `max`, um serviço de
+        // ciclo 1 produziria 0 e derrubaria o cron inteiro por violação de constraint.
+        personalCycleDays: Math.max(1, Math.round(resultado.personalCycleDays)),
+        defaultCycleDays,
+      })
+    }
 
     /*
       `docs/DECISOES.md` 2026-09-18: assinante ativo não paga avulso, então o preço de catálogo

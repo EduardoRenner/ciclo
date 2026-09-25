@@ -37,6 +37,12 @@ export function vazioDeRecuperar(
     canal ela simplesmente não convida.
   */
   temCanalDeContato = false,
+  /*
+    "daqui a 6 dias (29/09)" — de `quandoVolta` (`core/ciclo/primeira-volta.ts`), calculado pela
+    página com o menor `predicted_on` futuro entre quem está em dia. `null` quando não há: a frase
+    de vitória continua de pé sem ele.
+  */
+  quandoOProximoVolta: string | null = null,
 ): VazioDeRecuperar {
   if (!temClientes) {
     return {
@@ -49,15 +55,20 @@ export function vazioDeRecuperar(
 
   if (!temCiclos && !temAtendimentosConcluidos) {
     /*
-     * Ter ficha nao basta: o ciclo nasce do primeiro atendimento CONCLUIDO. Dizer "cadastre
-     * clientes" aqui mandaria a pessoa refazer o que ela ja fez — e o produto pareceria nao ter
-     * percebido o trabalho dela.
+     * Ter ficha nao basta: o ciclo precisa de uma ultima visita. Dizer "cadastre clientes" aqui
+     * mandaria a pessoa refazer o que ela ja fez.
+     *
+     * Ate a rodada 18 do docs/82 esta frase era "O Motor comeca no primeiro atendimento concluido"
+     * e levava para a agenda — semanas de espera ate o Motor ter o que mostrar, numa conta que ja
+     * tem as fichas. O "Ja atendo" poe essa gente no Motor HOJE, com a ultima vez respondida de
+     * memoria (e desde a rodada 17 o recalculo envelhece essas fichas, entao a lista enche sozinha).
      */
     return {
-      titulo: 'O Motor começa no primeiro atendimento concluído',
-      descricao: 'Assim que você concluir um atendimento, ele passa a prever quando aquela pessoa volta.',
-      acaoRotulo: 'Ver a agenda',
-      acaoHref: '/admin/agenda',
+      titulo: 'Diga quando foi o último atendimento de cada um',
+      descricao:
+        'Suas fichas já estão aqui. Conte de memória quando cada pessoa veio pela última vez (não precisa ser exato) e o Motor começa hoje, sem esperar a agenda.',
+      acaoRotulo: 'Dizer quando vieram',
+      acaoHref: '/admin/clientes/ja-atendo',
     }
   }
 
@@ -91,7 +102,9 @@ export function vazioDeRecuperar(
   // "esta tudo certo", nao como "nao encontrei nada".
   return {
     titulo: 'Todo mundo em dia',
-    descricao: 'Ninguém passou do tempo de voltar. Quando alguém atrasar, aparece aqui.',
+    descricao: quandoOProximoVolta
+      ? `Ninguém passou do tempo de voltar. O próximo deve voltar ${quandoOProximoVolta}; se atrasar, aparece aqui.`
+      : 'Ninguém passou do tempo de voltar. Quando alguém atrasar, aparece aqui.',
     acaoRotulo: 'Ver clientes',
     acaoHref: '/admin/clientes',
   }

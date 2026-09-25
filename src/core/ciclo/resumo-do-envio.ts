@@ -37,8 +37,8 @@ const JANELA_FIM = 21
 /** Cada motivo traz as DUAS conjugações: "1 pessoa já receberam" é o tipo de frase que envelhece mal na tela de quem paga. */
 const FRASES: Record<string, { uma: string; varias: string }> = {
   fora_de_janela: {
-    uma: `fora do horário de envio (${JANELA_INICIO}h às ${JANELA_FIM}h) — tente de manhã.`,
-    varias: `fora do horário de envio (${JANELA_INICIO}h às ${JANELA_FIM}h) — tente de manhã.`,
+    uma: `fora do horário de envio (${JANELA_INICIO}h às ${JANELA_FIM}h); tente de manhã.`,
+    varias: `fora do horário de envio (${JANELA_INICIO}h às ${JANELA_FIM}h); tente de manhã.`,
   },
   rate_limited: {
     uma: 'já recebeu uma mensagem nos últimos 7 dias.',
@@ -49,8 +49,8 @@ const FRASES: Record<string, { uma: string; varias: string }> = {
     varias: 'pediram para não receber, ou estão sem telefone cadastrado.',
   },
   falha_de_envio: {
-    uma: 'não recebeu — tentar de novo agora não resolve.',
-    varias: 'não receberam — tentar de novo agora não resolve.',
+    uma: 'não recebeu; tentar de novo agora não resolve.',
+    varias: 'não receberam; tentar de novo agora não resolve.',
   },
 }
 

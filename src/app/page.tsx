@@ -136,18 +136,26 @@ const RECURSOS = [
   },
 ]
 
+/*
+  `docs/82` §16 rodada 21: o terceiro passo era "Atenda. O resto o CICLO acompanha" — o caminho de
+  semanas, em que a lista enche conforme cada pessoa volta duas ou três vezes. O caminho de um dia
+  é trazer quem já atende com a última vez de memória (`/admin/clientes/ja-atendo`), e é o que a
+  visita, o onboarding e a aba Hoje ensinam; a porta de entrada era a única que ensinava a esperar.
+  Guardado por `tests/unit/design/home-ensina-o-primeiro-dia.test.ts`.
+*/
 const PASSOS = [
   {
     titulo: 'Crie a conta e diga o que você faz',
     texto: 'O catálogo da sua profissão já vem pronto: serviços, duração e preço sugerido. Você ajusta o que quiser.',
   },
   {
-    titulo: 'Compartilhe seu link',
-    texto: 'Sua página fica no ar na hora, com seus serviços, horário de funcionamento e contato.',
+    titulo: 'Traga quem você já atende',
+    texto:
+      'Cole a lista ou escreva os nomes, com mais ou menos quando cada pessoa veio pela última vez. Quem já passou do tempo de voltar aparece na lista no mesmo dia.',
   },
   {
-    titulo: 'Atenda. O resto o CICLO acompanha',
-    texto: 'Cada atendimento concluído alimenta o ciclo daquela pessoa, e é assim que o sistema sabe quem está para voltar.',
+    titulo: 'Compartilhe seu link',
+    texto: 'Sua página fica no ar na hora. Cada atendimento concluído afina o ritmo de cada pessoa, e a lista fica mais certeira.',
   },
 ]
 
@@ -213,12 +221,12 @@ const PERGUNTAS = [
     */
     pergunta: 'Eu já tenho minha lista de clientes. Dá para trazer?',
     resposta:
-      'Dá, de uma planilha: nome, telefone, e-mail e etiquetas. E se a sua planilha tiver a data da última visita, traga essa coluna também: é ela que faz a lista de quem sumiu nascer cheia no primeiro dia, em vez de você esperar as pessoas voltarem para o CICLO ter o que calcular.',
+      'Dá, e não precisa de planilha. Cole a lista (do bloco de notas ou de uma conversa) ou escreva os nomes, com mais ou menos quando cada pessoa veio pela última vez. Vale de memória, não precisa ser exato. No Android, dá para escolher direto dos contatos. Tem planilha? Importe o arquivo, com a coluna da última visita. É essa data que faz a lista de quem sumiu nascer cheia no primeiro dia.',
   },
   {
     pergunta: 'Em quanto tempo a lista de quem sumiu fica útil?',
     resposta:
-      'Se você importar a data da última visita, já na primeira tela. Sem essa data, o CICLO precisa ver cada pessoa voltar duas ou três vezes para saber o ritmo dela. Até lá a lista começa vazia e vai enchendo conforme você atende.',
+      'No mesmo dia, se você disser quando cada pessoa veio pela última vez. Sem essa data, o CICLO precisa ver cada pessoa voltar duas ou três vezes para saber o ritmo dela, e a lista começa vazia e vai enchendo conforme você atende.',
   },
   {
     /*
@@ -426,6 +434,19 @@ export default async function Home() {
           ) : null}
         </div>
         {/*
+          `docs/82` §8 e rodada 21: a calculadora responde em dinheiro à pergunta do próprio `h1`, e
+          só aparecia no rodapé. Uma linha, abaixo dos botões — não disputa com "Criar minha conta":
+          quem ainda não quer conta faz a conta, e o fim da calculadora leva ao cadastro com
+          `?origem=calculadora`.
+        */}
+        {/* A linha inteira é o alvo (≥ 48 px): um link inline de duas linhas media 34. */}
+        <Link href="/calculadora" className="mt-2 flex min-h-12 items-center text-secundario text-txt-2">
+          <span>
+            Ainda não quer criar conta?{' '}
+            <span className="font-semibold text-acc-2 underline underline-offset-2">Veja quanto os clientes que sumiram custam por mês</span>
+          </span>
+        </Link>
+        {/*
           TICKET-UX16: pedido direto do usuário foi tirar o preço do topo, "para não assustar" —
           reverte a decisão anterior (comentário removido dizia "o preço aparece já na primeira
           dobra... é de graça fazer diferente"). A transparência de preço continua existindo, só
@@ -568,6 +589,11 @@ export default async function Home() {
       <footer className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 pt-10 text-center text-label text-txt-3">
         <Link href="/precos" className="toque-48 -mx-2 px-2 font-semibold text-txt-2 underline underline-offset-2">
           Preços
+        </Link>
+        <span aria-hidden>·</span>
+        {/* docs/82 §8: ferramenta grátis — rodapé para quem ainda não quer criar conta. */}
+        <Link href="/calculadora" className="toque-48 -mx-2 px-2 font-semibold text-txt-2 underline underline-offset-2">
+          Calculadora
         </Link>
         <span aria-hidden>·</span>
         <Link href="/termos" className="toque-48 -mx-2 px-2 font-semibold text-txt-2 underline underline-offset-2">

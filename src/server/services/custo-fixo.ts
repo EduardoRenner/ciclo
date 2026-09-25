@@ -17,7 +17,7 @@ type Cliente = SupabaseClient<Database>
  */
 export const EsquemaCustoFixo = z.object({
   mensalCents: z.number().int().min(0, 'O valor não pode ser negativo.').max(100_000_000, 'Confira o valor: passou de R$ 1 milhão por mês.'),
-  horasPorMes: z.number().min(1, 'Informe quantas horas o negócio fica aberto por mês.').max(744, 'Um mês tem 744 horas — confira o número.'),
+  horasPorMes: z.number().min(1, 'Informe quantas horas o negócio fica aberto por mês.').max(744, 'Um mês tem 744 horas. Confira o número.'),
   cadeiras: z.number().int().min(1, 'Pelo menos uma.').max(200, 'Confira o número de postos de atendimento.'),
 })
 export type EntradaCustoFixo = z.infer<typeof EsquemaCustoFixo>

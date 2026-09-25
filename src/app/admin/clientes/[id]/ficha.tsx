@@ -30,7 +30,7 @@ import { useToast } from '@/components/ui/toast'
 import { dinheiro, formatarTelefone } from '@/lib/formato'
 import { APP_HOST } from '@/lib/app-url'
 import { camposDePreferencia } from '@/lib/preferencias'
-import { aplicarVariaveis, linkWhatsApp, precisaDeAgendamento } from '@/lib/mensagens'
+import { aplicarVariaveis, linkWhatsApp, linkWhatsAppCompartilhar, precisaDeAgendamento } from '@/lib/mensagens'
 
 import { fraseDoRitmo } from '@/core/ciclo/ritmo-do-cliente'
 import type { EstadoCiclo } from '@/core/cycle/compute'
@@ -45,7 +45,10 @@ import Notas from './notas'
 import PacotesCarteira from './pacotes-carteira'
 import Saude from './saude'
 
-type Modelo = { id: string; title: string; body: string }
+type Modelo = { id: string; slug: string; title: string; body: string }
+
+/** O modelo padrão de recuperação (`mensagens-prontas.ts`). Tocá-lo anota a chamada para o Motor. */
+const SLUG_DE_RECUPERACAO = 'sentimos_falta'
 type Plano = { id: string; name: string; price_cents: number; sessions_per_month: number | null }
 type ProfissionalOpcao = { id: string; name: string }
 
@@ -162,6 +165,29 @@ export default function Ficha({
   const router = useRouter()
   const parametros = useSearchParams()
   const mostrarToast = useToast()
+
+  /*
+    `docs/82` §7: "Sumiu, chamar de volta" pela ficha é a mesma chamada que o "Chamar" da lista de
+    Recuperar — e, como ela, não deixava rastro: se a pessoa voltasse, o Motor não sabia que alguém
+    a tinha chamado. Anota em paralelo à abertura do WhatsApp; o servidor escolhe o ciclo mais
+    atrasado e não anota nada se ela estiver no ritmo (aí não é recuperação). Falha não trava a
+    conversa que já abriu: vira aviso. Pessoa no ritmo não gera toast nenhum (não é recuperação).
+  */
+  async function anotarChamadaDeVolta() {
+    try {
+      const r = await fetch('/api/v1/cycle/recover/manual', {
+        method: 'POST',
+        keepalive: true,
+        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+        body: JSON.stringify({ clientId: cliente.id }),
+      })
+      if (!r.ok) throw new Error(String(r.status))
+      const json = (await r.json()) as { data?: { registrada: boolean } }
+      if (json.data?.registrada) mostrarToast({ tom: 'ok', titulo: 'Anotado', descricao: 'Se marcar, a volta conta para o Motor de Ciclo.' })
+    } catch {
+      mostrarToast({ tom: 'aviso', titulo: 'Não consegui anotar a chamada', descricao: 'A mensagem no WhatsApp não muda. Só esta volta pode não aparecer no que o Motor trouxe.' })
+    }
+  }
 
   /**
    * A aba nasce da URL (link de ficha aberta em "Histórico" abre em "Histórico") mas vive em
@@ -693,13 +719,19 @@ export default function Ficha({
           <p className="text-corpo text-bad">
             Pediu para não receber mensagens. Respeite o pedido.
           </p>
-        ) : !telefoneUtilizavel ? (
-          <p className="text-corpo text-txt-2">
-            {cliente.phoneE164 ? 'Telefone cadastrado não parece válido.' : 'Sem telefone cadastrado.'} Toque no lápis para
-            {cliente.phoneE164 ? ' corrigir' : ' adicionar'}.
-          </p>
+        ) : cliente.phoneE164 && !telefoneUtilizavel ? (
+          <p className="text-corpo text-txt-2">Telefone cadastrado não parece válido. Toque no lápis para corrigir.</p>
         ) : (
           <div className="grid gap-2">
+            {/*
+              `docs/82` §7: sem telefone NENHUM (a base trazida de memória chega assim) o modelo abre o
+              seletor de contatos do próprio WhatsApp — o contato já está no celular do dono, pelo
+              nome. Era "Sem telefone cadastrado. Toque no lápis", um beco na pessoa que ele acabou de
+              trazer. Telefone inválido continua pedindo correção: aí há um dado errado a consertar.
+            */}
+            {!cliente.phoneE164 ? (
+              <p className="text-secundario text-txt-3">Sem telefone cadastrado: o WhatsApp abre para você escolher o contato.</p>
+            ) : null}
             {modelos.map((m) => {
               // Sem horário marcado, o modelo de confirmação/lembrete sairia com buraco no
               // lugar da data — melhor bloquear e dizer o porquê do que mandar frase quebrada.
@@ -718,14 +750,17 @@ export default function Ficha({
               }
 
               const texto = aplicarVariaveis(m.body, variaveis)
-              const link = linkWhatsApp(cliente.phoneE164, texto)
+              const link = cliente.phoneE164 ? linkWhatsApp(cliente.phoneE164, texto) : linkWhatsAppCompartilhar(texto)
               return (
                 <a
                   key={m.id}
                   href={link ?? '#'}
                   target="_blank"
                   rel="noreferrer"
-                  onClick={() => setEscolhendoMensagem(false)}
+                  onClick={() => {
+                    setEscolhendoMensagem(false)
+                    if (m.slug === SLUG_DE_RECUPERACAO) void anotarChamadaDeVolta()
+                  }}
                   className="rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 p-3 text-left transition-colors hover:border-acc/40 hover:bg-surface-3"
                 >
                   <p className="text-corpo font-semibold text-txt">{m.title}</p>

@@ -14,6 +14,7 @@ import Card from '@/components/ui/card'
 import Chip from '@/components/ui/chip'
 import EmptyState from '@/components/ui/empty-state'
 import { ASSUNTO_MOTOR_PARADO, canalDeContato } from '@/lib/contato'
+import { linkWhatsApp, linkWhatsAppCompartilhar, primeiroNome, textoDeVolta } from '@/lib/mensagens'
 import FilterRow from '@/components/ui/filter-row'
 import IconeAnel from '@/components/ui/icone-anel'
 import Skeleton from '@/components/ui/skeleton'
@@ -56,6 +57,7 @@ export default function RecuperarReceita({
   temClientes,
   temCiclos,
   temAtendimentosConcluidos,
+  quandoOProximoVolta,
   servicosSemMaterial,
 }: {
   inicial: ListaRecuperar
@@ -76,10 +78,12 @@ export default function RecuperarReceita({
   servicosSemMaterial: number
   /** Existe alguma ficha de cliente neste salão. */
   temClientes: boolean
-  /** O Motor já calculou algum ciclo — precisa de atendimento CONCLUÍDO, não só de ficha. */
+  /** O Motor já calculou algum ciclo — precisa de uma última visita (atendimento concluído ou informada), não só de ficha. */
   temCiclos: boolean
   /** Separa "ainda nao atendeu ninguem" de "atendeu e o Motor nao processou". */
   temAtendimentosConcluidos: boolean
+  /** "daqui a 6 dias (29/09)" — só para o vazio de "todo mundo em dia"; `null` quando não há. */
+  quandoOProximoVolta: string | null
 }) {
   const vocabulario = useVocabulario()
   const mostrarToast = useToast()
@@ -154,11 +158,43 @@ export default function RecuperarReceita({
     }
   }
 
+  /*
+    `docs/82` §7: o toque em "Chamar" abre o WhatsApp do dono numa aba nova e, em paralelo, anota a
+    chamada — é o que faz a volta dessa pessoa contar em "O Motor de Ciclo trouxe". Falha aqui não
+    pode travar a conversa que já abriu: vira aviso, e o dono segue no WhatsApp.
+  */
+  async function anotarChamada(item: ItemRecuperar) {
+    try {
+      const r = await fetch('/api/v1/cycle/recover/manual', {
+        method: 'POST',
+        keepalive: true,
+        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+        body: JSON.stringify({ clientId: item.clientId, serviceId: item.serviceId }),
+      })
+      if (!r.ok) throw new Error(String(r.status))
+      const json = (await r.json()) as { data?: { registrada: boolean; motivo?: string } }
+      const primeiro = primeiroNome(item.name)
+      if (json.data?.registrada) {
+        mostrarToast({ tom: 'ok', titulo: 'Anotado', descricao: `Se ${primeiro} marcar, a volta conta para o Motor de Ciclo.` })
+      } else if (json.data?.motivo === 'ja_chamada') {
+        // A conversa abriu do mesmo jeito; o que não acontece é contar duas vezes na mesma semana.
+        mostrarToast({ tom: 'aviso', titulo: 'Já anotado nesta semana', descricao: `A chamada anterior de ${primeiro} continua valendo para o Motor.` })
+      }
+    } catch {
+      mostrarToast({ tom: 'erro', titulo: 'Não consegui anotar a chamada', descricao: 'A mensagem no WhatsApp não muda. Só esta volta pode não aparecer no que o Motor trouxe.' })
+    }
+  }
+
   const recorte = recorteDaLista(lista.count, lista.items.length)
   const itensSelecionados = lista.items.filter((i) => selecionados.has(chave(i)))
-  // O bloqueio só aparece quando ela realmente pediu o lote. Com uma cliente marcada o caminho
-  // grátis atende, e mostrar oferta de plano ali seria vender no meio de uma tarefa que funciona.
-  const bloqueado = !podeEnviarEmLote && itensSelecionados.length > 1
+  /*
+    Decisão de 2026-09-23 (`docs/82` §11): esta barra só faz uma coisa — mandar pelo número do
+    CICLO, que é dinheiro real por mensagem. O caminho grátis, um a um, para sempre, é "Chamar" em
+    cada linha (o WhatsApp do PRÓPRIO dono) e não passa por aqui — então marcar até uma cliente e
+    tocar nesta barra já é pedir o recurso pago, com ou sem plano. Era `> 1`, de quando esta rota
+    era o único jeito de avisar alguém.
+  */
+  const bloqueado = !podeEnviarEmLote && itensSelecionados.length > 0
   const valorSelecionadoCents = itensSelecionados.reduce((soma, i) => soma + i.valueCents, 0)
 
   /*
@@ -195,17 +231,28 @@ export default function RecuperarReceita({
         <StatTile rotulo={comMaiuscula(plural(vocabulario.cliente))} valor={String(lista.count)} />
       </div>
 
-      <p className="mb-4 text-secundario text-txt-3">
-        Estimativa, não promessa: o preço do serviço de cada uma, multiplicado pela chance de ela voltar. Quanto mais
-        tempo sem aparecer, menor a chance, e por isso quem sumiu há mais tempo vale menos aqui. A ordem da lista segue o
-        <strong> lucro</strong>, o que sobra depois da comissão{servicosSemMaterial > 0 ? '' : ' e do produto'}, não o preço.
-      </p>
+      {/*
+        `docs/82` §7, medido em 2026-09-23 numa conta nova: esta é a tela a que o primeiro passo leva
+        ("Traga quem você já atende" → "Ver quem são"), e antes da lista vinham DOIS parágrafos de
+        ressalva — o método e a lacuna de custo — empurrando os nomes para fora da primeira tela do
+        celular. O método continua a um toque, com a frase que importa ("estimativa, não promessa")
+        visível no resumo. A lacuna de custo continua SEMPRE visível (`tela-que-desconta-produto-
+        sabe-a-lacuna`), só mais curta. E "cada uma… ela" virou "cada pessoa": numa barbearia a
+        clientela não é "ela".
+      */}
+      <details className="mb-3 text-secundario text-txt-3">
+        <summary className="cursor-pointer py-4 font-semibold text-txt-2">Estimativa, não promessa: como a conta é feita</summary>
+        <p className="pb-2">
+          O preço do serviço de cada pessoa, multiplicado pela chance de ela voltar. Quanto mais tempo sem aparecer, menor a
+          chance, e por isso quem sumiu há mais tempo vale menos aqui. A ordem da lista segue o <strong>lucro</strong>, o que
+          sobra depois da comissão{servicosSemMaterial > 0 ? '' : ' e do produto'}, não o preço.
+        </p>
+      </details>
 
       {servicosSemMaterial > 0 ? (
         <p className="mb-4 text-secundario text-txt-3">
-          O produto ainda não entra nesta conta: {servicosSemMaterial === 1 ? '1 serviço' : `${servicosSemMaterial} serviços`} sem o custo
-          registrado. Enquanto isso, um serviço que gasta material parece tão lucrativo quanto um que não gasta, e é a ordem desta lista que
-          fica errada.{' '}
+          {servicosSemMaterial === 1 ? '1 serviço está' : `${servicosSemMaterial} serviços estão`} sem o custo do material, então a
+          ordem da lista pode estar errada.{' '}
           <Link href="/admin/config/servicos" className="font-semibold text-acc-2">
             Completar o custo
           </Link>
@@ -271,6 +318,7 @@ export default function RecuperarReceita({
             temClientes={temClientes}
             temCiclos={temCiclos}
             temAtendimentosConcluidos={temAtendimentosConcluidos}
+            quandoOProximoVolta={quandoOProximoVolta}
           />
         </Card>
       ) : (
@@ -317,16 +365,42 @@ export default function RecuperarReceita({
                         <p className="tabular text-label text-txt-3">{dinheiro.format(item.profitCents / 100)} de lucro</p>
                       </>
                     )}
-                    <Button
-                      variante="ghost"
-                      tamanho="sm"
-                      className="-mr-2 mt-0.5 px-2"
-                      disabled={enviando}
-                      onClick={() => enviar([item])}
-                      motivoDesabilitado="Aguarde o envio em andamento terminar."
-                    >
-                      Avisar
-                    </Button>
+                    {/*
+                      `docs/82` §7/§11 do plano — decisão de 2026-09-23: "Chamar" (o WhatsApp DO
+                      PRÓPRIO DONO, grátis, sem depender de credencial) virou o caminho padrão para
+                      todo mundo, com ou sem telefone salvo. Antes, quem tinha telefone caía em
+                      "Avisar" — a mensagem saía pelo número do CICLO, categoria marketing paga por
+                      mensagem (~R$0,31), sem teto nenhum no plano Grátis, e chegava de um número que
+                      a cliente não conhece. "Avisar pelo sistema" continua existindo, mas só como a
+                      alavanca PAGA de chamar todo mundo de uma vez (`ActionBar` mais abaixo,
+                      `envio_em_lote`) — nunca mais como a ação de um clique por pessoa.
+
+                      Opt-out bloqueia os dois caminhos igual: quem pediu para não receber não pode
+                      ganhar nem o "Avisar" pelo sistema nem o "Chamar" manual (o servidor também
+                      recusa, `registrarChamadaManual`) — mostrar o botão aqui seria prometer um
+                      toque que não faz nada.
+
+                      Com telefone válido, o wa.me já abre endereçado à pessoa (`linkWhatsApp`); sem
+                      telefone (a base trazida de memória, campo opcional de propósito), cai no
+                      seletor de contato do próprio WhatsApp do dono (`linkWhatsAppCompartilhar`).
+                    */}
+                    {item.optOut ? (
+                      <p className="mt-1 text-label text-txt-3">Pediu para não receber</p>
+                    ) : (
+                      <a
+                        href={
+                          linkWhatsApp(item.phone, textoDeVolta({ nome: item.name, servico: item.serviceName })) ??
+                          linkWhatsAppCompartilhar(textoDeVolta({ nome: item.name, servico: item.serviceName }))
+                        }
+                        target="_blank"
+                        rel="noreferrer"
+                        aria-label={`Chamar ${item.name} pelo seu WhatsApp`}
+                        onClick={() => void anotarChamada(item)}
+                        className="toque-48 -mr-2 mt-0.5 inline-flex h-10 items-center px-2 text-label font-semibold text-acc-2 transition active:scale-[.97]"
+                      >
+                        Chamar
+                      </a>
+                    )}
                   </div>
                 </Card>
               </li>
@@ -344,9 +418,10 @@ export default function RecuperarReceita({
         {bloqueado ? (
           /*
             §M.1: a peça de conversão mais importante do produto aparece AQUI, no momento em que
-            ela marcou oito clientes e tocou para avisar — não numa página de preço que ela teria
-            de ir procurar. Por isso leva o número e o valor DELA, e por isso o caminho grátis
-            (avisar uma de cada vez, pelo botão de cada linha) fica escrito e continua valendo.
+            ela marcou clientes e tocou para avisar pelo sistema — não numa página de preço que ela
+            teria de ir procurar. Por isso leva o número e o valor DELA, e por isso o caminho
+            grátis (o botão "Chamar" de cada linha, sem marcar nada) fica escrito e continua
+            valendo — só que agora ele é a resposta pra QUALQUER seleção, não só pra mais de uma.
 
             Sem as bordas próprias: a ActionBar já é o cartão.
           */
@@ -354,7 +429,7 @@ export default function RecuperarReceita({
             nativo={nativo}
             className="border-0 bg-transparent p-1 shadow-none"
             precisaDo="essencial"
-            acao="avisar todo mundo de uma vez"
+            acao="avisar pelo sistema, sem abrir o WhatsApp"
             evidencia={{
               quantidade: itensSelecionados.length,
               substantivo: 'na lista, esperando para voltar',
@@ -362,7 +437,7 @@ export default function RecuperarReceita({
             }}
             alternativa={
               <button type="button" onClick={() => setSelecionados(new Set())}>
-                Avisar uma de cada vez, de graça
+                Chame pelo seu WhatsApp, de graça, tocando em &ldquo;Chamar&rdquo; em cada linha
               </button>
             }
           />
@@ -389,14 +464,22 @@ function EmptyStateDeRecuperar({
   temClientes,
   temCiclos,
   temAtendimentosConcluidos,
+  quandoOProximoVolta,
 }: {
   temClientes: boolean
   temCiclos: boolean
   temAtendimentosConcluidos: boolean
+  quandoOProximoVolta: string | null
 }) {
   // `canalDeContato` devolve `null` quando nao ha WhatsApp nem e-mail configurado. E o que
   // decide se a frase pode mandar falar com a gente ou tem que calar.
-  const v = vazioDeRecuperar(temClientes, temCiclos, temAtendimentosConcluidos, canalDeContato(ASSUNTO_MOTOR_PARADO) !== null)
+  const v = vazioDeRecuperar(
+    temClientes,
+    temCiclos,
+    temAtendimentosConcluidos,
+    canalDeContato(ASSUNTO_MOTOR_PARADO) !== null,
+    quandoOProximoVolta,
+  )
   return (
     <EmptyState
       icone={<IconeAnel aria-hidden className="size-6" />}

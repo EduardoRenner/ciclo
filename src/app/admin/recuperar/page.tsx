@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { headers } from 'next/headers'
 import { Temporal } from '@js-temporal/polyfill'
 
+import { quandoVolta } from '@/core/ciclo/primeira-volta'
 import { algumEstadoFoiCalibrado } from '@/core/cycle/calibrar-probabilidade'
 import { podeUsarCapacidade } from '@/core/billing/planos'
 import { ehRequisicaoDoAppNativo } from '@/core/plataforma/nativo'
@@ -32,6 +33,7 @@ export default async function PaginaRecuperar() {
   // `docs/28` §8: o `timezone` chega no contexto, sem segunda ida ao banco.
   const timezone = ctx.tenant.timezone
   const mesAtual = Temporal.PlainYearMonth.from(Temporal.Now.zonedDateTimeISO(timezone).toPlainDate())
+  const hoje = Temporal.Now.zonedDateTimeISO(timezone).toPlainDate()
   const desde = mesAtual.toPlainDate({ day: 1 }).toString()
   const ate = mesAtual.toPlainDate({ day: mesAtual.daysInMonth }).toString()
 
@@ -46,7 +48,7 @@ export default async function PaginaRecuperar() {
    * São `head: true` com `count: 'exact'`: não trazem linha nenhuma, só o número, e vão no mesmo
    * `Promise.all` que já existia — custo de latência zero contra o que a tela já pagava.
    */
-  const [lista, atribuicao, plano, clientes, ciclos, concluidos, resumoDoMotor, material] = await Promise.all([
+  const [lista, atribuicao, plano, clientes, ciclos, concluidos, resumoDoMotor, material, proximo] = await Promise.all([
     listarParaRecuperar(db, ctx.tenantId),
     receitaAtribuidaAoCiclo(db, ctx.tenantId, timezone, desde, ate),
     contextoDePlano(db, ctx.tenantId),
@@ -77,6 +79,20 @@ export default async function PaginaRecuperar() {
       a `0067` veio consertar.
     */
     medirMaterialDoCatalogo(db, ctx.tenantId),
+    /*
+      Para o vazio de "todo mundo em dia" dizer QUANDO o Motor volta a ter trabalho (docs/82 §16,
+      rodada 18). `predicted_on >= hoje` porque `on_track` também cobre quem está atrasado mas já
+      remarcou — a volta dele no passado não é "o próximo". Uma linha, pelo índice do tenant.
+    */
+    db
+      .from('client_cycles')
+      .select('predicted_on')
+      .eq('tenant_id', ctx.tenantId)
+      .eq('state', 'on_track')
+      .gte('predicted_on', hoje.toString())
+      .order('predicted_on')
+      .limit(1)
+      .maybeSingle(),
   ])
 
   // A tela precisa saber para desenhar o caminho certo; quem RECUSA é a rota (§L.1). Aqui é
@@ -122,6 +138,7 @@ export default async function PaginaRecuperar() {
         temClientes={(clientes.count ?? 0) > 0}
         temCiclos={(ciclos.count ?? 0) > 0}
         temAtendimentosConcluidos={(concluidos.count ?? 0) > 0}
+        quandoOProximoVolta={proximo.data?.predicted_on ? quandoVolta(proximo.data.predicted_on, hoje) : null}
         servicosSemMaterial={material.semFicha + material.comProdutoSemCusto}
       />
     </>

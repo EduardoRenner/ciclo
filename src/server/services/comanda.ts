@@ -171,7 +171,7 @@ export async function adicionarItemComanda(db: Cliente, tenantId: string, ticket
        */
       const explicacao = produto.is_retail
         ? `"${produto.name}" não tem preço cadastrado. Defina o preço no estoque antes de vender.`
-        : `"${produto.name}" é insumo de uso interno, não produto de revenda — ele já entra no custo do serviço. Para vender assim mesmo, informe o preço.`
+        : `"${produto.name}" é insumo de uso interno, não produto de revenda: ele já entra no custo do serviço. Para vender assim mesmo, informe o preço.`
       throw AppError.validacao({ productId: explicacao }, explicacao)
     }
     unitPriceCents = entrada.unitPriceCents ?? precoDoCatalogo!

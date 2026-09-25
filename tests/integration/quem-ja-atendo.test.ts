@@ -1,9 +1,11 @@
 import { randomUUID } from 'node:crypto'
 
+import { Temporal } from '@js-temporal/polyfill'
 import { createClient } from '@supabase/supabase-js'
 import dotenv from 'dotenv'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
+import { recomputarCiclosDoTenant } from '@/server/services/ciclo'
 import { cadastrarQuemJaAtendo } from '@/server/services/quem-ja-atendo'
 import { executarOnboarding } from '@/server/services/onboarding'
 
@@ -135,6 +137,73 @@ describe('cadastrar de memória põe a clientela no Motor', () => {
         .eq('tenant_id', tenantId)
         .eq('client_id', cliente!.id)
       expect(aRecuperar?.length ?? 0, 'quem está em dia apareceu como "dá para recuperar"').toBe(0)
+    },
+    30_000,
+  )
+
+  it(
+    'ninguém atrasado: a previsão diz QUANDO o primeiro volta, a mesma data que o Motor gravou',
+    async () => {
+      /*
+        Rodada 17 do docs/82: a linha nasce em "Uns 15 dias" e o serviço padrão de barbearia volta a
+        cada 21. Quem aceita o padrão cadastra todo mundo "em dia", e a tela de resultado não dizia
+        nada do Motor — só "2 pessoas cadastradas" — enquanto /admin/recuperar mostrava "Todo mundo
+        em dia". Para a tela dizer "o primeiro volta por volta de tal dia", a data tem que ser a do
+        `predicted_on` gravado, não uma conta paralela no navegador.
+      */
+      const marca = randomUUID().slice(0, 6)
+      const r = await cadastrarQuemJaAtendo(svc, tenantId, {
+        serviceId,
+        pessoas: [
+          { nome: `Quinze ${marca}`, telefone: telefoneNovo(), quando: 'quinzena' },
+          { nome: `Semana ${marca}`, telefone: telefoneNovo(), quando: 'semana' },
+        ],
+      })
+      expect(r.previsao?.jaDevendoVoltar).toBe(0)
+
+      const { data: gravados } = await svc
+        .from('client_cycles')
+        .select('predicted_on, clients!inner(name)')
+        .eq('tenant_id', tenantId)
+        .in('clients.name', [`Quinze ${marca}`, `Semana ${marca}`])
+      expect(gravados?.length, 'cenário não montado: os dois ciclos deviam estar gravados').toBe(2)
+      const maisCedo = gravados!.map((g) => g.predicted_on).sort()[0]
+      expect(r.previsao?.proximaVolta, 'a data da tela não é a do primeiro que o Motor espera').toBe(maisCedo)
+    },
+    30_000,
+  )
+
+  it(
+    'quem entrou EM DIA vira atrasado quando o tempo passa — o recálculo noturno não congela a ficha',
+    async () => {
+      /*
+        O recálculo do Motor (`recomputarCiclosDoTenant`) montava o histórico SÓ a partir de
+        atendimentos concluídos. Quem entra de memória ou por planilha não tem atendimento nenhum:
+        a linha de `client_cycles` nascia `on_track` e ficava assim para sempre, e a pessoa nunca
+        chegava em /admin/recuperar. Aqui o "tempo passa" pelo parâmetro `today` do próprio job.
+      */
+      const marca = randomUUID().slice(0, 6)
+      await cadastrarQuemJaAtendo(svc, tenantId, {
+        serviceId,
+        pessoas: [{ nome: `Congelado ${marca}`, telefone: telefoneNovo(), quando: 'semana' }],
+      })
+      const { data: cliente } = await svc.from('clients').select('id').eq('tenant_id', tenantId).eq('name', `Congelado ${marca}`).single()
+      const { data: antes } = await svc.from('client_cycles').select('state').eq('client_id', cliente!.id).single()
+      expect(antes?.state, 'cenário não montado: quem veio semana passada devia nascer em dia').toBe('on_track')
+
+      const daquiA90 = Temporal.Now.plainDateISO().add({ days: 90 }).toString()
+      await recomputarCiclosDoTenant(svc, tenantId, 'America/Sao_Paulo', daquiA90)
+
+      const { data: depois } = await svc.from('client_cycles').select('state, late_days').eq('client_id', cliente!.id).single()
+      expect(depois?.state, '90 dias depois continua "em dia": a ficha congelou no dia do cadastro').not.toBe('on_track')
+      expect(depois?.late_days ?? 0).toBeGreaterThan(0)
+
+      const { data: aRecuperar } = await svc.from('v_clientes_a_recuperar').select('client_id').eq('client_id', cliente!.id)
+      expect(aRecuperar?.length, 'recalculou mas não chegou na lista que Recuperar lê').toBe(1)
+
+      // A data de memória é palpite: não pode entrar na trilha que mede o acerto do Motor.
+      const { count } = await svc.from('cycle_predictions').select('client_id', { count: 'exact', head: true }).eq('client_id', cliente!.id)
+      expect(count, 'a data aproximada de memória entrou na trilha de previsões').toBe(0)
     },
     30_000,
   )

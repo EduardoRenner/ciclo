@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { aplicarVariaveis, linkWhatsApp, precisaDeAgendamento, saidaDeContato } from '@/lib/mensagens'
+import { aplicarVariaveis, linkWhatsApp, precisaDeAgendamento, saidaDeContato, textoDeVolta } from '@/lib/mensagens'
 
 describe('aplicarVariaveis', () => {
   it('troca as variáveis pelo valor', () => {
@@ -100,5 +100,17 @@ describe('saidaDeContato', () => {
   it('sem nenhum dos dois, não inventa botão', () => {
     expect(saidaDeContato(null, null, 'Dom Rocha', TEXTO)).toBeNull()
     expect(saidaDeContato('11', null, 'Dom Rocha', TEXTO)).toBeNull()
+  })
+})
+
+describe('textoDeVolta (docs/82 §7)', () => {
+  it('primeiro nome, serviço em minúscula, na voz de quem manda', () => {
+    expect(textoDeVolta({ nome: 'Joana Teste', servico: 'Corte' })).toBe(
+      'Oi, Joana! Faz um tempinho desde seu último horário de corte. Quer marcar essa semana?',
+    )
+  })
+
+  it('nome em branco não vira "Oi, !"; serviço feminino não vira "seu último barba"', () => {
+    expect(textoDeVolta({ nome: '  ', servico: 'Barba' })).toBe('Oi! Faz um tempinho desde seu último horário de barba. Quer marcar essa semana?')
   })
 })

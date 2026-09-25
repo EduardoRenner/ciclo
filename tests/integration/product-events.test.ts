@@ -7,6 +7,8 @@ import { afterAll, describe, expect, it } from 'vitest'
 import { registrarEvento, registrarPrimeiraOcorrencia } from '@/server/services/product-events'
 import { executarOnboarding } from '@/server/services/onboarding'
 
+import type { Origem } from '@/core/aquisicao/origem'
+
 import type { Database } from '@/server/db/types.gen'
 
 dotenv.config({ path: '.env.local' })
@@ -29,7 +31,7 @@ const svc = createClient<Database>(SUPABASE_URL, SERVICE_KEY, { auth: { persistS
 const tenants: string[] = []
 const usuarios: string[] = []
 
-async function novoTenant() {
+async function novoTenant(origem?: Origem) {
   const marca = randomUUID().slice(0, 8)
   const { data, error } = await svc.auth.admin.createUser({ email: `pe-${marca}@ciclo.test`, password: randomUUID(), email_confirm: true })
   if (error || !data.user) throw new Error(`seed falhou: ${error?.message}`)
@@ -41,6 +43,7 @@ async function novoTenant() {
     vertical: 'barber',
     slug: `pe-${marca}`,
     timezone: 'America/Sao_Paulo',
+    origem,
   })
   tenants.push(tenant.id)
   return tenant.id
@@ -59,6 +62,19 @@ describe('registrarEvento / registrarPrimeiraOcorrencia', () => {
 
       const { data } = await svc.from('product_events').select('event_type, meta').eq('tenant_id', tenantId)
       expect(data).toEqual([{ event_type: 'conta_criada', meta: { vertical: 'barber' } }])
+    },
+    30_000,
+  )
+
+  it(
+    'docs/82 §6: a origem do primeiro toque vai junto no conta_criada — é o que o placar agrupa',
+    async () => {
+      const tenantId = await novoTenant({ canal: 'convite', ref: 'dom-rocha', em: '2026-09-23' })
+
+      const { data } = await svc.from('product_events').select('event_type, meta').eq('tenant_id', tenantId)
+      expect(data).toEqual([
+        { event_type: 'conta_criada', meta: { vertical: 'barber', origem: { canal: 'convite', ref: 'dom-rocha', em: '2026-09-23' } } },
+      ])
     },
     30_000,
   )

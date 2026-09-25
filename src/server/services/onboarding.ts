@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { SLUG_PROFISSAO_GENERICA } from '@/core/profissoes'
+import type { Origem } from '@/core/aquisicao/origem'
 import { gerarDekCifrada } from '@/server/crypto/kek'
 import { AppError } from '@/server/http/errors'
 import { registrarEvento } from '@/server/services/product-events'
@@ -36,6 +37,12 @@ export type ParametrosOnboarding = {
    * antigo.
    */
   professionId?: string
+  /**
+   * `docs/82` §6: de onde a conta veio, lido do cookie de primeiro toque. Vai só para a trilha do
+   * funil (`conta_criada.meta`), nunca para o tenant — é pergunta do CICLO sobre si mesmo, não
+   * dado do negócio de ninguém.
+   */
+  origem?: Origem | null
 }
 
 export type ResultadoOnboarding = {
@@ -178,7 +185,10 @@ export async function executarOnboarding(
   // G-05a (docs/60): o primeiro dos dois eventos do funil mínimo. Depois deste ponto o tenant já
   // está completo (membership, profissional, chave, catálogo) — `registrarEvento` nunca lança,
   // então isto não pode desfazer o cadastro que acabou de suceder.
-  await registrarEvento(svc, tenant.id, 'conta_criada', { vertical: params.vertical })
+  await registrarEvento(svc, tenant.id, 'conta_criada', {
+    vertical: params.vertical,
+    ...(params.origem ? { origem: { canal: params.origem.canal, ref: params.origem.ref, em: params.origem.em } } : {}),
+  })
 
   return { tenant }
 }

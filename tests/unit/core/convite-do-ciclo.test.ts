@@ -47,6 +47,13 @@ describe('textoDoConviteDoCiclo', () => {
     expect(textoDoConviteDoCiclo(base)).toMatch(/^Oi! Eu uso/)
   })
 
+  it('nome de negócio feminino não sai com artigo errado ("aqui do Barbearia")', () => {
+    // Medido na tela Hoje em 2026-09-23: "os clientes aqui do Barbearia Origem E2E".
+    const texto = textoDoConviteDoCiclo({ ...base, nomeDoNegocio: 'Barbearia da Rua' })
+    expect(texto).not.toMatch(/ (do|no|ao) Barbearia/)
+    expect(texto).toContain('Barbearia da Rua')
+  })
+
   it('negócio sem nome não deixa buraco na frase', () => {
     // O tenant pode não ter `name` preenchido. Sem este ramo sairia "aqui do ." na cara do colega.
     const texto = textoDoConviteDoCiclo({ ...base, nomeDoNegocio: '   ' })

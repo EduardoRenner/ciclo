@@ -1,5 +1,6 @@
 'use client'
 
+import { Temporal } from '@js-temporal/polyfill'
 import Link from 'next/link'
 
 import { CalendarClock, Upload } from 'lucide-react'
@@ -8,9 +9,10 @@ import { useRef, useState, useTransition } from 'react'
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import { useToast } from '@/components/ui/toast'
+import { primeiraVolta } from '@/core/ciclo/primeira-volta'
 
 type Preview = { colunas: string[]; sample: Record<string, string>[] }
-type Previsao = { comDataInformada: number; jaDevendoVoltar: number; cyclesGravados: number }
+type Previsao = { comDataInformada: number; jaDevendoVoltar: number; cyclesGravados: number; proximaVolta: string | null }
 type Resultado = {
   imported: number
   skipped: { linha: number; motivo: string }[]
@@ -94,7 +96,7 @@ export default function Importador({ servicos }: { servicos: ServicoComRitmo[] }
         )
         const r = await enviarMultipart<Resultado>('/api/v1/clients/import', form)
         setResultado(r)
-        mostrarToast({ tom: 'ok', titulo: 'Importação concluída', descricao: `${r.imported} clientes importados.` })
+        mostrarToast({ tom: 'ok', titulo: 'Importação concluída', descricao: `${r.imported} ${r.imported === 1 ? 'cliente importado' : 'clientes importados'}.` })
       } catch (erro) {
         mostrarToast({ tom: 'erro', titulo: 'A importação falhou', descricao: (erro as Error).message })
       }
@@ -300,8 +302,35 @@ export default function Importador({ servicos }: { servicos: ServicoComRitmo[] }
                 })()
               ) : null}
 
+              {/*
+                Ninguém atrasado: sem este cartão a importação terminava em "N clientes importados"
+                e a aba Recuperar dizia "Todo mundo em dia" — nenhuma palavra do Motor. Mesma frase
+                da porta de memória (`core/ciclo/primeira-volta.ts`), docs/82 §16 rodada 17.
+              */}
+              {resultado.previsao &&
+              resultado.previsao.jaDevendoVoltar === 0 &&
+              resultado.previsao.cyclesGravados > 0 &&
+              resultado.previsao.proximaVolta ? (
+                (() => {
+                  const volta = primeiraVolta(resultado.previsao.proximaVolta, Temporal.Now.plainDateISO(), 'planilha')
+                  return (
+                    <Card className="border-acc-2/40 bg-acc-soft">
+                      <div className="flex items-start gap-3">
+                        <CalendarClock aria-hidden className="mt-0.5 size-6 shrink-0 text-acc-2" />
+                        <div>
+                          <p className="text-corpo font-semibold text-acc-2">{volta.titulo}</p>
+                          <p className="mt-1 text-secundario text-txt-2">{volta.descricao}</p>
+                        </div>
+                      </div>
+                    </Card>
+                  )
+                })()
+              ) : null}
+
               <Card>
-                <p className="text-corpo font-semibold">{resultado.imported} clientes importados</p>
+                <p className="text-corpo font-semibold">
+                  {resultado.imported} {resultado.imported === 1 ? 'cliente importado' : 'clientes importados'}
+                </p>
                 {resultado.skipped.length > 0 ? (
                   <p className="mt-1 text-secundario text-warn">{resultado.skipped.length} não importadas (duplicata)</p>
                 ) : null}

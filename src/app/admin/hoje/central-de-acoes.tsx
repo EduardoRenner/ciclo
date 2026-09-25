@@ -1,6 +1,6 @@
 'use client'
 
-import { ChevronRight, DollarSign, FileText, Gift, Scissors, Star, TrendingUp, UserPlus, UserX } from 'lucide-react'
+import { CalendarClock, ChevronRight, DollarSign, FileText, Gift, Scissors, Star, TrendingUp, UserPlus, UserX } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 
@@ -35,6 +35,9 @@ const ICONE: Record<string, typeof DollarSign> = {
   'inicio-servicos': Scissors,
   'inicio-clientes': UserPlus,
   'inicio-agenda': UserPlus,
+  // O mesmo relógio dos cartões de "quando o próximo volta" no "Já atendo" e na planilha.
+  'motor-de-olho': CalendarClock,
+  'motor-sem-ultima-visita': CalendarClock,
 }
 
 /** docs/62 Fase E1: piso de cards visíveis antes do "ver mais" — medido, 4 cards de sugestão
