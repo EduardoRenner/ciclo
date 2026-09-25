@@ -47,6 +47,10 @@ export type LinkDaBio = {
   href: string
   /** O cartão grande do topo. Só um: o gancho. */
   destaque?: boolean
+  /** Etiqueta curta sobre o título. Só no destaque: em mais de um cartão ela deixa de dizer por onde começar. */
+  selo?: string
+  /** O botão cheio: o objetivo da página (criar conta). Só um, senão nada se destaca. */
+  principal?: boolean
 }
 
 /**
@@ -61,12 +65,14 @@ export function linksDaBio({ slugDeDemonstracao }: { slugDeDemonstracao: string 
       descricao: 'Três números que você sabe de cabeça e a conta aparece. Sem cadastro.',
       href: linkComOrigem('/calculadora', 'instagram'),
       destaque: true,
+      selo: 'Comece por aqui',
     },
     {
       chave: 'cadastro',
       titulo: 'Criar minha conta',
       descricao: 'É grátis pra começar, sem cartão. Traga quem você já atende e veja quem sumiu.',
       href: linkComOrigem('/cadastro', 'instagram'),
+      principal: true,
     },
   ]
 

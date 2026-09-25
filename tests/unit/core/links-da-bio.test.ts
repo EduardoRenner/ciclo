@@ -48,6 +48,15 @@ describe('linksDaBio — a página que a bio do Instagram aponta', () => {
     expect(links[1]?.chave).toBe('cadastro')
   })
 
+  it('só o destaque tem etiqueta, e ela diz por onde começar', () => {
+    expect(links[0]?.selo).toBe('Comece por aqui')
+    expect(links.filter((l) => l.selo), 'etiqueta em mais de um cartão dilui o "comece por aqui"').toHaveLength(1)
+  })
+
+  it('o cadastro é o botão principal, o único marcado como tal', () => {
+    expect(links.filter((l) => l.principal).map((l) => l.chave)).toEqual(['cadastro'])
+  })
+
   it('todo link interno carrega a origem instagram, senão o canal some do placar', () => {
     expect(links.length, 'cenário não montado: nenhum link').toBeGreaterThan(3)
     for (const l of links) {
@@ -78,7 +87,7 @@ describe('linksDaBio — a página que a bio do Instagram aponta', () => {
   })
 
   it('copy sem travessão nem vocabulário proibido', () => {
-    const tudo = texto(...links.flatMap((l) => [l.titulo, l.descricao]))
+    const tudo = texto(...links.flatMap((l) => [l.titulo, l.descricao, l.selo ?? '']))
     expect(tudo).not.toContain('—')
     for (const p of PROIBIDAS) expect(tudo, `"${p}" entrou na página de links`).not.toContain(p)
   })
