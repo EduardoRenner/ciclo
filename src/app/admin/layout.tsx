@@ -13,7 +13,7 @@ import TabBar from '@/components/shell/tab-bar'
 import TransicaoDeTela from '@/components/shell/transicao-de-tela'
 import Topbar from '@/components/shell/topbar'
 
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 
 /** Painel de trabalho, não vitrine — nunca deve aparecer numa busca (Gate 10). */
 export const metadata: Metadata = {
@@ -60,6 +60,26 @@ export const dynamic = 'force-dynamic'
  * — então checar o `code` antes de redirecionar não manda pro onboarding quem só precisa trocar de
  * aba ou escolher qual negócio usar.
  */
+/**
+ * Cor da barra do navegador no painel, pelo mesmo cookie `ciclo-tema` que decide o `data-theme` abaixo.
+ * Sem isto a barra ficaria clara (padrão do layout raiz) sobre um painel que a pessoa escolheu escuro.
+ * `sistema` volta a seguir o aparelho: só aí a barra troca por `prefers-color-scheme`.
+ */
+export async function generateViewport(): Promise<Viewport> {
+  const cabecalhos = await headers()
+  const escolha = cabecalhos.get('cookie')?.match(/(?:^|;\s*)ciclo-tema=(claro|escuro|sistema)/)?.[1]
+  if (escolha === 'escuro') return { themeColor: '#0d0c0c' }
+  if (escolha === 'sistema') {
+    return {
+      themeColor: [
+        { media: '(prefers-color-scheme: dark)', color: '#0d0c0c' },
+        { media: '(prefers-color-scheme: light)', color: '#faf8f5' },
+      ],
+    }
+  }
+  return { themeColor: '#faf8f5' }
+}
+
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const cabecalhos = await headers()
   const ctx = await contextoAtual(new Request('https://interno/admin', { headers: cabecalhos })).catch((erro: unknown) => {
@@ -67,10 +87,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     return null
   })
   // Cookie `ciclo-tema` (o seletor em Configurações → Aparência grava): `claro` | `escuro` |
-  // ausente. O wrapper abaixo carrega isso como `data-theme`, e o CSS de `globals.css` decide a
-  // paleta a partir dali — no servidor, então não pisca. `sistema` deixa o `@media` resolver.
-  const temaSalvo = cabecalhos.get('cookie')?.match(/(?:^|;\s*)ciclo-tema=(claro|escuro)/)?.[1]
-  const dataTheme = temaSalvo === 'claro' ? 'light' : temaSalvo === 'escuro' ? 'dark' : 'sistema'
+  // `sistema` | ausente. O wrapper abaixo carrega isso como `data-theme`, e o CSS de `globals.css`
+  // decide a paleta a partir dali — no servidor, então não pisca.
+  //
+  // AUSENTE = CLARO (2026-09-23, pedido do Eduardo: "tudo no padrão claro"). Era `sistema`, e quem
+  // tinha o celular em escuro criava a conta numa tela clara e caía num painel escuro. `sistema`
+  // continua existindo, mas só quando a pessoa pede o Automático de propósito.
+  const temaSalvo = cabecalhos.get('cookie')?.match(/(?:^|;\s*)ciclo-tema=(claro|escuro|sistema)/)?.[1]
+  const dataTheme = temaSalvo === 'escuro' ? 'dark' : temaSalvo === 'sistema' ? 'sistema' : 'light'
 
   // O `<div>` abaixo pinta o próprio fundo; este `<style>` estende essa cor ao `<html>`/`<body>`
   // (ancestrais, fora do alcance da variável) para o rubber-band do celular não mostrar o escuro.

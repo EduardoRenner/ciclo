@@ -54,6 +54,11 @@ export const POST = rota(async (req) => {
     return new Response('Invalid signature', { status: 401 })
   }
 
+  if (evento.kind === 'ignorado') {
+    console.info(JSON.stringify({ level: 'info', event: 'whatsapp_webhook_ignorado', campo: evento.campo }))
+    return new Response('OK', { status: 200 })
+  }
+
   await withNovoTenant(async (svc) => {
     if (evento.kind === 'inbound') {
       const resultado = await processarMensagemRecebida(svc, evento)

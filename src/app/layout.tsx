@@ -69,14 +69,12 @@ export const metadata: Metadata = {
   },
 };
 
-// O escuro é o padrão; a barra do navegador acompanha o tema do sistema. A escolha explícita do
-// seletor não passa por aqui (viewport é estático) — o `seletor-de-tema` reescreve a
-// <meta name="theme-color"> quando troca.
+// O padrão do produto é CLARO (`docs/82` rodada 33/34), então a barra do navegador é clara para todo
+// mundo, inclusive para quem tem o aparelho em escuro: antes ela seguia o aparelho e ficava escura
+// sobre página clara. Quem escolheu Escuro (ou Automático) em Configurações recebe a barra certa do
+// `generateViewport` de `admin/layout.tsx`, que lê o cookie no servidor.
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: dark)", color: "#0d0c0c" },
-    { media: "(prefers-color-scheme: light)", color: "#faf8f5" },
-  ],
+  themeColor: "#faf8f5",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
