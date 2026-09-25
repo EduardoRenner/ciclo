@@ -81,6 +81,7 @@ describe('a mesma armadilha, em wrappers com style inline em vez de #raiz-do-tem
   const ARQUIVOS = [
     'src/components/shell/tela-publica.tsx',
     'src/app/page.tsx',
+    'src/app/(public)/links/page.tsx',
     'src/app/(public)/[slug]/layout.tsx',
     'src/app/(public)/precos/page.tsx',
     'src/app/(public)/privacidade/page.tsx',

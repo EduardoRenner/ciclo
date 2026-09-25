@@ -24,7 +24,8 @@ const PREFIXOS_PROTEGIDOS = ['/admin', '/onboarding']
  * `/onboarding`, `(auth)`, `[slug]`, `/api`) continua na CSP com nonce + `force-dynamic`.
  */
 // `/calculadora` (docs/82 §8): a conta roda no navegador, não lê sessão nem recebe credencial.
-const ROTAS_DE_CONTEUDO_ESTATICO = new Set(['/', '/precos', '/privacidade', '/termos', '/calculadora'])
+// `/links` (docs/82 rodada 35): a página que a bio do Instagram aponta é só cartões, sem sessão.
+const ROTAS_DE_CONTEUDO_ESTATICO = new Set(['/', '/precos', '/privacidade', '/termos', '/calculadora', '/links'])
 
 /** Ver `ROTAS_DE_CONTEUDO_ESTATICO`. Exportada para a guarda. */
 export function rotaDeConteudoEstatico(pathname: string): boolean {
