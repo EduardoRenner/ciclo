@@ -26,4 +26,6 @@ Você é o mantenedor do CICLO (repositório `C:\Users\Usuario\.claude\code\cicl
 
 ## Estado do loop
 (atualize ao fim de cada rodada: rodada atual, último alvo, pendências)
-- Rodada 1 (feita): alvo overflow 320 px descartado; achado e consertado acento claro/escuro da vitrine [slug] (docs/82 linha 36). Próximo: conferir telas de dentro do fluxo de agendamento com cor escolhida, depois outra classe (conversão do cadastro/calculadora).
+- Rodada 1 (feita): overflow 320 px descartado; acento da vitrine [slug] consertado (docs/82 linha 36).
+- Rodada 2 (feita): calculadora mostrava exemplo como se fosse número da pessoa; rótulo corrigido (linha 37).
+- Próximo: /cadastro e /links a 375 px em claro; depois telas de dentro do fluxo de agendamento com cor escolhida; depois auditar copy de erros públicos.
