@@ -195,8 +195,8 @@ export const perfilPublico = cache(async (slug: string): Promise<PerfilPublico> 
     // (`site.accent`, editável em /admin/config/negocio), nunca mais fixa por
     // profissão — era assim que cílios/sobrancelha nasciam roxo. Sem escolha,
     // osso; o schema já garante formato `#rrggbb` antes de chegar aqui, mas o
-    // `HEX.test` em `layout.tsx` é a segunda camada que nunca deixa nada além
-    // de hex válido virar `style` inline.
+    // `acentoNoTemaClaro` (que valida o hex de novo), no `layout.tsx`, é a segunda
+    // camada que nunca deixa nada além de hex válido virar `style` inline.
     const acc = site.accent ?? ACENTO_PADRAO.acc
 
     /*
