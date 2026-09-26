@@ -45,3 +45,55 @@ export const PALETA_PRESET: ReadonlyArray<{ nome: string; hex: string }> = [
   { nome: 'Dourado', hex: '#eab308' },
   { nome: 'Rosa', hex: '#f9a8d4' },
 ]
+
+/** O fundo da página pública (`html,body` do layout do `[slug]` e `--bg` do tema claro). */
+export const FUNDO_CLARO = '#faf8f5'
+
+/** Osso: o acento de fábrica. Feito para o fundo escuro, some sobre o fundo claro. */
+export const ACENTO_OSSO = '#f0ebe3'
+
+/** WCAG 2.1: razão de contraste entre duas cores hex (1 a 21). Hex inválido conta como branco. */
+export function contrasteWcag(a: string, b: string): number {
+  const [maior, menor] = [luminanciaRelativa(a), luminanciaRelativa(b)].sort((x, y) => y - x) as [number, number]
+  return (maior + 0.05) / (menor + 0.05)
+}
+
+function misturarComPreto(hex: string, fator: number): string {
+  const m = HEX.exec(hex)
+  if (!m) return hex
+  const canal = (h: string) =>
+    Math.round(parseInt(h, 16) * (1 - fator))
+      .toString(16)
+      .padStart(2, '0')
+  return `#${canal(m[1]!)}${canal(m[2]!)}${canal(m[3]!)}`
+}
+
+/**
+ * Escurece `hex` só o quanto falta para chegar a `minimo`:1 contra o fundo claro. Cor que já
+ * passa volta igual, para a marca do dono não mudar sem necessidade. Menta, rosa, lavanda e
+ * dourado (os presets) eram pensados para o fundo escuro: sobre o creme dão 1,2 a 2:1, e é nesse
+ * tom que a página pública pinta a aba ativa, o link e a data escolhida.
+ */
+export function corLegivelNoClaro(hex: string, minimo: number): string {
+  if (!HEX.test(hex)) return hex
+  for (let passo = 0; passo <= 100; passo += 2) {
+    const candidata = misturarComPreto(hex, passo / 100)
+    if (contrasteWcag(candidata, FUNDO_CLARO) >= minimo) return candidata
+  }
+  return '#000000'
+}
+
+/**
+ * O acento da página pública, que agora é clara. `null` para o osso de fábrica (ou hex inválido):
+ * o layout então NÃO sobrescreve nada e valem os tokens do tema claro (`--acc` #0b7d6f), que já
+ * foram medidos. Antes o osso era gravado por cima dentro de um wrapper claro: aba ativa, botão
+ * e dia escolhido saíam bege sobre creme, 1,1:1, em todo negócio que nunca escolheu cor.
+ *
+ * Com cor escolhida, `acc` (preenchimento de botão e dia) precisa de 3:1 contra o fundo e `acc2`
+ * (texto e borda) de 4,5:1.
+ */
+export function acentoNoTemaClaro(hex: string): { acc: string; acc2: string; onAcc: '#0d0c0c' | '#fffcf7' } | null {
+  if (!HEX.test(hex) || hex.toLowerCase() === ACENTO_OSSO) return null
+  const acc = corLegivelNoClaro(hex, 3)
+  return { acc, acc2: corLegivelNoClaro(hex, 4.5), onAcc: corDeContraste(acc) }
+}

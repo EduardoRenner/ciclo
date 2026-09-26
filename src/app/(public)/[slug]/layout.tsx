@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 
-import { corDeContraste } from '@/core/text/cor'
+import { acentoNoTemaClaro } from '@/core/text/cor'
 import { AppError } from '@/server/http/errors'
 import { perfilPublico } from '@/server/services/public-booking'
 
@@ -30,8 +30,6 @@ import { perfilPublico } from '@/server/services/public-booking'
  */
 export const dynamic = 'force-dynamic'
 
-const HEX = /^#[0-9a-f]{6}$/i
-
 export default async function LayoutSlug({
   children,
   params,
@@ -47,22 +45,23 @@ export default async function LayoutSlug({
   })
   if (!perfil) notFound()
 
-  // Fallback se o dono não escolheu cor (ou salvou um valor inválido): osso — o
-  // mesmo acento neutro do app (`docs/08-REDESIGN-E-IDENTIDADE.md` Parte II §3.3),
-  // nunca o roxo antigo por profissão (removido na migration 0033). Um salão sem
-  // cor configurada não deve herdar a marca de IA.
-  const acc = HEX.test(perfil.accentColor.acc) ? perfil.accentColor.acc : '#f0ebe3'
-  const acc2 = HEX.test(perfil.accentColor.acc2) ? perfil.accentColor.acc2 : '#fffcf7'
+  // Sem cor escolhida (osso de fábrica) ou valor inválido: `null`, e nada é sobrescrito: valem os
+  // tokens do tema claro. Nunca o roxo antigo por profissão (migration 0033): um salão sem cor não
+  // herda a marca de IA. Com cor escolhida, ela é escurecida só o necessário para ter contraste
+  // sobre o fundo claro (`acentoNoTemaClaro`).
+  const acento = acentoNoTemaClaro(perfil.accentColor.acc)
 
   return (
     <div
       data-theme="light"
       style={
         {
-          '--acc': acc,
-          '--acc-2': acc2,
-          '--acc-soft': `color-mix(in srgb, ${acc} 16%, transparent)`,
-          '--on-acc': corDeContraste(acc),
+          ...(acento && {
+            '--acc': acento.acc,
+            '--acc-2': acento.acc2,
+            '--acc-soft': `color-mix(in srgb, ${acento.acc} 16%, transparent)`,
+            '--on-acc': acento.onAcc,
+          }),
           color: 'var(--txt)',
           background: 'var(--bg)',
         } as React.CSSProperties
