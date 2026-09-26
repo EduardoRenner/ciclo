@@ -21,12 +21,22 @@ function paraInteiro(texto: string): number {
 /**
  * `docs/82` §8. Começa com números de exemplo (uma barbearia de cidade pequena) para o resultado
  * aparecer antes de a pessoa digitar qualquer coisa — um formulário vazio pede esforço antes de
- * mostrar por que vale a pena. O rótulo diz que é exemplo.
+ * mostrar por que vale a pena. Enquanto a pessoa não mexe em nada, o rótulo do resultado diz que é o
+ * exemplo e pede os números dela; depois de qualquer edição, vira "só com essas pessoas". Antes o
+ * rótulo era o mesmo nos dois casos, e quem tocava no botão sem digitar levava adiante um número que
+ * nunca foi dele.
  */
 export default function Calculadora() {
   const [clientes, setClientes] = useState(8)
   const [ticketCents, setTicketCents] = useState(3500)
   const [retorno, setRetorno] = useState(30)
+  const [mexeu, setMexeu] = useState(false)
+  const editar =
+    <T,>(definir: (valor: T) => void) =>
+    (valor: T) => {
+      setMexeu(true)
+      definir(valor)
+    }
 
   const resultado = calcularParado({ clientesSumidos: clientes, ticketCents, retornoDias: retorno })
 
@@ -66,7 +76,7 @@ export default function Calculadora() {
           type="text"
           inputMode="numeric"
           value={clientes === 0 ? '' : String(clientes)}
-          onChange={(e) => setClientes(paraInteiro(e.target.value))}
+          onChange={(e) => editar(setClientes)(paraInteiro(e.target.value))}
           classNameCampo="tabular"
         />
 
@@ -75,7 +85,7 @@ export default function Calculadora() {
           ajuda="O ticket médio. Exemplo: R$ 35,00."
           erro={erroTicket}
           centavos={ticketCents}
-          aoMudar={setTicketCents}
+          aoMudar={editar(setTicketCents)}
         />
 
         <fieldset className="flex min-w-0 flex-col gap-3">
@@ -84,7 +94,7 @@ export default function Calculadora() {
           </legend>
           <div className="flex flex-wrap gap-2">
             {RITMOS_COMUNS.map((dias) => (
-              <Chip key={dias} ligado={retorno === dias} onClick={() => setRetorno(dias)}>
+              <Chip key={dias} ligado={retorno === dias} onClick={() => editar(setRetorno)(dias)}>
                 {dias} dias
               </Chip>
             ))}
@@ -95,14 +105,16 @@ export default function Calculadora() {
             type="text"
             inputMode="numeric"
             value={retorno === 0 ? '' : String(retorno)}
-            onChange={(e) => setRetorno(paraInteiro(e.target.value))}
+            onChange={(e) => editar(setRetorno)(paraInteiro(e.target.value))}
             classNameCampo="tabular"
           />
         </fieldset>
       </section>
 
       <section className="rounded-[var(--radius)] border border-acc-2 bg-surface p-5 shadow-elevado">
-        <p className="text-secundario text-txt-2">Deixou de entrar, só com essas pessoas:</p>
+        <p className="text-secundario text-txt-2">
+          {mexeu ? 'Deixou de entrar, só com essas pessoas:' : 'Com os números de exemplo acima. Troque pelos seus:'}
+        </p>
         <p className="sr-only" role="status" aria-live="polite">
           {anuncio}
         </p>
