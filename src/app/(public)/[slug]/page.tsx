@@ -119,9 +119,9 @@ export default async function PaginaPublica({ params }: { params: Promise<{ slug
           role="status"
           className="mt-4 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-4 py-3 text-secundario text-txt-2"
         >
-          <span className="font-semibold text-txt">Página de exemplo do CICLO.</span> Este
-          estabelecimento não existe e nenhum horário marcado aqui será atendido, e ela está no ar
-          para mostrar como fica a página de quem usa o sistema.
+          <span className="font-semibold text-txt">Negócio de exemplo.</span> Ele não existe e nenhum
+          horário marcado aqui será atendido. A página está no ar para mostrar como fica a de quem
+          usa o CICLO.
         </p>
       ) : null}
       <SecoesPublicas perfil={perfil} />
