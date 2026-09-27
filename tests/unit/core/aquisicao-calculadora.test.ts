@@ -59,3 +59,23 @@ describe('toda entrada que calcularParado recusa tem frase na tela (revisão 202
   })
 })
 
+
+describe('o resultado de exemplo não se passa por número da pessoa (loop de melhoria, rodada 2)', () => {
+  const tela = readFileSync(join(__dirname, '..', '..', '..', 'src/app/(public)/calculadora/calculadora.tsx'), 'utf8')
+    .replace(/\r\n/g, '\n')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/^\s*\/\/.*$/gm, '')
+
+  it('o rótulo do exemplo existe, e o rótulo "só com essas pessoas" só vale depois de editar', () => {
+    expect(tela).toContain('Com os números de exemplo acima')
+    expect(tela).toMatch(/mexeu \? 'Deixou de entrar, só com essas pessoas:'/)
+  })
+
+  it('as quatro entradas passam por `editar`: nenhuma escreve o estado sem marcar que a pessoa mexeu', () => {
+    const chamadas = tela.match(/editar\(set(Clientes|TicketCents|Retorno)\)/g) ?? []
+    expect(chamadas.length, 'clientes, ticket, chip de retorno e retorno digitado').toBe(4)
+    // Toda chamada direta aos setters fica só dentro de `editar(...)`; solta, ela deixaria o rótulo de exemplo.
+    const soltas = tela.replace(/editar\(set\w+\)/g, '').match(/\bset(Clientes|TicketCents|Retorno)\(/g) ?? []
+    expect(soltas, 'setter chamado sem passar por `editar`').toEqual([])
+  })
+})

@@ -28,8 +28,8 @@ export default function AlternadorDeExemplo({
       <div role="tablist" className="grid grid-cols-2 gap-2 rounded-[var(--radius)] bg-surface-2 p-1">
         {(
           [
-            { chave: "cliente", rotulo: "O que quem agenda vê" },
-            { chave: "dono", rotulo: "O que você vê" },
+            { chave: "cliente", rotulo: "Visão de quem agenda" },
+            { chave: "dono", rotulo: "Visão de quem atende" },
           ] as const
         ).map((opcao) => (
           <button
@@ -48,10 +48,10 @@ export default function AlternadorDeExemplo({
         ))}
       </div>
 
-      <div id="painel-exemplo-cliente" role="tabpanel" aria-label="O que quem agenda vê" tabIndex={0} hidden={aba !== "cliente"}>
+      <div id="painel-exemplo-cliente" role="tabpanel" aria-label="Visão de quem agenda" tabIndex={0} hidden={aba !== "cliente"}>
         {visaoCliente}
       </div>
-      <div id="painel-exemplo-dono" role="tabpanel" aria-label="O que você vê" tabIndex={0} hidden={aba !== "dono"}>
+      <div id="painel-exemplo-dono" role="tabpanel" aria-label="Visão de quem atende" tabIndex={0} hidden={aba !== "dono"}>
         {visaoDono}
       </div>
     </div>

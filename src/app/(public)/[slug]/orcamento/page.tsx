@@ -47,8 +47,8 @@ export default async function PaginaDePedido({ params }: { params: Promise<{ slu
           role="status"
           className="mb-6 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-4 py-3 text-secundario text-txt-2"
         >
-          <strong className="font-semibold text-txt">Página de exemplo do CICLO.</strong> Este estabelecimento não existe e
-          nenhum pedido enviado aqui será respondido.
+          <strong className="font-semibold text-txt">Negócio de exemplo.</strong> Ele não existe e nenhum pedido
+          enviado aqui será respondido.
         </p>
       ) : null}
 

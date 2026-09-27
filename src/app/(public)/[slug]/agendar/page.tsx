@@ -92,9 +92,8 @@ export default async function PaginaAgendar({
           role="status"
           className="mb-6 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-4 py-3 text-secundario text-txt-2"
         >
-          <span className="font-semibold text-txt">Página de exemplo do CICLO.</span> Este
-          estabelecimento não existe: dá para percorrer o agendamento inteiro aqui, mas nenhum
-          horário marcado será atendido.
+          <span className="font-semibold text-txt">Negócio de exemplo.</span> Ele não existe: dá para
+          percorrer o agendamento inteiro, mas nenhum horário marcado será atendido.
         </p>
       ) : null}
 
