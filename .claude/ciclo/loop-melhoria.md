@@ -28,5 +28,6 @@ Você é o mantenedor do CICLO (repositório `C:\Users\Usuario\.claude\code\cicl
 (atualize ao fim de cada rodada: rodada atual, último alvo, pendências)
 - Rodada 1 (feita): overflow 320 px descartado; acento da vitrine [slug] consertado (docs/82 linha 36).
 - Rodada 2 (feita): calculadora mostrava exemplo como se fosse número da pessoa; rótulo corrigido (linha 37).
-- Rodadas 3 a 5 (feitas): contraste, copy e alvo de toque das páginas públicas, sem defeito (linha 38). PARADO pela condição das 3 rodadas.
-- Para retomar: (1) varredura do painel logado (Hoje, Clientes, Recuperar, Caixa, Agenda, Config) precisa de sessão da demo no navegador; (2) decisão do Eduardo sobre "grátis para sempre" na home e em /precos.
+- Rodadas 3 a 5 (feitas): contraste, copy e alvo de toque das páginas públicas, sem defeito (linha 38).
+- Rodada 6 (feita, pedido do Eduardo): página do exemplo, prints claros, copy, CTA (linha 39). O contador de rodadas sem defeito zerou.
+- Para retomar: (1) varredura do painel logado precisa de sessão da demo no navegador (negado uma vez pelo classificador); (2) decisão do Eduardo sobre "grátis para sempre" na home e em /precos.
