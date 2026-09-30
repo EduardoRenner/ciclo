@@ -280,6 +280,14 @@ export type ContextoDoTenant = {
   eixos: { [E in Eixo]?: ValorDoEixo[E] | null }
   /** `tenant_modules` com origem 'dono'. Ausente = o dono não mexeu, vale o padrão. */
   desligadosPeloDono?: readonly ModuloKey[]
+  /**
+   * A conta passou da cortesia e da graça sem assinar (docs/87 D1): lê e exporta tudo, não cria
+   * nada novo. Ausente = não pausada. Quem calcula é `situacaoDaConta` (`prelancamento.ts`).
+   *
+   * É um fato à parte de `plano` de propósito: o degrau continua sendo o que a pessoa ENXERGA
+   * (regra 5.1 — cair de degrau nunca esconde dado), e a pausa é só a trava de CRIAR.
+   */
+  contaPausada?: boolean
 }
 
 /**
@@ -431,6 +439,8 @@ export function verificarLimite(
  * essa distinção tenha um nome e um teste, em vez de virar um `if` esquecido numa rota.
  */
 export function podeCriar(ctx: ContextoDoTenant, recurso: Recurso, usoAtual: number, aAdicionar = 1): boolean {
+  // Conta pausada não cria nada, nem o que o limite suave deixaria passar.
+  if (ctx.contaPausada) return false
   const r = verificarLimite(ctx, recurso, usoAtual, aAdicionar)
   return r.severidade === 'suave' ? true : r.dentro
 }
