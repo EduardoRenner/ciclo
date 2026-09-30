@@ -19,23 +19,24 @@ export const POST = rota(async (req, _ctx, requestId) => {
   const entrada = await lerCorpo(req, EsquemaProduto)
   const db = await criarClienteDoUsuario()
 
-  const produto = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: '/api/v1/products' }, () =>
-    criarProduto(db, ctx.tenantId, entrada),
-  )
-
-  await writeAudit(
-    {
-      tenantId: ctx.tenantId,
-      actorId: ctx.sessao.userId,
-      actorRole: ctx.papel,
-      action: 'product.create',
-      entity: 'products',
-      entityId: produto.id,
-      after: produto,
-      requestId,
-    },
-    req,
-  )
+  // BL-42: writeAudit dentro do fechamento — ver o comentário em wallet/credit/route.ts.
+  const produto = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: '/api/v1/products' }, async () => {
+    const produto = await criarProduto(db, ctx.tenantId, entrada)
+    await writeAudit(
+      {
+        tenantId: ctx.tenantId,
+        actorId: ctx.sessao.userId,
+        actorRole: ctx.papel,
+        action: 'product.create',
+        entity: 'products',
+        entityId: produto.id,
+        after: produto,
+        requestId,
+      },
+      req,
+    )
+    return produto
+  })
 
   return produto
 })

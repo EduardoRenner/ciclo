@@ -18,22 +18,23 @@ export const DELETE = rota(async (req, params, requestId) => {
   if (!UUID.test(id)) throw new AppError('NOT_FOUND', { message: 'Essa folga não existe mais.' })
 
   const db = await criarClienteDoUsuario()
-  const resultado = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/time-off/${id}` }, () =>
-    removerFolga(db, ctx.tenantId, id),
-  )
-
-  await writeAudit(
-    {
-      tenantId: ctx.tenantId,
-      actorId: ctx.sessao.userId,
-      actorRole: ctx.papel,
-      action: 'time_off.delete',
-      entity: 'time_off',
-      entityId: id,
-      requestId,
-    },
-    req,
-  )
+  // BL-42: writeAudit dentro do fechamento — ver o comentário em wallet/credit/route.ts.
+  const resultado = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/time-off/${id}` }, async () => {
+    const resultado = await removerFolga(db, ctx.tenantId, id)
+    await writeAudit(
+      {
+        tenantId: ctx.tenantId,
+        actorId: ctx.sessao.userId,
+        actorRole: ctx.papel,
+        action: 'time_off.delete',
+        entity: 'time_off',
+        entityId: id,
+        requestId,
+      },
+      req,
+    )
+    return resultado
+  })
 
   return resultado
 })

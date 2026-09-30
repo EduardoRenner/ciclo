@@ -26,23 +26,24 @@ export const POST = rota(async (req, _params, requestId) => {
   const entrada = await lerCorpo(req, EsquemaModelo)
   const db = await criarClienteDoUsuario()
 
-  const modelo = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: '/api/v1/message-templates' }, () =>
-    criarModelo(db, ctx.tenantId, entrada),
-  )
-
-  await writeAudit(
-    {
-      tenantId: ctx.tenantId,
-      actorId: ctx.sessao.userId,
-      actorRole: ctx.papel,
-      action: 'message_template.create',
-      entity: 'message_templates',
-      entityId: modelo.id,
-      after: modelo,
-      requestId,
-    },
-    req,
-  )
+  // BL-42: writeAudit dentro do fechamento — ver o comentário em wallet/credit/route.ts.
+  const modelo = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: '/api/v1/message-templates' }, async () => {
+    const modelo = await criarModelo(db, ctx.tenantId, entrada)
+    await writeAudit(
+      {
+        tenantId: ctx.tenantId,
+        actorId: ctx.sessao.userId,
+        actorRole: ctx.papel,
+        action: 'message_template.create',
+        entity: 'message_templates',
+        entityId: modelo.id,
+        after: modelo,
+        requestId,
+      },
+      req,
+    )
+    return modelo
+  })
 
   return modelo
 })

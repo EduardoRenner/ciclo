@@ -113,6 +113,14 @@ async function clienteCompleto(nome: string) {
   if (servico.data) {
     const fila = await svc.from('waitlist').insert({ tenant_id: tenantId, client_id: clientId, service_id: servico.data.id, period_of_day: 'morning' }).select('id').single()
     if (fila.error) throw fila.error
+
+    // BL-48: previsão do Motor de Ciclo para a mesma pessoa — é o que `eliminarCliente` precisa
+    // apagar (achado desta sessão) e que a versão revertida (`f6f46acf`/`9bf0d1b8`) nunca chegou a
+    // provar com um caso de teste de verdade.
+    const ciclo = await svc
+      .from('client_cycles')
+      .insert({ tenant_id: tenantId, client_id: clientId, service_id: servico.data.id, personal_cycle_days: 21, state: 'late', late_days: 5 })
+    if (ciclo.error) throw ciclo.error
   }
 
   return { clientId, mediaId: media.id, storageKey: media.storage_key }
@@ -146,6 +154,9 @@ describe('eliminarCliente', () => {
       expect(resultado.healthRecordsRemoved).toBe(1)
       expect(resultado.mediaRemoved).toBe(1)
       expect(resultado.rowsRemoved.client_notes).toBe(1)
+      // BL-48: a previsão do Motor de Ciclo some junto — sem isto, "Cliente eliminada" continuava
+      // "atrasada para voltar" para sempre, recalculada toda madrugada pelo job.
+      expect(resultado.rowsRemoved.client_cycles).toBe(1)
 
       const saude = await svc.from('health_records').select('id').eq('tenant_id', tenantId).eq('client_id', clientId).maybeSingle()
       expect(saude.data).toBeNull()
@@ -178,6 +189,9 @@ describe('eliminarCliente', () => {
 
       const fila = await svc.from('waitlist').select('id').eq('client_id', clientId)
       expect(fila.data ?? []).toHaveLength(0)
+
+      const ciclos = await svc.from('client_cycles').select('service_id').eq('client_id', clientId)
+      expect(ciclos.data ?? []).toHaveLength(0)
 
       // O consentimento sobrevive (art. 16, III: prova de que houve permissão); o rastro pessoal não.
       const consentimento = await svc.from('consents').select('granted, version, ip, user_agent').eq('client_id', clientId).maybeSingle()

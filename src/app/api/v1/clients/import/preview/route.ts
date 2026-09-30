@@ -1,3 +1,4 @@
+import { COMO_SALVAR_EM_CSV, decodificarTexto, planilhaBinaria } from '@/core/text/decodificar-texto'
 import { exigirPermissao } from '@/server/auth/rbac'
 import { contextoAtual } from '@/server/auth/tenant'
 import { AppError } from '@/server/http/errors'
@@ -15,6 +16,9 @@ export const POST = rota(async (req) => {
   if (!(arquivo instanceof File)) throw AppError.validacao({ file: 'Envie um arquivo CSV.' })
   if (arquivo.size > TAMANHO_MAXIMO) throw AppError.validacao({ file: 'Arquivo maior que 5 MB.' })
 
-  const texto = await arquivo.text()
-  return preVisualizarCsv(texto)
+  // BL-51: mesma decodificação da importação — a prévia tem que mostrar o nome como ele vai entrar.
+  const bytes = await arquivo.arrayBuffer()
+  // docs/83 P4: planilha do Excel binária vira instrução de como salvar em CSV, não uma prévia de lixo.
+  if (planilhaBinaria(bytes)) throw AppError.validacao({ file: COMO_SALVAR_EM_CSV })
+  return preVisualizarCsv(decodificarTexto(bytes))
 })

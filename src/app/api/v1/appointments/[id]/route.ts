@@ -29,23 +29,24 @@ export const PATCH = rota(async (req, params, requestId) => {
 
   const { data: tenantRow } = await db.from('tenants').select('settings, timezone').eq('id', ctx.tenantId).single()
 
-  const agendamento = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/appointments/${id}` }, () =>
-    remarcarAgendamento(db, ctx.tenantId, tenantRow?.timezone ?? 'America/Sao_Paulo', id, entrada, tenantRow?.settings),
-  )
-
-  await writeAudit(
-    {
-      tenantId: ctx.tenantId,
-      actorId: ctx.sessao.userId,
-      actorRole: ctx.papel,
-      action: 'appointment.reschedule',
-      entity: 'appointments',
-      entityId: id,
-      after: agendamento,
-      requestId,
-    },
-    req,
-  )
+  // BL-42: writeAudit dentro do fechamento — ver o comentário em wallet/credit/route.ts.
+  const agendamento = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/appointments/${id}` }, async () => {
+    const agendamento = await remarcarAgendamento(db, ctx.tenantId, tenantRow?.timezone ?? 'America/Sao_Paulo', id, entrada, tenantRow?.settings)
+    await writeAudit(
+      {
+        tenantId: ctx.tenantId,
+        actorId: ctx.sessao.userId,
+        actorRole: ctx.papel,
+        action: 'appointment.reschedule',
+        entity: 'appointments',
+        entityId: id,
+        after: agendamento,
+        requestId,
+      },
+      req,
+    )
+    return agendamento
+  })
 
   return { appointment: agendamento }
 })
@@ -58,23 +59,24 @@ export const DELETE = rota(async (req, params, requestId) => {
   const entrada = await lerCorpo(req, EsquemaCancelar)
   const db = await criarClienteDoUsuario()
 
-  const agendamento = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/appointments/${id}` }, () =>
-    cancelarAgendamento(db, ctx.tenantId, id, entrada),
-  )
-
-  await writeAudit(
-    {
-      tenantId: ctx.tenantId,
-      actorId: ctx.sessao.userId,
-      actorRole: ctx.papel,
-      action: 'appointment.cancel',
-      entity: 'appointments',
-      entityId: id,
-      after: agendamento,
-      requestId,
-    },
-    req,
-  )
+  // BL-42: writeAudit dentro do fechamento — ver o comentário em wallet/credit/route.ts.
+  const agendamento = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/appointments/${id}` }, async () => {
+    const agendamento = await cancelarAgendamento(db, ctx.tenantId, id, entrada)
+    await writeAudit(
+      {
+        tenantId: ctx.tenantId,
+        actorId: ctx.sessao.userId,
+        actorRole: ctx.papel,
+        action: 'appointment.cancel',
+        entity: 'appointments',
+        entityId: id,
+        after: agendamento,
+        requestId,
+      },
+      req,
+    )
+    return agendamento
+  })
 
   // TICKET-034: um horário liberado avisa a próxima pessoa da lista de
   // espera daquele serviço. Roda por fora do envelope de resposta — mesmo

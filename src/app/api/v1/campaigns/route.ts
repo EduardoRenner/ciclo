@@ -20,23 +20,24 @@ export const POST = rota(async (req, _params, requestId) => {
   // já existe. Quem desce de degrau continua vendo o que registrou — o que trava é criar mais.
   await exigirModulo(db, ctx.tenantId, 'campaigns')
 
-  const campanha = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: '/api/v1/campaigns' }, () =>
-    registrarCampanha(db, ctx.tenantId, entrada),
-  )
-
-  await writeAudit(
-    {
-      tenantId: ctx.tenantId,
-      actorId: ctx.sessao.userId,
-      actorRole: ctx.papel,
-      action: 'campaign.create',
-      entity: 'campaigns',
-      entityId: campanha.id,
-      after: campanha,
-      requestId,
-    },
-    req,
-  )
+  // BL-42: `writeAudit` dentro do fechamento — ver o comentário em `wallet/credit/route.ts`.
+  const campanha = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: '/api/v1/campaigns' }, async () => {
+    const campanha = await registrarCampanha(db, ctx.tenantId, entrada)
+    await writeAudit(
+      {
+        tenantId: ctx.tenantId,
+        actorId: ctx.sessao.userId,
+        actorRole: ctx.papel,
+        action: 'campaign.create',
+        entity: 'campaigns',
+        entityId: campanha.id,
+        after: campanha,
+        requestId,
+      },
+      req,
+    )
+    return campanha
+  })
 
   return campanha
 })

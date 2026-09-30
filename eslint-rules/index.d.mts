@@ -11,6 +11,13 @@ import type { Rule } from 'eslint'
  * de execução para algo que o compilador já sabe. Nomeando, renomear a regra e esquecer o teste
  * vira erro de typecheck — piso melhor que um `throw`.
  */
-declare const plugin: { rules: { 'service-client-confinado': Rule.RuleModule } }
+declare const plugin: {
+  rules: {
+    'service-client-confinado': Rule.RuleModule
+    'writeaudit-dentro-do-idempotente': Rule.RuleModule
+    'dinheiro-em-centavos-inteiros': Rule.RuleModule
+    'sem-delete-em-tabela-append-only': Rule.RuleModule
+  }
+}
 
 export default plugin

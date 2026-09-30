@@ -1,0 +1,923 @@
+<title>Plano de escala CICLO</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* Mesmo formato do "Plano de distribuição": coluna única de 700px, papel, divisor perfurado, bolhas de chat. */
+  :root {
+    --paper: #f2efe4; --paper-2: #eae5d5; --paper-3: #e2dcc8;
+    --ink: #22241f; --ink-soft: #4b4a3f; --muted: #6d6656; --rule: #d7d0bd;
+    --accent: #0d8577; --accent-strong: #0a5f56; --accent-soft: #dcefe9;
+    --warn: #9a5a2c; --warn-soft: #f1e2d2;
+    --bubble: #dcefe9; --bubble-mine: #eae5d5;
+    --shadow: 0 1px 2px rgba(34,36,31,.06), 0 8px 24px -12px rgba(34,36,31,.2);
+    --display: "Fraunces", ui-serif, Georgia, serif;
+    --body: "Work Sans", ui-sans-serif, system-ui, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #191a16; --paper-2: #212219; --paper-3: #282a20;
+      --ink: #ece7d8; --ink-soft: #cbc5b2; --muted: #a39c88; --rule: #34322a;
+      --accent: #35c2ae; --accent-strong: #7fe0d0; --accent-soft: #17332e;
+      --warn: #d99a5c; --warn-soft: #2c2017; --bubble: #17332e; --bubble-mine: #282a20;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.55);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #191a16; --paper-2: #212219; --paper-3: #282a20;
+    --ink: #ece7d8; --ink-soft: #cbc5b2; --muted: #a39c88; --rule: #34322a;
+    --accent: #35c2ae; --accent-strong: #7fe0d0; --accent-soft: #17332e;
+    --warn: #d99a5c; --warn-soft: #2c2017; --bubble: #17332e; --bubble-mine: #282a20;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.55);
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html, body { background: var(--paper); }
+  body { margin: 0; color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 700px; margin: 0 auto; padding: 26px 20px 70px; }
+  .eyebrow { display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent-strong); margin: 0 0 10px; }
+  .eyebrow .dot { width: 6px; height: 6px; border-radius: 999px; background: var(--accent); flex: none; }
+  h1 { font-family: var(--display); font-weight: 600; font-size: clamp(30px, 8vw, 42px); line-height: 1.06; letter-spacing: -0.01em; margin: 0 0 10px; text-wrap: balance; }
+  .lede { margin: 0 0 6px; color: var(--ink-soft); max-width: 60ch; font-size: 17px; }
+  .lede b { color: var(--ink); }
+  .northstar { margin: 18px 0 4px; padding: 14px 16px; border-radius: 12px; background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--rule)); display: flex; gap: 12px; align-items: flex-start; }
+  .northstar .mk { font-family: var(--display); font-weight: 700; font-size: 20px; color: var(--accent-strong); flex: none; }
+  .northstar p { margin: 0; font-size: 14.5px; color: var(--ink-soft); }
+  .northstar strong { color: var(--ink); }
+  code { font-family: var(--mono); font-size: .9em; background: var(--paper-2); border: 1px solid var(--rule); border-radius: 4px; padding: .05em .35em; word-break: break-word; }
+  nav.jump { display: flex; gap: 8px; overflow-x: auto; margin: 22px 0 4px; padding-bottom: 4px; scrollbar-width: none; }
+  nav.jump::-webkit-scrollbar { display: none; }
+  nav.jump a { flex: none; font-family: var(--mono); font-size: 12px; color: var(--ink-soft); text-decoration: none; background: var(--paper-2); border: 1px solid var(--rule); border-radius: 999px; padding: 7px 12px; white-space: nowrap; }
+  nav.jump a:hover, nav.jump a:focus-visible { border-color: var(--accent); color: var(--accent-strong); }
+  .perf { display: flex; align-items: center; gap: 6px; margin: 34px 0 20px; }
+  .perf::before, .perf::after { content: ""; height: 1px; flex: 1; background: repeating-linear-gradient(to right, var(--rule) 0 6px, transparent 6px 11px); }
+  .perf .hole { width: 5px; height: 5px; border-radius: 999px; background: var(--rule); flex: none; }
+  section { margin: 0 0 8px; scroll-margin-top: 18px; }
+  .kicker { font-family: var(--mono); font-size: 11.5px; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); margin: 0 0 6px; }
+  h2 { font-family: var(--display); font-weight: 600; font-size: 23px; letter-spacing: -0.01em; margin: 0 0 6px; text-wrap: balance; }
+  .sectionlede { margin: 0 0 16px; color: var(--ink-soft); max-width: 62ch; font-size: 14.5px; }
+  .sectionlede b { color: var(--ink); }
+  .icprow { display: grid; grid-template-columns: 1fr auto; gap: 10px 14px; align-items: center; padding: 10px 0; border-bottom: 1px dashed var(--rule); }
+  .icprow:last-child { border-bottom: none; }
+  .icprow .name { font-weight: 600; font-size: 14.5px; min-width: 0; }
+  .icprow .name small { display: block; font-weight: 400; color: var(--muted); font-size: 12.5px; margin-top: 1px; }
+  .score { font-family: var(--display); font-weight: 700; font-size: 17px; color: var(--accent-strong); background: var(--accent-soft); border-radius: 8px; padding: 3px 10px; text-align: center; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .icprow.top .score { background: var(--accent); color: var(--paper); }
+  .tagrow { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 0; }
+  .tag { font-family: var(--mono); font-size: 12px; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--rule); color: var(--muted); background: var(--paper-2); }
+  .tag.free { border-color: var(--accent); color: var(--accent-strong); background: var(--accent-soft); }
+  .chanhead { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .chanbadge { width: 40px; height: 40px; border-radius: 10px; flex: none; background: var(--accent); color: var(--paper); display: grid; place-items: center; font-family: var(--display); font-weight: 700; font-size: 17px; }
+  .chanmeta { font-size: 12.5px; color: var(--muted); margin: 2px 0 0; }
+  .chanmeta b { color: var(--ink-soft); }
+  .steps { position: relative; margin: 0; padding: 0; list-style: none; }
+  .steps::before { content: ""; position: absolute; left: 17px; top: 4px; bottom: 4px; width: 1.5px; background: var(--rule); }
+  .step { position: relative; padding: 0 0 22px 48px; }
+  .step:last-child { padding-bottom: 0; }
+  .stepnum { position: absolute; left: 0; top: -2px; width: 36px; height: 36px; border-radius: 999px; background: var(--paper); border: 1.5px solid var(--accent); color: var(--accent-strong); font-family: var(--display); font-weight: 600; font-size: 15px; display: grid; place-items: center; }
+  .step h4 { margin: 2px 0 5px; font-weight: 700; font-size: 14.5px; }
+  .step p { margin: 0 0 8px; color: var(--ink-soft); font-size: 14px; }
+  .step p:last-child { margin-bottom: 0; }
+  .say { font-family: var(--mono); font-size: 13.5px; line-height: 1.5; color: var(--ink) !important; background: var(--accent-soft); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 9px 13px; }
+  .chatcard { background: var(--paper-2); border: 1px solid var(--rule); border-radius: 14px; padding: 13px 13px 15px; box-shadow: var(--shadow); margin-bottom: 12px; }
+  .chatwho { font-size: 12px; font-weight: 600; color: var(--muted); margin: 0 0 9px; display: flex; align-items: center; gap: 6px; justify-content: space-between; }
+  .chatwho .who { display: flex; align-items: center; gap: 6px; }
+  .chatwho .avatar { width: 19px; height: 19px; border-radius: 999px; background: var(--accent); color: var(--paper); font-family: var(--display); font-size: 10.5px; font-weight: 700; display: grid; place-items: center; flex: none; }
+  .chatwho .when { font-family: var(--mono); font-size: 10.5px; color: var(--muted); }
+  .bubble { background: var(--bubble-mine); border-radius: 13px 13px 3px 13px; padding: 9px 12px; font-size: 13.5px; line-height: 1.48; max-width: 94%; margin-left: auto; color: var(--ink); }
+  .bubble .var { color: var(--accent-strong); font-weight: 600; }
+  .bubble .link { display: block; margin-top: 5px; font-family: var(--mono); font-size: 11.5px; color: var(--accent-strong); word-break: break-all; }
+  .rulebox { margin-top: 10px; padding: 10px 13px; border-radius: 10px; background: var(--paper-3); border: 1px solid var(--rule); }
+  .rulebox .k { font-family: var(--mono); font-size: 10.5px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 5px; }
+  .rulebox ul, .rulebox ol { margin: 0; padding-left: 18px; }
+  .rulebox li { font-size: 13.5px; color: var(--ink-soft); margin-bottom: 4px; }
+  .rulebox li:last-child { margin-bottom: 0; }
+  .rulebox li b { color: var(--ink); }
+  .contentgrid { display: flex; flex-direction: column; gap: 10px; }
+  .ccard { background: var(--paper-2); border: 1px solid var(--rule); border-radius: 12px; padding: 12px 14px; }
+  .ccard .chead { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+  .ccard .fmt { font-family: var(--mono); font-size: 10.5px; letter-spacing: .04em; text-transform: uppercase; color: var(--accent-strong); background: var(--accent-soft); border-radius: 6px; padding: 2px 7px; flex: none; }
+  .ccard .wk { font-family: var(--mono); font-size: 10.5px; color: var(--muted); }
+  .ccard .hook { font-weight: 700; font-size: 14px; margin: 0 0 4px; }
+  .ccard p { margin: 0 0 4px; font-size: 13px; color: var(--ink-soft); }
+  .metricgrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 4px 0 14px; }
+  .metric { background: var(--paper-2); border: 1px solid var(--rule); border-radius: 10px; padding: 10px 12px; min-width: 0; }
+  .metric .mv { display: block; font-family: var(--display); font-weight: 700; font-size: 20px; color: var(--accent-strong); font-variant-numeric: tabular-nums; }
+  .metric .ml { font-size: 12px; color: var(--muted); }
+  .tablewrap { overflow-x: auto; margin: 0 0 12px; border: 1px solid var(--rule); border-radius: 10px; background: var(--paper-2); }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th, td { padding: 8px 10px; text-align: left; border-bottom: 1px dashed var(--rule); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  th { font-family: var(--mono); font-size: 10.5px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+  tr:last-child td { border-bottom: none; }
+  td.num { text-align: right; } th.num { text-align: right; }
+  td.hi { color: var(--accent-strong); font-weight: 700; }
+  td.lo { color: var(--warn); font-weight: 600; }
+  .weekcard { display: flex; gap: 14px; padding: 14px 0; border-bottom: 1px dashed var(--rule); }
+  .weekcard:last-child { border-bottom: none; }
+  .wnum { flex: none; width: 46px; height: 46px; border-radius: 10px; background: var(--paper-2); border: 1px solid var(--rule); display: grid; place-items: center; font-family: var(--display); font-weight: 700; font-size: 13px; color: var(--muted); text-align: center; line-height: 1.1; }
+  .weekcard.now .wnum { background: var(--accent); border-color: var(--accent); color: var(--paper); }
+  .wbody { min-width: 0; }
+  .wbody h4 { margin: 2px 0 6px; font-size: 14.5px; }
+  .wbody p { margin: 2px 0 0; font-size: 13.5px; color: var(--ink-soft); }
+  .critbox { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; }
+  .crit { border-left: 3px solid var(--rule); padding: 2px 0 2px 14px; }
+  .crit.go { border-color: var(--accent); }
+  .crit.stop { border-color: var(--warn); }
+  .crit .lab { font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); display: block; margin-bottom: 3px; }
+  .crit.go .lab { color: var(--accent-strong); }
+  .crit.stop .lab { color: var(--warn); }
+  .crit p { margin: 0; font-size: 13.5px; color: var(--ink-soft); }
+  .scalepath { display: flex; align-items: stretch; gap: 8px; margin: 8px 0 18px; flex-wrap: wrap; }
+  .citychip { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 10px; background: var(--paper-2); border: 1px solid var(--rule); flex: 1 1 140px; min-width: 0; }
+  .citychip.active { border-color: var(--accent); background: var(--accent-soft); }
+  .citychip .cn { font-family: var(--display); font-weight: 700; font-size: 15px; }
+  .citychip .cs { font-size: 12px; color: var(--muted); }
+  .warnbar { display: flex; gap: 12px; align-items: flex-start; background: var(--warn-soft); border: 1px solid color-mix(in srgb, var(--warn) 35%, var(--rule)); border-radius: 12px; padding: 14px 16px; }
+  .warnbar .mark { font-family: var(--display); font-weight: 700; font-size: 18px; color: var(--warn); flex: none; line-height: 1.3; }
+  .warnbar .warntext { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+  .warnbar p { margin: 0; color: var(--ink-soft); font-size: 14px; }
+  .warnbar strong { color: var(--ink); }
+  .src { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .src a { color: var(--accent-strong); }
+  .ccard ul { margin: 6px 0 0; padding-left: 18px; }
+  .ccard li { font-size: 13px; color: var(--ink-soft); margin-bottom: 3px; }
+  .ccard li b { color: var(--ink); }
+  .st { font-family: var(--mono); font-size: 10px; letter-spacing: .03em; text-transform: uppercase; padding: 1px 6px; border-radius: 5px; margin-left: 4px; white-space: nowrap; }
+  .st.new { color: var(--accent-strong); background: var(--accent-soft); }
+  .st.off { color: var(--warn); background: var(--warn-soft); }
+  .qbox { display: flex; flex-direction: column; gap: 8px; }
+  .q { background: var(--paper-2); border: 1px solid var(--rule); border-radius: 10px; padding: 11px 14px; font-size: 14px; }
+  .q b { display: block; margin-bottom: 2px; }
+  .q span { color: var(--ink-soft); font-size: 13px; }
+  footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--rule); font-family: var(--mono); font-size: 11.5px; letter-spacing: .03em; color: var(--muted); text-align: center; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  @media (max-width: 420px) { .metricgrid { grid-template-columns: 1fr; } }
+</style>
+
+<div class="wrap">
+
+  <div class="eyebrow"><span class="dot"></span>CICLO · plano de escala · 30/09/2026</div>
+  <h1>Por que o CICLO, e como ele chega a 100 pagantes gastando o mínimo</h1>
+  <p class="lede">Você começa a prospectar <b>agora</b>, continua <b>MEI</b>, dá <b>1 mês grátis sem cartão</b> e depois cobra
+    <b>R$ 49</b> (1 profissional) ou <b>R$ 99</b> (até 5). Investimento inicial <b>R$ 0</b>. O primeiro dinheiro entra em
+    <b>novembro</b>.</p>
+
+  <div class="northstar">
+    <span class="mk">→</span>
+    <p><strong>Métrica que manda:</strong> conta real em que uma cliente que o Motor apontou <strong>voltou</strong>
+      (<code>cliente_voltou</code>). É isso que faz o dono pagar no fim do mês grátis. Cadastro, visita e seguidor
+      só importam se levarem a esse número.</p>
+  </div>
+
+  <nav class="jump" aria-label="Ir para a seção">
+    <a href="#oque">O que é</a><a href="#resumo">Em 5 linhas</a><a href="#diferencial">Diferencial</a><a href="#tecnico">Técnico</a><a href="#funcoes">Tudo que faz</a><a href="#automacoes">Automações</a><a href="#campanha">Campanha</a><a href="#agente">Agente</a><a href="#junto">Já usa outro</a><a href="#mercado">Mercado</a><a href="#visao">Visão</a><a href="#parceiro">Para o parceiro</a><a href="#objecoes">Objeções</a><a href="#quem">Quem</a><a href="#oferta">Oferta</a><a href="#cobranca">Cobrança</a>
+    <a href="#custos">Custos</a><a href="#previsao">Previsão</a><a href="#metas">Metas</a><a href="#abordagem">Abordagem</a>
+    <a href="#conteudo">Conteúdo</a><a href="#placar">Placar</a><a href="#plano30">30 dias</a><a href="#escala">Escala</a>
+    <a href="#produto">Produto</a><a href="#riscos">Riscos</a><a href="#perguntas">Perguntas</a>
+  </nav>
+
+  <div class="perf"><span class="hole"></span></div>
+
+  <section id="oque">
+    <p class="kicker">Antes de qualquer número</p>
+    <h2>O que é o CICLO</h2>
+    <p class="sectionlede">O CICLO é um sistema para <b>quem vive de agenda e de cliente que volta</b>: barbeiro, salão, manicure, esteticista, e também faxineira, eletricista e personal. Roda no celular, em português, e tem <b>agenda, caixa, estoque e ficha de cliente</b> como qualquer sistema do tipo.</p>
+    <div class="rulebox">
+      <span class="k">O que muda</span>
+      <ul>
+        <li><b>O problema:</b> o dono não sabe quem sumiu. O cliente para de vir em silêncio, e ninguém percebe até o caixa cair.</li>
+        <li><b>O Motor de Ciclo:</b> aprende o ritmo de cada cliente (quem corta a cada 15 dias, quem faz coloração a cada 60) e avisa <b>quem passou da hora, e quanto isso vale em reais</b>.</li>
+        <li><b>A ação:</b> com um toque, o dono chama o cliente de volta pelo próprio WhatsApp, com a mensagem pronta.</li>
+        <li><b>A prova:</b> o sistema mostra quanto dinheiro voltou de quem foi chamado.</li>
+      </ul>
+    </div>
+    <p class="src" style="margin-top:8px">Em uma frase: <b>agenda que mostra quem sumiu e traz de volta.</b> O cliente paga R$ 49 (1 profissional) ou R$ 99 (até 5) por mês, depois de 1 mês grátis.</p>
+  </section>
+
+  <div class="perf"><span class="hole"></span></div>
+
+  <section id="resumo">
+    <p class="kicker">Para ler em 1 minuto</p>
+    <h2>Em 5 linhas</h2>
+    <div class="rulebox">
+      <ol>
+        <li><b>Você gasta pouco:</b> R$ 238 por mês de sistema, e só a partir do primeiro cliente pagando. Mais uns R$ 25 por dia de rua.</li>
+        <li><b>Com 5 pagantes o sistema se paga.</b> Com 13, paga também a gasolina da rua.</li>
+        <li><b>O pior momento é janeiro/27:</b> você terá tirado uns <b>R$ 1.200</b> do bolso. Separe <b>R$ 1.500</b>.</li>
+        <li><b>Em abril/27 você já recuperou tudo</b> (cenário do meio). Em dezembro/27 são uns 63 pagantes e R$ 3.800 por mês entrando.</li>
+        <li><b>O que decide:</b> quantos donos assinam no fim do mês grátis, e quantas contas novas você consegue pôr no ar por mês. Não é abordar mais gente.</li>
+      </ol>
+    </div>
+    <p class="src" style="margin-top:8px">Todos os números vêm de um cálculo refeito do zero e conferido contra a planilha <code>docs/modelo-financeiro-ciclo.xlsx</code> (bateram iguais). Taxas de funil são palpite até o seu primeiro mês de rua.</p>
+  </section>
+
+
+  <div class="perf"><span class="hole"></span></div>
+
+  <section id="diferencial">
+    <p class="kicker">Por que ele é diferente</p>
+    <h2>O que o CICLO faz que os outros não fazem</h2>
+    <p class="sectionlede">Todo sistema de salão marca horário e manda lembrete. Isso virou o mínimo, e existe até de graça.
+      O CICLO foi feito para outra coisa: <b>encontrar o dinheiro que o salão está perdendo sem ver</b>.</p>
+    <div class="icprow top"><span class="name">Ritmo de cada cliente, não uma regra igual para todos<small>os concorrentes marcam "sumido" com uma janela fixa (30, 45, 60 dias ou "6 semanas", mesmo o de IA avaliado em US$ 1,15 bi). O CICLO calcula quando CADA cliente costuma voltar, em CADA serviço, e aponta pelo nome quem passou da hora hoje, com o valor</small></span><span class="score">só ele</span></div>
+    <div class="icprow top"><span class="name">Prova de que funciona, com número do próprio salão<small>"dos 40 que previmos, 31 voltaram". Nenhum concorrente pesquisado mostra isso, e ninguém copia rápido: exige meses de histórico</small></span><span class="score">só ele</span></div>
+    <div class="icprow"><span class="name">Mapa de onde o dinheiro está vazando, com o botão para resolver<small>clientes sumidos, clube que dá prejuízo, serviço com margem baixa. Existe como artigo nos concorrentes, não como tela</small></span><span class="score">raro</span></div>
+    <div class="icprow"><span class="name">"E se eu subir o preço? E se eu contratar?" e testes que o dono liga<small>simulador e experimentos com os dados do próprio negócio. Não encontramos em nenhum software de agenda</small></span><span class="score">raro</span></div>
+    <div class="icprow"><span class="name">Assistente que não inventa número<small>roda num motor próprio, sem IA de terceiro: cada resposta sai de uma conta, custo zero por pergunta, e o dado do cliente não sai do CICLO</small></span><span class="score">raro</span></div>
+    <div class="icprow"><span class="name">O cliente é do salão, não da plataforma<small>o líder de nicho junta várias barbearias no mesmo app, e o cliente vê a concorrente do lado. No CICLO o link é só do salão</small></span><span class="score">+</span></div>
+    <div class="icprow"><span class="name">Mais barato e preço que não sobe com a equipe<small>R$ 49 e R$ 99 com tudo incluído, contra R$ 79,90 só com 1 profissional no líder</small></span><span class="score">+</span></div>
+    <div class="icprow"><span class="name">Não é só beleza<small>17 profissões prontas (faxina, eletricista, personal, banho e tosa...), onde os sistemas de agenda de salão não estão</small></span><span class="score">+</span></div>
+    <div class="rulebox">
+      <span class="k">A frase para o parceiro</span>
+      <ul><li>"Os outros vendem agenda. O CICLO mostra onde o dinheiro do salão está vazando, qual torneira fechar primeiro, e prova com o número do próprio salão."</li></ul>
+    </div>
+    <p class="src" style="margin-top:8px">Pesquisa de concorrentes de 05 a 28/09/2026 registrada no repo (<code>docs/43</code>, <code>docs/45</code>, <code>docs/52</code>, <code>docs/84</code>, <code>competitors/</code>).
+      O que "não encontramos" vem de buscas de mercado; não prova que não existe em lugar nenhum.</p>
+  </section>
+
+
+  <div class="perf"><span class="hole"></span></div>
+
+  <section id="tecnico">
+    <p class="kicker">Por baixo do capô</p>
+    <h2>Diferencial técnico: feito para ser confiável e crescer</h2>
+    <p class="sectionlede">Dono de salão confia no sistema com a agenda, o caixa e a lista de clientes. Por isso o CICLO foi construído com regras que quebram o build quando alguém erra, em vez de depender de boa vontade.</p>
+
+    <div class="metricgrid">
+      <div class="metric"><span class="mv">~3.700</span><span class="ml">testes automáticos (3.070 unitários, ~450 de banco, 213 de isolamento entre salões)</span></div>
+      <div class="metric"><span class="mv">20</span><span class="ml">documentos de auditoria e relatório de qualidade no repositório</span></div>
+      <div class="metric"><span class="mv">98</span><span class="ml">migrações de banco versionadas</span></div>
+      <div class="metric"><span class="mv">108</span><span class="ml">rotas de API, todas com a mesma camada de validação</span></div>
+    </div>
+
+    <h3 style="margin:18px 0 8px">Arquitetura</h3>
+    <div class="tablewrap" style="padding:10px">
+<pre class="mermaid">
+flowchart LR
+  D["Dono e equipe<br/>app no celular"]
+  C["Cliente do salão<br/>link só do salão"]
+  subgraph VE["Vercel, São Paulo"]
+    W["Next.js<br/>telas e API /api/v1"]
+    K["Motor de Ciclo e<br/>Motor de Inteligência<br/>funções puras"]
+    R["Rotas das rotinas"]
+  end
+  subgraph SU["Supabase"]
+    DB[("Postgres<br/>isolamento por salão")]
+    V["Cofre cifrado<br/>AES-256-GCM"]
+    Q["Fila de tarefas<br/>e pg_cron"]
+    F["Fotos"]
+  end
+  AG["Agendador externo"]
+  MP["Mercado Pago<br/>assinatura e Pix"]
+  WA["WhatsApp do dono<br/>um toque"]
+  EM["Resend<br/>e-mail"]
+  D --> W
+  C --> W
+  W --> K
+  W --> DB
+  DB --- V
+  DB --- Q
+  W --> F
+  AG --> R
+  Q -. segunda rede .-> R
+  R --> DB
+  W --> MP
+  MP -. aviso de pagamento .-> W
+  W --> WA
+  W --> EM
+</pre>
+    </div>
+    <div class="rulebox">
+      <ul>
+        <li><b>Uma camada só de regra:</b> o cálculo do Motor mora em funções puras, sem acesso ao banco, e por isso é testado sem subir nada.</li>
+        <li><b>O banco é a última barreira:</b> mesmo que uma tela erre, o Postgres recusa ler ou gravar dado de outro salão.</li>
+        <li><b>Tudo passa por uma porta:</b> toda gravação entra pela API com validação e chave de idempotência.</li>
+        <li><b>Rotina com plano B:</b> o agendador externo chama as rotinas, e o próprio banco tem uma segunda rede.</li>
+      </ul>
+    </div>
+    <h3 style="margin:18px 0 8px">Segurança</h3>
+    <div class="icprow top"><span class="name">Um salão nunca vê o dado de outro<small>isolamento por salão no próprio banco (RLS forçado em toda tabela), não só no código. Há 213 testes que tentam furar isso, e uma tabela nova sem a trava não passa no build</small></span><span class="score">banco</span></div>
+    <div class="icprow"><span class="name">Ficha de saúde cifrada, com chave por salão<small>AES-256-GCM, com chave própria de cada salão protegida por outra chave mestra, e rotação de chave testada. A chave em claro fica só na memória</small></span><span class="score">cofre</span></div>
+    <div class="icprow"><span class="name">Histórico não se apaga<small>agendamento, movimento de estoque, ficha de saúde e consentimento não aceitam DELETE pela API do banco. Estorno vira lançamento de compensação</small></span><span class="score">trilha</span></div>
+    <div class="icprow"><span class="name">Chave de serviço confinada a 1 arquivo<small>o acesso que ignora as travas só existe num lugar, e uma regra de lint reprova o build se aparecer em outro</small></span><span class="score">lint</span></div>
+    <div class="icprow"><span class="name">Links do cliente assinados e à prova de força bruta<small>confirmar, cancelar, aprovar orçamento: assinatura HMAC-SHA256, validade, escopo dentro da assinatura e comparação em tempo constante</small></span><span class="score">HMAC</span></div>
+    <div class="icprow"><span class="name">Login com verificação em 2 etapas, limite de tentativas, dado de saúde fora de log<small>o limite de requisições é compartilhado entre servidores (não por instância) e dado de saúde nunca vai para log ou monitor de erros</small></span><span class="score">2FA</span></div>
+    <div class="icprow"><span class="name">LGPD de verdade<small>exportar todos os dados de um cliente e eliminá-lo são rotas prontas; aceite dos termos guardado por versão, por conta</small></span><span class="score">LGPD</span></div>
+
+    <h3 style="margin:18px 0 8px">Quantas vezes foi auditado</h3>
+    <div class="rulebox">
+      <ul>
+        <li><b>Auditoria de segurança completa (fases A a N):</b> 20 achados, 12 corrigidos com um commit cada. Já tinha fechado uma falha crítica real (função que deixava escrever em qualquer salão).</li>
+        <li><b>Mais de 10 rodadas de auditoria e loops de qualidade:</b> produto, design e interface, falha silenciosa, banco de demonstração, lançamento, pendências, uma auditoria ampla, performance, texto da interface e a auditoria de pré-lançamento (dia 27/09, resultado: pode lançar, com ressalvas, todas registradas).</li>
+        <li><b>Achados que só aparecem olhando o produto no ar:</b> a equipe abre a página de verdade e mede, porque teste que passa não prova que funciona. Já pegou promessa falsa na tela, botão coberto e senha indo na URL.</li>
+        <li><b>Atualização de dependência com 2 falhas críticas</b> corrigida assim que a auditoria de CI as encontrou.</li>
+      </ul>
+    </div>
+
+    <h3 style="margin:18px 0 8px">Feito para crescer sem reescrever</h3>
+    <div class="icprow top"><span class="name">Um sistema, todos os salões<small>multi-tenant desde o dia 1: 250 contas cabem no mesmo servidor de R$ 238 por mês, e o custo por conta cai para menos de R$ 1 a partir de 500</small></span><span class="score">escala</span></div>
+    <div class="icprow"><span class="name">Escrita que não duplica nem se perde<small>toda gravação tem chave de idempotência: clicar duas vezes ou perder a rede não cria dois agendamentos</small></span><span class="score">rede</span></div>
+    <div class="icprow"><span class="name">Funciona com a rede ruim<small>aplicativo instalável no celular, fila de escrita offline e telas leves. O dono está no meio do expediente, não no escritório</small></span><span class="score">celular</span></div>
+    <div class="icprow"><span class="name">Rotinas com plano B<small>o cálculo diário do Motor roda por um agendador externo e por uma segunda rede dentro do banco, e há alarme se ficar parado</small></span><span class="score">cron</span></div>
+    <div class="icprow"><span class="name">Rápido de verdade<small>a tela "Hoje" e as previsões foram medidas e otimizadas (uma consulta em lote ficou 208 vezes mais rápida). Servidor em São Paulo</small></span><span class="score">medido</span></div>
+    <div class="icprow"><span class="name">Assistente sem custo e sem risco<small>roda num motor próprio: nenhum dado de cliente sai para IA de terceiro, e cada resposta sai de uma conta que dá para testar</small></span><span class="score">R$ 0</span></div>
+    <p class="src" style="margin-top:8px">Fontes no repositório: <code>docs/16-AUDITORIA-SEGURANCA.md</code>, <code>docs/29-SUPER-AUDITORIA.md</code>, <code>docs/66-AUDITORIA-AMPLA-PLANO.md</code>, <code>docs/70-RELATORIO-LOOP-PERFORMANCE.md</code>. Contagens medidas em 30/09/2026.
+      O que a auditoria não cobre: não foi teste de invasão contra produção, e a Supabase e a Vercel de produção ainda precisam ter o plano pago confirmado.</p>
+  </section>
+
+
+  <div class="perf"><span class="hole"></span></div>
+
+  <section id="funcoes">
+    <p class="kicker">O produto por dentro</p>
+    <h2>Tudo que o CICLO faz</h2>
+    <p class="sectionlede">Levantado no código em 30/09/2026. <span class="st new">pronto, não publicado</span> quer dizer que existe e passou nos testes, mas o site no ar ainda não recebeu.
+      <span class="st off">código pronto, desligado</span> quer dizer que existe e não roda em produção por falta de credencial ou de decisão.
+      O que não tem etiqueta está no código publicado.</p>
+    <div class="contentgrid">
+      <div class="ccard"><div class="chead"><span class="fmt">Motor</span><span class="wk">o coração</span></div><p class="hook">Motor de Ciclo</p><ul><li><b>Aprende o ritmo de cada cliente</b> em cada serviço (mediana dos intervalos entre visitas), sem regra igual para todos.</li><li>Marca cada cliente: <b>em dia, chegando, atrasado</b>, e calcula o <b>valor em risco</b> (quanto o atraso custa).</li><li><b>Previsão auditada:</b> registra o dia previsto da volta e compara com o que aconteceu ("dos 40 previstos, 31 voltaram"). Nunca é apagada.</li><li>Ordena a lista por quanto vale chamar; some da lista quem voltou; aceita cliente que já existia (importado ou de memória).</li><li>Recalcula todo dia por agendador externo, com uma segunda rede dentro do banco e alarme se parar.</li></ul></div><div class="ccard"><div class="chead"><span class="fmt">Motor</span><span class="wk">novo</span></div><p class="hook">Motor de Inteligência <span class="st new">pronto, não publicado</span></p><ul><li>O assistente <b>não usa IA de terceiro</b>: entende a frase por regra, consulta os números e responde por conta.</li><li>Explica <b>"por que caiu?"</b> decompondo o faturamento (atendimentos, ticket médio, quem não voltou).</li><li>Simula <b>"e se?"</b>: subir preço (3 cenários), contratar, abrir mais um dia, sempre com a premissa à mostra.</li><li>Lembra o contexto ("e no mês passado?"), e o <b>"resolve"</b> prepara a chamada de volta pelo WhatsApp do dono.</li><li>Quando não entende, diz que não entendeu e oferece botões. Conta o que não soube responder, sem guardar a pergunta.</li></ul></div><div class="ccard"><div class="chead"><span class="fmt">Painel</span><span class="wk">abre o dia</span></div><p class="hook">Hoje: a Central de Ações</p><ul><li>Faturado hoje, próximo cliente, agenda do dia e as <b>ações que valem dinheiro</b> (clientes sumindo, anotar custo, pendências).</li><li>Ordem que o dono escolheu no onboarding: a dor dele aparece primeiro. <span class="st new">pronto, não publicado</span></li><li>Alarme do Motor ("14 clientes passaram da hora") com botão direto para a lista.</li></ul></div><div class="ccard"><div class="chead"><span class="fmt">Painel</span><span class="wk">a tela do dinheiro parado</span></div><p class="hook">Recuperar</p><ul><li>A lista de quem passou da hora, com <b>nome, ritmo próprio ("vem a cada 24 dias, veio faz 41"), e valor</b>.</li><li>Mensagem pronta, um toque, abre o <b>WhatsApp do próprio dono</b>. Chama em lote quando o plano libera.</li><li>Marca quem voltou e mostra quanto dinheiro o Motor trouxe de volta no mês. Respeita o pedido de quem não quer ser chamado.</li></ul></div><div class="ccard"><div class="chead"><span class="fmt">Painel</span><span class="wk">onde o dinheiro escapa</span></div><p class="hook">O mês: lucro e mapa de vazamento <span class="st new">pronto, não publicado</span></p><ul><li><b>Mapa de vazamento:</b> clientes sumidos, clube que dá prejuízo, serviço com margem baixa, dependência de um profissional, agenda vazia com procura real.</li><li><b>Lucro de verdade:</b> quanto sobrou depois de material, taxa de pagamento, comissão e custo fixo; margem por serviço e por profissional.</li><li>Série mensal, concentração de receita e "sobrou" explicado linha a linha. Cadeira vazia só vira R$ quando há procura registrada.</li></ul></div><div class="ccard"><div class="chead"><span class="fmt">Painel</span><span class="wk">novo</span></div><p class="hook">Experimentos <span class="st new">pronto, não publicado</span></p><ul><li>O dono liga um teste ("3 horários extras na quinta por 14 dias"). O CICLO <b>registra o antes, mede o depois</b> e mostra o resultado com o tamanho da amostra.</li><li>Sem veredito enquanto roda, e sem prometer "comprovado".</li></ul></div><div class="ccard"><div class="chead"><span class="fmt">Agenda</span><span class="wk">sem conflito</span></div><p class="hook">Agenda</p><ul><li>Grade por profissional, criação rápida, encaixe, folga e <b>expediente de cada um</b>. O banco <b>impede dois clientes no mesmo horário</b> (constraint), não só a tela.</li><li><b>Recorrência:</b> série semanal ou mensal, cancelar uma ou a série.</li><li><b>Lista de espera:</b> quando abre um horário, o próximo da fila recebe o link para reivindicar.</li><li>Confirmar, chegou, concluiu, faltou (o sistema <b>sugere</b>, quem marca é o profissional). Pontuação de risco de falta por cliente.</li><li>Horários e fuso do salão respeitados (dia de mudança de horário incluído).</li></ul></div><div class="ccard"><div class="chead"><span class="fmt">Agenda</span><span class="wk">vitrine do cliente</span></div><p class="hook">Página do salão e agendamento pelo cliente</p><ul><li>Link próprio <b>só do salão</b>: serviços, preços, profissionais, fotos, avaliações. Sem concorrente ao lado.</li><li>O cliente agenda em 5 passos, nome e telefone; <b>sinal por Pix opcional</b> reduz falta.</li><li>Confirmar ou cancelar por link assinado, avaliar o atendimento, pedir orçamento.</li><li>O produto <b>registra quando alguém procurou horário e não achou</b> (demanda não atendida), sem dado pessoal.</li></ul></div><div class="ccard"><div class="chead"><span class="fmt">Clientes</span><span class="wk">CRM</span></div><p class="hook">Clientes e ficha</p><ul><li>Ficha com histórico, ritmo, o que costuma pedir, <b>dia da semana e profissional preferidos</b> <span class="st new">pronto, não publicado</span>, aniversário, notas, fotos, consentimentos.</li><li>Segmentos automáticos por comportamento, busca que perdoa acento, telefone padronizado.</li><li><b>Reconhece cliente que já existe</b> ao agendar. Convite de indicação: cliente que indica e cliente indicado ganham pontos.</li><li>Pedidos de LGPD: <b>exportar todos os dados</b> de um cliente ou eliminá-lo.</li></ul></div><div class="ccard"><div class="chead"><span class="fmt">Clientes</span><span class="wk">trazer a base</span></div><p class="hook">Importar, migrar, exportar</p><ul><li>Importa <b>planilha do Excel em português</b> (acentos, datas dd/mm/aaaa) e diz quantas linhas não entendeu antes de importar. Ao terminar, já mostra quem passou da hora.</li><li><b>"Quem eu já atendo":</b> digita nomes de memória ou cola uma lista, com "faz um mês" ou "uns 2 meses". Escolhe direto dos contatos do celular no Android.</li><li><b>"Vindo de outro sistema":</b> mensagem pronta para pedir a exportação ao suporte antigo, e as saídas "use junto", "traga agora" e "eu importo para você" <span class="st new">pronto, não publicado</span></li><li><b>Exportar toda a base</b> em planilha, quando quiser <span class="st new">pronto, não publicado</span></li></ul></div><div class="ccard"><div class="chead"><span class="fmt">Dinheiro</span><span class="wk">balcão</span></div><p class="hook">Comanda, caixa e pagamentos</p><ul><li>Comanda por atendimento: serviços, produtos de revenda, desconto <b>guardado em reais</b>, fechamento.</li><li>Caixa: fechamento do dia, receita por forma de pagamento, <b>taxa de cada forma</b> (maquininha, Pix) descontada no lucro.</li><li>Custo fixo do salão diluído por hora de cadeira. Todo dinheiro em centavos inteiros, com trilha de auditoria.</li><li>Cobrança da assinatura do próprio CICLO pelo Mercado Pago (assinar, cancelar, carência de 7 dias).</li></ul></div><div class="ccard"><div class="chead"><span class="fmt">Dinheiro</span><span class="wk">recorrência do salão</span></div><p class="hook">Pacotes, fidelidade e clube</p><ul><li><b>Pacotes</b> de sessões (receita reconhecida por sessão usada, não na venda), com vencimento.</li><li><b>Fidelidade</b> por pontos, com prêmio e bônus de indicação pago uma vez só.</li><li><b>Clube de assinatura</b> do salão (o cliente paga por mês) com controle de margem: avisa quando o clube dá prejuízo.</li></ul></div><div class="ccard"><div class="chead"><span class="fmt">Dinheiro</span><span class="wk">para serviço sob medida</span></div><p class="hook">Orçamentos</p><ul><li>Orçamento com link para o cliente <b>aprovar ou recusar</b>; vira comanda quando aprovado.</li><li>Modelos de preço: fixo, por hora, visita + hora, diária ou "sob orçamento", para quem não tem preço de tabela.</li></ul></div><div class="ccard"><div class="chead"><span class="fmt">Estoque</span><span class="wk">sem bloquear o atendimento</span></div><p class="hook">Produtos e ficha de consumo</p><ul><li>Produtos, entradas, <b>baixa automática</b> pelo que cada serviço consome, média móvel de custo.</li><li>Alerta de estoque baixo e ponto de pedido. <b>Nunca bloqueia atendimento</b> por estoque negativo. Estorno gera lançamento de devolução.</li></ul></div><div class="ccard"><div class="chead"><span class="fmt">Equipe</span><span class="wk">para 2 a 5 profissionais</span></div><p class="hook">Profissionais e comissão</p><ul><li>Cada profissional com agenda, serviços, folgas e expediente próprios; convite por link.</li><li><b>Extrato de comissão</b> por profissional, com o cliente de um não aparecendo para o outro quando o papel não deve ver.</li></ul></div><div class="ccard"><div class="chead"><span class="fmt">Mensagens</span><span class="wk">sem promessa falsa</span></div><p class="hook">Lembretes, campanhas e WhatsApp</p><ul><li><b>Hoje, no ar:</b> chamar cliente pelo WhatsApp do dono com um toque, com modelos de mensagem editáveis. Push para o dono no celular.</li><li>Lembretes automáticos, confirmação e campanha de reativação em massa: <span class="st off">código pronto, desligado</span> até o número de WhatsApp estar verificado e aquecido. O produto não promete o que não roda.</li><li>Antiabuso no cadastro, limite de mensagens por dia e pausa geral de envio.</li></ul></div><div class="ccard"><div class="chead"><span class="fmt">Onboarding</span><span class="wk">do cadastro ao primeiro valor</span></div><p class="hook">Cadastro e primeiros passos</p><ul><li>Três respostas e a página do salão está no ar, com o <b>catálogo da profissão</b> já carregado (17 profissões, mais uma opção genérica).</li><li>"Onde estão seus clientes hoje?" leva direto ao caminho certo (caderno, contatos, planilha, outro sistema) <span class="st new">pronto, não publicado</span></li><li>Perguntas que mudam a tela de verdade: "só eu" esconde equipe e comissão; a dor escolhida sobe primeiro no painel <span class="st new">pronto, não publicado</span></li><li>Aceite dos termos guardado por versão e por conta <span class="st new">pronto, não publicado</span></li></ul></div><div class="ccard"><div class="chead"><span class="fmt">Config</span><span class="wk">controle do dono</span></div><p class="hook">Configurações</p><ul><li>Negócio e cor do site, serviços (com ficha de consumo), profissionais, horários, mensagens, automações, taxas, custo fixo, notificações.</li><li><b>Módulos ligáveis e desligáveis</b> pelo dono. Planos com a regra "mostra o que o plano de cima faz, nunca esconde a tela".</li><li><b>Segurança:</b> verificação em 2 etapas. <b>Cofre:</b> ficha de saúde cifrada com registro de quem abriu. <b>Excluir conta.</b></li></ul></div><div class="ccard"><div class="chead"><span class="fmt">Público</span><span class="wk">gera cliente</span></div><p class="hook">Ferramentas abertas</p><ul><li><b>Calculadora "quanto custa quem sumiu":</b> o dono digita 3 números e vê o dinheiro parado por ano. Abre a visita.</li><li>Página de preços, termos, privacidade e "links" com origem medida (visita, WhatsApp, conteúdo, parceiro) para o placar.</li></ul></div><div class="ccard"><div class="chead"><span class="fmt">Plataforma</span><span class="wk">por baixo</span></div><p class="hook">O que sustenta tudo</p><ul><li><b>Aplicativo no celular:</b> instalável (PWA), com fila de escrita offline. Base do app nativo (Capacitor) pronta para Android e iOS.</li><li><b>Agendador:</b> 8 rotinas prontas (cálculo dos ciclos, segmentos, alertas de estoque, retenção de dados de LGPD, lembretes, campanhas, fila de tarefas, fim da carência). <b>Hoje 2 estão agendadas:</b> o cálculo dos ciclos e os segmentos. As outras ligam quando houver canal de envio e decisão. Há alarme se uma agendada parar.</li><li><b>Fila de tarefas</b> no próprio banco, tentativas com espera crescente. Medição de funil sem ferramenta de terceiro (eventos sem dado pessoal).</li><li>Origem de cada cadastro (visita, Instagram, parceiro) e <b>atribuição:</b> quanto dinheiro o Motor trouxe de volta no mês.</li></ul></div>
+    </div>
+    <div class="rulebox">
+      <span class="k">O que o CICLO não faz hoje (diga antes que perguntem)</span>
+      <ul>
+        <li>Não manda WhatsApp sozinho para o cliente. O dono chama com um toque.</li>
+        <li>Não tem integração automática com outros sistemas de agenda (só planilha) nem importa o histórico completo de atendimentos.</li>
+        <li>Não tem marketplace nem app do cliente final: o cliente usa o link do salão.</li>
+        <li>Ainda não está nas lojas de aplicativo (a base nativa existe).</li>
+      </ul>
+    </div>
+    <p class="src" style="margin-top:8px">Fonte: código-fonte (<code>src/app</code>, <code>src/core</code>, <code>src/server/services</code>, <code>src/app/api/cron</code>), <code>.claude/ciclo/product-map.md</code> e o histórico de commits até 30/09/2026.</p>
+  </section>
+
+
+  <div class="perf"><span class="hole"></span></div>
+
+  <section id="automacoes">
+    <p class="kicker">O produto que trabalha por você</p>
+    <h2>Automações e o dial de autonomia</h2>
+    <p class="sectionlede">Toda automação tem <b>três níveis</b>: <b>1 · Só me avisa</b> (encontra e mostra), <b>2 · Deixa pronto</b> (prepara e você toca em enviar) e <b>3 · Faz e me conta</b> (executa e registra). O padrão de fábrica é <b>sempre o 1</b>: o CICLO nunca automatiza em silêncio. Subir de nível é escolha do dono, uma automação por vez.</p>
+    <div class="contentgrid">
+      <div class="ccard"><div class="chead"><span class="fmt">Motor</span><span class="wk">sempre ligada</span></div><p class="hook">Motor de Ciclo</p><ul><li>Calcula quando cada cliente deve voltar e quanto está em risco. Só calcula e mostra, e <b>nunca fala com o cliente</b>. O dono não pode desligar: é a base do produto.</li></ul></div><div class="ccard"><div class="chead"><span class="fmt">Painel</span><span class="wk">sempre ligada</span></div><p class="hook">Vale a pena hoje</p><ul><li>Mostra na tela Hoje quem sumiu, quem faz aniversário e o que está parado. Nada sai da tela do dono.</li></ul></div><div class="ccard"><div class="chead"><span class="fmt">Dinheiro</span><span class="wk">níveis 1 a 3</span></div><p class="hook">Pontos automáticos</p><ul><li>A cada atendimento concluído os pontos entram sozinhos, sem ninguém lançar. Pode ir até "faz e me conta", porque só escreve na ficha de quem foi atendido.</li></ul></div><div class="ccard"><div class="chead"><span class="fmt">Estoque</span><span class="wk">nível 1</span></div><p class="hook">Aviso de reposição</p><ul><li>Avisa quando um produto bate o ponto de recompra. Fica em "só me avisa" para sempre: <b>comprar é decisão do dono, e o CICLO nunca gasta dinheiro por ele</b>.</li></ul></div><div class="ccard"><div class="chead"><span class="fmt">Mensagem</span><span class="wk">níveis 1 a 3 · <span class="st off">código pronto, desligado</span></span></div><p class="hook">Lembrete de horário</p><ul><li>Lembra o horário marcado e pede confirmação. Pode ir a "faz e me conta", porque é uma pessoa por vez, de um horário que ela mesma marcou. <span class="st off">código pronto, desligado</span></li></ul></div><div class="ccard"><div class="chead"><span class="fmt">Mensagem</span><span class="wk">níveis 1 e 2 · <span class="st off">código pronto, desligado</span></span></div><p class="hook">Campanha de recuperação</p><ul><li>Chama de volta quem passou da hora. <b>Teto no nível 2:</b> alcança várias pessoas de uma vez, então sempre espera o toque do dono. <span class="st off">código pronto, desligado</span></li></ul></div>
+    </div>
+    <div class="rulebox">
+      <span class="k">Por que isso é diferencial</span>
+      <ul>
+        <li><b>O teto de cada automação é decidido pelo risco, não pelo dono.</b> Mexe com dinheiro ou alcança várias pessoas de uma vez: nunca chega ao nível 3. A regra vale no servidor, então um pedido montado à mão também é cortado.</li>
+        <li><b>A tela diz a verdade.</b> Ela separa "o dono escolheu" de "o produto de fato executa hoje". Automação que depende de rotina desligada aparece como desligada, em vez de fingir que roda.</li>
+        <li><b>Um erro que atinge 1 cliente é constrangimento. Um que atinge 46 é a reputação do salão.</b> Por isso a campanha em lote sempre espera o toque.</li>
+      </ul>
+    </div>
+    <p class="src" style="margin-top:8px">Hoje, das 8 rotinas do sistema, <b>2 estão agendadas</b>: o cálculo dos ciclos e os segmentos. Lembrete, campanha e alerta de estoque existem e têm teste, mas esperam o canal de envio e a decisão de ligar.</p>
+  </section>
+
+  <div class="perf"><span class="hole"></span></div>
+
+  <section id="campanha">
+    <p class="kicker">O coração da receita</p>
+    <h2>Campanha de recuperação: o passo a passo</h2>
+    <p class="sectionlede">É a funcionalidade que transforma "quem sumiu" em dinheiro que volta. Foi desenhada para <b>chamar as pessoas certas, do jeito certo, sem queimar o número do salão</b>.</p>
+    <div class="contentgrid">
+      <div class="ccard"><div class="chead"><span class="fmt">Passo 1</span><span class="wk">quem entra</span></div><p class="hook">Escolhe pelo lucro, não pela receita</p><ul><li>Lista só quem está <b>chegando, atrasado, em risco ou perdido</b>. Quem está em dia nunca entra.</li><li>A ordem é pelo <b>lucro que sobra se a pessoa voltar</b>, já descontando material e taxa. Quem vale mais chamar aparece primeiro.</li><li><b>Uma linha por cliente:</b> quem atrasou em 3 serviços aparece uma vez, com o valor certo. Antes contava 149 "clientes" num salão de 55.</li><li>Cliente que vem todo mês <b>não entra</b> só porque uma progressiva de março atrasou.</li></ul></div><div class="ccard"><div class="chead"><span class="fmt">Passo 2</span><span class="wk">travas</span></div><p class="hook">Regras que protegem o salão</p><ul><li><b>7 dias</b> entre campanhas para o mesmo cliente e serviço.</li><li>Só entre <b>8h e 21h</b>. Fora disso a tela diz o motivo real, em vez de "deu erro".</li><li><b>Opt-out:</b> quem pediu para não receber nunca é chamado, e a tela nem oferece o botão.</li><li>No máximo 200 por rodada, e teto diário de mensagens com <b>pausa geral</b> de envio.</li><li>A tela mostra por que cada pessoa foi pulada (fora da janela, já chamada, pediu para parar).</li></ul></div><div class="ccard"><div class="chead"><span class="fmt">Passo 3</span><span class="wk">como sai</span></div><p class="hook">Mensagem pronta, dono no controle</p><ul><li><b>Hoje, no ar:</b> um toque abre o WhatsApp do próprio dono com o texto pronto, no número dele, de graça.</li><li>Modelos com o nome, o serviço e o salão, editáveis. Texto na voz do dono.</li><li>Envio em lote pelo sistema: <span class="st off">código pronto, desligado</span> (só com WhatsApp verificado). Se o WhatsApp falhar, o sistema tenta o push e o e-mail como reserva.</li><li>Nunca promete "chega sozinho" na tela enquanto a rotina não roda.</li></ul></div><div class="ccard"><div class="chead"><span class="fmt">Passo 4</span><span class="wk">resultado</span></div><p class="hook">Prova em dinheiro</p><ul><li><b>Atribuição:</b> mede quanto dinheiro voltou de quem foi chamado, e mostra "o Motor trouxe R$ X este mês".</li><li>A previsão de volta fica registrada antes e nunca é apagada. Depois se compara com o que aconteceu.</li><li>Alimenta o <b>experimento</b>: o dono liga um teste e vê o antes e o depois com o tamanho da amostra <span class="st new">pronto, não publicado</span></li></ul></div>
+    </div>
+    <div class="rulebox">
+      <span class="k">O que os concorrentes fazem, e o que o CICLO faz</span>
+      <ul>
+        <li><b>Janela fixa igual para todo mundo</b> (30, 45, 60 dias): quem corta a cada 15 dias e sumiu há 28 nem aparece, e quem faz coloração a cada 60 é chamado cedo demais. O CICLO usa o ritmo de cada cliente.</li>
+        <li><b>Ordem por lucro em risco</b>, com desconto de material e taxa, não por valor bruto.</li>
+        <li><b>Respeito antes de volume:</b> 7 dias, janela de horário, opt-out e pausa geral. O número do salão é o ativo mais caro dele.</li>
+        <li><b>Prova de retorno em reais</b>, com a previsão registrada antes do resultado.</li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="perf"><span class="hole"></span></div>
+
+  <section id="agente">
+    <p class="kicker">O assistente do dono</p>
+    <h2>O agente: pergunta, e ele faz a conta</h2>
+    <p class="sectionlede">Roda no <b>Motor de Inteligência</b> do próprio CICLO, sem depender de IA de terceiro. Entende o domínio do negócio (agenda, clientes, dinheiro, recuperação, estoque, orçamento), responde com números que saem de uma conta e <b>prepara ações que o dono confirma</b>. <span class="st new">pronto, não publicado</span></p>
+    <div class="contentgrid">
+      <div class="ccard"><div class="chead"><span class="fmt">Ler</span><span class="wk">12 perguntas</span></div><p class="hook">O que o agente responde</p><ul><li>Resumo de hoje, clientes para recuperar, buscar cliente, histórico do cliente, faturamento do período, ocupação do dia, orçamentos parados, alertas de estoque.</li><li><b>"Por quê caiu?"</b> decompõe o faturamento em atendimentos e ticket médio, e diz quantos que costumam voltar ainda não voltaram <span class="st new">pronto, não publicado</span></li><li><b>"E se eu subir o preço?"</b> em 3 cenários, e <b>"e se eu contratar?"</b> pelo que sobra. A premissa fica à mostra, e a decisão de quantos deixam de vir é do dono.</li><li><b>"Onde tem procura sem horário?"</b>: mostra a demanda que ficou sem vaga, antes de o dono abrir mais um dia.</li></ul></div><div class="ccard"><div class="chead"><span class="fmt">Preparar</span><span class="wk">6 ações</span></div><p class="hook">O que o agente prepara</p><ul><li>Marcar horário, concluir atendimento, cadastrar cliente, lançar item na comanda, anotar na ficha e <b>chamar de volta</b>.</li><li>Ele <b>só prepara</b>. Mostra um cartão com o que vai fazer, e nada acontece até o dono tocar em confirmar.</li><li>O <b>"resolve"</b> vira a chamada de volta pelo WhatsApp do dono, com a mesma lista, texto e permissão da tela Recuperar <span class="st new">pronto, não publicado</span></li></ul></div><div class="ccard"><div class="chead"><span class="fmt">Regras</span><span class="wk">não inventa</span></div><p class="hook">Como ele se comporta</p><ul><li>Cada resposta sai de uma <b>conta</b>. Se a conta não fecha, ele diz "não sei" e oferece botões. Nunca chuta.</li><li>Empate ("qual Maria?") vira <b>pergunta</b>, não escolha por conta própria.</li><li><b>Respeita o plano e o papel:</b> só enxerga o que aquela pessoa pode ver. Quando falta um módulo, diz qual e por quê, em vez de responder "está tudo certo".</li><li><b>Dado de saúde nunca entra.</b> E nenhum dado do salão sai do CICLO para IA de terceiro.</li><li>Teto de uso por negócio e por pessoa, para o custo nunca surpreender. Custo por pergunta: zero.</li></ul></div><div class="ccard"><div class="chead"><span class="fmt">Regras</span><span class="wk">medido</span></div><p class="hook">Qualidade do agente</p><ul><li>Cada pergunta tem resposta esperada em teste, e uma frase errada vira caso de teste antes do conserto.</li><li>Responde em milissegundos (antes, com IA externa, levava de 2 a 8 segundos).</li><li>Conta o que não soube responder, <b>sem gravar a pergunta</b>, para saber o que ensinar a seguir.</li></ul></div>
+    </div>
+    <div class="rulebox">
+      <span class="k">Por que não usar IA de terceiro, e como o CICLO se compara</span>
+      <ul>
+        <li><b>Não inventa número:</b> a IA generativa pode "confabular" quando não vê um dado. Aqui cada frase sai de uma conta, e um teste garante isso.</li>
+        <li><b>Custo zero por pergunta</b> e sem cota nem chave de terceiro. Antes, sem a chave, o botão sumia para todo mundo.</li>
+        <li><b>Privacidade:</b> nenhum dado de cliente sai do servidor. Houve um incidente real de dado de saúde indo para a IA externa; isso deixou de ser possível.</li>
+        <li><b>Testável e previsível:</b> a mesma pergunta dá a mesma resposta no mesmo dia.</li>
+        <li><b>Limite honesto:</b> entende o domínio do negócio, não qualquer frase. O que não entende, ele diz.</li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="perf"><span class="hole"></span></div>
+
+  <section id="junto">
+    <p class="kicker">Sem trocar de sistema</p>
+    <h2>Quem já usa AppBarber, Belasis ou outro</h2>
+    <p class="sectionlede">Trocar de sistema dá medo: perder histórico, a equipe não usar, ficar preso. O CICLO resolve isso com <b>três saídas</b>. A primeira nem exige trocar.</p>
+    <div class="icprow top"><span class="name">1. Use junto, por enquanto<small>continua marcando horário no sistema de hoje. O CICLO fica só de olho em quem está sumindo, e você chama pelo seu WhatsApp. Ninguém precisa mudar de hábito</small></span><span class="score">sem risco</span></div>
+    <div class="icprow"><span class="name">2. Traga a base agora, na hora<small>importa planilha com nome, telefone e data da última visita; entende o formato do Excel em português e datas dd/mm/aaaa. A lista de quem passou da hora aparece no mesmo minuto</small></span><span class="score">5 min</span></div>
+    <div class="icprow"><span class="name">3. Eu importo para você<small>manda a lista pelo WhatsApp que a gente importa e apaga o arquivo depois</small></span><span class="score">grátis</span></div>
+    <div class="rulebox">
+      <span class="k">Sem ficar preso</span>
+      <ul>
+        <li><b>Exportar tudo, quando quiser:</b> um botão baixa todos os clientes em planilha. "Trouxe na hora, levo na hora."</li>
+        <li><b>Mensagem pronta</b> para pedir a exportação ao suporte do sistema antigo (nome, telefone e data do último atendimento).</li>
+        <li><b>Nada de comparar nome de concorrente na tela.</b> A prova é a lista do próprio salão, feita no minuto da importação.</li>
+        <li><b>Limite honesto:</b> hoje é por planilha. <b>Não há integração automática</b> com AppBarber ou Belasis, e o histórico completo de atendimentos não é importado (só a última visita, que é o que o Motor precisa para começar).</li>
+      </ul>
+    </div>
+    <p class="sectionlede" style="margin-top:12px"><b>O argumento que funciona:</b> "seu sistema atual mostra quem não voltou depois que a janela fechou, e só se você abrir o relatório. O CICLO calcula o ritmo de cada cliente e lista, pelo nome, quem passou da hora hoje."</p>
+  </section>
+
+  <div class="perf"><span class="hole"></span></div>
+
+  <section id="mercado">
+    <p class="kicker">Tamanho do jogo</p>
+    <h2>O mercado</h2>
+    <div class="metricgrid">
+      <div class="metric"><span class="mv">1,13 milhão</span><span class="ml">salões de beleza ativos no Brasil</span></div>
+      <div class="metric"><span class="mv">235 mil</span><span class="ml">abertos só em 2025 (+17,9%); 94% MEI</span></div>
+      <div class="metric"><span class="mv">&lt; 30%</span><span class="ml">usam sistema de gestão; o resto usa caderno e memória</span></div>
+      <div class="metric"><span class="mv">R$ 8 mi/ano</span><span class="ml">se 1% dos salões pagar o preço médio (conta simples, não previsão)</span></div>
+    </div>
+    <p class="sectionlede">O concorrente principal não é outro sistema: é o caderno. E todo ano chegam 235 mil negócios novos que ainda não escolheram nada.
+      A conta dos R$ 8 milhões é 1,13 milhão × 1% × R$ 61,50 × 12, só para mostrar o tamanho; o plano de verdade é o da Previsão.</p>
+    <p class="src"><a href="https://agenciasebrae.com.br/cultura-empreendedora/a-cada-hora-27-negocios-de-beleza-sao-abertos-no-pais-crescimento-foi-de-185-em-2025/" target="_blank" rel="noreferrer">Agência Sebrae</a> · <a href="https://www.uai.com.br/networking-e-negocios/2026/09/18/maioria-dos-saloes-de-beleza-no-brasil-fatura-menos-de-r-50-mil-por-mes-aponta-levantamento/" target="_blank" rel="noreferrer">Sebrae via UAI, 18/09/2026</a></p>
+  </section>
+
+  <div class="perf"><span class="hole"></span></div>
+
+  <section id="visao">
+    <p class="kicker">Depois dos primeiros 100</p>
+    <h2>Visão: o software é a porta, não o teto</h2>
+    <p class="sectionlede">Com a base dentro, o CICLO sabe quem sumiu, quanto vale, e quanto o salão fatura. Isso abre camadas de receita que um sistema de agenda comum não consegue vender.
+      <b>Nenhuma entra na previsão acima</b>: são hipóteses para depois de ~100 pagantes.</p>
+    <div class="contentgrid">
+      <div class="ccard"><div class="chead"><span class="fmt">Camada 1</span><span class="wk">já existe</span></div>
+        <p class="hook">Software: R$ 49 e R$ 99 por mês</p><p>A base de tudo. Margem alta: o sistema custa R$ 238 por mês até ~250 contas.</p></div>
+      <div class="ccard"><div class="chead"><span class="fmt">Camada 2</span><span class="wk">depois de 30 pagantes</span></div>
+        <p class="hook">Serviço vendido pelo software</p><p>"A gente chama seus clientes sumidos por você", importação feita pela equipe, consultoria de preço com os números do próprio salão. O software mostra o problema; o serviço resolve e cobra por isso (por mês, ou por cliente que voltou).</p></div>
+      <div class="ccard"><div class="chead"><span class="fmt">Camada 3</span><span class="wk">depois de 100</span></div>
+        <p class="hook">Comunidade e curso</p><p>"Gestão da cadeira" para dono de salão e barbearia: preço, retorno, fidelidade. O curso vende o CICLO, e o CICLO dá os números reais que o curso ensina a usar. Os donos que já usam viram prova e professores.</p></div>
+      <div class="ccard"><div class="chead"><span class="fmt">Camada 4</span><span class="wk">depois de 100, com CNPJ e parceiro financeiro</span></div>
+        <p class="hook">Dinheiro passando pelo CICLO</p><p>Sinal por Pix no agendamento (reduz falta), pagamento do cliente e do clube. Modelo de quem cobra um pedaço de cada pagamento em vez de mensalidade. Exemplo só para escala: 100 salões movimentando R$ 20 mil por mês cada, a 0,5%, dariam R$ 10 mil por mês. <b>Hipótese</b>, depende de parceiro de pagamento e de regulação.</p></div>
+      <div class="ccard"><div class="chead"><span class="fmt">Camada 5</span><span class="wk">com volume e parecer jurídico</span></div>
+        <p class="hook">Dados da cidade</p><p>"Em barbearias como a sua, o cliente volta a cada 28 dias e o corte custa entre R$ X e R$ Y". Números agregados e sem nome, que ficam melhores a cada salão novo. Só com a cláusula nos termos aprovada por advogado.</p></div>
+    </div>
+  </section>
+
+  <div class="perf"><span class="hole"></span></div>
+
+  <section id="parceiro">
+    <p class="kicker">Para a conversa de hoje</p>
+    <h2>Por que investir no CICLO</h2>
+    <div class="rulebox">
+      <span class="k">Os 6 motivos</span>
+      <ol>
+        <li><b>O produto está pronto e é robusto:</b> ~3.700 testes automáticos, mais de 10 auditorias, isolamento entre salões testado 213 vezes, ficha de saúde cifrada, e já funciona do cadastro até "quem sumiu" e "chamar".</li>
+        <li><b>Diferencial que não se copia rápido:</b> o ritmo de cada cliente e a prova com número do salão dependem de tempo e de dado acumulado.</li>
+        <li><b>Mercado enorme e sem dono:</b> 1,13 milhão de salões, 70% no caderno, 235 mil novos por ano.</li>
+        <li><b>Custo baixíssimo:</b> R$ 238 por mês de sistema até ~250 contas. Quase toda assinatura vira margem.</li>
+        <li><b>Risco pequeno:</b> no pior cenário, a perda até dez/28 é de uns R$ 7.500. No do meio, o dinheiro volta em abril/27.</li>
+        <li><b>Várias camadas de receita depois do software</b> (serviço, curso, pagamentos, dados).</li>
+      </ol>
+    </div>
+    <p class="sectionlede" style="margin:14px 0 4px"><b>As 5 objeções que ele vai fazer primeiro, e a resposta:</b></p>
+    <div class="critbox" style="margin:16px 0 4px">
+      <div class="crit stop"><span class="lab">Objeção 1 · "Não tem nenhum pagante"</span><p><b>Quebra:</b> é verdade, então o pedido é pequeno e a prova é rápida. Em 30 dias de rua você tem as primeiras assinaturas pedidas, e o pior momento do caixa é ~R$ 1.200. Combine marcos: 30 contas ativas em 30 dias, 5 pagantes em 60. Não bateu, para.</p></div>
+      <div class="crit"><span class="lab">Objeção 2 · "Já tem Trinks, AppBarber e agenda de graça"</span><p><b>Quebra:</b> ninguém paga por agenda, paga pelo dinheiro que volta. Os outros usam janela fixa de 30 a 60 dias; o CICLO calcula o ritmo de cada cliente e lista pelo nome quem sumiu, com o valor. E 70% dos salões nem usam sistema: o rival é o caderno.</p></div>
+      <div class="crit go"><span class="lab">Objeção 3 · "O dono não vai largar o sistema que já usa"</span><p><b>Quebra:</b> não precisa largar. O CICLO funciona ao lado e só mostra quem está sumindo. Sem migração e sem treinar equipe. E se quiser trazer a base, entra em 5 minutos e sai com um botão.</p></div>
+      <div class="crit stop"><span class="lab">Objeção 4 · "É um negócio de uma pessoa só"</span><p><b>Quebra:</b> é o risco mais real, e por isso o pedido é um parceiro. O código é documentado (98 migrações, 3.700 testes, roteiros de suporte e de publicação) e custa R$ 238 por mês para rodar. Com dois, o risco cai. Não some por completo.</p></div>
+      <div class="crit go"><span class="lab">Objeção 5 · "Se dinheiro não falta, por que pedir investimento?"</span><p><b>Quebra:</b> o que falta é tempo. Sozinho, ~40 contas por mês. Com um parceiro na rua e implantando, 63 pagantes viram 117 em dez/27, e o caixa de dez/28 dobra. O dinheiro necessário continua pequeno, uns R$ 2 mil no pior momento.</p></div>
+    </div>
+    <p class="sectionlede" style="margin-top:14px"><b>O gargalo não é dinheiro, é braço.</b> Sozinho, o Vitor põe no ar ~40 contas por mês.
+      Com um parceiro na rua e implantando, o cálculo muda assim:</p>
+    <div class="tablewrap"><table>
+      <thead><tr><th></th><th class="num">Pagantes dez/27</th><th class="num">Entrando/mês dez/28</th><th class="num">Caixa dez/28</th></tr></thead>
+      <tbody>
+        <tr><td>Vitor sozinho</td><td class="num">63</td><td class="num">R$ 5.878</td><td class="num">R$ 49.742</td></tr>
+        <tr><td>Com parceiro (80 contas/mês, 2 na rua)</td><td class="num hi">117</td><td class="num hi">R$ 11.069</td><td class="num hi">R$ 101.407</td></tr>
+        <tr><td>Com parceiro + importação automática</td><td class="num">158</td><td class="num">R$ 15.113</td><td class="num">R$ 153.889</td></tr>
+      </tbody>
+    </table></div>
+    <p class="sectionlede">Cenário do meio, mesmas premissas; a última linha supõe que 20 em cada 100 assinem, em vez de 15, com a implantação mais rápida. O dinheiro necessário continua pequeno (o pior momento do caixa fica em ~R$ 2 mil). O que o parceiro traz é tempo, rede e rua.</p>
+    <div class="rulebox">
+      <span class="k">O que dizer com honestidade</span>
+      <ul>
+        <li>Hoje são <b>zero pagantes</b>. Tudo acima é previsão com funil ainda em palpite; em 30 dias de rua vira número de verdade.</li>
+        <li>O site no ar está atrasado em relação ao código; publicar é a primeira tarefa.</li>
+        <li>Os concorrentes grandes têm anos e muito dinheiro. O CICLO não briga por agenda; briga por "quem sumiu e quanto vale".</li>
+      </ul>
+    </div>
+  </section>
+
+
+  <div class="perf"><span class="hole"></span></div>
+
+  <section id="objecoes">
+    <p class="kicker">Antes que perguntem</p>
+    <h2>Objeções e como responder</h2>
+    <p class="sectionlede">Verde é resposta que aguenta a pergunta. Sem cor é resposta parcial: o argumento ajuda, mas falta prova.
+      <b>Laranja é ponto fraco de verdade.</b> Diga que é, e mostre o que reduz o risco. Quem esconde ponto fraco perde o parceiro no primeiro "e se".</p>
+    <h3 style="margin:14px 0 8px">Do parceiro que vai investir</h3>
+    <div class="critbox" style="margin-top:0">
+<div class="crit"><span class="lab">"Não tem nenhum cliente pagando." · resposta parcial</span><p>Verdade, e não dá para negar. É por isso que o pedido é pequeno e a prova é rápida: são 30 dias de rua até ter as primeiras assinaturas pedidas, e o pior momento do caixa é ~R$ 1.200. Proponha marcos: 30 contas ativas em 30 dias, 5 pagantes em 60. Se não bater, para.</p></div>
+      <div class="crit"><span class="lab">"O mercado já tem Trinks, AppBarber, Belasis e um de R$ 39,90. Por que ganhar?" · resposta parcial</span><p>O CICLO não compete em agenda, compete em <b>quem sumiu e quanto vale</b>. Os concorrentes usam janela fixa (30, 45, 60 dias); o CICLO calcula o ritmo de cada cliente. E 70% dos salões nem usam sistema: o concorrente real é o caderno. Fora do nicho de beleza (faxina, eletricista, personal) quase não há quem atenda.</p></div>
+      <div class="crit"><span class="lab">"Agenda de graça já existe (maquininha, WhatsApp). Quem paga R$ 49?" · resposta parcial</span><p>Ninguém paga por agenda. Paga pelo dinheiro que volta. Se o CICLO trouxer 1 cliente de R$ 35 por mês, ele já pagou 70% da mensalidade. A venda é "quanto eu perco calado", com a calculadora no celular do dono. Isso precisa ser <b>provado com os primeiros clientes</b>: é a hipótese central.</p></div>
+      <div class="crit stop"><span class="lab">"É um negócio de um homem só. Se você sumir?" · ponto fraco: não esconda</span><p>É o risco mais real. Mitigações que já existem: o código é documentado (98 migrações, 20 relatórios), 3.700 testes, runbooks de suporte e publicação, e o custo é tão baixo que o sistema roda sozinho por R$ 238 por mês. Com um parceiro na rua e o Vitor no produto, o risco cai. Não some por completo.</p></div>
+      <div class="crit"><span class="lab">"Sem cliente, como você sabe que o produto funciona?" · resposta parcial</span><p>O que se prova sem cliente está provado: roda do cadastro até "quem sumiu" e "chamar", 3.700 testes, isolamento testado 213 vezes, auditorias. O que não se prova sem cliente é se o dono <b>usa</b> e <b>paga</b>. Por isso a métrica é cliente que voltou, e o alpha vem antes do dinheiro.</p></div>
+      <div class="crit go"><span class="lab">"E se o dono não largar o sistema que já usa?" · resposta forte</span><p>Ele não precisa largar. A saída número 1 é usar junto: o CICLO só fica de olho em quem está sumindo. Sem migração, sem medo, sem treinar equipe.</p></div>
+      <div class="crit"><span class="lab">"Barbeiro pequeno paga R$ 49? E cancela em 2 meses?" · resposta parcial</span><p>O modelo já assume 4% de cancelamento por mês (o normal em SaaS de pequena empresa é 3% a 5%). No pior cenário (6%, e só 8 em cada 100 assinam) o CICLO não se paga e a perda até dez/28 é ~R$ 7.500. Ninguém garante retenção antes de medir; a regra de parada existe para isso.</p></div>
+      <div class="crit"><span class="lab">"Sem WhatsApp automático, o produto é fraco." · resposta parcial</span><p>Hoje o dono chama com um toque, pelo próprio número, de graça. Isso é <b>proposital</b>: mensagem em massa pelo número do CICLO queima o número de todos os clientes e pede aprovação da Meta. Vem depois de ~20 assinantes, com aquecimento. É limite real e está dito na oferta.</p></div>
+      <div class="crit"><span class="lab">"Você é MEI e software não é atividade de MEI." · resposta parcial</span><p>Verdade, li a lista oficial inteira. A consequência é desenquadrar (vira ME, paga em percentual) e multa de R$ 50 se não avisar; não cancela o CNPJ. O plano já prevê virar ME por volta de 40 pagantes, com contador de ~R$ 195 e ~6% de imposto (o contador confirma o anexo). É custo previsto, não surpresa.</p></div>
+      <div class="crit"><span class="lab">"Depende de Supabase e Vercel. E se ficarem caros ou mudarem?" · resposta parcial</span><p>O código é padrão (Next.js e Postgres), sem prender em recurso proprietário; migrar o banco é exportar Postgres. Até ~250 contas o custo é fixo (R$ 238). O que falta é confirmar o plano pago de produção, que ainda não conferi.</p></div>
+      <div class="crit"><span class="lab">"LGPD e dado de saúde: e se vazar?" · resposta parcial</span><p>É a parte mais bem coberta: ficha de saúde cifrada (AES-256-GCM, chave por salão), isolamento no banco testado 213 vezes, auditoria de segurança com 12 achados corrigidos, exportação e eliminação de dados de cliente. O que falta: revisão jurídica dos termos (R$ 3.000, cortada por enquanto) e teste de invasão contra produção. Começar só com barbearia e salão pequeno, sem ficha de saúde pesada, reduz o risco.</p></div>
+      <div class="crit go"><span class="lab">"Todo mundo tem IA. Onde está o diferencial?" · resposta forte</span><p>Concordo que "IA" virou commodity. O CICLO não vende IA: vende conta. O ritmo de cada cliente e a prova ("dos 40 previstos, 31 voltaram") vêm de cálculo determinístico, que o dono confere. Nenhum concorrente pesquisado mostra isso.</p></div>
+      <div class="crit go"><span class="lab">"Por que o dinheiro não é o gargalo, se você pede investimento?" · resposta forte</span><p>Porque não é. O sistema custa R$ 238 por mês até ~250 contas. O gargalo é tempo: sozinho, ~40 contas por mês. O que o parceiro compra é rua, rede e implantação: com ele o cenário do meio vai de 63 para 117 pagantes em dez/27.</p></div>
+      <div class="crit stop"><span class="lab">"O produto nem está no ar atualizado." · ponto fraco: não esconda</span><p>Verdade: o site no ar está ~113 commits atrás. O roteiro de publicação em fatias já está escrito, com as 2 armadilhas mapeadas. É a tarefa nº 1 da semana 1, antes de qualquer cobrança.</p></div>
+      <div class="crit go"><span class="lab">"E quando o mercado de barbearia acabar ou saturar?" · resposta forte</span><p>1,13 milhão de salões, 235 mil novos por ano, 17 profissões prontas. Para chegar a 100 pagantes, o CICLO precisa de 0,01% do mercado.</p></div>
+      <div class="crit"><span class="lab">"Como vocês ganham dinheiro além de R$ 49?" · resposta parcial</span><p>Serviço vendido pelo software, comunidade e curso, pagamentos e dados da cidade (seção Visão). Nenhuma está na previsão, e as de pagamento e dados dependem de parceiro financeiro e de advogado. É upside, não a tese.</p></div>
+    </div>
+    <h3 style="margin:22px 0 8px">Do dono de salão</h3>
+    <div class="critbox" style="margin-top:0">
+<div class="crit go"><span class="lab">"Não tenho tempo de cadastrar cliente." · resposta forte</span><p>Cinco minutos, na sua frente, colando uma lista por nome. A lista de quem sumiu aparece na hora. Se preferir, manda a planilha pelo WhatsApp que a gente importa.</p></div>
+      <div class="crit go"><span class="lab">"Vai me cobrar sem eu saber?" · resposta forte</span><p>Não. Sem cartão no mês grátis, e nada é cobrado sem você tocar em assinar.</p></div>
+      <div class="crit"><span class="lab">"Meus clientes não respondem WhatsApp." · resposta parcial</span><p>A mensagem sai do seu número, o mesmo canal que você já usa. Quem responde ali, responde aqui.</p></div>
+      <div class="crit go"><span class="lab">"E se eu quiser sair? Perco tudo?" · resposta forte</span><p>Botão que baixa todos os seus clientes em planilha, quando quiser. Você leva tudo.</p></div>
+      <div class="crit go"><span class="lab">"Já uso outro sistema." · resposta forte</span><p>Não precisa trocar: o CICLO funciona ao lado e só mostra quem está sumindo.</p></div>
+      <div class="crit"><span class="lab">"É caro." · resposta parcial</span><p>R$ 49 com 1 profissional, R$ 99 até 5, e não sobe com a equipe. Se voltar 1 cliente de R$ 35 por mês, você já pagou 70% dele.</p></div>
+      <div class="crit"><span class="lab">"Isso manda mensagem sozinho?" · resposta parcial</span><p>Hoje você manda com um toque. Automático vem depois. Sem data.</p></div>
+      <div class="crit go"><span class="lab">"Meu dado está seguro?" · resposta forte</span><p>Cada salão só vê o seu, ficha de saúde cifrada, e você exporta ou apaga quando quiser. Auditado e testado.</p></div>
+    </div>
+    <div class="rulebox">
+      <span class="k">Os 3 pontos fracos que não dá para derrubar hoje</span>
+      <ol>
+        <li><b>Zero pagantes.</b> Só o mercado resolve. A resposta é ir à rua e voltar com número.</li>
+        <li><b>Dependência de uma pessoa.</b> Com parceiro e runbooks reduz, não elimina.</li>
+        <li><b>Site desatualizado e textos antigos no ar.</b> Resolve em dias, mas precisa ser feito antes de cobrar.</li>
+      </ol>
+    </div>
+  </section>
+
+  <div class="perf"><span class="hole"></span></div>
+
+  <section id="quem">
+    <p class="kicker">Alvo</p>
+    <h2>Quem procurar, e onde ele já está</h2>
+    <p class="sectionlede">Nota de 1 a 5 somada em dor, frequência de retorno, capacidade de pagar, facilidade de achar e velocidade de venda.</p>
+    <div class="icprow top"><span class="name">Barbearia, 1 a 3 cadeiras<small>cliente volta a cada ~21 dias, o Motor prova rápido; dono corta e decide sozinho</small></span><span class="score">43</span></div>
+    <div class="icprow"><span class="name">Unhas e cílios, sozinha<small>retorno curtíssimo, indicação forte; R$ 49 pesa mais no bolso</small></span><span class="score">36</span></div>
+    <div class="icprow"><span class="name">Salão de cabelo com equipe<small>compra pelo caixa e comissão, venda mais lenta; depois</small></span><span class="score">34</span></div>
+    <div class="icprow"><span class="name">Estética e clínica<small>retorno longo e ficha de saúde (risco legal); fora por enquanto</small></span><span class="score">27</span></div>
+    <div class="tagrow">
+      <span class="tag free">o próprio salão</span><span class="tag free">Instagram do negócio</span><span class="tag free">Google Maps</span>
+      <span class="tag">representante de cosmético</span><span class="tag">contador</span><span class="tag">curso de barbeiro</span>
+    </div>
+  </section>
+
+  <div class="perf"><span class="hole"></span></div>
+
+  <section id="oferta">
+    <p class="kicker">O que você vende</p>
+    <h2>A oferta</h2>
+    <div class="icprow top"><span class="name">1 mês grátis, tudo liberado<small>sem cartão; a lista de quem sumiu aparece no dia 1, na hora do cadastro</small></span><span class="score">R$ 0</span></div>
+    <div class="icprow"><span class="name">Solo<small>1 profissional, tudo incluído</small></span><span class="score">R$ 49</span></div>
+    <div class="icprow"><span class="name">Equipe<small>até 5 profissionais, tudo incluído</small></span><span class="score">R$ 99</span></div>
+    <div class="rulebox">
+      <span class="k">Não ofereça</span>
+      <ul>
+        <li>Desconto, "grátis para sempre", data de nada, WhatsApp que manda sozinho.</li>
+        <li><b>Por quê 1 mês e não 14 dias:</b> pesquisas mostram teste de 14 dias convertendo mais que o de 30 (28% contra 22% num estudo de 84 mil testes). Mantive 1 mês porque o cliente da barbearia leva ~21 a 30 dias para voltar, e é essa volta que convence. Se no seu primeiro mês a assinatura ficar abaixo de 10%, teste 14 dias.</li>
+        <li><b>Preço:</b> mais barato que o líder de nicho (R$ 79,90 com 1 profissional). Depois de 30 pagantes, teste R$ 59 e R$ 119 só para quem chega: no cálculo isso adianta o retorno em 1 mês.</li>
+      </ul>
+    </div>
+    <p class="src" style="margin-top:8px">Fonte do teste: <a href="https://visionary-marketing.co.uk/blog/saas-free-trial-conversion-statistics-2026" target="_blank" rel="noreferrer">Visionary Marketing 2026</a> · <a href="https://ordwaylabs.com/blog/saas-free-trial-length-conversion/" target="_blank" rel="noreferrer">Ordway</a>. Preço do líder: pesquisa de 05/09/2026 no repo (<code>competitors/appbarber.md</code>).</p>
+  </section>
+
+  <div class="perf"><span class="hole"></span></div>
+
+  <section id="cobranca">
+    <p class="kicker">Dinheiro entrando</p>
+    <h2>Cobrança e impostos</h2>
+    <p class="sectionlede">Você continua <b>MEI</b> no começo. Não paga imposto extra: o DAS de R$ 86 você já paga.</p>
+    <div class="icprow top"><span class="name">Primeiros 20 pagantes: Pix mensal combinado<small>você manda o Pix, marca quem pagou numa planilha; taxa zero ou 0,99%</small></span><span class="score">agora</span></div>
+    <div class="icprow"><span class="name">Depois: assinatura no cartão (Mercado Pago)<small>já está no código; <b>4,99%</b> recebendo na hora, <b>3,99%</b> recebendo em 30 dias. Escolha 30 dias</small></span><span class="score">20+</span></div>
+    <div class="icprow"><span class="name">Virar ME (microempresa)<small>contador ~R$ 195/mês e ~6% do faturamento; o mesmo CNPJ, sem abrir outro</small></span><span class="score">~40</span></div>
+    <div class="rulebox">
+      <span class="k">A verdade sobre o MEI</span>
+      <ul>
+        <li>Software <b>não está</b> na lista oficial do MEI. Se a Receita notar, ela tira você do MEI (vira ME) e a multa é <b>R$ 50</b> se você não avisar. Não cancela o CNPJ.</li>
+        <li>O teto do MEI é <b>R$ 81 mil por ano, somando tudo que seu CNPJ fatura</b>, inclusive o seu negócio de hoje.</li>
+        <li><b>Imposto quando virar ME:</b> a lei (LC 123, art. 18, §5º-D, V) põe licença de software no Anexo III (6%); o mercado aplica o Fator R (6% ou 15,5%). Com 15,5%, o caixa de dez/28 cai de R$ 49,7 mil para ~R$ 42 mil. O contador confirma.</li>
+      </ul>
+    </div>
+    <p class="src" style="margin-top:8px"><a href="https://www.mercadopago.com.br/blog/link-pagamento-recorrencia-servicos-assinatura" target="_blank" rel="noreferrer">Mercado Pago, recorrência</a> · <a href="https://normas.receita.fazenda.gov.br/sijut2consulta/anexoOutros.action?idArquivoBinario=64455" target="_blank" rel="noreferrer">Anexo XI da CGSN 140 (lista do MEI)</a> · <a href="https://www8.receita.fazenda.gov.br/SimplesNacional/Arquivos/manual/MANUAL_DESENQUADRAMENTO_SIMEI.pdf" target="_blank" rel="noreferrer">Manual do desenquadramento, Receita</a> · <a href="https://www.normaslegais.com.br/legislacao/lc123_2006.htm" target="_blank" rel="noreferrer">LC 123/2006</a></p>
+  </section>
+
+  <div class="perf"><span class="hole"></span></div>
+
+  <section id="custos">
+    <p class="kicker">Dinheiro saindo</p>
+    <h2>Custos</h2>
+    <div class="metricgrid">
+      <div class="metric"><span class="mv">R$ 0</span><span class="ml">investimento inicial (você já tem CNPJ)</span></div>
+      <div class="metric"><span class="mv">R$ 238/mês</span><span class="ml">sistema, só depois do 1º pagante</span></div>
+      <div class="metric"><span class="mv">R$ 25/dia</span><span class="ml">rua (transporte e café), ~R$ 400 por mês</span></div>
+      <div class="metric"><span class="mv">~250 contas</span><span class="ml">cabem antes de o sistema custar mais</span></div>
+    </div>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Item</th><th class="num">Por mês</th><th>Quando</th></tr></thead>
+      <tbody>
+        <tr><td>Supabase Pro (banco, com backup)</td><td class="num">R$ 130</td><td>1º pagante</td></tr>
+        <tr><td>Vercel Pro (servidor do site)</td><td class="num">R$ 104</td><td>1º pagante</td></tr>
+        <tr><td>Domínio</td><td class="num">R$ 3</td><td>já existe</td></tr>
+        <tr><td>+ banco maior (Supabase)</td><td class="num">+R$ 26</td><td>~150 contas</td></tr>
+        <tr><td>+ e-mail e monitor de erros</td><td class="num">+R$ 240</td><td>~100 a 120 contas</td></tr>
+        <tr><td>+ banco maior de novo</td><td class="num">+R$ 235</td><td>~400 contas</td></tr>
+        <tr><td>Contador (ao virar ME)</td><td class="num">+R$ 195</td><td>~40 pagantes</td></tr>
+      </tbody>
+    </table></div>
+    <p class="sectionlede"><b>Por que Pro desde o 1º pagante:</b> o plano grátis da Vercel proíbe uso comercial e o da Supabase não faz backup. Com cliente pagando e dado dele dentro, não dá.
+      Dólar a R$ 5,22 (28/09). Peso medido no banco: 0,8 KB por agendamento, 1,2 KB por cliente.</p>
+    <p class="src"><a href="https://vercel.com/pricing" target="_blank" rel="noreferrer">Vercel</a> · <a href="https://supabase.com/pricing" target="_blank" rel="noreferrer">Supabase</a> · <a href="https://supabase.com/docs/guides/platform/compute-and-disk" target="_blank" rel="noreferrer">tamanhos de banco</a> · <a href="https://resend.com/pricing" target="_blank" rel="noreferrer">Resend</a> · <a href="https://sentry.io/pricing/" target="_blank" rel="noreferrer">Sentry</a></p>
+  </section>
+
+  <div class="perf"><span class="hole"></span></div>
+
+  <section id="previsao">
+    <p class="kicker">Quanto volta</p>
+    <h2>Previsão em três cenários</h2>
+    <p class="sectionlede">A única diferença entre eles é o que ninguém sabe ainda: de cada 100 donos que testam, quantos assinam (8, 15 ou 25) e quantos cancelam por mês.
+      Com rua <b>4 dias por semana</b>.</p>
+    <div class="tablewrap"><table>
+      <thead><tr><th></th><th class="num">Pessimista</th><th class="num">Meio</th><th class="num">Otimista</th></tr></thead>
+      <tbody>
+        <tr><td>Assinam, de cada 100 que testam</td><td class="num">8</td><td class="num">15</td><td class="num">25</td></tr>
+        <tr><td>Cancelam por mês, de cada 100</td><td class="num">6</td><td class="num">4</td><td class="num">2,5</td></tr>
+        <tr><td>Pagantes em nov/26</td><td class="num">1</td><td class="num">6</td><td class="num">10</td></tr>
+        <tr><td>Pagantes em jan/27</td><td class="num">3</td><td class="num">16</td><td class="num">29</td></tr>
+        <tr><td>Pagantes em jun/27</td><td class="num">8</td><td class="num">40</td><td class="num">73</td></tr>
+        <tr><td>Pagantes em dez/27</td><td class="num">12</td><td class="num hi">63</td><td class="num">119</td></tr>
+        <tr><td>Pagantes em dez/28</td><td class="num">17</td><td class="num">97</td><td class="num">193</td></tr>
+        <tr><td>Entrando por mês em dez/27</td><td class="num">R$ 685</td><td class="num hi">R$ 3.794</td><td class="num">R$ 7.699</td></tr>
+        <tr><td>Pior momento do caixa</td><td class="num lo">−R$ 7.560</td><td class="num">−R$ 1.187 (jan/27)</td><td class="num">−R$ 721</td></tr>
+        <tr><td>Primeiro mês no azul</td><td class="num lo">não chega</td><td class="num">fev/27</td><td class="num">dez/26</td></tr>
+        <tr><td>Recupera tudo que pôs</td><td class="num lo">não até dez/28</td><td class="num hi">abr/27</td><td class="num">jan/27</td></tr>
+        <tr><td>Caixa acumulado em dez/28</td><td class="num">−R$ 7.560</td><td class="num">R$ 49.742</td><td class="num">R$ 134.998</td></tr>
+      </tbody>
+    </table></div>
+    <div class="rulebox">
+      <span class="k">Traduzindo</span>
+      <ul>
+        <li><b>Pior momento do caixa:</b> o máximo que você terá tirado do bolso antes de começar a sobrar. É o valor para ter guardado.</li>
+        <li><b>No azul:</b> o mês em que entra mais do que sai.</li>
+        <li><b>Recupera tudo:</b> quando a soma do que sobrou paga tudo que saiu. Dali em diante é lucro.</li>
+        <li>Inclui virar ME aos 40 pagantes (contador + 6%). Não inclui o seu tempo, que é o maior custo: umas 120 horas por mês.</li>
+      </ul>
+    </div>
+    <p class="src" style="margin-top:8px">Conversão de teste sem cartão: mediana ~14% (<a href="https://userpilot.com/blog/saas-average-conversion-rate/" target="_blank" rel="noreferrer">Userpilot</a>). Cancelamento de SaaS para pequena empresa: 3% a 5% ao mês (<a href="https://retentioncheck.com/churn-benchmarks/smb-saas" target="_blank" rel="noreferrer">RetentionCheck</a>).</p>
+  </section>
+
+  <div class="perf"><span class="hole"></span></div>
+
+  <section id="metas">
+    <p class="kicker">Quanto fazer</p>
+    <h2>Metas</h2>
+    <div class="metricgrid">
+      <div class="metric"><span class="mv">12</span><span class="ml">donos abordados por dia de rua</span></div>
+      <div class="metric"><span class="mv">4 dias</span><span class="ml">de rua por semana; o 5º é retorno e suporte</span></div>
+      <div class="metric"><span class="mv">~9</span><span class="ml">contas criadas por semana (~35 a 40 por mês)</span></div>
+      <div class="metric"><span class="mv">~1,4</span><span class="ml">pagante novo por semana</span></div>
+    </div>
+    <p class="sectionlede"><b>Por que não 5 dias:</b> o limite é quantas contas você consegue pôr no ar e atender (~40 por mês). Com 4 dias já chega lá; o 5º dia de rua não aumenta pagante e ainda gasta.
+      Abordar 20 por dia em vez de 12 também não muda o resultado.</p>
+    <div class="scalepath">
+      <div class="citychip active"><span class="cn">5</span><span class="cs">sistema pago</span></div>
+      <div class="citychip"><span class="cn">13</span><span class="cs">rua paga também</span></div>
+      <div class="citychip"><span class="cn">40</span><span class="cs">~R$ 2.300/mês · virar ME</span></div>
+      <div class="citychip"><span class="cn">100</span><span class="cs">~R$ 6.000/mês · teto do MEI</span></div>
+    </div>
+  </section>
+
+  <div class="perf"><span class="hole"></span></div>
+
+  <section id="abordagem">
+    <div class="chanhead">
+      <span class="chanbadge">1</span>
+      <div><h2 style="margin-bottom:0">Visita</h2>
+        <p class="chanmeta">Canal <b>principal</b> · fim de tarde de segunda ou começo de tarde de terça · nunca sábado · 10 minutos</p></div>
+    </div>
+    <ol class="steps">
+      <li class="step"><span class="stepnum">1</span><h4>Abertura: uma conta, não uma apresentação</h4>
+        <p class="say">"Posso te fazer uma conta de um minuto? Quantos clientes que vinham sempre pararam de vir? Só os que você lembra."</p>
+        <p>Abra a calculadora no celular dele. O número é dele.</p></li>
+      <li class="step"><span class="stepnum">2</span><h4>A virada</h4>
+        <p class="say">"E essa conta é só de quem você lembrou. E quem você não lembra?"</p></li>
+      <li class="step"><span class="stepnum">3</span><h4>A oferta, em uma frase</h4>
+        <p class="say">"Você usa o CICLO inteiro 1 mês, sem cartão. Eu te ajudo a pôr seus clientes. Se não gostar, não paga nada."</p></li>
+      <li class="step"><span class="stepnum">4</span><h4>Cadastro na hora, com 10 a 20 clientes</h4>
+        <p>"Colar uma lista" aceita um nome por linha. Cole primeiro quem ele não vê faz tempo. A lista de quem passou da hora aparece na hora.</p></li>
+      <li class="step"><span class="stepnum">5</span><h4>Uma mensagem, na sua frente</h4>
+        <p>Ele escolhe um nome e manda pelo WhatsApp dele, com o texto pronto.</p></li>
+      <li class="step"><span class="stepnum">6</span><h4>Volta no dia 10 a 14</h4>
+        <p class="say">"Quantos dos que você chamou voltaram?"</p>
+        <p>É aqui que se fecha a assinatura. Voltou alguém: peça depoimento e indicação.</p></li>
+    </ol>
+
+    <div class="perf"><span class="hole"></span></div>
+
+    <div class="chanhead">
+      <span class="chanbadge">2</span>
+      <div><h2 style="margin-bottom:0">WhatsApp frio</h2>
+        <p class="chanmeta">Para quem fica longe, ou para marcar a visita · manual, um por vez, número público</p></div>
+    </div>
+    <div class="chatcard">
+      <p class="chatwho"><span class="who"><span class="avatar">Z</span>Primeira mensagem</span><span class="when">dia 0</span></p>
+      <div class="bubble">Oi! Vi o <span class="var">[Instagram]</span> da <span class="var">[barbearia]</span> aqui de <span class="var">[cidade]</span>. Rápido: você sabe quantos clientes que vinham sempre pararam de vir? Fiz uma calculadora grátis que faz essa conta em 1 minuto.
+        <span class="link">seuciclo.com.br/calculadora?origem=whatsapp&amp;ref=[nome-do-negocio]</span></div>
+    </div>
+    <div class="chatcard">
+      <p class="chatwho"><span class="who"><span class="avatar">Z</span>Se responder bem</span><span class="when">mesmo dia</span></p>
+      <div class="bubble">Boa! Se tiver 10 minutos essa semana eu passo aí e deixo rodando no seu celular. É 1 mês grátis, sem cartão.</div>
+    </div>
+
+    <div class="perf"><span class="hole"></span></div>
+
+    <div class="chanhead">
+      <span class="chanbadge">3</span>
+      <div><h2 style="margin-bottom:0">Indicação e parceiros</h2>
+        <p class="chanmeta">Trabalham sem você na rua · valem quando você conseguir atender mais de 40 contas por mês</p></div>
+    </div>
+    <div class="chatcard">
+      <p class="chatwho"><span class="who"><span class="avatar">C</span>Cliente que já paga</span><span class="when">na visita de retorno</span></p>
+      <div class="bubble">Conhece mais alguém aqui perto que vive perdendo cliente sem saber? Se ele assinar, seu próximo mês sai de graça.</div>
+    </div>
+    <div class="chatcard">
+      <p class="chatwho"><span class="who"><span class="avatar">R</span>Representante de cosmético</span><span class="when">1 por semana</span></p>
+      <div class="bubble">Oi, <span class="var">[nome]</span>! Tô fazendo um sistema aqui de <span class="var">[cidade]</span> que mostra pro barbeiro quem parou de voltar, pelo nome. Você visita esse pessoal toda semana. Topa mandar a calculadora? Se alguém virar cliente pago, te passo R$ 50 por conta.
+        <span class="link">seuciclo.com.br/calculadora?origem=parceiro&amp;ref=[seu-codigo]</span></div>
+    </div>
+  </section>
+
+  <div class="perf"><span class="hole"></span></div>
+
+  <section id="conteudo">
+    <p class="kicker">Apoio, nunca sozinho</p>
+    <h2>Conteúdo</h2>
+    <p class="sectionlede">Duas mensagens só: <b>"quem sumiu tem nome e valor"</b> e <b>"1 mês grátis, sem cartão"</b>. 2 a 3 posts por semana, stories nos dias de rua. Nenhum cenário do cálculo conta post como fonte de cliente.</p>
+    <div class="contentgrid">
+      <div class="ccard"><div class="chead"><span class="fmt">Reel 20 a 30s</span><span class="wk">semana 1</span></div>
+        <p class="hook">"Barbeiro, faz essa conta comigo."</p><p>8 clientes que sumiram, R$ 35 por corte, todo mês: mais de R$ 3.400 por ano parados. Fecha perguntando quantos ele lembrou.</p></div>
+      <div class="ccard"><div class="chead"><span class="fmt">Reel tela gravada</span><span class="wk">semana 2</span></div>
+        <p class="hook">"Escrevi três clientes de cabeça. Dois já passaram da hora de voltar."</p><p>Conta de demonstração, nunca de cliente real.</p></div>
+      <div class="ccard"><div class="chead"><span class="fmt">Story + enquete</span><span class="wk">semana 1</span></div>
+        <p class="hook">"Como você marca horário hoje?" Caderno ou aplicativo</p><p>Quem responde é visita quente.</p></div>
+      <div class="ccard"><div class="chead"><span class="fmt">Reel com o dono</span><span class="wk">semana 3 ou 4</span></div>
+        <p class="hook">"Conta em 20 segundos o que aconteceu com quem você chamou?"</p><p>Só com autorização por escrito, depois do primeiro resultado.</p></div>
+    </div>
+  </section>
+
+  <div class="perf"><span class="hole"></span></div>
+
+  <section id="placar">
+    <p class="kicker">Toda segunda, 10 minutos</p>
+    <h2>Placar semanal</h2>
+    <div class="metricgrid">
+      <div class="metric"><span class="mv">48</span><span class="ml">abordagens na semana</span></div>
+      <div class="metric"><span class="mv">~9</span><span class="ml">contas criadas</span></div>
+      <div class="metric"><span class="mv">≥ 45%</span><span class="ml">ativas: puseram a base e chamaram alguém em 14 dias</span></div>
+      <div class="metric"><span class="mv">↑</span><span class="ml">clientes que voltaram e assinaturas</span></div>
+    </div>
+    <p class="sectionlede">As consultas estão prontas em <code>docs/runbooks/placar-do-piloto.sql</code>. Depois de 3 semanas, troque os palpites da planilha pelos seus números.</p>
+  </section>
+
+  <div class="perf"><span class="hole"></span></div>
+
+  <section id="plano30">
+    <p class="kicker">Outubro</p>
+    <h2>Os primeiros 30 dias</h2>
+    <div class="weekcard now"><span class="wnum">SEM<br>1</span><div class="wbody"><h4>Pôr no ar e sair</h4>
+      <p>Publicar o código e trocar os textos de "grátis para sempre" (ver Produto) · lista de 40 barbearias perto · 4 dias de rua, 48 abordagens · 1 representante.</p></div></div>
+    <div class="weekcard"><span class="wnum">SEM<br>2</span><div class="wbody"><h4>Volume e primeiro retorno</h4>
+      <p>48 abordagens · voltar nas contas da semana 1 ("quantos voltaram?") · anotar a primeira frase de recusa de cada um.</p></div></div>
+    <div class="weekcard"><span class="wnum">SEM<br>3</span><div class="wbody"><h4>Prova</h4>
+      <p>Rua e retorno · primeiro depoimento, se alguém voltou · Vercel Pro e Supabase Pro no primeiro sim.</p></div></div>
+    <div class="weekcard"><span class="wnum">SEM<br>4</span><div class="wbody"><h4>Primeira cobrança</h4>
+      <p>As contas da semana 1 fecham o mês grátis: pedir a assinatura, pessoalmente · trocar os palpites da planilha pelo que você mediu.</p></div></div>
+    <div class="critbox">
+      <div class="crit go"><span class="lab">Deu certo se, no fim de outubro</span><p>30 ou mais contas criadas · metade ativa · 3 ou mais com cliente que voltou · as primeiras assinaturas pedidas.</p></div>
+      <div class="crit stop"><span class="lab">Mude de rumo se</span><p>menos de 45% das contas ativarem por 2 semanas: pare a rua e conserte a implantação. Ativam mas ninguém assina: é a oferta ou o preço, não o canal.</p></div>
+    </div>
+  </section>
+
+  <div class="perf"><span class="hole"></span></div>
+
+  <section id="escala">
+    <p class="kicker">Sem contratar ninguém</p>
+    <h2>Escala</h2>
+    <p class="sectionlede">O teto não é dinheiro, é o <b>seu tempo</b>: pôr uma conta no ar leva ~1,5 hora. Com 40 contas por mês são 60 horas. Se cair para 20 por mês, o retorno vai de abril para novembro/27.</p>
+    <div class="rulebox">
+      <span class="k">O que automatizar, nesta ordem</span>
+      <ol>
+        <li><b>A importação da base</b> (o dono mandar a lista sozinho e ela entrar): corta a hora de implantação pela metade. É o que mais vale.</li>
+        <li><b>A cobrança no cartão</b>, a partir de 20 pagantes, para você parar de conferir Pix.</li>
+        <li><b>O suporte:</b> as respostas prontas em <code>docs/runbooks/suporte-e-onboarding-assistido.md</code>.</li>
+        <li><b>Plano anual</b> (R$ 490 e R$ 990) depois de 30 pagantes: dinheiro adiantado.</li>
+      </ol>
+    </div>
+    <div class="scalepath">
+      <div class="citychip active"><span class="cn">Sua cidade</span><span class="cs">visita a pé</span></div>
+      <div class="citychip"><span class="cn">Cidade vizinha</span><span class="cs">só com 30 pagantes e o roteiro fechado; WhatsApp frio abre caminho</span></div>
+      <div class="citychip"><span class="cn">App nas lojas</span><span class="cs">depois de pagantes; dá com MEI e sem Mac</span></div>
+    </div>
+    <p class="sectionlede"><b>App:</b> Apple aceita conta de pessoa física (US$ 99 por ano); Google cobra US$ 25 uma vez e exige 12 testadores por 14 dias em conta pessoal. O app é montado na nuvem (Codemagic ou Expo), sem Mac.</p>
+    <p class="src"><a href="https://developer.apple.com/programs/whats-included/" target="_blank" rel="noreferrer">Apple Developer</a> · <a href="https://support.google.com/googleplay/android-developer/answer/14151465?hl=pt-BR" target="_blank" rel="noreferrer">Google, teste com 12 pessoas</a> · <a href="https://www.choicely.com/blog/publish-ios-app-without-a-mac" target="_blank" rel="noreferrer">iOS sem Mac</a></p>
+  </section>
+
+  <div class="perf"><span class="hole"></span></div>
+
+  <section id="produto">
+    <p class="kicker">Antes de cobrar o primeiro</p>
+    <h2>O que consertar no produto</h2>
+    <div class="rulebox">
+      <span class="k">Obrigatório, nesta ordem</span>
+      <ol>
+        <li><b>Publicar o código novo.</b> O site no ar está 113 commits atrás. O roteiro está pronto (<code>docs/runbooks/publicar-a-branch-de-trabalho.md</code>) e tem 2 armadilhas: a migração 0093 precisa ser corrigida, e a 0095 sobe antes do código senão o cadastro quebra.</li>
+        <li><b>Trocar "grátis para sempre" por "1 mês grátis"</b> em 3 lugares medidos: <code>/precos</code>, <code>src/lib/planos-cartoes.ts</code> e a página inicial. Cobrar com essa frase no ar é promessa quebrada.</li>
+        <li><b>O mês grátis no código.</b> Já existem 4 commits prontos numa cópia separada, mas feitos para 60 dias: ajustar para 1 mês.</li>
+        <li><b>Seu WhatsApp e e-mail de contato no site</b> (duas variáveis na Vercel).</li>
+        <li><b>Vercel Pro e Supabase Pro</b> no primeiro sim.</li>
+      </ol>
+    </div>
+    <div class="rulebox">
+      <span class="k">Pode esperar</span>
+      <ul>
+        <li>Importar a base sem o dono presente (a página de convite não existe). Até lá, faça junto na visita.</li>
+        <li>Apagar o negócio inteiro pela tela (hoje apaga só o login). Se alguém pedir, você apaga à mão.</li>
+        <li>App nas lojas, marca no INPI, advogado.</li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="perf"><span class="hole"></span></div>
+
+  <section id="riscos">
+    <p class="kicker">Ataquei o próprio plano</p>
+    <h2>As 5 formas de dar errado</h2>
+    <div class="critbox">
+      <div class="crit stop"><span class="lab">1 · Dono que não te conhece não assina</span><p>Se só 10 em 100 assinarem: 43 pagantes em dez/27 e retorno em ago/27. Por isso a visita de retorno no dia 10 a 14 é obrigatória.</p></div>
+      <div class="crit stop"><span class="lab">2 · Você não aguenta 40 contas por mês</span><p>Com 20 por mês: 33 pagantes em dez/27 e retorno em nov/27. Automatizar a importação vem primeiro.</p></div>
+      <div class="crit stop"><span class="lab">3 · Barbeiro não põe cartão</span><p>Por isso os primeiros 20 pagam por Pix combinado. O cartão entra depois.</p></div>
+      <div class="crit stop"><span class="lab">4 · Cobrar com o site dizendo "grátis para sempre"</span><p>Publicar e trocar os textos antes do primeiro pedido de assinatura, em novembro.</p></div>
+      <div class="crit stop"><span class="lab">5 · Estourar o teto do MEI antes da hora</span><p>O teto soma o CICLO com o seu negócio de hoje. Se ele já fatura bastante, você vira ME antes dos 40 pagantes.</p></div>
+      <div class="crit go"><span class="lab">Regra de parada</span><p>Menos de 20 pagantes em junho/27 (o meio prevê 40): rua cai para 2 dias por semana e o foco vai para quem já paga. No pior cenário você perde no máximo uns R$ 7.500 até dez/28.</p></div>
+    </div>
+  </section>
+
+  <div class="perf"><span class="hole"></span></div>
+
+  <section id="perguntas">
+    <p class="kicker">O que mudei e o que falta</p>
+    <h2>Correções no plano anterior e perguntas</h2>
+    <div class="rulebox">
+      <span class="k">Mudei em relação ao docs/90</span>
+      <ul>
+        <li>O DAS de R$ 86 saiu do custo: você já paga. Custo novo cai de R$ 324 para <b>R$ 238</b>.</li>
+        <li>Vercel e Supabase Pro só a partir do 1º pagante (antes estavam cobrados desde outubro).</li>
+        <li>Equilíbrio: <b>5 pagantes</b> para o sistema, 13 contando a rua (antes: 6).</li>
+        <li>Rua <b>4 dias</b> por semana, não 5: o resultado é quase igual e gasta menos.</li>
+        <li>Pior momento do caixa: <b>R$ 1.187</b> em jan/27 (antes R$ 2.012); recupera em <b>abril/27</b> (antes junho).</li>
+        <li>Taxa do cartão confirmada no Mercado Pago: 3,99% a 4,99%.</li>
+        <li>Primeiros 20 pagantes por Pix combinado, cartão depois.</li>
+        <li>Incluí a ida para ME aos 40 pagantes, que o docs/90 não contava.</li>
+      </ul>
+    </div>
+    <div class="qbox" style="margin-top:12px">
+      <div class="q"><b>1. Quanto o seu MEI já fatura por ano?</b><span>O teto de R$ 81 mil soma tudo. Isso decide quando você vira ME.</span></div>
+      <div class="q"><b>2. Os primeiros 20 pagam por Pix combinado?</b><span>Recomendo que sim: é o mais rápido e não depende do cartão.</span></div>
+      <div class="q"><b>3. O que o parceiro entraria com: dinheiro, tempo na rua, ou os dois? E em troca de quê?</b><span>Muda a seção "Para o parceiro". Participação societária pede contrato e, com sócio, o MEI deixa de servir (MEI não tem sócio).</span></div>
+      <div class="q"><b>4. "Aquele esquema de vender o serviço pelo software" era o modelo de pagamentos (tipo Asaas) ou serviço/consultoria?</b><span>Coloquei os dois na Visão, como camadas 2 e 4.</span></div>
+    </div>
+  </section>
+
+  <div class="perf"><span class="hole"></span></div>
+
+  <section>
+    <div class="warnbar">
+      <span class="mark">!</span>
+      <div class="warntext">
+        <p><strong>Nunca prometa:</strong> WhatsApp que manda sozinho, desconto, data de nada, "grátis para sempre". "Hoje você manda com um toque" é a frase verdadeira.</p>
+        <p><strong>Nunca anote</strong> nome ou telefone de cliente do salão na sua planilha. Isso fica no CICLO de cada dono.</p>
+        <p><strong>Nunca gaste em anúncio</strong> nesta fase. A R$ 49 por mês, a conta não fecha.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>docs/90 · docs/88 · docs/89 · modelo-financeiro-ciclo.xlsx · runbooks: kit-de-visita, placar-do-piloto, suporte-e-onboarding-assistido, publicar-a-branch-de-trabalho</footer>
+</div>

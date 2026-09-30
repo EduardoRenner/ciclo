@@ -9,7 +9,7 @@ import { criarServico } from '@/server/services/servicos'
 import { executarOnboarding } from '@/server/services/onboarding'
 import { concluirAgendamento, confirmarAgendamento, criarAgendamento, marcarChegada } from '@/server/services/agendamentos'
 import { recomputarCiclosDoTenant, recomputarCicloDeUmAtendimento } from '@/server/services/ciclo'
-import { prestacaoDeContasDoMotor, oscilacaoDaReguaDoTenant } from '@/server/services/previsao'
+import { prestacaoDeContasDoMotor, oscilacaoDaReguaDoTenant, resolverPrevisoes } from '@/server/services/previsao'
 
 import type { Database } from '@/server/db/types.gen'
 
@@ -500,6 +500,197 @@ describe('recomputarCiclosDoTenant — performance', () => {
       expect(duracao).toBeLessThan(60_000)
     },
     120_000,
+  )
+
+})
+
+/*
+ * BL-46 (`.claude/ciclo/autonomous-backlog.md`): tenant PRÓPRIO, isolado do resto do arquivo.
+ *
+ * Achado ao rodar pela primeira vez: os dois testes abaixo (5 mil previsões resolvidas + a de
+ * corrida) inseriam dados no `tenantId` COMPARTILHADO do `beforeAll` principal — e isso quebrou
+ * `'prestação de contas do Motor'` mais abaixo, que espera amostra PEQUENA (`acertoBps` tem que
+ * ficar `null` com poucas previsões resolvidas). Milhares de previsões resolvidas "de propósito"
+ * por este describe empurravam a amostra do tenant compartilhado para muito além do piso mínimo de
+ * confiança, e o teste seguinte passava a ver uma taxa de acerto que ele explicitamente não deveria
+ * conseguir afirmar. `'10 mil clientes recalculam em menos de 60s'`, acima, não tem este problema —
+ * ela só ABRE previsão nova, nunca RESOLVE nenhuma (cada cliente tem uma única visita, sem histórico
+ * anterior para fechar contra). Tenant próprio aqui é o que evita a mesma poluição se este describe
+ * ganhar mais casos no futuro.
+ */
+describe('resolverPrevisoes / resolver_previsoes_em_lote — isolado num tenant próprio', () => {
+  let tenantIdIsolado: string
+  let servicoIdIsolado: string
+  const tenantsIsolados: string[] = []
+  const usuariosIsolados: string[] = []
+
+  beforeAll(async () => {
+    const marca = randomUUID().slice(0, 8)
+    const { data, error } = await svc.auth.admin.createUser({
+      email: `resolver-lote-${marca}@ciclo.test`,
+      password: randomUUID(),
+      email_confirm: true,
+      user_metadata: { full_name: 'Dona do Resolver em Lote' },
+    })
+    if (error || !data.user) throw new Error(`seed falhou: ${error?.message}`)
+    usuariosIsolados.push(data.user.id)
+
+    const { tenant } = await executarOnboarding(svc, {
+      userId: data.user.id,
+      businessName: 'Salão do Resolver em Lote',
+      vertical: 'nails',
+      slug: `resolver-lote-${marca}`,
+      timezone: TZ,
+    })
+    tenantIdIsolado = tenant.id
+    tenantsIsolados.push(tenantIdIsolado)
+
+    const servico = await criarServico(svc, tenantIdIsolado, {
+      name: 'Esmaltação',
+      description: null,
+      durationMin: 60,
+      bufferBeforeMin: 0,
+      bufferAfterMin: 0,
+      priceCents: 6000,
+      pricingModel: 'fixed',
+      cycleDays: 21,
+      depositBps: 0,
+      depositMinCents: 0,
+      parallelCapacity: 1,
+      requiresAnamnesis: false,
+      bookableOnline: true,
+      categoryId: null,
+    })
+    servicoIdIsolado = servico.id
+  }, 60_000)
+
+  afterAll(async () => {
+    for (const t of tenantsIsolados) await svc.from('tenants').delete().eq('id', t)
+    for (const u of usuariosIsolados) await svc.auth.admin.deleteUser(u)
+  }, 60_000)
+
+  /*
+   * O benchmark de escrita nova ("10 mil clientes…") mede a PRIMEIRA execução — `registrarPrevisoes`
+   * (já em lote) — e nunca exercita `resolverPrevisoes`, porque nenhum cliente tem `cycle_predictions`
+   * ABERTA antes de rodar. "<60s" não prova nada sobre o laço de `resolverPrevisoes`, que era o
+   * suspeito real de gargalo num tenant com muita previsão fechando no mesmo dia (ex.: depois de uma
+   * campanha de recuperação bem-sucedida). Este teste mede exatamente esse caminho, isolado.
+   */
+  it(
+    'resolverPrevisoes isolado: 5 mil previsões ABERTAS fecham em tempo aceitável',
+    async () => {
+      const TOTAL = 5_000
+      const clientes = Array.from({ length: TOTAL }, (_, i) => ({ tenant_id: tenantIdIsolado, name: `Cliente Resolve ${i}` }))
+
+      const idsClientes: string[] = []
+      for (let inicio = 0; inicio < TOTAL; inicio += 1000) {
+        const { data, error } = await svc.from('clients').insert(clientes.slice(inicio, inicio + 1000)).select('id')
+        if (error) throw error
+        idsClientes.push(...data.map((c) => c.id))
+      }
+
+      // Uma previsão ABERTA por cliente, todas do mesmo serviço, todas com o "retorno" acontecendo
+      // amanhã em relação a `last_visit_on` — é exatamente o histórico que `historicoPorCombinacao`
+      // precisa para achar o par que fecha cada uma.
+      const lastVisitOn = '2026-01-01'
+      const retorno = '2026-01-22'
+      const previsoes = idsClientes.map((clientId) => ({
+        tenant_id: tenantIdIsolado,
+        client_id: clientId,
+        service_id: servicoIdIsolado,
+        last_visit_on: lastVisitOn,
+        predicted_on: retorno,
+        personal_cycle_days: 21,
+        default_cycle_days: 21,
+        algo_version: 1,
+      }))
+      for (let inicio = 0; inicio < previsoes.length; inicio += 1000) {
+        const { error } = await svc.from('cycle_predictions').insert(previsoes.slice(inicio, inicio + 1000))
+        if (error) throw error
+      }
+
+      const historicoPorCombinacao = new Map<string, string[]>(idsClientes.map((clientId) => [`${clientId}:${servicoIdIsolado}`, [lastVisitOn, retorno]]))
+
+      const t0 = Date.now()
+      const fechadas = await resolverPrevisoes(svc, tenantIdIsolado, historicoPorCombinacao)
+      const duracao = Date.now() - t0
+
+      expect(fechadas).toBe(TOTAL)
+      /*
+       * Medido ANTES da RPC em lote (`resolver_previsoes_em_lote`, migration `0094`): 87.830ms —
+       * 17,57ms/previsão. DEPOIS da RPC: ~400ms — o teto de 120s abaixo ficou folgado de propósito
+       * (não é o mesmo teto de "<60s" do benchmark de escrita, que é promessa já feita ao produto)
+       * porque o valor deste teste não é mais "vai estourar o teto", é continuar provando que o
+       * caminho de RESOLUÇÃO não regride para o padrão antigo por linha.
+       */
+      console.log(`[BL-46] resolverPrevisoes: ${TOTAL} previsões abertas fechadas em ${duracao}ms (${(duracao / TOTAL).toFixed(2)}ms/previsão)`)
+      expect(duracao, `resolverPrevisoes demorou ${duracao}ms para ${TOTAL} previsões — regressão para o padrão por linha? (BL-46)`).toBeLessThan(120_000)
+    },
+    180_000,
+  )
+
+  /*
+   * A RPC em lote (`resolver_previsoes_em_lote`, migration `0094`) precisa preservar a MESMA trava
+   * contra corrida que o `UPDATE` por linha tinha (`resolved_at is null`) — é o requisito nº 1 do
+   * BL-46 para a RPC valer a pena.
+   *
+   * **Por que chamar a RPC DIRETO (`svc.rpc(...)`), não `resolverPrevisoes` duas vezes em
+   * sequência.** A primeira versão deste teste chamava `resolverPrevisoes` duas vezes seguidas e
+   * media 0 fechadas na segunda — mas por um motivo ERRADO: `resolverPrevisoes` refaz o `SELECT`
+   * com `is('resolved_at', null)` ANTES de montar o lote, então a segunda chamada não achava
+   * previsão aberta nenhuma e **nunca chegava a invocar a RPC**. O teste passava mesmo com a trava
+   * `and cp.resolved_at is null` REMOVIDA da função (mutação testada e restaurada) — media o filtro
+   * de fora, não a trava de dentro. A corrida real que a trava protege é entre duas execuções que
+   * JÁ leram o mesmo snapshot de "abertas" antes de qualquer uma das duas commitar — só chamando a
+   * RPC direto, duas vezes, com o MESMO lote, reproduz isso de verdade.
+   */
+  it(
+    'a RPC resolver_previsoes_em_lote não fecha a mesma previsão duas vezes com o mesmo lote (corrida)',
+    async () => {
+      const marca = randomUUID().slice(0, 6)
+      const { data: cliente, error: erroCliente } = await svc
+        .from('clients')
+        .insert({ tenant_id: tenantIdIsolado, name: `CAS ${marca}` })
+        .select('id')
+        .single()
+      if (erroCliente) throw erroCliente
+
+      const retorno = '2026-02-22'
+      const { data: previsao, error: erroPrevisao } = await svc
+        .from('cycle_predictions')
+        .insert({
+          tenant_id: tenantIdIsolado,
+          client_id: cliente.id,
+          service_id: servicoIdIsolado,
+          last_visit_on: '2026-02-01',
+          predicted_on: retorno,
+          personal_cycle_days: 21,
+          default_cycle_days: 21,
+          algo_version: 1,
+        })
+        .select('id')
+        .single()
+      if (erroPrevisao) throw erroPrevisao
+
+      const lote = [{ id: previsao.id, actual_return_on: retorno }]
+
+      // As duas chamadas usam o MESMO lote — é a simulação de duas execuções que já decidiram, em
+      // memória, que esta previsão fecha, antes de qualquer uma das duas escrever.
+      const primeira = await svc.rpc('resolver_previsoes_em_lote', { p_tenant_id: tenantIdIsolado, p_atualizacoes: lote })
+      if (primeira.error) throw primeira.error
+      expect(primeira.data).toBe(1)
+
+      const { data: depoisDaPrimeira } = await svc.from('cycle_predictions').select('resolved_at').eq('id', previsao.id).single()
+      expect(depoisDaPrimeira?.resolved_at).not.toBeNull()
+
+      const segunda = await svc.rpc('resolver_previsoes_em_lote', { p_tenant_id: tenantIdIsolado, p_atualizacoes: lote })
+      if (segunda.error) throw segunda.error
+      expect(segunda.data, 'a trava contra corrida não segurou — a RPC fechou a mesma previsão duas vezes').toBe(0)
+
+      const { data: depoisDaSegunda } = await svc.from('cycle_predictions').select('resolved_at').eq('id', previsao.id).single()
+      expect(depoisDaSegunda?.resolved_at, 'resolved_at foi reescrito — o resultado não pode mudar depois de conhecido').toBe(depoisDaPrimeira?.resolved_at)
+    },
+    30_000,
   )
 })
 

@@ -106,7 +106,7 @@ export default function PedidoDeOrcamento({
   }
 
   return (
-    <form onSubmit={enviar} className="flex flex-col gap-4">
+    <form method="post" onSubmit={enviar} className="flex flex-col gap-4">
       <Textarea
         rotulo="O que você precisa"
         value={mensagem}

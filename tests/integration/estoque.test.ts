@@ -151,6 +151,30 @@ describe('estoque — baixa no fechamento, estorno, média móvel', () => {
   )
 
   it(
+    // Auditoria de armadilhas catalogadas (item 2): F83/o comentário de `baixarEstoqueDaComanda`
+    // dizem "nunca bloqueia por estoque insuficiente" — isto media a afirmação, não só a lê.
+    // Vender mais do que o estoque tem precisa FECHAR a comanda normalmente e deixar o número
+    // negativo, nunca lançar erro. Bloquear faz o salão vender o produto de qualquer jeito e
+    // abandonar o sistema (regra do CLAUDE.md).
+    'fechar comanda vendendo mais do que o estoque tem NÃO bloqueia — desce o número, mesmo negativo',
+    async () => {
+      const produto = await criarProduto('Máscara Reparadora 15g', 2, { revenda: true, precoCents: 3_500 })
+
+      const ticketId = await abrirTicketVazio()
+      await adicionarItemComanda(svc, tenantId, ticketId, { productId: produto.id, professionalId, qty: 5, discountCents: 0 })
+
+      await expect(fecharComanda(svc, tenantId, ticketId, 'cash')).resolves.toBeDefined()
+
+      const { data: produtoDepois } = await svc.from('products').select('stock_qty').eq('id', produto.id).single()
+      expect(produtoDepois?.stock_qty).toBe(-3) // 2 - 5, negativo — é o comportamento certo, não um bug
+
+      const { data: movimento } = await svc.from('stock_moves').select('kind, qty').eq('product_id', produto.id).eq('source', 'ticket').single()
+      expect(movimento).toMatchObject({ kind: 'out', qty: -5 }) // o movimento registra o consumo real, não trunca no que havia
+    },
+    30_000,
+  )
+
+  it(
     'produto de revenda entra pelo preço do catálogo, não por zero',
     async () => {
       const produto = await criarProduto('Óleo de Barba 30ml', 10, { revenda: true, precoCents: 4_500 })

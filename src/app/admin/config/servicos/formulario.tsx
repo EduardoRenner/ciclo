@@ -143,7 +143,7 @@ export default function FormularioServico({ aberto, aoFechar, servico, aoSalvar 
 
   return (
     <Sheet aberto={aberto} aoFechar={(a) => !a && aoFechar()} titulo={editando ? 'Editar serviço' : 'Novo serviço'}>
-      <form action={enviar} className="flex flex-col gap-3">
+      <form method="post" action={enviar} className="flex flex-col gap-3">
         <Input rotulo="Nome" name="nome" value={nome} onChange={(e) => setNome(e.target.value)} required />
 
         <Textarea

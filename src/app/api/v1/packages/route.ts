@@ -26,23 +26,24 @@ export const POST = rota(async (req, _ctx, requestId) => {
   const entrada = await lerCorpo(req, EsquemaVenderPacote)
   const db = await criarClienteDoUsuario()
 
-  const pacote = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: '/api/v1/packages' }, () =>
-    venderPacote(db, ctx.tenantId, entrada),
-  )
-
-  await writeAudit(
-    {
-      tenantId: ctx.tenantId,
-      actorId: ctx.sessao.userId,
-      actorRole: ctx.papel,
-      action: 'package.sell',
-      entity: 'packages',
-      entityId: pacote.id,
-      after: pacote,
-      requestId,
-    },
-    req,
-  )
+  // BL-42: `writeAudit` dentro do fechamento — ver o comentário em `wallet/credit/route.ts`.
+  const pacote = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: '/api/v1/packages' }, async () => {
+    const pacote = await venderPacote(db, ctx.tenantId, entrada)
+    await writeAudit(
+      {
+        tenantId: ctx.tenantId,
+        actorId: ctx.sessao.userId,
+        actorRole: ctx.papel,
+        action: 'package.sell',
+        entity: 'packages',
+        entityId: pacote.id,
+        after: pacote,
+        requestId,
+      },
+      req,
+    )
+    return pacote
+  })
 
   return pacote
 })

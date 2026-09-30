@@ -282,6 +282,9 @@ async function semear(f: Fixture, sufixo: string): Promise<void> {
   const restantes: Array<[string, Record<string, unknown>]> = [
     ['tenant_keys', { tenant_id: t, dek_wrapped: '\\xdeadbeef' }],
     ['product_events', { tenant_id: t, event_type: 'conta_criada' }],
+    ['terms_acceptances', { tenant_id: t, documento: 'termos', versao: '2026-09-21', via: 'cadastro' }],
+    // Os testes do dono (0098): o antes congelado é a série de atendimentos de um salão — não pode vazar.
+    ['experiments', { tenant_id: t, titulo: 'Teste de isolamento', metrica: 'atendimentos', starts_on: '2026-10-01', dias: 14, baseline: { de: '2026-09-17', ate: '2026-09-30', atendimentos: 3, atendidoCents: 15000 } }],
     ['business_hours', { tenant_id: t, weekday: 1, opens_at: '09:00', closes_at: '19:00' }],
     ['time_off', { tenant_id: t, starts_at: inicio, ends_at: fim }],
     ['professional_services', { tenant_id: t, professional_id: f.professionalId, service_id: f.serviceId }],

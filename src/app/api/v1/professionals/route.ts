@@ -31,23 +31,24 @@ export const POST = rota(async (req, _ctx, requestId) => {
   // sendo proibida, não devolver o resultado guardado de uma tentativa anterior.
   await exigirLimite(db, ctx.tenantId, 'profissionais')
 
-  const profissional = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: '/api/v1/professionals' }, () =>
-    criarProfissional(db, ctx.tenantId, entrada),
-  )
-
-  await writeAudit(
-    {
-      tenantId: ctx.tenantId,
-      actorId: ctx.sessao.userId,
-      actorRole: ctx.papel,
-      action: 'professional.create',
-      entity: 'professionals',
-      entityId: profissional.id,
-      after: profissional,
-      requestId,
-    },
-    req,
-  )
+  // BL-42: writeAudit dentro do fechamento — ver o comentário em wallet/credit/route.ts.
+  const profissional = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: '/api/v1/professionals' }, async () => {
+    const profissional = await criarProfissional(db, ctx.tenantId, entrada)
+    await writeAudit(
+      {
+        tenantId: ctx.tenantId,
+        actorId: ctx.sessao.userId,
+        actorRole: ctx.papel,
+        action: 'professional.create',
+        entity: 'professionals',
+        entityId: profissional.id,
+        after: profissional,
+        requestId,
+      },
+      req,
+    )
+    return profissional
+  })
 
   return profissional
 })

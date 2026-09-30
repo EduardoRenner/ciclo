@@ -1,5 +1,7 @@
 # 56 · ESTRATÉGIA DE PROSPECÇÃO LOCAL — O PRIMEIRO LOTE DE PAGANTES
 
+> **Atualização de 30/09/2026:** este documento é de 06/09 e parte do plano Grátis "para sempre" e de cobrança manual por Pix. **Vale a tese, o roteiro de visita (§3) e a cadência (§7).** **Não vale a oferta** (§4 e §5): o `docs/87` trocou o grátis por 60 dias de cortesia sem cartão, dois planos (Solo R$ 49 e Equipe R$ 99) e preço travado por 12 meses. Metas, funil e custos atuais: `docs/88`.
+
 > **Contexto que muda tudo, confirmado no código em 2026-09-06:** o Motor de Ciclo (a razão do
 > produto existir) já funciona por completo no plano **Grátis**, sem depender de nenhuma
 > integração pendente. `podeUsarCapacidade` (`core/billing/planos.ts`) mostra que o grátis inclui

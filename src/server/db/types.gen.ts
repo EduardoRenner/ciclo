@@ -1048,6 +1048,56 @@ export type Database = {
           },
         ]
       }
+      experiments: {
+        Row: {
+          baseline: Json
+          canceled_at: string | null
+          created_at: string
+          created_by: string | null
+          dias: number
+          id: string
+          metrica: string
+          starts_on: string
+          tenant_id: string
+          titulo: string
+          weekday: number | null
+        }
+        Insert: {
+          baseline: Json
+          canceled_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          dias: number
+          id?: string
+          metrica: string
+          starts_on: string
+          tenant_id: string
+          titulo: string
+          weekday?: number | null
+        }
+        Update: {
+          baseline?: Json
+          canceled_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          dias?: number
+          id?: string
+          metrica?: string
+          starts_on?: string
+          tenant_id?: string
+          titulo?: string
+          weekday?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "experiments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       health_records: {
         Row: {
           alert_label: string | null
@@ -2552,6 +2602,7 @@ export type Database = {
           bookable_online: boolean
           buffer_after_min: number
           buffer_before_min: number
+          canonical_key: string | null
           category_id: string | null
           cost_cents: number
           created_at: string
@@ -2582,6 +2633,7 @@ export type Database = {
           bookable_online?: boolean
           buffer_after_min?: number
           buffer_before_min?: number
+          canonical_key?: string | null
           category_id?: string | null
           cost_cents?: number
           created_at?: string
@@ -2612,6 +2664,7 @@ export type Database = {
           bookable_online?: boolean
           buffer_after_min?: number
           buffer_before_min?: number
+          canonical_key?: string | null
           category_id?: string | null
           cost_cents?: number
           created_at?: string
@@ -2907,6 +2960,44 @@ export type Database = {
             columns: ["profession_id"]
             isOneToOne: false
             referencedRelation: "professions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      terms_acceptances: {
+        Row: {
+          aceito_em: string
+          documento: string
+          id: string
+          tenant_id: string
+          user_id: string | null
+          versao: string
+          via: string
+        }
+        Insert: {
+          aceito_em?: string
+          documento: string
+          id?: string
+          tenant_id: string
+          user_id?: string | null
+          versao: string
+          via: string
+        }
+        Update: {
+          aceito_em?: string
+          documento?: string
+          id?: string
+          tenant_id?: string
+          user_id?: string | null
+          versao?: string
+          via?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "terms_acceptances_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -3676,6 +3767,10 @@ export type Database = {
       redigir_trilha_do_cliente: {
         Args: { p_client: string; p_tenant: string }
         Returns: Json
+      }
+      resolver_previsoes_em_lote: {
+        Args: { p_atualizacoes: Json; p_tenant_id: string }
+        Returns: number
       }
       resumo_central_de_acoes: {
         Args: { p_tenant: string }

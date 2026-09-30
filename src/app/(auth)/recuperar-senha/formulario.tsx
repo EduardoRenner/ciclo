@@ -53,7 +53,7 @@ export default function FormularioRecuperar() {
   }
 
   return (
-    <form
+    <form method="post"
       /*
         `onSubmit` e não `action`, e a diferença é medida: no React 19 um `<form action={fn}>`
         RESETA o formulário quando a ação termina, inclusive quando ela FALHOU. Conferido no

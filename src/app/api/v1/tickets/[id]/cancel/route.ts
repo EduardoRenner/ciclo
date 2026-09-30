@@ -18,12 +18,15 @@ export const POST = rota(async (req, params, requestId) => {
   if (!UUID.test(ticketId)) throw new AppError('NOT_FOUND', { message: 'Essa comanda não existe mais.' })
 
   const db = await criarClienteDoUsuario()
-  const ticket = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/tickets/${ticketId}/cancel` }, () => cancelarComandaFechada(db, ctx.tenantId, ticketId))
-
-  await writeAudit(
-    { tenantId: ctx.tenantId, actorId: ctx.sessao.userId, actorRole: ctx.papel, action: 'ticket.cancel', entity: 'tickets', entityId: ticketId, after: ticket, requestId },
-    req,
-  )
+  // BL-42: writeAudit dentro do fechamento — ver o comentário em wallet/credit/route.ts.
+  const ticket = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/tickets/${ticketId}/cancel` }, async () => {
+    const ticket = await cancelarComandaFechada(db, ctx.tenantId, ticketId)
+    await writeAudit(
+      { tenantId: ctx.tenantId, actorId: ctx.sessao.userId, actorRole: ctx.papel, action: 'ticket.cancel', entity: 'tickets', entityId: ticketId, after: ticket, requestId },
+      req,
+    )
+    return ticket
+  })
 
   return ticket
 })

@@ -14,23 +14,24 @@ export const POST = rota(async (req, _ctx, requestId) => {
   const entrada = await lerCorpo(req, EsquemaMovimentoCarteira)
   const db = await criarClienteDoUsuario()
 
-  const balanceCents = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: '/api/v1/wallet/debit' }, () =>
-    debitarCarteira(db, ctx.tenantId, entrada),
-  )
-
-  await writeAudit(
-    {
-      tenantId: ctx.tenantId,
-      actorId: ctx.sessao.userId,
-      actorRole: ctx.papel,
-      action: 'wallet.debit',
-      entity: 'wallet_entries',
-      entityId: entrada.clientId,
-      after: { ...entrada, balanceCents },
-      requestId,
-    },
-    req,
-  )
+  // BL-42: `writeAudit` dentro do fechamento — ver o comentário gêmeo em `wallet/credit/route.ts`.
+  const balanceCents = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: '/api/v1/wallet/debit' }, async () => {
+    const balanceCents = await debitarCarteira(db, ctx.tenantId, entrada)
+    await writeAudit(
+      {
+        tenantId: ctx.tenantId,
+        actorId: ctx.sessao.userId,
+        actorRole: ctx.papel,
+        action: 'wallet.debit',
+        entity: 'wallet_entries',
+        entityId: entrada.clientId,
+        after: { ...entrada, balanceCents },
+        requestId,
+      },
+      req,
+    )
+    return balanceCents
+  })
 
   return { balanceCents }
 })

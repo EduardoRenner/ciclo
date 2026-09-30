@@ -47,23 +47,24 @@ export const POST = rota(async (req, params, requestId) => {
    */
   if (entrada.points > 0) await exigirModulo(db, ctx.tenantId, 'loyalty')
 
-  const lancamento = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/clients/${id}/loyalty` }, () =>
-    lancarPontos(db, ctx.tenantId, id, ctx.sessao.userId, entrada),
-  )
-
-  await writeAudit(
-    {
-      tenantId: ctx.tenantId,
-      actorId: ctx.sessao.userId,
-      actorRole: ctx.papel,
-      action: 'loyalty.entry',
-      entity: 'loyalty_entries',
-      entityId: lancamento.id,
-      after: lancamento,
-      requestId,
-    },
-    req,
-  )
+  // BL-42: `writeAudit` dentro do fechamento — ver o comentário em `wallet/credit/route.ts`.
+  const lancamento = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/clients/${id}/loyalty` }, async () => {
+    const lancamento = await lancarPontos(db, ctx.tenantId, id, ctx.sessao.userId, entrada)
+    await writeAudit(
+      {
+        tenantId: ctx.tenantId,
+        actorId: ctx.sessao.userId,
+        actorRole: ctx.papel,
+        action: 'loyalty.entry',
+        entity: 'loyalty_entries',
+        entityId: lancamento.id,
+        after: lancamento,
+        requestId,
+      },
+      req,
+    )
+    return lancamento
+  })
 
   return lancamento
 })

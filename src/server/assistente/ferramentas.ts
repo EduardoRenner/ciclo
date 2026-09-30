@@ -4,10 +4,16 @@ import { z } from 'zod'
 import type { ModuloKey } from '@/core/billing/planos'
 import { mesAtual } from '@/core/tempo/dia'
 import { avaliarPermissao, type Papel } from '@/server/auth/rbac'
+import { AppError } from '@/server/http/errors'
 import { listarAgendamentos } from '@/server/services/agendamentos'
 import { listarProdutosAtivos } from '@/server/services/estoque'
 import { listarAlertasDeEstoque } from '@/server/services/alertas-estoque'
-import { resumoMensal } from '@/server/services/caixa'
+import { resumoDoIntervalo, resumoMensal } from '@/server/services/caixa'
+import { procurasEmDiaFechado } from '@/server/services/demanda-nao-atendida'
+import { janelasComparaveis } from '@/core/inteligencia/explicar'
+import { precoComPercentual } from '@/core/inteligencia/simular'
+import { lerCustoFixoDoTenant } from '@/server/services/custo-fixo'
+import { lerTaxasDoTenant } from '@/server/services/taxas-de-pagamento'
 import { buscarCliente, listarClientes } from '@/server/services/clientes'
 import { listarAgendaDoDia } from '@/server/services/agendamentos'
 import { listarOrcamentos } from '@/server/services/orcamentos'
@@ -16,7 +22,10 @@ import { listarServicos } from '@/server/services/servicos'
 import { buscarTicketIdPorAgendamento } from '@/server/services/comanda'
 import { listarProfissionais } from '@/server/services/profissionais'
 import { limparParaGemini } from '@/core/assistente/json-schema'
+import { frasesDaMemoria, memoriaDoCliente } from '@/core/crm/memoria-do-cliente'
 import { diaNoFuso } from '@/core/tempo/dia'
+import { formatarTelefone } from '@/core/text/telefone'
+import { textoDeVolta } from '@/lib/mensagens'
 import { resolverPorNome, resolverProfissional, type Candidato } from '@/core/assistente/resolver'
 import { semAcento } from '@/core/text/normalizar'
 import { resumoDeHoje, type LinhaHoje, type ResumoHoje } from '@/server/services/resumo-hoje'
@@ -108,6 +117,17 @@ const EsquemaPrepararAgendamento = z.object({
     .describe('telefone, SÓ quando a pessoa ainda não está cadastrada e o dono informou o número'),
 })
 
+const EsquemaSimularPreco = z.object({
+  servico: z.string().min(2).describe('nome do serviço, como o dono falou'),
+  precoNovoCents: z.number().int().positive().optional().describe('o preço que o DONO disse, em centavos; nunca sugira um'),
+  percentualBps: z.number().int().positive().max(100_000).optional().describe('ou a mudança em basis points (10% = 1000)'),
+  aumento: z.boolean().optional().describe('true para subir, false para baixar; padrão subir'),
+})
+
+const EsquemaSimularContratacao = z.object({
+  custoMensalCents: z.number().int().positive().describe('quanto a pessoa nova custaria por mês, com tudo, em centavos — o dono diz'),
+})
+
 const EsquemaCadastroDeCliente = z.object({
   nome: z.string().min(2).max(120).describe('nome completo de quem vai ser atendido, como o dono falou'),
   telefone: z.string().min(8).max(20).describe('telefone com DDD. OBRIGATORIO: se o dono nao disser, PERGUNTE. Nunca invente um numero.'),
@@ -125,6 +145,13 @@ const EsquemaNotaNaFicha = z.object({
   cliente: z.string().min(2).describe('nome de quem vai ser atendido, como o dono falou'),
   anotacao: z.string().min(2).max(2000).describe('o texto da anotação, EXATAMENTE como o dono ditou — não resuma, não reescreva, não corrija'),
 })
+
+const EsquemaChamadaDeVolta = z
+  .object({
+    cliente: z.string().min(2).max(120).optional().describe('nome de quem chamar de volta, como o dono falou'),
+    clientId: z.uuid().optional().describe('id de quem chamar, quando já veio de uma lista'),
+  })
+  .refine((v) => v.cliente !== undefined || v.clientId !== undefined, { message: 'Diga quem chamar.' })
 
 const EsquemaConcluirAtendimento = z.object({
   cliente: z.string().min(2).describe('nome de quem foi atendido'),
@@ -257,13 +284,25 @@ export const FERRAMENTAS: Ferramenta[] = [
     permissao: 'client:read',
     modulo: 'clients',
     executar: async (ctx, { clientId }) => {
-      const [cliente, agendamentos] = await Promise.all([
+      const [cliente, agendamentos, equipe] = await Promise.all([
         buscarCliente(ctx.db, ctx.tenantId, clientId),
         listarAgendamentos(ctx.db, ctx.tenantId, { clientId }),
+        listarProfissionais(ctx.db, ctx.tenantId, true),
       ])
+      // docs/84 P4: o costume sai do histórico INTEIRO (a faixa de retorno precisa dele), e volta já
+      // em frase — a mesma da ficha, com a contagem. Só o nome de quem atendeu, nada da equipe.
+      const nomeDe = new Map(equipe.map((p) => [p.id, p.display_name]))
+      const memoria = frasesDaMemoria(
+        memoriaDoCliente(
+          agendamentos
+            .filter((a) => a.status === 'done')
+            .map((a) => ({ dia: diaNoFuso(ctx.timezone, new Date(a.starts_at)), profissional: nomeDe.get(a.professional_id) ?? null })),
+          { variosProfissionais: equipe.filter((p) => p.active).length > 1 },
+        ),
+      )
       // Só os 10 mais recentes voltam ao modelo — histórico inteiro de anos não cabe no
       // contexto e não muda a resposta de "quando ela veio da última vez".
-      return { cliente: soCadastroQueOModeloPrecisa(cliente), ultimosAgendamentos: agendamentos.slice(-10).reverse() }
+      return { cliente: soCadastroQueOModeloPrecisa(cliente), ultimosAgendamentos: agendamentos.slice(-10).reverse(), memoria }
     },
   }),
   apagarTipo({
@@ -272,8 +311,93 @@ export const FERRAMENTAS: Ferramenta[] = [
     schema: EsquemaMes,
     permissao: 'report:read',
     modulo: 'register',
-    executar: async (ctx, args: z.infer<typeof EsquemaMes> | Record<string, never>) =>
-      resumoMensal(ctx.db, ctx.tenantId, ctx.timezone, 'mes' in args && args.mes ? args.mes : mesAtual(ctx.timezone)),
+    executar: async (ctx, args: z.infer<typeof EsquemaMes> | Record<string, never>) => {
+      const [resumo, taxas, custoFixo] = await Promise.all([
+        resumoMensal(ctx.db, ctx.tenantId, ctx.timezone, 'mes' in args && args.mes ? args.mes : mesAtual(ctx.timezone)),
+        lerTaxasDoTenant(ctx.db, ctx.tenantId),
+        lerCustoFixoDoTenant(ctx.db, ctx.tenantId),
+      ])
+      // `taxasRespondidas` e `custoFixoRespondido`: sem eles, quem fala "sobrou" não sabe o que foi
+      // descontado — e a frase afirmaria de menos ou de mais. Mesmas fontes da tela do caixa.
+      return { ...resumo, taxasRespondidas: taxas.respondida, custoFixoRespondido: custoFixo.respondido }
+    },
+  }),
+  apagarTipo({
+    nome: 'explicar_variacao',
+    descricao:
+      'Compara o faturamento de um mês (AAAA-MM; padrão: o corrente) com o mês anterior NOS MESMOS DIAS ' +
+      '(mês corrente até hoje contra os mesmos dias do anterior), com atendimentos e receita de cada lado — ' +
+      'a base para explicar por que subiu ou caiu.',
+    schema: EsquemaMes,
+    permissao: 'report:read',
+    modulo: 'register',
+    executar: async (ctx, args: z.infer<typeof EsquemaMes> | Record<string, never>) => {
+      const hoje = Temporal.PlainDate.from(hojeNoFuso(ctx.timezone))
+      const c = janelasComparaveis('mes' in args && args.mes ? args.mes : mesAtual(ctx.timezone), hoje)
+      if (!c) return { status: 'futuro' }
+      const [agora, antes] = await Promise.all([
+        resumoDoIntervalo(ctx.db, ctx.tenantId, ctx.timezone, c.agora.inicio, c.agora.fimExclusivo),
+        resumoDoIntervalo(ctx.db, ctx.tenantId, ctx.timezone, c.antes.inicio, c.antes.fimExclusivo),
+      ])
+      return {
+        status: 'ok',
+        parcial: c.parcial,
+        agora: { rotulo: c.agora.rotulo, atendimentos: agora.ticketsCount, receitaCents: agora.revenueCents },
+        antes: { rotulo: c.antes.rotulo, atendimentos: antes.ticketsCount, receitaCents: antes.revenueCents },
+      }
+    },
+  }),
+  apagarTipo({
+    nome: 'simular_preco',
+    descricao:
+      'Simula a mudança de preço de UM serviço que o dono está considerando: preço de hoje, atendimentos ' +
+      'concluídos desse serviço nos últimos 90 dias e o preço novo que ELE disse. Nunca sugere preço.',
+    schema: EsquemaSimularPreco,
+    permissao: 'report:read',
+    modulo: 'register',
+    executar: async (ctx, { servico, precoNovoCents, percentualBps, aumento }) => {
+      const servicos = await listarServicos(ctx.db, ctx.tenantId)
+      const rs = resolverPorNome(servico, servicos.map((s) => ({ id: s.id, nome: s.name })))
+      if (rs.tipo === 'nenhum') return { status: 'nao_achei', oQue: 'servico', termo: servico, servicosDisponiveis: servicos.map((s) => s.name) }
+      if (rs.tipo === 'ambiguo') return { status: 'qual_delas', oQue: 'servico', opcoes: rs.opcoes.map((o) => o.nome) }
+      const s = servicos.find((x) => x.id === rs.item.id)!
+      // Preço por hora, visita+hora, diária ou sob orçamento não tem "o preço" para multiplicar.
+      if (s.pricing_model !== 'fixed' || s.price_cents <= 0) return { status: 'nao_da', motivo: 'preco_nao_fixo', servico: s.name }
+      const novo = precoNovoCents ?? (percentualBps ? precoComPercentual(s.price_cents, percentualBps, aumento ?? true) : null)
+      if (!novo) return { status: 'nao_da', motivo: 'sem_preco_novo', servico: s.name }
+      const desde = Temporal.PlainDate.from(hojeNoFuso(ctx.timezone)).subtract({ days: 90 }).toZonedDateTime({ timeZone: ctx.timezone, plainTime: '00:00' }).toInstant().toString()
+      const { count, error } = await ctx.db
+        .from('appointments')
+        .select('id', { count: 'exact', head: true })
+        .eq('tenant_id', ctx.tenantId)
+        .eq('service_id', s.id)
+        .eq('status', 'done')
+        .gte('starts_at', desde)
+      if (error) throw new AppError('INTERNAL', { cause: error })
+      return { status: 'ok', servico: s.name, precoAtualCents: s.price_cents, precoNovoCents: novo, atendimentos: count ?? 0, dias: 90 }
+    },
+  }),
+  apagarTipo({
+    nome: 'simular_contratacao',
+    descricao: 'Quantos atendimentos por mês uma contratação precisa trazer para se pagar, pelo que SOBRA por atendimento nos últimos 30 dias. O custo é o que o dono disse.',
+    schema: EsquemaSimularContratacao,
+    permissao: 'report:read',
+    modulo: 'register',
+    executar: async (ctx, { custoMensalCents }) => {
+      const hoje = Temporal.PlainDate.from(hojeNoFuso(ctx.timezone))
+      const r = await resumoDoIntervalo(ctx.db, ctx.tenantId, ctx.timezone, hoje.subtract({ days: 29 }).toString(), hoje.add({ days: 1 }).toString())
+      return { status: 'ok', custoMensalCents, atendimentos: r.ticketsCount, sobraCents: r.profitCents, dias: 30 }
+    },
+  }),
+  apagarTipo({
+    nome: 'procuras_sem_horario',
+    descricao:
+      'Quantas procuras pela página de agendamento caíram em dia FECHADO nos últimos 30 dias, por dia da semana ' +
+      '(pares distintos serviço+dia, sem dado pessoal). É o dado do "e se eu abrir tal dia?".',
+    schema: EsquemaVazio,
+    permissao: 'report:read',
+    modulo: 'agenda',
+    executar: async (ctx) => procurasEmDiaFechado(ctx.db, ctx.tenantId, hojeNoFuso(ctx.timezone)),
   }),
   apagarTipo({
     nome: 'ocupacao_do_dia',
@@ -604,6 +728,52 @@ export const FERRAMENTAS: Ferramenta[] = [
         // como UUID de novo em `core/assistente/acoes.ts` antes de virar URL.
         dados: { clientId: rc.item.id, body: anotacao },
         resumo: { Cliente: rc.item.nome, Anotação: anotacao },
+      }
+    },
+  }),
+  apagarTipo({
+    nome: 'preparar_chamada_de_volta',
+    descricao:
+      'Prepara a mensagem para chamar de volta alguém que passou da hora de voltar e devolve uma PROPOSTA. NÃO manda nada: o dono abre no PRÓPRIO WhatsApp e envia ele mesmo.',
+    schema: EsquemaChamadaDeVolta,
+    // A MESMA permissão e o MESMO módulo do "Chamar" da tela Recuperar (`/cycle/recover/manual`,
+    // `clientes_para_recuperar`): o assistente não alcança o que a tela não alcança.
+    permissao: 'client:read',
+    modulo: 'cycle_engine',
+    executar: async (ctx, { cliente, clientId }) => {
+      /*
+        docs/84 P2 / docs/85 §2.5 ("resolve"). A pessoa sai da MESMA lista da tela Recuperar — é ela
+        que decide quem passou da hora (e tira quem tem outro ciclo em dia, `quemRecuperar`). Uma
+        segunda regra aqui divergiria da tela sem nenhuma suíte ficar vermelha.
+      */
+      const lista = await listarParaRecuperar(ctx.db, ctx.tenantId, { limit: 100_000 })
+      let alvo = clientId ? lista.items.find((i) => i.clientId === clientId) : undefined
+      if (!alvo && cliente) {
+        const rc = resolverPorNome(cliente, lista.items.map((i) => ({ id: i.clientId, nome: i.name })))
+        if (rc.tipo === 'ambiguo') return { status: 'qual_delas', oQue: 'cliente', opcoes: rc.opcoes.map((o) => o.nome) }
+        if (rc.tipo === 'achou') alvo = lista.items.find((i) => i.clientId === rc.item.id)
+      }
+      if (!alvo) {
+        // Fora da lista não é "não achei": a pessoa pode existir e estar no ritmo. Dizer "não achei"
+        // para uma cliente que está na tela ao lado seria mentir sobre o cadastro.
+        const existe = cliente ? (await listarClientes(ctx.db, ctx.tenantId, { busca: cliente, limite: 5 })).length > 0 : Boolean(clientId)
+        return existe ? { status: 'nao_da', motivo: 'fora_da_lista', cliente: cliente ?? '' } : { status: 'nao_achei', oQue: 'cliente', termo: cliente ?? '' }
+      }
+      // A mesma trava da tela e do servidor (`registrarChamadaManual`): pediu para parar, não recebe.
+      if (alvo.optOut) return { status: 'nao_da', motivo: 'pediu_para_nao_receber', cliente: alvo.name }
+
+      return {
+        status: 'proposta',
+        acao: 'chamar_de_volta',
+        // `clientId`/`serviceId` são o corpo de `EsquemaChamadaManual`; `telefone` só monta o wa.me
+        // na tela (o Zod da rota descarta a chave). O texto é o MESMO do "Chamar" da tela Recuperar.
+        dados: { clientId: alvo.clientId, serviceId: alvo.serviceId, telefone: alvo.phone, mensagem: textoDeVolta({ nome: alvo.name, servico: alvo.serviceName }) },
+        resumo: {
+          cliente: alvo.name,
+          servico: alvo.serviceName,
+          WhatsApp: formatarTelefone(alvo.phone) ?? 'sem telefone salvo: você escolhe o contato',
+          Mensagem: textoDeVolta({ nome: alvo.name, servico: alvo.serviceName }),
+        },
       }
     },
   }),

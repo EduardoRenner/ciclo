@@ -36,25 +36,24 @@ export const PATCH = rota(async (req, params, requestId) => {
     await exigirModulo(db, ctx.tenantId, 'team')
   }
 
-  const profissional = await comIdempotencia(
-    req,
-    { tenantId: ctx.tenantId, endpoint: `/api/v1/professionals/${id}` },
-    () => atualizarProfissional(db, ctx.tenantId, id, entrada),
-  )
-
-  await writeAudit(
-    {
-      tenantId: ctx.tenantId,
-      actorId: ctx.sessao.userId,
-      actorRole: ctx.papel,
-      action: 'professional.update',
-      entity: 'professionals',
-      entityId: id,
-      after: profissional,
-      requestId,
-    },
-    req,
-  )
+  // BL-42: writeAudit dentro do fechamento — ver o comentário em wallet/credit/route.ts.
+  const profissional = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/professionals/${id}` }, async () => {
+    const profissional = await atualizarProfissional(db, ctx.tenantId, id, entrada)
+    await writeAudit(
+      {
+        tenantId: ctx.tenantId,
+        actorId: ctx.sessao.userId,
+        actorRole: ctx.papel,
+        action: 'professional.update',
+        entity: 'professionals',
+        entityId: id,
+        after: profissional,
+        requestId,
+      },
+      req,
+    )
+    return profissional
+  })
 
   return profissional
 })
@@ -66,25 +65,24 @@ export const DELETE = rota(async (req, params, requestId) => {
   const id = await idValidado(params)
   const db = await criarClienteDoUsuario()
 
-  const resultado = await comIdempotencia(
-    req,
-    { tenantId: ctx.tenantId, endpoint: `/api/v1/professionals/${id}` },
-    () => desativarProfissional(db, ctx.tenantId, id),
-  )
-
-  await writeAudit(
-    {
-      tenantId: ctx.tenantId,
-      actorId: ctx.sessao.userId,
-      actorRole: ctx.papel,
-      action: 'professional.deactivate',
-      entity: 'professionals',
-      entityId: id,
-      after: resultado,
-      requestId,
-    },
-    req,
-  )
+  // BL-42: writeAudit dentro do fechamento — ver o comentário em wallet/credit/route.ts.
+  const resultado = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/professionals/${id}` }, async () => {
+    const resultado = await desativarProfissional(db, ctx.tenantId, id)
+    await writeAudit(
+      {
+        tenantId: ctx.tenantId,
+        actorId: ctx.sessao.userId,
+        actorRole: ctx.papel,
+        action: 'professional.deactivate',
+        entity: 'professionals',
+        entityId: id,
+        after: resultado,
+        requestId,
+      },
+      req,
+    )
+    return resultado
+  })
 
   return resultado
 })

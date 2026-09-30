@@ -38,6 +38,7 @@ export const GET = rota(async (req) => {
     const agora = new Date()
     let tenantsProcessados = 0
     let totalEnviadas = 0
+    let falhas = 0
     for (const tenant of tenants ?? []) {
       // Tenant de demonstração não tem cliente de verdade do outro lado do telefone.
       if (ehDemonstracao(tenant.slug)) continue
@@ -52,7 +53,8 @@ export const GET = rota(async (req) => {
         const resultado = await executarCampanhaDiaria(svc, tenant.id, tenant.timezone)
         totalEnviadas += resultado.queued
       } catch (erro) {
-        console.error(JSON.stringify({ level: 'error', event: 'campanha_diaria_falhou', tenantId: tenant.id }), erro)
+        falhas++
+        console.error(JSON.stringify({ level: 'error', event: 'campanha_diaria_tenant_falhou', tenantId: tenant.id }), erro)
       }
       tenantsProcessados++
     }
@@ -61,6 +63,6 @@ export const GET = rota(async (req) => {
     // padrão de `reminders/route.ts`), senão o heartbeat vira falso-negativo em dia sem tenant.
     await registrarHeartbeat(svc, 'send_campaigns')
 
-    return { tenantsProcessados, totalEnviadas }
+    return { tenantsProcessados, totalEnviadas, tenantsComFalha: falhas }
   })
 })

@@ -36,24 +36,25 @@ export const PATCH = rota(async (req, params, requestId) => {
 
   const antes = await buscarCliente(db, ctx.tenantId, id)
 
-  const cliente = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/clients/${id}` }, () =>
-    atualizarCliente(db, ctx.tenantId, id, entrada),
-  )
-
-  await writeAudit(
-    {
-      tenantId: ctx.tenantId,
-      actorId: ctx.sessao.userId,
-      actorRole: ctx.papel,
-      action: 'client.update',
-      entity: 'clients',
-      entityId: id,
-      before: antes,
-      after: cliente,
-      requestId,
-    },
-    req,
-  )
+  // BL-42: writeAudit dentro do fechamento — ver o comentário em wallet/credit/route.ts.
+  const cliente = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/clients/${id}` }, async () => {
+    const cliente = await atualizarCliente(db, ctx.tenantId, id, entrada)
+    await writeAudit(
+      {
+        tenantId: ctx.tenantId,
+        actorId: ctx.sessao.userId,
+        actorRole: ctx.papel,
+        action: 'client.update',
+        entity: 'clients',
+        entityId: id,
+        before: antes,
+        after: cliente,
+        requestId,
+      },
+      req,
+    )
+    return cliente
+  })
 
   return cliente
 })
@@ -65,22 +66,23 @@ export const DELETE = rota(async (req, params, requestId) => {
   const id = await idValidado(params)
   const db = await criarClienteDoUsuario()
 
-  const resultado = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/clients/${id}` }, () =>
-    removerCliente(db, ctx.tenantId, id),
-  )
-
-  await writeAudit(
-    {
-      tenantId: ctx.tenantId,
-      actorId: ctx.sessao.userId,
-      actorRole: ctx.papel,
-      action: 'client.delete',
-      entity: 'clients',
-      entityId: id,
-      requestId,
-    },
-    req,
-  )
+  // BL-42: writeAudit dentro do fechamento — ver o comentário em wallet/credit/route.ts.
+  const resultado = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/clients/${id}` }, async () => {
+    const resultado = await removerCliente(db, ctx.tenantId, id)
+    await writeAudit(
+      {
+        tenantId: ctx.tenantId,
+        actorId: ctx.sessao.userId,
+        actorRole: ctx.papel,
+        action: 'client.delete',
+        entity: 'clients',
+        entityId: id,
+        requestId,
+      },
+      req,
+    )
+    return resultado
+  })
 
   return resultado
 })

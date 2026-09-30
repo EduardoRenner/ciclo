@@ -247,7 +247,7 @@ export default function FormularioAgendamento({
   }
 
   return (
-    <form onSubmit={aoEnviarFormulario} className="flex flex-col gap-4">
+    <form method="post" onSubmit={aoEnviarFormulario} className="flex flex-col gap-4">
       <Select rotulo={comMaiuscula(vocabulario.servico)} value={serviceId} onChange={(e) => setServiceId(e.target.value)} required>
         {servicos.map((s) => (
           <option key={s.id} value={s.id}>

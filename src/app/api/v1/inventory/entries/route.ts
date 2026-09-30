@@ -20,12 +20,15 @@ export const POST = rota(async (req, _ctx, requestId) => {
   // já existe. Quem desce de degrau continua vendo o que registrou — o que trava é criar mais.
   await exigirModulo(db, ctx.tenantId, 'stock')
 
-  const produto = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: '/api/v1/inventory/entries' }, () => registrarEntradaEstoque(db, ctx.tenantId, entrada))
-
-  await writeAudit(
-    { tenantId: ctx.tenantId, actorId: ctx.sessao.userId, actorRole: ctx.papel, action: 'inventory.entry', entity: 'products', entityId: entrada.productId, after: produto, requestId },
-    req,
-  )
+  // BL-42: `writeAudit` dentro do fechamento — ver o comentário em `wallet/credit/route.ts`.
+  const produto = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: '/api/v1/inventory/entries' }, async () => {
+    const produto = await registrarEntradaEstoque(db, ctx.tenantId, entrada)
+    await writeAudit(
+      { tenantId: ctx.tenantId, actorId: ctx.sessao.userId, actorRole: ctx.papel, action: 'inventory.entry', entity: 'products', entityId: entrada.productId, after: produto, requestId },
+      req,
+    )
+    return produto
+  })
 
   return produto
 })

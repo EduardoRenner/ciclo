@@ -469,3 +469,728 @@ com `since` recente (dentro de 24h) e `requestPath`/`query` filtrando `/agendar`
 `.claude/ciclo/growth-opportunities.md`/`funnel.md`/`market-intelligence.md`/`experiments.md`
 (missão de crescimento) documentam o resto do que essa mesma sessão pesquisou — este achado é o
 único item de bug-hunting que a pesquisa de mercado produziu de lambuja.
+
+---
+
+## 2026-09-27/28 · Missão `.claude/ciclo/loop-motor-nao-esquece.md` — BL-48, BL-47, BL-46, todos fechados
+
+Modo autônomo infinito, branch `fix/motor-nao-esquece-2026-09-27`, 5 commits.
+
+**BL-48 (serviço arquivado / cliente eliminada continuavam "atrasados" para sempre).** A tentativa
+anterior (commit `f6f46acf`, revertida em `9bf0d1b8`) tinha diagnosticado RLS como causa do erro na
+CI — **errado**. Reproduzido com Postgres local: `service_role` ignora RLS por desenho
+(`BYPASSRLS`), `FORCE ROW LEVEL SECURITY` não vale para ele. A causa real: `client_cycles` tem chave
+primária composta, sem coluna `id`, e o laço genérico de `TABELAS_APAGADAS` fazia
+`.delete()...select('id')` — `SQLSTATE 42703`. Corrigido com deleção própria fora do laço. Segunda
+parte (serviço arquivado): job noturno ganhou `.eq('active', true)`, e as duas views de dinheiro
+(`v_recover_revenue`, `v_clientes_a_recuperar`) ganharam o mesmo filtro dos dois lados da lógica.
+Todas as três partes verificadas com mutação (reintroduzi o defeito, vi a guarda reprovar,
+restaurei).
+
+**BL-47 (cobertura de dinheiro da porta CSV).** Ao tentar espelhar os 3 casos de
+`quem-ja-atendo.test.ts`, achado: 2 deles (assinante ativo, pacote com saldo) são estruturalmente
+IMPOSSÍVEIS pela porta CSV — ela só cria cadastro novo, nunca atualiza um telefone já existente, e
+assinatura/pacote só existem presos a um `client_id` que já tem ficha. Implementado só o caso
+alcançável, com o achado documentado no backlog para não ser tentado de novo à toa.
+
+**BL-46 (`resolverPrevisoes` nunca em lote).** Medido pela primeira vez com Docker disponível:
+17,57ms/previsão, 87,8s para 5 mil. RPC em lote (`resolver_previsoes_em_lote`, migration `0094`)
+trouxe para 0,08ms/previsão — **~208x mais rápido**. A trava contra corrida (`resolved_at is null`)
+continua por linha, dentro do `UPDATE` em lote. **Achado no caminho, sobre o próprio teste que eu
+estava escrevendo:** a primeira versão do teste de corrida chamava `resolverPrevisoes` duas vezes em
+sequência e via "0 fechadas" na segunda — mas por motivo ERRADO (o filtro externo de
+`resolverPrevisoes`, não a trava da RPC). O teste passava mesmo com a trava removida da função
+(mutação testada). Corrigido chamando a RPC direto, duas vezes, com o mesmo lote — só assim a
+mutação REPROVA de verdade. **Segundo achado, também de isolamento:** o benchmark de 5 mil
+previsões usava o tenant compartilhado do arquivo e poluía a amostra que outro teste
+(`'prestação de contas do Motor'`) precisa pequena para provar que `acertoBps` fica `null` — isolado
+num tenant próprio.
+
+**Infra, de passagem:** depois de um `supabase db reset --local`, o Kong local ficou apontando para
+o IP antigo do container de auth (`connect() failed... 172.18.0.6:9999`) — `502` em toda chamada de
+auth admin, com a mensagem genérica "An invalid response was received from the upstream server" do
+lado do supabase-js. `docker restart supabase_kong_ciclo` resolve. Vale lembrar se acontecer de
+novo: não é bug do teste, é o proxy com cache de DNS/IP desatualizado depois de um restart de
+container.
+
+`pnpm verify` verde nas três frentes. Suíte de integração inteira rodou verde (1 flake pré-existente
+e não relacionado em `job-queue.test.ts` sob carga pesada, confirmado passando isolado).
+
+---
+
+## 2026-09-28 · BL-42 — 5 rotas de dinheiro param de duplicar linha de auditoria em retry
+
+Mesma missão, mesmo loop infinito. `writeAudit` ficava FORA do fechamento que `comIdempotencia`
+protege em pelo menos 49 (na verdade 50, recontado) rotas — repetir a mesma `Idempotency-Key`
+(fila offline reenviando, toque duplo) não repetia a mutação, mas gravava uma linha nova em
+`audit_log` a cada repetição. Corrigido nas 5 rotas onde isso mais custa (dinheiro):
+`wallet/credit`, `wallet/debit`, `tickets/[id]/close`, `billing/assinar`, `billing/cancelar` —
+`writeAudit` move para dentro do fechamento; numa repetição, `comIdempotencia` nem chama o
+fechamento, então nem a mutação nem a auditoria rodam de novo.
+
+**Achado ao contar a lista de pendentes, não ao consertar:** escrevi a lista das 44 rotas restantes
+de cabeça (a partir do resultado de um `grep` que eu já tinha visto) e errei — pulei
+`tickets/[id]/cancel`. Recontei gerando a lista por comando em vez de por memória: são 45
+restantes, não 44 (50 no total, não 49 — a contagem original do achado, "pelo menos 49", ficou
+desatualizada no meio do caminho, uma rota nova nasceu). Registrado no BL-42 com a lista completa,
+gerada, não digitada.
+
+`pnpm verify` verde. `tests/integration/idempotencia-nao-duplica-auditoria.test.ts` prova o
+mecanismo (`comIdempotencia`+`writeAudit`) contra Postgres real, verificado com mutação.
+
+---
+
+## 2026-09-28 · BL-42, segunda rodada — mais 5 rotas + guarda de fonte permanente
+
+Mesmo loop. Mais 5 rotas corrigidas, priorizadas por LGPD/dinheiro/estoque: `clients/[id]/erase`
+(eliminação de dado pessoal — o registro que prova quando e por quem é onde a auditoria inflada
+mais dói), `packages`, `packages/[id]/use`, `inventory/entries`, `clients/[id]/subscription`
+(POST+DELETE). Total: 10 de 50.
+
+**Decisão desta rodada:** em vez de só repetir o conserto rota a rota confiando na memória de "fiz
+certo", escrevi uma guarda de fonte (`tests/unit/design/writeaudit-dentro-do-idempotente.test.ts`)
+que confere, para as rotas já corrigidas, que `writeAudit(` está de verdade DENTRO do corpo
+balanceado de `comIdempotencia(` — não só presente no arquivo. Isso transforma "eu revisei" em algo
+que a próxima pessoa (ou eu, na próxima rodada) não pode desfazer sem o teste avisar. Verificado com
+mutação: reintroduzi o defeito original em `inventory/entries` (voltei `writeAudit` pra fora), a
+guarda reprovou nomeando a rota certa, restaurei.
+
+`pnpm verify` verde. Testes relacionados às rotas tocadas (`lgpd.test.ts`, `pacotes.test.ts`,
+`estoque.test.ts`) continuam verdes, sem regressão.
+
+---
+
+## 2026-09-28 · BL-42, terceira rodada — mais 5 rotas, e uma varredura de `growth-opportunities.md` que não achou alvo
+
+Antes de continuar o BL-42, conferi as sete entradas de `growth-opportunities.md` (GO-0 a GO-6)
+procurando um alvo alternativo, para variar de ticket. Nenhuma serve para esta sessão:
+
+- GO-0: bloqueada por acesso a credenciais de produção (rodar um script, não código a escrever).
+- GO-1: já decidida "não construir mais" (evidência insuficiente/já resolvido de outro jeito).
+- GO-2: decisão do Eduardo (ligar `reminders` em produção — mensagem pra cliente final de terceiro).
+- GO-3: bloqueada por GO-0.
+- GO-4: causa raiz já corrigida em sessão anterior; o que resta é medir com GO-0.
+- GO-5: "não é lacuna a preencher às pressas" — recomendação explícita de não implementar.
+- GO-6: "não implementar agora" — recomendação explícita, e é a mesma família de "mensagem para
+  terceiro" do GO-2.
+
+Achado, não implementação: todo o documento de oportunidades de crescimento está genuinamente
+esgotado para trabalho autônomo agora — sete de sete itens são bloqueio de acesso, decisão de
+negócio, ou dependência de outro item bloqueado. Voltei para o BL-42, que continua sendo o alvo
+mais produtivo disponível.
+
+Mais 5 rotas corrigidas, por volume/valor: `clients/[id]/loyalty`, `campaigns`, `quotes`, `clients`
+(maior volume do produto), `appointments/[id]/complete` (dispara recálculo síncrono do Motor —
+provavelmente a rota mutante mais chamada do produto inteiro). Total: 15 de 50. Guarda de fonte
+estendida e reverificada com mutação numa rota nova (`clients/route.ts`).
+
+`pnpm verify` verde. Testes relacionados (`ciclo.test.ts`, `orcamentos.test.ts`, `comanda.test.ts`)
+continuam verdes.
+
+---
+
+## 2026-09-28 (rodada 4) — BL-42 vira regra de ESLint; `test:integration` oscila por contenção de conexão, não por defeito
+
+**Regra de ESLint em vez de rota por rota.** Depois de 3 rodadas fixando rotas uma a uma (15 de
+50), o passo de maior alavancagem era parar de depender de memória humana para "não esquecer" uma
+rota nova. `ciclo/writeaudit-dentro-do-idempotente` (`eslint-rules/index.mjs`) faz isso em AST,
+mesmo mecanismo de `service-client-confinado`.
+
+**Achado no meu próprio design, antes de commitar — vale registrar por ser exatamente a família de
+defeito que este projeto já catalogou.** A primeira versão da regra era "todo `comIdempotencia`
+sem `writeAudit` dentro do fechamento é erro". Passou nos 4 primeiros casos do teste e só quebrou
+no quinto: "rota que não audita nada não pode ser reprovada". A regra estava certa para o padrão
+que eu tinha em mente (writeAudit MOVIDO pra fora) mas cega para o caso real mais comum no código
+(mutação que não tem — nem precisa ter — auditoria). Isso é `medição ingênua dá falso positivo` e
+`guarda cega` ao mesmo tempo: eu tinha escrito a própria armadilha que a tabela do CLAUDE.md
+cataloga, num arquivo que EXISTE para caçar essa família de defeito. Corrigido antes do commit: a
+regra só acusa quando existe uma chamada de `writeAudit` em algum lugar da MESMA função que não
+está dentro do fechamento — não quando `writeAudit` está simplesmente ausente.
+
+`pnpm lint` bateu com a lista existente: 40 warnings em 34 arquivos, contra os "35 pendentes"
+escritos à mão na rodada anterior — a diferença é a mesma classe de erro de contagem manual já
+documentada nesta sessão (`.claude/ciclo/autonomous-backlog.md`, BL-42), e a regra nova existe
+justamente para a ferramenta contar sozinha daqui pra frente.
+
+**`test:integration` oscilando entre rodadas — não é regressão deste diff.** `pnpm verify` completo
+rodou 3 vezes nesta sessão e falhou em arquivos DIFERENTES a cada vez: primeiro
+`lembretes`/`comanda`/`cor-do-site` (todos com `AppError('INTERNAL', { cause: erroTenant })` saindo
+de `executarOnboarding`), depois `job-queue` (contagem de concorrência, 997/1000)  e
+`whatsapp-inbound` ("An invalid response was received from the upstream server" — a MESMA
+assinatura do achado de Kong/Docker já documentado nesta sessão), depois `reconhecimento` (de novo
+`executarOnboarding`) e `job-queue` de novo (999/1000). Nenhum desses arquivos toca
+`eslint-rules/`, `eslint.config.mjs` ou o teste novo. Reproduzido: `docker restart
+supabase_kong_ciclo` não resolveu sozinho desta vez (o padrão se repetiu depois do restart), mas
+`vitest run --config vitest.banco.config.ts --dir tests/integration --poolOptions.forks.maxForks=2`
+passou **430/430** de primeira — confirma contenção de conexão com o Postgres local sob paralelismo
+alto (muitos arquivos de teste abrindo conexão ao mesmo tempo), não um defeito de código. Registro
+aqui **para não confundir com bug de teste da próxima vez** (mesma cautela já registrada para o
+achado do Kong): se `test:integration` falhar em arquivos que mudam a cada rodada e a mensagem for
+`AppError INTERNAL` genérico ou "invalid response from upstream", rode de novo com
+`--poolOptions.forks.maxForks=2` antes de investigar como bug.
+
+`pnpm verify` (rodando os gates separadamente para confirmar, dado o achado acima): typecheck ✓,
+lint ✓ (0 erros, 40 warnings novos e esperados), test:unit 2764 ✓, test:integration 430/430 ✓ (com
+`maxForks=2`), test:rls 210 ✓, build ✓. Guarda nova mutada e vista reprovando antes do commit
+(`d76d93f5`).
+
+---
+
+## 2026-09-28 (rodadas 5–10) — BL-42 fechado: 50 de 50 rotas, regra em "error"
+
+Seis rodadas depois da 4 (que criou a regra de ESLint), o BL-42 foi de 15 para 50 rotas corrigidas
+e a regra subiu de `"warn"` para `"error"`. Registro só o que é novo em relação à rodada 4 — o
+mecanismo em si já está documentado lá.
+
+**A lista manual de pendências foi abandonada de propósito a partir da rodada 5.** Mantê-la era a
+própria fonte do erro de contagem já documentado nesta sessão (rodadas 1–3: "pelo menos 49",
+depois "50", com um item esquecido no meio do caminho). A partir daqui, cada rodada regenerou a
+lista com `npx eslint 'src/app/api/v1/**'` filtrando por `ciclo/writeaudit-dentro-do-idempotente` —
+a ferramenta virou sua própria fonte de verdade sobre o que falta, em vez de depender de alguém
+lembrar de atualizar um `.md`.
+
+**Dois casos fugiram do padrão mecânico "mover a chamada para dentro" e mereceram desenho próprio:**
+
+1. `clients/ja-atendo/route.ts` (rodada 6): `registrarPrimeiraOcorrencia` fica de propósito FORA do
+   fechamento. Ela mesma se protege (`SELECT` antes do `INSERT` — "primeira ocorrência" é o próprio
+   contrato da função), então repeti-la numa repetição idempotente é inofensivo — ao contrário de
+   `writeAudit`, que sempre insere uma linha nova sem checar se já existe. Mover TUDO pra dentro por
+   reflexo teria sido esconder essa distinção, não corrigi-la.
+2. `account/route.ts` (rodada 10): não era uma chamada de `writeAudit`, era um LAÇO — um registro
+   por vínculo/tenant (quem é `professional` em dois salões, por exemplo). Fora do fechamento, uma
+   repetição não duplicaria uma linha, duplicaria N linhas (uma por vínculo). O laço inteiro
+   precisou mover para dentro, não só a chamada individual.
+
+**O passo final (rodada 10) foi verificado nos dois sentidos, não só um.** Antes de subir
+`ciclo/writeaudit-dentro-do-idempotente` de `"warn"` para `"error"` em `eslint.config.mjs`,
+confirmei `pnpm lint` limpo (zero erros, zero warnings) — subir a severidade com alguma rota ainda
+pendente teria quebrado `pnpm verify` na hora. Depois de subir, testei o oposto: reintroduzi o
+defeito em `waitlist/route.ts` (a mesma mutação de sempre) e rodei `pnpm lint` de novo — agora ele
+FALHA de verdade (`ELIFECYCLE`, exit 1), não só avisa. Sem esse segundo teste, "subi a severidade"
+seria uma afirmação não verificada — o mesmo espírito do procedimento de mutação, aplicado à
+CONFIGURAÇÃO da regra, não só ao código que ela varre.
+
+**O mecanismo final que fica:** duas guardas independentes, cada uma pega uma classe diferente de
+regressão. `tests/unit/design/writeaudit-dentro-do-idempotente.test.ts` prova, rota por rota, que
+as 50 já corrigidas continuam corrigidas — útil como documentação viva e como teste rápido em CI. A
+regra de ESLint (`error`) pega QUALQUER rota, existente ou futura, sem precisar que ninguém edite
+lista nenhuma — é ela quem realmente fecha o buraco de origem do BL-42 (alguém escrever uma rota
+nova com o padrão errado e ninguém perceber na revisão).
+
+`pnpm verify` da rodada final: typecheck ✓, lint ✓ (0 problemas com a regra em `error`), test:unit
+2799 ✓, test:integration 430/430 ✓ (com `maxForks=2`), test:rls 210 ✓, build ✓.
+
+---
+
+## 2026-09-28 — Varredura: "confiar no `tenant_id` do corpo da requisição" — LIMPA (achado negativo)
+
+Depois do BL-42 fechado, varri o código atrás da armadilha catalogada no CLAUDE.md ("Confiar no
+`tenant_id` do corpo da requisição / Use sempre o do contexto validado"). Três checagens, cada uma
+cobrindo uma superfície diferente:
+
+1. `grep -rn 'tenantId:\s*z\.' src/` — **zero** schemas Zod (`EsquemaXxx`) declaram um campo
+   `tenantId`. Se nenhum schema aceita o campo, `lerCorpo` nunca deixaria um `tenantId` do corpo
+   chegar a lugar nenhum — a validação na borda (regra 7 do CLAUDE.md) já fecha essa porta antes de
+   qualquer rota individual precisar se lembrar de ignorá-lo.
+2. Todas as 80 rotas de `src/app/api/v1/**/route.ts` que usam `tenantId` o fazem via `ctx.tenantId`
+   (de `contextoAtual(req)`, a sessão validada) — nenhuma lê de `entrada.tenantId`/`corpo.tenantId`/
+   query string. As poucas ocorrências de `entrada.tenantId` que existem no projeto inteiro
+   (`server/audit/write.ts`, `server/services/job-queue.ts`, `server/services/mensageria.ts`) são
+   parâmetros de função de camada de SERVIÇO, sempre chamadas pela própria rota já passando
+   `ctx.tenantId` — não são o corpo bruto da requisição HTTP.
+3. Os dois webhooks públicos e não-autenticados (`webhooks/mercado-pago`, `webhooks/whatsapp`) —
+   a superfície de MAIOR risco, já que não têm sessão nenhuma — não recebem `tenantId` do payload
+   em lugar nenhum. O do Mercado Pago verifica a assinatura HMAC (`verificarAssinaturaWebhook`)
+   ANTES de processar qualquer coisa, e resolve o tenant fazendo uma segunda chamada AUTORITATIVA à
+   própria API do MP (`consultarPreapproval`, usando o `data.id` já verificado) — o `tenantId` que
+   sai dali é `externalReference`, um valor que o PRÓPRIO CICLO gravou quando criou a assinatura, não
+   algo que o payload do webhook possa forjar diretamente. O do WhatsApp resolve o tenant por busca
+   no banco (telefone → tenant), não por um campo do payload.
+
+**Resultado: nenhuma violação encontrada.** Registro aqui para a próxima sessão não reabrir esta
+varredura sem evidência nova — mesma disciplina já aplicada a `growth-opportunities.md`.
+
+---
+
+## 2026-09-28 — Início da auditoria de `.claude/ciclo/loop-auditoria-armadilhas-catalogadas.md`
+
+Escrito o plano completo (6 itens da tabela "Armadilhas conhecidas" do CLAUDE.md ainda não
+conferidos com evidência medida nesta sessão) e já investigados os dois primeiros, ambos negativos:
+
+**Item 1 (slot de agenda em horário local) — LIMPO.** `tests/unit/core/available-slots.test.ts`,
+describe `'availableSlots — dia de mudança de horário de verão'`, já cobre exatamente o cenário da
+armadilha: dias reais de transição de DST do Brasil (2018-11-04, dia de 23h; 2019-02-16, dia de
+25h — confirmados contra `Temporal`, não fusos inventados), prova que o offset é resolvido PELA
+DATA (não fixo), e prova que antecedência mínima atravessando a virada conta em tempo real, não em
+"horas de relógio". Rodado (`npx vitest run tests/unit/core/available-slots.test.ts
+tests/unit/core/dia-do-salao.test.ts`): 38/38 verde. Não é teste decorativo — é exatamente o
+comportamento que a armadilha do CLAUDE.md descreve, testado contra datas reais.
+
+**Item 3 (no-show automático) — LIMPO.** `grep -r marcarFalta src` encontra só 2 arquivos: a
+própria definição (`server/services/agendamentos.ts`) e a rota autenticada
+(`appointments/[id]/no-show/route.ts`, que exige `exigirPermissao` e uma pessoa logada chamando).
+Nenhum cron, job ou chamada automática invoca `marcarFalta` — a regra do comentário `FAQ E68` no
+código ("quem marca é o profissional, manualmente") é respeitada de fato, não só documentada.
+
+Itens 2 (bloqueio por estoque negativo), 4 (delete no estorno), 5 (catch que descarta) e 6
+(promessa de canal) ainda pendentes — continuar seguindo `loop-auditoria-armadilhas-catalogadas.md`.
+
+**Item 4 (delete de movimento de estoque no estorno) — LIMPO, com prova forte já existente.**
+`estornarBaixaDaComanda` (`server/services/estoque.ts`) nunca chama `.delete()` — gera um
+movimento `return` novo, positivo, do mesmo tamanho do `out` original (comentário no código já cita
+"F81: jamais delete o movimento original"). `tests/integration/estoque.test.ts`, teste "estornar
+comanda fechada devolve o estoque com movimento return, sem apagar o out original", já prova isso
+contra Postgres real: confere as DUAS linhas (`out` intacto E `return` novo) e o `stock_qty` final.
+Rodado, verde. Achado negativo desde antes desta auditoria — só confirmado aqui.
+
+**Item 2 (bloqueio por estoque negativo) — LIMPO, mas SEM prova antes desta auditoria.**
+`baixarEstoqueDaComanda` tem o comentário certo ("F83: nunca bloqueia o fechamento por estoque
+insuficiente... só desce o número, mesmo que fique negativo") e o código (`registrarMovimento`,
+CAS por `stock_qty`) de fato não tem `throw` nenhum condicionado a `stock_qty < 0`. Mas não existia
+NENHUM teste que vendesse mais do que o estoque tinha e confirmasse que o fechamento sucede — a
+afirmação do comentário nunca tinha sido medida, só lida. Escrito o teste que faltava (`tests/
+integration/estoque.test.ts`, "fechar comanda vendendo mais do que o estoque tem NÃO bloqueia"):
+vende 5 de um produto com 2 no estoque, `fecharComanda` resolve sem lançar, `stock_qty` termina em
+-3, o movimento registra -5 (o consumo real, não truncado no que havia). Rodado contra Postgres
+real, verde. Achado negativo, agora com prova.
+
+**Item 5 (catch que descarta sem contar) — ACHADO REAL, corrigido.** `cron/campaigns/route.ts`
+tinha `try/catch` por tenant desde que foi escrita, mas o `catch` só logava — nenhum contador,
+nenhuma exposição no corpo da resposta —, diferente dos três cron jobs irmãos
+(`recompute-cycles`, `segments`, `stock-alerts`), que já tinham `falhas++` + `tenantsComFalha` no
+retorno. O próprio guard que existe para essa classe de defeito
+(`tests/unit/server/motor-de-ciclo-um-tenant-nao-derruba-o-laco.test.ts`) excluía `campaigns` da
+lista com o comentário "já tinha try por item" — verdade só pela metade: o `try` existia, o
+CONTADOR não. Corrigido: `falhas++` no catch, `tenantsComFalha` no retorno, evento de log
+renomeado para o padrão dos irmãos (`campanha_diaria_tenant_falhou`), rota incluída na lista do
+guard. Mutado (revertido o conserto) e confirmado que o guard reprova nos dois checks certos
+(contador e exposição no corpo), nomeando `campaigns/route.ts`; restaurado. `lgpd-retention`
+(também excluído da lista original) foi conferido à parte: usa `falhas.push(id)`/`falhas:
+falhas.length` — padrão diferente (lista em vez de contador), mas correto; não cabe no regex
+genérico do guard sem reescrevê-lo para os dois formatos, deixado como está.
+
+pnpm verify: typecheck ✓, lint ✓, test:unit 2803 ✓, test:rls 210 ✓, build ✓. test:integration
+431/431 com `--poolOptions.forks.maxForks=2` (1 falha isolada de `job-queue.test.ts` — a mesma
+oscilação de contagem sob concorrência já documentada nesta sessão, arquivo não tocado por este
+diff — 2ª rodada completa verde). Commit `ca1cbb09`.
+
+**Item 6 (promessa de canal sem rota agendada + credencial) — LIMPO, achado já fechado numa sessão
+anterior a esta auditoria.** Os dois pontos de maior risco (tela de confirmação de agendamento
+público, `agendar.tsx`; tela de pedido de orçamento, `pedido.tsx`) têm comentário explícito
+citando a violação EXATA que este item procura ("A frase anterior prometia 'você vai receber a
+confirmação por WhatsApp', e isso era falso em três níveis: `criarAgendamentoPublico` não manda
+nada para o cliente [...] e o WhatsApp não tem credencial [...] Nada chegava, nunca.") — já
+corrigida, com o comentário deixado de propósito como lição. `lib/mensagens.ts`,
+`saidaDeContato()`: a função central que decide "por onde a cliente fala com o salão" devolve
+sempre um LINK que a PESSOA clica (`wa.me`/`tel:`), nunca uma alegação de envio automático — o
+próprio docstring da função registra a distinção ("Nada aqui é promessa de canal: quem manda a
+mensagem é a pessoa, no aplicativo dela"). Conferido também que o comentário cita uma varredura
+mais ampla já feita ("`DECISOES` de 05/09 registrou ao varrer as 16 linhas de canal"). Nenhuma nova
+violação encontrada nas 34 ocorrências de "WhatsApp" em `.tsx` fora de `/admin/**` — o restante são
+links de contato do próprio negócio (`secoes.tsx`), texto institucional (`termos`, `privacidade`)
+ou comentário/nome de variável.
+
+**Com isto, os 6 itens de `loop-auditoria-armadilhas-catalogadas.md` estão todos investigados:**
+1 e 3 limpos (rodada anterior), 4 limpo com prova preexistente, 2 limpo com prova nova escrita
+nesta rodada, 5 achado real e corrigido, 6 limpo (achado de sessão anterior, confirmado). Um
+conserto real de seis itens — proporção saudável para uma varredura de armadilhas já conhecidas,
+não hipóteses: a maioria já estava certa porque as sessões anteriores já tinham corrigido essa
+classe de defeito quando apareceu.
+
+---
+
+## 2026-09-28 (continuação) — Duas armadilhas de dinheiro além do plano dos 6 itens
+
+**"Calcular desconto percentual e guardar o percentual" — LIMPO, agora com prova.** `grep -r
+discount_bps\|discountBps src/ supabase/migrations/`: zero ocorrências no projeto inteiro.
+`comanda.ts` usa `discount_cents` em toda parte; `orcamentos.ts`/`pacotes.ts` não têm conceito de
+desconto. Leitura confirma que `unit_price_cents`/`discount_cents`/`total_cents` são gravados uma
+vez no INSERT do item, nunca recalculados de `services.price_cents` na leitura — mas não havia
+teste medindo essa afirmação. Escrito `tests/integration/comanda.test.ts` (serviço PRÓPRIO, não o
+`servicoId` compartilhado do describe, para não poluir os testes seguintes que esperam preço
+10.000 — mesma armadilha de poluição já documentada nesta sessão): vende com desconto, muda o
+preço do serviço depois, relê o item e confirma que nada mudou. Rodado contra Postgres real
+(`comanda.test.ts` inteiro, 22/22), verde, sem poluir os demais testes do arquivo. Commit
+`f488991a`.
+
+**"Reconhecer receita de pacote na venda" — LIMPO, achado de sessão anterior já fechado, NÃO
+reaberto.** Minha primeira leitura (`venderPacote` só insere em `packages`, com `paid_cents`;
+`consumirSessao` só incrementa `used_sessions`; nenhum dos dois toca `payments`/`ticket_items`)
+quase me levou a marcar como possível achado real — mas `docs/DECISOES.md`
+("2026-09-18 · Terceiro mecanismo de pagamento não-avulso: pacote com sessão sobrando") já
+investigou e fechou EXATAMENTE esta linha do CLAUDE.md, com uma correção importante de
+interpretação que eu teria perdido lendo só o código: `paid_cents` cobrado NA VENDA é o desenho
+CERTO, não o defeito — é dinheiro que já entrou de verdade (`clients.ltv_cents` reflete isso de
+propósito, "é uma venda que JÁ aconteceu"). O defeito real que essa armadilha descrevia NESTE
+projeto era outro: o Motor de Ciclo (`value_at_risk_cents`/`profit_at_risk_cents` em
+`client_cycles`, e `receitaAtribuidaAoCiclo`/`receitaPorCampanha`) tratava um cliente com sessão de
+pacote sobrando como se a próxima visita fosse uma venda avulsa nova em risco — dinheiro contado
+DUAS vezes (uma na venda do pacote, outra como "risco" da sessão que ele já pagou). Corrigido
+2026-09-18 com 7 testes de integração novos, e a varredura de lá já cobriu os TRÊS mecanismos de
+pagamento não-avulso (clube, pacote, comanda normal via `caixa.ts`/`resumo-hoje.ts`). Não reaberto
+aqui — só confirmado que a lição já existe e onde ela mora, para a próxima sessão achar mais rápido
+do que eu achei.
+
+**Terceira armadilha (fallback do plano): "cachear `/vault`/mídia assinada no service worker" —
+LIMPO, guarda dedicada já existe e passa.** `tests/unit/design/sw-nao-cacheia-tela-privada.test.ts`
+(5 testes, rodado, verde) cobre exatamente esta inviolável: `public/sw.js` tem uma deny-list por
+prefixo, testada com controle POSITIVO (uma rota pública tem que passar, não só a privada tem que
+ser negada — `/precos`/`/` confirmados fora da deny-list) e cobre nominalmente `/api/v1/clients/X/
+vault`. Nada a fazer.
+
+---
+
+## 2026-09-28 (continuação) — Duas últimas linhas da tabela de armadilhas: limpas, uma medida ao vivo
+
+**"Texto de erro escrito para o profissional numa tela pública" — LIMPO, guarda já muito madura.**
+`src/app/error.tsx` já é exatamente o conserto que a regra pede: decide a saída por `usePathname()`
+(`noPainel = caminho.startsWith('/admin')`), com mensagem e botão DIFERENTES para painel vs. rota
+pública, nunca `/admin/hoje` fixo. Duas guardas já provam isso, não uma: `erro-nao-manda-cliente-
+pro-admin.test.ts` (8 testes — inclusive uma segunda metade que varre TODOS os boundaries do Next
+por DIRETÓRIO, não por lista fixa, então um `global-error.tsx`/`not-found.tsx`/`error.tsx` de
+segmento NOVO entra sozinho na varredura — precedente direto do `[[guarda-cega-de-raiz]]`) e
+`boundary-de-erro-tem-saida.test.ts` (9 testes). Rodados: 17/17 verde. Grep complementar por
+`tenant_id|tenantId|RLS|Postgres|stack trace` em `src/app/(public)/**/*.tsx`: a única ocorrência de
+"RLS" é na página de privacidade, em contexto de explicação legítima ao usuário, não vazamento de
+erro. Nada a fazer.
+
+**"`toque-48` em dois links no mesmo parágrafo" — LIMPO, medido AO VIVO no navegador, não só lido.**
+As duas guardas de fonte existentes (`alvo-de-toque-tem-48.test.ts`,
+`alvo-de-toque-tem-largura.test.ts`) verificam presença de classe (`toque-48`/`px-2`), nunca
+geometria computada — e isso é DELIBERADO, documentado no próprio docstring
+("esse caso continua sendo trabalho de medição no navegador"), porque jsdom não computa layout CSS
+de verdade. Escrever um teste Vitest que "sonda geometria" seria fingir medir. Em vez disso, rodei a
+MESMA receita de `elementFromPoint` que o achado original de 2026-09-09 usou, ao vivo, contra o
+servidor de dev (`pnpm dev` via `.claude/launch.json`), a 320px de largura — a mesma régua e o mesmo
+viewport do achado original:
+- `/precos`: sondagem em X (largura) e Y (altura) dos 8 links do rodapé/CTAs. Nenhum com área
+  efetiva zerada; "Termos"/"Privacidade"/"Voltar para o início" (o trio inline, exatamente a
+  situação da armadilha) com largura efetiva 58/81-82/81+ px, batendo com a largura visual.
+- `/` (landing): mesma sondagem nos links "Preços"/"Termos"/"Privacidade" do rodapé — 56/58/82 px
+  efetivos, batendo com a largura visual (55/58/82).
+
+Nenhum link com o padrão do defeito original ("o vizinho cobre o segundo, que fica com zero").
+Confirmado hoje, não presumido pelo commit antigo. Servidor de dev parado ao final
+(`preview_stop`), viewport resetado para desktop.
+
+**Com isto, a tabela "Armadilhas conhecidas" do CLAUDE.md está esgotada para varredura nesta
+sessão** — toda linha catalogada foi conferida ao menos uma vez, com achado negativo (a maioria) ou
+achado real corrigido (BL-42's causa original, o item 5 do plano de auditoria/`cron/campaigns`).
+Próxima sessão: não reabra sem evidência nova. Se quiser continuar essa família de trabalho, a
+avenida que resta é (a) mecanizar mais regras do CLAUDE.md por AST, ou (b) segunda leitura crítica
+do que esta própria sessão escreveu.
+
+---
+
+## 2026-09-28 (continuação) — Nova regra de ESLint: regra 3 do CLAUDE.md (dinheiro em centavos)
+
+Escolhida a alternativa (a) do fallback acima. `ciclo/dinheiro-em-centavos-inteiros`
+(`eslint-rules/index.mjs`) mecaniza a regra 3 do CLAUDE.md ("dinheiro em centavos, percentual em
+basis points, nunca float") no limite onde ela é verificável por AST: todo campo de schema Zod
+terminado em `Cents`/`Bps` precisa recusar fração (`z.number().int(...)` ou `z.int(...)`).
+
+Varredura ANTES de escrever a regra (`grep -rn "Cents:\s*z\.number\|Bps:\s*z\.number" src/ |
+grep -v '\.int()'`, e uma segunda passada mais ampla): **zero violações no projeto inteiro** — todo
+campo já usa `.int()` ou o `z.int()` direto do Zod 4. Diferença importante do BL-42: lá havia 50
+rotas para corrigir antes de subir a severidade; aqui a regra nasce direto em `"error"`, sem
+estágio `"warn"`.
+
+Cuidados de design (mesma disciplina das duas regras anteriores): só dispara quando o valor tem
+raiz `z.` de verdade (uma referência a variável não dá pra verificar por AST — reprovar seria
+adivinhar, não conferir) e só quando a raiz é `z.number()`/`z.int()` (campo homônimo não-numérico
+fica fora do escopo). Teste novo
+(`tests/unit/design/dinheiro-em-centavos-inteiros.test.ts`, `RuleTester`, 8 casos) cobre o padrão
+errado, o certo em duas variações (`.int()` em qualquer ordem, `z.int()` direto), o sufixo `*Bps`
+além de `*Cents`, nome que só TERMINA parecido ("recents"), `Cents` no MEIO do nome, referência a
+variável e campo não-numérico.
+
+Mutação contra código REAL (não sintético): removido `.int()` de `discountCents` em
+`comanda.ts` (`EsquemaDescontoGorjeta`) — `pnpm lint` reprovou de verdade (`exit 1`, `ELIFECYCLE`),
+nomeando o campo e o arquivo certos; restaurado, `pnpm lint` voltou a zero. `pnpm verify` completo:
+typecheck ✓, lint ✓ (0 problemas), test:unit 2811 ✓, test:rls 210 ✓, build ✓, test:integration
+432/432 com `--poolOptions.forks.maxForks=2`. Commit `a454450d`.
+
+---
+
+## 2026-09-28 (continuação) — Segunda leitura crítica de 5 arquivos: nada encontrado (bom sinal)
+
+Mesmo método que achou BL-42, BL-43 e o defeito do `cron/campaigns` (reler o próprio trabalho
+recém-commitado com ceticismo, não confiar que "já foi corrigido uma vez" basta). Cinco arquivos,
+cinco investigações de verdade, zero defeitos:
+
+1. **`account/route.ts` (laço de writeAudit por vínculo).** A dúvida: usar `sessao.userId` como
+   `tenantId` do `comIdempotencia` é seguro? Segui a cadeia até `withTenant`/`withNovoTenant`
+   (`server/db/with-tenant.ts`): as duas só validam formato UUID e devolvem `createServiceClient()`
+   — nenhuma delas seta contexto de RLS a partir do valor. Confirmado no schema (`0001_initial.sql`):
+   `idempotency_keys.tenant_id` é `uuid` solto, sem FK, `force row level security` **sem política
+   nenhuma** ("sem políticas = ninguém lê pelo cliente"). Ou seja: a tabela só é tocável por
+   `service_role` mesmo, e não exige que o valor seja um `tenants.id` de verdade. Uso de
+   `sessao.userId` é seguro E correto, não só "parece certo".
+2. **`tickets/[id]/route.ts` (leitura extra após o fechamento).** A dúvida: `buscarComanda` rodando
+   de novo, fora do `comIdempotencia`, pode divergir do que uma repetição "deveria" devolver?
+   Confirmado que é uma leitura PURA (sem mutação), e que o fechamento — que contém a ÚNICA mutação
+   e o `writeAudit` — só roda uma vez independente de quantas vezes a rota é chamada. Uma leitura
+   fresca a mais não duplica nada; na pior hipótese devolve um estado mais atual, nunca um estado
+   corrompido ou uma ação repetida.
+3. **`cron/campaigns/route.ts` (contagem e janela).** Duas perguntas concretas do prompt: (a) tenant
+   demo/pausado pular o incremento de `tenantsProcessados` está certo? Sim — eles nunca foram
+   CANDIDATOS a processamento, contar como "processado" inflaria a métrica sem significar nada. (b)
+   A janela (`TOLERANCIA_HORAS = 3`, `core/cron/janela.ts`) é larga o bastante para o atraso real do
+   GitHub Actions (36-56min documentado)? Sim, com folga — e há teste dedicado
+   (`cron-sobrevive-a-atraso.test.ts`) recalculando a garantia para quatro fusos a cada build, não
+   um número solto em comentário. Rodado: 6/6 verde.
+4. **`eslint-rules/index.mjs` (as 3 regras existentes).** Os dois casos de borda sugeridos no prompt
+   para `dinheiro-em-centavos-inteiros`: `.optional()` ANTES de `.int()` não é um caso real — a
+   própria tipagem do Zod não expõe `.int()` depois de `.optional()`/`.nullish()` (confirmado contra
+   o uso real do projeto: `.int()` sempre vem antes). União com `z.string()`
+   (`z.number().int().or(z.string())`) é uma lacuna real da regra, mas não ocorre em lugar nenhum do
+   projeto hoje — registrado como limitação conhecida, não corrigido por especulação (over-
+   engineering contra um caso fantasma é o mesmo erro pelo avesso de uma guarda cega).
+5. **`packages/[id]/use/route.ts`.** Estrutura limpa: `comIdempotencia` devolve o valor usado como
+   resposta (ao contrário de `tickets/[id]`, que descarta), `writeAudit` dentro do fechamento,
+   `consumirSessao` internamente já usa CAS (`used_sessions`). Nada a apontar.
+
+**A releitura não achar nada em 5 arquivos não é falha de busca — é evidência de que o trabalho
+está sólido**, exatamente como o próprio plano desta rodada previu. Pivotei para a alternativa (a)
+sugerida: nova regra de ESLint, `ciclo/sem-delete-em-tabela-append-only` (regra 11 do CLAUDE.md).
+Achado no processo, não hipotético: a primeira varredura manual (`grep` só em `src/`) escondeu 9
+ocorrências legítimas de `.delete()` em `tests/**`/`scripts/**` que só `pnpm lint` revelou — o
+próprio teste de RLS PRECISA chamar `.delete()` para provar que o banco bloqueia, e scripts de seed
+recriam demonstração do zero. Resolvido com o mesmo escopo de isenção já usado por
+`service-client-confinado`. Mutação contra código real (appointments.ts, `.delete()` acrescentado e
+removido): `pnpm lint` reprovou de verdade. `pnpm verify` completo: typecheck ✓, lint ✓ (0
+problemas), test:unit 2819 ✓, test:rls 210 ✓, build ✓, test:integration 432/432 com
+`--poolOptions.forks.maxForks=2` (1 falha isolada em `agendamentos.test.ts` na 1ª rodada — arquivo
+não tocado por este diff, mesmo padrão de contenção já documentado; 2ª rodada completa). Commit
+`c7e4ee92`.
+
+**Motivação da nova regra, além do texto literal da regra 11:** a proteção de RLS (migration
+`0081`, `tests/rls/append-only-nao-se-apaga.test.ts`) só vale para o cliente do USUÁRIO —
+`service_role` (`withTenant`/`withNovoTenant`, o caminho que a maioria do código de servidor usa)
+ignora RLS por desenho (`BYPASSRLS`, confirmado nesta sessão ao investigar um bug totalmente
+diferente, ver entrada de `eliminarCliente`/`client_cycles`). A regra de ESLint fecha a MESMA porta
+no código-fonte — camada extra, não substituta da proteção do banco.
+
+---
+
+## 2026-09-28 — Missão de onboarding + migração: plano em `docs/83`, um bug real (BL-51)
+
+Missão `.claude/ciclo/loop-migracao-de-concorrentes.md`, rodada em Opus 5.5. Entregável:
+`docs/83-ONBOARDING-E-MIGRACAO-PLANO.md`. Achados que valem fora do plano:
+
+- **BL-51 [medido]:** o importador de CSV corrompe acento de arquivo Windows-1252 (o "CSV" do Excel
+  em PT-BR) e descarta em silêncio toda data `dd/mm/aaaa` — o Motor nasce vazio para quem migra de
+  planilha. Ponto-e-vírgula funciona. Medido com teste temporário contra a função real, apagado
+  depois.
+- **GO-1 reconciliado, não contradito:** o veredito "não construir mais migração" continua certo
+  sobre parsers por concorrente. O que muda é roteamento/argumento/confiança em volta do que existe,
+  e o BL-51 é exatamente a "fricção dentro da feature que já existe" que o próprio GO-1 previu.
+- **Concorrência [evidência, 28/09]:** AppBarber importa só clientes/serviços/produtos, por chamado,
+  até 5 dias úteis, sem histórico; "Taxa de Retorno" deles é relatório manual por período. Belasis
+  usa janelas fixas de 30/60/90 dias e promete "IA que traz cliente de volta" — "trazemos cliente
+  de volta" sozinho não diferencia o CICLO. BarbUp anuncia migração sem custo. Trinks exporta
+  clientes em Excel (colunas exatas não verificadas). "Beleza na Web" não é concorrente (loja de
+  cosméticos).
+- **Lacuna de confiança:** o CICLO não tem exportação da base inteira pelo dono (só `data-export`
+  por cliente, LGPD). "Traga na hora, leve na hora" não pode ser prometido até existir.
+- **Tela de 3 respostas não cresce:** freio deliberado em `onboarding/page.tsx`. Perguntas de
+  qualificação vão para uma tela pulável DEPOIS da conta criada.
+
+---
+
+## 2026-09-28 — Dados e inteligência (`docs/84`): o que o mercado já tem e o que falta a todos
+
+- **"IA que opera o negócio" é commodity em 2026 [evidência]:** GlossGenius virou Genius AI
+  (21/07/2026, US$ 1,15 bi, 125 mil negócios, agentes que agem sozinhos). No Brasil: Barberia.io,
+  BarberAI, BarberFlow AI, RobotiZap, Simples Agenda, Belasis, Trinks. Até o Genius AI decide quem
+  sumiu por janela fixa (seis semanas) — o ritmo pessoal do Motor continua diferença real.
+- **Não encontrado em software de agenda:** simulador "e se" com dados do próprio negócio;
+  experimento ligado pelo dono e medido pelo sistema; mapa de vazamento de receita como TELA
+  (existe como artigo/relatório: Salon Today, Zenoti). Comparativo com outros negócios por dado
+  agregado existe só na Zenoti, só EUA.
+- **Metade da visão já está construída [fato]:** Motor, previsão auditada, valor em risco, lucro por
+  cliente, concentração, margem do clube, cadeira vazia (`ociosidade.ts`), assistente com 13
+  ferramentas que PREPARAM ações para o dono confirmar.
+- **Sinal que se perde hoje:** a página pública não registra quando alguém procura horário e não
+  acha (`disponibilidadePublica`). Demanda não atendida é o dado que tornaria o simulador "abrir
+  sábado" e o vazamento "horário vazio" honestos.
+- **Histórico de preço já existe sem ninguém usar:** `audit_log` grava `service.update` com
+  antes/depois — base do simulador de preço e dos experimentos.
+- **Os termos hoje não permitem nenhum uso agregado:** `/privacidade` §1 põe o CICLO como operador e
+  §3 promete não usar dados para nada além do serviço. A estratégia de dados do Eduardo precisa de
+  cláusula nova + aceite versionado (BL-50) — e é jurídica, não decidida aqui.
+
+## 2026-09-29 · BL-51 fechado, C-07 de fim de mês, MI-1 (Motor de Inteligência)
+
+- **"Importe de novo" era instrução falsa, e morava em duas frases do importador.** A segunda
+  importação pula quem tem telefone (a ficha existe, o ciclo nunca é criado) e duplica quem não tem
+  (sem telefone não há o que comparar). O caminho que funciona é "Quem você já atende" (`retornos`:
+  ficha existente + serviço + data). Só apareceu importando um CSV Win-1252 de verdade na tela.
+- **Teste que depende do calendário passa 28 dias por mês.** C-07 do clube chamava `assinar` com
+  `billingDay: hoje.day`; `billing_day` é 1..28 (check da 0019). Quebrou em 29/09 com INTERNAL. O Zod
+  da borda protege o produto; só o teste furava. Mesma família do 139d8c22 (UTC × fuso).
+- **Outra sessão commitou "trabalho solto" no mesmo working tree** (8e05904c) e levou junto arquivo
+  temporário desta. Duas sessões na mesma árvore: `git add` sempre por nome, e a divisão de trabalho
+  ficou escrita em `.claude/ciclo/loop-onboarding-migracao-inteligencia.md` (Fase 3 é desta sessão).
+- **MI-1: o Motor entende sem IA e, principalmente, não chuta.** Sonda com 31 frases nunca vistas:
+  9 entendidas, 0 erradas. O que ele não entende divide em (a) lacuna de vocabulário — vira gabarito
+  e conserto — e (b) pedido que nenhuma ferramenta atende ("desmarca a Joana", "quanto custa o
+  corte"): ali "não entendi" é a resposta CERTA e está escrita como tal no teste.
+- **A guarda de gênero pegou o vocabulário de ENTRADA** ("obrigado" na lista do que o Motor ignora).
+  Em vez de afrouxar a guarda, agradecimento virou cortesia pelo prefixo `obrigad*` — um item cobre
+  as duas formas. A guarda continua valendo para o que o produto fala.
+- **Guarda sem caso próprio para o piso**: trocar `PISO` por 0 passava verde (nenhuma frase do
+  gabarito ficava só com peso 1). Achado ao planejar as mutações, antes de rodá-las; caso próprio
+  em dfd1ef4f. 6 de 6 mutações reprovam.
+
+## 2026-09-29 · MI-2: o assistente sem Gemini, medido no navegador
+
+- **Desempenho:** 22 perguntas pela rota real, 200 em ~220-350 ms cada (Gemini: 2-8 s, medido em
+  30/08). Cada resposta conferida contra o banco local — o Motor não disse nada que o banco não
+  sustentasse.
+- **Senha na URL (b9c1c3b8):** achado de passagem. Enter antes da hidratação mandou e-mail e senha
+  como query string (`<form>` sem method = GET). 15 formulários, 4 com credencial, 1 público com
+  dado de cliente do salão. `method="post"` + guarda com controle positivo.
+- **`pnpm build` com o dev server rodando derruba o dev server** (mesmo `.next`): chunks somem,
+  toda página dá 500. Parar o preview antes do build, apagar `.next`, subir de novo.
+- **Três defeitos que só a pergunta real mostrou (3db106b6):** telefone cru, "com a Juliana" virando
+  serviço, e "qual profissional?" sem jeito de responder. Nenhum teste unitário os teria pedido.
+- **Demonstração oca:** 133 atendimentos concluídos, 0 comandas, 0 ciclos no seed dos 6 negócios.
+  "R$ 0,00" e "ninguém sumiu" são verdade ali — e parecem produto quebrado numa demo (DECISOES).
+
+## 2026-09-29 · MI-4 e MI-7 no ar (local), e duas frases que mentiam
+
+- **MI-4 medido no chat de verdade:** "e sexta?", "e da Xênia?" (herda o FOCO: telefone), "qual
+  profissional?" → "a Camila" → cartão completo. O contexto vai e volta pelo navegador, validado por
+  esquema fechado; forjado não abre ferramenta fora do papel (três barreiras; a do laço basta).
+- **A rota descartava o contexto** (lista explícita de campos) e os 34 testes do Motor passavam —
+  eles chamam o laço, não a rota. Só o navegador mostrou. `corpoDaResposta` agora é testada.
+- **MI-7 desviou do plano de propósito:** docs/85 dizia gravar "as palavras que sobraram". A frase
+  não entendida é a que ninguém filtrou — nome e dado de saúde (regra 9). Grava só motivo + tema de
+  lista fechada. Medido no banco: pergunta sobre reação alérgica gravou `{motivo, tema: "outro"}`.
+- **"Sobrou" mentia para quem respondeu o custo fixo (56c71009):** a frase dizia sempre "ainda não
+  desconta o custo fixo", falsa desde a 0072 (06/09) para quem respondeu. Mesma armadilha da
+  maquininha; mesma fonte da tela do caixa agora.
+- **Cartão de confirmação mostrava "duracaoMin 60"** (4520339d) — nome interno do campo, cru.
+
+## 2026-09-29 · MI-5 e MI-6: explicar e simular, medidos com dado real
+
+- **"Por que caiu?" compara os MESMOS dias** (1–29/09 × 1–29/08). Mês corrente contra o anterior
+  inteiro "cai" todo mês; a armadilha estava no desenho, não no código.
+- **O teste pegou `lembrar` herdando o assunto sem o período:** "quanto faturei em agosto?" → "por
+  quê?" explicava setembro.
+- **"R$ 2.500" não era dinheiro** para o `entender` (milhar com ponto). Pego pelo teste do MI-6.
+- **Dado real mostrou o que o teste com 30 atendimentos não mostrava:** com 5 cortes em 90 dias,
+  "1 em cada 10" e "2 em cada 10" davam o mesmo número. Volume < 10 conta em PESSOAS.
+- **O dono disse "de R$ 80" e o preço real era R$ 85:** a resposta abre com o preço de verdade.
+  Premissa do dono sobre o que perde, sim; sobre o preço atual, não — esse vem do catálogo.
+- **O teto de uso (429) aparecia como "não consegui responder"** — a rota mandava a frase certa e o
+  chat descartava. Corrigido (01d8a608).
+- Heredoc de ~8 KB estourou de novo (`unexpected EOF`) — nada aplicado, conferido antes de refazer.
+  Script Python em arquivo no scratchpad resolve e ainda evita o `\b`→backspace.
+
+## 2026-09-29 · Demanda não atendida gravando (docs/84 §2.2)
+
+- `demanda_nao_atendida` em product_events, sem dado pessoal (chaves exatas conferidas em
+  integração). Medido pela rota pública de verdade: domingo do Studio Bella → 0 horários → gravou
+  `dia_fechado`; quarta com 95 horários → nada.
+- **Opt-in de propósito:** `disponibilidadePublica` também valida a RESERVA; gravar ali contaria
+  a mesma procura duas vezes.
+- **Profissional sem expediente próprio cai no padrão do salão** — quarta não era "fechada" no
+  fixture. A precondição do teste pegou antes de a asserção mentir.
+- **Contar evento ≠ contar gente:** a mesma pessoa espiando o domingo 3 vezes gera 3 eventos (sem
+  dado pessoal não há como deduplicar pessoa). Quem for LER isto (mapa de vazamento, "e se eu abrir
+  sábado?") deve contar pares distintos (serviço, dia), não linhas.
+- `/privacidade` intocada; frase sugerida em DECISOES para o Eduardo.
+
+## 2026-09-29 · Mapa de vazamento v1 e BL-50
+
+- **Mapa de vazamento no topo de "O mês"** (ba4abe1d): só composição de cálculos existentes; R$ só
+  onde é medido. Medido no navegador com 3 procuras reais em domingos: a linha apareceu com "3
+  procuras" — e eram 4 eventos (o mesmo domingo 2 vezes): contar pares distintos segurou o número.
+- **BL-50** (e6efbdc9): aceite versionado, migration 0095 que precisa ir ANTES do deploy (senão
+  todo cadastro novo falha). A guarda `schema-esperado-bate-com-o-disco` reprovou até a contagem de
+  migrations ser atualizada — funcionando como desenhada.
+- **Mutação inválida não é prova:** duas vezes hoje a mutação não compilou ("no tests") ou não
+  casou (multilinha × CRLF). Ambas refeitas antes de contar como "guarda vista reprovando".
+- `pnpm db:types` exige `supabase` no PATH; com `npx supabase gen types --local` para arquivo
+  temporário, validar e só então copiar (redirecionar direto no arquivo versionado o zera se falhar).
+
+## 2026-09-29 · docs/85 fechado (MI-1…MI-7) e o loop de 83/84 concluído
+
+- **Motor de Inteligência inteiro sem IA externa:** entender (MI-1), trocar o Gemini (MI-2),
+  próximo passo em botão (MI-3), conversa com contexto (MI-4), "por que caiu?" (MI-5), "e se...?"
+  (MI-6), contar o que não soube (MI-7). Cada peça medida no chat de verdade contra o banco local.
+- **Loop 83/84:** BL-51, demanda não atendida, BL-50 e mapa de vazamento v1 — todos com mutação.
+- **Cartão dizia "Marcado." para qualquer ação** (93093e44) — achado lendo o código do cartão.
+- **Pendências que são do Eduardo** (todas em DECISOES com a pergunta exata): migration 0095 ANTES
+  do deploy; frase da /privacidade sobre demanda não atendida; teto de uso do assistente; seed de
+  demonstração oco (0 comandas, 0 ciclos).
+
+## 2026-09-29 · P3 exportação terminado; a data que voltava um dia
+
+- **`last_visit_at` gravado como data pura = meia-noite UTC = dia anterior em Brasília** (2f78a103).
+  Importação e "Quem você já atende" desde 10/09. Conserto: meio-dia UTC na escrita + migration 0096
+  que normaliza só o que não veio de atendimento (medida antes/depois com linha de controle).
+- **Duas guardas passavam verde com o defeito**: uma cortava a string no "T", outra só checava
+  `toBeTruthy`. Ambas vistas passando na mutação e corrigidas para comparar o DIA no fuso do salão.
+- **Guarda que lista por `git ls-files` é cega a arquivo novo antes do commit:** o `verify` local passou
+  com dois travessões na copy do P3 (arquivos untracked da outra sessão). `git add -N` fez a guarda
+  enxergar. Vale para toda guarda de fonte desta base.
+- P3 retomado da outra sessão (parada desde 28/09 23:45) — commit com as duas autorias.
+- BL-52 registrado: "hoje" no fuso do servidor em "Quem você já atende".
+
+## 2026-09-29 · Memória do cliente (docs/84 P4)
+
+- **Tudo derivado dos atendimentos concluídos, sem coluna nova**; ficha e assistente dizem a MESMA
+  frase, com a contagem ("5 de 7 visitas"). Pisos: 4 visitas para dia, 3 para profissional (e só
+  com 2+ pessoas ativas), 3 intervalos para faixa. Empate não escolhe.
+- **Visita = dia**, não atendimento: corte + barba no mesmo dia inflaria o hábito e criaria um
+  intervalo de 0 dias. Faixa do quartil de baixo ao de cima (nearest-rank): a volta de 90 dias
+  depois das férias não estica a faixa de quem vem todo mês.
+- **Fuso:** o teste de integração grava quarta 01:00 UTC = terça 22:00 em SP. A mutação "dia em UTC"
+  foi pega por ele; 12 de 12 mutações pegas.
+- A guarda `agrega-lendo-tudo` ancorava no texto exato do select da ficha e **reprovou** quando
+  ganhei a coluna do profissional (grita em vez de passar vazia, como desenhada). Âncora atualizada;
+  a regra que ela guarda não mudou.
+- **Seed:** medido no navegador, Vinícius (Studio Bella) = 5 terças com a mesma profissional a cada
+  21 dias. No seed TODO cliente é perfeitamente regular, então a demo sempre mostra "sempre" e "5 de 5":
+  é o mesmo seed oco já registrado (DECISOES 29/09), não defeito da memória. Nesses clientes sem
+  `client_cycles` a memória é a ÚNICA linha de ritmo da ficha.
+
+## 2026-09-29 · "Resolve" no assistente (docs/84 P2) e dois números que mentiam
+
+- **"Resolve" = chamada de volta pelo WhatsApp DO DONO**, não envio pelo sistema: mesma lista
+  (`listarParaRecuperar`), mesmo texto (`textoDeVolta`), mesma rota (`/cycle/recover/manual`), mesma
+  permissão e módulo. O cartão tem LINK (a aba nova só abre de dentro do toque), host fixo `wa.me`,
+  número só como E.164, texto codificado. Medido no navegador: link certo, "Chamada anotada", e
+  `messages.recover_manual` + `last_campaign_at` gravados no banco local.
+- **A rota responde 200 sem anotar** (`registrada: false`, já chamada na semana): o cartão agora diz
+  isso em vez de "anotada".
+- **Duas guardas reprovaram como desenhadas**: `permissao-igual-a-da-rota` (ferramenta nova de preparo
+  sem mapa) e o "não chuta" do `entender` ("manda mensagem pra Joana" era o exemplo de pedido sem
+  ferramenta; o tema `mandar_mensagem` ficou guardado por "manda um lembrete pra todo mundo").
+- **Achado medindo: "-2 dias sem voltar"** na resposta de "quem eu chamo primeiro?". A fila é por
+  lucro e `due` (até 3 dias ANTES da data) entra com atraso ≤ 0. A tela Recuperar já dizia "na janela".
+- **Achado vizinho: "14 clientes passaram da hora de voltar"** no Hoje e o título do mapa contavam os
+  `due` também (3 de 14). Virou "para chamar de volta". Só apareceu porque recalculei o Motor no seed
+  (o seed tinha 0 ciclos). Seed oco esconde defeito de texto, não só de número.
+- Heredoc de ~8 KB estourou de novo (nada aplicado). Script em arquivo resolveu.
+
+## 2026-09-29 · Experimentos v1 (docs/84 Aposta C) e a missão fechada
+
+- **O antes é congelado na criação** (`experiments.baseline`), e o início só pode ser hoje ou depois:
+  sem isso, o dono escolheria o "antes" depois de ver o resultado. Mutação "antes recalculado na
+  leitura" pega pelo teste que conclui um atendimento do período de antes DEPOIS de criar o teste.
+- **Sem veredito enquanto roda, e o dia de hoje não conta** (ainda pode ter atendimento). "Subiu/caiu"
+  só com 20+ atendimentos nos dois períodos e 10%+ de diferença; amostra sempre junto.
+- **Concordância:** "Nos 2 quintas" saiu na primeira versão. Dia útil é feminino e sábado/domingo
+  masculino, e uma quinta só é "na quinta". Pego pelo próprio teste.
+- A guarda do estado vazio reprovou (`acao={null}`): o vazio agora leva ao formulário (ou a "O mês",
+  para quem não pode criar).
+- `pnpm test:rls` falhou uma vez com "invalid response from the upstream server" no seed de
+  `client_reviews` (infra local). Rodado de novo: verde. Não é defeito da tabela nova.
+- No navegador, cada campo aparece duas vezes na árvore de acessibilidade: é o `<div hidden id="S:0">`
+  do streaming do React no dev, em toda tela. Conferido no DOM (0×0, `hidden`) antes de chamar de defeito.
+- 11 de 11 mutações pegas; medido no navegador: antes = 1 atendimento em 2 quintas (bate com o banco),
+  auditoria `experiment.create`, cancelar funciona, 390 px sem rolagem lateral e alvos de 48 px.

@@ -30,23 +30,26 @@ export const POST = rota(async (req, params, requestId) => {
   // trava fica só aqui (assinar), nunca no DELETE (cancelar) logo abaixo.
   await exigirModulo(db, ctx.tenantId, 'club')
 
+  // BL-42: `writeAudit` dentro do fechamento — ver o comentário em `wallet/credit/route.ts`.
   const assinatura = await comIdempotencia(
     req,
     { tenantId: ctx.tenantId, endpoint: `/api/v1/clients/${id}/subscription` },
-    () => assinar(db, ctx.tenantId, id, entrada, ctx.tenant.timezone),
-  )
-
-  await writeAudit(
-    {
-      tenantId: ctx.tenantId,
-      actorId: ctx.sessao.userId,
-      actorRole: ctx.papel,
-      action: 'subscription.start',
-      entity: 'client_subscriptions',
-      entityId: assinatura.id,
-      requestId,
+    async () => {
+      const assinatura = await assinar(db, ctx.tenantId, id, entrada, ctx.tenant.timezone)
+      await writeAudit(
+        {
+          tenantId: ctx.tenantId,
+          actorId: ctx.sessao.userId,
+          actorRole: ctx.papel,
+          action: 'subscription.start',
+          entity: 'client_subscriptions',
+          entityId: assinatura.id,
+          requestId,
+        },
+        req,
+      )
+      return assinatura
     },
-    req,
   )
 
   return assinatura
@@ -63,23 +66,26 @@ export const DELETE = rota(async (req, params, requestId) => {
   const atual = await assinaturaAtiva(db, ctx.tenantId, id)
   if (!atual) throw new AppError('NOT_FOUND', { message: 'Esse cliente não tem assinatura ativa.' })
 
+  // BL-42: `writeAudit` dentro do fechamento — ver o comentário em `wallet/credit/route.ts`.
   const resultado = await comIdempotencia(
     req,
     { tenantId: ctx.tenantId, endpoint: `/api/v1/clients/${id}/subscription` },
-    () => cancelarAssinatura(db, ctx.tenantId, atual.id),
-  )
-
-  await writeAudit(
-    {
-      tenantId: ctx.tenantId,
-      actorId: ctx.sessao.userId,
-      actorRole: ctx.papel,
-      action: 'subscription.cancel',
-      entity: 'client_subscriptions',
-      entityId: atual.id,
-      requestId,
+    async () => {
+      const resultado = await cancelarAssinatura(db, ctx.tenantId, atual.id)
+      await writeAudit(
+        {
+          tenantId: ctx.tenantId,
+          actorId: ctx.sessao.userId,
+          actorRole: ctx.papel,
+          action: 'subscription.cancel',
+          entity: 'client_subscriptions',
+          entityId: atual.id,
+          requestId,
+        },
+        req,
+      )
+      return resultado
     },
-    req,
   )
 
   return resultado

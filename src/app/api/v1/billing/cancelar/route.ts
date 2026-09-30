@@ -24,27 +24,31 @@ export const POST = rota(async (req, _params, requestId) => {
   exigirPermissao(ctx.papel, 'tenant:update')
 
   const db = await criarClienteDoUsuario()
+  // BL-42: `writeAudit` dentro do fechamento — ver o comentário em `wallet/credit/route.ts`. O `if`
+  // continua exatamente igual, só mudou de lugar: uma repetição cacheada não grava nem entra nele.
   const resultado = await comIdempotencia(
     req,
     { tenantId: ctx.tenantId, endpoint: '/api/v1/billing/cancelar' },
-    () => cancelarAssinatura(db, ctx.tenantId),
+    async () => {
+      const resultado = await cancelarAssinatura(db, ctx.tenantId)
+      if (resultado.resultado === 'cancelada') {
+        await writeAudit(
+          {
+            tenantId: ctx.tenantId,
+            actorId: ctx.sessao.userId,
+            actorRole: ctx.papel,
+            action: 'tenant.subscription.cancel',
+            entity: 'tenants',
+            entityId: ctx.tenantId,
+            after: { plano: resultado.plano },
+            requestId,
+          },
+          req,
+        )
+      }
+      return resultado
+    },
   )
-
-  if (resultado.resultado === 'cancelada') {
-    await writeAudit(
-      {
-        tenantId: ctx.tenantId,
-        actorId: ctx.sessao.userId,
-        actorRole: ctx.papel,
-        action: 'tenant.subscription.cancel',
-        entity: 'tenants',
-        entityId: ctx.tenantId,
-        after: { plano: resultado.plano },
-        requestId,
-      },
-      req,
-    )
-  }
 
   return resultado
 })

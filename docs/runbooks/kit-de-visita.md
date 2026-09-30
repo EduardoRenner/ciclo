@@ -29,7 +29,7 @@
 
    Pergunte: *"E quem você não lembra?"* Espere a resposta. Não fale de sistema ainda.
 
-3. **Mostrar, não explicar:** "Quer ver quem são, pelo nome? Leva cinco minutos e é grátis."
+3. **Mostrar, não explicar:** "Quer ver quem são, pelo nome? Leva cinco minutos. Você usa o CICLO inteiro por 2 meses, sem cartão, e eu passo seus clientes pra dentro pelo WhatsApp. No fim você decide se assina; se não quiser, exporta tudo."
    Cadastro pelo link `?origem=visita`. **O e-mail de confirmação chega no celular dele**: deixe
    o app de e-mail aberto antes de começar.
 
@@ -50,10 +50,12 @@
 ## Na volta (10 a 14 dias)
 
 - Pergunta única: **"Quantos dos que você chamou voltaram?"**
-- Voltou alguém → oferta de fundador: Essencial a R$ 49 **travado para sempre** para os
-  primeiros 15, Pix mensal combinado. Depois: *"Conhece mais alguém aqui perto que vive perdendo
-  cliente sem saber?"* — e mande o convite de "Meu plano" pelo WhatsApp dele (já sai com o
-  `ref` dele, conta no placar).
+- Voltou alguém → peça o depoimento (autorização por escrito) e a indicação: *"Conhece mais alguém
+  aqui perto que vive perdendo cliente sem saber?"* — e mande o convite de "Meu plano" pelo
+  WhatsApp dele (já sai com o `ref` dele, conta no placar). **Não cobre nada nesta visita.**
+  A oferta de preço vem no lançamento (`docs/87` D5): quem assina até 30 dias depois de 11/01/2027
+  trava R$ 49 (Solo) ou R$ 99 (Equipe) por 12 meses. Até lá o uso é de graça, sem cartão, e nada é
+  cobrado sem o toque de assinar.
 - Ninguém voltou → não force. Pergunte por que não mandou (quase sempre: esqueceu). Combine 10
   minutos por semana olhando a lista juntos.
 

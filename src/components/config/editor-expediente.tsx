@@ -276,7 +276,7 @@ export default function EditorExpediente({
         ) : null}
 
         <Card>
-          <form
+          <form method="post"
             onSubmit={(e) => {
               e.preventDefault()
               criarFolga(new FormData(e.currentTarget), e.currentTarget)

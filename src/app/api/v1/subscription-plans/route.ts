@@ -29,23 +29,24 @@ export const POST = rota(async (req, _params, requestId) => {
   // auditoria de 26/08 achou em Comanda, Equipe, Fidelidade e Recorrência (`docs/23` §7).
   await exigirModulo(db, ctx.tenantId, 'club')
 
-  const plano = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: '/api/v1/subscription-plans' }, () =>
-    criarPlano(db, ctx.tenantId, entrada),
-  )
-
-  await writeAudit(
-    {
-      tenantId: ctx.tenantId,
-      actorId: ctx.sessao.userId,
-      actorRole: ctx.papel,
-      action: 'subscription_plan.create',
-      entity: 'subscription_plans',
-      entityId: plano.id,
-      after: plano,
-      requestId,
-    },
-    req,
-  )
+  // BL-42: writeAudit dentro do fechamento — ver o comentário em wallet/credit/route.ts.
+  const plano = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: '/api/v1/subscription-plans' }, async () => {
+    const plano = await criarPlano(db, ctx.tenantId, entrada)
+    await writeAudit(
+      {
+        tenantId: ctx.tenantId,
+        actorId: ctx.sessao.userId,
+        actorRole: ctx.papel,
+        action: 'subscription_plan.create',
+        entity: 'subscription_plans',
+        entityId: plano.id,
+        after: plano,
+        requestId,
+      },
+      req,
+    )
+    return plano
+  })
 
   return plano
 })

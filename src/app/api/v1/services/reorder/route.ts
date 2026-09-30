@@ -14,24 +14,23 @@ export const POST = rota(async (req, _ctx, requestId) => {
   const { ids } = await lerCorpo(req, EsquemaReordenar)
   const db = await criarClienteDoUsuario()
 
-  const resultado = await comIdempotencia(
-    req,
-    { tenantId: ctx.tenantId, endpoint: '/api/v1/services/reorder' },
-    () => reordenarServicos(db, ctx.tenantId, ids),
-  )
-
-  await writeAudit(
-    {
-      tenantId: ctx.tenantId,
-      actorId: ctx.sessao.userId,
-      actorRole: ctx.papel,
-      action: 'service.reorder',
-      entity: 'services',
-      after: { ids },
-      requestId,
-    },
-    req,
-  )
+  // BL-42: writeAudit dentro do fechamento — ver o comentário em wallet/credit/route.ts.
+  const resultado = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: '/api/v1/services/reorder' }, async () => {
+    const resultado = await reordenarServicos(db, ctx.tenantId, ids)
+    await writeAudit(
+      {
+        tenantId: ctx.tenantId,
+        actorId: ctx.sessao.userId,
+        actorRole: ctx.papel,
+        action: 'service.reorder',
+        entity: 'services',
+        after: { ids },
+        requestId,
+      },
+      req,
+    )
+    return resultado
+  })
 
   return resultado
 })

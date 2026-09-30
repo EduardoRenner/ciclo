@@ -37,14 +37,15 @@ export const POST = rota(async (req, params, requestId) => {
    */
   await exigirModulo(db, ctx.tenantId, 'register')
 
-  const item = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/tickets/${ticketId}/items` }, () =>
-    adicionarItemComanda(db, ctx.tenantId, ticketId, entrada),
-  )
-
-  await writeAudit(
-    { tenantId: ctx.tenantId, actorId: ctx.sessao.userId, actorRole: ctx.papel, action: 'ticket.item.add', entity: 'ticket_items', entityId: item.id, after: item, requestId },
-    req,
-  )
+  // BL-42: writeAudit dentro do fechamento — ver o comentário em wallet/credit/route.ts.
+  const item = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/tickets/${ticketId}/items` }, async () => {
+    const item = await adicionarItemComanda(db, ctx.tenantId, ticketId, entrada)
+    await writeAudit(
+      { tenantId: ctx.tenantId, actorId: ctx.sessao.userId, actorRole: ctx.papel, action: 'ticket.item.add', entity: 'ticket_items', entityId: item.id, after: item, requestId },
+      req,
+    )
+    return item
+  })
 
   return item
 })

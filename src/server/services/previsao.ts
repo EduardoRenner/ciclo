@@ -84,8 +84,13 @@ export async function registrarPrevisoes(db: Cliente, tenantId: string, previsoe
  * D, o resultado é **a primeira visita seguinte a D**. Se não houver nenhuma, a previsão continua
  * em aberto: a pessoa ainda pode voltar, e fechá-la como "não voltou" seria inventar um fato.
  *
- * Só toca linha com `resolved_at is null`, então rodar duas vezes no mesmo dia é idêntico a rodar
- * uma. O resultado nunca é reescrito depois de conhecido.
+ * **BL-46** (`.claude/ciclo/autonomous-backlog.md`): até 2026-09-27 isto era um `UPDATE` por linha,
+ * dentro de um `for` — medido em 17,6ms/previsão (5 mil previsões abertas, 87,8s para fechar). A
+ * DECISÃO de quem fecha continua em TypeScript, em memória (mudar isso para SQL duplicaria a regra
+ * "primeira visita ESTRITAMENTE depois" num segundo lugar); só a ESCRITA virou lote, via
+ * `resolver_previsoes_em_lote` (migration `0094`). A trava contra corrida (`resolved_at is null`)
+ * continua por linha, só que dentro do `UPDATE` em lote da função — nenhuma previsão pode fechar
+ * duas vezes, mesmo com duas execuções deste job disputando as mesmas linhas.
  */
 export async function resolverPrevisoes(
   db: Cliente,
@@ -102,9 +107,7 @@ export async function resolverPrevisoes(
   )
   if (abertas.length === 0) return 0
 
-  const agora = new Date().toISOString()
-  let fechadas = 0
-
+  const atualizacoes: { id: string; actual_return_on: string }[] = []
   for (const aberta of abertas) {
     const visitas = historicoPorCombinacao.get(`${aberta.client_id}:${aberta.service_id}`)
     if (!visitas) continue
@@ -114,24 +117,23 @@ export async function resolverPrevisoes(
     const retorno = visitas.find((d) => d > aberta.last_visit_on)
     if (!retorno) continue
 
-    /*
-      `.select('id')` não é enfeite: no supabase-js um `update` que não casa linha nenhuma devolve
-      `error: null`, e aqui o `where` tem uma GUARDA além da identidade (`resolved_at is null`).
-      Sem pedir as linhas de volta, uma execução simultânea que já tivesse fechado esta previsão
-      faria o contador subir do mesmo jeito, e o job relataria um trabalho que não fez.
+    atualizacoes.push({ id: aberta.id, actual_return_on: retorno })
+  }
+  if (atualizacoes.length === 0) return 0
 
-      Zero linhas aqui é inofensivo — quer dizer que alguém chegou antes — mas só é inofensivo
-      porque não conta.
-    */
-    const { data: mudadas, error } = await db
-      .from('cycle_predictions')
-      .update({ actual_return_on: retorno, resolved_at: agora })
-      .eq('tenant_id', tenantId)
-      .eq('id', aberta.id)
-      .is('resolved_at', null)
-      .select('id')
+  /*
+    O RETORNO da função é quantas linhas REALMENTE mudaram (a trava `resolved_at is null` dentro
+    do `UPDATE` da RPC) — não o tamanho do lote enviado. Uma execução simultânea que já tivesse
+    fechado alguma dessas previsões faz a contagem vir menor que `atualizacoes.length`, e é isso
+    que preserva a garantia que o `.select('id')` do laço antigo protegia: zero linhas de verdade
+    para uma previsão específica é inofensivo, mas não pode contar como trabalho feito.
+  */
+  let fechadas = 0
+  for (let inicio = 0; inicio < atualizacoes.length; inicio += TAMANHO_DO_LOTE) {
+    const lote = atualizacoes.slice(inicio, inicio + TAMANHO_DO_LOTE)
+    const { data, error } = await db.rpc('resolver_previsoes_em_lote', { p_tenant_id: tenantId, p_atualizacoes: lote })
     if (error) throw new AppError('INTERNAL', { cause: error })
-    fechadas += mudadas?.length ?? 0
+    fechadas += data ?? 0
   }
 
   return fechadas

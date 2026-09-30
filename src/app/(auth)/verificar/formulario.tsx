@@ -45,7 +45,7 @@ export default function FormularioVerificar({ factorId, proximo }: { factorId: s
   }
 
   return (
-    <form onSubmit={enviar} className="flex w-full max-w-sm flex-col gap-3">
+    <form method="post" onSubmit={enviar} className="flex w-full max-w-sm flex-col gap-3">
       <Input
         rotulo="Código de 6 dígitos"
         value={codigo}

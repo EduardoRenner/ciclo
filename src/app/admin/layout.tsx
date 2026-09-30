@@ -138,11 +138,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <Topbar />
         <IndicadorDeConexao />
         {/*
-          A folga inferior é a barra + o relevo do aparelho + respiro. Sai do
-          token: era `pb-24` fixo, que já não batia com a barra de 82px e passou
-          a errar de novo quando ela virou 64.
+          A folga inferior é a barra + o relevo do aparelho + o botão do assistente,
+          que é `fixed` e aparece sempre desde o MI-2: com só 28px de respiro, o fim
+          de toda tela ficava embaixo dele (medido a 375px). A conta é vigiada em
+          `botao-do-assistente-nao-cobre-o-fim-da-tela.test.ts`.
         */}
-        <main className="px-[var(--gutter)] pb-[calc(var(--tabbar-h)+env(safe-area-inset-bottom)+28px)]">
+        <main className="px-[var(--gutter)] pb-[calc(var(--tabbar-h)+env(safe-area-inset-bottom)+88px)]">
           <TransicaoDeTela>{children}</TransicaoDeTela>
         </main>
       </div>
@@ -150,13 +151,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <TabBar />
         <ResolucaoDeFila />
         {/*
-          docs/26-AGENTE-IA-PLANO.md §4.4/§7: `Boolean(process.env.GEMINI_API_KEY)` é leitura de
-          variável de ambiente, não I/O — não transforma este layout num fetch novo por navegação
-          (a mesma razão pela qual `Topbar` continua sem buscar dado). Sem chave, o componente
-          nem monta o botão; o módulo desligado pelo dono ainda é pego dentro do painel, na
-          primeira pergunta, porque isso sim depende de banco e de tenant.
+          docs/85 MI-2 (2026-09-29): o assistente roda no Motor de Inteligência do próprio CICLO,
+          sem chave de terceiro — então aparece sempre. Até aqui dependia de
+          `GEMINI_API_KEY`, e sem ela o botão sumia para todos. O módulo desligado pelo dono
+          continua sendo pego na primeira pergunta (403 da rota), porque isso depende de banco e
+          de tenant, e este layout não busca dado.
         */}
-        <AssistenteFlutuante disponivel={Boolean(process.env.GEMINI_API_KEY)} />
+        <AssistenteFlutuante disponivel />
     </VocabularioProvider>
     </ToastProvider>
     </div>

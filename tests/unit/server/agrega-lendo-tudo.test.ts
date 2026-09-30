@@ -40,7 +40,7 @@ describe('quem agrega no Node le todas as linhas', () => {
     // confere que o `buscarTudoPaginado(` que a envolve e o do ELEMENTO anterior do `Promise.all`
     // (a virgula mais proxima antes dela), nao um em outro lugar do arquivo.
     const crm = semComentarios(readFileSync(join('src', 'server', 'services', 'crm.ts'), 'utf8'))
-    const ancora = "select('price_cents, starts_at, status, service_id')"
+    const ancora = "select('price_cents, starts_at, status, service_id, professionals(display_name)')"
     const posAncora = crm.indexOf(ancora)
     expect(posAncora, 'nao achei a consulta que alimenta visitas/valor/faltas').toBeGreaterThan(-1)
 

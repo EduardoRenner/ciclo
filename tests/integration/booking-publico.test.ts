@@ -1,3 +1,4 @@
+import { Temporal } from '@js-temporal/polyfill'
 import { randomUUID } from 'node:crypto'
 
 import { createClient } from '@supabase/supabase-js'
@@ -9,6 +10,7 @@ import { definirExpediente } from '@/server/services/expediente'
 import { criarServico } from '@/server/services/servicos'
 import { executarOnboarding } from '@/server/services/onboarding'
 import { criarAgendamentoPublico, disponibilidadePublica, perfilPublico } from '@/server/services/public-booking'
+import { procurasEmDiaFechado } from '@/server/services/demanda-nao-atendida'
 
 import { POST as reservar } from '@/app/api/v1/public/[slug]/book/route'
 
@@ -260,6 +262,79 @@ describe('disponibilidadePublica', () => {
       const profissionaisNosSlots = new Set(slots.map((s) => s.professionalId))
       expect(profissionaisNosSlots.size).toBeGreaterThanOrEqual(2)
       expect(profissionaisNosSlots.has(professionalId)).toBe(true)
+    },
+    30_000,
+  )
+})
+
+/**
+ * docs/84 §2.2 — "demanda não atendida". O domingo depois de `DIA` é dia fechado: nem o
+ * profissional do fixture nem o expediente padrão do salão abrem. (Quarta NÃO serve: profissional
+ * sem expediente próprio no dia cai no padrão do salão — a precondição de cada caso confere.) Cada
+ * caso lê os eventos do próprio dia pedido, para um não contar o do outro.
+ */
+describe('disponibilidadePublica — demanda não atendida', () => {
+  const eventosDo = async (dia: string) => {
+    const { data, error } = await svc.from('product_events').select('meta').eq('tenant_id', tenantId).eq('event_type', 'demanda_nao_atendida')
+    if (error) throw error
+    return (data ?? []).map((e) => e.meta as Record<string, unknown>).filter((m) => m.dia === dia)
+  }
+  const domingo = Temporal.PlainDate.from(DIA).add({ days: 5 }).toString()
+
+  it(
+    'dia fechado para o profissional escolhido: grava dia_fechado — só o que foi procurado, nada da pessoa',
+    async () => {
+      const slots = await disponibilidadePublica(slug, servicoOnlineId, domingo, professionalId, { registrarDemanda: true })
+      expect(slots, 'o cenário exige um dia sem horário').toEqual([])
+      const eventos = await eventosDo(domingo)
+      expect(eventos).toHaveLength(1)
+      expect(eventos[0]).toEqual({ motivo: 'dia_fechado', servicoId: servicoOnlineId, dia: domingo, diaDaSemana: 0, comPreferencia: true })
+    },
+    30_000,
+  )
+
+  it(
+    'o mapa conta PARES distintos (serviço, dia): procurar o mesmo domingo de novo não infla o número',
+    async () => {
+      const hoje = Temporal.Now.plainDateISO(TZ).toString()
+      const antes = (await procurasEmDiaFechado(svc, tenantId, hoje)).find((p) => p.weekday === 0)?.procuras ?? 0
+      expect(antes, 'precondição: o domingo do caso anterior já foi procurado').toBeGreaterThanOrEqual(1)
+      // A mesma pessoa espiando o mesmo domingo mais duas vezes: dois eventos a mais, mesmo par.
+      await disponibilidadePublica(slug, servicoOnlineId, domingo, professionalId, { registrarDemanda: true })
+      await disponibilidadePublica(slug, servicoOnlineId, domingo, professionalId, { registrarDemanda: true })
+      expect(await eventosDo(domingo), 'controle: os eventos a mais existem').toHaveLength(3)
+      const depois = (await procurasEmDiaFechado(svc, tenantId, hoje)).find((p) => p.weekday === 0)?.procuras ?? 0
+      expect(depois).toBe(antes)
+    },
+    30_000,
+  )
+
+  it(
+    'dia COM horário não grava nada — controle: o mesmo caminho, com vaga',
+    async () => {
+      const slots = await disponibilidadePublica(slug, servicoOnlineId, DIA, professionalId, { registrarDemanda: true })
+      expect(slots.length).toBeGreaterThan(0)
+      expect(await eventosDo(DIA)).toEqual([])
+    },
+    30_000,
+  )
+
+  it(
+    'sem o opt-in (a checagem da reserva) não grava — senão a mesma procura contaria duas vezes',
+    async () => {
+      const outroDomingo = Temporal.PlainDate.from(domingo).add({ days: 7 }).toString()
+      expect(await disponibilidadePublica(slug, servicoOnlineId, outroDomingo, professionalId)).toEqual([])
+      expect(await eventosDo(outroDomingo)).toEqual([])
+    },
+    30_000,
+  )
+
+  it(
+    'dia no passado não é demanda',
+    async () => {
+      const ontem = Temporal.Now.plainDateISO(TZ).subtract({ days: 1 }).toString()
+      await disponibilidadePublica(slug, servicoOnlineId, ontem, professionalId, { registrarDemanda: true })
+      expect(await eventosDo(ontem)).toEqual([])
     },
     30_000,
   )

@@ -30,14 +30,18 @@ export const POST = rota(async (req, params, requestId) => {
   const { id } = await (params as Ctx).params
   if (!UUID.test(id)) throw new AppError('NOT_FOUND', { message: 'Essa ficha não está mais na sua lista.' })
 
-  const resultado = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/clients/${id}/erase` }, () =>
-    withTenant(ctx.tenantId, (svc) => eliminarCliente(svc, ctx.tenantId, id)),
-  )
-
-  await writeAudit(
-    { tenantId: ctx.tenantId, actorId: sessao.userId, actorRole: ctx.papel, action: 'client.erase', entity: 'clients', entityId: id, after: resultado, requestId },
-    req,
-  )
+  // BL-42 (`.claude/ciclo/autonomous-backlog.md`): `writeAudit` dentro do fechamento — ver o
+  // comentário em `wallet/credit/route.ts`. Aqui dói mais que em dinheiro: sem isto, uma repetição
+  // gravava uma segunda linha de auditoria descrevendo uma eliminação de dado pessoal que só
+  // aconteceu uma vez — o registro que prova QUANDO e POR QUEM ficava com ruído.
+  const resultado = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/clients/${id}/erase` }, async () => {
+    const resultado = await withTenant(ctx.tenantId, (svc) => eliminarCliente(svc, ctx.tenantId, id))
+    await writeAudit(
+      { tenantId: ctx.tenantId, actorId: sessao.userId, actorRole: ctx.papel, action: 'client.erase', entity: 'clients', entityId: id, after: resultado, requestId },
+      req,
+    )
+    return resultado
+  })
 
   return resultado
 })

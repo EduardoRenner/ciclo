@@ -4,8 +4,10 @@ import { createClient } from '@supabase/supabase-js'
 import dotenv from 'dotenv'
 import { afterAll, describe, expect, it } from 'vitest'
 
+import { VERSOES_LEGAIS } from '@/core/legal/versoes'
 import { abrirDekCifrada } from '@/server/crypto/kek'
 import { executarOnboarding } from '@/server/services/onboarding'
+import { atualizarServico, criarServico, EsquemaServico } from '@/server/services/servicos'
 
 import type { Database } from '@/server/db/types.gen'
 
@@ -107,6 +109,14 @@ describe('executarOnboarding — contra o projeto real', () => {
       expect(servicos.count).toBe(6)
       expect(produtos.count).toBe(7)
       expect(expediente.count).toBe(6)
+
+      // BL-50: a conta nasce com o registro de QUAL versão dos termos e da privacidade estava no
+      // ar — a mesma data que a página mostra (`core/legal/versoes.ts`), e de quem aceitou.
+      const aceites = await svc.from('terms_acceptances').select('documento, versao, via, user_id').eq('tenant_id', tenant.id).order('documento')
+      expect(aceites.data).toEqual([
+        { documento: 'privacidade', versao: VERSOES_LEGAIS.privacidade, via: 'cadastro', user_id: userId },
+        { documento: 'termos', versao: VERSOES_LEGAIS.termos, via: 'cadastro', user_id: userId },
+      ])
     },
     60_000,
   )
@@ -242,6 +252,95 @@ describe('executarOnboarding com professionId (P4)', () => {
 
       const tenantCompleto = await svc.from('tenants').select('profession_id').eq('id', tenant.id).single()
       expect(tenantCompleto.data?.profession_id).toBe(profissao.id) // eixos/profession_id são setados mesmo usando o pack antigo
+    },
+    60_000,
+  )
+})
+
+/**
+ * docs/84 §2.3 — serviço canônico (migration 0097). O agregado entre negócios agrupa por DE ONDE o
+ * serviço veio, não pelo nome. Os quatro casos: os dois catálogos gravam a origem; renomear pela
+ * rota de edição não perde a origem; serviço criado à mão não ganha origem inventada.
+ */
+describe('serviço canônico — cada serviço do catálogo sabe de onde veio', () => {
+  const servicosDe = async (tenantId: string) =>
+    (await svc.from('services').select('id, name, canonical_key').eq('tenant_id', tenantId).is('deleted_at', null)).data ?? []
+
+  it(
+    'catálogo novo (profissão fora das 8): cada serviço aponta para o seu item em profession_services',
+    async () => {
+      const userId = await criarUsuario('canonico-prof')
+      const { data: profissao, error } = await svc.from('professions').select('id').eq('slug', 'eletricista').single()
+      if (error) throw error
+      const { tenant } = await executarOnboarding(svc, {
+        userId,
+        businessName: 'Eletricista Canônico',
+        vertical: 'general',
+        professionId: profissao.id,
+        slug: `canonico-prof-${randomUUID().slice(0, 8)}`,
+        timezone: 'America/Sao_Paulo',
+      })
+      tenantsParaLimpar.push(tenant.id)
+
+      const catalogo = (await svc.from('profession_services').select('id, nome').eq('profession_id', profissao.id)).data ?? []
+      const servicos = await servicosDe(tenant.id)
+      expect(servicos.length).toBeGreaterThan(0)
+      expect(servicos).toHaveLength(catalogo.length)
+      for (const s of servicos) {
+        const item = catalogo.find((c) => c.nome === s.name)
+        expect(item, `serviço "${s.name}" sem item no catálogo`).toBeDefined()
+        expect(s.canonical_key).toBe(`prof:${item!.id}`)
+      }
+    },
+    60_000,
+  )
+
+  it(
+    'catálogo antigo (vertical legada): cada serviço aponta para o pack e o nome do item',
+    async () => {
+      const userId = await criarUsuario('canonico-pack')
+      const { tenant } = await executarOnboarding(svc, {
+        userId,
+        businessName: 'Barbearia Canônica',
+        vertical: 'barber',
+        slug: `canonico-pack-${randomUUID().slice(0, 8)}`,
+        timezone: 'America/Sao_Paulo',
+      })
+      tenantsParaLimpar.push(tenant.id)
+
+      const servicos = await servicosDe(tenant.id)
+      expect(servicos.length).toBeGreaterThan(0)
+      for (const s of servicos) expect(s.canonical_key).toBe(`pack:barber:${s.name}`)
+    },
+    60_000,
+  )
+
+  it(
+    'renomear pela função de edição mantém a origem; serviço criado à mão fica sem origem',
+    async () => {
+      const userId = await criarUsuario('canonico-edicao')
+      const { tenant } = await executarOnboarding(svc, {
+        userId,
+        businessName: 'Barbearia que Renomeia',
+        vertical: 'barber',
+        slug: `canonico-edicao-${randomUUID().slice(0, 8)}`,
+        timezone: 'America/Sao_Paulo',
+      })
+      tenantsParaLimpar.push(tenant.id)
+
+      const [primeiro] = await servicosDe(tenant.id)
+      const origem = primeiro!.canonical_key
+      expect(origem).toMatch(/^pack:barber:/)
+
+      await atualizarServico(svc, tenant.id, primeiro!.id, { name: 'Corte do Zé, do jeito da casa' })
+      const renomeado = (await servicosDe(tenant.id)).find((s) => s.id === primeiro!.id)
+      expect(renomeado?.name).toBe('Corte do Zé, do jeito da casa')
+      expect(renomeado?.canonical_key).toBe(origem)
+
+      const manual = await criarServico(svc, tenant.id, EsquemaServico.parse({ name: 'Pezinho avulso', durationMin: 15, priceCents: 1500 }))
+      const criado = (await servicosDe(tenant.id)).find((s) => s.id === manual.id)
+      expect(criado).toBeDefined()
+      expect(criado?.canonical_key).toBeNull()
     },
     60_000,
   )

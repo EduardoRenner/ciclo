@@ -401,7 +401,13 @@ describe('clube de assinatura', () => {
        * `visitasNoCiclo` vinha 0. Medido: falhou na CI rodando às 00h39 UTC (21h39 em SP).
        */
       const hojeLocal = Temporal.Now.zonedDateTimeISO('America/Sao_Paulo').toPlainDate()
-      await assinar(svc, tenantId, cliente.id, { planId: plano.id, billingDay: hojeLocal.day }, 'America/Sao_Paulo')
+      /*
+       * `billing_day` vai de 1 a 28 (check da 0019: dia que existe em todo mês). Com `hojeLocal.day`
+       * cru o teste dava INTERNAL nos dias 29, 30 e 31 de TODO mês — medido em 29/09/2026. O Zod
+       * da borda já barra 29+, então o produto nunca chega nisso; só o teste, que chama `assinar`
+       * direto. Com 28 nesses dias o ciclo começa ontem ou anteontem e hoje continua dentro dele.
+       */
+      await assinar(svc, tenantId, cliente.id, { planId: plano.id, billingDay: Math.min(hojeLocal.day, 28) }, 'America/Sao_Paulo')
 
       // Ainda sem visita: 2 de 2 restantes, não excedeu.
       const antes = await assinaturaAtiva(svc, tenantId, cliente.id, 'America/Sao_Paulo')
@@ -621,6 +627,50 @@ describe('lucro por cliente na ficha', () => {
       expect(ficha.metricas.lucro!.lucroCents).toBe(3_200)
       expect(ficha.metricas.lucro!.cobertura, 'uma visita ficou sem comanda').toBe('parcial')
       expect(ficha.metricas.lucro!.visitasSemComanda).toBe(1)
+    },
+    90_000,
+  )
+})
+
+describe('memória do cliente na ficha (docs/84 P4)', () => {
+  it(
+    'dia da semana NO FUSO DO SALÃO, quem mais atende e a faixa de retorno — com a contagem',
+    async () => {
+      const marca = randomUUID().slice(0, 6)
+      const cliente = await criarCliente(svc, tenantId, { name: `Costumeira ${marca}`, phone: null, tags: [], marketingOptIn: false })
+      // A dona criada no cadastro também atende: o negócio tem duas pessoas, então "com quem" vale.
+      const { data: equipe } = await svc.from('professionals').select('id').eq('tenant_id', tenantId).neq('id', profissionalId).limit(1)
+      const outraId = equipe?.[0]?.id
+      expect(outraId, 'o cenário precisa de uma segunda profissional ativa').toBeTruthy()
+
+      // Quarta 01:00 UTC = TERÇA 22:00 em São Paulo. Quem contar o dia em UTC diria "quartas".
+      const quartasUtc = ['2026-09-02', '2026-09-09', '2026-09-16', '2026-09-23']
+      for (const [i, dia] of quartasUtc.entries()) {
+        const inicio = `${dia}T01:00:00Z`
+        const { error } = await svc.from('appointments').insert({
+          tenant_id: tenantId,
+          client_id: cliente.id,
+          service_id: servicoId,
+          professional_id: i === 3 ? outraId! : profissionalId,
+          starts_at: inicio,
+          ends_at: new Date(new Date(inicio).getTime() + 1_800_000).toISOString(),
+          price_cents: 5_000,
+          status: 'done',
+        })
+        if (error) throw error
+      }
+
+      const ficha = await fichaDoCliente(svc, tenantId, cliente.id, 'America/Sao_Paulo')
+      expect(ficha.memoria).toEqual([
+        'Costuma vir às terças (4 de 4 visitas).',
+        'Quase sempre com Barbeiro (3 de 4 visitas).',
+        'Costuma voltar em 7 dias.',
+      ])
+
+      // A cliente de 2 visitas não ganha costume nenhum — o piso vale no banco de verdade.
+      const fiel = await fichaDoCliente(svc, tenantId, fielId, 'America/Sao_Paulo')
+      expect(fiel.metricas.visitas, 'o cenário da cliente fiel tem 2 visitas').toBe(2)
+      expect(fiel.memoria).toEqual([])
     },
     90_000,
   )

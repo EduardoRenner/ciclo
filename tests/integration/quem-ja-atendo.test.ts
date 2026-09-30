@@ -1,9 +1,10 @@
 import { randomUUID } from 'node:crypto'
 
+import { dataDaUltimaVez } from '@/core/ciclo/quando-foi-a-ultima-vez'
 import { Temporal } from '@js-temporal/polyfill'
 import { createClient } from '@supabase/supabase-js'
 import dotenv from 'dotenv'
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { recomputarCiclosDoTenant } from '@/server/services/ciclo'
 import { cadastrarQuemJaAtendo } from '@/server/services/quem-ja-atendo'
@@ -98,6 +99,11 @@ describe('cadastrar de memória põe a clientela no Motor', () => {
         .eq('name', `Sumida ${marca}`)
         .maybeSingle()
       expect(cliente?.last_visit_at, 'a data de memória não foi gravada em clients').toBeTruthy()
+      // O DIA certo, no fuso do salão (29/09): gravar a data pura dava meia-noite UTC, que em
+      // Brasília é o dia anterior — "faz tempo" viraria um dia a mais de atraso sem ninguém ver.
+      // "Hoje" do SALÃO (BL-52), não do processo — em UTC, depois das 21h em Brasília, é amanhã.
+      const esperado = dataDaUltimaVez('faz-tempo', Temporal.Now.plainDateISO('America/Sao_Paulo')).toString()
+      expect(Temporal.Instant.from(String(cliente?.last_visit_at)).toZonedDateTimeISO('America/Sao_Paulo').toPlainDate().toString()).toBe(esperado)
       expect(cliente?.source).toBe('memoria')
 
       const { data: aRecuperar } = await svc
@@ -464,6 +470,40 @@ describe('preverEPersistirCiclos grava o dinheiro certo (não só o estado)', ()
         .single()
       expect(ciclo?.value_at_risk_cents).toBe(0)
       expect(ciclo?.profit_at_risk_cents).toBe(0)
+    },
+    30_000,
+  )
+})
+
+describe('BL-52 — "hoje" é o dia no salão, não no servidor', () => {
+  it(
+    'o dia de "hoje" sai do fuso do SALÃO, qualquer que seja o fuso da máquina',
+    async () => {
+      /*
+       * A primeira versão deste teste congelava 22h em Brasília e passava COM o defeito: a máquina
+       * de desenvolvimento está no fuso de Brasília, então "fuso do servidor" e "fuso do salão" eram o
+       * mesmo e o defeito só apareceria na Vercel (UTC). Visto na mutação.
+       *
+       * Agora o salão vai para Kiritimati (UTC+14): às 11h UTC de 30/09 lá já é 1º/10, enquanto em
+       * UTC e em Brasília ainda é 30/09. O certo dá 1º/10; o defeito dá 30/09 — em qualquer máquina.
+       * A data é conferida pela string gravada (meio-dia UTC do dia informado), não por fuso.
+       */
+      const { data: antes } = await svc.from('tenants').select('timezone').eq('id', tenantId).single()
+      await svc.from('tenants').update({ timezone: 'Pacific/Kiritimati' }).eq('id', tenantId)
+      vi.useFakeTimers({ toFake: ['Date'] })
+      vi.setSystemTime(new Date('2026-09-30T11:00:00Z'))
+      try {
+        const marca = randomUUID().slice(0, 6)
+        await cadastrarQuemJaAtendo(svc, tenantId, {
+          serviceId,
+          pessoas: [{ nome: `Fuso ${marca}`, telefone: telefoneNovo(), quando: 'faz-tempo' }],
+        })
+        const { data: cliente } = await svc.from('clients').select('last_visit_at').eq('tenant_id', tenantId).eq('name', `Fuso ${marca}`).maybeSingle()
+        expect(String(cliente?.last_visit_at).slice(0, 10)).toBe(dataDaUltimaVez('faz-tempo', Temporal.PlainDate.from('2026-10-01')).toString())
+      } finally {
+        vi.useRealTimers()
+        await svc.from('tenants').update({ timezone: antes!.timezone }).eq('id', tenantId)
+      }
     },
     30_000,
   )

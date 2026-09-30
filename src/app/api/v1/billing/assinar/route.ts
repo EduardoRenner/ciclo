@@ -51,24 +51,27 @@ export const POST = rota(async (req, _params, requestId) => {
   }
 
   const db = await criarClienteDoUsuario()
+  // BL-42: `writeAudit` dentro do fechamento — ver o comentário em `wallet/credit/route.ts`.
   const { initPoint } = await comIdempotencia(
     req,
     { tenantId: ctx.tenantId, endpoint: '/api/v1/billing/assinar' },
-    () => iniciarAssinatura(db, ctx.tenantId, tier, ctx.sessao.email, `${APP_URL}/admin/config/meu-plano`),
-  )
-
-  await writeAudit(
-    {
-      tenantId: ctx.tenantId,
-      actorId: ctx.sessao.userId,
-      actorRole: ctx.papel,
-      action: 'tenant.subscription.start',
-      entity: 'tenants',
-      entityId: ctx.tenantId,
-      after: { tier },
-      requestId,
+    async () => {
+      const resultado = await iniciarAssinatura(db, ctx.tenantId, tier, ctx.sessao.email!, `${APP_URL}/admin/config/meu-plano`)
+      await writeAudit(
+        {
+          tenantId: ctx.tenantId,
+          actorId: ctx.sessao.userId,
+          actorRole: ctx.papel,
+          action: 'tenant.subscription.start',
+          entity: 'tenants',
+          entityId: ctx.tenantId,
+          after: { tier },
+          requestId,
+        },
+        req,
+      )
+      return resultado
     },
-    req,
   )
 
   return { initPoint }

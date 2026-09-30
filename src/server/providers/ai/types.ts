@@ -30,12 +30,29 @@ export type MensagemDoAssistente =
   | { papel: 'ferramenta'; nome: string; conteudo: string }
 
 export type RespostaDoModelo =
-  | { tipo: 'texto'; texto: string }
+  /**
+   * `contexto`: o que o provedor quer que a PRÓXIMA pergunta saiba desta (docs/85 MI-4). Opaco para
+   * o laço e para a rota — só o provedor que o produziu sabe ler. O Gemini não usa.
+   */
+  | {
+      tipo: 'texto'
+      texto: string
+      contexto?: unknown
+      /**
+       * Para MEDIR o produto (docs/85 MI-7): por que não houve resposta de verdade. Vai para
+       * `product_events` pela rota e nunca volta para a tela. Não carrega texto da pergunta.
+       */
+      sinal?: unknown
+      /** Botões de próximo passo (docs/85 MI-3): perguntas que o provedor sabe responder. */
+      sugestoes?: unknown
+    }
   | { tipo: 'chamada_ferramenta'; nome: string; argumentos: string; assinatura?: string }
 
 export type PedidoAoModelo = {
   mensagens: MensagemDoAssistente[]
   ferramentas: DescricaoFerramenta[]
+  /** O `contexto` que a resposta anterior devolveu, de volta pelo navegador. Entrada NÃO confiável. */
+  contexto?: unknown
 }
 
 export interface AiProvider {

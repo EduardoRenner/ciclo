@@ -10,6 +10,7 @@ import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
 import { useToast } from '@/components/ui/toast'
 import { primeiraVolta } from '@/core/ciclo/primeira-volta'
+import { lerDataInformada } from '@/core/tempo/data-informada'
 
 type Preview = { colunas: string[]; sample: Record<string, string>[] }
 type Previsao = { comDataInformada: number; jaDevendoVoltar: number; cyclesGravados: number; proximaVolta: string | null }
@@ -18,6 +19,29 @@ type Resultado = {
   skipped: { linha: number; motivo: string }[]
   errors: { linha: number; motivo: string }[]
   previsao: Previsao | null
+  datasNaoReconhecidas: number
+}
+
+/**
+ * BL-51: confere, nas linhas da prévia, se a coluna escolhida como "última visita" é legível — com
+ * o MESMO leitor que o servidor usa (`lerDataInformada`), para o aviso nunca discordar do que a
+ * importação vai fazer. É a chance de a pessoa trocar de coluna ou corrigir a planilha ANTES de
+ * importar sem data.
+ */
+function datasIlegiveisNaAmostra(sample: Record<string, string>[], coluna: string): { ilegiveis: number; preenchidas: number; exemplo: string | null } {
+  let ilegiveis = 0
+  let preenchidas = 0
+  let exemplo: string | null = null
+  for (const linha of sample) {
+    const valor = linha[coluna]?.trim()
+    if (!valor) continue
+    preenchidas++
+    if (!lerDataInformada(valor)) {
+      ilegiveis++
+      exemplo ??= valor
+    }
+  }
+  return { ilegiveis, preenchidas, exemplo }
 }
 type Mapeamento = { name: string; phone: string; email: string; tags: string; lastVisit: string }
 
@@ -27,8 +51,17 @@ const CAMPO_VAZIO = '__nenhum__'
 
 async function enviarMultipart<T>(url: string, form: FormData): Promise<T> {
   const r = await fetch(url, { method: 'POST', body: form })
-  const json = (await r.json()) as { data?: T; error?: { message: string } }
-  if (!r.ok) throw new Error(json.error?.message ?? 'Não consegui processar o arquivo.')
+  const json = (await r.json()) as { data?: T; error?: { message: string; details?: { fields?: Record<string, string> } } }
+  if (!r.ok) {
+    /*
+      O motivo de verdade vem em `details.fields` ("Arquivo maior que 5 MB", "é uma planilha do
+      Excel, salve em CSV assim..."). A `message` de validação é a genérica da casa, "Confira os
+      campos destacados", e esta tela NÃO tem campo destacado nenhum: medido em 29/09, a pessoa lia
+      uma instrução impossível e o motivo real se perdia.
+    */
+    const motivo = Object.values(json.error?.details?.fields ?? {})[0]
+    throw new Error(motivo ?? json.error?.message ?? 'Não consegui processar o arquivo.')
+  }
   return json.data as T
 }
 
@@ -45,6 +78,12 @@ export default function Importador({ servicos }: { servicos: ServicoComRitmo[] }
   */
   const [serviceId, setServiceId] = useState<string>(servicos[0]?.id ?? '')
   const [resultado, setResultado] = useState<Resultado | null>(null)
+  /*
+    O motivo de o arquivo não ter entrado fica NA TELA, ao lado do campo, até a pessoa escolher outro.
+    Era um toast: some sozinho, e o motivo mais comum (planilha do Excel em vez de CSV) é uma
+    instrução de quatro passos que ninguém termina de ler antes de ela sumir.
+  */
+  const [erroDoArquivo, setErroDoArquivo] = useState<string | null>(null)
   const [pendente, iniciarTransicao] = useTransition()
   const mostrarToast = useToast()
   const inputRef = useRef<HTMLInputElement>(null)
@@ -53,6 +92,7 @@ export default function Importador({ servicos }: { servicos: ServicoComRitmo[] }
     setArquivo(f)
     setPreview(null)
     setResultado(null)
+    setErroDoArquivo(null)
 
     iniciarTransicao(async () => {
       try {
@@ -70,7 +110,7 @@ export default function Importador({ servicos }: { servicos: ServicoComRitmo[] }
           lastVisit: p.colunas.find((c) => /visita|atendimento|compra/i.test(c)) ?? '',
         })
       } catch (erro) {
-        mostrarToast({ tom: 'erro', titulo: 'Não consegui ler o arquivo', descricao: (erro as Error).message })
+        setErroDoArquivo((erro as Error).message)
       }
     })
   }
@@ -142,6 +182,12 @@ export default function Importador({ servicos }: { servicos: ServicoComRitmo[] }
         </Card>
       ) : null}
 
+      {!preview && erroDoArquivo ? (
+        <p role="alert" className="-mt-3 text-secundario text-bad">
+          <span className="font-semibold">Não consegui ler o arquivo.</span> {erroDoArquivo}
+        </p>
+      ) : null}
+
       {preview ? (
         <>
           <section>
@@ -155,7 +201,7 @@ export default function Importador({ servicos }: { servicos: ServicoComRitmo[] }
                   ['phone', 'Telefone'],
                   ['email', 'E-mail'],
                   ['tags', 'Etiquetas'],
-                  ['lastVisit', 'Última visita (opcional, AAAA-MM-DD)'],
+                  ['lastVisit', 'Última visita (opcional, ex.: 15/08/2026)'],
                 ] as const
               ).map(([campo, rotulo]) => (
                 <label key={campo} className="flex flex-col gap-1">
@@ -187,6 +233,23 @@ export default function Importador({ servicos }: { servicos: ServicoComRitmo[] }
               coluna: assim que a importação terminar, o CICLO já mostra quem está atrasado para
               voltar.
             </p>
+
+            {mapa.lastVisit
+              ? (() => {
+                  const { ilegiveis, preenchidas, exemplo } = datasIlegiveisNaAmostra(preview.sample, mapa.lastVisit)
+                  if (ilegiveis === 0) return null
+                  return (
+                    <p role="status" className="mt-2 text-secundario text-warn">
+                      {ilegiveis === preenchidas
+                        ? `Não consegui ler nenhuma data desta coluna nas primeiras linhas (ex.: "${exemplo}").`
+                        : ilegiveis === 1
+                          ? `Nas primeiras linhas, 1 de ${preenchidas} datas não foi reconhecida (ex.: "${exemplo}").`
+                          : `Nas primeiras linhas, ${ilegiveis} de ${preenchidas} datas não foram reconhecidas (ex.: "${exemplo}").`}{' '}
+                      Use o formato 15/08/2026. Quem ficar com a data ilegível entra mesmo, mas sem a última visita.
+                    </p>
+                  )
+                })()
+              : null}
 
             {/*
               2026-09-10. O campo que faltava para aquela frase acima ser VERDADE.
@@ -278,15 +341,36 @@ export default function Importador({ servicos }: { servicos: ServicoComRitmo[] }
                       <div className="flex items-start gap-3">
                         <CalendarClock aria-hidden className="mt-0.5 size-6 shrink-0 text-acc-2" />
                         <div>
+                          {/*
+                            2026-09-28 (medido na tela): "1 cliente já está atrasados" — o plural
+                            ficava fora do ternário. "Passou da hora de voltar" em vez de
+                            "atrasado(a)": não supõe gênero de quem é atendido.
+                          */}
                           <p className="text-corpo font-semibold text-acc-2">
-                            {p.jaDevendoVoltar} {p.jaDevendoVoltar === 1 ? 'cliente já está' : 'clientes já estão'}{' '}
-                            atrasados para voltar
+                            {p.jaDevendoVoltar === 1
+                              ? '1 cliente já passou da hora de voltar'
+                              : `${p.jaDevendoVoltar} clientes já passaram da hora de voltar`}
                           </p>
                           <p className="mt-1 text-secundario text-txt-2">
                             De {p.comDataInformada} com data de última visita informada.{' '}
-                            {noMotor
-                              ? 'Já estão no Motor de Ciclo. Ver quem são →'
-                              : 'Para o Motor acompanhar essas pessoas, importe de novo escolhendo o serviço que elas fazem.'}
+                            {/*
+                              NÃO "importe de novo escolhendo o serviço" (a frase que estava aqui até
+                              2026-09-28): a segunda importação PULA quem tem telefone (a ficha já
+                              existe, o ciclo nunca é criado) e DUPLICA quem não tem (sem telefone
+                              não há o que comparar). "Quem você já atende" recebe a ficha existente
+                              + serviço + data e grava o ciclo — é o caminho que funciona.
+                            */}
+                            {noMotor ? (
+                              p.cyclesGravados === 1 ? 'Já está no Motor de Ciclo. Ver quem é →' : 'Já estão no Motor de Ciclo. Ver quem são →'
+                            ) : (
+                              <>
+                                Para o Motor acompanhar {p.comDataInformada === 1 ? 'essa pessoa' : 'essas pessoas'}, diga o serviço em{' '}
+                                <Link href="/admin/clientes/ja-atendo" className="font-semibold underline underline-offset-2">
+                                  Quem você já atende
+                                </Link>
+                                . Importar de novo não resolve: quem já tem ficha é pulado.
+                              </>
+                            )}
                           </p>
                         </div>
                       </div>
@@ -333,6 +417,23 @@ export default function Importador({ servicos }: { servicos: ServicoComRitmo[] }
                 </p>
                 {resultado.skipped.length > 0 ? (
                   <p className="mt-1 text-secundario text-warn">{resultado.skipped.length} não importadas (duplicata)</p>
+                ) : null}
+                {resultado.datasNaoReconhecidas > 0 ? (
+                  <p className="mt-1 text-secundario text-warn">
+                    {resultado.datasNaoReconhecidas === 1
+                      ? '1 cliente entrou sem a última visita: a data da planilha não estava num formato que eu reconheço.'
+                      : `${resultado.datasNaoReconhecidas} clientes entraram sem a última visita: a data da planilha não estava num formato que eu reconheço.`}{' '}
+                    {/*
+                      NÃO "importe de novo": a segunda importação pularia essas pessoas como
+                      duplicata (mesmo telefone) e a data continuaria faltando. "Quem você já
+                      atende" busca quem já tem ficha e grava a data — é o caminho que funciona.
+                    */}
+                    Dá para informar a data {resultado.datasNaoReconhecidas === 1 ? 'dessa pessoa' : 'dessas pessoas'} em{' '}
+                    <Link href="/admin/clientes/ja-atendo" className="font-semibold underline underline-offset-2">
+                      Quem você já atende
+                    </Link>
+                    .
+                  </p>
                 ) : null}
                 {resultado.errors.length > 0 ? (
                   <div className="mt-2">

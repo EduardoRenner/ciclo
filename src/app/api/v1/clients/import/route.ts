@@ -1,3 +1,4 @@
+import { COMO_SALVAR_EM_CSV, decodificarTexto, planilhaBinaria } from '@/core/text/decodificar-texto'
 import { writeAudit } from '@/server/audit/write'
 import { exigirPermissao } from '@/server/auth/rbac'
 import { contextoAtual } from '@/server/auth/tenant'
@@ -29,7 +30,11 @@ export const POST = rota(async (req, _ctx, requestId) => {
   }
   const mapeamento = lerJson(EsquemaMapeamento, mapeamentoJson)
 
-  const texto = await arquivo.text()
+  // BL-51: `arquivo.text()` é sempre UTF-8 e corrompia o CSV que o Excel em português salva.
+  const bytes = await arquivo.arrayBuffer()
+  // docs/83 P4: mesma recusa da prévia — quem pula a prévia não importa lixo.
+  if (planilhaBinaria(bytes)) throw AppError.validacao({ file: COMO_SALVAR_EM_CSV })
+  const texto = decodificarTexto(bytes)
   const db = await criarClienteDoUsuario()
 
   const resultado = await importarClientes(db, ctx.tenantId, texto, mapeamento)
