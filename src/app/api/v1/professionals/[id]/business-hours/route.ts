@@ -54,24 +54,27 @@ export const PUT = rota(async (req, params, requestId) => {
    */
   if (professionalId !== null) await exigirModulo(db, ctx.tenantId, 'team')
 
+  // BL-42: writeAudit dentro do fechamento — ver o comentário em wallet/credit/route.ts.
   const resultado = await comIdempotencia(
     req,
     { tenantId: ctx.tenantId, endpoint: `/api/v1/professionals/${professionalId ?? 'default'}/business-hours` },
-    () => definirExpediente(db, ctx.tenantId, corpo),
-  )
-
-  await writeAudit(
-    {
-      tenantId: ctx.tenantId,
-      actorId: ctx.sessao.userId,
-      actorRole: ctx.papel,
-      action: 'business_hours.replace',
-      entity: 'business_hours',
-      entityId: professionalId ?? undefined,
-      after: resultado,
-      requestId,
+    async () => {
+      const resultado = await definirExpediente(db, ctx.tenantId, corpo)
+      await writeAudit(
+        {
+          tenantId: ctx.tenantId,
+          actorId: ctx.sessao.userId,
+          actorRole: ctx.papel,
+          action: 'business_hours.replace',
+          entity: 'business_hours',
+          entityId: professionalId ?? undefined,
+          after: resultado,
+          requestId,
+        },
+        req,
+      )
+      return resultado
     },
-    req,
   )
 
   return resultado

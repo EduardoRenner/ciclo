@@ -24,23 +24,24 @@ export const POST = rota(async (req, _ctx, requestId) => {
   const entrada = await lerCorpo(req, EsquemaFolga)
   const db = await criarClienteDoUsuario()
 
-  const folga = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: '/api/v1/time-off' }, () =>
-    criarFolga(db, ctx.tenantId, entrada),
-  )
-
-  await writeAudit(
-    {
-      tenantId: ctx.tenantId,
-      actorId: ctx.sessao.userId,
-      actorRole: ctx.papel,
-      action: 'time_off.create',
-      entity: 'time_off',
-      entityId: folga.id,
-      after: folga,
-      requestId,
-    },
-    req,
-  )
+  // BL-42: writeAudit dentro do fechamento — ver o comentário em wallet/credit/route.ts.
+  const folga = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: '/api/v1/time-off' }, async () => {
+    const folga = await criarFolga(db, ctx.tenantId, entrada)
+    await writeAudit(
+      {
+        tenantId: ctx.tenantId,
+        actorId: ctx.sessao.userId,
+        actorRole: ctx.papel,
+        action: 'time_off.create',
+        entity: 'time_off',
+        entityId: folga.id,
+        after: folga,
+        requestId,
+      },
+      req,
+    )
+    return folga
+  })
 
   return folga
 })

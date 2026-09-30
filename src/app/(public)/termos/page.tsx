@@ -2,6 +2,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 
 import { precoDoPlano } from '@/core/billing/planos'
+import { dataLegivel, VERSOES_LEGAIS } from '@/core/legal/versoes'
 import { canalDeContato } from '@/lib/contato'
 
 import wordmark from '../../../../public/marca/ciclo-wordmark-aqua.png'
@@ -51,7 +52,8 @@ export const metadata = {
 // `/privacidade` já ficou parada numa data velha depois de um commit mudar o conteúdo de verdade
 // sem tocar na constante irmã — achado só verificando a página publicada, não pelo build passar
 // (2026-09-16). Mudou o texto abaixo? Mude esta linha junto, na MESMA mudança.
-const ATUALIZADO_EM = '21 de setembro de 2026'
+// BL-50: a data sai de `core/legal/versoes.ts` — a mesma que o cadastro grava como versão aceita.
+const ATUALIZADO_EM = dataLegivel(VERSOES_LEGAIS.termos)
 
 export default function Termos() {
   return (

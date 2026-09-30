@@ -29,9 +29,33 @@ export const POST = rota(async (req, _params, requestId) => {
   const entrada = await lerCorpo(req, EsquemaQuemJaAtendo)
   const db = await criarClienteDoUsuario()
 
-  const resultado = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: '/api/v1/clients/ja-atendo' }, () =>
-    cadastrarQuemJaAtendo(db, ctx.tenantId, entrada),
-  )
+  // BL-42: writeAudit dentro do fechamento — ver o comentário em wallet/credit/route.ts.
+  // `registrarPrimeiraOcorrencia` fica de fora de propósito: ela mesma se protege (SELECT antes do
+  // INSERT, "primeira ocorrência" já é o próprio nome do contrato) — repetir a chamada numa
+  // repetição idempotente é inofensivo, ao contrário de writeAudit, que sempre insere.
+  const resultado = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: '/api/v1/clients/ja-atendo' }, async () => {
+    const resultado = await cadastrarQuemJaAtendo(db, ctx.tenantId, entrada)
+    await writeAudit(
+      {
+        tenantId: ctx.tenantId,
+        actorId: ctx.sessao.userId,
+        actorRole: ctx.papel,
+        action: 'client.ja_atendo',
+        entity: 'clients',
+        // Sem nome nem telefone na trilha: o `after` do audit vira `jsonb` e já foi ponto cego de LGPD
+        // uma vez (`docs/…`, achado de 2026-08-28). O contador basta para auditar a ação.
+        after: {
+          cadastrados: resultado.cadastrados,
+          jaExistiam: resultado.jaExistiam.length,
+          retornos: entrada.retornos?.length ?? 0,
+          cyclesGravados: resultado.previsao?.cyclesGravados ?? 0,
+        },
+        requestId,
+      },
+      req,
+    )
+    return resultado
+  })
 
   /*
    * G-05b (docs/60): "base_importada" ainda represado, até este par (G-05a) provar que
@@ -44,26 +68,6 @@ export const POST = rota(async (req, _params, requestId) => {
     // e uma promise solta corre o risco de nunca terminar de escrever — mesma razão de `conta_criada`.
     await registrarPrimeiraOcorrencia(db, ctx.tenantId, 'base_importada', { via: 'ja_atendo', cadastrados: resultado.cadastrados })
   }
-
-  await writeAudit(
-    {
-      tenantId: ctx.tenantId,
-      actorId: ctx.sessao.userId,
-      actorRole: ctx.papel,
-      action: 'client.ja_atendo',
-      entity: 'clients',
-      // Sem nome nem telefone na trilha: o `after` do audit vira `jsonb` e já foi ponto cego de LGPD
-      // uma vez (`docs/…`, achado de 2026-08-28). O contador basta para auditar a ação.
-      after: {
-        cadastrados: resultado.cadastrados,
-        jaExistiam: resultado.jaExistiam.length,
-        retornos: entrada.retornos?.length ?? 0,
-        cyclesGravados: resultado.previsao?.cyclesGravados ?? 0,
-      },
-      requestId,
-    },
-    req,
-  )
 
   return resultado
 })

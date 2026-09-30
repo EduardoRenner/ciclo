@@ -36,15 +36,16 @@ export const PUT = rota(async (req, params, requestId) => {
   const db = await criarClienteDoUsuario()
 
   const antes = await listarFicha(db, ctx.tenantId, id)
-  const ficha = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/services/${id}/consumption` }, () =>
-    salvarFicha(db, ctx.tenantId, id, entrada),
-  )
-
-  // Mudar a ficha muda o custo de todo atendimento futuro daquele serviço e o que sai do estoque.
-  await writeAudit(
-    { tenantId: ctx.tenantId, actorId: ctx.sessao.userId, actorRole: ctx.papel, action: 'service.consumption', entity: 'services', entityId: id, before: antes, after: ficha, requestId },
-    req,
-  )
+  // BL-42: writeAudit dentro do fechamento — ver o comentário em wallet/credit/route.ts.
+  const ficha = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/services/${id}/consumption` }, async () => {
+    const ficha = await salvarFicha(db, ctx.tenantId, id, entrada)
+    // Mudar a ficha muda o custo de todo atendimento futuro daquele serviço e o que sai do estoque.
+    await writeAudit(
+      { tenantId: ctx.tenantId, actorId: ctx.sessao.userId, actorRole: ctx.papel, action: 'service.consumption', entity: 'services', entityId: id, before: antes, after: ficha, requestId },
+      req,
+    )
+    return ficha
+  })
 
   return ficha
 })

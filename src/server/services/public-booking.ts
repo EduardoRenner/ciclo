@@ -3,6 +3,7 @@ import { Temporal } from '@js-temporal/polyfill'
 import { cache } from 'react'
 import { z } from 'zod'
 
+import { classificarDemanda } from '@/core/agenda/demanda-nao-atendida'
 import { podeUsarCapacidade } from '@/core/billing/planos'
 import { availableSlots, type IntervaloExpediente, type IntervaloOcupado } from '@/core/scheduling/available-slots'
 import type { ModeloDePreco } from '@/core/pricing/formatar'
@@ -20,6 +21,7 @@ import { normalizarTelefoneBR } from '@/server/services/telefone'
 import { criarAgendamento } from '@/server/services/agendamentos'
 import { verificarTokenIndicacao } from '@/server/services/indicacao'
 import { notificarEquipe } from '@/server/services/mensageria'
+import { registrarEvento } from '@/server/services/product-events'
 import { gerarTokenReconhecimento } from '@/server/services/reconhecimento'
 import { AppError } from '@/server/http/errors'
 
@@ -317,6 +319,12 @@ export async function disponibilidadePublica(
   serviceId: string,
   date: string,
   professionalId?: string,
+  /**
+   * docs/84 §2.2: grava "demanda não atendida" quando não há horário. Opt-in de propósito: esta
+   * função também valida o horário na hora de RESERVAR (`criarAgendamentoPublico`), e ali contar
+   * de novo dobraria a mesma procura. Só a rota de consulta liga.
+   */
+  opcoes: { registrarDemanda?: boolean } = {},
 ): Promise<SlotPublico[]> {
   return withNovoTenant(async (svc) => {
     const tenant = await tenantPeloSlug(svc, slug)
@@ -414,7 +422,7 @@ export async function disponibilidadePublica(
           opensAt: h.opens_at,
           closesAt: h.closes_at,
         }))
-        if (businessHours.length === 0) return []
+        if (businessHours.length === 0) return { temExpediente: false, slots: [] }
 
         const timeOff: IntervaloOcupado[] = (folgas.data ?? []).map((f) => ({ start: f.starts_at, end: f.ends_at }))
         const ocupados: IntervaloOcupado[] = (agendamentos.data ?? []).map((a) => ({ start: a.starts_at, end: a.ends_at }))
@@ -439,15 +447,43 @@ export async function disponibilidadePublica(
           parallelCapacity: servico.parallel_capacity,
         })
 
-        return slots.map((s) => ({
-          startsAt: s,
-          endsAt: Temporal.Instant.from(s).add({ minutes: servico.duration_min }).toString(),
-          professionalId: prof.id,
-        }))
+        return {
+          temExpediente: true,
+          slots: slots.map((s) => ({
+            startsAt: s,
+            endsAt: Temporal.Instant.from(s).add({ minutes: servico.duration_min }).toString(),
+            professionalId: prof.id,
+          })),
+        }
       }),
     )
 
-    return porProfissional.flat().sort((a, b) => (a.startsAt < b.startsAt ? -1 : 1))
+    const todos = porProfissional.flatMap((p) => p.slots).sort((a, b) => (a.startsAt < b.startsAt ? -1 : 1))
+
+    if (opcoes.registrarDemanda) {
+      const motivo = classificarDemanda({
+        haviaHorario: todos.length > 0,
+        profissionaisOnline: porProfissional.length,
+        algumExpediente: porProfissional.some((p) => p.temExpediente),
+        dia,
+        hoje: Temporal.Now.instant().toZonedDateTimeISO(tenant.timezone).toPlainDate(),
+        maxAdvanceDays: config.maxAdvanceDays,
+      })
+      // SEM dado pessoal nenhum: nem IP, nem nome, nem telefone — só o que foi procurado. Quem
+      // procurou é anônimo por construção (a página ainda nem pediu nada à pessoa), e continua.
+      // `registrarEvento` nunca lança: a pessoa recebe "sem horário" mesmo se a gravação falhar.
+      if (motivo) {
+        await registrarEvento(svc, tenant.id, 'demanda_nao_atendida', {
+          motivo,
+          servicoId: serviceId,
+          dia: date,
+          diaDaSemana: weekdayPg(dia),
+          comPreferencia: Boolean(professionalId),
+        })
+      }
+    }
+
+    return todos
   })
 }
 

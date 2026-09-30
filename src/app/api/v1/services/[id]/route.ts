@@ -31,26 +31,25 @@ export const PATCH = rota(async (req, params, requestId) => {
   // que havia lá, e não dá para reconstruir quem mudou o preço de quanto.
   const antes = (await listarServicos(db, ctx.tenantId, true)).find((s) => s.id === id) ?? null
 
-  const servico = await comIdempotencia(
-    req,
-    { tenantId: ctx.tenantId, endpoint: `/api/v1/services/${id}` },
-    () => atualizarServico(db, ctx.tenantId, id, entrada),
-  )
-
-  await writeAudit(
-    {
-      tenantId: ctx.tenantId,
-      actorId: ctx.sessao.userId,
-      actorRole: ctx.papel,
-      action: 'service.update',
-      entity: 'services',
-      entityId: id,
-      before: antes,
-      after: servico,
-      requestId,
-    },
-    req,
-  )
+  // BL-42: writeAudit dentro do fechamento — ver o comentário em wallet/credit/route.ts.
+  const servico = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/services/${id}` }, async () => {
+    const servico = await atualizarServico(db, ctx.tenantId, id, entrada)
+    await writeAudit(
+      {
+        tenantId: ctx.tenantId,
+        actorId: ctx.sessao.userId,
+        actorRole: ctx.papel,
+        action: 'service.update',
+        entity: 'services',
+        entityId: id,
+        before: antes,
+        after: servico,
+        requestId,
+      },
+      req,
+    )
+    return servico
+  })
 
   return servico
 })
@@ -62,25 +61,24 @@ export const DELETE = rota(async (req, params, requestId) => {
   const id = await idValidado(params)
   const db = await criarClienteDoUsuario()
 
-  const resultado = await comIdempotencia(
-    req,
-    { tenantId: ctx.tenantId, endpoint: `/api/v1/services/${id}` },
-    () => arquivarServico(db, ctx.tenantId, id),
-  )
-
-  await writeAudit(
-    {
-      tenantId: ctx.tenantId,
-      actorId: ctx.sessao.userId,
-      actorRole: ctx.papel,
-      action: 'service.archive',
-      entity: 'services',
-      entityId: id,
-      after: resultado,
-      requestId,
-    },
-    req,
-  )
+  // BL-42: writeAudit dentro do fechamento — ver o comentário em wallet/credit/route.ts.
+  const resultado = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/services/${id}` }, async () => {
+    const resultado = await arquivarServico(db, ctx.tenantId, id)
+    await writeAudit(
+      {
+        tenantId: ctx.tenantId,
+        actorId: ctx.sessao.userId,
+        actorRole: ctx.papel,
+        action: 'service.archive',
+        entity: 'services',
+        entityId: id,
+        after: resultado,
+        requestId,
+      },
+      req,
+    )
+    return resultado
+  })
 
   return resultado
 })

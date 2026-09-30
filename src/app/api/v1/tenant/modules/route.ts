@@ -26,26 +26,29 @@ export const PATCH = rota(async (req, _ctx, requestId) => {
   const entrada = await lerCorpo(req, EsquemaModulo)
   const db = await criarClienteDoUsuario()
 
+  // BL-42: writeAudit dentro do fechamento — ver o comentário em wallet/credit/route.ts.
   const modules = await comIdempotencia(
     req,
     { tenantId: ctx.tenantId, endpoint: '/api/v1/tenant/modules' },
-    () => definirModulo(db, ctx.tenantId, entrada),
-  )
-
-  await writeAudit(
-    {
-      tenantId: ctx.tenantId,
-      actorId: ctx.sessao.userId,
-      actorRole: ctx.papel,
-      action: 'tenant.module.update',
-      entity: 'tenant_modules',
-      // Sem `entityId`: `audit_log.entity_id` é `uuid` no banco, e a chave do módulo é texto
-      // ('campaigns'). Os tipos gerados dizem `string` e não pegam isso — o Postgres pegaria, em
-      // produção, a cada toque no interruptor. Qual módulo mudou já está em `after`.
-      after: entrada,
-      requestId,
+    async () => {
+      const modules = await definirModulo(db, ctx.tenantId, entrada)
+      await writeAudit(
+        {
+          tenantId: ctx.tenantId,
+          actorId: ctx.sessao.userId,
+          actorRole: ctx.papel,
+          action: 'tenant.module.update',
+          entity: 'tenant_modules',
+          // Sem `entityId`: `audit_log.entity_id` é `uuid` no banco, e a chave do módulo é texto
+          // ('campaigns'). Os tipos gerados dizem `string` e não pegam isso — o Postgres pegaria, em
+          // produção, a cada toque no interruptor. Qual módulo mudou já está em `after`.
+          after: entrada,
+          requestId,
+        },
+        req,
+      )
+      return modules
     },
-    req,
   )
 
   return { modules }

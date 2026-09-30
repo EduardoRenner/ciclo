@@ -25,23 +25,24 @@ export const PATCH = rota(async (req, params, requestId) => {
   const entrada = await lerCorpo(req, EsquemaModeloParcial)
   const db = await criarClienteDoUsuario()
 
-  const modelo = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/message-templates/${id}` }, () =>
-    atualizarModelo(db, ctx.tenantId, id, entrada),
-  )
-
-  await writeAudit(
-    {
-      tenantId: ctx.tenantId,
-      actorId: ctx.sessao.userId,
-      actorRole: ctx.papel,
-      action: 'message_template.update',
-      entity: 'message_templates',
-      entityId: id,
-      after: modelo,
-      requestId,
-    },
-    req,
-  )
+  // BL-42: writeAudit dentro do fechamento — ver o comentário em wallet/credit/route.ts.
+  const modelo = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/message-templates/${id}` }, async () => {
+    const modelo = await atualizarModelo(db, ctx.tenantId, id, entrada)
+    await writeAudit(
+      {
+        tenantId: ctx.tenantId,
+        actorId: ctx.sessao.userId,
+        actorRole: ctx.papel,
+        action: 'message_template.update',
+        entity: 'message_templates',
+        entityId: id,
+        after: modelo,
+        requestId,
+      },
+      req,
+    )
+    return modelo
+  })
 
   return modelo
 })
@@ -53,22 +54,23 @@ export const DELETE = rota(async (req, params, requestId) => {
   const id = await idValidado(params)
   const db = await criarClienteDoUsuario()
 
-  const resultado = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/message-templates/${id}` }, () =>
-    removerModelo(db, ctx.tenantId, id),
-  )
-
-  await writeAudit(
-    {
-      tenantId: ctx.tenantId,
-      actorId: ctx.sessao.userId,
-      actorRole: ctx.papel,
-      action: 'message_template.delete',
-      entity: 'message_templates',
-      entityId: id,
-      requestId,
-    },
-    req,
-  )
+  // BL-42: writeAudit dentro do fechamento — ver o comentário em wallet/credit/route.ts.
+  const resultado = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/message-templates/${id}` }, async () => {
+    const resultado = await removerModelo(db, ctx.tenantId, id)
+    await writeAudit(
+      {
+        tenantId: ctx.tenantId,
+        actorId: ctx.sessao.userId,
+        actorRole: ctx.papel,
+        action: 'message_template.delete',
+        entity: 'message_templates',
+        entityId: id,
+        requestId,
+      },
+      req,
+    )
+    return resultado
+  })
 
   return resultado
 })

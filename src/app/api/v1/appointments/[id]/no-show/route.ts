@@ -19,14 +19,15 @@ export const POST = rota(async (req, params, requestId) => {
   const db = await criarClienteDoUsuario()
 
   // FAQ E68: quem marca é o profissional, manualmente. Nunca automático.
-  const agendamento = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/appointments/${id}/no-show` }, () =>
-    marcarFalta(db, ctx.tenantId, id),
-  )
-
-  await writeAudit(
-    { tenantId: ctx.tenantId, actorId: ctx.sessao.userId, actorRole: ctx.papel, action: 'appointment.no_show', entity: 'appointments', entityId: id, after: agendamento, requestId },
-    req,
-  )
+  // BL-42: writeAudit dentro do fechamento — ver o comentário em wallet/credit/route.ts.
+  const agendamento = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/appointments/${id}/no-show` }, async () => {
+    const agendamento = await marcarFalta(db, ctx.tenantId, id)
+    await writeAudit(
+      { tenantId: ctx.tenantId, actorId: ctx.sessao.userId, actorRole: ctx.papel, action: 'appointment.no_show', entity: 'appointments', entityId: id, after: agendamento, requestId },
+      req,
+    )
+    return agendamento
+  })
 
   return { appointment: agendamento }
 })

@@ -33,23 +33,24 @@ export const POST = rota(async (req, _ctx, requestId) => {
 
   const { data: tenantRow } = await db.from('tenants').select('settings, timezone').eq('id', ctx.tenantId).single()
 
-  const agendamento = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: '/api/v1/appointments' }, () =>
-    criarAgendamento(db, ctx.tenantId, tenantRow?.timezone ?? 'America/Sao_Paulo', ctx.sessao.userId, entrada, tenantRow?.settings),
-  )
-
-  await writeAudit(
-    {
-      tenantId: ctx.tenantId,
-      actorId: ctx.sessao.userId,
-      actorRole: ctx.papel,
-      action: 'appointment.create',
-      entity: 'appointments',
-      entityId: agendamento.id,
-      after: agendamento,
-      requestId,
-    },
-    req,
-  )
+  // BL-42: writeAudit dentro do fechamento — ver o comentário em wallet/credit/route.ts.
+  const agendamento = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: '/api/v1/appointments' }, async () => {
+    const agendamento = await criarAgendamento(db, ctx.tenantId, tenantRow?.timezone ?? 'America/Sao_Paulo', ctx.sessao.userId, entrada, tenantRow?.settings)
+    await writeAudit(
+      {
+        tenantId: ctx.tenantId,
+        actorId: ctx.sessao.userId,
+        actorRole: ctx.papel,
+        action: 'appointment.create',
+        entity: 'appointments',
+        entityId: agendamento.id,
+        after: agendamento,
+        requestId,
+      },
+      req,
+    )
+    return agendamento
+  })
 
   return { appointment: agendamento }
 })

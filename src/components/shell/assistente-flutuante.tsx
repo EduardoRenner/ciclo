@@ -7,8 +7,9 @@ import { Fragment, useEffect, useRef, useState } from 'react'
 import Card from '@/components/ui/card'
 import Sheet from '@/components/ui/sheet'
 import { useToast } from '@/components/ui/toast'
-import { acaoTemVolta, rotaDaAcao } from '@/core/assistente/acoes'
+import { acaoTemVolta, linkDaChamada, rotaDaAcao, textoDeFeito } from '@/core/assistente/acoes'
 import { linhasDoResumo } from '@/core/assistente/resumo'
+import { duracao } from '@/lib/formato'
 import { cn } from '@/lib/utils'
 
 type Sugestao = {
@@ -74,7 +75,8 @@ function sugestoesPara(pathname: string): Sugestao[] {
 }
 
 type Proposta = { acao: string; dados: Record<string, unknown>; resumo: Record<string, unknown> }
-type RespostaOk = { resposta: string; ferramentasUsadas: string[]; proposta?: Proposta }
+type RespostaOk = { resposta: string; ferramentasUsadas: string[]; proposta?: Proposta; contexto?: unknown; sugestoes?: unknown }
+type ProximoPasso = { rotulo: string; pergunta: string }
 type Turno = {
   pergunta: string
   resposta: string
@@ -83,6 +85,18 @@ type Turno = {
   /** Vira `feito` depois do clique — o cartão não pode oferecer o mesmo botão duas vezes. */
   estadoDaProposta?: 'pendente' | 'executando' | 'feito' | 'erro'
   erroDaProposta?: string
+  /** O que o cartão diz depois do toque — depende da RESPOSTA quando a rota responde 200 sem ter feito (chamada de volta). */
+  textoFeito?: string
+  /** docs/85 MI-3: os botões de próximo passo que o Motor devolveu. */
+  sugestoes?: ProximoPasso[]
+}
+
+/** O que vem da rota é lido com cuidado: botão sem texto não vira botão. */
+function lerSugestoes(bruto: unknown): ProximoPasso[] {
+  if (!Array.isArray(bruto)) return []
+  return bruto
+    .filter((x): x is ProximoPasso => typeof x?.rotulo === 'string' && typeof x?.pergunta === 'string' && x.rotulo !== '' && x.pergunta !== '')
+    .slice(0, 4)
 }
 
 
@@ -322,9 +336,10 @@ function ajustarAlturaDoCampo(el: HTMLTextAreaElement) {
 
 /**
  * docs/26-AGENTE-IA-PLANO.md §5/§6 (A7) — painel do assistente, presente em toda tela do `/admin`.
- * `disponivel` vem do layout (server component, `Boolean(process.env.GEMINI_API_KEY)`, sem I/O) —
- * sem credencial, este componente nem monta o botão (§4.4: nunca degradar em silêncio, nunca
- * aparecer para depois falhar).
+ * `disponivel` vem do layout. Desde 2026-09-29 (docs/85 MI-2) é sempre verdadeiro: o assistente
+ * roda no Motor de Inteligência próprio, sem credencial de terceiro para faltar. A prop fica para
+ * o dia em que outra condição de ambiente precisar esconder o botão (§4.4: nunca aparecer para
+ * depois falhar).
  *
  * 2026-08-30: no desktop (≥1024px) virou janela flutuante que se arrasta pela tela — pedido do
  * Eduardo comparando com o padrão dos grandes (Intercom, Drift, ChatGPT): uma janela que fica por
@@ -345,6 +360,12 @@ export default function AssistenteFlutuante({ disponivel }: { disponivel: boolea
   const [aberto, setAberto] = useState(false)
   const [pergunta, setPergunta] = useState('')
   const [turnos, setTurnos] = useState<Turno[]>([])
+  /*
+    docs/85 MI-4: o que a última resposta deixou para a próxima ("e no mês passado?", "a Juliana").
+    Opaco para a tela — só volta para o servidor, que valida. Acompanha a conversa que está na
+    tela (que não some ao fechar a janela) e zera em toda sugestão pronta, que começa outra.
+  */
+  const [contexto, setContexto] = useState<unknown>(undefined)
   const [indisponivel, setIndisponivel] = useState(false)
   /** O `requestId` da chamada que falhou, para achar a linha de log correspondente. */
   const [codigoDaFalha, setCodigoDaFalha] = useState<string | null>(null)
@@ -446,7 +467,7 @@ export default function AssistenteFlutuante({ disponivel }: { disponivel: boolea
         : await fetch('/api/v1/assistant', {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ pergunta: limpo }),
+            body: JSON.stringify({ pergunta: limpo, ...(contexto !== undefined ? { contexto } : {}) }),
           })
 
       if (r.status === 403 || r.status === 503) {
@@ -471,11 +492,21 @@ export default function AssistenteFlutuante({ disponivel }: { disponivel: boolea
         return
       }
       if (!r.ok) {
-        setTurnos((atual) => atual.map((t, i) => (i === atual.length - 1 ? { ...t, resposta: 'Não consegui responder agora.', carregando: false } : t)))
+        /*
+          429 é o teto de uso (contra abuso, `limites-de-uso.ts`), e a rota já manda a frase certa:
+          "Você fez muitas perguntas seguidas. Tente de novo daqui a cerca de uma hora." Medido em
+          29/09: a tela a jogava fora e dizia "Não consegui responder agora" — a pessoa tentava de
+          novo, batia no mesmo teto e achava que o assistente tinha quebrado.
+        */
+        const corpoDoErro = r.status === 429 ? ((await r.json().catch(() => null)) as { error?: { message?: string } } | null) : null
+        const aviso = corpoDoErro?.error?.message ?? (r.status === 429 ? 'Você fez muitas perguntas seguidas. Tente de novo mais tarde.' : 'Não consegui responder agora.')
+        setTurnos((atual) => atual.map((t, i) => (i === atual.length - 1 ? { ...t, resposta: aviso, carregando: false } : t)))
         return
       }
 
       const corpo = (await r.json()) as { data: RespostaOk }
+      // Sugestão pronta não devolve contexto: ela termina a conversa anterior, não a continua.
+      setContexto(idRapido ? undefined : corpo.data.contexto)
       setTurnos((atual) =>
         atual.map((t, i) =>
           i === atual.length - 1
@@ -485,6 +516,7 @@ export default function AssistenteFlutuante({ disponivel }: { disponivel: boolea
                 carregando: false,
                 proposta: corpo.data.proposta,
                 estadoDaProposta: corpo.data.proposta ? ('pendente' as const) : undefined,
+                sugestoes: lerSugestoes(corpo.data.sugestoes),
               }
             : t,
         ),
@@ -531,7 +563,8 @@ export default function AssistenteFlutuante({ disponivel }: { disponivel: boolea
         )
         return
       }
-      setTurnos((a) => a.map((t, i) => (i === indice ? { ...t, estadoDaProposta: 'feito' } : t)))
+      const json = (await r.json().catch(() => null)) as { data?: unknown } | null
+      setTurnos((a) => a.map((t, i) => (i === indice ? { ...t, estadoDaProposta: 'feito', textoFeito: textoDeFeito(proposta.acao, json?.data) } : t)))
       mostrarToast({ tom: 'ok', titulo: 'Feito' })
     } catch {
       setTurnos((a) =>
@@ -581,6 +614,25 @@ export default function AssistenteFlutuante({ disponivel }: { disponivel: boolea
                     <div className="min-w-0 flex-1 text-corpo text-txt [&_p:not(:last-child)]:mb-2 [&_div:not(:last-child)]:mb-2">
                       {t.carregando ? <PontosDigitando /> : renderMarkdownLeve(t.resposta)}
                       {/*
+                        docs/85 MI-3 — próximo passo em botão, só na ÚLTIMA resposta: o botão de uma
+                        resposta antiga levaria o contexto de agora, e "e o mês passado?" viraria o
+                        mês passado de outra pergunta. Some enquanto a próxima carrega.
+                      */}
+                      {i === turnos.length - 1 && !t.carregando && t.sugestoes && t.sugestoes.length > 0 ? (
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {t.sugestoes.map((s) => (
+                            <button
+                              key={s.pergunta}
+                              type="button"
+                              onClick={() => perguntar(s.pergunta)}
+                              className="min-h-12 rounded-full border border-line px-4 py-2 text-left text-secundario font-semibold text-acc-2 transition hover:border-line-2 hover:bg-surface-2 active:scale-[.98]"
+                            >
+                              {s.rotulo}
+                            </button>
+                          ))}
+                        </div>
+                      ) : null}
+                      {/*
                         O cartão de confirmação: é o que separa "assistente que sugere" de
                         "assistente que opera". Mostra o que VAI acontecer em português, com nome
                         de gente e preço — nunca id nem JSON. A pesquisa da Anthropic sobre fadiga
@@ -597,7 +649,9 @@ export default function AssistenteFlutuante({ disponivel }: { disponivel: boolea
                                   ? dinheiroBR(linha.valor)
                                   : linha.tipo === 'data' && typeof linha.valor === 'string'
                                     ? formatarQuando(linha.valor)
-                                    : String(linha.valor),
+                                    : linha.tipo === 'duracao' && typeof linha.valor === 'number'
+                                      ? duracao(linha.valor)
+                                      : String(linha.valor),
                               ])
                               .filter((par): par is [string, string] => typeof par[1] === 'string' && par[1] !== '')
                               .map(([rotulo, valor]) => (
@@ -609,7 +663,7 @@ export default function AssistenteFlutuante({ disponivel }: { disponivel: boolea
                           </dl>
 
                           {t.estadoDaProposta === 'feito' ? (
-                            <p className="mt-2.5 text-secundario font-semibold text-ok">Marcado.</p>
+                            <p className="mt-2.5 text-secundario font-semibold text-ok">{t.textoFeito ?? textoDeFeito(t.proposta.acao)}</p>
                           ) : t.estadoDaProposta === 'erro' ? (
                             <p role="alert" className="mt-2.5 text-secundario text-bad">
                               {t.erroDaProposta}
@@ -626,14 +680,39 @@ export default function AssistenteFlutuante({ disponivel }: { disponivel: boolea
                             {!acaoTemVolta(t.proposta.acao) ? (
                               <p className="mt-2.5 text-secundario text-warn">Depois de confirmar, não dá para desfazer por aqui.</p>
                             ) : null}
-                            <button
-                              type="button"
-                              onClick={() => confirmarProposta(i)}
-                              disabled={t.estadoDaProposta === 'executando'}
-                              className="mt-2.5 grid h-12 w-full place-items-center rounded-[var(--radius-sm)] bg-acc font-semibold text-on-acc transition active:scale-[.98] disabled:opacity-60"
-                            >
-                              {t.estadoDaProposta === 'executando' ? 'Confirmando…' : 'Confirmar'}
-                            </button>
+                            {t.proposta.acao === 'chamar_de_volta' ? (
+                              /*
+                                docs/84 P2 ("resolve"): quem manda é o dono, do PRÓPRIO WhatsApp — o
+                                mesmo "Chamar" da tela Recuperar. O link abre a conversa (tem que ser
+                                o toque, senão o navegador bloqueia a aba) e, junto, anota a chamada.
+                                Link que não se monta (número fora do formato) não vira botão.
+                              */
+                              linkDaChamada(t.proposta.dados) ? (
+                                <a
+                                  href={linkDaChamada(t.proposta.dados)!}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  onClick={() => void confirmarProposta(i)}
+                                  aria-disabled={t.estadoDaProposta === 'executando'}
+                                  className="mt-2.5 grid h-12 w-full place-items-center rounded-[var(--radius-sm)] bg-acc font-semibold text-on-acc transition active:scale-[.98] aria-disabled:opacity-60"
+                                >
+                                  Abrir no meu WhatsApp
+                                </a>
+                              ) : (
+                                <p role="alert" className="mt-2.5 text-secundario text-bad">
+                                  Não deu para montar a mensagem. Chame pela tela Recuperar receita.
+                                </p>
+                              )
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => confirmarProposta(i)}
+                                disabled={t.estadoDaProposta === 'executando'}
+                                className="mt-2.5 grid h-12 w-full place-items-center rounded-[var(--radius-sm)] bg-acc font-semibold text-on-acc transition active:scale-[.98] disabled:opacity-60"
+                              >
+                                {t.estadoDaProposta === 'executando' ? 'Confirmando…' : 'Confirmar'}
+                              </button>
+                            )}
                             </>
                           )}
                         </div>
@@ -646,7 +725,7 @@ export default function AssistenteFlutuante({ disponivel }: { disponivel: boolea
             </div>
           )}
 
-          <form
+          <form method="post"
             onSubmit={(e) => {
               e.preventDefault()
               perguntar(pergunta)

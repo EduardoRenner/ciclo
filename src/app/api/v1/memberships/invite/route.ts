@@ -24,23 +24,24 @@ export const POST = rota(async (req, _ctx, requestId) => {
   const entrada = await lerCorpo(req, EsquemaConvite)
   const db = await criarClienteDoUsuario()
 
-  const { invite, token } = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: '/api/v1/memberships/invite' }, () =>
-    criarConvite(db, ctx.tenantId, ctx.sessao.userId, entrada),
-  )
-
-  await writeAudit(
-    {
-      tenantId: ctx.tenantId,
-      actorId: ctx.sessao.userId,
-      actorRole: ctx.papel,
-      action: 'membership.invite',
-      entity: 'invites',
-      entityId: invite.id,
-      after: { email: invite.email, role: invite.role },
-      requestId,
-    },
-    req,
-  )
+  // BL-42: writeAudit dentro do fechamento — ver o comentário em wallet/credit/route.ts.
+  const { invite, token } = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: '/api/v1/memberships/invite' }, async () => {
+    const resultado = await criarConvite(db, ctx.tenantId, ctx.sessao.userId, entrada)
+    await writeAudit(
+      {
+        tenantId: ctx.tenantId,
+        actorId: ctx.sessao.userId,
+        actorRole: ctx.papel,
+        action: 'membership.invite',
+        entity: 'invites',
+        entityId: resultado.invite.id,
+        after: { email: resultado.invite.email, role: resultado.invite.role },
+        requestId,
+      },
+      req,
+    )
+    return resultado
+  })
 
   // O link volta na resposta para o dono copiar e mandar. A redação anterior justificava isso com
   // "nenhum MessagingProvider existe" — e existe desde então (`server/providers/messaging/`). O

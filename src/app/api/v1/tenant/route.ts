@@ -31,24 +31,25 @@ export const PATCH = rota(async (req, _ctx, requestId) => {
 
   const antes = await lerTenant(db, ctx.tenantId)
 
-  const tenant = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: '/api/v1/tenant' }, () =>
-    atualizarTenant(db, ctx.tenantId, entrada),
-  )
-
-  await writeAudit(
-    {
-      tenantId: ctx.tenantId,
-      actorId: ctx.sessao.userId,
-      actorRole: ctx.papel,
-      action: 'tenant.update',
-      entity: 'tenants',
-      entityId: ctx.tenantId,
-      before: antes,
-      after: tenant,
-      requestId,
-    },
-    req,
-  )
+  // BL-42: writeAudit dentro do fechamento — ver o comentário em wallet/credit/route.ts.
+  const tenant = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: '/api/v1/tenant' }, async () => {
+    const tenant = await atualizarTenant(db, ctx.tenantId, entrada)
+    await writeAudit(
+      {
+        tenantId: ctx.tenantId,
+        actorId: ctx.sessao.userId,
+        actorRole: ctx.papel,
+        action: 'tenant.update',
+        entity: 'tenants',
+        entityId: ctx.tenantId,
+        before: antes,
+        after: tenant,
+        requestId,
+      },
+      req,
+    )
+    return tenant
+  })
 
   return tenant
 })

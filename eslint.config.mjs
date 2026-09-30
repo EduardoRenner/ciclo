@@ -69,6 +69,50 @@ const eslintConfig = [
     },
   },
 
+  // BL-42: writeAudit precisa estar dentro do fechamento de comIdempotencia (ver eslint-rules/index.mjs).
+  // "error" desde 2026-09-28: as 50 rotas de src/app/api/v1 que combinavam comIdempotencia +
+  // writeAudit foram corrigidas (10 rodadas), `pnpm lint` não acusa mais nenhuma. Começou em "warn"
+  // enquanto o trabalho estava em andamento — "error" agora é o passo final do BL-42: qualquer
+  // rota nova (ou regressão numa já corrigida) quebra `pnpm verify` por construção, em vez de
+  // depender de alguém lembrar de revisar.
+  {
+    files: ["src/app/api/v1/**"],
+    plugins: { ciclo },
+    rules: {
+      "ciclo/writeaudit-dentro-do-idempotente": "error",
+    },
+  },
+
+  // (c) dinheiro sempre em centavos inteiros, percentual sempre em basis points inteiros —
+  // CLAUDE.md regra 3 (ver eslint-rules/index.mjs). "error" desde o nascimento: varredura de
+  // 2026-09-28 não achou nenhum campo *Cents/*Bps existente que aceitasse fração, então não há
+  // "warn" de transição — só regressão futura para impedir.
+  {
+    plugins: { ciclo },
+    rules: {
+      "ciclo/dinheiro-em-centavos-inteiros": "error",
+    },
+  },
+
+  // (d) nunca DELETE em agendamento/movimento de estoque/auditoria — CLAUDE.md regra 11 (ver
+  // eslint-rules/index.mjs). "error" desde o nascimento no CÓDIGO DO APP: varredura de 2026-09-28
+  // não achou nenhuma ocorrência em src/. `tests/**`/`scripts/**` ficam de fora, mesmo escopo de
+  // (a) acima: o próprio teste de RLS PRECISA chamar `.delete()` pra provar que o banco bloqueia
+  // (`tests/rls/append-only-nao-se-apaga.test.ts`), testes de integração limpam fixture entre casos
+  // (`resumo-hoje.test.ts`), e scripts de seed recriam dado de demonstração do zero.
+  {
+    plugins: { ciclo },
+    rules: {
+      "ciclo/sem-delete-em-tabela-append-only": "error",
+    },
+  },
+  {
+    files: ["tests/**", "scripts/**"],
+    rules: {
+      "ciclo/sem-delete-em-tabela-append-only": "off",
+    },
+  },
+
   // (b) core/ é regra de negócio pura — CLAUDE.md regra 5
   {
     files: ["src/core/**/*.ts", "src/core/**/*.tsx"],

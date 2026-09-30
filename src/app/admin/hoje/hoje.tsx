@@ -307,7 +307,7 @@ export default function Hoje({
             valor={dinheiro.format(emRisco.totalCents / 100)}
             apoio={
               <span className="flex items-center justify-between gap-2">
-                {`${emRisco.count} ${emRisco.count === 1 ? 'cliente passou da hora de voltar' : 'clientes passaram da hora de voltar'}`}
+                {`${emRisco.count} ${emRisco.count === 1 ? 'cliente para chamar de volta' : 'clientes para chamar de volta'}`}
                 <span className="flex shrink-0 items-center gap-0.5 font-semibold text-acc-2">
                   Ver quem sumiu
                   <ChevronRight aria-hidden className="size-4" />

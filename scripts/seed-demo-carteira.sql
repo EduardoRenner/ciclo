@@ -96,7 +96,7 @@ create table if not exists seed.voc (chave text primary key, itens text[]);
 insert into seed.cfg (slug, qtd, publico, ordem) values
   ('demo-navalha-de-ouro', 44, 'm', 1),  -- grátis: teto DURO de 50 clientes em planos.ts. 44
   ('demo-corte-fino',      47, 'm', 2),  -- deixa a conta perto do limite de propósito, para a
-  ('demo-dom-estilo',      52, 'm', 3),  -- demonstração mostrar o aviso de upgrade chegando.
+  ('demo-dom-estilo',     160, 'm', 3),  -- demonstração mostrar o aviso de upgrade chegando. (Dom Estilo é plano Equipe, sem teto de 50.)
   ('demo-studio-bella',    55, 'f', 4),
   ('demo-salao-encanto',   58, 'f', 5),
   ('demo-espaco-vitoria',  54, 'f', 6)

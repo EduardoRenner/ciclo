@@ -34,12 +34,14 @@ export const PATCH = rota(async (req, params, requestId) => {
   const entrada = await lerCorpo(req, EsquemaDescontoGorjeta)
   const db = await criarClienteDoUsuario()
 
-  await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/tickets/${id}` }, () => atualizarDescontoEGorjeta(db, ctx.tenantId, id, entrada))
-
-  await writeAudit(
-    { tenantId: ctx.tenantId, actorId: ctx.sessao.userId, actorRole: ctx.papel, action: 'ticket.update', entity: 'tickets', entityId: id, after: entrada, requestId },
-    req,
-  )
+  // BL-42: writeAudit dentro do fechamento — ver o comentário em wallet/credit/route.ts.
+  await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/tickets/${id}` }, async () => {
+    await atualizarDescontoEGorjeta(db, ctx.tenantId, id, entrada)
+    await writeAudit(
+      { tenantId: ctx.tenantId, actorId: ctx.sessao.userId, actorRole: ctx.papel, action: 'ticket.update', entity: 'tickets', entityId: id, after: entrada, requestId },
+      req,
+    )
+  })
 
   return buscarComanda(db, ctx.tenantId, id)
 })

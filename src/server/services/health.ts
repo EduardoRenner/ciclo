@@ -114,14 +114,10 @@ export async function verificarSaude(db: Cliente, agora: Date = new Date()): Pro
  * é um jeito caro de transformar observabilidade em conta no fim do mês.
  */
 function checarAssistente(): ChecagemSaude {
-  return process.env.GEMINI_API_KEY
-    ? { ok: true, detail: 'assistente com credencial configurada (não verifica o provedor, para não gastar cota)' }
-    : {
-        ok: true,
-        detail:
-          'assistente SEM credencial (falta GEMINI_API_KEY) — o botão flutuante não aparece no painel. ' +
-          'Se ele aparece e mesmo assim falha, a causa é o provedor, não a configuração.',
-      }
+  // docs/85 MI-2 (2026-09-29): o assistente deixou de depender de provedor externo. Não há chave
+  // para faltar nem cota para gastar — se ele falha, a causa é o banco ou o código, nunca a
+  // configuração. A checagem continua existindo para quem opera não ter que deduzir isso.
+  return { ok: true, detail: 'assistente no Motor de Inteligência próprio (sem provedor externo nem chave)' }
 }
 
 /**

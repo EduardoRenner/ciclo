@@ -527,7 +527,7 @@ export default function ListaProfissionais({
 
 
 
-        <form
+        <form method="post"
 
           /*
 

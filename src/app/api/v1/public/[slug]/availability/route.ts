@@ -40,6 +40,7 @@ export const GET = rota(async (req, ctx) => {
     professionalId: params.get('professionalId'),
   })
 
-  const slots = await disponibilidadePublica(slug, query.serviceId, query.date, query.professionalId ?? undefined)
+  // `registrarDemanda`: sem horário vira `demanda_nao_atendida` (docs/84 §2.2), sem dado pessoal.
+  const slots = await disponibilidadePublica(slug, query.serviceId, query.date, query.professionalId ?? undefined, { registrarDemanda: true })
   return { slots }
 })

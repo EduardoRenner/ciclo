@@ -1,4 +1,6 @@
 import { Temporal } from '@js-temporal/polyfill'
+import { instanteDoDiaInformado } from '@/core/tempo/data-informada'
+import { diaNoFuso } from '@/core/tempo/dia'
 import { z } from 'zod'
 
 import { dataDaUltimaVez, VALORES_DE_QUANDO, type QuandoFoi } from '@/core/ciclo/quando-foi-a-ultima-vez'
@@ -92,7 +94,11 @@ export async function cadastrarQuemJaAtendo(
   tenantId: string,
   entrada: EntradaQuemJaAtendo,
 ): Promise<ResultadoQuemJaAtendo> {
-  const hoje = Temporal.Now.plainDateISO()
+  // BL-52: "hoje" é o dia NO SALÃO. `Temporal.Now.plainDateISO()` usava o fuso do processo (UTC na
+  // Vercel): quem digitava "faz 15 dias" depois das 21h em Brasília contava a partir do dia seguinte.
+  const { data: tenant, error: erroTenant } = await db.from('tenants').select('timezone').eq('id', tenantId).maybeSingle()
+  if (erroTenant) throw new AppError('INTERNAL', { cause: erroTenant })
+  const hoje = Temporal.PlainDate.from(diaNoFuso(tenant?.timezone ?? 'America/Sao_Paulo'))
   const pessoas = entrada.pessoas ?? []
   const retornos = entrada.retornos ?? []
 
@@ -142,7 +148,8 @@ export async function cadastrarQuemJaAtendo(
           phone_e164: n.e164,
           phone_hash: n.hash,
           source: 'memoria',
-          last_visit_at: n.ultimaVisita.toString(),
+          // Meio-dia UTC, não meia-noite: ver `instanteDoDiaInformado` (o dia não pode voltar um).
+          last_visit_at: instanteDoDiaInformado(n.ultimaVisita),
         })),
       )
       .select('id')

@@ -73,6 +73,12 @@ export type ResultadoDoAssistente = {
   resposta: string
   ferramentasUsadas: string[]
   proposta?: PropostaDoAssistente
+  /** Para a tela devolver com a próxima pergunta (docs/85 MI-4). Nunca vai para log nem auditoria. */
+  contexto?: unknown
+  /** Por que o assistente não respondeu de verdade (docs/85 MI-7). Só para `product_events`. */
+  sinal?: unknown
+  /** Botões de próximo passo (docs/85 MI-3). */
+  sugestoes?: unknown
 }
 
 /**
@@ -137,13 +143,14 @@ export async function perguntarAoAssistente(opcoes: {
   timezone: string
   papel: Papel
   pergunta: string
+  contexto?: unknown
 }): Promise<ResultadoDoAssistente> {
-  const { provider, db, tenantId, timezone, papel, pergunta } = opcoes
+  const { provider, db, tenantId, timezone, papel, pergunta, contexto } = opcoes
 
   const { ferramentas, bloqueios } = await ferramentasDisponiveisAgora(db, tenantId, papel)
   const ctxFerramenta: ContextoFerramenta = { db, tenantId, timezone }
 
-  return executarLaco({ provider, ferramentas, ctxFerramenta, pergunta, bloqueios })
+  return executarLaco({ provider, ferramentas, ctxFerramenta, pergunta, bloqueios, contexto })
 }
 
 /**
@@ -165,8 +172,10 @@ export async function executarLaco(opcoes: {
   pergunta: string
   /** O que o plano/config esconde deste tenant — vai no prompt para o modelo não confabular. */
   bloqueios?: Bloqueio[]
+  /** O `contexto` da resposta anterior, como a tela devolveu. Repassado ao provedor, intacto. */
+  contexto?: unknown
 }): Promise<ResultadoDoAssistente> {
-  const { provider, ferramentas: disponiveis, ctxFerramenta, pergunta } = opcoes
+  const { provider, ferramentas: disponiveis, ctxFerramenta, pergunta, contexto } = opcoes
   const descricoes = disponiveis.map((f) => ({ nome: f.nome, descricao: f.descricao, parametros: paraJsonSchema(f.schema) }))
 
   const mensagens: MensagemDoAssistente[] = [
@@ -183,14 +192,21 @@ export async function executarLaco(opcoes: {
     const noUltimaVolta = chamada === MAX_CHAMADAS_DE_FERRAMENTA
     let resposta
     try {
-      resposta = await provider.perguntar({ mensagens, ferramentas: noUltimaVolta ? [] : descricoes })
+      resposta = await provider.perguntar({ mensagens, ferramentas: noUltimaVolta ? [] : descricoes, contexto })
     } catch (erro) {
       if (erro instanceof ErroDeInferencia) throw erro
       throw new AppError('INTERNAL', { cause: erro })
     }
 
     if (resposta.tipo === 'texto') {
-      return { resposta: resposta.texto, ferramentasUsadas, proposta }
+      return {
+        resposta: resposta.texto,
+        ferramentasUsadas,
+        proposta,
+        ...(resposta.contexto !== undefined ? { contexto: resposta.contexto } : {}),
+        ...(resposta.sinal !== undefined ? { sinal: resposta.sinal } : {}),
+        ...(resposta.sugestoes !== undefined ? { sugestoes: resposta.sugestoes } : {}),
+      }
     }
 
     // Trava dura: na última volta o pedido não ofereceu NENHUMA ferramenta (`ferramentas: []`

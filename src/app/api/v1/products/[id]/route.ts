@@ -27,23 +27,24 @@ export const PATCH = rota(async (req, params, requestId) => {
   const entrada = await lerCorpo(req, EsquemaProdutoParcial)
   const db = await criarClienteDoUsuario()
 
-  const produto = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/products/${id}` }, () =>
-    atualizarProduto(db, ctx.tenantId, id, entrada),
-  )
-
-  await writeAudit(
-    {
-      tenantId: ctx.tenantId,
-      actorId: ctx.sessao.userId,
-      actorRole: ctx.papel,
-      action: 'product.update',
-      entity: 'products',
-      entityId: id,
-      after: produto,
-      requestId,
-    },
-    req,
-  )
+  // BL-42: writeAudit dentro do fechamento — ver o comentário em wallet/credit/route.ts.
+  const produto = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/products/${id}` }, async () => {
+    const produto = await atualizarProduto(db, ctx.tenantId, id, entrada)
+    await writeAudit(
+      {
+        tenantId: ctx.tenantId,
+        actorId: ctx.sessao.userId,
+        actorRole: ctx.papel,
+        action: 'product.update',
+        entity: 'products',
+        entityId: id,
+        after: produto,
+        requestId,
+      },
+      req,
+    )
+    return produto
+  })
 
   return produto
 })

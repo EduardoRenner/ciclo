@@ -34,22 +34,23 @@ export const POST = rota(async (req, _ctx, requestId) => {
   if (error) throw new AppError('INTERNAL', { cause: error })
   const timezone = tenant?.timezone ?? 'America/Sao_Paulo'
 
-  const resultado = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: '/api/v1/cycle/recover/send' }, () =>
-    enviarParaRecuperar(db, ctx.tenantId, timezone, entrada),
-  )
-
-  await writeAudit(
-    {
-      tenantId: ctx.tenantId,
-      actorId: ctx.sessao.userId,
-      actorRole: ctx.papel,
-      action: 'cycle.recover.send',
-      entity: 'client_cycles',
-      after: resultado,
-      requestId,
-    },
-    req,
-  )
+  // BL-42: writeAudit dentro do fechamento — ver o comentário em wallet/credit/route.ts.
+  const resultado = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: '/api/v1/cycle/recover/send' }, async () => {
+    const resultado = await enviarParaRecuperar(db, ctx.tenantId, timezone, entrada)
+    await writeAudit(
+      {
+        tenantId: ctx.tenantId,
+        actorId: ctx.sessao.userId,
+        actorRole: ctx.papel,
+        action: 'cycle.recover.send',
+        entity: 'client_cycles',
+        after: resultado,
+        requestId,
+      },
+      req,
+    )
+    return resultado
+  })
 
   return resultado
 })

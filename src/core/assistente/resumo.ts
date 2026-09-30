@@ -16,7 +16,7 @@
  * Por isso agora a lista é DERIVADA do resumo, não fixa: chave nova aparece sozinha, com o próprio
  * nome de rótulo. Uma ferramenta futura não consegue mais nascer com cartão em branco.
  */
-export type TipoDaLinha = 'texto' | 'data' | 'dinheiro'
+export type TipoDaLinha = 'texto' | 'data' | 'dinheiro' | 'duracao'
 export type LinhaDoResumo = { rotulo: string; valor: unknown; tipo: TipoDaLinha }
 
 /** Chaves com rótulo e formatação próprios; a ordem aqui é a ordem em que aparecem no cartão. */
@@ -27,6 +27,9 @@ const CONHECIDAS: Record<string, { rotulo: string; tipo: TipoDaLinha }> = {
   profissional: { rotulo: 'Com', tipo: 'texto' },
   quando: { rotulo: 'Quando', tipo: 'data' },
   precoCents: { rotulo: 'Valor', tipo: 'dinheiro' },
+  // Medido no navegador em 29/09: o cartão mostrava "duracaoMin 60" — o nome interno do campo,
+  // cru, na frente de quem precisa julgar antes de confirmar.
+  duracaoMin: { rotulo: 'Duração', tipo: 'duracao' },
 }
 
 function vazio(v: unknown): boolean {
@@ -48,7 +51,7 @@ export function linhasDoResumo(resumo: Record<string, unknown>): LinhaDoResumo[]
   // tela como "4500".
   for (const [chave, valor] of Object.entries(resumo)) {
     if (usadas.has(chave) || vazio(valor)) continue
-    linhas.push({ rotulo: chave, valor, tipo: chave.endsWith('Cents') ? 'dinheiro' : 'texto' })
+    linhas.push({ rotulo: chave, valor, tipo: chave.endsWith('Cents') ? 'dinheiro' : chave.endsWith('Min') ? 'duracao' : 'texto' })
   }
 
   return linhas

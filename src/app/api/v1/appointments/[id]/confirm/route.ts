@@ -18,14 +18,15 @@ export const POST = rota(async (req, params, requestId) => {
   if (!UUID.test(id)) throw new AppError('NOT_FOUND', { message: 'Esse agendamento não existe mais.' })
   const db = await criarClienteDoUsuario()
 
-  const agendamento = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/appointments/${id}/confirm` }, () =>
-    confirmarAgendamento(db, ctx.tenantId, id),
-  )
-
-  await writeAudit(
-    { tenantId: ctx.tenantId, actorId: ctx.sessao.userId, actorRole: ctx.papel, action: 'appointment.confirm', entity: 'appointments', entityId: id, after: agendamento, requestId },
-    req,
-  )
+  // BL-42: writeAudit dentro do fechamento — ver o comentário em wallet/credit/route.ts.
+  const agendamento = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/appointments/${id}/confirm` }, async () => {
+    const agendamento = await confirmarAgendamento(db, ctx.tenantId, id)
+    await writeAudit(
+      { tenantId: ctx.tenantId, actorId: ctx.sessao.userId, actorRole: ctx.papel, action: 'appointment.confirm', entity: 'appointments', entityId: id, after: agendamento, requestId },
+      req,
+    )
+    return agendamento
+  })
 
   return { appointment: agendamento }
 })

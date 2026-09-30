@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 
+import { Temporal } from '@js-temporal/polyfill'
 import { createClient } from '@supabase/supabase-js'
 import dotenv from 'dotenv'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
@@ -206,17 +207,51 @@ describe('importarClientes — previsão (F2/ticket 13, docs/25-ESTRATEGIA-E-EXE
     30_000,
   )
 
+  /*
+   * BL-51 (2026-09-28): até aqui este caso afirmava que `10/03/2024` "importa igual, sem contar pra
+   * previsão" — e isso era o DEFEITO escrito como regra. Toda planilha brasileira usa dd/mm/aaaa;
+   * descartar a data em silêncio fazia o Motor de Ciclo nascer vazio para quem migrou. A troca é
+   * deliberada: o formato brasileiro agora conta, e o que não é data é CONTADO e avisado na tela.
+   */
   it(
-    'data de última visita num formato que não é ISO: cliente importa igual, sem contar pra previsão',
+    'data no formato brasileiro (dd/mm/aaaa): grava last_visit_at e conta na previsão',
     async () => {
       const marca = randomUUID().slice(0, 6)
-      const csv = ['Nome,Telefone,UltimaVisita', `Data Ruim ${marca},,10/03/2024`].join('\n')
+      const csv = ['Nome,Telefone,UltimaVisita', `Data BR ${marca},,10/03/2024`].join('\n')
 
       const resultado = await importarClientes(svc, tenantId, csv, { name: 'Nome', phone: 'Telefone', lastVisit: 'UltimaVisita' })
 
       expect(resultado.imported).toBe(1)
       expect(resultado.errors).toEqual([])
+      expect(resultado.datasNaoReconhecidas).toBe(0)
+      expect(resultado.previsao).toMatchObject({ comDataInformada: 1, jaDevendoVoltar: 1 })
+
+      const { data: cliente } = await svc
+        .from('clients')
+        .select('last_visit_at')
+        .eq('tenant_id', tenantId)
+        .eq('name', `Data BR ${marca}`)
+        .maybeSingle()
+      // 10/03 é 10 de MARÇO: dd/mm, nunca mm/dd. E conferido NO FUSO DO SALÃO: cortar a string no
+      // "T" passava tanto com o defeito de 29/09 (meia-noite UTC = dia 9 em Brasília) quanto sem ele.
+      expect(Temporal.Instant.from(String(cliente?.last_visit_at)).toZonedDateTimeISO('America/Sao_Paulo').toPlainDate().toString()).toBe('2024-03-10')
+    },
+    30_000,
+  )
+
+  it(
+    'texto que não é data: cliente importa igual, sem previsão — e a conta volta para a tela avisar',
+    async () => {
+      const marca = randomUUID().slice(0, 6)
+      const csv = ['Nome,Telefone,UltimaVisita', `Data Ruim ${marca},,ontem`, `Sem Data ${marca},,`].join('\n')
+
+      const resultado = await importarClientes(svc, tenantId, csv, { name: 'Nome', phone: 'Telefone', lastVisit: 'UltimaVisita' })
+
+      expect(resultado.imported).toBe(2)
+      expect(resultado.errors).toEqual([])
       expect(resultado.previsao).toBeNull()
+      // Célula VAZIA não é data ilegível — só "ontem" conta. Senão o aviso culpa quem não informou nada.
+      expect(resultado.datasNaoReconhecidas).toBe(1)
     },
     30_000,
   )
@@ -368,6 +403,78 @@ describe('a base importada entra no Motor de Ciclo', () => {
         .eq('tenant_id', tenantId)
         .eq('client_id', cliente!.id)
       expect(count, 'o arnês não distingue gravado de não-gravado: as asserções do caso anterior são vazias').toBe(0)
+    },
+    30_000,
+  )
+})
+
+/*
+ * BL-47 (`.claude/ciclo/autonomous-backlog.md`): `preverEPersistirCiclos` (`ciclo-de-quem-ja-
+ * atende.ts`) é a fórmula ÚNICA compartilhada por esta porta (CSV) e pela porta "memória"
+ * (`quem-ja-atendo.ts`, describe `'preverEPersistirCiclos grava o dinheiro certo'`). Aquela suíte
+ * já prova os TRÊS casos de dinheiro (venda avulsa, assinante zera, pacote zera) — esta cobre só o
+ * que falta: a mesma prova, do lado de cá.
+ *
+ * **Achado ao tentar espelhar os três casos, não só dois:** os casos de "assinante ativo"/"pacote
+ * com saldo" são estruturalmente IMPOSSÍVEIS de reproduzir pela porta CSV, e não por falta de
+ * teste. `importarClientes` só CRIA cadastro novo — uma linha cujo telefone já existe é PULADA
+ * (`'Já existe uma ficha com esse telefone.'`, visto acima), nunca atualizada. Uma assinatura ou
+ * pacote com saldo só existe presa a um `client_id` que JÁ tem ficha — e essa ficha, por definição,
+ * faria a linha do CSV ser pulada antes de chegar em `preverEPersistirCiclos`. Não é um buraco de
+ * cobertura: é uma combinação de estados que o produto não permite acontecer por este caminho. Só
+ * o caso de venda avulsa (dinheiro > 0, não cai no default 0) é alcançável aqui, e é o que este
+ * bloco prova.
+ */
+describe('importarClientes grava o dinheiro certo (não só o estado) — BL-47', () => {
+  // Cópias locais dos três helpers de 'a base importada entra no Motor de Ciclo': são `function`
+  // declarados dentro DAQUELE `describe`, fora do escopo deste — mesmo padrão de
+  // `quem-ja-atendo.test.ts`, cujo describe de dinheiro também define o próprio `clienteExistente`
+  // em vez de importar de outro describe.
+  async function servicoComRitmo() {
+    const { data } = await svc.from('services').select('id, cycle_days, price_cents').eq('tenant_id', tenantId).gt('cycle_days', 0).limit(1)
+    const s = data?.[0]
+    if (!s) throw new Error('o onboarding devia ter criado serviços com cycle_days — sem isso o caso não mede nada')
+    return s
+  }
+
+  function csvDeUmaPessoa(nome: string, telefone: string) {
+    const d = new Date()
+    d.setDate(d.getDate() - 400)
+    return ['Nome,Telefone,UltimaVisita', `${nome},${telefone},${d.toISOString().slice(0, 10)}`].join('\n')
+  }
+
+  function telefoneNovo() {
+    return `1198${String(1000000 + Math.floor(Math.random() * 8999999)).padStart(7, '0')}`
+  }
+
+  it(
+    'value_at_risk_cents e profit_at_risk_cents são gravados de verdade (não ficam 0 por padrão)',
+    async () => {
+      const servico = await servicoComRitmo()
+      const marca = randomUUID().slice(0, 6)
+      const telefone = telefoneNovo()
+
+      const r = await importarClientes(svc, tenantId, csvDeUmaPessoa(`Vai Ter Lucro Csv ${marca}`, telefone), {
+        name: 'Nome',
+        phone: 'Telefone',
+        lastVisit: 'UltimaVisita',
+        serviceId: servico.id,
+      })
+      expect(r.previsao?.cyclesGravados).toBe(1)
+
+      const { data: cliente } = await svc.from('clients').select('id').eq('tenant_id', tenantId).eq('name', `Vai Ter Lucro Csv ${marca}`).single()
+      const { data: ciclo } = await svc
+        .from('client_cycles')
+        .select('value_at_risk_cents, profit_at_risk_cents')
+        .eq('tenant_id', tenantId)
+        .eq('client_id', cliente!.id)
+        .single()
+
+      expect(ciclo?.value_at_risk_cents, 'venda avulsa em risco não pode ficar 0 para quem acabou de ser importado').toBeGreaterThan(0)
+      // Sem material configurado nem profissional conhecido (comissão 0), lucro esperado = preço —
+      // os dois números coincidem, e é isso que prova que a coluna está sendo escrita de verdade,
+      // não caindo no default (mesmo raciocínio de quem-ja-atendo.test.ts).
+      expect(ciclo?.profit_at_risk_cents).toBe(ciclo?.value_at_risk_cents)
     },
     30_000,
   )

@@ -28,6 +28,31 @@ const ROTAS: Record<string, MontarRota> = {
     const id = d.clientId
     return typeof id === 'string' && UUID.test(id) ? `/api/v1/clients/${id}/notes` : null
   },
+  // A rota não leva id na URL, mas o corpo leva: id que não é UUID não vira botão.
+  chamar_de_volta: (d) =>
+    typeof d.clientId === 'string' && UUID.test(d.clientId) && (d.serviceId === undefined || (typeof d.serviceId === 'string' && UUID.test(d.serviceId)))
+      ? '/api/v1/cycle/recover/manual'
+      : null,
+}
+
+/** E.164 de verdade: `+`, sem zero à frente, 10 a 15 dígitos. Qualquer outra coisa não vira destino. */
+const E164 = /^\+[1-9]\d{9,14}$/
+const MAXIMO_DA_MENSAGEM = 1000
+
+/**
+ * O link do "chamar de volta" (docs/84 P2): o WhatsApp do PRÓPRIO dono, com o texto pronto — o mesmo
+ * caminho grátis do "Chamar" da tela Recuperar. Mesma régua de `rotaDaAcao`: o HOST é fixo aqui
+ * (`wa.me`), e da proposta vem só o número (conferido como E.164) e o texto (codificado). Sem
+ * telefone salvo, abre o seletor de contato do próprio WhatsApp — a base trazida de memória não tem
+ * telefone, e é justamente a que mais precisa ser chamada.
+ */
+export function linkDaChamada(dados: Record<string, unknown>): string | null {
+  const texto = dados.mensagem
+  if (typeof texto !== 'string' || texto.trim() === '' || texto.length > MAXIMO_DA_MENSAGEM) return null
+  const tel = dados.telefone
+  if (tel === null || tel === undefined) return `https://wa.me/?text=${encodeURIComponent(texto)}`
+  if (typeof tel !== 'string' || !E164.test(tel)) return null
+  return `https://wa.me/${tel.slice(1)}?text=${encodeURIComponent(texto)}`
 }
 
 /** `null` quando a ação é desconhecida ou os dados não formam uma rota válida. */
@@ -41,4 +66,37 @@ const SEM_VOLTA = new Set(['concluir_atendimento'])
 
 export function acaoTemVolta(acao: string): boolean {
   return !SEM_VOLTA.has(acao)
+}
+
+/**
+ * O que o cartão diz depois do toque. Era "Marcado." para TODA ação — inclusive salvar uma anotação
+ * ou cadastrar alguém, onde "marcado" é falso (medido lendo o cartão em 29/09). Ação desconhecida
+ * cai num "Feito." neutro, nunca numa palavra que descreve outra coisa.
+ */
+const FEITO: Record<string, string> = {
+  criar_agendamento: 'Marcado.',
+  concluir_atendimento: 'Atendimento concluído.',
+  adicionar_item_comanda: 'Lançado na comanda.',
+  cadastrar_cliente: 'Cadastro feito.',
+  adicionar_nota: 'Anotação salva.',
+  chamar_de_volta: 'Chamada anotada. Se marcar, a volta conta para o Motor de Ciclo.',
+}
+
+/**
+ * A chamada de volta responde `{ registrada, motivo }` com 200 mesmo quando NÃO anotou (já chamada
+ * nesta semana, saiu da lista). Dizer "anotada" nesses casos prometeria uma volta contada que não
+ * vai ser contada.
+ */
+const NAO_ANOTOU: Record<string, string> = {
+  ja_chamada: 'Já estava anotada nesta semana. A mensagem abre do mesmo jeito.',
+  sem_ciclo: 'A mensagem abre, mas não conta para o Motor de Ciclo: essa pessoa saiu da lista.',
+  opt_out: 'Essa pessoa pediu para não receber mensagem. Nada foi anotado.',
+}
+
+export function textoDeFeito(acao: string, resposta?: unknown): string {
+  if (acao === 'chamar_de_volta' && typeof resposta === 'object' && resposta !== null && 'registrada' in resposta && resposta.registrada === false) {
+    const motivo = 'motivo' in resposta && typeof resposta.motivo === 'string' ? resposta.motivo : ''
+    return NAO_ANOTOU[motivo] ?? 'A mensagem abre, mas a chamada não foi anotada.'
+  }
+  return FEITO[acao] ?? 'Feito.'
 }

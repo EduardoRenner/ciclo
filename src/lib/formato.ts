@@ -10,15 +10,11 @@ export function duracao(min: number): string {
 }
 
 /**
- * `+5511987654321` → `(11) 98765-4321`, o formato que a profissional reconhece
- * de cabeça. Estava copiado em `clientes/lista.tsx` e `clientes/[id]/ficha.tsx`.
- * Devolve o próprio valor quando não é um celular brasileiro — número
- * estrangeiro importado de planilha aparece cru, e não vazio.
+ * Estava copiado em `clientes/lista.tsx` e `clientes/[id]/ficha.tsx`, e depois morou aqui. Desde
+ * 29/09 mora em `core/text/telefone.ts`, porque o Motor de Inteligência também fala o telefone e
+ * `core/` não importa `@/lib`. Re-exportado para as telas não mudarem de import.
  */
-export function formatarTelefone(e164: string | null): string | null {
-  const m = /^\+55(\d{2})(\d{4,5})(\d{4})$/.exec(e164 ?? '')
-  return m ? `(${m[1]}) ${m[2]}-${m[3]}` : e164
-}
+export { formatarTelefone } from '@/core/text/telefone'
 
 /**
  * Máscara aplicada enquanto a pessoa digita. Só dígitos entram; o `+55` colado

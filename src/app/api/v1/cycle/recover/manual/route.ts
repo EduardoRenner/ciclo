@@ -19,22 +19,23 @@ export const POST = rota(async (req, _ctx, requestId) => {
   const entrada = await lerCorpo(req, EsquemaChamadaManual)
   const db = await criarClienteDoUsuario()
 
-  const resultado = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: '/api/v1/cycle/recover/manual' }, () =>
-    registrarChamadaManual(db, ctx.tenantId, entrada),
-  )
-
-  await writeAudit(
-    {
-      tenantId: ctx.tenantId,
-      actorId: ctx.sessao.userId,
-      actorRole: ctx.papel,
-      action: 'cycle.recover.manual',
-      entity: 'client_cycles',
-      after: { ...entrada, ...resultado },
-      requestId,
-    },
-    req,
-  )
+  // BL-42: writeAudit dentro do fechamento — ver o comentário em wallet/credit/route.ts.
+  const resultado = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: '/api/v1/cycle/recover/manual' }, async () => {
+    const resultado = await registrarChamadaManual(db, ctx.tenantId, entrada)
+    await writeAudit(
+      {
+        tenantId: ctx.tenantId,
+        actorId: ctx.sessao.userId,
+        actorRole: ctx.papel,
+        action: 'cycle.recover.manual',
+        entity: 'client_cycles',
+        after: { ...entrada, ...resultado },
+        requestId,
+      },
+      req,
+    )
+    return resultado
+  })
 
   return resultado
 })

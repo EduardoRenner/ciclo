@@ -1043,7 +1043,7 @@ por ambiguidade de especificação.
 
 ---
 
-### BL-42 · Observação (não implementada): `writeAudit` roda de novo em toda repetição idempotente
+### BL-42 · `writeAudit` roda de novo em toda repetição idempotente — FEITO (50 de 50 + regra em "error")
 
 - **Achado numa segunda leitura do próprio BL-39** (revisão deliberada do trabalho recém-commitado,
   não um bug relatado por ninguém). Em toda rota que combina `comIdempotencia` + `writeAudit` — e
@@ -1066,11 +1066,107 @@ por ambiguidade de especificação.
   (`response_body` grava o que a função de dentro devolve — gravar auditoria lá dentro mudaria O
   QUE fica cacheado, não só onde o código roda). É trabalho de revisão deliberada, rota por rota,
   não um `sed` em massa.
-- **Status:** registrado, não implementado. Acionável como um item de arquitetura numa sessão
-  futura com tempo dedicado a revisar as 49 rotas uma a uma — ou como decisão consciente de aceitar
-  o comportamento atual (auditoria com duplicata rara em retry é um trade-off, não necessariamente
-  um defeito, dependendo de quão seriamente a trilha é usada para contagem exata versus só "o que
-  aconteceu, aproximadamente quando").
+- **Status:** **15 de 50 rotas FEITAS (2026-09-28, três rodadas).** Rodada 1 (dinheiro):
+  `wallet/credit`, `wallet/debit`, `tickets/[id]/close`, `billing/assinar`, `billing/cancelar`.
+  Rodada 2 (LGPD + mais dinheiro/estoque): `clients/[id]/erase`, `packages`, `packages/[id]/use`,
+  `inventory/entries`, `clients/[id]/subscription` (POST e DELETE, os dois handlers do arquivo).
+  Rodada 3 (volume/valor, depois de conferir que `growth-opportunities.md` inteiro está bloqueado
+  ou decidido): `clients/[id]/loyalty`, `campaigns`, `quotes`, `clients` (a rota de maior volume do
+  produto), `appointments/[id]/complete` (dispara recálculo síncrono do Motor de Ciclo).
+  (A contagem original dizia "pelo menos 49"; recontado, 50.) `writeAudit` move para DENTRO do
+  fechamento que `comIdempotencia` protege; numa repetição, nem a mutação nem a auditoria rodam de
+  novo. Verificado com mutação nas três rodadas (voltei `writeAudit` para fora, o teste/guarda
+  reprovou nomeando a rota certa, restaurei) e contra Postgres real
+  (`tests/integration/idempotencia-nao-duplica-auditoria.test.ts`). Guarda de fonte
+  (`tests/unit/design/writeaudit-dentro-do-idempotente.test.ts`, desde a rodada 2) cresce a cada
+  rodada — 15 rotas cobertas agora. `pnpm verify` verde nas três rodadas, sem regressão
+  (`comanda.test.ts`/`assinatura-mp.test.ts`/`lgpd.test.ts`/`pacotes.test.ts`/`estoque.test.ts`/
+  `orcamentos.test.ts`/`ciclo.test.ts` continuam verdes). Branch local
+  `fix/motor-nao-esquece-2026-09-27` (commits `34a022c5`, `5035d9c7`, `cabd94e5`), não enviada.
+- **As restantes continuam pendentes, de propósito** — não foram tocadas ainda. **A partir da
+  rodada 4, a lista não é mais mantida à mão aqui** (era a própria fonte do erro de contagem
+  documentado nesta sessão) — `npx eslint 'src/app/api/v1/**'` mostra a lista exata e atualizada a
+  qualquer momento, filtrando por `ciclo/writeaudit-dentro-do-idempotente`. Depois da rodada 5: 30
+  arquivos. O padrão do conserto é sempre o mesmo (mover `writeAudit` para dentro do fechamento,
+  conferir que `response_body` não muda, acrescentar a rota à lista de
+  `writeaudit-dentro-do-idempotente.test.ts`), mas cada rota merece o mesmo cuidado das rodadas já
+  feitas — não um `sed` em massa, como o achado original já avisava.
+- **Rodada 4 (2026-09-28) — regra de ESLint em AST, em vez de continuar rota por rota:**
+  `ciclo/writeaudit-dentro-do-idempotente` (`eslint-rules/index.mjs`), mesmo mecanismo de
+  `service-client-confinado`. Detecta a MESMA classe de defeito automaticamente, em QUALQUER rota,
+  existente ou futura, sem depender de alguém lembrar de acrescentar o arquivo a uma lista.
+  Cuidado deliberado no design: a versão ingênua ("reprovar todo `comIdempotencia` sem `writeAudit`
+  dentro") reprovaria toda rota que legitimamente não audita — o CLAUDE.md diz "nas mutações
+  RELEVANTES", não em todas — e seria a própria guarda cega da tabela do CLAUDE.md (medição
+  ingênua dá falso positivo). Corrigido: só acusa quando existe uma chamada de `writeAudit` em
+  algum lugar da MESMA função que não está dentro do fechamento — sinal de que a rota pretende
+  auditar, só que no lugar errado. Registrada em `eslint.config.mjs` como `"warn"` (não `"error"`),
+  escopo `src/app/api/v1/**` — subir para `"error"` é o passo final do BL-42, quando `pnpm lint`
+  não acusar mais nada.
+  **`pnpm lint` confirma 40 warnings em 34 arquivos** — bate com a lista de 35 pendentes acima
+  (a pequena diferença é a mesma classe de erro de contagem manual já documentada nesta sessão;
+  a regra agora conta sozinha, o que era o próprio ponto de construí-la). Teste novo
+  (`tests/unit/design/writeaudit-dentro-do-idempotente-ast.test.ts`, `RuleTester`) cobre os 5
+  casos: defeito clássico, padrão certo, rota sem auditoria nenhuma (não pode reprovar), nome de
+  função parecido (não pode reprovar), e writeAudit indevido mesmo com código legítimo depois do
+  fechamento. Mutado (`if (textoDeFora.includes(...))` → `if (false)`) e visto reprovando
+  nomeando o teste certo antes de restaurado. `pnpm verify` completo verde nesta rodada:
+  typecheck, lint (0 erros), test:unit (2764), test:rls (210), build. `test:integration` oscilou
+  entre rodadas por contenção de conexão em paralelo — confirmado 430/430 verde com
+  `--poolOptions.forks.maxForks=2`, arquivos que falharam não têm relação com este diff (ver
+  `discoveries.md`). Branch local `fix/motor-nao-esquece-2026-09-27` (commit `d76d93f5`), não
+  enviada.
+- **Rodada 5 (2026-09-28) — núcleo da agenda:** `appointments/[id]/arrive`,
+  `appointments/[id]/confirm`, `appointments/[id]/no-show`, `appointments/[id]` (PATCH remarcar +
+  DELETE cancelar, os dois handlers), `appointments` (POST criar). 20 de 50. `pnpm lint` confirma
+  40→34 warnings da regra de AST — a ferramenta conta sozinha agora, não depende mais de lista
+  manual para saber quantas faltam. Verificado com mutação em `appointments/route.ts`: as DUAS
+  guardas (a de fonte antiga e a regra de ESLint nova) reprovaram nomeando a rota certa, restaurado.
+  `pnpm verify` completo verde (`test:integration` com `--poolOptions.forks.maxForks=2`, mesmo
+  motivo já documentado na rodada 4). Commit `a99644de`.
+- **Rodada 6 (2026-09-28) — cliente e recuperação:** `clients/[id]/notes`, `clients/[id]` (PATCH +
+  DELETE), `clients/ja-atendo` (aqui `registrarPrimeiraOcorrencia` fica de propósito FORA do
+  fechamento — se auto-protege com SELECT antes do INSERT, ao contrário de `writeAudit`),
+  `cycle/recover/manual`, `cycle/recover/send`. 25 de 50 — metade do caminho. `pnpm lint`: 34→28
+  warnings. Mutação em `clients/[id]/notes/route.ts` confirmou as duas guardas reprovando.
+  `pnpm verify` completo verde (`test:integration` com `maxForks=2`). Commit `b35047ab`.
+- **Rodada 7 (2026-09-28) — catálogo:** `products` (POST), `products/[id]` (PATCH), `services`
+  (POST), `services/[id]` (PATCH + DELETE, os dois handlers), `services/reorder`. 30 de 50 — 60% do
+  caminho. `pnpm lint`: 28→22 warnings. Mutação no handler DELETE de `services/[id]/route.ts`
+  (mantendo o PATCH já corrigido no mesmo arquivo) confirmou as duas guardas reprovando só o
+  handler certo. `pnpm verify` completo verde (`test:integration` com `maxForks=2`). Commit
+  `d4c0a5d3`.
+- **Rodada 8 (2026-09-28) — equipe e série recorrente:** `professionals` (POST), `professionals/[id]`
+  (PATCH + DELETE), `professionals/[id]/business-hours` (PUT, chamada de `comIdempotencia` na forma
+  multi-argumento — bom teste de robustez), `appointments/series` (POST), `appointments/series/[id]/cancel`
+  (POST). 35 de 50 — 70% do caminho. `pnpm lint`: 22→16 warnings. Mutação em
+  `professionals/[id]/business-hours/route.ts` confirmou as duas guardas reprovando mesmo na forma
+  multi-argumento. `pnpm verify` completo verde (`test:integration` com `maxForks=2`). Commit
+  `31c14cec`.
+- **Rodada 9 (2026-09-28) — comanda e folga:** `tickets/[id]` (PATCH desconto/gorjeta — a leitura
+  extra de `buscarComanda` depois do fechamento fica de fora de propósito, é leitura fresca, não
+  derivação do valor cacheado), `tickets/[id]/cancel`, `tickets/[id]/items` (atrás do módulo
+  `register`), `time-off` (POST), `time-off/[id]` (DELETE). 40 de 50 — 80%, faltam só 10.
+  `pnpm lint`: 16→11 warnings. Mutação em `tickets/[id]/route.ts` confirmou as duas guardas.
+  `pnpm verify`: 1 falha isolada em `pausar-mensageria.test.ts` (arquivo não tocado) na 1ª rodada de
+  `test:integration`, reproduzida sozinha e verde de primeira — mesmo padrão de contenção já
+  documentado; 2ª rodada completa 430/430. Commit `c94edd3d`.
+- **Rodada 10, final (2026-09-28) — as últimas 10 rotas + subir a regra para "error":** `account`
+  (DELETE — o laço de writeAudit, um registro por vínculo/tenant, precisou mover inteiro pra dentro
+  do fechamento, não só a chamada), `memberships/invite`, `message-templates` (POST) e `[id]`
+  (PATCH + DELETE), `quotes/[id]/convert`, `services/[id]/consumption`, `subscription-plans`,
+  `tenant` (PATCH), `tenant/modules`, `waitlist`. **50 de 50 — BL-42 fechado.**
+  `eslint.config.mjs`: `ciclo/writeaudit-dentro-do-idempotente` sobe de `"warn"` para `"error"` —
+  confirmado `pnpm lint` limpo (zero erros, zero warnings) ANTES da mudança, e confirmado o oposto
+  depois: reintroduzido o defeito em `waitlist/route.ts` com a severidade já em `error`, `pnpm lint`
+  FALHOU de verdade (exit 1) — a regra agora bloqueia `pnpm verify` por construção para qualquer
+  rota nova ou regressão futura, não só avisa. `pnpm verify` completo verde (`test:integration` com
+  `maxForks=2`). Commit `e3063bd2`.
+- **O que o BL-42 deixa como mecanismo permanente:** duas guardas, não uma — o teste de fonte
+  (`writeaudit-dentro-do-idempotente.test.ts`, varre as 50 rotas por nome, prova histórica) e a
+  regra de ESLint em AST (`error`, cobre qualquer rota futura sem precisar editar lista nenhuma).
+  As duas foram mutation-testadas em toda rodada, incluindo os dois casos mais complexos (chamada
+  de `comIdempotencia` em forma multi-argumento, e laço de `writeAudit` por item).
 
 ---
 
@@ -1136,7 +1232,7 @@ lista.)
 
 ---
 
-### BL-46 · Observação (não implementada): `resolverPrevisoes` nunca lote — e o benchmark de "10 mil/60s" não prova o contrário
+### BL-46 · `resolverPrevisoes` nunca lote — FEITO (RPC em lote, 208x mais rápido)
 
 - **Achado:** `resolverPrevisoes` (`previsao.ts`) fecha cada previsão resolvida com um `UPDATE`
   POR LINHA, dentro de um `for`, nunca em lote — ao contrário de `registrarPrevisoes`, a função
@@ -1167,13 +1263,31 @@ lista.)
   perderia a proteção contra corrida); (3) considerar se o cenário realista (quantas previsões
   resolvem no MESMO dia, para o MESMO tenant) sequer chega perto de importar na escala atual do
   produto (~12 tenants, por achado anterior desta sessão).
-- **Status:** registrado, não implementado. Achado por leitura cuidadosa comparando o que o
-  benchmark REALMENTE constrói contra o que ele é citado como provando — não por medição direta
-  (impossível nesta sessão).
+- **Status:** **FEITO (2026-09-27) — medido, implementado e medido de novo.** `tests/integration/
+  ciclo.test.ts`, `'resolverPrevisoes isolado: 5 mil previsões ABERTAS fecham em tempo aceitável'`:
+  5.000 previsões abertas, cada uma com retorno correspondente no histórico, fechadas por
+  `resolverPrevisoes` isolado. **Antes: 87.830ms — 17,57ms por previsão** (UPDATE por linha, dentro
+  de um `for`). Confirmou a suspeita: gargalo real, não ruído de leitura de código.
+  Recomendações #2 e #3 do achado original, cumpridas: migration `0094` cria
+  `resolver_previsoes_em_lote(p_tenant_id, p_atualizacoes jsonb)` — a DECISÃO de quem fecha continua
+  em TypeScript (evita duplicar a regra "primeira visita estritamente depois" em SQL), só a ESCRITA
+  virou lote; a trava contra corrida (`resolved_at is null`) continua por linha, dentro do `UPDATE`
+  em lote. **Depois: ~420ms para as mesmas 5 mil — 0,08ms/previsão, ~208x mais rápido.**
+  `security invoker` (padrão da casa, mesmo raciocínio da `0034`/`debitar_carteira`), `EXECUTE`
+  restrito a `service_role`. Trava de corrida verificada com mutação: tirei `and cp.resolved_at is
+  null` da função, um teste dedicado (chamando a RPC direto duas vezes com o mesmo lote — não
+  `resolverPrevisoes` duas vezes, que não chega a invocar a RPC na segunda por causa do filtro
+  externo, achado no caminho) REPROVOU com o erro certo, restaurei e confirmei verde. Achado
+  colateral: o benchmark de 5 mil poluía o tenant compartilhado do arquivo e quebrava outro teste
+  que precisava de amostra pequena — isolado num tenant próprio. `pnpm verify` verde. Branch local
+  `fix/motor-nao-esquece-2026-09-27` (commits `2c51b6db`, `77278430`), não enviada.
+- **Status (histórico, achado original):** registrado, não implementado. Achado por leitura
+  cuidadosa comparando o que o benchmark REALMENTE constrói contra o que ele é citado como
+  provando — não por medição direta (impossível nesta sessão).
 
 ---
 
-### BL-47 · As "duas portas" do Motor não têm a mesma cobertura de dinheiro
+### BL-47 · As "duas portas" do Motor não têm a mesma cobertura de dinheiro — FEITO (com achado novo)
 
 - **Achado:** `ciclo-de-quem-ja-atende.ts` (`preverEPersistirCiclos`) é a fórmula ÚNICA e
   compartilhada que grava `client_cycles` para duas portas de entrada diferentes — a planilha
@@ -1203,13 +1317,24 @@ lista.)
   indisponível nesta sessão sem Docker. Adicionar as asserções certas (`profit_at_risk_cents` e os
   dois casos de preço zerado, espelhando exatamente os três casos que já existem em `quem-ja-
   atendo.test.ts`) é mecânico e de baixo risco, mas só é verificável com o banco real.
-- **Status:** registrado, não implementado. Achado por comparação direta dos dois arquivos de teste
-  de integração linha a linha — não é uma suspeita, é uma contagem: 3 asserções de dinheiro num
-  lado, 0 no outro, para a mesma função.
+- **Status:** **FEITO (2026-09-27), com uma correção no meio.** Tentei espelhar os três casos
+  (venda avulsa, assinante zera, pacote zera) e descobri, ao escrever o segundo caso, que a
+  hipótese original estava incompleta: `importarClientes` só CRIA cadastro novo — uma linha cujo
+  telefone já existe é PULADA (`'Já existe uma ficha com esse telefone.'`), nunca atualizada. Uma
+  assinatura ou pacote com saldo só existe presa a um `client_id` que JÁ tem ficha, e essa ficha
+  faria a linha do CSV ser pulada antes de chegar em `preverEPersistirCiclos` — os dois casos são
+  estruturalmente irreproduzíveis por esta porta, não um buraco de cobertura. Implementei só o caso
+  alcançável (venda avulsa > 0, não cai no default 0), em
+  `tests/integration/importacao-clientes.test.ts`, describe `'importarClientes grava o dinheiro
+  certo (não só o estado) — BL-47'`. 15/15 verde contra o banco local. Branch local
+  `fix/motor-nao-esquece-2026-09-27`, não enviada.
+- **Status (histórico, achado original):** registrado, não implementado. Achado por comparação
+  direta dos dois arquivos de teste de integração linha a linha — não é uma suspeita, é uma
+  contagem: 3 asserções de dinheiro num lado, 0 no outro, para a mesma função.
 
 ---
 
-### BL-48 · Arquivar um serviço não tira as previsões dele da lista de recuperação (nem do alerta do Hoje)
+### BL-48 · Arquivar um serviço não tira as previsões dele da lista de recuperação (nem do alerta do Hoje) — FEITO
 
 - **Achado, com a cadeia completa:**
   1. `arquivarServico` (`servicos.ts:209-222`) — a ÚNICA forma de "apagar" um serviço no produto
@@ -1319,6 +1444,47 @@ implementar. Revertido imediatamente ao ver o job vermelho; `main` está verde d
 ao do serviço arquivado — as duas partes precisam da mesma investigação com Postgres local antes de
 qualquer novo commit tocando `client_cycles`.
 
+**RESOLVIDO (2026-09-27) — a hipótese de RLS estava errada, e a causa era outra, mais simples.**
+
+Reproduzido com Postgres local (Docker, indisponível na sessão anterior): a hipótese de
+`force row level security` bloqueando `service_role` estava **errada**. `service_role` ignora RLS
+normalmente — `FORCE ROW LEVEL SECURITY` não vale para papel com `BYPASSRLS`, e `service_role` tem
+esse atributo. `DELETE` direto em `client_cycles` com `service_role` funciona sem erro nenhum,
+confirmado isolando a chamada antes de tocar em `lgpd.ts` de novo.
+
+A causa real: o laço genérico de `TABELAS_APAGADAS` faz `.delete()...select('id')`, e
+`client_cycles` tem chave primária COMPOSTA `(tenant_id, client_id, service_id)` — **não existe
+coluna `id`**. `SQLSTATE 42703 (column client_cycles.id does not exist)`, reproduzido isolando a
+mesma chamada exata que `eliminarCliente` faz. É por isso que a CI via `AppError('INTERNAL')` — um
+erro real de Postgres, só que sobre a coluna errada, nada a ver com política de RLS.
+
+**Conserto (gatilho 1, cliente eliminada):** `client_cycles` sai do laço genérico (mesma razão de
+`media`/`health_records` já ficarem de fora dele) e ganha deleção própria com
+`.select('client_id')`, que existe. Sem mudança de RLS nenhuma — nunca foi necessária.
+`tests/integration/lgpd.test.ts`: `clienteCompleto()` agora semeia um `client_cycles` de verdade, e
+o teste principal afirma `rowsRemoved.client_cycles` e a ausência da linha depois. Verificado com
+mutação (reintroduzi `client_cycles` no laço genérico, os 5 testes que dependem disso reprovaram
+com o MESMO erro da CI original — confirma que a causa está correta — restaurei e confirmei verde).
+
+**Conserto (gatilho 2, serviço arquivado):** as três partes do plano original, implementadas.
+(1) `server/services/ciclo.ts`: leitura de `services` no job noturno ganha `.eq('active', true)` —
+um serviço arquivado vira "desconhecido" para o mapa de preço/ciclo e o job PARA de atualizar a
+linha (congela, não fica errada-mas-fresca). (2) migration `0093`: `v_recover_revenue` ganha
+`and s.active` no join. (3) mesma migration: `v_clientes_a_recuperar` ganha o mesmo filtro nos DOIS
+lados da lógica (o que conta como "atrasado" e o `not exists` que decide "em dia") — um `on_track`
+de serviço arquivado não pode blindar nem prejudicar ninguém. Novo arquivo
+`tests/integration/servico-arquivado-sai-das-telas.test.ts` (5 casos), verificado com mutação
+(tirei `and s.active`, 3 testes reprovaram, restaurei).
+
+Nota de numeração (ver também o comentário na própria migration `0093`): esta branch
+(`fix/motor-nao-esquece-2026-09-27`) nasceu de `main` antes de `melhoria/orcamento-e-motor-
+2026-09-27` (branch local separada, não mesclada) acrescentar `personal_cycle_days`/
+`last_visit_on`/`sample_size` a `v_recover_revenue` como a migration `0092` DAQUELA branch — que
+não existe aqui. Ao mesclar as duas, a versão final da view precisa somar as duas mudanças.
+
+`pnpm verify` verde nas duas partes. Branch local `fix/motor-nao-esquece-2026-09-27`, 2 commits
+(`7b5e9664`, `46af6d57`), não enviada.
+
 ---
 
 ### BL-49 · CRÍTICO, CONSERTADO · `/cadastro` derrubava para TODO MUNDO desde a BL-38
@@ -1386,4 +1552,54 @@ qualquer novo commit tocando `client_cycles`.
   que valia quando o Fulano assinou" deixar de ser uma pergunta hipotética. Vale revisitar então,
   não antes — construir versionamento para um problema que ainda não aconteceu seria a mesma classe
   de erro já registrada nesta base para suavização de régua sem sintoma medido.
-- **Status:** registrado, não implementado.
+- **Status:** FEITO em 2026-09-29 (engenharia, sem mudar texto legal). A "terceira mudança" que
+  este item mandava esperar chegou: a cláusula de dados agregados (docs/84). Tabela append-only
+  `terms_acceptances` (0095, RLS só leitura do próprio tenant), gravada no cadastro dentro do `try`;
+  versão = data ISO de `core/legal/versoes.ts`, a MESMA que a página mostra (texto idêntico,
+  conferido no HTML servido). Sem backfill inventado. **Migration antes do deploy** (DECISOES).
+
+---
+
+### BL-51 · Importador de CSV quebra no formato que o Excel brasileiro produz — data e acento
+
+- **Achado durante a missão de onboarding/migração** (`.claude/ciclo/loop-migracao-de-concorrentes.md`,
+  2026-09-28), medido — não lido. Um teste temporário chamou a função REAL (`preVisualizarCsv`,
+  depois de `File.text()`, a mesma chamada de `src/app/api/v1/clients/import/route.ts`) e a mesma
+  chamada de `tentarParsearData` (`Temporal.PlainDate.from`) com um arquivo no formato que o Excel
+  em português salva:
+  - **Ponto-e-vírgula como separador:** funciona. O Papa detecta sozinho. Não é defeito.
+  - **Codificação Windows-1252 (padrão do "CSV" do Excel em PT-BR):** `João Conceição` virou
+    `Jo�o Concei��o`, e é assim que seria GRAVADO em `clients.name`. `arquivo.text()` decodifica
+    sempre como UTF-8.
+  - **Data `15/08/2026` (todo export brasileiro):** `null`. Só `2026-08-15` é aceita. A linha
+    importa, mas a última visita é descartada **em silêncio** — e é ela que faz o Motor de Ciclo
+    nascer cheio (o próprio comentário de `serviceId` em `EsquemaMapeamento` diz isso). Quem migra de
+    planilha ou de sistema importa os nomes e o Motor nasce vazio, sem aviso. O comentário de
+    `tentarParsearData` ("a última visita é só um bônus") contradiz o de 2026-09-10 no mesmo arquivo
+    ("é ela que faz a lista de quem sumiu nascer cheia").
+- **Por que importa agora:** a Trinks exporta a lista de clientes em **Excel** (`ajuda.trinks.com/
+  importacao-exportacao-de-lista-de-clientes`, 2026-09-28), com filtro por "data da última visita".
+  O caminho natural de quem vem da Trinks é abrir no Excel e "salvar como CSV" — exatamente o
+  arquivo que quebra nos dois pontos.
+- **Conserto provável (para a sessão de EXECUÇÃO, não esta):** (1) aceitar `dd/mm/aaaa` e
+  `dd/mm/aa` em `tentarParsearData` — sem ambiguidade de mês/dia, porque o produto é pt-BR; (2)
+  detectar codificação: tentar UTF-8 com `fatal: true` (`new TextDecoder('utf-8', { fatal: true })`)
+  e cair para `windows-1252` se falhar; (3) quando a coluna de data estiver mapeada e N linhas
+  tiverem data não reconhecida, **dizer isso na tela** antes de importar, em vez de descartar calado
+  (armadilha do `catch` que descarta, CLAUDE.md). Considerar também aceitar `.xlsx` direto — ver o
+  plano `docs/83` para a decisão de escopo.
+- **Status:** FEITO em 2026-09-28/29 — `007bb25d` (leitor de data dd/mm/aaaa + decodificação
+  Windows-1252 + aviso na amostra e no resultado; 4 mutações vistas reprovando) e `08d8b778`
+  (copy do resultado medida na tela com CSV Win-1252 real: concordância, gênero e a instrução
+  falsa "importe de novo" — reimportar PULA quem tem telefone e DUPLICA quem não tem).
+
+---
+
+### BL-52 · "Quem você já atende" calcula "hoje" no fuso do SERVIDOR
+
+- **Achado em 2026-09-29** (lendo `quem-ja-atendo.ts:96` ao consertar a última visita): `const hoje =
+  Temporal.Now.plainDateISO()` usa o fuso do processo — UTC na Vercel. Quem digita "faz 15 dias" depois
+  das 21h em Brasília tem a conta feita a partir do dia SEGUINTE: um dia a mais de atraso no Motor.
+- **Conserto:** ler `tenants.timezone` e usar `diaNoFuso(timezone)` (`core/tempo/dia.ts`), como o resto
+  da casa. Teste: congelar o relógio às 01h UTC e conferir que "hoje" é o dia anterior em SP.
+- **Status:** FEITO em 2026-09-29 — `diaNoFuso(tenants.timezone)`; teste com o relógio às 01h UTC.

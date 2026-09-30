@@ -1,4 +1,5 @@
 import { Temporal } from '@js-temporal/polyfill'
+import { lerDorPrincipal, priorizarPelaDor } from '@/core/onboarding/perfil'
 import { z } from 'zod'
 
 import { alertaDoCliente, rotuloDoAlerta } from '@/server/services/anamnese'
@@ -22,6 +23,8 @@ import { acaoDoMotor } from '@/core/ciclo/acao-do-motor'
 import { quandoVolta } from '@/core/ciclo/primeira-volta'
 import { ritmoDoCliente, type RitmoDoCliente } from '@/core/ciclo/ritmo-do-cliente'
 import { lucroDoCliente, type LucroDoCliente } from '@/core/crm/lucro-do-cliente'
+import { frasesDaMemoria, memoriaDoCliente } from '@/core/crm/memoria-do-cliente'
+import { diaNoFuso } from '@/core/tempo/dia'
 import { AppError } from '@/server/http/errors'
 
 import type { Database } from '@/server/db/types.gen'
@@ -76,6 +79,11 @@ export type FichaCliente = {
     /** `docs/48` C4: a cadência da PESSOA dita na tela, e não só usada para ordenar por dentro. */
     ritmo: RitmoDoCliente
   } | null
+  /**
+   * `docs/84` P4: o dia em que costuma vir, com quem e a faixa de retorno — já em frase, com a
+   * contagem junto. Vazio enquanto não há visita bastante para afirmar (`memoria-do-cliente.ts`).
+   */
+  memoria: string[]
   historico: {
     id: string
     startsAt: string
@@ -166,6 +174,7 @@ export async function fichaDoCliente(
     rotuloDoCofre,
     servicosBruto,
     comandasBruto,
+    equipeBruto,
   ] = await Promise.all([
     db
       .from('appointments')
@@ -200,7 +209,7 @@ export async function fichaDoCliente(
     buscarTudoPaginado(() =>
       db
         .from('appointments')
-        .select('price_cents, starts_at, status, service_id')
+        .select('price_cents, starts_at, status, service_id, professionals(display_name)')
         .eq('tenant_id', tenantId)
         .eq('client_id', clientId)
         .in('status', ['done', 'no_show'])
@@ -262,6 +271,8 @@ export async function fichaDoCliente(
             .order('id'),
         )
       : Promise.resolve(null),
+    // P4: "sempre com a dona" no negócio de uma pessoa só é ruído — só conta quem atende hoje.
+    db.from('professionals').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId).eq('active', true).is('deleted_at', null),
   ])
 
   const historico = (historicoBruto.data ?? []).map((a) => ({
@@ -357,6 +368,12 @@ export async function fichaDoCliente(
           }),
         }
       : null,
+    memoria: frasesDaMemoria(
+      memoriaDoCliente(
+        concluidos.map((a) => ({ dia: diaNoFuso(timezone, new Date(a.starts_at)), profissional: a.professionals?.display_name ?? null })),
+        { variosProfissionais: (equipeBruto.count ?? 0) > 1 },
+      ),
+    ),
     historico,
     mensagens: (mensagensBruto.data ?? []).map((m) => ({
       id: m.id,
@@ -824,7 +841,9 @@ export async function centralDeAcoes(db: Cliente, tenantId: string, papel?: Pape
     }),
   )
 
-  return { titulo: 'Vale a pena hoje', acoes }
+  // docs/83 P5: a dor que o dono escolheu na tela "do seu jeito" vem primeiro — quando há cartão
+  // dela para mostrar. Sem preferência gravada, a ordem é a de sempre.
+  return { titulo: 'Vale a pena hoje', acoes: priorizarPelaDor(acoes, lerDorPrincipal(tenantSettings.data?.settings)) }
 }
 
 export type PainelCarteira = {

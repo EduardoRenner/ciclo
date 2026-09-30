@@ -108,7 +108,7 @@ export default function FormularioNegocio({ tenant, urlSite }: { tenant: Tenant;
         </a>
       </Card>
 
-      <form action={enviar} className="flex flex-col gap-3">
+      <form method="post" action={enviar} className="flex flex-col gap-3">
         <label className="flex flex-col gap-1">
           <span className="text-label font-semibold text-txt-2">Nome do negócio</span>
           <input

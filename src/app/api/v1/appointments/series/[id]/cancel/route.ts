@@ -28,23 +28,24 @@ export const POST = rota(async (req, params, requestId) => {
   const id = await idValidado(params)
   const db = await criarClienteDoUsuario()
 
-  const resultado = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/appointments/series/${id}/cancel` }, () =>
-    cancelarSerie(db, ctx.tenantId, id),
-  )
-
-  await writeAudit(
-    {
-      tenantId: ctx.tenantId,
-      actorId: ctx.sessao.userId,
-      actorRole: ctx.papel,
-      action: 'appointment_series.cancel',
-      entity: 'appointment_series',
-      entityId: id,
-      after: resultado,
-      requestId,
-    },
-    req,
-  )
+  // BL-42: writeAudit dentro do fechamento — ver o comentário em wallet/credit/route.ts.
+  const resultado = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/appointments/series/${id}/cancel` }, async () => {
+    const resultado = await cancelarSerie(db, ctx.tenantId, id)
+    await writeAudit(
+      {
+        tenantId: ctx.tenantId,
+        actorId: ctx.sessao.userId,
+        actorRole: ctx.papel,
+        action: 'appointment_series.cancel',
+        entity: 'appointment_series',
+        entityId: id,
+        after: resultado,
+        requestId,
+      },
+      req,
+    )
+    return resultado
+  })
 
   return resultado
 })

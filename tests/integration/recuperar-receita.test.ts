@@ -9,6 +9,8 @@ import type { MessagingProvider } from '@/server/providers/messaging/types'
 import { criarServico } from '@/server/services/servicos'
 import { executarOnboarding } from '@/server/services/onboarding'
 import { enviarParaRecuperar, listarParaRecuperar, registrarChamadaManual } from '@/server/services/recuperar-receita'
+import { FERRAMENTAS, type ContextoFerramenta } from '@/server/assistente/ferramentas'
+import { linkDaChamada, rotaDaAcao } from '@/core/assistente/acoes'
 
 import type { Database } from '@/server/db/types.gen'
 
@@ -386,3 +388,42 @@ describe('registrarChamadaManual (docs/82 §7)', () => {
   }, 30_000)
 })
 
+describe('preparar_chamada_de_volta — o "resolve" do assistente (docs/84 P2)', () => {
+  const ferramenta = FERRAMENTAS.find((f) => f.nome === 'preparar_chamada_de_volta')!
+  const ctx = (): ContextoFerramenta => ({ db: svc as never, tenantId, timezone: TZ })
+
+  it('quem está na lista vira proposta com o MESMO texto do "Chamar", e a proposta executa na rota da tela', async () => {
+    const marca = randomUUID().slice(0, 6)
+    const clientId = await criarClienteEmCiclo(`Resolve ${marca}`, { state: 'late', valueAtRiskCents: 5_000 })
+
+    const r = (await ferramenta.executar(ctx(), { clientId })) as { status: string; acao: string; dados: Record<string, unknown>; resumo: Record<string, unknown> }
+    expect(r.status).toBe('proposta')
+    expect(r.acao).toBe('chamar_de_volta')
+    expect(r.dados).toMatchObject({ clientId, serviceId: servicoId })
+    expect(r.resumo.Mensagem).toBe(`Oi, Resolve! Faz um tempinho desde seu último horário de esmaltação. Quer marcar essa semana?`)
+    // O link abre o WhatsApp endereçado ao telefone dela, e a rota é a do "Chamar" da tela.
+    expect(linkDaChamada(r.dados)).toMatch(/^https:\/\/wa\.me\/551198899\d{4}\?text=Oi%2C%20Resolve!/)
+    expect(rotaDaAcao(r.acao, r.dados)).toBe('/api/v1/cycle/recover/manual')
+
+    // Pelo NOME também — "chama a Resolve".
+    const porNome = (await ferramenta.executar(ctx(), { cliente: `Resolve ${marca}` })) as { status: string; dados: Record<string, unknown> }
+    expect(porNome.status).toBe('proposta')
+    expect(porNome.dados.clientId).toBe(clientId)
+
+    // E o corpo da proposta é aceito por quem executa: vira chamada anotada.
+    expect(await registrarChamadaManual(svc, tenantId, { clientId: r.dados.clientId as string, serviceId: r.dados.serviceId as string })).toEqual({ registrada: true })
+  }, 30_000)
+
+  it('quem pediu para não receber não ganha mensagem pronta', async () => {
+    const marca = randomUUID().slice(0, 6)
+    const clientId = await criarClienteEmCiclo(`Parou ${marca}`, { state: 'late', valueAtRiskCents: 5_000, optOut: true })
+    expect(await ferramenta.executar(ctx(), { clientId })).toEqual({ status: 'nao_da', motivo: 'pediu_para_nao_receber', cliente: `Parou ${marca}` })
+  }, 30_000)
+
+  it('quem está no ritmo existe, mas não está na lista — "fora da lista", nunca "não achei"', async () => {
+    const marca = randomUUID().slice(0, 6)
+    await criarClienteEmCiclo(`Ritmada ${marca}`, { state: 'on_track', valueAtRiskCents: 0 })
+    expect(await ferramenta.executar(ctx(), { cliente: `Ritmada ${marca}` })).toEqual({ status: 'nao_da', motivo: 'fora_da_lista', cliente: `Ritmada ${marca}` })
+    expect(await ferramenta.executar(ctx(), { cliente: `Ninguem ${marca}` })).toEqual({ status: 'nao_achei', oQue: 'cliente', termo: `Ninguem ${marca}` })
+  }, 30_000)
+})

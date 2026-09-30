@@ -543,7 +543,7 @@ cliente mais valioso. Revisitar quando houver ~20 pagantes e o preço tiver para
 **Por que contabilidade virou linha obrigatória, e não opcional:** cobrar assinatura exige CNPJ
 com nota fiscal, e **MEI está fora** — desenvolvimento e licenciamento de software (CNAEs 6201,
 6202, 6203) **não constam na lista de ocupações do MEI**, e operar como MEI em atividade vedada
-leva a cancelamento do CNPJ **[M]**. O caminho é **ME no Simples Nacional**, que exige
+leva a cancelamento do CNPJ **[M]** *(correção de 30/09: a Receita diz que o efeito é o **desenquadramento do MEI**, com R$ 50 de multa se não avisar no prazo, não o cancelamento do CNPJ; ver `docs/89`)*. O caminho é **ME no Simples Nacional**, que exige
 contabilidade. Ver Fase N.
 
 Isso é uma correção com consequência: o custo fixo **triplica**, de R$ 55 para R$ 194 — e
@@ -1128,8 +1128,8 @@ O §4.6 do prompt mandava **nomear** a consequência fiscal, não resolvê-la. N
 
 **Desenvolvimento e licenciamento de software não constam na lista de ocupações permitidas ao
 MEI** — os CNAEs da atividade (6201-5/01, 6202-3/00, 6203-1/00, 6204-0/00, 6209-1/00) estão
-**todos fora** **[M]**. Operar como MEI em atividade vedada pode levar a **cancelamento do CNPJ,
-impossibilidade de emitir nota e autuação** **[M]**. O caminho correto é **ME** (até R$ 360 mil/ano)
+**todos fora** **[M]**. Operar como MEI em atividade vedada leva ao **desenquadramento do MEI** (o CNPJ vira ME e paga pela regra do
+Simples; multa de R$ 50 se não comunicar no prazo) **[M, corrigido em 30/09 pelo manual da Receita; ver `docs/89`]**. O caminho correto é **ME** (até R$ 360 mil/ano)
 optante pelo **Simples Nacional**.
 
 Fontes: [contabilizei — MEI para programador](https://www.contabilizei.com.br/contabilidade-online/mei-para-programador/) ·

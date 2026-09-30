@@ -29,23 +29,24 @@ export const POST = rota(async (req, params, requestId) => {
   const entrada = await lerCorpo(req, EsquemaConverterOrcamento)
   const db = await criarClienteDoUsuario()
 
-  const resultado = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/quotes/${id}/convert` }, () =>
-    converterOrcamentoEmAgendamento(db, ctx.tenantId, id, entrada.appointmentId),
-  )
-
-  await writeAudit(
-    {
-      tenantId: ctx.tenantId,
-      actorId: ctx.sessao.userId,
-      actorRole: ctx.papel,
-      action: 'quote.convert',
-      entity: 'quotes',
-      entityId: id,
-      after: resultado,
-      requestId,
-    },
-    req,
-  )
+  // BL-42: writeAudit dentro do fechamento — ver o comentário em wallet/credit/route.ts.
+  const resultado = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/quotes/${id}/convert` }, async () => {
+    const resultado = await converterOrcamentoEmAgendamento(db, ctx.tenantId, id, entrada.appointmentId)
+    await writeAudit(
+      {
+        tenantId: ctx.tenantId,
+        actorId: ctx.sessao.userId,
+        actorRole: ctx.papel,
+        action: 'quote.convert',
+        entity: 'quotes',
+        entityId: id,
+        after: resultado,
+        requestId,
+      },
+      req,
+    )
+    return resultado
+  })
 
   return resultado
 })

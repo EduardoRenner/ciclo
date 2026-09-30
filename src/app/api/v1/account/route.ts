@@ -25,28 +25,30 @@ export const DELETE = rota(async (req, _ctx, requestId) => {
   // colisão de chave entre pedidos concorrentes (`server/http/idempotency.ts`), então o próprio
   // `userId` serve igual a um tenant de verdade pra esse propósito — a fila offline não pode
   // reenviar esta exclusão duas vezes sem que a segunda vez devolva a mesma resposta da primeira.
-  const vinculos = await comIdempotencia(req, { tenantId: sessao.userId, endpoint: '/api/v1/account' }, () =>
-    withNovoTenant((svc) => excluirPropriaConta(svc, sessao.userId)),
-  )
-
-  // Um registro por tenant onde a conta tinha vínculo — `writeAudit` exige `tenantId`, e a exclusão
-  // pode atingir mais de um negócio de uma vez (quem é `professional` em dois salões, por exemplo).
-  // Grava DEPOIS de excluir de propósito: `actor_id` em `audit_log` não tem FK pra `auth.users`
-  // (migration 0001), então não há corrida com a exclusão já ter acontecido.
-  for (const vinculo of vinculos) {
-    await writeAudit(
-      {
-        tenantId: vinculo.tenantId,
-        actorId: sessao.userId,
-        actorRole: vinculo.role,
-        action: 'account.self_delete',
-        entity: 'memberships',
-        entityId: sessao.userId,
-        requestId,
-      },
-      req,
-    )
-  }
+  // BL-42: o laço de writeAudit também fica DENTRO do fechamento — fora dele, uma repetição não só
+  // duplicaria UMA linha, duplicaria uma por vínculo (quem é `professional` em dois salões, por
+  // exemplo).
+  await comIdempotencia(req, { tenantId: sessao.userId, endpoint: '/api/v1/account' }, async () => {
+    const vinculos = await withNovoTenant((svc) => excluirPropriaConta(svc, sessao.userId))
+    // Um registro por tenant onde a conta tinha vínculo — `writeAudit` exige `tenantId`. Grava
+    // DEPOIS de excluir de propósito: `actor_id` em `audit_log` não tem FK pra `auth.users`
+    // (migration 0001), então não há corrida com a exclusão já ter acontecido.
+    for (const vinculo of vinculos) {
+      await writeAudit(
+        {
+          tenantId: vinculo.tenantId,
+          actorId: sessao.userId,
+          actorRole: vinculo.role,
+          action: 'account.self_delete',
+          entity: 'memberships',
+          entityId: sessao.userId,
+          requestId,
+        },
+        req,
+      )
+    }
+    return vinculos
+  })
 
   return { deleted: true }
 })

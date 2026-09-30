@@ -11,6 +11,7 @@ import StatTile from '@/components/ui/stat-tile'
 import { dinheiro } from '@/lib/formato'
 import { APP_HOST } from '@/lib/app-url'
 import { comMaiuscula, plural } from '@/core/text/vocabulario'
+import { avaliarPermissao } from '@/server/auth/rbac'
 import { contextoDoPainel } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { listarClientes } from '@/server/services/clientes'
@@ -71,6 +72,20 @@ export default async function PaginaClientes() {
           </Link>
         }
       />
+
+      {/*
+        P3, `docs/83` §7.4/§9: só o dono vê — é a mesma permissão que a rota exige
+        (`client:export`, C35 do `rbac.ts`). Fica aqui, perto de "Importe uma planilha" no estado
+        vazio, porque é o mesmo par: quem trouxe a base de outro lugar precisa saber que também
+        consegue levá-la embora.
+      */}
+      {avaliarPermissao(ctx.papel, 'client:export') !== null ? (
+        <div className="mb-4 text-right">
+          <Link href="/admin/clientes/exportar" className="text-label font-semibold text-acc-2 underline underline-offset-2">
+            Baixar todos em planilha
+          </Link>
+        </div>
+      ) : null}
 
       <div className="mb-4 grid grid-cols-2 gap-3">
         <StatTile rotulo="Ticket médio" valor={dinheiro.format(painel.ticketMedioCents / 100)} />

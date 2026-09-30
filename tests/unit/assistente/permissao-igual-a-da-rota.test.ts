@@ -38,6 +38,10 @@ const EXECUCAO: Record<string, { ferramenta: string; arquivo: string; metodo: st
     ferramenta: 'preparar_nota_na_ficha',
     arquivo: 'src/app/api/v1/clients/[id]/notes/route.ts',
     metodo: 'POST',
+  },  chamar_de_volta: {
+    ferramenta: 'preparar_chamada_de_volta',
+    arquivo: 'src/app/api/v1/cycle/recover/manual/route.ts',
+    metodo: 'POST',
   },
 }
 

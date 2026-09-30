@@ -80,6 +80,13 @@ describe('o cartão de confirmação nunca fica em branco', () => {
     expect(linhas.map((l) => l.rotulo)).toEqual(['Cliente', 'Anotação'])
   })
 
+  it('nome interno de campo não aparece cru no cartão: duração tem rótulo e tipo (medido em 29/09)', () => {
+    // O cartão do agendamento mostrava "duracaoMin 60" na frente de quem precisa julgar antes de
+    // confirmar. Qualquer chave terminada em `Min` é duração, venha de onde vier.
+    expect(linhasDoResumo({ duracaoMin: 60 })).toEqual([{ rotulo: 'Duração', valor: 60, tipo: 'duracao' }])
+    expect(linhasDoResumo({ intervaloMin: 15 })[0]!.tipo).toBe('duracao')
+  })
+
   it('valor vazio não vira linha fantasma', () => {
     expect(linhasDoResumo({ cliente: 'Ana', servico: '', profissional: null })).toHaveLength(1)
   })

@@ -63,8 +63,19 @@ export async function recomputarCiclosDoTenant(db: Cliente, tenantId: string, ti
         .in('status', ['pending', 'confirmed', 'arrived'])
         .order('id'),
     ),
+    /*
+     * `and('active', true)` — BL-48 (`.claude/ciclo/autonomous-backlog.md`): sem este filtro, um
+     * serviço arquivado (`arquivarServico`, `active: false`) continua dentro de
+     * `cycleDaysPorServico`/`precoPorServico`, e o job recalcula `late_days`/`state`/dinheiro para
+     * ele TODA madrugada, para sempre — o mesmo raciocínio de "cliente nunca some da lista"
+     * (`quem-recuperar.ts`) só que no eixo do catálogo, não no eixo do cliente. Um serviço fora
+     * deste mapa vira "desconhecido" para o laço abaixo (`if (!defaultCycleDays) continue`, guarda
+     * que já existia) e para de ser atualizado — a régua CONGELA no último valor calculado, em vez
+     * de continuar errada-mas-fresca. `v_recover_revenue`/`v_clientes_a_recuperar` (migration
+     * seguinte) fecham a ponta que falta: tirar essas linhas congeladas da TELA, não só do job.
+     */
     buscarTudoPaginado(() =>
-      db.from('services').select('id, cycle_days, cycle_days_observado, price_cents').eq('tenant_id', tenantId).order('id'),
+      db.from('services').select('id, cycle_days, cycle_days_observado, price_cents').eq('tenant_id', tenantId).eq('active', true).order('id'),
     ),
     // `docs/73` F1: a chance de retorno por estado, calibrada com o histórico deste tenant —
     // continua igual à tabela global até o tenant acumular amostra suficiente por estado.

@@ -5,7 +5,7 @@ import dotenv from 'dotenv'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { criarProfissional } from '@/server/services/profissionais'
-import { criarServico } from '@/server/services/servicos'
+import { atualizarServico, criarServico } from '@/server/services/servicos'
 import { executarOnboarding } from '@/server/services/onboarding'
 import { adicionarItemComanda, atualizarDescontoEGorjeta, buscarComanda, fecharComanda, removerItemComanda } from '@/server/services/comanda'
 
@@ -118,6 +118,49 @@ describe('comanda — abrir, itens, desconto, gorjeta, fechar', () => {
       const { ticket } = await buscarComanda(svc, tenantId, ticketId)
       expect(ticket.subtotal_cents).toBe(10_000)
       expect(ticket.total_cents).toBe(11_000) // 10.000 - 1.000 + 2.000
+    },
+    30_000,
+  )
+
+  it(
+    // Auditoria de armadilhas catalogadas: "calcular desconto percentual e guardar o percentual"
+    // — a regra do CLAUDE.md é "guarde o valor em centavos, preço muda, histórico não pode mudar".
+    // `unit_price_cents`/`discount_cents`/`total_cents` são gravados uma vez, no INSERT do item —
+    // nunca recalculados a partir de `services.price_cents` na leitura. Isto mede a afirmação:
+    // muda o preço do serviço DEPOIS de uma venda já feita e prova que a venda antiga não sente.
+    //
+    // Serviço próprio, não o `servicoId` compartilhado do describe: `atualizarServico` mudaria o
+    // preço para TODO teste depois deste que reusa `servicoId` e espera 10.000 — a mesma armadilha
+    // de poluição de teste já documentada nesta sessão (`ciclo.test.ts`, benchmark isolado).
+    'item de comanda congela preço e desconto em centavos — mudar o preço do serviço depois não altera a venda antiga',
+    async () => {
+      const servicoProprio = await criarServico(svc, tenantId, {
+        name: `Serviço com preço mutável ${randomUUID().slice(0, 6)}`,
+        description: null,
+        durationMin: 30,
+        bufferBeforeMin: 0,
+        bufferAfterMin: 0,
+        priceCents: 10_000,
+        pricingModel: 'fixed',
+        cycleDays: 21,
+        depositBps: 0,
+        depositMinCents: 0,
+        parallelCapacity: 1,
+        requiresAnamnesis: false,
+        bookableOnline: true,
+        categoryId: null,
+      })
+
+      const ticketId = await abrirTicketVazio()
+      const item = await adicionarItemComanda(svc, tenantId, ticketId, { serviceId: servicoProprio.id, professionalId, qty: 1, discountCents: 1_500 })
+      expect(item.unit_price_cents).toBe(10_000)
+      expect(item.discount_cents).toBe(1_500)
+      expect(item.total_cents).toBe(8_500)
+
+      await atualizarServico(svc, tenantId, servicoProprio.id, { priceCents: 99_999 })
+
+      const { data: itemRelido } = await svc.from('ticket_items').select('unit_price_cents, discount_cents, total_cents').eq('id', item.id).single()
+      expect(itemRelido).toMatchObject({ unit_price_cents: 10_000, discount_cents: 1_500, total_cents: 8_500 }) // intocado
     },
     30_000,
   )

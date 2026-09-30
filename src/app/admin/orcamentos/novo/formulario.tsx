@@ -141,7 +141,7 @@ export default function FormularioOrcamento({
   }
 
   return (
-    <form onSubmit={enviar} className="flex flex-col gap-4">
+    <form method="post" onSubmit={enviar} className="flex flex-col gap-4">
       {profissionais.length > 1 ? (
         <Select rotulo={comMaiuscula(vocabulario.profissional)} value={professionalId} onChange={(e) => setProfessionalId(e.target.value)} required>
           {profissionais.map((p) => (

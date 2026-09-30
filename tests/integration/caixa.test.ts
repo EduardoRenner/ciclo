@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js'
 import dotenv from 'dotenv'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
-import { concentracaoDoMes, congelarMesesFechados, fechamentoDiario, resumoMensal, serieMensalDeLucro } from '@/server/services/caixa'
+import { concentracaoDoMes, congelarMesesFechados, fechamentoDiario, resumoDoIntervalo, resumoMensal, serieMensalDeLucro } from '@/server/services/caixa'
 import { executarOnboarding } from '@/server/services/onboarding'
 
 import type { Database } from '@/server/db/types.gen'
@@ -124,6 +124,30 @@ describe('resumoMensal', () => {
       const resumo = await resumoMensal(svc, tenantId, TZ, '2026-05')
       expect(resumo.ticketsCount).toBe(2)
       expect(resumo.revenueCents).toBe(7_000)
+    },
+    30_000,
+  )
+})
+
+/**
+ * docs/85 MI-5: "por que caiu?" compara os MESMOS dias de dois meses. Os limites são dias no fuso do
+ * salão (fim exclusivo) — a mesma armadilha do fechamento às 23h30 vale aqui.
+ */
+describe('resumoDoIntervalo', () => {
+  it(
+    'soma do primeiro dia até ANTES do fim, no fuso do salão',
+    async () => {
+      await inserirTicketFechado('2026-07-01T09:00:00-03:00', { total: 1_000, material: 0, fee: 0, commission: 0, profit: 0 })
+      await inserirTicketFechado('2026-07-15T23:30:00-03:00', { total: 2_000, material: 0, fee: 0, commission: 0, profit: 0 })
+      // Dia 16 é o fim EXCLUSIVO: não entra.
+      await inserirTicketFechado('2026-07-16T00:10:00-03:00', { total: 99_999, material: 0, fee: 0, commission: 0, profit: 0 })
+
+      const r = await resumoDoIntervalo(svc, tenantId, TZ, '2026-07-01', '2026-07-16')
+      expect(r.ticketsCount).toBe(2)
+      expect(r.revenueCents).toBe(3_000)
+      // Controle: o dia 16 existe e é contado quando entra no intervalo — senão o "não entra" acima
+      // passaria por não haver o ticket.
+      expect((await resumoDoIntervalo(svc, tenantId, TZ, '2026-07-16', '2026-07-17')).revenueCents).toBe(99_999)
     },
     30_000,
   )

@@ -2,6 +2,7 @@ import { Temporal } from '@js-temporal/polyfill'
 import Papa from 'papaparse'
 import { z } from 'zod'
 
+import { instanteDoDiaInformado, lerDataInformada } from '@/core/tempo/data-informada'
 import { preverEPersistirCiclos, type ClienteComUltimaVisita, type PrevisaoDaBase } from '@/server/services/ciclo-de-quem-ja-atende'
 import { AppError } from '@/server/http/errors'
 import { hashTelefone, normalizarTelefoneBR } from '@/server/services/telefone'
@@ -98,6 +99,12 @@ export type ResultadoImportacao = {
   errors: LinhaComErro[]
   /** `null` quando ninguém mapeou a coluna de última visita — não há o que prever. */
   previsao: PrevisaoImportacao | null
+  /**
+   * BL-51: linhas em que a coluna de última visita tinha ALGUMA coisa escrita e não deu para ler
+   * como data. A cliente entra do mesmo jeito; o que se perde é a data — e a tela precisa dizer
+   * isso, em vez de o Motor nascer vazio sem ninguém saber por quê.
+   */
+  datasNaoReconhecidas: number
 }
 
 function parsearCsv(texto: string): { colunas: string[]; linhas: Record<string, string>[] } {
@@ -135,24 +142,19 @@ type LinhaValida = {
 }
 
 /**
- * Só o formato ISO (`Temporal.PlainDate.from` não aceita outro) — mesmo padrão do resto do
- * projeto (nenhum lugar em `core/`/`server/` faz parsing de data em formato BR). Data inválida ou
- * num formato diferente não derruba a linha: a última visita é só um bônus para a prévia, o
- * cliente importa igual sem ela.
+ * Aplica o mapeamento de coluna e valida cada linha — sem tocar no banco ainda.
+ *
+ * A data da última visita é lida por `lerDataInformada` (`15/08/2026`, `15/08/26`, ISO...). Data
+ * ilegível não derruba a linha — a cliente importa igual —, mas é CONTADA: até o BL-51 o comentário
+ * daqui dizia que a data era "só um bônus", e ela é o contrário — é o que faz o Motor nascer cheio.
  */
-function tentarParsearData(bruto: string | undefined): Temporal.PlainDate | null {
-  if (!bruto) return null
-  try {
-    return Temporal.PlainDate.from(bruto.trim())
-  } catch {
-    return null
-  }
-}
-
-/** Aplica o mapeamento de coluna e valida cada linha — sem tocar no banco ainda. */
-function validarLinhas(linhas: Record<string, string>[], mapa: Mapeamento): { validas: LinhaValida[]; errors: LinhaComErro[] } {
+function validarLinhas(
+  linhas: Record<string, string>[],
+  mapa: Mapeamento,
+): { validas: LinhaValida[]; errors: LinhaComErro[]; datasNaoReconhecidas: number } {
   const validas: LinhaValida[] = []
   const errors: LinhaComErro[] = []
+  let datasNaoReconhecidas = 0
 
   linhas.forEach((linha, indice) => {
     // Linha 1 do arquivo é o cabeçalho; a primeira linha de dado é a 2 — é o
@@ -203,12 +205,13 @@ function validarLinhas(linhas: Record<string, string>[], mapa: Mapeamento): { va
       : []
 
     const lastVisitBruto = mapa.lastVisit ? linha[mapa.lastVisit]?.trim() : undefined
-    const lastVisitDate = tentarParsearData(lastVisitBruto)
+    const lastVisitDate = lerDataInformada(lastVisitBruto)
+    if (lastVisitBruto && !lastVisitDate) datasNaoReconhecidas++
 
     validas.push({ linha: numero, name, phoneE164, email: emailBruto || null, tags, lastVisitDate })
   })
 
-  return { validas, errors }
+  return { validas, errors, datasNaoReconhecidas }
 }
 
 /**
@@ -234,7 +237,7 @@ export async function importarClientes(
     throw AppError.validacao({ file: `Envie no máximo ${MAX_LINHAS} linhas por vez.` })
   }
 
-  const { validas, errors } = validarLinhas(linhas, mapa)
+  const { validas, errors, datasNaoReconhecidas } = validarLinhas(linhas, mapa)
   const skipped: LinhaComErro[] = []
 
   // Duplicata dentro do próprio arquivo: mantém a primeira ocorrência,
@@ -308,7 +311,7 @@ export async function importarClientes(
           email: l.email,
           tags: l.tags,
           source: 'csv_import',
-          last_visit_at: l.lastVisitDate ? l.lastVisitDate.toString() : null,
+          last_visit_at: l.lastVisitDate ? instanteDoDiaInformado(l.lastVisitDate) : null,
         })),
       )
       .select('id')
@@ -340,7 +343,7 @@ export async function importarClientes(
           email: linha.email,
           tags: linha.tags,
           source: 'csv_import',
-          last_visit_at: linha.lastVisitDate ? linha.lastVisitDate.toString() : null,
+          last_visit_at: linha.lastVisitDate ? instanteDoDiaInformado(linha.lastVisitDate) : null,
         })
         .select('id')
         .maybeSingle()
@@ -359,5 +362,5 @@ export async function importarClientes(
 
   const previsao = await preverEPersistirCiclos(db, tenantId, comData, mapa.serviceId ?? null)
 
-  return { imported, skipped, errors, previsao }
+  return { imported, skipped, errors, previsao, datasNaoReconhecidas }
 }

@@ -90,7 +90,10 @@ export default function FormularioOnboarding({ profissoes }: { profissoes: Profi
         setErro(primeiroCampo ?? json.error?.message ?? 'Não consegui criar sua conta. Confira o endereço da página e tente de novo.')
         return
       }
-      router.push('/admin/hoje')
+      // docs/83 §5.1 (P1): a tela de qualificação entra DEPOIS daqui, nunca dentro das três
+      // respostas — a promessa desta tela era só "sua página está no ar", e ela já foi cumprida.
+      // `/onboarding/perfil` decide sozinha se já foi respondida/pulada e manda pro painel.
+      router.push('/onboarding/perfil')
       router.refresh()
     } catch {
       setErro('Não consegui falar com o servidor. Tente de novo.')
@@ -100,7 +103,7 @@ export default function FormularioOnboarding({ profissoes }: { profissoes: Profi
   }
 
   return (
-    <form onSubmit={enviar} className="flex w-full max-w-sm flex-col gap-3">
+    <form method="post" onSubmit={enviar} className="flex w-full max-w-sm flex-col gap-3">
       <Input rotulo="Nome do negócio" value={nome} onChange={(e) => aoMudarNome(e.target.value)} required autoFocus />
 
       {profissaoEscolhida ? (

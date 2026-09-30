@@ -219,7 +219,7 @@ export default function Ficha({
   // `notasRegistradas` (o histórico de anotações datadas) e `notas` (o estado local do campo de
   // observação livre no formulário de edição, abaixo) são coisas diferentes — nomes parecidos de
   // propósito porque a ideia é a mesma, só que uma substitui e a outra acumula.
-  const { cliente, metricas, ciclo, historico, mensagens, indicadoPor, indicados, notas: notasRegistradas, pontos, assinatura, pacotes, saldoCarteiraCents, fotos, consentimentos, saude } = ficha
+  const { cliente, metricas, ciclo, memoria, historico, mensagens, indicadoPor, indicados, notas: notasRegistradas, pontos, assinatura, pacotes, saldoCarteiraCents, fotos, consentimentos, saude } = ficha
 
   const camposPreferencia = camposDePreferencia(vertical)
 
@@ -404,6 +404,12 @@ export default function Ficha({
           {ciclo.ritmo.procedencia ? <span className="text-txt-3"> ({ciclo.ritmo.procedencia})</span> : null}
         </p>
       ) : null}
+
+      {/*
+        `docs/84` P4: o que o dono sabe de cabeça sobre a cliente antiga — e a recepção nova não
+        sabe. Cada frase traz a contagem, e só aparece com visita bastante para ser costume.
+      */}
+      {memoria.length > 0 ? <p className="mb-4 text-secundario text-txt-2">{memoria.join(' ')}</p> : null}
 
       {/*
         Camada 1 — o que a profissional precisa COM O CLIENTE NA CADEIRA. Estava no segundo

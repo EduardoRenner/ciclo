@@ -101,7 +101,7 @@ export default function FormularioSeguranca({ fatoresIniciais }: { fatoresInicia
         <p className="text-secundario text-txt-3">
           Não consegue escanear? Digite manualmente: <span className="tabular font-semibold text-txt">{cadastro.secret}</span>
         </p>
-        <form onSubmit={confirmarCodigo} className="flex w-full max-w-xs flex-col gap-3">
+        <form method="post" onSubmit={confirmarCodigo} className="flex w-full max-w-xs flex-col gap-3">
           <Input
             rotulo="Código de 6 dígitos"
             value={codigo}

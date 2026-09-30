@@ -292,6 +292,27 @@ export async function eliminarCliente(db: Cliente, tenantId: string, clientId: s
   if (erroSaude) throw new AppError('INTERNAL', { cause: erroSaude })
   rowsRemoved.health_records = saudeApagada?.length ?? 0
 
+  /*
+   * `client_cycles` (BL-48, `.claude/ciclo/autonomous-backlog.md`): fica FORA de `TABELAS_APAGADAS`
+   * de propósito, na SEGUNDA vez que este conserto é tentado.
+   *
+   * A primeira tentativa (commit `f6f46acf`, revertido em `9bf0d1b8`) colocou `client_cycles`
+   * dentro do laço genérico e a CI reprovou com `AppError('INTERNAL')` em todo teste de
+   * `lgpd.test.ts`. A hipótese registrada então era RLS/`force row level security` bloqueando
+   * `service_role` — **errada**, reproduzido nesta sessão contra o banco local: `service_role`
+   * ignora RLS normalmente (`FORCE ROW LEVEL SECURITY` não vale para papel com `BYPASSRLS`, e
+   * `service_role` tem). A causa real é mais simples e não tem nada a ver com RLS: o laço genérico
+   * faz `.select('id')` depois do `.delete()`, e `client_cycles` tem chave primária composta
+   * `(tenant_id, client_id, service_id)` — **não existe coluna `id`**. `SQLSTATE 42703 (column
+   * client_cycles.id does not exist)`, confirmado com o mesmo `.delete()...select('id')` desta
+   * função rodado isolado contra o banco local. Por isso sai do laço genérico (que assume `id` em
+   * toda tabela, mesma razão de `media`/`health_records` já ficarem de fora dele) e ganha `.select
+   * ('client_id')`, que existe e nunca é nulo aqui.
+   */
+  const { data: ciclosApagados, error: erroCiclos } = await db.from('client_cycles').delete().eq('tenant_id', tenantId).eq('client_id', clientId).select('client_id')
+  if (erroCiclos) throw new AppError('INTERNAL', { cause: erroCiclos })
+  rowsRemoved.client_cycles = ciclosApagados?.length ?? 0
+
   for (const tabela of TABELAS_APAGADAS) {
     const { data, error } = await db.from(tabela).delete().eq('tenant_id', tenantId).eq('client_id', clientId).select('id')
     if (error) throw new AppError('INTERNAL', { cause: error })

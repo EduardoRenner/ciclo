@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 
+import { VERSOES_LEGAIS } from '@/core/legal/versoes'
 import { SLUG_PROFISSAO_GENERICA } from '@/core/profissoes'
 import type { Origem } from '@/core/aquisicao/origem'
 import { gerarDekCifrada } from '@/server/crypto/kek'
@@ -157,6 +158,19 @@ export async function executarOnboarding(
       .from('tenant_keys')
       .insert({ tenant_id: tenant.id, dek_wrapped: wrapped, key_version: keyVersion })
     if (erroChave) throw erroChave
+
+    // BL-50: qual versão dos termos e da privacidade estava no ar quando esta conta nasceu. Dentro
+    // do `try`: aceite sem registro não prova nada, então falhar aqui desfaz o cadastro inteiro.
+    const { error: erroAceite } = await svc.from('terms_acceptances').insert(
+      (['termos', 'privacidade'] as const).map((documento) => ({
+        tenant_id: tenant.id,
+        user_id: params.userId,
+        documento,
+        versao: VERSOES_LEGAIS[documento],
+        via: 'cadastro',
+      })),
+    )
+    if (erroAceite) throw erroAceite
 
     // Profissão nova (fora das 8 legadas) usa o catálogo de profession_services — as 8
     // legadas continuam no vertical_packs de sempre, mesmo quando escolhidas via professionId

@@ -82,9 +82,16 @@ describe('a copy que o assistente e o salão mandam prontas', () => {
      * as perguntas mais comuns. Se elas usarem travessão, o prompt acima fica desmentido pela
      * própria casa: metade das respostas do assistente sai num estilo e metade no outro.
      */
-    const fonte = semComentarios(readFileSync('src/server/assistente/respostas-rapidas.ts', 'utf8'))
-    const linhas = fonte.split('\n').filter((l) => l.includes('—'))
-    expect(linhas.map((l) => l.trim()), 'travessão em resposta do assistente').toEqual([])
+    // 2026-09-29: as frases desceram para `core/inteligencia/falar.ts`, onde o Motor de
+    // Inteligência também as usa. Os DOIS arquivos são lidos: o de cima ainda monta texto (a hora,
+    // por exemplo), e o de baixo é onde a frase mora agora. Ler só o antigo deixaria esta guarda
+    // olhando para um arquivo sem frase nenhuma.
+    for (const arquivo of ['src/server/assistente/respostas-rapidas.ts', 'src/core/inteligencia/falar.ts']) {
+      const fonte = semComentarios(readFileSync(arquivo, 'utf8'))
+      const linhas = fonte.split('\n').filter((l) => l.includes('—'))
+      expect(linhas.map((l) => l.trim()), `travessão em resposta do assistente (${arquivo})`).toEqual([])
+    }
+    expect(readFileSync('src/core/inteligencia/falar.ts', 'utf8'), 'falar.ts sem frase: a guarda olharia o vazio').toMatch(/export function falar/)
   })
 
   it('nenhum modelo de mensagem pronta usa travessão', () => {

@@ -20,23 +20,24 @@ export const POST = rota(async (req, _ctx, requestId) => {
   // já existe. Quem desce de degrau continua vendo o que registrou — o que trava é criar mais.
   await exigirModulo(db, ctx.tenantId, 'quotes')
 
-  const resultado = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: '/api/v1/quotes' }, () =>
-    criarOrcamento(db, ctx.tenantId, ctx.sessao.userId, entrada),
-  )
-
-  await writeAudit(
-    {
-      tenantId: ctx.tenantId,
-      actorId: ctx.sessao.userId,
-      actorRole: ctx.papel,
-      action: 'quote.create',
-      entity: 'quotes',
-      entityId: resultado.quote.id,
-      after: resultado.quote,
-      requestId,
-    },
-    req,
-  )
+  // BL-42: `writeAudit` dentro do fechamento — ver o comentário em `wallet/credit/route.ts`.
+  const resultado = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: '/api/v1/quotes' }, async () => {
+    const resultado = await criarOrcamento(db, ctx.tenantId, ctx.sessao.userId, entrada)
+    await writeAudit(
+      {
+        tenantId: ctx.tenantId,
+        actorId: ctx.sessao.userId,
+        actorRole: ctx.papel,
+        action: 'quote.create',
+        entity: 'quotes',
+        entityId: resultado.quote.id,
+        after: resultado.quote,
+        requestId,
+      },
+      req,
+    )
+    return resultado
+  })
 
   return { ...resultado, url: `${exigirEnv('NEXT_PUBLIC_APP_URL')}/orcamento/${resultado.token}` }
 })

@@ -37,23 +37,24 @@ export const POST = rota(async (req, _ctx, requestId) => {
   const entrada = await lerCorpo(req, EsquemaCliente)
   const db = await criarClienteDoUsuario()
 
-  const cliente = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: '/api/v1/clients' }, () =>
-    criarCliente(db, ctx.tenantId, entrada),
-  )
-
-  await writeAudit(
-    {
-      tenantId: ctx.tenantId,
-      actorId: ctx.sessao.userId,
-      actorRole: ctx.papel,
-      action: 'client.create',
-      entity: 'clients',
-      entityId: cliente.id,
-      after: cliente,
-      requestId,
-    },
-    req,
-  )
+  // BL-42: `writeAudit` dentro do fechamento — ver o comentário em `wallet/credit/route.ts`.
+  const cliente = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: '/api/v1/clients' }, async () => {
+    const cliente = await criarCliente(db, ctx.tenantId, entrada)
+    await writeAudit(
+      {
+        tenantId: ctx.tenantId,
+        actorId: ctx.sessao.userId,
+        actorRole: ctx.papel,
+        action: 'client.create',
+        entity: 'clients',
+        entityId: cliente.id,
+        after: cliente,
+        requestId,
+      },
+      req,
+    )
+    return cliente
+  })
 
   return cliente
 })

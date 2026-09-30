@@ -17,30 +17,12 @@ import { registrarPrevisoes, resolverPrevisoes, type PrevisaoParaRegistrar } fro
  */
 
 type Upsert = { linhas: Record<string, unknown>[]; opcoes: { onConflict?: string; ignoreDuplicates?: boolean } }
-type Update = { valores: Record<string, unknown>; filtros: [string, unknown][]; exigiuEmAberto: boolean }
+type ChamadaRpc = { nome: string; args: { p_tenant_id: string; p_atualizacoes: { id: string; actual_return_on: string }[] } }
 
 /** Fake do client: registra o que foi pedido, para o teste medir a INTENÇÃO da chamada. */
 function fakeDb(abertas: { id: string; client_id: string; service_id: string; last_visit_on: string }[]) {
   const upserts: Upsert[] = []
-  const updates: Update[] = []
-
-  function cadeiaDeUpdate(valores: Record<string, unknown>): Update & Record<string, unknown> {
-    const registro: Update = { valores, filtros: [], exigiuEmAberto: false }
-    updates.push(registro)
-    const cadeia = {
-      eq: (coluna: string, valor: unknown) => {
-        registro.filtros.push([coluna, valor])
-        return cadeia
-      },
-      is: (coluna: string, valor: unknown) => {
-        if (coluna === 'resolved_at' && valor === null) registro.exigiuEmAberto = true
-        return cadeia
-      },
-      // Pedir as linhas de volta é o que distingue "fechei" de "alguém fechou antes de mim".
-      select: () => Promise.resolve({ data: [{ id: 'p-1' }], error: null }),
-    }
-    return cadeia as unknown as Update & Record<string, unknown>
-  }
+  const rpcs: ChamadaRpc[] = []
 
   const leitura = {
     select: () => leitura,
@@ -57,11 +39,17 @@ function fakeDb(abertas: { id: string; client_id: string; service_id: string; la
         upserts.push({ linhas, opcoes })
         return Promise.resolve({ error: null })
       },
-      update: cadeiaDeUpdate,
     }),
+    // `resolver_previsoes_em_lote` (migration 0094, BL-46): o fake devolve o tamanho do lote como
+    // "fechadas" — este teste mede a DECISÃO em memória (quem fecha, com que data), não a trava de
+    // corrida por linha, que só o banco real prova (`tests/integration/ciclo.test.ts`).
+    rpc: (nome: string, args: ChamadaRpc['args']) => {
+      rpcs.push({ nome, args })
+      return Promise.resolve({ data: args.p_atualizacoes.length, error: null })
+    },
   }
 
-  return { db: db as unknown as Parameters<typeof registrarPrevisoes>[0], upserts, updates }
+  return { db: db as unknown as Parameters<typeof registrarPrevisoes>[0], upserts, rpcs }
 }
 
 const UMA: PrevisaoParaRegistrar = {
@@ -111,16 +99,17 @@ describe('só fecha a previsão cujo resultado realmente aconteceu', () => {
   const aberta = { id: 'p-1', client_id: 'cli-1', service_id: 'srv-1', last_visit_on: '2026-01-10' }
 
   it('fecha com a primeira visita DEPOIS da que originou a previsão', async () => {
-    const { db, updates } = fakeDb([aberta])
+    const { db, rpcs } = fakeDb([aberta])
     const historico = new Map([['cli-1:srv-1', ['2026-01-10', '2026-02-04', '2026-03-01']]])
 
     const fechadas = await resolverPrevisoes(db, 'tenant-1', historico)
 
     expect(fechadas).toBe(1)
+    expect(rpcs).toHaveLength(1)
+    expect(rpcs[0]!.nome).toBe('resolver_previsoes_em_lote')
+    expect(rpcs[0]!.args.p_tenant_id).toBe('tenant-1')
     // A primeira seguinte, não a última: o retorno é 04/02, não 01/03.
-    expect(updates[0]!.valores).toMatchObject({ actual_return_on: '2026-02-04' })
-    // E o filtro `resolved_at is null` é o que torna rodar duas vezes idêntico a rodar uma.
-    expect(updates[0]!.exigiuEmAberto).toBe(true)
+    expect(rpcs[0]!.args.p_atualizacoes).toEqual([{ id: 'p-1', actual_return_on: '2026-02-04' }])
   })
 
   it('sem visita posterior, continua em ABERTO — não vira "não voltou"', async () => {
@@ -128,34 +117,34 @@ describe('só fecha a previsão cujo resultado realmente aconteceu', () => {
      * A pessoa ainda pode voltar. Fechar aqui inventaria um fato, e o fato inventado entraria na
      * calibração como se fosse medição — o defeito mais caro que esta série pode ter.
      */
-    const { db, updates } = fakeDb([aberta])
+    const { db, rpcs } = fakeDb([aberta])
     const historico = new Map([['cli-1:srv-1', ['2026-01-10']]])
 
     const fechadas = await resolverPrevisoes(db, 'tenant-1', historico)
 
     expect(fechadas).toBe(0)
-    expect(updates).toHaveLength(0)
+    expect(rpcs).toHaveLength(0)
   })
 
   it('duas visitas no MESMO dia não fecham uma à outra', async () => {
     // Corte e barba no mesmo atendimento são duas linhas com a mesma data. Isso não é retorno.
-    const { db, updates } = fakeDb([aberta])
+    const { db, rpcs } = fakeDb([aberta])
     const historico = new Map([['cli-1:srv-1', ['2026-01-10', '2026-01-10']]])
 
     expect(await resolverPrevisoes(db, 'tenant-1', historico)).toBe(0)
-    expect(updates).toHaveLength(0)
+    expect(rpcs).toHaveLength(0)
   })
 
   it('combinação sem histórico carregado não é tocada', async () => {
-    const { db, updates } = fakeDb([aberta])
+    const { db, rpcs } = fakeDb([aberta])
     expect(await resolverPrevisoes(db, 'tenant-1', new Map())).toBe(0)
-    expect(updates).toHaveLength(0)
+    expect(rpcs).toHaveLength(0)
   })
 
   it('nada em aberto não vira trabalho', async () => {
-    const { db, updates } = fakeDb([])
+    const { db, rpcs } = fakeDb([])
     expect(await resolverPrevisoes(db, 'tenant-1', new Map([['cli-1:srv-1', ['2026-02-04']]]))).toBe(0)
-    expect(updates).toHaveLength(0)
+    expect(rpcs).toHaveLength(0)
   })
 })
 

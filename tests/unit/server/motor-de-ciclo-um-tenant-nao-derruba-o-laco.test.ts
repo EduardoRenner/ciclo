@@ -22,14 +22,20 @@ import { semComentarios } from '../../helpers/fonte'
  */
 
 /*
- * `campaigns` e `lgpd-retention` já tinham `try` por item desde que foram escritas. Estas três
- * ficaram para trás — as duas primeiras rodam sozinhas em produção HOJE; `stock-alerts` roda
- * quando entrar no agendador (`ROTAS_DE_CRON`, ainda fora de `ROTAS_AGENDADAS`).
+ * `campaigns` e `lgpd-retention` já tinham `try` por item desde que foram escritas — mas "já tinha
+ * `try`" não era a mesma coisa que "já contava e expunha a falha": a auditoria de armadilhas
+ * catalogadas de 2026-09-28 achou que `campaigns/route.ts` tinha o `try/catch` mas o `catch` só
+ * logava, sem `falhas++` nem `tenantsComFalha` no corpo — o mesmo defeito que este arquivo existe
+ * para pegar, só que sem guarda nenhuma cobrindo. Corrigido e incluído na lista abaixo. `lgpd-
+ * retention` usa `falhas.push(id)`/`falhas: falhas.length` (padrão ligeiramente diferente, arranjo
+ * de lista em vez de contador) e por isso não casa com o regex genérico daqui — conferido à mão,
+ * está correto, mas não cabe nesta lista sem reescrever os regex para os dois formatos.
  */
 const ROTAS = [
   { arquivo: 'src/app/api/cron/recompute-cycles/route.ts', servico: 'recomputarCiclosDoTenant' },
   { arquivo: 'src/app/api/cron/segments/route.ts', servico: 'recalcularSegmentosDoTenant' },
   { arquivo: 'src/app/api/cron/stock-alerts/route.ts', servico: 'listarAlertasDeEstoque' },
+  { arquivo: 'src/app/api/cron/campaigns/route.ts', servico: 'executarCampanhaDiaria' },
 ]
 
 describe('um tenant com erro não derruba o Motor de Ciclo para os outros', () => {

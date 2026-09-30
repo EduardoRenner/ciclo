@@ -19,23 +19,24 @@ export const POST = rota(async (req, params, requestId) => {
   if (!UUID.test(id)) throw new AppError('NOT_FOUND', { message: 'Esse agendamento não existe mais.' })
   const db = await criarClienteDoUsuario()
 
-  const resultado = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/appointments/${id}/complete` }, () =>
-    concluirAgendamento(db, ctx.tenantId, id),
-  )
-
-  await writeAudit(
-    {
-      tenantId: ctx.tenantId,
-      actorId: ctx.sessao.userId,
-      actorRole: ctx.papel,
-      action: 'appointment.complete',
-      entity: 'appointments',
-      entityId: id,
-      after: { status: 'done', ticketId: resultado.ticket.id },
-      requestId,
-    },
-    req,
-  )
+  // BL-42: `writeAudit` dentro do fechamento — ver o comentário em `wallet/credit/route.ts`.
+  const resultado = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/appointments/${id}/complete` }, async () => {
+    const resultado = await concluirAgendamento(db, ctx.tenantId, id)
+    await writeAudit(
+      {
+        tenantId: ctx.tenantId,
+        actorId: ctx.sessao.userId,
+        actorRole: ctx.papel,
+        action: 'appointment.complete',
+        entity: 'appointments',
+        entityId: id,
+        after: { status: 'done', ticketId: resultado.ticket.id },
+        requestId,
+      },
+      req,
+    )
+    return resultado
+  })
 
   // Link pra pedir avaliação, pronto pra mandar por WhatsApp na hora — sem credencial nenhuma,
   // o `wa.me` de sempre. Cliente sem telefone continua tendo o link, só não tem pra quem mandar.

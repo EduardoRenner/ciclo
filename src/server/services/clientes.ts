@@ -1,5 +1,8 @@
+import { Temporal } from '@js-temporal/polyfill'
+import Papa from 'papaparse'
 import { z } from 'zod'
 
+import { protegerContraFormula } from '@/core/text/csv-seguro'
 import { semAcento } from '@/core/text/normalizar'
 import { AppError } from '@/server/http/errors'
 import { hashTelefone, normalizarTelefoneBR } from '@/server/services/telefone'
@@ -138,6 +141,87 @@ export async function listarClientes(
   const { data, error } = await consulta.order('id', { ascending: false }).limit(limite)
   if (error) throw new AppError('INTERNAL', { cause: error })
   return data ?? []
+}
+
+export type LinhaClienteParaExportar = {
+  name: string
+  phone: string | null
+  email: string | null
+  /**
+   * `yyyy-mm-dd` NO FUSO DO SALÃO, ou `null` — o formato que `lerDataInformada` lê de volta na
+   * importação. `clients.last_visit_at` é `timestamptz`: cortar a string no "T" dava o dia UTC, e um
+   * atendimento às 21h em Brasília saía como o dia seguinte (29/09, teste da exportação).
+   */
+  lastVisit: string | null
+}
+
+/**
+ * P3 de `docs/83-ONBOARDING-E-MIGRACAO-PLANO.md` §7.4: "trouxe na hora, levo na hora" — a
+ * exportação da carteira INTEIRA, diferente de `exportarDadosDoCliente` (`lgpd.ts`), que é a
+ * ficha de UMA cliente para o direito de acesso da LGPD.
+ *
+ * Pagina como `listarClientes` (cursor por `id` desc), mas SEM o teto de 200: aqui a promessa é
+ * "todos os meus clientes", e um salão com 3000 fichas não pode perder as últimas 2800 caladas.
+ * `TAMANHO_DA_PAGINA` é só o tamanho de cada ida ao banco, não um limite do resultado.
+ */
+export async function listarTodosClientesParaExportar(db: Cliente, tenantId: string, timezone: string): Promise<LinhaClienteParaExportar[]> {
+  const diaNoSalao = (ts: string | null) => (ts ? Temporal.Instant.from(ts).toZonedDateTimeISO(timezone).toPlainDate().toString() : null)
+  const TAMANHO_DA_PAGINA = 1000
+  const linhas: LinhaClienteParaExportar[] = []
+  let cursor: string | undefined
+
+  for (;;) {
+    let consulta = db
+      .from('clients')
+      .select('id, name, phone_e164, email, last_visit_at')
+      .eq('tenant_id', tenantId)
+      .is('deleted_at', null)
+      .order('id', { ascending: false })
+      .limit(TAMANHO_DA_PAGINA)
+    if (cursor) consulta = consulta.lt('id', cursor)
+
+    const { data, error } = await consulta
+    if (error) throw new AppError('INTERNAL', { cause: error })
+    if (!data || data.length === 0) break
+
+    for (const c of data) linhas.push({ name: c.name, phone: c.phone_e164, email: c.email, lastVisit: diaNoSalao(c.last_visit_at) })
+
+    if (data.length < TAMANHO_DA_PAGINA) break
+    cursor = data[data.length - 1]!.id
+  }
+
+  return linhas
+}
+
+/** Cabeçalho em português, nos mesmos nomes que fazem sentido escolher de volta na tela de mapeamento do importador (`preVisualizarCsv`). */
+const CABECALHO_EXPORTACAO = ['nome', 'telefone', 'email', 'ultima_visita']
+
+/**
+ * `phone` sai como veio de `phone_e164` (sempre começa com "+") e **não** passa por
+ * `protegerContraFormula`: não é texto livre digitado por alguém, é gerado por
+ * `normalizarTelefoneBR` — prefixar a coluna inteira quebraria 100% dos telefones exportados,
+ * porque TODOS começam com o mesmo caractere que o guard existe para neutralizar em texto livre.
+ *
+ * `name` e `email` SÃO texto livre: chegam por agendamento público e por importação de outro
+ * sistema, então uma cliente mal-intencionada escolhe o próprio valor. Sem o guard, um nome
+ * `=HYPERLINK("http://...","clique")` vira fórmula viva assim que a dona abre o CSV que ela mesma
+ * baixou — o risco que `importacao-clientes.ts` (achado S7) já apontava e adiava para "quando a
+ * primeira exportação em CSV nascer". Esta é essa exportação.
+ *
+ * Vive aqui, e não em `core/`, pelo mesmo motivo de `importacao-clientes.ts` (que também usa
+ * `papaparse`) já viver em `server/services/`: um teste-guarda (`core-nao-conhece-o-mundo`)
+ * proíbe dependência externa nova em `core/` sem decisão explícita — o peso de qualquer coisa lá
+ * chega na página pública do salão, no 3G do cliente dele. Geração de CSV do painel não precisa
+ * pagar esse preço.
+ */
+export function clientesParaCsv(linhas: readonly LinhaClienteParaExportar[]): string {
+  const dados = linhas.map((l) => [
+    protegerContraFormula(l.name),
+    l.phone ?? '',
+    l.email ? protegerContraFormula(l.email) : '',
+    l.lastVisit ?? '',
+  ])
+  return Papa.unparse({ fields: CABECALHO_EXPORTACAO, data: dados })
 }
 
 export async function criarCliente(db: Cliente, tenantId: string, entrada: Entrada) {

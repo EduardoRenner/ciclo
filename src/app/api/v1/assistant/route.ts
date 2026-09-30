@@ -7,24 +7,23 @@ import { AppError } from '@/server/http/errors'
 import { rota } from '@/server/http/handler'
 import { lerCorpo } from '@/server/http/body'
 import { exigirModulo } from '@/server/services/planos'
+import { registrarEvento } from '@/server/services/product-events'
 import { limitador } from '@/server/services/rate-limit'
-import { perguntarAoAssistente } from '@/server/services/assistente'
+import { perguntarAoAssistente, type ResultadoDoAssistente } from '@/server/services/assistente'
 import { LIMITE_POR_TENANT_DIA, LIMITE_POR_USUARIO_HORA } from '@/server/assistente/limites-de-uso'
-import { GeminiProvider } from '@/server/providers/ai/gemini'
+import { MotorDeConversa } from '@/server/providers/ai/motor'
 import { ErroDeInferencia } from '@/server/providers/ai/types'
 
 const EsquemaPergunta = z.object({
   pergunta: z.string().trim().min(1, 'Digite uma pergunta.').max(500, 'Pergunta muito longa.'),
+  // docs/85 MI-4: o contexto que a resposta anterior devolveu. Opaco aqui — quem valida a forma é o
+  // Motor (`lerContexto`, esquema fechado com tamanho travado); fora da forma, vira "sem contexto".
+  contexto: z.unknown().optional(),
 })
 
-// 2026-08-30: `executarLaco` (assistente.ts) permite até MAX_CHAMADAS_DE_FERRAMENTA + 1 = 4
-// chamadas ao Gemini em sequência (escolhe ferramenta → repete até responder em texto). Cada
-// uma aborta sozinha em TIMEOUT_MS (gemini.ts, 15s) no pior caso — 4×15s = 60s no limite
-// absoluto, bem acima do padrão da plataforma (10s) sem isto. Piso alto de propósito: é melhor
-// a função esperar do que morrer antes do timeout interno conseguir agir e devolver 503 correto.
-export const maxDuration = 60
-
-const provider = new GeminiProvider()
+// Com o Gemini, 4 chamadas de até 15s pediam 60s. Com o Motor de Inteligência (docs/85 MI-2) o
+// provedor responde na hora: o que resta são até 3 consultas ao banco pelas ferramentas.
+export const maxDuration = 30
 
 /**
  * `POST /api/v1/assistant`. Só o dono ou quem tem alguma permissão de leitura chega até aqui —
@@ -35,7 +34,7 @@ const provider = new GeminiProvider()
  */
 export const POST = rota(async (req, _ctx, requestId) => {
   const ctx = await contextoAtual(req)
-  const { pergunta } = await lerCorpo(req, EsquemaPergunta)
+  const { pergunta, contexto } = await lerCorpo(req, EsquemaPergunta)
 
   const db = await criarClienteDoUsuario()
 
@@ -56,12 +55,14 @@ export const POST = rota(async (req, _ctx, requestId) => {
   let resultado
   try {
     resultado = await perguntarAoAssistente({
-      provider,
+      // Um por pergunta: o Motor precisa do fuso do salão para saber que dia é "amanhã".
+      provider: new MotorDeConversa(tenant?.timezone ?? 'America/Sao_Paulo'),
       db,
       tenantId: ctx.tenantId,
       timezone: tenant?.timezone ?? 'America/Sao_Paulo',
       papel: ctx.papel,
       pergunta,
+      contexto,
     })
   } catch (erro) {
     if (erro instanceof ErroDeInferencia) {
@@ -87,8 +88,34 @@ export const POST = rota(async (req, _ctx, requestId) => {
     req,
   )
 
-  // `proposta` vai junto quando alguma ferramenta preparou uma ação: é o que a tela transforma
-  // em cartão com botão. Sem ela o campo simplesmente não existe na resposta, e o chat segue
-  // sendo só texto — nenhuma tela quebra por isso.
-  return { resposta: resultado.resposta, ferramentasUsadas: resultado.ferramentasUsadas, proposta: resultado.proposta }
+  // docs/85 MI-7: a pergunta que ficou sem resposta de verdade vira contagem — motivo e tema de uma
+  // lista fechada, nunca o texto (pode ter nome ou dado de saúde, regra 9). Nunca lança.
+  if (resultado.sinal && typeof resultado.sinal === 'object') {
+    await registrarEvento(db, ctx.tenantId, 'assistente_sem_resposta', resultado.sinal as Record<string, string>)
+  }
+
+  return corpoDaResposta(resultado)
 })
+
+/**
+ * O que a rota devolve, campo por campo — lista explícita de propósito, para nada que o laço venha
+ * a carregar vazar sem alguém decidir.
+ *
+ * `proposta` vai junto quando alguma ferramenta preparou uma ação: é o que a tela transforma em
+ * cartão com botão. Sem ela o campo simplesmente não existe na resposta, e o chat segue sendo só
+ * texto — nenhuma tela quebra por isso.
+ *
+ * `contexto` (docs/85 MI-4) volta para a tela devolver com a próxima pergunta. Esquecê-lo aqui foi
+ * medido no navegador em 29/09: o laço devolvia, a rota descartava, e "e sexta?" virava "não
+ * entendi" sem erro nenhum. Não vai para a auditoria (acima): carrega nome de gente.
+ */
+export function corpoDaResposta(resultado: ResultadoDoAssistente) {
+  return {
+    resposta: resultado.resposta,
+    ferramentasUsadas: resultado.ferramentasUsadas,
+    proposta: resultado.proposta,
+    contexto: resultado.contexto,
+    // docs/85 MI-3: os botões de próximo passo.
+    sugestoes: resultado.sugestoes,
+  }
+}

@@ -95,6 +95,16 @@ async function somarTickets(db: Cliente, tenantId: string, inicio: string, fim: 
   return resumo
 }
 
+/**
+ * A mesma soma do caixa, para um intervalo de DIAS no fuso do salão (`inicio` incluso,
+ * `fimExclusivo` não). Existe para o "por que caiu?" do Motor (docs/85 MI-5) comparar os mesmos
+ * dias de dois meses — e não uma segunda fórmula de faturamento: é `somarTickets`, a de sempre.
+ */
+export async function resumoDoIntervalo(db: Cliente, tenantId: string, timezone: string, inicio: string, fimExclusivo: string): Promise<ResumoCaixa> {
+  const instante = (dia: string) => Temporal.PlainDate.from(dia).toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant().toString()
+  return somarTickets(db, tenantId, instante(inicio), instante(fimExclusivo))
+}
+
 /** `GET /cash/daily?date=`. */
 export async function fechamentoDiario(db: Cliente, tenantId: string, timezone: string, date: string): Promise<ResumoCaixa & { date: string }> {
   const dia = Temporal.PlainDate.from(date)
