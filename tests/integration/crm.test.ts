@@ -525,10 +525,22 @@ describe('margem do clube de assinatura', () => {
       await assinar(svc, tenantId, assinante.id, { planId: plano.id, billingDay: 1 }, 'America/Sao_Paulo')
 
       // Quatro cortes no ciclo: 4 × (R$ 25 de comissão + R$ 2 de pomada) = R$ 108, contra R$ 90.
-      const hoje = new Date()
+      // O dia vem do FUSO DO SALÃO, não de UTC: a janela de cobrança é montada no fuso do tenant.
+      // Com `getUTC*`, entre 21h e meia-noite de Brasília do último dia do mês o teste plantava as
+      // visitas no mês SEGUINTE e a janela corrente contava zero (CI de 30/09/2026, 21h58).
+      const hojeNoSalao = Temporal.Now.zonedDateTimeISO('America/Sao_Paulo').toPlainDate()
       for (let i = 0; i < 4; i++) {
-        const quando = new Date(Date.UTC(hoje.getUTCFullYear(), hoje.getUTCMonth(), Math.min(hoje.getUTCDate(), 28), 15, 0, 0))
-        quando.setUTCMinutes(quando.getUTCMinutes() - i * 60)
+        const quando = new Date(
+          Temporal.ZonedDateTime.from({
+            timeZone: 'America/Sao_Paulo',
+            year: hojeNoSalao.year,
+            month: hojeNoSalao.month,
+            day: Math.min(hojeNoSalao.day, 28),
+            hour: 12,
+          })
+            .subtract({ hours: i })
+            .toInstant().epochMilliseconds,
+        )
         const { error } = await svc.from('appointments').insert({
           tenant_id: tenantId,
           client_id: assinante.id,
