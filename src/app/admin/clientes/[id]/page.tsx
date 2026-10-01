@@ -7,6 +7,7 @@ import { avaliarPermissao } from '@/server/auth/rbac'
 import { contextoDoPainel } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { AppError } from '@/server/http/errors'
+import { lerPartes, type Classe, type Perfil } from '@/core/crm/nota-do-cliente'
 import { fichaDoCliente } from '@/server/services/crm'
 import { lerConfigFidelidade, listarPlanos } from '@/server/services/fidelidade'
 import { gerarTokenIndicacao } from '@/server/services/indicacao'
@@ -28,7 +29,7 @@ export default async function PaginaFicha({ params }: { params: Promise<{ id: st
   const db = await criarClienteDoUsuario()
   const nativo = ehRequisicaoDoAppNativo(hdrs.get('user-agent'))
 
-  const [ficha, modelos, negocio, planos, profissionais, servicos, plano] = await Promise.all([
+  const [ficha, modelos, negocio, planos, profissionais, servicos, plano, notaBruta] = await Promise.all([
     fichaDoCliente(db, ctx.tenantId, id, ctx.tenant.timezone, {
       // `docs/48` §4.6: o lucro por cliente é dado sensível dentro do salão, e a ficha é aberta
       // por quem atende. Mesma porta do caixa e da comanda.
@@ -55,6 +56,8 @@ export default async function PaginaFicha({ params }: { params: Promise<{ id: st
     listarProfissionais(db, ctx.tenantId),
     listarServicos(db, ctx.tenantId),
     contextoDePlano(db, ctx.tenantId),
+    // `docs/95` E3.3: a nota do cliente e o porquê. Sem linha (rotina ainda não rodou) a ficha só não mostra.
+    db.from('client_scores').select('score, tier, profile, parts').eq('tenant_id', ctx.tenantId).eq('client_id', id).maybeSingle(),
   ])
 
   if (!ficha) notFound()
@@ -98,6 +101,16 @@ export default async function PaginaFicha({ params }: { params: Promise<{ id: st
       // de trabalho com muita coisa acontecendo, e a oferta cheia é a da tela de Orçamentos.
       podeOrcamento={podeUsarModulo(plano, 'quotes').estado === 'liberado'}
       nativo={nativo}
+      nota={
+        notaBruta.data
+          ? {
+              nota: notaBruta.data.score,
+              classe: notaBruta.data.tier as Classe,
+              perfil: notaBruta.data.profile as Perfil,
+              partes: lerPartes(notaBruta.data.parts),
+            }
+          : null
+      }
     />
   )
 }

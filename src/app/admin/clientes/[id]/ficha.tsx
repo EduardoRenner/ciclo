@@ -33,6 +33,7 @@ import { camposDePreferencia } from '@/lib/preferencias'
 import { aplicarVariaveis, linkWhatsApp, linkWhatsAppCompartilhar, precisaDeAgendamento } from '@/lib/mensagens'
 
 import { fraseDoRitmo } from '@/core/ciclo/ritmo-do-cliente'
+import { ROTULO_DA_CLASSE, ROTULO_DO_COMPONENTE, ROTULO_DO_PERFIL, type Classe, type ParteDaNota, type Perfil } from '@/core/crm/nota-do-cliente'
 import type { EstadoCiclo } from '@/core/cycle/compute'
 import type { EstadoAgendamento } from '@/core/scheduling/state'
 import type { FichaCliente } from '@/server/services/crm'
@@ -134,6 +135,7 @@ export default function Ficha({
   bloqueadoClube,
   podeOrcamento,
   nativo,
+  nota = null,
 }: {
   ficha: FichaCliente
   /** Fuso do salao: a data de inicio da assinatura e de calendario, e calendario e do salao. */
@@ -161,6 +163,8 @@ export default function Ficha({
   podeOrcamento: boolean
   /** T1.5 (docs/64 §0.2): `ehRequisicaoDoAppNativo`, calculado no servidor em `page.tsx`. */
   nativo: boolean
+  /** `docs/95` E3.3: nota, classe, perfil e as partes da conta (`client_scores`). `null` = ainda sem nota. */
+  nota?: { nota: number; classe: Classe; perfil: Perfil; partes: ParteDaNota[] } | null
 }) {
   const router = useRouter()
   const parametros = useSearchParams()
@@ -410,6 +414,28 @@ export default function Ficha({
         sabe. Cada frase traz a contagem, e só aparece com visita bastante para ser costume.
       */}
       {memoria.length > 0 ? <p className="mb-4 text-secundario text-txt-2">{memoria.join(' ')}</p> : null}
+
+      {/*
+        `docs/95` E3.3: a prioridade para chamar, com a conta à vista. A nota só ordena a fila do
+        dono; nunca decide quem é atendido. Por isso o porquê vem junto, parte por parte.
+      */}
+      {nota ? (
+        <details className="mb-4 text-secundario text-txt-2">
+          <summary className="cursor-pointer py-4 font-semibold text-txt">
+            {`Prioridade para chamar: ${ROTULO_DA_CLASSE[nota.classe]} · nota ${nota.nota} · ${ROTULO_DO_PERFIL[nota.perfil]}`}
+          </summary>
+          <ul className="flex flex-col gap-1 pb-2">
+            {nota.partes.map((p) => (
+              <li key={p.componente} className="flex justify-between gap-3">
+                <span className="min-w-0">
+                  <span className="text-txt">{ROTULO_DO_COMPONENTE[p.componente]}</span>: {p.motivo}
+                </span>
+                <span className="tabular shrink-0 text-txt-3">{`${p.pontos} de ${p.maximo}`}</span>
+              </li>
+            ))}
+          </ul>
+        </details>
+      ) : null}
 
       {/*
         Camada 1 — o que a profissional precisa COM O CLIENTE NA CADEIRA. Estava no segundo
