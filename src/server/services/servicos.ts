@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { parcialSemPadroes } from '@/server/http/esquema-parcial'
 
 import { AppError } from '@/server/http/errors'
 
@@ -56,7 +57,7 @@ export const EsquemaServico = EsquemaServicoBase.refine((d) => d.pricingModel !=
 })
 
 /** No PATCH todo campo é opcional, mas o que vier ainda passa pelas mesmas regras. */
-export const EsquemaServicoParcial = EsquemaServicoBase.partial()
+export const EsquemaServicoParcial = parcialSemPadroes(EsquemaServicoBase)
 
 export const EsquemaReordenar = z.object({
   // A UI manda a lista inteira na ordem nova. Mandar só o que mudou obrigaria

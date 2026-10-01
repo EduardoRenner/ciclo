@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { parcialSemPadroes } from '@/server/http/esquema-parcial'
 
 import { AppError } from '@/server/http/errors'
 
@@ -26,7 +27,7 @@ export const EsquemaProfissional = z.object({
   acceptsOnline: z.boolean().default(true),
 })
 
-export const EsquemaProfissionalParcial = EsquemaProfissional.partial()
+export const EsquemaProfissionalParcial = parcialSemPadroes(EsquemaProfissional)
 
 type Entrada = z.infer<typeof EsquemaProfissional>
 type EntradaParcial = z.infer<typeof EsquemaProfissionalParcial>

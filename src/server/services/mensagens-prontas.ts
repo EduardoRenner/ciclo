@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { parcialSemPadroes } from '@/server/http/esquema-parcial'
 
 import { AppError } from '@/server/http/errors'
 
@@ -14,7 +15,7 @@ export const EsquemaModelo = z.object({
   body: z.string().trim().min(5, 'Escreva a mensagem.').max(1000, 'Mensagem muito longa.'),
   active: z.boolean().default(true),
 })
-export const EsquemaModeloParcial = EsquemaModelo.partial()
+export const EsquemaModeloParcial = parcialSemPadroes(EsquemaModelo)
 
 type Entrada = z.infer<typeof EsquemaModelo>
 type EntradaParcial = z.infer<typeof EsquemaModeloParcial>
