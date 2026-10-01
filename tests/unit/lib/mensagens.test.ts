@@ -113,4 +113,14 @@ describe('textoDeVolta (docs/82 §7)', () => {
   it('nome em branco não vira "Oi, !"; serviço feminino não vira "seu último barba"', () => {
     expect(textoDeVolta({ nome: '  ', servico: 'Barba' })).toBe('Oi! Faz um tempinho desde seu último horário de barba. Quer marcar essa semana?')
   })
+
+  it('com o link de volta, o link vai no fim, depois da pergunta (docs/95 E1)', () => {
+    expect(textoDeVolta({ nome: 'Joana', servico: 'Corte', link: 'https://seuciclo.com.br/x/agendar?volta=t' })).toBe(
+      'Oi, Joana! Faz um tempinho desde seu último horário de corte. Quer marcar essa semana? É só escolher o horário aqui: https://seuciclo.com.br/x/agendar?volta=t',
+    )
+    // Link ausente (sem chave de assinatura) não deixa frase pela metade.
+    expect(textoDeVolta({ nome: 'Joana', servico: 'Corte', link: null })).toBe(
+      'Oi, Joana! Faz um tempinho desde seu último horário de corte. Quer marcar essa semana?',
+    )
+  })
 })

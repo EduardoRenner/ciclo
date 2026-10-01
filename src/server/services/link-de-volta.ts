@@ -115,3 +115,28 @@ export async function registrarAgendamentoPeloLinkDeVolta(
   if (erroAbertura) throw erroAbertura
   return true
 }
+
+/**
+ * Põe o link de volta em cada item da lista Recuperar. Só HMAC, sem ida ao banco.
+ *
+ * Sem chave de assinatura no ambiente, `gerarTokenAssinado` lança. Aqui isso não pode derrubar a
+ * tela Recuperar (o botão central do produto): cada item fica com `linkVolta: null` e o "Chamar"
+ * manda o texto de sempre, sem link. Medição a menos, nunca tela quebrada.
+ */
+export function comLinksDeVolta<T extends { clientId: string; serviceId: string }>(
+  itens: T[],
+  tenantId: string,
+  slug: string,
+  base: string | null | undefined = process.env.NEXT_PUBLIC_APP_URL,
+  segredo?: string,
+): (T & { linkVolta: string | null })[] {
+  try {
+    return itens.map((item) => ({
+      ...item,
+      linkVolta: urlDoLinkDeVolta(base, slug, gerarTokenDeVolta({ tenantId, clientId: item.clientId, serviceId: item.serviceId }, segredo)),
+    }))
+  } catch (erro) {
+    console.error(JSON.stringify({ level: 'error', event: 'link_de_volta_sem_chave', tenantId }), erro)
+    return itens.map((item) => ({ ...item, linkVolta: null }))
+  }
+}

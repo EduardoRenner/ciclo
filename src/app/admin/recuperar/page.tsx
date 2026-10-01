@@ -12,6 +12,7 @@ import { contextoDoPainel } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { resumoDoMotorDoTenant } from '@/server/services/previsao'
 import { medirMaterialDoCatalogo } from '@/server/services/ficha-de-consumo'
+import { comLinksDeVolta } from '@/server/services/link-de-volta'
 import { listarParaRecuperar } from '@/server/services/recuperar-receita'
 import { receitaAtribuidaAoCiclo } from '@/server/services/atribuicao'
 
@@ -122,7 +123,7 @@ export default async function PaginaRecuperar() {
       <PrestacaoDeContasDoMotor contas={resumoDoMotor.prestacao} probabilidadeCalibrada={algumEstadoFoiCalibrado(resumoDoMotor.probabilidade)} />
 
       <RecuperarReceita
-        inicial={lista}
+        inicial={{ ...lista, items: comLinksDeVolta(lista.items, ctx.tenantId, ctx.tenant.slug) }}
         temClientes={(clientes.count ?? 0) > 0}
         temCiclos={(ciclos.count ?? 0) > 0}
         temAtendimentosConcluidos={(concluidos.count ?? 0) > 0}

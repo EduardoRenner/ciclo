@@ -29,6 +29,8 @@ export type ItemRecuperar = {
   /** O que SOBRA daquele atendimento × a chance de a pessoa voltar. É o que ordena a lista. */
   profitCents: number
   lastCampaignAt: string | null
+  /** `docs/95` E1: link pessoal de agendamento (com o serviço) que vai dentro do texto do "Chamar". */
+  linkVolta?: string | null
 }
 
 export type ListaRecuperar = {
