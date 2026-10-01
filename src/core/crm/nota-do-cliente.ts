@@ -208,3 +208,70 @@ export function notasDoSalao(historicos: HistoricoDoCliente[]): NotaDoCliente[] 
     return { clientId: h.clientId, nota, classe: classeDaNota(nota), perfil: perfilDoCliente(h), partes, versao: VERSAO_DA_NOTA }
   })
 }
+
+/** Cancelar a menos disto do horário conta como "em cima da hora". */
+export const HORAS_DE_CANCELAMENTO_TARDIO = 24
+
+const DIA_MS = 86_400_000
+
+export type AgendamentoParaNota = {
+  clientId: string
+  status: string
+  startsAt: string
+  priceCents: number
+  canceledAt: string | null
+}
+
+export type ClienteParaNota = { id: string; createdAt: string; referredBy: string | null }
+
+/**
+ * Monta o histórico de cada cliente a partir das linhas cruas do banco. Fica no `core/` porque é
+ * aqui que moram as regras: o que é visita (só `done`), o que é falta (`no_show`, que só o
+ * profissional marca) e o que é cancelamento em cima da hora.
+ */
+export function montarHistoricos(
+  clientes: ClienteParaNota[],
+  agendamentos: AgendamentoParaNota[],
+  ritmos: { clientId: string; ritmoDias: number }[],
+  agoraMs: number,
+): HistoricoDoCliente[] {
+  const porCliente = new Map<string, HistoricoDoCliente>()
+  for (const c of clientes) {
+    porCliente.set(c.id, {
+      clientId: c.id,
+      visitas: [],
+      faltas: 0,
+      cancelamentosTardios: 0,
+      ritmoDias: null,
+      cadastradoHaDias: Math.max(0, Math.floor((agoraMs - Date.parse(c.createdAt)) / DIA_MS)),
+      indicou: 0,
+    })
+  }
+  for (const c of clientes) {
+    if (c.referredBy) {
+      const quemIndicou = porCliente.get(c.referredBy)
+      if (quemIndicou) quemIndicou.indicou++
+    }
+  }
+  for (const r of ritmos) {
+    const h = porCliente.get(r.clientId)
+    if (!h || r.ritmoDias <= 0) continue
+    // Quem faz mais de um serviço: o ritmo mais curto é o que diz quando a pessoa deveria voltar.
+    h.ritmoDias = h.ritmoDias === null ? r.ritmoDias : Math.min(h.ritmoDias, r.ritmoDias)
+  }
+  for (const a of agendamentos) {
+    const h = porCliente.get(a.clientId)
+    if (!h) continue
+    const inicio = Date.parse(a.startsAt)
+    if (a.status === 'done') {
+      if (inicio > agoraMs) continue
+      h.visitas.push({ diasAtras: Math.floor((agoraMs - inicio) / DIA_MS), valorCents: a.priceCents })
+    } else if (a.status === 'no_show') {
+      h.faltas++
+    } else if (a.status === 'canceled' && a.canceledAt) {
+      const antecedenciaHoras = (inicio - Date.parse(a.canceledAt)) / 3_600_000
+      if (antecedenciaHoras < HORAS_DE_CANCELAMENTO_TARDIO) h.cancelamentosTardios++
+    }
+  }
+  return [...porCliente.values()]
+}

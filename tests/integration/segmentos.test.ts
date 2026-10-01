@@ -9,6 +9,7 @@ import { criarProfissional } from '@/server/services/profissionais'
 import { criarServico } from '@/server/services/servicos'
 import { executarOnboarding } from '@/server/services/onboarding'
 import { recalcularSegmentosDoTenant, listarClientesPorSegmento } from '@/server/services/segmentos'
+import { recalcularNotasDoTenant } from '@/server/services/notas-do-cliente'
 
 import type { Database } from '@/server/db/types.gen'
 
@@ -199,6 +200,33 @@ describe('recalcularSegmentosDoTenant + listarClientesPorSegmento', () => {
       const lista = await listarClientesPorSegmento(svc, tenantId, 'ticket_alto')
       const ids = lista.map((c) => c.id)
       expect(ids).toContain(ticketAlto)
+    },
+    30_000,
+  )
+
+  it(
+    'nota do cliente (docs/95 E3): todo cliente ganha linha, e quem gasta e vem mais fica acima',
+    async () => {
+      const assiduo = await criarCliente('Vem Sempre')
+      for (let i = 0; i < 6; i++) await criarAgendamentoConcluido(assiduo, 10 + i * 30, 8_000)
+      const raro = await criarCliente('Veio Uma Vez')
+      await criarAgendamentoConcluido(raro, 200, 3_000)
+
+      const total = await recalcularNotasDoTenant(svc, tenantId)
+      expect(total).toBeGreaterThanOrEqual(2)
+
+      const { data } = await svc.from('client_scores').select('client_id, score, tier, profile, parts, algo_version').eq('tenant_id', tenantId).in('client_id', [assiduo, raro])
+      const porId = Object.fromEntries((data ?? []).map((l) => [l.client_id, l]))
+      expect(porId[assiduo], 'cliente assíduo ficou sem nota').toBeDefined()
+      expect(porId[raro], 'cliente raro ficou sem nota').toBeDefined()
+      expect(porId[assiduo]!.score).toBeGreaterThan(porId[raro]!.score)
+      expect(porId[raro]!.profile).toBe('novo')
+      expect(Array.isArray(porId[assiduo]!.parts)).toBe(true)
+
+      // Rodar de novo não duplica (upsert pela chave tenant + cliente).
+      await recalcularNotasDoTenant(svc, tenantId)
+      const { count } = await svc.from('client_scores').select('client_id', { count: 'exact', head: true }).eq('tenant_id', tenantId).eq('client_id', assiduo)
+      expect(count).toBe(1)
     },
     30_000,
   )

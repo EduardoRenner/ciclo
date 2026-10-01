@@ -631,6 +631,54 @@ export type Database = {
           },
         ]
       }
+      client_scores: {
+        Row: {
+          algo_version: number
+          client_id: string
+          computed_at: string
+          parts: Json
+          profile: string
+          score: number
+          tenant_id: string
+          tier: string
+        }
+        Insert: {
+          algo_version: number
+          client_id: string
+          computed_at?: string
+          parts?: Json
+          profile: string
+          score: number
+          tenant_id: string
+          tier: string
+        }
+        Update: {
+          algo_version?: number
+          client_id?: string
+          computed_at?: string
+          parts?: Json
+          profile?: string
+          score?: number
+          tenant_id?: string
+          tier?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_scores_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_scores_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_subscriptions: {
         Row: {
           billing_day: number

@@ -4,6 +4,7 @@ import {
   PESOS,
   atrasoRelativo,
   classeDaNota,
+  montarHistoricos,
   notasDoSalao,
   percentil,
   perfilDoCliente,
@@ -126,5 +127,46 @@ describe('nota do salão', () => {
     const textos = notasDoSalao(salao).flatMap((n) => n.partes.map((p) => p.motivo.toLowerCase()))
     expect(textos.length).toBeGreaterThan(0)
     expect(textos.some((t) => t.includes('ruim'))).toBe(false)
+  })
+})
+
+describe('montarHistoricos: o que conta como visita, falta e cancelamento em cima da hora', () => {
+  const AGORA = Date.parse('2026-10-01T12:00:00Z')
+  const DIA = 86_400_000
+  const iso = (ms: number) => new Date(ms).toISOString()
+
+  const [h] = montarHistoricos(
+    [
+      { id: 'c1', createdAt: iso(AGORA - 400 * DIA), referredBy: null },
+      { id: 'c2', createdAt: iso(AGORA - 10 * DIA), referredBy: 'c1' },
+    ],
+    [
+      { clientId: 'c1', status: 'done', startsAt: iso(AGORA - 10 * DIA), priceCents: 5_000, canceledAt: null },
+      { clientId: 'c1', status: 'done', startsAt: iso(AGORA + 2 * DIA), priceCents: 5_000, canceledAt: null },
+      { clientId: 'c1', status: 'no_show', startsAt: iso(AGORA - 30 * DIA), priceCents: 5_000, canceledAt: null },
+      { clientId: 'c1', status: 'canceled', startsAt: iso(AGORA - 50 * DIA), priceCents: 5_000, canceledAt: iso(AGORA - 50 * DIA - 3 * 3_600_000) },
+      { clientId: 'c1', status: 'canceled', startsAt: iso(AGORA - 60 * DIA), priceCents: 5_000, canceledAt: iso(AGORA - 62 * DIA) },
+      { clientId: 'outro-salao', status: 'done', startsAt: iso(AGORA - 5 * DIA), priceCents: 9_000, canceledAt: null },
+    ],
+    [
+      { clientId: 'c1', ritmoDias: 40 },
+      { clientId: 'c1', ritmoDias: 20 },
+    ],
+    AGORA,
+  )
+
+  it('visita é só atendimento concluído no passado', () => {
+    expect(h!.visitas).toEqual([{ diasAtras: 10, valorCents: 5_000 }])
+  })
+
+  it('falta é no_show; cancelamento só conta se foi a menos de 24h do horário', () => {
+    expect(h!.faltas).toBe(1)
+    expect(h!.cancelamentosTardios).toBe(1)
+  })
+
+  it('ritmo é o mais curto entre os serviços; indicação conta para quem indicou; antiguidade em dias', () => {
+    expect(h!.ritmoDias).toBe(20)
+    expect(h!.indicou).toBe(1)
+    expect(h!.cadastradoHaDias).toBe(400)
   })
 })
