@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { parcialSemPadroes } from '@/server/http/esquema-parcial'
 
 import { calcularNovoCustoMedio } from '@/core/estoque/media-movel'
 import { AppError } from '@/server/http/errors'
@@ -281,7 +282,7 @@ export const EsquemaProduto = EsquemaProdutoBase.refine((d) => !d.isRetail || d.
 })
 
 /** No PATCH todo campo é opcional — mas a combinação isRetail+priceCents ainda é checada quando as duas chegam juntas. */
-export const EsquemaProdutoParcial = EsquemaProdutoBase.partial().refine(
+export const EsquemaProdutoParcial = parcialSemPadroes(EsquemaProdutoBase).refine(
   (d) => d.isRetail !== true || d.priceCents !== null,
   { message: 'Defina o preço de venda para um produto de revenda.', path: ['priceCents'] },
 )

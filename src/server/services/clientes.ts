@@ -1,6 +1,7 @@
 import { Temporal } from '@js-temporal/polyfill'
 import Papa from 'papaparse'
 import { z } from 'zod'
+import { parcialSemPadroes } from '@/server/http/esquema-parcial'
 
 import { protegerContraFormula } from '@/core/text/csv-seguro'
 import { semAcento } from '@/core/text/normalizar'
@@ -44,7 +45,7 @@ export const EsquemaCliente = z.object({
   marketingOptIn: z.boolean().default(false),
 })
 
-export const EsquemaClienteParcial = EsquemaCliente.partial()
+export const EsquemaClienteParcial = parcialSemPadroes(EsquemaCliente)
 
 type Entrada = z.infer<typeof EsquemaCliente>
 type EntradaParcial = z.infer<typeof EsquemaClienteParcial>
