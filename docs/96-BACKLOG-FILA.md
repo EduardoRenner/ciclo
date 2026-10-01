@@ -7,18 +7,19 @@ reescrever dado, tirar privilégio ou ligar mensagem para cliente final.
 Legenda: `[ ]` a fazer · `[~]` em andamento · `[x]` no ar (com o nº do PR).
 
 ## E0 · Tirar a seleção em lote
-- [ ] E0.1 Remover checkbox, barra de envio pago e estado de seleção da tela Recuperar (mantém a rota
+- [x] E0.1 (#135) Remover checkbox, barra de envio pago e estado de seleção da tela Recuperar (mantém a rota
       `recover/send` e a capacidade `envio_em_lote` no servidor).
-- [ ] E0.2 Guarda: a tela Recuperar não tem `type="checkbox"`, nem `<ActionBar`, nem chamada a
+- [x] E0.2 (#135) Guarda: a tela Recuperar não tem `type="checkbox"`, nem `<ActionBar`, nem chamada a
       `recover/send`; vista reprovando por mutação.
 
 ## E1 · Texto com link de agendamento
-- [ ] E1.1 Migration aditiva: `messages.clicked_at`, `messages.booked_appointment_id`.
-- [ ] E1.2 Token assinado de escopo `volta` (id = mensagem da chamada manual), validade 14 dias.
-- [ ] E1.3 Rota pública que abre o link: registra `clicked_at`, redireciona para `/{slug}/agendar`
+- [x] E1.1 Migration aditiva (0099, aplicada em produção): `messages.clicked_at`, `messages.booked_appointment_id`.
+- [x] E1.2 Token assinado de escopo `volta` (id = tenant~cliente~serviço, montado ao desenhar a lista), validade 14 dias.
+- [x] E1.3 Página pública `?volta=` abre o link: registra `clicked_at`, redireciona para `/{slug}/agendar`
       com o cliente reconhecido e o serviço pré-escolhido.
-- [ ] E1.4 Agendamento feito pelo link grava `booked_appointment_id` (atribuição por clique).
-- [ ] E1.5 `textoDeVolta` passa a incluir o link; "Chamar" pede o link ao servidor antes de abrir o WhatsApp.
+- [x] E1.4 Agendamento feito pelo link grava `booked_appointment_id` (atribuição por clique).
+- [x] E1.5 `textoDeVolta` inclui o link (a lista já chega com ele; sem chave de assinatura, cai para o texto sem link).
+- [ ] E1.6 Assistente ("resolve") também mandar o link (precisa do slug no contexto da ferramenta).
 
 ## E2 · Fila de chamadas
 - [ ] E2.1 Tela "Fila de chamadas": um cliente por vez; Chamar, Já falei, Pular hoje, Não chamar mais, VIP.

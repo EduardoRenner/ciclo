@@ -9,6 +9,8 @@ import type { MessagingProvider } from '@/server/providers/messaging/types'
 import { criarServico } from '@/server/services/servicos'
 import { executarOnboarding } from '@/server/services/onboarding'
 import { enviarParaRecuperar, listarParaRecuperar, registrarChamadaManual } from '@/server/services/recuperar-receita'
+import { gerarTokenDeVolta, registrarAberturaDoLinkDeVolta, registrarAgendamentoPeloLinkDeVolta } from '@/server/services/link-de-volta'
+import { abrirLinkDeVolta } from '@/server/services/public-booking'
 import { FERRAMENTAS, type ContextoFerramenta } from '@/server/assistente/ferramentas'
 import { linkDaChamada, rotaDaAcao } from '@/core/assistente/acoes'
 
@@ -26,6 +28,7 @@ const svc = createClient<Database>(SUPABASE_URL, SERVICE_KEY, { auth: { persistS
 
 const TZ = 'America/Sao_Paulo'
 let tenantId: string
+let slugDoTenant: string
 let servicoId: string
 const tenants: string[] = []
 const usuarios: string[] = []
@@ -49,6 +52,7 @@ beforeAll(async () => {
     timezone: TZ,
   })
   tenantId = tenant.id
+  slugDoTenant = `recuperar-${marca}`
   tenants.push(tenantId)
 
   const servico = await criarServico(svc, tenantId, {
@@ -425,5 +429,90 @@ describe('preparar_chamada_de_volta — o "resolve" do assistente (docs/84 P2)',
     await criarClienteEmCiclo(`Ritmada ${marca}`, { state: 'on_track', valueAtRiskCents: 0 })
     expect(await ferramenta.executar(ctx(), { cliente: `Ritmada ${marca}` })).toEqual({ status: 'nao_da', motivo: 'fora_da_lista', cliente: `Ritmada ${marca}` })
     expect(await ferramenta.executar(ctx(), { cliente: `Ninguem ${marca}` })).toEqual({ status: 'nao_achei', oQue: 'cliente', termo: `Ninguem ${marca}` })
+  }, 30_000)
+})
+
+describe('link de volta: clique e agendamento na mensagem do "Chamar" (docs/95 E1)', () => {
+  let horarioDoTeste = 0
+
+  async function agendamentoDe(clientId: string) {
+    const { data: prof } = await svc.from('professionals').select('id').eq('tenant_id', tenantId).limit(1).single()
+    // Um horário por chamada: o mesmo profissional no mesmo horário bate na `appointments_no_overlap`.
+    horarioDoTeste += 2
+    const inicio = Temporal.Now.instant().add({ hours: 48 + horarioDoTeste })
+    const { data, error } = await svc
+      .from('appointments')
+      .insert({
+        tenant_id: tenantId,
+        client_id: clientId,
+        professional_id: prof!.id,
+        service_id: servicoId,
+        starts_at: inicio.toString(),
+        ends_at: inicio.add({ minutes: 60 }).toString(),
+        status: 'confirmed',
+        price_cents: 10_000,
+      })
+      .select('id')
+      .single()
+    if (error) throw error
+    return data.id
+  }
+
+  it('abrir o link marca a chamada uma vez; agendar por ele liga o agendamento à chamada', async () => {
+    const clientId = await criarClienteEmCiclo('Abriu o Link', { state: 'late', valueAtRiskCents: 5_000 })
+    expect(await registrarChamadaManual(svc, tenantId, { clientId, serviceId: servicoId })).toEqual({ registrada: true })
+    const alvo = { tenantId, clientId, serviceId: servicoId }
+
+    expect(await registrarAberturaDoLinkDeVolta(svc, alvo)).toBe(true)
+    const { data: aberta } = await svc.from('messages').select('clicked_at').eq('tenant_id', tenantId).eq('client_id', clientId).single()
+    expect(aberta?.clicked_at).not.toBeNull()
+
+    // Abrir de novo não move a primeira marca.
+    expect(await registrarAberturaDoLinkDeVolta(svc, alvo, Temporal.Now.instant().add({ hours: 1 }))).toBe(false)
+    const { data: reaberta } = await svc.from('messages').select('clicked_at').eq('tenant_id', tenantId).eq('client_id', clientId).single()
+    expect(reaberta?.clicked_at).toBe(aberta?.clicked_at)
+
+    const agendamentoId = await agendamentoDe(clientId)
+    expect(await registrarAgendamentoPeloLinkDeVolta(svc, alvo, agendamentoId)).toBe(true)
+    const { data: agendada } = await svc
+      .from('messages')
+      .select('booked_appointment_id, clicked_at')
+      .eq('tenant_id', tenantId)
+      .eq('client_id', clientId)
+      .single()
+    expect(agendada?.booked_appointment_id).toBe(agendamentoId)
+    expect(agendada?.clicked_at).toBe(aberta?.clicked_at)
+  }, 30_000)
+
+  it('sem chamada anotada na janela, abrir e agendar não marcam nada (e não lançam)', async () => {
+    const clientId = await criarClienteEmCiclo('Nunca Chamada', { state: 'late', valueAtRiskCents: 5_000 })
+    const alvo = { tenantId, clientId, serviceId: servicoId }
+    expect(await registrarAberturaDoLinkDeVolta(svc, alvo)).toBe(false)
+    expect(await registrarAgendamentoPeloLinkDeVolta(svc, alvo, await agendamentoDe(clientId))).toBe(false)
+    const { count } = await svc.from('messages').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId).eq('client_id', clientId)
+    expect(count).toBe(0)
+  }, 30_000)
+
+  it('chamada fora da janela de 14 dias não é dona do clique', async () => {
+    const clientId = await criarClienteEmCiclo('Chamada Antiga', { state: 'late', valueAtRiskCents: 5_000 })
+    expect(await registrarChamadaManual(svc, tenantId, { clientId, serviceId: servicoId })).toEqual({ registrada: true })
+    const daquiA15Dias = Temporal.Now.instant().add({ hours: 15 * 24 })
+    expect(await registrarAberturaDoLinkDeVolta(svc, { tenantId, clientId, serviceId: servicoId }, daquiA15Dias)).toBe(false)
+  }, 30_000)
+
+  it('a página pública só aceita o link do PRÓPRIO salão: token de outro tenant não marca nada', async () => {
+    const clientId = await criarClienteEmCiclo('Link Alheio', { state: 'late', valueAtRiskCents: 5_000 })
+    expect(await registrarChamadaManual(svc, tenantId, { clientId, serviceId: servicoId })).toEqual({ registrada: true })
+
+    const deOutroSalao = gerarTokenDeVolta({ tenantId: randomUUID(), clientId, serviceId: servicoId })
+    expect(await abrirLinkDeVolta(slugDoTenant, deOutroSalao)).toBeNull()
+    const { data: intacta } = await svc.from('messages').select('clicked_at').eq('tenant_id', tenantId).eq('client_id', clientId).single()
+    expect(intacta?.clicked_at).toBeNull()
+
+    // Controle positivo: o token do próprio salão abre e devolve o serviço do link.
+    const doSalao = gerarTokenDeVolta({ tenantId, clientId, serviceId: servicoId })
+    expect(await abrirLinkDeVolta(slugDoTenant, doSalao)).toEqual({ serviceId: servicoId })
+    const { data: aberta } = await svc.from('messages').select('clicked_at').eq('tenant_id', tenantId).eq('client_id', clientId).single()
+    expect(aberta?.clicked_at).not.toBeNull()
   }, 30_000)
 })

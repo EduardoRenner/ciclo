@@ -1547,8 +1547,10 @@ export type Database = {
         Row: {
           appointment_id: string | null
           body: string | null
+          booked_appointment_id: string | null
           campaign_id: string | null
           channel: Database["public"]["Enums"]["message_channel"]
+          clicked_at: string | null
           client_id: string | null
           cost_cents: number
           created_at: string
@@ -1565,8 +1567,10 @@ export type Database = {
         Insert: {
           appointment_id?: string | null
           body?: string | null
+          booked_appointment_id?: string | null
           campaign_id?: string | null
           channel: Database["public"]["Enums"]["message_channel"]
+          clicked_at?: string | null
           client_id?: string | null
           cost_cents?: number
           created_at?: string
@@ -1583,8 +1587,10 @@ export type Database = {
         Update: {
           appointment_id?: string | null
           body?: string | null
+          booked_appointment_id?: string | null
           campaign_id?: string | null
           channel?: Database["public"]["Enums"]["message_channel"]
+          clicked_at?: string | null
           client_id?: string | null
           cost_cents?: number
           created_at?: string
@@ -1602,6 +1608,13 @@ export type Database = {
           {
             foreignKeyName: "messages_appointment_id_fkey"
             columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_booked_appointment_id_fkey"
+            columns: ["booked_appointment_id"]
             isOneToOne: false
             referencedRelation: "appointments"
             referencedColumns: ["id"]

@@ -244,6 +244,7 @@ export default function Agendar({
   servicoInicial,
   profissionalInicial,
   ind,
+  volta = null,
   indicadaPor,
 }: {
   slug: string;
@@ -263,6 +264,8 @@ export default function Agendar({
   profissionalInicial: string | null;
   /** Token de `?ind=` (I-1) — repassado cru ao `POST book`, que confere e resolve sozinho. */
   ind: string | null;
+  /** Token de `?volta=` (`docs/95` E1), já conferido no servidor. Repassado ao `POST book`. */
+  volta?: string | null;
   /** I-4: primeiro nome de quem indicou, já resolvido no servidor. `null` = sem convite válido. */
   indicadaPor: string | null;
 }) {
@@ -615,6 +618,7 @@ export default function Agendar({
             address: endereco.trim() || undefined,
             website: website || undefined,
             ind: ind || undefined,
+            volta: volta || undefined,
             wantsSuggestedProduct: querLevarProduto,
           }),
         });

@@ -300,8 +300,8 @@ export default function RecuperarReceita({
                     ) : (
                       <a
                         href={
-                          linkWhatsApp(item.phone, textoDeVolta({ nome: item.name, servico: item.serviceName })) ??
-                          linkWhatsAppCompartilhar(textoDeVolta({ nome: item.name, servico: item.serviceName }))
+                          linkWhatsApp(item.phone, textoDeVolta({ nome: item.name, servico: item.serviceName, link: item.linkVolta })) ??
+                          linkWhatsAppCompartilhar(textoDeVolta({ nome: item.name, servico: item.serviceName, link: item.linkVolta }))
                         }
                         target="_blank"
                         rel="noreferrer"

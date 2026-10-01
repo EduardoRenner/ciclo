@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 
 import { ehDemonstracao, SLUGS_DE_VITRINE } from '@/core/tenants/demonstracao'
 import { AppError } from '@/server/http/errors'
-import { perfilPublico, quemIndicou } from '@/server/services/public-booking'
+import { abrirLinkDeVolta, perfilPublico, quemIndicou } from '@/server/services/public-booking'
 
 import Agendar from './agendar'
 import AlternadorDeExemplo from './alternador-de-exemplo'
@@ -49,10 +49,12 @@ export default async function PaginaAgendar({
   // `?ver=dono` é o CTA "Ver uma página de exemplo" da home apontando direto para a aba do painel
   // do dono — a prova do Motor de Ciclo, o argumento do `h1` da landing. Qualquer valor que não
   // seja `dono` cai no padrão de sempre ("cliente"), incluindo link antigo sem o parâmetro.
-  searchParams: Promise<{ ind?: string; servico?: string; profissional?: string; ver?: string }>
+  // `?volta=<token>` (`docs/95` E1): o link da mensagem do "Chamar". Marca a abertura e já traz o
+  // serviço; conferido no servidor como o `ind`.
+  searchParams: Promise<{ ind?: string; servico?: string; profissional?: string; ver?: string; volta?: string }>
 }) {
   const { slug } = await params
-  const { ind, servico, profissional, ver } = await searchParams
+  const { ind, servico, profissional, ver, volta } = await searchParams
 
   const perfil = await perfilPublico(slug).catch((erro: unknown) => {
     if (erro instanceof AppError && erro.code === 'NOT_FOUND') return null
@@ -63,7 +65,9 @@ export default async function PaginaAgendar({
   // I-4: a moldura de chegada. Nunca derruba a página — sem o nome, a tela é a de sempre.
   const indicadaPor = await quemIndicou(slug, ind).catch(() => null)
 
-  const servicoInicial = perfil.services.some((s) => s.id === servico) ? servico! : null
+  const doLink = await abrirLinkDeVolta(slug, volta)
+  const pedido = servico ?? doLink?.serviceId
+  const servicoInicial = perfil.services.some((s) => s.id === pedido) ? pedido! : null
   // `?profissional=` é o toque num rosto da seção "Quem atende", e passa pela mesma conferência
   // do `?servico=`: id de outro salão, ou de quem saiu da equipe, cai no comportamento padrão
   // ("Tanto faz") em vez de pré-selecionar alguém que não existe.
@@ -113,6 +117,7 @@ export default async function PaginaAgendar({
             servicoInicial={servicoInicial}
             profissionalInicial={profissionalInicial}
             ind={ind ?? null}
+            volta={doLink ? (volta ?? null) : null}
             indicadaPor={indicadaPor}
           />
         )
