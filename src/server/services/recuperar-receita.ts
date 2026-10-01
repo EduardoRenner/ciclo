@@ -5,6 +5,7 @@ import type { MessagingProvider } from '@/server/providers/messaging/types'
 import { WhatsAppCloudProvider } from '@/server/providers/messaging/whatsapp'
 import { quemRecuperar } from '@/core/ciclo/quem-recuperar'
 import type { MotivoPulado } from '@/core/ciclo/resumo-do-envio'
+import type { Classe, Perfil } from '@/core/crm/nota-do-cliente'
 import { enviarComFallback } from '@/server/services/mensageria'
 import { registrarEvento } from '@/server/services/product-events'
 import { AppError } from '@/server/http/errors'
@@ -31,6 +32,10 @@ export type ItemRecuperar = {
   lastCampaignAt: string | null
   /** `docs/95` E1: link pessoal de agendamento (com o serviço) que vai dentro do texto do "Chamar". */
   linkVolta?: string | null
+  /** `docs/95` E2/E3: nota, classe e perfil do cliente (`client_scores`); `null` = ainda sem nota. */
+  nota?: number | null
+  classe?: Classe | null
+  perfil?: Perfil | null
 }
 
 export type ListaRecuperar = {

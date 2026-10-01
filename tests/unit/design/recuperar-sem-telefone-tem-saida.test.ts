@@ -25,6 +25,8 @@ import { semComentarios } from '../../helpers/fonte'
  */
 const fonte = semComentarios(readFileSync(join(__dirname, '..', '..', '..', 'src/app/admin/recuperar/recuperar.tsx'), 'utf8'))
 
+const fonteFila = semComentarios(readFileSync(join(__dirname, '..', '..', '..', 'src/app/admin/recuperar/fila.tsx'), 'utf8'))
+
 const fonteRota = semComentarios(
   readFileSync(join(__dirname, '..', '..', '..', 'src/app/api/v1/cycle/recover/send/route.ts'), 'utf8'),
 )
@@ -40,6 +42,14 @@ describe('Recuperar: "Chamar" é o caminho padrão, com ou sem telefone', () => 
     expect(fonte).not.toMatch(/\/api\/v1\/cycle\/recover\/send/)
     // Controle positivo: a rota manual (o "Chamar") continua sendo chamada daqui.
     expect(fonte).toMatch(/\/api\/v1\/cycle\/recover\/manual/)
+  })
+
+  it('a fila de chamadas (docs/95 E2) também só chama pelo WhatsApp do dono, com o link de volta', () => {
+    expect(fonteFila).not.toMatch(/\/api\/v1\/cycle\/recover\/send/)
+    expect(fonteFila).toContain('linkWhatsApp(atual.phone, textoDeVolta(')
+    expect(fonteFila).toContain('link: atual.linkVolta')
+    // Quem pediu para não receber nem entra na fila.
+    expect(fonteFila).toMatch(/itens\.filter\(\(i\) => !i\.optOut\)/)
   })
 
   it('sem seleção em lote: nenhuma caixa de marcar e nenhuma barra flutuante de ação', () => {

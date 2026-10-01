@@ -1,4 +1,4 @@
-import { montarHistoricos, notasDoSalao } from '@/core/crm/nota-do-cliente'
+import { montarHistoricos, notasDoSalao, type Classe, type Perfil } from '@/core/crm/nota-do-cliente'
 import { buscarTudoPaginado } from '@/server/db/paginar'
 import { AppError } from '@/server/http/errors'
 
@@ -64,4 +64,28 @@ export async function recalcularNotasDoTenant(db: Cliente, tenantId: string, ago
   }
 
   return linhas.length
+}
+
+export type NotaResumida = { nota: number; classe: Classe; perfil: Perfil }
+
+/**
+ * `docs/95` E2: junta nota, classe e perfil aos itens da lista Recuperar, para a fila ordenar e
+ * filtrar. Uma ida ao banco para a lista toda. Cliente sem nota ainda fica com `null` nos três.
+ */
+export async function comNotas<T extends { clientId: string }>(
+  db: Cliente,
+  tenantId: string,
+  itens: T[],
+): Promise<(T & { nota: number | null; classe: Classe | null; perfil: Perfil | null })[]> {
+  const ids = [...new Set(itens.map((i) => i.clientId))]
+  const porCliente = new Map<string, NotaResumida>()
+  if (ids.length > 0) {
+    const { data, error } = await db.from('client_scores').select('client_id, score, tier, profile').eq('tenant_id', tenantId).in('client_id', ids)
+    if (error) throw new AppError('INTERNAL', { cause: error })
+    for (const l of data ?? []) porCliente.set(l.client_id, { nota: l.score, classe: l.tier as Classe, perfil: l.profile as Perfil })
+  }
+  return itens.map((i) => {
+    const n = porCliente.get(i.clientId)
+    return { ...i, nota: n?.nota ?? null, classe: n?.classe ?? null, perfil: n?.perfil ?? null }
+  })
 }
