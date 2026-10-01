@@ -5,14 +5,11 @@ import { Temporal } from '@js-temporal/polyfill'
 
 import { quandoVolta } from '@/core/ciclo/primeira-volta'
 import { algumEstadoFoiCalibrado } from '@/core/cycle/calibrar-probabilidade'
-import { podeUsarCapacidade } from '@/core/billing/planos'
-import { ehRequisicaoDoAppNativo } from '@/core/plataforma/nativo'
 import AlertBanner from '@/components/ui/alert-banner'
 import PageHeader from '@/components/ui/page-header'
 import { dinheiro } from '@/lib/formato'
 import { contextoDoPainel } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
-import { contextoDePlano } from '@/server/services/planos'
 import { resumoDoMotorDoTenant } from '@/server/services/previsao'
 import { medirMaterialDoCatalogo } from '@/server/services/ficha-de-consumo'
 import { listarParaRecuperar } from '@/server/services/recuperar-receita'
@@ -27,8 +24,6 @@ export default async function PaginaRecuperar() {
   const cabecalhos = await headers()
   const ctx = await contextoDoPainel(new Request('https://interno/recuperar', { headers: cabecalhos }))
   const db = await criarClienteDoUsuario()
-  // T1.5 (docs/64 §0.2): a versão nativa não pode oferecer caminho pra pagar.
-  const nativo = ehRequisicaoDoAppNativo(cabecalhos.get('user-agent'))
 
   // `docs/28` §8: o `timezone` chega no contexto, sem segunda ida ao banco.
   const timezone = ctx.tenant.timezone
@@ -48,10 +43,9 @@ export default async function PaginaRecuperar() {
    * São `head: true` com `count: 'exact'`: não trazem linha nenhuma, só o número, e vão no mesmo
    * `Promise.all` que já existia — custo de latência zero contra o que a tela já pagava.
    */
-  const [lista, atribuicao, plano, clientes, ciclos, concluidos, resumoDoMotor, material, proximo] = await Promise.all([
+  const [lista, atribuicao, clientes, ciclos, concluidos, resumoDoMotor, material, proximo] = await Promise.all([
     listarParaRecuperar(db, ctx.tenantId),
     receitaAtribuidaAoCiclo(db, ctx.tenantId, timezone, desde, ate),
-    contextoDePlano(db, ctx.tenantId),
     db.from('clients').select('id', { count: 'exact', head: true }).eq('tenant_id', ctx.tenantId).is('deleted_at', null),
     db.from('client_cycles').select('client_id', { count: 'exact', head: true }).eq('tenant_id', ctx.tenantId),
     /*
@@ -95,10 +89,6 @@ export default async function PaginaRecuperar() {
       .maybeSingle(),
   ])
 
-  // A tela precisa saber para desenhar o caminho certo; quem RECUSA é a rota (§L.1). Aqui é
-  // desenho, não segurança.
-  const podeEnviarEmLote = podeUsarCapacidade(plano, 'envio_em_lote').estado === 'liberado'
-
   return (
     <>
       {/*
@@ -133,8 +123,6 @@ export default async function PaginaRecuperar() {
 
       <RecuperarReceita
         inicial={lista}
-        nativo={nativo}
-        podeEnviarEmLote={podeEnviarEmLote}
         temClientes={(clientes.count ?? 0) > 0}
         temCiclos={(ciclos.count ?? 0) > 0}
         temAtendimentosConcluidos={(concluidos.count ?? 0) > 0}

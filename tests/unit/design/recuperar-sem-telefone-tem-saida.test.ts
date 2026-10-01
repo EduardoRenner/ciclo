@@ -18,6 +18,10 @@ import { semComentarios } from '../../helpers/fonte'
  *    caminho padrão para TODO mundo, com ou sem telefone — o "Avisar" por linha (que mandava pelo
  *    número pago do CICLO) foi removido. `enviar([item])` não pode voltar a existir: é o sintoma
  *    de a ação de uma pessoa só voltar a custar dinheiro por mensagem.
+ * 3. (`docs/95` E0, 2026-09-30) A seleção em lote saiu da tela. O `wa.me` abre UMA conversa por
+ *    toque, então "vários de uma vez" pelo WhatsApp do dono não existe sem API; e o botão de lote
+ *    (número do CICLO) não entregava nada em produção, sem canal configurado. A rota e a
+ *    capacidade `envio_em_lote` ficam no servidor para quando houver canal oficial.
  */
 const fonte = semComentarios(readFileSync(join(__dirname, '..', '..', '..', 'src/app/admin/recuperar/recuperar.tsx'), 'utf8'))
 
@@ -31,11 +35,16 @@ describe('Recuperar: "Chamar" é o caminho padrão, com ou sem telefone', () => 
     expect(fonte).toContain('linkWhatsAppCompartilhar(textoDeVolta(')
   })
 
-  it('o envio por item nunca volta a custar dinheiro por mensagem: sem enviar([item]) no arquivo', () => {
-    // Mutação: reintroduzir `enviar([item])` em qualquer lugar do arquivo tem que reprovar aqui.
-    expect(fonte).not.toContain('enviar([item])')
-    // O único chamador de `enviar` continua sendo o botão de lote (pago), com a lista inteira.
-    expect(fonte.match(/\benviar\(itensSelecionados\)/g)?.length).toBe(1)
+  it('a tela não manda pelo número do CICLO: nenhuma chamada à rota de envio em lote', () => {
+    // Casa com a URL da rota, que é o que volta junto com qualquer botão de lote pago.
+    expect(fonte).not.toMatch(/\/api\/v1\/cycle\/recover\/send/)
+    // Controle positivo: a rota manual (o "Chamar") continua sendo chamada daqui.
+    expect(fonte).toMatch(/\/api\/v1\/cycle\/recover\/manual/)
+  })
+
+  it('sem seleção em lote: nenhuma caixa de marcar e nenhuma barra flutuante de ação', () => {
+    expect(fonte).not.toMatch(/type="checkbox"/)
+    expect(fonte).not.toMatch(/<ActionBar\b/)
   })
 
   it('quem pediu para não receber não ganha "Chamar", com ou sem telefone', () => {
@@ -50,13 +59,6 @@ describe('Recuperar: "Chamar" é o caminho padrão, com ou sem telefone', () => 
     const ramoChamar = fonte.slice(fimDoRamo, fonte.indexOf(')}', fonte.indexOf('</a>', fimDoRamo)))
     expect(ramoChamar).toContain('anotarChamada(item)')
     expect(ramoChamar).toContain('linkWhatsApp(item.phone')
-  })
-
-  it('marcar até UMA cliente e tocar na barra já pede o plano — não só marcar mais de uma', () => {
-    // Era `itensSelecionados.length > 1`: sobrava um envio grátis pelo sistema pago escondido
-    // atrás do checkbox, driblando o "Chamar" que devia ser o único caminho grátis.
-    expect(fonte).toContain('!podeEnviarEmLote && itensSelecionados.length > 0')
-    expect(fonte).not.toContain('itensSelecionados.length > 1')
   })
 
   it('a rota que manda pelo número do CICLO exige o plano sempre, não só a partir de 2 itens', () => {

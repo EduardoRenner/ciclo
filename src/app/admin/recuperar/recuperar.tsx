@@ -1,12 +1,10 @@
 'use client'
 
-import { RefreshCw, Send } from 'lucide-react'
+import { RefreshCw } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
 
-import ActionBar from '@/components/ui/action-bar'
-import BloqueioPlano from '@/components/ui/bloqueio-plano'
 import { useVocabulario } from '@/components/shell/vocabulario'
 import { comMaiuscula, plural } from '@/core/text/vocabulario'
 import Button from '@/components/ui/button'
@@ -24,7 +22,6 @@ import { dinheiro } from '@/lib/formato'
 import { cn } from '@/lib/utils'
 
 import { recorteDaLista } from '@/core/ciclo/recorte-da-lista'
-import { resumoDoEnvio } from '@/core/ciclo/resumo-do-envio'
 import { vazioDeRecuperar } from '@/core/ciclo/vazio-de-recuperar'
 
 import type { ItemRecuperar, ListaRecuperar } from '@/server/services/recuperar-receita'
@@ -52,8 +49,6 @@ function chave(item: Pick<ItemRecuperar, 'clientId' | 'serviceId'>): string {
 
 export default function RecuperarReceita({
   inicial,
-  podeEnviarEmLote,
-  nativo,
   temClientes,
   temCiclos,
   temAtendimentosConcluidos,
@@ -61,9 +56,6 @@ export default function RecuperarReceita({
   servicosSemMaterial,
 }: {
   inicial: ListaRecuperar
-  podeEnviarEmLote: boolean
-  /** T1.5 (docs/64 §0.2) — calculado no servidor (`page.tsx`), repassado pro `BloqueioPlano`. */
-  nativo: boolean
   /**
    * Quantos serviços ativos ainda não têm material confiável. A frase abaixo promete que o lucro
    * é "o que sobra depois da comissão e do produto" — e depois da 0069 o produto vale zero até o
@@ -90,13 +82,9 @@ export default function RecuperarReceita({
   const [filtro, setFiltro] = useState<Estado | 'all'>('all')
   const [lista, setLista] = useState(inicial)
   const [carregando, setCarregando] = useState(false)
-  const [selecionados, setSelecionados] = useState<Set<string>>(new Set())
-  const [enviando, setEnviando] = useState(false)
-  const [aviso, setAviso] = useState<string | null>(null)
 
   async function trocarFiltro(valor: Estado | 'all') {
     setFiltro(valor)
-    setSelecionados(new Set())
     setCarregando(true)
     try {
       const qs = valor === 'all' ? '' : `?state=${valor}`
@@ -112,49 +100,6 @@ export default function RecuperarReceita({
       if (json.data) setLista(json.data)
     } finally {
       setCarregando(false)
-    }
-  }
-
-  function alternar(item: ItemRecuperar) {
-    setSelecionados((atual) => {
-      const proximo = new Set(atual)
-      const k = chave(item)
-      if (proximo.has(k)) proximo.delete(k)
-      else proximo.add(k)
-      return proximo
-    })
-  }
-
-  async function enviar(itens: ItemRecuperar[]) {
-    if (itens.length === 0) return
-    setEnviando(true)
-    setAviso(null)
-    try {
-      const r = await fetch('/api/v1/cycle/recover/send', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
-        body: JSON.stringify({
-          items: itens.map((i) => ({ clientId: i.clientId, serviceId: i.serviceId })),
-          mode: 'template',
-        }),
-      })
-      /*
-       * Sem checar `r.ok`, uma falha (401/500) caía nos mesmos `??` de baixo e virava
-       * `resumoDoEnvio(0, [])` — a MESMA frase de "não tinha ninguém pra mandar", quando na
-       * verdade a requisição nem foi processada. A pessoa lia como se tivesse dado certo e não
-       * tentava de novo.
-       */
-      if (!r.ok) {
-        const corpo = (await r.json().catch(() => null)) as { error?: { message?: string } } | null
-        mostrarToast({ tom: 'erro', titulo: 'Não consegui enviar', descricao: corpo?.error?.message ?? 'Tente de novo.' })
-        return
-      }
-      const json = (await r.json()) as { data?: { queued: number; skipped: { clientId: string; reason: string }[] } }
-      setAviso(resumoDoEnvio(json.data?.queued ?? 0, (json.data?.skipped ?? []).map((s) => s.reason)))
-      setSelecionados(new Set())
-      await trocarFiltro(filtro)
-    } finally {
-      setEnviando(false)
     }
   }
 
@@ -186,32 +131,9 @@ export default function RecuperarReceita({
   }
 
   const recorte = recorteDaLista(lista.count, lista.items.length)
-  const itensSelecionados = lista.items.filter((i) => selecionados.has(chave(i)))
-  /*
-    Decisão de 2026-09-23 (`docs/82` §11): esta barra só faz uma coisa — mandar pelo número do
-    CICLO, que é dinheiro real por mensagem. O caminho grátis, um a um, para sempre, é "Chamar" em
-    cada linha (o WhatsApp do PRÓPRIO dono) e não passa por aqui — então marcar até uma cliente e
-    tocar nesta barra já é pedir o recurso pago, com ou sem plano. Era `> 1`, de quando esta rota
-    era o único jeito de avisar alguém.
-  */
-  const bloqueado = !podeEnviarEmLote && itensSelecionados.length > 0
-  const valorSelecionadoCents = itensSelecionados.reduce((soma, i) => soma + i.valueCents, 0)
 
-  /*
-    A folga do fim da lista, quando a barra flutuante aparece.
-
-    MEDIDO em 2026-09-09, a 390px: a `ActionBar` e `fixed` em
-    `bottom: tabbar + 12px` e tem 70px de altura propria, entao o topo dela fica a 146px do fundo
-    da tela. O `pb` do layout do admin reserva `tabbar + 28` = 92px. Sobram ~54px de lista
-    passando POR BAIXO da barra, e a barra e quase opaca (`bg-surface/95` com desfoque).
-
-    `ficha.tsx` ja tinha topado com isto e resolvido com `pb-20`, com o motivo escrito — mas so
-    para ela. Aqui a barra e condicional (so com selecao), entao a folga tambem e: sem selecao
-    nao ha barra e o espaco vazio seria desperdicio. Padding no FIM nao move o que esta acima,
-    entao ligar a folga junto com a barra nao empurra a lista.
-  */
   return (
-    <div className={itensSelecionados.length > 0 ? 'pb-20' : undefined}>
+    <div>
       {/*
         O número era "Valor parado" e ninguém tinha como entendê-lo: §5.3 define
         valor em risco como `preço do serviço × chance de recuperação por
@@ -293,7 +215,6 @@ export default function RecuperarReceita({
       */}
       {!carregando && recorte ? <p className="mb-3 text-secundario text-txt-2">{recorte}</p> : null}
 
-      {aviso ? <p className="mb-4 rounded-[var(--radius-sm)] bg-acc-soft p-3 text-secundario text-txt">{aviso}</p> : null}
 
 
       {carregando ? (
@@ -325,21 +246,9 @@ export default function RecuperarReceita({
         <ul className="flex flex-col gap-2">
           {lista.items.map((item) => {
             const k = chave(item)
-            const marcada = selecionados.has(k)
             return (
               <li key={k}>
-                <Card className={cn('flex items-center gap-3', marcada && 'border-acc-2')}>
-                  {/* O quadradinho tem 20px; quem precisa de 48px é o dedo.
-                      O rótulo em volta é a área de toque, sem engordar o desenho. */}
-                  <label className="-my-2 -ml-1.5 grid size-12 shrink-0 cursor-pointer place-items-center">
-                    <span className="sr-only">{`Selecionar ${item.name}`}</span>
-                    <input
-                      type="checkbox"
-                      checked={marcada}
-                      onChange={() => alternar(item)}
-                      className="size-5 accent-[var(--acc-2)]"
-                    />
-                  </label>
+                <Card className="flex items-center gap-3">
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-corpo font-semibold">{item.name}</p>
                     <p className="truncate text-secundario text-txt-2">
@@ -372,8 +281,10 @@ export default function RecuperarReceita({
                       "Avisar" — a mensagem saía pelo número do CICLO, categoria marketing paga por
                       mensagem (~R$0,31), sem teto nenhum no plano Grátis, e chegava de um número que
                       a cliente não conhece. "Avisar pelo sistema" continua existindo, mas só como a
-                      alavanca PAGA de chamar todo mundo de uma vez (`ActionBar` mais abaixo,
-                      `envio_em_lote`) — nunca mais como a ação de um clique por pessoa.
+                      alavanca PAGA de chamar todo mundo de uma vez (rota `recover/send`,
+                      `envio_em_lote`) — e, desde `docs/95` E0, sem botão nesta tela: o `wa.me` abre
+                      uma conversa por toque, então não existe "vários de uma vez" sem API, e um
+                      botão de lote sem canal configurado prometia um envio que não sai.
 
                       Opt-out bloqueia os dois caminhos igual: quem pediu para não receber não pode
                       ganhar nem o "Avisar" pelo sistema nem o "Chamar" manual (o servidor também
@@ -409,52 +320,6 @@ export default function RecuperarReceita({
         </ul>
       )}
 
-      {/*
-        §3.2 manda a ação primária no terço inferior da tela. O botão de enviar
-        nascia acima da lista: a pessoa marcava sete clientes, rolava para
-        conferir, e perdia de vista o botão que age sobre a seleção.
-      */}
-      <ActionBar visivel={itensSelecionados.length > 0}>
-        {bloqueado ? (
-          /*
-            §M.1: a peça de conversão mais importante do produto aparece AQUI, no momento em que
-            ela marcou clientes e tocou para avisar pelo sistema — não numa página de preço que ela
-            teria de ir procurar. Por isso leva o número e o valor DELA, e por isso o caminho
-            grátis (o botão "Chamar" de cada linha, sem marcar nada) fica escrito e continua
-            valendo — só que agora ele é a resposta pra QUALQUER seleção, não só pra mais de uma.
-
-            Sem as bordas próprias: a ActionBar já é o cartão.
-          */
-          <BloqueioPlano
-            nativo={nativo}
-            className="border-0 bg-transparent p-1 shadow-none"
-            precisaDo="essencial"
-            acao="avisar pelo sistema, sem abrir o WhatsApp"
-            evidencia={{
-              quantidade: itensSelecionados.length,
-              substantivo: 'na lista, esperando para voltar',
-              valorCents: valorSelecionadoCents,
-            }}
-            alternativa={
-              <button type="button" onClick={() => setSelecionados(new Set())}>
-                Chame pelo seu WhatsApp, de graça, tocando em &ldquo;Chamar&rdquo; em cada linha
-              </button>
-            }
-          />
-        ) : (
-          <Button
-            largura="cheia"
-            carregando={enviando}
-            onClick={() => enviar(itensSelecionados)}
-            // `tabIndex` acompanha a visibilidade: barra escondida não pode ser
-            // alcançada pelo teclado nem lida pelo leitor de tela.
-            tabIndex={itensSelecionados.length > 0 ? undefined : -1}
-          >
-            <Send aria-hidden className="size-4" />
-            {`Avisar ${itensSelecionados.length}`}
-          </Button>
-        )}
-      </ActionBar>
     </div>
   )
 }
