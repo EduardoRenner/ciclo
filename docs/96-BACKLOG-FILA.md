@@ -35,12 +35,12 @@ Legenda: `[ ]` a fazer · `[~]` em andamento · `[x]` no ar (com o nº do PR).
 - [x] E3.3 Nota, classe e perfil na lista e na fila (#139); na ficha, com o porquê parte por parte (verificado no navegador a 390 px).
 
 ## E4 · Biblioteca de mensagens
-- [ ] E4.1 Tabela `message_variants` (global ou do salão; segmento; perfil; serviço; texto).
+- [x] E4.1 Biblioteca no código (`core/mensageria/biblioteca-de-volta.ts`): 5 versões, duas por perfil, sorteio fixo por cliente. Tabela de variantes do salão fica para quando o dono editar (E4.2).
 - [ ] E4.2 Textos prontos por nicho × serviço × perfil; editar vira variante própria.
 - [ ] E4.3 Pré-visualização = envio (mesma função); variável vazia bloqueia o texto.
 
 ## E5 · Medição
-- [ ] E5.1 Tabela `call_attempts` (variante, perfil, nota, hora local, dia da semana, resultado).
+- [x] E5.1 A chamada (`messages`, 0101) guarda versão do texto, nota e perfil do momento; hora e dia saem de `sent_at`. **0101 aplicada só no local: falta produção.**
 - [ ] E5.2 Funil chamado → abriu → agendou → compareceu → valor, por texto, hora, perfil, cliente,
       serviço e profissional, sempre com amostra.
 
