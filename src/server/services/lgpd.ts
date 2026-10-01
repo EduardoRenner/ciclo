@@ -161,6 +161,11 @@ export const TRATAMENTO_NA_ELIMINACAO: Record<string, Record<string, string>> = 
     error: 'redige',
     template: 'preserva', // nome do modelo, não conteúdo
     provider_id: 'preserva', // id do provedor, necessário para conciliar entrega
+    variant_key: 'preserva', // qual texto da biblioteca saiu; é do salão, não da pessoa (docs/95 E4)
+    // Nota e perfil do momento da chamada (0101) são perfilamento da pessoa: somem com ela. A nota
+    // (`score_at_send`) é número e fica fora desta lista, que só cobre texto, mas é zerada junto no
+    // mesmo `update` da eliminação.
+    profile_at_send: 'redige',
   },
   quotes: {
     message: 'redige', // texto escrito para quem é atendido
@@ -370,7 +375,7 @@ export async function eliminarCliente(db: Cliente, tenantId: string, clientId: s
 
   const mensagens = await db
     .from('messages')
-    .update({ body: null, error: null })
+    .update({ body: null, error: null, profile_at_send: null, score_at_send: null })
     .eq('tenant_id', tenantId)
     .eq('client_id', clientId)
     .select('id')
