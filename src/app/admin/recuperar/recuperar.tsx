@@ -300,7 +300,7 @@ export default function RecuperarReceita({
               setClasses([])
               setPerfis([])
             }}
-            className="mt-2 h-10 text-label font-semibold text-acc-2"
+            className="toque-48 mt-2 h-10 text-label font-semibold text-acc-2"
           >
             Tirar os filtros
           </button>
