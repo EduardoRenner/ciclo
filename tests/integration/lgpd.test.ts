@@ -121,6 +121,12 @@ async function clienteCompleto(nome: string) {
       .from('client_cycles')
       .insert({ tenant_id: tenantId, client_id: clientId, service_id: servico.data.id, personal_cycle_days: 21, state: 'late', late_days: 5 })
     if (ciclo.error) throw ciclo.error
+
+    // `docs/95` E3: a nota do cliente (perfilamento) também tem que sumir na eliminação.
+    const nota = await svc
+      .from('client_scores')
+      .insert({ tenant_id: tenantId, client_id: clientId, score: 55, tier: 'prata', profile: 'regular', parts: [], algo_version: 1 })
+    if (nota.error) throw nota.error
   }
 
   return { clientId, mediaId: media.id, storageKey: media.storage_key }
@@ -157,6 +163,7 @@ describe('eliminarCliente', () => {
       // BL-48: a previsão do Motor de Ciclo some junto — sem isto, "Cliente eliminada" continuava
       // "atrasada para voltar" para sempre, recalculada toda madrugada pelo job.
       expect(resultado.rowsRemoved.client_cycles).toBe(1)
+      expect(resultado.rowsRemoved.client_scores).toBe(1)
 
       const saude = await svc.from('health_records').select('id').eq('tenant_id', tenantId).eq('client_id', clientId).maybeSingle()
       expect(saude.data).toBeNull()
@@ -192,6 +199,9 @@ describe('eliminarCliente', () => {
 
       const ciclos = await svc.from('client_cycles').select('service_id').eq('client_id', clientId)
       expect(ciclos.data ?? []).toHaveLength(0)
+
+      const nota = await svc.from('client_scores').select('score').eq('client_id', clientId)
+      expect(nota.data ?? []).toHaveLength(0)
 
       // O consentimento sobrevive (art. 16, III: prova de que houve permissão); o rastro pessoal não.
       const consentimento = await svc.from('consents').select('granted, version, ip, user_agent').eq('client_id', clientId).maybeSingle()
