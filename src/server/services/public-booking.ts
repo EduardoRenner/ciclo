@@ -20,6 +20,7 @@ import { lerSite } from '@/server/services/site'
 import { normalizarTelefoneBR } from '@/server/services/telefone'
 import { criarAgendamento } from '@/server/services/agendamentos'
 import { verificarTokenIndicacao } from '@/server/services/indicacao'
+import { lerTokenDeVolta, registrarAberturaDoLinkDeVolta, registrarAgendamentoPeloLinkDeVolta } from '@/server/services/link-de-volta'
 import { notificarEquipe } from '@/server/services/mensageria'
 import { registrarEvento } from '@/server/services/product-events'
 import { gerarTokenReconhecimento } from '@/server/services/reconhecimento'
@@ -551,6 +552,9 @@ export const EsquemaBookingPublico = z.object({
   // `criarAgendamentoPublico`, não do schema. Um token inválido nunca vira erro de validação:
   // vira, na pior das hipóteses, um agendamento sem indicação.
   ind: z.string().trim().nullish(),
+  // `docs/95` E1: token de `?volta=`, o link que vai dentro da mensagem do "Chamar". Mesma regra do
+  // `ind`: inválido, vencido ou de outro salão nunca vira erro, só um agendamento sem atribuição.
+  volta: z.string().trim().nullish(),
   // 0091: a cliente marcou que quer o produto sugerido para este serviço. Não cobra nada aqui —
   // vira uma nota pro profissional lançar na comanda de verdade, se ainda fizer sentido no dia.
   wantsSuggestedProduct: z.boolean().default(false),
@@ -651,6 +655,36 @@ export async function criarAgendamentoPublico(slug: string, entrada: z.input<typ
      * chega ao navegador de quem ACABOU de provar, agendando, que este telefone é dele; fica só
      * no `localStorage`, nunca em cookie nem em URL (`reconhecimento.ts` explica por quê).
      */
+    // `docs/95` E1: atribuição por clique. Melhor esforço, como o push: falhar aqui não pode
+    // derrubar o agendamento que acabou de nascer.
+    const volta = lerTokenDeVolta(entrada.volta)
+    if (volta && volta.tenantId === tenant.id) {
+      await registrarAgendamentoPeloLinkDeVolta(svc, volta, agendamento.id).catch((erro: unknown) => {
+        console.error(JSON.stringify({ level: 'error', event: 'link_de_volta_agendamento_falhou', tenantId: tenant.id }), erro)
+      })
+    }
+
     return { appointmentId: agendamento.id, reconhecimentoToken: gerarTokenReconhecimento(tenant.id, telefone) }
   })
+}
+
+/**
+ * `docs/95` E1: a página `/{slug}/agendar?volta=` chama isto ao abrir. Devolve o serviço do link
+ * (para já vir escolhido) e marca a abertura na chamada. Token de outro salão é ignorado. Nunca
+ * lança: link quebrado vira a página de agendamento de sempre.
+ */
+export async function abrirLinkDeVolta(slug: string, token: string | null | undefined): Promise<{ serviceId: string } | null> {
+  const alvo = lerTokenDeVolta(token)
+  if (!alvo) return null
+  try {
+    return await withNovoTenant(async (svc) => {
+      const tenant = await tenantPeloSlug(svc, slug)
+      if (tenant.id !== alvo.tenantId) return null
+      await registrarAberturaDoLinkDeVolta(svc, alvo)
+      return { serviceId: alvo.serviceId }
+    })
+  } catch (erro) {
+    console.error(JSON.stringify({ level: 'error', event: 'link_de_volta_abertura_falhou' }), erro)
+    return null
+  }
 }
