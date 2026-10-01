@@ -433,9 +433,13 @@ describe('preparar_chamada_de_volta — o "resolve" do assistente (docs/84 P2)',
 })
 
 describe('link de volta: clique e agendamento na mensagem do "Chamar" (docs/95 E1)', () => {
+  let horarioDoTeste = 0
+
   async function agendamentoDe(clientId: string) {
     const { data: prof } = await svc.from('professionals').select('id').eq('tenant_id', tenantId).limit(1).single()
-    const inicio = Temporal.Now.instant().add({ hours: 48 })
+    // Um horário por chamada: o mesmo profissional no mesmo horário bate na `appointments_no_overlap`.
+    horarioDoTeste += 2
+    const inicio = Temporal.Now.instant().add({ hours: 48 + horarioDoTeste })
     const { data, error } = await svc
       .from('appointments')
       .insert({

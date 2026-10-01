@@ -47,7 +47,7 @@ export async function processarMensagemRecebida(db: Cliente, evento: MensagemRec
    */
   const { data: candidatos, error } = await db
     .from('messages')
-    .select('tenant_id, appointment_id, sent_at, clients!inner(phone_e164), appointments!inner(status)')
+    .select('tenant_id, appointment_id, sent_at, clients!inner(phone_e164), appointments!messages_appointment_id_fkey!inner(status)')
     .eq('channel', 'whatsapp')
     .in('kind', ['reminder', 'confirmation'])
     .eq('clients.phone_e164', telefone)
