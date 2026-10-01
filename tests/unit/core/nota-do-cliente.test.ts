@@ -108,6 +108,16 @@ describe('nota do salão', () => {
     expect(porId.faltoso!.perfil).toBe('sumido')
   })
 
+  it('quem nunca foi atendido não ganha ponto "neutro" de regularidade nem de recência', () => {
+    const [n] = notasDoSalao([cliente({ clientId: 'x', cadastradoHaDias: 3 })])
+    const pontos = Object.fromEntries(n!.partes.map((p) => [p.componente, p.pontos]))
+    expect(pontos.valor).toBe(0)
+    expect(pontos.frequencia).toBe(0)
+    expect(pontos.regularidade).toBe(0)
+    expect(pontos.recencia).toBe(0)
+    expect(n!.classe).toBe('bronze')
+  })
+
   it('mesma entrada, mesma nota (determinística, sem relógio nem sorteio)', () => {
     expect(notasDoSalao(salao)).toEqual(notasDoSalao(salao))
   })
