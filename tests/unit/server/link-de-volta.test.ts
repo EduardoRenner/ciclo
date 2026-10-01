@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto'
 import { describe, expect, it, vi } from 'vitest'
 
 import { gerarTokenIndicacao } from '@/server/services/indicacao'
+import { gerarTokenAssinado } from '@/server/services/token-assinado'
 import { comLinksDeVolta, gerarTokenDeVolta, lerTokenDeVolta, urlDoLinkDeVolta } from '@/server/services/link-de-volta'
 
 // Segredo por parâmetro, nunca pelo ambiente: arquivos de teste compartilham `process.env`.
@@ -18,7 +19,12 @@ describe('link de volta (docs/95 E1)', () => {
     expect(lerTokenDeVolta(gerarTokenDeVolta(a, SEGREDO), SEGREDO)).toEqual(a)
   })
 
-  it('token de outra família (indicação) não é aceito como link de volta', () => {
+  it('token de outra família não é aceito como link de volta, mesmo com o id no formato certo', () => {
+    // Com o id no MESMO formato (tenant~cliente~serviço), quem barra é só o escopo. Um token de
+    // indicação comum (id = um uuid só) cairia pela contagem de partes e deixaria o escopo sem teste.
+    const a = alvo()
+    const mesmoFormato = gerarTokenAssinado('indicacao', [a.tenantId, a.clientId, a.serviceId].join('~'), 24, SEGREDO)
+    expect(lerTokenDeVolta(mesmoFormato, SEGREDO)).toBeNull()
     expect(lerTokenDeVolta(gerarTokenIndicacao(randomUUID(), SEGREDO), SEGREDO)).toBeNull()
   })
 
