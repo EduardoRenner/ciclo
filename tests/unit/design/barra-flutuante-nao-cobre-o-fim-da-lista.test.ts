@@ -44,8 +44,8 @@ const USAM_A_BARRA = [...telas('src/app/admin'), ...telas('src/components')].fil
 describe('quem usa a barra flutuante reserva espaço embaixo', () => {
   it('a varredura acha as telas — não passa por não ter olhado nada', () => {
     expect(USAM_A_BARRA.length, 'nenhuma tela usa `<ActionBar` — a varredura cegou').toBeGreaterThan(0)
-    // O positivo conhecido: as duas de 2026-09-09. Se uma sair da lista, foi por mudança real.
-    expect(USAM_A_BARRA).toContain('src/app/admin/recuperar/recuperar.tsx')
+    // O positivo conhecido: a ficha (2026-09-09). A Recuperar saiu da lista em `docs/95` E0,
+    // quando a seleção em lote foi removida da tela.
     expect(USAM_A_BARRA).toContain('src/app/admin/clientes/[id]/ficha.tsx')
   })
 
