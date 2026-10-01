@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 
+import { Temporal } from '@js-temporal/polyfill'
 import { createClient } from '@supabase/supabase-js'
 import dotenv from 'dotenv'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
@@ -167,7 +168,10 @@ describe('recalcularSegmentosDoTenant + listarClientesPorSegmento', () => {
   it(
     'aniversariante: nasceu neste mês, em qualquer ano',
     async () => {
-      const mesAtual = String(new Date().getMonth() + 1).padStart(2, '0')
+      // O mês do FUSO DO SALÃO (0048 calcula o aniversariante nele), não o do processo: no CI
+      // (UTC), entre 21h e meia-noite de Brasília do último dia do mês, `new Date().getMonth()` já
+      // era o mês seguinte e o aniversariante plantado não aparecia (30/09/2026, 21h58).
+      const mesAtual = String(Temporal.Now.plainDateISO(TZ).month).padStart(2, '0')
       const aniversariante = await criarCliente('Faz Aniver Este Mês', `1990-${mesAtual}-15`)
       const naoAniversariante = await criarCliente('Não Faz Aniver Agora', '1990-01-01')
 
