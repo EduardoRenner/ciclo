@@ -4,6 +4,7 @@ import {
   PESOS,
   atrasoRelativo,
   classeDaNota,
+  lerPartes,
   montarHistoricos,
   notasDoSalao,
   percentil,
@@ -168,5 +169,15 @@ describe('montarHistoricos: o que conta como visita, falta e cancelamento em cim
     expect(h!.ritmoDias).toBe(20)
     expect(h!.indicou).toBe(1)
     expect(h!.cadastradoHaDias).toBe(400)
+  })
+})
+
+describe('lerPartes: o que vem do banco', () => {
+  it('aceita o que a conta grava e descarta o resto sem lançar', () => {
+    const [n] = notasDoSalao([cliente({ clientId: 'x', visitas: visitas(3, 20, 5), ritmoDias: 20 })])
+    expect(lerPartes(JSON.parse(JSON.stringify(n!.partes)))).toEqual(n!.partes)
+    expect(lerPartes(null)).toEqual([])
+    expect(lerPartes('texto')).toEqual([])
+    expect(lerPartes([{ componente: 'inventado', pontos: 1, maximo: 2, motivo: 'x' }, { componente: 'valor', pontos: '3' }])).toEqual([])
   })
 })

@@ -22,7 +22,7 @@ Legenda: `[ ]` a fazer · `[~]` em andamento · `[x]` no ar (com o nº do PR).
 - [ ] E1.6 Assistente ("resolve") também mandar o link (precisa do slug no contexto da ferramenta).
 
 ## E2 · Fila de chamadas
-- [x] E2.1 Modo fila na tela Recuperar: um cliente por vez; Chamar, Já falei, Pular hoje (verificado no navegador a 390 px).
+- [x] E2.1 (#139) Modo fila na tela Recuperar: um cliente por vez; Chamar, Já falei, Pular hoje (verificado no navegador a 390 px).
 - [ ] E2.4 "Não chamar mais" (precisa do opt-out do WhatsApp no PATCH de cliente) e "VIP" (etiqueta; seguro depois do #138).
 - [x] E2.2 Ordenar por prioridade (lucro × nota), lucro, nota, atraso e nome; filtrar por classe e perfil.
 - [ ] E2.5 Ordenar/filtrar também por ticket, última visita, nº de visitas, serviço, profissional e "não chamado nesta semana".
@@ -31,7 +31,7 @@ Legenda: `[ ]` a fazer · `[~]` em andamento · `[x]` no ar (com o nº do PR).
 ## E3 · Perfil e nota do cliente
 - [x] E3.1 Função pura `notaDoCliente` (0–100, componentes à vista) e `perfilDoCliente` em `src/core/`.
 - [x] E3.2 Tabela `client_scores` (estado atual por cliente, com versão do algoritmo; 0100 aplicada em produção) e cálculo diário na rotina de segmentos.
-- [~] E3.3 Nota, classe e perfil aparecem na lista e na fila. Falta a ficha do cliente com o porquê (partes da conta).
+- [x] E3.3 Nota, classe e perfil na lista e na fila (#139); na ficha, com o porquê parte por parte (verificado no navegador a 390 px).
 
 ## E4 · Biblioteca de mensagens
 - [ ] E4.1 Tabela `message_variants` (global ou do salão; segmento; perfil; serviço; texto).

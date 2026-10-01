@@ -275,3 +275,28 @@ export function montarHistoricos(
   }
   return [...porCliente.values()]
 }
+
+/** Como cada parte da conta aparece para o dono. */
+export const ROTULO_DO_COMPONENTE: Record<Componente, string> = {
+  valor: 'Quanto gasta',
+  frequencia: 'Quantas vezes vem',
+  regularidade: 'Regularidade',
+  presenca: 'Presença',
+  recencia: 'Em dia com o ritmo',
+  vinculo: 'Tempo de casa e indicações',
+}
+
+/**
+ * Lê as partes gravadas em `client_scores.parts` (jsonb). O banco não garante o formato, então o
+ * que não tiver a forma de uma parte é descartado em vez de quebrar a ficha.
+ */
+export function lerPartes(bruto: unknown): ParteDaNota[] {
+  if (!Array.isArray(bruto)) return []
+  return bruto.flatMap((p: unknown) => {
+    if (typeof p !== 'object' || p === null) return []
+    const { componente, pontos, maximo, motivo } = p as Record<string, unknown>
+    if (typeof componente !== 'string' || !(componente in PESOS)) return []
+    if (typeof pontos !== 'number' || typeof maximo !== 'number' || typeof motivo !== 'string') return []
+    return [{ componente: componente as Componente, pontos, maximo, motivo }]
+  })
+}
