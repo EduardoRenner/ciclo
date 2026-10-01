@@ -22,9 +22,13 @@ import { dinheiro } from '@/lib/formato'
 import { cn } from '@/lib/utils'
 
 import { recorteDaLista } from '@/core/ciclo/recorte-da-lista'
+import { CRITERIOS, ROTULO_DO_CRITERIO, filtrarFila, ordenarFila, type Criterio } from '@/core/ciclo/fila-de-chamadas'
+import { ROTULO_DA_CLASSE, ROTULO_DO_PERFIL, type Classe, type Perfil } from '@/core/crm/nota-do-cliente'
 import { vazioDeRecuperar } from '@/core/ciclo/vazio-de-recuperar'
 
 import type { ItemRecuperar, ListaRecuperar } from '@/server/services/recuperar-receita'
+
+import FilaDeChamadas from './fila'
 
 type Estado = 'due' | 'late' | 'at_risk' | 'lost'
 
@@ -82,6 +86,11 @@ export default function RecuperarReceita({
   const [filtro, setFiltro] = useState<Estado | 'all'>('all')
   const [lista, setLista] = useState(inicial)
   const [carregando, setCarregando] = useState(false)
+  // `docs/95` E2: a ordem e o recorte da fila valem para a lista e para o modo "um por vez".
+  const [criterio, setCriterio] = useState<Criterio>('prioridade')
+  const [classes, setClasses] = useState<Classe[]>([])
+  const [perfis, setPerfis] = useState<Perfil[]>([])
+  const [modoFila, setModoFila] = useState(false)
 
   async function trocarFiltro(valor: Estado | 'all') {
     setFiltro(valor)
@@ -131,6 +140,8 @@ export default function RecuperarReceita({
   }
 
   const recorte = recorteDaLista(lista.count, lista.items.length)
+  const visiveis = ordenarFila(filtrarFila(lista.items, { classes, perfis }), criterio)
+  const alternar = <T,>(lista: T[], valor: T) => (lista.includes(valor) ? lista.filter((v) => v !== valor) : [...lista, valor])
 
   return (
     <div>
@@ -190,6 +201,42 @@ export default function RecuperarReceita({
       </FilterRow>
 
       {/*
+        `docs/95` E2: a fila de chamadas. Classe e perfil saem da nota do cliente (E3), recalculada
+        todo dia; quem ainda não tem nota só aparece sem filtro. Nada aqui manda mensagem: a ordem
+        só decide por onde o dono começa.
+      */}
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <label className="flex items-center gap-2 text-secundario text-txt-2">
+          Ordenar por
+          <select
+            value={criterio}
+            onChange={(e) => setCriterio(e.target.value as Criterio)}
+            className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo text-txt"
+          >
+            {CRITERIOS.map((c) => (
+              <option key={c} value={c}>
+                {ROTULO_DO_CRITERIO[c]}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+      <FilterRow rotulo="Filtrar por classe do cliente" className="mb-3">
+        {(['ouro', 'prata', 'bronze'] as const).map((c) => (
+          <Chip key={c} ligado={classes.includes(c)} onClick={() => setClasses((atual) => alternar(atual, c))}>
+            {ROTULO_DA_CLASSE[c]}
+          </Chip>
+        ))}
+      </FilterRow>
+      <FilterRow rotulo="Filtrar por perfil do cliente" className="mb-4">
+        {(['fiel', 'regular', 'novo', 'atrasado', 'faltante', 'sumido'] as const).map((p) => (
+          <Chip key={p} ligado={perfis.includes(p)} onClick={() => setPerfis((atual) => alternar(atual, p))}>
+            {ROTULO_DO_PERFIL[p]}
+          </Chip>
+        ))}
+      </FilterRow>
+
+      {/*
         Mesmo defeito que a página pública de agendamento tinha, e nesta tela dói mais: aqui é o
         Motor de Ciclo, o diferencial que sustenta o preço do produto. Trocar o filtro recarrega a
         lista E os dois números do topo, sem trocar de rota — e, para quem usa leitor de tela, nada
@@ -242,37 +289,62 @@ export default function RecuperarReceita({
             quandoOProximoVolta={quandoOProximoVolta}
           />
         </Card>
+      ) : modoFila ? (
+        <FilaDeChamadas itens={visiveis} anotarChamada={anotarChamada} sair={() => setModoFila(false)} />
+      ) : visiveis.length === 0 ? (
+        <Card>
+          <p className="text-corpo font-semibold">Ninguém com esse recorte.</p>
+          <button
+            type="button"
+            onClick={() => {
+              setClasses([])
+              setPerfis([])
+            }}
+            className="mt-2 h-10 text-label font-semibold text-acc-2"
+          >
+            Tirar os filtros
+          </button>
+        </Card>
       ) : (
-        <ul className="flex flex-col gap-2">
-          {lista.items.map((item) => {
-            const k = chave(item)
-            return (
-              <li key={k}>
-                <Card className="flex items-center gap-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-corpo font-semibold">{item.name}</p>
-                    <p className="truncate text-secundario text-txt-2">
-                      {item.serviceName} · {RUBRICA_ESTADO[item.state as Estado]} · {item.lateDays > 0 ? `${item.lateDays}d de atraso` : 'na janela'}
-                    </p>
-                  </div>
-                  <div className="shrink-0 text-right">
-                    {/*
-                      `docs/DECISOES.md` 2026-09-18: assinante do clube e pacote com sessão sobrando
-                      zeram os dois valores de propósito (a próxima visita não gera venda avulsa) —
-                      e depois desse conserto, R$0,00 deixou de ser um caso raro. Sem esta ressalva,
-                      "R$0,00 de lucro" ao lado de um botão "Avisar" lê como número quebrado, não
-                      como informação — a mesma lição do "estado incompleto honesto" em
-                      `prestacao.tsx`. Não afirma qual dos dois motivos é (assinante, pacote, ou uma
-                      probabilidade calibrada genuinamente perto de zero): a tela não sabe qual, e
-                      inventar um dos dois seria menos honesto que dizer "sem valor avulso".
-                    */}
-                    {item.valueCents === 0 && item.profitCents === 0 ? (
-                      <p className="text-label text-txt-3">Sem valor avulso</p>
-                    ) : (
-                      <>
-                        <p className="tabular text-corpo font-bold text-acc-2">{dinheiro.format(item.valueCents / 100)}</p>
-                        <p className="tabular text-label text-txt-3">{dinheiro.format(item.profitCents / 100)} de lucro</p>
-                      </>
+        <>
+          <Button largura="cheia" className="mb-3" onClick={() => setModoFila(true)}>
+            {`Começar a fila (${visiveis.filter((i) => !i.optOut).length})`}
+          </Button>
+          <ul className="flex flex-col gap-2">
+            {visiveis.map((item) => {
+              const k = chave(item)
+              return (
+                <li key={k}>
+                  <Card className="flex items-center gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-corpo font-semibold">{item.name}</p>
+                      <p className="truncate text-secundario text-txt-2">
+                        {item.serviceName} · {RUBRICA_ESTADO[item.state as Estado]} · {item.lateDays > 0 ? `${item.lateDays}d de atraso` : 'na janela'}
+                      </p>
+                      {item.classe && item.nota != null ? (
+                        <p className="truncate text-label text-txt-3">
+                          {`${ROTULO_DA_CLASSE[item.classe]} · nota ${item.nota}${item.perfil ? ` · ${ROTULO_DO_PERFIL[item.perfil]}` : ''}`}
+                        </p>
+                      ) : null}
+                    </div>
+                    <div className="shrink-0 text-right">
+                      {/*
+                        `docs/DECISOES.md` 2026-09-18: assinante do clube e pacote com sessão sobrando
+                        zeram os dois valores de propósito (a próxima visita não gera venda avulsa) —
+                        e depois desse conserto, R$0,00 deixou de ser um caso raro. Sem esta ressalva,
+                        "R$0,00 de lucro" ao lado de um botão "Avisar" lê como número quebrado, não
+                        como informação — a mesma lição do "estado incompleto honesto" em
+                        `prestacao.tsx`. Não afirma qual dos dois motivos é (assinante, pacote, ou uma
+                        probabilidade calibrada genuinamente perto de zero): a tela não sabe qual, e
+                        inventar um dos dois seria menos honesto que dizer "sem valor avulso".
+                      */}
+                      {item.valueCents === 0 && item.profitCents === 0 ? (
+                        <p className="text-label text-txt-3">Sem valor avulso</p>
+                      ) : (
+                        <>
+                          <p className="tabular text-corpo font-bold text-acc-2">{dinheiro.format(item.valueCents / 100)}</p>
+                          <p className="tabular text-label text-txt-3">{dinheiro.format(item.profitCents / 100)} de lucro</p>
+        </>
                     )}
                     {/*
                       `docs/82` §7/§11 do plano — decisão de 2026-09-23: "Chamar" (o WhatsApp DO
@@ -318,6 +390,7 @@ export default function RecuperarReceita({
             )
           })}
         </ul>
+        </>
       )}
 
     </div>

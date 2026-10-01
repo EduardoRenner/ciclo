@@ -2,6 +2,7 @@ import { exigirPermissao } from '@/server/auth/rbac'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { comLinksDeVolta } from '@/server/services/link-de-volta'
+import { comNotas } from '@/server/services/notas-do-cliente'
 import { listarParaRecuperar } from '@/server/services/recuperar-receita'
 import { rota } from '@/server/http/handler'
 
@@ -21,5 +22,6 @@ export const GET = rota(async (req) => {
 
   const db = await criarClienteDoUsuario()
   const lista = await listarParaRecuperar(db, ctx.tenantId, { state, limit })
-  return { ...lista, items: comLinksDeVolta(lista.items, ctx.tenantId, ctx.tenant.slug) }
+  const comNota = await comNotas(db, ctx.tenantId, lista.items)
+  return { ...lista, items: comLinksDeVolta(comNota, ctx.tenantId, ctx.tenant.slug) }
 })
