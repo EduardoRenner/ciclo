@@ -43,14 +43,20 @@ function gravarTratados(tratados: Set<string>) {
 export default function FilaDeChamadas({
   itens,
   anotarChamada,
+  pararDeChamar,
   sair,
 }: {
   itens: ItemRecuperar[]
   /** Anota a chamada para o Motor medir a volta (mesma rota do "Chamar" da lista). */
   anotarChamada: (item: ItemRecuperar) => Promise<void>
+  /** Marca o opt-out do WhatsApp da pessoa (`docs/95` E2.4). Devolve se gravou. */
+  pararDeChamar: (item: ItemRecuperar) => Promise<boolean>
   sair: () => void
 }) {
   const [tratados, setTratados] = useState<Set<string>>(() => new Set())
+  // Pergunta antes de gravar: "não chamar mais" tira a pessoa da fila e do Chamar até alguém desfazer na ficha.
+  const [confirmandoParar, setConfirmandoParar] = useState(false)
+  const [parando, setParando] = useState(false)
   useEffect(() => setTratados(lerTratados()), [])
 
   const chamaveis = useMemo(() => itens.filter((i) => !i.optOut), [itens])
@@ -58,6 +64,7 @@ export default function FilaDeChamadas({
   const feitos = chamaveis.filter((i) => tratados.has(chaveDaFila(i))).length
 
   function tratar(item: ItemRecuperar) {
+    setConfirmandoParar(false)
     const proximo = new Set(tratados)
     proximo.add(chaveDaFila(item))
     setTratados(proximo)
@@ -121,6 +128,35 @@ export default function FilaDeChamadas({
               Pular hoje
             </Button>
           </div>
+
+          {confirmandoParar ? (
+            <div role="group" aria-label="Confirmar não chamar mais" className="flex flex-col gap-2 rounded-[var(--radius-sm)] border border-line-2 p-3">
+              <p className="text-secundario text-txt">
+                {`${atual.name} sai da fila e do Chamar. Dá para desfazer na ficha.`}
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variante="danger"
+                  carregando={parando}
+                  onClick={async () => {
+                    setParando(true)
+                    const gravou = await pararDeChamar(atual)
+                    setParando(false)
+                    if (gravou) tratar(atual)
+                  }}
+                >
+                  Confirmar
+                </Button>
+                <Button variante="secondary" onClick={() => setConfirmandoParar(false)}>
+                  Voltar
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <Button variante="ghost" onClick={() => setConfirmandoParar(true)}>
+              Pediu para não ser chamado
+            </Button>
+          )}
         </Card>
       ) : (
         <Card>

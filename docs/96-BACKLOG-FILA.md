@@ -23,7 +23,8 @@ Legenda: `[ ]` a fazer · `[~]` em andamento · `[x]` no ar (com o nº do PR).
 
 ## E2 · Fila de chamadas
 - [x] E2.1 (#139) Modo fila na tela Recuperar: um cliente por vez; Chamar, Já falei, Pular hoje (verificado no navegador a 390 px).
-- [ ] E2.4 "Não chamar mais" (precisa do opt-out do WhatsApp no PATCH de cliente) e "VIP" (etiqueta; seguro depois do #138).
+- [x] E2.4 "Pediu para não ser chamado" na fila, com confirmação; "Foi engano" na ficha desfaz (PATCH aceita o opt-out do WhatsApp). Verificado no navegador.
+- [ ] E2.6 "VIP" na fila e na ficha (etiqueta; seguro depois do #138).
 - [x] E2.2 Ordenar por prioridade (lucro × nota), lucro, nota, atraso e nome; filtrar por classe e perfil.
 - [ ] E2.5 Ordenar/filtrar também por ticket, última visita, nº de visitas, serviço, profissional e "não chamado nesta semana".
 - [~] E2.3 Fila lembra quem já foi tratado no dia (no aparelho). Falta o teto diário configurável.

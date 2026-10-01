@@ -294,6 +294,25 @@ export default function Ficha({
    */
   const telefoneUtilizavel = linkWhatsApp(cliente.phoneE164, '') !== null
 
+  const [voltandoAChamar, setVoltandoAChamar] = useState(false)
+  async function voltarAChamar() {
+    setVoltandoAChamar(true)
+    try {
+      const r = await fetch(`/api/v1/clients/${cliente.id}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+        body: JSON.stringify({ whatsappOptOut: false }),
+      })
+      if (!r.ok) throw new Error(String(r.status))
+      mostrarToast({ tom: 'ok', titulo: 'Pode chamar de novo' })
+      router.refresh()
+    } catch {
+      mostrarToast({ tom: 'erro', titulo: 'Não consegui gravar', descricao: 'Tente de novo.' })
+    } finally {
+      setVoltandoAChamar(false)
+    }
+  }
+
   function salvar() {
     setErro(null)
     iniciarSalvamento(async () => {
@@ -748,9 +767,15 @@ export default function Ficha({
       {/* ─── escolher mensagem pronta ─── */}
       <Sheet aberto={escolhendoMensagem} aoFechar={(a) => !a && setEscolhendoMensagem(false)} titulo="Mensagem pronta">
         {cliente.whatsappOptOut ? (
-          <p className="text-corpo text-bad">
-            Pediu para não receber mensagens. Respeite o pedido.
-          </p>
+          <div className="flex flex-col gap-3">
+            <p className="text-corpo text-bad">
+              Pediu para não receber mensagens. Respeite o pedido.
+            </p>
+            {/* `docs/95` E2.4: o "Pediu para não ser chamado" da fila tem volta, para o caso de engano. */}
+            <Button variante="secondary" carregando={voltandoAChamar} onClick={voltarAChamar}>
+              Foi engano: voltar a chamar
+            </Button>
+          </div>
         ) : cliente.phoneE164 && !telefoneUtilizavel ? (
           <p className="text-corpo text-txt-2">Telefone cadastrado não parece válido. Toque no lápis para corrigir.</p>
         ) : (

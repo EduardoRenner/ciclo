@@ -42,6 +42,10 @@ export const EsquemaCliente = z.object({
   preferredProfessionalId: z.uuid().nullish(),
   /** Trava de quem já sumiu várias vezes: continua sendo atendido, só não marca sozinho pelo site. */
   onlineBookingBlocked: z.boolean().optional(),
+  // Opt-out de WhatsApp (`docs/95` E2.4, "Não chamar mais" da fila). `optional` e não
+  // `default(false)` de propósito: editar outro campo nunca pode desfazer o pedido de quem pediu
+  // para parar.
+  whatsappOptOut: z.boolean().optional(),
   marketingOptIn: z.boolean().default(false),
 })
 
@@ -65,6 +69,7 @@ function paraColunas(entrada: EntradaParcial): ColunasCliente {
   if (entrada.birthDate !== undefined) colunas.birth_date = entrada.birthDate ?? null
   if (entrada.notes !== undefined) colunas.notes = entrada.notes ?? null
   if (entrada.tags !== undefined) colunas.tags = entrada.tags
+  if (entrada.whatsappOptOut !== undefined) colunas.whatsapp_opt_out = entrada.whatsappOptOut
   if (entrada.source !== undefined) colunas.source = entrada.source ?? null
   if (entrada.preferences !== undefined) colunas.preferences = entrada.preferences
   if (entrada.document !== undefined) colunas.document = entrada.document ?? null

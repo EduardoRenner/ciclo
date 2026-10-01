@@ -117,6 +117,28 @@ export default function RecuperarReceita({
     chamada — é o que faz a volta dessa pessoa contar em "O Motor de Ciclo trouxe". Falha aqui não
     pode travar a conversa que já abriu: vira aviso, e o dono segue no WhatsApp.
   */
+  /*
+    `docs/95` E2.4: "Pediu para não ser chamado", da fila. Grava o opt-out do WhatsApp (mesma coluna que
+    o "Chamar" já respeita) e tira a pessoa da lista na hora. Falha vira aviso, e a pessoa continua
+    na fila: melhor pedir de novo do que sumir sem ter gravado.
+  */
+  async function pararDeChamar(item: ItemRecuperar): Promise<boolean> {
+    try {
+      const r = await fetch(`/api/v1/clients/${item.clientId}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+        body: JSON.stringify({ whatsappOptOut: true }),
+      })
+      if (!r.ok) throw new Error(String(r.status))
+      setLista((atual) => ({ ...atual, items: atual.items.map((i) => (i.clientId === item.clientId ? { ...i, optOut: true } : i)) }))
+      mostrarToast({ tom: 'ok', titulo: 'Anotado', descricao: `${primeiroNome(item.name)} não aparece mais para chamar.` })
+      return true
+    } catch {
+      mostrarToast({ tom: 'erro', titulo: 'Não consegui gravar', descricao: 'Tente de novo. A pessoa continua na fila até gravar.' })
+      return false
+    }
+  }
+
   async function anotarChamada(item: ItemRecuperar) {
     try {
       const r = await fetch('/api/v1/cycle/recover/manual', {
@@ -290,7 +312,7 @@ export default function RecuperarReceita({
           />
         </Card>
       ) : modoFila ? (
-        <FilaDeChamadas itens={visiveis} anotarChamada={anotarChamada} sair={() => setModoFila(false)} />
+        <FilaDeChamadas itens={visiveis} anotarChamada={anotarChamada} pararDeChamar={pararDeChamar} sair={() => setModoFila(false)} />
       ) : visiveis.length === 0 ? (
         <Card>
           <p className="text-corpo font-semibold">Ninguém com esse recorte.</p>
