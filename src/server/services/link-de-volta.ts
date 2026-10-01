@@ -78,14 +78,19 @@ export async function registrarAberturaDoLinkDeVolta(
 ): Promise<boolean> {
   const id = await chamadaDaJanela(db, alvo, agora, 'nao_aberta')
   if (!id) return false
-  const { error } = await db
+
+  // Zero linhas = outra aba abriu o mesmo link entre a leitura e esta escrita. A primeira abertura
+  // já ficou marcada; esta só não conta de novo.
+  const { data, error } = await db
     .from('messages')
     .update({ clicked_at: agora.toString() })
     .eq('tenant_id', alvo.tenantId)
     .eq('id', id)
     .is('clicked_at', null)
+    .select('id')
+
   if (error) throw error
-  return true
+  return (data ?? []).length > 0
 }
 
 /** Liga o agendamento feito pelo link à chamada mais recente ainda sem agendamento. */
@@ -97,21 +102,29 @@ export async function registrarAgendamentoPeloLinkDeVolta(
 ): Promise<boolean> {
   const id = await chamadaDaJanela(db, alvo, agora, 'sem_agendamento')
   if (!id) return false
-  const { error } = await db
+
+  // Zero linhas = dois agendamentos pelo mesmo link quase juntos; o primeiro fica com a chamada.
+  const { data, error } = await db
     .from('messages')
     .update({ booked_appointment_id: appointmentId })
     .eq('tenant_id', alvo.tenantId)
     .eq('id', id)
     .is('booked_appointment_id', null)
+    .select('id')
+
   if (error) throw error
+  if ((data ?? []).length === 0) return false
+
   // Quem agendou pelo link abriu o link, mesmo que a página tenha sido aberta antes desta chamada
-  // existir. Só preenche se estiver vazio: a primeira abertura continua sendo a primeira.
+  // existir. Só preenche se estiver vazio: zero linhas aqui é o caso normal (já estava aberta).
   const { error: erroAbertura } = await db
     .from('messages')
     .update({ clicked_at: agora.toString() })
     .eq('tenant_id', alvo.tenantId)
     .eq('id', id)
     .is('clicked_at', null)
+    .select('id')
+
   if (erroAbertura) throw erroAbertura
   return true
 }
