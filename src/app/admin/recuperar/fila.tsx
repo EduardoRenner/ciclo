@@ -100,8 +100,8 @@ export default function FilaDeChamadas({
 
           <a
             href={
-              linkWhatsApp(atual.phone, textoDeVolta({ nome: atual.name, servico: atual.serviceName, link: atual.linkVolta })) ??
-              linkWhatsAppCompartilhar(textoDeVolta({ nome: atual.name, servico: atual.serviceName, link: atual.linkVolta }))
+              linkWhatsApp(atual.phone, textoDeVolta({ nome: atual.name, servico: atual.serviceName, link: atual.linkVolta, variante: atual.variante })) ??
+              linkWhatsAppCompartilhar(textoDeVolta({ nome: atual.name, servico: atual.serviceName, link: atual.linkVolta, variante: atual.variante }))
             }
             target="_blank"
             rel="noreferrer"

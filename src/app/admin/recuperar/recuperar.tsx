@@ -145,7 +145,7 @@ export default function RecuperarReceita({
         method: 'POST',
         keepalive: true,
         headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
-        body: JSON.stringify({ clientId: item.clientId, serviceId: item.serviceId }),
+        body: JSON.stringify({ clientId: item.clientId, serviceId: item.serviceId, variante: item.variante }),
       })
       if (!r.ok) throw new Error(String(r.status))
       const json = (await r.json()) as { data?: { registrada: boolean; motivo?: string } }
@@ -394,8 +394,8 @@ export default function RecuperarReceita({
                     ) : (
                       <a
                         href={
-                          linkWhatsApp(item.phone, textoDeVolta({ nome: item.name, servico: item.serviceName, link: item.linkVolta })) ??
-                          linkWhatsAppCompartilhar(textoDeVolta({ nome: item.name, servico: item.serviceName, link: item.linkVolta }))
+                          linkWhatsApp(item.phone, textoDeVolta({ nome: item.name, servico: item.serviceName, link: item.linkVolta, variante: item.variante })) ??
+                          linkWhatsAppCompartilhar(textoDeVolta({ nome: item.name, servico: item.serviceName, link: item.linkVolta, variante: item.variante }))
                         }
                         target="_blank"
                         rel="noreferrer"

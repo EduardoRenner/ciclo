@@ -6,6 +6,7 @@ import { WhatsAppCloudProvider } from '@/server/providers/messaging/whatsapp'
 import { quemRecuperar } from '@/core/ciclo/quem-recuperar'
 import type { MotivoPulado } from '@/core/ciclo/resumo-do-envio'
 import type { Classe, Perfil } from '@/core/crm/nota-do-cliente'
+import { CHAVES_DE_VARIANTE, type ChaveDaVariante } from '@/core/mensageria/biblioteca-de-volta'
 import { enviarComFallback } from '@/server/services/mensageria'
 import { registrarEvento } from '@/server/services/product-events'
 import { AppError } from '@/server/http/errors'
@@ -36,6 +37,8 @@ export type ItemRecuperar = {
   nota?: number | null
   classe?: Classe | null
   perfil?: Perfil | null
+  /** `docs/95` E4: versão do texto que esta pessoa recebe (fixa por pessoa, para comparar). */
+  variante?: ChaveDaVariante
 }
 
 export type ListaRecuperar = {
@@ -339,7 +342,12 @@ export async function enviarParaRecuperar(
  * lá o dono escolhe o modelo "Sumiu, chamar de volta" para a PESSOA. Sem serviço, vale o ciclo mais
  * atrasado dela; se nenhum estiver fora do ritmo, não é recuperação e nada é anotado.
  */
-export const EsquemaChamadaManual = z.object({ clientId: z.string().uuid(), serviceId: z.string().uuid().optional() })
+export const EsquemaChamadaManual = z.object({
+  clientId: z.string().uuid(),
+  serviceId: z.string().uuid().optional(),
+  // `docs/95` E4: qual texto da biblioteca saiu nesta chamada. Desconhecido não vira erro, vira nulo.
+  variante: z.enum(CHAVES_DE_VARIANTE as [ChaveDaVariante, ...ChaveDaVariante[]]).optional().catch(undefined),
+})
 export type EntradaChamadaManual = z.infer<typeof EsquemaChamadaManual>
 
 /**
@@ -397,6 +405,14 @@ export async function registrarChamadaManual(
   if (dentroDosSeteDias) return { registrada: false, motivo: 'ja_chamada' }
 
   const agoraIso = agora.toString()
+  // `docs/95` E5: como a pessoa estava NA HORA da chamada. A nota muda todo dia; ler a de hoje para
+  // uma chamada antiga mediria a coisa errada.
+  const { data: notaAgora } = await db
+    .from('client_scores')
+    .select('score, profile')
+    .eq('tenant_id', tenantId)
+    .eq('client_id', entrada.clientId)
+    .maybeSingle()
   const { error: erroMensagem } = await db.from('messages').insert({
     tenant_id: tenantId,
     client_id: entrada.clientId,
@@ -405,6 +421,9 @@ export async function registrarChamadaManual(
     status: 'sent',
     template: 'recover_manual',
     sent_at: agoraIso,
+    variant_key: entrada.variante ?? null,
+    score_at_send: notaAgora?.score ?? null,
+    profile_at_send: notaAgora?.profile ?? null,
   })
   if (erroMensagem) throw new AppError('INTERNAL', { cause: erroMensagem })
 

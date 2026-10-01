@@ -345,6 +345,18 @@ describe('registrarChamadaManual (docs/82 §7)', () => {
     expect(eventos?.some((e) => (e.meta as { via?: string }).via === 'manual')).toBe(true)
   }, 30_000)
 
+  it('a chamada guarda o texto usado e a nota e o perfil daquele momento (docs/95 E4/E5)', async () => {
+    const clientId = await criarClienteEmCiclo('Texto Medido', { state: 'lost', valueAtRiskCents: 5_000 })
+    const { error } = await svc
+      .from('client_scores')
+      .insert({ tenant_id: tenantId, client_id: clientId, score: 42, tier: 'prata', profile: 'sumido', parts: [], algo_version: 1 })
+    if (error) throw error
+
+    expect(await registrarChamadaManual(svc, tenantId, { clientId, serviceId: servicoId, variante: 'saudade' })).toEqual({ registrada: true })
+    const { data } = await svc.from('messages').select('variant_key, score_at_send, profile_at_send').eq('tenant_id', tenantId).eq('client_id', clientId).single()
+    expect(data).toEqual({ variant_key: 'saudade', score_at_send: 42, profile_at_send: 'sumido' })
+  }, 30_000)
+
   it('a mesma pessoa chamada de novo na mesma semana não conta duas vezes (revisão 2026-09-23)', async () => {
     const clientId = await criarClienteEmCiclo('Chamada Repetida', { state: 'late', valueAtRiskCents: 5_000 })
     expect(await registrarChamadaManual(svc, tenantId, { clientId, serviceId: servicoId })).toEqual({ registrada: true })
