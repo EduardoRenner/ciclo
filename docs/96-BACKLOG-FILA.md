@@ -13,7 +13,7 @@ Legenda: `[ ]` a fazer · `[~]` em andamento · `[x]` no ar (com o nº do PR).
       `recover/send`; vista reprovando por mutação.
 
 ## E1 · Texto com link de agendamento
-- [x] E1.1 Migration aditiva (0099, aplicada em produção): `messages.clicked_at`, `messages.booked_appointment_id`.
+- [x] E1.1 (#136) Migration aditiva (0099, aplicada em produção): `messages.clicked_at`, `messages.booked_appointment_id`.
 - [x] E1.2 Token assinado de escopo `volta` (id = tenant~cliente~serviço, montado ao desenhar a lista), validade 14 dias.
 - [x] E1.3 Página pública `?volta=` abre o link: registra `clicked_at`, redireciona para `/{slug}/agendar`
       com o cliente reconhecido e o serviço pré-escolhido.
@@ -28,8 +28,8 @@ Legenda: `[ ]` a fazer · `[~]` em andamento · `[x]` no ar (com o nº do PR).
 - [ ] E2.3 Teto diário configurável; fila persiste ao sair e voltar.
 
 ## E3 · Perfil e nota do cliente
-- [ ] E3.1 Função pura `notaDoCliente` (0–100, componentes à vista) e `perfilDoCliente` em `src/core/`.
-- [ ] E3.2 Tabela `client_scores` (append-only, versão do algoritmo) e cálculo diário junto do Motor.
+- [x] E3.1 Função pura `notaDoCliente` (0–100, componentes à vista) e `perfilDoCliente` em `src/core/`.
+- [x] E3.2 Tabela `client_scores` (estado atual por cliente, com versão do algoritmo; 0100 aplicada em produção) e cálculo diário na rotina de segmentos.
 - [ ] E3.3 Mostrar nota, classe (Ouro/Prata/Bronze) e o porquê na ficha e na fila.
 
 ## E4 · Biblioteca de mensagens

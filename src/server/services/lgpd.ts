@@ -141,6 +141,12 @@ export const TRATAMENTO_NA_ELIMINACAO: Record<string, Record<string, string>> = 
     tipo: 'preserva', // weekly | biweekly | monthly
     status: 'preserva', // active | paused | canceled — estado da série, não da pessoa
   },
+  // `docs/95` E3 (0100): a nota, o perfil e o porquê são perfilamento da pessoa. Somem com ela.
+  client_scores: {
+    tier: 'apaga_linha',
+    profile: 'apaga_linha',
+    parts: 'apaga_linha',
+  },
   client_notes: {
     body: 'apaga_linha', // anotação datada é exatamente o dado que a lei manda eliminar
   },
@@ -312,6 +318,12 @@ export async function eliminarCliente(db: Cliente, tenantId: string, clientId: s
   const { data: ciclosApagados, error: erroCiclos } = await db.from('client_cycles').delete().eq('tenant_id', tenantId).eq('client_id', clientId).select('client_id')
   if (erroCiclos) throw new AppError('INTERNAL', { cause: erroCiclos })
   rowsRemoved.client_cycles = ciclosApagados?.length ?? 0
+
+  // `client_scores` (0100): mesma razão de `client_cycles` para ficar fora do laço genérico, a
+  // chave é composta (tenant + cliente) e não existe coluna `id`.
+  const { data: notasApagadas, error: erroNotas } = await db.from('client_scores').delete().eq('tenant_id', tenantId).eq('client_id', clientId).select('client_id')
+  if (erroNotas) throw new AppError('INTERNAL', { cause: erroNotas })
+  rowsRemoved.client_scores = notasApagadas?.length ?? 0
 
   for (const tabela of TABELAS_APAGADAS) {
     const { data, error } = await db.from(tabela).delete().eq('tenant_id', tenantId).eq('client_id', clientId).select('id')

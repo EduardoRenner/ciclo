@@ -152,6 +152,14 @@ const JUSTIFICADAS: { arquivo: string; tabela: string; quantas: number; porque: 
       'token HMAC é a própria autorização, não há tenant de contexto antes de decodificá-lo',
   },
   {
+    arquivo: 'src/server/services/notas-do-cliente.ts',
+    tabela: 'client_scores',
+    quantas: 1,
+    porque:
+      'recalcularNotasDoTenant faz upsert de array montado em variável (`linhas = notasDoSalao(...).map(n => ({ tenant_id: tenantId, ... }))`) — ' +
+      'mesma classe de ciclo.ts::client_cycles e previsao.ts::cycle_predictions',
+  },
+  {
     arquivo: 'src/server/services/previsao.ts',
     tabela: 'cycle_predictions',
     quantas: 1,

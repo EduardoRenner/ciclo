@@ -283,6 +283,8 @@ async function semear(f: Fixture, sufixo: string): Promise<void> {
     ['tenant_keys', { tenant_id: t, dek_wrapped: '\\xdeadbeef' }],
     ['product_events', { tenant_id: t, event_type: 'conta_criada' }],
     ['terms_acceptances', { tenant_id: t, documento: 'termos', versao: '2026-09-21', via: 'cadastro' }],
+    // A nota do cliente (0100): a posição de cada pessoa no salão não pode vazar para outro salão.
+    ['client_scores', { tenant_id: t, client_id: f.clientId, score: 50, tier: 'prata', profile: 'regular', parts: [], algo_version: 1 }],
     // Os testes do dono (0098): o antes congelado é a série de atendimentos de um salão — não pode vazar.
     ['experiments', { tenant_id: t, titulo: 'Teste de isolamento', metrica: 'atendimentos', starts_on: '2026-10-01', dias: 14, baseline: { de: '2026-09-17', ate: '2026-09-30', atendimentos: 3, atendidoCents: 15000 } }],
     ['business_hours', { tenant_id: t, weekday: 1, opens_at: '09:00', closes_at: '19:00' }],

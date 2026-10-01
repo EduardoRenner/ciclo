@@ -3,6 +3,7 @@ import { AppError } from '@/server/http/errors'
 import { compararSegredo } from '@/server/http/segredo'
 import { rota } from '@/server/http/handler'
 import { registrarHeartbeat } from '@/server/services/health'
+import { recalcularNotasDoTenant } from '@/server/services/notas-do-cliente'
 import { recalcularSegmentosDoTenant } from '@/server/services/segmentos'
 
 /**
@@ -27,10 +28,17 @@ export const GET = rota(async (req) => {
     // para o log/Sentry e `tenantsComFalha` volta no corpo.
     let processados = 0
     let falhas = 0
+    let notasComFalha = 0
     for (const tenant of tenants ?? []) {
       try {
         await recalcularSegmentosDoTenant(svc, tenant.id)
         processados++
+        // `docs/95` E3: a nota do cliente vem junto, na mesma passada. Falha nela vira log e conta à
+        // parte: não pode desfazer os segmentos que já foram gravados nem derrubar o heartbeat.
+        await recalcularNotasDoTenant(svc, tenant.id).catch((erro: unknown) => {
+          notasComFalha++
+          console.error(JSON.stringify({ level: 'error', event: 'recompute_scores_tenant_falhou', tenantId: tenant.id }), erro)
+        })
       } catch (erro) {
         falhas++
         console.error(
@@ -59,6 +67,6 @@ export const GET = rota(async (req) => {
       })
     }
 
-    return { tenantsProcessados: processados, tenantsComFalha: falhas }
+    return { tenantsProcessados: processados, tenantsComFalha: falhas, notasComFalha }
   })
 })
