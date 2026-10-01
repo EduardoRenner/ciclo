@@ -122,6 +122,20 @@ async function clienteCompleto(nome: string) {
       .insert({ tenant_id: tenantId, client_id: clientId, service_id: servico.data.id, personal_cycle_days: 21, state: 'late', late_days: 5 })
     if (ciclo.error) throw ciclo.error
 
+    // `docs/95` E5: a chamada de volta guarda nota e perfil do momento; são perfilamento.
+    const chamada = await svc.from('messages').insert({
+      tenant_id: tenantId,
+      client_id: clientId,
+      channel: 'whatsapp',
+      kind: 'campaign',
+      status: 'sent',
+      template: 'recover_manual',
+      variant_key: 'saudade',
+      score_at_send: 40,
+      profile_at_send: 'sumido',
+    })
+    if (chamada.error) throw chamada.error
+
     // `docs/95` E3: a nota do cliente (perfilamento) também tem que sumir na eliminação.
     const nota = await svc
       .from('client_scores')
@@ -202,6 +216,9 @@ describe('eliminarCliente', () => {
 
       const nota = await svc.from('client_scores').select('score').eq('client_id', clientId)
       expect(nota.data ?? []).toHaveLength(0)
+
+      const chamadas = await svc.from('messages').select('variant_key, score_at_send, profile_at_send').eq('client_id', clientId)
+      expect(chamadas.data).toEqual([{ variant_key: 'saudade', score_at_send: null, profile_at_send: null }])
 
       // O consentimento sobrevive (art. 16, III: prova de que houve permissão); o rastro pessoal não.
       const consentimento = await svc.from('consents').select('granted, version, ip, user_agent').eq('client_id', clientId).maybeSingle()

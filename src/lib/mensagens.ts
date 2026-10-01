@@ -1,3 +1,5 @@
+import { textoDaVariante, type ChaveDaVariante } from '@/core/mensageria/biblioteca-de-volta'
+
 /**
  * Substituição de variável e link de WhatsApp. Fica em `lib/` (não em `server/`) porque a tela
  * da ficha monta a prévia no navegador enquanto a pessoa escolhe o modelo — mesma função dos
@@ -116,12 +118,21 @@ export function saidaDeContato(
  * Primeira pessoa e primeiro nome, como a dona escreveria — não é a mensagem do sistema, é a dela.
  * Sem "sentimos sua falta": no WhatsApp pessoal isso soa como disparo em massa.
  */
-export function textoDeVolta({ nome, servico, link }: { nome: string; servico: string; link?: string | null }): string {
-  const primeiro = primeiroNome(nome)
-  const saudacao = primeiro ? `Oi, ${primeiro}!` : 'Oi!'
+export function textoDeVolta({
+  nome,
+  servico,
+  link,
+  variante = 'padrao',
+}: {
+  nome: string
+  servico: string
+  link?: string | null
+  /** `docs/95` E4: a versão da biblioteca (`core/mensageria/biblioteca-de-volta.ts`). */
+  variante?: ChaveDaVariante | null
+}): string {
   // "seu último HORÁRIO DE {serviço}", nunca "seu último {serviço}": metade do catálogo de beleza é
   // feminino (barba, escova, manutenção, depilação) e "seu último barba" sai na voz do dono.
-  const base = `${saudacao} Faz um tempinho desde seu último horário de ${servico.toLowerCase()}. Quer marcar essa semana?`
+  const base = textoDaVariante(variante ?? 'padrao', primeiroNome(nome), servico.toLowerCase())
   // `docs/95` E1: o link pessoal leva direto ao agendamento, com o serviço escolhido, e é o que
   // mede se a mensagem foi aberta e se virou horário marcado.
   return link ? `${base} É só escolher o horário aqui: ${link}` : base

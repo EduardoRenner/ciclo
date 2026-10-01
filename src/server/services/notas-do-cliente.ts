@@ -1,4 +1,5 @@
 import { montarHistoricos, notasDoSalao, type Classe, type Perfil } from '@/core/crm/nota-do-cliente'
+import { varianteDe, type ChaveDaVariante } from '@/core/mensageria/biblioteca-de-volta'
 import { buscarTudoPaginado } from '@/server/db/paginar'
 import { AppError } from '@/server/http/errors'
 
@@ -76,7 +77,7 @@ export async function comNotas<T extends { clientId: string }>(
   db: Cliente,
   tenantId: string,
   itens: T[],
-): Promise<(T & { nota: number | null; classe: Classe | null; perfil: Perfil | null })[]> {
+): Promise<(T & { nota: number | null; classe: Classe | null; perfil: Perfil | null; variante: ChaveDaVariante })[]> {
   const ids = [...new Set(itens.map((i) => i.clientId))]
   const porCliente = new Map<string, NotaResumida>()
   if (ids.length > 0) {
@@ -86,6 +87,6 @@ export async function comNotas<T extends { clientId: string }>(
   }
   return itens.map((i) => {
     const n = porCliente.get(i.clientId)
-    return { ...i, nota: n?.nota ?? null, classe: n?.classe ?? null, perfil: n?.perfil ?? null }
+    return { ...i, nota: n?.nota ?? null, classe: n?.classe ?? null, perfil: n?.perfil ?? null, variante: varianteDe(i.clientId, n?.perfil) }
   })
 }

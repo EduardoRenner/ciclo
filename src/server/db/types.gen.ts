@@ -1605,12 +1605,15 @@ export type Database = {
           error: string | null
           id: string
           kind: Database["public"]["Enums"]["message_kind"]
+          profile_at_send: string | null
           provider_id: string | null
           scheduled_for: string | null
+          score_at_send: number | null
           sent_at: string | null
           status: Database["public"]["Enums"]["message_status"]
           template: string | null
           tenant_id: string
+          variant_key: string | null
         }
         Insert: {
           appointment_id?: string | null
@@ -1625,12 +1628,15 @@ export type Database = {
           error?: string | null
           id?: string
           kind: Database["public"]["Enums"]["message_kind"]
+          profile_at_send?: string | null
           provider_id?: string | null
           scheduled_for?: string | null
+          score_at_send?: number | null
           sent_at?: string | null
           status?: Database["public"]["Enums"]["message_status"]
           template?: string | null
           tenant_id: string
+          variant_key?: string | null
         }
         Update: {
           appointment_id?: string | null
@@ -1645,12 +1651,15 @@ export type Database = {
           error?: string | null
           id?: string
           kind?: Database["public"]["Enums"]["message_kind"]
+          profile_at_send?: string | null
           provider_id?: string | null
           scheduled_for?: string | null
+          score_at_send?: number | null
           sent_at?: string | null
           status?: Database["public"]["Enums"]["message_status"]
           template?: string | null
           tenant_id?: string
+          variant_key?: string | null
         }
         Relationships: [
           {
