@@ -52,6 +52,17 @@ describe('Recuperar: "Chamar" é o caminho padrão, com ou sem telefone', () => 
     expect(fonteFila).toMatch(/itens\.filter\(\(i\) => !i\.optOut\)/)
   })
 
+  it('"Pediu para não ser chamado" (docs/95 E2.4) só grava depois de confirmar', () => {
+    const ramoConfirmacao = fonteFila.indexOf('confirmandoParar ? (')
+    expect(ramoConfirmacao, 'o passo de confirmação sumiu da fila').toBeGreaterThan(-1)
+    const fimDoRamo = fonteFila.indexOf(') : (', ramoConfirmacao)
+    const chamadas = [...fonteFila.matchAll(/await pararDeChamar\(atual\)/g)].map((m) => m.index ?? -1)
+    expect(chamadas.length, 'a fila não grava mais o pedido').toBe(1)
+    // A única gravação mora DENTRO do ramo de confirmação, nunca no botão que abre a pergunta.
+    expect(chamadas[0]!).toBeGreaterThan(ramoConfirmacao)
+    expect(chamadas[0]!).toBeLessThan(fimDoRamo)
+  })
+
   it('sem seleção em lote: nenhuma caixa de marcar e nenhuma barra flutuante de ação', () => {
     expect(fonte).not.toMatch(/type="checkbox"/)
     expect(fonte).not.toMatch(/<ActionBar\b/)

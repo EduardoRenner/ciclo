@@ -30,5 +30,7 @@ describe('EsquemaClienteParcial — editar um campo não inventa outros', () => 
 
   it('CONTROLE POSITIVO — o que foi enviado chega', () => {
     expect(EsquemaClienteParcial.parse({ tags: ['vip'], marketingOptIn: true })).toEqual({ tags: ['vip'], marketingOptIn: true })
+    // `docs/95` E2.4: o "Não chamar mais" da fila chega, e só ele.
+    expect(EsquemaClienteParcial.parse({ whatsappOptOut: true })).toEqual({ whatsappOptOut: true })
   })
 })
