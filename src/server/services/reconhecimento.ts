@@ -4,6 +4,7 @@ import { withNovoTenant } from '@/server/db/with-tenant'
 import { gerarTokenAssinado, verificarTokenAssinado } from '@/server/services/token-assinado'
 import { hashTelefone } from '@/server/services/telefone'
 import { AppError } from '@/server/http/errors'
+import { negocioEstaPausado } from '@/server/services/planos'
 
 import type { Database } from '@/server/db/types.gen'
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -53,7 +54,7 @@ export async function reconhecerCliente(slug: string, token: string): Promise<Re
   return withNovoTenant(async (svc: Cliente) => {
     const { data: tenant, error: erroTenant } = await svc
       .from('tenants')
-      .select('id')
+      .select('id, plan, settings')
       .eq('slug', slug)
       .eq('id', tenantId)
       .is('deleted_at', null)
@@ -62,6 +63,9 @@ export async function reconhecerCliente(slug: string, token: string): Promise<Re
     // Token de outro tenant (ou tenant apagado) nunca chega a consultar `clients` — o payload
     // batendo com o `slug` é a prova de que o token pertence a ESTE salão.
     if (!tenant) return null
+    // C8: negócio pausado não recebe agendamento, então não há o que reconhecer. `null`, igual ao token
+    // inválido: nenhum dos dois diz nada a quem pergunta.
+    if (negocioEstaPausado(tenant.plan, tenant.settings)) return null
 
     const { data: cliente, error: erroCliente } = await svc
       .from('clients')

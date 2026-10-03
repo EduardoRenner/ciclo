@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { ROTAS_DE_ESCRITA, regraDaEscritaNaPausa } from '@/core/billing/pausa'
 import { cortesiaDoCadastro, fimDaGraca, situacaoDaConta } from '@/core/billing/prelancamento'
 import { AppError } from '@/server/http/errors'
-import { exigirContaQueEscreve } from '@/server/services/planos'
+import { exigirContaQueEscreve, negocioEstaPausado, paginaIndisponivel } from '@/server/services/planos'
 
 describe('regraDaEscritaNaPausa', () => {
   it('leitura nunca é recusada, mesmo em rota que bloqueia escrita', () => {
@@ -92,5 +92,31 @@ describe('exigirContaQueEscreve', () => {
 
   it('conta sem cortesia (anterior ao programa) segue como antes: não pausa', () => {
     expect(() => exigirContaQueEscreve('POST', '/api/v1/clients', 'gratis', null, pausada)).not.toThrow()
+  })
+})
+
+describe('a página pública do negócio pausado (C8)', () => {
+  const cadastro = new Date('2026-12-01T15:00:00Z')
+  const cortesia = cortesiaDoCadastro(cadastro)
+  const settings = { cortesia }
+  const dentro = new Date('2026-12-20T15:00:00Z')
+  const pausada = new Date(fimDaGraca(cortesia).getTime() + 3 * 24 * 3600 * 1000)
+
+  it('só a conta pausada fica indisponível (controle: os dois relógios dizem o que se espera)', () => {
+    expect(negocioEstaPausado('gratis', settings, dentro)).toBe(false)
+    expect(negocioEstaPausado('gratis', settings, pausada)).toBe(true)
+  })
+
+  it('quem assinou, e quem nunca teve cortesia, continua recebendo', () => {
+    expect(negocioEstaPausado('equipe', settings, pausada)).toBe(false)
+    expect(negocioEstaPausado('gratis', {}, pausada)).toBe(false)
+    expect(negocioEstaPausado('gratis', null, pausada)).toBe(false)
+  })
+
+  it('a recusa é NOT_FOUND (toda página pública já trata), com a marca que o layout lê e o nome público', () => {
+    const e = paginaIndisponivel('Barbearia Navalha de Ouro')
+    expect(e.code).toBe('NOT_FOUND')
+    expect(e.details).toEqual({ indisponivel: true, nome: 'Barbearia Navalha de Ouro' })
+    expect(e.message).not.toMatch(/[—–]/)
   })
 })

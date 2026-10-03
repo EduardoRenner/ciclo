@@ -15,7 +15,7 @@ import { urlDaVitrine } from '@/core/text/vitrine'
 import { withNovoTenant } from '@/server/db/with-tenant'
 import { listarExpediente } from '@/server/services/expediente'
 import { lerConfiguracoesAgenda } from '@/server/services/configuracoes-agenda'
-import { normalizarPlano } from '@/server/services/planos'
+import { negocioEstaPausado, normalizarPlano, paginaIndisponivel } from '@/server/services/planos'
 import { lerSite } from '@/server/services/site'
 import { normalizarTelefoneBR } from '@/server/services/telefone'
 import { criarAgendamento } from '@/server/services/agendamentos'
@@ -57,6 +57,8 @@ async function tenantPeloSlug(svc: Cliente, slug: string) {
     .maybeSingle()
   if (error) throw new AppError('INTERNAL', { cause: error })
   if (!data) throw new AppError('NOT_FOUND', { message: 'Esse endereço não existe.' })
+  // C8: é o ÚNICO ponto por onde toda leitura e toda escrita pública por slug passa.
+  if (negocioEstaPausado(data.plan, data.settings)) throw paginaIndisponivel(data.name)
   return data
 }
 

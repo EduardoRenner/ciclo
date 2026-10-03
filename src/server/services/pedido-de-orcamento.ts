@@ -2,6 +2,7 @@ import { z } from 'zod'
 
 import { withNovoTenant } from '@/server/db/with-tenant'
 import { resolverCliente } from '@/server/services/agendamentos'
+import { negocioEstaPausado, paginaIndisponivel } from '@/server/services/planos'
 import { normalizarTelefoneBR } from '@/server/services/telefone'
 import { AppError } from '@/server/http/errors'
 
@@ -47,12 +48,14 @@ export async function criarPedidoDeOrcamento(slug: string, entrada: EntradaDePed
   return withNovoTenant(async (svc) => {
     const { data: tenant, error } = await svc
       .from('tenants')
-      .select('id')
+      .select('id, name, plan, settings')
       .eq('slug', slug)
       .is('deleted_at', null)
       .maybeSingle()
     if (error) throw new AppError('INTERNAL', { cause: error })
     if (!tenant) throw new AppError('NOT_FOUND', { message: 'Esse endereço não existe.' })
+    // C8: o pedido de orçamento cria linha no negócio; a conta pausada não recebe.
+    if (negocioEstaPausado(tenant.plan, tenant.settings)) throw paginaIndisponivel(tenant.name)
 
     /*
      * O serviço é conferido contra o catálogo DESTE tenant, e só `quote` entra: aceitar um id

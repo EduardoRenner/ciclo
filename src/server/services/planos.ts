@@ -227,6 +227,27 @@ export function exigirContaQueEscreve(
   throw contaPausadaNaoCria()
 }
 
+/**
+ * C8 (docs/87 D1): a página pública de um negócio pausado diz que o agendamento está indisponível, e
+ * as rotas públicas que CRIAM algo no negócio (agendar, pedir orçamento) recusam. Quem recebe o
+ * visitante é o negócio, não o CICLO: aceitar agendamento de uma conta que não pode criar deixaria o
+ * cliente final marcando horário numa agenda que o dono não consegue mexer.
+ *
+ * `NOT_FOUND` (e não um código novo) de propósito: toda página pública já trata `NOT_FOUND`, então
+ * nenhuma rota nova passa a lançar um erro que ninguém captura. O que distingue é `details.indisponivel`,
+ * que só o layout lê para trocar o 404 pela mensagem. O nome do negócio já é público.
+ */
+export function negocioEstaPausado(plan: string, settings: unknown, agora: Date = new Date()): boolean {
+  return !situacaoDaConta(normalizarPlano(plan), lerCortesia(settings), agora).podeEscrever
+}
+
+export function paginaIndisponivel(nome: string): AppError {
+  return new AppError('NOT_FOUND', {
+    message: 'Este negócio não está recebendo agendamentos online agora.',
+    details: { indisponivel: true, nome },
+  })
+}
+
 function rotulo(recurso: Recurso, quantidade: number): string {
   const um = quantidade === 1
   return recurso === 'profissionais' ? (um ? 'profissional' : 'profissionais') : um ? 'cliente' : 'clientes'

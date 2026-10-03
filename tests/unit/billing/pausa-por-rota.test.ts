@@ -70,3 +70,38 @@ describe('toda rota de escrita está classificada para a pausa', () => {
     expect(tenant).toMatch(/exigirContaQueEscreve\(req\.method, new URL\(req\.url\)\.pathname, ctx\.tenant\.plan, ctx\.tenant\.cortesia\)/)
   })
 })
+
+describe('toda entrada pública por slug confere a pausa (C8)', () => {
+  // Procura quem resolve um negócio pelo slug em `src/` fora do painel: é por ali que o visitante entra.
+  function fontes(pasta: string): string[] {
+    return readdirSync(pasta).flatMap((nome) => {
+      const caminho = join(pasta, nome)
+      if (statSync(caminho).isDirectory()) return fontes(caminho)
+      return /\.(ts|tsx)$/.test(nome) ? [caminho] : []
+    })
+  }
+  const LEEM_POR_SLUG = fontes('src')
+    .filter((a) => !a.startsWith(join('src', 'app', 'admin')))
+    .map((arquivo) => ({ arquivo, fonte: semComentarios(readFileSync(arquivo, 'utf8').replace(/\r\n/g, '\n')) }))
+    .filter((f) => /\.eq\('slug', /.test(f.fonte))
+
+  it('o leitor achou os dois pontos de entrada conhecidos (controle contra varredura vazia)', () => {
+    const nomes = LEEM_POR_SLUG.map((f) => f.arquivo.split(sep).join('/'))
+    expect(nomes).toContain('src/server/services/public-booking.ts')
+    expect(nomes).toContain('src/server/services/pedido-de-orcamento.ts')
+  })
+
+  it('quem lê o negócio pelo slug CHAMA a conferência de pausa (a chamada, não o import)', () => {
+    const semConferir = LEEM_POR_SLUG.filter((f) => !/if \(negocioEstaPausado\(/.test(f.fonte)).map((f) => f.arquivo)
+    expect(
+      semConferir,
+      `Estes arquivos resolvem um negócio pelo slug e não conferem a pausa: ${semConferir.join(', ')}. Um negócio pausado não pode receber agendamento nem pedido.`,
+    ).toEqual([])
+  })
+
+  it('o layout público mostra a mensagem em vez do 404 quando a recusa traz a marca', () => {
+    const layout = semComentarios(readFileSync(join('src', 'app', '(public)', '[slug]', 'layout.tsx'), 'utf8').replace(/\r\n/g, '\n'))
+    expect(layout).toMatch(/aviso\?\.indisponivel/)
+    expect(layout).toMatch(/if \(indisponivel\) \{/)
+  })
+})

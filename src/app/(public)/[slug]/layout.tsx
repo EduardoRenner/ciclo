@@ -39,10 +39,30 @@ export default async function LayoutSlug({
 }) {
   const { slug } = await params
 
-  const perfil = await perfilPublico(slug).catch((erro: unknown) => {
-    if (erro instanceof AppError && erro.code === 'NOT_FOUND') return null
-    throw erro
-  })
+  const achado = await perfilPublico(slug).then(
+    (perfil) => ({ perfil, indisponivel: null as string | null }),
+    (erro: unknown) => {
+      if (erro instanceof AppError && erro.code === 'NOT_FOUND') {
+        // C8: negócio com a conta pausada. Mostra a mensagem em vez do 404, que diria "esse endereço
+        // não existe" de uma página que existe.
+        const aviso = erro.details as { indisponivel?: boolean; nome?: string } | undefined
+        return { perfil: null, indisponivel: aviso?.indisponivel ? (aviso.nome ?? 'Este negócio') : null }
+      }
+      throw erro
+    },
+  )
+  const { perfil, indisponivel } = achado
+  if (indisponivel) {
+    return (
+      <div data-theme="light" style={{ color: 'var(--txt)', background: 'var(--bg)' } as React.CSSProperties}>
+        <style dangerouslySetInnerHTML={{ __html: 'html,body{background:#faf8f5}' }} />
+        <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-3 px-4 py-10">
+          <h1 className="text-titulo font-bold text-txt">{indisponivel}</h1>
+          <p className="text-corpo text-txt-2">O agendamento online deste negócio não está disponível agora. Fale direto com o negócio para marcar seu horário.</p>
+        </main>
+      </div>
+    )
+  }
   if (!perfil) notFound()
 
   // Sem cor escolhida (osso de fábrica) ou valor inválido: `null`, e nada é sobrescrito: valem os
