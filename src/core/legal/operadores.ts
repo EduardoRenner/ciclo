@@ -55,7 +55,8 @@ export const OPERADORES: readonly Operador[] = [
     condicao: 'sempre',
     naPolitica: true,
     marcadores: ['@supabase/supabase-js', '@supabase/ssr'],
-    chavesDeAmbiente: ['NEXT_PUBLIC_SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'],
+    // A chave de serviço fica de fora de propósito: o nome dela só pode aparecer em with-tenant.ts (lint).
+    chavesDeAmbiente: ['NEXT_PUBLIC_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_ANON_KEY'],
     hostsDoNavegador: [],
     hostsDoServidor: [],
   },
