@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 
 import { CARTOES } from '@/lib/planos-cartoes'
 
-import type { ModuloKey } from '@/core/billing/planos'
+import { PLANOS, type ModuloKey } from '@/core/billing/planos'
 
 /**
  * O irmão de `precos-nao-promete-demais.test.ts`, e a razão de ele não ter bastado.
@@ -79,12 +79,21 @@ function modulosTravadosNoServidor(): Set<ModuloKey> {
   return achados
 }
 
-/** Todo módulo vendido num degrau PAGO. O grátis não precisa de trava — ele é o piso. */
+/**
+ * Todo módulo vendido num degrau PAGO. O piso não precisa de trava.
+ *
+ * ATUALIZADO em 2026-09-30 (docs/87 D2). O piso era "o cartão do Grátis"; com o Grátis fora de
+ * venda, o cartão do Solo anuncia também a agenda, a página e o Motor de Ciclo, que são de todo
+ * tenant e por isso nunca tiveram `exigirModulo`. O que decide se um módulo precisa de trava é o
+ * mesmo de sempre — algum degrau abaixo dele NÃO o libera —, agora lido de onde ele mora: o
+ * catálogo do degrau `gratis` em `PLANOS`, que continua existindo como piso. Módulo pago sem trava
+ * continua reprovando.
+ */
 function modulosVendidosComoPagos(): ModuloKey[] {
-  const chaves = CARTOES.filter((c) => c.tier !== 'gratis')
-    .flatMap((c) => c.inclui)
+  const chaves = CARTOES.flatMap((c) => c.inclui)
     .map((i) => i.modulo)
     .filter((m): m is ModuloKey => Boolean(m))
+    .filter((m) => !PLANOS.gratis.modulos.includes(m))
   return [...new Set(chaves)]
 }
 

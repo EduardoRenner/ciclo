@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { CARTOES } from '@/lib/planos-cartoes'
-import { ORDEM_DOS_PLANOS, PLANOS, type PlanoTier } from '@/core/billing/planos'
+import { PLANOS, PLANOS_A_VENDA, type PlanoTier } from '@/core/billing/planos'
 
 /**
  * A página de preço é o único lugar do produto cujo trabalho é prometer. Este teste existe para
@@ -17,9 +17,22 @@ import { ORDEM_DOS_PLANOS, PLANOS, type PlanoTier } from '@/core/billing/planos'
  * vale.
  */
 
+/**
+ * ATUALIZADO em 2026-09-30 (docs/87 D2). "O degrau de baixo" era `ORDEM_DOS_PLANOS[i - 1]`, e para o
+ * primeiro degrau pago isso era o Grátis. O Grátis deixou de ser vendido (vira a conta pausada) e o
+ * Avançado também, então quem a página de preço compara entre si são as duas faixas À VENDA: o
+ * Solo não tem degrau de baixo (o Grátis não está no cartão), e o Equipe se compara com o Solo.
+ * A regra em si — não vender como novidade o que o degrau abaixo já dava — não mudou.
+ */
 function degrauAbaixo(tier: PlanoTier): PlanoTier | null {
-  const i = ORDEM_DOS_PLANOS.indexOf(tier)
-  return i > 0 ? (ORDEM_DOS_PLANOS[i - 1] as PlanoTier) : null
+  const vendidos = PLANOS_A_VENDA as readonly PlanoTier[]
+  const i = vendidos.indexOf(tier)
+  return i > 0 ? (vendidos[i - 1] as PlanoTier) : null
+}
+
+/** O teto de profissionais, com `null` (sem teto) valendo infinito para poder comparar. */
+function tetoDeProfissionais(tier: PlanoTier): number {
+  return PLANOS[tier].maxProfissionais ?? Number.POSITIVE_INFINITY
 }
 
 describe('a página de preço não promete o que o código não libera', () => {
@@ -73,10 +86,29 @@ describe('a página de preço não promete o que o código não libera', () => {
   it('todo degrau pago anuncia pelo menos uma coisa que só ele libera', () => {
     // Degrau que não tem nada de próprio para mostrar não deveria existir — é a pergunta que a
     // Fase D do plano manda fazer em cada fronteira: "qual dor específica faz alguém subir?".
+    //
+    // ATUALIZADO em 2026-09-30 (docs/87 D2): "só ele libera" ganhou uma segunda forma. As duas faixas
+    // vendem o mesmo produto e diferem só no tamanho da equipe, então a coisa própria do Equipe é um
+    // TETO maior de profissionais (`limite`), e não um módulo. O teto anunciado é conferido contra o
+    // core no caso seguinte, para a forma nova não virar promessa solta.
     for (const cartao of CARTOES) {
-      if (cartao.tier === 'gratis') continue
-      const proprios = cartao.inclui.filter((i) => i.modulo ?? i.capacidade)
+      const abaixo = degrauAbaixo(cartao.tier)
+      const proprios = cartao.inclui.filter((i) => {
+        if (i.modulo ?? i.capacidade) return true
+        return abaixo !== null && i.limite === 'profissionais' && tetoDeProfissionais(cartao.tier) > tetoDeProfissionais(abaixo)
+      })
       expect(proprios.length, `o cartão do ${cartao.tier} não anuncia nada que só ele libera`).toBeGreaterThan(0)
+    }
+  })
+
+  it('todo teto anunciado no cartão é o teto que o core tem', () => {
+    const comLimite = CARTOES.flatMap((c) => c.inclui.filter((i) => i.limite).map((i) => ({ tier: c.tier, item: i })))
+    // controle: se ninguém anuncia teto, o caso abaixo passaria vazio
+    expect(comLimite.length, 'nenhum cartão anuncia teto de profissionais').toBeGreaterThan(0)
+    for (const { tier, item } of comLimite) {
+      const teto = PLANOS[tier].maxProfissionais
+      expect(teto, `o cartão do ${tier} anuncia um teto que o core não tem`).not.toBeNull()
+      expect(item.texto, `"${item.texto}" não diz o teto real (${teto})`).toContain(String(teto))
     }
   })
 })

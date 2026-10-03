@@ -185,7 +185,7 @@ export async function exigirLimite(
   throw new AppError('PLAN_LIMIT', {
     message: alvo
       ? `Seu plano ${NOME_DO_PLANO[ctx.plano]} permite ${r.limite} ${rotulo(recurso, r.limite ?? 0)}. No ${NOME_DO_PLANO[alvo]} você cadastra mais.`
-      : `Seu plano ${NOME_DO_PLANO[ctx.plano]} permite ${r.limite} ${rotulo(recurso, r.limite ?? 0)}.`,
+      : `Seu plano ${NOME_DO_PLANO[ctx.plano]} permite ${r.limite} ${rotulo(recurso, r.limite ?? 0)}. Para mais que isso, veja Config → Meu plano.`,
     details: {
       recurso,
       plano: ctx.plano,

@@ -58,13 +58,20 @@ export const PRELANCAMENTO = {
   avisosDaPausa: [30, 7],
   /** Últimos N dias em que a faixa passa a contar dias (docs/87 §3.1: "só nos últimos 14 dias"). */
   diasDaContagemRegressiva: 14,
+  /**
+   * O número que a chamada pública usa ("60 dias de tudo liberado"). Só é dito enquanto for
+   * verdade para quem cria a conta HOJE; a partir do dia em que a cortesia restante fica menor, a
+   * chamada passa a dizer a DATA (`ofertaDoCadastro`). Sem isso a página prometeria 60 dias a quem
+   * se cadastra em 12/12 e entrega 30.
+   */
+  diasDaChamada: 60,
 } as const
 
 /**
- * O degrau que a cortesia libera. É o que a pessoa vê como "tudo liberado". Trocado no mesmo
- * commit que juntou os módulos nas duas faixas (docs/87 D2).
+ * O degrau que a cortesia libera: "tudo liberado", até 5 profissionais. Desde a D2 (docs/87) o
+ * Equipe tem todos os módulos; antes disso "tudo" só existia no Avançado, que deixou de ser vendido.
  */
-export const PLANO_DA_CORTESIA: PlanoTier = 'avancado'
+export const PLANO_DA_CORTESIA: PlanoTier = 'equipe'
 
 export const ORIGENS_DA_CORTESIA = ['pre_lancamento', 'teste'] as const
 export type OrigemDaCortesia = (typeof ORIGENS_DA_CORTESIA)[number]
@@ -313,4 +320,45 @@ export function descreverDia(dia: string): string {
 export function descreverDiaCurto(dia: string): string {
   const d = Temporal.PlainDate.from(dia)
   return `${d.day} de ${MESES[d.month - 1]}`
+}
+
+// ---------------------------------------------------------------------------------------------
+// A oferta, como a página pública a diz antes de a conta existir (docs/87 §3.2)
+// ---------------------------------------------------------------------------------------------
+
+export type OfertaDoCadastro = {
+  /** Cortesia até D0 (cadastro na janela) ou o teste de `diasDoTeste` dias (depois de 12/12). */
+  longa: boolean
+  /** A frase-título: "60 dias de tudo liberado, sem cartão", ou a data quando os 60 dias já não são verdade. */
+  chamada: string
+  /** O último dia de uso liberado, por extenso: "10 de janeiro de 2027". A data é fixa e real, nunca um contador. */
+  fim: string
+  /** O último dia em que o cadastro ainda leva a cortesia longa, sem o ano: "12 de dezembro". */
+  ateQuandoALongaVale: string
+}
+
+/**
+ * O que quem cria a conta em `agora` recebe e até quando, dito antes de criar a conta.
+ *
+ * Deriva de `cortesiaDoCadastro`, a MESMA função que concede no cadastro: o texto que a pessoa lê e
+ * o que ela ganha não têm como divergir. Nenhuma frase de urgência: só a data de fim, que é fixa, e
+ * um número (60) que some da chamada assim que deixa de ser verdade.
+ */
+export function ofertaDoCadastro(agora: Date): OfertaDoCadastro {
+  const c = cortesiaDoCadastro(agora)
+  const ultimo = ultimoDiaDaCortesia(c)
+  const longa = c.origem === 'pre_lancamento'
+  const diasInclusivos = diasEntre(diaEmBrasilia(agora), Temporal.PlainDate.from(ultimo)) + 1
+
+  let chamada: string
+  if (!longa) chamada = `${PRELANCAMENTO.diasDoTeste} dias de tudo liberado, sem cartão`
+  else if (diasInclusivos >= PRELANCAMENTO.diasDaChamada) chamada = `${PRELANCAMENTO.diasDaChamada} dias de tudo liberado, sem cartão`
+  else chamada = `Tudo liberado até ${descreverDiaCurto(ultimo)}, sem cartão`
+
+  return {
+    longa,
+    chamada,
+    fim: descreverDia(ultimo),
+    ateQuandoALongaVale: descreverDiaCurto(PRELANCAMENTO.ultimoDiaDaCortesiaLonga),
+  }
 }

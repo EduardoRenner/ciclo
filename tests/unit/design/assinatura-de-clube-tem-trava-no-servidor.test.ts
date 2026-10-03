@@ -33,11 +33,19 @@ function chamaExigirModuloClub(caminho: string): boolean {
 }
 
 describe('o clube de assinatura (club) existe de verdade e tem trava no servidor', () => {
-  it('club é um módulo real, só liberado no Avançado — a premissa desta guarda', () => {
+  /*
+    ATUALIZADO em 2026-09-30 (docs/87 D2): a premissa era "só liberado no Avançado". A D2 pôs todos os
+    módulos no degrau de entrada pago, então a premissa que importa é a de fundo: o clube é módulo
+    PAGO (não está no Grátis) e portanto precisa de trava no servidor, senão quem não paga cria plano
+    mensal à vontade. O que mudou é só QUAL degrau o libera.
+  */
+  it('club é um módulo real e pago (fora do Grátis, no degrau de entrada) — a premissa desta guarda', () => {
     expect(CATALOGO.some((m) => m.key === 'club'), 'club sumiu do catálogo — esta guarda precisa ser revista').toBe(true)
     expect(PLANOS.gratis.modulos, 'club entrou no Grátis — a trava de servidor deixou de fazer sentido').not.toContain('club')
-    expect(PLANOS.equipe.modulos, 'club entrou no Equipe — revisar junto com o Avançado').not.toContain('club')
-    expect(PLANOS.avancado.modulos, 'club saiu do Avançado — a página de preço e esta guarda precisam ser revistas').toContain('club')
+    expect(PLANOS.essencial.modulos, 'club saiu do degrau de entrada — a página de preço e esta guarda precisam ser revistas').toContain('club')
+    // e o herdam os de cima, que é o que garante que subir de degrau nunca tira o clube de ninguém
+    expect(PLANOS.equipe.modulos).toContain('club')
+    expect(PLANOS.avancado.modulos).toContain('club')
   })
 
   it('POST /api/v1/subscription-plans (criar plano mensal) exige o módulo club', () => {

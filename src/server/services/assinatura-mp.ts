@@ -17,9 +17,12 @@ type Cliente = SupabaseClient<Database>
 
 const DIAS_DE_GRACA = 7
 
-/** Só degrau cobrável — `gratis` não passa por checkout nenhum. */
+/**
+ * Só degrau cobrável — `gratis` não passa por checkout nenhum, e o Avançado deixou de ser vendido
+ * (docs/87 D2). O tipo continua largo porque um preapproval antigo pode carregá-lo.
+ */
 export type TierCobravel = Exclude<PlanoTier, 'gratis'>
-export const TIERS_COBRAVEIS: readonly TierCobravel[] = ['essencial', 'equipe', 'avancado']
+export const TIERS_COBRAVEIS: readonly TierCobravel[] = ['essencial', 'equipe']
 export function ehTierCobravel(v: string): v is TierCobravel {
   return (TIERS_COBRAVEIS as readonly string[]).includes(v)
 }
