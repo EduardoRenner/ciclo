@@ -4,9 +4,10 @@ import { headers } from 'next/headers'
 
 import { linkComOrigem } from '@/core/aquisicao/origem'
 import { textoDeParaQueIndicar, textoDoConviteDoCiclo } from '@/core/billing/convite-do-ciclo'
-import { lerAssinatura } from '@/core/billing/mercado-pago'
+import { acessoPagoVigente, lerAssinatura } from '@/core/billing/mercado-pago'
 import { visaoDoMeuPlano } from '@/core/billing/meu-plano'
 import { NOME_DO_PLANO, PLANOS, precoDoPlanoPorMes, verificarLimite } from '@/core/billing/planos'
+import { descreverDia, diaDeBrasilia } from '@/core/billing/prelancamento'
 import { ehRequisicaoDoAppNativo } from '@/core/plataforma/nativo'
 import { comMaiuscula, plural } from '@/core/text/vocabulario'
 import { APP_HOST, APP_URL } from '@/lib/app-url'
@@ -166,6 +167,16 @@ export default async function PaginaMeuPlano() {
           {cobrancaAutomatica && assinatura && assinatura.status !== 'cancelled' ? <CancelarAssinatura /> : null}
         </Card>
       )}
+
+      {/* C7: cancelou, mas o período já pago corre até a data. Sem esta frase, a pessoa que cancelou acha que perdeu o que pagou. */}
+      {!nativo && assinatura && acessoPagoVigente(assinatura, new Date()) ? (
+        <Card className="mb-5">
+          <p className="text-secundario text-txt-2">
+            <span className="font-semibold text-txt">Assinatura cancelada, sem nova cobrança.</span>{' '}
+            {`Seu plano ${NOME_DO_PLANO[pago]} continua valendo até ${descreverDia(diaDeBrasilia(new Date(assinatura.acesso_ate!)))}, o fim do período que você já pagou.`}
+          </p>
+        </Card>
+      ) : null}
 
       {!nativo && assinatura?.status === 'paused' ? (
         <Card className="mb-5 flex gap-3 border-warn">

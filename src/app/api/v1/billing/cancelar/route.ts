@@ -40,7 +40,7 @@ export const POST = rota(async (req, _params, requestId) => {
             action: 'tenant.subscription.cancel',
             entity: 'tenants',
             entityId: ctx.tenantId,
-            after: { plano: resultado.plano },
+            after: { plano: resultado.plano, acessoAte: resultado.acessoAte },
             requestId,
           },
           req,

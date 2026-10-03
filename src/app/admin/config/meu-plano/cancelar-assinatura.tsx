@@ -8,7 +8,7 @@ import { useState } from 'react'
  * literal de cliques com "Assinar" (`assinar-plano.tsx`), não um passo extra de cautela. O
  * `router.refresh()` no sucesso reidrata a tela do servidor — ela decide sozinha se mostra o link
  * de WhatsApp de novo (sem assinatura ativa) ou o aviso de graça (se a cancelação bateu num evento
- * de webhook concorrente, embora `cancelarAssinatura` já grave `gratis` na hora, sem esperar).
+ * de webhook concorrente) e, para quem já tinha pago, a data até a qual o plano continua (C7).
  */
 export default function CancelarAssinatura() {
   const router = useRouter()

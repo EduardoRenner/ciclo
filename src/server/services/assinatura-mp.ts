@@ -1,4 +1,5 @@
 import {
+  acessoPagoVigente,
   decidirPlano,
   lerAssinatura,
   valorConfereComDegrau,
@@ -73,10 +74,19 @@ export async function iniciarAssinatura(
 // ---------------------------------------------------------------------------------------------
 
 /**
- * O dono clica "Cancelar assinatura" → cancela o preapproval no MP e derruba para `gratis` NA
- * HORA, sem esperar o webhook (`docs/18` Fase K: "mesmo número de cliques que assinar" — esperar
- * faria o clique único parecer que não funcionou). Idempotente por construção: chamar de novo numa
- * assinatura já cancelada/inexistente é `sem_assinatura_ativa`, não erro.
+ * O dono clica "Cancelar assinatura" → cancela o preapproval no MP, sem esperar o webhook (`docs/18`
+ * Fase K: "mesmo número de cliques que assinar" — esperar faria o clique único parecer que não
+ * funcionou). Idempotente por construção: chamar de novo numa assinatura já cancelada/inexistente é
+ * `sem_assinatura_ativa`, não erro.
+ *
+ * **O degrau depende de a pessoa já ter pago** (C7, docs/86). Os Termos §6 prometem "você continua
+ * com o acesso até o fim do período já pago": quem tinha a assinatura `authorized` mantém o degrau
+ * contratado até o `next_payment_date` do MP, lido ANTES de cancelar (depois de cancelar o MP deixa de
+ * informar a data), e `expirarGracaVencida` o derruba nessa data. Quem nunca pagou (`pending`) ou cuja
+ * cobrança falhava (`paused`) não tem período pago correndo: cai na hora. Se a leitura da data falhar,
+ * o cancelamento NÃO acontece e o erro sobe: cancelar sem saber a data é cortar o que a pessoa pagou,
+ * e tentar de novo é barato. Ao fim, quem cair para `gratis` com cortesia vencida fica pausada, não
+ * no Grátis legado: `situacaoDaConta` já resolve isso.
  *
  * Regra 11 do CLAUDE.md ("nunca delete... use estado/compensação") não se aplica aqui: isto é a
  * PRÓPRIA transição de estado que a regra pede, não um delete de linha nem de histórico.
@@ -84,31 +94,42 @@ export async function iniciarAssinatura(
 export async function cancelarAssinatura(
   db: Cliente,
   tenantId: string,
-): Promise<{ resultado: 'cancelada'; plano: PlanoTier } | { resultado: 'sem_assinatura_ativa' }> {
+  // Injetável só para teste, como em `processarWebhookMP`.
+  consultarPreapprovalFn: typeof consultarPreapproval = consultarPreapproval,
+  agora: Date = new Date(),
+): Promise<{ resultado: 'cancelada'; plano: PlanoTier; acessoAte: string | null } | { resultado: 'sem_assinatura_ativa' }> {
   const { data: tenant, error } = await db.from('tenants').select('plan, settings').eq('id', tenantId).single()
   if (error) throw new AppError('INTERNAL', { cause: error })
 
   const assinatura = lerAssinatura(tenant.settings)
   if (!assinatura || assinatura.status === 'cancelled') return { resultado: 'sem_assinatura_ativa' }
 
+  let acessoAte: string | null = null
+  if (assinatura.status === 'authorized') {
+    const proximo = (await consultarPreapprovalFn(assinatura.preapproval_id)).proximoPagamento
+    if (proximo && new Date(proximo).getTime() > agora.getTime()) acessoAte = new Date(proximo).toISOString()
+  }
+
   await cancelarPreapproval(assinatura.preapproval_id)
 
   const novaAssinatura: AssinaturaDoTenant = {
     ...assinatura,
     status: 'cancelled',
-    atualizado_em: new Date().toISOString(),
+    atualizado_em: agora.toISOString(),
     graca_ate: null,
+    acesso_ate: acessoAte,
   }
+  const plano = acessoAte ? normalizarPlano(tenant.plan) : 'gratis'
   const { error: erroUpdate } = await db
     .from('tenants')
     .update({
-      plan: 'gratis',
+      plan: plano,
       settings: { ...((tenant.settings ?? {}) as Record<string, unknown>), assinatura: novaAssinatura },
     })
     .eq('id', tenantId)
   if (erroUpdate) throw new AppError('INTERNAL', { cause: erroUpdate })
 
-  return { resultado: 'cancelada', plano: 'gratis' }
+  return { resultado: 'cancelada', plano, acessoAte }
 }
 
 export type ResultadoWebhookMP =
@@ -177,7 +198,7 @@ export async function processarWebhookMP(
   }
 
   const planoVigente = normalizarPlano(tenant.plan)
-  const decisao = decidirPlano(situacao.status, assinatura.plano_contratado, planoVigente)
+  const decisao = decidirPlano(situacao.status, assinatura.plano_contratado, planoVigente, acessoPagoVigente(assinatura, new Date()))
 
   const novaAssinatura: AssinaturaDoTenant = {
     ...assinatura,
@@ -187,6 +208,8 @@ export async function processarWebhookMP(
     // em `core/billing/mercado-pago.ts`. `null` assim que sair de `paused`, para não sobrar data
     // de graça velha numa assinatura que já voltou a pagar.
     graca_ate: decisao.emGraca ? new Date(Date.now() + DIAS_DE_GRACA * 86_400_000).toISOString() : null,
+    // Só uma assinatura cancelada guarda o fim do período pago; ao voltar a pagar, a data velha some.
+    acesso_ate: situacao.status === 'cancelled' ? (assinatura.acesso_ate ?? null) : null,
   }
 
   const { error: erroUpdate } = await db
@@ -214,8 +237,8 @@ export async function processarWebhookMP(
 // ---------------------------------------------------------------------------------------------
 
 /**
- * Varre tenants com assinatura registrada, e derruba para `gratis` quem está `paused` com
- * `graca_ate` no passado — ou seja, o MP tentou cobrar e falhou por 7 dias seguidos sem se
+ * Varre tenants com assinatura registrada, e derruba para `gratis` quem cancelou e cujo período pago
+ * acabou (C7), e quem está `paused` com `graca_ate` no passado — ou seja, o MP tentou cobrar e falhou por 7 dias seguidos sem se
  * recuperar. Sem isto, uma assinatura pausada fica no degrau pago para sempre: o webhook só
  * REAGE a evento novo do MP, e o MP para de mandar evento quando desiste de retentar.
  */
@@ -230,10 +253,14 @@ export async function expirarGracaVencida(svc: Cliente, agora: Date = new Date()
   let derrubados = 0
   for (const t of data ?? []) {
     const a = lerAssinatura(t.settings)
-    if (!a || a.status !== 'paused' || !a.graca_ate) continue
-    if (new Date(a.graca_ate) > agora) continue
+    if (!a) continue
+    // Dois motivos de derrubar: a cobrança falhou por 7 dias, ou o período pago de quem cancelou acabou.
+    const porGraca = a.status === 'paused' && a.graca_ate && new Date(a.graca_ate) <= agora
+    const porFimDoPeriodoPago =
+      a.status === 'cancelled' && a.acesso_ate && new Date(a.acesso_ate) <= agora && normalizarPlano(t.plan) !== 'gratis'
+    if (!porGraca && !porFimDoPeriodoPago) continue
 
-    const novaAssinatura: AssinaturaDoTenant = { ...a, graca_ate: null, atualizado_em: agora.toISOString() }
+    const novaAssinatura: AssinaturaDoTenant = { ...a, graca_ate: null, acesso_ate: null, atualizado_em: agora.toISOString() }
     const { error: erroUpdate } = await svc
       .from('tenants')
       .update({
@@ -250,7 +277,7 @@ export async function expirarGracaVencida(svc: Cliente, agora: Date = new Date()
       action: 'tenant.plan.change',
       entity: 'tenants',
       entity_id: t.id,
-      after: { de: t.plan, para: 'gratis', por: 'graca_expirada' } as never,
+      after: { de: t.plan, para: 'gratis', por: porFimDoPeriodoPago ? 'periodo_pago_encerrado' : 'graca_expirada' } as never,
     })
     if (erroAudit) console.error(JSON.stringify({ level: 'error', event: 'audit_graca_expirada_falhou', tenantId: t.id }), erroAudit)
 
