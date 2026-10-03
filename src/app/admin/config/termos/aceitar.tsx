@@ -27,7 +27,7 @@ export default function AceitarVersaoNova() {
         setErro(json?.error?.message ?? 'Não deu para registrar o aceite agora. Tente de novo em instantes.')
         return
       }
-      mostrarToast({ tom: 'ok', titulo: 'Aceite registrado', descricao: 'Obrigado por ler.' })
+      mostrarToast({ tom: 'ok', titulo: 'Aceite registrado', descricao: 'Você pode rever os textos quando quiser.' })
       router.refresh()
     } catch {
       setErro('Sem conexão agora. Nada foi registrado; tente de novo quando a internet voltar.')
