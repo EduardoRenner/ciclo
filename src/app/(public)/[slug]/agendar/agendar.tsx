@@ -1341,6 +1341,27 @@ export default function Agendar({
             "Confirmar agendamento", mesma trava com motivo. Deixar os DOIS botões na tela
             duplicaria o alvo de toque e confundiria quem navega por Tab; a barra fixa é o único.
           */}
+
+          {/*
+            docs/86 J7. Esta é a única tela do produto em que quem NÃO contratou o CICLO entrega dado
+            pessoal (nome e telefone), e ela não dizia para onde o dado vai nem tinha caminho até a
+            política. Quem decide o uso é o negócio (controlador); o CICLO só guarda para ele
+            (operador). O link abre em OUTRA aba de propósito: navegar na mesma perderia o nome e o
+            telefone já digitados, que é o oposto de ajudar quem quer ler antes de confirmar.
+          */}
+          <div className="flex flex-col gap-1">
+            <p className="text-label text-txt-3">
+              Seus dados vão para {nomeDoSalao}, que decide o que fazer com eles. O CICLO só guarda para ele.
+            </p>
+            <a
+              href="/privacidade"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="toque-48 -mx-2 inline-flex w-fit items-center px-2 text-label font-semibold text-acc-2 underline underline-offset-2"
+            >
+              Política de privacidade
+            </a>
+          </div>
         </Card>
       ) : null}
     </div>
