@@ -47,7 +47,16 @@ function arquivos(dir: string): string[] {
   })
 }
 
-const FONTE = arquivos('src').map((caminho) => ({ caminho: caminho.replace(/\\/g, '/'), texto: semComentarios(readFileSync(caminho, 'utf8')) }))
+/**
+ * A própria lista fica FORA do que a guarda lê. Ela escreve cada marcador e cada host por extenso, então
+ * incluí-la fazia todo operador "encontrar rastro" de si mesmo: tirar a integração do código não
+ * reprovava, e um marcador errado também não (achado ao mutar esta guarda).
+ */
+const ARQUIVO_DA_LISTA = 'src/core/legal/operadores.ts'
+
+const FONTE = arquivos('src')
+  .map((caminho) => ({ caminho: caminho.replace(/\\/g, '/'), texto: semComentarios(readFileSync(caminho, 'utf8')) }))
+  .filter((f) => f.caminho !== ARQUIVO_DA_LISTA)
 
 function hostsDoFonte(): Map<string, string[]> {
   const mapa = new Map<string, string[]>()
@@ -66,6 +75,7 @@ const HOSTS_DOS_OPERADORES = new Set(OPERADORES.flatMap((o) => [...o.hostsDoServ
 describe('a lista de operadores cobre os terceiros do código', () => {
   it('o detector enxerga o cenário: acha dezenas de hosts e os operadores conhecidos, senão as asserções passariam vazias', () => {
     expect(FONTE.length, 'não li o fonte').toBeGreaterThan(300)
+    expect(FONTE.some((f) => f.caminho === ARQUIVO_DA_LISTA), 'a lista voltou a ser lida como se fosse o código: a guarda enxerga a si mesma').toBe(false)
     expect(HOSTS.size).toBeGreaterThan(10)
     for (const h of ['api.mercadopago.com', 'graph.facebook.com', 'api.resend.com']) expect(HOSTS.has(h), `${h} sumiu do fonte: o detector quebrou`).toBe(true)
   })
