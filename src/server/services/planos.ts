@@ -13,6 +13,7 @@ import {
   type Recurso,
   type ValorDoEixo,
 } from '@/core/billing/planos'
+import { regraDaEscritaNaPausa } from '@/core/billing/pausa'
 import { lerCortesia, situacaoDaConta, type SituacaoDaConta } from '@/core/billing/prelancamento'
 import { AppError } from '@/server/http/errors'
 
@@ -206,6 +207,24 @@ export function contaPausadaNaoCria(): AppError {
       'Sua cortesia acabou e a conta está pausada: você vê e exporta tudo, mas não cria nada novo. Escolha um plano em Config → Meu plano para voltar na hora.',
     details: { contaPausada: true },
   })
+}
+
+/**
+ * A trava de pausa de `contextoAtual` (C5). A situação é calculada na leitura, sem cron: a conta
+ * pausa na meia-noite certa sem ninguém precisar rodar nada. `agora` é parâmetro porque o teste
+ * precisa pôr o relógio em dia de pausa sem esperar até lá.
+ */
+export function exigirContaQueEscreve(
+  metodo: string,
+  pathname: string,
+  plano: string,
+  cortesia: unknown,
+  agora: Date = new Date(),
+): void {
+  const regra = regraDaEscritaNaPausa(metodo, pathname)
+  if (regra === 'leitura' || regra === 'permite') return
+  if (situacaoDaConta(normalizarPlano(plano), lerCortesia({ cortesia }), agora).podeEscrever) return
+  throw contaPausadaNaoCria()
 }
 
 function rotulo(recurso: Recurso, quantidade: number): string {

@@ -8,6 +8,7 @@ import { UUID } from '@/core/text/uuid'
 import { exigirSessao, type Sessao } from '@/server/auth/session'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { AppError } from '@/server/http/errors'
+import { exigirContaQueEscreve } from '@/server/services/planos'
 
 import type { Papel } from '@/server/auth/rbac'
 
@@ -116,6 +117,20 @@ function dadosDoTenant(bruto: TenantBruto | null): DadosDoTenant {
 }
 
 /**
+ * C5 (docs/87 D1): a conta pausada lê e exporta tudo, mas não cria nada novo. A trava mora AQUI,
+ * na porta por onde toda rota autenticada passa, e não em cada rota: das 93 rotas que escrevem, só
+ * 16 passavam por uma trava de plano. `core/billing/pausa.ts` diz, rota por rota, o que a pausa
+ * recusa; rota que a tabela não conhece é recusada.
+ *
+ * Leitura (`GET`) nunca é recusada, e o painel monta o contexto com uma `Request` de `GET`, então
+ * nenhuma tela quebra.
+ */
+function travaDaPausa(req: Request, ctx: Contexto): Contexto {
+  exigirContaQueEscreve(req.method, new URL(req.url).pathname, ctx.tenant.plan, ctx.tenant.cortesia)
+  return ctx
+}
+
+/**
  * Resolve o tenant ativo e **revalida o membership em toda requisição**
  * (FAQ C27). O header e o cookie dizem qual tenant a pessoa quer; quem responde
  * se ela pode é o banco.
@@ -137,7 +152,7 @@ export async function contextoAtual(req: Request): Promise<Contexto> {
     // Mesmo erro para "tenant não existe" e "existe mas não é seu": a diferença
     // vira um verificador de quais estabelecimentos existem no CICLO.
     if (!escolhido) throw new AppError('TENANT_MISMATCH')
-    return { sessao, tenantId: escolhido.tenant_id, papel: escolhido.role, tenant: dadosDoTenant(escolhido.tenants) }
+    return travaDaPausa(req, { sessao, tenantId: escolhido.tenant_id, papel: escolhido.role, tenant: dadosDoTenant(escolhido.tenants) })
   }
 
   if (ativos.length === 0) {
@@ -154,7 +169,7 @@ export async function contextoAtual(req: Request): Promise<Contexto> {
     )
   }
 
-  return { sessao, tenantId: unico.tenant_id, papel: unico.role, tenant: dadosDoTenant(unico.tenants) }
+  return travaDaPausa(req, { sessao, tenantId: unico.tenant_id, papel: unico.role, tenant: dadosDoTenant(unico.tenants) })
 }
 
 /**
