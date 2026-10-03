@@ -2,7 +2,7 @@ import { ArrowRight, CalendarCheck, Link2, Wallet } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 
-import { PLANOS } from '@/core/billing/planos'
+import { ofertaDoCadastro } from '@/core/billing/prelancamento'
 import { slugDeDemonstracaoNoAr } from '@/server/services/demonstracao'
 import IconeAnel from '@/components/ui/icone-anel'
 
@@ -250,6 +250,8 @@ const PERGUNTAS = [
 ]
 
 export default async function Home() {
+  // docs/87 §3.2: calculada AQUI, a cada regeneração, e não no topo do módulo (que envelhece numa instância quente).
+  const oferta = ofertaDoCadastro(new Date())
   /*
     A única leitura de banco desta página, e ela é barata de propósito: um `in` numa lista fechada
     de slugs, com índice, devolvendo uma coluna. Ver `server/services/demonstracao.ts` para o
@@ -566,10 +568,10 @@ export default async function Home() {
           `preco-em-um-lugar-so` aplicada a limite em vez de a preço.
         */}
         <CalendarCheck aria-hidden className="mx-auto mb-3 size-8 text-acc-2" />
-        <h2 className="text-titulo font-bold">Comece de graça, e sem cartão</h2>
+        <h2 className="text-titulo font-bold">Comece sem cartão</h2>
         <p className="mx-auto mt-2 max-w-[44ch] text-secundario text-txt-2">
-          Grátis para sempre com {PLANOS.gratis.maxProfissionais} profissional. A base é sua: se um dia você parar de
-          pagar, nada some.
+          {oferta.chamada[0]?.toUpperCase()}
+          {oferta.chamada.slice(1)}. A base é sua: se um dia você parar de pagar, nada some.
         </p>
         <div className="mt-5 flex flex-wrap justify-center gap-3">
           <Link href="/cadastro" className={botaoPrimario}>

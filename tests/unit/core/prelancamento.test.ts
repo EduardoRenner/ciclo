@@ -3,6 +3,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import {
   PRELANCAMENTO,
   cortesiaDoCadastro,
+  ofertaDoCadastro,
   descreverDia,
   descreverDiaCurto,
   diaDeBrasilia,
@@ -256,5 +257,69 @@ describe('apresentação', () => {
   it('escreve a data por extenso, igual em qualquer máquina', () => {
     expect(descreverDia('2027-01-11')).toBe('11 de janeiro de 2027')
     expect(descreverDiaCurto('2026-12-12')).toBe('12 de dezembro')
+  })
+})
+
+describe('ofertaDoCadastro: o que a página pública diz antes de a conta existir', () => {
+  const um = (iso: string) => ofertaDoCadastro(new Date(iso))
+
+  it('antes da janela: diz "pelo menos 60" e a data de fim, e o número NÃO passa do que a pessoa recebe', () => {
+    const o = um('2026-10-03T15:00:00Z')
+    expect(o.longa).toBe(true)
+    expect(o.chamada).toBe('Pelo menos 60 dias de tudo liberado, sem cartão')
+    expect(o.fim).toBe('10 de janeiro de 2027')
+    const c = cortesiaDoCadastro(new Date('2026-10-03T15:00:00Z'))
+    const dias = diasParaOFim(c, new Date('2026-10-03T15:00:00Z')) + 1
+    expect(dias, 'a chamada prometeu mais dias do que a cortesia entrega').toBeGreaterThanOrEqual(60)
+  })
+
+  it('na abertura pública (09/11) ainda são mais de 60 dias, e a chamada continua verdadeira', () => {
+    const o = um('2026-11-09T15:00:00Z')
+    expect(o.chamada).toBe('Pelo menos 60 dias de tudo liberado, sem cartão')
+  })
+
+  it('o número SOME no dia em que deixa de ser verdade, e vira a data', () => {
+    // Em 12/11 restam 60 dias inclusivos até 10/01? Conferido pela mesma conta, não por aritmética à mão.
+    const quando = (iso: string) => {
+      const c = cortesiaDoCadastro(new Date(iso))
+      return diasParaOFim(c, new Date(iso)) + 1
+    }
+    expect(quando('2026-11-12T15:00:00Z')).toBe(60)
+    expect(um('2026-11-12T15:00:00Z').chamada).toBe('Pelo menos 60 dias de tudo liberado, sem cartão')
+    expect(quando('2026-11-13T15:00:00Z')).toBe(59)
+    expect(um('2026-11-13T15:00:00Z').chamada).toBe('Tudo liberado até 10 de janeiro, sem cartão')
+  })
+
+  it('o último dia da cortesia longa (12/12) ainda é cortesia longa, com 30 dias de verdade', () => {
+    const o = um('2026-12-12T15:00:00Z')
+    expect(o.longa).toBe(true)
+    expect(o.chamada).toBe('Tudo liberado até 10 de janeiro, sem cartão')
+    expect(o.ateQuandoALongaVale).toBe('12 de dezembro')
+  })
+
+  it('13/12 em diante é o teste de 21 dias, e a frase diz 21', () => {
+    const o = um('2026-12-13T15:00:00Z')
+    expect(o.longa).toBe(false)
+    expect(o.chamada).toBe('21 dias de tudo liberado, sem cartão')
+    expect(o.fim).toBe('3 de janeiro de 2027')
+  })
+
+  it('depois do lançamento: o teste de 21 dias, para sempre', () => {
+    expect(um('2027-03-01T15:00:00Z')).toMatchObject({ longa: false, chamada: '21 dias de tudo liberado, sem cartão' })
+  })
+
+  it('o dia é o de Brasília: 22h30 de 12/12 em Brasília ainda é cortesia longa, mesmo com a máquina em outro dia', () => {
+    // 2026-12-13T01:30Z = 22h30 de 12/12 em Brasília; em Kiritimati já é 13/12.
+    expect(um('2026-12-13T01:30:00Z').longa).toBe(true)
+    // E 21h01 de 12/12 + 3h = 00h01 de 13/12 em Brasília: acabou.
+    expect(um('2026-12-13T03:01:00Z').longa).toBe(false)
+  })
+
+  it('nenhuma frase tem travessão nem escassez', () => {
+    for (const iso of ['2026-10-03T15:00:00Z', '2026-11-20T15:00:00Z', '2026-12-13T15:00:00Z', '2027-03-01T15:00:00Z']) {
+      const o = um(iso)
+      expect(o.chamada).not.toMatch(/[—–]/)
+      expect(o.chamada).not.toMatch(/só hoje|últimas vagas|corra/i)
+    }
   })
 })

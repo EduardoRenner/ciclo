@@ -16,8 +16,14 @@ describe('versões legais', () => {
     for (const v of Object.values(VERSOES_LEGAIS)) expect(v).toMatch(/^\d{4}-\d{2}-\d{2}$/)
   })
 
-  it('a página mostra EXATAMENTE a data que mostrava antes — o texto legal não mudou', () => {
-    expect(dataLegivel(VERSOES_LEGAIS.termos)).toBe('21 de setembro de 2026')
+  /*
+    A data é FIXADA aqui para que mudar a versão legal seja um ato deliberado: quem muda o texto de
+    `/termos` ou `/privacidade` troca a constante E esta linha no mesmo commit, e o revisor vê as
+    duas. Termos: 03/10/2026, §5 e §6 reescritos para o período de uso sem cobrança e os dois planos
+    (docs/87). Antes: 21/09/2026.
+  */
+  it('a versão em vigor é a que este teste conhece: mudar o texto legal exige mudar a data aqui, de propósito', () => {
+    expect(dataLegivel(VERSOES_LEGAIS.termos)).toBe('3 de outubro de 2026')
     expect(dataLegivel(VERSOES_LEGAIS.privacidade)).toBe('16 de setembro de 2026')
   })
 

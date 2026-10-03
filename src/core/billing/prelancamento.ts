@@ -59,7 +59,7 @@ export const PRELANCAMENTO = {
   /** Últimos N dias em que a faixa passa a contar dias (docs/87 §3.1: "só nos últimos 14 dias"). */
   diasDaContagemRegressiva: 14,
   /**
-   * O número que a chamada pública usa ("60 dias de tudo liberado"). Só é dito enquanto for
+   * O número que a chamada pública usa ("pelo menos 60 dias de tudo liberado"). Só é dito enquanto for
    * verdade para quem cria a conta HOJE; a partir do dia em que a cortesia restante fica menor, a
    * chamada passa a dizer a DATA (`ofertaDoCadastro`). Sem isso a página prometeria 60 dias a quem
    * se cadastra em 12/12 e entrega 30.
@@ -339,7 +339,7 @@ export function descreverDiaCurto(dia: string): string {
 export type OfertaDoCadastro = {
   /** Cortesia até D0 (cadastro na janela) ou o teste de `diasDoTeste` dias (depois de 12/12). */
   longa: boolean
-  /** A frase-título: "60 dias de tudo liberado, sem cartão", ou a data quando os 60 dias já não são verdade. */
+  /** A frase-título: "pelo menos 60 dias de tudo liberado, sem cartão", ou a data quando os 60 dias já não são verdade. */
   chamada: string
   /** O último dia de uso liberado, por extenso: "10 de janeiro de 2027". A data é fixa e real, nunca um contador. */
   fim: string
@@ -362,7 +362,7 @@ export function ofertaDoCadastro(agora: Date): OfertaDoCadastro {
 
   let chamada: string
   if (!longa) chamada = `${PRELANCAMENTO.diasDoTeste} dias de tudo liberado, sem cartão`
-  else if (diasInclusivos >= PRELANCAMENTO.diasDaChamada) chamada = `${PRELANCAMENTO.diasDaChamada} dias de tudo liberado, sem cartão`
+  else if (diasInclusivos >= PRELANCAMENTO.diasDaChamada) chamada = `Pelo menos ${PRELANCAMENTO.diasDaChamada} dias de tudo liberado, sem cartão`
   else chamada = `Tudo liberado até ${descreverDiaCurto(ultimo)}, sem cartão`
 
   return {
