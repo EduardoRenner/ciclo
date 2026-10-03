@@ -1,6 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 
+import { OPERADORES_NA_POLITICA } from '@/core/legal/operadores'
 import { dataLegivel, VERSOES_LEGAIS } from '@/core/legal/versoes'
 import { canalDeContato } from '@/lib/contato'
 
@@ -23,7 +24,12 @@ const CANAL = canalDeContato('Oi! É sobre os meus dados no CICLO.')
  *     com teste de isolamento que quebra o build;
  *   - "dá para exportar e apagar" → `/api/v1/clients/[id]/data-export` e `.../erase`;
  *   - "quando você apaga, some da trilha também" → a eliminação alcança `audit_log` e
- *     `idempotency_keys` (achado da rodada 2 da super auditoria).
+ *     `idempotency_keys` (achado da rodada 2 da super auditoria);
+ *   - a lista de quem recebe dado e ONDE processa → `core/legal/operadores.ts`, com guarda que a
+ *     amarra ao que o código chama (docs/86 J2). Antes eram quatro nomes escritos à mão e a frase
+ *     "os servidores ficam no Brasil", verdadeira só para o banco e as funções;
+ *   - "as telas só falam com o CICLO e com o banco" → a CSP de `middleware.ts` (`connect-src`,
+ *     `img-src`, `default-src 'self'`), que a mesma guarda confere contra os operadores.
  *
  * Nada aqui descreve intenção futura. Se uma frase deixar de ser verdade no código, ela sai daqui
  * junto — política de privacidade que promete o que o sistema não faz é a pior classe de promessa
@@ -154,22 +160,12 @@ export default function Privacidade() {
             operar o serviço que você contratou. Isso inclui, hoje:
           </p>
           <ul className="mt-2 list-disc pl-5">
-            <li>
-              <strong className="font-semibold text-txt">Mercado Pago</strong>, pra processar a
-              assinatura do seu plano. A gente nunca vê nem guarda número de cartão.
-            </li>
-            <li>
-              <strong className="font-semibold text-txt">WhatsApp Business Platform (Meta)</strong>,
-              pra entregar lembrete e mensagem de recuperação de cliente.
-            </li>
-            <li>
-              <strong className="font-semibold text-txt">Resend</strong>, pra entregar e-mail
-              transacional (confirmação, recuperação de senha).
-            </li>
-            <li>
-              <strong className="font-semibold text-txt">Supabase</strong>, que hospeda o banco de
-              dados, com o mesmo isolamento por conta descrito na seção 4.
-            </li>
+            {OPERADORES_NA_POLITICA.map((o) => (
+              <li key={o.id}>
+                <strong className="font-semibold text-txt">{o.nome}</strong>, {o.papel}. Recebe: {o.dadoQueRecebe}. Onde
+                processa: {o.onde}.{o.condicao === 'se_configurado' ? ' Só entra em ação quando está ligado.' : ''}
+              </li>
+            ))}
           </ul>
         </section>
 
@@ -191,7 +187,16 @@ export default function Privacidade() {
               <strong className="font-semibold text-txt">Telefone de cliente é guardado também de
               forma embaralhada</strong>, para que a busca funcione sem espalhar o número.
             </li>
-            <li>Tudo trafega por conexão cifrada, e os servidores ficam no Brasil.</li>
+            <li>Tudo trafega por conexão cifrada.</li>
+            <li>
+              O banco de dados e as funções do sistema ficam em São Paulo. Alguns serviços da lista da seção 3 processam
+              fora do Brasil, e isso está dito ao lado de cada um.
+            </li>
+            <li>
+              As telas só falam com o próprio CICLO e com o banco de dados. Não há Google Analytics, pixel de
+              rastreio nem fonte ou vídeo de terceiro. Só o serviço de erros, quando está ligado, recebe algo do
+              navegador, com os dados pessoais removidos.
+            </li>
             <li>Dado de saúde nunca vai para registro de erro nem para ferramenta de análise.</li>
           </ul>
         </section>
@@ -199,9 +204,10 @@ export default function Privacidade() {
         <section>
           <h2>5. Com quem a gente compartilha</h2>
           <p>
-            Só com quem é necessário para o serviço existir, e cada um vê apenas o que precisa:
-            a empresa que hospeda o sistema, a que hospeda o banco de dados e, quando você usa
-            envio de mensagem ou e-mail, o serviço que entrega essa mensagem.
+            Só com quem é necessário para o serviço existir, e cada um vê apenas o que precisa. A lista
+            completa, com o que cada um recebe e onde processa, está na seção 3. Quando um deles processa dado
+            fora do Brasil, isso é transferência internacional (LGPD, art. 33), e ele aparece na lista como
+            &ldquo;fora do Brasil&rdquo;.
           </p>
           <p>
             Podemos compartilhar também se a lei ou uma ordem judicial exigir. Fora isso, ninguém

@@ -11,10 +11,31 @@
  */
 export const VERSOES_LEGAIS = {
   termos: '2026-09-21',
-  privacidade: '2026-09-16',
+  privacidade: '2026-10-03',
 } as const
 
 export type DocumentoLegal = keyof typeof VERSOES_LEGAIS
+
+/**
+ * O que mudou em cada versão, em uma ou duas frases para o dono da conta, escrito por quem mudou o
+ * texto. A tela de aceite mostra o da versão em vigor; **uma guarda exige que exista um resumo para
+ * a versão atual de cada documento**, então trocar a data em `VERSOES_LEGAIS` sem escrever o que mudou
+ * reprova (senão o dono seria convidado a aceitar sem saber o quê).
+ *
+ * Chave = a data da versão. Versões antigas ficam: servem de histórico do que cada aceite aceitou.
+ */
+export const RESUMO_DA_VERSAO: Record<DocumentoLegal, Record<string, string>> = {
+  termos: {
+    '2026-09-21': 'Versão anterior ao período de uso sem cobrança.',
+    '2026-10-03':
+      'Os termos passam a descrever o período de uso sem cobrança, os dois planos (Solo e Equipe), a pausa da conta depois desse período e a exportação da base inteira. A limitação de responsabilidade deixou de citar o plano gratuito.',
+  },
+  privacidade: {
+    '2026-09-16': 'Versão anterior à lista completa de quem recebe dados.',
+    '2026-10-03':
+      'A lista de quem recebe dados agora diz o que cada um recebe e onde processa. A política deixou de dizer que todos os servidores ficam no Brasil: só o banco de dados e as funções ficam. E passou a dizer que as telas só falam com o CICLO e com o banco.',
+  },
+}
 
 const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
 

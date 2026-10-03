@@ -4,10 +4,14 @@ import Link from 'next/link'
 import { after } from 'next/server'
 import { Temporal } from '@js-temporal/polyfill'
 
+import AlertBanner from '@/components/ui/alert-banner'
 import PageHeader from '@/components/ui/page-header'
+import { textoDoAvisoDeVersao } from '@/core/legal/aceite'
 import { ehRequisicaoDoAppNativo } from '@/core/plataforma/nativo'
+import { avaliarPermissao } from '@/server/auth/rbac'
 import { contextoDoPainel } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
+import { aceitesPendentes } from '@/server/services/aceite-legal'
 import { receitaAtribuidaAoCiclo } from '@/server/services/atribuicao'
 import { centralDeAcoes } from '@/server/services/crm'
 import { registrarPrimeiraOcorrencia } from '@/server/services/product-events'
@@ -46,7 +50,7 @@ export default async function PaginaHoje() {
 
   const hoje = Temporal.Now.zonedDateTimeISO(timezone).toPlainDate().toString()
 
-  const [resumo, acoes, atribuicao, emRisco, prestacaoDeContas] = await Promise.all([
+  const [resumo, acoes, atribuicao, emRisco, prestacaoDeContas, aceitePendente] = await Promise.all([
     resumoDeHoje(db, ctx.tenantId, timezone),
     /*
       Nunca derruba "Hoje": um resumo de CRM que falhar vira lista vazia, não erro na tela mais
@@ -100,6 +104,17 @@ export default async function PaginaHoje() {
       console.warn(JSON.stringify({ level: 'warn', event: 'prestacao_de_contas_indisponivel' }), erro)
       return { conferidas: 0, acertos: 0, acertoBps: null, emAberto: 0, detalhe: { voltouAntes: 0, voltouNaJanela: 0, voltouDepois: 0, naoVoltou: 0 }, erroMedianoDias: null }
     }),
+    /*
+      docs/86 J8: o aviso de versão nova dos termos. Só para quem pode aceitar (o dono), no MESMO
+      `Promise.all` (não soma ida de rede) e com `catch` que registra: falha aqui não derruba a tela
+      mais importante do app, e vira linha de log em vez de um aviso que some sem ninguém saber.
+    */
+    avaliarPermissao(ctx.papel, 'tenant:update')
+      ? aceitesPendentes(db, ctx.tenantId).catch((erro: unknown) => {
+          console.warn(JSON.stringify({ level: 'warn', event: 'aceite_pendente_indisponivel' }), erro)
+          return []
+        })
+      : Promise.resolve([]),
   ])
 
   // G-05a (docs/60): o segundo evento do funil mínimo — o momento em que o Motor de Ciclo mostra,
@@ -151,6 +166,21 @@ export default async function PaginaHoje() {
           ) : null
         }
       />
+
+      {textoDoAvisoDeVersao(aceitePendente) ? (
+        <AlertBanner
+          tom="acento"
+          role="status"
+          className="mb-4"
+          acao={
+            <Link href="/admin/config/termos" className="toque-48 inline-flex items-center text-acc-2">
+              Ver e aceitar
+            </Link>
+          }
+        >
+          <p className="text-secundario">{textoDoAvisoDeVersao(aceitePendente)}</p>
+        </AlertBanner>
+      ) : null}
 
       <Hoje
         resumo={resumo}
