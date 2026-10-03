@@ -231,6 +231,16 @@ export function fimDaPausa(cortesia: Pick<Cortesia, 'ate'>): Date {
   )
 }
 
+/** O último dia em que a graça ainda deixa criar, como `AAAA-MM-DD` de Brasília. `fimDaGraca` é a meia-noite SEGUINTE a ele. */
+export function ultimoDiaDaGraca(cortesia: Pick<Cortesia, 'ate'>): string {
+  return diaDeBrasilia(new Date(fimDaGraca(cortesia).getTime() - 1))
+}
+
+/** O último dia em que a conta pausada ainda guarda tudo, antes da eliminação prevista nos termos. */
+export function ultimoDiaDaPausa(cortesia: Pick<Cortesia, 'ate'>): string {
+  return diaDeBrasilia(new Date(fimDaPausa(cortesia).getTime() - 1))
+}
+
 /**
  * O plano vigente: **o maior entre o plano pago e a cortesia ainda em pé** — a cortesia nunca
  * rebaixa quem já paga mais. "Em pé" inclui os 7 dias de graça (docs/87 D1: tudo funciona). Depois

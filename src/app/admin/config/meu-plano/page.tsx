@@ -5,7 +5,8 @@ import { headers } from 'next/headers'
 import { linkComOrigem } from '@/core/aquisicao/origem'
 import { textoDeParaQueIndicar, textoDoConviteDoCiclo } from '@/core/billing/convite-do-ciclo'
 import { lerAssinatura } from '@/core/billing/mercado-pago'
-import { NOME_DO_PLANO, ORDEM_DOS_PLANOS, precoDoPlanoPorMes, verificarLimite } from '@/core/billing/planos'
+import { visaoDoMeuPlano } from '@/core/billing/meu-plano'
+import { NOME_DO_PLANO, PLANOS, precoDoPlanoPorMes, verificarLimite } from '@/core/billing/planos'
 import { ehRequisicaoDoAppNativo } from '@/core/plataforma/nativo'
 import { comMaiuscula, plural } from '@/core/text/vocabulario'
 import { APP_HOST, APP_URL } from '@/lib/app-url'
@@ -97,13 +98,17 @@ export default async function PaginaMeuPlano() {
   const limProf = verificarLimite(plano, 'profissionais', usoProf, 0)
   const limCli = verificarLimite(plano, 'clientes', usoCli, 0)
 
-  const atual = plano.plano
-  const indiceAtual = ORDEM_DOS_PLANOS.indexOf(atual)
-  const acima = ORDEM_DOS_PLANOS.slice(indiceAtual + 1)
+  /*
+    docs/87 §3: o que a tela diz depende do ESTADO da conta (cortesia, graça, pausada, pago), e não do
+    degrau de leitura. `plano.plano` na conta pausada ainda é o Equipe, e dizer "Você está no Equipe,
+    R$ 99/mês" a quem não paga nada foi o defeito medido no navegador em 03/10.
+  */
+  const pago = plano.planoPago
+  const visao = visaoDoMeuPlano(plano.situacao, pago, usoProf)
 
   // A porta que faltava. Enquanto não há cobrança automática, mudar de plano é uma conversa — e
   // até 2026-09-03 esta tela mandava "falar com a gente" sem oferecer com quem. Ver `lib/contato.ts`.
-  const canal = canalDeContato(assuntoDeMudarDePlano(NOME_DO_PLANO[atual]))
+  const canal = canalDeContato(assuntoDeMudarDePlano(visao.nome))
 
   // Leitura de variável de ambiente, não I/O — mesmo raciocínio de `AssistenteFlutuante` em
   // `admin/layout.tsx`. Sem a credencial do MP, o botão de assinar nem existe: regra 5.4.
@@ -118,7 +123,7 @@ export default async function PaginaMeuPlano() {
 
   return (
     <>
-      <PageHeader titulo="Meu plano" descricao={nativo ? undefined : `Você está no ${NOME_DO_PLANO[atual]}.`} />
+      <PageHeader titulo="Meu plano" descricao={nativo ? undefined : visao.descricao} />
 
       {nativo ? (
         <Card className="mb-5">
@@ -135,16 +140,19 @@ export default async function PaginaMeuPlano() {
       ) : (
         <Card className="mb-5">
           <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-            <p className="text-corpo font-semibold text-txt">{NOME_DO_PLANO[atual]}</p>
-            <p className="tabular text-stat font-bold text-txt">{precoDoPlanoPorMes(atual)}</p>
+            <p className="text-corpo font-semibold text-txt">{visao.nome}</p>
+            {visao.preco !== null ? <p className="tabular text-stat font-bold text-txt">{visao.preco}</p> : null}
           </div>
           {/*
             A frase mais importante da tela, e a que responde a pergunta que a pessoa realmente tem
             quando abre "Meu plano" num produto que ainda não cobra. Dizer isso em texto simples é
             mais honesto — e menos assustador — que um botão de cobrança que não funciona.
           */}
-          <p className="mt-2 text-secundario text-txt-2">{textoDeMudarDePlano(atual === 'gratis', canal !== null)}</p>
-          {canal ? (
+          <p className="mt-2 text-secundario text-txt-2">
+            {visao.explicacao ?? textoDeMudarDePlano(pago === 'gratis', canal !== null, cobrancaAutomatica)}
+          </p>
+          {/* Na cortesia, na graça e na pausa a porta é o cartão do plano logo abaixo, não a conversa. */}
+          {canal && visao.explicacao === null ? (
             <a
               href={canal.href}
               target="_blank"
@@ -165,7 +173,7 @@ export default async function PaginaMeuPlano() {
           <p className="text-secundario text-txt-2">
             <span className="font-semibold text-txt">Seu pagamento não passou.</span>{' '}
             {assinatura.graca_ate
-              ? `Você continua no ${NOME_DO_PLANO[atual]} até ${new Date(assinatura.graca_ate).toLocaleDateString('pt-BR')}. Depois disso, cai para o Grátis, sem perder nada: só limita o que dá para criar.`
+              ? `Você continua no ${NOME_DO_PLANO[pago]} até ${new Date(assinatura.graca_ate).toLocaleDateString('pt-BR')}. Depois disso, cai para o Grátis, sem perder nada: só limita o que dá para criar.`
               : 'O Mercado Pago está tentando de novo. Se não resolver, o plano cai para o Grátis.'}
           </p>
         </Card>
@@ -209,11 +217,11 @@ export default async function PaginaMeuPlano() {
         </p>
       </Card>
 
-      {nativo ? null : acima.length > 0 ? (
+      {nativo ? null : visao.opcoes.length > 0 ? (
         <>
-          <SectionHeader>Se precisar de mais</SectionHeader>
+          <SectionHeader>{visao.cabecalho}</SectionHeader>
           <div className="flex flex-col gap-3">
-            {acima.map((tier) => (
+            {visao.opcoes.map(({ tier, excedeEm }) => (
               <Card key={tier}>
                 <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
                   <p className="text-corpo font-semibold text-txt">{NOME_DO_PLANO[tier]}</p>
@@ -233,17 +241,22 @@ export default async function PaginaMeuPlano() {
                   ))}
                 </ul>
                 {/*
-                  Cada degrau leva o próprio pedido, com o nome do plano já escrito na mensagem.
-                  Sem isto a seção era um folheto: listava o que o assinante ganharia e não dava
-                  como pedir. O botão nomeia o plano em vez de dizer "fazer upgrade" — quem toca
-                  aqui já escolheu, e o texto que sai no WhatsApp poupa a pessoa de explicar.
+                  Assinar uma faixa menor que a equipe que a pessoa já tem é pagar por onde a próxima
+                  criação trava. Então a faixa que não comporta mostra o porquê, e não o botão.
                 */}
-                {cobrancaAutomatica ? (
+                {excedeEm > 0 ? (
+                  <p className="mt-4 text-secundario text-txt-2">
+                    Você tem {usoProf} profissionais ativos, e o {NOME_DO_PLANO[tier]} comporta{' '}
+                    {PLANOS[tier].maxProfissionais}.
+                  </p>
+                ) : cobrancaAutomatica ? (
                   <AssinarPlano tier={tier} />
                 ) : (
                   (() => {
                     const pedido = canalDeContato(
-                      `Oi! Uso o CICLO no ${NOME_DO_PLANO[atual]} e quero passar para o ${NOME_DO_PLANO[tier]}.`,
+                      pago === 'gratis'
+                        ? `Oi! Uso o CICLO e quero assinar o ${NOME_DO_PLANO[tier]}.`
+                        : `Oi! Uso o CICLO no ${NOME_DO_PLANO[pago]} e quero passar para o ${NOME_DO_PLANO[tier]}.`,
                     )
                     return pedido ? (
                       <a
@@ -262,14 +275,40 @@ export default async function PaginaMeuPlano() {
             ))}
           </div>
         </>
-      ) : (
-        <Card className="flex gap-3">
+      ) : null}
+
+      {/*
+        Acima de 5 profissionais não há faixa à venda (docs/87 D2): o caminho é uma conversa. Aparece
+        para quem já está no Equipe e para quem tem mais gente do que o Equipe comporta, e some
+        quando ninguém precisa dela, em vez de dizer "você já está no plano mais completo".
+      */}
+      {nativo ? null : visao.noDegrauMaisAlto || visao.opcoes.some((o) => o.tier === 'equipe' && o.excedeEm > 0) ? (
+        <Card className="mt-3 flex gap-3">
           <Minus aria-hidden className="mt-0.5 size-4 shrink-0 text-txt-3" />
-          <p className="text-secundario text-txt-2">
-            Você já está no plano mais completo. Não há mais nada para liberar.
-          </p>
+          <div className="min-w-0 flex-1">
+            <p className="text-secundario font-semibold text-txt">Mais de {PLANOS.equipe.maxProfissionais} profissionais?</p>
+            <p className="mt-1 text-secundario text-txt-2">
+              {canalDeContato('Oi! Meu negócio tem mais profissionais do que o plano Equipe comporta.')
+                ? 'Esse plano é combinado em uma conversa, porque cada equipe grande é diferente.'
+                : 'Esse plano é combinado à parte, porque cada equipe grande é diferente.'}
+            </p>
+            {(() => {
+              const grande = canalDeContato('Oi! Meu negócio tem mais profissionais do que o plano Equipe comporta.')
+              return grande ? (
+                <a
+                  href={grande.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-5 text-corpo font-semibold text-txt transition duration-[var(--dur-1)] hover:bg-surface-3 active:scale-[.97]"
+                >
+                  {grande.rotulo}
+                  <ArrowRight aria-hidden className="size-4" />
+                </a>
+              ) : null
+            })()}
+          </div>
         </Card>
-      )}
+      ) : null}
 
       {/*
         `docs/30-INDICACAO-PLANO.md` §3: o laço B2C (a cliente do salão indica outra cliente) está

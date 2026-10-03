@@ -2,10 +2,9 @@ import {
   PRELANCAMENTO,
   descreverDia,
   descreverDiaCurto,
-  diaDeBrasilia,
   diasParaOFim,
-  fimDaGraca,
   ultimoDiaDaCortesia,
+  ultimoDiaDaGraca,
   type SituacaoDaConta,
 } from './prelancamento'
 
@@ -36,11 +35,6 @@ export type FaixaDaConta = {
 }
 
 const ACAO = 'Escolher plano'
-
-/** O último dia em que a graça ainda deixa criar. `fimDaGraca` é a meia-noite SEGUINTE a ele. */
-function ultimoDiaDaGraca(cortesia: { ate: string }): string {
-  return diaDeBrasilia(new Date(fimDaGraca(cortesia).getTime() - 1))
-}
 
 export function faixaDaConta(situacao: SituacaoDaConta, agora: Date): FaixaDaConta | null {
   const { estado, cortesia } = situacao
