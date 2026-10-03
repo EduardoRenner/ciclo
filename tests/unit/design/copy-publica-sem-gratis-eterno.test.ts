@@ -56,13 +56,17 @@ describe('a copy pública não promete o Grátis para sempre', () => {
 
   it('a chamada é calculada DENTRO da página, nunca no topo do módulo (que envelhece numa instância quente)', () => {
     for (const k of ['home', 'precos', 'cadastro', 'llms'] as const) {
-      const fonte = FONTE[k]
-      const uso = fonte.indexOf('ofertaDoCadastro(new Date())')
-      // Antes do uso tem que existir a abertura de uma função (a página, o GET ou generateMetadata).
-      const antes = fonte.slice(0, uso)
-      expect(antes, `${SUPERFICIES[k]} calcula a oferta no topo do módulo`).toMatch(/(function|=>)\s*[^]*$/)
-      const ultimaLinhaDeTopo = antes.split('\n').reverse().find((l) => /^(const|let|var) .*ofertaDoCadastro/.test(l))
-      expect(ultimaLinhaDeTopo, `${SUPERFICIES[k]} tem \`const ... = ofertaDoCadastro(...)\` no nível do módulo`).toBeUndefined()
+      // Linha por linha, TODAS as ocorrências: olhar só antes da primeira deixava passar uma segunda
+      // `const oferta = ...` no topo quando a primeira estava dentro de `generateMetadata`.
+      const noTopo = FONTE[k].split('\n').filter((l) => /^(export )?(const|let|var) .*ofertaDoCadastro\(/.test(l))
+      expect(noTopo, `${SUPERFICIES[k]} calcula a oferta no nível do módulo`).toEqual([])
+    }
+  })
+
+  it('o detector enxerga o cenário: o fonte tem chamadas indentadas (dentro de função), senão o filtro acima passaria vazio', () => {
+    for (const k of ['home', 'precos', 'cadastro', 'llms'] as const) {
+      const indentadas = FONTE[k].split('\n').filter((l) => /^\s+(const|let|var) .*ofertaDoCadastro\(/.test(l))
+      expect(indentadas.length, `${SUPERFICIES[k]}: nenhuma chamada indentada, o filtro de topo ficou sem o que distinguir`).toBeGreaterThan(0)
     }
   })
 })
