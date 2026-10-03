@@ -18,7 +18,7 @@ describe('versões legais', () => {
 
   it('a página mostra EXATAMENTE a data que mostrava antes — o texto legal não mudou', () => {
     expect(dataLegivel(VERSOES_LEGAIS.termos)).toBe('21 de setembro de 2026')
-    expect(dataLegivel(VERSOES_LEGAIS.privacidade)).toBe('16 de setembro de 2026')
+    expect(dataLegivel(VERSOES_LEGAIS.privacidade)).toBe('3 de outubro de 2026')
   })
 
   it.each(['termos', 'privacidade'] as const)('/%s lê a data da fonte única, sem data escrita à mão', (doc) => {
