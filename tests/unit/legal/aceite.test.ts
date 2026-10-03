@@ -39,6 +39,18 @@ describe('pendenciasDeAceite', () => {
     expect(pendenciasDeAceite(linhas, ATUAIS)).toEqual([])
   })
 
+  it('a ordem das linhas não decide: a antiga primeiro e a nova depois também quita (nas duas ordens)', () => {
+    const antigaDepoisNova = [
+      { documento: 'termos', versao: '2026-09-21' },
+      { documento: 'termos', versao: '2026-10-03' },
+      { documento: 'privacidade', versao: '2026-10-03' },
+    ]
+    expect(pendenciasDeAceite(antigaDepoisNova, ATUAIS)).toEqual([])
+    expect(pendenciasDeAceite([...antigaDepoisNova].reverse(), ATUAIS)).toEqual([])
+    // Controle positivo: com SÓ a antiga, o documento continua pendente (o teste montou o cenário).
+    expect(pendenciasDeAceite([antigaDepoisNova[0]!, antigaDepoisNova[2]!], ATUAIS)).toEqual(['termos'])
+  })
+
   it('aceite de um documento NÃO vale para o outro', () => {
     const linhas = [{ documento: 'termos', versao: '2026-10-03' }]
     expect(pendenciasDeAceite(linhas, ATUAIS)).toEqual(['privacidade'])
