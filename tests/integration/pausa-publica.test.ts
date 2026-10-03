@@ -26,7 +26,7 @@ let slug: string
 const VIGENTE = { plano: 'equipe', ate: '2099-01-01T03:00:00.000Z', origem: 'teste', concedida_em: '2026-10-01T12:00:00.000Z', fundador: false }
 const VENCIDA = { plano: 'equipe', ate: '2026-09-01T03:00:00.000Z', origem: 'teste', concedida_em: '2026-07-01T12:00:00.000Z', fundador: false }
 
-async function definirCortesia(cortesia: unknown, plan = 'gratis') {
+async function definirCortesia(cortesia: unknown, plan: 'gratis' | 'equipe' = 'gratis') {
   const { data } = await svc.from('tenants').select('settings').eq('id', tenantId).single()
   const settings = { ...((data?.settings as Record<string, unknown> | null) ?? {}), cortesia }
   const { error } = await svc.from('tenants').update({ plan, settings: settings as never }).eq('id', tenantId)
@@ -87,13 +87,13 @@ describe('negócio pausado não recebe pelo link público (docs/86 C8)', () => {
 
       const e1 = await recusa(perfilPublico(slug))
       expect(e1.code).toBe('NOT_FOUND')
-      expect(e1.details).toEqual({ indisponivel: true, nome: 'Salão da Pausa' })
+      expect(e1.details).toEqual({ indisponivel: true, nome: 'Salão da Pausa', telefone: null })
 
       const e2 = await recusa(disponibilidadePublica(slug, randomUUID(), '2099-01-05'))
-      expect(e2.details).toEqual({ indisponivel: true, nome: 'Salão da Pausa' })
+      expect(e2.details).toEqual({ indisponivel: true, nome: 'Salão da Pausa', telefone: null })
 
       const e3 = await recusa(criarPedidoDeOrcamento(slug, { message: 'Quero um orçamento agora.', name: 'Visitante', phone: '11988887777' }))
-      expect(e3.details).toEqual({ indisponivel: true, nome: 'Salão da Pausa' })
+      expect(e3.details).toEqual({ indisponivel: true, nome: 'Salão da Pausa', telefone: null })
 
       // Recusar sem gravar: o pedido não pode ter virado linha antes de a recusa chegar.
       expect(await contarOrcamentos()).toBe(antes)

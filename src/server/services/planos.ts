@@ -235,16 +235,16 @@ export function exigirContaQueEscreve(
  *
  * `NOT_FOUND` (e não um código novo) de propósito: toda página pública já trata `NOT_FOUND`, então
  * nenhuma rota nova passa a lançar um erro que ninguém captura. O que distingue é `details.indisponivel`,
- * que só o layout lê para trocar o 404 pela mensagem. O nome do negócio já é público.
+ * que só o layout lê para trocar o 404 pela mensagem. O nome e o telefone do negócio já são públicos (a página mostra os dois).
  */
 export function negocioEstaPausado(plan: string, settings: unknown, agora: Date = new Date()): boolean {
   return !situacaoDaConta(normalizarPlano(plan), lerCortesia(settings), agora).podeEscrever
 }
 
-export function paginaIndisponivel(nome: string): AppError {
+export function paginaIndisponivel(nome: string, telefone: string | null = null): AppError {
   return new AppError('NOT_FOUND', {
     message: 'Este negócio não está recebendo agendamentos online agora.',
-    details: { indisponivel: true, nome },
+    details: { indisponivel: true, nome, telefone },
   })
 }
 

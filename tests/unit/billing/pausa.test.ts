@@ -114,9 +114,9 @@ describe('a página pública do negócio pausado (C8)', () => {
   })
 
   it('a recusa é NOT_FOUND (toda página pública já trata), com a marca que o layout lê e o nome público', () => {
-    const e = paginaIndisponivel('Barbearia Navalha de Ouro')
+    const e = paginaIndisponivel('Barbearia Navalha de Ouro', '11988887777')
     expect(e.code).toBe('NOT_FOUND')
-    expect(e.details).toEqual({ indisponivel: true, nome: 'Barbearia Navalha de Ouro' })
+    expect(e.details).toEqual({ indisponivel: true, nome: 'Barbearia Navalha de Ouro', telefone: '11988887777' })
     expect(e.message).not.toMatch(/[—–]/)
   })
 })

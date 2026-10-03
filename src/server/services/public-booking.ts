@@ -58,7 +58,7 @@ async function tenantPeloSlug(svc: Cliente, slug: string) {
   if (error) throw new AppError('INTERNAL', { cause: error })
   if (!data) throw new AppError('NOT_FOUND', { message: 'Esse endereço não existe.' })
   // C8: é o ÚNICO ponto por onde toda leitura e toda escrita pública por slug passa.
-  if (negocioEstaPausado(data.plan, data.settings)) throw paginaIndisponivel(data.name)
+  if (negocioEstaPausado(data.plan, data.settings)) throw paginaIndisponivel(data.name, data.phone)
   return data
 }
 
