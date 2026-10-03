@@ -47,7 +47,7 @@ async function novoTenant() {
 }
 
 async function eventosDoTenant(tenantId: string) {
-  const { data } = await svc.from('product_events').select('event_type, meta').eq('tenant_id', tenantId).neq('event_type', 'conta_criada')
+  const { data } = await svc.from('product_events').select('event_type, meta').eq('tenant_id', tenantId).neq('event_type', 'conta_criada').neq('event_type', 'cortesia_concedida')
   return data ?? []
 }
 

@@ -71,15 +71,36 @@ describe('llms.txt não vira tabela de preço paralela', () => {
    */
   it('o preço servido vem do core, e bate com a tabela de planos', async () => {
     const { GET } = await import('@/app/llms.txt/route')
-    const { precoDoPlanoPorMes } = await import('@/core/billing/planos')
+    const { NOME_DO_PLANO, PLANOS_A_VENDA, precoDoPlanoPorMes } = await import('@/core/billing/planos')
 
     const texto = await GET().text()
     expect(texto.length, 'llms.txt veio vazio').toBeGreaterThan(300)
 
     // Se alguém congelar um número aqui, ele deixa de bater com o core no dia do reajuste.
-    for (const tier of ['gratis', 'essencial', 'equipe', 'avancado'] as const) {
-      expect(texto, `o plano ${tier} não aparece com o preço do core`).toContain(precoDoPlanoPorMes(tier))
+    for (const tier of PLANOS_A_VENDA) {
+      expect(texto, `o plano ${tier} não aparece com o preço do core`).toContain(`- ${NOME_DO_PLANO[tier]}: ${precoDoPlanoPorMes(tier)}`)
     }
+  })
+
+  it('só lista o que se vende: o Grátis e o Avançado saíram (docs/87 D2), e um assistente repete o que lê', async () => {
+    const { GET } = await import('@/app/llms.txt/route')
+    const { NOME_DO_PLANO, precoDoPlanoPorMes } = await import('@/core/billing/planos')
+    const texto = await GET().text()
+    // Casa com a LINHA DE PLANO, não com a palavra: "grátis" aparece também na frase da calculadora.
+    for (const tier of ['gratis', 'avancado'] as const) {
+      expect(texto, `o plano ${tier} voltou para a lista de planos do llms.txt`).not.toContain(`- ${NOME_DO_PLANO[tier]}: ${precoDoPlanoPorMes(tier)}`)
+    }
+    // E o controle positivo: a seção de planos existe e tem as duas linhas, senão a asserção acima passaria vazia.
+    expect((texto.match(/^- (Solo|Equipe): /gm) ?? []).length).toBe(2)
+  })
+
+  it('diz a oferta de hoje com a mesma função que concede a cortesia, sem prometer "para sempre"', async () => {
+    const { GET } = await import('@/app/llms.txt/route')
+    const { ofertaDoCadastro } = await import('@/core/billing/prelancamento')
+    const texto = await GET().text()
+    const { chamada } = ofertaDoCadastro(new Date())
+    expect(texto).toContain(chamada.slice(1))
+    expect(texto).not.toMatch(/para sempre/i)
   })
 
   it('serve como texto puro, que é o que a convenção pede', async () => {

@@ -87,7 +87,18 @@ export const ASSUNTO_TRANSFERIR_TITULARIDADE = 'Oi! Preciso transferir a titular
  * virar silêncio — quem abre "Meu plano" num produto que não cobra tem uma pergunta específica
  * ("isso vira cobrança sozinho?") e ela precisa de resposta nos dois casos.
  */
-export function textoDeMudarDePlano(noGratis: boolean, temCanal: boolean): string {
+export function textoDeMudarDePlano(noGratis: boolean, temCanal: boolean, cobrancaAutomatica = false): string {
+  /*
+    Com o Mercado Pago ligado (`MERCADOPAGO_ACCESS_TOKEN`), "a cobrança automática ainda não está no
+    ar" é FALSO, e a tela dizia isso ao lado de um botão Assinar que cobra de verdade (auditoria de
+    27/09, B5). Nesse mundo a resposta à pergunta da pessoa ("isso vira cobrança sozinho?") é outra:
+    só depois do toque em Assinar, e cancelar fica no mesmo lugar.
+  */
+  if (cobrancaAutomatica) {
+    return noGratis
+      ? 'O Grátis não expira e não vira cobrança sem você pedir. Para assinar, escolha um plano abaixo: leva um toque, o pagamento é recorrente pelo Mercado Pago e cancelar leva outro toque, aqui mesmo.'
+      : 'Nada é cobrado sem você assinar. Para mudar de plano ou cancelar, use os botões desta tela: cada um leva um toque.'
+  }
   if (noGratis) {
     return temCanal
       ? 'O Grátis não expira e não vira cobrança sem você pedir. A cobrança automática ainda não está no ar, então subir de plano é uma conversa rápida: a gente ajusta na hora e você já usa.'

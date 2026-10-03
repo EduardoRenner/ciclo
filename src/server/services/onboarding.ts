@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 
+import { cortesiaDoCadastro } from '@/core/billing/prelancamento'
 import { VERSOES_LEGAIS } from '@/core/legal/versoes'
 import { SLUG_PROFISSAO_GENERICA } from '@/core/profissoes'
 import type { Origem } from '@/core/aquisicao/origem'
@@ -44,6 +45,8 @@ export type ParametrosOnboarding = {
    * dado do negócio de ninguém.
    */
   origem?: Origem | null
+  /** O "agora" do cadastro, que decide qual cortesia a conta ganha. Injetável só para teste. */
+  agora?: Date
 }
 
 export type ResultadoOnboarding = {
@@ -79,6 +82,10 @@ export async function executarOnboarding(
 
   const { wrapped, keyVersion } = gerarDekCifrada()
 
+  // docs/87 §3.1: a cortesia nasce junto com o tenant, no mesmo `insert`. Assim não existe conta sem
+  // ela por uma falha entre dois passos, e o rollback abaixo não tem o que desfazer aqui.
+  const cortesia = cortesiaDoCadastro(params.agora ?? new Date())
+
   let profissao: { id: string; slug: string; onde: string; cobranca: string; inicio: string; ritmo: string } | null = null
   if (params.professionId) {
     const { data, error } = await svc
@@ -98,6 +105,7 @@ export async function executarOnboarding(
       slug: params.slug,
       vertical: params.vertical,
       timezone: params.timezone,
+      settings: { cortesia } as Database['public']['Tables']['tenants']['Insert']['settings'],
       /*
         Os quatro eixos vêm da profissão — MENOS quando ela é a genérica.
 
@@ -172,6 +180,21 @@ export async function executarOnboarding(
     )
     if (erroAceite) throw erroAceite
 
+    // Cortesia sem registro é um benefício que ninguém consegue explicar depois (a pessoa diz "me
+    // prometeram até janeiro"). Como o aceite dos termos, dentro do `try`: sem trilha, sem conta.
+    // Insert direto e não `writeAudit`: este último engole a falha por desenho, e aqui a falha tem
+    // que desfazer o cadastro.
+    const { error: erroTrilha } = await svc.from('audit_log').insert({
+      tenant_id: tenant.id,
+      actor_id: params.userId,
+      actor_role: 'owner',
+      action: 'tenant.cortesia.grant',
+      entity: 'tenants',
+      entity_id: tenant.id,
+      after: cortesia as never,
+    })
+    if (erroTrilha) throw erroTrilha
+
     // Profissão nova (fora das 8 legadas) usa o catálogo de profession_services — as 8
     // legadas continuam no vertical_packs de sempre, mesmo quando escolhidas via professionId
     // (ex.: barber também tem profession_services agora, de P5, mas trocar de catálogo aqui
@@ -202,6 +225,15 @@ export async function executarOnboarding(
   await registrarEvento(svc, tenant.id, 'conta_criada', {
     vertical: params.vertical,
     ...(params.origem ? { origem: { canal: params.origem.canal, ref: params.origem.ref, em: params.origem.em } } : {}),
+  })
+
+  // docs/87 §3.1: a métrica que a conversão da cortesia usa como denominador. Fora do `try` de
+  // propósito: `registrarEvento` nunca lança e evento perdido não desfaz um cadastro que já deu certo.
+  await registrarEvento(svc, tenant.id, 'cortesia_concedida', {
+    origem: cortesia.origem,
+    plano: cortesia.plano,
+    ate: cortesia.ate,
+    fundador: cortesia.fundador,
   })
 
   return { tenant }

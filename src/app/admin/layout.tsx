@@ -1,13 +1,17 @@
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 
+import { faixaDaConta } from '@/core/billing/faixa-da-conta'
+import { lerCortesia, situacaoDaConta } from '@/core/billing/prelancamento'
 import { PADRAO } from '@/core/text/vocabulario'
 import { contextoAtual } from '@/server/auth/tenant'
 import { AppError } from '@/server/http/errors'
+import { normalizarPlano } from '@/server/services/planos'
 import ToastProvider from '@/components/ui/toast'
 import AssistenteFlutuante from '@/components/shell/assistente-flutuante'
 import { VocabularioProvider } from '@/components/shell/vocabulario'
 import ResolucaoDeFila from '@/components/shell/resolucao-de-fila'
+import FaixaDaConta from '@/components/shell/faixa-da-conta'
 import IndicadorDeConexao from '@/components/shell/indicador-de-conexao'
 import TabBar from '@/components/shell/tab-bar'
 import TransicaoDeTela from '@/components/shell/transicao-de-tela'
@@ -101,6 +105,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // `style-src` da CSP permite inline — só `script-src` tem `strict-dynamic`.
   const corDeFundo = dataTheme === 'light' ? '#faf8f5' : dataTheme === 'dark' ? '#0d0c0c' : null
 
+  // docs/87 §3.1: a data de fim da cortesia aparece em toda tela. Sem ida ao banco: `plan` e a chave
+  // `settings.cortesia` vêm na consulta que já valida o vínculo (`server/auth/tenant.ts`).
+  const faixa = ctx
+    ? faixaDaConta(situacaoDaConta(normalizarPlano(ctx.tenant.plan), lerCortesia({ cortesia: ctx.tenant.cortesia }), new Date()), new Date())
+    : null
+
   return (
     /*
      * `ToastProvider` entra AQUI DENTRO, não por fora (era o contrário até 2026-09-13) — o toast
@@ -137,6 +147,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <div className="mx-auto min-h-dvh max-w-[560px] sm:border-x sm:border-line">
         <Topbar />
         <IndicadorDeConexao />
+        {faixa ? <FaixaDaConta faixa={faixa} /> : null}
         {/*
           A folga inferior é a barra + o relevo do aparelho + o botão do assistente,
           que é `fixed` e aparece sempre desde o MI-2: com só 28px de respiro, o fim

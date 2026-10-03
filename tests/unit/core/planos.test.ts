@@ -101,8 +101,15 @@ describe('bloqueio aponta o degrau mais barato que resolve', () => {
     })
   })
 
-  it('anamnese custa o Avançado — dado de saúde tem custo de conformidade real', () => {
-    expect(menorPlanoCom('health_records')).toBe('avancado')
+  /*
+    ATUALIZADO em 2026-09-30 (docs/87 D2), e não por acaso: este caso dizia "anamnese custa o
+    Avançado — dado de saúde tem custo de conformidade real", e a D2 decidiu o contrário de forma
+    explícita ("anamnese e o resto entram nas duas faixas, ligados só pelo dono"). O que a regra
+    protege continua de pé em outros lugares — o cofre cifrado, a trilha de acesso e o módulo que o
+    dono desliga —, e o degrau de entrada passa a ser o que libera.
+  */
+  it('anamnese custa o degrau de entrada: as duas faixas vendem o produto inteiro (docs/87 D2)', () => {
+    expect(menorPlanoCom('health_records')).toBe('essencial')
   })
 
   it('o selo aparece no grátis e sai no primeiro degrau pago (§D.3/G.1)', () => {

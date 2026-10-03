@@ -60,8 +60,11 @@ describe('registrarEvento / registrarPrimeiraOcorrencia', () => {
     async () => {
       const tenantId = await novoTenant()
 
-      const { data } = await svc.from('product_events').select('event_type, meta').eq('tenant_id', tenantId)
-      expect(data).toEqual([{ event_type: 'conta_criada', meta: { vertical: 'barber' } }])
+      // O cadastro agora também concede a cortesia (docs/87 §3.1) e grava `cortesia_concedida`: o
+      // conjunto de eventos do fluxo real é estes dois, nem mais nem menos.
+      const { data } = await svc.from('product_events').select('event_type, meta').eq('tenant_id', tenantId).order('event_type')
+      expect(data?.map((e) => e.event_type)).toEqual(['conta_criada', 'cortesia_concedida'])
+      expect(data?.[0]).toEqual({ event_type: 'conta_criada', meta: { vertical: 'barber' } })
     },
     30_000,
   )
@@ -71,7 +74,7 @@ describe('registrarEvento / registrarPrimeiraOcorrencia', () => {
     async () => {
       const tenantId = await novoTenant({ canal: 'convite', ref: 'dom-rocha', em: '2026-09-23' })
 
-      const { data } = await svc.from('product_events').select('event_type, meta').eq('tenant_id', tenantId)
+      const { data } = await svc.from('product_events').select('event_type, meta').eq('tenant_id', tenantId).eq('event_type', 'conta_criada')
       expect(data).toEqual([
         { event_type: 'conta_criada', meta: { vertical: 'barber', origem: { canal: 'convite', ref: 'dom-rocha', em: '2026-09-23' } } },
       ])
@@ -91,11 +94,11 @@ describe('registrarEvento / registrarPrimeiraOcorrencia', () => {
         .eq('tenant_id', tenantId)
         .order('created_at', { ascending: true })
 
-      expect(data?.map((e) => e.event_type)).toEqual(['conta_criada', 'motor_viu_valor'])
+      expect(data?.map((e) => e.event_type)).toEqual(['conta_criada', 'cortesia_concedida', 'motor_viu_valor'])
       if (!data) throw new Error('sem dados')
 
       const contaCriada = new Date(data[0]!.created_at).getTime()
-      const motorViuValor = new Date(data[1]!.created_at).getTime()
+      const motorViuValor = new Date(data[2]!.created_at).getTime()
       expect(motorViuValor - contaCriada, 'motor_viu_valor tem que vir depois de conta_criada').toBeGreaterThanOrEqual(0)
     },
     30_000,

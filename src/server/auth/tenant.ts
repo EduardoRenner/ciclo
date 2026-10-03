@@ -31,6 +31,15 @@ export type DadosDoTenant = {
    * regra de precedencia por todo componente que queira uma palavra.
    */
   vocabulario: Vocabulario
+  /**
+   * O degrau que a pessoa PAGA (`tenants.plan`), como veio do banco: `normalizarPlano` mora em
+   * `server/services/planos` e é quem traduz nomes antigos. E `settings.cortesia`, SÓ essa chave:
+   * a faixa do painel (docs/87 §3.1) precisa dizer a data de fim em TODA tela, e uma ida extra ao
+   * banco por tela é o que o `docs/28` passou um mês desfazendo. Extrair uma chave de jsonb não
+   * muda o argumento acima contra trazer `settings` inteiro.
+   */
+  plan: string
+  cortesia: unknown
 }
 
 export type Contexto = {
@@ -67,7 +76,7 @@ const vinculosAtivos = cache(async function vinculosAtivos(userId: string) {
   const db = await criarClienteDoUsuario()
   const { data, error } = await db
     .from('memberships')
-    .select('tenant_id, role, tenants(name, slug, timezone, vertical, vocab_override, professions(vocab))')
+    .select('tenant_id, role, tenants(name, slug, timezone, vertical, vocab_override, plan, cortesia:settings->cortesia, professions(vocab))')
     .eq('user_id', userId)
     .eq('active', true)
   if (error) throw new AppError('INTERNAL', { cause: error })
@@ -86,6 +95,8 @@ type TenantBruto = {
   timezone: string
   vertical: string | null
   vocab_override: unknown
+  plan: string
+  cortesia: unknown
   professions: { vocab: unknown } | null
 }
 
@@ -96,6 +107,8 @@ function dadosDoTenant(bruto: TenantBruto | null): DadosDoTenant {
     slug: bruto.slug,
     timezone: bruto.timezone,
     vertical: bruto.vertical,
+    plan: bruto.plan,
+    cortesia: bruto.cortesia,
     // `professions` vem `null` em tenant sem profissao escolhida; `resolverVocabulario` trata
     // ausencia como padrao, entao nao existe caminho em que a tela fique sem palavra.
     vocabulario: resolverVocabulario(bruto.professions?.vocab, bruto.vocab_override),

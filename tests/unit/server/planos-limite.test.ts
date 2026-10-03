@@ -115,11 +115,16 @@ describe('exigirLimite — o limite vale no servidor (§L.1)', () => {
     expect(erro.publicMessage).not.toContain('1 profissionais')
   })
 
-  it('no Equipe o sexto profissional é recusado e aponta o Avançado', async () => {
+  // ATUALIZADO em 2026-09-30 (docs/87 D2): o Avançado deixou de ser vendido, então acima de 5
+  // não há degrau para apontar: `precisaDo` é nulo e a mensagem manda para "Meu plano", onde o
+  // caminho é "fale com a gente". Oferecer um degrau que ninguém consegue comprar seria pior.
+  it('no Equipe o sexto profissional é recusado, e não aponta degrau nenhum (acima de 5, fale com a gente)', async () => {
     const erro = (await exigirLimite(bancoFalso({ plano: 'equipe', profissionais: 5 }), T, 'profissionais').catch(
       (e: unknown) => e,
     )) as AppError
-    expect(erro.details).toMatchObject({ precisaDo: 'avancado' })
+    expect(erro.code).toBe('PLAN_LIMIT')
+    expect(erro.details).toMatchObject({ recurso: 'profissionais', limite: 5, precisaDo: null })
+    expect(erro.publicMessage).toContain('Meu plano')
   })
 
   it('degrau sem teto não recusa nunca', async () => {
@@ -157,7 +162,8 @@ describe('exigirModulo', () => {
     const erro = (await exigirModulo(bancoFalso({ plano: 'gratis' }), T, 'stock').catch((e: unknown) => e)) as AppError
     expect(erro.code).toBe('PLAN_LIMIT')
     expect(erro.status).toBe(402)
-    expect(erro.details).toMatchObject({ modulo: 'stock', precisaDo: 'avancado' })
+    // ATUALIZADO em 2026-09-30 (docs/87 D2): estoque saiu do Avançado e mora no degrau de entrada.
+    expect(erro.details).toMatchObject({ modulo: 'stock', precisaDo: 'essencial' })
   })
 
   it('fora do eixo devolve 403, e NÃO oferece upgrade', async () => {

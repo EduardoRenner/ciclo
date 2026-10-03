@@ -23,70 +23,66 @@ import { PLANOS, type Capacidade, type ModuloKey, type PlanoTier } from '@/core/
  * Item sem chave é copy legítima que não mapeia para um interruptor ("Agenda sem risco de marcar
  * dois no mesmo horário" é o produto, não um módulo).
  */
-type ItemDoCartao = { texto: string; modulo?: ModuloKey; capacidade?: Capacidade }
+type ItemDoCartao = {
+  texto: string
+  modulo?: ModuloKey
+  capacidade?: Capacidade
+  /**
+   * O item anuncia um TETO (hoje só o de profissionais). Desde a D2 (docs/87) as duas faixas vendem o
+   * mesmo produto e diferem só no tamanho da equipe, então o que o Equipe tem de próprio é um teto
+   * maior, e não um módulo. `precos-nao-promete-demais` confere que o número do texto é o do core.
+   */
+  limite?: 'profissionais'
+}
 
 type Plano = {
   /** O degrau; nome e preço vêm do core, para a tabela de preço não virar a quinta cópia deles. */
   tier: PlanoTier
   porDia?: string
   chamada: string
-  /** A dor específica que faz alguém subir para cá. Degrau sem isto não deveria existir. */
+  /** A dor específica que faz alguém escolher este degrau. Degrau sem isto não deveria existir. */
   paraQuem: string
   inclui: ItemDoCartao[]
   naoInclui?: string[]
   destaque?: boolean
 }
 
-/** O conteúdo dos cartões. Os NÚMEROS vêm do core (`PLANOS`), nunca daqui. */
+/**
+ * O conteúdo dos cartões: SÓ o que está à venda (`PLANOS_A_VENDA`, docs/87 D2). O Grátis e o
+ * Avançado não têm cartão. Os NÚMEROS vêm do core (`PLANOS`), nunca daqui.
+ */
 export const CARTOES: Plano[] = [
-  {
-    tier: 'gratis',
-    chamada: 'Para sempre, sem cartão.',
-    /*
-      Era "Você atende sozinho e quer sair do caderno." — o defeito que a tabela do
-      `docs/20-COPY-PLANO.md` §C.4 nomeia: *"quem atende sozinho" não resolve*, porque escolher um
-      gênero é o mesmo erro que trocar de gênero. A saída é reescrever sem, e "por conta" é
-      exatamente a substituição que aquela tabela recomenda.
-
-      Ficou fora da guarda de gênero até 2026-09-03 porque ela varria só `src/app` e
-      `src/components`, e este arquivo é `src/lib` — copy de produto mora nos três.
-    */
-    paraQuem: 'Você atende por conta e quer sair do caderno.',
-    inclui: [
-      { texto: 'Agenda sem risco de marcar dois no mesmo horário', modulo: 'agenda' },
-      { texto: 'Sua página de agendamento com link para a bio', modulo: 'public_page' },
-      { texto: `${PLANOS.gratis.maxClientes} clientes com ficha e histórico`, modulo: 'clients' },
-      { texto: 'Motor de Ciclo: veja quem sumiu e quanto isso vale', modulo: 'cycle_engine' },
-      /*
-        "Lembrete e confirmação de agendamento" saiu daqui em 2026-08-24 (docs/20-COPY-PLANO.md
-        §A.4 e §S.1/C-2). O módulo `reminders` existe e o Grátis o libera — mas a rota que dispara
-        o lembrete não roda em produção. Anunciar numa tabela de preço uma automação que não
-        executa é a promessa mais cara que este produto pode fazer, e o teste
-        `precos-nao-promete-demais` não pega esta classe: ele confere o degrau, não se o motor está
-        ligado. Volta quando o passo 4 do F0 (`docs/25`) estiver feito.
-
-        A versão original desta nota dizia "mas `vercel.json` está com `crons: []`". O fato é
-        verdadeiro e a conclusão também, mas o ARQUIVO está errado — e ler o agendador no lugar
-        errado já produziu um defeito neste repositório (`tests/helpers/cron.ts`). O agendador é
-        `.github/workflows/cron.yml`; o `vercel.json` fica vazio de propósito e para sempre
-        (`docs/18` §L.5). Quem for conferir se o lembrete já roda, confere lá — e
-        `src/core/cron/agendadas.ts` é a lista que o código usa.
-      */
-    ],
-    naoInclui: ['Mandar mensagem para vários de uma vez: no grátis você manda um a um'],
-  },
   {
     tier: 'essencial',
     porDia: 'menos de R$ 1,70 por dia, o preço de um corte uma vez por mês',
     chamada: 'Por mês, um profissional.',
-    paraQuem: 'Você já viu quem sumiu e cansou de mandar mensagem um por um.',
+    /*
+      "Por conta" e não "quem atende sozinho": escolher um gênero é o erro que a tabela do
+      `docs/20-COPY-PLANO.md` §C.4 nomeia, e `copy-nao-supoe-genero` varre `src/lib` também.
+    */
+    paraQuem: 'Você atende por conta e quer o produto inteiro, sem escolher módulo.',
     inclui: [
-      { texto: 'Tudo do Grátis, sem limite de clientes' },
+      { texto: 'Agenda sem risco de marcar dois no mesmo horário', modulo: 'agenda' },
+      { texto: 'Sua página de agendamento com link para a bio, sem o selo do CICLO', modulo: 'public_page', capacidade: 'remover_selo' },
+      { texto: 'Clientes com ficha e histórico, sem limite', modulo: 'clients' },
+      { texto: 'Motor de Ciclo: veja quem sumiu e quanto isso vale', modulo: 'cycle_engine' },
+      /*
+        "Lembrete e confirmação de agendamento" continua fora, pelo mesmo motivo de 2026-08-24
+        (docs/20-COPY-PLANO.md §A.4 e §S.1/C-2): o módulo `reminders` existe, mas a rota que dispara
+        o lembrete não roda em produção, e anunciar automação que não executa é a promessa mais cara
+        que este produto pode fazer. O agendador é `.github/workflows/cron.yml` (o `vercel.json`
+        fica vazio de propósito); `src/core/cron/agendadas.ts` é a lista que o código usa. Volta
+        quando `reminders` entrar no schedule.
+      */
       { texto: 'Chamar de volta a base inteira de uma vez', capacidade: 'envio_em_lote' },
       { texto: 'Campanhas para datas e aniversários', modulo: 'campaigns' },
       { texto: 'Comanda, caixa e fechamento do dia', modulo: 'register' },
       { texto: 'Orçamento com aprovação por link', modulo: 'quotes' },
-      { texto: 'Sua página fica sem o selo do CICLO', capacidade: 'remover_selo' },
+      { texto: 'Controle de estoque', modulo: 'stock' },
+      { texto: 'Anamnese e ficha de saúde em cofre cifrado', modulo: 'health_records' },
+      { texto: 'Recorrência e pacotes', modulo: 'recurrence' },
+      { texto: 'Fidelidade e pontos', modulo: 'loyalty' },
+      { texto: 'Relatórios do negócio' },
     ],
   },
   {
@@ -94,23 +90,12 @@ export const CARTOES: Plano[] = [
     chamada: `Por mês, até ${PLANOS.equipe.maxProfissionais} profissionais.`,
     paraQuem: 'Você contratou alguém e precisa de agenda e acerto separados.',
     inclui: [
-      { texto: 'Tudo do Essencial' },
-      { texto: 'Agenda por profissional', modulo: 'team' },
-      { texto: 'Comissão e extrato de cada um', modulo: 'team' },
-      { texto: 'Relatórios do negócio' },
-      { texto: 'Fidelidade e pontos', modulo: 'loyalty' },
+      { texto: 'Tudo do Solo, sem tirar nada' },
+      {
+        texto: `Até ${PLANOS.equipe.maxProfissionais} profissionais, cada um com agenda, comissão e extrato próprios`,
+        limite: 'profissionais',
+      },
     ],
     destaque: true,
-  },
-  {
-    tier: 'avancado',
-    chamada: 'Por mês, sem limite de profissionais.',
-    paraQuem: `Você passou de ${PLANOS.equipe.maxProfissionais}, controla estoque ou atende com ficha de saúde.`,
-    inclui: [
-      { texto: 'Tudo do Equipe, com profissionais ilimitados' },
-      { texto: 'Controle de estoque', modulo: 'stock' },
-      { texto: 'Anamnese e ficha de saúde em cofre cifrado', modulo: 'health_records' },
-      { texto: 'Recorrência e pacotes', modulo: 'recurrence' },
-    ],
   },
 ]

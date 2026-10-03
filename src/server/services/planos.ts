@@ -13,6 +13,7 @@ import {
   type Recurso,
   type ValorDoEixo,
 } from '@/core/billing/planos'
+import { lerCortesia, situacaoDaConta, type SituacaoDaConta } from '@/core/billing/prelancamento'
 import { AppError } from '@/server/http/errors'
 
 import type { Database } from '@/server/db/types.gen'
@@ -73,13 +74,29 @@ export function normalizarEixo<E extends Eixo>(eixo: E, valor: string | null): V
 }
 
 /**
+ * O contexto de plano com a situação da conta anexada. `situacao` traz o que a tela precisa para
+ * dizer POR QUE o plano é este (cortesia até tal dia, graça, pausada), sem ninguém reler `settings`.
+ */
+export type ContextoDePlano = ContextoDoTenant & {
+  situacao: SituacaoDaConta
+  /** O degrau que a pessoa PAGA (`tenants.plan`), sem a cortesia. */
+  planoPago: PlanoTier
+}
+
+/**
  * Lê plano, eixos e o que o dono desligou. Uma consulta para o tenant e outra para os módulos —
  * as duas por id, com índice, e o resultado é pequeno.
+ *
+ * **O plano vigente sai daqui e de nenhum outro lugar** (docs/87 §3): `tenants.plan` é o que a
+ * pessoa paga, `settings.cortesia` é o que ela ganhou, e o que vale é o maior dos dois enquanto a
+ * cortesia estiver em pé — comparado com `agora` a CADA leitura, sem cron e sem escrever nada
+ * quando ela acaba. `agora` é injetável só para teste.
  */
-export async function contextoDePlano(db: Cliente, tenantId: string): Promise<ContextoDoTenant> {
+export async function contextoDePlano(db: Cliente, tenantId: string, agora: Date = new Date()): Promise<ContextoDePlano> {
   const { data: tenant, error } = await db
     .from('tenants')
-    .select('plan, onde, cobranca, inicio, ritmo')
+    // `cortesia:settings->cortesia` traz só a chave; `settings` inteiro é jsonb que cresce por tenant.
+    .select('plan, onde, cobranca, inicio, ritmo, cortesia:settings->cortesia')
     .eq('id', tenantId)
     .single()
   if (error) throw new AppError('INTERNAL', { cause: error })
@@ -99,10 +116,18 @@ export async function contextoDePlano(db: Cliente, tenantId: string): Promise<Co
     ritmo: normalizarEixo('ritmo', tenant.ritmo),
   }
 
+  const planoPago = normalizarPlano(tenant.plan)
+  const situacao = situacaoDaConta(planoPago, lerCortesia({ cortesia: tenant.cortesia }), agora)
+
   return {
-    plano: normalizarPlano(tenant.plan),
+    // O degrau de LEITURA, não o vigente: na conta pausada ele continua o da cortesia, para nenhuma
+    // tela esconder o que já existe. A trava de criar vai em `contaPausada`.
+    plano: situacao.planoDeLeitura,
+    planoPago,
+    situacao,
     eixos,
     desligadosPeloDono: (modulos ?? []).map((m) => m.modulo as ModuloKey),
+    ...(situacao.podeEscrever ? {} : { contaPausada: true }),
   }
 }
 
@@ -150,6 +175,7 @@ export async function exigirLimite(
   aAdicionar = 1,
 ): Promise<void> {
   const ctx = await contextoDePlano(db, tenantId)
+  if (ctx.contaPausada) throw contaPausadaNaoCria()
   const usoAtual = await contar(db, tenantId, recurso)
   const r = verificarLimite(ctx, recurso, usoAtual, aAdicionar)
 
@@ -159,7 +185,7 @@ export async function exigirLimite(
   throw new AppError('PLAN_LIMIT', {
     message: alvo
       ? `Seu plano ${NOME_DO_PLANO[ctx.plano]} permite ${r.limite} ${rotulo(recurso, r.limite ?? 0)}. No ${NOME_DO_PLANO[alvo]} você cadastra mais.`
-      : `Seu plano ${NOME_DO_PLANO[ctx.plano]} permite ${r.limite} ${rotulo(recurso, r.limite ?? 0)}.`,
+      : `Seu plano ${NOME_DO_PLANO[ctx.plano]} permite ${r.limite} ${rotulo(recurso, r.limite ?? 0)}. Para mais que isso, veja Config → Meu plano.`,
     details: {
       recurso,
       plano: ctx.plano,
@@ -167,6 +193,18 @@ export async function exigirLimite(
       usoAtual,
       precisaDo: alvo,
     },
+  })
+}
+
+/**
+ * A recusa de quem está na conta pausada (docs/87 D1). `PLAN_LIMIT` (402), o mesmo código do teto,
+ * porque a tela de bloqueio já sabe tratá-lo; `details.contaPausada` é o que a distingue de teto.
+ */
+export function contaPausadaNaoCria(): AppError {
+  return new AppError('PLAN_LIMIT', {
+    message:
+      'Sua cortesia acabou e a conta está pausada: você vê e exporta tudo, mas não cria nada novo. Escolha um plano em Config → Meu plano para voltar na hora.',
+    details: { contaPausada: true },
   })
 }
 
