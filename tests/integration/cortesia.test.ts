@@ -2,13 +2,16 @@ import { randomUUID } from 'node:crypto'
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import dotenv from 'dotenv'
-import { afterAll, describe, expect, it } from 'vitest'
+import { afterAll, describe, expect, it, vi } from 'vitest'
 
 import { lerCortesia } from '@/core/billing/prelancamento'
 import { executarOnboarding } from '@/server/services/onboarding'
 import { contextoDePlano } from '@/server/services/planos'
 
 import type { Database } from '@/server/db/types.gen'
+
+// Estas regras são as do programa de cortesia: valem com `ACESSO_ABERTO` desligado.
+vi.mock('@/core/billing/acesso-aberto', () => ({ ACESSO_ABERTO: false }))
 
 dotenv.config({ path: '.env.local' })
 
