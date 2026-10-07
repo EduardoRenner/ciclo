@@ -2,7 +2,7 @@ import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 
 import { faixaDaConta } from '@/core/billing/faixa-da-conta'
-import { lerCortesia, situacaoDaConta } from '@/core/billing/prelancamento'
+import { lerCortesia, situacaoEmVigor } from '@/core/billing/prelancamento'
 import { PADRAO } from '@/core/text/vocabulario'
 import { contextoAtual } from '@/server/auth/tenant'
 import { AppError } from '@/server/http/errors'
@@ -108,7 +108,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // docs/87 §3.1: a data de fim da cortesia aparece em toda tela. Sem ida ao banco: `plan` e a chave
   // `settings.cortesia` vêm na consulta que já valida o vínculo (`server/auth/tenant.ts`).
   const faixa = ctx
-    ? faixaDaConta(situacaoDaConta(normalizarPlano(ctx.tenant.plan), lerCortesia({ cortesia: ctx.tenant.cortesia }), new Date()), new Date())
+    ? faixaDaConta(situacaoEmVigor(normalizarPlano(ctx.tenant.plan), lerCortesia({ cortesia: ctx.tenant.cortesia }), new Date()), new Date())
     : null
 
   return (

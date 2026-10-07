@@ -68,6 +68,18 @@ function opcoesPara(tiers: readonly TierAVenda[], profissionaisAtivos: number): 
 export function visaoDoMeuPlano(situacao: SituacaoDaConta, planoPago: PlanoTier, profissionaisAtivos: number): VisaoDoMeuPlano {
   const { estado, cortesia } = situacao
 
+  if (estado === 'aberto') {
+    return {
+      descricao: 'Tudo liberado, sem cobrança.',
+      nome: 'Acesso aberto',
+      preco: null,
+      explicacao: 'Você usa o CICLO inteiro, sem cartão e sem prazo por enquanto. A gente avisa com antecedência antes de qualquer cobrança, e a sua base é sua: dá para exportar quando quiser.',
+      opcoes: [],
+      cabecalho: '',
+      noDegrauMaisAlto: false,
+    }
+  }
+
   if (cortesia && estado === 'cortesia') {
     const teste = cortesia.origem === 'teste'
     const ultimo = ultimoDiaDaCortesia(cortesia)

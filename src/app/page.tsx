@@ -571,7 +571,7 @@ export default async function Home() {
         <h2 className="text-titulo font-bold">Comece sem cartão</h2>
         <p className="mx-auto mt-2 max-w-[44ch] text-secundario text-txt-2">
           {oferta.chamada[0]?.toUpperCase()}
-          {oferta.chamada.slice(1)}. A base é sua: se um dia você parar de pagar, nada some.
+          {oferta.chamada.slice(1)}.{oferta.aberto ? ' Sem prazo por enquanto.' : ''} A base é sua: se um dia você parar de pagar, nada some.
         </p>
         <div className="mt-5 flex flex-wrap justify-center gap-3">
           <Link href="/cadastro" className={botaoPrimario}>

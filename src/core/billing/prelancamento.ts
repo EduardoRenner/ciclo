@@ -31,6 +31,7 @@
 import { Temporal } from '@js-temporal/polyfill'
 import { z } from 'zod'
 
+import { ACESSO_ABERTO } from './acesso-aberto'
 import { ORDEM_DOS_PLANOS, type PlanoTier } from './planos'
 
 export const FUSO_DO_PROGRAMA = 'America/Sao_Paulo'
@@ -191,10 +192,11 @@ export function lerCortesia(settings: unknown): Cortesia | null {
  * - `cortesia`      — a cortesia vale e libera mais do que o pago.
  * - `graca`         — a cortesia acabou há menos de `diasDeGraca`: tudo funciona, faixa vermelha.
  * - `pausada`       — passou da graça sem assinar: lê e exporta tudo, não cria nada novo.
+ * - `aberto`        — `ACESSO_ABERTO` ligado: tudo liberado, sem prazo, sem pausa.
  * - `sem_cortesia`  — nunca recebeu cortesia (conta anterior ao programa, ou `settings` corrompido).
  *                     Comporta-se exatamente como antes do programa existir.
  */
-export type EstadoDaConta = 'pago' | 'cortesia' | 'graca' | 'pausada' | 'sem_cortesia'
+export type EstadoDaConta = 'pago' | 'cortesia' | 'graca' | 'pausada' | 'sem_cortesia' | 'aberto'
 
 export type SituacaoDaConta = {
   estado: EstadoDaConta
@@ -250,6 +252,24 @@ export function planoVigente(planoPago: PlanoTier, cortesia: Cortesia | null, ag
   if (!cortesia) return planoPago
   if (agora.getTime() < fimDaGraca(cortesia).getTime()) return maior(planoPago, cortesia.plano)
   return planoPago
+}
+
+/**
+ * A situação que vale HOJE: a regra do programa de cortesia (`situacaoDaConta`), a menos que o acesso
+ * esteja aberto. É a função que tela e servidor chamam; `situacaoDaConta` só diz o que o programa
+ * decidiria. `aberto` é parâmetro para o teste exercitar os dois lados sem mexer na constante.
+ */
+export function situacaoEmVigor(
+  planoPago: PlanoTier,
+  cortesia: Cortesia | null,
+  agora: Date,
+  aberto: boolean = ACESSO_ABERTO,
+): SituacaoDaConta {
+  if (aberto) {
+    const mais = ORDEM_DOS_PLANOS[ORDEM_DOS_PLANOS.length - 1]!
+    return { estado: 'aberto', plano: mais, planoDeLeitura: mais, podeEscrever: true, cortesia }
+  }
+  return situacaoDaConta(planoPago, cortesia, agora)
 }
 
 export function situacaoDaConta(planoPago: PlanoTier, cortesia: Cortesia | null, agora: Date): SituacaoDaConta {
@@ -337,6 +357,8 @@ export function descreverDiaCurto(dia: string): string {
 // ---------------------------------------------------------------------------------------------
 
 export type OfertaDoCadastro = {
+  /** `ACESSO_ABERTO`: sem prazo. `fim` e `ateQuandoALongaVale` ficam vazios e a tela não fala de data. */
+  aberto: boolean
   /** Cortesia até D0 (cadastro na janela) ou o teste de `diasDoTeste` dias (depois de 12/12). */
   longa: boolean
   /** A frase-título: "pelo menos 60 dias de tudo liberado, sem cartão", ou a data quando os 60 dias já não são verdade. */
@@ -354,7 +376,8 @@ export type OfertaDoCadastro = {
  * o que ela ganha não têm como divergir. Nenhuma frase de urgência: só a data de fim, que é fixa, e
  * um número (60) que some da chamada assim que deixa de ser verdade.
  */
-export function ofertaDoCadastro(agora: Date): OfertaDoCadastro {
+export function ofertaDoCadastro(agora: Date, aberto: boolean = ACESSO_ABERTO): OfertaDoCadastro {
+  if (aberto) return { aberto: true, longa: false, chamada: 'Tudo liberado, sem cartão', fim: '', ateQuandoALongaVale: '' }
   const c = cortesiaDoCadastro(agora)
   const ultimo = ultimoDiaDaCortesia(c)
   const longa = c.origem === 'pre_lancamento'
@@ -366,6 +389,7 @@ export function ofertaDoCadastro(agora: Date): OfertaDoCadastro {
   else chamada = `Tudo liberado até ${descreverDiaCurto(ultimo)}, sem cartão`
 
   return {
+    aberto: false,
     longa,
     chamada,
     fim: descreverDia(ultimo),

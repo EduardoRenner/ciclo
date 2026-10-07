@@ -1,8 +1,11 @@
 import { readFileSync } from 'node:fs'
 
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { semComentarios } from '../../helpers/fonte'
+
+// Estas regras são as do programa de cortesia e dos degraus: valem com `ACESSO_ABERTO` desligado.
+vi.mock('@/core/billing/acesso-aberto', () => ({ ACESSO_ABERTO: false }))
 
 /**
  * A faixa de cortesia (docs/87 §3.1) só protege alguém se aparecer em TODA tela do painel, e ela
@@ -18,7 +21,7 @@ const TENANT = semComentarios(readFileSync('src/server/auth/tenant.ts', 'utf8'))
 
 describe('a faixa da conta está ligada no painel', () => {
   it('o layout calcula a faixa a partir da situação da conta', () => {
-    expect(LAYOUT).toMatch(/faixaDaConta\(\s*situacaoDaConta\(/)
+    expect(LAYOUT).toMatch(/faixaDaConta\(\s*situacaoEmVigor\(/)
     // O plano pago vem normalizado, nunca o texto cru do banco.
     expect(LAYOUT).toMatch(/normalizarPlano\(ctx\.tenant\.plan\)/)
     expect(LAYOUT).toMatch(/lerCortesia\(\{ cortesia: ctx\.tenant\.cortesia \}\)/)

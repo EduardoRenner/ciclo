@@ -1,8 +1,11 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { NOME_DO_PLANO } from '@/core/billing/planos'
 import { AppError } from '@/server/http/errors'
 import { definirModulo, listarModulos } from '@/server/services/modulos'
+
+// Estas regras são as do programa de cortesia e dos degraus: valem com `ACESSO_ABERTO` desligado.
+vi.mock('@/core/billing/acesso-aberto', () => ({ ACESSO_ABERTO: false }))
 
 /**
  * Cliente falso que registra o que teria ido para `tenant_modules`. Unitário e não integração

@@ -1,9 +1,12 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { ROTAS_DE_ESCRITA, regraDaEscritaNaPausa } from '@/core/billing/pausa'
 import { cortesiaDoCadastro, fimDaGraca, situacaoDaConta } from '@/core/billing/prelancamento'
 import { AppError } from '@/server/http/errors'
 import { exigirContaQueEscreve, negocioEstaPausado, paginaIndisponivel } from '@/server/services/planos'
+
+// Estas regras são as do programa de cortesia e dos degraus: valem com `ACESSO_ABERTO` desligado.
+vi.mock('@/core/billing/acesso-aberto', () => ({ ACESSO_ABERTO: false }))
 
 describe('regraDaEscritaNaPausa', () => {
   it('leitura nunca é recusada, mesmo em rota que bloqueia escrita', () => {

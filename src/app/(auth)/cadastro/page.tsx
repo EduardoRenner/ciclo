@@ -48,7 +48,8 @@ export default async function PaginaCadastro({ searchParams }: { searchParams: P
             ? 'Crie a conta, escreva quem você lembra e o CICLO mostra quem passou da hora de voltar. '
             : 'Leva menos de um minuto. '}
           Você começa com {oferta.chamada[0]?.toLowerCase()}
-          {oferta.chamada.slice(1)}: o último dia é {oferta.fim}.
+          {oferta.chamada.slice(1)}
+          {oferta.aberto ? '. Sem prazo por enquanto.' : `: o último dia é ${oferta.fim}.`}
         </p>
       </div>
       <LoginSocial provedores={provedores} />

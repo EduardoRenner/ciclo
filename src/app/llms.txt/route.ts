@@ -57,7 +57,7 @@ ${modulos}
 
 ${planos}
 
-${oferta.chamada[0]?.toUpperCase()}${oferta.chamada.slice(1)}. Depois, os dois planos acima, com o produto inteiro nos dois: o que muda é o tamanho da equipe. O preço fica na tela, sem "fale com vendas".
+${oferta.chamada[0]?.toUpperCase()}${oferta.chamada.slice(1)}. ${oferta.aberto ? 'Sem prazo por enquanto, e a gente avisa antes de qualquer cobrança.' : 'Depois, os dois planos acima, com o produto inteiro nos dois: o que muda é o tamanho da equipe.'} O preço fica na tela, sem "fale com vendas".
 
 ## Páginas
 

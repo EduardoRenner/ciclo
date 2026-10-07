@@ -1,8 +1,11 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { podeCriar, podeUsarModulo, verificarLimite } from '@/core/billing/planos'
 import { AppError } from '@/server/http/errors'
 import { contextoDePlano, exigirLimite } from '@/server/services/planos'
+
+// Estas regras são as do programa de cortesia e dos degraus: valem com `ACESSO_ABERTO` desligado.
+vi.mock('@/core/billing/acesso-aberto', () => ({ ACESSO_ABERTO: false }))
 
 /**
  * `contextoDePlano` é o ÚNICO lugar que lê o plano vigente (docs/87 §3). Aqui o banco é encenação

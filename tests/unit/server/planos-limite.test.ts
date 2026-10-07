@@ -9,6 +9,9 @@ import {
   normalizarPlano,
 } from '@/server/services/planos'
 
+// Estas regras são as do programa de cortesia e dos degraus: valem com `ACESSO_ABERTO` desligado.
+vi.mock('@/core/billing/acesso-aberto', () => ({ ACESSO_ABERTO: false }))
+
 /**
  * Cliente falso com a superfície exata que `planos.ts` usa. Deliberadamente NÃO é teste de
  * integração: `.env.local` aponta para o Supabase de produção, então cada `test:integration`

@@ -14,7 +14,7 @@ import {
   type ValorDoEixo,
 } from '@/core/billing/planos'
 import { regraDaEscritaNaPausa } from '@/core/billing/pausa'
-import { lerCortesia, situacaoDaConta, type SituacaoDaConta } from '@/core/billing/prelancamento'
+import { lerCortesia, situacaoEmVigor, type SituacaoDaConta } from '@/core/billing/prelancamento'
 import { AppError } from '@/server/http/errors'
 
 import type { Database } from '@/server/db/types.gen'
@@ -118,7 +118,7 @@ export async function contextoDePlano(db: Cliente, tenantId: string, agora: Date
   }
 
   const planoPago = normalizarPlano(tenant.plan)
-  const situacao = situacaoDaConta(planoPago, lerCortesia({ cortesia: tenant.cortesia }), agora)
+  const situacao = situacaoEmVigor(planoPago, lerCortesia({ cortesia: tenant.cortesia }), agora)
 
   return {
     // O degrau de LEITURA, não o vigente: na conta pausada ele continua o da cortesia, para nenhuma
@@ -223,7 +223,7 @@ export function exigirContaQueEscreve(
 ): void {
   const regra = regraDaEscritaNaPausa(metodo, pathname)
   if (regra === 'leitura' || regra === 'permite') return
-  if (situacaoDaConta(normalizarPlano(plano), lerCortesia({ cortesia }), agora).podeEscrever) return
+  if (situacaoEmVigor(normalizarPlano(plano), lerCortesia({ cortesia }), agora).podeEscrever) return
   throw contaPausadaNaoCria()
 }
 
@@ -238,7 +238,7 @@ export function exigirContaQueEscreve(
  * que só o layout lê para trocar o 404 pela mensagem. O nome e o telefone do negócio já são públicos (a página mostra os dois).
  */
 export function negocioEstaPausado(plan: string, settings: unknown, agora: Date = new Date()): boolean {
-  return !situacaoDaConta(normalizarPlano(plan), lerCortesia(settings), agora).podeEscrever
+  return !situacaoEmVigor(normalizarPlano(plan), lerCortesia(settings), agora).podeEscrever
 }
 
 export function paginaIndisponivel(nome: string, telefone: string | null = null): AppError {

@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it } from 'vitest'
+import { beforeAll, describe, expect, it, vi } from 'vitest'
 
 import {
   PRELANCAMENTO,
@@ -16,6 +16,9 @@ import {
   ultimoDiaDaCortesia,
   type Cortesia,
 } from '@/core/billing/prelancamento'
+
+// Estas regras são as do programa de cortesia e dos degraus: valem com `ACESSO_ABERTO` desligado.
+vi.mock('@/core/billing/acesso-aberto', () => ({ ACESSO_ABERTO: false }))
 
 /**
  * A máquina vai para Kiritimati (UTC+14), o fuso onde o dia UTC vira 14 horas ANTES do de Brasília.

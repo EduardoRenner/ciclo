@@ -175,7 +175,7 @@ export default function Precos() {
         */}
         <h1 className="text-numero font-bold sm:text-[2.25rem] sm:leading-[1.1]">
           {oferta.chamada[0]?.toUpperCase()}
-          {oferta.chamada.slice(1)}. Depois, dois planos.
+          {oferta.chamada.slice(1)}.{oferta.aberto ? ' Sem prazo por enquanto.' : ' Depois, dois planos.'}
         </h1>
         <p className="mt-4 max-w-[52ch] text-corpo text-txt-2">
           Preço na tela, sem cadastro e sem &ldquo;fale com um consultor&rdquo;. Os dois planos têm o produto inteiro,
