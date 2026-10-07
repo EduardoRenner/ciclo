@@ -1,7 +1,8 @@
 # 99 · Plano-mestre do ecossistema CICLO (v3): da ferramenta ao serviço entregue por software
 
 Escrito em 2026-10-07, **v3 no mesmo dia** (a v3 está descrita na seção 2.5 e corrige a v2 com o que o
-repositório e a concorrência já mostravam). A v1 juntou os `docs/97` e `98` com cobrança, agentes e
+repositório e a concorrência já mostravam). **Rodada 2 do loop (mesmo dia):** preços ao vivo de Trinks e
+BarbUp, texto oficial da Meta, regras do Pix Automático (seções 2.6, 3.6 e 4.7). A v1 juntou os `docs/97` e `98` com cobrança, agentes e
 operação. **Esta v2 mescla o plano anterior ainda incompleto (`docs/91` a `96`: Motor de Retorno e
 plataforma de decisão) e acrescenta a mudança de modelo que o Eduardo pediu: parar de vender a
 ferramenta e passar a vender a entrega, usando o software por dentro.**
@@ -156,13 +157,41 @@ concorrente direto**, então **o nosso "assistido" sozinho não diferencia**. O 
 mostra (e a busca não achou): ritmo **individual** do cliente, **prestação de contas por salão** e
 **cobrança atrelada a resultado com extrato**. É onde o degrau 3 se separa.
 
-**Preços de referência** [P, `competitors/*`, 05/09 e 20/09, **podem ter mudado**]: AppBarber
-**R$ 79,90** (1 profissional), **R$ 164,50** (2 a 5), **R$ 219,90** (6 ou mais); Booksy **US$ 29,99 mais
-US$ 20 por usuário**, 14 dias grátis, plano único com tudo; Fresha **US$ 19,95 solo** mais 20% (mínimo
-US$ 6) de cliente novo. **Comparação [E]:** o exemplo do degrau 3 (R$ 211 por mês) fica **abaixo do
-AppBarber 6+** e acima do solo; e o variável de R$ 16 por retorno pagável (20% de R$ 80) é **menor
-que o mínimo de US$ 6 (cerca de R$ 33) que a Fresha cobra por cliente novo**, com a diferença de que
-aqui é cliente que **já é do salão**.
+**Preços de referência.** Lidos **ao vivo em 07/10/2026** nos sites (marcados **[P hoje]**) e, onde não deu para
+reler, os do repositório (**[P antigo]**, de `competitors/*`, 05/09 e 20/09, podem ter mudado):
+
+| Sistema | 1 a 2 profissionais | 3 a 5 | 6 ou mais | Teste e garantia | Migração | WhatsApp |
+|---|---|---|---|---|---|---|
+| **CICLO** (proposta) | R$ 49 (solo, 1 prof.) | R$ 99 (até 5) | sob contato | acesso aberto, sem prazo | grátis (D1) | manual (D6) |
+| **BarbUp** [P hoje] | **R$ 49,90** (até 2) | **R$ 89,90** (até 5) | R$ 129,90 (até 12) | **14 dias sem cartão e 30 dias de garantia de reembolso**, sem fidelidade | **assistida, sem custo** | configuração por WhatsApp; suporte em menos de 2 h úteis |
+| **Trinks** [P hoje] | **R$ 76** (1 a 2) | R$ 110 (3 a 4) | sob consulta | **5 dias** grátis | assistida só no tier enterprise (P antigo) | **"rotina de mensagens por WhatsApp" é item adicional pago** |
+| **AppBarber** [P antigo] | R$ 79,90 (1) | R$ 164,50 (2 a 5) | R$ 219,90 | n/d | por chamado, até 5 dias úteis | n/d |
+| **Booksy** [P antigo] | US$ 29,99 mais US$ 20 por usuário | idem | idem | 14 dias sem cartão | n/d | n/d |
+| **Fresha** [P antigo] | US$ 19,95 solo | US$ 14,95 por membro | idem | n/d | n/d | n/d |
+
+**O que isso diz de verdade (corrige uma suposição minha):**
+1. **Preço não é diferencial contra o BarbUp.** O CICLO solo (R$ 49, **1** profissional) custa o mesmo que o
+   BarbUp básico (R$ 49,90, **até 2**), e o **Equipe (R$ 99) é mais caro** que o BarbUp intermediário
+   (R$ 89,90, até 5). **Só ganhamos no preço do Trinks.** A tese precisa se sustentar em **ritmo
+   individual, prova e serviço**, não em ser barato.
+2. **O padrão de mercado de confiança é teste sem cartão mais garantia de reembolso de 30 dias** (BarbUp
+   tem os dois). **Recomendação [Do Eduardo]:** oferecer **garantia de 30 dias no plano anual à vista**
+   (o direito legal de arrependimento é de 7 dias; 30 dias é diferencial comercial e baixa o risco de
+   pagar R$ 497 adiantado a um fornecedor novo).
+3. **O Trinks cobra o WhatsApp como item adicional**, o que reforça o diferencial de "WhatsApp incluído"
+   **no dia em que ele for verdade em produção** (D6).
+4. **Comparação do degrau 3 [E]:** o exemplo de R$ 211 por mês fica **bem acima** de todos os planos de
+   software (BarbUp R$ 129,90 no topo). **Não é o preço de uma ferramenta, é o de um serviço**, e só se
+   justifica se o extrato mostrar retorno maior que o custo (seção 4.4). O variável de R$ 16 por retorno
+   pagável (20% de R$ 80) é **menor que o mínimo de US$ 6 (cerca de R$ 33) que a Fresha cobra por
+   cliente novo**, com a diferença de que aqui é cliente que **já é do salão**.
+
+**Contexto de mercado novo** [S, matéria do UAI com dados do Sebrae e de pesquisas]: o uso de **CRM entre
+pequenas empresas brasileiras foi de 23% para 29% entre 2024 e 2025** (TIC Empresas 2025), o que
+**sustenta a leitura de que a maioria ainda não usa sistema** (D3); **cerca de 236 mil pequenos negócios de
+beleza se formalizaram em 2025 (+18%)**; **79,5% das pessoas contataram marcas por WhatsApp no último
+ano**; e o custo de **conquistar um cliente novo é de 5 a 25 vezes o de manter um existente** (citação
+de pesquisa da Harvard Business Review, **não conferida por mim**).
 
 ### 2.7 Resolução do conflito entre a esteira (`docs/97`) e o veredito GO-1
 
@@ -230,7 +259,7 @@ destino**. Só o Dromo processa no navegador (opção paga) [S]. Detalhe em `doc
 ### 3.4 Recepcionista de IA para salão (agentes no mercado)
 Velora, Wello, Ada e outros, no WhatsApp e Instagram: **virou commodity** em 2026, com muitos
 entrantes [S]. Números de "no-show cai e ocupação sobe 20 a 30%" vêm de blogs de fornecedor, **não
-usar**. **Regra do WhatsApp (Meta), 2026** [S, reportagens; **conferir o texto oficial**]: a API
+usar**. **Regra do WhatsApp (Meta), 2026** [S, reportagens; **o texto oficial foi lido em 07/10/2026 e confirma a regra: seção 4.7, ver 3.6**]: a API
 **proíbe chatbots de IA de uso geral** (desde 15/01/2026 para todos), mas **permite IA como parte de um
 serviço do negócio** (reserva, suporte, avisos). A IA **não pode ser a funcionalidade principal**.
 
@@ -238,10 +267,38 @@ serviço do negócio** (reserva, suporte, avisos). A IA **não pode ser a funcio
 Seção T6 (Asaas, Pix Automático, Mercado Pago).
 
 ### 3.6 Lacunas desta pesquisa [fazer]
-(a) preços e telas reais dos concorrentes brasileiros (pedir print a salões que os usam); (b) texto
-oficial da política do WhatsApp Business; (c) **parceiros de distribuição** (contadores, fornecedores
-de produtos, associações, escolas de beleza), **não pesquisados**; (d) Instagram e Google Meu
-Negócio; (e) **se algum concorrente brasileiro já vende retorno por resultado** (a busca não achou).
+**Fechadas nesta rodada:** preços do Trinks e do BarbUp (ao vivo); texto oficial da Meta (item abaixo);
+regra de valor variável do Pix Automático (item abaixo).
+
+**Texto oficial da Meta** [S, página oficial lida em 07/10/2026, resumo do trecho]: nos **Termos da
+Plataforma WhatsApp Business**, seção **4.7 "Provedores de IA"** (documento atualizado em 23/09/2026),
+fornecedores e desenvolvedores de IA ficam **proibidos de acessar ou usar a plataforma quando a IA for a
+funcionalidade principal**. **Continua permitido** quando a IA é **incidental ou auxiliar** (o que
+casa com agendar e recuperar). **Restrição que importa para nós:** os dados da plataforma **não podem
+ser usados para criar, desenvolver, treinar ou melhorar** sistemas de aprendizado de máquina ou modelos de
+linguagem, **exceto o refinamento de um modelo próprio de uso exclusivamente interno**. Consequência: o
+**uplift, o bandido e o modelo hierárquico do `docs/91`/`92`, se forem treinados em mensagens do
+WhatsApp, esbarram nessa cláusula**; **perguntar ao advogado** o que cabe como "uso próprio interno" para
+um operador que serve vários salões.
+
+**Pix Automático e valor variável** [S, notícias sobre as regras do Banco Central, e a documentação do
+Asaas; **não consegui abrir o guia oficial do BC**]: o pagador define **no momento da autorização** um
+**valor máximo por cobrança**, e a cobrança **pode variar abaixo desse teto**; o pagador pode **cancelar
+uma cobrança até 23h59 do dia anterior** ao vencimento se não concordar; se faltar saldo há **3
+retentativas em 7 dias**; o recebedor pode cancelar uma cobrança até **22h do dia anterior**. No Asaas, o
+modo `MANUAL` **não declara restrição de valor** e exige criar a instrução **entre 2 e 10 dias úteis
+antes do vencimento**. **Conclusão: cobrança variável por Pix Automático é viável, mas a confirmação
+final é no sandbox do Asaas** (criar uma autorização e cobranças de valores diferentes).
+
+**Ainda abertas [fazer]:** (a) **prints de preço e tela dos concorrentes pelo olhar de um salão que os usa**
+(os sites não mostram tudo; a Belasis não publicou preço); (c) **parceiros de distribuição**: a busca
+**não achou um canal estabelecido** de venda de software para salão por contadores, associações ou
+fornecedores (só distribuidoras de cosméticos, que visitam salões e **são um canal possível mas não
+pesquisado**); (d) Instagram e Google Meu Negócio; (e) **se algum concorrente brasileiro já vende retorno
+por resultado** (segue sem achado). **Pista nova:** a **Lei do Salão-Parceiro** (Lei 13.352/2016) regula a
+parceria entre profissionais autônomos (cabeleireiro, barbeiro, manicure e outros) e o salão, o que **muda
+quem é o "dono" do cliente que volta e a comissão do profissional**; **não aprofundei**, e vale uma
+pergunta ao contador e ao advogado antes de o Motor atribuir retorno a um profissional.
 
 ## 4. A escada de oferta e o modelo Entregue (o coração da v2)
 
@@ -373,12 +430,19 @@ de 30% dos pilotos não chamarem a lista**, o gargalo é o dono, e o produto cer
   plano** (proteção contra checkout adulterado). **Cobrança variável não pode ser uma assinatura de
   valor fixo.** Precisa de **cobrança avulsa por mês**, com o valor calculado pelo sistema a partir do
   livro `return_attributions`.
-- **Candidatos [S, a conferir]:** (1) **Asaas, cobrança avulsa por API** a cada mês (Pix, boleto ou
-  cartão) com o valor calculado; (2) **Pix Automático em modo `MANUAL`** (a plataforma cria cada
-  cobrança, **com valor próprio**): o dono autoriza uma vez e o nosso sistema cobra cada mês um valor
-  diferente. **Verificar nas regras do Pix Automático se o valor pode variar** e dentro de qual
-  limite autorizado; a documentação lida diz que no modo `MANUAL` **a aplicação cria cada cobrança**,
-  mas **não confirmei** a regra de valor variável. (3) **Pix manual** com QR gerado por mês (alpha).
+- **Candidatos [S, a conferir no sandbox]:** (1) **Asaas, cobrança avulsa por API** a cada mês (Pix,
+  boleto ou cartão) com o valor calculado; (2) **Pix Automático em modo `MANUAL`**: o dono autoriza uma vez,
+  **com um valor máximo por cobrança**, e o nosso sistema cobra cada mês um valor diferente **abaixo do
+  teto** (viabilidade na seção 3.6); (3) **Pix manual** com QR gerado por mês (alpha).
+- **Consequência de calendário (v3, rodada 2):** a instrução de cobrança precisa ser criada **entre 2 e
+  10 dias úteis antes do vencimento**, e o pagador pode **recusar até a véspera**. Logo, **o mês de
+  medição fecha antes da cobrança**: fecha-se o livro, gera-se o **extrato**, **avisa-se o dono** e só
+  depois se cria a cobrança, com folga de pelo menos 2 dias úteis para ele **contestar antes de pagar**.
+  Isso **casa com o direito de contestar em 10 dias** da seção 4.4: **cobrar em atraso (competência
+  anterior)**, nunca no mesmo mês da medição.
+- **O teto autorizado é o teto contratual** (seção 4.4): o valor máximo que o dono autoriza no Pix
+  Automático **tem que ser igual ao teto mensal do contrato**, para a cobrança nunca ser recusada por
+  passar do autorizado.
 - **O cálculo da cobrança é função pura** em `core/billing` (`cobrancaDoMes(livro, contrato)`), com
   teste de propriedade (nunca cobra acima do teto; variável nunca negativa; o mesmo livro dá o mesmo
   valor), mutação e **reconciliação mensal** (soma do extrato = valor da cobrança).
@@ -492,7 +556,9 @@ Quatro regras inegociáveis, **estendidas a todo agente**:
 8. **Teto de custo por conta e chave de desligamento.**
 9. **Avaliação com gabarito antes de soltar**; mutação vale.
 10. **Registro do que o agente fez**, visível ao dono, com redação de dado pessoal.
-11. **Política do WhatsApp:** o agente é sempre **uma função do negócio**, nunca conversa aberta.
+11. **Política do WhatsApp:** o agente é sempre **uma função do negócio**, nunca conversa aberta. **E, pela
+    seção 4.7 dos termos da Meta (3.6), nenhum dado da plataforma do WhatsApp treina modelo do CICLO** (nem
+    o uplift nem o hierárquico) **sem parecer jurídico sobre o que é "uso próprio interno"**.
 12. **(v2) O agente do serviço entregue nunca cobra, nunca decide quem entra no livro de retornos e
     nunca altera o livro.** A cobrança sai de função pura sobre o livro; **o livro só recebe evento do
     sistema** (agendamento e atendimento), nunca de texto de agente.
@@ -722,11 +788,12 @@ contrato e parecer → T6 variável (P2).
 
 ## 17. O que esta versão NÃO fez
 
-Não testou produto nenhum; não leu o texto oficial da Meta; **não confirmou se o Pix Automático
-permite valor variável**; não confirmou taxa nem exigência de cadastro do Asaas nem do Mercado Pago;
-não pesquisou distribuição nem concorrentes brasileiros a fundo; **não verificou se algum concorrente
-brasileiro cobra por resultado**; não mediu nenhuma hipótese do Motor; **todos os números da seção 4.4
-(fixo, taxa de 20%, β de 3%, minutos por salão) são hipótese minha, não medição**; **não repesquisou os
-preços dos concorrentes ao vivo** (os da 2.6 são de 05/09 e 20/09 e vêm de `competitors/*`); **não
-verificou o plano da Belasis nem o do BarbUp** (o site da Belasis não mostrou preço); não escreveu código.
-Tudo marcado [S] é ponto de partida e [E] é conta a confirmar.
+Não testou produto nenhum; **não abriu o guia oficial do Banco Central** (o valor variável do Pix
+Automático vem de notícias e da documentação do Asaas, e **precisa de confirmação no sandbox**); **o texto da
+Meta veio de um resumo automático da página oficial**, não de leitura minha do contrato inteiro; não
+confirmou taxa nem exigência de cadastro do Asaas nem do Mercado Pago; **não achou canal de distribuição**
+nem concorrente brasileiro que cobre por resultado; não mediu nenhuma hipótese do Motor; **todos os números
+da seção 4.4 (fixo, taxa de 20%, β de 3%, minutos por salão) são hipótese minha, não medição**; **os preços
+da seção 2.6 marcados [P hoje] são de 07/10/2026** (Trinks e BarbUp) e os [P antigo] vêm de `competitors/*`;
+**o plano da Belasis não publica preço**; a citação da Harvard Business Review vem de uma matéria, não foi
+conferida; não escreveu código. Tudo marcado [S] é ponto de partida e [E] é conta a confirmar.
