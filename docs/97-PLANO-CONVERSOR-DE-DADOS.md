@@ -4,6 +4,9 @@ Escrito em 2026-10-07, v3 (mesmo dia): inclui a pesquisa de mercado, o que copia
 traz para dentro do plano o que antes estava "fora" (OCR, IA, dado de saúde, texto jurídico), cada um
 com a sua trava.
 
+A revisão que mediu este plano contra o estado da arte (e que revisa o Motor) está em
+`docs/98-REVISAO-ECOSSISTEMA-E-MOTOR.md`; o que ela mudou aqui está marcado com **(rev. 98)**.
+
 **A ideia em uma frase.** O salão joga qualquer coisa (planilha, CSV, export de outro sistema, lista
 colada, contatos do celular, até foto ou PDF escaneado). Uma esteira com estações fixas, **rodando no
 navegador por padrão**, identifica o formato, acha a tabela, descobre o que cada coluna é olhando o
@@ -107,7 +110,10 @@ dele**, que é exatamente o atrito que a esteira remove.
    diferença**. Se faltarem 214, algo ficou para trás.
 6. **Correção que volta.** O CSV da quarentena, corrigido e devolvido, é reconhecido como correção
    do mesmo lote, não como um arquivo novo.
-7. **Lista de virada.** Ao fim: "o que fazer no dia em que você parar de usar o outro sistema" (agenda
+7. **Retroteste (rev. 98):** quando vier histórico (N2), mostrar "se o CICLO existisse em março,
+   teria mandado você chamar 38 pessoas; 14 voltaram; eram R$ 2.100", **medido nos dados do próprio
+   salão** e com a amostra dita. É a prova no momento da decisão de pagar (`docs/98`, seção 5).
+8. **Lista de virada.** Ao fim: "o que fazer no dia em que você parar de usar o outro sistema" (agenda
    futura, saldos, avisos de mudança de número).
 
 ## 3. Arquitetura: no navegador por padrão
@@ -177,7 +183,10 @@ células mescladas; linhas e colunas ocultas reportadas; **todas as abas**, cada
 **E3 · Descoberta de tabelas.** O cabeçalho quase nunca está na linha 1. Acha o bloco denso, a linha
 de cabeçalho, descarta título, filtros ("Período: ..."), total e rodapé (contados como ignoradas),
 separa **duas tabelas na mesma aba** e desdobra relatórios **agrupados por profissional** (o nome
-solto numa linha vira coluna).
+solto numa linha vira coluna). **(rev. 98)** Achar a tabela em planilha bagunçada é difícil até
+para o estado da arte (um modelo dedicado da Microsoft, o TableSense, fica em ~86% de precisão): a
+heurística **vai** errar, então a prévia (E9) deixa **ajustar o retângulo da tabela**, e um erro de
+detecção nunca vira dado errado calado.
 
 **E4 · Perfilamento de colunas.** Mede o conteúdo antes de dar nome: fração que parece telefone,
 e-mail, data (e em qual formato), dinheiro (`1.234,56`, `R$ 80`, centavos), nome próprio, texto livre,
@@ -187,8 +196,11 @@ vazio, cardinalidade, tamanho médio.
 **E5 · Classificação de campo.** Quatro sinais, **o conteúdo pesa mais que o nome**: perfil da coluna;
 cabeçalho normalizado contra um dicionário PT/EN/ES com sinônimos ("cel", "whats", "fone",
 "contato"); assinatura conhecida (E11); vizinhança. Cada coluna sai com **campo canônico +
-confiança**: ≥ 0,9 segue; 0,6 a 0,9 sugere e pede um toque; abaixo disso pergunta ou ignora. Por
-regra, não por sorte:
+confiança**: ≥ 0,9 segue; 0,6 a 0,9 sugere e pede um toque; abaixo disso pergunta ou ignora. **(rev. 98)** A
+classificação é **da tabela inteira de uma vez**, com restrições entre colunas (um telefone
+principal, um nome, datas coerentes entre si, uma coluna não pode ser duas coisas): o ganho dos
+modelos de tipagem de coluna da literatura (Sato) vem do contexto das outras colunas, não da coluna
+isolada. Por regra, não por sorte:
 - **dia/mês ou mês/dia** pela distribuição (valor com primeiro número acima de 12 define); se nenhum,
   pergunta mostrando os dois;
 - coluna que mistura "Maria 11 99999-0000": separa; vários telefones numa célula: separa e usa o
@@ -205,12 +217,20 @@ dígito; fixo separado de celular); nome sem estragar "da Silva" nem "McDonald";
 que não casa vira pergunta.
 
 **E7 · Resolução de entidades.** Mesma pessoa em várias linhas, no arquivo e **contra a base já
-existente**. Chave principal: hash do telefone (já usado hoje); secundária: nome + aniversário. Nomes
-muito diferentes no mesmo telefone são **família ou recepção**: marca "telefone compartilhado", não
-funde. Nunca sobrescreve dado preenchido pelo salão com vazio; em conflito vence o mais recente e o
+existente**. **(rev. 98)** Em vez de uma regra única, **pontuação por campo** no estilo
+Fellegi-Sunter (a técnica clássica de junção de registros, usada no Splink): bloqueio para não
+comparar todos com todos (mesmo hash de telefone, mesmo aniversário, mesma chave fonética do nome);
+peso para telefone igual, nome parecido (distância de edição) e aniversário igual; **ajuste de
+frequência** (um "Maria Silva" vale menos como evidência do que um nome raro). Três destinos:
+**funde**, **pergunta** ("estas duas são a mesma pessoa?") ou **não funde**. O hash do telefone (já
+usado hoje) continua sendo o bloqueio principal. Nomes muito diferentes no mesmo telefone são
+**família ou recepção**: marca "telefone compartilhado", não funde. Nunca sobrescreve dado preenchido pelo salão com vazio; em conflito vence o mais recente e o
 outro vai ao relatório.
 
-**E8 · Validação, quarentena e controle de totais.** Cada linha sai com destino (ouro, ouro com aviso,
+**E8 · Validação, quarentena e controle de totais.** **(rev. 98)** As validações são uma **lista
+declarativa de expectativas nomeadas** ("telefone com 10 ou 11 dígitos", "data não está no futuro",
+"nome não vazio"), no estilo dos contratos de dados (Great Expectations, Frictionless Table Schema), e
+o relatório da importação sai **sempre no mesmo formato**. Cada linha sai com destino (ouro, ouro com aviso,
 quarentena com motivo em código, ignorada). A quarentena sai como **a mesma planilha anotada** (copiado
 do OneSchema): célula problemática marcada e coluna com a explicação, no formato que a esteira relê,
 para o dono corrigir e devolver. **Controle de totais:** pergunta quantos clientes o sistema antigo
@@ -218,7 +238,7 @@ mostra e acusa a diferença.
 
 **E9 · Prévia: "entendi assim".** Uma tela: cinco linhas *como veio → como vai ficar*, contagens, no
 máximo **três perguntas** (com a resposta provável marcada), o **valor em reais** ("47 clientes, R$
-6.300"), o nível alcançado e o que falta para subir, a **declaração** (seção 9) e edição em massa
+6.300"), o nível alcançado e o que falta para subir, a **declaração** (seção 9), **o ajuste do retângulo da tabela (rev. 98)** e edição em massa
 (achar-e-trocar, corrigir uma coluna inteira) sem sair da tela.
 
 **E10 · Carga.** Lotes de 100, transacional por lote, **idempotente** (hash do arquivo + chave da
@@ -363,6 +383,13 @@ abaixo é proposta minha, não é parecer, e não vai ao ar sem a redação do a
 7. **Hostil:** zip-bomb, macro, XML externo, fórmula, arquivo gigante, binário com extensão errada.
 8. **Ida e volta:** exporta uma base, importa em conta vazia, compara contagens e campos.
 9. **Prova no navegador** a 390 px com arquivo real, e em aparelho Android fraco para o que é pesado.
+10. **(rev. 98) Modo sombra:** toda versão nova de classificador roda em paralelo à atual e só
+    **registra** o que faria, até haver semanas de resultado real.
+11. **(rev. 98) Portão de regressão no CI:** as métricas do corpus (falso-aceite, acerto de coluna)
+    têm piso; PR que as piora reprova.
+12. **(rev. 98) Telemetria de correção:** a taxa em que o dono corrige a coluna que a esteira
+    classificou é a métrica de qualidade real (sem dado pessoal); cada correção em produção vira caso
+    permanente do corpus.
 
 ## 13. O que precisa do advogado (lista única, para o dossiê do #144)
 
@@ -395,7 +422,9 @@ depende de amostra de concorrente para começar.**
 - **Onda 5 · Outras entidades:** serviços e preços, produtos, **saldos e pacotes** (revisão), assinaturas
   e **agenda futura** (aviso de horário em dobro).
 - **Onda 6 · Saída completa:** exportação `.zip` de tudo com `LEIA-ME.txt`, teste de ida e volta,
-  escape de fórmula via `csv-seguro.ts`; dado de saúde só com o AAL2 que a exportação de conta já exige.
+  escape de fórmula via `csv-seguro.ts`; **(rev. 98)** descritor `datapackage.json` (Frictionless
+  Data Package) para qualquer ferramenta ler a base; dado de saúde só com o AAL2 que a exportação de
+  conta já exige.
 - **Onda 7 · Modelo no aparelho (opcional)**, depois que as camadas 1 e 4 estiverem medidas. Camada
   de terceiros: **só com parecer jurídico**.
 
