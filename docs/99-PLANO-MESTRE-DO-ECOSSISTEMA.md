@@ -1,392 +1,602 @@
-# 99 · Plano-mestre do ecossistema CICLO: tudo o que faz o sistema rodar, vender, cobrar e aprender
+# 99 · Plano-mestre do ecossistema CICLO (v2): da ferramenta ao serviço entregue por software
 
-Escrito em 2026-10-07 pelo Claude (Sonnet 5.5) a pedido do Eduardo. **É só plano: nenhuma linha de
-código deste documento foi escrita.** O destino é outra conta do Claude, que vai **estruturar o
-backlog inteiro e executar** usando todo o seu poder. Por isso o documento é autossuficiente:
-traz o estado real, as regras, as decisões já tomadas, o que está verificado e o que não está.
+Escrito em 2026-10-07, **v2 no mesmo dia**. A v1 juntou os `docs/97` e `98` com cobrança, agentes e
+operação. **Esta v2 mescla o plano anterior ainda incompleto (`docs/91` a `96`: Motor de Retorno e
+plataforma de decisão) e acrescenta a mudança de modelo que o Eduardo pediu: parar de vender a
+ferramenta e passar a vender a entrega, usando o software por dentro.**
 
-Documentos irmãos (leia nesta ordem): `docs/97` (esteira de dados), `docs/98` (revisão do Motor e do
-ecossistema), `docs/26` (assistente de IA: **as regras de agente já decididas**), `docs/87` (cortesia),
-`docs/88` e `docs/89` (custos e metas), `docs/95` e `docs/96` (fila de chamadas), `docs/86` (jurídico).
+**É só plano: nenhuma linha de código deste documento foi escrita.** O destino é outra conta do
+Claude, que vai estruturar o backlog inteiro e executar com todo o seu poder. Por isso o documento é
+autossuficiente: traz o estado real, as regras, as decisões já tomadas, os conflitos entre planos e o
+que está verificado ou não.
 
-**Rótulos usados** (os mesmos de `docs/26`): **[M]** medido ou lido no repositório · **[E]** estimado
-com conta · **[S]** suposto ou de fonte externa não conferida. Classes de decisão: **Decidido**,
-**Recomendado**, **Do Eduardo**, **Do advogado**, **Bloqueado**.
+**Sobre uma palavra do pedido.** O Eduardo escreveu "saas e assas". Li como **"SaaS e o modelo
+service-as-software"** (vender o serviço pronto, feito por software e agentes, em vez de vender a
+ferramenta), e **não** como Asaas (a plataforma de cobrança). O Asaas continua no plano, mas só como
+**infraestrutura de cobrança** (T6). Se a leitura estiver errada, só a seção 4 muda.
+
+Documentos irmãos, nesta ordem: `docs/97` (esteira de dados), `docs/98` (Motor), `docs/26` (assistente
+de IA: **regras de agente já decididas**), `docs/91` a `94` (Motor de Retorno e plataforma), `docs/95`
+e `docs/96` (fila de chamadas e backlog), `docs/87` (cortesia), `docs/88` e `89` (custos), `docs/86`
+(jurídico).
+
+**Rótulos:** **[M]** medido ou lido no repositório · **[E]** estimado com conta · **[S]** suposto ou
+de fonte externa não conferida. **Classes de decisão:** Decidido, Recomendado, Do Eduardo, Do advogado,
+Bloqueado.
 
 ---
 
 ## 0. Como a outra conta deve usar este documento
 
-1. Leia `CLAUDE.md`, `docs/00-BRIEFING.md` e os documentos irmãos acima. **Não execute nada antes.**
-2. Crie `docs/100-BACKLOG-MESTRE.md` no formato de `docs/96`: um ticket por item, com id, trilha,
-   dependências, critério de aceite verificável, como se prova (teste, mutação, navegador a 390 px) e
-   a classe de decisão. **A estrutura do backlog é o primeiro entregável**, e passa por revisão do
+1. Leia `CLAUDE.md`, `docs/00-BRIEFING.md` e **todos** os documentos irmãos acima, **inclusive os
+   `docs/91` a `96`**, que são o plano que esta v2 mescla. **Não execute nada antes.**
+2. Crie `docs/100-BACKLOG-MESTRE.md` no formato de `docs/96`: um ticket por item, com id, trilha (T1 a
+   T11), dependências, critério de aceite verificável, prova (teste, mutação, navegador a 390 px) e a
+   classe de decisão. **A estrutura do backlog é o primeiro entregável** e passa pela revisão do
    Eduardo antes de qualquer código.
-3. Rode as trilhas **em paralelo, cada uma em worktree e branch próprios** (seção 12). O caminho
-   crítico está na seção 11.
-4. Atualize este documento quando uma decisão mudar. Plano que diverge do código é o defeito mais
-   caro deste projeto.
+3. **Resolva os conflitos da seção 2.3 antes de montar o backlog** (são decisões de preço, canal e
+   regra de produção). Onde faltar decisão, o ticket nasce **Bloqueado**, não adivinhado.
+4. Rode as trilhas em paralelo, cada uma em worktree e branch próprios (seção 13).
+5. Atualize este documento quando uma decisão mudar. Plano que diverge do código é o defeito mais caro
+   deste projeto.
 
-## 1. A tese em cinco linhas
+## 1. A tese (v2)
 
 1. O CICLO **não é uma agenda**. É um **motor de retorno de clientes**, e agenda é só o chão.
 2. O mercado de salão é dominado por agenda e reserva; **retenção automática é o elo fraco de todos**
    (seção 3). O espaço está pouco ocupado.
 3. O motor só é bom se **come qualquer dado** (`docs/97`), **prova que acerta** (`docs/98`) e
-   **fecha a volta**: entra o dado, prevê, alguém age, mede, aprende, e o dono pode sair levando tudo.
-4. **Agentes de IA entram onde reduzem trabalho do dono sem decidir por ele** (seção 6): quem aperta
-   o botão é sempre uma pessoa. A decisão de `docs/26` continua de pé.
-5. Tudo isso só vale se **cobrar for simples, confiar for possível e operar for barato** (seções 5, 8
-   e 9).
+   **fecha a volta** (entra o dado, prevê, alguém age, mede, aprende, e o dono pode sair levando tudo).
+4. **Mudança de modelo (v2):** o dono de salão **não quer software, quer o cliente de volta**. O
+   mercado de software está migrando de "vender a ferramenta" para **"vender o trabalho feito, com IA
+   por dentro, e cobrar pelo resultado"** (seção 3.3). O CICLO tem as três peças que isso exige: um
+   motor que decide, uma fila que executa e uma **atribuição que mede**. **A oferta passa a ser uma
+   escada de três degraus: Ferramenta, Assistido, Entregue** (seção 4).
+5. **Agentes entram onde reduzem o trabalho de quem opera sem decidir por ninguém** (seção 7). O
+   operador do serviço entregue é uma pessoa **supervisionando** um agente. A decisão de `docs/26`
+   (assistente que propõe, pessoa aprova) continua de pé.
+6. Tudo isso só vale se **cobrar for simples, confiar for possível e operar for barato** (T6, T9, T10).
 
 ## 2. O estado real (verificado em 2026-10-07)
 
-**No ar na `main`** [M]: Motor de Ciclo v1, fila de chamadas (um cliente por vez, WhatsApp do dono,
-link de agendamento com clique medido), perfil e nota do cliente, importação de CSV, exportação de
-clientes em CSV, assistente de IA (Gemini, desligado sem a chave), mensageria e entrada de WhatsApp,
-push, crons de lembrete, campanhas, segmentos e recálculo de ciclos, cobrança por Mercado Pago
+### 2.1 O que existe
+
+**Na `main`** [M]: Motor de Ciclo v1; **fila de chamadas** (um cliente por vez, WhatsApp do próprio
+dono, link de agendamento com clique medido); perfil e nota do cliente; importação de CSV; exportação de
+clientes em CSV; assistente de IA (Gemini, desligado sem a chave); mensageria e entrada de WhatsApp;
+push; crons de lembrete, campanhas, segmentos e recálculo de ciclos; cobrança por Mercado Pago
 (assinatura com cartão, webhook, cancelamento).
 
 **Em PRs abertos, nada fundido** [M]:
-- **#143** (`feat/cortesia-2026-10-03`): cortesia e faixa, pausa que trava toda rota de escrita,
-  link público de negócio pausado, cancelar mantendo o mês pago, **`ACESSO_ABERTO` ligado** (toda
-  conta usa tudo, sem pagar), documentos 97, 98 e 99.
-- **#144** (`feat/juridico-2026-10-03`): inventário de dados, mapa de operadores, política de
-  privacidade gerada do código, aviso na página pública, reaceite dos termos, minutas jurídicas
-  (não estão no ar).
+- **#143** (`feat/cortesia-2026-10-03`): cortesia e faixa, **pausa que trava toda rota de escrita**,
+  link público de negócio pausado, cancelar mantendo o mês pago, **`ACESSO_ABERTO` ligado** (toda conta
+  usa tudo, sem pagar), `docs/97` a `99`.
+- **#144** (`feat/juridico-2026-10-03`): inventário de dados, mapa de operadores, política gerada do
+  código, aviso na página pública, reaceite dos termos, minutas jurídicas (fora do ar).
 - **#142** (outra conta): textos de volta por perfil.
-- Ao fundir #143 e #144: a rota nova `POST v1/legal/accept` precisa de uma linha `'permite'` em
+- Ao fundir #143 e #144: a rota `POST v1/legal/accept` precisa de uma linha `'permite'` em
   `core/billing/pausa.ts`, e há conflito de uma linha em `tests/unit/core/versoes-legais.test.ts`.
 
-**Não existe ainda** [M]: esteira de dados; retroteste; backoffice interno; integração de cobrança
-automática em produção (credencial do Mercado Pago ausente); e-mails de aviso (C6); eliminação após
-90 dias de pausa (C9); RIPD; runbook de incidente.
+### 2.2 O plano anterior (`docs/91` a `96`) e o quanto já foi feito
 
-**Datas anteriores** (de `docs/87`, hoje afetadas pelo acesso aberto): alpha 26/10, abertura pública
-09/11, lançamento oficial 11/01/2027. **Reconfirmar com o Eduardo**: com tudo liberado sem prazo, o
-conceito de "pré-lançamento com data" mudou.
+| Peça do plano anterior | Estado [M] |
+|---|---|
+| **Fila de chamadas** (E0 a E3 do `docs/96`): sem seleção em lote, link de agendamento com clique, fila de um por vez, ordenação por lucro × nota, "pediu para não ser chamado" | **no ar** (#135 a #141) |
+| Perfil e nota do cliente, calculados todo dia | no ar (#137) |
+| Textos por perfil e "chamada que guarda o texto e a nota" | **PR #142 aberto** |
+| Pendentes do `docs/96`: assistente mandar o link (E1.6), "VIP" (E2.6), ordenar por mais campos (E2.5), teto diário (E2.3) | a fazer |
+| **Consentimento** com prova (`consents` append-only, link pessoal) | **não existe** |
+| **Base de medição** com braço de controle (`message_exposures`, `return_outcomes`) | **não existe** (existe atribuição por clique em `messages`) |
+| **Canal oficial** (API do WhatsApp via BSP, coexistência) | **não existe**; ficou **adiado** |
+| Central de Decisões, casamento vaga × cliente, segunda visita, ciclo de obrigação | não existe |
+| Modelo hierárquico, benchmark entre salões, uplift, bandido | **não existe e está bloqueado** (advogado, RIPD, ~30 negócios) |
+| **Cobrança por resultado** | **foi cortada** no `docs/94` (seção 2.4) |
 
-**Regra de trabalho em conflito [Do Eduardo]:** nesta conversa a regra era **nunca escrever em
-produção, nunca fundir, nunca fazer deploy nem `db push` sem pedido**. O `docs/96` (outra conta)
-descreve CI verde, auto-merge e migrations aplicadas em produção antes do código. **A outra conta deve
-perguntar ao Eduardo qual regra vale antes de tocar em produção.**
+### 2.3 Conflitos entre os planos (resolver antes do backlog, **Do Eduardo**)
+
+| # | Conflito | Onde | Leitura mais provável |
+|---|---|---|---|
+| C1 | **Canal:** `docs/91` quer API oficial; `docs/95` decidiu **reativação manual, sem API por enquanto** | 91 × 95 | vale o 95 (é o mais novo); a API volta por portão (seção 4.6) |
+| C2 | **Preços:** `docs/87` vende **R$ 49 (Solo) e R$ 99 (Equipe)**; `docs/94` modela **R$ 37 (básico) e R$ 149 (recuperação)** | 87 × 94 | não dá para ter os dois; o plano de R$ 149 contava com mensagens da API incluídas |
+| C3 | **Decisor:** os `docs/91` a `96` citam **"Vitor"** como quem decide e faz a papelada; este plano trata o **Eduardo** | 91–96 × 99 | **confirmar se são sócios ou a mesma pessoa** e quem decide o quê |
+| C4 | **Regra de produção:** nesta conversa valia "nunca escrever em produção, nunca fundir, nunca `db push`"; o `docs/96` descreve CI verde, **auto-merge e migrations aplicadas em produção antes do código** | 96 × conversa | **perguntar qual vale** antes de tocar em produção |
+| C5 | **Cobrança por resultado:** cortada no `docs/94`; esta v2 a **reintroduz de forma híbrida e com portões** | 94 × 99 | decisão deliberada, explicada na seção 4.5 |
+| C6 | **Datas:** alpha 26/10, pública 09/11 e oficial 11/01/2027 vêm do `docs/87` e **perderam o sentido com o acesso aberto** | 87 × #143 | redefinir |
+| C7 | **Guarda de valor do Mercado Pago:** o código exige que o valor autorizado **bata com o preço do plano** (`valorConfereComDegrau`). Uma cobrança **variável** (base + resultado) **quebraria essa guarda** | código × 99 | a cobrança variável **não** pode usar a assinatura do MP (seção 4.7) |
+
+### 2.4 Por que o `docs/94` cortou a cobrança por resultado (e por que a v2 a traz de volta com cuidado)
+
+O `docs/94` diz que ela "exige medição causal sólida por salão, que não existe com ~100 sumidos por
+mês" [M]. É verdade: um salão pequeno não tem volume para provar, sozinho, que a mensagem causou a
+volta. **A v2 não tenta resolver isso por salão.** Ela (a) cobra sobre uma **linha-base contratual**
+em vez de uma medição causal individual, (b) mede o efeito **agregado** com um braço de controle de
+**todos** os salões atendidos, (c) usa preço **híbrido** (a parte fixa cobre o custo) e (d) só liga a
+parte variável depois de portões (seção 4.5). **Se esses portões não forem cumpridos, a v2 concorda
+com o `docs/94`: não cobrar por resultado.**
 
 ## 3. O mercado (pesquisado hoje; **nenhum produto foi testado**)
 
-**Agenda e reserva** (Fresha, Booksy, Vagaro, Mangomint): fortes em reserva, mas os comparativos
-dizem que a **retenção automatizada fica fraca ou exige camada de fora** [S]. **Phorest** aparece como
-o voltado a retenção (campanhas de retorno, fidelidade, reputação) [S]. Brasil: Trinks, Avec, AppBarber,
-Salão99, Belle, Simples Agenda, Belasis, Actana: **não há documentação pública** achada sobre
-exportação e importação, com duas exceções: AppBarber exporta **pelo chat do suporte**, e Belasis,
-Actana e Zenamu **fazem a migração por você, de graça, como parte da venda** [S].
+### 3.1 Agenda, reserva e retenção
+Fresha, Booksy, Vagaro e Mangomint são fortes em reserva; os comparativos dizem que a **retenção
+automatizada fica fraca ou exige camada de fora** [S]. **Phorest** é o voltado a retenção (campanhas de
+retorno, fidelidade, reputação) e lançou o **"On Behalf Marketing"**, um marketing **totalmente
+gerenciado** em nome do salão [S]: **o serviço entregue já aparece no segmento**, do lado do
+marketing. Fresha e Booksy cobram **comissão por cliente novo** do marketplace [S, `docs/07`]: o dono
+de salão **já entende "pagar por cliente trazido"**. Brasil: Trinks, Avec, AppBarber, Salão99, Belle,
+Simples Agenda, Belasis, Actana: sem documentação pública de importação e exportação, com exceções:
+AppBarber exporta pelo chat do suporte, e Belasis, Actana e Zenamu **migram os dados por você, de
+graça, como parte da venda** [S].
 
-**Importadores de dados** (Flatfile, OneSchema, Dromo, CSVBox, Ingestro): genéricos, embutidos em outro
-produto, **nenhum conhece o destino**. Só o Dromo processa no navegador (como opção paga) [S].
+### 3.2 Importadores de dados
+Flatfile, OneSchema, Dromo, CSVBox, Ingestro: genéricos, embutidos em outro produto, **nenhum conhece o
+destino**. Só o Dromo processa no navegador (opção paga) [S]. Detalhe em `docs/97`.
 
-**Recepcionista de IA para salão** (Velora, Wello, Ada e outros, no WhatsApp e no Instagram): o
-produto virou **commodity** em 2026, com muitos entrantes [S]. Cuidado com os números de "no-show
-cai e ocupação sobe 20 a 30%": vêm de blogs de fornecedor [S], **não usar**.
+### 3.3 O modelo "serviço como software" e o preço por resultado (a pesquisa nova)
 
-**Regra do WhatsApp (Meta), vigente em 2026** [S, de várias reportagens, **conferir o texto oficial**]:
-a API de negócios **proíbe chatbots de IA de uso geral** (a partir de 15/01/2026 para todos), mas
-**permite IA como parte de um serviço do negócio**: reserva, suporte, avisos, acompanhamento de
-pedido. A IA **não pode ser a funcionalidade principal**. Isso favorece o desenho do CICLO (agendar
-e recuperar são fins do negócio), mas **proíbe vender "um ChatGPT no WhatsApp do salão"**.
+- **A tese** (Sequoia, abril de 2026) [S]: para cada **US$ 1 que as empresas gastam em software, gastam
+  US$ 6 em serviços**. A próxima geração **vende o resultado e usa IA para entregá-lo**, junto com
+  especialistas humanos; o fornecedor que **vende o trabalho** fica mais forte quando o modelo
+  melhora, em vez de correr contra ele. O exemplo citado é a **Sierra**: o cliente **paga por problema
+  resolvido**; sem resolução, sem cobrança.
+- **Prova de mercado em suporte ao cliente** [S]: o agente **Fin, da Intercom, cobra US$ 0,99 por
+  conversa resolvida** (e US$ 9,99 por lead qualificado); a taxa de resolução subiu de ~25% para
+  **65 a 70%**; o produto está **perto de US$ 100 milhões de receita anual recorrente, cerca da metade da
+  Intercom**. A **Zendesk** também cobra por resolução automática. **Definição de "resolvido"
+  importa:** a Intercom conta por confirmação ou por **sumiço sem nova pergunta**; a Zendesk conta
+  após **72 horas sem atividade**.
+- **Os riscos do preço por resultado** [S]: **disputa de atribuição** (quem causou o resultado),
+  **receita imprevisível** (varia com sazonalidade), **risco moral** (otimizar o ganho fácil e
+  cobrável), **custo de instrumentação** (dado auditável custa caro). **O padrão que o mercado
+  adotou é o híbrido: parte fixa mais bônus por resultado**, com **métrica binária e auditável**
+  ("ticket resolvido"), linha-base documentada, mínimo de desempenho e processo formal de contestação.
+- **Leitura para o CICLO:** a nossa unidade de resultado é **mais auditável** que "conversa resolvida":
+  "cliente chamado pela fila, que agendou pelo link e **compareceu**" é um evento binário, com data,
+  valor e id de agendamento, **já registrado pelo sistema**. É exatamente o tipo de métrica que o
+  mercado diz ser a viável. A nossa fraqueza é a outra: **o contrafactual** (voltaria sozinho?),
+  tratado na seção 4.3.
 
-**Cobrança no Brasil:** seção 5.
+### 3.4 Recepcionista de IA para salão (agentes no mercado)
+Velora, Wello, Ada e outros, no WhatsApp e Instagram: **virou commodity** em 2026, com muitos
+entrantes [S]. Números de "no-show cai e ocupação sobe 20 a 30%" vêm de blogs de fornecedor, **não
+usar**. **Regra do WhatsApp (Meta), 2026** [S, reportagens; **conferir o texto oficial**]: a API
+**proíbe chatbots de IA de uso geral** (desde 15/01/2026 para todos), mas **permite IA como parte de um
+serviço do negócio** (reserva, suporte, avisos). A IA **não pode ser a funcionalidade principal**.
 
-**Lacunas desta pesquisa [fazer]:** (a) preços e funcionalidades reais dos concorrentes brasileiros
-(pedir print a salões que os usam); (b) texto oficial da política do WhatsApp Business; (c) parceiros
-de distribuição (contadores, fornecedores de produtos, sindicatos e associações de salão, escolas de
-beleza), que **não foram pesquisados**; (d) o que o Instagram e o Google Meu Negócio permitem
-integrar.
+### 3.5 Cobrança
+Seção T6 (Asaas, Pix Automático, Mercado Pago).
 
-## 4. O ecossistema: dez trilhas, uma volta
+### 3.6 Lacunas desta pesquisa [fazer]
+(a) preços e telas reais dos concorrentes brasileiros (pedir print a salões que os usam); (b) texto
+oficial da política do WhatsApp Business; (c) **parceiros de distribuição** (contadores, fornecedores
+de produtos, associações, escolas de beleza), **não pesquisados**; (d) Instagram e Google Meu
+Negócio; (e) **se algum concorrente brasileiro já vende retorno por resultado** (a busca não achou).
+
+## 4. A escada de oferta e o modelo Entregue (o coração da v2)
+
+### 4.1 Três degraus
+
+| Degrau | O dono compra | O CICLO entrega | Quem trabalha | Preço (proposta [E]) |
+|---|---|---|---|---|
+| **1 · Ferramenta** | acesso ao sistema | o software, autoatendimento | o dono | R$ 49 (Solo) e R$ 99 (Equipe), ou R$ 497 por ano à vista (`docs/87`, `docs/99` v1) |
+| **2 · Assistido** | "montem pra mim" | **importação feita por nós**, calibragem do Motor, **diagnóstico** ("47 clientes, R$ 6.300") e o **retroteste** | o CICLO, uma vez | **grátis com o plano anual** (copiado de Belasis e Zenamu) ou taxa única pequena [Do Eduardo] |
+| **3 · Entregue** | "devolvam meus clientes" | **a operação semanal do retorno**: lista pronta, texto certo, ordem, acompanhamento e **relatório mensal do que voltou e quanto valeu** | o CICLO (pessoa supervisionando agente), e o dono só toca em Chamar | **híbrido: fixo mais variável por retorno confirmado** (seção 4.4) |
+
+**Por que a escada e não só o degrau 3:** o degrau 2 é a **arma de venda e o piloto** (o mercado
+brasileiro já vende migração assistida de graça), e é nele que se mede o efeito. O degrau 3 só se
+liga com resultado provado (portões, seção 4.5). **O degrau 1 continua existindo**: quem quer fazer
+sozinho faz.
+
+### 4.2 A unidade de entrega: o **retorno confirmado**
+
+Métrica **binária e auditável**, calculada **só com eventos que o sistema já registra** [M: link
+assinado com validade de 14 dias, `clicked_at`, `booked_appointment_id`, atendimento concluído]:
+
+1. **Exposição:** o cliente estava na fila do CICLO e o dono **tocou em Chamar**, com o link pessoal
+   (o toque é registrado em `/api/v1/cycle/recover/manual`).
+2. **Evento:** o cliente **agendou pelo link** (`booked_appointment_id`) **e o atendimento foi
+   concluído** (não basta agendar).
+3. **Janela:** até **30 dias** depois da exposição.
+4. **Valor:** o preço do atendimento concluído, em **centavos**, como já gravado.
+5. **Exclusões (para ninguém cobrar o que não causou):** cliente que **já tinha agendamento futuro**
+   antes do contato; cliente que **visitou nos N dias anteriores** ao contato; cliente do **braço de
+   controle** (seção 4.3); **primeira visita** (novo cliente não é retorno); retorno **antes** da
+   exposição.
+6. **Cada retorno confirmado entra num livro append-only** (`return_attributions`), com id do
+   agendamento, data, valor e o hash do cliente. Esse livro **é** o extrato da cobrança (seção 4.4).
+
+### 4.3 A linha-base: cobrar só pelo que passar do que voltaria sozinho
+
+O problema do contrafactual (parte dos clientes voltaria de qualquer jeito, ~3% em 30 dias segundo
+fornecedor [S, `docs/94`]) é o que mais gera briga em preço por resultado. A proposta:
+
+- **Fórmula:** retornos pagáveis = `max(0, retornos confirmados − β × clientes expostos)`.
+  **β é uma constante contratual** (inicial **3%**, [S]), escrita no contrato e **igual para todos os
+  salões**, e não uma medição por salão.
+- **Calibração de β:** um **braço de controle de 10%** (sorteado de forma reprodutível, **sem contato**
+  por 30 dias, como já desenhado no `docs/91`) é medido **agregado entre todos os salões do degrau 3**.
+  β só muda por **adendo** e com aviso, nunca retroativo.
+- **Por quê assim:** o dono vê uma conta que consegue refazer à mão; não depende de estatística que
+  um salão pequeno não sustenta (`docs/94`); e o controle agregado continua alimentando o Motor
+  (`docs/98`).
+- **O que o controle custa:** 10% da lista sem ser chamada é dinheiro que o dono deixa de recuperar.
+  **Dizer isso no contrato, por escrito**, e deixar o dono **recusar o controle** (nesse caso a parte
+  variável usa β fixo e **não** entra na calibração).
+
+### 4.4 O preço híbrido e o extrato
+
+`cobrança do mês = fixo + taxa × (valor dos retornos pagáveis)`, com **teto mensal** (previsibilidade)
+e **piso zero** no variável ("sem resultado, sem variável").
+
+**Modelo de conta [E], todos os números são hipótese a trocar** (usa o caso-base do `docs/94`: 100
+clientes expostos por mês, 10% voltam, β = 3%, ticket R$ 80):
+
+| Item | Valor |
+|---|---|
+| Expostos | 100 |
+| Retornos confirmados (10%) | 10 |
+| Retornos pagáveis (10 − 3) | **7** |
+| Valor dos pagáveis (7 × R$ 80) | R$ 560 |
+| Variável a 20% | R$ 112 |
+| Fixo (hipótese) | R$ 99 |
+| **Cobrado no mês** | **R$ 211** |
+| Faturamento a mais do dono (pagáveis) | R$ 560 |
+| **Ganho líquido do dono** | **R$ 349** |
+
+**E o cenário ruim do `docs/94`** (60 expostos, 7% de retorno): pagáveis = `4,2 − 1,8 = 2,4`; valor
+R$ 120 (ticket R$ 50); variável R$ 24; **cobrado R$ 123 contra R$ 120 de faturamento a mais: o dono
+não ganha**. **Leitura honesta:** com **fixo de R$ 99, o modelo não se paga para barbearia pequena de
+ticket baixo**, exatamente a conclusão do `docs/94` para o plano de R$ 149. O degrau 3 mira
+**salão e estética com ticket de R$ 80 ou mais, ou base grande**. Para ticket baixo, **fixo menor e
+variável maior**, ou ficar no degrau 1.
+
+**Custo do CICLO por salão (fórmula, não número):**
+`margem = fixo + variável − taxa de pagamento − custo de mensagem (se API) − minutos do operador × custo
+do minuto − imposto`. **O número que decide se escala é "minutos de operador por salão por semana".**
+Meta [E]: **≤ 15 min por salão por semana**; acima disso o serviço não escala e o preço sobe.
+
+**Extrato mensal ao dono** (anti-disputa, **obrigatório**): lista dos retornos pagáveis com data do
+contato, data do atendimento, serviço e valor, o **β usado**, o **cálculo** e o **teto**. **Direito de
+contestar** em 10 dias, com revisão por uma pessoa (e a lista inteira do livro à vista).
+
+### 4.5 Portões: quando cada parte liga
+
+| Fase | O que liga | Só quando |
+|---|---|---|
+| **P0 · Diagnóstico grátis** | degrau 2 em 5 pilotos (de preferência ticket ≥ R$ 80) | esteira Onda 1 e retroteste prontos (`docs/97`, `docs/98`) |
+| **P1 · Operação cobrada só com fixo** | degrau 3 com **fixo**, sem variável, medindo | diferença tratamento × controle **≥ 4 p.p. somada em ≥ 3 pilotos** (portão do dia 35, `docs/94`) |
+| **P2 · Híbrido** | variável sobre β | **(a)** P1 estável por 60 dias; **(b)** contrato assinado (seção 9); **(c)** CNPJ, enquadramento fiscal e **nota de serviço** resolvidos (`docs/89`); **(d)** cobrança variável **tecnicamente possível** (4.7); **(e)** extrato auditável em produção; **(f)** parecer do advogado sobre o modelo |
+| **P3 · Automação do canal** | envio pela API oficial, com consentimento | opt-in com prova em **≥ 30% da base ativa de 3 salões** (`docs/91`); BSP contratado; decisão do C1 |
+| **P4 · Revisão de β e do controle** | β calibrado pelo agregado | **~30 salões** no degrau 3 |
+
+**Regra de parada:** se no dia 35 a diferença for menor que o limite, **não vender o degrau 3**; ficam
+os degraus 1 e 2. Isso é o que o `docs/94` manda e a v2 mantém.
+
+### 4.6 Como o serviço é operado (a parte que ninguém planeja)
+
+- **Ciclo semanal:** segunda, o agente de retorno (G2) monta a lista e o texto de cada salão; o
+  **operador** (pessoa) revisa em minutos e libera; o dono executa (v1: toca em Chamar; v2, depois de
+  P3: o CICLO envia, com consentimento); sexta, fechamento e anotação do que voltou.
+- **Operador de entrega:** uma pessoa por **N salões**, com **checklist e tempo orçado por salão**. A
+  alavanca de lucro é **quantos salões uma pessoa supervisiona** (métrica na seção 14).
+- **Acordo de nível de serviço, nos dois sentidos:** o CICLO entrega a lista na segunda; o **dono
+  precisa chamar pelo menos X% da lista**. Se não chamar, **não há retorno e não há variável**, e o
+  fixo continua (senão o dono "esconde" o resultado).
+- **Garantia de qualidade:** amostra semanal de textos e listas revisada por outra pessoa; erro vai
+  para o corpus de teste do agente (seção 7).
+- **Ferramenta de operador** (T10): fila de salões atendidos, estado da semana, minutos gastos,
+  pendências. **Sem isso o serviço entregue vira planilha e some.**
+- **O que NÃO é o serviço entregue:** não atende cliente final no lugar do dono, não negocia preço,
+  não manda nada que o dono não tenha visto (L1 é o teto, seção 7).
+
+### 4.7 O que a cobrança variável exige do código (e por que não é a assinatura do MP)
+
+- A guarda atual do Mercado Pago (`valorConfereComDegrau`) **recusa valor diferente do preço do
+  plano** (proteção contra checkout adulterado). **Cobrança variável não pode ser uma assinatura de
+  valor fixo.** Precisa de **cobrança avulsa por mês**, com o valor calculado pelo sistema a partir do
+  livro `return_attributions`.
+- **Candidatos [S, a conferir]:** (1) **Asaas, cobrança avulsa por API** a cada mês (Pix, boleto ou
+  cartão) com o valor calculado; (2) **Pix Automático em modo `MANUAL`** (a plataforma cria cada
+  cobrança, **com valor próprio**): o dono autoriza uma vez e o nosso sistema cobra cada mês um valor
+  diferente. **Verificar nas regras do Pix Automático se o valor pode variar** e dentro de qual
+  limite autorizado; a documentação lida diz que no modo `MANUAL` **a aplicação cria cada cobrança**,
+  mas **não confirmei** a regra de valor variável. (3) **Pix manual** com QR gerado por mês (alpha).
+- **O cálculo da cobrança é função pura** em `core/billing` (`cobrancaDoMes(livro, contrato)`), com
+  teste de propriedade (nunca cobra acima do teto; variável nunca negativa; o mesmo livro dá o mesmo
+  valor), mutação e **reconciliação mensal** (soma do extrato = valor da cobrança).
+
+## 5. O ecossistema em onze trilhas (mapa do plano mesclado)
 
 ```
- CAPTAR → ATIVAR → ENTRAR DADO → PREVER → AGIR → MEDIR → APRENDER → COBRAR/RETER → SAIR LEVANDO
-   (A)     (A)        (B)          (C)     (D)     (E)      (C,E)        (F)           (B,I)
-              + (G) agentes em volta de cada elo   + (H) confiança   + (J) operação   + (K) método
+ CAPTAR → ATIVAR → ENTRAR DADO → PREVER → AGIR → MEDIR → APRENDER → COBRAR → ENTREGAR → SAIR LEVANDO
+  (T1)     (T1)       (T2)        (T3)    (T4)   (T5)     (T3,T5)     (T6)     (T7)        (T2)
+                 + (T8) agentes   + (T9) confiança   + (T10) plataforma   + (T11) método
 ```
 
-| Trilha | Faz o quê | Estado | Doc |
+| Trilha | Faz o quê | Estado | Onde |
 |---|---|---|---|
-| **A** Captação e ativação | landing, calculadora, indicação, prospecção, onboarding, alpha | landing e calculadora existem; onboarding existe | `docs/82`, `docs/83` |
-| **B** Entrada e saída de dados | esteira de qualquer arquivo; exportação completa | plano pronto, **nada construído** | `docs/97` |
-| **C** Motor | previsão, valor em risco, backtest, v2 | v1 no ar; revisão pronta | `docs/98` |
-| **D** Ação | fila de chamadas, texto, link, mensageria | no ar; textos por perfil em #142 | `docs/95`, `docs/96` |
-| **E** Medição e prova | atribuição, calibração, **retroteste**, placar do dono | parcial | `docs/98` §5 |
-| **F** Cobrança e planos | provedor, Pix, cobrança manual, dunning, notas | **decisão aberta** (seção 5) | `docs/87`, `docs/88` |
-| **G** Agentes | assistentes que preparam, humano aprova | assistente base no ar; catálogo na seção 6 | `docs/26` |
-| **H** Confiança e conformidade | LGPD, termos, política, retenção, incidente | #144 aberto, sem revisão humana | `docs/86` |
-| **J** Plataforma e operação | infra, custos, vigias, backoffice | vigias existem; **backoffice não existe** | `docs/88` |
-| **K** Método de engenharia | testes, mutação, modo sombra, experimentos | forte; some o que está na seção 10 | `CLAUDE.md` |
+| **T1** Captação e ativação | landing, calculadora, indicação, prospecção, onboarding, alpha, **venda do diagnóstico** | landing, calculadora, onboarding existem | `docs/82`, `83`, `56` |
+| **T2** Entrada e saída de dados | esteira de qualquer arquivo; exportação completa | plano pronto, **nada construído** | `docs/97` |
+| **T3** Motor | previsão, valor em risco, backtest, v2, **motor de retorno** (decisão por lucro incremental) | v1 no ar; revisão pronta | `docs/98`, `91` §5, `92`, `93` |
+| **T4** Ação e canal | fila de chamadas, texto por perfil, link, **consentimento**, **canal oficial (adiado)** | fila no ar; #142 aberto; consentimento e API **não existem** | `docs/95`, `96`, `91` A e B |
+| **T5** Medição, controle e prova | **livro de retornos**, braço de controle, calibração, **retroteste**, placar do dono | atribuição por clique existe; livro e controle **não** | `docs/91` C, `98` §5 |
+| **T6** Oferta, preço e cobrança | escada de oferta, **cobrança variável**, provedor, dunning, notas | **decisão aberta** | seção 4 e 6 |
+| **T7** Operação do serviço entregue | ciclo semanal, operador, SLA, QA, extrato, contestação | **não existe** | seção 4.6 |
+| **T8** Agentes | assistentes que preparam, pessoa aprova | assistente base no ar | seção 7, `docs/26` |
+| **T9** Confiança e conformidade | LGPD, termos, política, **contrato de serviço e de operador**, incidente | #144 aberto, sem revisão humana | `docs/86`, seção 9 |
+| **T10** Plataforma e operação interna | infra, custos, vigias, **backoffice** | vigias existem; **backoffice não** | `docs/88`, seção 10 |
+| **T11** Método de engenharia | testes, mutação, modo sombra, experimentos | forte; acrescentar o da seção 11 | `CLAUDE.md` |
 
-(A trilha **I**, plataforma, está dentro de **J**; mantive a letra para não renumerar os documentos
-anteriores.)
+**Mapa para os `docs/91` a `96`** (que usam letras): A canal oficial → **T4**; B consentimento → **T4**;
+C base de medição → **T5**; D motor de retorno → **T3**; E estatística por nicho → **T3, bloqueada**;
+F jurídico e fiscal → **T9**.
 
-## 5. Trilha F: cobrança e planos (a pesquisa nova: Asaas e o Pix Automático)
+## 6. T6: oferta, preço e cobrança (com o que a pesquisa do Asaas trouxe)
 
-**O que foi lido hoje** (documentação e página de preços do Asaas; **conferir no cadastro**, porque
-uma das leituras da tabela de cartão veio ambígua):
-- A **API cobra Pix, boleto e cartão**, avulso, parcelado ou **recorrente** (`POST /v3/subscriptions`
-  gera uma cobrança a cada ciclo; cada cobrança tem id e status próprios). **Webhook** a cada mudança de
-  status. Sandbox gratuito [S, resumo de terceiros].
-- **Pix Automático** (Banco Central, desde **16/06/2025**): o pagador autoriza **uma vez** (QR Code) e
-  as cobranças seguintes saem sem nova confirmação, como um débito automático. No Asaas há dois modos:
-  `MANUAL` (o nosso sistema cria cada cobrança) e `SUBSCRIPTION` (a plataforma gera sozinha).
-  Há política de **retentativas** configurável.
-- **Taxas lidas** [S]: sem mensalidade nem taxa de adesão; **Pix R$ 1,99 por cobrança recebida**
-  (promocional de R$ 0,99 nos 3 primeiros meses); boleto igual; **cartão à vista 1,99% + R$ 0,49**.
-  O Mercado Pago, segundo `docs/88`, cobra **0,99% no Pix** [S, também não confirmado], e a taxa do
-  cartão recorrente do MP **não foi confirmada**.
-
-**Conta que importa (taxa efetiva, sobre cada pagamento):**
+**Lido hoje no Asaas** (documentação e página de preços; **conferir no cadastro**, uma leitura de
+cartão veio ambígua) [S]: a API cobra **Pix, boleto e cartão**, avulso, parcelado ou **recorrente**
+(`POST /v3/subscriptions` gera uma cobrança a cada ciclo, cada uma com id e status), com **webhook** e
+sandbox gratuito. **Pix Automático** (Banco Central, desde 16/06/2025): o pagador autoriza uma vez e as
+cobranças seguintes saem sem nova confirmação; no Asaas há os modos `MANUAL` e `SUBSCRIPTION`, com
+política de retentativas. **Taxas lidas:** sem mensalidade; **Pix R$ 1,99** por cobrança recebida
+(promocional R$ 0,99 nos 3 primeiros meses); boleto igual; **cartão à vista 1,99% + R$ 0,49**. O
+Mercado Pago, segundo `docs/88`, cobra **0,99% no Pix** [S] e a taxa do cartão recorrente do MP **não
+foi confirmada**.
 
 | Ticket | Asaas Pix (R$ 1,99) | MP Pix (0,99%) | Asaas cartão (1,99% + R$ 0,49) |
 |---|---|---|---|
 | R$ 49 (Essencial, mensal) | **4,1%** | 1,0% | 3,0% |
 | R$ 99 (Equipe, mensal) | 2,0% | 1,0% | 2,5% |
+| R$ 211 (Entregue, exemplo da 4.4) | **0,9%** | 1,0% | 2,2% |
 | R$ 497 (anual à vista) | **0,4%** | 1,0% | 2,1% |
 
-**Leitura [E]:** taxa fixa por cobrança pesa em **ticket pequeno** e some em **ticket grande**. O ponto
-de virada entre Asaas Pix e MP Pix é perto de **R$ 200**. Duas consequências: (1) o **plano anual à
-vista** é barato de cobrar em qualquer provedor e **elimina a cobrança mensal manual**; (2) o Essencial
-mensal no Asaas Pix é o pior caso. Isso reforça o preço-âncora de **R$ 497 por ano** para fundadores.
+**Leitura [E]:** taxa fixa pesa em ticket pequeno e some em ticket grande; o ponto de virada contra o
+MP Pix é perto de **R$ 200**. **O degrau 3 (ticket maior) combina bem com cobrança de taxa fixa**, e o
+**anual à vista** é barato em qualquer provedor.
 
-**Recomendação** (**Do Eduardo** decidir), em ordem:
-1. **Alpha:** cobrança **por fora** (Pix anual à vista, manual) **mais uma tela de backoffice** para
-   marcar a conta paga (seção 9). Zero integração, zero taxa de plataforma, zero risco.
-2. **Abstração antes de escolher provedor:** uma interface `ProvedorDeCobranca` em `core/billing`
-   (criar assinatura, cancelar, ler situação, próxima data de vencimento, webhook) com **adaptadores
-   intercambiáveis**: `Manual`, `MercadoPago` (o código atual) e `Asaas`. Testes com um provedor falso.
-   **Por quê:** o plano atual está preso ao vocabulário do Mercado Pago (`preapproval`, `authorized`,
-   `paused`, `cancelled`), e já tivemos que consertar semântica de cancelamento. Trocar de provedor
-   não pode exigir mexer em regra de negócio.
-3. **Recorrente real:** avaliar **Asaas com Pix Automático** para o mensal (quem não usa cartão
-   assina uma vez e esquece, que é o jeito de **reduzir inadimplência por esquecimento**), e cartão
-   como alternativa. Conferir antes: exigência de CNPJ ou pessoa física, MEI (**o CICLO precisa
-   resolver o enquadramento fiscal: `docs/89`**), prazo de repasse, chargeback, e se o Pix Automático
-   está liberado para a conta do Eduardo.
-4. **Semântica que o adaptador novo precisa respeitar** (já consertada no #143): **cancelar não corta
-   o mês pago** (`acesso_ate`), e quem cai para o plano mais baixo com cortesia vencida **fica pausada**.
-5. **Régua de cobrança (dunning), sem IA:** aviso antes do vencimento, link de pagamento, retentativa,
-   aviso de pausa. Determinística, com **e-mail transacional** (C6 do `docs/86`), pela fila de jobs e
-   **não pelo cron do GitHub** (que atrasa horas).
+**Recomendação (Do Eduardo decide), em ordem:**
+1. **Alpha:** cobrança **por fora** (Pix anual à vista, manual) **mais backoffice** para marcar a conta
+   paga (T10). Zero integração.
+2. **Interface `ProvedorDeCobranca`** em `core/billing` com adaptadores `Manual`, `MercadoPago` (o código
+   atual) e `Asaas`, e testes com provedor falso. Motivo: o código atual fala o vocabulário do MP
+   (`preapproval`, `authorized`, `paused`, `cancelled`); trocar de provedor não pode mexer em regra.
+   **Dois tipos de cobrança:** **assinatura de valor fixo** (degrau 1) e **cobrança avulsa de valor
+   calculado** (degrau 3, seção 4.7).
+3. **Recorrente real:** Pix Automático para o mensal fixo; **avulsa para o variável**. Conferir antes:
+   CNPJ ou pessoa física, MEI, prazo de repasse, chargeback e liberação do Pix Automático.
+4. **Semântica que o adaptador novo precisa respeitar** (já feita no #143): **cancelar não corta o mês
+   pago** (`acesso_ate`).
+5. **Régua de cobrança (dunning), sem IA:** aviso antes do vencimento, link, retentativa, aviso de
+   pausa, **e-mail transacional** pela fila de jobs (C6 de `docs/86`), **não** pelo cron do GitHub.
+6. **Nota fiscal de serviço:** o degrau 3 é **serviço**, não licença de software. O enquadramento
+   (ISS, Simples, ME) **muda**: resolver com o contador (`docs/89`) **antes do P2**.
 
-**Pendências de decisão [Do Eduardo]:** manter ou aposentar o código do Mercado Pago; o
-enquadramento fiscal (CNPJ, nota fiscal, Simples); preço final (R$ 497 por ano e R$ 49 por mês são
-propostas, **R$ 497 por ano dá R$ 41,40 por mês, abaixo do Essencial de R$ 49**, e isso precisa ser
-dito como desconto de fundador).
+**Preço, a decidir (C2):** R$ 49 e R$ 99 (`docs/87`) **ou** R$ 37 e R$ 149 (`docs/94`); R$ 497 por ano
+é **R$ 41,40 por mês**, abaixo do Essencial, e precisa ser dito como desconto de fundador.
 
-## 6. Trilha G: onde agentes se encaixam
+## 7. T8: onde agentes se encaixam
 
-**A decisão que já existe e continua valendo (`docs/26`):** chamar de **assistente**, não de agente
-autônomo. Quatro regras inegociáveis, **estendidas aqui a todo agente**:
+**A decisão que continua valendo (`docs/26`):** chamar de **assistente**, não de agente autônomo.
+Quatro regras inegociáveis, **estendidas a todo agente**:
 
 1. **O modelo nunca produz número.** Toda cifra vem de uma consulta ao serviço existente.
 2. **O modelo nunca escreve SQL.** Ferramentas fixas, sempre.
-3. **Escrita exige confirmação humana** (o assistente propõe; o endpoint normal executa com o clique).
-4. **Dado de saúde nunca entra no contexto**, por construção e não por instrução de prompt.
+3. **Escrita exige confirmação humana.**
+4. **Dado de saúde nunca entra no contexto**, por construção.
 
 **Regras acrescentadas por este plano:**
 5. **Escada de autonomia.** L0 informa; **L1 propõe e a pessoa aprova (teto para tudo que toca cliente
-   final ou dinheiro)**; L2 executa ação **reversível e de baixo risco**, avisa e deixa desfazer;
-   L3 autônomo: **proibido**, exceto operação interna somente de leitura.
-6. **Cada agente tem a lista fechada de ferramentas** e um **teste de contrato** que reprova ferramenta
-   nova sem decisão registrada.
-7. **IA no aparelho primeiro; de terceiros só com parecer jurídico** (`docs/97` §7). A política
-   atual diz que dado de cliente não vai a provedor de IA externo.
-8. **Teto de custo por conta e chave de desligamento** (flag) por agente.
-9. **Avaliação antes de soltar:** conjunto de conversas e casos com gabarito; o agente que erra o
-   gabarito não sai. Mutação vale: se o teste passa com o agente quebrado, o teste é cego.
-10. **Registro do que o agente fez**, visível ao dono ("o que o assistente fez hoje"), com redação de
-    dado pessoal.
-11. **Política do WhatsApp:** o agente é sempre **uma função do negócio** (agendar, recuperar,
-    confirmar), nunca conversa aberta.
+   final ou dinheiro)**; L2 executa ação **reversível e de baixo risco**, avisa e deixa desfazer; L3
+   autônomo: **proibido**, exceto operação interna somente de leitura.
+6. **Lista fechada de ferramentas** por agente, com **teste de contrato**.
+7. **IA no aparelho primeiro; de terceiros só com parecer jurídico** (`docs/97` §7).
+8. **Teto de custo por conta e chave de desligamento.**
+9. **Avaliação com gabarito antes de soltar**; mutação vale.
+10. **Registro do que o agente fez**, visível ao dono, com redação de dado pessoal.
+11. **Política do WhatsApp:** o agente é sempre **uma função do negócio**, nunca conversa aberta.
+12. **(v2) O agente do serviço entregue nunca cobra, nunca decide quem entra no livro de retornos e
+    nunca altera o livro.** A cobrança sai de função pura sobre o livro; **o livro só recebe evento do
+    sistema** (agendamento e atendimento), nunca de texto de agente.
 
-**Catálogo, em ordem de valor e de baixo risco:**
+**Catálogo, em ordem de valor e de baixo risco** (G2 passa a ser **o trabalhador do degrau 3**):
 
-| # | Agente | Para quem | O que faz | Autonomia | IA | Trava | Onda |
+| # | Agente | Para quem | O que faz | Autonomia | IA | Trava | Quando |
 |---|---|---|---|---|---|---|---|
-| G1 | **Importação** | dono, no primeiro uso | guia a esteira: explica o que entendeu, pergunta o mínimo, diz o que falta para subir o nível, escreve o pedido ao sistema antigo | L1 | **regras** e, se o dono ligar, modelo no aparelho | só vê o que o dono subiu; nada vai para fora | com a esteira |
-| G2 | **Retorno** | dono, todo dia | monta a fila de chamadas, escolhe o texto pelo perfil, explica o porquê ("vem a cada 28 dias, faz 41"), propõe a ordem | **L1** (o dono toca em Chamar) | texto por regras; explicação por regras | WhatsApp **manual do dono**: sem API, sem disparo | com o Motor v2 |
-| G3 | **Operações** (interno) | Eduardo | vigia crons, fila, cobrança, taxa de erro, importações que travaram; abre alerta com a causa | L0 e L1 (relatório) | regras e consultas fixas | **somente leitura** em produção | cedo |
-| G4 | **Onboarding** | dono novo | leva do cadastro ao primeiro valor em menos de 15 minutos: serviços, horário, importar, ver o ouro | L1 | regras | não grava sem o toque | cedo |
-| G5 | **Cobrança** | dono pagante | régua de aviso, link de pagamento, pausa | L2 (e-mail transacional) | **nenhuma** | só e-mail de conta; texto fixo e revisado | com a trilha F |
-| G6 | **Qualidade de dados** | dono | acha duplicados e telefones ruins depois da importação, propõe corrigir | L1 | regras (pontuação por campo, `docs/97` E7) | nunca funde sozinho | depois da esteira |
-| G7 | **Suporte** | dono | responde dúvidas com base na documentação do próprio produto, abre chamado se não souber | L1 | **parecer jurídico** se usar modelo de terceiros | sem dado de cliente no contexto | tardio |
-| G8 | **Recepcionista** (WhatsApp, Instagram) | cliente final do salão | conversa para **agendar e confirmar** | L1 no começo (propõe horários, o sistema agenda) | **terceiros**, API oficial paga | **alto risco jurídico, de custo e de política da Meta**; mercado já saturado | **depois de tudo; avaliar parceria em vez de construir** |
-| G9 | **Prospecção** (do Eduardo, fora do produto) | Eduardo | lista de salões, roteiro, resposta a objeção | L0 | qualquer, **sem dado de cliente do CICLO** | LGPD e antispam: abordagem **manual e individual** | quando houver alpha |
-| G10 | **Engenharia** (as contas do Claude e o Codex) | time | executam o backlog | L1 (PR revisado) | n/a | contratos, worktrees, revisão (seção 12) | já |
+| G1 | **Importação** | dono, no primeiro uso | guia a esteira, diz o que falta para subir o nível | L1 | regras; modelo no aparelho opcional | só vê o que o dono subiu | com a esteira |
+| G2 | **Retorno** | **operador do serviço** e dono | monta a lista semanal, escolhe o texto pelo perfil, **explica o porquê** ("vem a cada 28 dias, faz 41"), propõe a ordem | **L1** | regras | WhatsApp **manual do dono**; sem API; **não escreve no livro** | com o Motor v2 |
+| G3 | **Operações** (interno) | Eduardo | vigia crons, fila, cobrança, **importações travadas**, minutos por salão | L0 e L1 | consultas fixas | **somente leitura** em produção | cedo |
+| G4 | **Onboarding** | dono novo | do cadastro ao primeiro ouro em 15 minutos | L1 | regras | não grava sem o toque | cedo |
+| G5 | **Cobrança** | dono pagante | régua de aviso, link, pausa, **extrato mensal** | L2 (e-mail transacional) | **nenhuma** | texto fixo e revisado; **valor vem da função pura** | com T6 |
+| G6 | **Qualidade de dados** | dono | duplicados e telefones ruins depois da importação | L1 | regras (`docs/97` E7) | nunca funde sozinho | depois da esteira |
+| G7 | **Suporte** | dono | dúvidas com base na documentação, abre chamado | L1 | **parecer** se modelo de terceiros | sem dado de cliente no contexto | tardio |
+| G8 | **Recepcionista** (WhatsApp, Instagram) | cliente final | agendar e confirmar | L1 no começo | **terceiros**, API oficial paga | risco jurídico, de custo e de política da Meta; **mercado saturado** | **por último; avaliar parceria em vez de construir** |
+| G9 | **Prospecção** (do Eduardo) | Eduardo | lista de salões, roteiro, objeção | L0 | qualquer, **sem dado de cliente do CICLO** | LGPD e antispam: abordagem **manual e individual** | com o alpha |
+| G10 | **Engenharia** (contas do Claude e Codex) | time | executam o backlog | L1 (PR revisado) | n/a | contratos, worktrees, revisão (seção 13) | já |
 
-**Por que G8 fica no fim, e é uma opinião fundamentada, não um veto:** (a) o produto virou commodity,
-com vários entrantes [S]; (b) o diferencial do CICLO é **retenção**, não conversa; (c) exige a API
-oficial do WhatsApp (custo por conversa, número verificado, aprovação de modelos), um provedor de IA de
-terceiros (**quebra a promessa da política de privacidade** até haver parecer) e conformidade com a
-política da Meta; (d) o ganho do CICLO está em G2, que já funciona sem nada disso. **Pergunta aberta
-[Do Eduardo]:** construir, ou **integrar** (deixar o salão conectar a recepcionista que já usa e o CICLO
-só entrega a lista e o motivo)?
+**Por que G8 fica no fim:** produto commodity [S]; o diferencial do CICLO é **retenção**, não
+conversa; exige API oficial (custo por conversa, aprovação de modelos), provedor de IA de terceiros
+(**quebra a promessa da política de privacidade** até haver parecer) e conformidade com a Meta. **Pergunta
+aberta [Do Eduardo]:** construir ou **integrar**?
 
-**Onde o agente mais agrega valor ao negócio do CICLO:** G1 (derruba a maior barreira de entrada),
-G2 (é o produto) e G3 (protege contra o defeito mais caro deste projeto, a **falha silenciosa**:
-cron parado, banco atrasado, painel verde que mente).
+**Onde o agente mais agrega valor:** G1 (derruba a maior barreira de entrada), **G2 (é o serviço
+entregue)** e G3 (protege contra a **falha silenciosa**, o defeito mais caro deste projeto).
 
-## 7. Trilha A: captação e ativação (o que falta pensar)
+## 8. T1: captação e ativação (v2)
 
-- **Métrica de ativação:** minutos do cadastro até o **primeiro ouro** ("47 clientes, R$ 6.300 na
-  tela"), meta **abaixo de 15**; depois, **primeira chamada feita**, **primeira volta confirmada**.
-- **A estrela-guia:** **clientes recuperados confirmados por mês** (clique no link seguido de
-  agendamento: o dado de atribuição já existe). **R$ recuperado por salão** é o número que justifica o
-  preço e entra no retroteste.
-- **O canal real do alpha** é a venda **um a um**, com o Eduardo na tela do salão importando a lista
-  (`docs/97`, modo assistido). Meta de abordagem e roteiro estão em `docs/88`. **Pesquisar parceiros
-  de distribuição** (seção 3, lacuna c).
-- **Indicação** (`docs/30`, `docs/82`) já tem o laço de convite; falta medir.
-- **O que não fazer:** disparo em massa frio, compra de lista, promessa de resultado que o retroteste
-  não prove.
+- **O pitch muda de "um sistema" para "devolvo seus clientes".** A oferta de entrada é o **diagnóstico
+  grátis do degrau 2**: o dono manda o arquivo, o CICLO mostra **"47 clientes, R$ 6.300"** e, quando
+  houver histórico, o **retroteste**. Quem se interessa **compra o degrau 3 ou o 1**.
+- **Métrica de ativação:** minutos do cadastro até o **primeiro ouro** (meta < 15), depois **primeira
+  chamada feita**, **primeira volta confirmada**.
+- **Estrela-guia:** **retornos confirmados por mês** e **R$ recuperado por salão** (é também a unidade
+  de cobrança do degrau 3).
+- **Canal do alpha:** venda um a um, com a pessoa na tela do salão importando a lista (`docs/88`,
+  `docs/56`). **Pesquisar parceiros de distribuição** (lacuna c da seção 3.6).
+- **O que não fazer:** disparo em massa frio, compra de lista, **promessa de resultado que o retroteste
+  não prove**, vender o degrau 3 antes do portão do dia 35.
 
-## 8. Trilha H: confiança e conformidade
+## 9. T9: confiança e conformidade (v2)
 
-- **Fundir e revisar o #144**; levar o **dossiê** ao advogado (prazo anterior: 21/12 para o Portão 1).
-- **Perguntas abertas ao advogado**, consolidadas (de `docs/97` §13 e `docs/86`): IA e OCR no aparelho
-  contam como terceiro? redação da declaração da prévia; dado de saúde em planilha; modo assistido
-  (CICLO recebendo o arquivo); IA ou OCR de terceiros; lista importada sem consentimento de contato;
-  dados agregados entre salões (a trilha segue **desligada**).
-- **Construir, sem esperar o advogado:** e-mails de aviso (C6), eliminação após 90 dias (C9, só depois
-  do parecer sobre retenção), RIPD, runbook de incidente com prazo de 3 dias úteis para a ANPD,
-  cobertura de `job_queue.payload` e `webhook_events.payload` na eliminação.
-- **Privacidade por arquitetura** é a vantagem competitiva: esteira no navegador, IA no aparelho,
-  retenção curta, nada de dado de cliente para terceiro.
-- **Acesso aberto:** os Termos §5 e §6 descrevem cortesia e pausa; **enquanto a chave estiver ligada
-  o texto promete uma pausa que não acontece**. Resolver antes de abrir ao público.
+- **Fundir e revisar o #144**; levar o dossiê ao advogado (prazo anterior: 21/12).
+- **Serviço entregue muda o papel jurídico:** o CICLO **opera em nome do salão** (já é operador) e
+  agora **prepara contato com clientes do salão** e **mede resultado para cobrar**. Precisa de:
+  **contrato de serviço** (escopo, β, controle, teto, extrato, contestação, SLA do dono, saída),
+  **cláusula de operador** (minuta do #144 estendida) e **texto sobre o braço de controle** (parte da
+  lista deixa de ser chamada por 30 dias, por pedido da metodologia).
+- **Perguntas ao advogado, consolidadas** (de `docs/97` §13, `docs/86` e v2): IA e OCR no aparelho
+  contam como terceiro?; declaração da prévia; dado de saúde em planilha; modo assistido; IA ou OCR de
+  terceiros; lista importada sem consentimento de contato; **dados agregados entre salões (segue
+  desligado)**; **(v2)** a cláusula de preço por resultado, a mensuração com braço de controle, o
+  enquadramento do degrau 3 como serviço.
+- **Consentimento (`docs/91` B):** `consents` append-only com prova; lista importada **só entra no
+  automático com declaração específica do salão**. Enquanto o canal for manual (C1), o consentimento é
+  prova para o futuro, não bloqueio de hoje.
+- **Construir sem esperar o advogado:** e-mails de aviso (C6), eliminação após 90 dias (C9, só depois
+  do parecer), RIPD, runbook de incidente (3 dias úteis para a ANPD), `job_queue.payload` e
+  `webhook_events.payload` na eliminação.
+- **Acesso aberto:** Termos §5 e §6 prometem pausa que não acontece com a chave ligada. Resolver antes
+  de abrir ao público.
 
-## 9. Trilha J: plataforma e operação (o que falta para operar sem sofrer)
+## 10. T10: plataforma e operação interna
 
-**Backoffice interno (não existe, e é pré-requisito do alpha pago)** [Recomendado]:
-- Lista de contas (plano pago, estado, cortesia, última atividade, nível de dados N0 a N3).
-- **Marcar conta como paga** (data, valor, forma), com trilha em `audit_log`.
-- Prorrogar cortesia, ligar e desligar o acesso aberto **por conta**.
-- **Acesso de suporte com justificativa e registro** (nunca silencioso).
-- Painel de funil: cadastro, importou, viu o ouro, chamou, voltou.
-- Tudo atrás de **papel de operador do CICLO** e verificação em duas etapas; **o painel interno é a
-  superfície de ataque mais valiosa** do sistema.
+**Backoffice interno (não existe; pré-requisito do alpha pago e do serviço entregue)** [Recomendado]:
+- Lista de contas (plano, estado, cortesia, última atividade, nível de dados N0 a N3, **degrau da escada**).
+- **Marcar conta como paga**, com trilha em `audit_log`.
+- Prorrogar cortesia; ligar e desligar o acesso aberto **por conta**.
+- **Acesso de suporte com justificativa e registro**, nunca silencioso.
+- **Fila do operador de entrega (v2):** salões atendidos, estado da semana, lista liberada ou não,
+  minutos gastos, pendências.
+- **Livro de retornos e extrato** (T5, T7): ver, conferir, exportar, contestar.
+- Funil: cadastro, importou, viu o ouro, chamou, voltou.
+- Atrás de **papel de operador do CICLO** e verificação em duas etapas. **É a superfície de ataque mais
+  valiosa do sistema.**
 
 **Custos e capacidade:** `docs/88` (fixo estimado em R$ 433 por mês, equilíbrio perto de 8 pagantes
-[E]) e a pergunta "quantos clientes cabem sem pagar Supabase e Vercel por escala" ficou lá. **Com a
-esteira no navegador, a carga de importação sai do servidor**, o que melhora a conta.
+[E]). **A v2 acrescenta o custo de gente** (minutos de operador) à conta. A esteira no navegador tira
+a carga de importação do servidor.
 
-**Vigias contra falha silenciosa** (lição do projeto, `falha-silenciosa-onde-procurar`): agendador,
-fila, banco atrasado em relação às migrations, cron do GitHub que atrasa horas, cobrança que não
-chega. G3 (agente de operações) é o consumidor natural.
+**Vigias contra falha silenciosa:** agendador, fila, banco atrasado em relação às migrations, cron do
+GitHub que atrasa horas, cobrança que não chega, **extrato que não fecha com a cobrança**. G3 é o
+consumidor natural.
 
-## 10. Trilha K: método (o que torna o resto confiável)
+## 11. T11: método
 
 Regras que **já valem** (`CLAUDE.md`): RLS sempre; `service_role` só em `with-tenant.ts`; dinheiro em
-centavos; núcleo em `src/core` puro; escrita por `/api/v1` com chave de idempotência; Zod na borda;
-sem `any`; dado de saúde fora de log; nunca apagar agendamento nem auditoria; **um ticket, um commit**;
-**guarda vista reprovando**; verde não é prova.
+centavos; núcleo em `src/core` puro; escrita por `/api/v1` com idempotência; Zod na borda; sem `any`;
+dado de saúde fora de log; nunca apagar agendamento nem auditoria; um ticket, um commit; **guarda vista
+reprovando**; verde não é prova.
 
-**Acrescentar** (de `docs/97` e `docs/98`): **modo sombra** para todo classificador e versão do Motor;
-**portão de regressão de métricas no CI**; **corpus versionado e crescente** (todo erro de produção vira
-caso permanente); **registro de experimentos** em `docs/DECISOES.md`, **inclusive os negativos**;
-**paridade navegador e servidor** do mesmo código; **teste de contrato de ferramentas** de agente;
-**retroteste** como prova de produto.
+**Acrescentar:** modo sombra, portão de regressão de métricas no CI, corpus crescente, registro de
+experimentos (inclusive os negativos), paridade navegador e servidor, **teste de contrato de ferramentas
+de agente**, retroteste como prova de produto, **e, para o livro de retornos e a cobrança variável:
+append-only por constraint de banco, reconciliação mensal automática, teste de propriedade e mutação em
+`cobrancaDoMes`**.
 
-**Armadilhas conhecidas do ambiente (aprendidas nesta e em sessões anteriores):**
-- A suíte de integração falha em **arquivo diferente a cada rodada em paralelo** e passa isolada. Para
-  verde limpo: `npx vitest run --config vitest.banco.config.ts --dir tests/integration
-  --no-file-parallelism`. O `pnpm verify` completo passa de 10 minutos: **rodar em segundo plano**.
-- Windows: `git add` **por nome**, nunca amplo; avisos de CRLF são esperados; comando de shell acima
-  de ~8 KB trunca (usar arquivos); **scripts com regex e `\n` em heredoc de Python corrompem**: usar
-  a ferramenta de escrita de arquivo.
-- **Commitar antes de mutar.** Confirmar que a mutação foi aplicada antes de ler o resultado.
+**Armadilhas conhecidas do ambiente:**
+- A suíte de integração falha em **arquivo diferente a cada rodada em paralelo** e passa isolada; verde
+  limpo: `npx vitest run --config vitest.banco.config.ts --dir tests/integration --no-file-parallelism`.
+  O `pnpm verify` completo passa de 10 minutos: **rodar em segundo plano**.
+- Windows: `git add` **por nome**; avisos de CRLF são esperados; comando acima de ~8 KB trunca; **scripts
+  com regex e `\n` em heredoc de Python corrompem**: usar a ferramenta de escrita de arquivo.
+- **Commitar antes de mutar**; confirmar que a mutação foi aplicada.
 - Pare o servidor de desenvolvimento antes de `pnpm build`.
-- Banco local pode estar com migrations fora de ordem (já aconteceu com a 0093 antes da 0092).
+- Banco local pode estar com migrations fora de ordem.
 - **Duas sessões na mesma árvore** já commitaram trabalho uma da outra.
 
-## 11. Dependências e caminho crítico
+## 12. Dependências e caminho crítico
 
 ```
- B1 Esteira Onda 1 ──► B2 Esteira Onda 2 (histórico) ──► C1 Backtest ──► C2 Experimentos H1-H5
-        │                        │                              │              │
-        │                        └────────────► E1 Retroteste ◄─┘              ▼
-        ▼                                                                   C3 Motor v2 em sombra
-   G1 Agente de Importação                                                      │
-   A  Onboarding (G4)                                                           ▼
-                                                                         G2 Retorno explicando
- F1 Backoffice ──► F2 Cobrança manual ──► F3 Interface de provedor ──► F4 Asaas/MP adaptador ──► G5 Régua
- H1 Fundir #143/#144 ──► H2 C6 e-mails ──► (parecer) ──► C9 eliminação, abrir ao público
- G3 Operações  (independente, cedo)
+ T2 Esteira Onda 1 ──► T2 Onda 2 (histórico) ──► T3 Backtest ──► T3 Experimentos ──► Motor v2 (sombra)
+        │                       │                      │
+        │                       └──────► T5 Retroteste ◄┘
+        ▼                                                   T5 Livro de retornos + braço de controle
+   G1 Importação                                                        │
+   G4 Onboarding                                                        ▼
+                                                              T7 Extrato + operador ──► T6 Cobrança variável
+ T10 Backoffice ──► T6 Cobrança manual ──► T6 Interface de provedor ──► T6 Adaptador Asaas/MP
+ T9 Fundir #143/#144 ──► C6 e-mails ──► (parecer) ──► contrato de serviço ──► P2 (híbrido)
+ T4 Consentimento ──► (BSP, C1) ──► P3 (canal oficial)
+ G3 Operações (independente, cedo)
 ```
 
-**Caminho crítico até um alpha pago:** F1 + F2 (poder cobrar à mão) **e** B1 (esteira mínima) **e** H1
-(fundir e revisar). **Caminho crítico até o diferencial** (provar que acerta): B2, C1, E1.
+**Caminho crítico até o alpha pago (degraus 1 e 2):** T10 backoffice + cobrança manual **e** T2 Onda 1
+**e** T9 fundir e revisar.
+**Caminho crítico até o degrau 3:** T5 (livro e controle) → portão do dia 35 → T7 (extrato e operador) →
+contrato e parecer → T6 variável (P2).
 
-## 12. Como executar com várias contas e agentes ao mesmo tempo
+## 13. Como executar com várias contas e agentes
 
 - **Um worktree e uma branch por trilha**, nunca duas sessões na mesma árvore.
-- **Contrato por tarefa** (ver como `docs/26` classifica): escopo exato, o que **não** tocar, critério de
-  pronto, prova exigida. Se o Codex ou outra conta receber a tarefa, precisa de um `AGENTS.md` que
-  aponte para o `CLAUDE.md`.
-- **Entregável pequeno e revisável:** um PR por estação da esteira, por hipótese do Motor, por adaptador.
-- **Quem revisa:** o PR de uma conta é revisado por outra, com os mesmos testes e **as mutações
-  refeitas** (não confiar no relato de "vi reprovando").
-- **O que fica com humano:** Onda 2 da esteira (dinheiro), qualquer texto jurídico, migration e RLS,
-  decisões de preço e de provedor.
-- **Empurrar vários commits seguidos reinicia o job de banco da CI** (~5 minutos): juntar antes de
-  empurrar.
+- **Contrato por tarefa:** escopo exato, o que **não** tocar, critério de pronto, prova. Para Codex ou
+  outra conta: `AGENTS.md` apontando para o `CLAUDE.md`.
+- **Entregável pequeno:** um PR por estação da esteira, por hipótese do Motor, por adaptador, por tabela.
+- **Revisão cruzada:** o PR de uma conta é revisado por outra, **com as mutações refeitas**.
+- **Fica com humano:** Onda 2 da esteira, texto jurídico, migration e RLS, **tudo que mexe no livro de
+  retornos e na cobrança**, decisões de preço e provedor.
+- Empurrar vários commits seguidos reinicia o job de banco da CI (~5 minutos): juntar antes.
 
-## 13. Medidas de sucesso (por trilha)
+## 14. Medidas de sucesso (por trilha)
 
 | Trilha | Medida | Meta inicial [E] |
 |---|---|---|
-| A | cadastro até o primeiro ouro | < 15 min |
-| A | recuperados confirmados por salão por mês | a medir no alpha |
-| B | arquivos sem nenhuma pergunta; falso-aceite | ≥ 70%; **0** no corpus |
-| C | precisão@k do Motor v2 contra o v1; escore de Brier | v2 só entra se vencer |
-| D | chamadas feitas por dia útil; cliques que viram agendamento | a medir |
-| E | retroteste mostrado com amostra dita | 100% das importações N2 |
-| F | pagamentos em dia; taxa efetiva de cobrança | ≥ 90% em dia; ≤ 3% |
-| G | tarefas do agente aceitas sem edição; custo por conta | a medir; teto fixado |
-| H | itens do dossiê respondidos; incidentes | 0 incidentes sem registro |
-| J | falhas silenciosas detectadas por vigia antes de reclamação | 100% |
+| T1 | cadastro até o primeiro ouro | < 15 min |
+| T1 | diagnósticos que viram degrau 3 ou 1 | a medir no piloto |
+| T2 | arquivos sem pergunta; falso-aceite | ≥ 70%; **0** no corpus |
+| T3 | precisão@k do Motor v2 contra o v1; Brier | v2 só entra se vencer |
+| T4 | chamadas por dia útil; cliques que viram agendamento | a medir |
+| T5 | **diferença tratamento × controle** (p.p.) | **≥ 4** no portão do dia 35 |
+| T5 | retroteste mostrado com amostra dita | 100% das importações N2 |
+| T6 | pagamentos em dia; taxa efetiva | ≥ 90%; ≤ 3% |
+| T7 | **minutos de operador por salão por semana** | **≤ 15** |
+| T7 | **salões supervisionados por pessoa** | a medir; define o preço |
+| T7 | contestações de extrato | < 5% dos extratos |
+| T8 | tarefas do agente aceitas sem edição; custo por conta | a medir; teto fixado |
+| T9 | itens do dossiê respondidos; incidentes | 0 sem registro |
+| T10 | falhas silenciosas pegas por vigia antes da reclamação | 100% |
 
-## 14. Riscos (os dez que mais custam)
+## 15. Riscos (os que mais custam)
 
 | Risco | Resposta |
 |---|---|
-| Escolher provedor de cobrança errado e ficar preso | interface de provedor com adaptadores; começar manual |
-| Promessa dos Termos que o código não cumpre (pausa, e-mails) | C6 antes de abrir; revisar o texto com o acesso aberto |
-| Agente que decide sozinho e erra com cliente final | escada de autonomia; L1 como teto; WhatsApp manual |
-| Dependência de IA de terceiros quebrando a política de privacidade | IA no aparelho; terceiros só com parecer |
-| Esteira classificando coluna errada sem ninguém ver | falso-aceite zero, prévia obrigatória, controle de totais |
-| Motor v2 pior que o v1 sem ninguém perceber | backtest, modo sombra, regra de adoção |
+| **Disputa de atribuição** no preço por resultado | métrica binária, β contratual, extrato auditável, direito de contestar |
+| **Risco moral:** chamar quem voltaria sozinho para inflar | exclusões da 4.2, β, braço de controle |
+| **Dono que não chama a lista** e esconde o resultado | SLA do dono; fixo continua; sem chamada, sem variável |
+| **Receita imprevisível** | híbrido com fixo; teto; piso zero no variável |
+| **Serviço que não escala** (minutos por salão) | meta de 15 min; G2 faz o trabalho; preço sobe se estourar |
+| Cobrança variável quebrando a guarda do Mercado Pago | cobrança avulsa calculada, nunca a assinatura de valor fixo |
+| Escolher provedor errado e ficar preso | interface com adaptadores; começar manual |
+| **Promessa dos Termos que o código não cumpre** | C6 antes de abrir; revisar texto com o acesso aberto |
+| Agente decidindo sozinho e errando com cliente final | escada de autonomia; L1 como teto; WhatsApp manual; agente nunca escreve no livro |
+| IA de terceiros quebrando a política de privacidade | IA no aparelho; terceiros só com parecer |
+| Esteira classificando coluna errada sem ninguém ver | falso-aceite zero, prévia, controle de totais |
+| Motor v2 pior que o v1 sem perceber | backtest, modo sombra, regra de adoção |
 | Backoffice vazando acesso | papel de operador, 2FA, trilha, justificativa |
-| Falha silenciosa (cron, fila, banco atrasado) | G3 e vigias; teste de que o vigia reprova |
+| Falha silenciosa | G3 e vigias |
+| Enquadramento fiscal errado (serviço versus software) | contador antes do P2 |
 | Duas contas pisando uma na outra | worktrees, contratos, revisão cruzada |
-| Concorrente copiar a ideia | o diferencial é o **conjunto** (entrada, motor, prova, saída aberta), difícil de copiar em um sprint |
+| Concorrente copiar a ideia | o diferencial é o **conjunto** (entrada, motor, prova, livro auditável, saída aberta, operação) |
 
-## 15. O que depende do Eduardo (lista única)
+## 16. O que depende do Eduardo (lista única)
 
-1. **Regra de produção** (nunca escrever em produção, ou o fluxo do `docs/96`).
-2. **Provedor de cobrança** (Pix manual no alpha; depois Asaas, Mercado Pago ou os dois) e o
-   **enquadramento fiscal**.
-3. **Preço** (R$ 497 por ano, R$ 49 e R$ 99 por mês) e o texto de fundador.
-4. **Fundir #143 e #144** e aplicar as migrations de produção antes do código (`0092` a `0098`, e as
+1. **Resolver os conflitos C1 a C7** (seção 2.3), principalmente **C3 (quem decide)**, **C4 (regra de
+   produção)** e **C2 (preços)**.
+2. **Aceitar ou recusar o degrau 3 e o preço por resultado** (e o desenho híbrido com β e controle).
+3. **Provedor de cobrança** e **enquadramento fiscal** (serviço, ISS, Simples, ME).
+4. **Preço** de cada degrau e o texto de fundador.
+5. **Fundir #143 e #144** e aplicar as migrations de produção antes do código (`0092` a `0098`, e as
    seguintes: **conferir o que já está em produção**, pois a outra conta aplica por conta própria).
-5. **Variáveis de contato** (`NEXT_PUBLIC_CONTATO_*`) e planos pagos de Vercel e Supabase.
-6. **Texto do aviso de cobrança** ("avisamos antes de qualquer cobrança" já está na tela de Meu plano).
-7. **Recepcionista de IA**: construir ou integrar.
-8. **Advogado**: a lista da seção 8.
-9. **Prints dos preços e das telas dos concorrentes brasileiros** e **2 ou 3 arquivos reais** de
-   exportação (anonimizados).
-10. **Datas do alpha e da abertura pública**, agora que o acesso é aberto.
+6. **Variáveis de contato** e planos pagos de Vercel e Supabase.
+7. **Texto do aviso de cobrança** ("avisamos antes de qualquer cobrança", já no Meu plano).
+8. **Recepcionista de IA:** construir ou integrar.
+9. **Advogado:** lista da seção 9, **mais o contrato de serviço**.
+10. **Prints de preços e telas** dos concorrentes brasileiros e **2 ou 3 arquivos reais** de exportação.
+11. **Quem é o operador de entrega** (uma pessoa, e quantos minutos por semana ela tem).
+12. **Datas** do alpha e da abertura pública.
 
-## 16. O que esta revisão NÃO fez
+## 17. O que esta v2 NÃO fez
 
-Não testou produto nenhum; não leu o texto oficial da Meta; não confirmou taxa nem exigência de
-cadastro do Asaas nem do Mercado Pago; não pesquisou distribuição nem concorrentes brasileiros a fundo
-(a busca web tem alcance limitado e quase nada de documentação pública aparece); não mediu nenhuma
-hipótese do Motor; não escreveu código. **Tudo marcado [S] é ponto de partida, e [E] é conta que
-precisa de confirmação.**
+Não testou produto nenhum; não leu o texto oficial da Meta; **não confirmou se o Pix Automático
+permite valor variável**; não confirmou taxa nem exigência de cadastro do Asaas nem do Mercado Pago;
+não pesquisou distribuição nem concorrentes brasileiros a fundo; **não verificou se algum concorrente
+brasileiro cobra por resultado**; não mediu nenhuma hipótese do Motor; **todos os números da seção 4.4
+(fixo, taxa de 20%, β de 3%, minutos por salão) são hipótese minha, não medição**; não escreveu código.
+Tudo marcado [S] é ponto de partida e [E] é conta a confirmar.
