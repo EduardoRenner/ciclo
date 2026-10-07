@@ -10,6 +10,13 @@ O plano-mestre que junta esta trilha com cobrança, agentes, confiança e opera�
 A revisão que mediu este plano contra o estado da arte (e que revisa o Motor) está em
 `docs/98-REVISAO-ECOSSISTEMA-E-MOTOR.md`; o que ela mudou aqui está marcado com **(rev. 98)**.
 
+**(v3, `docs/99` §2.5 a 2.7)** Este plano **convive com decisões anteriores do Eduardo**: a migração é
+**sempre grátis** e nunca barreira de pagamento; o veredito GO-1 disse "não construir mais"
+importação de XLSX, PDF ou print por falta de evidência (menos de 30% dos salões usam sistema, o
+concorrente principal é o caderno); e o caminho principal continua sendo `ja-atendo`. Por isso a
+esteira ganha **portão de evidência** (instrumentar o funil, GO-0) e a **ordem das ondas muda**: vCard e
+texto colado (a lista digital que o público do caderno realmente tem) sobem para a **Onda 1b**.
+
 **A ideia em uma frase.** O salão joga qualquer coisa (planilha, CSV, export de outro sistema, lista
 colada, contatos do celular, até foto ou PDF escaneado). Uma esteira com estações fixas, **rodando no
 navegador por padrão**, identifica o formato, acha a tabela, descobre o que cada coluna é olhando o
@@ -272,6 +279,10 @@ Entra como **Onda 4**, e só no aparelho. Nada de OCR de terceiros.
      receberá a mensagem, e pior, outra pessoa pode recebê-la.
   3. A tela diz a **confiança por linha** e coloca no topo as que o OCR duvidou.
   4. Conta como N0 ou N1, **nunca N3**: valores lidos de foto não alimentam "valor em risco".
+- **Letra manuscrita (v3):** o concorrente principal é o caderno, mas **manuscrito é o pior caso do OCR**
+  (o motor local é bom em texto impresso). A foto do caderno entra como **ajuda para digitar**, nunca
+  como importação confiável: a pessoa confere cada linha. Se o piloto mostrar que quase ninguém usa
+  foto, **a Onda 4 encolhe**.
 - **Quando vale:** a pessoa só tem um relatório impresso ou uma foto do caderno. É o último recurso,
   porque funciona onde nada mais funciona, e a barra de qualidade é a mais baixa de todas.
 - **Custo:** o dado do idioma e o motor pesam alguns megabytes e rodam no aparelho da pessoa. Não
@@ -340,6 +351,12 @@ abaixo é proposta minha, não é parecer, e não vai ao ar sem a redação do a
 
 É como o mercado brasileiro vende (Belasis, Actana, Zenamu) e é como o alpha vai ser vendido. Usa
 **a mesma esteira**, rodando em modo de operador.
+
+**É sempre grátis (decidido pelo Eduardo, `docs/83`): migração nunca é barreira de pagamento.** O
+benefício por trazer a base (1 mês do Essencial, com a data da última visita) já está decidido. O
+diferencial **não é ser grátis** (BarbUp e Belasis também são): é **na hora, sem chamado, com o ouro
+no mesmo minuto**. Hoje o AppBarber leva até 5 dias úteis e não traz histórico. O Eduardo já decidiu
+importar pelo WhatsApp as primeiras contas: **é a Onda 0, e já está aprovada.**
 
 - O salão **envia o arquivo de propósito** por um link seguro (não há o arquivo cru no fluxo normal;
   aqui há, porque a pessoa decidiu enviar).
@@ -416,6 +433,9 @@ depende de amostra de concorrente para começar.**
   totais, E9 com o valor na tela, `.xlsx`, corpus sintético de 40 variações, paridade
   navegador/servidor. *Pronto quando:* corpus com falso-aceite zero, invariante fechando, e um arquivo
   bagunçado (título, cabeçalho na linha 4, `;`, Windows-1252) entra sem uma pergunta.
+- **Onda 1b · Para quem não tem sistema (v3).** **vCard** (contatos do celular) e **texto colado** (lista
+  do WhatsApp ou das notas), com as mesmas estações E3 a E9. *Pronto quando:* uma lista de 40 contatos
+  colada do celular vira clientes com telefone normalizado e sem duplicata, a 390 px, sem planilha.
 - **Onda 2 · Histórico e entidades (N2 e N3).** Grão, relatório agrupado, E7 completo, visitas
   importadas como atendimentos **marcados como importados** (sem caixa, comissão nem estoque).
   **Revisão antes de começar** (dinheiro).

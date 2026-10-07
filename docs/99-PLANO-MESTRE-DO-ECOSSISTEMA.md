@@ -1,6 +1,7 @@
-# 99 · Plano-mestre do ecossistema CICLO (v2): da ferramenta ao serviço entregue por software
+# 99 · Plano-mestre do ecossistema CICLO (v3): da ferramenta ao serviço entregue por software
 
-Escrito em 2026-10-07, **v2 no mesmo dia**. A v1 juntou os `docs/97` e `98` com cobrança, agentes e
+Escrito em 2026-10-07, **v3 no mesmo dia** (a v3 está descrita na seção 2.5 e corrige a v2 com o que o
+repositório e a concorrência já mostravam). A v1 juntou os `docs/97` e `98` com cobrança, agentes e
 operação. **Esta v2 mescla o plano anterior ainda incompleto (`docs/91` a `96`: Motor de Retorno e
 plataforma de decisão) e acrescenta a mudança de modelo que o Eduardo pediu: parar de vender a
 ferramenta e passar a vender a entrega, usando o software por dentro.**
@@ -114,6 +115,76 @@ em vez de uma medição causal individual, (b) mede o efeito **agregado** com um
 parte variável depois de portões (seção 4.5). **Se esses portões não forem cumpridos, a v2 concorda
 com o `docs/94`: não cobrar por resultado.**
 
+### 2.5 O que já estava decidido e a v2 ignorou (a v3 corrige; **não reabrir sem evidência nova**)
+
+Lidos hoje em `.claude/ciclo/` (`growth-opportunities.md`, `competitive-gaps.md`,
+`market-intelligence.md`, `competitors/*`), `docs/43`, `45`, `83` e `DECISOES.md`:
+
+| # | O que já estava decidido | Onde | O que muda neste plano |
+|---|---|---|---|
+| D1 | **A migração nunca pode ser barreira de pagamento.** A linha "migração assistida R$ 199" é **obsoleta**. Decidido: **1 mês do Essencial para quem importa com a data da última visita**, e o Eduardo **importa pelo WhatsApp as primeiras contas** | `docs/83`, decisões de 28/09 | **A v2 oferecia "taxa única pequena" no degrau 2. Removida.** O degrau 2 é **sempre grátis** |
+| D2 | **Migração grátis é o mínimo do mercado, não diferencial** (BarbUp "sem custo extra"; Belasis com gerente dedicado). O diferencial possível é **na hora, sem chamado, com o resultado do Motor no mesmo minuto** (o AppBarber leva até 5 dias úteis, sem histórico) | `docs/83` §1 do sumário | o pitch do degrau 2 é **velocidade e resultado**, não "a gente faz de graça" |
+| D3 | **Veredito GO-1: "não construir mais" importação de XLSX, PDF ou print** (confiança alta). Razões: menos de **30% dos salões usam sistema** (Sebrae via UAI, 18/09/2026), o concorrente principal é **o caderno e a memória**, e o caminho principal já é `ja-atendo` (digitação assistida) | `growth-opportunities.md` GO-1 | **Conflita com a esteira do `docs/97`.** Resolução na seção 2.6 |
+| D4 | **GO-0 primeiro:** o funil não está instrumentado (só `conta_criada` e mais um evento gravados em produção), então **ninguém sabe onde a ativação morre**. GO-3 e GO-4 dependem dele | GO-0 | **GO-0 vira o primeiro ticket do backlog** (T1) |
+| D5 | **Nenhum item de paridade urgente:** a pesquisa não achou feature que o CICLO não tenha e cuja falta faça alguém escolher o concorrente. A prioridade é **comunicar o que já é diferente** e **medir** | `competitive-gaps.md` | **não copiar feature de concorrente**; o degrau 3 é aposta de **modelo**, não paridade |
+| D6 | **"WhatsApp incluído" não pode ser dito:** a rota `reminders` **não roda sozinha em produção** (só `recompute-cycles` e `segments`); ligar é **decisão do Eduardo** | GO-2 | qualquer texto do degrau 3 que prometa canal só vale **no dia em que for verdade** |
+| D7 | **Não competir por aquisição** com quem tem rede (app do cliente e marketplace): AppBarber 1 milhão+ de instalações, Trinks 44 mil negócios, Fresha 450 mil profissionais, Booksy 330 mil | `docs/43`, `45` | o degrau 3 é **retenção da base que o salão já tem**, nunca "trazer cliente novo" |
+| D8 | **Trinks saiu do foco:** o foco é **AppBarber, Belasis, BarbUp, caderno e planilha** | `docs/83`, decisões de 28/09 | a esteira não prioriza conversor do Trinks |
+| D9 | **Nomear concorrentes no produto: sim, só com fato verificável** | `docs/83` | cuidado com tudo marcado [S] neste plano |
+
+### 2.6 O que o nosso produto e o dos concorrentes já têm (o mapa que faltava)
+
+**O que o CICLO já tem e nenhum concorrente pesquisado tem** [M, `competitive-gaps.md`]:
+1. **Motor de Ciclo com ritmo por cliente e por serviço**, e não janela fixa. Todos os concorrentes
+   tratam "sumido" por **janela igual para todos** (AppBarber: períodos escolhidos à mão num
+   relatório; **Belasis: 30, 60 e 90 dias**; o setor: 45 dias) [S].
+2. **Prestação de contas do Motor** ("o Motor acertou X%"): já em produção em `/admin/recuperar`.
+3. **Preço 100% publicado** (o Trinks esconde tiers maiores) e **sem comissão por cliente novo**
+   (Fresha cobra 20%, mínimo US$ 6, sobre cliente novo do marketplace).
+4. **Onboarding que não pede planilha** (`ja-atendo`, digitação assistida por memória).
+5. **Funciona ao lado do sistema atual**: "você não precisa largar o AppBarber hoje" (`docs/83`).
+
+**O que os concorrentes têm e o CICLO não** (e que **não é** paridade urgente, mas é onde eles ganham):
+**rede e marketplace** (app do cliente, descoberta); **escala** (ver D7); conta digital e maquininha
+(Trinks, Booksy); **gerente dedicado e suporte 24 horas** (Belasis) [S]; app nativo do cliente.
+
+**O concorrente mais próximo do degrau 3 é a Belasis** [S, site e blog dela]: promete "IA que traz
+cliente de volta", CRM que acha quem sumiu há 30, 60 ou 90 dias e manda mensagem, **migração assistida
+de clientes, agenda e histórico com gerente dedicado**, suporte 24 horas, e cita um depoimento de
+**+30% de faturamento em 6 meses**. **Leitura:** serviço humano de implantação **já é o padrão do
+concorrente direto**, então **o nosso "assistido" sozinho não diferencia**. O que a Belasis não
+mostra (e a busca não achou): ritmo **individual** do cliente, **prestação de contas por salão** e
+**cobrança atrelada a resultado com extrato**. É onde o degrau 3 se separa.
+
+**Preços de referência** [P, `competitors/*`, 05/09 e 20/09, **podem ter mudado**]: AppBarber
+**R$ 79,90** (1 profissional), **R$ 164,50** (2 a 5), **R$ 219,90** (6 ou mais); Booksy **US$ 29,99 mais
+US$ 20 por usuário**, 14 dias grátis, plano único com tudo; Fresha **US$ 19,95 solo** mais 20% (mínimo
+US$ 6) de cliente novo. **Comparação [E]:** o exemplo do degrau 3 (R$ 211 por mês) fica **abaixo do
+AppBarber 6+** e acima do solo; e o variável de R$ 16 por retorno pagável (20% de R$ 80) é **menor
+que o mínimo de US$ 6 (cerca de R$ 33) que a Fresha cobra por cliente novo**, com a diferença de que
+aqui é cliente que **já é do salão**.
+
+### 2.7 Resolução do conflito entre a esteira (`docs/97`) e o veredito GO-1
+
+O veredito GO-1 foi dado **sem dado de funil** e antes do pedido novo do Eduardo ("máquina de extração
+de qualquer arquivo"). **Os dois têm razão em partes.** A resolução:
+
+1. **O público real manda.** Menos de 30% têm sistema; **a maioria tem caderno, memória, WhatsApp e a
+   agenda do celular.** O caminho principal continua **`ja-atendo`**, e **a esteira não o substitui**.
+2. **A esteira serve três públicos** e ganha prioridade nesta ordem: **(a)** quem tem **sistema
+   exportável** (AppBarber, Belasis, BarbUp): `.xlsx`, cabeçalho fora da linha 1, quarentena; **(b)** quem
+   tem **contatos no celular ou lista no WhatsApp**: **vCard e texto colado sobem de prioridade**
+   (eram "formatos extras", viram **Onda 1b**), porque é a lista digital que o público do caderno
+   realmente tem; **(c)** quem só tem **foto do caderno**: OCR no aparelho, **com a ressalva honesta de
+   que letra manuscrita é o pior caso do OCR** e a revisão linha a linha não é negociável.
+3. **Portão de evidência antes de construir além da Onda 1:** instrumentar o funil (GO-0) e **medir a
+   taxa de conclusão de `ja-atendo` e `importar`**. Se a conclusão for alta e o atrito for outro, a
+   esteira **encolhe**. Se o atrito estiver **dentro da importação** (arquivo que não entra, data que
+   não lê), a esteira **resolve exatamente isso**.
+4. **O diagnóstico do degrau 2 é o teste de demanda mais barato:** o Eduardo já decidiu importar
+   pelo WhatsApp as primeiras contas. **Fazer isso com 5 salões, antes de qualquer código novo, mede
+   quem aceita o degrau 3**, quanto tempo leva e o que trava.
+
 ## 3. O mercado (pesquisado hoje; **nenhum produto foi testado**)
 
 ### 3.1 Agenda, reserva e retenção
@@ -123,7 +194,8 @@ retorno, fidelidade, reputação) e lançou o **"On Behalf Marketing"**, um mark
 gerenciado** em nome do salão [S]: **o serviço entregue já aparece no segmento**, do lado do
 marketing. Fresha e Booksy cobram **comissão por cliente novo** do marketplace [S, `docs/07`]: o dono
 de salão **já entende "pagar por cliente trazido"**. Brasil: Trinks, Avec, AppBarber, Salão99, Belle,
-Simples Agenda, Belasis, Actana: sem documentação pública de importação e exportação, com exceções:
+Simples Agenda, Belasis, Actana: sem documentação pública de importação e exportação, com exceções (e
+veja a seção 2.6 sobre a Belasis, o concorrente mais próximo do degrau 3):
 AppBarber exporta pelo chat do suporte, e Belasis, Actana e Zenamu **migram os dados por você, de
 graça, como parte da venda** [S].
 
@@ -178,7 +250,7 @@ Negócio; (e) **se algum concorrente brasileiro já vende retorno por resultado*
 | Degrau | O dono compra | O CICLO entrega | Quem trabalha | Preço (proposta [E]) |
 |---|---|---|---|---|
 | **1 · Ferramenta** | acesso ao sistema | o software, autoatendimento | o dono | R$ 49 (Solo) e R$ 99 (Equipe), ou R$ 497 por ano à vista (`docs/87`, `docs/99` v1) |
-| **2 · Assistido** | "montem pra mim" | **importação feita por nós**, calibragem do Motor, **diagnóstico** ("47 clientes, R$ 6.300") e o **retroteste** | o CICLO, uma vez | **grátis com o plano anual** (copiado de Belasis e Zenamu) ou taxa única pequena [Do Eduardo] |
+| **2 · Assistido** | "montem pra mim" | **importação feita por nós**, calibragem do Motor, **diagnóstico** ("47 clientes, R$ 6.300") e o **retroteste** | o CICLO, uma vez | **sempre grátis (decidido, D1)**, e **1 mês do Essencial** para quem traz a base com a data da última visita |
 | **3 · Entregue** | "devolvam meus clientes" | **a operação semanal do retorno**: lista pronta, texto certo, ordem, acompanhamento e **relatório mensal do que voltou e quanto valeu** | o CICLO (pessoa supervisionando agente), e o dono só toca em Chamar | **híbrido: fixo mais variável por retorno confirmado** (seção 4.4) |
 
 **Por que a escada e não só o degrau 3:** o degrau 2 é a **arma de venda e o piloto** (o mercado
@@ -263,13 +335,20 @@ contestar** em 10 dias, com revisão por uma pessoa (e a lista inteira do livro 
 | Fase | O que liga | Só quando |
 |---|---|---|
 | **P0 · Diagnóstico grátis** | degrau 2 em 5 pilotos (de preferência ticket ≥ R$ 80) | esteira Onda 1 e retroteste prontos (`docs/97`, `docs/98`) |
-| **P1 · Operação cobrada só com fixo** | degrau 3 com **fixo**, sem variável, medindo | diferença tratamento × controle **≥ 4 p.p. somada em ≥ 3 pilotos** (portão do dia 35, `docs/94`) |
+| **P1 · Acompanhado, cobrado só com fixo** | degrau 3 **sem envio automático**: lista, texto, acompanhamento e extrato, com **fixo**, sem variável, medindo | diferença tratamento × controle **≥ 4 p.p. somada em ≥ 3 pilotos** (portão do dia 35, `docs/94`) |
 | **P2 · Híbrido** | variável sobre β | **(a)** P1 estável por 60 dias; **(b)** contrato assinado (seção 9); **(c)** CNPJ, enquadramento fiscal e **nota de serviço** resolvidos (`docs/89`); **(d)** cobrança variável **tecnicamente possível** (4.7); **(e)** extrato auditável em produção; **(f)** parecer do advogado sobre o modelo |
 | **P3 · Automação do canal** | envio pela API oficial, com consentimento | opt-in com prova em **≥ 30% da base ativa de 3 salões** (`docs/91`); BSP contratado; decisão do C1 |
 | **P4 · Revisão de β e do controle** | β calibrado pelo agregado | **~30 salões** no degrau 3 |
 
 **Regra de parada:** se no dia 35 a diferença for menor que o limite, **não vender o degrau 3**; ficam
 os degraus 1 e 2. Isso é o que o `docs/94` manda e a v2 mantém.
+
+**Critérios de morte (v3), escritos antes para ninguém racionalizar depois:** (1) se **menos de 2 dos 5
+pilotos** aceitarem pagar o fixo do degrau 3 depois do diagnóstico grátis, o degrau 3 **não é o que o
+mercado quer** e volta-se ao degrau 1 com o diagnóstico como isca; (2) se o operador gastar **mais de 30
+minutos por salão por semana** depois de 4 semanas, o serviço **não escala** nesse preço; (3) se **mais
+de 30% dos pilotos não chamarem a lista**, o gargalo é o dono, e o produto certo é **canal automático**
+(P3), não mais acompanhamento.
 
 ### 4.6 Como o serviço é operado (a parte que ninguém planeja)
 
@@ -303,6 +382,27 @@ os degraus 1 e 2. Isso é o que o `docs/94` manda e a v2 mantém.
 - **O cálculo da cobrança é função pura** em `core/billing` (`cobrancaDoMes(livro, contrato)`), com
   teste de propriedade (nunca cobra acima do teto; variável nunca negativa; o mesmo livro dá o mesmo
   valor), mutação e **reconciliação mensal** (soma do extrato = valor da cobrança).
+
+### 4.8 A crítica honesta ao próprio modelo (v3)
+
+**O serviço só é "entregue" de verdade quando o CICLO envia.** Hoje a fila de chamadas e o perfil do
+cliente **já preparam a lista, o texto e a ordem sozinhos**, e quem executa é o dono, tocando em
+Chamar. Enquanto o canal for manual (C1, D6), o que uma pessoa do CICLO acrescenta é:
+**(a)** a configuração e a calibragem iniciais; **(b)** a **prestação de contas** (extrato);
+**(c)** o **empurrão semanal para chamar** (mudança de comportamento, que é o verdadeiro gargalo); e
+**(d)** o diagnóstico de por que alguém não volta. **Isso vale dinheiro, mas é mais "acompanhamento e
+prova" do que "serviço entregue".** O degrau 3 completo exige **P3** (envio automático com
+consentimento), que depende de BSP, verificação da Meta e decisão do C1. **Não vender "entregue" antes
+disso; vender "acompanhado", e dizer isso na página.**
+
+**As bases de cálculo vêm de fornecedor.** O β de 3% (volta espontânea) e os 7% a 15% de volta com
+mensagem vêm de **material de fornecedor de software** [S, `docs/94`]. **São chute informado, não dado
+deste público.** O braço de controle existe justamente para trocar chute por medição.
+
+**O risco real é construir demais antes de saber.** O repositório mostra funil sem instrumentação
+(D4), canal de lembrete desligado (D6) e nenhuma paridade urgente (D5). **Onze trilhas é um mapa, não
+um sprint.** A seção 12 traz a **sequência de evidência**: pilotar com o que já existe, medir e só
+então construir.
 
 ## 5. O ecossistema em onze trilhas (mapa do plano mesclado)
 
@@ -425,12 +525,21 @@ entregue)** e G3 (protege contra a **falha silenciosa**, o defeito mais caro des
 - **O pitch muda de "um sistema" para "devolvo seus clientes".** A oferta de entrada é o **diagnóstico
   grátis do degrau 2**: o dono manda o arquivo, o CICLO mostra **"47 clientes, R$ 6.300"** e, quando
   houver histórico, o **retroteste**. Quem se interessa **compra o degrau 3 ou o 1**.
+- **Primeiro ticket do backlog inteiro: GO-0** (instrumentar o funil com `product_events`: cadastro,
+  abriu `ja-atendo` ou `importar`, **concluiu**, viu o ouro, chamou, voltou). **Sem isso nenhuma decisão
+  de ativação sai de hipótese** (D4).
 - **Métrica de ativação:** minutos do cadastro até o **primeiro ouro** (meta < 15), depois **primeira
-  chamada feita**, **primeira volta confirmada**.
+  chamada feita**, **primeira volta confirmada**. O ouro tem que aparecer **no mesmo minuto** da
+  importação (D2): é o diferencial contra o AppBarber (até 5 dias úteis).
 - **Estrela-guia:** **retornos confirmados por mês** e **R$ recuperado por salão** (é também a unidade
   de cobrança do degrau 3).
+- **Pergunta do onboarding:** **"onde estão seus clientes hoje?"** (caderno, WhatsApp, planilha, outro
+  sistema, negócio novo), e não "qual sistema você usa?" (`docs/83`): serve os 70% e os 30% com uma
+  pergunta.
+- **Benefício por trazer a base:** 1 mês do Essencial para quem importa com a data da última visita
+  (decidido, D1).
 - **Canal do alpha:** venda um a um, com a pessoa na tela do salão importando a lista (`docs/88`,
-  `docs/56`). **Pesquisar parceiros de distribuição** (lacuna c da seção 3.6).
+  `docs/56`); **o Eduardo importa pelo WhatsApp as primeiras contas** (decidido). **Pesquisar parceiros de distribuição** (lacuna c da seção 3.6).
 - **O que não fazer:** disparo em massa frio, compra de lista, **promessa de resultado que o retroteste
   não prove**, vender o degrau 3 antes do portão do dia 35.
 
@@ -518,6 +627,24 @@ append-only por constraint de banco, reconciliação mensal automática, teste d
  G3 Operações (independente, cedo)
 ```
 
+### 12.1 Sequência de evidência (v3): pilotar antes de construir
+
+```
+S0  decidir e medir   │ resolver C1 a C7 · GO-0 (funil) · fundir #143/#144 · decidir `reminders` (D6)
+S1  pilotar sem código│ 5 salões, o Eduardo importa pelo WhatsApp (decidido) · diagnóstico grátis ·
+                      │ medir: aceita pagar? quanto tempo? o que trava? (critérios de morte, 4.5)
+S2  construir o que a │ só o que o piloto e o GO-0 provarem: esteira Onda 1 (+ vCard e texto colado),
+    evidência pedir   │ livro de retornos e braço de controle, backoffice
+S3  cobrar            │ P1 (fixo) · depois P2 (híbrido) pelos portões da 4.5
+```
+
+**Por quê:** o repositório mostra funil sem medição, canal desligado e nenhuma paridade urgente
+(seção 2.5). O pedido de ter **a melhor** esteira, o melhor Motor e o serviço entregue continua de
+pé, e **a sequência de evidência é o jeito de chegar lá sem construir às cegas**. Onde o Eduardo
+mandar construir antes da evidência, **a diretriz dele vale**, e o plano registra o risco.
+
+### 12.2 Caminhos críticos
+
 **Caminho crítico até o alpha pago (degraus 1 e 2):** T10 backoffice + cobrança manual **e** T2 Onda 1
 **e** T9 fundir e revisar.
 **Caminho crítico até o degrau 3:** T5 (livro e controle) → portão do dia 35 → T7 (extrato e operador) →
@@ -577,6 +704,7 @@ contrato e parecer → T6 variável (P2).
 
 ## 16. O que depende do Eduardo (lista única)
 
+0. **(v3) Decidir `reminders` em produção** (D6): é o que destrava o canal e o texto "WhatsApp incluído".
 1. **Resolver os conflitos C1 a C7** (seção 2.3), principalmente **C3 (quem decide)**, **C4 (regra de
    produção)** e **C2 (preços)**.
 2. **Aceitar ou recusar o degrau 3 e o preço por resultado** (e o desenho híbrido com β e controle).
@@ -592,11 +720,13 @@ contrato e parecer → T6 variável (P2).
 11. **Quem é o operador de entrega** (uma pessoa, e quantos minutos por semana ela tem).
 12. **Datas** do alpha e da abertura pública.
 
-## 17. O que esta v2 NÃO fez
+## 17. O que esta versão NÃO fez
 
 Não testou produto nenhum; não leu o texto oficial da Meta; **não confirmou se o Pix Automático
 permite valor variável**; não confirmou taxa nem exigência de cadastro do Asaas nem do Mercado Pago;
 não pesquisou distribuição nem concorrentes brasileiros a fundo; **não verificou se algum concorrente
 brasileiro cobra por resultado**; não mediu nenhuma hipótese do Motor; **todos os números da seção 4.4
-(fixo, taxa de 20%, β de 3%, minutos por salão) são hipótese minha, não medição**; não escreveu código.
+(fixo, taxa de 20%, β de 3%, minutos por salão) são hipótese minha, não medição**; **não repesquisou os
+preços dos concorrentes ao vivo** (os da 2.6 são de 05/09 e 20/09 e vêm de `competitors/*`); **não
+verificou o plano da Belasis nem o do BarbUp** (o site da Belasis não mostrou preço); não escreveu código.
 Tudo marcado [S] é ponto de partida e [E] é conta a confirmar.
