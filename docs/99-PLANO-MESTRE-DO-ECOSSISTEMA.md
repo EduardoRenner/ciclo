@@ -146,7 +146,7 @@ Lidos hoje em `.claude/ciclo/` (`growth-opportunities.md`, `competitive-gaps.md`
 5. **Funciona ao lado do sistema atual**: "você não precisa largar o AppBarber hoje" (`docs/83`).
 
 **O que os concorrentes têm e o CICLO não** (e que **não é** paridade urgente, mas é onde eles ganham):
-**rede e marketplace** (app do cliente, descoberta); **escala** (ver D7); conta digital e maquininha
+**rede e marketplace** (app do cliente, descoberta); **escala** (ver D7); **"Reservar com o Google" (Trinks e SuperAgendador)**; conta digital e maquininha
 (Trinks, Booksy); **gerente dedicado e suporte 24 horas** (Belasis) [S]; app nativo do cliente.
 
 **O concorrente mais próximo do degrau 3 é a Belasis** [S, site e blog dela]: promete "IA que traz
@@ -291,11 +291,25 @@ antes do vencimento**. **Conclusão: cobrança variável por Pix Automático é 
 final é no sandbox do Asaas** (criar uma autorização e cobranças de valores diferentes).
 
 **Ainda abertas [fazer]:** (a) **prints de preço e tela dos concorrentes pelo olhar de um salão que os usa**
-(os sites não mostram tudo; a Belasis não publicou preço); (c) **parceiros de distribuição**: a busca
-**não achou um canal estabelecido** de venda de software para salão por contadores, associações ou
-fornecedores (só distribuidoras de cosméticos, que visitam salões e **são um canal possível mas não
-pesquisado**); (d) Instagram e Google Meu Negócio; (e) **se algum concorrente brasileiro já vende retorno
-por resultado** (segue sem achado). **Pista nova:** a **Lei do Salão-Parceiro** (Lei 13.352/2016) regula a
+(os sites não mostram tudo; a Belasis não publicou preço); (c) **parceiros de distribuição**: **duas buscas**
+(rodadas 2 e 3) **não acharam programa de parceiros, revendedores ou afiliados**, nem do Trinks nem de
+outro, e **não acharam um canal estabelecido** de venda de software para salão por contadores,
+associações ou fornecedores (só distribuidoras de cosméticos, que visitam salões e **são um canal possível mas não
+pesquisado**); (d) **Google e Instagram**, no bloco abaixo; (e) **se algum concorrente brasileiro já vende retorno
+por resultado**: **a busca foi refeita na rodada 3 e segue sem achado** [S; e **ausência de resultado
+de busca não prova que não exista**]. Pode ser espaço aberto, ou sinal de que o modelo não fecha a conta
+no segmento: **só tratar como espaço aberto depois do piloto**.
+
+**Google (rodada 3)** [S, resultado de busca; a matéria do Tecnoblog bloqueou a leitura com erro 403]:
+no Brasil o **"Reservar com o Google"** (botão de agendar na busca e no Maps, ligado ao Google Meu
+Negócio) funciona para estabelecimentos que **contrataram o Trinks ou o SuperAgendador**. **Leitura:**
+é mais um **ativo de aquisição que o concorrente tem e nós não** (D7), e **não é paridade urgente**
+(D5), porque o degrau 3 trabalha a base que o salão já tem. A página pública `/{slug}/agendar` já
+existe, então **virar parceiro do Google é um caminho futuro**, a verificar (requisitos e prazo **não
+foram pesquisados**). **Instagram:** a alternativa barata, sem parceria, é o **link da página de
+agendamento na bio**, que o produto já suporta; **não pesquisei** integrações oficiais.
+
+**Pista nova:** a **Lei do Salão-Parceiro** (Lei 13.352/2016) regula a
 parceria entre profissionais autônomos (cabeleireiro, barbeiro, manicure e outros) e o salão, o que **muda
 quem é o "dono" do cliente que volta e a comissão do profissional**; **não aprofundei**, e vale uma
 pergunta ao contador e ao advogado antes de o Motor atribuir retorno a um profissional.
