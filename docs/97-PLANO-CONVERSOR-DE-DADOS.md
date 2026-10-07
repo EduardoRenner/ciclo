@@ -4,6 +4,9 @@ Escrito em 2026-10-07, v3 (mesmo dia): inclui a pesquisa de mercado, o que copia
 traz para dentro do plano o que antes estava "fora" (OCR, IA, dado de saúde, texto jurídico), cada um
 com a sua trava.
 
+O plano-mestre que junta esta trilha com cobrança, agentes, confiança e operação está em
+`docs/99-PLANO-MESTRE-DO-ECOSSISTEMA.md`.
+
 A revisão que mediu este plano contra o estado da arte (e que revisa o Motor) está em
 `docs/98-REVISAO-ECOSSISTEMA-E-MOTOR.md`; o que ela mudou aqui está marcado com **(rev. 98)**.
 

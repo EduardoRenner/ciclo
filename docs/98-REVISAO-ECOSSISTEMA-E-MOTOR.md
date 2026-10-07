@@ -4,6 +4,9 @@ Escrito em 2026-10-07. Pergunta do Eduardo: o que falta para o CICLO ter o melho
 sistema e motor do mercado? Este documento **revisa o que existe** (lendo o código), **pesquisa o
 estado da arte** e transforma o resultado em hipóteses testáveis, não em promessas.
 
+O plano-mestre que junta esta trilha com cobrança, agentes, confiança e operação está em
+`docs/99-PLANO-MESTRE-DO-ECOSSISTEMA.md`.
+
 Companheiro do `docs/97` (a esteira de dados). O que a revisão mudou no 97 está na seção 8.
 
 ## 0. Como ler (e o que NÃO foi verificado)
