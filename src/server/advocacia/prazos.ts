@@ -137,6 +137,15 @@ export async function alterarPrazo(
     const eu = await db.from('professionals').select('legal_role').eq('tenant_id', tenantId).eq('user_id', userId).maybeSingle()
     if (eu.data?.legal_role === 'estagio') throw new AppError('FORBIDDEN', { message: 'Quem é de estágio não confirma prazo: peça à advocacia.' })
   }
+  if (e.acao === 'corrigir') {
+    // O gatilho da 0109 só registra o campo que MUDOU: corrigir para a mesma data respondia "corrigida",
+    // não gravava nada e o motivo digitado sumia.
+    const atual = await db.from('legal_deadlines').select('due_on, internal_due_on').eq('tenant_id', tenantId).eq('id', prazoId).maybeSingle()
+    if (atual.error) throw traduzir(atual.error)
+    if (!atual.data) throw new AppError('NOT_FOUND', { message: 'Esse prazo não está mais disponível.' })
+    const internoIgual = e.internalDueOn === undefined || e.internalDueOn === atual.data.internal_due_on
+    if (atual.data.due_on === e.dueOn && internoIgual) throw AppError.validacao({ dueOn: 'Essa já é a data do prazo: escolha a data certa para corrigir.' })
+  }
   const mudanca =
     e.acao === 'confirmar'
       ? { confirmed_by: userId, confirmed_at: new Date().toISOString() }

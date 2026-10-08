@@ -144,8 +144,8 @@ export default function PrazosDoCaso({ prazos, hoje, clienteId, casoId, timezone
                       <Button
                         tamanho="sm"
                         carregando={pendente}
-                        disabled={!novaData || motivo.trim().length < 5}
-                        motivoDesabilitado="Escolha a data e escreva o motivo (pelo menos 5 letras)."
+                        disabled={!novaData || novaData === p.venceEm || motivo.trim().length < 5}
+                        motivoDesabilitado={novaData === p.venceEm ? 'Essa já é a data do prazo: escolha a data certa.' : 'Escolha a data e escreva o motivo (pelo menos 5 letras).'}
                         onClick={() => agir(p.id, `/api/v1/legal/deadlines/${p.id}`, 'PATCH', { acao: 'corrigir', dueOn: novaData, motivo }, 'Data corrigida')}
                       >
                         Corrigir

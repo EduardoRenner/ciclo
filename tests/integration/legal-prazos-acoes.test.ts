@@ -76,6 +76,18 @@ describe('ações de prazo', () => {
     })
   })
 
+  it('corrigir para a mesma data é recusado (antes respondia "corrigida" e o motivo sumia)', async () => {
+    const p = await criarPrazo(P.advocacia.c, T, P.advocacia.uid, { clientId: clienteId, ...fatal })
+    await expect(alterarPrazo(P.advocacia.c, T, p.id, P.advocacia.uid, { acao: 'corrigir', dueOn: fatal.dueOn, motivo: 'Nada mudou de verdade' })).rejects.toMatchObject({
+      code: 'VALIDATION_ERROR',
+      details: { fields: { dueOn: expect.stringContaining('já é a data') } },
+    })
+    const hist = await admin.from('legal_deadline_changes').select('id', { count: 'exact', head: true }).eq('deadline_id', p.id)
+    expect(hist.count).toBe(0)
+    // controle positivo: mesma data e o interno mudando é correção de verdade
+    await expect(alterarPrazo(P.advocacia.c, T, p.id, P.advocacia.uid, { acao: 'corrigir', dueOn: fatal.dueOn, internalDueOn: '2026-11-16', motivo: 'Margem interna maior' })).resolves.toHaveProperty('id')
+  })
+
   it('cumprido de prazo fatal exige nota; encerrar duas vezes é conflito', async () => {
     const p = await criarPrazo(P.advocacia.c, T, P.advocacia.uid, { clientId: clienteId, ...fatal })
     await expect(encerrarPrazo(P.advocacia.c, T, p.id, P.advocacia.uid, { status: 'cumprido' })).rejects.toMatchObject({
