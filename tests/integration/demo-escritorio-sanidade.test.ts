@@ -115,6 +115,18 @@ describe('o escritório-modelo, medido depois de gerado', () => {
     }
   })
 
+  it('caso encerrado não tem prazo aberto, e família com holding não tem divórcio', async () => {
+    const abertos = await admin.from('legal_deadlines').select('legal_cases!legal_deadlines_case_id_tenant_id_fkey!inner(status)').eq('tenant_id', T).eq('status', 'aberto')
+    const linhas = (abertos.data ?? []) as unknown as { legal_cases: { status: string } }[]
+    expect(linhas.length).toBeGreaterThan(0)
+    expect(linhas.filter((l) => ['concluido', 'arquivado'].includes(l.legal_cases.status))).toEqual([])
+    const comHolding = await admin.from('legal_entities').select('client_id').eq('tenant_id', T).eq('kind', 'holding_patrimonial')
+    const ids = [...new Set((comHolding.data ?? []).map((e) => e.client_id))]
+    expect(ids.length).toBe(4)
+    const divorcios = await admin.from('legal_cases').select('id').eq('tenant_id', T).eq('kind', 'divorcio_partilha').in('client_id', ids)
+    expect(divorcios.data ?? []).toEqual([])
+  })
+
   it('o pico de 15 intimações num dia existe, e nenhum dia passa dele', async () => {
     const { data } = await admin.from('legal_intimations').select('data_disponibilizacao').eq('tenant_id', T)
     const porDia = new Map<string, number>()

@@ -391,8 +391,10 @@ async function main() {
     // Famílias concentram holding e planejamento; o resto se espalha. Um cliente não tem dois casos
     // do MESMO tipo abertos (duas "Holding Alves" na fila denunciam o sorteio na hora da demo).
     const familiar = ['holding', 'planejamento_sucessorio', 'societario'].includes(kind) && chance(0.6)
-    const candidatos = (familiar ? clientes.slice(0, FAMILIAS.length) : clientes).filter((x) => !tipos.has(`${x.nome}:${kind}`))
-    const cliente = sortear(candidatos.length > 0 ? candidatos : clientes.filter((x) => !tipos.has(`${x.nome}:${kind}`)))
+    // divórcio nunca cai numa família da demo: a holding é do casal e a história ficaria incoerente
+    const elegiveis = kind === 'divorcio_partilha' ? clientes.slice(FAMILIAS.length) : clientes
+    const candidatos = (familiar ? clientes.slice(0, FAMILIAS.length) : elegiveis).filter((x) => !tipos.has(`${x.nome}:${kind}`))
+    const cliente = sortear(candidatos.length > 0 ? candidatos : elegiveis.filter((x) => !tipos.has(`${x.nome}:${kind}`)))
     tipos.add(`${cliente.nome}:${kind}`)
     const abertoEm = proximoUtil(somarDias(HOJE, -Math.floor(Math.pow(aleatorio(), 1.6) * 540)))
     const sigiloso = n === 3 || n === 17
@@ -623,7 +625,8 @@ async function main() {
     const dia = proximoUtil(somarDias(HOJE, entre(2, 40)))
     prazos.push({ tenant_id: T, client_id: c.cliente.id, case_id: c.id, kind: 'audiencia', title: 'Audiência de conciliação', due_on: dia, due_at: instante(dia, entre(9, 16)), source: 'manual', responsible_professional_id: prof[c.responsavel], confirmed_by: usuario.direcao, confirmed_at: instante(HOJE, 9), created_by: usuario.direcao })
   }
-  for (const c of casos.filter((x) => x.kind === 'societario' || x.kind === 'contrato').slice(0, 5)) {
+  // prazo aberto só em caso aberto: caso concluído com "Registro na Junta" pendente denunciava o gerador
+  for (const c of casos.filter((x) => (x.kind === 'societario' || x.kind === 'contrato') && x.linha.status !== 'concluido').slice(0, 5)) {
     const dia = proximoUtil(somarDias(HOJE, entre(-3, 30)))
     prazos.push({ tenant_id: T, client_id: c.cliente.id, case_id: c.id, kind: 'contratual', title: 'Registro na Junta Comercial', due_on: dia, internal_due_on: somarUteis(dia, -3), source: 'manual', responsible_professional_id: prof[c.responsavel], created_by: usuario.direcao })
   }

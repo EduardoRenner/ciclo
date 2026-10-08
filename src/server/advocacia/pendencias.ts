@@ -14,7 +14,11 @@ const LIMITE = 300
  * As linhas da fila de Pendências, com o cliente do USUÁRIO: a RLS de `legal_checklist_items` já
  * esconde o item de caso sigiloso de quem não é da equipe, e a fila não precisa saber que ele existe.
  */
-export async function lerFilaDePendencias(db: Cliente, tenantId: string, casoId?: string): Promise<ItemDaFila[]> {
+export async function lerFilaDePendencias(
+  db: Cliente,
+  tenantId: string,
+  recorte: { casoId?: string; clienteId?: string } = {},
+): Promise<ItemDaFila[]> {
   let consulta = db
     .from('legal_checklist_items')
     .select(
@@ -24,7 +28,9 @@ export async function lerFilaDePendencias(db: Cliente, tenantId: string, casoId?
     .eq('tenant_id', tenantId)
     .in('status', ESTADOS_NA_FILA as EstadoDaPendencia[])
   // A ficha do caso usa a mesma fila, recortada no caso: mesmos botões, mesma cobrança.
-  if (casoId) consulta = consulta.eq('case_id', casoId)
+  if (recorte.casoId) consulta = consulta.eq('case_id', recorte.casoId)
+  // o recorte por cliente passa pelo caso (o item não tem `client_id`); o `!inner` do embed faz valer
+  if (recorte.clienteId) consulta = consulta.eq('legal_cases.client_id', recorte.clienteId)
   const { data, error } = await consulta.order('due_on', { ascending: true, nullsFirst: false }).limit(LIMITE)
   if (error) throw new AppError('INTERNAL', { cause: error })
 

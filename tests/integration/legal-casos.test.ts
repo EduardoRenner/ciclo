@@ -172,4 +172,19 @@ describe('fila de pendências', () => {
     expect(daOutra.length, 'a outra advocacia vê os casos normais').toBeGreaterThan(0)
     expect(daOutra.some((i) => i.casoId === s.id)).toBe(false)
   })
+
+  it('recorte por cliente traz só os itens dele, e por caso só os do caso', async () => {
+    const outroCliente = id(await admin.from('clients').insert({ tenant_id: tenantId, name: 'Outra família' }).select('id').single(), 'outro cliente')
+    const doOutro = await criarCaso(advocacia, tenantId, OPCOES, {
+      clientId: outroCliente, kind: 'divorcio_partilha', area: 'familia_sucessoes', title: 'Divórcio Outra', clientTitle: 'a partilha', sensitivity: 'normal', gerarChecklist: true,
+    })
+    const doCliente = await lerFilaDePendencias(advocacia, tenantId, { clienteId: clientId })
+    const daOutra = await lerFilaDePendencias(advocacia, tenantId, { clienteId: outroCliente })
+    // piso pelo positivo conhecido: os dois recortes precisam ter linha, senão o teste passaria vazio
+    expect(doCliente.length).toBeGreaterThan(0)
+    expect(daOutra.length).toBe(3)
+    expect(doCliente.every((i) => i.clienteId === clientId)).toBe(true)
+    expect(daOutra.every((i) => i.casoId === doOutro.id)).toBe(true)
+    expect(await lerFilaDePendencias(advocacia, tenantId, { casoId: doOutro.id })).toHaveLength(3)
+  })
 })

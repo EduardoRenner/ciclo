@@ -85,12 +85,16 @@ function resumir(l: LinhaDoCaso, hoje: string): CasoNaLista {
 export async function listarCasos(
   db: Cliente,
   tenantId: string,
-  opcoes: { encerrados: boolean; hoje: string },
+  opcoes: { encerrados: boolean | null; hoje: string; clienteId?: string },
 ): Promise<{ casos: CasoNaLista[]; restritos: number }> {
   let consulta = db.from('legal_cases').select(SELECAO).eq('tenant_id', tenantId).is('archived_at', null)
-  consulta = opcoes.encerrados
-    ? consulta.in('status', CASO_ENCERRADO as EstadoDoCaso[])
-    : consulta.not('status', 'in', `(${CASO_ENCERRADO.join(',')})`)
+  if (opcoes.clienteId) consulta = consulta.eq('client_id', opcoes.clienteId)
+  // `null`: todos (a ficha do cliente mostra os encerrados junto, no fim)
+  if (opcoes.encerrados !== null) {
+    consulta = opcoes.encerrados
+      ? consulta.in('status', CASO_ENCERRADO as EstadoDoCaso[])
+      : consulta.not('status', 'in', `(${CASO_ENCERRADO.join(',')})`)
+  }
   const [{ data, error }, restritos] = await Promise.all([
     consulta.order('opened_on', { ascending: false }).limit(300),
     db.rpc('legal_count_restricted', { p_tenant: tenantId }),

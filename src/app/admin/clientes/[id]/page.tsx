@@ -1,6 +1,7 @@
 import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 
+import { hojeNoFuso } from '@/core/advocacia/datas'
 import { podeUsarModulo } from '@/core/billing/planos'
 import { ehRequisicaoDoAppNativo } from '@/core/plataforma/nativo'
 import { avaliarPermissao } from '@/server/auth/rbac'
@@ -16,6 +17,7 @@ import { contextoDePlano } from '@/server/services/planos'
 import { listarProfissionais } from '@/server/services/profissionais'
 import { listarServicos } from '@/server/services/servicos'
 
+import Cliente360 from './advocacia'
 import Ficha from './ficha'
 
 export const dynamic = 'force-dynamic'
@@ -27,6 +29,13 @@ export default async function PaginaFicha({ params }: { params: Promise<{ id: st
   const hdrs = await headers()
   const ctx = await contextoDoPainel(new Request('https://interno/clientes', { headers: hdrs }))
   const db = await criarClienteDoUsuario()
+
+  // docs/101 T2.5: no pacote Advocacia a ficha é o Cliente 360 (casos, pendências, família). Nenhum
+  // bloco do salão (fidelidade, pacotes, cofre de saúde) faz sentido aqui.
+  if (ctx.tenant.pacote === 'advocacia') {
+    if (!/^[0-9a-f-]{36}$/i.test(id)) notFound()
+    return <Cliente360 db={db} tenantId={ctx.tenantId} escritorio={ctx.tenant.name} clienteId={id} hoje={hojeNoFuso(ctx.tenant.timezone, new Date())} />
+  }
   const nativo = ehRequisicaoDoAppNativo(hdrs.get('user-agent'))
 
   const [ficha, modelos, negocio, planos, profissionais, servicos, plano, notaBruta] = await Promise.all([

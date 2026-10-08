@@ -46,7 +46,7 @@ export default async function PaginaCaso({ params }: { params: Promise<{ id: str
   if (!caso) notFound()
 
   const [itens, trilha] = await Promise.all([
-    lerFilaDePendencias(db, ctx.tenantId, id),
+    lerFilaDePendencias(db, ctx.tenantId, { casoId: id }),
     caso.sigiloso ? db.rpc('legal_registrar_abertura_do_caso', { p_case: id }) : Promise.resolve(null),
   ])
   const grupos = montarFila(itens, hoje, ctx.tenant.name)
