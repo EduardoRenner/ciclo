@@ -119,7 +119,7 @@ export default async function PaginaCaso({ params }: { params: Promise<{ id: str
                           ? `Fazer até ${dataLonga(p.internoEm)} · fatal ${dataLonga(p.venceEm)}`
                           : `${dataLonga(p.venceEm)}${p.horario ? ` às ${horaNoFuso(p.horario, ctx.tenant.timezone)}` : ''}`}
                       </p>
-                      {!p.confirmado ? <p className="text-label text-warn">Sugestão a confirmar</p> : null}
+                      {p.tipo === 'fatal' && !p.confirmado ? <p className="text-label text-warn">Sugestão a confirmar</p> : null}
                     </div>
                     <Badge estado={p.tipo === 'fatal' ? 'risk' : 'ciclo'} className="shrink-0 whitespace-nowrap">
                       {ROTULO_DO_PRAZO[p.tipo] ?? 'Prazo'}

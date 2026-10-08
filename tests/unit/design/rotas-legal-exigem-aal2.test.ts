@@ -30,6 +30,7 @@ describe('rotas v1/legal', () => {
     const nomes = ARQUIVOS.map((a) => a.split(String.fromCharCode(92)).join('/'))
     expect(nomes).toContain('src/app/api/v1/legal/cases/route.ts')
     expect(nomes).toContain('src/app/api/v1/legal/checklist/[id]/route.ts')
+    expect(nomes).toContain('src/app/api/v1/legal/intimations/[id]/decide/route.ts')
   })
 
   it.each(ARQUIVOS)('%s exige segundo fator, pacote e módulo em todo handler de escrita', (arquivo) => {

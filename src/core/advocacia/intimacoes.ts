@@ -504,3 +504,8 @@ export function corpoDaRpc(alvo: Alvo, dia: string, d: DiaCapturado) {
     })),
   };
 }
+
+/** `00000000000000000000` → `0000000-00.0000.0.00.0000`, a máscara do CNJ que todo mundo lê. Fora disso, devolve igual. */
+export function mascaraCnj(n: string): string {
+  return /^\d{20}$/.test(n) ? `${n.slice(0, 7)}-${n.slice(7, 9)}.${n.slice(9, 13)}.${n.slice(13, 14)}.${n.slice(14, 16)}.${n.slice(16)}` : n
+}

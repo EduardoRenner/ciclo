@@ -100,6 +100,21 @@ describe('o escritório-modelo, medido depois de gerado', () => {
     expect(comSugestao.length).toBeGreaterThan(0)
   })
 
+  it('intimação sem triagem é coisa da última semana, não de meses', async () => {
+    const { data } = await admin.from('legal_intimations').select('data_disponibilizacao').eq('tenant_id', T).eq('status', 'nova')
+    expect((data ?? []).length).toBeGreaterThan(0)
+    for (const i of data ?? []) expect(dias(i.data_disponibilizacao), i.data_disponibilizacao).toBeLessThanOrEqual(10)
+  })
+
+  it('a memória de cálculo só lista feriado que caiu em dia útil (domingo não é "pulado")', async () => {
+    const { data } = await admin.from('legal_intimation_suggestions').select('calc_memo').eq('tenant_id', T).not('calc_memo', 'is', null)
+    expect((data ?? []).length).toBeGreaterThan(0)
+    for (const s of data ?? []) {
+      const feriados = ((s.calc_memo as { feriados_considerados?: string[] }).feriados_considerados ?? [])
+      for (const f of feriados) expect([0, 6], f).not.toContain(new Date(`${f}T12:00:00Z`).getUTCDay())
+    }
+  })
+
   it('o pico de 15 intimações num dia existe, e nenhum dia passa dele', async () => {
     const { data } = await admin.from('legal_intimations').select('data_disponibilizacao').eq('tenant_id', T)
     const porDia = new Map<string, number>()

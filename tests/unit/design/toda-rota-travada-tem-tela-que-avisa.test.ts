@@ -81,7 +81,7 @@ const ONDE_AVISA: Record<ModuloKey, { telas: string[]; isento?: string }> = {
   legal_cases: { telas: ['src/app/admin/casos'] },
   legal_checklists: { telas: ['src/app/admin/pendencias'] },
   legal_structure: { telas: [], isento: 'pacote Advocacia sem rota de escrita ainda (docs/101 Fase 3)' },
-  legal_deadlines: { telas: [], isento: 'pacote Advocacia sem rota de escrita ainda (docs/101 Fase 4)' },
+  legal_deadlines: { telas: ['src/app/admin/intimacoes'] },
   legal_documents: { telas: [], isento: 'pacote Advocacia sem rota de escrita ainda (docs/101 Fase 2)' },
 }
 

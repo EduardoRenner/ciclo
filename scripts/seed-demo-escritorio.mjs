@@ -535,12 +535,15 @@ async function main() {
       const fatal = temPrazo ? somarUteis(publicacao, prazoDias) : null
       const interno = fatal ? somarUteis(fatal, -2) : null
       const memo = temPrazo
-        ? { regra: `${prazoDias} dias úteis`, disponibilizacao: d, publicacao, inicio: somarUteis(publicacao, 1), fim: fatal, feriados_considerados: [...FERIADOS].filter((f) => f > publicacao && f <= fatal), aviso: 'Sugestão a conferir. Exemplo fictício.' }
+        ? { regra: `${prazoDias} dias úteis`, disponibilizacao: d, publicacao, inicio: somarUteis(publicacao, 1), fim: fatal, feriados_considerados: [...FERIADOS].filter((f) => f > publicacao && f <= fatal && diaDaSemana(f) !== 0 && diaDaSemana(f) !== 6).sort(), aviso: 'Sugestão a conferir. Exemplo fictício.' }
         : null
 
-      // Triagem: 75% no mesmo dia útil, 20% no seguinte, 5% nunca (fica em "Exige direção").
+      // Triagem: 75% no mesmo dia útil, 20% no seguinte, 5% atrasam. Só as da última semana ficam SEM
+      // triagem ("Exige direção"); as antigas atrasadas foram triadas dias depois. Sem isto, a fila de Hoje
+      // mostrava intimação parada há 65 dias, o que nenhum escritório que usa o sistema teria.
       const sorteio = aleatorio()
-      const triadaEm = d === ontem || sorteio >= 0.95 ? null : sorteio < 0.75 ? d : somarUteis(d, 1)
+      const recente = d >= somarUteis(HOJE, -5)
+      const triadaEm = d === ontem ? null : sorteio < 0.75 ? d : sorteio < 0.95 ? somarUteis(d, 1) : recente ? null : somarUteis(d, entre(2, 4))
       const triada = triadaEm !== null && triadaEm < HOJE
       let status = 'nova'
       if (triada) status = caso ? (temPrazo ? 'prazo_criado' : chance(0.5) ? 'vinculada' : 'sem_prazo') : chance(0.6) ? 'descartada' : 'sem_prazo'
