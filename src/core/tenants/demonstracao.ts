@@ -67,6 +67,8 @@ const SLUGS_DE_DEMONSTRACAO: readonly string[] = [
   'demo-studio-bella',
   'demo-salao-encanto',
   'demo-espaco-vitoria',
+  // docs/101 anexo 06: o escritório-modelo do pacote Advocacia (`scripts/seed-demo-escritorio.mjs`).
+  'demo-alvorada-advocacia',
 ]
 
 /** O tenant deste slug é uma demonstração, e não um negócio de verdade. */
