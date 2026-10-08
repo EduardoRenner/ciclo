@@ -14,6 +14,7 @@ import ResolucaoDeFila from '@/components/shell/resolucao-de-fila'
 import FaixaDaConta from '@/components/shell/faixa-da-conta'
 import IndicadorDeConexao from '@/components/shell/indicador-de-conexao'
 import TabBar from '@/components/shell/tab-bar'
+import { ehDemonstracao } from '@/core/tenants/demonstracao'
 import TransicaoDeTela from '@/components/shell/transicao-de-tela'
 import Topbar from '@/components/shell/topbar'
 
@@ -148,6 +149,17 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <Topbar />
         <IndicadorDeConexao />
         {faixa ? <FaixaDaConta faixa={faixa} /> : null}
+        {/*
+          docs/101 anexo 06 §4: o escritório-modelo diz em TODA tela que nada ali existe (frase 40). Sem
+          botão de fechar: é a amostra que vai para a frente de advogado, e um print dela sem a faixa
+          passaria por escritório de verdade. Só no pacote Advocacia: as vitrines do salão têm o aviso
+          próprio na página pública.
+        */}
+        {ctx?.tenant.pacote === 'advocacia' && ehDemonstracao(ctx.tenant.slug) ? (
+          <p role="status" className="border-b border-warn/30 bg-warn/10 px-[var(--gutter)] py-2 text-center text-label font-semibold text-txt">
+            Dados fictícios de demonstração. Nenhuma pessoa, empresa ou processo aqui existe.
+          </p>
+        ) : null}
         {/*
           A folga inferior é a barra + o relevo do aparelho + o botão do assistente,
           que é `fixed` e aparece sempre desde o MI-2: com só 28px de respiro, o fim
