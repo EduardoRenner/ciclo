@@ -112,7 +112,7 @@ Escritório-modelo, sessão `aal2`, banco conferido depois de cada um:
 | Bucket privado, leitura só com trilha, GET direto negado, SW não cacheia | ✅ |
 | Nenhuma data de prazo pré-preenchida sem regra confirmada | ✅ (e a triagem nasce vazia mesmo com regra) |
 | Toda rota `v1/legal/*` com aal2, módulo, permissão, idempotência, trilha, pausa | ✅ (guardas `rotas-legal-exigem-aal2` e `pausa-por-rota`) |
-| Health com `legalIntimacoes`, `legalFila`, `legalMfa`; monitor externo | ⬜ heartbeat existe; vigia só liga quando a rota entrar em `ROTAS_AGENDADAS` |
+| Health com `legalIntimacoes`, `legalFila`, `legalMfa`; monitor externo | 🟡 as três checagens existem e foram mutadas (`docs/evidencias/T-health-mutacao.md`); o heartbeat só é cobrado quando a rota entrar em `ROTAS_AGENDADAS`; monitor externo é do Eduardo |
 | Migrations aplicadas em produção, `/api/health` sem "schema atrás" | ⬜ Eduardo |
 | Adendo, privacidade e publicidade revisados pelo advogado | ⬜ dossiê pronto (`docs/101-dossie-advogado.md`); adendo depende do #144 |
 | Modelo de WhatsApp sem dado do caso | ✅ `mensagens.ts` recusa número de processo, valor, CPF e CNPJ |
@@ -140,7 +140,7 @@ grafo escondendo percentual; ramo morto na Estrutura. Cada um com teste e evidê
 
 | Item | Por que não deu | O que falta | Quem destrava |
 |---|---|---|---|
-| Migrations 0102 a 0115 em produção | regra: sem `db push` | aplicar pelo runbook: 0102 a 0113 antes do deploy, 0114 e 0115 depois | Eduardo |
+| Migrations 0102 a 0116 em produção | regra: sem `db push` | aplicar pelo runbook, todas em ordem, antes do deploy | Eduardo |
 | TOTP no projeto Supabase de produção | configuração do painel | ligar enroll e verify | Eduardo |
 | Revisão jurídica | precisa de advogado | dossiê pronto para revisão | advogado revisor |
 | Gabarito de 50 intimações | dado real, fora do repositório | pedir ao escritório parceiro | Eduardo |

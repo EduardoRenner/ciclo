@@ -5,15 +5,15 @@
 
 ## 1. Publicar o pacote (ordem que não quebra nada)
 
-1. **Migrations antes do código** (memória `migration-que-tira-privilegio-inverte-a-ordem`): 0102 a 0113
-   são aditivas (tabelas, funções, políticas novas), então sobem ANTES do deploy. Conferir que a 0101
-   da branch da fila já está aplicada; a numeração do pacote começa na 0102 por causa dela.
-   Aplicar pelo `docs/runbooks/aplicar-migrations-pendentes.md`. Depois, `/api/health` sem "schema atrás".
-   A 0114 (gatilho) e a 0115 (privilégio mínimo) são RESTRITIVAS: pela regra, sobem DEPOIS do deploy do
-   passo 3. Nenhum código, nem o desta branch, apaga linha jurídica ou grava a trilha pelo cliente do
-   usuário, então a ordem inversa não quebraria nada hoje; a regra vale para não ter de reconferir isso.
-   Entre o deploy e a 0115, o `/api/health` acusa "schema atrás" (o código espera 114): é o esperado, e
-   some quando as duas sobem.
+1. **Migrations antes do código, todas em ordem (0102 a 0116).** Conferir que a 0101 da branch da fila já
+   está aplicada; a numeração do pacote começa na 0102 por causa dela. Aplicar pelo
+   `docs/runbooks/aplicar-migrations-pendentes.md`. Depois, `/api/health` sem "schema atrás".
+   A 0114 (gatilho) e a 0115 (privilégio mínimo) são restritivas, e a memória
+   `migration-que-tira-privilegio-inverte-a-ordem` manda restritiva DEPOIS do deploy. Aqui ela não se
+   aplica: a regra protege privilégio que o código EM PRODUÇÃO usa, e as tabelas `legal_*` nem existem em
+   produção antes da 0102. Separar a ordem obrigaria a aplicar a 0116 antes da 0114, fora da numeração,
+   o que o `db push` recusa. Conferido em 2026-10-08: nenhum código apaga linha jurídica nem grava nas
+   cinco tabelas que a 0115 fecha pelo cliente do usuário.
 2. **TOTP ligado no projeto Supabase** (Authentication → MFA → TOTP enroll e verify). O pacote exige
    segundo fator em toda tela e rota; sem TOTP, ninguém entra.
 3. **Deploy do código.** Com a chave fechada, nenhuma conta real escolhe o pacote.
