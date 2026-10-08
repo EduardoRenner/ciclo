@@ -52,6 +52,8 @@ const SEM_COLUNA_TENANT = new Set([
   'memberships',
   'tenants',
   'invites',
+  // docs/101: os passos de um modelo de checklist pendem do modelo (`template_id`), que é quem tem dono
+  'legal_checklist_template_items',
 ])
 
 /**
@@ -60,6 +62,20 @@ const SEM_COLUNA_TENANT = new Set([
  * muda o número e reprova, mesmo que o arquivo já esteja na lista.
  */
 const JUSTIFICADAS: { arquivo: string; tabela: string; quantas: number; porque: string }[] = [
+  {
+    arquivo: 'src/server/advocacia/casos.ts',
+    tabela: 'legal_checklist_templates',
+    quantas: 1,
+    porque:
+      'cliente do USUÁRIO (RLS valendo), e o filtro é `.or(tenant_id.eq.<do contexto>, tenant_id.is.null)`: o modelo ' +
+      'da plataforma não tem tenant, então `.eq` sozinho esconderia exatamente o que a consulta precisa achar',
+  },
+  {
+    arquivo: 'src/server/advocacia/casos.ts',
+    tabela: 'legal_holidays',
+    quantas: 1,
+    porque: 'mesmo caso dos modelos: feriado nacional tem `tenant_id` nulo, e o `.or` traz os da plataforma e os do escritório',
+  },
   {
     arquivo: 'src/server/services/avaliacoes.ts',
     tabela: 'client_reviews',

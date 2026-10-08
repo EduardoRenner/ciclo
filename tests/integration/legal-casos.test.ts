@@ -5,6 +5,7 @@ import dotenv from 'dotenv'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { agirNaPendencia, criarCaso } from '@/server/advocacia/casos'
+import { lerFilaDePendencias } from '@/server/advocacia/pendencias'
 import { AppError } from '@/server/http/errors'
 
 import type { Database } from '@/server/db/types.gen'
@@ -99,6 +100,16 @@ describe('criar caso', () => {
     const itens = await estagio.from('legal_checklist_items').select('status').eq('case_id', r.id)
     expect((itens.data ?? []).length).toBe(3)
     expect((itens.data ?? []).every((i) => i.status === 'rascunho')).toBe(true)
+
+    // 0110: quem é de estágio não aprova o próprio rascunho; a advocacia aprova.
+    const i = (await estagio.from('legal_checklist_items').select('id, row_version').eq('case_id', r.id).eq('position', 1).single()).data!
+    const quem = { userId: usuarios[1]!, timezone: 'America/Sao_Paulo', agora: AGORA }
+    await expect(agirNaPendencia(estagio, tenantId, i.id, quem, { acao: 'aprovar', rowVersion: i.row_version })).rejects.toMatchObject({
+      code: 'FORBIDDEN',
+      message: expect.stringContaining('estágio'),
+    })
+    const aprovado = await agirNaPendencia(advocacia, tenantId, i.id, { ...quem, userId: usuarios[0]! }, { acao: 'aprovar', rowVersion: i.row_version })
+    expect(aprovado.estado).toBe('pendente')
   })
 
   it('cliente de outro escritório é recusado com mensagem, não com erro interno', async () => {
@@ -145,5 +156,20 @@ describe('agir numa pendência', () => {
     await expect(
       agirNaPendencia(outra, tenantId, i.id, { userId: 'x', timezone: 'America/Sao_Paulo', agora: AGORA }, { acao: 'receber', rowVersion: i.row_version }),
     ).rejects.toMatchObject({ code: 'NOT_FOUND' })
+  })
+})
+
+describe('fila de pendências', () => {
+  it('traz cliente e caso pelo embed, e esconde o sigiloso de quem não é da equipe', async () => {
+    const s = await criarCaso(advocacia, tenantId, OPCOES, {
+      clientId, kind: 'inventario', area: 'familia_sucessoes', title: 'Inventário reservado', clientTitle: 'o inventário', sensitivity: 'sigiloso', gerarChecklist: true,
+    })
+    const daAdvocacia = await lerFilaDePendencias(advocacia, tenantId)
+    expect(daAdvocacia.length).toBeGreaterThan(0)
+    expect(daAdvocacia[0]).toMatchObject({ clienteId: clientId, clienteNome: 'Família integração' })
+    expect(daAdvocacia.some((i) => i.casoId === s.id)).toBe(true)
+    const daOutra = await lerFilaDePendencias(outra, tenantId)
+    expect(daOutra.length, 'a outra advocacia vê os casos normais').toBeGreaterThan(0)
+    expect(daOutra.some((i) => i.casoId === s.id)).toBe(false)
   })
 })

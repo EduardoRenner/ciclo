@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto'
 import { z } from 'zod'
 
 import { gerarPendencias, TIPOS_DE_CASO, transicionar, type AcaoNaPendencia, type ModeloDeChecklist, type PassoDoModelo } from '@/core/advocacia/checklist'
-import { sigiloInicial } from '@/core/advocacia/casos'
+import { AREAS_DO_CASO, sigiloInicial } from '@/core/advocacia/casos'
 import { hojeNoFuso } from '@/core/advocacia/datas'
 import { AppError } from '@/server/http/errors'
 
@@ -18,16 +18,12 @@ type Cliente = SupabaseClient<Database>
  * `core/advocacia/`. `service_role` não entra aqui.
  */
 
-const AREAS = [
-  'holding_planejamento', 'empresarial', 'familia_sucessoes', 'tributario', 'bancario',
-  'trabalhista', 'previdenciario', 'civel', 'criminal', 'tribunal_juri', 'outro',
-] as const
 
 export const EsquemaCriarCaso = z
   .object({
     clientId: z.uuid(),
     kind: z.enum(TIPOS_DE_CASO),
-    area: z.enum(AREAS).default('outro'),
+    area: z.enum(AREAS_DO_CASO).default('outro'),
     title: z.string().trim().min(2).max(200),
     clientTitle: z.string().trim().min(2).max(200),
     sensitivity: z.enum(['normal', 'sigiloso']).default('normal'),
@@ -91,9 +87,8 @@ async function diasNaoContaveis(db: Cliente, tenantId: string): Promise<{ data: 
     .or(`tenant_id.eq.${tenantId},tenant_id.is.null`)
     .is('tribunal', null)
     .is('comarca', null)
-  // A tabela de feriados nasce na 0109. Sem ela (ou sem linha), a data relativa só pula fim de semana,
-  // o que é o lado conservador para PENDÊNCIA do cliente (nunca para prazo processual).
-  if (error) return []
+  // Erro aqui não vira lista vazia: datas sem feriado sairiam erradas e ninguém saberia por quê.
+  if (error) throw new AppError('INTERNAL', { cause: error })
   return (data ?? []).map((f) => ({ data: f.day, motivo: f.name }))
 }
 
@@ -213,6 +208,8 @@ export async function agirNaPendencia(
     .eq('id', itemId)
     .eq('row_version', atual.row_version)
     .select('id, status, rodada')
+  // LGL01 é o gatilho do rascunho (0110): estágio não aprova o que gerou. A frase vem do banco.
+  if (erroGravar?.code === 'LGL01') throw new AppError('FORBIDDEN', { message: erroGravar.message, cause: erroGravar })
   if (erroGravar) throw new AppError('INTERNAL', { cause: erroGravar })
   // UPDATE de zero linhas não é erro no PostgREST: aqui é a corrida que o `row_version` existe para pegar.
   if (!gravado || gravado.length === 0) {
