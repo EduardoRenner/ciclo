@@ -3721,6 +3721,7 @@ export type Database = {
           bio: string | null
           color: string | null
           commission_bps: number
+          product_commission_bps: number | null
           comp_model: Database["public"]["Enums"]["comp_model"]
           created_at: string
           deleted_at: string | null
@@ -3740,6 +3741,7 @@ export type Database = {
           bio?: string | null
           color?: string | null
           commission_bps?: number
+          product_commission_bps?: number | null
           comp_model?: Database["public"]["Enums"]["comp_model"]
           created_at?: string
           deleted_at?: string | null
@@ -3759,6 +3761,7 @@ export type Database = {
           bio?: string | null
           color?: string | null
           commission_bps?: number
+          product_commission_bps?: number | null
           comp_model?: Database["public"]["Enums"]["comp_model"]
           created_at?: string
           deleted_at?: string | null

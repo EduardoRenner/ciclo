@@ -1,11 +1,10 @@
 'use client'
 
+import Link from 'next/link'
 import { useState, useTransition } from 'react'
 
 import type { ModeloDePreco } from '@/core/pricing/formatar'
-import { urlDaVitrine } from '@/core/text/vitrine'
 import { dinheiro } from '@/lib/formato'
-import UploadDeFoto from '@/components/config/upload-de-foto'
 import Button from '@/components/ui/button'
 import Input from '@/components/ui/input'
 import MoneyInput from '@/components/ui/money-input'
@@ -75,6 +74,17 @@ export default function FormularioServico({ aberto, aoFechar, servico, aoSalvar 
   const [erro, setErro] = useState<string | null>(null)
 
   const editando = !!servico
+  // Calculado do que o serviço JÁ tinha ao abrir, não do que a pessoa digita: o painel não pode
+  // fechar sozinho no meio da digitação.
+  const [temOpcaoNaoPadrao] = useState(
+    !!servico &&
+      (servico.pricing_model !== 'fixed' ||
+        servico.deposit_bps > 0 ||
+        servico.buffer_before_min > 0 ||
+        servico.buffer_after_min > 0 ||
+        !servico.bookable_online ||
+        !!servico.description),
+  )
 
   function enviar(formData: FormData) {
     /*
@@ -146,13 +156,6 @@ export default function FormularioServico({ aberto, aoFechar, servico, aoSalvar 
       <form method="post" action={enviar} className="flex flex-col gap-3">
         <Input rotulo="Nome" name="nome" value={nome} onChange={(e) => setNome(e.target.value)} required />
 
-        <Textarea
-          rotulo="Descrição (opcional)"
-          value={descricao}
-          onChange={(e) => setDescricao(e.target.value)}
-          rows={2}
-        />
-
         <div className={modeloDePreco === 'quote' ? 'grid grid-cols-1 gap-3' : 'grid grid-cols-2 gap-3'}>
           <Input
             rotulo="Duração (min)"
@@ -181,109 +184,121 @@ export default function FormularioServico({ aberto, aoFechar, servico, aoSalvar 
           )}
         </div>
 
-        <Select
-          rotulo="Como cobra"
-          value={modeloDePreco}
-          onChange={(e) => setModeloDePreco(e.target.value as ModeloDePreco)}
-          ajuda="Muda só como o preço aparece pro cliente. O valor que entra no caixa continua ajustável na hora de fechar."
-        >
-          <option value="fixed">Preço fechado</option>
-          <option value="hourly">Por hora</option>
-          <option value="visit_hourly">Taxa de visita + hora</option>
-          <option value="daily">Diária</option>
-          <option value="quote">Sob orçamento</option>
-        </Select>
+        {/*
+          O cadastro é nome, tempo e preço. O resto continua existindo, com o padrão de sempre, mas
+          fechado: quem cadastra o primeiro serviço não precisa decidir sinal, limpeza ou ciclo
+          para terminar. Aberto de saída quando o serviço já usa algum deles (editar um serviço
+          com sinal e esconder o sinal faria a pessoa achar que ele sumiu), e quando o modelo de
+          preço não é o fechado, porque aí o campo extra do modelo é parte do preço.
 
-        {modeloDePreco === 'visit_hourly' ? (
-          <MoneyInput rotulo="Valor da hora (depois da visita)" centavos={valorHoraCentavos} aoMudar={setValorHoraCentavos} required />
-        ) : null}
+          A foto do serviço saiu daqui: o cadastro mostra o que é, quanto custa e quanto dura.
+        */}
+        <details className="rounded-[var(--radius-sm)] border border-line-2 px-3" open={temOpcaoNaoPadrao}>
+          <summary className="flex min-h-12 cursor-pointer items-center text-corpo font-semibold text-txt-2">Mais opções</summary>
+          <div className="flex flex-col gap-3 pb-3">
+            <Textarea rotulo="Descrição" value={descricao} onChange={(e) => setDescricao(e.target.value)} rows={2} />
 
-        {modeloDePreco === 'daily' ? (
-          <>
+            <Select rotulo="Como cobra" value={modeloDePreco} onChange={(e) => setModeloDePreco(e.target.value as ModeloDePreco)}>
+              <option value="fixed">Preço fechado</option>
+              <option value="hourly">Por hora</option>
+              <option value="visit_hourly">Taxa de visita + hora</option>
+              <option value="daily">Diária</option>
+              <option value="quote">Sob orçamento</option>
+            </Select>
+
+            {modeloDePreco === 'visit_hourly' ? (
+              <MoneyInput rotulo="Valor da hora (depois da visita)" centavos={valorHoraCentavos} aoMudar={setValorHoraCentavos} required />
+            ) : null}
+
+            {modeloDePreco === 'daily' ? (
+              <>
+                <label className="flex min-h-12 items-center gap-3 py-1">
+                  <input
+                    type="checkbox"
+                    checked={temMeiaDiaria}
+                    onChange={(e) => setTemMeiaDiaria(e.target.checked)}
+                    className="size-5 shrink-0 accent-[var(--acc-2)]"
+                  />
+                  <span className="text-corpo text-txt">Também cobra meia diária</span>
+                </label>
+                {temMeiaDiaria ? <MoneyInput rotulo="Meia diária" centavos={meiaDiariaCentavos} aoMudar={setMeiaDiariaCentavos} required /> : null}
+              </>
+            ) : null}
+
+            <div className="grid grid-cols-2 gap-3">
+              <Input
+                rotulo="Preparo antes (min)"
+                type="number"
+                inputMode="numeric"
+                min={0}
+                max={240}
+                value={preparoAntes}
+                onChange={(e) => setPreparoAntes(e.target.value)}
+                classNameCampo="tabular"
+              />
+              <Input
+                rotulo="Limpeza depois (min)"
+                type="number"
+                inputMode="numeric"
+                min={0}
+                max={240}
+                value={preparoDepois}
+                onChange={(e) => setPreparoDepois(e.target.value)}
+                classNameCampo="tabular"
+              />
+            </div>
+
+            <Input
+              rotulo="Volta em quantos dias, em média"
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={365}
+              value={cicloDias}
+              onChange={(e) => setCicloDias(e.target.value)}
+              classNameCampo="tabular"
+            />
+
+            <Input
+              rotulo="Sinal (%)"
+              name="sinal"
+              type="number"
+              inputMode="decimal"
+              min={0}
+              max={100}
+              step="0.5"
+              value={sinalPercentual}
+              onChange={(e) => setSinalPercentual(e.target.value)}
+              classNameCampo="tabular"
+              ajuda={
+                precoCentavos > 0 && Number(sinalPercentual.replace(',', '.')) > 0
+                  ? `Quem agenda vê "sinal de ${dinheiro.format((precoCentavos * Number(sinalPercentual.replace(',', '.'))) / 10000)}" antes de confirmar. Você combina o pagamento direto. O CICLO não cobra.`
+                  : undefined
+              }
+            />
+
             <label className="flex min-h-12 items-center gap-3 py-1">
               <input
                 type="checkbox"
-                checked={temMeiaDiaria}
-                onChange={(e) => setTemMeiaDiaria(e.target.checked)}
+                checked={apareceNoSite}
+                onChange={(e) => setApareceNoSite(e.target.checked)}
                 className="size-5 shrink-0 accent-[var(--acc-2)]"
               />
-              <span className="text-corpo text-txt">Também cobra meia diária</span>
+              <span className="text-corpo text-txt">Aparece no site para agendamento online</span>
             </label>
-            {temMeiaDiaria ? <MoneyInput rotulo="Meia diária" centavos={meiaDiariaCentavos} aoMudar={setMeiaDiariaCentavos} required /> : null}
-          </>
-        ) : null}
 
-        <div className="grid grid-cols-2 gap-3">
-          <Input
-            rotulo="Preparo antes (min)"
-            type="number"
-            inputMode="numeric"
-            min={0}
-            max={240}
-            value={preparoAntes}
-            onChange={(e) => setPreparoAntes(e.target.value)}
-            classNameCampo="tabular"
-          />
-          <Input
-            rotulo="Limpeza depois (min)"
-            type="number"
-            inputMode="numeric"
-            min={0}
-            max={240}
-            value={preparoDepois}
-            onChange={(e) => setPreparoDepois(e.target.value)}
-            classNameCampo="tabular"
-          />
-        </div>
-
-        <Input
-          rotulo="Volta em quantos dias, em média"
-          type="number"
-          inputMode="numeric"
-          min={1}
-          max={365}
-          value={cicloDias}
-          onChange={(e) => setCicloDias(e.target.value)}
-          classNameCampo="tabular"
-          ajuda="É o que o Motor de Ciclo usa enquanto não tem visitas suficientes para calcular o ritmo de cada pessoa."
-        />
-
-        {/*
-          Só ao editar: a foto precisa de um `id` para ser vinculada, e no cadastro a linha ainda
-          não existe. O componente diz isso em vez de aparecer quebrado.
-        */}
-        <div className="flex flex-col gap-1">
-          <span className="text-label font-semibold text-txt-2">Foto do serviço</span>
-          <UploadDeFoto tipo="service" id={servico?.id ?? null} urlAtual={urlDaVitrine(servico?.image_key ?? null)} />
-        </div>
-
-        <Input
-          rotulo="Sinal (%)"
-          name="sinal"
-          type="number"
-          inputMode="decimal"
-          min={0}
-          max={100}
-          step="0.5"
-          value={sinalPercentual}
-          onChange={(e) => setSinalPercentual(e.target.value)}
-          classNameCampo="tabular"
-          ajuda={
-            precoCentavos > 0 && Number(sinalPercentual.replace(',', '.')) > 0
-              ? `Quem agenda vê "sinal de ${dinheiro.format((precoCentavos * Number(sinalPercentual.replace(',', '.'))) / 10000)}" antes de confirmar. Você combina o pagamento direto. O CICLO não cobra.`
-              : 'Deixe 0 se não pede sinal. O valor aparece antes de confirmar o horário.'
-          }
-        />
-
-        <label className="flex min-h-12 items-center gap-3 py-1">
-          <input
-            type="checkbox"
-            checked={apareceNoSite}
-            onChange={(e) => setApareceNoSite(e.target.checked)}
-            className="size-5 shrink-0 accent-[var(--acc-2)]"
-          />
-          <span className="text-corpo text-txt">Aparece no site para agendamento online</span>
-        </label>
+            {/*
+              A ficha de consumo (o que o serviço gasta de produto) saiu da lista, onde aparecia em
+              TODA linha, e mora aqui: é o que dá o custo do serviço e baixa o estoque no fechamento
+              da comanda, então continua alcançável, só não disputa a tela de quem cadastra.
+            */}
+            {editando ? (
+              <Link href={`/admin/config/servicos/${servico.id}/ficha`} className="flex min-h-12 items-center text-label font-semibold text-acc-2">
+                Produtos que este serviço gasta
+              </Link>
+            ) : null}
+          </div>
+        </details>
 
         {erro ? (
           <p role="alert" className="text-secundario text-bad">

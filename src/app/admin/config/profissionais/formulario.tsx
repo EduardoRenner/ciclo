@@ -14,6 +14,8 @@ export type ProfissionalEditavel = {
   bio: string | null
   color: string | null
   accepts_online: boolean
+  /** Comissão sobre produto em basis points; `null` = a do negócio. */
+  product_commission_bps?: number | null
   /** Chave da foto no bucket `vitrine`. Escrita só pela rota de upload. */
   photo_key: string | null
 }
@@ -58,13 +60,28 @@ export default function FormularioProfissional({ aberto, aoFechar, profissional,
   // lista (era assim que o roxo virava default silencioso — ver CORES acima).
   const [cor, setCor] = useState<string | null>(profissional?.color ?? null)
   const [aceitaOnline, setAceitaOnline] = useState(profissional?.accepts_online ?? true)
+  // Em porcentagem, como o dono pensa; vazio = usa a do negócio.
+  const [comissaoProduto, setComissaoProduto] = useState(
+    profissional?.product_commission_bps == null ? '' : String(profissional.product_commission_bps / 100),
+  )
   const [erro, setErro] = useState<string | null>(null)
 
   const editando = !!profissional
 
   function enviar() {
     setErro(null)
-    const corpo = { displayName: nome.trim(), bio: bio.trim() || null, color: cor, acceptsOnline: aceitaOnline }
+    const pct = comissaoProduto.trim() === '' ? null : Number(comissaoProduto.replace(',', '.'))
+    if (pct !== null && (!Number.isFinite(pct) || pct < 0 || pct > 100)) {
+      setErro('A comissão é um número de 0 a 100, ou deixe em branco.')
+      return
+    }
+    const corpo = {
+      displayName: nome.trim(),
+      bio: bio.trim() || null,
+      color: cor,
+      acceptsOnline: aceitaOnline,
+      productCommissionBps: pct === null ? null : Math.round(pct * 100),
+    }
 
     iniciarTransicao(async () => {
       try {
@@ -164,6 +181,16 @@ export default function FormularioProfissional({ aberto, aoFechar, profissional,
             ) : null}
           </div>
         </div>
+        <label className="flex flex-col gap-1">
+          <span className="text-label font-semibold text-txt-2">Comissão sobre produto vendido (%) · opcional</span>
+          <input
+            value={comissaoProduto}
+            onChange={(e) => setComissaoProduto(e.target.value)}
+            inputMode="decimal"
+            placeholder="Em branco: vale a do negócio"
+            className="tabular h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo text-txt"
+          />
+        </label>
         {/* `py-1` dava 31px de altura ao alvo — o rótulo é largo, mas baixo demais. */}
         <label className="flex min-h-12 items-center gap-2 py-1">
           <input

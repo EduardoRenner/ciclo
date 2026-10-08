@@ -15,6 +15,7 @@ import { ASSUNTO_MOTOR_PARADO, canalDeContato } from '@/lib/contato'
 import { linkWhatsApp, linkWhatsAppCompartilhar, primeiroNome, textoDeVolta } from '@/lib/mensagens'
 import FilterRow from '@/components/ui/filter-row'
 import IconeAnel from '@/components/ui/icone-anel'
+import IconeWhatsApp from '@/components/ui/icone-whatsapp'
 import Skeleton from '@/components/ui/skeleton'
 import StatTile from '@/components/ui/stat-tile'
 import { useToast } from '@/components/ui/toast'
@@ -39,13 +40,6 @@ const FILTROS: { valor: Estado | 'all'; rotulo: string }[] = [
   { valor: 'at_risk', rotulo: 'Em risco' },
   { valor: 'lost', rotulo: 'Perdidas' },
 ]
-
-const RUBRICA_ESTADO: Record<Estado, string> = {
-  due: 'Na hora de voltar',
-  late: 'Atrasada',
-  at_risk: 'Em risco',
-  lost: 'Perdida',
-}
 
 function chave(item: Pick<ItemRecuperar, 'clientId' | 'serviceId'>): string {
   return `${item.clientId}:${item.serviceId}`
@@ -182,7 +176,7 @@ export default function RecuperarReceita({
         gastar o WhatsApp do dia com quem vale menos.
       */}
       <div className="mb-5 grid grid-cols-2 gap-3">
-        <StatTile rotulo="Dá para recuperar" valor={dinheiro.format(lista.totalValueCents / 100)} apoio={`${dinheiro.format(lista.totalProfitCents / 100)} de lucro`} />
+        <StatTile rotulo="Dá para recuperar" valor={dinheiro.format(lista.totalValueCents / 100)} apoio="estimativa" />
         <StatTile rotulo={comMaiuscula(plural(vocabulario.cliente))} valor={String(lista.count)} />
       </div>
 
@@ -196,23 +190,22 @@ export default function RecuperarReceita({
         clientela não é "ela".
       */}
       <details className="mb-3 text-secundario text-txt-3">
-        <summary className="cursor-pointer py-4 font-semibold text-txt-2">Estimativa, não promessa: como a conta é feita</summary>
+        <summary className="cursor-pointer py-3 font-semibold text-txt-2">Como a conta é feita</summary>
         <p className="pb-2">
-          O preço do serviço de cada pessoa, multiplicado pela chance de ela voltar. Quanto mais tempo sem aparecer, menor a
-          chance, e por isso quem sumiu há mais tempo vale menos aqui. A ordem da lista segue o <strong>lucro</strong>, o que
-          sobra depois da comissão{servicosSemMaterial > 0 ? '' : ' e do produto'}, não o preço.
+          O preço do serviço de cada pessoa, multiplicado pela chance de ela voltar: é uma estimativa, não uma promessa. A ordem da
+          lista segue o <strong>lucro</strong>, o que sobra depois da comissão{servicosSemMaterial > 0 ? '' : ' e do produto'}, não o
+          preço.
         </p>
+        {servicosSemMaterial > 0 ? (
+          <p className="pb-2">
+            {servicosSemMaterial === 1 ? '1 serviço está' : `${servicosSemMaterial} serviços estão`} sem o custo do material, então a
+            ordem da lista pode estar errada.{' '}
+            <Link href="/admin/config/servicos" className="toque-48 whitespace-nowrap font-semibold text-acc-2">
+              Completar o custo
+            </Link>
+          </p>
+        ) : null}
       </details>
-
-      {servicosSemMaterial > 0 ? (
-        <p className="mb-4 text-secundario text-txt-3">
-          {servicosSemMaterial === 1 ? '1 serviço está' : `${servicosSemMaterial} serviços estão`} sem o custo do material, então a
-          ordem da lista pode estar errada.{' '}
-          <Link href="/admin/config/servicos" className="toque-48 whitespace-nowrap font-semibold text-acc-2">
-            Completar o custo
-          </Link>
-        </p>
-      ) : null}
 
       <FilterRow rotulo="Filtrar por estado do ciclo" className="mb-4">
         {FILTROS.map((f) => (
@@ -223,40 +216,43 @@ export default function RecuperarReceita({
       </FilterRow>
 
       {/*
-        `docs/95` E2: a fila de chamadas. Classe e perfil saem da nota do cliente (E3), recalculada
-        todo dia; quem ainda não tem nota só aparece sem filtro. Nada aqui manda mensagem: a ordem
-        só decide por onde o dono começa.
+        `docs/95` E2: a ordem e o recorte por classe e perfil continuam existindo, mas fechados: a
+        primeira tela é só o estado do ciclo e o botão de começar. Quem precisa de mais abre aqui.
+        Nada aqui manda mensagem: a ordem só decide por onde o dono começa.
       */}
-      <div className="mb-3 flex flex-wrap items-center gap-2">
-        <label className="flex items-center gap-2 text-secundario text-txt-2">
-          Ordenar por
-          <select
-            value={criterio}
-            onChange={(e) => setCriterio(e.target.value as Criterio)}
-            className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo text-txt"
-          >
-            {CRITERIOS.map((c) => (
-              <option key={c} value={c}>
-                {ROTULO_DO_CRITERIO[c]}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-      <FilterRow rotulo="Filtrar por classe do cliente" className="mb-3">
-        {(['ouro', 'prata', 'bronze'] as const).map((c) => (
-          <Chip key={c} ligado={classes.includes(c)} onClick={() => setClasses((atual) => alternar(atual, c))}>
-            {ROTULO_DA_CLASSE[c]}
-          </Chip>
-        ))}
-      </FilterRow>
-      <FilterRow rotulo="Filtrar por perfil do cliente" className="mb-4">
-        {(['fiel', 'regular', 'novo', 'atrasado', 'faltante', 'sumido'] as const).map((p) => (
-          <Chip key={p} ligado={perfis.includes(p)} onClick={() => setPerfis((atual) => alternar(atual, p))}>
-            {ROTULO_DO_PERFIL[p]}
-          </Chip>
-        ))}
-      </FilterRow>
+      <details className="mb-4 text-secundario text-txt-2">
+        <summary className="cursor-pointer py-2 font-semibold">Mais filtros</summary>
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <label className="flex items-center gap-2 text-secundario text-txt-2">
+            Ordenar por
+            <select
+              value={criterio}
+              onChange={(e) => setCriterio(e.target.value as Criterio)}
+              className="h-12 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-3 text-corpo text-txt"
+            >
+              {CRITERIOS.map((c) => (
+                <option key={c} value={c}>
+                  {ROTULO_DO_CRITERIO[c]}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <FilterRow rotulo="Filtrar por classe do cliente" className="mb-3">
+          {(['ouro', 'prata', 'bronze'] as const).map((c) => (
+            <Chip key={c} ligado={classes.includes(c)} onClick={() => setClasses((atual) => alternar(atual, c))}>
+              {ROTULO_DA_CLASSE[c]}
+            </Chip>
+          ))}
+        </FilterRow>
+        <FilterRow rotulo="Filtrar por perfil do cliente">
+          {(['fiel', 'regular', 'novo', 'atrasado', 'faltante', 'sumido'] as const).map((p) => (
+            <Chip key={p} ligado={perfis.includes(p)} onClick={() => setPerfis((atual) => alternar(atual, p))}>
+              {ROTULO_DO_PERFIL[p]}
+            </Chip>
+          ))}
+        </FilterRow>
+      </details>
 
       {/*
         Mesmo defeito que a página pública de agendamento tinha, e nesta tela dói mais: aqui é o
@@ -341,56 +337,32 @@ export default function RecuperarReceita({
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-corpo font-semibold">{item.name}</p>
                       <p className="truncate text-secundario text-txt-2">
-                        {item.serviceName} · {RUBRICA_ESTADO[item.state as Estado]} · {item.lateDays > 0 ? `${item.lateDays}d de atraso` : 'na janela'}
+                        {item.serviceName} · {item.lateDays > 0 ? `${item.lateDays}d de atraso` : 'na janela'}
                       </p>
-                      {item.classe && item.nota != null ? (
-                        <p className="truncate text-label text-txt-3">
-                          {`${ROTULO_DA_CLASSE[item.classe]} · nota ${item.nota}${item.perfil ? ` · ${ROTULO_DO_PERFIL[item.perfil]}` : ''}`}
-                        </p>
-                      ) : null}
                     </div>
-                    <div className="shrink-0 text-right">
-                      {/*
-                        `docs/DECISOES.md` 2026-09-18: assinante do clube e pacote com sessão sobrando
-                        zeram os dois valores de propósito (a próxima visita não gera venda avulsa) —
-                        e depois desse conserto, R$0,00 deixou de ser um caso raro. Sem esta ressalva,
-                        "R$0,00 de lucro" ao lado de um botão "Avisar" lê como número quebrado, não
-                        como informação — a mesma lição do "estado incompleto honesto" em
-                        `prestacao.tsx`. Não afirma qual dos dois motivos é (assinante, pacote, ou uma
-                        probabilidade calibrada genuinamente perto de zero): a tela não sabe qual, e
-                        inventar um dos dois seria menos honesto que dizer "sem valor avulso".
-                      */}
-                      {item.valueCents === 0 && item.profitCents === 0 ? (
-                        <p className="text-label text-txt-3">Sem valor avulso</p>
-                      ) : (
-                        <>
-                          <p className="tabular text-corpo font-bold text-acc-2">{dinheiro.format(item.valueCents / 100)}</p>
-                          <p className="tabular text-label text-txt-3">{dinheiro.format(item.profitCents / 100)} de lucro</p>
-        </>
-                    )}
                     {/*
-                      `docs/82` §7/§11 do plano — decisão de 2026-09-23: "Chamar" (o WhatsApp DO
-                      PRÓPRIO DONO, grátis, sem depender de credencial) virou o caminho padrão para
-                      todo mundo, com ou sem telefone salvo. Antes, quem tinha telefone caía em
-                      "Avisar" — a mensagem saía pelo número do CICLO, categoria marketing paga por
-                      mensagem (~R$0,31), sem teto nenhum no plano Grátis, e chegava de um número que
-                      a cliente não conhece. "Avisar pelo sistema" continua existindo, mas só como a
-                      alavanca PAGA de chamar todo mundo de uma vez (rota `recover/send`,
-                      `envio_em_lote`) — e, desde `docs/95` E0, sem botão nesta tela: o `wa.me` abre
-                      uma conversa por toque, então não existe "vários de uma vez" sem API, e um
-                      botão de lote sem canal configurado prometia um envio que não sai.
-
-                      Opt-out bloqueia os dois caminhos igual: quem pediu para não receber não pode
-                      ganhar nem o "Avisar" pelo sistema nem o "Chamar" manual (o servidor também
-                      recusa, `registrarChamadaManual`) — mostrar o botão aqui seria prometer um
-                      toque que não faz nada.
-
-                      Com telefone válido, o wa.me já abre endereçado à pessoa (`linkWhatsApp`); sem
-                      telefone (a base trazida de memória, campo opcional de propósito), cai no
-                      seletor de contato do próprio WhatsApp do dono (`linkWhatsAppCompartilhar`).
+                      O número da linha é o PREÇO do serviço da última visita, não a estimativa: a
+                      estimativa (preço × chance de voltar) dava R$ 24,50 num corte de R$ 70 e o dono
+                      lia "valor baixo". Assinante do clube e pacote com sessão sobrando zeram a estimativa
+                      de propósito (a próxima visita não gera venda avulsa, `docs/DECISOES.md` 2026-09-18),
+                      e nesse caso a linha diz "Sem valor avulso" em vez de um preço que não vira venda.
+                    */}
+                    <p className="tabular shrink-0 text-corpo font-bold text-acc-2">
+                      {item.valueCents === 0 && item.profitCents === 0 ? (
+                        <span className="text-label font-normal text-txt-3">Sem valor avulso</span>
+                      ) : (
+                        dinheiro.format(item.priceCents / 100)
+                      )}
+                    </p>
+                    {/*
+                      `docs/82` §7/§11 — decisão de 2026-09-23: "Chamar" é o WhatsApp DO PRÓPRIO DONO,
+                      grátis, sem depender de credencial. Opt-out bloqueia o botão (o servidor também
+                      recusa, `registrarChamadaManual`): mostrar o botão seria prometer um toque que
+                      não faz nada. Com telefone válido o wa.me abre endereçado à pessoa; sem telefone
+                      cai no seletor de contato do WhatsApp do dono (`linkWhatsAppCompartilhar`).
                     */}
                     {item.optOut ? (
-                      <p className="mt-1 text-label text-txt-3">Pediu para não receber</p>
+                      <p className="w-14 shrink-0 text-center text-label text-txt-3">Pediu para não receber</p>
                     ) : (
                       <a
                         href={
@@ -401,13 +373,12 @@ export default function RecuperarReceita({
                         rel="noreferrer"
                         aria-label={`Chamar ${item.name} pelo seu WhatsApp`}
                         onClick={() => void anotarChamada(item)}
-                        className="toque-48 -mr-2 mt-0.5 inline-flex h-10 items-center px-2 text-label font-semibold text-acc-2 transition active:scale-[.97]"
+                        className="flex size-12 shrink-0 items-center justify-center rounded-full bg-acc text-on-acc shadow-elevado transition active:scale-[.94]"
                       >
-                        Chamar
+                        <IconeWhatsApp className="size-6" />
                       </a>
                     )}
-                  </div>
-                </Card>
+                  </Card>
               </li>
             )
           })}

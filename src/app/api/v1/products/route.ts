@@ -5,7 +5,7 @@ import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { lerCorpo } from '@/server/http/body'
 import { rota } from '@/server/http/handler'
 import { comIdempotencia } from '@/server/http/idempotency'
-import { criarProduto, EsquemaProduto } from '@/server/services/estoque'
+import { criarProduto, EsquemaProdutoNovo, registrarEntradaEstoque } from '@/server/services/estoque'
 
 /**
  * docs/62 Fase 1: não existia rota para cadastrar produto novo — só o pacote inicial do nicho
@@ -16,12 +16,23 @@ export const POST = rota(async (req, _ctx, requestId) => {
   const ctx = await contextoAtual(req)
   exigirPermissao(ctx.papel, 'inventory:create')
 
-  const entrada = await lerCorpo(req, EsquemaProduto)
+  const { initialQty, ...entrada } = await lerCorpo(req, EsquemaProdutoNovo)
   const db = await criarClienteDoUsuario()
 
   // BL-42: writeAudit dentro do fechamento — ver o comentário em wallet/credit/route.ts.
   const produto = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: '/api/v1/products' }, async () => {
-    const produto = await criarProduto(db, ctx.tenantId, entrada)
+    let produto = await criarProduto(db, ctx.tenantId, entrada)
+    // O estoque inicial entra como compra ao custo informado, pelo mesmo caminho da entrada manual: o
+    // saldo e o histórico de movimento nascem juntos, e o custo médio parte do valor certo.
+    if (initialQty > 0) {
+      const comEstoque = await registrarEntradaEstoque(db, ctx.tenantId, {
+        productId: produto.id,
+        qty: initialQty,
+        unitCostCents: entrada.avgCostCents,
+        note: 'Estoque inicial',
+      })
+      produto = { ...produto, stock_qty: comEstoque.stock_qty, avg_cost_cents: comEstoque.avg_cost_cents }
+    }
     await writeAudit(
       {
         tenantId: ctx.tenantId,

@@ -1,6 +1,6 @@
 'use client'
 
-import { PackagePlus, PackageX, Pencil, Plus } from 'lucide-react'
+import { Minus, PackagePlus, PackageX, Pencil, Plus, ShoppingBag } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useTransition } from 'react'
 
@@ -11,9 +11,11 @@ import Card from '@/components/ui/card'
 import EmptyState from '@/components/ui/empty-state'
 import Input from '@/components/ui/input'
 import MoneyInput from '@/components/ui/money-input'
+import Select from '@/components/ui/select'
 import SectionHeader from '@/components/ui/section-header'
 import Sheet from '@/components/ui/sheet'
 import { useToast } from '@/components/ui/toast'
+import { FORMAS_DE_PAGAMENTO, NOME_DA_FORMA, type FormaDePagamento } from '@/core/comanda/taxa-de-pagamento'
 import { dinheiro } from '@/lib/formato'
 
 export type ProdutoEstoque = {
@@ -44,12 +46,19 @@ function diasAte(iso: string): number {
   return Math.round((alvo - inicioDeHoje) / 86_400_000)
 }
 
+export type PessoaDaEquipe = { id: string; nome: string }
+
 export default function ListaEstoque({
   produtos,
   podeLancar,
+  podeVender,
+  equipe,
   nativo,
 }: {
   produtos: ProdutoEstoque[]
+  /** O plano libera lançar item na comanda (`register`): é o que a venda de balcão usa. */
+  podeVender: boolean
+  equipe: PessoaDaEquipe[]
   /**
    * O plano do salão libera `stock`. A tela CONTINUA visível sem ele — regra 5.2: bloqueio mostra
    * o motivo e o caminho, e sumir com o item esconderia o que dá para comprar.
@@ -61,6 +70,7 @@ export default function ListaEstoque({
   const mostrarToast = useToast()
   const [lista, setLista] = useState(produtos)
   const [entrando, setEntrando] = useState<ProdutoEstoque | null>(null)
+  const [vendendo, setVendendo] = useState<ProdutoEstoque | null>(null)
   // docs/62 Fase 1: `'novo'` abre o formulário vazio; um produto abre pra edição.
   const [editando, setEditando] = useState<ProdutoEstoque | 'novo' | null>(null)
 
@@ -119,7 +129,15 @@ export default function ListaEstoque({
   }
 
   const linha = (p: ProdutoEstoque) => (
-    <LinhaProduto key={p.id} produto={p} podeLancar={podeLancar} aoEditar={() => setEditando(p)} aoLancarEntrada={() => setEntrando(p)} />
+    <LinhaProduto
+      key={p.id}
+      produto={p}
+      podeLancar={podeLancar}
+      podeVender={podeVender && equipe.length > 0}
+      aoEditar={() => setEditando(p)}
+      aoLancarEntrada={() => setEntrando(p)}
+      aoVender={() => setVendendo(p)}
+    />
   )
 
   return (
@@ -165,6 +183,18 @@ export default function ListaEstoque({
         />
       ) : null}
 
+      {vendendo ? (
+        <FormularioVenda
+          produto={vendendo}
+          equipe={equipe}
+          aoFechar={() => setVendendo(null)}
+          aoVender={(id, estoque) => {
+            setLista((atual) => atual.map((p) => (p.id === id ? { ...p, estoque, emAlerta: estoque <= p.pontoDePedido } : p)))
+            mostrarToast({ tom: 'ok', titulo: 'Venda lançada', descricao: 'O estoque desceu e a comissão já está com quem vendeu.' })
+          }}
+        />
+      ) : null}
+
       {entrando ? (
         <FormularioEntrada
           produto={entrando}
@@ -192,19 +222,23 @@ export default function ListaEstoque({
 function LinhaProduto({
   produto: p,
   podeLancar,
+  podeVender,
   aoEditar,
   aoLancarEntrada,
+  aoVender,
 }: {
   produto: ProdutoEstoque
   podeLancar: boolean
+  podeVender: boolean
   aoEditar: () => void
   aoLancarEntrada: () => void
+  aoVender: () => void
 }) {
   const dias = p.venceEm ? diasAte(p.venceEm) : null
   // `null` sem preço (não deveria acontecer pra `isRetail`, mas a UI não assume — a rota já barra
   // isso na borda, esta tela só não quebra se algum dado antigo escapar da regra).
   const margemCents = p.isRetail && p.precoCents != null ? p.precoCents - p.custoMedioCents : null
-  const margemPct = margemCents !== null && p.precoCents ? Math.round((margemCents / p.precoCents) * 100) : null
+  const vendavel = p.isRetail && p.precoCents != null && p.precoCents > 0
 
   return (
     <Card className="flex items-center justify-between gap-3">
@@ -219,25 +253,15 @@ function LinhaProduto({
             <Badge estado="warn">Repor</Badge>
           ) : null}
         </div>
+        {/* A linha é o que a pessoa decide olhando: quanto tem e por quanto vende. Custo, ponto de
+            reposição e margem continuam no cadastro, a um toque de editar. */}
         <p className="tabular mt-0.5 text-secundario text-txt-2">
           {quantidade(p.estoque)} {p.unidade}
-          {p.pontoDePedido > 0 ? ` · repor com ${quantidade(p.pontoDePedido)}` : ''}
-          {p.custoMedioCents > 0 ? ` · ${dinheiro.format(p.custoMedioCents / 100)} custo` : ''}
-          {p.isRetail && p.precoCents != null ? ` · vende por ${dinheiro.format(p.precoCents / 100)}` : ''}
+          {p.isRetail && p.precoCents != null ? ` · ${dinheiro.format(p.precoCents / 100)}` : ''}
         </p>
-        {/*
-          Margem visível é o dado que justifica revenda e que hoje não aparecia em lugar nenhum:
-          custo e preço já ficavam lado a lado na mesma linha, e ninguém tinha feito a subtração.
-          Vermelho quando vende abaixo do custo (bug de precificação de verdade, não estilo) ou
-          quando a margem é baixa demais pra valer o espaço na prateleira — o piso de 20% é uma
-          régua inicial, não uma constante importada de lugar nenhum.
-        */}
-        {margemCents !== null ? (
-          <p className={`tabular mt-0.5 text-secundario ${margemCents <= 0 ? 'text-bad' : margemPct !== null && margemPct < 20 ? 'text-warn' : 'text-ok'}`}>
-            {margemCents <= 0
-              ? `Vendendo abaixo do custo (${dinheiro.format(margemCents / 100)})`
-              : `Margem: ${dinheiro.format(margemCents / 100)}${margemPct !== null ? ` (${margemPct}%)` : ''}`}
-          </p>
+        {/* Só o alarme sobrevive: vender abaixo do custo é erro de preço de verdade, não estilo. */}
+        {margemCents !== null && margemCents <= 0 && p.custoMedioCents > 0 ? (
+          <p className="tabular mt-0.5 text-secundario text-bad">Vendendo abaixo do custo ({dinheiro.format(margemCents / 100)})</p>
         ) : null}
       </div>
       <div className="flex shrink-0 items-center gap-2">
@@ -259,8 +283,132 @@ function LinhaProduto({
         >
           Entrada
         </Button>
+        {vendavel ? (
+          <Button
+            tamanho="sm"
+            disabled={!podeVender}
+            motivoDesabilitado="Lançar venda precisa do plano com comanda e de alguém na equipe."
+            onClick={aoVender}
+          >
+            <ShoppingBag aria-hidden className="size-4" />
+            Vender
+          </Button>
+        ) : null}
       </div>
     </Card>
+  )
+}
+
+/**
+ * Venda de balcão em três toques: quanto, quem vendeu e como pagou. Quem vendeu é quem recebe a
+ * comissão, e o fechamento é o que baixa o estoque, então não há segundo lançamento a fazer.
+ */
+function FormularioVenda({
+  produto,
+  equipe,
+  aoFechar,
+  aoVender,
+}: {
+  produto: ProdutoEstoque
+  equipe: PessoaDaEquipe[]
+  aoFechar: () => void
+  aoVender: (id: string, estoque: number) => void
+}) {
+  const [qtd, setQtd] = useState(1)
+  // Equipe de uma pessoa só não pergunta quem vendeu: não há o que escolher.
+  const [quem, setQuem] = useState<string | null>(equipe.length === 1 ? equipe[0]!.id : null)
+  const [forma, setForma] = useState<FormaDePagamento>('pix')
+  const [erro, setErro] = useState<string | null>(null)
+  const [salvando, iniciarSalvamento] = useTransition()
+
+  const total = (produto.precoCents ?? 0) * qtd
+
+  function vender() {
+    if (!quem) {
+      setErro('Escolha quem vendeu.')
+      return
+    }
+    setErro(null)
+    iniciarSalvamento(async () => {
+      try {
+        const r = await fetch(`/api/v1/products/${produto.id}/sale`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          body: JSON.stringify({ professionalId: quem, qty: qtd, paymentMethod: forma }),
+        })
+        const json = (await r.json()) as { data?: { stockQty: number | null }; error?: { message: string } }
+        if (!r.ok || !json.data) {
+          setErro(json.error?.message ?? 'Não consegui lançar a venda. Tente de novo.')
+          return
+        }
+        aoVender(produto.id, json.data.stockQty ?? produto.estoque - qtd)
+        aoFechar()
+      } catch {
+        // Rede caiu antes de chegar resposta — sem isto, o React 19 relança para o error
+        // boundary da raiz e a tela inteira some (docs/21 §5.4).
+        setErro('Não consegui falar com o servidor. Confira a conexão e tente de novo.')
+      }
+    })
+  }
+
+  return (
+    <Sheet aberto aoFechar={(aberto) => !aberto && aoFechar()} titulo={`Vender ${produto.nome}`}>
+      <div className="flex flex-col gap-4">
+        <div>
+          <p className="mb-2 text-label font-semibold text-txt-2">Quantas</p>
+          <div className="flex items-center gap-3">
+            <Button tamanho="sm" variante="secondary" aria-label="Menos uma" onClick={() => setQtd((q) => Math.max(1, q - 1))}>
+              <Minus aria-hidden className="size-4" />
+            </Button>
+            <span className="tabular w-10 text-center text-titulo font-bold">{qtd}</span>
+            <Button tamanho="sm" variante="secondary" aria-label="Mais uma" onClick={() => setQtd((q) => Math.min(999, q + 1))}>
+              <Plus aria-hidden className="size-4" />
+            </Button>
+            <span className="tabular ml-auto text-titulo font-bold text-acc-2">{dinheiro.format(total / 100)}</span>
+          </div>
+        </div>
+
+        {equipe.length > 1 ? (
+          <div role="group" aria-label="Quem vendeu">
+            <p className="mb-2 text-label font-semibold text-txt-2">Quem vendeu</p>
+            <div className="flex flex-wrap gap-2">
+              {equipe.map((e) => (
+                <button
+                  key={e.id}
+                  type="button"
+                  aria-pressed={quem === e.id}
+                  onClick={() => setQuem(e.id)}
+                  className={
+                    'h-12 rounded-[var(--radius-pill)] border px-4 text-corpo font-semibold transition ' +
+                    (quem === e.id ? 'border-acc bg-acc-soft text-acc-2' : 'border-line-2 bg-surface-2 text-txt-2')
+                  }
+                >
+                  {e.nome}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        <Select rotulo="Como pagou" value={forma} onChange={(e) => setForma(e.target.value as FormaDePagamento)}>
+          {FORMAS_DE_PAGAMENTO.map((f) => (
+            <option key={f} value={f}>
+              {NOME_DA_FORMA[f]}
+            </option>
+          ))}
+        </Select>
+
+        {erro ? (
+          <p role="alert" className="text-secundario text-bad">
+            {erro}
+          </p>
+        ) : null}
+
+        <Button largura="cheia" carregando={salvando} onClick={vender}>
+          Lançar venda
+        </Button>
+      </div>
+    </Sheet>
   )
 }
 
@@ -422,11 +570,17 @@ function FormularioProduto({
   const [nome, setNome] = useState(produto?.nome ?? '')
   const [unidade, setUnidade] = useState(produto?.unidade ?? 'un')
   const [custoCents, setCustoCents] = useState(produto?.custoMedioCents ?? 0)
-  const [isRetail, setIsRetail] = useState(produto?.isRetail ?? false)
+  // Cadastro novo parte de revenda: nome, preço e estoque é o produto que se vende. Insumo (uso
+  // interno, sem preço) existe, mas fica em "Mais opções".
+  const [isRetail, setIsRetail] = useState(produto?.isRetail ?? true)
   const [precoCents, setPrecoCents] = useState(produto?.precoCents ?? 0)
+  const [estoqueInicial, setEstoqueInicial] = useState('')
   const [pontoDePedido, setPontoDePedido] = useState(produto && produto.pontoDePedido > 0 ? String(produto.pontoDePedido) : '')
   const [erro, setErro] = useState<string | null>(null)
   const [salvando, iniciarSalvamento] = useTransition()
+  // Aberto quando o produto já usa algo daqui (editar um insumo e esconder "uso interno" faria o
+  // produto parecer outro).
+  const [temOpcaoNaoPadrao] = useState(!!produto && (!produto.isRetail || produto.custoMedioCents > 0 || produto.pontoDePedido > 0 || produto.unidade !== 'un'))
 
   function salvar() {
     if (nome.trim().length < 2) {
@@ -434,13 +588,18 @@ function FormularioProduto({
       return
     }
     // `MoneyInput` nunca fica vazio de verdade (sempre mostra "0,00" formatado), então o
-    // `required` do HTML nunca dispara — quem toca no toggle e esquece de digitar o preço salvava
-    // um produto de revenda a R$ 0,00 sem aviso nenhum, virando item grátis em toda comanda futura
-    // até alguém perceber e editar. O schema do servidor (EsquemaProduto) só exige `priceCents !=
-    // null`, não `> 0` — zero é um valor válido lá (é o que permite dar cortesia manual na
-    // comanda), então a trava certa é aqui, não na borda.
+    // `required` do HTML nunca dispara — quem esquece de digitar o preço salvava um produto de
+    // revenda a R$ 0,00 sem aviso nenhum, virando item grátis em toda comanda futura até alguém
+    // perceber e editar. O schema do servidor (EsquemaProduto) só exige `priceCents != null`, não
+    // `> 0` — zero é um valor válido lá (é o que permite dar cortesia manual na comanda), então a
+    // trava certa é aqui, não na borda.
     if (isRetail && precoCents <= 0) {
-      setErro('Defina um preço de venda maior que zero, ou desmarque "Vende para cliente".')
+      setErro('Defina um preço de venda maior que zero, ou marque "Só uso interno" em Mais opções.')
+      return
+    }
+    const quantidadeInicial = estoqueInicial.trim() === '' ? 0 : Number(estoqueInicial.replace(',', '.'))
+    if (!editando && (!Number.isFinite(quantidadeInicial) || quantidadeInicial < 0)) {
+      setErro('O estoque é um número, ou deixe em branco.')
       return
     }
     setErro(null)
@@ -460,6 +619,7 @@ function FormularioProduto({
             isRetail,
             priceCents: isRetail ? precoCents : null,
             ...(pontoDigitado !== undefined ? { reorderPoint: pontoDigitado } : {}),
+            ...(editando ? {} : { initialQty: quantidadeInicial }),
           }),
         })
         const json = (await r.json()) as {
@@ -506,32 +666,44 @@ function FormularioProduto({
     <Sheet aberto aoFechar={(aberto) => !aberto && aoFechar()} titulo={editando ? 'Editar produto' : 'Novo produto'}>
       <div className="flex flex-col gap-3">
         <Input rotulo="Nome" value={nome} onChange={(e) => setNome(e.target.value)} autoFocus required />
-        <Input rotulo="Unidade" value={unidade} onChange={(e) => setUnidade(e.target.value)} placeholder="un, ml, g..." />
-        <MoneyInput rotulo="Custo (opcional)" centavos={custoCents} aoMudar={setCustoCents} ajuda="Pode deixar em zero e ajustar na próxima compra." />
-
-        <label className="flex min-h-12 items-center gap-2 py-1">
-          <input
-            type="checkbox"
-            checked={isRetail}
-            onChange={(e) => setIsRetail(e.target.checked)}
-            className="size-5 rounded border-line-2 bg-surface-2"
-          />
-          <span className="text-corpo text-txt">Vende para cliente (revenda)</span>
-        </label>
-        <p className="-mt-2 text-secundario text-txt-2">
-          {isRetail
-            ? 'Revenda: quem é atendido leva pra casa (xampu, óleo de barba). Precisa de preço.'
-            : 'Insumo de uso interno (água oxigenada, luva): o serviço consome, sem preço próprio.'}
-        </p>
 
         {isRetail ? <MoneyInput rotulo="Preço de venda" centavos={precoCents} aoMudar={setPrecoCents} required /> : null}
 
-        <Input
-          rotulo="Me avise quando sobrar menos que (opcional)"
-          value={pontoDePedido}
-          onChange={(e) => setPontoDePedido(e.target.value)}
-          inputMode="decimal"
-        />
+        {/* O estoque só se digita ao cadastrar. Depois, ele muda por entrada, venda ou serviço:
+            editar o número direto apagaria o histórico de movimento que explica a diferença. */}
+        {editando ? null : (
+          <Input
+            rotulo="Quanto tem agora"
+            value={estoqueInicial}
+            onChange={(e) => setEstoqueInicial(e.target.value)}
+            inputMode="decimal"
+            placeholder="0"
+            classNameCampo="tabular"
+          />
+        )}
+
+        <details className="rounded-[var(--radius-sm)] border border-line-2 px-3" open={temOpcaoNaoPadrao}>
+          <summary className="flex min-h-12 cursor-pointer items-center text-corpo font-semibold text-txt-2">Mais opções</summary>
+          <div className="flex flex-col gap-3 pb-3">
+            <Input rotulo="Unidade" value={unidade} onChange={(e) => setUnidade(e.target.value)} placeholder="un, ml, g..." />
+            <MoneyInput rotulo="Custo" centavos={custoCents} aoMudar={setCustoCents} />
+            <Input
+              rotulo="Me avise quando sobrar menos que"
+              value={pontoDePedido}
+              onChange={(e) => setPontoDePedido(e.target.value)}
+              inputMode="decimal"
+            />
+            <label className="flex min-h-12 items-center gap-3 py-1">
+              <input
+                type="checkbox"
+                checked={!isRetail}
+                onChange={(e) => setIsRetail(!e.target.checked)}
+                className="size-5 shrink-0 accent-[var(--acc-2)]"
+              />
+              <span className="text-corpo text-txt">Só uso interno (não vendo este produto)</span>
+            </label>
+          </div>
+        </details>
 
         {erro ? (
           <p role="alert" className="text-secundario text-bad">
