@@ -196,7 +196,7 @@ export default function CadastroDaEstrutura({ clienteId, pessoas, empresas, hoje
                 {quadro.length > 1 ? (
                   <button
                     type="button"
-                    aria-label={`Tirar o sócio ${i + 1}`}
+                    aria-label={`Tirar a linha ${i + 1} do quadro`}
                     className="mb-1 inline-flex size-12 items-center justify-center rounded-[var(--radius-sm)] text-txt-2"
                     onClick={() => setQuadro(quadro.filter((_, j) => j !== i))}
                   >
@@ -218,7 +218,7 @@ export default function CadastroDaEstrutura({ clienteId, pessoas, empresas, hoje
             className="self-start"
             carregando={pendente}
             disabled={!ato.empresaId || quadro.some((l) => !l.dono || !(Number(l.percent.replace(',', '.')) > 0))}
-            motivoDesabilitado="Escolha cada sócio e o percentual dele."
+            motivoDesabilitado="Escolha quem participa em cada linha e o percentual."
             onClick={() =>
               salvar(
                 `/api/v1/legal/entities/${ato.empresaId}/changes`,

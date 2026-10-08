@@ -137,7 +137,7 @@ function Lista({ empresas }: { empresas: EmpresaNaTela[] }) {
               ) : null}
             </div>
             {e.donos.length === 0 ? (
-              <p className="mt-2 text-secundario text-txt-2">Nenhum sócio lançado.</p>
+              <p className="mt-2 text-secundario text-txt-2">Nenhuma participação lançada.</p>
             ) : (
               <ul className="mt-2 flex flex-col gap-1 border-l-2 border-line-2 pl-3">
                 {e.donos.map((d) => (

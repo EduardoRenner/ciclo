@@ -5,7 +5,7 @@
 // Regras que mandam:
 //  * leitura incerta, rito não definido, unidade do texto que não bate com o rito ou regra ainda não confirmada: NÃO há data sugerida
 //    (a pessoa digita) e isso fica visível, nunca vira chute;
-//  * só vira "sugerida" a data de um cálculo com `podePreencher` (todas as regras validadas ou confirmadas pelo sócio);
+//  * só vira "sugerida" a data de um cálculo com `podePreencher` (todas as regras validadas ou confirmadas pela direção do escritório);
 //  * a memória de cálculo vai inteira para o banco junto com a sugestão (prova de como a data nasceu).
 import {
   calcularPrazo,
@@ -73,7 +73,7 @@ export interface EntradaDaSugestao {
   naoContaveis: readonly DiaNaoContavel[];
   /** O tipo da comunicação do DJEN ("Intimação", "Citação", "Edital"...). Só "Intimação" tem a regra de publicação. */
   tipoDaComunicacao?: string | null;
-  /** Regras que o sócio confirmou. */
+  /** Regras que a direção do escritório confirmou. */
   confirmadas?: readonly string[];
   /** Recuo do prazo interno em dias úteis (padrão 2). */
   recuoInterno?: number;
@@ -155,7 +155,7 @@ export function sugerirPrazo(e: EntradaDaSugestao): Sugestao {
     );
   if (!calculo.podePreencher)
     return sem(
-      `Regra ainda não confirmada pelo sócio: ${calculo.regrasPendentes.map((r) => r.rotulo).join("; ")}. A data não vem preenchida.`,
+      `Regra ainda não confirmada pela direção do escritório: ${calculo.regrasPendentes.map((r) => r.rotulo).join("; ")}. A data não vem preenchida.`,
       leitura,
       calculo,
     );

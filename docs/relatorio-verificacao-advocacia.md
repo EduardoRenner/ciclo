@@ -148,14 +148,16 @@ grafo escondendo percentual; ramo morto na Estrutura. Cada um com teste e evidê
 | Exercício de restauração | precisa do projeto de produção | restaurar uma vez e anotar | Eduardo |
 | Cron da captura agendado | só com o pacote aberto | cron-job.org + `ROTAS_AGENDADAS` | Eduardo |
 | Histórico do git com nome/OAB real | reescrever exige force push | decidir se reescreve a branch | Eduardo |
-| Varredura em 768 e 1280 px, toque por `elementFromPoint`, movimento reduzido | 375 px feito nas 10 telas (`docs/evidencias/T5.2-varredura.md`) | completar a varredura | próxima rodada |
 | Lighthouse/peso real em produção | sem deploy | medir no preview | próxima rodada |
 
 ## Depois deste relatório (mesmo dia)
 
 Entraram, cada um com integração e mutação em `docs/evidencias/`: ações de prazo na ficha (criar, cumprir,
 corrigir com motivo, confirmar) e a 0114 (estágio não confirma prazo, também no banco); mudar estado do caso
-com a frase ao cliente; cadastro de pessoas, empresas e atos societários na Estrutura; a 0115 (privilégio
+com a frase ao cliente; cadastro de pessoas, empresas e atos societários na Estrutura; estados da escrita
+jurídica (sem conexão, sessão expirada, conflito) e atalhos de teclado (`T5.3-mutacao.md`, `T5.4-atalhos.md`);
+varredura completa a 375/768/1280 px com toque por `elementFromPoint` (5 consertos, `T5.2-varredura.md`);
+health `legalIntimacoes`/`legalFila`/`legalMfa` com a 0116 (`T-health-mutacao.md`); a 0115 (privilégio
 mínimo: `anon` sem nada nas tabelas jurídicas, `authenticated` sem DELETE/TRUNCATE em nenhuma e sem
 INSERT/UPDATE nas cinco que só o servidor grava), com guarda que exige toda tabela `legal_*` nova na lista
 (`docs/evidencias/T1.10-mutacao.md`).

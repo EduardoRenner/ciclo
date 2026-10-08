@@ -157,7 +157,9 @@ export default function Triagem({ intimacao, casos, casoInicial }: Props) {
                       <li key={l}>{l}</li>
                     ))}
                   </ul>
-                  <p className="mt-2 text-label text-txt-3">Regra de contagem ainda não confirmada pela direção: confira e digite a data.</p>
+                  {/* Só existe data sugerida quando todas as regras da conta estão confirmadas (`podePreencher`); dizer
+                      aqui que a regra "não foi confirmada" era falso. O que falta é a pessoa conferir e usar. */}
+                  <p className="mt-2 text-label text-txt-3">Confira a conta antes de usar: a data só entra no prazo quando você confirma.</p>
                   <Button
                     tamanho="sm"
                     variante="secondary"
