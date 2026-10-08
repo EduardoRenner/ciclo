@@ -76,6 +76,7 @@ export const ROTAS_DE_ESCRITA: Readonly<Record<string, RegraNaPausa>> = {
   'POST v1/memberships/invite': 'bloqueia',
   // docs/101 (pacote Advocacia): criar caso é linha nova; agir numa pendência mexe no que existe.
   'POST v1/legal/cases': 'bloqueia',
+  'PATCH v1/legal/cases/[id]': 'permite',
   'PATCH v1/legal/checklist/[id]': 'permite',
   // marca o lembrete já feito pelo WhatsApp da pessoa: não cria nada nem gasta envio
   'POST v1/legal/checklist/lembrete': 'permite',

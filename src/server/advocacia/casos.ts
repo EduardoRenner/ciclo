@@ -3,8 +3,10 @@ import { randomUUID } from 'node:crypto'
 import { z } from 'zod'
 
 import { gerarPendencias, TIPOS_DE_CASO, transicionar, type AcaoNaPendencia, type ModeloDeChecklist, type PassoDoModelo } from '@/core/advocacia/checklist'
-import { AREAS_DO_CASO, sigiloInicial } from '@/core/advocacia/casos'
+import { AREAS_DO_CASO, decidirMudancaDeSigilo, ESTADOS_DO_CASO, podeMudarEstado, sigiloInicial, type EstadoDoCaso, type PapelNoEscritorio } from '@/core/advocacia/casos'
 import { hojeNoFuso } from '@/core/advocacia/datas'
+import { linkDoWhatsApp } from '@/core/advocacia/fila-de-pendencias'
+import { montarMensagem } from '@/core/advocacia/mensagens'
 import { AppError } from '@/server/http/errors'
 
 import type { Database } from '@/server/db/types.gen'
@@ -216,4 +218,86 @@ export async function agirNaPendencia(
     throw new AppError('CONFLICT', { message: 'Alguém alterou esta pendência. Recarregue para ver a versão atual.' })
   }
   return { id: gravado[0]!.id, estado: gravado[0]!.status, rodada: gravado[0]!.rodada }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Estado e sigilo do caso
+// ---------------------------------------------------------------------------------------------
+
+export const EsquemaMudarCaso = z
+  .object({
+    estado: z.enum(ESTADOS_DO_CASO).optional(),
+    // a frase ao cliente (anexo 04 §4.4): vira `client_status_note` e a mensagem pronta de andamento
+    notaParaCliente: z.string().trim().min(2).max(300).optional(),
+    sigilo: z.enum(['normal', 'sigiloso']).optional(),
+    motivoDoSigilo: z.string().trim().max(300).optional(),
+    rowVersion: z.number().int().min(1),
+  })
+  .strict()
+  .refine((e) => e.estado !== undefined || e.notaParaCliente !== undefined || e.sigilo !== undefined, 'Nada para mudar.')
+
+/**
+ * Muda estado, frase ao cliente e sigilo do caso, com concorrência por `row_version`. As regras são de
+ * `core/advocacia/casos.ts` (transições, quem tira sigilo); o banco repete a do sigilo no gatilho. A
+ * mensagem de andamento volta pronta (o texto passa por `montarMensagem`, que recusa número de processo,
+ * valor, CPF e CNPJ): nada é enviado daqui.
+ */
+export async function mudarCaso(
+  db: Cliente,
+  tenantId: string,
+  casoId: string,
+  quem: { papel: PapelNoEscritorio; escritorio: string; hoje: string },
+  e: z.infer<typeof EsquemaMudarCaso>,
+): Promise<{ estado: string; mensagem: { texto: string; link: string } | { erro: string } | null }> {
+  const { data: atual, error } = await db
+    .from('legal_cases')
+    .select('status, area, sensitivity, row_version, client_title, clients!legal_cases_client_id_tenant_id_fkey(name, phone_e164)')
+    .eq('tenant_id', tenantId)
+    .eq('id', casoId)
+    .maybeSingle()
+  if (error) throw new AppError('INTERNAL', { cause: error })
+  if (!atual) throw new AppError('NOT_FOUND', { message: 'Esse caso não está mais disponível.' })
+  if (atual.row_version !== e.rowVersion) throw new AppError('CONFLICT', { message: 'Alguém alterou este caso. Recarregue para ver a versão atual.' })
+
+  const estadoAtual = atual.status as EstadoDoCaso
+  if (e.estado && e.estado !== estadoAtual && !podeMudarEstado(estadoAtual, e.estado)) {
+    throw AppError.validacao({ estado: 'Este caso não pode ir para esse estado agora.' })
+  }
+  if (e.sigilo) {
+    const d = decidirMudancaDeSigilo({ area: atual.area, sigilo: atual.sensitivity as 'normal' | 'sigiloso' }, e.sigilo, quem.papel, e.motivoDoSigilo ?? null)
+    if (!d.ok) throw AppError.validacao({ sigilo: d.motivo })
+  }
+
+  const encerrando = e.estado === 'concluido' || e.estado === 'arquivado'
+  const reabrindo = e.estado !== undefined && !encerrando && (estadoAtual === 'concluido' || estadoAtual === 'arquivado')
+  const { data: gravado, error: erroGravar } = await db
+    .from('legal_cases')
+    .update({
+      ...(e.estado ? { status: e.estado } : {}),
+      ...(encerrando ? { closed_on: quem.hoje } : {}),
+      ...(reabrindo ? { closed_on: null } : {}),
+      ...(e.notaParaCliente !== undefined ? { client_status_note: e.notaParaCliente } : {}),
+      ...(e.sigilo ? { sensitivity: e.sigilo, sensitivity_reason: e.motivoDoSigilo || null } : {}),
+      row_version: atual.row_version + 1,
+    })
+    .eq('tenant_id', tenantId)
+    .eq('id', casoId)
+    .eq('row_version', atual.row_version)
+    .select('status')
+  if (erroGravar) throw new AppError('INTERNAL', { cause: erroGravar })
+  if (!gravado || gravado.length === 0) throw new AppError('CONFLICT', { message: 'Alguém alterou este caso. Recarregue para ver a versão atual.' })
+
+  let mensagem: { texto: string; link: string } | { erro: string } | null = null
+  if (e.notaParaCliente) {
+    const cliente = atual.clients as unknown as { name: string; phone_e164: string | null } | null
+    const m = montarMensagem({
+      tipo: 'andamento',
+      primeiroNome: cliente?.name.trim().split(/\s+/u)[0] ?? null,
+      escritorio: quem.escritorio,
+      casoParaCliente: atual.client_title,
+      frase: e.notaParaCliente,
+    })
+    mensagem = m.ok ? { texto: m.texto, link: linkDoWhatsApp(cliente?.phone_e164 ?? null, m.texto) } : { erro: m.motivo }
+  }
+  return { estado: gravado[0]!.status, mensagem }
 }

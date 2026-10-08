@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation'
 
 import FilaDePendencias from '@/app/admin/pendencias/fila'
 import DocumentosDoCaso from '@/components/advocacia/documentos'
+import MudarCaso from '@/components/advocacia/mudar-caso'
 import PrazosDoCaso from '@/components/advocacia/prazos'
 import Badge from '@/components/ui/badge'
 import Card from '@/components/ui/card'
@@ -80,6 +81,7 @@ export default async function PaginaCaso({ params }: { params: Promise<{ id: str
         <p className="text-secundario text-txt-2">
           O cliente lê: <span className="text-txt">“{caso.paraCliente}”</span>
         </p>
+        <MudarCaso casoId={id} estado={caso.estado} rowVersion={caso.rowVersion} notaAtual={caso.notaParaCliente} />
         <Link href={`/admin/clientes/${caso.clienteId}/estrutura`} className="toque-48 inline-flex w-fit items-center text-secundario font-semibold text-acc-2">
           Estrutura da família
         </Link>

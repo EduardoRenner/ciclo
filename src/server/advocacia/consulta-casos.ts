@@ -117,6 +117,7 @@ export type FichaDoCaso = CasoNaLista & {
   cnj: string | null
   comarca: string | null
   abertoEm: string
+  rowVersion: number
   equipe: { id: string; nome: string; papel: string }[]
   prazos: { id: string; titulo: string; tipo: string; venceEm: string; horario: string | null; internoEm: string | null; estado: string; confirmado: boolean }[]
 }
@@ -126,7 +127,7 @@ export async function lerCaso(db: Cliente, tenantId: string, casoId: string, hoj
     .from('legal_cases')
     .select(
       SELECAO +
-        ', client_title, client_status_note, area, cnj_number, comarca, opened_on, ' +
+        ', client_title, client_status_note, area, cnj_number, comarca, opened_on, row_version, ' +
         'legal_case_members!legal_case_members_case_id_tenant_id_fkey(role, professional_id, professionals!legal_case_members_professional_id_fkey(display_name))',
     )
     .eq('tenant_id', tenantId)
@@ -142,6 +143,7 @@ export async function lerCaso(db: Cliente, tenantId: string, casoId: string, hoj
     cnj_number: string | null
     comarca: string | null
     opened_on: string
+    row_version: number
     legal_case_members: { role: string; professional_id: string; professionals: { display_name: string } | null }[]
   }
   const l = data as unknown as Linha
@@ -163,6 +165,7 @@ export async function lerCaso(db: Cliente, tenantId: string, casoId: string, hoj
     cnj: l.cnj_number,
     comarca: l.comarca,
     abertoEm: l.opened_on,
+    rowVersion: l.row_version,
     equipe: l.legal_case_members.map((m) => ({ id: m.professional_id, nome: m.professionals?.display_name ?? 'Pessoa da equipe', papel: m.role })),
     prazos: (prazos.data ?? []).map((p) => ({
       id: p.id,
