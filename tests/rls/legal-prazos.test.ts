@@ -159,12 +159,13 @@ describe('a captura de intimações', () => {
     count_fonte: countFonte,
     itens,
   })
+  // o formato de `corpoDaRpc` (core/advocacia/intimacoes.ts), que a 0113 passou a ler: `texto_sanitizado`
   const item = (djenId: number, processo: string) => ({
     djen_id: djenId,
     numero_processo: processo,
     data_disponibilizacao: '2026-10-05',
     tribunal: 'TJSC',
-    texto: 'Fica a parte intimada para se manifestar no prazo de 15 (quinze) dias. Exemplo fictício.',
+    texto_sanitizado: 'Fica a parte intimada para se manifestar no prazo de 15 (quinze) dias. Exemplo fictício.',
     destinatarios: [{ nome: 'Parte de exemplo', polo: 'A' }],
   })
 
