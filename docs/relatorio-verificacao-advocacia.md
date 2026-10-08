@@ -52,7 +52,7 @@ de captura, que a 0113 corrigiu); consertado em b537251f, 313/313.
 
 ## 2. Banco e RLS (gate 4)
 
-- 12 migrations do pacote (0102 a 0113), todas aditivas. Banco local com a 0101 da branch da fila aplicada
+- 13 migrations do pacote (0102 a 0114), todas aditivas. Banco local com a 0101 da branch da fila aplicada
   antes (é por isso que o pacote começa na 0102).
 - **Toda tabela `legal_*` com RLS habilitada e forçada**, linha de semente no `isolation.test.ts` (o teste
   genérico de "sobrou linha do outro tenant" tem o que sobrar) e nenhuma política de DELETE.
@@ -140,7 +140,7 @@ grafo escondendo percentual; ramo morto na Estrutura. Cada um com teste e evidê
 
 | Item | Por que não deu | O que falta | Quem destrava |
 |---|---|---|---|
-| Migrations 0102 a 0113 em produção | regra: sem `db push` | aplicar pelo runbook, antes do deploy | Eduardo |
+| Migrations 0102 a 0114 em produção | regra: sem `db push` | aplicar pelo runbook, antes do deploy | Eduardo |
 | TOTP no projeto Supabase de produção | configuração do painel | ligar enroll e verify | Eduardo |
 | Revisão jurídica | precisa de advogado | dossiê pronto para revisão | advogado revisor |
 | Gabarito de 50 intimações | dado real, fora do repositório | pedir ao escritório parceiro | Eduardo |
@@ -150,6 +150,12 @@ grafo escondendo percentual; ramo morto na Estrutura. Cada um com teste e evidê
 | Histórico do git com nome/OAB real | reescrever exige force push | decidir se reescreve a branch | Eduardo |
 | Telas a 390 px além de Pendências e Hoje | verificado só desktop nas outras | varredura T5.2 (390/768/1280, claro e escuro) | próxima rodada |
 | Lighthouse/peso real em produção | sem deploy | medir no preview | próxima rodada |
+
+## Depois deste relatório (mesmo dia)
+
+Entraram, cada um com integração e mutação em `docs/evidencias/`: ações de prazo na ficha (criar, cumprir,
+corrigir com motivo, confirmar) e a 0114 (estágio não confirma prazo, também no banco); mudar estado do caso
+com a frase ao cliente; cadastro de pessoas, empresas e atos societários na Estrutura.
 
 ## Dívidas aceitas conscientemente
 
