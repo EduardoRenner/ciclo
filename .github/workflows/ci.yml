@@ -90,7 +90,11 @@ jobs:
           set -uo pipefail
           pnpm audit --audit-level moderate || true
 
-          saida=$(pnpm audit --audit-level high 2>&1) && codigo=0 || codigo=$?
+          # BLOQUEIA só o que vai para o pacote de produção (`--prod`); a árvore inteira acima fica no log.
+          # Decisão do Eduardo em 2026-10-08: `tinypool` (via vitest) só corrige na 2.x, que exige vitest 4, e
+          # `braces` (via eslint-config-next) não tem versão corrigida. Nenhum dos dois entra no bundle, e o
+          # check ficava vermelho em todo PR, o que ensina a ignorar a CI. Reverter quando vitest 4 entrar.
+          saida=$(pnpm audit --prod --audit-level high 2>&1) && codigo=0 || codigo=$?
           echo "$saida"
 
           if [ "$codigo" -eq 0 ]; then exit 0; fi
