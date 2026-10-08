@@ -61,8 +61,9 @@ export function montarEstrutura(
           usufruto: a.usufructPersonId ? (pessoaNome.get(a.usufructPersonId) ?? 'Sem nome') : null,
         }))
         .sort((x, y) => y.percent - x.percent),
-      // empresa sem nenhum dono cadastrado não é "abaixo de 100": é estrutura que ninguém lançou ainda
-      problema: (totais.get(e.id) ?? 0) === 0 ? null : p ? (p.kind as 'acima-de-100' | 'abaixo-de-100') : null,
+      // Empresa sem nenhum sócio lançado não aparece em `validarEstrutura` (ela soma só o que tem aresta):
+      // é estrutura que ninguém lançou ainda, e não "abaixo de 100". O teste fixa esse comportamento.
+      problema: p ? (p.kind as 'acima-de-100' | 'abaixo-de-100') : null,
     }
   })
 
