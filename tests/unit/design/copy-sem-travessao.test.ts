@@ -28,6 +28,12 @@ import { describe, expect, it } from 'vitest'
  */
 
 const TRAVESSAO = String.fromCharCode(8212)
+/**
+ * docs/102 M5.1: o travessão também chega à tela escrito como entidade ou escape, e a guarda só procurava o
+ * caractere. Medido em 2026-10-08: `/precos` renderizava "de lugar nenhum &mdash; sua página" e a guarda passava.
+ */
+// O \u00faltimo \u00e9 o escape escrito no fonte (barra, u, 2014), n\u00e3o o caractere: por isso a barra dobrada.
+const FORMAS_DO_TRAVESSAO = [TRAVESSAO, '&mdash;', '&#8212;', '\\u2014']
 
 /**
  * Comentário fora antes de casar — armadilha nº 1 do `CLAUDE.md`, e aqui ela é quase garantida:
@@ -104,7 +110,7 @@ function travessoes(arquivos: string[], apenasMensagem = false): Achado[] {
   for (const arquivo of arquivos) {
     const limpo = semPlaceholder(semComentarios(readFileSync(arquivo, 'utf8')))
     limpo.split('\n').forEach((linha, i) => {
-      if (!linha.includes(TRAVESSAO)) return
+      if (!FORMAS_DO_TRAVESSAO.some((forma) => linha.includes(forma))) return
       // Nas rotas de API só interessa o texto que volta para a tela, não log nem erro interno.
       if (apenasMensagem && !linha.includes('message:')) return
       achados.push({ arquivo, linha: i + 1, texto: linha.trim().slice(0, 100) })

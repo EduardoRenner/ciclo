@@ -454,7 +454,7 @@ function BuscaDeRetorno({ jaAdicionados, aoEscolher }: { jaAdicionados: string[]
   return (
     <section className="flex flex-col gap-2">
       <label className="flex flex-col gap-1">
-        <span className="text-label font-semibold text-txt-2">Alguém que já é sua cliente voltou?</span>
+        <span className="text-label font-semibold text-txt-2">Alguém que você já atende voltou?</span>
         <div className="relative">
           <Search aria-hidden className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-txt-3" />
           <input

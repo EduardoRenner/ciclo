@@ -22,7 +22,7 @@ export const metadata = { title: 'Quem você já atende' }
  * pessoas o Motor de Ciclo nascia vazio e ficava vazio por meses, esperando cada cliente voltar duas
  * ou três vezes.
  *
- * A busca de "já é sua cliente" (dentro de `FormularioQuemJaAtendo`) é o que sustenta o salão que
+ * A busca de "alguém que você já atende voltou" (dentro de `FormularioQuemJaAtendo`) é o que sustenta o salão que
  * continua operando noutro sistema e usa o CICLO só como camada de recuperação: sem ela, o Motor
  * nascia uma vez com o cadastro inicial e nunca mais era alimentado, porque marcar "voltou" exigia
  * reabrir a ficha inteira ou lançar um atendimento de verdade na agenda.

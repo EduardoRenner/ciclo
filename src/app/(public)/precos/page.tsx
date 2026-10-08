@@ -79,7 +79,7 @@ const CANAL = canalDeContato('Oi! Vi os planos do CICLO e quero falar sobre assi
  * dias de uso completo sem cartão e depois escolhe um plano; se não escolher, a conta pausa, e a
  * pausa não apaga nada.
  */
-function perguntas(cobrancaLigada: boolean) {
+function perguntas(cobrancaLigada: boolean, acessoAberto: boolean) {
   return [
     {
       pergunta: 'Como eu pago?',
@@ -89,7 +89,15 @@ function perguntas(cobrancaLigada: boolean) {
           ? 'Conversando. A cobrança automática ainda não está no ar, e preferimos dizer isso a montar um botão que não funciona. Você usa tudo sem pagar, e quando quiser assinar a gente combina direto e ajusta na hora. O botão no fim desta página abre a conversa.'
           : 'A cobrança automática ainda não está no ar, e preferimos dizer isso a montar um botão que não funciona. Você usa tudo sem pagar; a assinatura é combinada caso a caso.',
     },
-    {
+    // docs/102 M5.1: com o acesso aberto o topo da página diz "Sem prazo por enquanto", e esta pergunta falava
+    // de dias grátis acabando. A resposta do acesso aberto é o compromisso já registrado (DECISOES 2026-10-07).
+    acessoAberto
+      ? {
+          pergunta: 'Até quando fica tudo liberado?',
+          resposta:
+            'Por enquanto, sem prazo: toda conta usa o produto inteiro sem pagar. Antes de qualquer cobrança, a gente avisa com antecedência, e nada é cobrado sem você escolher um plano.',
+        }
+      : {
       pergunta: 'O que acontece quando acabam os dias grátis?',
       resposta: `Nada é cobrado: não pedimos cartão para começar, então não existe cobrança surpresa. Você tem ${PRELANCAMENTO.diasDeGraca} dias a mais com tudo funcionando, e depois a conta pausa: você vê e exporta tudo, mas não cria nada novo, por até ${PRELANCAMENTO.diasDePausa} dias. Escolher um plano reativa na hora.`,
     },
@@ -327,7 +335,7 @@ export default function Precos() {
         <p className="mt-5 max-w-[52ch] text-secundario text-txt-2">
           A parte honesta: quem cobra comissão costuma cobrar sobre o cliente que a <em>própria plataforma</em> trouxe,
           de uma vitrine onde a sua clientela também vê os seus concorrentes. O CICLO não tem vitrine e não traz cliente
-          de lugar nenhum &mdash; sua página é do seu negócio e só dele, e quem chega nela chegou por você. Se o que você
+          de lugar nenhum: sua página é do seu negócio e só dele, e quem chega nela chegou por você. Se o que você
           procura é alugar a clientela de um marketplace, o CICLO não é isso.
         </p>
       </section>
@@ -335,7 +343,7 @@ export default function Precos() {
       <section className="py-10">
         <h2 className="mb-4 text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">Perguntas de dinheiro</h2>
         <dl className="flex flex-col gap-4">
-          {perguntas(cobrancaLigada).map((q) => (
+          {perguntas(cobrancaLigada, oferta.aberto).map((q) => (
             <div key={q.pergunta} className="rounded-[var(--radius)] border border-line bg-surface p-5 shadow-elevado">
               <dt className="text-corpo font-semibold text-txt">{q.pergunta}</dt>
               <dd className="mt-1.5 text-secundario text-txt-2">{q.resposta}</dd>

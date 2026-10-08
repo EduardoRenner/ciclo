@@ -26,7 +26,7 @@ describe('tela "Vindo de outro sistema" — as três saídas do §5.4', () => {
     expect(FONTE).toContain('href="/admin/clientes/ja-atendo"')
   })
 
-  it('saída 2 (usar junto) também aponta pro ja-atendo — é o mesmo "já é sua cliente" que sustenta a camada de recuperação', () => {
+  it('saída 2 (usar junto) também aponta pro ja-atendo — é o mesmo "alguém que você já atende voltou" que sustenta a camada de recuperação', () => {
     // As DUAS ocorrências de ja-atendo (saída 1 e saída 2) — se uma sumir, uma das saídas ficou sem destino.
     const ocorrencias = FONTE.match(/href="\/admin\/clientes\/ja-atendo"/g) ?? []
     expect(ocorrencias.length).toBe(2)
