@@ -53,7 +53,7 @@
  * o prefixo é convenção, não regra: quem decide é esta lista, e é ela que o sitemap, o robots, o
  * aviso da página e as rotas de lembrete/campanha leem.
  */
-const SLUGS_DE_DEMONSTRACAO: readonly string[] = [
+export const SLUGS_DE_DEMONSTRACAO: readonly string[] = [
   'dom-rocha',
   'ruivo-barber',
   'teste-essencial',
