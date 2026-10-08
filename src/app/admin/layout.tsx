@@ -159,7 +159,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </main>
       </div>
         {/* `fixed`: fica fora da coluna de conteúdo para poder virar barra lateral no `lg`. */}
-        <TabBar />
+        {/* docs/101 T0.3: abas e botão central são do pacote da profissão; sem contexto, a barra de sempre. */}
+        <TabBar pacote={ctx?.tenant.pacote ?? 'base'} />
         <ResolucaoDeFila />
         {/*
           docs/85 MI-2 (2026-09-29): o assistente roda no Motor de Inteligência do próprio CICLO,

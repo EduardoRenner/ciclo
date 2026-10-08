@@ -6,9 +6,10 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
 import IconeAnel from '@/components/ui/icone-anel'
+import { PACOTES, type SlugDoPacote } from '@/core/pacotes'
 import { cn } from '@/lib/utils'
 
-import { ABAS, HREF_DO_CENTRO, hrefDaAbaAtiva, type Aba } from './tabs'
+import { hrefDaAbaAtiva, type Aba } from './tabs'
 
 // Exaustivo sobre `IconeDaAba` (`core/pacotes/tipos.ts`): ícone novo no pacote sem desenho aqui não compila.
 const ICONES: Record<Aba['icone'], typeof Home | typeof IconeAnel> = {
@@ -22,8 +23,13 @@ const ICONES: Record<Aba['icone'], typeof Home | typeof IconeAnel> = {
 }
 
 type Props = {
-  /** Rota do botão central. Parametrizado para o teste não depender de string solta. */
-  hrefFab?: string
+  /**
+   * O pacote da profissão do tenant (docs/101 T0.3), que decide as quatro abas e o botão central.
+   * Chega do layout (`ctx.tenant.pacote`); sem contexto (conta no meio do onboarding) é `base`,
+   * que é a barra de sempre. Slug e não o objeto: prop de Server para Client Component atravessa a
+   * rede, e o registro `PACOTES` já está no bundle do cliente.
+   */
+  pacote?: SlugDoPacote
 }
 
 /**
@@ -39,10 +45,12 @@ type Props = {
  * barra era `inset-x-0` puro e, em qualquer monitor, espalhava quatro ícones
  * por 1920px enquanto o app vivia numa coluna estreita no meio.
  */
-export default function TabBar({ hrefFab = HREF_DO_CENTRO }: Props) {
+export default function TabBar({ pacote = 'base' }: Props) {
   const pathname = usePathname()
-  const ativo = hrefDaAbaAtiva(pathname)
-  const [esquerda, direita] = [ABAS.slice(0, 2), ABAS.slice(2)]
+  const { abas, centro } = PACOTES[pacote]
+  const hrefFab = centro.href
+  const ativo = hrefDaAbaAtiva(pathname, abas)
+  const [esquerda, direita] = [abas.slice(0, 2), abas.slice(2)]
 
   return (
     <nav
@@ -76,14 +84,14 @@ export default function TabBar({ hrefFab = HREF_DO_CENTRO }: Props) {
             conteúdo em vez de dividir espaço com quatro ícones.
 
             31/08: essa "peça mais importante" deixou de ser marcar horário e passou a ser o Motor
-            de Ciclo — o porquê está em `tabs.ts`, junto de `HREF_DO_CENTRO`. Resumo: o centro é o
-            único ponto que o polegar alcança sem reposicionar a mão, e estava com a ação mais
-            comum em vez da mais valiosa.
+            de Ciclo — o porquê está em `core/pacotes/base.ts`. Resumo: o centro é o único ponto que
+            o polegar alcança sem reposicionar a mão, e estava com a ação mais comum em vez da mais
+            valiosa. Desde o docs/101 o centro é do PACOTE: na Advocacia, Pendências.
           */}
           <Link
             href={hrefFab}
-            aria-label="Recuperar receita"
-            aria-current={pathname.startsWith(HREF_DO_CENTRO) ? 'page' : undefined}
+            aria-label={centro.rotulo}
+            aria-current={pathname.startsWith(hrefFab) ? 'page' : undefined}
             className={cn(
               'grid size-14 -translate-y-4 place-items-center rounded-[var(--radius-pill)]',
               'border-4 border-surface bg-acc text-on-acc shadow-fab',
@@ -92,7 +100,7 @@ export default function TabBar({ hrefFab = HREF_DO_CENTRO }: Props) {
               'transition duration-[var(--dur-1)] ease-[var(--ease-ios)] hover:brightness-110 active:scale-[.92]',
             )}
           >
-            <IconeDoFab />
+            <IconeDoFab icone={centro.icone} />
             {/*
               Na coluna lateral o botão tem 207px de largura e trazia só o "+"
               encostado na esquerda — medido. Os quatro destinos logo abaixo
@@ -101,7 +109,7 @@ export default function TabBar({ hrefFab = HREF_DO_CENTRO }: Props) {
               para um rótulo que nunca foi escrito. No celular o FAB continua
               redondo e só com o ícone: lá o `aria-label` basta e texto não cabe.
             */}
-            <span className="hidden text-corpo font-semibold lg:inline">Recuperar receita</span>
+            <span className="hidden text-corpo font-semibold lg:inline">{centro.rotulo}</span>
           </Link>
         </div>
 
@@ -134,7 +142,7 @@ const GIRO_MINIMO_MS = 500
  * verdade, ele continua até `pending` resolver — só o mínimo de visibilidade é garantido, não um
  * teto.
  */
-function IconeDoFab() {
+function IconeDoFab({ icone }: { icone: Aba['icone'] }) {
   const { pending } = useLinkStatus()
   const [girando, setGirando] = useState(false)
 
@@ -147,7 +155,11 @@ function IconeDoFab() {
     return () => clearTimeout(tempo)
   }, [pending])
 
-  return <IconeAnel aria-hidden className={cn('size-7 lg:size-5', girando && 'animate-spin')} />
+  // O giro é da MARCA (o anel do Motor de Ciclo, `docs/08` Parte II §F1). Uma lista de tarefas
+  // girando não diz nada; no centro de outro pacote o ícone só esmaece enquanto a rota carrega.
+  if (icone === 'Anel') return <IconeAnel aria-hidden className={cn('size-7 lg:size-5', girando && 'animate-spin')} />
+  const Icone = ICONES[icone]
+  return <Icone aria-hidden className={cn('size-7 transition-opacity lg:size-5', girando && 'opacity-60')} />
 }
 
 function ItemAba({ aba, ativa }: { aba: Aba; ativa: boolean }) {
