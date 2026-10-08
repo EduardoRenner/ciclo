@@ -5339,6 +5339,13 @@ export type Database = {
       legal_intimacao_decidir: { Args: { p: Json }; Returns: Json }
       legal_intimacoes_falha: { Args: { p: Json }; Returns: undefined }
       legal_intimacoes_gravar: { Args: { p: Json }; Returns: Json }
+      legal_membros_sem_segundo_fator: {
+        Args: { p_dias?: number }
+        Returns: {
+          sem_fator: number
+          tenant_id: string
+        }[]
+      }
       legal_registrar_abertura_do_caso: {
         Args: { p_case: string }
         Returns: boolean

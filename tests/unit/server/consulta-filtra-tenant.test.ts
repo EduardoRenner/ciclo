@@ -132,6 +132,30 @@ const JUSTIFICADAS: { arquivo: string; tabela: string; quantas: number; porque: 
     porque: 'healthcheck da instância — conta mensagens de TODOS os tenants de propósito, sem ler conteúdo',
   },
   {
+    arquivo: 'src/server/services/health.ts',
+    tabela: 'legal_intimation_sync',
+    quantas: 1,
+    porque: 'healthcheck (docs/101 §15): reconciliação da captura de TODOS os escritórios; o texto público leva só datas e contagem',
+  },
+  {
+    arquivo: 'src/server/services/health.ts',
+    tabela: 'legal_deadlines',
+    quantas: 1,
+    porque: 'healthcheck: só `head: true` com limit 1, para saber se a tabela da fila responde; não lê linha',
+  },
+  {
+    arquivo: 'src/server/services/health.ts',
+    tabela: 'legal_intimations',
+    quantas: 1,
+    porque: 'healthcheck: só `head: true` com limit 1, para saber se a tabela da fila responde; não lê linha',
+  },
+  {
+    arquivo: 'src/server/services/health.ts',
+    tabela: 'legal_checklist_items',
+    quantas: 1,
+    porque: 'healthcheck: só `head: true` com limit 1, para saber se a tabela da fila responde; não lê linha',
+  },
+  {
     arquivo: 'src/server/services/whatsapp-inbound.ts',
     tabela: 'messages',
     quantas: 2,

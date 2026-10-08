@@ -1,5 +1,6 @@
 import { heartbeatVigiado } from '@/core/cron/agendadas'
 import { compararSchema, MIGRATIONS_ESPERADAS } from '@/core/schema/versao'
+import { ehDemonstracao } from '@/core/tenants/demonstracao'
 import { AppError } from '@/server/http/errors'
 import { semHandlerRegistrado } from '@/server/services/job-queue'
 
@@ -22,6 +23,11 @@ const LIMIAR_HEARTBEAT_CAMPANHAS_MIN = 26 * 60
  */
 const LIMIAR_HEARTBEAT_CICLO_MIN = 26 * 60
 const LIMIAR_FALHA_MENSAGEM = 0.05 // 5%, J129
+// docs/101 §3.5: a captura do DJEN roda por dia útil e faz catch-up; 3 h sem rodar com o agendador ligado
+// já é o "parou em silêncio" do risco R5. Só vale quando a rota estiver em `ROTAS_AGENDADAS`.
+const LIMIAR_HEARTBEAT_INTIMACOES_MIN = 3 * 60
+const DIAS_DE_RECONCILIACAO = 3
+const DIAS_SEM_SEGUNDO_FATOR = 7
 
 export async function registrarHeartbeat(db: Cliente, kind: string): Promise<void> {
   const { error } = await db.from('cron_heartbeats').upsert({ kind, last_run_at: new Date().toISOString() }, { onConflict: 'kind' })
@@ -46,6 +52,9 @@ export type RelatorioSaude = {
     errorTracking: ChecagemSaude
     assistente: ChecagemSaude
     schema: ChecagemSaude
+    legalIntimacoes: ChecagemSaude
+    legalFila: ChecagemSaude
+    legalMfa: ChecagemSaude
   }
 }
 
@@ -79,8 +88,25 @@ export async function verificarSaude(db: Cliente, agora: Date = new Date()): Pro
   const errorTracking = checarRastreioDeErro()
   const assistente = checarAssistente()
   const schema = await checarSchema(db)
+  const legalIntimacoes = await checarIntimacoes(db, agora)
+  const legalFila = await checarFilaJuridica(db)
+  const legalMfa = await checarSegundoFator(db)
 
-  const checks = { database, jobQueue, messages, sendReminders, sendCampaigns, recomputeCycles, recomputeSegments, errorTracking, assistente, schema }
+  const checks = {
+    database,
+    jobQueue,
+    messages,
+    sendReminders,
+    sendCampaigns,
+    recomputeCycles,
+    recomputeSegments,
+    errorTracking,
+    assistente,
+    schema,
+    legalIntimacoes,
+    legalFila,
+    legalMfa,
+  }
 
   /*
    * O `ok` geral sai de `every`, e nao de um `&&` escrito a mao com uma parcela por checagem.
@@ -302,4 +328,75 @@ async function checarHeartbeat(db: Cliente, kind: string, agora: Date, limiarMin
   return minutosDesdeUltimoRun <= limiarMinutos
     ? { ok: true }
     : { ok: false, detail: `job "${kind}" sem execução há ${Math.round(minutosDesdeUltimoRun)} min (limite ${limiarMinutos} min)` }
+}
+
+/**
+ * docs/101 §3.5 e risco R5: a captura de intimações parou ou voltou incompleta?
+ *
+ * Duas perguntas, porque "rodou" não quer dizer "trouxe tudo" (LUBI `06` §0, saúde de verdade):
+ *  1. heartbeat `legal_intimacoes`, cobrado só com a rota no agendador (a mesma dispensa dos outros jobs);
+ *  2. reconciliação: algum dia dos últimos 3 com `ok = false`, ou gravado menor que a fonte, é vermelho.
+ *     O texto é público (o health responde a qualquer um): só datas e quantos escritórios, nunca OAB nem
+ *     nome. Escritório de demonstração não conta, como no cron.
+ */
+async function checarIntimacoes(db: Cliente, agora: Date): Promise<ChecagemSaude> {
+  const batida = await checarHeartbeat(db, 'legal_intimacoes', agora, LIMIAR_HEARTBEAT_INTIMACOES_MIN)
+  const desde = new Date(agora.getTime() - DIAS_DE_RECONCILIACAO * 86_400_000).toISOString().slice(0, 10)
+  const { data, error } = await db
+    .from('legal_intimation_sync')
+    .select('dia, ok, count_fonte, count_gravado, tenant_id, tenants!legal_intimation_sync_tenant_id_fkey(slug)')
+    .gte('dia', desde)
+  if (error) return falhaSemVazar('intimações (reconciliação)', error)
+  const falhos = (data ?? []).filter((l) => !ehDemonstracao(l.tenants?.slug ?? '') && (!l.ok || l.count_gravado < l.count_fonte))
+  if (falhos.length > 0) {
+    const dias = [...new Set(falhos.map((l) => l.dia))].sort().join(', ')
+    const escritorios = new Set(falhos.map((l) => l.tenant_id)).size
+    return {
+      ok: false,
+      detail: `faltam intimações de ${dias} em ${escritorios} ${escritorios === 1 ? 'escritório' : 'escritórios'}: confira em comunica.pje.jus.br e rode a captura de novo`,
+    }
+  }
+  return batida
+}
+
+/**
+ * docs/101 §15 "legalFila": as três leituras da fila de Hoje do pacote respondem. Tabela faltando (migration
+ * não aplicada) ou permissão quebrada aparecem aqui antes de aparecerem na tela de um escritório.
+ */
+async function checarFilaJuridica(db: Cliente): Promise<ChecagemSaude> {
+  // Uma chamada por tabela, com o nome escrito: `from(variavel)` some da guarda `consulta-filtra-tenant`.
+  const [prazos, intimacoes, pendencias] = await Promise.all([
+    db.from('legal_deadlines').select('id', { head: true, count: 'exact' }).limit(1),
+    db.from('legal_intimations').select('id', { head: true, count: 'exact' }).limit(1),
+    db.from('legal_checklist_items').select('id', { head: true, count: 'exact' }).limit(1),
+  ])
+  if (prazos.error) return falhaSemVazar('fila jurídica (prazos)', prazos.error)
+  if (intimacoes.error) return falhaSemVazar('fila jurídica (intimações)', intimacoes.error)
+  if (pendencias.error) return falhaSemVazar('fila jurídica (pendências)', pendencias.error)
+  return { ok: true }
+}
+
+/**
+ * docs/101 §15 "legalMfa": membro do pacote sem segundo fator há mais de 7 dias. É amarelo (`ok: true` com o
+ * aviso): ninguém está exposto, a pessoa só não entra. Vermelho aqui viraria o alarme permanente que
+ * `agendadas.ts` proíbe, porque quem resolve é o escritório, não quem opera.
+ */
+async function checarSegundoFator(db: Cliente): Promise<ChecagemSaude> {
+  const { data, error } = await db.rpc('legal_membros_sem_segundo_fator', { p_dias: DIAS_SEM_SEGUNDO_FATOR })
+  if (error) {
+    // Função ainda não existe (0116 não aplicada): o `schema` já acusa; aqui não dá para afirmar nada.
+    return { ok: true, detail: `não deu para ler o segundo fator dos escritórios (${error.code ?? 'sem código'}): vigilância desligada` }
+  }
+  if (!data || data.length === 0) return { ok: true }
+  const ids = data.map((l) => l.tenant_id)
+  const slugs = await db.from('tenants').select('id, slug').in('id', ids)
+  if (slugs.error) return falhaSemVazar('segundo fator (escritórios)', slugs.error)
+  const demo = new Set((slugs.data ?? []).filter((t) => ehDemonstracao(t.slug)).map((t) => t.id))
+  const reais = data.filter((l) => !demo.has(l.tenant_id))
+  if (reais.length === 0) return { ok: true }
+  const pessoas = reais.reduce((n, l) => n + l.sem_fator, 0)
+  return {
+    ok: true,
+    detail: `${pessoas} ${pessoas === 1 ? 'pessoa' : 'pessoas'} em ${reais.length} ${reais.length === 1 ? 'escritório' : 'escritórios'} sem segundo fator há mais de ${DIAS_SEM_SEGUNDO_FATOR} dias: não conseguem entrar no pacote`,
+  }
 }
