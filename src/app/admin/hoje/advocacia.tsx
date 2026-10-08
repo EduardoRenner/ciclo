@@ -6,7 +6,7 @@ import Card from '@/components/ui/card'
 import PageHeader from '@/components/ui/page-header'
 import { addDays, fmtDiaMes } from '@/core/advocacia/datas'
 import { GRUPOS } from '@/core/advocacia/prioridade'
-import { lerFilaDeHoje, type ItemDeHoje } from '@/server/advocacia/fila-de-hoje'
+import { lerFilaDeHoje, retrotesteDe90Dias, type ItemDeHoje } from '@/server/advocacia/fila-de-hoje'
 
 import type { Database } from '@/server/db/types.gen'
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -43,6 +43,7 @@ type Props = {
   papel: string
   meuProfissional: string | null
   filtroPedido: string | undefined
+  demonstracao: boolean
 }
 
 /**
@@ -50,15 +51,16 @@ type Props = {
  * LUBI); esta tela só filtra e agrupa. Não mostra gráfico, KPI nem "atividade recente": a pergunta é
  * "o que preciso fazer agora?".
  */
-export default async function HojeDaAdvocacia({ db, tenantId, hoje, papel, meuProfissional, filtroPedido }: Props) {
+export default async function HojeDaAdvocacia({ db, tenantId, hoje, papel, meuProfissional, filtroPedido, demonstracao }: Props) {
   const direcao = papel === 'owner' || papel === 'manager'
   const filtro: Filtro =
     filtroPedido === 'direcao' || filtroPedido === 'meus' || filtroPedido === 'equipe' ? filtroPedido : direcao ? 'direcao' : 'meus'
 
-  const [fila, captura] = await Promise.all([
+  const [fila, captura, retroteste] = await Promise.all([
     lerFilaDeHoje(db, tenantId, hoje),
     // a saúde da captura é da direção (política da 0109): para os outros a leitura volta vazia
     direcao ? db.from('legal_intimation_sync').select('dia, ok').eq('tenant_id', tenantId).order('dia', { ascending: false }).limit(1) : null,
+    demonstracao ? retrotesteDe90Dias(db, tenantId, hoje) : null,
   ])
 
   const visiveis = fila.filter((i) =>
@@ -92,6 +94,15 @@ export default async function HojeDaAdvocacia({ db, tenantId, hoje, papel, meuPr
             comunica.pje.jus.br.
           </p>
         </div>
+      ) : null}
+
+      {retroteste && retroteste.intimacoes > 0 ? (
+        <p role="note" className="mb-4 rounded-[var(--radius-md)] border border-line-2 bg-surface-2 p-3 text-secundario">
+          <span className="font-semibold">Simulação: </span>
+          nos últimos 90 dias este painel teria capturado {retroteste.intimacoes} {retroteste.intimacoes === 1 ? 'intimação' : 'intimações'} e
+          antecipado {retroteste.prazos} {retroteste.prazos === 1 ? 'prazo' : 'prazos'} com um dia interno antes do fatal. Números contados nos dados
+          fictícios deste escritório.
+        </p>
       ) : null}
 
       <nav aria-label="Filtrar a fila" className="mb-4 flex flex-wrap gap-2">

@@ -4,6 +4,8 @@ import { createClient } from '@supabase/supabase-js'
 import dotenv from 'dotenv'
 import { beforeAll, describe, expect, it } from 'vitest'
 
+import { retrotesteDe90Dias } from '@/server/advocacia/fila-de-hoje'
+
 import type { Database } from '@/server/db/types.gen'
 
 dotenv.config({ path: '.env.local' })
@@ -141,6 +143,16 @@ describe('o escritório-modelo, medido depois de gerado', () => {
     const pedemLigar = new Set(linhas.filter((l) => dias(l.rodada_desde) >= 10 && !l.call_task_created).map((l) => l.legal_cases.client_id))
     expect(linhas.length).toBeGreaterThan(10)
     expect(pedemLigar.size, 'clientes pedindo ligação hoje (9 denunciava o gerador sem histórico)').toBeLessThanOrEqual(4)
+  })
+
+  it('o retroteste conta o que está no banco (cenário 6), e não um número escrito à mão', async () => {
+    const r = await retrotesteDe90Dias(admin, T, hoje)
+    const intim = await admin.from('legal_intimations').select('id', { count: 'exact', head: true }).eq('tenant_id', T)
+    // o gerador cria 90 dias de intimações: todas caem na janela
+    expect(r.intimacoes).toBe(intim.count)
+    expect(r.prazos).toBeGreaterThan(0)
+    const fatais = await admin.from('legal_deadlines').select('id', { count: 'exact', head: true }).eq('tenant_id', T).eq('kind', 'fatal')
+    expect(r.prazos).toBeLessThanOrEqual(fatais.count ?? 0)
   })
 
   it('o pico de 15 intimações num dia existe, e nenhum dia passa dele', async () => {

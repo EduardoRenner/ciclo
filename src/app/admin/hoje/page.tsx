@@ -6,6 +6,7 @@ import { Temporal } from '@js-temporal/polyfill'
 
 import PageHeader from '@/components/ui/page-header'
 import { hojeNoFuso } from '@/core/advocacia/datas'
+import { ehDemonstracao } from '@/core/tenants/demonstracao'
 import { ehRequisicaoDoAppNativo } from '@/core/plataforma/nativo'
 import { contextoDoPainel } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
@@ -52,6 +53,7 @@ export default async function PaginaHoje({ searchParams }: { searchParams: Promi
         papel={ctx.papel}
         meuProfissional={eu.data?.id ?? null}
         filtroPedido={fila}
+        demonstracao={ehDemonstracao(ctx.tenant.slug)}
       />
     )
   }

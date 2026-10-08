@@ -213,3 +213,25 @@ export async function lerFilaDeHoje(db: Cliente, tenantId: string, hoje: string)
   const extras = new Map(itens.map((i) => [i.item_key, { clienteNome: i.clienteNome, casoTitulo: i.casoTitulo }]))
   return ordenarFila(itens, hoje).map((i) => ({ ...i, ...extras.get(i.item_key)! }))
 }
+
+/**
+ * docs/101 T5b.3: o retroteste do escritório de demonstração. "Nos últimos 90 dias este painel teria
+ * capturado N intimações e antecipado M prazos": N e M são CONTADOS no banco (nunca escritos à mão), e
+ * a tela rotula como simulação. Antecipado = prazo fatal com um "fazer até" antes da data fatal.
+ */
+export async function retrotesteDe90Dias(db: Cliente, tenantId: string, hoje: string): Promise<{ intimacoes: number; prazos: number }> {
+  const desde = addDays(hoje, -90)
+  const [intim, prazos] = await Promise.all([
+    db.from('legal_intimations').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId).gte('data_disponibilizacao', desde),
+    db
+      .from('legal_deadlines')
+      .select('due_on, internal_due_on')
+      .eq('tenant_id', tenantId)
+      .eq('kind', 'fatal')
+      .gte('due_on', desde)
+      .not('internal_due_on', 'is', null),
+  ])
+  if (intim.error || prazos.error) throw new AppError('INTERNAL', { cause: intim.error ?? prazos.error })
+  return { intimacoes: intim.count ?? 0, prazos: (prazos.data ?? []).filter((p) => p.internal_due_on! < p.due_on).length }
+}
+
