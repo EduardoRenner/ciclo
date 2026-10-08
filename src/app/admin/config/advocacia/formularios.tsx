@@ -8,21 +8,11 @@ import Card from '@/components/ui/card'
 import Input from '@/components/ui/input'
 import Select from '@/components/ui/select'
 import { useToast } from '@/components/ui/toast'
+import { escreverJuridico } from '@/lib/advocacia/escrever'
 
 async function salvar(corpo: unknown): Promise<string | null> {
-  try {
-    const r = await fetch('/api/v1/tenant/advocacia', {
-      method: 'PATCH',
-      headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
-      body: JSON.stringify(corpo),
-    })
-    if (r.ok) return null
-    const json = (await r.json()) as { error?: { message: string; details?: { fields?: Record<string, string> } } }
-    const campo = json.error?.details?.fields ? Object.values(json.error.details.fields)[0] : undefined
-    return campo ?? json.error?.message ?? 'Não consegui salvar. Tente de novo.'
-  } catch {
-    return 'Não consegui falar com o servidor. Confira a conexão e tente de novo.'
-  }
+  const r = await escreverJuridico('/api/v1/tenant/advocacia', { method: 'PATCH', json: corpo })
+  return r.ok ? null : r.texto
 }
 
 const PAPEL: Record<string, string> = { advogado: 'Advocacia', estagio: 'Estágio' }

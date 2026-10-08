@@ -1,5 +1,6 @@
 'use client'
 
+import { ehEscritaJuridica } from '@/core/advocacia/falha-de-escrita'
 import { classificarResposta, drenarFila, type Mutacao, type ResultadoEnvio } from '@/core/offline/queue'
 
 import { listarMutacoes, removerMutacao, salvarMutacao } from './db'
@@ -133,6 +134,9 @@ export type ResultadoApiFetch = { queued: boolean }
  * meio (ou vier 5xx/429), enfileira em vez de perder a mutação.
  */
 export async function apiFetch(url: string, opcoes: { method: 'POST' | 'PATCH' | 'DELETE'; body?: unknown }): Promise<ResultadoApiFetch> {
+  // docs/101 §3.6: prazo gravado horas depois, com a data que valia quando a pessoa digitou, é pior que
+  // não gravar. Escrita jurídica vai por `escreverJuridico`, que avisa em vez de enfileirar.
+  if (ehEscritaJuridica(url)) throw new Error(`escrita jurídica não entra na fila offline: ${url}`)
   const mutacao: Mutacao = {
     id: crypto.randomUUID(),
     method: opcoes.method,

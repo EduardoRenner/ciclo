@@ -10,6 +10,7 @@ import Input from '@/components/ui/input'
 import Select from '@/components/ui/select'
 import Textarea from '@/components/ui/textarea'
 import { useToast } from '@/components/ui/toast'
+import { escreverJuridico } from '@/lib/advocacia/escrever'
 
 type Sugestao = { venceEm: string; internoEm: string | null; memoria: Record<string, unknown>; regra: string }
 
@@ -66,37 +67,32 @@ export default function Triagem({ intimacao, casos, casoInicial }: Props) {
   function decidir(acao: Acao) {
     setErro(null)
     iniciar(async () => {
-      try {
-        const corpo =
-          acao === 'criar_prazo'
-            ? { acao, caseId: caso, dueOn: fatal, ...(interno ? { internalDueOn: interno } : {}), title: titulo }
-            : { acao, motivo, ...(caso ? { caseId: caso } : {}) }
-        const r = await fetch(`/api/v1/legal/intimations/${intimacao.id}/decide`, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
-          body: JSON.stringify(corpo),
-        })
-        const json = (await r.json()) as { data?: { status: string; confirmado?: boolean }; error?: { message: string } }
-        if (!r.ok || !json.data) {
-          setErro(json.error?.message ?? 'Não consegui registrar a decisão. Tente de novo.')
-          return
-        }
-        mostrarToast({
-          tom: 'ok',
-          titulo:
-            acao === 'criar_prazo'
-              ? json.data.confirmado === false
-                ? 'Prazo criado. Falta a confirmação da advocacia.'
-                : 'Prazo confirmado'
-              : acao === 'sem_prazo'
-                ? 'Registrado: não gera prazo'
-                : 'Intimação descartada',
-        })
-        router.push('/admin/hoje')
-        router.refresh()
-      } catch {
-        setErro('Não consegui falar com o servidor. Confira a conexão e tente de novo.')
+      const corpo =
+        acao === 'criar_prazo'
+          ? { acao, caseId: caso, dueOn: fatal, ...(interno ? { internalDueOn: interno } : {}), title: titulo }
+          : { acao, motivo, ...(caso ? { caseId: caso } : {}) }
+      const r = await escreverJuridico<{ status: string; confirmado?: boolean }>(
+        `/api/v1/legal/intimations/${intimacao.id}/decide`,
+        { method: 'POST', json: corpo },
+        'Não consegui registrar a decisão. Tente de novo.',
+      )
+      if (!r.ok || !r.dados) {
+        setErro(r.ok ? 'Não consegui registrar a decisão. Tente de novo.' : r.texto)
+        return
       }
+      mostrarToast({
+        tom: 'ok',
+        titulo:
+          acao === 'criar_prazo'
+            ? r.dados.confirmado === false
+              ? 'Prazo criado. Falta a confirmação da advocacia.'
+              : 'Prazo confirmado'
+            : acao === 'sem_prazo'
+              ? 'Registrado: não gera prazo'
+              : 'Intimação descartada',
+      })
+      router.push('/admin/hoje')
+      router.refresh()
     })
   }
 

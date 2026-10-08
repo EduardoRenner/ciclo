@@ -8,6 +8,7 @@ import Input from '@/components/ui/input'
 import Select from '@/components/ui/select'
 import { AREAS_DO_CASO, AREAS_SEMPRE_SIGILOSAS, ROTULO_DA_AREA, type AreaDoCaso } from '@/core/advocacia/casos'
 import { ROTULO_DO_TIPO_DE_CASO, TIPOS_DE_CASO, type TipoDeCaso } from '@/core/advocacia/checklist'
+import { escreverJuridico } from '@/lib/advocacia/escrever'
 
 /** A área mais provável de cada tipo: só sugere, a pessoa troca. */
 const AREA_DO_TIPO: Readonly<Record<TipoDeCaso, AreaDoCaso>> = {
@@ -63,11 +64,11 @@ export default function FormularioNovoCaso({ clientes, equipe, clienteInicial, r
     setErro(null)
     setErros({})
     iniciar(async () => {
-      try {
-        const r = await fetch('/api/v1/legal/cases', {
+      const r = await escreverJuridico<{ id: string }>(
+        '/api/v1/legal/cases',
+        {
           method: 'POST',
-          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
-          body: JSON.stringify({
+          json: {
             clientId: clienteId,
             kind: tipo,
             area,
@@ -76,18 +77,16 @@ export default function FormularioNovoCaso({ clientes, equipe, clienteInicial, r
             sensitivity: sigiloso || sigiloForcado ? 'sigiloso' : 'normal',
             gerarChecklist: gerar,
             ...(responsavel ? { responsibleProfessionalId: responsavel } : {}),
-          }),
-        })
-        const json = (await r.json()) as { data?: { id: string }; error?: { message: string; details?: { fields?: Record<string, string> } } }
-        if (!r.ok || !json.data) {
-          setErro(json.error?.message ?? 'Não consegui abrir o caso. Tente de novo.')
-          setErros(json.error?.details?.fields ?? {})
-          return
-        }
-        router.push(`/admin/casos/${json.data.id}`)
-      } catch {
-        setErro('Não consegui falar com o servidor. Confira a conexão e tente de novo.')
+          },
+        },
+        'Não consegui abrir o caso. Tente de novo.',
+      )
+      if (!r.ok || !r.dados) {
+        setErro(r.ok ? 'Não consegui abrir o caso. Tente de novo.' : r.texto)
+        setErros(r.ok ? {} : r.campos)
+        return
       }
+      router.push(`/admin/casos/${r.dados.id}`)
     })
   }
 

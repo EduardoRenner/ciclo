@@ -12,6 +12,7 @@ import Select from '@/components/ui/select'
 import Textarea from '@/components/ui/textarea'
 import { useToast } from '@/components/ui/toast'
 import { CATEGORIAS, ROTULO_DO_STATUS_DO_DOCUMENTO, type CategoriaDoDocumento, type DocumentoNaLista } from '@/core/advocacia/documentos'
+import { escreverJuridico } from '@/lib/advocacia/escrever'
 
 type Props = {
   documentos: DocumentoNaLista[]
@@ -19,12 +20,6 @@ type Props = {
   casoId?: string
   /** O plano libera documentos? Decidido no servidor ANTES do formulário (guarda `toda-rota-travada`). */
   podeEnviar: boolean
-}
-
-async function erroDa(r: Response, padrao: string): Promise<string> {
-  const json = (await r.json().catch(() => ({}))) as { error?: { message?: string; details?: { fields?: Record<string, string> } } }
-  const campo = json.error?.details?.fields ? Object.values(json.error.details.fields)[0] : undefined
-  return campo ?? json.error?.message ?? padrao
 }
 
 /**
@@ -50,23 +45,19 @@ export default function DocumentosDoCaso({ documentos, clienteId, casoId, podeEn
     if (!f) return setErro({ onde: 'envio', texto: 'Escolha o arquivo.' })
     setErro(null)
     iniciar(async () => {
-      try {
-        const corpo = new FormData()
-        corpo.set('file', f)
-        corpo.set('clientId', clienteId)
-        if (casoId) corpo.set('caseId', casoId)
-        corpo.set('title', titulo || f.name.replace(/\.[^.]+$/, '').slice(0, 200))
-        corpo.set('category', categoria)
-        corpo.set('origin', origem)
-        const r = await fetch('/api/v1/legal/documents', { method: 'POST', headers: { 'idempotency-key': crypto.randomUUID() }, body: corpo })
-        if (!r.ok) return setErro({ onde: 'envio', texto: await erroDa(r, 'Não consegui enviar. Tente de novo.') })
-        mostrarToast({ tom: 'ok', titulo: origem === 'cliente' ? 'Documento recebido. Aguardando conferência.' : 'Documento salvo' })
-        setEnviando(false)
-        setTitulo('')
-        router.refresh()
-      } catch {
-        setErro({ onde: 'envio', texto: 'Não consegui falar com o servidor. Confira a conexão e tente de novo.' })
-      }
+      const corpo = new FormData()
+      corpo.set('file', f)
+      corpo.set('clientId', clienteId)
+      if (casoId) corpo.set('caseId', casoId)
+      corpo.set('title', titulo || f.name.replace(/\.[^.]+$/, '').slice(0, 200))
+      corpo.set('category', categoria)
+      corpo.set('origin', origem)
+      const r = await escreverJuridico('/api/v1/legal/documents', { method: 'POST', form: corpo }, 'Não consegui enviar. Tente de novo.')
+      if (!r.ok) return setErro({ onde: 'envio', texto: r.texto })
+      mostrarToast({ tom: 'ok', titulo: origem === 'cliente' ? 'Documento recebido. Aguardando conferência.' : 'Documento salvo' })
+      setEnviando(false)
+      setTitulo('')
+      router.refresh()
     })
   }
 
@@ -77,43 +68,33 @@ export default function DocumentosDoCaso({ documentos, clienteId, casoId, podeEn
     const aba = window.open('', '_blank')
     if (aba) aba.opener = null
     iniciar(async () => {
-      try {
-        const r = await fetch(`/api/v1/legal/documents/${id}/open`, { method: 'POST', headers: { 'idempotency-key': crypto.randomUUID() } })
-        if (!r.ok) {
-          aba?.close()
-          return setErro({ onde: id, texto: await erroDa(r, 'Não consegui abrir o documento.') })
-        }
-        const { data } = (await r.json()) as { data: { url: string } }
-        if (aba) aba.location.href = data.url
-        else window.location.href = data.url
-      } catch {
+      const r = await escreverJuridico<{ url: string }>(`/api/v1/legal/documents/${id}/open`, { method: 'POST' }, 'Não consegui abrir o documento.')
+      if (!r.ok) {
         aba?.close()
-        setErro({ onde: id, texto: 'Não consegui falar com o servidor. Confira a conexão e tente de novo.' })
+        return setErro({ onde: id, texto: r.texto })
       }
+      if (aba) aba.location.href = r.dados.url
+      else window.location.href = r.dados.url
     })
   }
 
   function conferir(d: DocumentoNaLista, acao: 'aceitar' | 'recusar') {
     setErro(null)
     iniciar(async () => {
-      try {
-        const r = await fetch(`/api/v1/legal/documents/${d.id}`, {
-          method: 'PATCH',
-          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
-          body: JSON.stringify({ acao, rowVersion: d.rowVersion, ...(acao === 'recusar' ? { motivo } : {}) }),
-        })
-        if (!r.ok) {
-          setErro({ onde: d.id, texto: await erroDa(r, 'Não consegui salvar a conferência.') })
-          if (r.status === 409) router.refresh()
-          return
-        }
-        mostrarToast({ tom: 'ok', titulo: acao === 'aceitar' ? 'Documento aceito' : 'Documento recusado' })
-        setRecusando(null)
-        setMotivo('')
-        router.refresh()
-      } catch {
-        setErro({ onde: d.id, texto: 'Não consegui falar com o servidor. Confira a conexão e tente de novo.' })
+      const r = await escreverJuridico(
+        `/api/v1/legal/documents/${d.id}`,
+        { method: 'PATCH', json: { acao, rowVersion: d.rowVersion, ...(acao === 'recusar' ? { motivo } : {}) } },
+        'Não consegui salvar a conferência.',
+      )
+      if (!r.ok) {
+        setErro({ onde: d.id, texto: r.texto })
+        if (r.tipo === 'conflito') router.refresh()
+        return
       }
+      mostrarToast({ tom: 'ok', titulo: acao === 'aceitar' ? 'Documento aceito' : 'Documento recusado' })
+      setRecusando(null)
+      setMotivo('')
+      router.refresh()
     })
   }
 

@@ -9,6 +9,7 @@ import Card from '@/components/ui/card'
 import Input from '@/components/ui/input'
 import Select from '@/components/ui/select'
 import { useToast } from '@/components/ui/toast'
+import { escreverJuridico } from '@/lib/advocacia/escrever'
 
 import type { Empresa, Pessoa } from '@/core/advocacia/estrutura-da-familia'
 
@@ -46,15 +47,8 @@ const TIPOS_DE_ATO = [
 ] as const
 
 async function enviar(url: string, corpo: unknown): Promise<string | null> {
-  try {
-    const r = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() }, body: JSON.stringify(corpo) })
-    if (r.ok) return null
-    const json = (await r.json().catch(() => ({}))) as { error?: { message?: string; details?: { fields?: Record<string, string> } } }
-    const campo = json.error?.details?.fields ? Object.values(json.error.details.fields)[0] : undefined
-    return campo ?? json.error?.message ?? 'Não consegui salvar. Tente de novo.'
-  } catch {
-    return 'Não consegui falar com o servidor. Confira a conexão e tente de novo.'
-  }
+  const r = await escreverJuridico(url, { method: 'POST', json: corpo })
+  return r.ok ? null : r.texto
 }
 
 type Props = { clienteId: string; pessoas: Pessoa[]; empresas: Empresa[]; hoje: string }

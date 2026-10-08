@@ -11,6 +11,7 @@ import Input from '@/components/ui/input'
 import Select from '@/components/ui/select'
 import Textarea from '@/components/ui/textarea'
 import { useToast } from '@/components/ui/toast'
+import { escreverJuridico } from '@/lib/advocacia/escrever'
 
 export type PrazoDaFicha = {
   id: string
@@ -26,22 +27,6 @@ export type PrazoDaFicha = {
 const ROTULO: Record<string, string> = { fatal: 'Prazo fatal', interno: 'Prazo interno', audiencia: 'Audiência', contratual: 'Prazo contratual' }
 
 const data = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit', timeZone: 'UTC' })
-
-async function chamar(url: string, metodo: 'POST' | 'PATCH', corpo: unknown): Promise<string | null> {
-  try {
-    const r = await fetch(url, {
-      method: metodo,
-      headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
-      body: JSON.stringify(corpo),
-    })
-    if (r.ok) return null
-    const json = (await r.json().catch(() => ({}))) as { error?: { message?: string; details?: { fields?: Record<string, string> } } }
-    const campo = json.error?.details?.fields ? Object.values(json.error.details.fields)[0] : undefined
-    return campo ?? json.error?.message ?? 'Não consegui salvar. Tente de novo.'
-  } catch {
-    return 'Não consegui falar com o servidor. Confira a conexão e tente de novo.'
-  }
-}
 
 /**
  * "Dia e hora no relógio do escritório" → instante UTC (regra 4 do CLAUDE.md: aritmética nunca em horário
@@ -77,8 +62,11 @@ export default function PrazosDoCaso({ prazos, hoje, clienteId, casoId, timezone
   function agir(onde: string, url: string, metodo: 'POST' | 'PATCH', corpo: unknown, feito: string) {
     setErro(null)
     iniciar(async () => {
-      const falha = await chamar(url, metodo, corpo)
-      if (falha) return setErro({ onde, texto: falha })
+      const r = await escreverJuridico(url, { method: metodo, json: corpo })
+      if (!r.ok) {
+        if (r.tipo === 'conflito') router.refresh()
+        return setErro({ onde, texto: r.texto })
+      }
       mostrarToast({ tom: 'ok', titulo: feito })
       setModo(null)
       setNota('')

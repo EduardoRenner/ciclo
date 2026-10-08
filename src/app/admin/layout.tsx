@@ -147,7 +147,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       */}
       <div className="mx-auto min-h-dvh max-w-[560px] sm:border-x sm:border-line">
         <Topbar />
-        <IndicadorDeConexao />
+        <IndicadorDeConexao pacote={ctx?.tenant.pacote ?? 'base'} />
         {faixa ? <FaixaDaConta faixa={faixa} /> : null}
         {/*
           docs/101 anexo 06 §4: o escritório-modelo diz em TODA tela que nada ali existe (frase 40). Sem

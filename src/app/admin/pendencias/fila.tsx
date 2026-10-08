@@ -11,6 +11,7 @@ import Card from '@/components/ui/card'
 import Textarea from '@/components/ui/textarea'
 import { useToast } from '@/components/ui/toast'
 import { acoesDaTela, type GrupoDaFila } from '@/core/advocacia/fila-de-pendencias'
+import { escreverJuridico } from '@/lib/advocacia/escrever'
 
 type Acao = ReturnType<typeof acoesDaTela>[number]
 
@@ -58,40 +59,25 @@ export default function FilaDePendencias({ grupos }: { grupos: GrupoDaFila[] }) 
 
   /** Marca o lembrete (sem esperar): a mensagem já saiu pelo WhatsApp, e uma falha aqui só faz a fila pedir de novo. */
   function registrar(itens: string[], marco: 0 | 3 | 7 | 'ligar') {
-    void fetch('/api/v1/legal/checklist/lembrete', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
-      body: JSON.stringify({ itens, marco }),
+    void escreverJuridico('/api/v1/legal/checklist/lembrete', { method: 'POST', json: { itens, marco } }).then((r) => {
+      if (r.ok) router.refresh()
     })
-      .then((r) => {
-        if (r.ok) router.refresh()
-      })
-      .catch(() => undefined)
   }
 
   function agir(id: string, rowVersion: number, acao: Acao, motivoDaAcao?: string) {
     setErro(null)
     iniciar(async () => {
-      try {
-        const r = await fetch(`/api/v1/legal/checklist/${id}`, {
-          method: 'PATCH',
-          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
-          body: JSON.stringify({ acao, rowVersion, ...(motivoDaAcao ? { motivo: motivoDaAcao } : {}) }),
-        })
-        const json = (await r.json()) as { error?: { code: string; message: string } }
-        if (!r.ok) {
-          setErro({ id, texto: json.error?.message ?? 'Não consegui salvar. Tente de novo.' })
-          if (r.status === 409) router.refresh()
-          return
-        }
-        mostrarToast({ tom: 'ok', titulo: FEITO[acao] })
-        setDevolvendo(null)
-        setMotivo('')
-        router.refresh()
-      } catch {
-        // Rede caiu antes da resposta: sem isto o React 19 relança para o boundary e a fila some.
-        setErro({ id, texto: 'Não consegui falar com o servidor. Confira a conexão e tente de novo.' })
+      // `escreverJuridico` não lança: rede caída vira frase, e o React 19 não leva a fila para o boundary.
+      const r = await escreverJuridico(`/api/v1/legal/checklist/${id}`, { method: 'PATCH', json: { acao, rowVersion, ...(motivoDaAcao ? { motivo: motivoDaAcao } : {}) } })
+      if (!r.ok) {
+        setErro({ id, texto: r.texto })
+        if (r.tipo === 'conflito') router.refresh()
+        return
       }
+      mostrarToast({ tom: 'ok', titulo: FEITO[acao] })
+      setDevolvendo(null)
+      setMotivo('')
+      router.refresh()
     })
   }
 

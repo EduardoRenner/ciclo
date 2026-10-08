@@ -10,6 +10,7 @@ import Select from '@/components/ui/select'
 import Textarea from '@/components/ui/textarea'
 import { useToast } from '@/components/ui/toast'
 import { ESTADOS_DO_CASO, podeMudarEstado, type EstadoDoCaso } from '@/core/advocacia/casos'
+import { escreverJuridico } from '@/lib/advocacia/escrever'
 import { ROTULO_DO_ESTADO_DO_CASO } from '@/core/advocacia/resumo-do-caso'
 
 type Props = { casoId: string; estado: EstadoDoCaso; rowVersion: number; notaAtual: string | null }
@@ -33,32 +34,22 @@ export default function MudarCaso({ casoId, estado, rowVersion, notaAtual }: Pro
   function salvar() {
     setErro(null)
     iniciar(async () => {
-      try {
-        const r = await fetch(`/api/v1/legal/cases/${casoId}`, {
-          method: 'PATCH',
-          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
-          body: JSON.stringify({ ...(novo !== estado ? { estado: novo } : {}), ...(frase.trim() ? { notaParaCliente: frase.trim() } : {}), rowVersion }),
-        })
-        const json = (await r.json().catch(() => ({}))) as {
-          data?: { mensagem: { link: string } | { erro: string } | null }
-          error?: { message?: string; details?: { fields?: Record<string, string> } }
-        }
-        if (!r.ok || !json.data) {
-          const campo = json.error?.details?.fields ? Object.values(json.error.details.fields)[0] : undefined
-          setErro(campo ?? json.error?.message ?? 'Não consegui salvar. Tente de novo.')
-          if (r.status === 409) router.refresh()
-          return
-        }
-        mostrarToast({ tom: 'ok', titulo: 'Caso atualizado' })
-        const m = json.data.mensagem
-        if (m && 'link' in m) setPronta({ link: m.link })
-        else if (m && 'erro' in m) setErro(m.erro)
-        else setAberto(false)
-        setFrase('')
-        router.refresh()
-      } catch {
-        setErro('Não consegui falar com o servidor. Confira a conexão e tente de novo.')
+      const r = await escreverJuridico<{ mensagem: { link: string } | { erro: string } | null }>(`/api/v1/legal/cases/${casoId}`, {
+        method: 'PATCH',
+        json: { ...(novo !== estado ? { estado: novo } : {}), ...(frase.trim() ? { notaParaCliente: frase.trim() } : {}), rowVersion },
+      })
+      if (!r.ok) {
+        setErro(r.texto)
+        if (r.tipo === 'conflito') router.refresh()
+        return
       }
+      mostrarToast({ tom: 'ok', titulo: 'Caso atualizado' })
+      const m = r.dados?.mensagem ?? null
+      if (m && 'link' in m) setPronta({ link: m.link })
+      else if (m && 'erro' in m) setErro(m.erro)
+      else setAberto(false)
+      setFrase('')
+      router.refresh()
     })
   }
 
