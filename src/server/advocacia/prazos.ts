@@ -64,6 +64,8 @@ function traduzir(error: PostgrestError): AppError {
   if (error.code === 'P0001' || (error.code === '23514' && !error.message.includes('violates check constraint'))) {
     return new AppError('VALIDATION_ERROR', { message: error.message, cause: error })
   }
+  // LGL01 é o gatilho da 0114 (estágio não confirma): a frase vem do banco
+  if (error.code === 'LGL01') return new AppError('FORBIDDEN', { message: error.message, cause: error })
   // 42501 é ambíguo (privilégio OU política): sem saber qual, a resposta honesta é "não pode"
   if (error.code === '42501') return new AppError('FORBIDDEN', { message: 'Seu perfil não pode fazer isso com este prazo.', cause: error })
   return new AppError('INTERNAL', { cause: error })

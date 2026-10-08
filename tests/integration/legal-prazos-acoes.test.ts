@@ -53,6 +53,9 @@ describe('ações de prazo', () => {
     const e = await criarPrazo(P.estagio.c, T, P.estagio.uid, { clientId: clienteId, ...fatal })
     expect((await admin.from('legal_deadlines').select('confirmed_at').eq('id', e.id).single()).data!.confirmed_at).toBeNull()
     await expect(alterarPrazo(P.estagio.c, T, e.id, P.estagio.uid, { acao: 'confirmar' })).rejects.toMatchObject({ code: 'FORBIDDEN' })
+    // a mesma recusa no banco (0114): UPDATE direto pela API, com o token do estágio, não passa
+    const direto = await P.estagio.c.from('legal_deadlines').update({ confirmed_by: P.estagio.uid, confirmed_at: new Date().toISOString() }).eq('id', e.id).select('id')
+    expect(direto.error?.message ?? '').toContain('estágio')
     await alterarPrazo(P.advocacia.c, T, e.id, P.advocacia.uid, { acao: 'confirmar' })
     expect((await admin.from('legal_deadlines').select('confirmed_at').eq('id', e.id).single()).data!.confirmed_at).not.toBeNull()
   })
