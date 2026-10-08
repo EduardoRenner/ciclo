@@ -55,6 +55,16 @@ const CHAVES_SENSIVEIS = [
   'cofre',
   'signature',
   'assinatura',
+  // docs/101 T1.9 (pacote Advocacia): o texto do tribunal e os destinatários trazem nome de parte; o
+  // número do processo identifica a causa; o motivo do sigilo e a nota ao cliente são texto livre.
+  'texto',
+  'destinatario',
+  'numero_processo',
+  'cnj',
+  'sensitivity_reason',
+  'status_note',
+  'strategy',
+  'estrategia',
 ]
 
 /** Não é PII/segredo — fica de fora da varredura de texto para não corromper trace/span/release por coincidência de dígitos. */

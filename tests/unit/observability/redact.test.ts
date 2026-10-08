@@ -205,4 +205,15 @@ describe('redigirEventoSentry — a redação não pode comer identificador (ach
     const id = 'req_9f8e7d6c5b4a3928170615243342516a'
     expect(redigirEventoSentry({ extra: { request_id: id } }).extra.request_id).toBe(id)
   })
+
+  it('dado do pacote Advocacia: texto do tribunal, partes e processo saem redigidos', () => {
+    const r = redigirEventoSentry({
+      extra: {
+        intimacao: { texto_sanitizado: 'Intime-se FULANO DE TAL', destinatarios: [{ nome: 'FULANO' }], numero_processo: '00012345620268240001' },
+        caso: { cnj_number: '00012345620268240001', sensitivity_reason: 'pedido do cliente', client_status_note: 'audiência marcada' },
+      },
+    })
+    expect(r.extra.intimacao).toEqual({ texto_sanitizado: '[redigido]', destinatarios: '[redigido]', numero_processo: '[redigido]' })
+    expect(r.extra.caso).toEqual({ cnj_number: '[redigido]', sensitivity_reason: '[redigido]', client_status_note: '[redigido]' })
+  })
 })
