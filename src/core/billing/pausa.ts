@@ -103,6 +103,8 @@ export const ROTAS_DE_ESCRITA: Readonly<Record<string, RegraNaPausa>> = {
   'POST v1/packages': 'bloqueia',
   'PATCH v1/products/[id]': 'permite',
   'POST v1/products': 'bloqueia',
+  // Venda de balcão é uma venda nova (abre e fecha uma comanda), a mesma natureza de lançar item.
+  'POST v1/products/[id]/sale': 'bloqueia',
   'PUT v1/professionals/[id]/business-hours': 'permite',
   'PATCH v1/professionals/[id]': 'permite',
   'DELETE v1/professionals/[id]': 'permite',
