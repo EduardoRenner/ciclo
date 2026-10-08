@@ -61,7 +61,9 @@ function rnd(...p) {
 }
 const pick = (sem, arr) => arr[Math.floor(rnd(sem) * arr.length)]
 
-const SLUGS = [ 'dom-rocha', 'ruivo-barber', 'teste-essencial', 'teste-equipe', 'teste-avancado', 'lang-barber', 'lang-unhas' ]
+// docs/102 M2.1: a MESMA lista de `src/core/tenants/demonstracao.ts` (o teste `agenda-futura-so-demonstracao`
+// reprova se divergirem). A antiga tinha 7 dos 13: os seis salões `demo-*` nunca eram renovados.
+const SLUGS = ['dom-rocha', 'ruivo-barber', 'teste-essencial', 'teste-equipe', 'teste-avancado', 'lang-barber', 'lang-unhas', 'demo-navalha-de-ouro', 'demo-corte-fino', 'demo-dom-estilo', 'demo-studio-bella', 'demo-salao-encanto', 'demo-espaco-vitoria']
 const OFFSET_H = 3 // America/Sao_Paulo = UTC-3 (sem horário de verão desde 2019)
 
 const DIAS_A_FRENTE = 21
@@ -71,6 +73,10 @@ const MAX_POR_CLIENTE = 2
 const PESO_DA_DISTANCIA = (d) => (d < 7 ? 1 : d < 14 ? 0.6 : 0.35)
 
 const alvo = process.argv.slice(2).length ? process.argv.slice(2) : SLUGS
+// O script APAGA agendamentos futuros (regra 11 do CLAUDE.md só aceita isso em conta de demonstração).
+// Antes aceitava qualquer slug na linha de comando: um salão de verdade perderia a agenda.
+const foraDaDemonstracao = alvo.filter((s) => !SLUGS.includes(s))
+if (foraDaDemonstracao.length) precisa({ message: `só conta de demonstração: ${foraDaDemonstracao.join(', ')}` }, 'conferir alvo')
 const { data: tenants } = await svc.from('tenants').select('id, slug').in('slug', alvo)
 if (!tenants?.length) precisa({ message: `nenhum tenant para: ${alvo.join(', ')}` }, 'achar tenants')
 

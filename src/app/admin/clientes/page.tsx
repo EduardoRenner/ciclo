@@ -89,7 +89,7 @@ export default async function PaginaClientes({ searchParams }: { searchParams: P
       */}
       {avaliarPermissao(ctx.papel, 'client:export') !== null ? (
         <div className="mb-4 text-right">
-          <Link href="/admin/clientes/exportar" className="text-label font-semibold text-acc-2 underline underline-offset-2">
+          <Link href="/admin/clientes/exportar" className="inline-flex min-h-12 items-center text-label font-semibold text-acc-2 underline underline-offset-2">
             Baixar todos em planilha
           </Link>
         </div>

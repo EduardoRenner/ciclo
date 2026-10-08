@@ -181,6 +181,12 @@ describe('a paleta CLARA também passa no WCAG AA', () => {
     expect(contraste(tokenClaro(nome), SURFACE_C)).toBeGreaterThanOrEqual(4.5)
   })
 
+  // docs/102 M1.8: o texto semântico também aparece direto no fundo da página, fora do card. --ok media
+  // 4,40:1 ali (medido no CSSOM em 2026-10-08) e esta guarda só olhava o card.
+  it.each(['ok', 'warn', 'risk', 'bad', 'info'])('--%s claro tem 4,5:1 como texto sobre o fundo da página', (nome) => {
+    expect(contraste(tokenClaro(nome), BG_C)).toBeGreaterThanOrEqual(4.5)
+  })
+
   it('ok e bad claros ainda se separam por luminância o quanto o teto de 4,5:1 permite', () => {
     /*
      * No escuro o piso é 0,15 (Parte II §3.7). No claro é impossível: para os cinco semânticos

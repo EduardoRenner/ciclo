@@ -285,7 +285,7 @@ export default function ListaProfissionais({
 
     <div aria-busy={pendente}>
 
-      <div className="mb-4 flex items-center justify-between gap-2">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
 
         <div className="flex gap-2">
 
@@ -365,7 +365,7 @@ export default function ListaProfissionais({
 
               <Card className="flex items-center justify-between gap-3">
 
-                <button type="button" onClick={() => setEditando(p)} className="min-w-0 flex-1 text-left">
+                <button type="button" onClick={() => setEditando(p)} className="flex min-h-12 min-w-0 flex-1 flex-col justify-center text-left">
 
                   <span className="flex items-center gap-2">
 

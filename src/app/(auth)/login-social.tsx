@@ -4,7 +4,6 @@ import { useState } from 'react'
 
 import Button from '@/components/ui/button'
 import type { ProvedorSocial } from '@/server/auth/provedores-sociais'
-import { criarClienteDoNavegador } from '@/server/db/browser-client'
 
 /**
  * Google e Apple, do lado de `/entrar` e de `/cadastro` — a mesma chamada cria conta na primeira
@@ -34,6 +33,9 @@ export default function LoginSocial({ provedores }: { provedores: ProvedorSocial
     setErro(null)
     setCarregando(provider)
     try {
+      // Importado no clique (docs/102 M4.1): no topo do módulo, o cliente Supabase entrava no primeiro
+      // carregamento de /entrar e /cadastro (208 e 209 kB) mesmo sem provedor ligado, quando este bloco nem aparece.
+      const { criarClienteDoNavegador } = await import('@/server/db/browser-client')
       const supabase = criarClienteDoNavegador()
       const { error } = await supabase.auth.signInWithOAuth({
         provider,

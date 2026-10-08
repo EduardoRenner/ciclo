@@ -177,9 +177,9 @@ const PASSOS = [
  */
 const GRUPOS_DE_PROFISSAO: readonly { grupo: string; itens: readonly string[] }[] = [
   { grupo: 'Beleza', itens: ['Barbearia', 'Cabelo', 'Unhas', 'Cílios', 'Sobrancelhas', 'Depilação', 'Estética', 'Tatuagem'] },
-  { grupo: 'Casa', itens: ['Faxina e diarista', 'Eletricista', 'Encanador', 'Jardineiro'] },
-  { grupo: 'Saúde, aula e treino', itens: ['Psicólogo', 'Professor particular', 'Personal trainer'] },
-  { grupo: 'Pet e eventos', itens: ['Banho e tosa', 'Fotógrafo'] },
+  { grupo: 'Casa', itens: ['Faxina e diarista', 'Eletricista', 'Encanamento', 'Jardinagem'] },
+  { grupo: 'Saúde, aula e treino', itens: ['Psicologia', 'Aula particular', 'Personal trainer'] },
+  { grupo: 'Pet e eventos', itens: ['Banho e tosa', 'Fotografia'] },
 ]
 
 /**
