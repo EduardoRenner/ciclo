@@ -9,3 +9,5 @@ Commit 5b7a93a0 antes de mutar; cada mutação conferida por `git diff --stat` e
 
 As regras de fundo (fatal não adia, motivo no histórico, fatal só da advocacia) são do banco e já têm
 mutação própria nas evidências da Fase 1 e na matriz de papéis (`T1.11-mutacao.md`).
+
+| gatilho `legal_deadlines_confirmacao` (0114) desligado no banco local | `legal-prazos-acoes` reprovou (o UPDATE direto do estágio passou); religado e conferido (`tgenabled = O`) |
