@@ -43,18 +43,27 @@ function sonda(sondar) {
     const pequenos = []
     for (const el of alvos) {
       el.scrollIntoView({ block: 'center', inline: 'center' })
-      const r = el.getBoundingClientRect()
-      const cx = r.left + r.width / 2
-      const cy = r.top + r.height / 2
       const alvo = (el.tagName === 'INPUT' && el.closest('label')) || el
       const acerta = (x, y) => {
         const h = document.elementFromPoint(x, y)
         return h && (h === alvo || alvo.contains(h))
       }
+      // Link que quebra linha tem um retângulo por linha; o centro da caixa que une os dois pode cair
+      // ENTRE eles e medir 0 × 0 (falso positivo de 2026-10-08 em /ja-atendo). Mede cada linha e fica com a melhor.
       let alt = 0
-      for (let y = Math.floor(r.top - 30); y <= r.bottom + 30; y++) if (y >= 0 && y < innerHeight && acerta(cx, y)) alt++
       let larg = 0
-      for (let x = Math.floor(r.left - 30); x <= r.right + 30; x++) if (x >= 0 && x < W && acerta(x, cy)) larg++
+      let r = el.getBoundingClientRect()
+      for (const f of el.getClientRects()) {
+        const fx = f.left + f.width / 2
+        const fy = f.top + f.height / 2
+        let a = 0
+        for (let y = Math.floor(f.top - 30); y <= f.bottom + 30; y++) if (y >= 0 && y < innerHeight && acerta(fx, y)) a++
+        let l = 0
+        for (let x = Math.floor(f.left - 30); x <= f.right + 30; x++) if (x >= 0 && x < W && acerta(x, fy)) l++
+        if (a * l > alt * larg) [alt, larg, r] = [a, l, f]
+      }
+      const cx = r.left + r.width / 2
+      const cy = r.top + r.height / 2
       if (alt < 48 || larg < 44) {
         const cobre = document.elementFromPoint(cx, cy)
         pequenos.push({

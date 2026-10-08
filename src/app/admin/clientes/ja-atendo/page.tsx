@@ -88,7 +88,7 @@ export default async function PaginaQuemJaAtendo() {
           */}
           <p className="mt-6 text-secundario text-txt-3">
             Já tem tudo numa planilha?{' '}
-            <Link href="/admin/clientes/importar" className="font-semibold text-txt-2 underline underline-offset-2">
+            <Link href="/admin/clientes/importar" className="toque-48 whitespace-nowrap font-semibold text-txt-2 underline underline-offset-2">
               Importe de um arquivo CSV
             </Link>
             .
