@@ -148,7 +148,7 @@ grafo escondendo percentual; ramo morto na Estrutura. Cada um com teste e evidê
 | Exercício de restauração | precisa do projeto de produção | restaurar uma vez e anotar | Eduardo |
 | Cron da captura agendado | só com o pacote aberto | cron-job.org + `ROTAS_AGENDADAS` | Eduardo |
 | Histórico do git com nome/OAB real | reescrever exige force push | decidir se reescreve a branch | Eduardo |
-| Telas a 390 px além de Pendências e Hoje | verificado só desktop nas outras | varredura T5.2 (390/768/1280, claro e escuro) | próxima rodada |
+| Varredura em 768 e 1280 px, toque por `elementFromPoint`, movimento reduzido | 375 px feito nas 10 telas (`docs/evidencias/T5.2-varredura.md`) | completar a varredura | próxima rodada |
 | Lighthouse/peso real em produção | sem deploy | medir no preview | próxima rodada |
 
 ## Depois deste relatório (mesmo dia)
