@@ -25,7 +25,7 @@ export type Aba = {
   icone: IconeDaAba
 }
 
-/** Os valores do `check` de `professions.pacote` (migration 0101). A guarda `pacote-tem-registro` confere. */
+/** Os valores do `check` de `professions.pacote` (migration 0102). A guarda `pacote-tem-registro` confere. */
 export type SlugDoPacote = 'base' | 'advocacia'
 
 export type Pacote = {

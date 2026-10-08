@@ -1,5 +1,5 @@
 -- =====================================================================
--- CICLO · a profissão ganha um PACOTE, e nasce a Advocacia (migration 0101)
+-- CICLO · a profissão ganha um PACOTE, e nasce a Advocacia (migration 0102)
 --
 -- docs/101-MVP-ADVOGADO.md §3.2 (T0.1). Um núcleo, vários pacotes: o que muda por
 -- profissão (menu, botão central, vocabulário extra, módulos próprios) passa a ser

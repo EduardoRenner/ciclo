@@ -35,7 +35,7 @@ export type DadosDoTenant = {
    */
   vocabulario: Vocabulario
   /**
-   * O pacote da profissão (docs/101 §3.2, migration 0101): decide a barra, o botão central e o
+   * O pacote da profissão (docs/101 §3.2, migration 0102): decide a barra, o botão central e o
    * vocabulário extra. Vem do mesmo join que traz o `vocab`, pelo mesmo motivo que o vocabulário
    * vem aqui: quase toda tela do painel precisa, e é uma palavra. Tenant sem profissão escolhida
    * (join nulo) resolve para `base`, que é o produto de hoje.

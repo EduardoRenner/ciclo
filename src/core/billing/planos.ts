@@ -97,7 +97,7 @@ export const CATALOGO: readonly { key: ModuloKey; label: string; sempreLigado: b
   // docs/26-AGENTE-IA-PLANO.md §6/§10 — liberado para todo tenant desde o grátis, porque agora
   // é medição de uso, não receita. Não `sempreLigado`: o dono precisa poder desligar (§4.4).
   { key: 'assistant', label: 'Assistente', sempreLigado: false },
-  // docs/101 §3.3 (migration 0102): o pacote Advocacia. Nenhum é "sempre ligado": um escritório
+  // docs/101 §3.3 (migration 0103): o pacote Advocacia. Nenhum é "sempre ligado": um escritório
   // só de contencioso desliga Estrutura; a camada de pacote (abaixo) é quem os esconde de beleza.
   { key: 'legal_cases', label: 'Casos', sempreLigado: false },
   { key: 'legal_checklists', label: 'Pendências do cliente', sempreLigado: false },
@@ -334,7 +334,7 @@ export type Veredito =
 export type ContextoDoTenant = {
   plano: PlanoTier
   /**
-   * O pacote da profissão (migration 0101, `core/pacotes`). Ausente = `base`, que é o produto de
+   * O pacote da profissão (migration 0102, `core/pacotes`). Ausente = `base`, que é o produto de
    * hoje: quem monta o contexto sem saber do pacote (testes antigos, chamadores de beleza) recebe
    * exatamente o veredito de antes. Só um valor conhecido e diferente libera módulo de pacote.
    */
@@ -410,7 +410,7 @@ const CONDICAO_DE_PACOTE: Partial<Record<ModuloKey, readonly SlugDoPacote[]>> = 
   legal_documents: ['advocacia'],
 }
 
-/** Exposto só para a guarda que confere estes módulos contra o `CATALOGO` e a migration 0102. */
+/** Exposto só para a guarda que confere estes módulos contra o `CATALOGO` e a migration 0103. */
 export const CONDICAO_DE_PACOTE_PARA_GUARDA: Readonly<Partial<Record<ModuloKey, readonly SlugDoPacote[]>>> = CONDICAO_DE_PACOTE
 
 export function podeUsarModulo(ctx: ContextoDoTenant, modulo: ModuloKey): Veredito {

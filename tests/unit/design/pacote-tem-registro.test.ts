@@ -8,18 +8,18 @@ import { semComentarios } from '../../helpers/fonte'
 
 /**
  * docs/101 T0.1. O pacote existe em dois lugares por motivos diferentes: no `check` de
- * `professions.pacote` (migration 0101), para o banco recusar valor inventado; e em
+ * `professions.pacote` (migration 0102), para o banco recusar valor inventado; e em
  * `core/pacotes/`, para a interface ter abas e palavras sem ida ao banco. Duplicação vigiada é
  * segura; duplicação silenciosa é a armadilha da §L.6 de novo (`modulos-catalogo.test.ts`).
  *
  * O defeito que esta guarda pega: valor no `check` sem entrada no registro. `normalizarPacote`
  * cairia em `base` e um tenant inteiro perderia a barra do pacote sem erro nenhum.
  */
-const SQL = readFileSync('supabase/migrations/0101_pacote_advocacia.sql', 'utf8')
+const SQL = readFileSync('supabase/migrations/0102_pacote_advocacia.sql', 'utf8')
 
 function slugsDoCheck(): string[] {
   const m = /check \(pacote in \(([^)]+)\)\)/.exec(SQL)
-  if (!m) throw new Error('não achei o `check (pacote in (...))` na 0101: a guarda cegou')
+  if (!m) throw new Error('não achei o `check (pacote in (...))` na 0102: a guarda cegou')
   return [...m[1]!.matchAll(/'([a-z_]+)'/g)].map((x) => x[1] as string).sort()
 }
 

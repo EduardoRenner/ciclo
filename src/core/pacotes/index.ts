@@ -5,7 +5,7 @@ import type { Pacote, SlugDoPacote } from './tipos'
 export type { Aba, IconeDaAba, Pacote, SlugDoPacote } from './tipos'
 
 /**
- * O registro: um pacote por valor do `check` de `professions.pacote` (migration 0101).
+ * O registro: um pacote por valor do `check` de `professions.pacote` (migration 0102).
  *
  * As duas listas, a do banco e esta, precisam bater, e `tests/unit/design/pacote-tem-registro.test.ts`
  * é quem confere: valor na migration sem entrada aqui quebraria a barra de um tenant inteiro em

@@ -442,6 +442,7 @@ export type Database = {
           personal_cycle_days: number
           predicted_on: string | null
           profit_at_risk_cents: number
+          sample_size: number
           service_id: string
           state: Database["public"]["Enums"]["cycle_state"]
           tenant_id: string
@@ -456,6 +457,7 @@ export type Database = {
           personal_cycle_days: number
           predicted_on?: string | null
           profit_at_risk_cents?: number
+          sample_size?: number
           service_id: string
           state?: Database["public"]["Enums"]["cycle_state"]
           tenant_id: string
@@ -470,6 +472,7 @@ export type Database = {
           personal_cycle_days?: number
           predicted_on?: string | null
           profit_at_risk_cents?: number
+          sample_size?: number
           service_id?: string
           state?: Database["public"]["Enums"]["cycle_state"]
           tenant_id?: string
@@ -668,6 +671,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_scores_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "v_client_segments"
             referencedColumns: ["id"]
           },
           {
@@ -1341,6 +1351,1489 @@ export type Database = {
           tenant_id?: string | null
         }
         Relationships: []
+      }
+      legal_access_log: {
+        Row: {
+          at: string
+          case_id: string | null
+          client_id: string | null
+          document_id: string | null
+          id: number
+          ip_hash: string | null
+          kind: string
+          tenant_id: string
+          user_id: string | null
+          version_id: string | null
+        }
+        Insert: {
+          at?: string
+          case_id?: string | null
+          client_id?: string | null
+          document_id?: string | null
+          id?: never
+          ip_hash?: string | null
+          kind: string
+          tenant_id: string
+          user_id?: string | null
+          version_id?: string | null
+        }
+        Update: {
+          at?: string
+          case_id?: string | null
+          client_id?: string | null
+          document_id?: string | null
+          id?: never
+          ip_hash?: string | null
+          kind?: string
+          tenant_id?: string
+          user_id?: string | null
+          version_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_access_log_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      legal_case_meetings: {
+        Row: {
+          appointment_id: string
+          case_id: string
+          created_at: string
+          tenant_id: string
+        }
+        Insert: {
+          appointment_id: string
+          case_id: string
+          created_at?: string
+          tenant_id: string
+        }
+        Update: {
+          appointment_id?: string
+          case_id?: string
+          created_at?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_case_meetings_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "legal_case_meetings_case_id_tenant_id_fkey"
+            columns: ["case_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "legal_cases"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "legal_case_meetings_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      legal_case_members: {
+        Row: {
+          case_id: string
+          created_at: string
+          professional_id: string
+          role: string
+          tenant_id: string
+        }
+        Insert: {
+          case_id: string
+          created_at?: string
+          professional_id: string
+          role?: string
+          tenant_id: string
+        }
+        Update: {
+          case_id?: string
+          created_at?: string
+          professional_id?: string
+          role?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_case_members_case_id_tenant_id_fkey"
+            columns: ["case_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "legal_cases"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "legal_case_members_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "legal_case_members_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      legal_cases: {
+        Row: {
+          archived_at: string | null
+          area: string
+          checklist_template_version: number | null
+          client_id: string
+          client_status_note: string | null
+          client_title: string
+          closed_on: string | null
+          cnj_number: string | null
+          comarca: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          kind: string
+          opened_on: string
+          prazo_em_dobro: boolean
+          responsible_professional_id: string | null
+          rito: string | null
+          row_version: number
+          sensitivity: string
+          sensitivity_reason: string | null
+          status: string
+          tenant_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          archived_at?: string | null
+          area?: string
+          checklist_template_version?: number | null
+          client_id: string
+          client_status_note?: string | null
+          client_title: string
+          closed_on?: string | null
+          cnj_number?: string | null
+          comarca?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind: string
+          opened_on?: string
+          prazo_em_dobro?: boolean
+          responsible_professional_id?: string | null
+          rito?: string | null
+          row_version?: number
+          sensitivity?: string
+          sensitivity_reason?: string | null
+          status?: string
+          tenant_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          archived_at?: string | null
+          area?: string
+          checklist_template_version?: number | null
+          client_id?: string
+          client_status_note?: string | null
+          client_title?: string
+          closed_on?: string | null
+          cnj_number?: string | null
+          comarca?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: string
+          opened_on?: string
+          prazo_em_dobro?: boolean
+          responsible_professional_id?: string | null
+          rito?: string | null
+          row_version?: number
+          sensitivity?: string
+          sensitivity_reason?: string | null
+          status?: string
+          tenant_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_cases_client_id_tenant_id_fkey"
+            columns: ["client_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "legal_cases_client_id_tenant_id_fkey"
+            columns: ["client_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_client_segments"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "legal_cases_responsible_professional_id_fkey"
+            columns: ["responsible_professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "legal_cases_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      legal_checklist_items: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          call_task_created: boolean
+          cancel_reason: string | null
+          case_id: string
+          created_at: string
+          created_by: string | null
+          document_id: string | null
+          due_on: string | null
+          expected_category: string | null
+          id: string
+          instructions: string | null
+          kind: string
+          owed_by: string
+          owed_by_person_id: string | null
+          position: number
+          reminders_sent: number[]
+          returned_reason: string | null
+          rodada: number
+          rodada_desde: string
+          row_version: number
+          status: string
+          template_item_id: string | null
+          tenant_id: string
+          title: string
+          updated_at: string
+          urgency: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          call_task_created?: boolean
+          cancel_reason?: string | null
+          case_id: string
+          created_at?: string
+          created_by?: string | null
+          document_id?: string | null
+          due_on?: string | null
+          expected_category?: string | null
+          id?: string
+          instructions?: string | null
+          kind: string
+          owed_by: string
+          owed_by_person_id?: string | null
+          position?: number
+          reminders_sent?: number[]
+          returned_reason?: string | null
+          rodada?: number
+          rodada_desde?: string
+          row_version?: number
+          status?: string
+          template_item_id?: string | null
+          tenant_id: string
+          title: string
+          updated_at?: string
+          urgency?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          call_task_created?: boolean
+          cancel_reason?: string | null
+          case_id?: string
+          created_at?: string
+          created_by?: string | null
+          document_id?: string | null
+          due_on?: string | null
+          expected_category?: string | null
+          id?: string
+          instructions?: string | null
+          kind?: string
+          owed_by?: string
+          owed_by_person_id?: string | null
+          position?: number
+          reminders_sent?: number[]
+          returned_reason?: string | null
+          rodada?: number
+          rodada_desde?: string
+          row_version?: number
+          status?: string
+          template_item_id?: string | null
+          tenant_id?: string
+          title?: string
+          updated_at?: string
+          urgency?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_checklist_items_case_id_tenant_id_fkey"
+            columns: ["case_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "legal_cases"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "legal_checklist_items_owed_by_person_id_tenant_id_fkey"
+            columns: ["owed_by_person_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "legal_persons"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "legal_checklist_items_template_item_id_fkey"
+            columns: ["template_item_id"]
+            isOneToOne: false
+            referencedRelation: "legal_checklist_template_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "legal_checklist_items_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      legal_checklist_template_items: {
+        Row: {
+          expected_category: string | null
+          id: string
+          kind: string
+          offset_business_days: number
+          owed_by: string
+          position: number
+          template_id: string
+          title: string
+          urgency: string
+        }
+        Insert: {
+          expected_category?: string | null
+          id?: string
+          kind: string
+          offset_business_days: number
+          owed_by: string
+          position: number
+          template_id: string
+          title: string
+          urgency?: string
+        }
+        Update: {
+          expected_category?: string | null
+          id?: string
+          kind?: string
+          offset_business_days?: number
+          owed_by?: string
+          position?: number
+          template_id?: string
+          title?: string
+          urgency?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_checklist_template_items_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "legal_checklist_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      legal_checklist_templates: {
+        Row: {
+          active: boolean
+          case_kind: string
+          created_at: string
+          id: string
+          name: string
+          needs_review: boolean
+          tenant_id: string | null
+          version: number
+        }
+        Insert: {
+          active?: boolean
+          case_kind: string
+          created_at?: string
+          id?: string
+          name: string
+          needs_review?: boolean
+          tenant_id?: string | null
+          version?: number
+        }
+        Update: {
+          active?: boolean
+          case_kind?: string
+          created_at?: string
+          id?: string
+          name?: string
+          needs_review?: boolean
+          tenant_id?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_checklist_templates_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      legal_corporate_changes: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          effective_on: string
+          entity_id: string
+          id: string
+          kind: string
+          registered_on: string | null
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          effective_on: string
+          entity_id: string
+          id?: string
+          kind: string
+          registered_on?: string | null
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          effective_on?: string
+          entity_id?: string
+          id?: string
+          kind?: string
+          registered_on?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_corporate_changes_entity_id_tenant_id_fkey"
+            columns: ["entity_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "legal_corporate_changes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      legal_deadline_alerts: {
+        Row: {
+          deadline_id: string
+          emitted_at: string
+          id: number
+          marco: number
+          notified_user_id: string | null
+          tenant_id: string
+        }
+        Insert: {
+          deadline_id: string
+          emitted_at?: string
+          id?: never
+          marco: number
+          notified_user_id?: string | null
+          tenant_id: string
+        }
+        Update: {
+          deadline_id?: string
+          emitted_at?: string
+          id?: never
+          marco?: number
+          notified_user_id?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_deadline_alerts_deadline_id_tenant_id_fkey"
+            columns: ["deadline_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "legal_deadlines"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "legal_deadline_alerts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      legal_deadline_changes: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          deadline_id: string
+          field: string
+          id: number
+          new_value: string | null
+          old_value: string | null
+          reason: string | null
+          tenant_id: string
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          deadline_id: string
+          field: string
+          id?: never
+          new_value?: string | null
+          old_value?: string | null
+          reason?: string | null
+          tenant_id: string
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          deadline_id?: string
+          field?: string
+          id?: never
+          new_value?: string | null
+          old_value?: string | null
+          reason?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_deadline_changes_deadline_id_tenant_id_fkey"
+            columns: ["deadline_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "legal_deadlines"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "legal_deadline_changes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      legal_deadlines: {
+        Row: {
+          alert_days: number[]
+          calc_divergence: boolean | null
+          calc_memo: Json | null
+          calc_rule_version: string | null
+          case_id: string | null
+          change_reason: string | null
+          client_id: string
+          close_document_id: string | null
+          close_note: string | null
+          close_reason: string | null
+          closed_at: string | null
+          closed_by: string | null
+          confirmed_at: string | null
+          confirmed_by: string | null
+          created_at: string
+          created_by: string | null
+          due_at: string | null
+          due_on: string
+          id: string
+          internal_due_on: string | null
+          intimation_id: string | null
+          kind: string
+          responsible_professional_id: string | null
+          source: string
+          source_note: string | null
+          status: string
+          suggested_due_on: string | null
+          tenant_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          alert_days?: number[]
+          calc_divergence?: boolean | null
+          calc_memo?: Json | null
+          calc_rule_version?: string | null
+          case_id?: string | null
+          change_reason?: string | null
+          client_id: string
+          close_document_id?: string | null
+          close_note?: string | null
+          close_reason?: string | null
+          closed_at?: string | null
+          closed_by?: string | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          due_at?: string | null
+          due_on: string
+          id?: string
+          internal_due_on?: string | null
+          intimation_id?: string | null
+          kind: string
+          responsible_professional_id?: string | null
+          source?: string
+          source_note?: string | null
+          status?: string
+          suggested_due_on?: string | null
+          tenant_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          alert_days?: number[]
+          calc_divergence?: boolean | null
+          calc_memo?: Json | null
+          calc_rule_version?: string | null
+          case_id?: string | null
+          change_reason?: string | null
+          client_id?: string
+          close_document_id?: string | null
+          close_note?: string | null
+          close_reason?: string | null
+          closed_at?: string | null
+          closed_by?: string | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          due_at?: string | null
+          due_on?: string
+          id?: string
+          internal_due_on?: string | null
+          intimation_id?: string | null
+          kind?: string
+          responsible_professional_id?: string | null
+          source?: string
+          source_note?: string | null
+          status?: string
+          suggested_due_on?: string | null
+          tenant_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_deadlines_case_id_tenant_id_fkey"
+            columns: ["case_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "legal_cases"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "legal_deadlines_client_id_tenant_id_fkey"
+            columns: ["client_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "legal_deadlines_client_id_tenant_id_fkey"
+            columns: ["client_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_client_segments"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "legal_deadlines_close_document_id_tenant_id_fkey"
+            columns: ["close_document_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "legal_documents"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "legal_deadlines_intimation_id_tenant_id_fkey"
+            columns: ["intimation_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "legal_intimations"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "legal_deadlines_responsible_professional_id_fkey"
+            columns: ["responsible_professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "legal_deadlines_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      legal_document_links: {
+        Row: {
+          created_at: string
+          document_id: string
+          id: string
+          target_id: string
+          target_type: string
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          document_id: string
+          id?: string
+          target_id: string
+          target_type: string
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          document_id?: string
+          id?: string
+          target_id?: string
+          target_type?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_document_links_document_id_tenant_id_fkey"
+            columns: ["document_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "legal_documents"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "legal_document_links_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      legal_document_versions: {
+        Row: {
+          created_at: string
+          document_id: string
+          id: string
+          mime: string
+          note: string | null
+          removed_at: string | null
+          sha256: string
+          size_bytes: number
+          storage_path: string
+          tenant_id: string
+          uploaded_by: string | null
+          version_no: number
+        }
+        Insert: {
+          created_at?: string
+          document_id: string
+          id?: string
+          mime: string
+          note?: string | null
+          removed_at?: string | null
+          sha256: string
+          size_bytes: number
+          storage_path: string
+          tenant_id: string
+          uploaded_by?: string | null
+          version_no: number
+        }
+        Update: {
+          created_at?: string
+          document_id?: string
+          id?: string
+          mime?: string
+          note?: string | null
+          removed_at?: string | null
+          sha256?: string
+          size_bytes?: number
+          storage_path?: string
+          tenant_id?: string
+          uploaded_by?: string | null
+          version_no?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_document_versions_document_id_tenant_id_fkey"
+            columns: ["document_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "legal_documents"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "legal_document_versions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      legal_documents: {
+        Row: {
+          archived_at: string | null
+          case_id: string | null
+          category: string
+          client_id: string
+          created_at: string
+          created_by: string | null
+          current_version_id: string | null
+          id: string
+          issued_on: string | null
+          origin: string
+          refused_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          row_version: number
+          sensitivity: string
+          status: string
+          tags: string[]
+          tenant_id: string
+          title: string
+          updated_at: string
+          valid_until: string | null
+        }
+        Insert: {
+          archived_at?: string | null
+          case_id?: string | null
+          category?: string
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          current_version_id?: string | null
+          id?: string
+          issued_on?: string | null
+          origin?: string
+          refused_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          row_version?: number
+          sensitivity?: string
+          status?: string
+          tags?: string[]
+          tenant_id: string
+          title: string
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Update: {
+          archived_at?: string | null
+          case_id?: string | null
+          category?: string
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          current_version_id?: string | null
+          id?: string
+          issued_on?: string | null
+          origin?: string
+          refused_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          row_version?: number
+          sensitivity?: string
+          status?: string
+          tags?: string[]
+          tenant_id?: string
+          title?: string
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_documents_case_id_tenant_id_fkey"
+            columns: ["case_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "legal_cases"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "legal_documents_client_id_tenant_id_fkey"
+            columns: ["client_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "legal_documents_client_id_tenant_id_fkey"
+            columns: ["client_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_client_segments"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "legal_documents_current_version_fkey"
+            columns: ["current_version_id", "id"]
+            isOneToOne: false
+            referencedRelation: "legal_document_versions"
+            referencedColumns: ["id", "document_id"]
+          },
+          {
+            foreignKeyName: "legal_documents_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      legal_entities: {
+        Row: {
+          archived_at: string | null
+          city: string | null
+          client_id: string
+          cnpj_hash: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          incorporated_on: string | null
+          is_external: boolean
+          kind: string
+          legal_form: string | null
+          legal_name: string
+          main_cnae: string | null
+          next_review_on: string | null
+          row_version: number
+          share_capital_cents: number | null
+          status: string
+          tax_regime: string | null
+          tenant_id: string
+          total_quotas: number | null
+          trade_name: string | null
+          uf: string | null
+          updated_at: string
+        }
+        Insert: {
+          archived_at?: string | null
+          city?: string | null
+          client_id: string
+          cnpj_hash?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          incorporated_on?: string | null
+          is_external?: boolean
+          kind: string
+          legal_form?: string | null
+          legal_name: string
+          main_cnae?: string | null
+          next_review_on?: string | null
+          row_version?: number
+          share_capital_cents?: number | null
+          status?: string
+          tax_regime?: string | null
+          tenant_id: string
+          total_quotas?: number | null
+          trade_name?: string | null
+          uf?: string | null
+          updated_at?: string
+        }
+        Update: {
+          archived_at?: string | null
+          city?: string | null
+          client_id?: string
+          cnpj_hash?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          incorporated_on?: string | null
+          is_external?: boolean
+          kind?: string
+          legal_form?: string | null
+          legal_name?: string
+          main_cnae?: string | null
+          next_review_on?: string | null
+          row_version?: number
+          share_capital_cents?: number | null
+          status?: string
+          tax_regime?: string | null
+          tenant_id?: string
+          total_quotas?: number | null
+          trade_name?: string | null
+          uf?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_entities_client_id_tenant_id_fkey"
+            columns: ["client_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "legal_entities_client_id_tenant_id_fkey"
+            columns: ["client_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_client_segments"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "legal_entities_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      legal_holidays: {
+        Row: {
+          comarca: string | null
+          conferido_por: string | null
+          created_at: string
+          day: string
+          fonte_url: string | null
+          id: string
+          name: string
+          scope: string
+          tenant_id: string | null
+          tribunal: string | null
+        }
+        Insert: {
+          comarca?: string | null
+          conferido_por?: string | null
+          created_at?: string
+          day: string
+          fonte_url?: string | null
+          id?: string
+          name: string
+          scope: string
+          tenant_id?: string | null
+          tribunal?: string | null
+        }
+        Update: {
+          comarca?: string | null
+          conferido_por?: string | null
+          created_at?: string
+          day?: string
+          fonte_url?: string | null
+          id?: string
+          name?: string
+          scope?: string
+          tenant_id?: string | null
+          tribunal?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_holidays_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      legal_intimation_suggestions: {
+        Row: {
+          calc_memo: Json | null
+          calc_rule_version: string | null
+          created_at: string
+          id: string
+          internal_due_on: string | null
+          intimation_id: string
+          sem_sugestao: string | null
+          suggested_due_on: string | null
+          tenant_id: string
+        }
+        Insert: {
+          calc_memo?: Json | null
+          calc_rule_version?: string | null
+          created_at?: string
+          id?: string
+          internal_due_on?: string | null
+          intimation_id: string
+          sem_sugestao?: string | null
+          suggested_due_on?: string | null
+          tenant_id: string
+        }
+        Update: {
+          calc_memo?: Json | null
+          calc_rule_version?: string | null
+          created_at?: string
+          id?: string
+          internal_due_on?: string | null
+          intimation_id?: string
+          sem_sugestao?: string | null
+          suggested_due_on?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_intimation_suggestions_intimation_id_tenant_id_fkey"
+            columns: ["intimation_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "legal_intimations"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "legal_intimation_suggestions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      legal_intimation_sync: {
+        Row: {
+          alvo: string
+          count_fonte: number
+          count_gravado: number
+          created_at: string
+          detalhe: string | null
+          dia: string
+          id: string
+          ok: boolean
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          alvo: string
+          count_fonte: number
+          count_gravado: number
+          created_at?: string
+          detalhe?: string | null
+          dia: string
+          id?: string
+          ok: boolean
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          alvo?: string
+          count_fonte?: number
+          count_gravado?: number
+          created_at?: string
+          detalhe?: string | null
+          dia?: string
+          id?: string
+          ok?: boolean
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_intimation_sync_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      legal_intimations: {
+        Row: {
+          alvo: string
+          cancel_reason: string | null
+          cancelled_at: string | null
+          case_id: string | null
+          classe: string | null
+          created_at: string
+          data_disponibilizacao: string
+          destinatarios: Json
+          djen_id: number
+          hash: string | null
+          id: string
+          link: string | null
+          numero_processo: string
+          orgao: string | null
+          reason: string | null
+          status: string
+          tenant_id: string
+          texto_sanitizado: string
+          tipo: string | null
+          triaged_at: string | null
+          triaged_by: string | null
+          tribunal: string
+          updated_at: string
+        }
+        Insert: {
+          alvo: string
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          case_id?: string | null
+          classe?: string | null
+          created_at?: string
+          data_disponibilizacao: string
+          destinatarios?: Json
+          djen_id: number
+          hash?: string | null
+          id?: string
+          link?: string | null
+          numero_processo: string
+          orgao?: string | null
+          reason?: string | null
+          status?: string
+          tenant_id: string
+          texto_sanitizado: string
+          tipo?: string | null
+          triaged_at?: string | null
+          triaged_by?: string | null
+          tribunal: string
+          updated_at?: string
+        }
+        Update: {
+          alvo?: string
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          case_id?: string | null
+          classe?: string | null
+          created_at?: string
+          data_disponibilizacao?: string
+          destinatarios?: Json
+          djen_id?: number
+          hash?: string | null
+          id?: string
+          link?: string | null
+          numero_processo?: string
+          orgao?: string | null
+          reason?: string | null
+          status?: string
+          tenant_id?: string
+          texto_sanitizado?: string
+          tipo?: string | null
+          triaged_at?: string | null
+          triaged_by?: string | null
+          tribunal?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_intimations_case_id_tenant_id_fkey"
+            columns: ["case_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "legal_cases"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "legal_intimations_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      legal_ownerships: {
+        Row: {
+          closed_by_change_id: string | null
+          created_at: string
+          id: string
+          opened_by_change_id: string
+          owned_entity_id: string
+          owner_entity_id: string | null
+          owner_key: string | null
+          owner_person_id: string | null
+          percent: number
+          quota_class: string | null
+          quotas: number | null
+          tenant_id: string
+          updated_at: string
+          usufruct_person_id: string | null
+          usufruct_until: string | null
+          valid_from: string
+          valid_to: string | null
+        }
+        Insert: {
+          closed_by_change_id?: string | null
+          created_at?: string
+          id?: string
+          opened_by_change_id: string
+          owned_entity_id: string
+          owner_entity_id?: string | null
+          owner_key?: string | null
+          owner_person_id?: string | null
+          percent: number
+          quota_class?: string | null
+          quotas?: number | null
+          tenant_id: string
+          updated_at?: string
+          usufruct_person_id?: string | null
+          usufruct_until?: string | null
+          valid_from: string
+          valid_to?: string | null
+        }
+        Update: {
+          closed_by_change_id?: string | null
+          created_at?: string
+          id?: string
+          opened_by_change_id?: string
+          owned_entity_id?: string
+          owner_entity_id?: string | null
+          owner_key?: string | null
+          owner_person_id?: string | null
+          percent?: number
+          quota_class?: string | null
+          quotas?: number | null
+          tenant_id?: string
+          updated_at?: string
+          usufruct_person_id?: string | null
+          usufruct_until?: string | null
+          valid_from?: string
+          valid_to?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_ownerships_closed_by_change_id_tenant_id_fkey"
+            columns: ["closed_by_change_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "legal_corporate_changes"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "legal_ownerships_opened_by_change_id_tenant_id_fkey"
+            columns: ["opened_by_change_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "legal_corporate_changes"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "legal_ownerships_owned_entity_id_tenant_id_fkey"
+            columns: ["owned_entity_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "legal_ownerships_owner_entity_id_tenant_id_fkey"
+            columns: ["owner_entity_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "legal_ownerships_owner_person_id_tenant_id_fkey"
+            columns: ["owner_person_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "legal_persons"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "legal_ownerships_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "legal_ownerships_usufruct_person_id_tenant_id_fkey"
+            columns: ["usufruct_person_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "legal_persons"
+            referencedColumns: ["id", "tenant_id"]
+          },
+        ]
+      }
+      legal_persons: {
+        Row: {
+          archived_at: string | null
+          birth_date: string | null
+          client_id: string
+          created_at: string
+          created_by: string | null
+          document_hash: string | null
+          email: string | null
+          full_name: string
+          id: string
+          is_contact: boolean
+          marital_regime: string
+          notes: string | null
+          phone_e164: string | null
+          relationship: string
+          row_version: number
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          archived_at?: string | null
+          birth_date?: string | null
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          document_hash?: string | null
+          email?: string | null
+          full_name: string
+          id?: string
+          is_contact?: boolean
+          marital_regime?: string
+          notes?: string | null
+          phone_e164?: string | null
+          relationship?: string
+          row_version?: number
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          archived_at?: string | null
+          birth_date?: string | null
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          document_hash?: string | null
+          email?: string | null
+          full_name?: string
+          id?: string
+          is_contact?: boolean
+          marital_regime?: string
+          notes?: string | null
+          phone_e164?: string | null
+          relationship?: string
+          row_version?: number
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_persons_client_id_tenant_id_fkey"
+            columns: ["client_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "legal_persons_client_id_tenant_id_fkey"
+            columns: ["client_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_client_segments"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "legal_persons_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       loyalty_entries: {
         Row: {
@@ -2233,6 +3726,9 @@ export type Database = {
           deleted_at: string | null
           display_name: string
           id: string
+          legal_role: string | null
+          oab_number: string | null
+          oab_uf: string | null
           photo_key: string | null
           rent_cents: number
           tenant_id: string
@@ -2249,6 +3745,9 @@ export type Database = {
           deleted_at?: string | null
           display_name: string
           id?: string
+          legal_role?: string | null
+          oab_number?: string | null
+          oab_uf?: string | null
           photo_key?: string | null
           rent_cents?: number
           tenant_id: string
@@ -2265,6 +3764,9 @@ export type Database = {
           deleted_at?: string | null
           display_name?: string
           id?: string
+          legal_role?: string | null
+          oab_number?: string | null
+          oab_uf?: string | null
           photo_key?: string | null
           rent_cents?: number
           tenant_id?: string
@@ -3700,10 +5202,13 @@ export type Database = {
           client_id: string | null
           client_name: string | null
           last_campaign_at: string | null
+          last_visit_on: string | null
           late_days: number | null
+          personal_cycle_days: number | null
           phone_e164: string | null
           predicted_on: string | null
           profit_at_risk_cents: number | null
+          sample_size: number | null
           service_id: string | null
           service_name: string | null
           state: Database["public"]["Enums"]["cycle_state"] | null
@@ -3821,6 +5326,32 @@ export type Database = {
       }
       has_tenant: { Args: { t: string }; Returns: boolean }
       imutavel_sem_acento: { Args: { texto: string }; Returns: string }
+      legal_abrir_intimacao: {
+        Args: { p_id: string }
+        Returns: {
+          destinatarios: Json
+          texto: string
+        }[]
+      }
+      legal_apply_corporate_change: { Args: { p: Json }; Returns: string }
+      legal_can_access_case: { Args: { p_case: string }; Returns: boolean }
+      legal_count_restricted: { Args: { p_tenant: string }; Returns: number }
+      legal_intimacoes_gravar: { Args: { p: Json }; Returns: Json }
+      legal_registrar_mudanca_de_prazo: {
+        Args: {
+          p_antes: string
+          p_campo: string
+          p_deadline: string
+          p_depois: string
+          p_motivo: string
+          p_tenant: string
+        }
+        Returns: undefined
+      }
+      legal_sou_da_equipe: {
+        Args: { p_case: string; p_tenant: string }
+        Returns: boolean
+      }
       migracoes_aplicadas: {
         Args: never
         Returns: {

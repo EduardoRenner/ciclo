@@ -14,7 +14,7 @@ import { PACOTES } from '@/core/pacotes'
  * conjunto inteiro de uma vez.
  */
 
-/** Barbearia no Grátis, sem pacote declarado (como todo chamador anterior à 0101 monta o contexto). */
+/** Barbearia no Grátis, sem pacote declarado (como todo chamador anterior à 0102 monta o contexto). */
 const BARBEARIA_GRATIS: ContextoDoTenant = {
   plano: 'gratis',
   eixos: { onde: 'no_local', cobranca: 'fixo', inicio: 'direto', ritmo: 'avulso' },
@@ -114,10 +114,10 @@ describe('as listas não divergem', () => {
     for (const k of LEGAIS) expect(PLANOS.gratis.modulos).not.toContain(k)
   })
 
-  it('os rótulos da 0102 são os do catálogo', () => {
-    const sql = readFileSync('supabase/migrations/0102_modulos_do_pacote.sql', 'utf8')
+  it('os rótulos da 0103 são os do catálogo', () => {
+    const sql = readFileSync('supabase/migrations/0103_modulos_do_pacote.sql', 'utf8')
     for (const m of CATALOGO.filter((x) => LEGAIS.includes(x.key))) {
-      expect(sql, `rótulo de ${m.key} diverge entre core e 0102`).toContain(`'${m.key}',`)
+      expect(sql, `rótulo de ${m.key} diverge entre core e 0103`).toContain(`'${m.key}',`)
       expect(sql).toContain(`'${m.label}'`)
     }
   })
