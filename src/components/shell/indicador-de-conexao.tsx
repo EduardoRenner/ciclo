@@ -52,7 +52,7 @@ export default function IndicadorDeConexao() {
   return (
     <div
       role="status"
-      className="sticky top-0 z-30 flex items-center justify-center gap-2 bg-warn/12 px-[var(--gutter)] py-1.5 text-label font-semibold text-warn"
+      className="sticky top-[calc(3rem+1px+env(safe-area-inset-top))] z-10 flex items-center justify-center gap-2 bg-warn/12 px-[var(--gutter)] py-1.5 text-label font-semibold text-warn backdrop-blur-xl"
     >
       <CloudOff aria-hidden className="size-3.5 shrink-0" />
       {online
