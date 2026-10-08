@@ -76,6 +76,9 @@ export default async function PaginaCaso({ params }: { params: Promise<{ id: str
         <p className="text-secundario text-txt-2">
           O cliente lê: <span className="text-txt">“{caso.paraCliente}”</span>
         </p>
+        <Link href={`/admin/clientes/${caso.clienteId}/estrutura`} className="toque-48 inline-flex w-fit items-center text-secundario font-semibold text-acc-2">
+          Estrutura da família
+        </Link>
       </header>
 
       {caso.sigiloso ? (
