@@ -11,6 +11,7 @@ import Card from '@/components/ui/card'
 import Textarea from '@/components/ui/textarea'
 import { useToast } from '@/components/ui/toast'
 import { acoesDaTela, type GrupoDaFila } from '@/core/advocacia/fila-de-pendencias'
+import AtalhosDaFila from '@/components/advocacia/atalhos-da-fila'
 import { escreverJuridico } from '@/lib/advocacia/escrever'
 
 type Acao = ReturnType<typeof acoesDaTela>[number]
@@ -82,6 +83,7 @@ export default function FilaDePendencias({ grupos }: { grupos: GrupoDaFila[] }) 
   }
 
   return (
+    <AtalhosDaFila modo="agir">
     <ul aria-busy={pendente} className="flex flex-col gap-3">
       {grupos.map((g) => (
         <li key={g.clienteId}>
@@ -146,7 +148,7 @@ export default function FilaDePendencias({ grupos }: { grupos: GrupoDaFila[] }) 
               {(abertos.has(g.clienteId) ? g.itens : g.itens.slice(0, VISIVEIS)).map((i) => {
                 const estado = ESTADO[i.estado]
                 return (
-                  <li key={i.id} className="flex flex-col gap-2 py-3 first:pt-0 last:pb-0">
+                  <li key={i.id} tabIndex={-1} data-atalho-item aria-keyshortcuts="j k" className="flex flex-col gap-2 rounded-[var(--radius-sm)] py-3 first:pt-0 last:pb-0">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="text-corpo">{i.titulo}</p>
@@ -191,9 +193,10 @@ export default function FilaDePendencias({ grupos }: { grupos: GrupoDaFila[] }) 
                       </div>
                     ) : (
                       <div className="flex flex-wrap gap-2">
-                        {acoesDaTela(i.estado, i.quemDeve).map((a) => (
+                        {acoesDaTela(i.estado, i.quemDeve).map((a, n) => (
                           <Button
                             key={a}
+                            {...(n === 0 && a !== 'devolver' ? { 'data-atalho-acao': true, 'aria-keyshortcuts': 'c' } : {})}
                             tamanho="sm"
                             variante={a === 'devolver' ? 'ghost' : 'secondary'}
                             disabled={pendente}
@@ -224,5 +227,6 @@ export default function FilaDePendencias({ grupos }: { grupos: GrupoDaFila[] }) 
         </li>
       ))}
     </ul>
+    </AtalhosDaFila>
   )
 }

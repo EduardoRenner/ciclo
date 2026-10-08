@@ -1,6 +1,7 @@
 import { AlertTriangle, CalendarClock, ChevronRight, FileText, Gavel, ListChecks, MessageCircle } from 'lucide-react'
 import Link from 'next/link'
 
+import AtalhosDaFila from '@/components/advocacia/atalhos-da-fila'
 import Badge from '@/components/ui/badge'
 import Card from '@/components/ui/card'
 import PageHeader from '@/components/ui/page-header'
@@ -128,6 +129,7 @@ export default async function HojeDaAdvocacia({ db, tenantId, hoje, papel, meuPr
           ) : null}
         </Card>
       ) : (
+        <AtalhosDaFila modo="abrir">
         <div className="flex flex-col gap-5 pb-8">
           {grupos.map(({ nome, g, itens }) => {
             const lista = (
@@ -158,6 +160,7 @@ export default async function HojeDaAdvocacia({ db, tenantId, hoje, papel, meuPr
             )
           })}
         </div>
+        </AtalhosDaFila>
       )}
     </>
   )
@@ -189,5 +192,15 @@ function ItemDaFila({ item }: { item: ItemDeHoje }) {
       </div>
     </Card>
   )
-  return <li>{item.link ? <Link href={item.link} className="block rounded-[var(--radius-md)]">{conteudo}</Link> : conteudo}</li>
+  return (
+    <li>
+      {item.link ? (
+        <Link href={item.link} data-atalho-item aria-keyshortcuts="j k" className="block rounded-[var(--radius-md)]">
+          {conteudo}
+        </Link>
+      ) : (
+        conteudo
+      )}
+    </li>
+  )
 }

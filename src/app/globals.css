@@ -468,6 +468,12 @@
     outline: 2px solid var(--ring);
     outline-offset: 2px;
   }
+  /* docs/101 T5.4: foco levado por j/k. Evento de teclado sintético e foco por script nem sempre acendem
+     o `:focus-visible`; o atalho marca o item e o anel aparece do mesmo jeito. */
+  [data-foco-atalho]:focus {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
 
   /* No desktop a barra padrão do Chrome é branca e rasga o tema escuro. */
   @media (pointer: fine) {
