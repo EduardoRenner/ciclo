@@ -462,8 +462,16 @@ async function main() {
         } else if (idade <= 3 && quem === 'cliente') status = chance(0.5) ? 'recebido' : 'em_conferencia'
         else status = 'concluido'
       }
+      // Histórico da escada de lembretes (T2.8): um escritório que usa o sistema cobrou nos marcos que já
+      // passaram, quase sempre. Sem isto, todo item parado pedia "ligar" na demo (9 clientes de uma vez).
+      const idadeDaRodada = Math.round((Date.parse(HOJE) - Date.parse(rodadaDesde)) / 86_400_000)
+      const esperando = quem === 'cliente' && (status === 'pendente' || status === 'devolvido')
+      const lembretes = esperando ? [0, 3, 7].filter((m) => m < idadeDaRodada && chance(0.9)) : []
+      const ligou = esperando && idadeDaRodada > 10 && chance(0.85)
       return {
         tenant_id: T,
+        reminders_sent: lembretes,
+        call_task_created: ligou,
         position: i + 1,
         title: titulo,
         kind: tipo,

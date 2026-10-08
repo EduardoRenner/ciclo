@@ -5,7 +5,7 @@ import dotenv from 'dotenv'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { agirNaPendencia, criarCaso } from '@/server/advocacia/casos'
-import { lerFilaDePendencias } from '@/server/advocacia/pendencias'
+import { lerFilaDePendencias, registrarLembrete } from '@/server/advocacia/pendencias'
 import { AppError } from '@/server/http/errors'
 
 import type { Database } from '@/server/db/types.gen'
@@ -186,5 +186,28 @@ describe('fila de pendências', () => {
     expect(doCliente.every((i) => i.clienteId === clientId)).toBe(true)
     expect(daOutra.every((i) => i.casoId === doOutro.id)).toBe(true)
     expect(await lerFilaDePendencias(advocacia, tenantId, { casoId: doOutro.id })).toHaveLength(3)
+  })
+
+  it('registrar o lembrete marca o marco e os menores, e "ligar" marca a tarefa', async () => {
+    const c = await criarCaso(advocacia, tenantId, OPCOES, {
+      clientId, kind: 'societario', area: 'empresarial', title: 'Alteração lembrete', clientTitle: 'a alteração', sensitivity: 'normal', gerarChecklist: true,
+    })
+    const ids = ((await advocacia.from('legal_checklist_items').select('id').eq('case_id', c.id).eq('owed_by', 'cliente')).data ?? []).map((i) => i.id)
+    expect(ids.length).toBeGreaterThan(0)
+    expect(await registrarLembrete(advocacia, tenantId, { itens: ids, marco: 3 })).toEqual({ marcados: ids.length })
+    const depois = (await advocacia.from('legal_checklist_items').select('reminders_sent').in('id', ids)).data ?? []
+    expect(depois.every((i) => JSON.stringify(i.reminders_sent) === '[0,3]')).toBe(true)
+    await registrarLembrete(advocacia, tenantId, { itens: ids, marco: 'ligar' })
+    const ligado = (await advocacia.from('legal_checklist_items').select('call_task_created').in('id', ids)).data ?? []
+    expect(ligado.every((i) => i.call_task_created)).toBe(true)
+  })
+
+  it('lembrete em item de caso sigiloso fora do alcance não marca nada', async () => {
+    const s = await criarCaso(advocacia, tenantId, OPCOES, {
+      clientId, kind: 'holding', area: 'holding_planejamento', title: 'Holding lembrete', clientTitle: 'o planejamento', sensitivity: 'sigiloso', gerarChecklist: true,
+    })
+    const ids = ((await advocacia.from('legal_checklist_items').select('id').eq('case_id', s.id)).data ?? []).map((i) => i.id)
+    expect(ids.length).toBeGreaterThan(0)
+    expect(await registrarLembrete(outra, tenantId, { itens: ids, marco: 7 })).toEqual({ marcados: 0 })
   })
 })

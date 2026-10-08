@@ -1,4 +1,4 @@
-import { transicionar, type EstadoDaPendencia } from './checklist'
+import { MARCO_DE_LIGAR, proximoLembrete, transicionar, type EstadoDaPendencia } from './checklist'
 import { montarMensagem } from './mensagens'
 
 /**
@@ -25,17 +25,27 @@ export type ItemDaFila = {
   clienteId: string
   clienteNome: string
   clienteTelefone: string | null
+  /** Marcos da escada (0, 3, 7) já cobrados NESTA rodada, e se a tarefa de ligar já saiu. */
+  lembretesFeitos?: readonly number[]
+  ligarFeito?: boolean
 }
 
 export type GrupoDaFila = {
   clienteId: string
   clienteNome: string
+  telefone: string | null
   /** Do item mais antigo do cliente: é por ele que a fila ordena. */
   diasEmAberto: number
   atrasados: number
   itens: (ItemDaFila & { diasEmAberto: number; atrasado: boolean })[]
   /** `null` quando não há o que cobrar do cliente (só itens da equipe ou só recebidos). */
   cobranca: { texto: string; link: string } | { erro: string } | null
+  /**
+   * O que a escada de lembretes (docs/101 T2.8) pede HOJE para este cliente: cobrar no marco (0, 3 ou 7
+   * dias desde a rodada) ou, passados 10 dias, ligar. Calculado na leitura; quem marca como feito é o
+   * toque em "Cobrar" (ou "Liguei"), para a fila não insistir no mesmo marco.
+   */
+  lembrete: { tipo: 'mensagem'; marco: number; itens: string[] } | { tipo: 'ligar'; itens: string[] } | null
 }
 
 /** Estados que aparecem na fila. Concluído e cancelado saem; rascunho aparece para a direção aprovar. */
@@ -97,13 +107,32 @@ export function montarFila(itens: readonly ItemDaFila[], hoje: string, escritori
       cobranca = m.ok ? { texto: m.texto, link: linkDoWhatsApp(primeiro.clienteTelefone, m.texto) } : { erro: m.motivo }
     }
 
+    const passos = cobraveis.map((i) => ({
+      id: i.id,
+      p: proximoLembrete(
+        { estado: i.estado, quemDeve: i.quemDeve, rodadaDesde: i.rodadaDesde, jaPreparados: i.lembretesFeitos ?? [], ligarJaCriado: i.ligarFeito ?? false },
+        hoje,
+      ),
+    }))
+    const paraLigar = passos.filter((x) => x.p.tipo === 'ligar').map((x) => x.id)
+    const mensagens = passos.filter((x): x is { id: string; p: { tipo: 'mensagem'; marco: number } } => x.p.tipo === 'mensagem')
+    const maiorMarco = mensagens.length > 0 ? Math.max(...mensagens.map((x) => x.p.marco)) : null
+    const lembrete: GrupoDaFila['lembrete'] =
+      paraLigar.length > 0
+        ? { tipo: 'ligar', itens: paraLigar }
+        : maiorMarco !== null
+          ? { tipo: 'mensagem', marco: maiorMarco, itens: mensagens.map((x) => x.id) }
+          : null
+
     grupos.push({
       clienteId,
       clienteNome: primeiro.clienteNome,
+      telefone: primeiro.clienteTelefone,
       diasEmAberto: Math.max(...comDias.map((i) => i.diasEmAberto)),
       atrasados: comDias.filter((i) => i.atrasado).length,
       itens: comDias,
       cobranca,
+      lembrete,
     })
   }
 
@@ -125,3 +154,5 @@ export function acoesDaTela(estado: EstadoDaPendencia, quemDeve: 'cliente' | 'eq
   // Pendente do cliente: "Recebi" basta; concluir sem receber é atalho que a fila não oferece.
   return estado === 'pendente' && quemDeve === 'cliente' ? validas.filter((a) => a !== 'concluir') : validas
 }
+
+export { MARCO_DE_LIGAR }

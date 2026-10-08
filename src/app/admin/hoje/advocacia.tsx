@@ -1,4 +1,4 @@
-import { AlertTriangle, CalendarClock, ChevronRight, FileText, Gavel, ListChecks } from 'lucide-react'
+import { AlertTriangle, CalendarClock, ChevronRight, FileText, Gavel, ListChecks, MessageCircle } from 'lucide-react'
 import Link from 'next/link'
 
 import Badge from '@/components/ui/badge'
@@ -18,9 +18,9 @@ const ROTULO_DO_FILTRO: Record<Filtro, string> = { direcao: 'Exige direção', m
 /** Grupos que abrem fechados: esperar alguém de fora não é "o que preciso fazer agora". */
 const FECHADOS = new Set([4, 5, 6, 7])
 
-const ICONE = { deadline: CalendarClock, intimation: Gavel, client_action: ListChecks, task: FileText } as const
+const ICONE = { deadline: CalendarClock, intimation: Gavel, client_action: ListChecks, task: FileText, message: MessageCircle } as const
 
-const ACAO: Record<string, string> = { deadline: 'Abrir', intimation: 'Triar', client_action: 'Abrir', task: 'Abrir' }
+const ACAO: Record<string, string> = { deadline: 'Abrir', intimation: 'Triar', client_action: 'Abrir', task: 'Abrir', message: 'Cobrar' }
 
 /**
  * "Exige direção" (docs/101 anexo 04 §4.1): sem responsável, prazo fatal atrasado ou de hoje, prazo

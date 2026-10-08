@@ -202,8 +202,10 @@ export function proximoLembrete(
   const [yb, mb, db] = hoje.split('-').map(Number) as [number, number, number]
   const dias = Math.round((Date.UTC(yb, mb - 1, db) - Date.UTC(ya, ma - 1, da)) / 86_400_000)
   if (dias >= MARCO_DE_LIGAR) return p.ligarJaCriado ? { tipo: 'nada' } : { tipo: 'ligar' }
-  // o maior marco alcançado que ainda não saiu: atraso de vários dias não gera rajada de mensagens
-  const alcancados = MARCOS_DO_LEMBRETE.filter((m) => dias >= m && !p.jaPreparados.includes(m))
+  // o maior marco alcançado DEPOIS do último que saiu: atraso de vários dias não gera rajada, e um marco
+  // menor que o último cobrado não volta (o lembrete do 3º dia já cobre o do dia 0 que ninguém mandou)
+  const ultimo = Math.max(-1, ...p.jaPreparados)
+  const alcancados = MARCOS_DO_LEMBRETE.filter((m) => dias >= m && m > ultimo)
   const marco = alcancados.at(-1)
   return marco === undefined ? { tipo: 'nada' } : { tipo: 'mensagem', marco }
 }

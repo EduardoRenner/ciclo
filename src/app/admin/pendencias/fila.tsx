@@ -1,6 +1,6 @@
 'use client'
 
-import { MessageCircle } from 'lucide-react'
+import { MessageCircle, Phone } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
@@ -56,6 +56,19 @@ export default function FilaDePendencias({ grupos }: { grupos: GrupoDaFila[] }) 
   const [erro, setErro] = useState<{ id: string; texto: string } | null>(null)
   const [abertos, setAbertos] = useState<ReadonlySet<string>>(new Set())
 
+  /** Marca o lembrete (sem esperar): a mensagem já saiu pelo WhatsApp, e uma falha aqui só faz a fila pedir de novo. */
+  function registrar(itens: string[], marco: 0 | 3 | 7 | 'ligar') {
+    void fetch('/api/v1/legal/checklist/lembrete', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+      body: JSON.stringify({ itens, marco }),
+    })
+      .then((r) => {
+        if (r.ok) router.refresh()
+      })
+      .catch(() => undefined)
+  }
+
   function agir(id: string, rowVersion: number, acao: Acao, motivoDaAcao?: string) {
     setErro(null)
     iniciar(async () => {
@@ -100,11 +113,38 @@ export default function FilaDePendencias({ grupos }: { grupos: GrupoDaFila[] }) 
               {g.atrasados > 0 ? <Badge estado="risk" className="shrink-0 whitespace-nowrap">{g.atrasados === 1 ? '1 atrasada' : `${g.atrasados} atrasadas`}</Badge> : null}
             </div>
 
+            {g.lembrete ? (
+              <p role="status" className="text-secundario font-semibold text-warn">
+                {g.lembrete.tipo === 'ligar'
+                  ? 'Passou de 10 dias sem resposta: vale ligar.'
+                  : g.lembrete.marco === 0
+                    ? 'Dia de avisar o que falta.'
+                    : `Dia de lembrar: ${g.lembrete.marco} dias sem resposta.`}
+              </p>
+            ) : null}
+            {g.lembrete?.tipo === 'ligar' && g.telefone ? (
+              <div className="flex flex-wrap gap-2">
+                <a
+                  href={`tel:${g.telefone}`}
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-line-2 bg-surface-2 px-5 text-corpo font-semibold"
+                >
+                  <Phone aria-hidden className="size-5" />
+                  Ligar
+                </a>
+                <Button variante="ghost" onClick={() => registrar(g.lembrete!.itens, 'ligar')}>
+                  Liguei
+                </Button>
+              </div>
+            ) : null}
             {g.cobranca && 'link' in g.cobranca ? (
               <a
                 href={g.cobranca.link}
                 target="_blank"
                 rel="noopener noreferrer"
+                // o toque em Cobrar é o "cobrei": marca o marco da escada para a fila não pedir de novo hoje
+                onClick={() => {
+                  if (g.lembrete?.tipo === 'mensagem') registrar(g.lembrete.itens, g.lembrete.marco as 0 | 3 | 7)
+                }}
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-sm)] bg-acc px-5 text-corpo font-semibold text-on-acc"
               >
                 <MessageCircle aria-hidden className="size-5" />

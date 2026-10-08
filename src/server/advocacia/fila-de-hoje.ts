@@ -1,3 +1,4 @@
+import { proximoLembrete, type EstadoDaPendencia } from '@/core/advocacia/checklist'
 import { addDays, diaDaSemana } from '@/core/advocacia/datas'
 import { mascaraCnj } from '@/core/advocacia/intimacoes'
 import { ordenarFila, type ItemFila, type ItemOrdenado } from '@/core/advocacia/prioridade'
@@ -55,7 +56,7 @@ export async function lerFilaDeHoje(db: Cliente, tenantId: string, hoje: string)
     db
       .from('legal_checklist_items')
       .select(
-        'id, title, status, owed_by, due_on, created_at, case_id, ' +
+        'id, title, status, owed_by, due_on, created_at, case_id, rodada_desde, reminders_sent, call_task_created, ' +
           'legal_cases!legal_checklist_items_case_id_tenant_id_fkey(title, client_id, sensitivity, responsible_professional_id, clients!legal_cases_client_id_tenant_id_fkey(name))',
       )
       .eq('tenant_id', tenantId)
@@ -80,7 +81,19 @@ export async function lerFilaDeHoje(db: Cliente, tenantId: string, hoje: string)
     legal_cases: { title: string; sensitivity: string } | null
   }
   type Intimacao = { id: string; tribunal: string; tipo: string | null; numero_processo: string; data_disponibilizacao: string; status: string; case_id: string | null; created_at: string; legal_cases: Caso }
-  type Pendencia = { id: string; title: string; status: string; owed_by: string; due_on: string | null; created_at: string; case_id: string; legal_cases: Caso }
+  type Pendencia = {
+    id: string
+    title: string
+    status: string
+    owed_by: string
+    due_on: string | null
+    created_at: string
+    case_id: string
+    rodada_desde: string
+    reminders_sent: number[]
+    call_task_created: boolean
+    legal_cases: Caso
+  }
 
   const itens: (ItemFila & { clienteNome: string | null; casoTitulo: string | null })[] = []
 
@@ -148,6 +161,52 @@ export async function lerFilaDeHoje(db: Cliente, tenantId: string, hoje: string)
       created_at: p.created_at,
       clienteNome: p.legal_cases?.clients?.name ?? null,
       casoTitulo: p.legal_cases?.title ?? null,
+    })
+  }
+
+  // A escada de lembretes (T2.8) vira UM item por cliente: "Cobrar Fulano" no marco, "Ligar para Fulano"
+  // depois de 10 dias. O item leva à fila de Pendências, onde o toque em Cobrar marca o lembrete.
+  const lembretes = new Map<string, { tipo: 'mensagem' | 'ligar'; cliente: string; responsavel: string | null; criado: string }>()
+  for (const p of (pendencias.data ?? []) as unknown as Pendencia[]) {
+    const clienteId = p.legal_cases?.client_id
+    if (!clienteId) continue
+    const passo = proximoLembrete(
+      {
+        estado: p.status as EstadoDaPendencia,
+        quemDeve: p.owed_by === 'equipe' ? 'equipe' : 'cliente',
+        rodadaDesde: p.rodada_desde,
+        jaPreparados: p.reminders_sent,
+        ligarJaCriado: p.call_task_created,
+      },
+      hoje,
+    )
+    if (passo.tipo === 'nada') continue
+    const atual = lembretes.get(clienteId)
+    if (atual?.tipo === 'ligar') continue
+    lembretes.set(clienteId, {
+      tipo: passo.tipo,
+      cliente: p.legal_cases?.clients?.name ?? 'cliente',
+      responsavel: p.legal_cases?.responsible_professional_id ?? null,
+      criado: p.created_at,
+    })
+  }
+  for (const [clienteId, l] of lembretes) {
+    itens.push({
+      item_key: `lembrete:${clienteId}`,
+      source: l.tipo === 'ligar' ? 'task' : 'message',
+      source_id: clienteId,
+      account_id: clienteId,
+      matter_id: null,
+      title: l.tipo === 'ligar' ? `Ligar para ${l.cliente}: 10 dias sem resposta` : `Cobrar ${l.cliente} pelo WhatsApp`,
+      owner_kind: 'staff',
+      owner_staff_id: l.responsavel,
+      due_on: hoje,
+      raw: {},
+      sensitivity: null,
+      link: `/admin/clientes/${clienteId}`,
+      created_at: l.criado,
+      clienteNome: l.cliente,
+      casoTitulo: null,
     })
   }
 

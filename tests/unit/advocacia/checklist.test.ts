@@ -134,4 +134,9 @@ describe('escada de lembretes', () => {
   it('devolvida conta da nova rodada', () => {
     expect(proximoLembrete({ ...base, estado: 'devolvido', rodadaDesde: '2026-10-08' }, '2026-10-08')).toEqual({ tipo: 'mensagem', marco: 0 })
   })
+
+  it('marco menor que o último cobrado não volta (o do 3º dia cobre o do dia 0)', () => {
+    expect(proximoLembrete({ estado: 'pendente', quemDeve: 'cliente', rodadaDesde: '2026-10-01', jaPreparados: [3], ligarJaCriado: false }, '2026-10-05')).toEqual({ tipo: 'nada' })
+    expect(proximoLembrete({ estado: 'pendente', quemDeve: 'cliente', rodadaDesde: '2026-10-01', jaPreparados: [3], ligarJaCriado: false }, '2026-10-08')).toEqual({ tipo: 'mensagem', marco: 7 })
+  })
 })

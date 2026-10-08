@@ -130,6 +130,19 @@ describe('o escritório-modelo, medido depois de gerado', () => {
     expect(divorcios.data ?? []).toEqual([])
   })
 
+  it('a escada de lembretes tem histórico: poucos clientes pedem ligação hoje', async () => {
+    const { data } = await admin
+      .from('legal_checklist_items')
+      .select('rodada_desde, call_task_created, legal_cases!legal_checklist_items_case_id_tenant_id_fkey!inner(client_id)')
+      .eq('tenant_id', T)
+      .eq('owed_by', 'cliente')
+      .in('status', ['pendente', 'devolvido'])
+    const linhas = (data ?? []) as unknown as { rodada_desde: string; call_task_created: boolean; legal_cases: { client_id: string } }[]
+    const pedemLigar = new Set(linhas.filter((l) => dias(l.rodada_desde) >= 10 && !l.call_task_created).map((l) => l.legal_cases.client_id))
+    expect(linhas.length).toBeGreaterThan(10)
+    expect(pedemLigar.size, 'clientes pedindo ligação hoje (9 denunciava o gerador sem histórico)').toBeLessThanOrEqual(4)
+  })
+
   it('o pico de 15 intimações num dia existe, e nenhum dia passa dele', async () => {
     const { data } = await admin.from('legal_intimations').select('data_disponibilizacao').eq('tenant_id', T)
     const porDia = new Map<string, number>()

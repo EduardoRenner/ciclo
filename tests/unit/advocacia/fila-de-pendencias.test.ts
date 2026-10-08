@@ -95,6 +95,30 @@ describe('montarFila', () => {
   })
 })
 
+describe('escada de lembretes no grupo', () => {
+  it('no 3º dia sem resposta, pede o lembrete do marco 3 (e não repete o 0 esquecido)', () => {
+    const [g] = montarFila([item({ id: 'a', rodadaDesde: '2026-10-05' })], HOJE, 'X')
+    expect(g!.lembrete).toEqual({ tipo: 'mensagem', marco: 3, itens: ['a'] })
+  })
+
+  it('marco já cobrado não volta', () => {
+    const [g] = montarFila([item({ id: 'a', rodadaDesde: '2026-10-05', lembretesFeitos: [3] })], HOJE, 'X')
+    expect(g!.lembrete).toBeNull()
+  })
+
+  it('passados 10 dias, ligar ganha da mensagem; depois de ligar, nada', () => {
+    const [g] = montarFila([item({ id: 'a', rodadaDesde: '2026-09-20' }), item({ id: 'b', rodadaDesde: '2026-10-08' })], HOJE, 'X')
+    expect(g!.lembrete).toEqual({ tipo: 'ligar', itens: ['a'] })
+    const [h] = montarFila([item({ id: 'a', rodadaDesde: '2026-09-20', ligarFeito: true })], HOJE, 'X')
+    expect(h!.lembrete).toBeNull()
+  })
+
+  it('item com a equipe ou já recebido não entra na escada', () => {
+    const [g] = montarFila([item({ id: 'a', quemDeve: 'equipe' }), item({ id: 'b', estado: 'recebido' })], HOJE, 'X')
+    expect(g!.lembrete).toBeNull()
+  })
+})
+
 describe('linkDoWhatsApp', () => {
   it('sem telefone válido abre o seletor de contato', () => {
     expect(linkDoWhatsApp(null, 'oi')).toBe('https://wa.me/?text=oi')
