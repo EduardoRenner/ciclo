@@ -167,6 +167,7 @@ INSERT/UPDATE nas cinco que só o servidor grava), com guarda que exige toda tab
 | Dívida | Motivo | Revisitar quando |
 |---|---|---|
 | Linha do tempo do Cliente 360 não existe | `audit_log` cru seria ação sem contexto | trilha com leitura por cliente |
+| Fila de Hoje sem `document_review` e sem reuniões | documento chegaria duas vezes (a pendência já entra); nenhuma tela cria reunião | envio de documento marcar a pendência; agenda do caso |
 | Lembretes calculados na leitura, sem job | sem canal de envio, "preparar" não seria visto | se o pacote ganhar envio |
 | `is_demo` não é coluna; vale a lista de demonstração | uma fonte só (sitemap, robots, mensageria já leem a lista) | nunca, salvo motivo novo |
 | Guarda `consulta-filtra-tenant` não lê arquivo ainda não adicionado ao git | lê `git ls-files`; na CI tudo está rastreado | se virar problema local |
