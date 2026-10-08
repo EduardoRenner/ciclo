@@ -14,6 +14,7 @@ import { contextoDoPainel } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { contextoDePlano } from '@/server/services/planos'
 
+import CadastroDaEstrutura from './cadastro'
 import EstruturaInterativa from './interativa'
 
 export const dynamic = 'force-dynamic'
@@ -34,6 +35,8 @@ export default async function PaginaEstrutura({ params, searchParams }: { params
   const db = await criarClienteDoUsuario()
   const plano = await contextoDePlano(db, ctx.tenantId)
   const veredito = podeUsarModulo(plano, 'legal_structure')
+  // ver a estrutura e cadastrar nela são o mesmo módulo: liberado, a tela também oferece o cadastro
+  const podeEditar = veredito.estado === 'liberado'
   if (veredito.estado === 'bloqueado_pelo_plano' && veredito.precisaDo !== 'gratis') {
     return (
       <BloqueioPlano
@@ -79,6 +82,12 @@ export default async function PaginaEstrutura({ params, searchParams }: { params
             )
           })}
         </nav>
+      ) : null}
+
+      {podeEditar && dia === hoje ? (
+        <div className="mb-5">
+          <CadastroDaEstrutura clienteId={id} pessoas={estrutura.pessoas} empresas={estrutura.empresas} hoje={hoje} />
+        </div>
       ) : null}
 
       {estrutura.empresas.length === 0 ? (

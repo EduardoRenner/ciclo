@@ -84,6 +84,10 @@ export const ROTAS_DE_ESCRITA: Readonly<Record<string, RegraNaPausa>> = {
   'POST v1/legal/documents': 'bloqueia',
   // prazo novo é linha nova; corrigir, confirmar e encerrar mexem no que existe (e prazo não espera pagamento)
   'POST v1/legal/deadlines': 'bloqueia',
+  // pessoa, empresa e ato societário são linhas novas
+  'POST v1/legal/persons': 'bloqueia',
+  'POST v1/legal/entities': 'bloqueia',
+  'POST v1/legal/entities/[id]/changes': 'bloqueia',
   'PATCH v1/legal/deadlines/[id]': 'permite',
   'POST v1/legal/deadlines/[id]/close': 'permite',
   'POST v1/legal/documents/[id]/open': 'permite',
