@@ -58,7 +58,7 @@ export default async function PaginaComissao() {
         <Card>
           <p className="text-corpo text-txt-2">
             O total de comissão por profissional já está no{' '}
-            <Link href="/admin/caixa" className="font-semibold text-acc-2">
+            <Link href="/admin/caixa" className="toque-48 -mx-1 px-1 font-semibold text-acc-2">
               Caixa
             </Link>
             . O extrato item a item de um profissional específico chega aqui em breve.

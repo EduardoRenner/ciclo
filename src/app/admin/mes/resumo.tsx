@@ -83,7 +83,7 @@ export default function ResumoDoMes({
       <p className="text-corpo text-txt-2">
         Nenhuma comanda fechada este mês ainda. Assim que a primeira fechar, os cinco números
         aparecem aqui.{' '}
-        <Link href="/admin/agenda" className="font-semibold text-acc-2">
+        <Link href="/admin/agenda" className="toque-48 whitespace-nowrap font-semibold text-acc-2">
           Ver a agenda
         </Link>
       </p>
