@@ -175,6 +175,18 @@ describe('matriz de escrita', () => {
     expect(casos.count).toBe(2)
   })
 
+  it('0115: DELETE nem chega à RLS: é privilégio negado para todo papel (não "0 linhas")', async () => {
+    for (const p of PERSONAS) {
+      const r = await quem[p.nome].cliente.from('legal_cases').delete().eq('tenant_id', T).select('id')
+      expect(r.error?.message ?? '', p.nome).toMatch(/permission denied/)
+    }
+  })
+
+  it('0115: a trilha e o histórico não aceitam INSERT de ninguém pela API', async () => {
+    const r = await quem.dono.cliente.from('legal_access_log').insert({ tenant_id: T, kind: 'open_case', case_id: ids.N })
+    expect(r.error?.message ?? '').toMatch(/permission denied/)
+  })
+
   it('ninguém muda o estado da intimação por UPDATE direto (só pela RPC da decisão)', async () => {
     for (const p of PERSONAS) {
       const r = await quem[p.nome].cliente.from('legal_intimations').update({ status: 'descartada' }).eq('id', ids.I0!).select('id')
