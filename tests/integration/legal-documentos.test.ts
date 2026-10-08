@@ -91,6 +91,16 @@ describe('documentos', () => {
     expect(new Uint8Array(await corpo.arrayBuffer())).toEqual(PDF)
   })
 
+  it('o bucket não abre para o navegador: nem quem é da equipe baixa ou lista direto (só pela porta com trilha)', async () => {
+    const v = (await admin.from('legal_document_versions').select('storage_path').eq('document_id', docId).order('version_no').limit(1).single()).data!
+    const baixar = await quem.equipe.c.storage.from('legal-docs').download(v.storage_path)
+    expect(baixar.data).toBeNull()
+    const listar = await quem.equipe.c.storage.from('legal-docs').list(`${T}/${clienteId}`)
+    expect(listar.data ?? []).toEqual([])
+    // controle positivo: o arquivo existe (a service role o vê)
+    expect((await admin.storage.from('legal-docs').download(v.storage_path)).data).not.toBeNull()
+  })
+
   it('quem não é da equipe do caso sigiloso: 404 ao abrir e ao mandar versão, sem trilha nova', async () => {
     await expect(abrirDocumento(quem.fora.c, T, docId, { userId: quem.fora.uid, ip: null })).rejects.toMatchObject({ code: 'NOT_FOUND' })
     await expect(
