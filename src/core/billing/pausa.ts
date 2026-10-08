@@ -110,6 +110,8 @@ export const ROTAS_DE_ESCRITA: Readonly<Record<string, RegraNaPausa>> = {
   'POST v1/services/reorder': 'permite',
   'POST v1/services': 'bloqueia',
   'POST v1/subscription-plans': 'bloqueia',
+  // docs/101 T4.6: regras de contagem e OAB da equipe são configuração do próprio escritório
+  'PATCH v1/tenant/advocacia': 'permite',
   'PATCH v1/tenant/automacoes': 'permite',
   'PATCH v1/tenant/fixed-cost': 'permite',
   'PATCH v1/tenant/loyalty-config': 'permite',

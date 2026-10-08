@@ -23,7 +23,9 @@ function rotas(dir: string): string[] {
   })
 }
 
-const ARQUIVOS = rotas(RAIZ)
+// rotas do pacote fora de `v1/legal` entram pelo nome: a varredura da pasta não as alcançaria
+const FORA_DA_PASTA = [join('src', 'app', 'api', 'v1', 'tenant', 'advocacia', 'route.ts')]
+const ARQUIVOS = [...rotas(RAIZ), ...FORA_DA_PASTA]
 
 describe('rotas v1/legal', () => {
   it('a varredura achou as rotas que existem (piso pelo positivo conhecido)', () => {
@@ -31,6 +33,7 @@ describe('rotas v1/legal', () => {
     expect(nomes).toContain('src/app/api/v1/legal/cases/route.ts')
     expect(nomes).toContain('src/app/api/v1/legal/checklist/[id]/route.ts')
     expect(nomes).toContain('src/app/api/v1/legal/intimations/[id]/decide/route.ts')
+    expect(nomes).toContain('src/app/api/v1/tenant/advocacia/route.ts')
   })
 
   it.each(ARQUIVOS)('%s exige segundo fator, pacote e módulo em todo handler de escrita', (arquivo) => {

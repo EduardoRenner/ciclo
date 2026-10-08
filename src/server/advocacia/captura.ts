@@ -1,4 +1,5 @@
 import { corpoComSugestoes, type CasoParaCaptura } from '@/core/advocacia/captura'
+import { regrasConfirmadas } from '@/core/advocacia/configuracao'
 import { alvosDaCaptura, chaveDoAlvo, consolidarDia, diasParaCapturar } from '@/core/advocacia/intimacoes'
 import { consultarDia, DjenErro, type OpcoesDjen } from '@/server/advocacia/djen'
 import { AppError } from '@/server/http/errors'
@@ -57,9 +58,8 @@ export async function capturarIntimacoesDoEscritorio(
     tribunal: f.tribunal,
     comarca: f.comarca,
   }))
-  // Regras de contagem confirmadas pela direção (T4.6). Sem a tela de configuração, nenhuma: a triagem pede a data.
-  const ajustes = (tenant.data?.settings as { advocacia?: { regras_confirmadas?: unknown } } | null)?.advocacia?.regras_confirmadas
-  const confirmadas = Array.isArray(ajustes) ? ajustes.filter((x): x is string => typeof x === 'string') : []
+  // Regras de contagem confirmadas pela direção (T4.6, Configurações do escritório). Nenhuma: a triagem pede a data.
+  const confirmadas = regrasConfirmadas(tenant.data?.settings)
 
   const resumo: ResumoDaCaptura = { alvos: alvos.length, semOab: semOab.length, dias: 0, novas: 0, falhas: 0, lacuna: false }
   for (const alvo of alvos) {

@@ -53,7 +53,8 @@ export function alvosDaCaptura(
     const ambigua = bruto !== "" && !/^[\d.\-\s]+$/.test(bruto);
     const numero = ambigua || !bruto ? "" : soDigitos(bruto);
     const uf = (p.oabUf ?? "").trim().toUpperCase();
-    if (numero && /^[A-Z]{2}$/.test(uf)) {
+    // número só de zeros não existe na OAB: consultá-lo traria o DJEN inteiro de outro filtro, ou nada, sem aviso
+    if (numero && /[1-9]/.test(numero) && /^[A-Z]{2}$/.test(uf)) {
       const a: Alvo = { tipo: "oab", numero, uf };
       if (!vistos.has(chaveDoAlvo(a))) {
         vistos.add(chaveDoAlvo(a));

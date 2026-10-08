@@ -51,6 +51,12 @@ describe("quem a captura consulta", () => {
     expect(r.semOab).toEqual([]);
   });
 
+  it("OAB só de zeros conta como sem OAB: não consulta e avisa", () => {
+    const r = alvosDaCaptura([pessoa({ id: "zero", oabNumber: "00000", oabUf: "SC" }), pessoa({ id: "z2", oabNumber: "0", oabUf: "SC" })], []);
+    expect(r.alvos).toEqual([]);
+    expect(r.semOab).toEqual(["zero", "z2"]);
+  });
+
   it("advogado e sócio ativos SEM OAB ou sem UF saem no aviso (nunca silencioso); sócio sem OAB, estagiário e secretaria não são cobrados", () => {
     const r = alvosDaCaptura(
       [
