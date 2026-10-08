@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation'
 
 import FilaDePendencias from '@/app/admin/pendencias/fila'
 import DocumentosDoCaso from '@/components/advocacia/documentos'
+import PrazosDoCaso from '@/components/advocacia/prazos'
 import Badge from '@/components/ui/badge'
 import Card from '@/components/ui/card'
 import SectionHeader from '@/components/ui/section-header'
@@ -23,11 +24,7 @@ export const dynamic = 'force-dynamic'
 
 export const metadata = { title: 'Caso' }
 
-const ROTULO_DO_PRAZO: Record<string, string> = { fatal: 'Prazo fatal', interno: 'Prazo interno', audiencia: 'Audiência', contratual: 'Prazo contratual' }
 const ROTULO_DO_PAPEL: Record<string, string> = { responsavel: 'Responsável', equipe: 'Equipe' }
-const horaNoFuso = (iso: string, timeZone: string) => new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone })
-const dataLonga = (iso: string) =>
-  new Date(`${iso}T12:00:00Z`).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit', timeZone: 'UTC' })
 
 /**
  * docs/101 T2.6 e anexo 04 §4.4: a ficha do caso. Topo com o título interno, o que o cliente LÊ, o
@@ -58,7 +55,6 @@ export default async function PaginaCaso({ params }: { params: Promise<{ id: str
   // o plano é consultado ANTES do formulário de envio (guarda `toda-rota-travada-tem-tela-que-avisa`)
   const podeEnviar = podeUsarModulo(plano, 'legal_documents').estado === 'liberado'
   const grupos = montarFila(itens, hoje, ctx.tenant.name)
-  const prazosAbertos = caso.prazos.filter((p) => p.estado === 'aberto')
 
   return (
     <>
@@ -114,33 +110,7 @@ export default async function PaginaCaso({ params }: { params: Promise<{ id: str
         <SectionHeader icone={<CalendarClock className="size-4" />}>
           <span id="sec-prazos">Prazos</span>
         </SectionHeader>
-        {prazosAbertos.length === 0 ? (
-          <p className="text-secundario text-txt-2">Nenhum prazo aberto neste caso.</p>
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {prazosAbertos.map((p) => {
-              const atrasado = (p.internoEm ?? p.venceEm) < hoje
-              return (
-                <li key={p.id}>
-                  <Card className="flex items-start justify-between gap-3 p-3">
-                    <div className="min-w-0">
-                      <p className="text-corpo">{p.titulo}</p>
-                      <p className={`text-secundario ${atrasado ? 'text-bad' : 'text-txt-2'}`}>
-                        {p.tipo === 'fatal' && p.internoEm
-                          ? `Fazer até ${dataLonga(p.internoEm)} · fatal ${dataLonga(p.venceEm)}`
-                          : `${dataLonga(p.venceEm)}${p.horario ? ` às ${horaNoFuso(p.horario, ctx.tenant.timezone)}` : ''}`}
-                      </p>
-                      {p.tipo === 'fatal' && !p.confirmado ? <p className="text-label text-warn">Sugestão a confirmar</p> : null}
-                    </div>
-                    <Badge estado={p.tipo === 'fatal' ? 'risk' : 'ciclo'} className="shrink-0 whitespace-nowrap">
-                      {ROTULO_DO_PRAZO[p.tipo] ?? 'Prazo'}
-                    </Badge>
-                  </Card>
-                </li>
-              )
-            })}
-          </ul>
-        )}
+        <PrazosDoCaso prazos={caso.prazos} hoje={hoje} clienteId={caso.clienteId} casoId={id} timezone={ctx.tenant.timezone} />
       </section>
 
       <section aria-labelledby="sec-pendencias" className="mb-6">

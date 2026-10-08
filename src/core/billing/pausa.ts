@@ -81,6 +81,10 @@ export const ROTAS_DE_ESCRITA: Readonly<Record<string, RegraNaPausa>> = {
   'POST v1/legal/checklist/lembrete': 'permite',
   // documento novo (ou versão nova) é linha nova; abrir e conferir mexem no que existe
   'POST v1/legal/documents': 'bloqueia',
+  // prazo novo é linha nova; corrigir, confirmar e encerrar mexem no que existe (e prazo não espera pagamento)
+  'POST v1/legal/deadlines': 'bloqueia',
+  'PATCH v1/legal/deadlines/[id]': 'permite',
+  'POST v1/legal/deadlines/[id]/close': 'permite',
   'POST v1/legal/documents/[id]/open': 'permite',
   'PATCH v1/legal/documents/[id]': 'permite',
   // triagem é obrigação (prazo que nasce dela não pode esperar a conta voltar a pagar)
