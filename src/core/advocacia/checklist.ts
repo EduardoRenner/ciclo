@@ -24,6 +24,20 @@ export const TIPOS_DE_CASO = [
 ] as const
 export type TipoDeCaso = (typeof TIPOS_DE_CASO)[number]
 
+/** Como o tipo aparece na tela, e a frase que o cliente lê por padrão (o escritório pode trocar). */
+export const ROTULO_DO_TIPO_DE_CASO: Readonly<Record<TipoDeCaso, { rotulo: string; paraCliente: string }>> = {
+  holding: { rotulo: 'Holding', paraCliente: 'o planejamento da família' },
+  inventario: { rotulo: 'Inventário', paraCliente: 'o inventário' },
+  planejamento_sucessorio: { rotulo: 'Planejamento sucessório', paraCliente: 'o planejamento sucessório' },
+  divorcio_partilha: { rotulo: 'Divórcio e partilha', paraCliente: 'a partilha' },
+  contrato: { rotulo: 'Contrato', paraCliente: 'o contrato' },
+  societario: { rotulo: 'Societário', paraCliente: 'a alteração da empresa' },
+  tributario: { rotulo: 'Tributário', paraCliente: 'o seu processo' },
+  trabalhista: { rotulo: 'Trabalhista', paraCliente: 'o seu processo' },
+  civel: { rotulo: 'Cível', paraCliente: 'o seu processo' },
+  outro: { rotulo: 'Outro', paraCliente: 'o seu atendimento' },
+}
+
 export type TipoDePendencia = 'enviar_documento' | 'assinar' | 'responder' | 'conferir' | 'agendar'
 export type QuemDeve = 'cliente' | 'equipe'
 export type Urgencia = 'alta' | 'media' | 'baixa'

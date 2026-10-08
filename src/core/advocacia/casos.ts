@@ -12,6 +12,27 @@ export type EstadoDoCaso = (typeof ESTADOS_DO_CASO)[number]
 
 export type Sigilo = 'normal' | 'sigiloso'
 
+/** As áreas do caso, na mesma ordem do `check` de `legal_cases.area` (0105). */
+export const AREAS_DO_CASO = [
+  'holding_planejamento', 'empresarial', 'familia_sucessoes', 'tributario', 'bancario',
+  'trabalhista', 'previdenciario', 'civel', 'criminal', 'tribunal_juri', 'outro',
+] as const
+export type AreaDoCaso = (typeof AREAS_DO_CASO)[number]
+
+export const ROTULO_DA_AREA: Readonly<Record<AreaDoCaso, string>> = {
+  holding_planejamento: 'Holding e planejamento',
+  empresarial: 'Empresarial',
+  familia_sucessoes: 'Família e sucessões',
+  tributario: 'Tributário',
+  bancario: 'Bancário',
+  trabalhista: 'Trabalhista',
+  previdenciario: 'Previdenciário',
+  civel: 'Cível',
+  criminal: 'Criminal',
+  tribunal_juri: 'Tribunal do júri',
+  outro: 'Outra',
+}
+
 /** Áreas que nascem sigilosas e não podem ser rebaixadas por ninguém (LUBI `0013`). */
 export const AREAS_SEMPRE_SIGILOSAS = ['criminal', 'tribunal_juri'] as const
 

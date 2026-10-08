@@ -5336,7 +5336,12 @@ export type Database = {
       legal_apply_corporate_change: { Args: { p: Json }; Returns: string }
       legal_can_access_case: { Args: { p_case: string }; Returns: boolean }
       legal_count_restricted: { Args: { p_tenant: string }; Returns: number }
+      legal_intimacao_decidir: { Args: { p: Json }; Returns: Json }
       legal_intimacoes_gravar: { Args: { p: Json }; Returns: Json }
+      legal_registrar_abertura_do_caso: {
+        Args: { p_case: string }
+        Returns: boolean
+      }
       legal_registrar_mudanca_de_prazo: {
         Args: {
           p_antes: string
