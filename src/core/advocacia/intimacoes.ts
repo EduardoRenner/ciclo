@@ -48,7 +48,7 @@ export function alvosDaCaptura(
     // só o papel "advogado" é cobrado pelo aviso; sócio com OAB preenchida é consultado, mas sócio sem OAB (que pode
     // não advogar) não deixa a vigia vermelha; estagiário e secretaria nunca são cobrados
     const advoga = p.role === "advogado";
-    // OAB com letras ("24850-A", suplementar) ou mais de um número ("SC 24850 / PR 51234") é ambígua: não consulta e avisa
+    // OAB com letras ("12345-A", suplementar) ou mais de um número ("SC 12345 / PR 51234") é ambígua: não consulta e avisa
     const bruto = p.oabNumber ?? "";
     const ambigua = bruto !== "" && !/^[\d.\-\s]+$/.test(bruto);
     const numero = ambigua || !bruto ? "" : soDigitos(bruto);

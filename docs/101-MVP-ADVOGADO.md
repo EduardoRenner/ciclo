@@ -50,7 +50,7 @@ inventar (§3).
    por introspecção e nos testes negativos por papel; caso sigiloso só para membros (§6, anexo 02).
 3. **Portar o LUBI é reescrita, não cópia.** Stacks diferentes (Vite/TanStack × Next.js) e
    instalação única × multi-tenant: toda tabela ganha `tenant_id` e toda tela é refeita (§8).
-4. **A tese não está validada.** Uma fonte (Dra. Katiane), entrevistas em andamento, uma venda
+4. **A tese não está validada.** Uma fonte (a advogada consultada), entrevistas em andamento, uma venda
    anterior. O plano prevê onde as respostas mudam o escopo (§13) e um critério de morte (§11).
 5. **Dado real antes da hora.** O ambiente aceita só dado fictício até o checklist "pode entrar dado
    real" estar 100% verde (anexo 02 §7).
@@ -228,7 +228,7 @@ alcança vê "1 item restrito" (contagem por função `security definer` que dev
 
 **[DECISÃO PENDENTE]** Intimação **sem caso** (ainda não vinculada) é sigilosa? Recomendação: visível
 a `owner`, `manager` e `professional`; `reception` não vê o texto, só o aviso "N intimações a triar".
-O LUBI deixou a mesma pergunta para o Dr. Miguel (`_progresso.md:244`).
+O LUBI deixou a mesma pergunta para o advogado do escritório parceiro (`_progresso.md:244`).
 
 ### 3.5 Fluxo de dados da fila Hoje
 
@@ -476,7 +476,7 @@ lados e `current_user`); mutação com tabela auxiliar fora de `public`; `servic
 Como manter as duas bases: **cópia versionada** com cabeçalho `// Origem: LUBI <caminho> @ <commit>`
 e teste próprio no CICLO (PM-D-005 do LUBI, pelo mesmo motivo: stacks diferentes). O LUBI continua
 como está; se o pacote vingar, o LUBI vira um tenant do CICLO e a instalação única é desligada
-**[DECISÃO PENDENTE, do Eduardo e do Dr. Miguel]**.
+**[DECISÃO PENDENTE, do Eduardo e do advogado do escritório parceiro]**.
 
 ---
 
@@ -578,8 +578,8 @@ Sinal forte é pagar, não dizer "barato"; sinal fraco é "interessante".
 | R13 | PRs #143/#144 não mergeados mudam a base | M | M | conflito no rebase | branch nasce de `feat/cortesia-2026-10-03`; rebase ao mergear; `POST v1/legal/accept` já precisa de `'permite'` em `pausa.ts` |
 | R14 | Suíte de banco intermitente (rate limit) | A | B | falhas que mudam de arquivo | `--no-file-parallelism` (memória `suite-de-banco-intermitente-por-rate-limit`) |
 
-**Depende de quem:** Eduardo (lista da §16); Dr. Miguel (gabarito de 50; regras cível/trabalhista/JEC/
-penal/recesso; OAB/UF da equipe; feriados de Maravilha); Dra. Katiane (entrevista; o que não resolve
+**Depende de quem:** Eduardo (lista da §16); advogado do escritório parceiro (gabarito de 50; regras cível/trabalhista/JEC/
+penal/recesso; OAB/UF da equipe; feriados da comarca); a advogada consultada (entrevista; o que não resolve
 hoje); advogado revisor externo (adendo, privacidade, Provimento 205/2021).
 
 ---
@@ -637,7 +637,7 @@ do commit (procedimento do `CLAUDE.md`: commitar antes de mutar, confirmar a mut
 5. **Revisão jurídica externa** do adendo, da privacidade e da publicidade (Provimento 205/2021).
    Sem ela, `ADVOCACIA_ABERTA` não liga.
 6. **Quando liberar dado real.** Só com o checklist do anexo 02 §7 inteiro.
-7. **Quem confirma as regras de prazo e o prazo do gabarito** (Dr. Miguel).
+7. **Quem confirma as regras de prazo e o prazo do gabarito** (advogado do escritório parceiro).
 8. **Contas pagas**: Supabase Pro (bucket e backup PITR), domínio/e-mail transacional (fora do MVP),
    ClamAV (P2).
 9. **O LUBI vira tenant do CICLO ou segue como instalação única** (§8).
@@ -680,7 +680,7 @@ do commit (procedimento do `CLAUDE.md`: commitar antes de mutar, confirmar a mut
 7. T1.2: `0104_legal_casos.sql` com sigilo e `legal_can_access_case`; mutação da política em banco clonado.
 8. Rodar `pnpm verify` completo em segundo plano e, em paralelo, escrever o gerador mínimo do
    escritório-modelo (só pessoas e empresas) para a Fase 3 ter dado.
-9. Mandar ao Dr. Miguel, por escrito, o pedido do gabarito de 50 e das OABs da equipe (texto no anexo 06 §7).
+9. Mandar ao advogado do escritório parceiro, por escrito, o pedido do gabarito de 50 e das OABs da equipe (texto no anexo 06 §7).
 10. Registrar em `docs/DECISOES.md` as decisões D1-D10 desta seção 5 e a entrada do pacote.
 
 ---

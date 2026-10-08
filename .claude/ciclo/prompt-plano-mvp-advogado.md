@@ -50,14 +50,14 @@ sucessório e holding** (nicho dentro de nicho, deliberadamente).
 **Por que advocacia patrimonial (hipótese, ainda não validada por mais de uma fonte).**
 - Ticket alto: já houve venda de site + painel por R$ 2.500 de entrada e R$ 200/mês, e o cliente
   achou barato. Com ticket assim bastam poucos escritórios para o negócio fechar a conta.
-- Dor relatada por uma advogada (Dra. Katiane): organização e acompanhamento do que falta de cada
+- Dor relatada por uma advogada consultada: organização e acompanhamento do que falta de cada
   cliente. Concorrente direto não verificado. Concorrentes adjacentes: Astrea, Projuris, ADVBox,
   Legal One, Cálculo Jurídico.
-- O escritório de referência (LUBI, Dr. Miguel) **não usa software jurídico**.
+- O escritório de referência (o parceiro do LUBI) **não usa software jurídico**.
 - O que NÃO deve ser duplicado: financeiro de honorários e prestação de contas (a Doulhe já cobre).
 
 **Entrevistas em andamento.** O Eduardo está conversando com advogados (dois primos e a Dra.
-Katiane) com roteiro aberto. Resultados ainda não chegaram. O plano deve prever **onde as
+advogada consultada) com roteiro aberto. Resultados ainda não chegaram. O plano deve prever **onde as
 respostas mudam o escopo** (ver seção 13) e não pode assumir que a tese está provada.
 
 **Gancho + diferencial (decisão de produto a defender no plano).**
@@ -313,7 +313,7 @@ reordenam o backlog. Inclua o experimento de preço (a venda anterior foi R$ 2.5
 
 ### 5.12 Riscos, premissas e perguntas em aberto
 Tabela com probabilidade, impacto, sinal de alerta e mitigação. Liste explicitamente o que
-depende do Eduardo, do Dr. Miguel, da Dra. Katiane e de um advogado revisor externo.
+depende do Eduardo, do advogado do escritório parceiro, da advogada consultada e de um advogado revisor externo.
 
 ### 5.13 Amostra de impacto (demo que convence) e amostra viva
 
@@ -429,7 +429,7 @@ Corrija o que achar. Registre o que não conseguiu corrigir.
 4. Preço, plano e cobrança do pacote Advocacia; se haverá taxa de implantação.
 5. Contratar revisão jurídica externa (termos, privacidade, Provimento 205/2021).
 6. Quando liberar dado real de cliente (só após o checklist de segurança 100% verde).
-7. Quem confirma as regras de prazo (Dr. Miguel) e o prazo para entregar o gabarito de 50.
+7. Quem confirma as regras de prazo (advogado do escritório parceiro) e o prazo para entregar o gabarito de 50.
 8. Autorizar contas pagas (Supabase Pro, domínio, e-mail transacional).
 
 ---

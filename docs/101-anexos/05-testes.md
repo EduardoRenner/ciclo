@@ -24,7 +24,7 @@
 - **Prazo interno**: fatal numa segunda → interno na quinta anterior (2 úteis); feriado na conta.
 - **Checklist do modelo**: `offset_business_days` em dias úteis; versão congelada; devolução incrementa rodada e zera lembretes.
 - **Mensagem pronta**: nunca contém `numero_processo`, nome de bem, valor; contém `client_title` e o nome do item.
-- **Alvos da captura**: membro inativo fora; OAB ambígua ("24850-A") fora com aviso; dedupe por chave.
+- **Alvos da captura**: membro inativo fora; OAB ambígua ("12345-A") fora com aviso; dedupe por chave.
 - **Normalização do DJEN**: HTML → texto; número com máscara → 20 dígitos; item sem `id` recusado e contado.
 
 ## 3. Matriz persona × tabela × operação

@@ -216,7 +216,7 @@ describe("recesso de fim de ano (suspensão: regra a confirmar)", () => {
   });
 });
 
-describe("o gabarito do Dr. Miguel e a trava das regras (dois modos, docs/101 §6.5)", () => {
+describe("o gabarito do advogado revisor e a trava das regras (dois modos, docs/101 §6.5)", () => {
   /*
    * No CICLO o repositório é PÚBLICO: o gabarito (50 intimações reais anonimizadas) nunca entra nele.
    * Ele mora fora, e o caminho vem por `LEGAL_GABARITO_PATH`. Os dois modos afirmam algo e nenhum pula:

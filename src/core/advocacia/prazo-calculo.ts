@@ -7,7 +7,7 @@
 //   publicação = 1º dia útil APÓS a disponibilização (Lei 11.419/2006 art. 4º §3º; CPC art. 224)
 //   início     = 1º dia útil APÓS a publicação, e é o DIA 1 da contagem (Lei 11.419 art. 4º §4º; CPC art. 224)
 //   unidade    = dias úteis (cível, trabalhista, juizado) ou corridos (penal), conforme o rito
-// As regras marcadas `validada: false` ainda não foram confirmadas pelo Dr. Miguel: enquanto isso o resultado
+// As regras marcadas `validada: false` ainda não foram confirmadas pela advocacia revisora: enquanto isso o resultado
 // traz `podePreencher = false` (a tela mostra a memória e exige a data digitada) — "regra [VALIDAR] desligada".
 import { addDays, diaDaSemana, fmtDiaMes, fmtDiaSemana } from "./datas";
 
@@ -21,7 +21,7 @@ export interface Regra {
   /** Texto curto para a tela ("contagem em dias úteis no rito cível"). */
   rotulo: string;
   fonte: string;
-  /** Confirmada pelo Dr. Miguel (ou por fonte legal inequívoca)? Só então a data vem pré-preenchida. */
+  /** Confirmada pela advocacia revisora (ou por fonte legal inequívoca)? Só então a data vem pré-preenchida. */
   validada: boolean;
 }
 

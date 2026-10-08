@@ -28,25 +28,25 @@ const pessoa = (p: Partial<EquipeParaCaptura> & { id: string }): EquipeParaCaptu
 
 describe("quem a captura consulta", () => {
   it("chave estável: OAB+UF e nome sem espaços repetidos, em maiúsculas", () => {
-    expect(chaveDoAlvo({ tipo: "oab", numero: "24850", uf: "SC" })).toBe("oab:24850/SC");
-    expect(chaveDoAlvo({ tipo: "nome", nome: "  Katiane   J P  Lubi " })).toBe(
-      "nome:KATIANE J P LUBI",
+    expect(chaveDoAlvo({ tipo: "oab", numero: "12345", uf: "SC" })).toBe("oab:12345/SC");
+    expect(chaveDoAlvo({ tipo: "nome", nome: "  Maria   E  Exemplo " })).toBe(
+      "nome:MARIA E EXEMPLO",
     );
   });
 
   it("só pessoa ATIVA com OAB e UF; número com máscara vira só dígitos; sem repetir", () => {
     const r = alvosDaCaptura(
       [
-        pessoa({ id: "a", oabNumber: "24.850", oabUf: "sc" }),
-        pessoa({ id: "b", oabNumber: "24850", oabUf: "SC" }), // a mesma OAB
-        pessoa({ id: "c", oabNumber: "32139", oabUf: "SC", active: false }),
-        pessoa({ id: "d", oabNumber: "64470", oabUf: "SC", role: "admin" }),
+        pessoa({ id: "a", oabNumber: "12.345", oabUf: "sc" }),
+        pessoa({ id: "b", oabNumber: "12345", oabUf: "SC" }), // a mesma OAB
+        pessoa({ id: "c", oabNumber: "23456", oabUf: "SC", active: false }),
+        pessoa({ id: "d", oabNumber: "34567", oabUf: "SC", role: "admin" }),
       ],
       [],
     );
     expect(r.alvos).toEqual([
-      { tipo: "oab", numero: "24850", uf: "SC" },
-      { tipo: "oab", numero: "64470", uf: "SC" },
+      { tipo: "oab", numero: "12345", uf: "SC" },
+      { tipo: "oab", numero: "34567", uf: "SC" },
     ]);
     expect(r.semOab).toEqual([]);
   });
@@ -74,10 +74,10 @@ describe("quem a captura consulta", () => {
   });
 
   it("nomes a monitorar: aparados, sem repetir, curtos demais ignorados", () => {
-    const r = alvosDaCaptura([], ["  LUBI ADVOGADOS  ", "lubi   advogados", "ab", "KATIANE LUBI"]);
+    const r = alvosDaCaptura([], ["  EXEMPLO ADVOGADOS  ", "exemplo   advogados", "ab", "MARIA EXEMPLO"]);
     expect(r.alvos).toEqual([
-      { tipo: "nome", nome: "LUBI ADVOGADOS" },
-      { tipo: "nome", nome: "KATIANE LUBI" },
+      { tipo: "nome", nome: "EXEMPLO ADVOGADOS" },
+      { tipo: "nome", nome: "MARIA EXEMPLO" },
     ]);
   });
 });
@@ -185,7 +185,7 @@ const real = (extra: Record<string, unknown> = {}) => ({
   numeroprocessocommascara: "0001234-56.2026.8.24.0001",
   destinatarios: [{ nome: "FULANO DE TAL", polo: "A" }],
   destinatarioadvogados: [
-    { advogado: { nome: "MIGUEL ANTONIO RUAS LUBI", numero_oab: "24850", uf_oab: "SC" } },
+    { advogado: { nome: "ADVOGADA EXEMPLO DE TAL", numero_oab: "12345", uf_oab: "SC" } },
   ],
   ...extra,
 });
@@ -209,7 +209,7 @@ describe("uma comunicação do DJEN", () => {
     });
     expect(n.comunicacao.destinatarios).toEqual([
       { tipo: "parte", nome: "FULANO DE TAL", polo: "A" },
-      { tipo: "advogado", nome: "MIGUEL ANTONIO RUAS LUBI", oab: "24850", uf: "SC" },
+      { tipo: "advogado", nome: "ADVOGADA EXEMPLO DE TAL", oab: "12345", uf: "SC" },
     ]);
   });
   it("número do processo com máscara vira 20 dígitos; id numérico em texto é aceito", () => {
@@ -307,8 +307,8 @@ describe("o dia consolidado e a reconciliação", () => {
   it("dia redondo: contagem bate, nada repetido, nada malformado → sem detalhe e ok", () => {
     const d = consolidarDia(2, [real({ id: 1 }), real({ id: 2 })]);
     expect(detalheDoDia(d)).toBeNull();
-    expect(corpoDaRpc({ tipo: "oab", numero: "24850", uf: "SC" }, "2026-10-06", d)).toMatchObject({
-      alvo: "oab:24850/SC",
+    expect(corpoDaRpc({ tipo: "oab", numero: "12345", uf: "SC" }, "2026-10-06", d)).toMatchObject({
+      alvo: "oab:12345/SC",
       dia: "2026-10-06",
       count_fonte: 2,
       ok: true,
@@ -319,9 +319,9 @@ describe("o dia consolidado e a reconciliação", () => {
     const d = consolidarDia(1, [
       real({ id: 1, numero_processo: "x", texto: "SEGREDO DE JUSTIÇA" }),
     ]);
-    const c = corpoDaRpc({ tipo: "nome", nome: "LUBI ADVOGADOS" }, "2026-10-06", d);
+    const c = corpoDaRpc({ tipo: "nome", nome: "EXEMPLO ADVOGADOS" }, "2026-10-06", d);
     expect(c.ok).toBe(false);
-    expect(c.alvo).toBe("nome:LUBI ADVOGADOS");
+    expect(c.alvo).toBe("nome:EXEMPLO ADVOGADOS");
     expect(JSON.stringify(c)).not.toContain("SEGREDO");
     expect(c.detalhe!.length).toBeLessThanOrEqual(300);
   });
@@ -383,14 +383,14 @@ describe("correções do revisor do M9", () => {
 });
 
 describe("mutantes sobreviventes do M9", () => {
-  const alvoOab = { tipo: "oab", numero: "24850", uf: "SC" } as const;
+  const alvoOab = { tipo: "oab", numero: "12345", uf: "SC" } as const;
   const bruto = (id: number, extra: Record<string, unknown> = {}) => ({
     id,
     data_disponibilizacao: "2026-10-06",
     siglaTribunal: "TJSC",
     numero_processo: "00012345620268240001",
     texto: "<p>Intime-se</p>",
-    destinatarioadvogados: [{ advogado: { nome: "A", numero_oab: "24850", uf_oab: "SC" } }],
+    destinatarioadvogados: [{ advogado: { nome: "A", numero_oab: "12345", uf_oab: "SC" } }],
     ...extra,
   });
 
@@ -425,7 +425,7 @@ describe("mutantes sobreviventes do M9", () => {
       [
         bruto(1),
         bruto(2, {
-          destinatarioadvogados: [{ advogado: { nome: "B", numero_oab: "24850", uf_oab: "PR" } }],
+          destinatarioadvogados: [{ advogado: { nome: "B", numero_oab: "12345", uf_oab: "PR" } }],
         }),
         bruto(3, {
           destinatarioadvogados: [{ advogado: { nome: "C", numero_oab: "999", uf_oab: "SC" } }],

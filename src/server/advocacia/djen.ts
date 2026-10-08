@@ -74,7 +74,7 @@ export async function consultarDia(
     try {
       const r = await fetchImpl(urlDaConsulta(alvo, dia, pagina), {
         signal: ctrl.signal,
-        headers: { Accept: "application/json", "User-Agent": "LUBI-captura-intimacoes/1" },
+        headers: { Accept: "application/json", "User-Agent": "CICLO-captura-intimacoes/1" },
         // a URL é fixa e a resposta nunca precisa de redirecionamento: seguir um levaria a captura para outro host
         redirect: "error",
       });

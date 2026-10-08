@@ -233,7 +233,7 @@ usa `withTenant`). Entra em `NEGADAS_POR_DESIGN` do `isolation.test.ts:30`. Rete
 Origem: `0026:37-77`. `tenant_id not null` (a captura é por tenant × OAB), `djen_id bigint`, `unique (tenant_id, djen_id)`
 (a mesma comunicação pode chegar a dois escritórios com advogados diferentes), `hash`, `numero_processo ^[0-9]{20}$`,
 `data_disponibilizacao date`, `tribunal`, `orgao`, `tipo`, `classe`, `texto_sanitizado ≤ 200000`, `link https`, `destinatarios jsonb`,
-`alvo` (chave `oab:24850/SC`), `case_id?`, `status` check (nova, vinculada, prazo_criado, sem_prazo, descartada) default nova,
+`alvo` (chave `oab:12345/SC`), `case_id?`, `status` check (nova, vinculada, prazo_criado, sem_prazo, descartada) default nova,
 `triaged_by`, `triaged_at`, `reason`, `cancelled_at`, `cancel_reason`. Checks de coerência de estado (`0026:64-72`).
 Gatilhos: `touch`, auditoria, `negar_delete`, `negar_truncate`, "só estado muda" (`0026:112`).
 Política de leitura: `has_tenant` e (caso nulo → papel em (owner, manager, professional); caso → `legal_can_access_case`).
