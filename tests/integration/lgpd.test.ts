@@ -285,10 +285,17 @@ describe('eliminarCliente', () => {
         global: { headers: { Authorization: `Bearer ${login.data.session.access_token}` } },
       })
 
-      await eliminarCliente(sessao, tenantId, clientId)
+      const antes = await svc.from('health_records').select('id').eq('tenant_id', tenantId).eq('client_id', clientId)
+      expect(antes.data?.length ?? 0, 'o cenário não montou o dado de saúde').toBeGreaterThan(0)
+
+      const resultado = await eliminarCliente(sessao, tenantId, clientId)
 
       const linha = await svc.from('media').select('id').eq('id', mediaId).maybeSingle()
       expect(linha.data).toBeNull()
+      // docs/102 M0.3: pela sessão, o dado de saúde ficava no banco com a resposta dizendo "eliminado".
+      const depois = await svc.from('health_records').select('id').eq('tenant_id', tenantId).eq('client_id', clientId)
+      expect(depois.data).toEqual([])
+      expect(resultado.healthRecordsRemoved).toBe(antes.data!.length)
 
       const { data: listaStorage } = await svc.storage.from('media').list(tenantId)
       expect(listaStorage?.some((f) => storageKey.endsWith(f.name))).toBe(false)

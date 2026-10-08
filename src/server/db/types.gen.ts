@@ -3825,6 +3825,16 @@ export type Database = {
         }[]
       }
       my_professional_id: { Args: { t: string }; Returns: string }
+      privilegios_report: {
+        Args: never
+        Returns: {
+          anon_qualquer: boolean
+          auth_delete: boolean
+          auth_truncate: boolean
+          politica_de_delete: boolean
+          table_name: string
+        }[]
+      }
       redigir_trilha_do_cliente: {
         Args: { p_client: string; p_tenant: string }
         Returns: Json

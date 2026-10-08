@@ -225,7 +225,19 @@ const TABELAS_APAGADAS = ['client_notes', 'waitlist', 'portfolio_photos'] as con
  * coluna por coluna, de que lado cada uma está — e o teste reprova se alguém acrescentar coluna
  * sem escolher um lado.
  */
-export async function eliminarCliente(db: Cliente, tenantId: string, clientId: string): Promise<ResultadoEliminacao> {
+export async function eliminarCliente(quemChamou: Cliente, tenantId: string, clientId: string): Promise<ResultadoEliminacao> {
+  /*
+   * docs/102 M0.3: a eliminação inteira roda com `service_role`, seja qual for o cliente de quem chamou.
+   * Antes, só o storage e a trilha iam por `withTenant`; as linhas iam pelo `db` recebido. Com um cliente
+   * de SESSÃO, `health_records`, `client_cycles` e `client_scores` (sem política de DELETE) devolviam
+   * zero linhas sem erro, e a resposta dizia "eliminado" com o dado de saúde ainda no banco. A 0117 tirou
+   * o DELETE dessas tabelas de `authenticated` e o caso passou a estourar; o certo é não depender do
+   * chamador. Quem pode eliminar continua conferido na rota (`client:delete` + AAL2).
+   */
+  return withTenant(tenantId, (db) => eliminarComServico(db, tenantId, clientId))
+}
+
+async function eliminarComServico(db: Cliente, tenantId: string, clientId: string): Promise<ResultadoEliminacao> {
   const { data: cliente, error: erroCliente } = await db.from('clients').select('id, anonymized_at').eq('tenant_id', tenantId).eq('id', clientId).maybeSingle()
   if (erroCliente) throw new AppError('INTERNAL', { cause: erroCliente })
   if (!cliente) throw new AppError('NOT_FOUND', { message: 'Essa ficha não está mais na sua lista.' })
