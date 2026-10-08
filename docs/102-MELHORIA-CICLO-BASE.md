@@ -144,7 +144,7 @@ e no celular o motivo só existe para leitor de tela.
 | Fluxo | Medido | Achado |
 |---|---|---|
 | 1. Cadastro ao primeiro valor | Hoje da conta vazia e `/ja-atendo` | o caminho do CSV está quebrado (0 px); o Hoje vazio repete a mesma frase três vezes |
-| 2. Marcar horário | não medido em toques nesta rodada | M1.0 mede antes de qualquer mudança |
+| 2. Marcar horário | medido no M1.0: Hoje → "Novo agendamento" → serviço, profissional, nome, telefone, data e hora | para quem JÁ é cliente (o caso comum) era preciso redigitar nome e telefone inteiros; o campo não buscava a base. Caminho pré-preenchido só saindo da ficha (`?cliente=`). Virou o M1.10 |
 | 3. Fechar atendimento | comanda aberta a partir do agendamento (8 alvos, sem defeito) | sem achado |
 | 4. Recuperar cliente | `/admin/recuperar` (45 alvos) | "Completar o custo" com 16 px; pílulas de 40 px |
 
@@ -180,7 +180,8 @@ navegador quando a pessoa vê, guarda vista reprovando quando houver guarda.
 
 **Fase 1 · o que a pessoa vê** (ordem dos fluxos)
 - **M1.0 Medir o fluxo 2** (marcar horário a partir do Hoje): toques e telas, antes de mudar algo.
-- **M1.1 Link de CSV intocável em `/ja-atendo`.** Achar o que cobre e corrigir sem `toque-48` vizinho.
+- **M1.1 Link de CSV em `/ja-atendo`.** Medição corrigida na execução: o "0 × 0" era falso positivo da sonda
+  (link quebrado em duas linhas, centro da caixa entre elas); o alvo real tinha 16 px. Agora uma linha com 48.
 - **M1.2 Rolagem lateral em `/admin/config/profissionais`.** Os botões quebram linha a 375 px.
 - **M1.3 Faixa de conexão abaixo do cabeçalho.**
 - **M1.4 Botão travado mostra o motivo.** `aria-disabled` no lugar de esconder o evento: o toque não executa a
@@ -191,6 +192,9 @@ navegador quando a pessoa vê, guarda vista reprovando quando houver guarda.
 - **M1.7 Hoje vazio com uma frase só.**
 - **M1.8 `--ok` com 4,5:1 no tema claro.**
 - **M1.9 Título coerente no 404 de `/[slug]/orcamento`.**
+- **M1.10 Sugestão de quem já é cliente no Novo agendamento** (nascido da medição do M1.0): digitar 2 letras
+  do nome mostra até 5 clientes (`GET v1/clients?q=`, a mesma busca da tela "Quem você já atende"); tocar
+  preenche nome e telefone. O servidor já reaproveita a cliente pelo telefone.
 
 **Fase 2 · confiabilidade**
 - **M2.1 Demonstração que não envelhece.** Do Eduardo agendar em produção. Padrão de trabalho: o script fica
