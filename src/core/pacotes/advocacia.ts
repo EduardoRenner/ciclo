@@ -36,4 +36,6 @@ export const ADVOCACIA: Pacote = {
     secretaria: 'secretaria',
     estagio: 'estágio',
   },
+  // Sigilo profissional: ninguém do escritório trabalha só com senha (docs/101 §6.3).
+  exigeSegundoFator: true,
 }

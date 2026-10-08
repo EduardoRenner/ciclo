@@ -28,4 +28,5 @@ export const BASE: Pacote = {
   ],
   centro: { href: '/admin/recuperar', rotulo: 'Recuperar receita', icone: 'Anel' },
   vocabularioExtra: {},
+  exigeSegundoFator: false,
 }

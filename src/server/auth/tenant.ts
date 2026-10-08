@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { cache } from 'react'
 
 import { normalizarPacote, type SlugDoPacote } from '@/core/pacotes'
+import { exigeSegundoFator, ROTA_DO_SEGUNDO_FATOR } from '@/core/pacotes/segundo-fator'
 import { resolverVocabulario, type Vocabulario } from '@/core/text/vocabulario'
 import { UUID } from '@/core/text/uuid'
 import { exigirSessao, type Sessao } from '@/server/auth/session'
@@ -205,8 +206,16 @@ export async function contextoAtual(req: Request): Promise<Contexto> {
  * exatamente como cobria antes desta função existir.
  */
 export async function contextoDoPainel(req: Request): Promise<Contexto> {
-  return contextoAtual(req).catch((erro: unknown) => {
+  const ctx = await contextoAtual(req).catch((erro: unknown) => {
     if (erro instanceof AppError && erro.code === 'FORBIDDEN') redirect('/onboarding')
     throw erro
   })
+  /*
+    docs/101 T0.4: o pacote que exige segundo fator (Advocacia) não abre tela nenhuma do painel com
+    sessão só de senha. Aqui, e não no layout, porque é por aqui que toda `page.tsx` do `/admin`
+    passa (guarda `pagina-do-admin-usa-contexto-do-painel`); o layout renderiza também na tela de
+    Segurança, que é o destino, e redirecionar ali seria laço.
+  */
+  if (exigeSegundoFator(ctx.tenant.pacote, ctx.sessao.aal)) redirect(ROTA_DO_SEGUNDO_FATOR)
+  return ctx
 }

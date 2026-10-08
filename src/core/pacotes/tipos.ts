@@ -41,4 +41,10 @@ export type Pacote = {
    * minúscula, sem acento, como as de `PADRAO`; valor em minúscula, sem gênero presumido.
    */
   vocabularioExtra: Readonly<Record<string, string>>
+  /**
+   * O painel inteiro exige segundo fator (docs/101 §6.3, T0.4). `true` só onde o dado justifica a
+   * fricção: sigilo profissional no escritório. Beleza continua como sempre, com segundo fator só
+   * nas ações sensíveis (`exigirAal2`, `session.ts`).
+   */
+  exigeSegundoFator: boolean
 }
