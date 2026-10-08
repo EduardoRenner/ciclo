@@ -17,6 +17,8 @@ const SQL = readFileSync('supabase/migrations/0041_modules_catalogo.sql', 'utf8'
 // docs/26-AGENTE-IA-PLANO.md §6 (A6): 0041 já foi aplicada em produção e não pode ser editada —
 // o 17º módulo (`assistant`) entrou como INSERT novo nesta migration.
 const SQL_ASSISTENTE = readFileSync('supabase/migrations/0043_modulo_assistente.sql', 'utf8')
+// docs/101 §3.3 (T0.2): os cinco do pacote Advocacia, pelo mesmo caminho (INSERT em migration própria).
+const SQL_ADVOCACIA = readFileSync('supabase/migrations/0102_modulos_do_pacote.sql', 'utf8')
 
 /** Lê as chaves de um `insert into modules (...) values ('agenda', ...), ('cycle_engine', ...)`. */
 function chavesDoInsert(sql: string, origem: string): string[] {
@@ -26,15 +28,17 @@ function chavesDoInsert(sql: string, origem: string): string[] {
 }
 
 function chavesDaMigration(): string[] {
-  return [...chavesDoInsert(SQL, '0041'), ...chavesDoInsert(SQL_ASSISTENTE, '0043')]
+  return [...chavesDoInsert(SQL, '0041'), ...chavesDoInsert(SQL_ASSISTENTE, '0043'), ...chavesDoInsert(SQL_ADVOCACIA, '0102')]
 }
 
-describe('catálogo de módulos: core e migrations 0041/0043 não podem divergir', () => {
-  it('as mesmas 17 chaves, na mesma ordem', () => {
+describe('catálogo de módulos: core e migrations 0041/0043/0102 não podem divergir', () => {
+  it('as mesmas 22 chaves, na mesma ordem', () => {
     const naMigration = chavesDaMigration()
     const noCore = CATALOGO.map((m) => m.key)
 
-    expect(naMigration).toHaveLength(17)
+    // 16 (0041) + 1 (0043) + 5 (0102). Afirmado por partes, para a contagem não passar por soma errada.
+    expect(chavesDoInsert(SQL_ADVOCACIA, '0102')).toEqual(['legal_cases', 'legal_checklists', 'legal_structure', 'legal_deadlines', 'legal_documents'])
+    expect(naMigration).toHaveLength(22)
     expect(noCore).toEqual(naMigration)
   })
 

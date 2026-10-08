@@ -15,6 +15,7 @@ import {
 } from '@/core/billing/planos'
 import { regraDaEscritaNaPausa } from '@/core/billing/pausa'
 import { lerCortesia, situacaoEmVigor, type SituacaoDaConta } from '@/core/billing/prelancamento'
+import { normalizarPacote } from '@/core/pacotes'
 import { AppError } from '@/server/http/errors'
 
 import type { Database } from '@/server/db/types.gen'
@@ -97,7 +98,9 @@ export async function contextoDePlano(db: Cliente, tenantId: string, agora: Date
   const { data: tenant, error } = await db
     .from('tenants')
     // `cortesia:settings->cortesia` traz só a chave; `settings` inteiro é jsonb que cresce por tenant.
-    .select('plan, onde, cobranca, inicio, ritmo, cortesia:settings->cortesia')
+    // `professions(pacote)`: a quarta camada de `podeUsarModulo` (docs/101 §3.3). Vem no mesmo
+    // `select`, pelo join que `profession_id` já dá; tenant sem profissão resolve para `base`.
+    .select('plan, onde, cobranca, inicio, ritmo, cortesia:settings->cortesia, professions(pacote)')
     .eq('id', tenantId)
     .single()
   if (error) throw new AppError('INTERNAL', { cause: error })
@@ -127,6 +130,7 @@ export async function contextoDePlano(db: Cliente, tenantId: string, agora: Date
     planoPago,
     situacao,
     eixos,
+    pacote: normalizarPacote(tenant.professions?.pacote),
     desligadosPeloDono: (modulos ?? []).map((m) => m.modulo as ModuloKey),
     ...(situacao.podeEscrever ? {} : { contaPausada: true }),
   }
@@ -266,13 +270,15 @@ export async function exigirModulo(db: Cliente, tenantId: string, modulo: Modulo
     })
   }
 
-  // Fora do eixo ou desligado pelo dono não é questão de dinheiro — não ofereça upgrade para
-  // resolver, porque upgrade não resolve.
+  // Fora do pacote, fora do eixo ou desligado pelo dono não é questão de dinheiro — não ofereça
+  // upgrade para resolver, porque upgrade não resolve.
   throw new AppError('FORBIDDEN', {
     message:
       v.estado === 'desligado_pelo_dono'
         ? 'Esse recurso está desligado nas configurações do seu negócio.'
-        : 'Esse recurso não se aplica ao tipo de atendimento do seu negócio.',
+        : v.estado === 'fora_do_pacote'
+          ? 'Esse recurso não faz parte do pacote da sua profissão.'
+          : 'Esse recurso não se aplica ao tipo de atendimento do seu negócio.',
     details: { modulo, estado: v.estado },
   })
 }

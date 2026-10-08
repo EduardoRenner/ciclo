@@ -1,3 +1,5 @@
+import type { SlugDoPacote } from '@/core/pacotes'
+
 /**
  * docs/18-MONETIZACAO-PLANO.md §L — o ÚNICO lugar que responde "este tenant pode X?".
  *
@@ -54,6 +56,12 @@ export type ModuloKey =
   | 'health_records'
   | 'documents'
   | 'assistant'
+  // docs/101 §3.3 (T0.2): os cinco do pacote Advocacia. Só existem para quem está no pacote.
+  | 'legal_cases'
+  | 'legal_checklists'
+  | 'legal_structure'
+  | 'legal_deadlines'
+  | 'legal_documents'
 
 /** Capacidades que não são módulo — são o que o degrau permite fazer com o módulo que já tem. */
 export type Capacidade = 'envio_em_lote' | 'remover_selo'
@@ -89,6 +97,13 @@ export const CATALOGO: readonly { key: ModuloKey; label: string; sempreLigado: b
   // docs/26-AGENTE-IA-PLANO.md §6/§10 — liberado para todo tenant desde o grátis, porque agora
   // é medição de uso, não receita. Não `sempreLigado`: o dono precisa poder desligar (§4.4).
   { key: 'assistant', label: 'Assistente', sempreLigado: false },
+  // docs/101 §3.3 (migration 0102): o pacote Advocacia. Nenhum é "sempre ligado": um escritório
+  // só de contencioso desliga Estrutura; a camada de pacote (abaixo) é quem os esconde de beleza.
+  { key: 'legal_cases', label: 'Casos', sempreLigado: false },
+  { key: 'legal_checklists', label: 'Pendências do cliente', sempreLigado: false },
+  { key: 'legal_structure', label: 'Estrutura da família', sempreLigado: false },
+  { key: 'legal_deadlines', label: 'Prazos e intimações', sempreLigado: false },
+  { key: 'legal_documents', label: 'Documentos do caso', sempreLigado: false },
 ]
 
 type Definicao = {
@@ -147,6 +162,14 @@ const PROPRIOS: Record<PlanoTier, Omit<Definicao, 'modulos'> & { modulos: readon
       'recurrence',
       'club',
       'documents',
+      // docs/101 §3.3: o pacote Advocacia inteiro mora no degrau de entrada. Com `ACESSO_ABERTO`
+      // ligado isso não muda nada para ninguém; quando desligar, o escritório paga o Solo/Equipe
+      // como qualquer negócio. Preço próprio do pacote é decisão pendente do Eduardo (docs/101 §16).
+      'legal_cases',
+      'legal_checklists',
+      'legal_structure',
+      'legal_deadlines',
+      'legal_documents',
     ],
     capacidades: ['envio_em_lote', 'remover_selo'],
   },
@@ -295,6 +318,11 @@ export function menorPlanoComCapacidade(capacidade: Capacidade): PlanoTier | nul
 // ---------------------------------------------------------------------------------------------
 
 export type Veredito =
+  /**
+   * Não pertence ao pacote da profissão deste negócio (docs/101 §3.3). Some da interface, sem
+   * oferta nenhuma, como `fora_do_eixo`: um salão não deveria ver "Casos" nem para saber que existe.
+   */
+  | { estado: 'fora_do_pacote'; pacote: SlugDoPacote }
   /** Não faz sentido para este negócio. Some da interface, sem oferta nenhuma. */
   | { estado: 'fora_do_eixo'; eixo: Eixo }
   /** Faz sentido, mas o degrau não libera. Aparece bloqueado, com motivo e caminho. */
@@ -305,6 +333,12 @@ export type Veredito =
 
 export type ContextoDoTenant = {
   plano: PlanoTier
+  /**
+   * O pacote da profissão (migration 0101, `core/pacotes`). Ausente = `base`, que é o produto de
+   * hoje: quem monta o contexto sem saber do pacote (testes antigos, chamadores de beleza) recebe
+   * exatamente o veredito de antes. Só um valor conhecido e diferente libera módulo de pacote.
+   */
+  pacote?: SlugDoPacote
   /**
    * Os quatro eixos da migration 0023. `null` = o tenant ainda não respondeu o onboarding.
    *
@@ -359,7 +393,34 @@ const CONDICAO_DE_EIXO: Partial<Record<ModuloKey, CondicaoDeEixo>> = {
 export const CONDICAO_DE_EIXO_PARA_GUARDA: Readonly<Record<string, { eixo: Eixo; valores: readonly string[] }>> =
   CONDICAO_DE_EIXO as Record<string, { eixo: Eixo; valores: readonly string[] }>
 
+/**
+ * A quarta camada, e ela vem ANTES do eixo (docs/101 §3.3): módulo que só existe num pacote não
+ * é "fora do eixo" nem "bloqueado pelo plano" para quem está em outro pacote; ele simplesmente
+ * não é daquele negócio. Se o plano viesse antes, um salão no Grátis veria "Casos bloqueado,
+ * assine o Solo" para algo que nunca vai usar: a regra 5.2 ao contrário, de novo.
+ *
+ * Lista de pacotes por módulo, e não predicado, pelo mesmo motivo de `CONDICAO_DE_EIXO`: lista
+ * é inspecionável por teste; closure não.
+ */
+const CONDICAO_DE_PACOTE: Partial<Record<ModuloKey, readonly SlugDoPacote[]>> = {
+  legal_cases: ['advocacia'],
+  legal_checklists: ['advocacia'],
+  legal_structure: ['advocacia'],
+  legal_deadlines: ['advocacia'],
+  legal_documents: ['advocacia'],
+}
+
+/** Exposto só para a guarda que confere estes módulos contra o `CATALOGO` e a migration 0102. */
+export const CONDICAO_DE_PACOTE_PARA_GUARDA: Readonly<Partial<Record<ModuloKey, readonly SlugDoPacote[]>>> = CONDICAO_DE_PACOTE
+
 export function podeUsarModulo(ctx: ContextoDoTenant, modulo: ModuloKey): Veredito {
+  const pacotes = CONDICAO_DE_PACOTE[modulo]
+  if (pacotes) {
+    // Diferente do eixo, o pacote nunca é "não respondido": ausente é `base`, por decisão.
+    const pacote = ctx.pacote ?? 'base'
+    if (!pacotes.includes(pacote)) return { estado: 'fora_do_pacote', pacote }
+  }
+
   const condicao = CONDICAO_DE_EIXO[modulo]
   if (condicao) {
     const valor = ctx.eixos[condicao.eixo]

@@ -19,10 +19,10 @@
  */
 
 /** Quantos arquivos existem em `supabase/migrations/`. O teste confere contra o disco. */
-export const MIGRATIONS_ESPERADAS = 101
+export const MIGRATIONS_ESPERADAS = 102
 
 /** O nome (sem `.sql`) do arquivo de maior número. O teste confere contra o disco. */
-export const ULTIMA_MIGRATION = '0101_pacote_advocacia'
+export const ULTIMA_MIGRATION = '0102_modulos_do_pacote'
 
 export type EstadoDoSchema = {
   ok: boolean

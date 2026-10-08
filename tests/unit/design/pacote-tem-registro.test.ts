@@ -62,3 +62,23 @@ describe('o contexto do tenant entrega o pacote resolvido', () => {
     expect(/pacote: normalizarPacote\(bruto\.professions\?\.pacote\)/.test(fonte), 'o pacote chega cru ou não chega').toBe(true)
   })
 })
+
+describe('a quarta camada chega ao servidor (docs/101 T0.2)', () => {
+  /*
+   * `podeUsarModulo` só esconde módulo de pacote se `ctx.pacote` vier preenchido. Quem preenche é
+   * `contextoDePlano`; se o `select` perder `professions(pacote)`, todo tenant vira `base` e o
+   * escritório perde os cinco módulos sem erro nenhum. E `listarModulos` precisa filtrar o veredito
+   * novo, ou o salão vê "Casos" na tela de módulos.
+   */
+  const planos = semComentarios(readFileSync('src/server/services/planos.ts', 'utf8'))
+  const modulos = semComentarios(readFileSync('src/server/services/modulos.ts', 'utf8'))
+
+  it('contextoDePlano busca professions(pacote) e normaliza', () => {
+    expect(/professions\(pacote\)/.test(planos), 'o select de contextoDePlano parou de trazer o pacote').toBe(true)
+    expect(/pacote: normalizarPacote\(tenant\.professions\?\.pacote\)/.test(planos), 'o pacote chega cru ou não chega ao contexto de plano').toBe(true)
+  })
+
+  it('listarModulos esconde o que está fora do pacote, como esconde o fora do eixo', () => {
+    expect(/estado !== 'fora_do_pacote'/.test(modulos), 'a tela de módulos mostraria módulo de outro pacote').toBe(true)
+  })
+})
