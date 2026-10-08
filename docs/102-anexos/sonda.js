@@ -6,6 +6,7 @@
 //  - espere ~3 s depois de navegar: tela com streaming medida cedo tem menos alvos (7 em vez de 19);
 //  - o segundo <h1> de toda tela é a cópia escondida do streaming: só conta o que é visível e fora de [hidden];
 //  - o `label` é o alvo do campo que está dentro dele;
+//  - elemento dentro de [inert] ou aria-hidden não é alvo (barra montada e invisível);
 //  - sem `requestAnimationFrame` (não roda com o painel do navegador escondido);
 //  - `scrollWidth` da página é a régua de overflow; a lista de elementos é só pista.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- é colada no console, não importada
@@ -37,7 +38,11 @@ function sonda(sondar) {
   }
   if (sondar) {
     const sel = 'a[href], button, summary, input:not([type=hidden]), select, textarea, [role=button]'
-    const todos = [...document.querySelectorAll(sel)].filter((el) => el.getClientRects().length && !el.closest('[hidden]') && getComputedStyle(el).visibility !== 'hidden')
+    // Fora de alcance de verdade: [hidden], [inert] e aria-hidden (a barra de confirmação do agendamento público
+    // fica montada, invisível e inert até a pessoa escolher o horário: medi-la dava um 0 × 0 falso).
+    const todos = [...document.querySelectorAll(sel)].filter(
+      (el) => el.getClientRects().length && !el.closest('[hidden], [inert], [aria-hidden="true"]') && getComputedStyle(el).visibility !== 'hidden',
+    )
     out.travados = todos.filter((el) => el.disabled).length
     const alvos = todos.filter((el) => !el.disabled).slice(0, 160)
     const pequenos = []
