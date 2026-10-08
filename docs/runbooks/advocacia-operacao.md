@@ -9,6 +9,11 @@
    são aditivas (tabelas, funções, políticas novas), então sobem ANTES do deploy. Conferir que a 0101
    da branch da fila já está aplicada; a numeração do pacote começa na 0102 por causa dela.
    Aplicar pelo `docs/runbooks/aplicar-migrations-pendentes.md`. Depois, `/api/health` sem "schema atrás".
+   A 0114 (gatilho) e a 0115 (privilégio mínimo) são RESTRITIVAS: pela regra, sobem DEPOIS do deploy do
+   passo 3. Nenhum código, nem o desta branch, apaga linha jurídica ou grava a trilha pelo cliente do
+   usuário, então a ordem inversa não quebraria nada hoje; a regra vale para não ter de reconferir isso.
+   Entre o deploy e a 0115, o `/api/health` acusa "schema atrás" (o código espera 114): é o esperado, e
+   some quando as duas sobem.
 2. **TOTP ligado no projeto Supabase** (Authentication → MFA → TOTP enroll e verify). O pacote exige
    segundo fator em toda tela e rota; sem TOTP, ninguém entra.
 3. **Deploy do código.** Com a chave fechada, nenhuma conta real escolhe o pacote.

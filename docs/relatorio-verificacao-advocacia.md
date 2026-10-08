@@ -140,7 +140,7 @@ grafo escondendo percentual; ramo morto na Estrutura. Cada um com teste e evidê
 
 | Item | Por que não deu | O que falta | Quem destrava |
 |---|---|---|---|
-| Migrations 0102 a 0115 em produção | regra: sem `db push` | aplicar pelo runbook, antes do deploy | Eduardo |
+| Migrations 0102 a 0115 em produção | regra: sem `db push` | aplicar pelo runbook: 0102 a 0113 antes do deploy, 0114 e 0115 depois | Eduardo |
 | TOTP no projeto Supabase de produção | configuração do painel | ligar enroll e verify | Eduardo |
 | Revisão jurídica | precisa de advogado | dossiê pronto para revisão | advogado revisor |
 | Gabarito de 50 intimações | dado real, fora do repositório | pedir ao escritório parceiro | Eduardo |
