@@ -72,7 +72,7 @@ export default async function PaginaCaso({ params }: { params: Promise<{ id: str
           </Badge>
         </div>
         <p className="text-secundario text-txt-2">
-          <Link href={`/admin/clientes/${caso.clienteId}`} className="font-semibold text-txt underline-offset-2 hover:underline">
+          <Link href={`/admin/clientes/${caso.clienteId}`} className="toque-48 font-semibold text-txt underline-offset-2 hover:underline">
             {caso.clienteNome}
           </Link>
           {caso.responsavel ? ` · ${caso.responsavel}` : ''}
@@ -82,7 +82,8 @@ export default async function PaginaCaso({ params }: { params: Promise<{ id: str
           O cliente lê: <span className="text-txt">“{caso.paraCliente}”</span>
         </p>
         <MudarCaso casoId={id} estado={caso.estado} rowVersion={caso.rowVersion} notaAtual={caso.notaParaCliente} />
-        <Link href={`/admin/clientes/${caso.clienteId}/estrutura`} className="toque-48 inline-flex w-fit items-center text-secundario font-semibold text-acc-2">
+        {/* 48 px de caixa, sem `toque-48`: o `::after` dele cobria os 8 px de baixo do botão logo acima (medido). */}
+        <Link href={`/admin/clientes/${caso.clienteId}/estrutura`} className="inline-flex min-h-12 w-fit items-center text-secundario font-semibold text-acc-2">
           Estrutura da família
         </Link>
       </header>

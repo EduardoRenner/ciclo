@@ -90,7 +90,7 @@ export default function FilaDePendencias({ grupos }: { grupos: GrupoDaFila[] }) 
           <Card className="flex flex-col gap-3 p-4">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <Link href={`/admin/clientes/${g.clienteId}`} className="text-corpo font-semibold underline-offset-2 hover:underline">
+                <Link href={`/admin/clientes/${g.clienteId}`} className="toque-48 text-corpo font-semibold underline-offset-2 hover:underline">
                   {g.clienteNome}
                 </Link>
                 <p className="text-secundario text-txt-2">

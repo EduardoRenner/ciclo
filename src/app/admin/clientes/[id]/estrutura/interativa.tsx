@@ -96,7 +96,7 @@ export default function EstruturaInterativa({ pessoas, empresas, arestas }: Prop
                     {p.porEmpresa.map((e) => (
                       <li key={e.empresaId}>
                         <details>
-                          <summary className="flex min-h-10 cursor-pointer items-center justify-between gap-3 text-secundario">
+                          <summary className="flex min-h-12 cursor-pointer items-center justify-between gap-3 text-secundario">
                             <span className="text-txt-2">{e.empresa}</span>
                             <span className="font-semibold tabular-nums text-txt">{formatarPercentual(e.total)}</span>
                           </summary>

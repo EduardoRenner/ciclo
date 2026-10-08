@@ -139,6 +139,7 @@ export default function PrazosDoCaso({ prazos, hoje, clienteId, casoId, timezone
                 ) : modo?.id === p.id && modo.tipo === 'corrigir' ? (
                   <div className="flex flex-col gap-2">
                     <Input rotulo="Data certa" type="date" value={novaData} onChange={(e) => setNovaData(e.target.value)} />
+                    {novaData === p.venceEm ? <p className="text-label text-txt-3">Essa já é a data do prazo: escolha a data certa.</p> : null}
                     <Textarea rotulo="Motivo da correção" ajuda="Fica no histórico do prazo." rows={2} value={motivo} onChange={(e) => setMotivo(e.target.value)} maxLength={500} />
                     <div className="flex gap-2">
                       <Button
