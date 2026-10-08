@@ -24,7 +24,18 @@
  */
 
 /** Toda rota sob `src/app/api/cron/`. O teste confere contra o disco. */
-export const ROTAS_DE_CRON = ['campaigns', 'expirar-graca', 'jobs', 'lgpd-retention', 'recompute-cycles', 'reminders', 'segments', 'stock-alerts'] as const
+export const ROTAS_DE_CRON = [
+  'campaigns',
+  'expirar-graca',
+  'jobs',
+  // docs/101 T4.1: fora do agendamento enquanto `ADVOCACIA_ABERTA` estiver desligada (nenhum escritório real)
+  'legal-intimacoes',
+  'lgpd-retention',
+  'recompute-cycles',
+  'reminders',
+  'segments',
+  'stock-alerts',
+] as const
 
 export type RotaDeCron = (typeof ROTAS_DE_CRON)[number]
 
@@ -47,6 +58,7 @@ export const ROTA_DO_HEARTBEAT = {
   send_campaigns: 'campaigns',
   recompute_cycles: 'recompute-cycles',
   recompute_segments: 'segments',
+  legal_intimacoes: 'legal-intimacoes',
 } as const satisfies Record<string, RotaDeCron>
 
 export type KindDeHeartbeat = keyof typeof ROTA_DO_HEARTBEAT

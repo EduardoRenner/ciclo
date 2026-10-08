@@ -22,17 +22,23 @@ type Props = {
 const data = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit', timeZone: 'UTC' })
 const texto = (v: unknown) => (typeof v === 'string' ? v : null)
 
-/** A memória de cálculo em linhas legíveis. Só as chaves conhecidas: o resto do JSON não vira tela. */
+/**
+ * A memória de cálculo em linhas legíveis, no formato que `sugerirPrazo` grava (`core/advocacia/
+ * prazo-sugestao.ts`). Só as chaves conhecidas: o resto do JSON não vira tela.
+ */
 function linhasDaMemoria(m: Record<string, unknown>): string[] {
   const linhas: string[] = []
-  if (texto(m.regra)) linhas.push(`Regra: ${texto(m.regra)}`)
-  if (texto(m.disponibilizacao)) linhas.push(`Disponibilizada em ${data(texto(m.disponibilizacao)!)}`)
-  if (texto(m.publicacao)) linhas.push(`Considerada publicada em ${data(texto(m.publicacao)!)}`)
-  if (texto(m.inicio)) linhas.push(`Contagem começa em ${data(texto(m.inicio)!)}`)
-  if (Array.isArray(m.feriados_considerados) && m.feriados_considerados.length > 0) {
-    linhas.push(`Feriados pulados: ${m.feriados_considerados.filter((f): f is string => typeof f === 'string').map(data).join(', ')}`)
+  const dias = typeof m.dias_lidos === 'number' ? m.dias_lidos : null
+  if (dias !== null) linhas.push(`Regra: ${dias} dias ${m.unidade === 'corridos' ? 'corridos' : 'úteis'}${m.em_dobro === true ? ', em dobro' : ''}`)
+  if (texto(m.disponibilizado_em)) linhas.push(`Disponibilizada em ${data(texto(m.disponibilizado_em)!)}`)
+  if (texto(m.publicado_em)) linhas.push(`Considerada publicada em ${data(texto(m.publicado_em)!)}`)
+  if (texto(m.inicio_em)) linhas.push(`Contagem começa em ${data(texto(m.inicio_em)!)}`)
+  if (Array.isArray(m.pulados) && m.pulados.length > 0) {
+    const pulados = m.pulados.filter((p): p is string => typeof p === 'string').map((p) => `${data(p.slice(0, 10))}${p.length > 11 ? ` (${p.slice(11)})` : ''}`)
+    linhas.push(`Dias que não contaram: ${pulados.join(', ')}`)
   }
-  if (texto(m.fim)) linhas.push(`Último dia: ${data(texto(m.fim)!)}`)
+  if (texto(m.vence_em)) linhas.push(`Último dia: ${data(texto(m.vence_em)!)}`)
+  if (texto(m.trecho)) linhas.push(`Trecho lido: “${texto(m.trecho)}”`)
   return linhas
 }
 

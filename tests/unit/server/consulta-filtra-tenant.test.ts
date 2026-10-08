@@ -77,6 +77,14 @@ const JUSTIFICADAS: { arquivo: string; tabela: string; quantas: number; porque: 
     porque: 'mesmo caso dos modelos: feriado nacional tem `tenant_id` nulo, e o `.or` traz os da plataforma e os do escritório',
   },
   {
+    arquivo: 'src/server/advocacia/captura.ts',
+    tabela: 'legal_holidays',
+    quantas: 1,
+    porque:
+      'AQUI a chave é de serviço (a rota de cron a passa): o filtro é `.or(tenant_id.eq.<do escritório>, tenant_id.is.null)` ' +
+      'e o tenantId vem da lista de tenants que a própria rota leu, nunca de entrada; feriado nacional não tem tenant',
+  },
+  {
     arquivo: 'src/server/services/avaliacoes.ts',
     tabela: 'client_reviews',
     quantas: 1,

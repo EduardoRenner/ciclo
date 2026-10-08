@@ -110,8 +110,11 @@ describe('o escritório-modelo, medido depois de gerado', () => {
     const { data } = await admin.from('legal_intimation_suggestions').select('calc_memo').eq('tenant_id', T).not('calc_memo', 'is', null)
     expect((data ?? []).length).toBeGreaterThan(0)
     for (const s of data ?? []) {
-      const feriados = ((s.calc_memo as { feriados_considerados?: string[] }).feriados_considerados ?? [])
-      for (const f of feriados) expect([0, 6], f).not.toContain(new Date(`${f}T12:00:00Z`).getUTCDay())
+      const memo = s.calc_memo as { pulados?: string[]; publicado_em?: string; vence_em?: string }
+      // o formato é o do núcleo (`sugerirPrazo`): a tela de triagem só lê estas chaves
+      expect(memo.publicado_em).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+      expect(memo.vence_em).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+      for (const p of memo.pulados ?? []) expect([0, 6], p).not.toContain(new Date(`${p.slice(0, 10)}T12:00:00Z`).getUTCDay())
     }
   })
 

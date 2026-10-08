@@ -536,8 +536,24 @@ async function main() {
       const publicacao = somarUteis(d, 1)
       const fatal = temPrazo ? somarUteis(publicacao, prazoDias) : null
       const interno = fatal ? somarUteis(fatal, -2) : null
+      // mesmo formato que `sugerirPrazo` grava (core/advocacia/prazo-sugestao.ts): a triagem lê as mesmas chaves
       const memo = temPrazo
-        ? { regra: `${prazoDias} dias úteis`, disponibilizacao: d, publicacao, inicio: somarUteis(publicacao, 1), fim: fatal, feriados_considerados: [...FERIADOS].filter((f) => f > publicacao && f <= fatal && diaDaSemana(f) !== 0 && diaDaSemana(f) !== 6).sort(), aviso: 'Sugestão a conferir. Exemplo fictício.' }
+        ? {
+            texto: `${prazoDias} dias úteis contados do primeiro dia útil após a publicação.`,
+            trecho: `prazo de ${prazoDias} (${EXTENSO[prazoDias]}) dias`,
+            disponibilizado_em: d,
+            publicado_em: publicacao,
+            inicio_em: somarUteis(publicacao, 1),
+            vence_em: fatal,
+            dias_lidos: prazoDias,
+            dias_contados: prazoDias,
+            unidade: 'uteis',
+            rito: 'civel',
+            em_dobro: false,
+            regras_confirmadas: ['unidade-civel'],
+            prorrogado_de: null,
+            pulados: [...FERIADOS].filter((f) => f > publicacao && f <= fatal && diaDaSemana(f) !== 0 && diaDaSemana(f) !== 6).sort().map((f) => `${f} feriado`),
+          }
         : null
 
       // Triagem: 75% no mesmo dia útil, 20% no seguinte, 5% atrasam. Só as da última semana ficam SEM
@@ -585,7 +601,7 @@ async function main() {
 
   for (const x of intimacoes) {
     if (x._memo && (x.status === 'nova' || x.status === 'prazo_criado' || x.status === 'vinculada')) {
-      sugestoes.push({ tenant_id: T, intimation_id: x.id, suggested_due_on: x._fatal, internal_due_on: x._interno, calc_memo: x._memo, calc_rule_version: 'cpc-219-v1' })
+      sugestoes.push({ tenant_id: T, intimation_id: x.id, suggested_due_on: x._fatal, internal_due_on: x._interno, calc_memo: x._memo, calc_rule_version: 'prazo-regras-v1' })
     } else if (x.status === 'nova') {
       sugestoes.push({ tenant_id: T, intimation_id: x.id, sem_sugestao: 'O texto não traz prazo em dias. Leia e informe.' })
     }
@@ -604,7 +620,7 @@ async function main() {
         source: 'djen',
         intimation_id: x.id,
         calc_memo: x._memo,
-        calc_rule_version: 'cpc-219-v1',
+        calc_rule_version: 'prazo-regras-v1',
         suggested_due_on: x._fatal,
         calc_divergence: divergiu,
         responsible_professional_id: prof[x._caso.responsavel],
