@@ -8,6 +8,7 @@
 //  - o `label` é o alvo do campo que está dentro dele;
 //  - sem `requestAnimationFrame` (não roda com o painel do navegador escondido);
 //  - `scrollWidth` da página é a régua de overflow; a lista de elementos é só pista.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- é colada no console, não importada
 function sonda(sondar) {
   document.querySelectorAll('nextjs-portal').forEach((p) => (p.style.display = 'none'))
   const W = innerWidth
