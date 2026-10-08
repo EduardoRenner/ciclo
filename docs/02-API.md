@@ -41,6 +41,7 @@ Base: `/api/v1`. Tudo JSON, `Content-Type: application/json`. Textos de erro em 
 | `NOT_FOUND` | 404 | |
 | `VALIDATION_ERROR` | 422 | `details.fields` com erro por campo |
 | `SLOT_TAKEN` | 409 | Horário ocupado; devolve alternativas |
+| `CONFLICT` | 409 | Edição concorrente: o `row_version` mudou desde a leitura (pacote Advocacia, docs/101) |
 | `INVALID_TRANSITION` | 422 | Transição de estado ilegal |
 | `IDEMPOTENCY_KEY_REUSED` | 422 | Mesma chave, payload diferente |
 | `DEPOSIT_REQUIRED` | 402 | Precisa pagar sinal para confirmar |

@@ -74,6 +74,9 @@ export const ROTAS_DE_ESCRITA: Readonly<Record<string, RegraNaPausa>> = {
   'DELETE v1/media/[id]': 'permite',
   'POST v1/memberships/accept': 'fora',
   'POST v1/memberships/invite': 'bloqueia',
+  // docs/101 (pacote Advocacia): criar caso é linha nova; agir numa pendência mexe no que existe.
+  'POST v1/legal/cases': 'bloqueia',
+  'PATCH v1/legal/checklist/[id]': 'permite',
   'PATCH v1/message-templates/[id]': 'permite',
   'DELETE v1/message-templates/[id]': 'permite',
   'POST v1/message-templates': 'bloqueia',

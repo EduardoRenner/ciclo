@@ -18,13 +18,18 @@ export const PERMISSIONS = {
     'inventory:*',
     'report:read',
     'professional:read',
+    'legal:*',
   ],
   // `commission:own` — `docs/53` C-01: o profissional lê o PRÓPRIO extrato de comissão, nada além.
   // O extrato já é congelado por item no fechamento (`server/services/comissao.ts`); quem resolve
   // "qual é o próprio" é a rota, via `my_professional_id`, nunca um `professionalId` de query
   // string — o mesmo cuidado que `rbac.ts` pede de todo alcance `own`.
-  professional: ['appointment:own', 'client:own', 'vault:own', 'comanda:own', 'commission:own'],
-  reception: ['appointment:*', 'client:read', 'client:create', 'comanda:create'],
+  //
+  // `legal:*` (docs/101 §3.4): no escritório, advocacia e secretaria trabalham casos e pendências. O
+  // sigilo NÃO mora aqui: quem pode ver qual caso é a RLS (`legal_can_access_case`), e quem cria prazo
+  // fatal também (a política recusa a secretaria). Esta camada só tira o financeiro do jurídico.
+  professional: ['appointment:own', 'client:own', 'vault:own', 'comanda:own', 'commission:own', 'legal:*'],
+  reception: ['appointment:*', 'client:read', 'client:create', 'comanda:create', 'legal:*'],
   finance: ['payment:*', 'commission:*', 'report:*'],
 } as const satisfies Record<Papel, readonly string[]>
 

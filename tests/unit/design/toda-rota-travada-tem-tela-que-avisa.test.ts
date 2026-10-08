@@ -78,8 +78,8 @@ const ONDE_AVISA: Record<ModuloKey, { telas: string[]; isento?: string }> = {
 
   // docs/101 (T0.2): o pacote Advocacia ainda não tem rota de escrita. Quando as rotas `v1/legal/*`
   // nascerem (Fase 2), este mapa cobra a tela que avisa, pelo mesmo mecanismo que já cobra as outras.
-  legal_cases: { telas: [], isento: 'pacote Advocacia sem rota de escrita ainda (docs/101 Fase 2)' },
-  legal_checklists: { telas: [], isento: 'pacote Advocacia sem rota de escrita ainda (docs/101 Fase 2)' },
+  legal_cases: { telas: ['src/app/admin/casos'] },
+  legal_checklists: { telas: ['src/app/admin/pendencias'] },
   legal_structure: { telas: [], isento: 'pacote Advocacia sem rota de escrita ainda (docs/101 Fase 3)' },
   legal_deadlines: { telas: [], isento: 'pacote Advocacia sem rota de escrita ainda (docs/101 Fase 4)' },
   legal_documents: { telas: [], isento: 'pacote Advocacia sem rota de escrita ainda (docs/101 Fase 2)' },
