@@ -2,6 +2,8 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { cortesiaDoCadastro } from '@/core/billing/prelancamento'
 import { VERSOES_LEGAIS } from '@/core/legal/versoes'
+import { normalizarPacote } from '@/core/pacotes'
+import { pacoteAberto } from '@/core/pacotes/abertos'
 import { SLUG_PROFISSAO_GENERICA } from '@/core/profissoes'
 import type { Origem } from '@/core/aquisicao/origem'
 import { gerarDekCifrada } from '@/server/crypto/kek'
@@ -90,11 +92,15 @@ export async function executarOnboarding(
   if (params.professionId) {
     const { data, error } = await svc
       .from('professions')
-      .select('id, slug, onde, cobranca, inicio, ritmo')
+      .select('id, slug, onde, cobranca, inicio, ritmo, pacote')
       .eq('id', params.professionId)
       .maybeSingle()
     if (error) throw new AppError('INTERNAL', { cause: error })
     if (!data) throw AppError.validacao({ professionId: 'Essa profissão não existe mais.' })
+    // docs/101 T0.6: a tela já não lista profissão de pacote fechado; isto pega quem chama a API direto.
+    if (!pacoteAberto(normalizarPacote(data.pacote))) {
+      throw AppError.validacao({ professionId: 'Essa profissão ainda não está aberta para contas novas. Escolha outra da lista.' })
+    }
     profissao = data
   }
 

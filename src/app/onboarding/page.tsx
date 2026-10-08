@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 
 import Selo from '@/components/shell/selo'
 import TelaPublica from '@/components/shell/tela-publica'
+import { pacotesAbertos } from '@/core/pacotes/abertos'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { sessaoAtual } from '@/server/auth/session'
 
@@ -28,7 +29,15 @@ export default async function PaginaOnboarding() {
   // P4: as 17 profissões do catálogo (professions, P0+P5) — busca de verdade, não mais as 8
   // verticais de beleza hardcoded. Server-side pra não custar um round-trip extra no fluxo
   // que precisa ficar em menos de 3 minutos (§16 critério 4).
-  const { data: profissoes } = await db.from('professions').select('id, slug, nome, grupo, sinonimos').eq('ativa', true).order('posicao').order('nome')
+  // docs/101 T0.6: só profissão de pacote ABERTO. Listar a Advocacia com a chave desligada faria a
+  // pessoa escolher e descobrir no envio que não podia, que é o beco sem saída da `0078` de novo.
+  const { data: profissoes } = await db
+    .from('professions')
+    .select('id, slug, nome, grupo, sinonimos')
+    .eq('ativa', true)
+    .in('pacote', pacotesAbertos())
+    .order('posicao')
+    .order('nome')
 
   return (
     <TelaPublica>
