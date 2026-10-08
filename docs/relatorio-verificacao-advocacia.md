@@ -140,7 +140,7 @@ grafo escondendo percentual; ramo morto na Estrutura. Cada um com teste e evidê
 
 | Item | Por que não deu | O que falta | Quem destrava |
 |---|---|---|---|
-| Migrations 0102 a 0114 em produção | regra: sem `db push` | aplicar pelo runbook, antes do deploy | Eduardo |
+| Migrations 0102 a 0115 em produção | regra: sem `db push` | aplicar pelo runbook, antes do deploy | Eduardo |
 | TOTP no projeto Supabase de produção | configuração do painel | ligar enroll e verify | Eduardo |
 | Revisão jurídica | precisa de advogado | dossiê pronto para revisão | advogado revisor |
 | Gabarito de 50 intimações | dado real, fora do repositório | pedir ao escritório parceiro | Eduardo |
@@ -155,7 +155,10 @@ grafo escondendo percentual; ramo morto na Estrutura. Cada um com teste e evidê
 
 Entraram, cada um com integração e mutação em `docs/evidencias/`: ações de prazo na ficha (criar, cumprir,
 corrigir com motivo, confirmar) e a 0114 (estágio não confirma prazo, também no banco); mudar estado do caso
-com a frase ao cliente; cadastro de pessoas, empresas e atos societários na Estrutura.
+com a frase ao cliente; cadastro de pessoas, empresas e atos societários na Estrutura; a 0115 (privilégio
+mínimo: `anon` sem nada nas tabelas jurídicas, `authenticated` sem DELETE/TRUNCATE em nenhuma e sem
+INSERT/UPDATE nas cinco que só o servidor grava), com guarda que exige toda tabela `legal_*` nova na lista
+(`docs/evidencias/T1.10-mutacao.md`).
 
 ## Dívidas aceitas conscientemente
 
