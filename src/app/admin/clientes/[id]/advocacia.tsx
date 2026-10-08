@@ -1,15 +1,19 @@
-import { Briefcase, Lock, MessageCircle, Network, Plus, Users } from 'lucide-react'
+import { Briefcase, FileText, Lock, MessageCircle, Network, Plus, Users } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
 import FilaDePendencias from '@/app/admin/pendencias/fila'
+import DocumentosDoCaso from '@/components/advocacia/documentos'
 import Badge from '@/components/ui/badge'
 import Card from '@/components/ui/card'
 import SectionHeader from '@/components/ui/section-header'
 import { linkDoWhatsApp, montarFila } from '@/core/advocacia/fila-de-pendencias'
 import { ROTULO_DO_ESTADO_DO_CASO, seloDoEstado } from '@/core/advocacia/resumo-do-caso'
+import { podeUsarModulo } from '@/core/billing/planos'
 import { listarCasos } from '@/server/advocacia/consulta-casos'
+import { listarDocumentos } from '@/server/advocacia/documentos'
 import { lerFilaDePendencias } from '@/server/advocacia/pendencias'
+import { contextoDePlano } from '@/server/services/planos'
 
 import type { Database } from '@/server/db/types.gen'
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -42,12 +46,14 @@ type Props = {
  * `audit_log` cru aqui seria mostrar ação sem contexto.
  */
 export default async function Cliente360({ db, tenantId, escritorio, clienteId, hoje }: Props) {
-  const [cliente, pessoas, empresas, casos, itens] = await Promise.all([
+  const [cliente, pessoas, empresas, casos, itens, documentos, plano] = await Promise.all([
     db.from('clients').select('name, phone_e164').eq('tenant_id', tenantId).eq('id', clienteId).is('deleted_at', null).maybeSingle(),
     db.from('legal_persons').select('id, full_name, relationship').eq('tenant_id', tenantId).eq('client_id', clienteId).is('archived_at', null).order('created_at'),
     db.from('legal_entities').select('id').eq('tenant_id', tenantId).eq('client_id', clienteId).limit(1),
     listarCasos(db, tenantId, { encerrados: null, hoje, clienteId }),
     lerFilaDePendencias(db, tenantId, { clienteId }),
+    listarDocumentos(db, tenantId, { clienteId }),
+    contextoDePlano(db, tenantId),
   ])
   if (cliente.error || pessoas.error || empresas.error) throw cliente.error ?? pessoas.error ?? empresas.error
   if (!cliente.data) notFound()
@@ -149,6 +155,13 @@ export default async function Cliente360({ db, tenantId, escritorio, clienteId, 
             ))}
           </ul>
         )}
+      </section>
+
+      <section aria-labelledby="sec-docs" className="mb-6">
+        <SectionHeader icone={<FileText className="size-4" />}>
+          <span id="sec-docs">Documentos</span>
+        </SectionHeader>
+        <DocumentosDoCaso documentos={documentos} clienteId={clienteId} podeEnviar={podeUsarModulo(plano, 'legal_documents').estado === 'liberado'} />
       </section>
 
       <section aria-labelledby="sec-pessoas" className="mb-10">

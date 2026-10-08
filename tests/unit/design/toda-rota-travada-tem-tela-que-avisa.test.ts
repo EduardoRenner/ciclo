@@ -82,7 +82,7 @@ const ONDE_AVISA: Record<ModuloKey, { telas: string[]; isento?: string }> = {
   legal_checklists: { telas: ['src/app/admin/pendencias'] },
   legal_structure: { telas: [], isento: 'pacote Advocacia sem rota de escrita ainda (docs/101 Fase 3)' },
   legal_deadlines: { telas: ['src/app/admin/intimacoes'] },
-  legal_documents: { telas: [], isento: 'pacote Advocacia sem rota de escrita ainda (docs/101 Fase 2)' },
+  legal_documents: { telas: ['src/app/admin/casos/[id]'] },
 }
 
 function arquivos(dir: string, ext: RegExp): string[] {

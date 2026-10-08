@@ -79,6 +79,10 @@ export const ROTAS_DE_ESCRITA: Readonly<Record<string, RegraNaPausa>> = {
   'PATCH v1/legal/checklist/[id]': 'permite',
   // marca o lembrete já feito pelo WhatsApp da pessoa: não cria nada nem gasta envio
   'POST v1/legal/checklist/lembrete': 'permite',
+  // documento novo (ou versão nova) é linha nova; abrir e conferir mexem no que existe
+  'POST v1/legal/documents': 'bloqueia',
+  'POST v1/legal/documents/[id]/open': 'permite',
+  'PATCH v1/legal/documents/[id]': 'permite',
   // triagem é obrigação (prazo que nasce dela não pode esperar a conta voltar a pagar)
   'POST v1/legal/intimations/[id]/decide': 'permite',
   'PATCH v1/message-templates/[id]': 'permite',

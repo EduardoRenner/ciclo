@@ -1,19 +1,23 @@
-import { ArrowLeft, CalendarClock, Lock, Users } from 'lucide-react'
+import { ArrowLeft, CalendarClock, FileText, Lock, Users } from 'lucide-react'
 import { headers } from 'next/headers'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
 import FilaDePendencias from '@/app/admin/pendencias/fila'
+import DocumentosDoCaso from '@/components/advocacia/documentos'
 import Badge from '@/components/ui/badge'
 import Card from '@/components/ui/card'
 import SectionHeader from '@/components/ui/section-header'
 import { hojeNoFuso } from '@/core/advocacia/datas'
 import { montarFila } from '@/core/advocacia/fila-de-pendencias'
 import { ROTULO_DO_ESTADO_DO_CASO, seloDoEstado } from '@/core/advocacia/resumo-do-caso'
+import { podeUsarModulo } from '@/core/billing/planos'
 import { lerCaso } from '@/server/advocacia/consulta-casos'
+import { listarDocumentos } from '@/server/advocacia/documentos'
 import { lerFilaDePendencias } from '@/server/advocacia/pendencias'
 import { contextoDoPainel } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
+import { contextoDePlano } from '@/server/services/planos'
 
 export const dynamic = 'force-dynamic'
 
@@ -45,10 +49,14 @@ export default async function PaginaCaso({ params }: { params: Promise<{ id: str
   const caso = await lerCaso(db, ctx.tenantId, id, hoje)
   if (!caso) notFound()
 
-  const [itens, trilha] = await Promise.all([
+  const [itens, trilha, documentos, plano] = await Promise.all([
     lerFilaDePendencias(db, ctx.tenantId, { casoId: id }),
     caso.sigiloso ? db.rpc('legal_registrar_abertura_do_caso', { p_case: id }) : Promise.resolve(null),
+    listarDocumentos(db, ctx.tenantId, { casoId: id }),
+    contextoDePlano(db, ctx.tenantId),
   ])
+  // o plano é consultado ANTES do formulário de envio (guarda `toda-rota-travada-tem-tela-que-avisa`)
+  const podeEnviar = podeUsarModulo(plano, 'legal_documents').estado === 'liberado'
   const grupos = montarFila(itens, hoje, ctx.tenant.name)
   const prazosAbertos = caso.prazos.filter((p) => p.estado === 'aberto')
 
@@ -140,6 +148,13 @@ export default async function PaginaCaso({ params }: { params: Promise<{ id: str
           <span id="sec-pendencias">Pendências do caso</span>
         </SectionHeader>
         {grupos.length === 0 ? <p className="text-secundario text-txt-2">Nenhuma pendência aberta neste caso.</p> : <FilaDePendencias grupos={grupos} />}
+      </section>
+
+      <section aria-labelledby="sec-docs" className="mb-6">
+        <SectionHeader icone={<FileText className="size-4" />}>
+          <span id="sec-docs">Documentos</span>
+        </SectionHeader>
+        <DocumentosDoCaso documentos={documentos} clienteId={caso.clienteId} casoId={id} podeEnviar={podeEnviar} />
       </section>
 
       <section aria-labelledby="sec-equipe" className="mb-8">

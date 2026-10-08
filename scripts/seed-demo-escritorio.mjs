@@ -13,7 +13,7 @@
  *
  * Só roda contra o banco LOCAL: a URL tem que ser 127.0.0.1/localhost, ou o script para.
  */
-import { createHash, createHmac, randomBytes } from 'node:crypto'
+import { createHash, createHmac, randomBytes, randomUUID } from 'node:crypto'
 import { existsSync, readFileSync } from 'node:fs'
 
 import { createClient } from '@supabase/supabase-js'
@@ -248,10 +248,23 @@ function numeroFicticio(tribunal) {
 
 // ---------------------------------------------------------------------------------------------
 // Limpeza
+async function apagarPasta(prefixo) {
+  const { data } = await svc.storage.from('legal-docs').list(prefixo, { limit: 1000 })
+  for (const item of data ?? []) {
+    const caminho = `${prefixo}/${item.name}`
+    if (item.id === null) await apagarPasta(caminho)
+    else await svc.storage.from('legal-docs').remove([caminho])
+  }
+}
+
 // ---------------------------------------------------------------------------------------------
 async function limpar() {
   const antigo = await svc.from('tenants').select('id').eq('slug', SLUG).maybeSingle()
-  if (antigo.data) precisa(await svc.from('tenants').delete().eq('id', antigo.data.id), 'apagar tenant antigo')
+  if (antigo.data) {
+    // os arquivos do bucket não vão no cascade do banco: sem isto, cada rodada deixaria PDFs órfãos
+    await apagarPasta(`${antigo.data.id}`)
+    precisa(await svc.from('tenants').delete().eq('id', antigo.data.id), 'apagar tenant antigo')
+  }
   const lista = precisa(await svc.auth.admin.listUsers({ perPage: 1000 }), 'listar usuários')
   for (const u of lista.users.filter((x) => EQUIPE.some((m) => m.email === x.email))) await svc.auth.admin.deleteUser(u.id)
 }
@@ -510,6 +523,40 @@ async function main() {
   await inserir('legal_case_members', membros, 'case_id')
   const todosItens = casos.flatMap((c, i) => itensPorCaso[i].map((x) => ({ ...x, case_id: c.id })))
   await inserir('legal_checklist_items', todosItens)
+
+  // ── documentos: o que o cliente entregou vira documento (aceito, ou a conferir se chegou há pouco).
+  // O arquivo é um PDF mínimo que DIZ ser fictício; vai para o bucket privado como o servidor faria.
+  const CATEGORIAS_VALIDAS = new Set(['identificacao_pessoal', 'certidao_civil', 'pacto_antenupcial', 'comprovante_endereco', 'contrato_social', 'alteracao_contratual', 'ata_assembleia', 'acordo_socios', 'cartao_cnpj', 'procuracao', 'matricula_imovel', 'escritura', 'iptu_itr_ccir', 'contrato', 'declaracao_ir', 'extrato_bancario', 'contrato_bancario', 'testamento', 'peticao_decisao', 'laudo_avaliacao', 'comprovante_pagamento', 'outro'])
+  const pdf = (titulo) => new TextEncoder().encode(`%PDF-1.4
+% ${titulo}. Documento ficticio de demonstracao (exemplo).
+%%EOF
+`)
+  const docs = []
+  const versoes = []
+  for (const it of todosItens) {
+    if (it.owed_by !== 'cliente' || it.kind !== 'enviar_documento') continue
+    if (!['concluido', 'recebido', 'em_conferencia'].includes(it.status)) continue
+    const caso = casos.find((c) => c.id === it.case_id)
+    const documentId = randomUUID()
+    const versaoId = randomUUID()
+    const caminho = `${T}/${caso.cliente.id}/${documentId}/1`
+    const bytes = pdf(it.title)
+    precisa(await svc.storage.from('legal-docs').upload(caminho, bytes, { contentType: 'application/pdf', upsert: true }), `upload ${it.title}`)
+    const conferido = it.status === 'concluido'
+    docs.push({
+      id: documentId, tenant_id: T, client_id: caso.cliente.id, case_id: caso.id, title: it.title,
+      category: CATEGORIAS_VALIDAS.has(it.expected_category) ? it.expected_category : 'outro',
+      origin: 'cliente', status: conferido ? 'aceito' : 'recebido', sensitivity: caso.linha.sensitivity,
+      reviewed_by: conferido ? usuario.direcao : null, reviewed_at: conferido ? instante(HOJE, 9) : null, created_by: usuario.secretaria,
+    })
+    versoes.push({
+      id: versaoId, tenant_id: T, document_id: documentId, version_no: 1, storage_path: caminho, mime: 'application/pdf',
+      size_bytes: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex'), uploaded_by: usuario.secretaria,
+    })
+  }
+  await inserir('legal_documents', docs)
+  await inserir('legal_document_versions', versoes)
+  for (const v of versoes) precisa(await svc.from('legal_documents').update({ current_version_id: v.id }).eq('tenant_id', T).eq('id', v.document_id), 'versão atual')
 
   // Cenário 2: a família 1 tem a matrícula do imóvel atrasada 12 dias, e ela trava a holding.
   const holdingFamilia1 = casos.find((c) => c.kind === 'holding' && c.cliente === clientes[0])
