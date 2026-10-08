@@ -24,7 +24,7 @@ export default function FilterRow({ rotulo, children, className }: Props) {
     <div
       role="group"
       aria-label={rotulo}
-      className={cn('scroll-x -mx-[var(--gutter)] gap-2 px-[var(--gutter)] pb-1', className)}
+      className={cn('scroll-x -mx-[var(--gutter)] gap-2 px-[var(--gutter)] py-1', className)}
     >
       {children}
     </div>

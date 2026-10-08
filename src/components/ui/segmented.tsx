@@ -45,7 +45,7 @@ export default function Segmented({ segmentos, valor, aoTrocar, rotulo, classNam
       aria-label={rotulo}
       // `scroll-x` (globals.css) já resolve encaixe por item, barra escondida e esmaecimento
       // na borda — a mesma fileira rolável de `FilterRow`, sem reinventar.
-      className={cn('scroll-x -mx-[var(--gutter)] gap-1.5 px-[var(--gutter)] pb-1', className)}
+      className={cn('scroll-x -mx-[var(--gutter)] gap-1.5 px-[var(--gutter)] py-1', className)}
     >
       {segmentos.map((s, i) => {
         const ativo = s.valor === valor

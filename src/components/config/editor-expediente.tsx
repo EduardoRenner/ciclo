@@ -187,12 +187,15 @@ export default function EditorExpediente({
                        Medido em 32×32px nos sete dias — abaixo do piso de 48px
                        do CLAUDE.md. Mesma sobra que a Parte III achou em
                        `fidelidade.tsx`: componente escrito depois da varredura
-                       de alvos. `toque-48` estende a área tocável sem engordar
-                       o desenho, que a 32px é o certo ao lado do nome do dia.
+                       de alvos. O `toque-48` que veio depois só estende na vertical
+                       e deixou 32 px de largura (docs/102): o botão tem 48 × 48 e o
+                       círculo de 32 px fica dentro, que é o desenho certo ao lado do nome.
                     */
-                    className="toque-48 flex size-8 items-center justify-center rounded-[var(--radius-pill)] bg-acc-soft text-acc-2"
+                    className="-mr-2 flex size-12 items-center justify-center"
                   >
-                    <Plus aria-hidden className="size-4" />
+                    <span className="flex size-8 items-center justify-center rounded-[var(--radius-pill)] bg-acc-soft text-acc-2">
+                      <Plus aria-hidden className="size-4" />
+                    </span>
                   </button>
                 </div>
 

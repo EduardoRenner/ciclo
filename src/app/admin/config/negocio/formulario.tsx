@@ -206,7 +206,7 @@ export default function FormularioNegocio({ tenant, urlSite }: { tenant: Tenant;
                 title={p.nome}
                 style={{ backgroundColor: p.hex }}
                 className={
-                  'size-10 shrink-0 rounded-full border-2 transition ' +
+                  'size-12 shrink-0 rounded-full border-2 transition ' +
                   (acento === p.hex ? 'border-txt' : 'border-transparent hover:border-line-2')
                 }
               />
