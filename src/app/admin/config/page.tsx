@@ -1,4 +1,4 @@
-import { BadgeDollarSign, Bell, Bot, Building2, CalendarRange, Clock, CreditCard, FileText, HandCoins, Megaphone, MessageSquareText, Package, Repeat, Repeat2, Scissors, ScrollText, ShieldCheck, Store, ToggleRight, Trash2, Users, Wallet } from 'lucide-react'
+import { BadgeDollarSign, Bell, Bot, Building2, CalendarRange, Clock, CreditCard, FileText, HandCoins, Megaphone, MessageSquareText, Package, Repeat, Repeat2, Scale, Scissors, ScrollText, ShieldCheck, Store, ToggleRight, Trash2, Users, Wallet } from 'lucide-react'
 import Link from 'next/link'
 
 import { headers } from 'next/headers'
@@ -31,6 +31,8 @@ const GRUPOS = [
       { href: '/admin/config/negocio', titulo: 'Negócio', descricao: 'Nome, contato, sobre e link do seu site', icone: Store },
       { href: '/admin/config/servicos', titulo: 'Serviços', descricao: 'Preço, duração e o que aparece no site', icone: Scissors },
       { href: '/admin/config/profissionais', titulo: 'Time', descricao: 'Quem atende, expediente e convites', icone: Users },
+      // docs/101 T4.6: só existe no pacote Advocacia (o módulo some do hub fora dele, `fora_do_pacote`)
+      { href: '/admin/config/advocacia', titulo: 'Escritório', descricao: 'OAB da equipe, regras de prazo e captura de intimações', icone: Scale, modulo: 'legal_deadlines' },
       { href: '/admin/config/horarios', titulo: 'Horário de funcionamento', descricao: 'Expediente padrão do negócio', icone: Clock },
     ],
   },

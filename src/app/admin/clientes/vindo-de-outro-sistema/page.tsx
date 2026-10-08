@@ -100,7 +100,7 @@ export default async function PaginaVindoDeOutroSistema() {
           <p className="mt-1 text-secundario text-txt-2">
             Não precisa trocar hoje. Continue marcando horário do jeito que já faz: o CICLO fica só de olho em
             quem está sumindo, para você chamar de volta pelo seu WhatsApp. Quando alguém voltar, marque
-            &ldquo;já é sua cliente&rdquo; para o Motor continuar certo.
+            &ldquo;alguém que você já atende voltou&rdquo; para o Motor continuar certo.
           </p>
           <Link href="/admin/clientes/ja-atendo" className={`mt-3 justify-between ${classeOpcao}`}>
             Ver quem já atendo

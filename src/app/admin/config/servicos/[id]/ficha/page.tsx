@@ -38,7 +38,7 @@ export default async function PaginaFichaDeConsumo({ params }: { params: Promise
         titulo="Ficha de consumo"
         descricao={`O que ${servico.data.name} gasta de produto a cada atendimento.`}
         acao={
-          <Link href="/admin/config/servicos" className="flex h-12 items-center text-label font-semibold text-acc-2">
+          <Link href="/admin/config/servicos" className="-mr-2 flex h-12 min-w-12 items-center justify-center px-2 text-label font-semibold text-acc-2">
             Voltar
           </Link>
         }

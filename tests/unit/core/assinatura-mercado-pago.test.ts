@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { PRECO_MENSAL_CENTS } from '@/core/billing/planos'
 import {
+  acessoPagoVigente,
   decidirPlano,
   lerAssinatura,
   lerNotificacaoMP,
@@ -32,6 +33,47 @@ describe('decidirPlano: status do Mercado Pago vira decisão sobre tenants.plan'
 
   it('cancelled volta pro grátis, sem graça', () => {
     expect(decidirPlano('cancelled', 'avancado', 'avancado')).toEqual({ plano: 'gratis', emGraca: false })
+  })
+
+  it('cancelled com período pago correndo MANTÉM o degrau contratado (Termos §6, C7)', () => {
+    expect(decidirPlano('cancelled', 'equipe', 'equipe', true)).toEqual({ plano: 'equipe', emGraca: false })
+    // O contratado, e não o vigente: o webhook pode chegar depois de a tela ter mudado o vigente.
+    expect(decidirPlano('cancelled', 'equipe', 'essencial', true)).toEqual({ plano: 'equipe', emGraca: false })
+  })
+
+  it('cancelled sem período pago correndo cai na hora, e o padrão do 4º argumento é "não corre"', () => {
+    expect(decidirPlano('cancelled', 'equipe', 'equipe', false)).toEqual({ plano: 'gratis', emGraca: false })
+    expect(decidirPlano('cancelled', 'equipe', 'equipe')).toEqual({ plano: 'gratis', emGraca: false })
+  })
+})
+
+describe('acessoPagoVigente: o período já pago de quem cancelou', () => {
+  const agora = new Date('2026-11-10T12:00:00Z')
+  const cancelada = (acesso_ate: string | null | undefined) => ({ status: 'cancelled' as const, acesso_ate })
+
+  it('vale até a data e acaba nela (a data é exclusiva)', () => {
+    expect(acessoPagoVigente(cancelada('2026-11-20T03:00:00Z'), agora)).toBe(true)
+    expect(acessoPagoVigente(cancelada('2026-11-10T12:00:00Z'), agora)).toBe(false)
+    expect(acessoPagoVigente(cancelada('2026-11-01T03:00:00Z'), agora)).toBe(false)
+  })
+
+  it('sem data, sem assinatura, ou com data lixo: não há período pago correndo', () => {
+    expect(acessoPagoVigente(cancelada(null), agora)).toBe(false)
+    expect(acessoPagoVigente(cancelada(undefined), agora)).toBe(false)
+    expect(acessoPagoVigente(null, agora)).toBe(false)
+    expect(acessoPagoVigente(cancelada('isto não é uma data'), agora)).toBe(false)
+  })
+
+  it('só a assinatura CANCELADA tem período pago a correr: authorized e paused não são afetadas pela data', () => {
+    expect(acessoPagoVigente({ status: 'authorized', acesso_ate: '2026-11-20T03:00:00Z' }, agora)).toBe(false)
+    expect(acessoPagoVigente({ status: 'paused', acesso_ate: '2026-11-20T03:00:00Z' }, agora)).toBe(false)
+  })
+
+  it('lerAssinatura lê acesso_ate, e ignora o que não é texto', () => {
+    const base = { provedor: 'mercado_pago', preapproval_id: 'p', plano_contratado: 'equipe', status: 'cancelled', atualizado_em: '2026-11-01T00:00:00Z' }
+    expect(lerAssinatura({ assinatura: { ...base, acesso_ate: '2026-11-20T03:00:00Z' } })?.acesso_ate).toBe('2026-11-20T03:00:00Z')
+    expect(lerAssinatura({ assinatura: { ...base, acesso_ate: 42 } })?.acesso_ate).toBeNull()
+    expect(lerAssinatura({ assinatura: base })?.acesso_ate).toBeNull()
   })
 })
 

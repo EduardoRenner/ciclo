@@ -56,7 +56,7 @@ export default function Privacidade() {
       <style dangerouslySetInnerHTML={{ __html: 'html,body{background:#faf8f5}' }} />
       <main className="mx-auto min-h-dvh max-w-[720px] px-[var(--gutter)] pb-16">
       <header className="flex items-center justify-between py-5">
-        <Link href="/" aria-label="CICLO, início">
+        <Link href="/" aria-label="CICLO, início" className="-ml-2 inline-flex min-h-12 items-center px-2">
           <Image src={wordmark} alt="CICLO" sizes="70px" className="marca-no-escuro h-7 w-auto" />
           <Image src={wordmarkClaro} alt="" aria-hidden sizes="70px" className="marca-no-claro h-7 w-auto" />
         </Link>

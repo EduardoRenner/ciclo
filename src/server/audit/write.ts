@@ -43,6 +43,22 @@ const REDIGIR = new Set([
    */
   'preferences',
   'alert_label',
+  /*
+   * docs/101 T1.9: as rotas do pacote Advocacia gravam só o que identifica o ato (estado, tipo, contagem),
+   * nunca a linha inteira. Estas chaves são a rede embaixo, para o dia em que alguém gravar a linha: o
+   * texto e os destinatários da intimação têm nome de parte, o número do processo identifica a causa,
+   * e motivo de sigilo, nota ao cliente e anotação são texto livre.
+   */
+  'texto',
+  'texto_sanitizado',
+  'destinatarios',
+  'numero_processo',
+  'cnj_number',
+  'sensitivity_reason',
+  'client_status_note',
+  'notes',
+  'document_hash',
+  'cnpj_hash',
 ])
 
 /**

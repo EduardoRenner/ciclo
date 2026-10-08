@@ -1,7 +1,8 @@
 import Image from 'next/image'
 import Link from 'next/link'
 
-import { precoDoPlano } from '@/core/billing/planos'
+import { NOME_DO_PLANO, PLANOS, precoDoPlano } from '@/core/billing/planos'
+import { PRELANCAMENTO, cortesiaDoCadastro, descreverDia, ultimoDiaDaCortesia } from '@/core/billing/prelancamento'
 import { dataLegivel, VERSOES_LEGAIS } from '@/core/legal/versoes'
 import { canalDeContato } from '@/lib/contato'
 
@@ -9,6 +10,19 @@ import wordmark from '../../../../public/marca/ciclo-wordmark-aqua.png'
 import wordmarkClaro from '../../../../public/marca/ciclo-wordmark-aqua-claro.png'
 
 const CANAL = canalDeContato('Oi! Tenho uma dúvida sobre os termos de uso do CICLO.')
+
+/**
+ * O último dia de uso de quem cria a conta na janela de pré-lançamento (D0 menos um dia). Vem de
+ * `cortesiaDoCadastro`, a MESMA função que concede a cortesia: a data do contrato e a do painel não
+ * têm como divergir.
+ */
+const ULTIMO_DIA_DA_CORTESIA_LONGA = ultimoDiaDaCortesia(cortesiaDoCadastro(new Date(`${PRELANCAMENTO.fundadorDe}T15:00:00Z`)))
+
+/**
+ * Com o Mercado Pago ligado (`MERCADOPAGO_ACCESS_TOKEN`), "a cobrança automática ainda não está no ar"
+ * é falso (auditoria de 27/09, B5). É lido na regeneração da página, como em `/precos`.
+ */
+const COBRANCA_LIGADA = Boolean(process.env.MERCADOPAGO_ACCESS_TOKEN)
 
 /**
  * L-7, `docs/31-LANCAMENTO-AUDITORIA-E-PLANO.md` — vender assinatura recorrente sem termos é
@@ -65,7 +79,7 @@ export default function Termos() {
       <style dangerouslySetInnerHTML={{ __html: 'html,body{background:#faf8f5}' }} />
       <main className="mx-auto min-h-dvh max-w-[720px] px-[var(--gutter)] pb-16">
       <header className="flex items-center justify-between py-5">
-        <Link href="/" aria-label="CICLO, início">
+        <Link href="/" aria-label="CICLO, início" className="-ml-2 inline-flex min-h-12 items-center px-2">
           <Image src={wordmark} alt="CICLO" sizes="70px" className="marca-no-escuro h-7 w-auto" />
           <Image src={wordmarkClaro} alt="" aria-hidden sizes="70px" className="marca-no-claro h-7 w-auto" />
         </Link>
@@ -140,40 +154,72 @@ export default function Termos() {
         <section>
           <h2>5. Planos e pagamento</h2>
           <p>
-            O plano Grátis é gratuito e não pede cartão. Os planos pagos começam em{' '}
-            {precoDoPlano('essencial')} por mês, e os valores de cada degrau estão na{' '}
+            Há dois planos: o {NOME_DO_PLANO.essencial}, para {PLANOS.essencial.maxProfissionais} profissional,
+            a {precoDoPlano('essencial')} por mês, e o {NOME_DO_PLANO.equipe}, até {PLANOS.equipe.maxProfissionais}{' '}
+            profissionais, a {precoDoPlano('equipe')} por mês. O produto é o mesmo nos dois; o que muda é o
+            tamanho da equipe. Acima de {PLANOS.equipe.maxProfissionais} profissionais, o plano é combinado à
+            parte. Os valores de hoje estão na{' '}
             <Link href="/precos" className="font-semibold text-acc-2 underline underline-offset-2">
               página de preços
             </Link>
             .
           </p>
           <p>
-            <strong className="font-semibold text-txt">A cobrança automática ainda não está no ar.</strong>{' '}
-            Hoje, se você quiser um plano pago, a gente combina direto e o pagamento é feito por
-            fora do sistema. Quando existir assinatura automática, você será avisado antes de
-            qualquer cobrança começar.
+            <strong className="font-semibold text-txt">Período de uso sem cobrança.</strong> Quem cria a conta
+            até {descreverDia(PRELANCAMENTO.ultimoDiaDaCortesiaLonga)} usa o CICLO inteiro, sem pagar e sem
+            cartão, até {descreverDia(ULTIMO_DIA_DA_CORTESIA_LONGA)}. Quem cria a conta depois disso tem{' '}
+            {PRELANCAMENTO.diasDoTeste} dias nas mesmas condições. A data de fim de cada conta aparece no
+            painel desde o primeiro dia. Nada é cobrado quando esse período acaba: a cobrança só começa se
+            você escolher um plano.
           </p>
           <p>
-            Se o preço de um plano mudar, a gente avisa com pelo menos 30 dias de antecedência, e
-            a mudança nunca vale para um período já pago.
+            <strong className="font-semibold text-txt">Quando o período acaba sem plano escolhido.</strong>{' '}
+            Você ainda tem {PRELANCAMENTO.diasDeGraca} dias com tudo funcionando. Depois disso a conta fica
+            pausada por até {PRELANCAMENTO.diasDePausa} dias: você vê e exporta tudo, mas não cria nada novo, e
+            escolher um plano reativa a conta na hora. Antes de a pausa terminar, a gente avisa{' '}
+            {PRELANCAMENTO.avisosDaPausa[0]} e {PRELANCAMENTO.avisosDaPausa[1]} dias antes; passado esse
+            prazo, a conta pode ser eliminada.
+          </p>
+          {COBRANCA_LIGADA ? (
+            <p>
+              <strong className="font-semibold text-txt">Como se paga.</strong> A assinatura é feita pelo
+              Mercado Pago, dentro do app, em Config e depois Meu plano, com cobrança mensal recorrente. A gente
+              nunca vê nem guarda número de cartão. Nada é cobrado antes de você assinar, e você é avisado
+              antes de qualquer mudança de valor.
+            </p>
+          ) : (
+            <p>
+              <strong className="font-semibold text-txt">A cobrança automática ainda não está no ar.</strong>{' '}
+              Hoje, se você quiser um plano, a gente combina direto e o pagamento é feito por fora do
+              sistema. Quando existir assinatura automática, você será avisado antes de qualquer cobrança
+              começar.
+            </p>
+          )}
+          <p>
+            Se o preço de um plano mudar, a gente avisa com pelo menos 30 dias de antecedência, e a mudança
+            nunca vale para um período já pago.
           </p>
         </section>
 
         <section>
           <h2>6. Cancelar</h2>
           <p>
-            Você pode parar de usar quando quiser, sem multa e sem fidelidade. Se estiver num plano
-            pago, é só avisar. Você continua com o acesso até o fim do período já pago e depois a
-            conta volta para o Grátis.
+            Você pode parar de usar quando quiser, sem multa e sem fidelidade.{' '}
+            {COBRANCA_LIGADA
+              ? 'Para cancelar a assinatura, é um toque em Meu plano.'
+              : 'Para cancelar um plano pago, é só avisar.'}{' '}
+            Você continua com o acesso até o fim do período já pago. Nos primeiros 7 dias depois de uma
+            cobrança, o valor volta integral, como manda o Código de Defesa do Consumidor.
           </p>
           <p>
             <strong className="font-semibold text-txt">Cair de plano nunca apaga nem esconde seus dados.</strong>{' '}
-            Se você tiver mais clientes do que o limite do Grátis, todos continuam lá e visíveis;
-            o que o plano pago libera é criar mais e usar os recursos de cada degrau.
+            Seus clientes, o histórico e a agenda continuam à vista; o que o plano libera é criar mais e usar
+            os recursos de cada faixa.
           </p>
           <p>
-            Se quiser apagar a conta de vez, peça e a gente apaga. Você também pode levar seus
-            dados embora: cada ficha de cliente tem exportação dentro do próprio sistema.
+            Se quiser apagar a conta de vez, peça e a gente apaga. Você também pode levar seus dados embora:
+            cada ficha de cliente tem exportação dentro do próprio sistema, e a base de clientes inteira pode ser
+            baixada em planilha.
           </p>
         </section>
 
@@ -217,8 +263,7 @@ export default function Termos() {
           </p>
           <p>
             Nossa responsabilidade por qualquer problema com o serviço fica limitada ao que você
-            pagou pelo CICLO nos últimos 12 meses, e se você está no plano Grátis, é esse mesmo
-            valor: zero. A gente não responde por lucro deixado de ganhar, por dano indireto, nem
+            pagou pelo CICLO nos últimos 12 meses. A gente não responde por lucro deixado de ganhar, por dano indireto, nem
             por prejuízo causado por mau uso do sistema ou por sua senha vazada por descuido seu.
             Nada aqui tira o direito que a lei brasileira já garante e que este contrato não pode
             afastar; essa limitação vale só para o que a lei permite limitar.

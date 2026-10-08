@@ -52,6 +52,8 @@ const SEM_COLUNA_TENANT = new Set([
   'memberships',
   'tenants',
   'invites',
+  // docs/101: os passos de um modelo de checklist pendem do modelo (`template_id`), que é quem tem dono
+  'legal_checklist_template_items',
 ])
 
 /**
@@ -60,6 +62,28 @@ const SEM_COLUNA_TENANT = new Set([
  * muda o número e reprova, mesmo que o arquivo já esteja na lista.
  */
 const JUSTIFICADAS: { arquivo: string; tabela: string; quantas: number; porque: string }[] = [
+  {
+    arquivo: 'src/server/advocacia/casos.ts',
+    tabela: 'legal_checklist_templates',
+    quantas: 1,
+    porque:
+      'cliente do USUÁRIO (RLS valendo), e o filtro é `.or(tenant_id.eq.<do contexto>, tenant_id.is.null)`: o modelo ' +
+      'da plataforma não tem tenant, então `.eq` sozinho esconderia exatamente o que a consulta precisa achar',
+  },
+  {
+    arquivo: 'src/server/advocacia/casos.ts',
+    tabela: 'legal_holidays',
+    quantas: 1,
+    porque: 'mesmo caso dos modelos: feriado nacional tem `tenant_id` nulo, e o `.or` traz os da plataforma e os do escritório',
+  },
+  {
+    arquivo: 'src/server/advocacia/captura.ts',
+    tabela: 'legal_holidays',
+    quantas: 1,
+    porque:
+      'AQUI a chave é de serviço (a rota de cron a passa): o filtro é `.or(tenant_id.eq.<do escritório>, tenant_id.is.null)` ' +
+      'e o tenantId vem da lista de tenants que a própria rota leu, nunca de entrada; feriado nacional não tem tenant',
+  },
   {
     arquivo: 'src/server/services/avaliacoes.ts',
     tabela: 'client_reviews',
@@ -106,6 +130,30 @@ const JUSTIFICADAS: { arquivo: string; tabela: string; quantas: number; porque: 
     tabela: 'messages',
     quantas: 1,
     porque: 'healthcheck da instância — conta mensagens de TODOS os tenants de propósito, sem ler conteúdo',
+  },
+  {
+    arquivo: 'src/server/services/health.ts',
+    tabela: 'legal_intimation_sync',
+    quantas: 1,
+    porque: 'healthcheck (docs/101 §15): reconciliação da captura de TODOS os escritórios; o texto público leva só datas e contagem',
+  },
+  {
+    arquivo: 'src/server/services/health.ts',
+    tabela: 'legal_deadlines',
+    quantas: 1,
+    porque: 'healthcheck: só `head: true` com limit 1, para saber se a tabela da fila responde; não lê linha',
+  },
+  {
+    arquivo: 'src/server/services/health.ts',
+    tabela: 'legal_intimations',
+    quantas: 1,
+    porque: 'healthcheck: só `head: true` com limit 1, para saber se a tabela da fila responde; não lê linha',
+  },
+  {
+    arquivo: 'src/server/services/health.ts',
+    tabela: 'legal_checklist_items',
+    quantas: 1,
+    porque: 'healthcheck: só `head: true` com limit 1, para saber se a tabela da fila responde; não lê linha',
   },
   {
     arquivo: 'src/server/services/whatsapp-inbound.ts',

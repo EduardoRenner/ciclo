@@ -1,3 +1,5 @@
+import type { SlugDoPacote } from '@/core/pacotes'
+
 /**
  * docs/18-MONETIZACAO-PLANO.md §L — o ÚNICO lugar que responde "este tenant pode X?".
  *
@@ -54,6 +56,12 @@ export type ModuloKey =
   | 'health_records'
   | 'documents'
   | 'assistant'
+  // docs/101 §3.3 (T0.2): os cinco do pacote Advocacia. Só existem para quem está no pacote.
+  | 'legal_cases'
+  | 'legal_checklists'
+  | 'legal_structure'
+  | 'legal_deadlines'
+  | 'legal_documents'
 
 /** Capacidades que não são módulo — são o que o degrau permite fazer com o módulo que já tem. */
 export type Capacidade = 'envio_em_lote' | 'remover_selo'
@@ -89,6 +97,13 @@ export const CATALOGO: readonly { key: ModuloKey; label: string; sempreLigado: b
   // docs/26-AGENTE-IA-PLANO.md §6/§10 — liberado para todo tenant desde o grátis, porque agora
   // é medição de uso, não receita. Não `sempreLigado`: o dono precisa poder desligar (§4.4).
   { key: 'assistant', label: 'Assistente', sempreLigado: false },
+  // docs/101 §3.3 (migration 0103): o pacote Advocacia. Nenhum é "sempre ligado": um escritório
+  // só de contencioso desliga Estrutura; a camada de pacote (abaixo) é quem os esconde de beleza.
+  { key: 'legal_cases', label: 'Casos', sempreLigado: false },
+  { key: 'legal_checklists', label: 'Pendências do cliente', sempreLigado: false },
+  { key: 'legal_structure', label: 'Estrutura da família', sempreLigado: false },
+  { key: 'legal_deadlines', label: 'Prazos e intimações', sempreLigado: false },
+  { key: 'legal_documents', label: 'Documentos do caso', sempreLigado: false },
 ]
 
 type Definicao = {
@@ -121,24 +136,58 @@ const PROPRIOS: Record<PlanoTier, Omit<Definicao, 'modulos'> & { modulos: readon
     modulos: ['agenda', 'cycle_engine', 'public_page', 'clients', 'reminders', 'assistant'],
     capacidades: [],
   },
+  /*
+    docs/87 D2 (2026-09-29): "tudo incluído nas duas faixas". Solo (1 profissional) e Equipe (até 5)
+    vendem o MESMO produto e diferem só no tamanho da equipe — é o que o mercado inteiro faz e o que
+    se explica numa frase. Os módulos que eram do Equipe (`team`, `loyalty`) e do Avançado (`stock`,
+    `health_records`, `recurrence`, `club`, `documents`) moram aqui, no degrau de entrada.
+
+    O dono continua mandando: cada módulo se desliga em Configurações (`tenant_modules`), inclusive
+    a anamnese. Ela sobe de degrau porque o argumento antigo ("quem precisa disso fatura para pagar")
+    era de precificação, e o custo de conformidade (LGPD, cifragem, trilha de acesso) já é pago em
+    todo tenant que liga o módulo, não só no de cima.
+  */
   essencial: {
     maxProfissionais: 1,
     maxClientes: null,
-    modulos: ['campaigns', 'register', 'quotes', 'routing'],
+    modulos: [
+      'campaigns',
+      'register',
+      'quotes',
+      'routing',
+      'team',
+      'loyalty',
+      'stock',
+      'health_records',
+      'recurrence',
+      'club',
+      'documents',
+      // docs/101 §3.3: o pacote Advocacia inteiro mora no degrau de entrada. Com `ACESSO_ABERTO`
+      // ligado isso não muda nada para ninguém; quando desligar, o escritório paga o Solo/Equipe
+      // como qualquer negócio. Preço próprio do pacote é decisão pendente do Eduardo (docs/101 §16).
+      'legal_cases',
+      'legal_checklists',
+      'legal_structure',
+      'legal_deadlines',
+      'legal_documents',
+    ],
     capacidades: ['envio_em_lote', 'remover_selo'],
   },
   equipe: {
     maxProfissionais: 5,
     maxClientes: null,
-    modulos: ['team', 'loyalty'],
+    modulos: [],
     capacidades: [],
   },
+  /*
+    Legado, não vendido (docs/87 D2): acima de 5 profissionais o caminho é "fale com a gente". O
+    degrau continua existindo porque `plan_tier` é enum do Postgres e um tenant pode ter esse valor
+    gravado; ele herda tudo do Equipe e só remove o teto de profissionais.
+  */
   avancado: {
     maxProfissionais: null,
     maxClientes: null,
-    // Anamnese no degrau mais alto não é gula: é dado de saúde, com custo de conformidade real
-    // (LGPD, cifragem, trilha de acesso). Quem precisa disso fatura para pagar.
-    modulos: ['stock', 'health_records', 'recurrence', 'club', 'documents'],
+    modulos: [],
     capacidades: [],
   },
 }
@@ -169,6 +218,14 @@ export const PLANOS: Record<PlanoTier, Definicao> = {
 
 export const ORDEM_DOS_PLANOS: readonly PlanoTier[] = ['gratis', 'essencial', 'equipe', 'avancado']
 
+/**
+ * O que está À VENDA (docs/87 D2): duas faixas. `gratis` deixou de ser vendido (vira a conta
+ * pausada, D1) e `avancado` também (acima de 5 profissionais, "fale com a gente"). Os dois seguem
+ * em `PLANOS` e em `ORDEM_DOS_PLANOS` porque o banco pode ter tenants neles; o que muda é que nenhum
+ * cartão, botão de assinar ou oferta de upgrade os anuncia.
+ */
+export const PLANOS_A_VENDA = ['essencial', 'equipe'] as const satisfies readonly PlanoTier[]
+
 const ORDEM = ORDEM_DOS_PLANOS
 
 /**
@@ -184,7 +241,9 @@ const ORDEM = ORDEM_DOS_PLANOS
  */
 export const NOME_DO_PLANO: Record<PlanoTier, string> = {
   gratis: 'Grátis',
-  essencial: 'Essencial',
+  // O identificador do degrau continua `essencial` (é o valor do enum `plan_tier`); o nome que a
+  // pessoa lê é o da faixa de 1 profissional (docs/87 D2).
+  essencial: 'Solo',
   equipe: 'Equipe',
   avancado: 'Avançado',
 }
@@ -259,6 +318,11 @@ export function menorPlanoComCapacidade(capacidade: Capacidade): PlanoTier | nul
 // ---------------------------------------------------------------------------------------------
 
 export type Veredito =
+  /**
+   * Não pertence ao pacote da profissão deste negócio (docs/101 §3.3). Some da interface, sem
+   * oferta nenhuma, como `fora_do_eixo`: um salão não deveria ver "Casos" nem para saber que existe.
+   */
+  | { estado: 'fora_do_pacote'; pacote: SlugDoPacote }
   /** Não faz sentido para este negócio. Some da interface, sem oferta nenhuma. */
   | { estado: 'fora_do_eixo'; eixo: Eixo }
   /** Faz sentido, mas o degrau não libera. Aparece bloqueado, com motivo e caminho. */
@@ -270,6 +334,12 @@ export type Veredito =
 export type ContextoDoTenant = {
   plano: PlanoTier
   /**
+   * O pacote da profissão (migration 0102, `core/pacotes`). Ausente = `base`, que é o produto de
+   * hoje: quem monta o contexto sem saber do pacote (testes antigos, chamadores de beleza) recebe
+   * exatamente o veredito de antes. Só um valor conhecido e diferente libera módulo de pacote.
+   */
+  pacote?: SlugDoPacote
+  /**
    * Os quatro eixos da migration 0023. `null` = o tenant ainda não respondeu o onboarding.
    *
    * Tipado por eixo (`ValorDoEixo[E]`), não como `string`: é o que faz o `tsc` recusar comparação
@@ -280,6 +350,14 @@ export type ContextoDoTenant = {
   eixos: { [E in Eixo]?: ValorDoEixo[E] | null }
   /** `tenant_modules` com origem 'dono'. Ausente = o dono não mexeu, vale o padrão. */
   desligadosPeloDono?: readonly ModuloKey[]
+  /**
+   * A conta passou da cortesia e da graça sem assinar (docs/87 D1): lê e exporta tudo, não cria
+   * nada novo. Ausente = não pausada. Quem calcula é `situacaoDaConta` (`prelancamento.ts`).
+   *
+   * É um fato à parte de `plano` de propósito: o degrau continua sendo o que a pessoa ENXERGA
+   * (regra 5.1 — cair de degrau nunca esconde dado), e a pausa é só a trava de CRIAR.
+   */
+  contaPausada?: boolean
 }
 
 /**
@@ -315,7 +393,34 @@ const CONDICAO_DE_EIXO: Partial<Record<ModuloKey, CondicaoDeEixo>> = {
 export const CONDICAO_DE_EIXO_PARA_GUARDA: Readonly<Record<string, { eixo: Eixo; valores: readonly string[] }>> =
   CONDICAO_DE_EIXO as Record<string, { eixo: Eixo; valores: readonly string[] }>
 
+/**
+ * A quarta camada, e ela vem ANTES do eixo (docs/101 §3.3): módulo que só existe num pacote não
+ * é "fora do eixo" nem "bloqueado pelo plano" para quem está em outro pacote; ele simplesmente
+ * não é daquele negócio. Se o plano viesse antes, um salão no Grátis veria "Casos bloqueado,
+ * assine o Solo" para algo que nunca vai usar: a regra 5.2 ao contrário, de novo.
+ *
+ * Lista de pacotes por módulo, e não predicado, pelo mesmo motivo de `CONDICAO_DE_EIXO`: lista
+ * é inspecionável por teste; closure não.
+ */
+const CONDICAO_DE_PACOTE: Partial<Record<ModuloKey, readonly SlugDoPacote[]>> = {
+  legal_cases: ['advocacia'],
+  legal_checklists: ['advocacia'],
+  legal_structure: ['advocacia'],
+  legal_deadlines: ['advocacia'],
+  legal_documents: ['advocacia'],
+}
+
+/** Exposto só para a guarda que confere estes módulos contra o `CATALOGO` e a migration 0103. */
+export const CONDICAO_DE_PACOTE_PARA_GUARDA: Readonly<Partial<Record<ModuloKey, readonly SlugDoPacote[]>>> = CONDICAO_DE_PACOTE
+
 export function podeUsarModulo(ctx: ContextoDoTenant, modulo: ModuloKey): Veredito {
+  const pacotes = CONDICAO_DE_PACOTE[modulo]
+  if (pacotes) {
+    // Diferente do eixo, o pacote nunca é "não respondido": ausente é `base`, por decisão.
+    const pacote = ctx.pacote ?? 'base'
+    if (!pacotes.includes(pacote)) return { estado: 'fora_do_pacote', pacote }
+  }
+
   const condicao = CONDICAO_DE_EIXO[modulo]
   if (condicao) {
     const valor = ctx.eixos[condicao.eixo]
@@ -389,7 +494,8 @@ function tetoDe(tier: PlanoTier, recurso: Recurso): number | null {
 }
 
 function menorPlanoQueComporta(recurso: Recurso, quantidade: number): PlanoTier | null {
-  return ORDEM.find((t) => {
+  // Só oferece o que se vende: acima do teto do Equipe a resposta é `null`, e a tela diz "fale com a gente".
+  return ORDEM.filter((t) => t === 'gratis' || (PLANOS_A_VENDA as readonly PlanoTier[]).includes(t)).find((t) => {
     const teto = tetoDe(t, recurso)
     return teto === null || teto >= quantidade
   }) ?? null
@@ -431,6 +537,8 @@ export function verificarLimite(
  * essa distinção tenha um nome e um teste, em vez de virar um `if` esquecido numa rota.
  */
 export function podeCriar(ctx: ContextoDoTenant, recurso: Recurso, usoAtual: number, aAdicionar = 1): boolean {
+  // Conta pausada não cria nada, nem o que o limite suave deixaria passar.
+  if (ctx.contaPausada) return false
   const r = verificarLimite(ctx, recurso, usoAtual, aAdicionar)
   return r.severidade === 'suave' ? true : r.dentro
 }

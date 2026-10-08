@@ -1,6 +1,9 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { lerConfigFidelidade, pontuarAtendimentoConcluido } from '@/server/services/fidelidade'
+
+// Estas regras são as do programa de cortesia e dos degraus: valem com `ACESSO_ABERTO` desligado.
+vi.mock('@/core/billing/acesso-aberto', () => ({ ACESSO_ABERTO: false }))
 
 /**
  * A fidelidade automática é o módulo `loyalty` — e era o único pedaço dele que nenhuma trava de

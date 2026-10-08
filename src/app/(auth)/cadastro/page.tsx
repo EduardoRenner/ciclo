@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 
-import { NOME_DO_PLANO } from '@/core/billing/planos'
+import { ofertaDoCadastro } from '@/core/billing/prelancamento'
 import Selo from '@/components/shell/selo'
 import TelaPublica from '@/components/shell/tela-publica'
 import { provedoresSociaisAtivos } from '@/server/auth/provedores-sociais'
@@ -23,6 +23,8 @@ export default async function PaginaCadastro({ searchParams }: { searchParams: P
   const daCalculadora = (await searchParams).origem === 'calculadora'
 
   const provedores = await provedoresSociaisAtivos()
+  // A MESMA função que concede a cortesia quando a conta é criada (docs/87 §3.2): o que a tela diz e o que a pessoa ganha não divergem.
+  const oferta = ofertaDoCadastro(new Date())
 
   return (
     <TelaPublica>
@@ -38,14 +40,16 @@ export default async function PaginaCadastro({ searchParams }: { searchParams: P
           de quem está com o dedo em cima de um formulário de quatro campos: a landing prometeu
           grátis e sem cartão, e a tela que converte era a única do funil sem nenhum argumento.
 
-          Os dois fatos são os do cartão do Grátis em `planos-cartoes.ts` ("Para sempre, sem
-          cartão"), e o nome do degrau vem do core — a página não reescreve promessa nem preço.
+          O Grátis deixou de ser vendido (docs/87 D1, D2). O fato que sobra é o do dia: quantos dias de
+          uso completo, sem cartão, e até quando. Vem de `ofertaDoCadastro`, nunca datilografado.
         */}
         <p className="mt-1 text-secundario text-txt-2">
           {daCalculadora
             ? 'Crie a conta, escreva quem você lembra e o CICLO mostra quem passou da hora de voltar. '
             : 'Leva menos de um minuto. '}
-          Você começa no {NOME_DO_PLANO.gratis} e não pedimos cartão.
+          Você começa com {oferta.chamada[0]?.toLowerCase()}
+          {oferta.chamada.slice(1)}
+          {oferta.aberto ? '. Sem prazo por enquanto.' : `: o último dia é ${oferta.fim}.`}
         </p>
       </div>
       <LoginSocial provedores={provedores} />

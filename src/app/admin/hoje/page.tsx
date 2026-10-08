@@ -5,6 +5,8 @@ import { after } from 'next/server'
 import { Temporal } from '@js-temporal/polyfill'
 
 import PageHeader from '@/components/ui/page-header'
+import { hojeNoFuso } from '@/core/advocacia/datas'
+import { ehDemonstracao } from '@/core/tenants/demonstracao'
 import { ehRequisicaoDoAppNativo } from '@/core/plataforma/nativo'
 import { contextoDoPainel } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
@@ -15,6 +17,7 @@ import { prestacaoDeContasDoMotor } from '@/server/services/previsao'
 import { listarParaRecuperar } from '@/server/services/recuperar-receita'
 import { resumoDeHoje } from '@/server/services/resumo-hoje'
 
+import HojeDaAdvocacia from './advocacia'
 import CentralDeAcoes from './central-de-acoes'
 import CompartilharSite from './compartilhar'
 import Hoje from './hoje'
@@ -29,10 +32,31 @@ function saudacao(timezone: string): string {
 
 export const metadata = { title: "Hoje" }
 
-export default async function PaginaHoje() {
+export default async function PaginaHoje({ searchParams }: { searchParams: Promise<{ fila?: string }> }) {
   const hdrs = await headers()
   const ctx = await contextoDoPainel(new Request('https://interno/hoje', { headers: hdrs }))
   const db = await criarClienteDoUsuario()
+
+  // docs/101 T4.4: o pacote Advocacia tem a SUA pergunta de manhã ("que prazo vence, que intimação
+  // chegou, o que falta de cada cliente"), e nenhum dos blocos do salão (receita, recuperar) cabe nela.
+  if (ctx.tenant.pacote === 'advocacia') {
+    const [{ fila }, eu] = await Promise.all([
+      searchParams,
+      db.from('professionals').select('id').eq('tenant_id', ctx.tenantId).eq('user_id', ctx.sessao.userId).maybeSingle(),
+    ])
+    return (
+      <HojeDaAdvocacia
+        db={db}
+        tenantId={ctx.tenantId}
+        timezone={ctx.tenant.timezone}
+        hoje={hojeNoFuso(ctx.tenant.timezone, new Date())}
+        papel={ctx.papel}
+        meuProfissional={eu.data?.id ?? null}
+        filtroPedido={fila}
+        demonstracao={ehDemonstracao(ctx.tenant.slug)}
+      />
+    )
+  }
   // T1.5 (docs/64 §0.2): a Central de Ações pode sugerir "plano-perto-do-teto", que aponta pra
   // /precos — dentro do app nativo isso não pode virar link. Ver central-de-acoes.tsx.
   const nativo = ehRequisicaoDoAppNativo(hdrs.get('user-agent'))

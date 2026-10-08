@@ -3,11 +3,14 @@ import { redirect } from 'next/navigation'
 
 import { cache } from 'react'
 
+import { normalizarPacote, type SlugDoPacote } from '@/core/pacotes'
+import { exigeSegundoFator, ROTA_DO_SEGUNDO_FATOR } from '@/core/pacotes/segundo-fator'
 import { resolverVocabulario, type Vocabulario } from '@/core/text/vocabulario'
 import { UUID } from '@/core/text/uuid'
 import { exigirSessao, type Sessao } from '@/server/auth/session'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { AppError } from '@/server/http/errors'
+import { exigirContaQueEscreve } from '@/server/services/planos'
 
 import type { Papel } from '@/server/auth/rbac'
 
@@ -31,6 +34,22 @@ export type DadosDoTenant = {
    * regra de precedencia por todo componente que queira uma palavra.
    */
   vocabulario: Vocabulario
+  /**
+   * O pacote da profissão (docs/101 §3.2, migration 0102): decide a barra, o botão central e o
+   * vocabulário extra. Vem do mesmo join que traz o `vocab`, pelo mesmo motivo que o vocabulário
+   * vem aqui: quase toda tela do painel precisa, e é uma palavra. Tenant sem profissão escolhida
+   * (join nulo) resolve para `base`, que é o produto de hoje.
+   */
+  pacote: SlugDoPacote
+  /**
+   * O degrau que a pessoa PAGA (`tenants.plan`), como veio do banco: `normalizarPlano` mora em
+   * `server/services/planos` e é quem traduz nomes antigos. E `settings.cortesia`, SÓ essa chave:
+   * a faixa do painel (docs/87 §3.1) precisa dizer a data de fim em TODA tela, e uma ida extra ao
+   * banco por tela é o que o `docs/28` passou um mês desfazendo. Extrair uma chave de jsonb não
+   * muda o argumento acima contra trazer `settings` inteiro.
+   */
+  plan: string
+  cortesia: unknown
 }
 
 export type Contexto = {
@@ -67,7 +86,7 @@ const vinculosAtivos = cache(async function vinculosAtivos(userId: string) {
   const db = await criarClienteDoUsuario()
   const { data, error } = await db
     .from('memberships')
-    .select('tenant_id, role, tenants(name, slug, timezone, vertical, vocab_override, professions(vocab))')
+    .select('tenant_id, role, tenants(name, slug, timezone, vertical, vocab_override, plan, cortesia:settings->cortesia, professions(vocab, pacote))')
     .eq('user_id', userId)
     .eq('active', true)
   if (error) throw new AppError('INTERNAL', { cause: error })
@@ -86,7 +105,9 @@ type TenantBruto = {
   timezone: string
   vertical: string | null
   vocab_override: unknown
-  professions: { vocab: unknown } | null
+  plan: string
+  cortesia: unknown
+  professions: { vocab: unknown; pacote: string } | null
 }
 
 function dadosDoTenant(bruto: TenantBruto | null): DadosDoTenant {
@@ -96,10 +117,28 @@ function dadosDoTenant(bruto: TenantBruto | null): DadosDoTenant {
     slug: bruto.slug,
     timezone: bruto.timezone,
     vertical: bruto.vertical,
+    plan: bruto.plan,
+    cortesia: bruto.cortesia,
     // `professions` vem `null` em tenant sem profissao escolhida; `resolverVocabulario` trata
     // ausencia como padrao, entao nao existe caminho em que a tela fique sem palavra.
     vocabulario: resolverVocabulario(bruto.professions?.vocab, bruto.vocab_override),
+    // Mesma defesa do vocabulário: join nulo ou valor que o registro não conhece cai em `base`.
+    pacote: normalizarPacote(bruto.professions?.pacote),
   }
+}
+
+/**
+ * C5 (docs/87 D1): a conta pausada lê e exporta tudo, mas não cria nada novo. A trava mora AQUI,
+ * na porta por onde toda rota autenticada passa, e não em cada rota: das 93 rotas que escrevem, só
+ * 16 passavam por uma trava de plano. `core/billing/pausa.ts` diz, rota por rota, o que a pausa
+ * recusa; rota que a tabela não conhece é recusada.
+ *
+ * Leitura (`GET`) nunca é recusada, e o painel monta o contexto com uma `Request` de `GET`, então
+ * nenhuma tela quebra.
+ */
+function travaDaPausa(req: Request, ctx: Contexto): Contexto {
+  exigirContaQueEscreve(req.method, new URL(req.url).pathname, ctx.tenant.plan, ctx.tenant.cortesia)
+  return ctx
 }
 
 /**
@@ -124,7 +163,7 @@ export async function contextoAtual(req: Request): Promise<Contexto> {
     // Mesmo erro para "tenant não existe" e "existe mas não é seu": a diferença
     // vira um verificador de quais estabelecimentos existem no CICLO.
     if (!escolhido) throw new AppError('TENANT_MISMATCH')
-    return { sessao, tenantId: escolhido.tenant_id, papel: escolhido.role, tenant: dadosDoTenant(escolhido.tenants) }
+    return travaDaPausa(req, { sessao, tenantId: escolhido.tenant_id, papel: escolhido.role, tenant: dadosDoTenant(escolhido.tenants) })
   }
 
   if (ativos.length === 0) {
@@ -141,7 +180,7 @@ export async function contextoAtual(req: Request): Promise<Contexto> {
     )
   }
 
-  return { sessao, tenantId: unico.tenant_id, papel: unico.role, tenant: dadosDoTenant(unico.tenants) }
+  return travaDaPausa(req, { sessao, tenantId: unico.tenant_id, papel: unico.role, tenant: dadosDoTenant(unico.tenants) })
 }
 
 /**
@@ -167,8 +206,16 @@ export async function contextoAtual(req: Request): Promise<Contexto> {
  * exatamente como cobria antes desta função existir.
  */
 export async function contextoDoPainel(req: Request): Promise<Contexto> {
-  return contextoAtual(req).catch((erro: unknown) => {
+  const ctx = await contextoAtual(req).catch((erro: unknown) => {
     if (erro instanceof AppError && erro.code === 'FORBIDDEN') redirect('/onboarding')
     throw erro
   })
+  /*
+    docs/101 T0.4: o pacote que exige segundo fator (Advocacia) não abre tela nenhuma do painel com
+    sessão só de senha. Aqui, e não no layout, porque é por aqui que toda `page.tsx` do `/admin`
+    passa (guarda `pagina-do-admin-usa-contexto-do-painel`); o layout renderiza também na tela de
+    Segurança, que é o destino, e redirecionar ali seria laço.
+  */
+  if (exigeSegundoFator(ctx.tenant.pacote, ctx.sessao.aal)) redirect(ROTA_DO_SEGUNDO_FATOR)
+  return ctx
 }

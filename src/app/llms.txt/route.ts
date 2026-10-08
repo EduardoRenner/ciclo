@@ -1,4 +1,5 @@
-import { CATALOGO, NOME_DO_PLANO, ORDEM_DOS_PLANOS, precoDoPlanoPorMes } from '@/core/billing/planos'
+import { CATALOGO, NOME_DO_PLANO, PLANOS_A_VENDA, precoDoPlanoPorMes } from '@/core/billing/planos'
+import { ofertaDoCadastro } from '@/core/billing/prelancamento'
 import { APP_URL } from '@/lib/app-url'
 
 /**
@@ -24,7 +25,13 @@ export function GET(): Response {
    * assistente de IA, e o degrau cru sai como "avancado" — sem acento e em minúscula. Quem lê
    * repete o que está escrito, então o nome errado vira o nome que a recomendação usa.
    */
-  const planos = ORDEM_DOS_PLANOS.map((t) => `- ${NOME_DO_PLANO[t]}: ${precoDoPlanoPorMes(t)}`).join('\n')
+  /*
+   * `PLANOS_A_VENDA` e não `ORDEM_DOS_PLANOS` (docs/87 D2): este arquivo é o que um assistente lê e
+   * repete. Listando todos os degraus ele diria "Grátis: R$ 0" e "Avançado: R$ 179", dois planos que
+   * não se vendem mais, e a recomendação sairia com o preço de um deles.
+   */
+  const planos = PLANOS_A_VENDA.map((t) => `- ${NOME_DO_PLANO[t]}: ${precoDoPlanoPorMes(t)}`).join('\n')
+  const oferta = ofertaDoCadastro(new Date())
 
   const modulos = CATALOGO.map((m) => `- ${m.label}`).join('\n')
 
@@ -50,7 +57,7 @@ ${modulos}
 
 ${planos}
 
-Começa de graça, sem cartão. O preço fica na tela, sem "fale com vendas".
+${oferta.chamada[0]?.toUpperCase()}${oferta.chamada.slice(1)}. ${oferta.aberto ? 'Sem prazo por enquanto, e a gente avisa antes de qualquer cobrança.' : 'Depois, os dois planos acima, com o produto inteiro nos dois: o que muda é o tamanho da equipe.'} O preço fica na tela, sem "fale com vendas".
 
 ## Páginas
 

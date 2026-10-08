@@ -2,6 +2,7 @@ import { Cake, UserPlus } from 'lucide-react'
 import Link from 'next/link'
 import { headers } from 'next/headers'
 
+import { hojeNoFuso } from '@/core/advocacia/datas'
 import { verificarLimite } from '@/core/billing/planos'
 import { ehRequisicaoDoAppNativo } from '@/core/plataforma/nativo'
 import AlertBanner from '@/components/ui/alert-banner'
@@ -18,16 +19,23 @@ import { listarClientes } from '@/server/services/clientes'
 import { contextoDePlano } from '@/server/services/planos'
 import { painelDaCarteira } from '@/server/services/crm'
 
+import ClientesDaAdvocacia from './advocacia'
 import ListaClientes from './lista'
 
 export const dynamic = 'force-dynamic'
 
 export const metadata = { title: "Clientes" }
 
-export default async function PaginaClientes() {
+export default async function PaginaClientes({ searchParams }: { searchParams: Promise<{ fase?: string }> }) {
   const hdrs = await headers()
   const ctx = await contextoDoPainel(new Request('https://interno/clientes', { headers: hdrs }))
   const db = await criarClienteDoUsuario()
+
+  // docs/101 T2.4: no pacote Advocacia a lista fala de casos e prazos, não de visitas e aniversários.
+  if (ctx.tenant.pacote === 'advocacia') {
+    const { fase } = await searchParams
+    return <ClientesDaAdvocacia db={db} tenantId={ctx.tenantId} hoje={hojeNoFuso(ctx.tenant.timezone, new Date())} filtro={fase === 'ativos' ? 'ativos' : 'todos'} />
+  }
   const nativo = ehRequisicaoDoAppNativo(hdrs.get('user-agent'))
 
   const [clientes, painel, plano] = await Promise.all([
@@ -81,7 +89,7 @@ export default async function PaginaClientes() {
       */}
       {avaliarPermissao(ctx.papel, 'client:export') !== null ? (
         <div className="mb-4 text-right">
-          <Link href="/admin/clientes/exportar" className="text-label font-semibold text-acc-2 underline underline-offset-2">
+          <Link href="/admin/clientes/exportar" className="inline-flex min-h-12 items-center text-label font-semibold text-acc-2 underline underline-offset-2">
             Baixar todos em planilha
           </Link>
         </div>

@@ -160,6 +160,89 @@ describe('processarWebhookMP', () => {
   )
 
   it(
+    'cancelada COM período pago correndo: o webhook confirma o cancelamento mas NÃO derruba o degrau (Termos §6, C7)',
+    async () => {
+      const preapprovalId = `pre_${randomUUID()}`
+      const tenantId = await tenantComAssinatura('equipe', preapprovalId, 'equipe')
+      const acessoAte = new Date(Date.now() + 9 * 86_400_000).toISOString()
+      await svc
+        .from('tenants')
+        .update({
+          settings: {
+            assinatura: { provedor: 'mercado_pago', preapproval_id: preapprovalId, plano_contratado: 'equipe', status: 'cancelled', atualizado_em: new Date().toISOString(), acesso_ate: acessoAte },
+          },
+        })
+        .eq('id', tenantId)
+
+      const resultado = await processarWebhookMP(
+        svc,
+        { assunto: 'subscription', id: preapprovalId },
+        fakePagamento(),
+        fakePreapproval({ externalReference: tenantId, status: 'cancelled', valorAutorizado: null }),
+      )
+
+      expect(resultado).toEqual({ resultado: 'plano_atualizado', tenantId, plano: 'equipe' })
+      const { data } = await svc.from('tenants').select('plan, settings').eq('id', tenantId).single()
+      expect(data!.plan, 'o evento que o MP manda por causa do NOSSO cancelamento não pode cortar o que ela pagou').toBe('equipe')
+      expect((data!.settings as { assinatura: { acesso_ate: string } }).assinatura.acesso_ate).toBe(acessoAte)
+    },
+    30_000,
+  )
+
+  it(
+    'cancelada com o período pago JÁ ENCERRADO: o webhook derruba para o grátis',
+    async () => {
+      const preapprovalId = `pre_${randomUUID()}`
+      const tenantId = await tenantComAssinatura('equipe', preapprovalId, 'equipe')
+      await svc
+        .from('tenants')
+        .update({
+          settings: {
+            assinatura: { provedor: 'mercado_pago', preapproval_id: preapprovalId, plano_contratado: 'equipe', status: 'cancelled', atualizado_em: new Date().toISOString(), acesso_ate: new Date(Date.now() - 86_400_000).toISOString() },
+          },
+        })
+        .eq('id', tenantId)
+
+      const resultado = await processarWebhookMP(
+        svc,
+        { assunto: 'subscription', id: preapprovalId },
+        fakePagamento(),
+        fakePreapproval({ externalReference: tenantId, status: 'cancelled', valorAutorizado: null }),
+      )
+
+      expect(resultado).toEqual({ resultado: 'plano_atualizado', tenantId, plano: 'gratis' })
+    },
+    30_000,
+  )
+
+  it(
+    'voltou a pagar (authorized): a data do período antigo some',
+    async () => {
+      const preapprovalId = `pre_${randomUUID()}`
+      const tenantId = await tenantComAssinatura('equipe', preapprovalId, 'gratis')
+      await svc
+        .from('tenants')
+        .update({
+          settings: {
+            assinatura: { provedor: 'mercado_pago', preapproval_id: preapprovalId, plano_contratado: 'equipe', status: 'cancelled', atualizado_em: new Date().toISOString(), acesso_ate: new Date(Date.now() + 86_400_000).toISOString() },
+          },
+        })
+        .eq('id', tenantId)
+
+      await processarWebhookMP(
+        svc,
+        { assunto: 'subscription', id: preapprovalId },
+        fakePagamento(),
+        fakePreapproval({ externalReference: tenantId, status: 'authorized', valorAutorizado: 99 }),
+      )
+
+      const { data } = await svc.from('tenants').select('settings').eq('id', tenantId).single()
+      expect((data!.settings as { assinatura: { acesso_ate: string | null } }).assinatura.acesso_ate).toBeNull()
+    },
+    30_000,
+  )
+
+  it(
     'evento de PAGAMENTO reconsulta a preapproval associada — não decide pelo status do pagamento',
     async () => {
       const preapprovalId = `pre_${randomUUID()}`

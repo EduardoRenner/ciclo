@@ -208,6 +208,27 @@ describe('service worker — tela autenticada nunca entra no cache', () => {
     }
   })
 
+  it('URL assinada do storage (outro host) nunca é interceptada nem cacheada: documento e foto de cliente', async () => {
+    // docs/101 T6: a resposta da URL assinada do Supabase não vem com `no-store` (o storage manda
+    // `max-age`), então o "network-first" do SW a guardava no aparelho, e o arquivo sobrevivia ao
+    // logout e à URL de 60 s. Vale para `legal-docs` e para `media` (regra do CLAUDE.md).
+    const storage = new FakeCacheStorage()
+    let redeChamada = false
+    const listeners = carregarServiceWorker('sha-novo', storage, async () => {
+      redeChamada = true
+      return fakeResponse({ cacheControl: 'max-age=3600' })
+    })
+    for (const url of [
+      'https://projeto.supabase.co/storage/v1/object/sign/legal-docs/t/c/d/1?token=abc',
+      'https://projeto.supabase.co/storage/v1/object/sign/media/t/foto.webp?token=abc',
+    ]) {
+      const resultado = await disparar(listeners, 'fetch', { request: { url, method: 'GET' } })
+      expect(resultado, url).toBeUndefined()
+      expect(await storage.match({ url }), url).toBeUndefined()
+    }
+    expect(redeChamada).toBe(false)
+  })
+
   it('POST/PATCH/DELETE nunca é interceptado, mesmo em rota pública', async () => {
     const storage = new FakeCacheStorage()
     const listeners = carregarServiceWorker('sha-novo', storage, async () => fakeResponse())

@@ -14,6 +14,7 @@
 // então todo deploy novo invalida o cache do anterior sozinho.
 const VERSAO = new URL(self.location.href).searchParams.get('v') || 'dev'
 const CACHE_VERSAO = `ciclo-${VERSAO}`
+const ORIGEM = new URL(self.location.href).origin
 
 // Só a casca ESTÁTICA e pública entra no pré-cache do install — nenhuma rota
 // autenticada. `/admin/*` guarda faturamento do dia, nome de cliente e agenda
@@ -67,6 +68,10 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return
 
   const url = new URL(request.url)
+  // Só o PRÓPRIO host passa por aqui. Outro host (a URL assinada do storage do Supabase, de documento
+  // jurídico e de foto de cliente) não é interceptado: a resposta dele vem com `max-age`, não `no-store`,
+  // e o "network-first" abaixo a guardava no aparelho, sobrevivendo ao logout e à validade da URL.
+  if (url.origin !== ORIGEM) return
   if (NUNCA_CACHEAR.test(url.pathname)) return
 
   if (ehEstaticoImutavel(url)) {

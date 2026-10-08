@@ -195,7 +195,7 @@ export default function FormularioCadastro() {
           </Link>
         </p>
       </div>
-      <Link href="/entrar" className="grid h-12 place-items-center text-secundario text-txt-2 transition hover:text-txt">
+      <Link href="/entrar" className="mt-1 grid h-12 place-items-center text-secundario text-txt-2 transition hover:text-txt">
         Já tem conta? <span className="ml-1 font-semibold text-acc-2">Entrar</span>
       </Link>
     </form>

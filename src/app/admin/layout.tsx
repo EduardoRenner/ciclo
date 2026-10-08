@@ -1,15 +1,20 @@
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 
+import { faixaDaConta } from '@/core/billing/faixa-da-conta'
+import { lerCortesia, situacaoEmVigor } from '@/core/billing/prelancamento'
 import { PADRAO } from '@/core/text/vocabulario'
 import { contextoAtual } from '@/server/auth/tenant'
 import { AppError } from '@/server/http/errors'
+import { normalizarPlano } from '@/server/services/planos'
 import ToastProvider from '@/components/ui/toast'
 import AssistenteFlutuante from '@/components/shell/assistente-flutuante'
 import { VocabularioProvider } from '@/components/shell/vocabulario'
 import ResolucaoDeFila from '@/components/shell/resolucao-de-fila'
+import FaixaDaConta from '@/components/shell/faixa-da-conta'
 import IndicadorDeConexao from '@/components/shell/indicador-de-conexao'
 import TabBar from '@/components/shell/tab-bar'
+import { ehDemonstracao } from '@/core/tenants/demonstracao'
 import TransicaoDeTela from '@/components/shell/transicao-de-tela'
 import Topbar from '@/components/shell/topbar'
 
@@ -101,6 +106,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // `style-src` da CSP permite inline — só `script-src` tem `strict-dynamic`.
   const corDeFundo = dataTheme === 'light' ? '#faf8f5' : dataTheme === 'dark' ? '#0d0c0c' : null
 
+  // docs/87 §3.1: a data de fim da cortesia aparece em toda tela. Sem ida ao banco: `plan` e a chave
+  // `settings.cortesia` vêm na consulta que já valida o vínculo (`server/auth/tenant.ts`).
+  const faixa = ctx
+    ? faixaDaConta(situacaoEmVigor(normalizarPlano(ctx.tenant.plan), lerCortesia({ cortesia: ctx.tenant.cortesia }), new Date()), new Date())
+    : null
+
   return (
     /*
      * `ToastProvider` entra AQUI DENTRO, não por fora (era o contrário até 2026-09-13) — o toast
@@ -136,7 +147,19 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       */}
       <div className="mx-auto min-h-dvh max-w-[560px] sm:border-x sm:border-line">
         <Topbar />
-        <IndicadorDeConexao />
+        <IndicadorDeConexao pacote={ctx?.tenant.pacote ?? 'base'} />
+        {faixa ? <FaixaDaConta faixa={faixa} /> : null}
+        {/*
+          docs/101 anexo 06 §4: o escritório-modelo diz em TODA tela que nada ali existe (frase 40). Sem
+          botão de fechar: é a amostra que vai para a frente de advogado, e um print dela sem a faixa
+          passaria por escritório de verdade. Só no pacote Advocacia: as vitrines do salão têm o aviso
+          próprio na página pública.
+        */}
+        {ctx?.tenant.pacote === 'advocacia' && ehDemonstracao(ctx.tenant.slug) ? (
+          <p role="status" className="border-b border-warn/30 bg-warn/10 px-[var(--gutter)] py-2 text-center text-label font-semibold text-txt">
+            Dados fictícios de demonstração. Nenhuma pessoa, empresa ou processo aqui existe.
+          </p>
+        ) : null}
         {/*
           A folga inferior é a barra + o relevo do aparelho + o botão do assistente,
           que é `fixed` e aparece sempre desde o MI-2: com só 28px de respiro, o fim
@@ -148,7 +171,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </main>
       </div>
         {/* `fixed`: fica fora da coluna de conteúdo para poder virar barra lateral no `lg`. */}
-        <TabBar />
+        {/* docs/101 T0.3: abas e botão central são do pacote da profissão; sem contexto, a barra de sempre. */}
+        <TabBar pacote={ctx?.tenant.pacote ?? 'base'} />
         <ResolucaoDeFila />
         {/*
           docs/85 MI-2 (2026-09-29): o assistente roda no Motor de Inteligência do próprio CICLO,

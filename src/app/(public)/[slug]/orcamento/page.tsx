@@ -10,7 +10,9 @@ import type { Metadata } from 'next'
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
   const perfil = await perfilPublico(slug).catch(() => null)
-  if (!perfil) return {}
+  // O mesmo corte da página: sem serviço sob orçamento a rota é 404, e o título dizia "Pedir orçamento" sobre o
+  // "Página não encontrada" (docs/102 M1.9).
+  if (!perfil || !perfil.services.some((s) => s.pricingModel === 'quote')) notFound()
   return {
     title: `Pedir orçamento · ${perfil.name}`,
     description: `Conte o que você precisa e ${perfil.name} responde com um orçamento.`,

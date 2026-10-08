@@ -21,7 +21,7 @@ if (!SUPABASE_URL || !SERVICE_KEY) {
 // pontos de I/O que este arquivo chama. `assinatura-mp.test.ts` (o webhook) injeta as funções por
 // parâmetro em vez de mockar o módulo; aqui não dá porque nenhuma das duas recebe injeção — arquivo
 // separado evita os dois estilos de mock colidirem no mesmo módulo.
-const mpMock = vi.hoisted(() => ({ criarPreapproval: vi.fn(), cancelarPreapproval: vi.fn() }))
+const mpMock = vi.hoisted(() => ({ criarPreapproval: vi.fn(), cancelarPreapproval: vi.fn(), consultarPreapproval: vi.fn(), consultarPagamento: vi.fn() }))
 vi.mock('@/server/billing/mercado-pago', () => mpMock)
 
 const svc = createClient<Database>(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false, autoRefreshToken: false } })
@@ -113,7 +113,7 @@ describe('iniciarAssinatura — a intenção de assinar', () => {
   )
 })
 
-describe('cancelarAssinatura — o dono clica "Cancelar" e o plano cai na hora', () => {
+describe('cancelarAssinatura — quem nunca pagou cai na hora', () => {
   it(
     'cancela o preapproval no MP e derruba pra gratis sem esperar webhook',
     async () => {
@@ -124,7 +124,7 @@ describe('cancelarAssinatura — o dono clica "Cancelar" e o plano cai na hora',
       mpMock.cancelarPreapproval.mockResolvedValueOnce(undefined)
       const r = await cancelarAssinatura(svc, tenantId)
 
-      expect(r).toEqual({ resultado: 'cancelada', plano: 'gratis' })
+      expect(r).toEqual({ resultado: 'cancelada', plano: 'gratis', acessoAte: null })
       expect(mpMock.cancelarPreapproval).toHaveBeenCalledWith('pre-6')
       const { plan, assinatura } = await planoEAssinatura()
       expect(plan).toBe('gratis')
@@ -156,6 +156,136 @@ describe('cancelarAssinatura — o dono clica "Cancelar" e o plano cai na hora',
 
       expect(r2).toEqual({ resultado: 'sem_assinatura_ativa' })
       expect(mpMock.cancelarPreapproval).not.toHaveBeenCalled()
+    },
+    30_000,
+  )
+})
+
+async function assinaturaAutorizada(plano: 'essencial' | 'equipe', preapprovalId: string) {
+  await svc
+    .from('tenants')
+    .update({
+      plan: plano,
+      settings: {
+        assinatura: { provedor: 'mercado_pago', preapproval_id: preapprovalId, plano_contratado: plano, status: 'authorized', atualizado_em: new Date().toISOString() },
+      },
+    })
+    .eq('id', tenantId)
+}
+
+describe('cancelarAssinatura — quem JÁ pagou fica até o fim do período (Termos §6, docs/86 C7)', () => {
+  const daquiA = (dias: number) => new Date(Date.now() + dias * 86_400_000).toISOString()
+
+  it(
+    'authorized: mantém o degrau, grava acesso_ate (o next_payment_date) e cancela no MP DEPOIS de ler a data',
+    async () => {
+      await assinaturaAutorizada('equipe', 'pre-pago-1')
+      const proximo = daquiA(12)
+      mpMock.consultarPreapproval.mockResolvedValueOnce({ status: 'authorized', externalReference: tenantId, valorAutorizado: 99, proximoPagamento: proximo })
+      mpMock.cancelarPreapproval.mockResolvedValueOnce(undefined)
+
+      const r = await cancelarAssinatura(svc, tenantId)
+
+      expect(r).toEqual({ resultado: 'cancelada', plano: 'equipe', acessoAte: new Date(proximo).toISOString() })
+      const { plan, assinatura } = await planoEAssinatura()
+      expect(plan, 'pagou o mês: o degrau fica até o fim dele').toBe('equipe')
+      expect(assinatura).toMatchObject({ status: 'cancelled', acesso_ate: new Date(proximo).toISOString() })
+      // Depois de cancelar o MP deixa de informar a data: ler antes é obrigatório.
+      expect(mpMock.consultarPreapproval.mock.invocationCallOrder[0]!).toBeLessThan(mpMock.cancelarPreapproval.mock.invocationCallOrder[0]!)
+    },
+    30_000,
+  )
+
+  it(
+    'authorized, mas o MP não informa próxima cobrança (ou ela já passou): não há período pago, cai na hora',
+    async () => {
+      for (const proximoPagamento of [null, new Date(Date.now() - 86_400_000).toISOString()]) {
+        await assinaturaAutorizada('essencial', 'pre-pago-2')
+        mpMock.consultarPreapproval.mockResolvedValueOnce({ status: 'authorized', externalReference: tenantId, valorAutorizado: 49, proximoPagamento })
+        mpMock.cancelarPreapproval.mockResolvedValueOnce(undefined)
+
+        const r = await cancelarAssinatura(svc, tenantId)
+
+        expect(r).toEqual({ resultado: 'cancelada', plano: 'gratis', acessoAte: null })
+        expect((await planoEAssinatura()).plan).toBe('gratis')
+      }
+    },
+    30_000,
+  )
+
+  it(
+    'se a leitura da data falha, NÃO cancela: cortar o período pago às cegas é pior que pedir para tentar de novo',
+    async () => {
+      await assinaturaAutorizada('equipe', 'pre-pago-3')
+      mpMock.consultarPreapproval.mockRejectedValueOnce(new Error('MP fora do ar'))
+
+      await expect(cancelarAssinatura(svc, tenantId)).rejects.toThrow('MP fora do ar')
+
+      expect(mpMock.cancelarPreapproval).not.toHaveBeenCalled()
+      const { plan, assinatura } = await planoEAssinatura()
+      expect(plan).toBe('equipe')
+      expect(assinatura?.status, 'continua authorized: nada foi mudado').toBe('authorized')
+    },
+    30_000,
+  )
+
+  it(
+    'paused (a cobrança falhava): não há período pago correndo, cai na hora e nem consulta a data',
+    async () => {
+      await svc
+        .from('tenants')
+        .update({
+          plan: 'equipe',
+          settings: { assinatura: { provedor: 'mercado_pago', preapproval_id: 'pre-pago-4', plano_contratado: 'equipe', status: 'paused', atualizado_em: new Date().toISOString(), graca_ate: daquiA(3) } },
+        })
+        .eq('id', tenantId)
+      mpMock.cancelarPreapproval.mockResolvedValueOnce(undefined)
+
+      const r = await cancelarAssinatura(svc, tenantId)
+
+      expect(r).toEqual({ resultado: 'cancelada', plano: 'gratis', acessoAte: null })
+      expect(mpMock.consultarPreapproval).not.toHaveBeenCalled()
+    },
+    30_000,
+  )
+})
+
+describe('expirarGracaVencida — o fim do período pago de quem cancelou (C7)', () => {
+  async function canceladaComAcessoAte(acessoAte: string) {
+    await svc
+      .from('tenants')
+      .update({
+        plan: 'equipe',
+        settings: { assinatura: { provedor: 'mercado_pago', preapproval_id: 'pre-fim', plano_contratado: 'equipe', status: 'cancelled', atualizado_em: new Date().toISOString(), acesso_ate: acessoAte } },
+      })
+      .eq('id', tenantId)
+  }
+
+  it(
+    'cancelada com acesso_ate no passado cai para gratis, zera a data e deixa trilha com o motivo certo',
+    async () => {
+      await canceladaComAcessoAte(new Date(Date.now() - 86_400_000).toISOString())
+
+      const derrubados = await expirarGracaVencida(svc)
+
+      expect(derrubados).toBeGreaterThanOrEqual(1)
+      const { plan, assinatura } = await planoEAssinatura()
+      expect(plan).toBe('gratis')
+      expect(assinatura?.acesso_ate).toBeNull()
+      const { data } = await svc.from('audit_log').select('after').eq('tenant_id', tenantId).eq('action', 'tenant.plan.change').order('created_at', { ascending: false }).limit(1)
+      expect(data?.[0]?.after).toMatchObject({ de: 'equipe', para: 'gratis', por: 'periodo_pago_encerrado' })
+    },
+    30_000,
+  )
+
+  it(
+    'cancelada com acesso_ate no FUTURO não é tocada: o aviso na tela prometeu a data',
+    async () => {
+      await canceladaComAcessoAte(new Date(Date.now() + 5 * 86_400_000).toISOString())
+
+      await expirarGracaVencida(svc)
+
+      expect((await planoEAssinatura()).plan).toBe('equipe')
     },
     30_000,
   )

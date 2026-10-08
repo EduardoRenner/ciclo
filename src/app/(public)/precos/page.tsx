@@ -3,6 +3,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 
 import { NOME_DO_PLANO, PLANOS, custoPorAtendimento, precoDoPlano } from '@/core/billing/planos'
+import { PRELANCAMENTO, ofertaDoCadastro } from '@/core/billing/prelancamento'
 
 import { canalDeContato } from '@/lib/contato'
 import { CARTOES } from '@/lib/planos-cartoes'
@@ -42,19 +43,26 @@ import type { Metadata } from 'next'
  */
 export const revalidate = 3600
 
-export const metadata = {
-  // Sem "CICLO" no título: o `template` do layout raiz já anexa "· CICLO", e repetir cancelaria
-  // o template — há teste de design que guarda exatamente isso.
-  title: 'Preços',
-  description:
-    `Comece de graça, para sempre. Planos a partir de ${precoDoPlano('essencial')} por mês para quem quer mandar mensagem para toda a base de uma vez, controlar caixa e trabalhar com equipe.`,
-  openGraph: {
-    title: 'Preços · CICLO',
-    description: `Comece de graça. Planos a partir de ${precoDoPlano('essencial')} por mês, com preço na tela e sem letra miúda.`,
-    type: 'website',
-    locale: 'pt_BR',
-  },
-} satisfies Metadata
+/**
+ * `generateMetadata` e não `export const metadata`: a chamada depende da DATA de hoje (`ofertaDoCadastro`),
+ * e uma constante no topo do módulo é calculada uma vez por instância. Numa instância quente ela
+ * continuaria dizendo "60 dias" depois de o número deixar de ser verdade (docs/87 §3.2).
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const oferta = ofertaDoCadastro(new Date())
+  return {
+    // Sem "CICLO" no título: o `template` do layout raiz já anexa "· CICLO", e repetir cancelaria
+    // o template — há teste de design que guarda exatamente isso.
+    title: 'Preços',
+    description: `${oferta.chamada}. Depois, dois planos: ${NOME_DO_PLANO.essencial} a ${precoDoPlano('essencial')} por mês e ${NOME_DO_PLANO.equipe} a ${precoDoPlano('equipe')}, com o produto inteiro nos dois.`,
+    openGraph: {
+      title: 'Preços · CICLO',
+      description: `${oferta.chamada}. Dois planos, com preço na tela e sem letra miúda.`,
+      type: 'website',
+      locale: 'pt_BR',
+    },
+  }
+}
 
 /*
   A conversa é o único caminho de pagamento que existe hoje, e até 2026-09-03 esta página mandava
@@ -62,68 +70,80 @@ export const metadata = {
 */
 const CANAL = canalDeContato('Oi! Vi os planos do CICLO e quero falar sobre assinar.')
 
-const PERGUNTAS = [
-  {
-    pergunta: 'Como eu pago hoje?',
-    resposta: CANAL
-      ? 'Conversando. A cobrança automática ainda não está no ar, e preferimos dizer isso a montar um botão que não funciona. Você cria a conta no grátis, usa, e quando quiser subir de plano a gente combina direto e ajusta na hora. O botão no fim desta página abre a conversa.'
-      : 'A cobrança automática ainda não está no ar, e preferimos dizer isso a montar um botão que não funciona. Você cria a conta no grátis e usa sem pagar nada; a mudança de degrau é combinada caso a caso.',
-  },
-  {
-    pergunta: 'O grátis expira?',
-    resposta: `Não. É grátis para sempre, com ${PLANOS.gratis.maxClientes} clientes e ${PLANOS.gratis.maxProfissionais} profissional. Não é um teste que vira cobrança sem avisar.`,
-  },
-  {
+/**
+ * As perguntas de dinheiro. Função, e não constante: a primeira resposta depende de o Mercado Pago
+ * estar ligado (`MERCADOPAGO_ACCESS_TOKEN`) e várias carregam números do programa (`PRELANCAMENTO`)
+ * que não podem ser datilografados aqui.
+ *
+ * Sem "grátis para sempre": o Grátis deixou de ser vendido (docs/87 D1, D2). Quem chega agora tem
+ * dias de uso completo sem cartão e depois escolhe um plano; se não escolher, a conta pausa, e a
+ * pausa não apaga nada.
+ */
+function perguntas(cobrancaLigada: boolean, acessoAberto: boolean) {
+  return [
+    {
+      pergunta: 'Como eu pago?',
+      resposta: cobrancaLigada
+        ? 'Pelo Mercado Pago, com um toque em Meu plano, dentro do app. Nada é cobrado antes de você escolher um plano, e cancelar leva um toque, no mesmo lugar.'
+        : CANAL
+          ? 'Conversando. A cobrança automática ainda não está no ar, e preferimos dizer isso a montar um botão que não funciona. Você usa tudo sem pagar, e quando quiser assinar a gente combina direto e ajusta na hora. O botão no fim desta página abre a conversa.'
+          : 'A cobrança automática ainda não está no ar, e preferimos dizer isso a montar um botão que não funciona. Você usa tudo sem pagar; a assinatura é combinada caso a caso.',
+    },
+    // docs/102 M5.1: com o acesso aberto o topo da página diz "Sem prazo por enquanto", e esta pergunta falava
+    // de dias grátis acabando. A resposta do acesso aberto é o compromisso já registrado (DECISOES 2026-10-07).
+    acessoAberto
+      ? {
+          pergunta: 'Até quando fica tudo liberado?',
+          resposta:
+            'Por enquanto, sem prazo: toda conta usa o produto inteiro sem pagar. Antes de qualquer cobrança, a gente avisa com antecedência, e nada é cobrado sem você escolher um plano.',
+        }
+      : {
+      pergunta: 'O que acontece quando acabam os dias grátis?',
+      resposta: `Nada é cobrado: não pedimos cartão para começar, então não existe cobrança surpresa. Você tem ${PRELANCAMENTO.diasDeGraca} dias a mais com tudo funcionando, e depois a conta pausa: você vê e exporta tudo, mas não cria nada novo, por até ${PRELANCAMENTO.diasDePausa} dias. Escolher um plano reativa na hora.`,
+    },
+    {
+      pergunta: 'Se eu parar de pagar, perco meus clientes?',
+      resposta:
+        'Nunca. Sua base, seu histórico e sua agenda continuam inteiros e à vista. O que trava é criar mais, não ver o que já existe. Essa regra não tem exceção.',
+    },
+    {
+      pergunta: 'Tenho três profissionais. Qual plano?',
+      resposta: `O ${NOME_DO_PLANO.equipe}, que vale até ${PLANOS.equipe.maxProfissionais} profissionais. O ${NOME_DO_PLANO.essencial} é para ${PLANOS.essencial.maxProfissionais}. Os dois têm o produto inteiro; o que muda é o tamanho da equipe. Acima de ${PLANOS.equipe.maxProfissionais}, o plano é combinado à parte.`,
+    },
+    {
+      pergunta: 'Posso cancelar quando quiser?',
+      resposta: cobrancaLigada
+        ? 'Pode, com um toque em Meu plano, sem multa e sem fidelidade. Nos primeiros 7 dias o valor volta integral, como manda o Código de Defesa do Consumidor.'
+        : 'Pode, e cancelar custa os mesmos toques que assinar: os dois são uma conversa, porque a cobrança automática ainda não está no ar. Nos primeiros 7 dias o valor volta integral, como manda o Código de Defesa do Consumidor.',
+    },
+    {
+      pergunta: 'Vocês aumentam o preço depois?',
+      resposta:
+        'Se um dia aumentar, avisamos com 30 dias de antecedência e quem já é cliente fica no preço antigo por 12 meses.',
+    },
     /*
-      Esta pergunta existe porque o teto de clientes é SUAVE no código (§L.1: avisa e deixa
-      passar), e uma tabela de preço que diz "até 50" sem mais nada promete uma parede que o
-      produto não tem. Prometer menos do que se entrega é honesto; prometer um limite que não
-      existe é o tipo de letra miúda ao contrário que ninguém perdoa depois.
+      `docs/53` B-01. Sem citar concorrente e sem número de terceiro — mesma régua do parágrafo da
+      vitrine acima, e pelo mesmo motivo: número alheio envelhece na mão dele. O argumento aqui é de
+      ESTRUTURA (quem ganha da taxa não pode te mostrar o que ela custa), não uma estatística — por
+      isso não precisa de fonte nem data, e não fica desatualizado. Só entra em produção porque a
+      conta que ele descreve (`/admin/mes`, TICKET A-01) já existe: prometer o que a tela de hoje não
+      mostra é exatamente o que o `docs/50` §5.6 e o `docs/51` §5.4 proíbem.
     */
-    pergunta: `E se eu passar de ${PLANOS.gratis.maxClientes} clientes?`,
-    resposta:
-      'Você continua cadastrando. O CICLO avisa quando você chega perto, mas não trava o cadastro no meio de um atendimento, e nenhuma ficha some. O limite que vale de verdade no Grátis é o de um profissional.',
-  },
-  {
-    pergunta: 'Se eu parar de pagar, perco meus clientes?',
-    resposta:
-      'Nunca. Sua base, seu histórico e sua agenda continuam inteiros e à vista. Você volta para o grátis, e o que trava é criar mais, não ver o que já existe. Essa regra não tem exceção.',
-  },
-  {
-    pergunta: 'Tenho três profissionais e quero o Grátis. Dá?',
-    resposta:
-      'O Grátis vale para um profissional. Os outros dois continuam aparecendo normalmente se já estiverem cadastrados, porque nada some. Para cadastrar mais é preciso o Equipe.',
-  },
-  {
-    pergunta: 'Posso cancelar quando quiser?',
-    resposta:
-      'Pode, e cancelar custa os mesmos toques que assinar: os dois são uma conversa, porque a cobrança automática ainda não está no ar. Nos primeiros 7 dias o valor volta integral, como manda o Código de Defesa do Consumidor.',
-  },
-  {
-    pergunta: 'Vocês aumentam o preço depois?',
-    resposta:
-      'Se um dia aumentar, avisamos com 30 dias de antecedência e quem já é cliente fica no preço antigo por 12 meses.',
-  },
-  /*
-    `docs/53` B-01. Sem citar concorrente e sem número de terceiro — mesma régua do parágrafo da
-    vitrine acima, e pelo mesmo motivo: número alheio envelhece na mão dele. O argumento aqui é de
-    ESTRUTURA (quem ganha da taxa não pode te mostrar o que ela custa), não uma estatística — por
-    isso não precisa de fonte nem data, e não fica desatualizado. Só entra em produção porque a
-    conta que ele descreve (`/admin/mes`, TICKET A-01) já existe: prometer o que a tela de hoje não
-    mostra é exatamente o que o `docs/50` §5.6 e o `docs/51` §5.4 proíbem.
-  */
-  {
-    pergunta: 'Vocês ganham alguma coisa da minha maquininha?',
-    resposta:
-      'Não, nada. O CICLO não processa pagamento e não fica com nenhuma parte do que você recebe. Por isso o app pode te dizer, sem conflito de interesse, quanto a taxa da maquininha levou do seu mês; quem vive dessa taxa não tem por que te mostrar essa conta.',
-  },
-]
+    {
+      pergunta: 'Vocês ganham alguma coisa da minha maquininha?',
+      resposta:
+        'Não, nada. O CICLO não processa pagamento e não fica com nenhuma parte do que você recebe. Por isso o app pode te dizer, sem conflito de interesse, quanto a taxa da maquininha levou do seu mês; quem vive dessa taxa não pode.',
+    },
+  ]
+}
 
 /** Ids dos dois `<symbol>` da lista de planos — a definição e cada `<use>` leem daqui. */
 const ID_INCLUI = 'precos-inclui'
 const ID_NAO_INCLUI = 'precos-nao-inclui'
 
 export default function Precos() {
+  const oferta = ofertaDoCadastro(new Date())
+  const cobrancaLigada = Boolean(process.env.MERCADOPAGO_ACCESS_TOKEN)
   const botaoPrimario =
     'inline-flex h-12 w-full items-center justify-center gap-2 rounded-[var(--radius-sm)] bg-acc px-5 text-corpo ' +
     'font-semibold text-on-acc shadow-elevado transition duration-[var(--dur-1)] hover:brightness-110 active:scale-[.97]'
@@ -152,24 +172,23 @@ export default function Precos() {
 
       <section className="py-8 sm:py-12">
         {/*
-          `docs/20-COPY-PLANO.md` §D.8, variante A — recomendada em 24/08 e não implementada.
+          docs/87 §3.2: o H1 diz o que a pessoa ganha ao criar a conta HOJE, e `ofertaDoCadastro` é a
+          mesma função que concede a cortesia no cadastro, então o texto e o que ela recebe não têm
+          como divergir. O número (60) só é dito enquanto for verdade; depois vira a data.
 
-          O H1 antigo ("Pague quando o CICLO já estiver te dando trabalho a menos") é uma boa frase
-          e responde a pergunta errada. A pergunta que a pessoa REALMENTE tem ao abrir a página de
-          preço de um produto que ela não conhece é: *o grátis serve para alguma coisa?* — e a
-          resposta é verificável no código, porque `cycle_engine` está nos módulos do Grátis.
-
-          Isto também é a única coisa em que o CICLO é literalmente único entre os cinco
-          concorrentes diretos pesquisados: nenhum deles tem plano gratuito, e na Belasis "recuperar
-          cliente inativo" mora a partir do Pro, R$ 189/mês (§B.2.1 do 20). Dizer que o grátis já
-          mostra quem parou de voltar é a frase que nenhum deles pode colar.
+          Sem contador regressivo, sem "só hoje" e sem escassez: a data de fim é fixa e real, e é dita
+          uma vez. A frase que a antecedia ("o grátis já mostra quem parou de voltar") era a razão de
+          o Grátis existir; agora a razão é a mesma, com dias contados: o Motor de Ciclo inteiro, com a
+          base da própria pessoa, antes de qualquer cobrança.
         */}
         <h1 className="text-numero font-bold sm:text-[2.25rem] sm:leading-[1.1]">
-          Comece de graça. O grátis já mostra quem parou de voltar.
+          {oferta.chamada[0]?.toUpperCase()}
+          {oferta.chamada.slice(1)}.{oferta.aberto ? ' Sem prazo por enquanto.' : ' Depois, dois planos.'}
         </h1>
         <p className="mt-4 max-w-[52ch] text-corpo text-txt-2">
-          Preço na tela, sem cadastro e sem &ldquo;fale com um consultor&rdquo;. O Motor de Ciclo está em todos os planos,
-          inclusive no grátis. O que o pago libera é chamar todo mundo de uma vez, em vez de um por um.
+          Preço na tela, sem cadastro e sem &ldquo;fale com um consultor&rdquo;. Os dois planos têm o produto inteiro,
+          com o Motor de Ciclo e tudo o que ele pede. O que muda é o tamanho da equipe: {NOME_DO_PLANO.essencial} para{' '}
+          {PLANOS.essencial.maxProfissionais} profissional, {NOME_DO_PLANO.equipe} até {PLANOS.equipe.maxProfissionais}.
         </p>
       </section>
 
@@ -248,9 +267,7 @@ export default function Precos() {
             </ul>
 
             <Link href="/cadastro" className={`mt-5 ${p.destaque ? botaoPrimario : botaoSecundario}`}>
-              {p.tier === 'gratis'
-                ? 'Criar minha conta grátis'
-                : `Começar no grátis e subir para o ${NOME_DO_PLANO[p.tier]}`}
+              Começar sem cartão
               <ArrowRight aria-hidden className="size-4" />
             </Link>
           </article>
@@ -318,7 +335,7 @@ export default function Precos() {
         <p className="mt-5 max-w-[52ch] text-secundario text-txt-2">
           A parte honesta: quem cobra comissão costuma cobrar sobre o cliente que a <em>própria plataforma</em> trouxe,
           de uma vitrine onde a sua clientela também vê os seus concorrentes. O CICLO não tem vitrine e não traz cliente
-          de lugar nenhum &mdash; sua página é do seu negócio e só dele, e quem chega nela chegou por você. Se o que você
+          de lugar nenhum: sua página é do seu negócio e só dele, e quem chega nela chegou por você. Se o que você
           procura é alugar a clientela de um marketplace, o CICLO não é isso.
         </p>
       </section>
@@ -326,7 +343,7 @@ export default function Precos() {
       <section className="py-10">
         <h2 className="mb-4 text-overline font-semibold uppercase tracking-[0.13em] text-txt-3">Perguntas de dinheiro</h2>
         <dl className="flex flex-col gap-4">
-          {PERGUNTAS.map((q) => (
+          {perguntas(cobrancaLigada, oferta.aberto).map((q) => (
             <div key={q.pergunta} className="rounded-[var(--radius)] border border-line bg-surface p-5 shadow-elevado">
               <dt className="text-corpo font-semibold text-txt">{q.pergunta}</dt>
               <dd className="mt-1.5 text-secundario text-txt-2">{q.resposta}</dd>
@@ -338,7 +355,7 @@ export default function Precos() {
       {/*
         Depois das perguntas de dinheiro, e não antes: quem chegou até aqui já leu o que queria
         saber, e é neste ponto que a dúvida vira "com quem eu falo". O botão fica secundário de
-        propósito — o CTA da página continua sendo criar a conta grátis, nos cartões acima.
+        propósito — o CTA da página continua sendo criar a conta sem cartão, nos cartões acima.
       */}
       {CANAL ? (
         <section className="rounded-[var(--radius)] border border-line bg-surface p-6 text-center shadow-elevado">

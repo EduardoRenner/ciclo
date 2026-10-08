@@ -206,6 +206,71 @@ export const TRATAMENTO_NA_ELIMINACAO: Record<string, Record<string, string>> = 
   client_subscriptions: {
     status: 'preserva', // active | canceled — vínculo contratual, obrigação de guarda
   },
+  /*
+    Pacote Advocacia (docs/101, migrations 0104-0107). A regra muda de natureza aqui: o escritório
+    guarda o registro do trabalho jurídico para o exercício regular de direitos e por dever
+    profissional (LGPD art. 16, I e II, e art. 7º, VI). Então o que é CONTATO e anotação livre some;
+    o que é o registro do caso fica, com o motivo ao lado. Prazo de guarda e a lista final são
+    decisão do advogado revisor (docs/101 §16, item 5): até lá, preservar é o lado que não destrói
+    prova de um serviço que o cliente contratou.
+  */
+  legal_persons: {
+    email: 'anonimiza',
+    phone_e164: 'anonimiza',
+    notes: 'anonimiza',
+    full_name: 'preserva', // quem é parte do caso: registro do serviço prestado (art. 16, I/II) [revisão do advogado]
+    relationship: 'preserva', // vínculo familiar que fundamenta a sucessão; sem ele o caso não se lê
+    marital_regime: 'preserva', // idem: o regime de bens decide a partilha
+    document_hash: 'preserva', // hash, não o CPF; serve à checagem de conflito de interesses (dever ético)
+  },
+  legal_entities: {
+    kind: 'preserva', // pessoa jurídica (fora do art. 5º, I) e registro do planejamento feito
+    legal_name: 'preserva', // pessoa jurídica (fora do art. 5º, I) e registro do planejamento feito
+    trade_name: 'preserva', // pessoa jurídica (fora do art. 5º, I) e registro do planejamento feito
+    cnpj_hash: 'preserva', // pessoa jurídica (fora do art. 5º, I) e registro do planejamento feito
+    legal_form: 'preserva', // pessoa jurídica (fora do art. 5º, I) e registro do planejamento feito
+    tax_regime: 'preserva', // pessoa jurídica (fora do art. 5º, I) e registro do planejamento feito
+    main_cnae: 'preserva', // pessoa jurídica (fora do art. 5º, I) e registro do planejamento feito
+    city: 'preserva', // pessoa jurídica (fora do art. 5º, I) e registro do planejamento feito
+    uf: 'preserva', // pessoa jurídica (fora do art. 5º, I) e registro do planejamento feito
+    status: 'preserva', // pessoa jurídica (fora do art. 5º, I) e registro do planejamento feito
+  },
+  legal_cases: {
+    client_status_note: 'redige', // frase livre escrita para o cliente: pode nomear alguém
+    sensitivity_reason: 'redige', // texto livre
+    title: 'preserva', // registro do caso (art. 16, I/II) [revisão do advogado]
+    client_title: 'preserva', // idem
+    kind: 'preserva', // registro do caso sob guarda do escritório (art. 16, I/II) [revisão do advogado]
+    area: 'preserva', // registro do caso sob guarda do escritório (art. 16, I/II) [revisão do advogado]
+    status: 'preserva', // registro do caso sob guarda do escritório (art. 16, I/II) [revisão do advogado]
+    sensitivity: 'preserva', // registro do caso sob guarda do escritório (art. 16, I/II) [revisão do advogado]
+    cnj_number: 'preserva', // número público do processo
+    rito: 'preserva', // registro do caso sob guarda do escritório (art. 16, I/II) [revisão do advogado]
+    comarca: 'preserva', // registro do caso sob guarda do escritório (art. 16, I/II) [revisão do advogado]
+  },
+  // 0109: o prazo é obrigação processual do escritório; apagar o registro de um prazo cumprido ou
+  // perdido destrói a prova de diligência (art. 16, I/II). Nenhuma coluna aqui é contato.
+  legal_deadlines: {
+    title: 'preserva', // nome interno do ato processual (art. 16, I/II)
+    kind: 'preserva', // fatal | interno | audiencia | contratual
+    source: 'preserva', // manual | djen | modelo
+    source_note: 'preserva', // referência ao ato ("intimação de 02/10"), prova da origem do prazo
+    calc_memo: 'preserva', // memória de cálculo: prova de como a data nasceu
+    calc_rule_version: 'preserva', // versão das regras de contagem
+    status: 'preserva', // aberto | cumprido | perdido | cancelado
+    close_note: 'preserva', // protocolo do cumprimento: prova de diligência
+    close_reason: 'preserva', // motivo de perda ou cancelamento: prova exigida pelo próprio prazo
+    change_reason: 'preserva', // transitória: o gatilho move para o histórico e zera; fica sempre nula
+  },
+  legal_documents: {
+    refused_reason: 'redige', // texto livre da conferência
+    title: 'preserva', // o documento do caso fica sob guarda do escritório [revisão do advogado]
+    category: 'preserva', // documento do caso sob guarda do escritório (art. 16, I/II) [revisão do advogado]
+    tags: 'preserva', // documento do caso sob guarda do escritório (art. 16, I/II) [revisão do advogado]
+    sensitivity: 'preserva', // documento do caso sob guarda do escritório (art. 16, I/II) [revisão do advogado]
+    origin: 'preserva', // documento do caso sob guarda do escritório (art. 16, I/II) [revisão do advogado]
+    status: 'preserva', // documento do caso sob guarda do escritório (art. 16, I/II) [revisão do advogado]
+  },
 }
 
 /** Tabelas cuja linha inteira some: nenhuma delas guarda registro fiscal. */
@@ -225,7 +290,19 @@ const TABELAS_APAGADAS = ['client_notes', 'waitlist', 'portfolio_photos'] as con
  * coluna por coluna, de que lado cada uma está — e o teste reprova se alguém acrescentar coluna
  * sem escolher um lado.
  */
-export async function eliminarCliente(db: Cliente, tenantId: string, clientId: string): Promise<ResultadoEliminacao> {
+export async function eliminarCliente(quemChamou: Cliente, tenantId: string, clientId: string): Promise<ResultadoEliminacao> {
+  /*
+   * docs/102 M0.3: a eliminação inteira roda com `service_role`, seja qual for o cliente de quem chamou.
+   * Antes, só o storage e a trilha iam por `withTenant`; as linhas iam pelo `db` recebido. Com um cliente
+   * de SESSÃO, `health_records`, `client_cycles` e `client_scores` (sem política de DELETE) devolviam
+   * zero linhas sem erro, e a resposta dizia "eliminado" com o dado de saúde ainda no banco. A 0117 tirou
+   * o DELETE dessas tabelas de `authenticated` e o caso passou a estourar; o certo é não depender do
+   * chamador. Quem pode eliminar continua conferido na rota (`client:delete` + AAL2).
+   */
+  return withTenant(tenantId, (db) => eliminarComServico(db, tenantId, clientId))
+}
+
+async function eliminarComServico(db: Cliente, tenantId: string, clientId: string): Promise<ResultadoEliminacao> {
   const { data: cliente, error: erroCliente } = await db.from('clients').select('id, anonymized_at').eq('tenant_id', tenantId).eq('id', clientId).maybeSingle()
   if (erroCliente) throw new AppError('INTERNAL', { cause: erroCliente })
   if (!cliente) throw new AppError('NOT_FOUND', { message: 'Essa ficha não está mais na sua lista.' })
@@ -394,6 +471,34 @@ export async function eliminarCliente(db: Cliente, tenantId: string, clientId: s
     .select('id')
   if (consentimentos.error) throw new AppError('INTERNAL', { cause: consentimentos.error })
   rowsRedacted.consents = consentimentos.data?.length ?? 0
+
+  // Pacote Advocacia: contato e anotação livre somem; o registro do caso fica (ver o mapa acima).
+  const pessoas = await db
+    .from('legal_persons')
+    .update({ email: null, phone_e164: null, notes: null })
+    .eq('tenant_id', tenantId)
+    .eq('client_id', clientId)
+    .select('id')
+  if (pessoas.error) throw new AppError('INTERNAL', { cause: pessoas.error })
+  rowsRedacted.legal_persons = pessoas.data?.length ?? 0
+
+  const casos = await db
+    .from('legal_cases')
+    .update({ client_status_note: null, sensitivity_reason: null })
+    .eq('tenant_id', tenantId)
+    .eq('client_id', clientId)
+    .select('id')
+  if (casos.error) throw new AppError('INTERNAL', { cause: casos.error })
+  rowsRedacted.legal_cases = casos.data?.length ?? 0
+
+  const documentosJuridicos = await db
+    .from('legal_documents')
+    .update({ refused_reason: null })
+    .eq('tenant_id', tenantId)
+    .eq('client_id', clientId)
+    .select('id')
+  if (documentosJuridicos.error) throw new AppError('INTERNAL', { cause: documentosJuridicos.error })
+  rowsRedacted.legal_documents = documentosJuridicos.data?.length ?? 0
 
   // ── o cadastro em si
   const agora = new Date().toISOString()

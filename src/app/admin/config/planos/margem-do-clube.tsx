@@ -83,7 +83,7 @@ export default function MargemDoClube({ margens }: { margens: MargemDoClube[] })
         <p className="mt-2 text-label text-txt-3">
           {semMaterial === 1 ? '1 atendimento entrou' : `${semMaterial} atendimentos entraram`} sem o custo de produto: falta a ficha de consumo do
           serviço, ou falta registrar quanto você pagou no produto dela. A margem acima está mais otimista do que a real.{' '}
-          <Link href="/admin/config/servicos" className="font-semibold text-acc-2">
+          <Link href="/admin/config/servicos" className="toque-48 whitespace-nowrap font-semibold text-acc-2">
             Completar o custo
           </Link>
         </p>

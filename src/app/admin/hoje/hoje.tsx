@@ -498,7 +498,11 @@ export default function Hoje({
         Sem mais nada agendado" logo abaixo de um cartão das 17:00 seria a tela se contradizendo:
         o vazio aqui só pode significar dia encerrado, e é isso que `restOfDay.length === 0` diz.
       */}
-      {resumo.restOfDay.length === 0 || restanteNaoMostrado.length > 0 ? (
+      {/*
+        Sem próximo cliente, o cartão "Nada mais para hoje" logo acima já disse isto: repetir "Sem mais
+        nada agendado" era a terceira frase igual na mesma tela (docs/102 M1.7).
+      */}
+      {(resumo.restOfDay.length === 0 && resumo.nextClient) || restanteNaoMostrado.length > 0 ? (
         <section>
           <SectionHeader>Resto do dia</SectionHeader>
           {resumo.restOfDay.length === 0 ? (

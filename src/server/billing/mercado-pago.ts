@@ -111,10 +111,10 @@ const RespostaCancelamento = z.object({ id: z.string(), status: z.string() })
 /**
  * Encerra o preapproval no MP. `docs/18` Fase K, regra "Cancelar": autoatendimento, mesmo número
  * de cliques que assinar — o dono clica uma vez e acabou, sem passar por conversa nenhuma. Quem
- * grava `tenants.plan = 'gratis'` é `cancelarAssinatura` (`server/services/assinatura-mp.ts`)
+ * grava o degrau (`gratis` já, ou o contratado até o fim do período pago) é `cancelarAssinatura` (`server/services/assinatura-mp.ts`)
  * LOGO DEPOIS desta chamada, sem esperar o webhook: esperar faria o clique único parecer que não
  * funcionou, e o webhook de `cancelled` que eventualmente chegar só confirma o que já está feito
- * (idempotente por construção — `decidirPlano('cancelled', ...)` sempre devolve `gratis`).
+ * (idempotente por construção: `decidirPlano('cancelled', ...)` só mantém o degrau enquanto há período pago correndo).
  */
 export async function cancelarPreapproval(preapprovalId: string): Promise<void> {
   await chamar(
@@ -132,6 +132,7 @@ const StatusPreapproval = z.object({
   status: z.enum(['pending', 'authorized', 'paused', 'cancelled']),
   external_reference: z.string().optional(),
   auto_recurring: z.object({ transaction_amount: z.number() }).optional(),
+  next_payment_date: z.string().nullish(),
 })
 
 export type SituacaoPreapproval = {
@@ -139,6 +140,8 @@ export type SituacaoPreapproval = {
   externalReference: string | null
   /** Reais com centavos, como o MP devolve. */
   valorAutorizado: number | null
+  /** ISO, o fim do período já pago de uma assinatura autorizada. `undefined` quando quem montou não informa. */
+  proximoPagamento?: string | null
 }
 
 export async function consultarPreapproval(id: string): Promise<SituacaoPreapproval> {
@@ -147,6 +150,7 @@ export async function consultarPreapproval(id: string): Promise<SituacaoPreappro
     status: r.status,
     externalReference: r.external_reference ?? null,
     valorAutorizado: r.auto_recurring?.transaction_amount ?? null,
+    proximoPagamento: r.next_payment_date ?? null,
   }
 }
 

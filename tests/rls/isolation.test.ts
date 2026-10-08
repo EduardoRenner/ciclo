@@ -27,7 +27,9 @@ if (!SUPABASE_URL || !ANON_KEY || !SERVICE_KEY) {
  * sem política que não esteja aqui reprova o teste — a escolha tem que ser
  * consciente, não esquecimento.
  */
-const NEGADAS_POR_DESIGN = new Set(['idempotency_keys', 'job_queue'])
+// `legal_access_log` (0107): trilha de leitura sensível do pacote Advocacia. Só o servidor grava e só o
+// servidor lê (rota da direção), pelo mesmo motivo de `audit_log` não ter política de insert.
+const NEGADAS_POR_DESIGN = new Set(['idempotency_keys', 'job_queue', 'legal_access_log'])
 
 /**
  * Tabelas **sem `tenant_id`**, e por isso fora da regra "tem que ter política".
@@ -75,6 +77,14 @@ type Fixture = {
   subscriptionPlanId: string
   categoryId: string
   quoteId: string
+  // pacote Advocacia (0104-0107): as linhas que outras tabelas jurídicas referenciam
+  legalPersonId: string
+  legalEntityId: string
+  legalChangeId: string
+  legalCaseId: string
+  legalDocumentId: string
+  legalIntimationId: string
+  legalDeadlineId: string
 }
 
 const admin = createClient(SUPABASE_URL, SERVICE_KEY, {
@@ -279,7 +289,100 @@ async function semear(f: Fixture, sufixo: string): Promise<void> {
     'subscription_plans',
   ).id
 
+  /*
+    docs/101 (0104-0107): o pacote Advocacia. Mesma exigência de toda tabela com `tenant_id`: uma linha
+    em cada uma, para o teste genérico de "sobrou linha do outro tenant" ter o que sobrar. As que são
+    referenciadas por outras nascem aqui, com id; as folhas entram em `restantes`.
+  */
+  f.legalPersonId = exigir(
+    await admin.from('legal_persons').insert({ tenant_id: t, client_id: f.clientId, full_name: `Titular ${sufixo}`, relationship: 'titular' }).select('id').single(),
+    'legal_persons',
+  ).id
+  f.legalEntityId = exigir(
+    await admin.from('legal_entities').insert({ tenant_id: t, client_id: f.clientId, kind: 'holding_patrimonial', legal_name: `Holding ${sufixo}` }).select('id').single(),
+    'legal_entities',
+  ).id
+  f.legalChangeId = exigir(
+    await admin
+      .from('legal_corporate_changes')
+      .insert({ tenant_id: t, entity_id: f.legalEntityId, effective_on: '2026-01-01', kind: 'constituicao' })
+      .select('id')
+      .single(),
+    'legal_corporate_changes',
+  ).id
+  f.legalCaseId = exigir(
+    await admin
+      .from('legal_cases')
+      .insert({ tenant_id: t, client_id: f.clientId, kind: 'holding', title: 'Caso de teste', client_title: 'Seu planejamento' })
+      .select('id')
+      .single(),
+    'legal_cases',
+  ).id
+  f.legalDocumentId = exigir(
+    await admin.from('legal_documents').insert({ tenant_id: t, client_id: f.clientId, case_id: f.legalCaseId, title: 'Documento de teste' }).select('id').single(),
+    'legal_documents',
+  ).id
+  // 0109: a intimação e o prazo são referenciados pela sugestão, pelo histórico e pelos alertas.
+  f.legalIntimationId = exigir(
+    await admin
+      .from('legal_intimations')
+      .insert({
+        tenant_id: t,
+        djen_id: Math.floor(Math.random() * 1e12),
+        numero_processo: '0000001' + String(Math.floor(Math.random() * 1e13)).padStart(13, '0'),
+        data_disponibilizacao: '2026-10-01',
+        tribunal: 'TJTS',
+        texto_sanitizado: 'Texto de teste',
+        alvo: 'OAB 0000/TS',
+      })
+      .select('id')
+      .single(),
+    'legal_intimations',
+  ).id
+  f.legalDeadlineId = exigir(
+    await admin
+      .from('legal_deadlines')
+      .insert({ tenant_id: t, client_id: f.clientId, case_id: f.legalCaseId, kind: 'interno', title: 'Prazo de teste', due_on: '2026-10-30' })
+      .select('id')
+      .single(),
+    'legal_deadlines',
+  ).id
+
   const restantes: Array<[string, Record<string, unknown>]> = [
+    [
+      'legal_ownerships',
+      {
+        tenant_id: t,
+        owned_entity_id: f.legalEntityId,
+        owner_person_id: f.legalPersonId,
+        percent: 100,
+        valid_from: '2026-01-01',
+        opened_by_change_id: f.legalChangeId,
+      },
+    ],
+    ['legal_case_members', { tenant_id: t, case_id: f.legalCaseId, professional_id: f.professionalId }],
+    ['legal_case_meetings', { tenant_id: t, case_id: f.legalCaseId, appointment_id: f.appointmentId }],
+    ['legal_checklist_templates', { tenant_id: t, case_kind: 'holding', name: 'Modelo de teste' }],
+    ['legal_checklist_items', { tenant_id: t, case_id: f.legalCaseId, title: 'Pendência de teste', kind: 'enviar_documento', owed_by: 'cliente' }],
+    [
+      'legal_document_versions',
+      {
+        tenant_id: t,
+        document_id: f.legalDocumentId,
+        version_no: 1,
+        storage_path: `${t}/${f.clientId}/${f.legalDocumentId}/1`,
+        mime: 'application/pdf',
+        size_bytes: 10,
+        sha256: '0'.repeat(64),
+      },
+    ],
+    ['legal_document_links', { tenant_id: t, document_id: f.legalDocumentId, target_type: 'person', target_id: f.legalPersonId }],
+    ['legal_access_log', { tenant_id: t, kind: 'open_case', case_id: f.legalCaseId }],
+    ['legal_holidays', { tenant_id: t, day: '2026-11-21', scope: 'municipal', name: 'Feriado de teste' }],
+    ['legal_intimation_sync', { tenant_id: t, alvo: 'OAB 0000/TS', dia: '2026-10-01', count_fonte: 1, count_gravado: 1, ok: true }],
+    ['legal_intimation_suggestions', { tenant_id: t, intimation_id: f.legalIntimationId, sem_sugestao: 'Teste sem sugestão' }],
+    ['legal_deadline_changes', { tenant_id: t, deadline_id: f.legalDeadlineId, field: 'due_on', old_value: '2026-10-29', new_value: '2026-10-30' }],
+    ['legal_deadline_alerts', { tenant_id: t, deadline_id: f.legalDeadlineId, marco: 7 }],
     ['tenant_keys', { tenant_id: t, dek_wrapped: '\\xdeadbeef' }],
     ['product_events', { tenant_id: t, event_type: 'conta_criada' }],
     ['terms_acceptances', { tenant_id: t, documento: 'termos', versao: '2026-09-21', via: 'cadastro' }],

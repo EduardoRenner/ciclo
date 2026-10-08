@@ -12,6 +12,9 @@ export const ERROR_CODES = {
   NOT_FOUND: { status: 404, message: 'Não encontramos o que você procura.' },
   VALIDATION_ERROR: { status: 422, message: 'Confira os campos destacados e tente de novo.' },
   SLOT_TAKEN: { status: 409, message: 'Esse horário acabou de ser reservado.' },
+  // docs/101 (anexo 04 §5): edição concorrente pega pelo `row_version`. A tela oferece recarregar
+  // sem perder o que a pessoa digitou.
+  CONFLICT: { status: 409, message: 'Alguém alterou isto agora há pouco. Recarregue para ver a versão atual.' },
   INVALID_TRANSITION: { status: 422, message: 'Esse agendamento não pode ir para esse estado.' },
   IDEMPOTENCY_KEY_REUSED: { status: 422, message: 'Essa operação já foi enviada com outro conteúdo.' },
   DEPOSIT_REQUIRED: { status: 402, message: 'Pague o sinal para confirmar o horário.' },

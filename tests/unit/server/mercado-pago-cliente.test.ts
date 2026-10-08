@@ -98,7 +98,26 @@ describe('cliente da API', () => {
       ),
     )
     const r = await consultarPreapproval('preapp-1')
-    expect(r).toEqual({ status: 'authorized', externalReference: 'tenant-42', valorAutorizado: 99 })
+    expect(r).toEqual({ status: 'authorized', externalReference: 'tenant-42', valorAutorizado: 99, proximoPagamento: null })
+  })
+
+  it('consultarPreapproval lê next_payment_date: é o fim do período pago que o cancelamento guarda (C7)', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        new Response(
+          JSON.stringify({
+            status: 'authorized',
+            external_reference: 'tenant-42',
+            auto_recurring: { transaction_amount: 99 },
+            next_payment_date: '2026-11-15T10:00:00.000-03:00',
+          }),
+          { status: 200 },
+        ),
+      ),
+    )
+    const r = await consultarPreapproval('preapp-1')
+    expect(r.proximoPagamento).toBe('2026-11-15T10:00:00.000-03:00')
   })
 
   it('erro do MP (não-2xx) vira PAYMENT_FAILED, sem vazar o corpo pra pessoa', async () => {

@@ -17,7 +17,15 @@ import { listarMutacoes } from '@/lib/offline/db'
  * Só aparece quando há algo a dizer: sem conexão, ou com mutação pendente pra enviar. Nos outros
  * momentos retorna `null`, mesmo padrão de `ResolucaoDeFila`.
  */
-export default function IndicadorDeConexao() {
+export function textoDaConexao(online: boolean, pendentes: number, pacote: string): string {
+  if (online) return `${pendentes} ${pendentes === 1 ? 'alteração pendente' : 'alterações pendentes'} · enviando quando possível`
+  // docs/101 T5.3: escrita jurídica não entra na fila (§3.6). "Serão guardadas" seria mentira no pacote Advocacia.
+  if (pacote === 'advocacia') return 'Sem conexão · dá para consultar; caso, prazo e documento só gravam com conexão'
+  if (pendentes > 0) return `Sem conexão · ${pendentes} ${pendentes === 1 ? 'alteração guardada' : 'alterações guardadas'}`
+  return 'Sem conexão · mudanças serão guardadas'
+}
+
+export default function IndicadorDeConexao({ pacote = 'base' }: { pacote?: string }) {
   const [online, setOnline] = useState(true)
   const [pendentes, setPendentes] = useState(0)
 
@@ -52,14 +60,10 @@ export default function IndicadorDeConexao() {
   return (
     <div
       role="status"
-      className="sticky top-0 z-30 flex items-center justify-center gap-2 bg-warn/12 px-[var(--gutter)] py-1.5 text-label font-semibold text-warn"
+      className="sticky top-[calc(3rem+1px+env(safe-area-inset-top))] z-10 flex items-center justify-center gap-2 bg-warn/12 px-[var(--gutter)] py-1.5 text-label font-semibold text-warn backdrop-blur-xl"
     >
       <CloudOff aria-hidden className="size-3.5 shrink-0" />
-      {online
-        ? `${pendentes} ${pendentes === 1 ? 'alteração pendente' : 'alterações pendentes'} · enviando quando possível`
-        : pendentes > 0
-          ? `Sem conexão · ${pendentes} ${pendentes === 1 ? 'alteração guardada' : 'alterações guardadas'}`
-          : 'Sem conexão · mudanças serão guardadas'}
+      {textoDaConexao(online, pendentes, pacote)}
     </div>
   )
 }

@@ -46,7 +46,8 @@ export type ModuloNaTela = {
  *
  * Módulo `fora_do_eixo` **não entra na lista** — some, sem oferta nenhuma (§D.5). Um barbeiro que
  * atende no local não deveria ver "Deslocamento e rota" nem para saber que existe; oferecer
- * upgrade para isso seria a regra 5.2 aplicada ao contrário.
+ * upgrade para isso seria a regra 5.2 aplicada ao contrário. `fora_do_pacote` (docs/101 §3.3)
+ * some pelo mesmo motivo: um salão não deveria ver "Casos".
  */
 export async function listarModulos(db: Cliente, tenantId: string): Promise<ModuloNaTela[]> {
   const ctx = await contextoDePlano(db, tenantId)
@@ -60,7 +61,7 @@ export async function listarModulos(db: Cliente, tenantId: string): Promise<Modu
       veredito,
       ligado: veredito.estado === 'liberado',
     }
-  }).filter((m) => m.veredito.estado !== 'fora_do_eixo')
+  }).filter((m) => m.veredito.estado !== 'fora_do_eixo' && m.veredito.estado !== 'fora_do_pacote')
 }
 
 export async function definirModulo(db: Cliente, tenantId: string, entrada: EntradaModulo): Promise<ModuloNaTela[]> {
@@ -76,9 +77,12 @@ export async function definirModulo(db: Cliente, tenantId: string, entrada: Entr
   const ctx = await contextoDePlano(db, tenantId)
   const veredito = podeUsarModulo(ctx, entrada.modulo)
 
-  if (veredito.estado === 'fora_do_eixo') {
+  if (veredito.estado === 'fora_do_eixo' || veredito.estado === 'fora_do_pacote') {
     throw new AppError('FORBIDDEN', {
-      message: 'Esse recurso não se aplica ao tipo de atendimento do seu negócio.',
+      message:
+        veredito.estado === 'fora_do_pacote'
+          ? 'Esse recurso não faz parte do pacote da sua profissão.'
+          : 'Esse recurso não se aplica ao tipo de atendimento do seu negócio.',
     })
   }
 

@@ -59,6 +59,9 @@ export default function FormularioAgendamento({
   const [professionalId, setProfessionalId] = useState(profissionais[0]?.id ?? '')
   const [clienteNome, setClienteNome] = useState('')
   const [clienteTelefone, setClienteTelefone] = useState('')
+  // docs/102 M1.10: remarcar quem já é cliente era redigitar nome e telefone inteiros a partir do Hoje.
+  const [sugestoes, setSugestoes] = useState<{ id: string; name: string; phone_e164: string | null }[]>([])
+  const [escolhido, setEscolhido] = useState<string | null>(null)
   const [dataHora, setDataHora] = useState('')
   const [alternativas, setAlternativas] = useState<string[] | null>(null)
   const [erro, setErro] = useState<string | null>(null)
@@ -106,6 +109,32 @@ export default function FormularioAgendamento({
       cancelado = true
     }
   }, [clienteId])
+
+  /**
+   * Mesma busca da tela "Quem você já atende" (`GET v1/clients?q=`, pedido em segundo plano: não vira URL
+   * do navegador nem entra no histórico). Vinda da ficha (`?cliente=`) a pessoa já está escolhida.
+   */
+  useEffect(() => {
+    const termo = clienteNome.trim()
+    if (clienteId || termo.length < 2 || termo === escolhido) {
+      setSugestoes([])
+      return
+    }
+    let cancelado = false
+    const temporizador = setTimeout(() => {
+      fetch(`/api/v1/clients?q=${encodeURIComponent(termo)}&limit=5`)
+        .then((r) => (r.ok ? (r.json() as Promise<{ data?: { clients?: { id: string; name: string; phone_e164: string | null }[] } }>) : null))
+        .then((json) => {
+          if (!cancelado) setSugestoes(json?.data?.clients ?? [])
+        })
+        // Sem sugestão o formulário continua valendo: é só digitar o telefone.
+        .catch(() => undefined)
+    }, 300)
+    return () => {
+      cancelado = true
+      clearTimeout(temporizador)
+    }
+  }, [clienteNome, clienteId, escolhido])
 
   function enviar(startsAtIso: string) {
     setErro(null)
@@ -291,6 +320,27 @@ export default function FormularioAgendamento({
         autoComplete="name"
         required
       />
+      {sugestoes.length > 0 ? (
+        <div role="group" aria-label="Já é cliente?" className="-mt-2 flex flex-col gap-1 rounded-[var(--radius-sm)] border border-line-2 p-1">
+          <span className="px-2 pt-1 text-label font-semibold text-txt-3">Já é cliente?</span>
+          {sugestoes.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => {
+                setClienteNome(c.name)
+                setClienteTelefone(formatarTelefone(c.phone_e164) ?? '')
+                setEscolhido(c.name)
+                setSugestoes([])
+              }}
+              className="flex min-h-12 items-center justify-between gap-3 rounded-[var(--radius-sm)] px-2 text-left hover:bg-surface-2"
+            >
+              <span className="truncate text-corpo font-semibold text-txt">{c.name}</span>
+              <span className="shrink-0 text-secundario text-txt-3">{formatarTelefone(c.phone_e164) ?? ''}</span>
+            </button>
+          ))}
+        </div>
+      ) : null}
 
       <PhoneInput valor={clienteTelefone} aoMudar={setClienteTelefone} required />
 

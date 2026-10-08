@@ -208,7 +208,7 @@ export default function RecuperarReceita({
         <p className="mb-4 text-secundario text-txt-3">
           {servicosSemMaterial === 1 ? '1 serviço está' : `${servicosSemMaterial} serviços estão`} sem o custo do material, então a
           ordem da lista pode estar errada.{' '}
-          <Link href="/admin/config/servicos" className="font-semibold text-acc-2">
+          <Link href="/admin/config/servicos" className="toque-48 whitespace-nowrap font-semibold text-acc-2">
             Completar o custo
           </Link>
         </p>

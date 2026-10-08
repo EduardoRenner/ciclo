@@ -10,7 +10,7 @@
  * isso é de quem edita.
  */
 export const VERSOES_LEGAIS = {
-  termos: '2026-09-21',
+  termos: '2026-10-03',
   privacidade: '2026-09-16',
 } as const
 

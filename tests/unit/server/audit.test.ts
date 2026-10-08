@@ -98,6 +98,27 @@ describe('writeAudit', () => {
     expect(texto).toContain('lashes_v1')
   })
 
+  it('redige o que o pacote Advocacia não pode guardar na trilha (docs/101 T1.9)', async () => {
+    const linhas = capturar()
+    await writeAudit(
+      {
+        ...BASE,
+        action: 'legal_intimation.criar_prazo',
+        after: {
+          status: 'prazo_criado',
+          intimacao: { texto_sanitizado: 'Intime-se FULANO DE TAL', destinatarios: [{ nome: 'CICLANA' }], numero_processo: '00012345620268240001' },
+          caso: { cnj_number: '00099999920268240001', sensitivity_reason: 'pedido expresso', client_status_note: 'audiência dia 20' },
+        },
+      },
+      req(),
+    )
+    const texto = JSON.stringify(linhas[0]?.after)
+    for (const vazado of ['FULANO', 'CICLANA', '00012345620268240001', '00099999920268240001', 'pedido expresso', 'audiência dia 20']) {
+      expect(texto, vazado).not.toContain(vazado)
+    }
+    expect(texto).toContain('prazo_criado')
+  })
+
   it('não deixa a falha da trilha derrubar a operação já concluída', async () => {
     const erro = vi.spyOn(console, 'error').mockImplementation(() => {})
     vi.mocked(withTenant).mockRejectedValue(new Error('banco fora do ar'))

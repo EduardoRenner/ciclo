@@ -61,6 +61,21 @@ export type AssinaturaDoTenant = {
    * mostra esta data antes de o degrau cair.
    */
   graca_ate?: string | null
+  /**
+   * ISO ou `null`. Só existe enquanto `status === 'cancelled'` e a pessoa já tinha pago: o fim do
+   * período pago, que é o `next_payment_date` do MP lido ANTES de cancelar (C7, docs/86). Os Termos
+   * §6 prometem "você continua com o acesso até o fim do período já pago"; sem esta data o plano
+   * caía na hora e o dinheiro de um mês já pago era perdido. Quem derruba o degrau na data é
+   * `expirarGracaVencida`.
+   */
+  acesso_ate?: string | null
+}
+
+/** Cancelada, mas o período já pago ainda não acabou: o degrau contratado continua valendo. */
+export function acessoPagoVigente(assinatura: Pick<AssinaturaDoTenant, 'status' | 'acesso_ate'> | null, agora: Date): boolean {
+  if (!assinatura || assinatura.status !== 'cancelled' || !assinatura.acesso_ate) return false
+  const ate = new Date(assinatura.acesso_ate).getTime()
+  return Number.isFinite(ate) && agora.getTime() < ate
 }
 
 export type DecisaoDePlano = {
@@ -84,13 +99,15 @@ export type DecisaoDePlano = {
  * primeiro boleto que não compensou seria a armadilha de "travar no meio do atendimento" do
  * CLAUDE.md, um nível acima. Quem decide quando a graça acaba é o `server/` (uma data), não este mapa.
  *
- * `cancelled` volta pro `gratis` sem graça: acabou. Regra 5.1 continua valendo do outro lado —
+ * `cancelled` volta pro `gratis` sem graça: acabou, a menos que haja período já pago correndo (`acessoPagoCorrendo`). Regra 5.1 continua valendo do outro lado —
  * cair de degrau não apaga nem esconde dado, só trava CRIAR mais (`podeCriar` em `planos.ts`).
  */
 export function decidirPlano(
   status: StatusMP,
   planoContratado: PlanoTier,
   planoVigente: PlanoTier,
+  /** `acessoPagoVigente(...)` da assinatura: cancelada com período pago ainda correndo. */
+  acessoPagoCorrendo = false,
 ): DecisaoDePlano {
   switch (status) {
     case 'authorized':
@@ -100,7 +117,9 @@ export function decidirPlano(
     case 'pending':
       return { plano: planoVigente, emGraca: false }
     case 'cancelled':
-      return { plano: 'gratis', emGraca: false }
+      // Cancelou, mas já pagou: o degrau fica até o fim do período (Termos §6). Sem período pago
+      // correndo (nunca pagou, ou a cobrança falhava), acabou na hora.
+      return { plano: acessoPagoCorrendo ? planoContratado : 'gratis', emGraca: false }
   }
 }
 
@@ -121,6 +140,7 @@ export function lerAssinatura(settings: unknown): AssinaturaDoTenant | null {
     status: o.status,
     atualizado_em: o.atualizado_em,
     graca_ate: typeof o.graca_ate === 'string' ? o.graca_ate : null,
+    acesso_ate: typeof o.acesso_ate === 'string' ? o.acesso_ate : null,
   }
 }
 

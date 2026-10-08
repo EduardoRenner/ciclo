@@ -468,7 +468,7 @@ export default function Ficha({
             <button
               type="button"
               onClick={() => setEditando(true)}
-              className="w-full text-left text-secundario text-txt-3 transition-colors hover:text-txt-2"
+              className="min-h-12 w-full text-left text-secundario text-txt-3 transition-colors hover:text-txt-2"
             >
               Nada anotado ainda. Toque para registrar as preferências de atendimento.
             </button>

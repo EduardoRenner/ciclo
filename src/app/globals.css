@@ -162,7 +162,7 @@
     --on-acc: #ffffff;
     --ring: var(--acc);
 
-    --ok: #2b8449;
+    --ok: #2a8148;
     --warn: #835800;
     --risk: #934315;
     --bad: #78120b;
@@ -195,7 +195,7 @@
   --on-acc: #ffffff;
   --ring: var(--acc);
 
-  --ok: #2b8449;
+  --ok: #2a8148;
   --warn: #835800;
   --risk: #934315;
   --bad: #78120b;
@@ -465,6 +465,12 @@
 
   /* §7: foco visível em todo elemento interativo. */
   :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  /* docs/101 T5.4: foco levado por j/k. Evento de teclado sintético e foco por script nem sempre acendem
+     o `:focus-visible`; o atalho marca o item e o anel aparece do mesmo jeito. */
+  [data-foco-atalho]:focus {
     outline: 2px solid var(--ring);
     outline-offset: 2px;
   }
