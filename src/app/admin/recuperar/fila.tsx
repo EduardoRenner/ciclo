@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 
 import Button from '@/components/ui/button'
 import Card from '@/components/ui/card'
+import IconeWhatsApp from '@/components/ui/icone-whatsapp'
 import { chaveDaFila, proximoDaFila } from '@/core/ciclo/fila-de-chamadas'
 import { ROTULO_DA_CLASSE, ROTULO_DO_PERFIL } from '@/core/crm/nota-do-cliente'
 import { dinheiro } from '@/lib/formato'
@@ -92,7 +93,7 @@ export default function FilaDeChamadas({
             <p className="mt-1 text-secundario text-txt-2">
               {atual.valueCents === 0 && atual.profitCents === 0
                 ? 'Sem valor avulso'
-                : `${dinheiro.format(atual.valueCents / 100)} · ${dinheiro.format(atual.profitCents / 100)} de lucro`}
+                : dinheiro.format(atual.priceCents / 100)}
               {atual.nota != null && atual.classe ? ` · ${ROTULO_DA_CLASSE[atual.classe]} (${atual.nota})` : ''}
               {atual.perfil ? ` · ${ROTULO_DO_PERFIL[atual.perfil]}` : ''}
             </p>
@@ -109,8 +110,9 @@ export default function FilaDeChamadas({
               void anotarChamada(atual)
               tratar(atual)
             }}
-            className="flex h-12 items-center justify-center rounded-[var(--radius-sm)] bg-acc text-corpo font-semibold text-on-acc shadow-elevado transition active:scale-[.98]"
+            className="flex h-14 items-center justify-center gap-2 rounded-[var(--radius-sm)] bg-acc text-corpo font-semibold text-on-acc shadow-elevado transition active:scale-[.98]"
           >
+            <IconeWhatsApp className="size-6" />
             Chamar pelo WhatsApp
           </a>
 

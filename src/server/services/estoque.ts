@@ -281,6 +281,17 @@ export const EsquemaProduto = EsquemaProdutoBase.refine((d) => !d.isRetail || d.
   path: ['priceCents'],
 })
 
+/**
+ * O cadastro simples é nome, preço e quanto tem em mãos. A quantidade só existe na CRIAÇÃO: depois
+ * dela o estoque muda por entrada, por venda ou por baixa de serviço, nunca por edição de campo.
+ */
+export const EsquemaProdutoNovo = EsquemaProdutoBase.extend({
+  initialQty: z.number().nonnegative('O estoque não pode ser negativo.').max(1_000_000, 'Quantidade alta demais.').default(0),
+}).refine((d) => !d.isRetail || d.priceCents != null, {
+  message: 'Defina o preço de venda para um produto de revenda.',
+  path: ['priceCents'],
+})
+
 /** No PATCH todo campo é opcional — mas a combinação isRetail+priceCents ainda é checada quando as duas chegam juntas. */
 export const EsquemaProdutoParcial = parcialSemPadroes(EsquemaProdutoBase).refine(
   (d) => d.isRetail !== true || d.priceCents !== null,

@@ -1,6 +1,6 @@
 'use client'
 
-import { ArrowDown, ArrowUp, FlaskConical, Plus, Scissors } from 'lucide-react'
+import { ArrowDown, ArrowUp, Plus, Scissors } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useTransition } from 'react'
 
@@ -281,22 +281,6 @@ export default function ListaServicos({
                   })()
                 : null}
 
-              {/*
-                A ficha de consumo ganhou tela em 2026-09-06 (`docs/49`). `service_products` existe
-                desde a `0001` e é lida pela baixa de estoque no fechamento da comanda — e nunca
-                teve como ser preenchida: nenhuma rota, nenhuma tela. Dois mecanismos prontos
-                paravam aí, e desde a `I-02` um terceiro (o custo de material do serviço).
-
-                Link sozinho na própria linha, e não ao lado do nome: `toque-48` em dois alvos que
-                dividem linha de texto corrida deixa o segundo intocável (`CLAUDE.md`).
-              */}
-              <Link
-                href={`/admin/config/servicos/${s.id}/ficha`}
-                className="flex h-12 items-center gap-2 text-label font-semibold text-acc-2"
-              >
-                <FlaskConical aria-hidden className="size-4" />
-                Ficha de consumo
-              </Link>
             </Card>
           </li>
         ))}

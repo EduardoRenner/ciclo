@@ -27,6 +27,8 @@ export type ItemRecuperar = {
   state: EstadoCiclo
   lateDays: number
   valueCents: number
+  /** Preço cheio do serviço da última visita: é o que a lista mostra, sem a chance de voltar. */
+  priceCents: number
   /** O que SOBRA daquele atendimento × a chance de a pessoa voltar. É o que ordena a lista. */
   profitCents: number
   lastCampaignAt: string | null
@@ -104,11 +106,20 @@ export async function listarParaRecuperar(
   const totalProfitCents = linhas.reduce((soma, l) => soma + l.ordemCents, 0)
   const limite = opcoes.limit ?? LIMITE_PADRAO
 
+  const visiveis = linhas.slice(0, limite)
+  const idsDosServicos = [...new Set(visiveis.map((l) => l.service_id!))]
+  const { data: precos, error: erroPrecos } =
+    idsDosServicos.length > 0
+      ? await db.from('services').select('id, price_cents').eq('tenant_id', tenantId).in('id', idsDosServicos)
+      : { data: [], error: null }
+  if (erroPrecos) throw new AppError('INTERNAL', { cause: erroPrecos })
+  const precoDoServico = new Map((precos ?? []).map((p) => [p.id, Number(p.price_cents)]))
+
   return {
     totalValueCents,
     totalProfitCents,
     count: linhas.length,
-    items: linhas.slice(0, limite).map((l) => ({
+    items: visiveis.map((l) => ({
       clientId: l.client_id!,
       serviceId: l.service_id!,
       name: l.client_name!,
@@ -118,6 +129,7 @@ export async function listarParaRecuperar(
       state: l.state!,
       lateDays: l.late_days!,
       valueCents: l.value_at_risk_cents!,
+      priceCents: precoDoServico.get(l.service_id!) ?? 0,
       profitCents: l.profit_at_risk_cents ?? 0,
       lastCampaignAt: l.last_campaign_at,
     })),
