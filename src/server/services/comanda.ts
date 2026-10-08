@@ -250,6 +250,11 @@ async function resolverCommissionBps(db: Cliente, tenantId: string, item: { serv
   if (item.product_id) {
     const { data: tenant } = await db.from('tenants').select('settings, timezone').eq('id', tenantId).maybeSingle()
     const settings = (tenant?.settings ?? {}) as Settings
+    // A comissão de produto da PESSOA, quando o dono definiu uma, vale sobre a do negócio.
+    if (item.professional_id) {
+      const { data: pessoa } = await db.from('professionals').select('product_commission_bps').eq('tenant_id', tenantId).eq('id', item.professional_id).maybeSingle()
+      if (pessoa?.product_commission_bps !== null && pessoa?.product_commission_bps !== undefined) return pessoa.product_commission_bps
+    }
     return settings.product_commission_bps ?? PRODUCT_COMMISSION_BPS_PADRAO
   }
   if (!item.service_id || !item.professional_id) return 0

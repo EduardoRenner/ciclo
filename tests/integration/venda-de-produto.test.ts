@@ -104,6 +104,21 @@ describe('venda de produto no balcão', () => {
   )
 
   it(
+    'usa a comissão de produto da pessoa quando o dono definiu uma, e a do negócio quando não',
+    async () => {
+      await svc.from('professionals').update({ product_commission_bps: 2_500 }).eq('tenant_id', tenantId).eq('id', outraId)
+      const produto = await produtoComEstoque({ priceCents: 5_000, isRetail: true, estoque: 10 })
+
+      const daOutra = await venderProduto(svc, tenantId, produto.id, { professionalId: outraId, qty: 2, paymentMethod: 'pix' })
+      const doVendedor = await venderProduto(svc, tenantId, produto.id, { professionalId: vendedorId, qty: 2, paymentMethod: 'pix' })
+
+      expect((await buscarComanda(svc, tenantId, daOutra.ticketId)).items[0]!.commission_cents).toBe(2_500)
+      expect((await buscarComanda(svc, tenantId, doVendedor.ticketId)).items[0]!.commission_cents).toBe(1_000)
+    },
+    30_000,
+  )
+
+  it(
     'recusa insumo sem preço, e não deixa comanda aberta nem estoque mexido',
     async () => {
       const insumo = await produtoComEstoque({ priceCents: null, isRetail: false, estoque: 5 })
