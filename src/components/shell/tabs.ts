@@ -1,49 +1,21 @@
-export type Aba = {
-  href: string
-  rotulo: string
-  /**
-   * Nome do ícone do lucide-react, resolvido pelo `TabBar` — mantém este
-   * arquivo livre de JSX/React. `'Anel'` é especial: não é lucide, é a própria
-   * marca do CICLO (`docs/08-REDESIGN-E-IDENTIDADE.md` Parte II §F1/§8) — o
-   * ícone que a aba do Motor de Ciclo tinha era `Sparkles` (✨), o emblema
-   * universal de "isto foi feito por IA", simbolizando exatamente o conceito
-   * que justifica o produto existir. O anel aberto já É a metáfora de "cliente
-   * que volta"; faz sentido a marca virar o próprio ícone aqui.
-   */
-  icone: 'Home' | 'CalendarDays' | 'Users' | 'Anel' | 'Plus'
-}
+import { PACOTES } from '@/core/pacotes'
+
+import type { Aba } from '@/core/pacotes'
+
+export type { Aba }
 
 /**
- * Os 5 slots da tab bar de `03-DESIGN-SYSTEM §4` (4 destinos + botão central).
- * Nenhum documento fixa quais 5; escolhidos os que sustentam o essencial do
- * MVP se tudo mais for cortado (`00-BRIEFING §1`): agenda, Motor de Ciclo, e o
- * cadastro de clientes que os dois dependem. Caixa e configurações ficam a um
- * toque do "Hoje", não na barra — são consultados bem menos que os cinco
- * daqui. Decisão registrada em `docs/DECISOES.md`.
+ * A barra do pacote `base` (docs/101 T0.1): os valores moram em `core/pacotes/base.ts`, com a
+ * história de cada escolha (os 5 slots de `03-DESIGN-SYSTEM §4`; o Motor de Ciclo no centro desde
+ * 31/08). Estes dois nomes continuam exportados porque `tab-bar.tsx` e `tests/unit/shell/tabs.test.ts`
+ * os consomem e porque, para toda profissão sem pacote próprio, eles ainda são a barra inteira.
  *
- * O Motor de Ciclo NÃO está nesta lista desde 31/08 porque virou o botão central
- * (`HREF_DO_CENTRO`, logo abaixo) — continua sendo um dos cinco, no slot mais alcançável.
+ * Quem precisa da barra de OUTRO pacote não lê daqui: lê `PACOTES[pacote].abas`, com o `pacote`
+ * que `contextoAtual` resolve do tenant.
  */
-export const ABAS: readonly Aba[] = [
-  { href: '/admin/hoje', rotulo: 'Hoje', icone: 'Home' },
-  { href: '/admin/agenda', rotulo: 'Agenda', icone: 'CalendarDays' },
-  { href: '/admin/clientes', rotulo: 'Clientes', icone: 'Users' },
-  { href: '/admin/agenda/novo', rotulo: 'Marcar', icone: 'Plus' },
-]
+export const ABAS: readonly Aba[] = PACOTES.base.abas
 
-/**
- * 31/08: o centro passou a ser o Motor de Ciclo, e "marcar horário" veio para cá.
- *
- * O slot central é o único que o polegar alcança sem reposicionar a mão, e estava com a ação mais
- * COMUM do dia — não a mais valiosa. Marcar horário é o que qualquer caderno faz; o Motor de Ciclo
- * é o que justifica o produto ter preço, e vivia no canto direito, que é o lugar de onde as coisas
- * somem da rotina. Um recurso que precisa ser LEMBRADO não gera receita: receita recuperada é
- * exatamente a que ninguém buscaria sozinho.
- *
- * Nada foi removido — os dois trocaram de lugar. Marcar continua a um toque, e continua também no
- * botão da tela "Hoje" e da agenda, que são de onde o gesto costuma partir de verdade.
- */
-export const HREF_DO_CENTRO = '/admin/recuperar'
+export const HREF_DO_CENTRO = PACOTES.base.centro.href
 
 /**
  * Uma aba fica ativa também nas rotas abaixo dela (`/clientes/123`), exceto

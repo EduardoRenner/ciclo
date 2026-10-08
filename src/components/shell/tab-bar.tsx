@@ -1,6 +1,6 @@
 'use client'
 
-import { CalendarDays, Home, Plus, Users } from 'lucide-react'
+import { Briefcase, CalendarDays, Home, ListChecks, Plus, Users } from 'lucide-react'
 import Link, { useLinkStatus } from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -10,7 +10,16 @@ import { cn } from '@/lib/utils'
 
 import { ABAS, HREF_DO_CENTRO, hrefDaAbaAtiva, type Aba } from './tabs'
 
-const ICONES: Record<Aba['icone'], typeof Home | typeof IconeAnel> = { Home, CalendarDays, Users, Plus, Anel: IconeAnel }
+// Exaustivo sobre `IconeDaAba` (`core/pacotes/tipos.ts`): ícone novo no pacote sem desenho aqui não compila.
+const ICONES: Record<Aba['icone'], typeof Home | typeof IconeAnel> = {
+  Home,
+  CalendarDays,
+  Users,
+  Plus,
+  Anel: IconeAnel,
+  Briefcase,
+  ListChecks,
+}
 
 type Props = {
   /** Rota do botão central. Parametrizado para o teste não depender de string solta. */

@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 
 import { cache } from 'react'
 
+import { normalizarPacote, type SlugDoPacote } from '@/core/pacotes'
 import { resolverVocabulario, type Vocabulario } from '@/core/text/vocabulario'
 import { UUID } from '@/core/text/uuid'
 import { exigirSessao, type Sessao } from '@/server/auth/session'
@@ -32,6 +33,13 @@ export type DadosDoTenant = {
    * regra de precedencia por todo componente que queira uma palavra.
    */
   vocabulario: Vocabulario
+  /**
+   * O pacote da profissão (docs/101 §3.2, migration 0101): decide a barra, o botão central e o
+   * vocabulário extra. Vem do mesmo join que traz o `vocab`, pelo mesmo motivo que o vocabulário
+   * vem aqui: quase toda tela do painel precisa, e é uma palavra. Tenant sem profissão escolhida
+   * (join nulo) resolve para `base`, que é o produto de hoje.
+   */
+  pacote: SlugDoPacote
   /**
    * O degrau que a pessoa PAGA (`tenants.plan`), como veio do banco: `normalizarPlano` mora em
    * `server/services/planos` e é quem traduz nomes antigos. E `settings.cortesia`, SÓ essa chave:
@@ -77,7 +85,7 @@ const vinculosAtivos = cache(async function vinculosAtivos(userId: string) {
   const db = await criarClienteDoUsuario()
   const { data, error } = await db
     .from('memberships')
-    .select('tenant_id, role, tenants(name, slug, timezone, vertical, vocab_override, plan, cortesia:settings->cortesia, professions(vocab))')
+    .select('tenant_id, role, tenants(name, slug, timezone, vertical, vocab_override, plan, cortesia:settings->cortesia, professions(vocab, pacote))')
     .eq('user_id', userId)
     .eq('active', true)
   if (error) throw new AppError('INTERNAL', { cause: error })
@@ -98,7 +106,7 @@ type TenantBruto = {
   vocab_override: unknown
   plan: string
   cortesia: unknown
-  professions: { vocab: unknown } | null
+  professions: { vocab: unknown; pacote: string } | null
 }
 
 function dadosDoTenant(bruto: TenantBruto | null): DadosDoTenant {
@@ -113,6 +121,8 @@ function dadosDoTenant(bruto: TenantBruto | null): DadosDoTenant {
     // `professions` vem `null` em tenant sem profissao escolhida; `resolverVocabulario` trata
     // ausencia como padrao, entao nao existe caminho em que a tela fique sem palavra.
     vocabulario: resolverVocabulario(bruto.professions?.vocab, bruto.vocab_override),
+    // Mesma defesa do vocabulário: join nulo ou valor que o registro não conhece cai em `base`.
+    pacote: normalizarPacote(bruto.professions?.pacote),
   }
 }
 

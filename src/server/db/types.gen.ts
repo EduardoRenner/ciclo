@@ -2302,6 +2302,7 @@ export type Database = {
           modulos_padrao: Json
           nome: string
           onde: string
+          pacote: string
           posicao: number
           ritmo: string
           sinonimos: string[]
@@ -2322,6 +2323,7 @@ export type Database = {
           modulos_padrao?: Json
           nome: string
           onde: string
+          pacote?: string
           posicao?: number
           ritmo: string
           sinonimos?: string[]
@@ -2342,6 +2344,7 @@ export type Database = {
           modulos_padrao?: Json
           nome?: string
           onde?: string
+          pacote?: string
           posicao?: number
           ritmo?: string
           sinonimos?: string[]

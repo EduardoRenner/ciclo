@@ -222,7 +222,9 @@ describe('o painel também fala a língua da profissão', () => {
      * carona no `select` que revalida o membership — o vocabulário entra ali pelo mesmo motivo.
      */
     const fonte = semComentarios(readFileSync('src/server/auth/tenant.ts', 'utf8'))
-    expect(/vocab_override.*professions\(vocab\)/.test(fonte), 'o contexto parou de buscar o vocabulário').toBe(true)
+    // `professions(vocab` seguido de qualquer outra coluna: a 0101 pôs `pacote` no mesmo join, e o que
+    // esta guarda protege é que o `vocab` continue vindo, não que ele venha sozinho.
+    expect(/vocab_override.*professions\(vocab\b[^)]*\)/.test(fonte), 'o contexto parou de buscar o vocabulário').toBe(true)
     expect(/resolverVocabulario\(/.test(fonte), 'o contexto entrega jsonb cru em vez de palavra resolvida').toBe(true)
   })
 

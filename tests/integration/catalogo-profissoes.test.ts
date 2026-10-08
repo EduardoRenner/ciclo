@@ -25,17 +25,22 @@ const svc = createClient<Database>(SUPABASE_URL, SERVICE_KEY, { auth: { persistS
 const PROFUNDAS = ['barber', 'faxina', 'eletricista']
 
 describe('catálogo de profissões (docs/09-PLATAFORMA.md §5)', () => {
-  it('tem o catálogo completo: 17 profissões + a linha genérica "outra" (0078)', async () => {
-    const { data, error } = await svc.from('professions').select('slug')
+  it('tem o catálogo completo: 17 profissões + a linha genérica "outra" (0078) + advocacia (0101)', async () => {
+    const { data, error } = await svc.from('professions').select('slug, pacote')
     if (error) throw error
     // 8 originais (P0) + 9 novas (P5) = 17, mais 'outra' (migration 0078: a saída
-    // para quem não se encontra na lista do onboarding) = 18. As 12 "do
+    // para quem não se encontra na lista do onboarding) = 18, mais 'advocacia'
+    // (migration 0101, o primeiro pacote fora de beleza) = 19. As 12 "do
     // lançamento" do plano são um subconjunto conceitual; a tabela guarda todas.
-    expect(data).toHaveLength(18)
+    expect(data).toHaveLength(19)
     // 'outra' explícito: se uma migration futura apagar essa linha, o beco sem
     // saída do onboarding volta — e o teste reprova pelo motivo certo, não só por
     // um número que mudou.
     expect(data!.map((p) => p.slug)).toContain('outra')
+    // docs/101 T0.1: só a advocacia tem pacote próprio; as outras 18 ficam no `base`, que é o
+    // produto de hoje. Afirmado pelos dois lados, para a coluna não virar `advocacia` por engano.
+    expect(data!.filter((p) => p.pacote === 'advocacia').map((p) => p.slug)).toEqual(['advocacia'])
+    expect(data!.filter((p) => p.pacote === 'base')).toHaveLength(18)
   })
 
   it.each(PROFUNDAS)('%s (profunda) tem pelo menos 4 serviços cadastrados', async (slug) => {
