@@ -1098,6 +1098,25 @@ Regra nova da U1: só entra o que, **a cada uso de hoje**, grava errado, cobra e
 **Migration:** não. **Dependências:** APR-037. **Risco:** nenhum (só leitura no local).
 **Commit:** `docs(aprimoramento): o que cada papel vê nas 15 telas (APR-039)`
 
+#### APR-040 · Fazer as rotas respeitarem o alcance `own` do profissional, a começar pelo cofre de saúde
+**Onda:** U1 · **Severidade:** S1 (dado de saúde, LGPD; regra inviolável 9 é vizinha) · **Esforço:** M (1,5–2 d) · **Dimensão:** geral (privacidade)
+**Problema:** FATO (APR-039, `medidas/papel-x-tela.md` P-04 a P-06): das 123 chamadas a `exigirPermissao` em `src/app/api/v1`, só 2 usam o alcance devolvido. `GET /clients/[id]/vault` exige `vault:own` e abre a ficha com o cliente de serviço sem conferir se o profissional atende aquela pessoa: qualquer profissional com AAL2 lê a anamnese de qualquer cliente. `POST /campaigns` exige `client:update`, e `client:own` passa como `all`: o profissional manda campanha para a base inteira. Clientes e Recuperar mostram a carteira toda com valores.
+**Proposta:** função única `clienteDoProfissional(db, tenantId, clientId)` = o profissional tem agendamento (qualquer estado) ou comanda com a pessoa. Cofre (GET/PUT) e escrita de cliente com escopo `own` passam por ela; campanha com escopo `own` recusa (campanha é do negócio). Guarda: toda rota que chama `exigirPermissao` com recurso que tem `own` em algum papel usa o retorno (linha de base que só encolhe).
+**Critério de aceite (MEDIDO):** integração com o cliente do usuário profissional: ficha de cliente que ele atendeu → abre; de cliente que nunca atendeu → 403, e nenhuma linha nova de "abriu a ficha" na trilha; campanha → 403. Dono e gerente sem mudança.
+**Teste:** os casos acima; ver reprovar contra o código atual (abre a ficha de quem nunca atendeu).
+**Migration:** não. **Dependências:** APR-037 (logins), APR-038 (padrão `exigirComandaPropria`). **Decisão do Eduardo (não bloqueia):** profissional que cobre a folga do colega precisa da ficha — a regra "tem agendamento com a pessoa" já cobre, porque a cobertura passa pela agenda.
+**Risco e como reverter:** médio (profissional perde acesso a ficha de quem não atende, que é o objetivo); `git revert`.
+**Como verificar em produção depois:** com autorização, só leitura da trilha do cofre: aberturas por profissional sem agendamento com a pessoa, antes × depois.
+**Commit:** `fix(privacidade): profissional só abre a ficha e o cofre de quem atende (APR-040)`
+
+#### APR-041 · Esconder da tela a ação que o papel não pode fazer
+**Onda:** U2 · **Severidade:** S2 · **Esforço:** P–M (1 d) · **Dimensão:** facilidade
+**Problema:** FATO (APR-039 P-02, P-03): "Time" mostra Cadastrar/Convidar/Desativar a profissional, recepção e financeiro, e o financeiro preenche Agenda/novo inteira para receber 403 no fim. A API recusa; a tela promete.
+**Proposta:** a página recebe `avaliarPermissao` do servidor e não desenha a ação; formulário inteiro sem permissão vira a tela de "sem permissão" na entrada, com o caminho de quem pode.
+**Critério de aceite (MEDIDO):** roteiro da APR-039 de novo: 0 botões de ação sem permissão nas 15 telas × 4 papéis.
+**Teste:** o roteiro (medição) + unitário da função que decide o que desenhar. **Migration:** não. **Dependências:** APR-039, junto de APR-103.
+**Commit:** `fix(papeis): a tela só oferece o que o papel pode fazer (APR-041)`
+
 Tabela compacta (ondas 2 e 4):
 
 | ID | Origem | Proposta | Aceite (MEDIDO) | Migration | Dependências | Esforço |

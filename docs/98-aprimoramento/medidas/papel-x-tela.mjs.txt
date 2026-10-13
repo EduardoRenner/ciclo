@@ -1,0 +1,72 @@
+import { chromium } from "playwright";
+import { writeFileSync } from "node:fs";
+// APR-039: 15 telas do painel × 5 papéis (dono como referência). Só leitura, banco local.
+const B = "http://localhost:3200";
+const OUT = "C:/Users/Usuario/.claude/code/ciclo-aprimoramento/docs/98-aprimoramento/medidas/";
+const SENHA = process.env.SEED_SENHA ?? "DemoCiclo#2026";
+const [COMANDA, CLIENTE] = process.argv.slice(2);
+const TELAS = [
+  ["Hoje", "/admin/hoje"],
+  ["Agenda", "/admin/agenda"],
+  ["Agenda/novo", "/admin/agenda/novo"],
+  ["Comanda", `/admin/comanda/${COMANDA}`],
+  ["Caixa", "/admin/caixa"],
+  ["Clientes", "/admin/clientes"],
+  ["Ficha", `/admin/clientes/${CLIENTE}`],
+  ["Recuperar", "/admin/recuperar"],
+  ["Campanhas", "/admin/campanhas"],
+  ["Mês", "/admin/mes"],
+  ["Configurações", "/admin/config"],
+  ["Orçamentos", "/admin/orcamentos"],
+  ["Comissão", "/admin/comissao"],
+  ["Estoque", "/admin/estoque"],
+  ["Equipe", "/admin/config/profissionais"],
+];
+const PAPEIS = ["dono", "profissional", "recepcao", "gerente", "financeiro"];
+const b = await chromium.launch({ channel: "chrome" });
+const linhas = [];
+for (const papel of PAPEIS) {
+  const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+  const p = await ctx.newPage();
+  await p.goto(B + "/entrar");
+  await p.fill('input[type="email"]', `${papel}-demo-dom-estilo@ciclo.app`);
+  await p.fill('input[type="password"]', SENHA);
+  await Promise.all([p.waitForURL(/admin|onboarding/, { timeout: 60000 }), p.press('input[type="password"]', "Enter")]);
+  // Links que o menu oferece a este papel (barra de baixo + menu do topo aberto).
+  await p.goto(B + "/admin/hoje", { waitUntil: "networkidle", timeout: 60000 });
+  const menu = new Set(await p.$$eval("nav a[href], header a[href]", (as) => as.map((a) => a.getAttribute("href"))));
+  const botaoMenu = p.locator('header button[aria-label*="enu" i]').first();
+  if (await botaoMenu.count()) {
+    await botaoMenu.click().catch(() => {});
+    await p.waitForTimeout(400);
+    for (const h of await p.$$eval("a[href^='/admin']", (as) => as.map((a) => a.getAttribute("href")))) menu.add(h);
+    await p.keyboard.press("Escape").catch(() => {});
+  }
+  for (const [tela, rota] of TELAS) {
+    const resp = await p.goto(B + rota, { waitUntil: "networkidle", timeout: 60000 }).catch(() => null);
+    const status = resp?.status() ?? 0;
+    const final = new URL(p.url()).pathname;
+    const txt = await p.locator("main").innerText().catch(() => "");
+    const interativos = await p.locator("main a[href], main button:not([disabled]), main input, main select, main textarea").count().catch(() => 0);
+    const proibido = status === 403 || /sem permissão|não tem permissão|não tem acesso|só o dono|acesso restrito/i.test(txt);
+    const erro = status >= 500 || /Algo deu errado|Não consegui carregar/i.test(txt);
+    linhas.push({
+      papel,
+      tela,
+      rota: rota.replace(COMANDA, "[id]").replace(CLIENTE, "[id]"),
+      status,
+      redirecionou: final !== rota ? final : "",
+      ve: !proibido && !erro && final === rota,
+      proibido,
+      erro,
+      reais: (txt.match(/R\$/g) ?? []).length,
+      interativos,
+      noMenu: [...menu].some((h) => h === rota || (rota !== "/admin/hoje" && h?.startsWith(rota))),
+      trecho: txt.replace(/\s+/g, " ").slice(0, 120),
+    });
+  }
+  await ctx.close();
+}
+await b.close();
+writeFileSync(OUT + "papel-x-tela.json", JSON.stringify(linhas, null, 1));
+console.log(JSON.stringify(linhas.map((l) => [l.papel, l.tela, l.status, l.ve ? "vê" : l.proibido ? "403" : l.erro ? "ERRO" : "redir:" + l.redirecionou, "R$" + l.reais, "int" + l.interativos, l.noMenu ? "menu" : "-"].join(" | "))));
