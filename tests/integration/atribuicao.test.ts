@@ -105,7 +105,7 @@ async function criarCampanhaEnviada(clientId: string, sentAtIso: string, campaig
   if (error) throw error
 }
 
-async function criarAssinaturaAtiva(clientId: string) {
+async function criarAssinaturaAtiva(clientId: string, startedOn = '2026-07-01') {
   const plano = await svc
     .from('subscription_plans')
     .insert({ tenant_id: tenantId, name: 'Plano da Atribuição', price_cents: 9_900, sessions_per_month: 4 })
@@ -114,14 +114,23 @@ async function criarAssinaturaAtiva(clientId: string) {
   if (plano.error) throw plano.error
   const { error } = await svc
     .from('client_subscriptions')
-    .insert({ tenant_id: tenantId, client_id: clientId, plan_id: plano.data.id, billing_day: 5, status: 'active' })
+    .insert({ tenant_id: tenantId, client_id: clientId, plan_id: plano.data.id, billing_day: 5, status: 'active', started_on: startedOn })
   if (error) throw error
 }
 
 async function criarPacoteComSaldo(clientId: string, usedSessions: number, totalSessions: number) {
-  const { error } = await svc
+  const { data, error } = await svc
     .from('packages')
     .insert({ tenant_id: tenantId, client_id: clientId, service_id: servicoId, total_sessions: totalSessions, used_sessions: usedSessions, paid_cents: 20_000 })
+    .select('id')
+    .single()
+  if (error) throw error
+  return data.id
+}
+
+/** APR-014: o uso da sessão é o que diz que a visita foi paga pelo pacote — não o saldo de hoje. */
+async function usarSessao(packageId: string, appointmentId: string | null, usedAt: string) {
+  const { error } = await svc.from('package_uses').insert({ tenant_id: tenantId, package_id: packageId, appointment_id: appointmentId, used_at: usedAt })
   if (error) throw error
 }
 
@@ -192,7 +201,7 @@ describe('receitaAtribuidaAoCiclo', () => {
     dinheiro que já estava garantido pela mensalidade.
   */
   it(
-    'assinante ativo do clube: entra na contagem, mas contribui zero pro total',
+    'assinante do clube no dia da visita: entra na contagem, mas contribui zero pro total',
     async () => {
       const cliente = await criarCliente('Assinante Voltou Depois da Campanha')
       await criarAssinaturaAtiva(cliente)
@@ -213,12 +222,13 @@ describe('receitaAtribuidaAoCiclo', () => {
     não gera venda avulsa — a visita consome o crédito já pago.
   */
   it(
-    'pacote com sessão sobrando: entra na contagem, mas contribui zero pro total',
+    'sessão de pacote usada na visita: entra na contagem, mas contribui zero pro total',
     async () => {
       const cliente = await criarCliente('Pacote Voltou Depois da Campanha')
-      await criarPacoteComSaldo(cliente, 1, 5)
+      const pacote = await criarPacoteComSaldo(cliente, 1, 5)
       await criarCampanhaEnviada(cliente, '2026-08-01T13:00:00Z')
       const agendamentoId = await criarAgendamentoConcluido(cliente, '2026-08-05T13:00:00Z', 9_000)
+      await usarSessao(pacote, agendamentoId, '2026-08-05T14:00:00Z')
 
       const resultado = await receitaAtribuidaAoCiclo(svc, tenantId, TZ, '2026-08-01', '2026-08-31')
 
@@ -230,10 +240,10 @@ describe('receitaAtribuidaAoCiclo', () => {
   )
 
   it(
-    'pacote ESGOTADO não zera — volta a contar venda avulsa normalmente',
+    'pacote com saldo, mas sessão NÃO usada nessa visita: conta como venda avulsa',
     async () => {
-      const cliente = await criarCliente('Pacote Esgotado Voltou Depois da Campanha')
-      await criarPacoteComSaldo(cliente, 5, 5)
+      const cliente = await criarCliente('Pacote Sem Uso Voltou Depois da Campanha')
+      await criarPacoteComSaldo(cliente, 1, 5)
       await criarCampanhaEnviada(cliente, '2026-08-01T13:00:00Z')
       const agendamentoId = await criarAgendamentoConcluido(cliente, '2026-08-05T13:00:00Z', 9_000)
 
@@ -241,6 +251,44 @@ describe('receitaAtribuidaAoCiclo', () => {
 
       const item = resultado.items.find((i) => i.appointmentId === agendamentoId)
       expect(item?.valueCents).toBe(9_000)
+    },
+    30_000,
+  )
+
+  /*
+    APR-014 (achado C-03): a regra antiga olhava o saldo de HOJE. Consumir a última sessão do pacote
+    transformava a visita antiga, paga pelo pacote, em "preço cheio" — e o número do Motor subia.
+  */
+  it(
+    'o pacote acabar depois não muda o total já atribuído',
+    async () => {
+      const cliente = await criarCliente('Pacote Que Acabou Depois')
+      const pacote = await criarPacoteComSaldo(cliente, 3, 5)
+      await criarCampanhaEnviada(cliente, '2026-08-01T13:00:00Z')
+      const agendamentoId = await criarAgendamentoConcluido(cliente, '2026-08-05T13:00:00Z', 9_000)
+      await usarSessao(pacote, agendamentoId, '2026-08-05T14:00:00Z')
+
+      const antes = (await receitaAtribuidaAoCiclo(svc, tenantId, TZ, '2026-08-01', '2026-08-31')).items.find((i) => i.appointmentId === agendamentoId)
+      await usarSessao(pacote, null, '2026-08-20T14:00:00Z')
+      await svc.from('packages').update({ used_sessions: 5 }).eq('id', pacote)
+      const depois = (await receitaAtribuidaAoCiclo(svc, tenantId, TZ, '2026-08-01', '2026-08-31')).items.find((i) => i.appointmentId === agendamentoId)
+
+      expect(antes?.valueCents).toBe(0)
+      expect(depois?.valueCents).toBe(0)
+    },
+    30_000,
+  )
+
+  it(
+    'assinatura que começou DEPOIS da visita não zera a visita',
+    async () => {
+      const cliente = await criarCliente('Assinou Depois')
+      await criarAssinaturaAtiva(cliente, '2026-08-20')
+      await criarCampanhaEnviada(cliente, '2026-08-01T13:00:00Z')
+      const agendamentoId = await criarAgendamentoConcluido(cliente, '2026-08-05T13:00:00Z', 9_000)
+
+      const resultado = await receitaAtribuidaAoCiclo(svc, tenantId, TZ, '2026-08-01', '2026-08-31')
+      expect(resultado.items.find((i) => i.appointmentId === agendamentoId)?.valueCents).toBe(9_000)
     },
     30_000,
   )
@@ -317,13 +365,15 @@ describe('registrarCampanha + receitaPorCampanha (migration 0054)', () => {
   )
 
   it(
-    'pacote com sessão sobrando conta como agendamento trazido, mas com receita zero',
+    'visita paga com sessão de pacote conta como agendamento trazido, mas com receita zero',
     async () => {
       const cliente = await criarCliente('Pacote da Campanha')
-      await criarPacoteComSaldo(cliente, 2, 5)
+      const pacote = await criarPacoteComSaldo(cliente, 2, 5)
       const campanha = await registrarCampanha(svc, tenantId, { name: 'Campanha Pacote 0054', segment: 'teste', template: 'Z', clientIds: [cliente] })
 
-      await criarAgendamentoConcluido(cliente, new Date(Date.now() + 3_600_000).toISOString(), 9_000)
+      const quando = new Date(Date.now() + 3_600_000).toISOString()
+      const agendamentoId = await criarAgendamentoConcluido(cliente, quando, 9_000)
+      await usarSessao(pacote, agendamentoId, quando)
 
       const resultado = await receitaPorCampanha(svc, tenantId)
       expect(resultado.get(campanha.id)).toEqual({ bookedCount: 1, revenueCents: 0 })
