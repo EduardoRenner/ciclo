@@ -247,6 +247,17 @@ otp_expiry = 3600
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
 
+# APR-026: recuperação e confirmação por `token_hash` (rota /auth/confirmar), que funcionam aberto
+# em OUTRO navegador. Em produção, o mesmo conteúdo vai no painel do Supabase (Authentication →
+# Email Templates): o config.toml só vale para o Supabase local.
+[auth.email.template.recovery]
+subject = "Criar senha nova no CICLO"
+content_path = "./supabase/templates/recuperar-senha.html"
+
+[auth.email.template.confirmation]
+subject = "Confirme seu e-mail no CICLO"
+content_path = "./supabase/templates/confirmar-cadastro.html"
+
 # Uncomment to customize email template
 # [auth.email.template.invite]
 # subject = "You have been invited"
