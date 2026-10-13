@@ -123,7 +123,9 @@ export function acharTabelas(grade: string[][]): TabelasAchadas {
         ignoradas.push({ origem: i, motivo: 'cabecalho_repetido' })
         continue
       }
-      if (cheias.length >= 1 && TOTAL.test(primeira)) {
+      // "Total" no começo de um CABEÇALHO ("Total de atendimentos" primeiro, colunas em outra ordem)
+      // não é linha de total: total tem número ou vazio do lado, cabeçalho tem texto.
+      if (cheias.length >= 1 && TOTAL.test(primeira) && (cheias.length <= 2 || pareceCabecalho(linha) < 0.5)) {
         ignoradas.push({ origem: i, motivo: 'total' })
         continue
       }

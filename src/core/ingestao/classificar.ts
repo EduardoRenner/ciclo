@@ -46,8 +46,8 @@ const DICIONARIO: Record<Exclude<Campo, 'ignorar' | 'telefone2'>, string[]> = {
   sobrenome: ['sobrenome', 'last name', 'family name', 'apellido', 'ultimo nome'],
   telefone: ['telefone', 'tel', 'fone', 'celular', 'cel', 'whatsapp', 'whats', 'zap', 'wpp', 'contato', 'telefone celular', 'numero', 'mobile', 'mobile phone', 'phone', 'phone 1 value', 'telefone 1', 'telefono', 'movil', 'home phone', 'business phone', 'telefone residencial', 'telefone comercial'],
   email: ['email', 'e mail', 'mail', 'correio eletronico', 'email 1 value', 'e mail address', 'email address', 'e mail 1 value', 'correo'],
-  nascimento: ['nascimento', 'data de nascimento', 'data nascimento', 'aniversario', 'dt nasc', 'nasc', 'birthday', 'birth date', 'fecha de nacimiento', 'cumpleanos'],
-  ultima_visita: ['ultima visita', 'ultimo atendimento', 'ultima compra', 'ultimo servico', 'last visit', 'ultima vez', 'data ultima visita', 'data do ultimo atendimento'],
+  nascimento: ['nascimento', 'dt nascimento', 'data nasc', 'niver', 'data de nascimento', 'data nascimento', 'aniversario', 'dt nasc', 'nasc', 'birthday', 'birth date', 'fecha de nacimiento', 'cumpleanos'],
+  ultima_visita: ['ultima visita', 'ult visita', 'ult atendimento', 'ult compra', 'dt ultima visita', 'dt ult visita', 'ultimo', 'ultima', 'ultimo atendimento', 'ultima compra', 'ultimo servico', 'last visit', 'ultima vez', 'data ultima visita', 'data do ultimo atendimento'],
   data_atendimento: ['data', 'dia', 'data do atendimento', 'data atendimento', 'data agendamento', 'data do servico', 'data da visita', 'date', 'fecha', 'atendido em', 'data e hora'],
   servico: ['servico', 'servicos', 'procedimento', 'procedimentos', 'service', 'servicio', 'tratamento', 'item'],
   profissional: ['profissional', 'colaborador', 'colaboradora', 'barbeiro', 'atendente', 'funcionario', 'cabeleireiro', 'cabeleireira', 'manicure', 'staff', 'grupo', 'responsavel', 'nome do profissional', 'executante'],
@@ -148,8 +148,16 @@ const CANDIDATOS: Campo[] = ['nome', 'sobrenome', 'telefone', 'email', 'nascimen
 function pontuar(p: PerfilDeColuna, cabecalho: string, campo: Campo): number {
   if (campo === 'ignorar' || campo === 'telefone2') return 0
   const cab = pontoDeCabecalho(cabecalho, campo)
-  const con = pontoDeConteudo(p, campo)
+  let con = pontoDeConteudo(p, campo)
   if (cab < 0) return 0
+  // Sobrenome não se deduz do conteúdo: sem cabeçalho dizendo, uma coluna de primeiros nomes (o
+  // profissional, por exemplo) seria colada no nome da ficha.
+  if (campo === 'sobrenome' && cab === 0) return 0
+  // Data do Excel guardada como número: só com cabeçalho de data (sem ele, "Código" viraria data).
+  if ((campo === 'nascimento' || campo === 'ultima_visita' || campo === 'data_atendimento') && cab > 0 && p.fracao.serialDeData >= 0.8) {
+    const antiga = p.fracao.dataAntiga
+    con = Math.max(con, p.fracao.serialDeData * (campo === 'nascimento' ? 0.4 + 0.6 * antiga : 0.4 + 0.6 * (1 - antiga)))
+  }
   if (campo === 'saude' || campo === 'documento') {
     // Fora por cabeçalho OU por conteúdo inequívoco (CPF formatado).
     return campo === 'documento' ? Math.max(cab, con) : cab

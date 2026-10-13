@@ -82,6 +82,19 @@ describe('classificar as colunas pelo conteúdo e pelo nome (CNV-004)', () => {
     expect(campos(c)['Nome da cliente']).toBe('nome')
   })
 
+  it('sem cabeçalho, coluna de primeiros nomes (o profissional) não vira sobrenome colado no nome', () => {
+    const c = classificar(['Maria Souza;11999990001;Bia', 'João Lima;11999990002;Carla', 'Ana Paula;11999990003;Bia', 'Rita Alves;11999990004;Duda'].join('\n'))
+    expect(c.colunas.map((x) => x.campo)).not.toContain('sobrenome')
+  })
+
+  it('data do Excel (número) com cabeçalho de data: reconhecida com confiança alta, sem pergunta à toa', () => {
+    const c = classificar(['Nome;Última visita;Código', 'Maria Souza;46259;10234', 'João Lima;46230;10235', 'Ana Paula;46200;10236'].join('\n'))
+    const visita = c.colunas.find((x) => x.cabecalho === 'Última visita')!
+    expect(visita.campo).toBe('ultima_visita')
+    expect(visita.confianca).toBeGreaterThanOrEqual(0.6)
+    expect(c.colunas.find((x) => x.cabecalho === 'Código')!.campo, 'número de 5 dígitos SEM cabeçalho de data não vira data').toBe('ignorar')
+  })
+
   it('CSV do Google Contatos', () => {
     const c = classificar(
       ['First Name;Last Name;Phone 1 - Value;E-mail 1 - Value;Birthday', 'Maria;Souza;+55 11 99999-0001;maria@exemplo.com;1990-08-15', 'João;Lima;+55 11 99999-0002;joao@exemplo.com;1985-09-02'].join('\n'),

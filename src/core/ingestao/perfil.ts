@@ -23,6 +23,8 @@ export type PerfilDeColuna = {
     decimal: number
     /** Das datas, a fração com ano antes de 2010: nascimento, não visita. */
     dataAntiga: number
+    /** Número que pode ser data do Excel (10000 a 60000 = 1927 a 2064). Só vale com cabeçalho de data. */
+    serialDeData: number
     nomeDePessoa: number
     documento: number
     textoLongo: number
@@ -91,6 +93,7 @@ function ordemDasDatas(valores: string[]): OrdemDeData | null {
 
 /** Ano de uma data dd/mm/aa(aa) ou aaaa-mm-dd; ano de 2 dígitos acima de 30 é 19xx. */
 function anoDe(v: string): number | null {
+  if (/^\d{5}(\.\d+)?$/.test(v)) return 1900 + Math.floor(Number(v) / 365.25)
   const iso = /^(\d{4})-\d{2}-\d{2}/.exec(v)
   if (iso) return Number(iso[1])
   const br = /^\d{1,2}[/.-]\d{1,2}[/.-](\d{2,4})/.exec(v)
@@ -127,6 +130,7 @@ export function perfilarColuna(indice: number, valoresBrutos: readonly string[])
       numero: fracaoTipo('numero'),
       decimal: conta((v) => /^-?\d+[.,]\d{1,2}$/.test(v)),
       dataAntiga: fracaoDeDatasAntigas(cheias),
+      serialDeData: conta((v) => /^\d{5}(\.\d+)?$/.test(v) && Number(v) >= 10_000 && Number(v) <= 60_000),
       nomeDePessoa: conta(pareceNomeDePessoa),
       documento: conta(pareceDocumento),
       textoLongo: conta((v) => v.length > 40 || v.split(/\s+/).length > 6),
