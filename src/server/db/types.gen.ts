@@ -5457,7 +5457,10 @@ export type Database = {
           name: string
         }[]
       }
+      my_full_view_tenant_ids: { Args: never; Returns: string[] }
       my_professional_id: { Args: { t: string }; Returns: string }
+      my_professional_keys: { Args: never; Returns: string[] }
+      my_tenant_ids: { Args: never; Returns: string[] }
       privilegios_report: {
         Args: never
         Returns: {
