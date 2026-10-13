@@ -193,10 +193,12 @@ function diasAtras(n) {
 
 async function semear(cfg, indiceNegocio) {
   const email = `dono-${cfg.slug}@ciclo.app`
-  // APR-037: um login por papel nos negócios com equipe — profissional (ligado ao 1º da equipe) e
-  // recepção. Sem eles, nada do que muda por papel (Hoje, Caixa, comissão) podia ser visto.
+  // APR-037/039: um login por papel nos negócios com equipe — profissional (ligado ao 1º da equipe),
+  // recepção, gerente e financeiro. Sem eles, nada do que muda por papel podia ser visto.
   const emailProfissional = `profissional-${cfg.slug}@ciclo.app`
   const emailRecepcao = `recepcao-${cfg.slug}@ciclo.app`
+  const emailGerente = `gerente-${cfg.slug}@ciclo.app`
+  const emailFinanceiro = `financeiro-${cfg.slug}@ciclo.app`
   const donoNome = cfg.dono ?? cfg.dona
 
   // ── limpeza (roda de novo sem duplicar)
@@ -204,7 +206,7 @@ async function semear(cfg, indiceNegocio) {
   if (antigo) await svc.from('tenants').delete().eq('id', antigo.id)
   const { data: lista } = await svc.auth.admin.listUsers({ perPage: 1000 })
   for (const u of lista?.users ?? []) {
-    if ([email, emailProfissional, emailRecepcao].includes(u.email)) await svc.auth.admin.deleteUser(u.id)
+    if ([email, emailProfissional, emailRecepcao, emailGerente, emailFinanceiro].includes(u.email)) await svc.auth.admin.deleteUser(u.id)
   }
 
   // ── dono + negócio
@@ -285,8 +287,12 @@ async function semear(cfg, indiceNegocio) {
     const idProfissional = await criarLogin(emailProfissional, cfg.equipe[0].nome, 'professional')
     precisa((await svc.from('professionals').update({ user_id: idProfissional }).eq('id', profissionais[1])).error, 'ligar login ao profissional')
     await criarLogin(emailRecepcao, `Recepção ${cfg.nome}`, 'reception')
+    await criarLogin(emailGerente, `Gerência ${cfg.nome}`, 'manager')
+    await criarLogin(emailFinanceiro, `Financeiro ${cfg.nome}`, 'finance')
     logins.profissional = emailProfissional
     logins.recepcao = emailRecepcao
+    logins.gerente = emailGerente
+    logins.financeiro = emailFinanceiro
   }
 
   /*
