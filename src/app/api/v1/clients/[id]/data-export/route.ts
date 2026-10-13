@@ -1,4 +1,4 @@
-import { ipDe } from '@/server/audit/write'
+import { ipDe, writeAudit } from '@/server/audit/write'
 import { exigirPermissao } from '@/server/auth/rbac'
 import { exigirAal2 } from '@/server/auth/session'
 import { contextoAtual } from '@/server/auth/tenant'
@@ -11,7 +11,7 @@ import { UUID } from '@/core/text/uuid'
 type Ctx = { params: Promise<{ id: string }> }
 
 /** §2.7 `GET .../data-export → JSON (direito de acesso/portabilidade)`. */
-export const GET = rota(async (req, params) => {
+export const GET = rota(async (req, params, requestId) => {
   const ctx = await contextoAtual(req)
   /*
     Unidade 10. Era `client:read`, que a RECEPÇÃO tem — e esta rota DECIFRA o cofre e devolve as
@@ -42,11 +42,27 @@ export const GET = rota(async (req, params) => {
   // `withTenant` e não o cliente do usuário: a `0077` tirou `ciphertext`/`iv`/`auth_tag` do
   // `grant select` de `authenticated`, então a leitura do cofre passa pelo service_role — depois
   // da permissão acima, nunca antes. O `tenant_id` segue filtrado na mão dentro do serviço.
-  return withTenant(ctx.tenantId, (db, tenantId) =>
+  const dados = await withTenant(ctx.tenantId, (db, tenantId) =>
     exportarDadosDoCliente(db, tenantId, id, {
       actorId: sessao.userId,
       ip: ipDe(req),
       userAgent: req.headers.get('user-agent')?.slice(0, 400) ?? null,
     }),
   )
+  // CNV-011 (D18): a trilha existia só quando havia ficha de saúde (`vault_access_log`). Exportar os
+  // dados de uma pessoa é ato que se audita sempre — só a contagem, nunca o conteúdo.
+  await writeAudit(
+    {
+      tenantId: ctx.tenantId,
+      actorId: sessao.userId,
+      actorRole: ctx.papel,
+      action: 'client.data_export',
+      entity: 'clients',
+      entityId: id,
+      after: { agendamentos: dados.appointments.length, comandas: dados.tickets.length, saude: dados.healthRecord !== null },
+      requestId,
+    },
+    req,
+  )
+  return dados
 })

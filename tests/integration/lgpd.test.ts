@@ -147,6 +147,33 @@ describe('exportarDadosDoCliente', () => {
     },
     30_000,
   )
+
+  it(
+    'CNV-011 (D18): leva também notas, pontos, créditos, comandas com os itens e pagamentos',
+    async () => {
+      const { clientId } = await clienteCompleto('Exportação Inteira')
+      await svc.from('client_notes').insert({ tenant_id: tenantId, client_id: clientId, body: 'gosta de franja curta' })
+      await svc.from('loyalty_entries').insert({ tenant_id: tenantId, client_id: clientId, points: 45, reason: 'atendimento' })
+      await svc.from('wallet_entries').insert({ tenant_id: tenantId, client_id: clientId, amount_cents: 2_000, reason: 'sinal virou crédito' })
+      const t = await svc.from('tickets').insert({ tenant_id: tenantId, client_id: clientId, status: 'closed', total_cents: 4_500, closed_at: new Date().toISOString() }).select('id').single()
+      if (t.error) throw new Error(`seed tickets: ${t.error.message}`)
+      const servico = (await svc.from('services').select('id').eq('tenant_id', tenantId).limit(1).single()).data!.id
+      const it_ = await svc.from('ticket_items').insert({ tenant_id: tenantId, ticket_id: t.data.id, service_id: servico, description: 'Corte', qty: 1, unit_price_cents: 4_500, total_cents: 4_500 })
+      if (it_.error) throw new Error(`seed ticket_items: ${it_.error.message}`)
+      const pg = await svc.from('payments').insert({ tenant_id: tenantId, client_id: clientId, kind: 'deposit', method: 'pix', status: 'paid', amount_cents: 2_000 })
+      if (pg.error) throw new Error(`seed payments: ${pg.error.message}`)
+
+      const e = await exportarDadosDoCliente(svc, tenantId, clientId, { actorId: null, ip: null, userAgent: null })
+
+      expect(e.notes.map((n) => n.body)).toContain('gosta de franja curta')
+      expect(e.loyalty.map((l) => l.points)).toEqual([45])
+      expect(e.wallet.map((w) => w.amount_cents)).toEqual([2_000])
+      expect(e.tickets).toHaveLength(1)
+      expect((e.tickets[0] as { ticket_items: unknown[] }).ticket_items).toHaveLength(1)
+      expect(e.payments.map((p) => p.kind)).toEqual(['deposit'])
+    },
+    30_000,
+  )
 })
 
 describe('eliminarCliente', () => {
