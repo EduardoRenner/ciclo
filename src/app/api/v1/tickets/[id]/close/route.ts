@@ -2,7 +2,7 @@ import { writeAudit } from '@/server/audit/write'
 import { exigirPermissao } from '@/server/auth/rbac'
 import { contextoAtual } from '@/server/auth/tenant'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
-import { EsquemaFechamento, fecharComanda } from '@/server/services/comanda'
+import { EsquemaFechamento, exigirComandaPropria, fecharComanda } from '@/server/services/comanda'
 import { lerCorpo } from '@/server/http/body'
 import { AppError } from '@/server/http/errors'
 import { rota } from '@/server/http/handler'
@@ -13,13 +13,15 @@ type Ctx = { params: Promise<{ id: string }> }
 
 export const POST = rota(async (req, params, requestId) => {
   const ctx = await contextoAtual(req)
-  exigirPermissao(ctx.papel, 'comanda:own')
+  const escopo = exigirPermissao(ctx.papel, 'comanda:own')
 
   const { id: ticketId } = await (params as Ctx).params
   if (!UUID.test(ticketId)) throw new AppError('NOT_FOUND', { message: 'Essa comanda não existe mais.' })
 
   const entrada = await lerCorpo(req, EsquemaFechamento)
   const db = await criarClienteDoUsuario()
+  // APR-038: o alcance `own` era ignorado aqui, e a RLS deixa o profissional fechar a do colega.
+  if (escopo === 'own') await exigirComandaPropria(db, ctx.tenantId, ticketId)
   // BL-42: `writeAudit` dentro do fechamento — ver o comentário em `wallet/credit/route.ts`.
   const ticket = await comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/tickets/${ticketId}/close` }, async () => {
     const ticket = await fecharComanda(db, ctx.tenantId, ticketId, entrada.paymentMethod)

@@ -5,6 +5,7 @@ import { calcularComissaoItem, calcularSobraDaComanda, calcularTotalItem, calcul
 import { custoDoServico } from '@/core/comanda/custo-do-servico'
 import { custoFixoDoAtendimento, lerCustoFixo } from '@/core/comanda/custo-fixo'
 import { calcularTaxaDaMaquininha, FORMAS_DE_PAGAMENTO, lerTaxasDePagamento, type FormaDePagamento } from '@/core/comanda/taxa-de-pagamento'
+import { withTenant } from '@/server/db/with-tenant'
 import { AppError } from '@/server/http/errors'
 import { congelarMesesFechados } from '@/server/services/caixa'
 import { baixarEstoqueDaComanda, estornarBaixaDaComanda } from '@/server/services/estoque'
@@ -300,6 +301,24 @@ async function resolverCommissionBps(db: Cliente, tenantId: string, item: { serv
 }
 
 /**
+ * APR-038: `comanda:own` é alcance, não verbo (`rbac.ts`). Com `restrict_professional_view`
+ * desligado (o padrão), a RLS deixa o profissional enxergar e atualizar a comanda do colega — quem
+ * segura "só a própria" é esta checagem, com o mesmo `my_professional_id` que a RLS usa.
+ */
+export async function exigirComandaPropria(db: Cliente, tenantId: string, ticketId: string): Promise<void> {
+  const [{ data: eu, error: erroEu }, { data: ticket, error: erroTicket }] = await Promise.all([
+    db.rpc('my_professional_id', { t: tenantId }),
+    db.from('tickets').select('professional_id').eq('tenant_id', tenantId).eq('id', ticketId).maybeSingle(),
+  ])
+  if (erroEu) throw new AppError('INTERNAL', { cause: erroEu })
+  if (erroTicket) throw new AppError('INTERNAL', { cause: erroTicket })
+  if (!ticket) throw new AppError('NOT_FOUND', { message: 'Essa comanda não existe mais.' })
+  if (!eu || ticket.professional_id !== eu) {
+    throw new AppError('FORBIDDEN', { message: 'Só quem atendeu fecha esta comanda. Peça para a recepção ou para o dono.' })
+  }
+}
+
+/**
  * TICKET-042: "fechar congela preço e comissão" — a partir daqui a linha nunca muda, mesmo que o
  * percentual de comissão do profissional ou o preço do serviço mudem depois. `payments`/webhook
  * (TICKET-043) é quem move `closed` pra `paid`; aqui só fecha o carrinho.
@@ -395,7 +414,12 @@ export async function fecharComanda(db: Cliente, tenantId: string, ticketId: str
 
   // §5.6/TICKET-044: baixa DEPOIS de fechar, nunca ao abrir — uma comanda aberta pode ganhar e
   // perder item várias vezes antes de fechar, e nada disso deveria mexer em estoque de verdade.
-  await baixarEstoqueDaComanda(db, tenantId, ticketId)
+  //
+  // APR-038: com o cliente de SERVIÇO. A RLS de `products_update` é só de dono e gerente, e o
+  // profissional fecha a própria comanda com o próprio JWT: o UPDATE do `stock_qty` voltava 0
+  // linhas, o CAS desistia em 5 tentativas e a pessoa via erro com a comanda já fechada. O direito
+  // de baixar ESTE estoque já foi provado acima — o UPDATE da comanda passou pela RLS de quem fecha.
+  await withTenant(tenantId, (svc) => baixarEstoqueDaComanda(svc, tenantId, ticketId))
 
   /*
    * O congelamento do mês fechado (`0071`) pega carona aqui, e o motivo é a regra 6 do `CLAUDE.md`:
