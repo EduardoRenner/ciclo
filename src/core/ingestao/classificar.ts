@@ -4,7 +4,7 @@
  * Quatro sinais, e o CONTEÚDO pesa mais que o cabeçalho: o perfil da coluna (E4), o cabeçalho contra
  * um dicionário PT/EN/ES com sinônimos e Jaro-Winkler, e a decisão da tabela INTEIRA de uma vez — uma
  * coluna só é nome, uma só é o telefone principal, e uma coluna não vira duas coisas (`docs/97`
- * rev. 98, Sato). Defeito D21 da auditoria: "Nome do profissional" virava o nome da cliente e "Total
+ * rev. 98, Sato). Defeito D21 da auditoria: "Nome do profissional" virava o nome de quem é atendido e "Total
  * de atendimentos" virava data, porque o chute antigo era "a primeira coluna cujo nome contém".
  *
  * Duas colunas nunca entram no CICLO, mesmo reconhecidas: documento (CPF/CNPJ: minimização, o Motor não
@@ -42,7 +42,7 @@ const UNICOS: ReadonlySet<Campo> = new Set(['nome', 'sobrenome', 'telefone', 'te
 
 /** Sinônimos normalizados (sem acento, minúsculo). Inclui Google Contatos novo e antigo e Outlook. */
 const DICIONARIO: Record<Exclude<Campo, 'ignorar' | 'telefone2'>, string[]> = {
-  nome: ['nome', 'cliente', 'nome do cliente', 'nome da cliente', 'nome completo', 'nome cliente', 'name', 'full name', 'nombre', 'paciente', 'aluno', 'aluna', 'first name', 'given name', 'primeiro nome'],
+  nome: ['nome', 'cliente', 'nome do cliente', 'nome completo', 'nome cliente', 'name', 'full name', 'nombre', 'paciente', 'aluno', 'aluna', 'first name', 'given name', 'primeiro nome'],
   sobrenome: ['sobrenome', 'last name', 'family name', 'apellido', 'ultimo nome'],
   telefone: ['telefone', 'tel', 'fone', 'celular', 'cel', 'whatsapp', 'whats', 'zap', 'wpp', 'contato', 'telefone celular', 'numero', 'mobile', 'mobile phone', 'phone', 'phone 1 value', 'telefone 1', 'telefono', 'movil', 'home phone', 'business phone', 'telefone residencial', 'telefone comercial'],
   email: ['email', 'e mail', 'mail', 'correio eletronico', 'email 1 value', 'e mail address', 'email address', 'e mail 1 value', 'correo'],

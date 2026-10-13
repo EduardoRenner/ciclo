@@ -77,6 +77,11 @@ describe('classificar as colunas pelo conteúdo e pelo nome (CNV-004)', () => {
     expect(c.colunas.map((x) => x.campo)).toEqual(['nome', 'telefone', 'ultima_visita'])
   })
 
+  it('"Nome da cliente" é reconhecido pela palavra, sem precisar estar no dicionário', () => {
+    const c = classificar(['Nome da cliente;Celular', 'Maria Souza;(11) 99999-0001', 'João Lima;(11) 99999-0002'].join('\n'))
+    expect(campos(c)['Nome da cliente']).toBe('nome')
+  })
+
   it('CSV do Google Contatos', () => {
     const c = classificar(
       ['First Name;Last Name;Phone 1 - Value;E-mail 1 - Value;Birthday', 'Maria;Souza;+55 11 99999-0001;maria@exemplo.com;1990-08-15', 'João;Lima;+55 11 99999-0002;joao@exemplo.com;1985-09-02'].join('\n'),
