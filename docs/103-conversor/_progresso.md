@@ -39,5 +39,25 @@
 
 **Ondas A, B e C concluídas; Onda D com o servidor pronto.** 0128 e 0129 aplicadas só no banco LOCAL. Pendente de prova no navegador (junto com a tela nova, CNV-023, a 390 px): o Worker, o OCR baixando de `/ocr` e o cartão "Tudo do seu negócio".
 
+## Funil da importação (CNV-024)
+
+Eventos em `product_events`, sem dado de pessoa: `importacao_aberta` (origem, formato, nível, pessoas),
+`importacao_retomada`, `importacao_concluida` (origem, formato, fichas), `importacao_desfeita`.
+Taxa de conclusão por origem:
+
+```sql
+select meta->>'origem' as origem,
+       count(*) filter (where event_type = 'importacao_aberta')    as abertas,
+       count(*) filter (where event_type = 'importacao_concluida') as concluidas,
+       round(100.0 * count(*) filter (where event_type = 'importacao_concluida')
+             / nullif(count(*) filter (where event_type = 'importacao_aberta'), 0), 1) as taxa
+from product_events
+where event_type in ('importacao_aberta', 'importacao_concluida')
+group by 1 order by 2 desc;
+```
+
+Ainda não medido: "abriu a tela" e "viu a prévia" (precisam de evento do navegador; não há rota
+genérica de evento, e a prévia mora toda no aparelho).
+
 ## Próximos
 Onda D: CNV-021 prévia com R$ e CNV-023 tela nova sobre `rodarEsteira` (juntos: a prévia mora na tela), 024 funil. Depois Onda E.

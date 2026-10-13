@@ -3,6 +3,7 @@ import { z } from 'zod'
 
 import { instanteDoDiaInformado } from '@/core/tempo/data-informada'
 import { AppError } from '@/server/http/errors'
+import { registrarEvento } from '@/server/services/product-events'
 import { preverEPersistirCiclos, type ClienteComUltimaVisita, type PrevisaoDaBase } from '@/server/services/ciclo-de-quem-ja-atende'
 import { hashTelefone } from '@/server/services/telefone'
 
@@ -103,7 +104,11 @@ export async function abrirLote(db: Db, tenantId: string, userId: string, e: z.i
     })
     .select('id, status, rows_expected, rows_written')
     .single()
-  if (!novo.error) return { lote: paraLote(novo.data), jaExistia: false }
+  if (!novo.error) {
+    // Funil (CNV-024): sem dado de pessoa, só o que diz por onde a base entra e quanto ela é.
+    await registrarEvento(db, tenantId, 'importacao_aberta', { origem: e.origem, formato: e.formato, nivel: e.nivel, pessoas: e.rowsExpected })
+    return { lote: paraLote(novo.data), jaExistia: false }
+  }
   if (novo.error.code !== '23505') throw new AppError('INTERNAL', { cause: novo.error })
 
   const vivo = await db
@@ -114,6 +119,7 @@ export async function abrirLote(db: Db, tenantId: string, userId: string, e: z.i
     .in('status', ['aberto', 'concluido'])
     .maybeSingle()
   if (vivo.error || !vivo.data) throw new AppError('INTERNAL', { cause: vivo.error })
+  await registrarEvento(db, tenantId, 'importacao_retomada', { origem: e.origem, formato: e.formato, status: vivo.data.status })
   return { lote: paraLote(vivo.data), jaExistia: true }
 }
 
@@ -124,20 +130,21 @@ const ERRO_DO_DESFAZER = { IMP01: 'NOT_FOUND', IMP02: 'FORBIDDEN', IMP03: 'CONFL
  * docs/103 CNV-022 · Desfaz o lote em até 7 dias: tira as fichas que ele criou e ninguém usou, mantém
  * as usadas (e diz quantas). Uma transação só, no banco.
  */
-export async function desfazerLote(db: Db, loteId: string): Promise<{ removidas: number; mantidas: number }> {
+export async function desfazerLote(db: Db, tenantId: string, loteId: string): Promise<{ removidas: number; mantidas: number }> {
   const { data, error } = await db.rpc('desfazer_lote_de_importacao', { p_batch: loteId }).single()
   if (error) {
     const codigo = ERRO_DO_DESFAZER[error.code as keyof typeof ERRO_DO_DESFAZER]
     if (codigo) throw new AppError(codigo, { message: error.message, cause: error })
     throw new AppError('INTERNAL', { cause: error })
   }
+  await registrarEvento(db, tenantId, 'importacao_desfeita', { removidas: data.removidas, mantidas: data.mantidas })
   return { removidas: data.removidas, mantidas: data.mantidas }
 }
 
 export async function gravarPedaco(db: Db, tenantId: string, loteId: string, pedaco: z.infer<typeof EsquemaPedaco>): Promise<ResultadoDoPedaco> {
   const { data: lote, error } = await db
     .from('import_batches')
-    .select('id, status, rows_expected, rows_written')
+    .select('id, status, rows_expected, rows_written, origem, formato')
     .eq('id', loteId)
     .eq('tenant_id', tenantId)
     .maybeSingle()
@@ -248,6 +255,10 @@ export async function gravarPedaco(db: Db, tenantId: string, loteId: string, ped
   if (atualizado.error) throw new AppError('INTERNAL', { cause: atualizado.error })
   // Zero linhas: outro envio concluiu o lote no meio deste. O que este gravou já está contado lá.
   const final = atualizado.data ?? { ...lote, rows_written: count ?? lote.rows_written }
+  // Só quem FECHOU o lote conta a conclusão: o envio que perdeu a corrida não duplica o evento.
+  if (atualizado.data?.status === 'concluido') {
+    await registrarEvento(db, tenantId, 'importacao_concluida', { origem: lote.origem, formato: lote.formato, fichas: atualizado.data.rows_written })
+  }
 
   return {
     gravadas: criadas.length,

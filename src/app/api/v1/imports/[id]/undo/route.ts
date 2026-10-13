@@ -23,7 +23,7 @@ export const POST = rota(async (req, params, requestId) => {
   const db = await criarClienteDoUsuario()
 
   return comIdempotencia(req, { tenantId: ctx.tenantId, endpoint: `/api/v1/imports/${id}/undo` }, async () => {
-    const resultado = await desfazerLote(db, id)
+    const resultado = await desfazerLote(db, ctx.tenantId, id)
     await writeAudit(
       {
         tenantId: ctx.tenantId,

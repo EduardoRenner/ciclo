@@ -167,7 +167,7 @@ describe('desfazer a importação (CNV-022) — como a dona, contra o banco loca
     const { data: usada } = await svc.from('clients').select('id').eq('import_batch_id', lote.id).eq('import_row', 3).single()
     await svc.from('client_notes').insert({ tenant_id: tenantId, client_id: usada!.id, body: 'Prefere o fim da tarde.' })
 
-    expect(await desfazerLote(dona, lote.id)).toEqual({ removidas: 2, mantidas: 1 })
+    expect(await desfazerLote(dona, tenantId, lote.id)).toEqual({ removidas: 2, mantidas: 1 })
 
     const { data: fichas } = await svc.from('clients').select('import_row, deleted_at').eq('import_batch_id', lote.id).order('import_row')
     expect(fichas?.map((f) => [f.import_row, f.deleted_at === null])).toEqual([[1, false], [2, false], [3, true]])
@@ -185,15 +185,15 @@ describe('desfazer a importação (CNV-022) — como a dona, contra o banco loca
     const abrirComo = (db: typeof dona) => abrirLote(db, tenantId, userId, { fileSha256: createHash('sha256').update(randomUUID()).digest('hex'), formato: 'csv', origem: 'arquivo', nivel: 'N1', counts: contagens, rowsExpected: 1 })
 
     const a = await abrirComo(dona)
-    await desfazerLote(dona, a.lote.id)
-    await expect(desfazerLote(dona, a.lote.id)).rejects.toMatchObject({ code: 'CONFLICT' })
+    await desfazerLote(dona, tenantId, a.lote.id)
+    await expect(desfazerLote(dona, tenantId, a.lote.id)).rejects.toMatchObject({ code: 'CONFLICT' })
 
     const velho = await abrirComo(dona)
     await svc.from('import_batches').update({ created_at: new Date(Date.now() - 8 * 86_400_000).toISOString() }).eq('id', velho.lote.id)
-    await expect(desfazerLote(dona, velho.lote.id)).rejects.toMatchObject({ code: 'CONFLICT', message: expect.stringMatching(/7 dias/) })
+    await expect(desfazerLote(dona, tenantId, velho.lote.id)).rejects.toMatchObject({ code: 'CONFLICT', message: expect.stringMatching(/7 dias/) })
 
     const doProfissional = await abrirComo(dona)
-    await expect(desfazerLote(await entrarComo('profissional'), doProfissional.lote.id)).rejects.toMatchObject({ code: 'FORBIDDEN' })
+    await expect(desfazerLote(await entrarComo('profissional'), tenantId, doProfissional.lote.id)).rejects.toMatchObject({ code: 'FORBIDDEN' })
     const { data } = await svc.from('import_batches').select('status').eq('id', doProfissional.lote.id).single()
     expect(data?.status).toBe('aberto')
   })
@@ -217,5 +217,24 @@ describe('o R$ da prévia é o que a Hoje soma depois de gravar (CNV-021)', () =
     const { data: fichas } = await svc.from('clients').select('id').eq('import_batch_id', lote.id)
     const { data: ciclos } = await svc.from('client_cycles').select('value_at_risk_cents').in('client_id', fichas!.map((f) => f.id))
     expect(ciclos!.reduce((s, c) => s + c.value_at_risk_cents, 0)).toBe(previa.valorCents)
+  })
+})
+
+describe('funil da importação (CNV-024): a taxa de conclusão por origem sai do banco', () => {
+  it('aberta, retomada, concluída e desfeita viram eventos, sem nome nem telefone', async () => {
+    const desde = new Date().toISOString()
+    const dona = await entrarComo('dona')
+    const hash = createHash('sha256').update(randomUUID()).digest('hex')
+    const e = { fileSha256: hash, formato: 'vcard', origem: 'contatos' as const, nivel: 'N1' as const, counts: contagens, rowsExpected: 1 }
+    const { lote } = await abrirLote(dona, tenantId, userId, e)
+    await abrirLote(dona, tenantId, userId, e)
+    await gravarPedaco(dona, tenantId, lote.id, { linhas: [{ linha: 1, nome: 'Nina Funil', telefone: `+551194${String(Date.now()).slice(-7)}`, etiquetas: [] }], ultimo: true })
+    await desfazerLote(dona, tenantId, lote.id)
+
+    const { data } = await svc.from('product_events').select('event_type, meta').eq('tenant_id', tenantId).like('event_type', 'importacao_%').gte('created_at', desde).order('created_at')
+    const destes = data ?? []
+    expect(destes.map((x) => x.event_type)).toEqual(['importacao_aberta', 'importacao_retomada', 'importacao_concluida', 'importacao_desfeita'])
+    expect(destes[2]!.meta).toEqual({ origem: 'contatos', formato: 'vcard', fichas: 1 })
+    expect(JSON.stringify(destes), 'evento do funil não leva dado de pessoa').not.toMatch(/Nina|\+55/)
   })
 })
