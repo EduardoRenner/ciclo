@@ -123,6 +123,16 @@ export function acharTabelas(grade: string[][]): TabelasAchadas {
   let grupo: string | null = null
 
   for (const bloco of blocos(grade)) {
+    // Linha em branco no meio da lista NÃO abre tabela nova: só fecha a anterior se este bloco começa
+    // com cabeçalho (na 1ª linha, ou na 2ª depois de um título). Antes, toda linha em branco fechava a
+    // tabela, e quem vinha depois dela virava "outra tabela" e sumia da importação (Onda E, achado ao
+    // provar o D4 com ";;" no meio da lista).
+    const abreTabelaNova = [bloco.inicio, bloco.inicio + 1].some((k) => k <= bloco.fim && pareceCabecalho(grade[k]!) >= 0.5 && fracaoConhecida(grade[k]!) >= 0.5)
+    if (abreTabelaNova || (tabelaAberta && preenchidas(grade[bloco.inicio]!).length > tabelaAberta.cabecalho.length)) {
+      tabelaAberta = null
+      cabecalhoAtual = null
+      grupo = null
+    }
     // Lista ESPARSA (nome sem telefone, telefone sem nome): linhas de uma célula só são dado, não nome
     // de grupo. O que denuncia: célula solitária fora da primeira coluna, ou duas solitárias seguidas.
     // Relatório agrupado põe o rótulo sempre na primeira coluna, seguido de linhas cheias.
@@ -226,10 +236,6 @@ export function acharTabelas(grade: string[][]): TabelasAchadas {
       }
       tabelaAberta.linhas.push({ origem: i, celulas })
     }
-    // Bloco acabou: a próxima tabela precisa de cabeçalho próprio ou abre sem cabeçalho.
-    tabelaAberta = null
-    cabecalhoAtual = null
-    grupo = null
   }
 
   ignoradas.sort((a, b) => a.origem - b.origem)
