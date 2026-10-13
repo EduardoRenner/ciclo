@@ -140,6 +140,9 @@ export type Classificacao = {
   avisos: ('saude_fora' | 'documento_descartado' | 'data_ambigua' | 'sem_nome' | 'sem_contato')[]
 }
 
+/** "Situação" e "Motivo": as colunas que `planilhaAnotada` acrescenta. Relidas, são ignoradas. */
+export const COLUNAS_DA_ANOTACAO: ReadonlySet<string> = new Set(['situacao', 'motivo'])
+
 const CANDIDATOS: Campo[] = ['nome', 'sobrenome', 'telefone', 'email', 'nascimento', 'ultima_visita', 'data_atendimento', 'servico', 'profissional', 'valor', 'observacao', 'etiquetas', 'genero', 'origem', 'documento', 'saude']
 
 function pontuar(p: PerfilDeColuna, cabecalho: string, campo: Campo): number {
@@ -162,7 +165,11 @@ function pontuar(p: PerfilDeColuna, cabecalho: string, campo: Campo): number {
  */
 export function classificarColunas(perfis: readonly PerfilDeColuna[], cabecalho: readonly string[], valores: (indice: number) => readonly string[]): Classificacao {
   const pares: { indice: number; campo: Campo; pontos: number }[] = []
-  for (const p of perfis) for (const campo of CANDIDATOS) pares.push({ indice: p.indice, campo, pontos: pontuar(p, cabecalho[p.indice] ?? '', campo) })
+  for (const p of perfis) {
+    // As colunas que a própria esteira escreve na planilha anotada nunca viram dado da ficha.
+    if (COLUNAS_DA_ANOTACAO.has(normalizarTexto(cabecalho[p.indice] ?? ''))) continue
+    for (const campo of CANDIDATOS) pares.push({ indice: p.indice, campo, pontos: pontuar(p, cabecalho[p.indice] ?? '', campo) })
+  }
   pares.sort((a, b) => b.pontos - a.pontos)
 
   const escolhido = new Map<number, { campo: Campo; pontos: number }>()

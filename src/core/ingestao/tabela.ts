@@ -11,7 +11,7 @@
  * isso a prévia deixa ajustar o retângulo, e o resultado diz `confianca`.
  */
 
-export type MotivoIgnorada = 'vazia' | 'titulo' | 'filtro' | 'cabecalho' | 'cabecalho_repetido' | 'grupo' | 'total' | 'rodape'
+export type MotivoIgnorada = 'vazia' | 'titulo' | 'filtro' | 'cabecalho' | 'cabecalho_repetido' | 'grupo' | 'total' | 'rodape' | 'outra_tabela'
 
 export type LinhaDeDados = { origem: number; celulas: string[] }
 
