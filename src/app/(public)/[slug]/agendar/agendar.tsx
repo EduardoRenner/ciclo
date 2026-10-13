@@ -662,7 +662,7 @@ export default function Agendar({
             // A recarga vem ANTES do aviso: ela limpa o erro, e o aviso tem que ficar na tela.
             buscarDisponibilidade(dia);
             setErro(
-              "Esse horário acabou de ser marcado por outra pessoa. Seu nome e telefone continuam aqui.",
+              "Esse horário acabou de ser marcado por outra pessoa. Escolha outro: seu nome e telefone já ficam guardados.",
             );
             setAlternativas(json.error.details?.alternatives ?? []);
             requestAnimationFrame(() => {
