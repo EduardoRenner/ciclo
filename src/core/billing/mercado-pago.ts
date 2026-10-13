@@ -78,6 +78,32 @@ export function acessoPagoVigente(assinatura: Pick<AssinaturaDoTenant, 'status' 
   return Number.isFinite(ate) && agora.getTime() < ate
 }
 
+/**
+ * APR-027b (C-06): o degrau PAGO que vale agora. `tenants.plan` só cai quando o cron `expirar-graca`
+ * roda — e ele ficou sem gatilho: assinatura pausada com a graça vencida, ou cancelada com o período
+ * pago encerrado, continuava no degrau pago para sempre. Comparar a data a cada leitura faz o degrau
+ * cair na hora certa sem depender de cron nenhum; o cron passa a ser só quem GRAVA a queda e audita.
+ *
+ * As mesmas duas regras de `expirarGracaVencida`, e nada além: `paused` sem `graca_ate` e data
+ * ilegível NÃO derrubam ninguém (lá, `new Date(lixo) <= agora` também é falso) — derrubar quem pagou
+ * por um dado torto é o erro mais caro desta função.
+ */
+export function planoPagoEmVigor(
+  plano: PlanoTier,
+  assinatura: Pick<AssinaturaDoTenant, 'status' | 'graca_ate' | 'acesso_ate'> | null,
+  agora: Date,
+): PlanoTier {
+  if (!assinatura || plano === 'gratis') return plano
+  const venceu = (iso: string | null | undefined) => {
+    if (!iso) return false
+    const t = new Date(iso).getTime()
+    return Number.isFinite(t) && t <= agora.getTime()
+  }
+  if (assinatura.status === 'paused' && venceu(assinatura.graca_ate)) return 'gratis'
+  if (assinatura.status === 'cancelled' && venceu(assinatura.acesso_ate)) return 'gratis'
+  return plano
+}
+
 export type DecisaoDePlano = {
   /** O degrau que `tenants.plan` deve passar a ter. */
   plano: PlanoTier

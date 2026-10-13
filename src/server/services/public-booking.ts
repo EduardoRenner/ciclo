@@ -15,7 +15,7 @@ import { urlDaVitrine } from '@/core/text/vitrine'
 import { withNovoTenant } from '@/server/db/with-tenant'
 import { listarExpediente } from '@/server/services/expediente'
 import { lerConfiguracoesAgenda } from '@/server/services/configuracoes-agenda'
-import { negocioEstaPausado, normalizarPlano, paginaIndisponivel } from '@/server/services/planos'
+import { negocioEstaPausado, paginaIndisponivel, planoPagoDoTenant } from '@/server/services/planos'
 import { lerSite } from '@/server/services/site'
 import { normalizarTelefoneBR } from '@/server/services/telefone'
 import { criarAgendamento } from '@/server/services/agendamentos'
@@ -230,10 +230,10 @@ export const perfilPublico = cache(async (slug: string): Promise<PerfilPublico> 
       logoUrl: urlDaVitrine(site.logoKey),
       coverUrl: urlDaVitrine(site.coverKey),
       accentColor: { acc, acc2: ACENTO_PADRAO.acc2 === acc ? acc : misturarComBranco(acc, 0.3) },
-      // `remover_selo` é capacidade do primeiro degrau pago (§D.3). `normalizarPlano` cobre a
-      // janela em que o banco ainda responde os nomes anteriores à migration 0040.
+      // `remover_selo` é capacidade do primeiro degrau pago (§D.3). `planoPagoDoTenant` cobre a janela
+      // em que o banco ainda responde os nomes anteriores à migration 0040, e a graça vencida (APR-027b).
       mostrarSelo: podeUsarCapacidade(
-        { plano: normalizarPlano(tenant.plan), eixos: {} },
+        { plano: planoPagoDoTenant(tenant.plan, tenant.settings), eixos: {} },
         'remover_selo',
       ).estado !== 'liberado',
       hours: horarioPadrao.map((h) => ({ weekday: h.weekday, opensAt: h.opens_at, closesAt: h.closes_at })),

@@ -10,7 +10,7 @@ import { UUID } from '@/core/text/uuid'
 import { exigirSessao, type Sessao } from '@/server/auth/session'
 import { criarClienteDoUsuario } from '@/server/db/server-client'
 import { AppError } from '@/server/http/errors'
-import { exigirContaQueEscreve } from '@/server/services/planos'
+import { exigirContaQueEscreve, planoPagoDoTenant } from '@/server/services/planos'
 
 import type { Papel } from '@/server/auth/rbac'
 
@@ -47,6 +47,9 @@ export type DadosDoTenant = {
    * a faixa do painel (docs/87 §3.1) precisa dizer a data de fim em TODA tela, e uma ida extra ao
    * banco por tela é o que o `docs/28` passou um mês desfazendo. Extrair uma chave de jsonb não
    * muda o argumento acima contra trazer `settings` inteiro.
+   *
+   * APR-027b: já com a graça e o período pago lidos na hora (`planoPagoDoTenant`, a partir da chave
+   * `settings.assinatura`) — a faixa do painel e a trava da pausa não esperam o cron gravar a queda.
    */
   plan: string
   cortesia: unknown
@@ -86,7 +89,7 @@ const vinculosAtivos = cache(async function vinculosAtivos(userId: string) {
   const db = await criarClienteDoUsuario()
   const { data, error } = await db
     .from('memberships')
-    .select('tenant_id, role, tenants(name, slug, timezone, vertical, vocab_override, plan, cortesia:settings->cortesia, professions(vocab, pacote))')
+    .select('tenant_id, role, tenants(name, slug, timezone, vertical, vocab_override, plan, cortesia:settings->cortesia, assinatura:settings->assinatura, professions(vocab, pacote))')
     .eq('user_id', userId)
     .eq('active', true)
   if (error) throw new AppError('INTERNAL', { cause: error })
@@ -107,6 +110,7 @@ type TenantBruto = {
   vocab_override: unknown
   plan: string
   cortesia: unknown
+  assinatura: unknown
   professions: { vocab: unknown; pacote: string } | null
 }
 
@@ -117,7 +121,7 @@ function dadosDoTenant(bruto: TenantBruto | null): DadosDoTenant {
     slug: bruto.slug,
     timezone: bruto.timezone,
     vertical: bruto.vertical,
-    plan: bruto.plan,
+    plan: planoPagoDoTenant(bruto.plan, { assinatura: bruto.assinatura }),
     cortesia: bruto.cortesia,
     // `professions` vem `null` em tenant sem profissao escolhida; `resolverVocabulario` trata
     // ausencia como padrao, entao nao existe caminho em que a tela fique sem palavra.
