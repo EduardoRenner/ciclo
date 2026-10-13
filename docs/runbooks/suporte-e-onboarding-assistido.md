@@ -179,15 +179,24 @@ tudo numa sentada, com o dono na chamada.
    > rápida. Depois eu apago o arquivo do meu aparelho.
 2. **Entre na conta com o dono presente.** Ele digita o próprio login. Nunca peça senha por mensagem,
    nunca guarde login de ninguém. (Sobre o acesso de suporte, ver "Antes de usar", item 2.)
-3. **Deixe o arquivo pronto.** O importador lê **CSV**, não `.xlsx`. No Excel: Arquivo, Salvar como,
-   "CSV UTF-8". Até 5 MB e 5.000 linhas. Caderno ou lista digitada: digite ou cole em "Quem você já atende, Colar uma
-   lista".
-4. **Importe.** Clientes, "Importar". Escolha a coluna do **nome** (obrigatória), do telefone e da
-   **última visita**. Depois escolha "Que serviço essas pessoas fazem com você?", porque é o ritmo
-   desse serviço que o Motor usa. Confira a prévia e importe.
-5. **Leia o resultado com o dono.** Anote **quantos passaram da hora** e o valor. Se aparecer "clientes
-   entraram sem a última visita", a data estava fora do formato: corrija para 15/08/2026 e importe
-   de novo só essas linhas.
+3. **Use o arquivo como ele veio.** A tela lê planilha do Excel ou do Google, CSV, contatos do
+   celular (.vcf), conversa exportada do WhatsApp, PDF (inclusive escaneado), Word, print e foto. Não
+   precisa converter nada. Excel antigo (.xls) e Numbers são a exceção: a tela diz como salvar. Caderno
+   escrito à mão: a leitura de imagem não lê letra de mão; digitem juntos em "Ou cole a lista", uma
+   pessoa por linha.
+4. **Importe.** Clientes, "Importar", "Escolher arquivo, print ou foto". A leitura acontece no
+   aparelho do dono; nada é gravado antes de ele conferir. Responda o que a tela perguntar (DDD de
+   quem veio sem DDD, se a data é dia/mês ou mês/dia, qual tabela quando o arquivo tem mais de uma) e
+   escolha "Que serviço essas pessoas fazem com você?", porque é o ritmo e o preço desse serviço que o
+   Motor usa. Print e foto entram sempre marcados para conferir: leia os telefones com o dono, dígito
+   a dígito.
+5. **Leia o resultado com o dono.** A prévia já mostra **quantos passaram da hora**, o valor e quem
+   chamar primeiro, antes de gravar. Se houver linhas em "Ficaram de fora", toque em "Baixar a
+   planilha com o motivo de cada linha", corrija só as marcadas como "corrigir", **apague as que
+   entraram** e importe esse arquivo menor. Reimportar o arquivo inteiro depois de mexer nele duplica
+   quem está sem telefone (com telefone, a ficha que já existe é mantida). Mandar o MESMO arquivo de
+   novo, sem mexer, não duplica nada: continua de onde parou. Importou errado? "Desfazer esta
+   importação" vale por 7 dias e só tira quem ainda não foi usado.
 6. **Faça a primeira chamada junto.** "Recuperar receita", um nome, "Chamar". Uma basta.
 7. **Apague a planilha.** Na mesma hora, sem deixar para depois:
    - a mensagem com o arquivo ou a foto no WhatsApp ("Apagar para mim");
@@ -219,14 +228,16 @@ Textos como aparecem na tela hoje. Se mudarem no código, mude aqui.
 
 | O que aparece | O que aconteceu | O que responder |
 |---|---|---|
-| "Esse arquivo é uma planilha do Excel, e o importador lê CSV..." | Subiu um `.xlsx` | "No Excel: Arquivo, Salvar como, escolhe CSV UTF-8, e sobe o arquivo novo. No Google Planilhas: Arquivo, Fazer download, valores separados por vírgula." |
-| "Arquivo maior que 5 MB." ou "Envie no máximo 5000 linhas por vez." | Base grande | "Divide em duas planilhas e sobe uma de cada vez." |
-| "Não consegui identificar as colunas. Confira se é um CSV separado por vírgula." | Arquivo que não é planilha, ou colunas sem separador | "Abre no Excel, salva de novo como CSV UTF-8 e sobe." |
-| "O arquivo está vazio ou sem cabeçalho." | Falta a primeira linha com o nome das colunas | "A primeira linha precisa ter os títulos, tipo Nome, Telefone, Última visita." |
-| "N clientes entraram sem a última visita: a data da planilha não estava num formato que eu reconheço." | Data escrita de outro jeito | "Os clientes entraram, mas sem data o CICLO não calcula. Escreve a data como 15/08/2026 e importa de novo só essas linhas." |
-| "Nome em branco." / "Telefone inválido" | Linha com defeito, só ela é pulada | "Essas linhas ficaram de fora. Corrige na planilha e sobe só elas." |
-| "Já existe uma ficha com esse telefone." | Cliente repetido, ou a base já entrou antes | "Não é erro. A ficha que já existe foi mantida." |
-| Recuperar receita vazio, ou "ninguém atrasado", logo depois de importar | Importou sem a data da última visita, ou todo mundo veio há pouco | "O CICLO só mostra quem sumiu com a data. Preenche a última visita e importa de novo." |
+| "Planilha do Excel antigo (.xls): abra no Excel e salve como .xlsx..." | Arquivo .xls do Excel 97-2003 | "Abre no Excel, Salvar como, Pasta de Trabalho do Excel (.xlsx), e manda de novo." |
+| "Foto no formato do iPhone (HEIC)..." | Foto direto da galeria do iPhone | "Tira um print da foto e manda o print." |
+| "Este PDF é uma imagem escaneada e não consegui ler o texto..." | Escaneado ilegível (torto, escuro, manuscrito) | "Me manda a planilha original, ou a gente digita junto colando a lista." |
+| "Não consegui ler texto nesta imagem..." | Print borrado, cortado ou pequeno | "Tira o print de novo, sem cortar, com a lista inteira na tela." |
+| "O arquivo está corrompido ou incompleto..." | Download pela metade, arquivo danificado | "Abre no computador, salva de novo e manda." |
+| "Esta planilha tem macro..." / "...protegida por senha" | .xlsm, ou planilha com senha | "Salva como .xlsx comum, sem senha, e manda." |
+| "Ficaram de fora": "Linha sem nome" / "Atendimento sem data válida" | Linha com defeito, só ela fica de fora | "Baixa a planilha com o motivo, corrige só essas, apaga as que entraram e importa esse arquivo." |
+| "Já existe uma ficha com esse telefone." (no resultado) | Cliente repetido, ou a base já entrou antes | "Não é erro. A ficha que já existe foi mantida." |
+| "Este arquivo já tinha sido importado. Nada foi gravado em dobro." | Mandou o mesmo arquivo de novo | "Está tudo lá. Se quer refazer, desfaz a importação antes (até 7 dias)." |
+| Recuperar receita vazio, ou "ninguém atrasado", logo depois de importar | Importou sem a data da última visita, ou todo mundo veio há pouco | "O CICLO só mostra quem sumiu com a data. Em Quem você já atende, marca quando cada pessoa veio pela última vez." (Não reimportar: quem está sem telefone entraria duplicado.) |
 | "E-mail ou senha não conferem." | Senha errada, **ou** e-mail ainda não confirmado (a tela não diz qual, de propósito) | "Procura no e-mail o link de confirmação, olha o spam. Se não achar, toca em Esqueci minha senha." |
 | "Não consegui verificar seu acesso agora. Não é problema com a sua senha, tente de novo em instantes." | Falha do nosso lado no acesso | "Não é a senha. Tenta de novo daqui a pouco. Se repetir, me manda um print e a hora." |
 | "Esse link não vale mais: eles expiram e só funcionam no aparelho em que você pediu." | Link de senha vencido ou aberto em outro aparelho | "Pede outro e abre no mesmo aparelho em que pediu." |
