@@ -53,6 +53,8 @@ const PALAVRAS_DE_CABECALHO =
 
 /** Filtro é "rótulo: valor" ("Período: 01/01 a 30/09", "Unidade: Centro") ou "Gerado em …". Título é o resto. */
 const FILTRO = /^([^:]{1,40}:\s*\S|(gerado|emitido|impresso) em\b)/i
+/** O que rodapé de relatório costuma dizer. */
+const RODAPE = /\b(gerado|emitido|impresso|sistema|p[aá]gina|relat[oó]rio|software|vers[aã]o)\b|www\.|https?:|©/i
 const TOTAL = /^(total|totais|soma|subtotal|total geral|quantidade de|qtd\.? total|registros|n[uú]mero de registros)\b/i
 const GRUPO = /^(profissional|colaborador|funcion[aá]rio|atendente|unidade|filial|barbeiro|cabeleireir[oa]|m[eê]s|dia|data)\s*:\s*(.+)$/i
 
@@ -115,6 +117,16 @@ export function acharTabelas(grade: string[][]): TabelasAchadas {
   let grupo: string | null = null
 
   for (const bloco of blocos(grade)) {
+    // Lista ESPARSA (nome sem telefone, telefone sem nome): linhas de uma célula só são dado, não nome
+    // de grupo. O que denuncia: célula solitária fora da primeira coluna, ou duas solitárias seguidas.
+    // Relatório agrupado põe o rótulo sempre na primeira coluna, seguido de linhas cheias.
+    let esparsa = false
+    for (let i = bloco.inicio; i <= bloco.fim; i++) {
+      const linha = grade[i]!
+      if (preenchidas(linha).length !== 1) continue
+      const coluna = linha.findIndex((c) => c.trim() !== '')
+      if (coluna > 0 || (i < bloco.fim && preenchidas(grade[i + 1]!).length === 1)) esparsa = true
+    }
     for (let i = bloco.inicio; i <= bloco.fim; i++) {
       const linha = grade[i]!
       const cheias = preenchidas(linha)
@@ -137,7 +149,7 @@ export function acharTabelas(grade: string[][]): TabelasAchadas {
         continue
       }
       // Linha solta (uma célula) no meio de uma tabela aberta: nome de grupo sem rótulo ("Ana").
-      if (cheias.length === 1 && tabelaAberta && tipoDaCelula(primeira) === 'texto' && larguraTipica >= 2 && i < bloco.fim) {
+      if (!esparsa && cheias.length === 1 && tabelaAberta && tipoDaCelula(primeira) === 'texto' && larguraTipica >= 2 && i < bloco.fim) {
         const proxima = grade[i + 1]!
         if (preenchidas(proxima).length >= 2) {
           grupo = primeira
@@ -178,9 +190,13 @@ export function acharTabelas(grade: string[][]): TabelasAchadas {
       }
 
       if (!largaOBastante && cheias.length <= 1) {
-        // Depois que os dados acabaram, linha estreita é rodapé ("Gerado pelo Sistema X").
-        ignoradas.push({ origem: i, motivo: tabelaAberta.linhas.length > 0 ? 'rodape' : FILTRO.test(primeira) ? 'filtro' : 'titulo' })
-        continue
+        // Linha de uma célula com a tabela aberta: rodapé só se tiver cara de rodapé ("Gerado pelo
+        // Sistema X") ou de filtro. Senão é DADO de uma lista esparsa (nome sem telefone) — antes ela
+        // sumia como "rodapé", e uma lista de nomes inteira virava zero pessoas.
+        if (RODAPE.test(primeira) || FILTRO.test(primeira) || tabelaAberta.linhas.length === 0 && !esparsa) {
+          ignoradas.push({ origem: i, motivo: tabelaAberta.linhas.length > 0 ? 'rodape' : FILTRO.test(primeira) ? 'filtro' : 'titulo' })
+          continue
+        }
       }
 
       const celulas = linha.map((c) => c.trim())

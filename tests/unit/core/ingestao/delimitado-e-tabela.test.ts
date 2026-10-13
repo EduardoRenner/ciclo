@@ -120,6 +120,15 @@ describe('achar a tabela (CNV-003, defeito D3 da auditoria)', () => {
     contaFecha(r)
   })
 
+  it('lista esparsa (nome sem telefone): linha de uma célula é dado, não rodapé nem nome de grupo', () => {
+    const { grade } = gradeDeTexto(['Nome;Telefone', 'Maria Souza;', 'João Lima;11999990002', 'Ana Paula;', ';11988880003', 'Gerado pelo Sistema X'].join('\n'))
+    const r = acharTabelas(grade)
+    expect(r.tabelas[0]!.linhas.map((l) => l.celulas[0])).toEqual(['Maria Souza', 'João Lima', 'Ana Paula', ''])
+    expect(r.tabelas[0]!.colunaDeGrupo).toBeNull()
+    expect(r.ignoradas.map((i) => i.motivo)).toEqual(['cabecalho', 'rodape'])
+    contaFecha(r)
+  })
+
   it('dados sem cabeçalho: nomes genéricos e confiança menor, sem perder a primeira linha', () => {
     const { grade } = gradeDeTexto(['Maria;11999990001;15/08/2026', 'João;11999990002;16/08/2026'].join('\n'))
     const r = acharTabelas(grade)

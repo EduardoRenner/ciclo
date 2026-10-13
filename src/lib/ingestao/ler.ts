@@ -12,6 +12,7 @@ import { gradeDeTexto } from '@/core/ingestao/delimitado'
 import { farejarFormato, type Formato } from '@/core/ingestao/formato'
 import { gradeDeJson } from '@/core/ingestao/json'
 import { gradeDeVcard } from '@/core/ingestao/vcard'
+import { gradeDeConversa, pareceConversaDoWhatsApp } from '@/core/ingestao/whatsapp'
 
 export type Aba = { nome: string; grade: string[][] }
 
@@ -43,6 +44,11 @@ export async function lerParaGrades(bytes: Uint8Array, nome: string): Promise<Li
     case 'texto': {
       const d = decodificar(bytes)
       const avisos = d.corrigidoDuploUtf8 ? ['Acentos estavam trocados ("JoÃ£o"): consertei.'] : []
+      if (pareceConversaDoWhatsApp(d.texto)) {
+        const c = gradeDeConversa(d.texto)
+        avisos.push(`Conversa do WhatsApp: ${c.mensagens} mensagens, ${c.grade.length - 1} pessoas. Quem aparece só pelo número fica para você dar o nome.`)
+        return { ok: true, formato: 'texto', abas: [{ nome, grade: c.grade }], avisos }
+      }
       return { ok: true, formato: 'texto', abas: [{ nome, grade: gradeDeTexto(d.texto).grade }], avisos }
     }
     case 'json': {
