@@ -1,6 +1,9 @@
 import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
 
+/** Páginas públicas com token de UMA pessoa (APR-031). A guarda confere contra as pastas `[token]`. */
+export const ROTAS_COM_TOKEN = ["confirmar", "avaliar", "orcamento", "lista-espera", "convite"];
+
 const nextConfig: NextConfig = {
   /**
    * Identificador de build exposto ao cliente (docs/13-CAUSA-RAIZ-LAYOUT-LEGADO.md
@@ -23,6 +26,14 @@ const nextConfig: NextConfig = {
    */
   env: {
     NEXT_PUBLIC_BUILD_ID: process.env.VERCEL_GIT_COMMIT_SHA || process.env.VERCEL_URL || "dev",
+  },
+  /*
+   * APR-031 (achado G-05): as páginas com token mostram negócio, serviço e horário de UMA pessoa.
+   * `noindex` no cabeçalho, além do metadata de cada página. E elas NÃO entram no `Disallow` do
+   * `robots.ts`: bloqueada, o robô não lê o `noindex` e a URL pode aparecer se alguém linkar (R-09).
+   */
+  async headers() {
+    return ROTAS_COM_TOKEN.map((rota) => ({ source: `/${rota}/:token`, headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] }));
   },
   // O app do profissional morava na raiz (`/hoje`, `/agenda`...) e mudou pra
   // `/admin/*` — favoritos e o PWA já instalado no celular apontam pro

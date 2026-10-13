@@ -1,6 +1,6 @@
 import ConfirmarAgendamento from './confirmar'
 
-export const metadata = { title: "Confirmar agendamento" }
+export const metadata = { title: "Confirmar agendamento", robots: { index: false, follow: false } }
 
 export default async function PaginaConfirmar({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params
