@@ -16,6 +16,7 @@ import PhoneInput from "@/components/ui/phone-input";
 import { textoDoCanalDeConfirmacao } from "@/core/messaging/promessa";
 import { montarIcs, type EventoIcs } from "@/core/scheduling/ics";
 import { dinheiro, duracao, horaLocal } from "@/lib/formato";
+import { diaPorExtensoNoFuso } from "@/core/agenda/resumo-do-horario";
 import {
   lerReconhecimentoLocal,
   salvarReconhecimentoLocal,
@@ -362,6 +363,7 @@ export default function Agendar({
     conteúdo novo, que é o que ela precisa para ler o resumo do que marcou.
   */
   const tituloDoSucesso = useRef<HTMLHeadingElement>(null);
+  const pedidoDeHorarios = useRef(0);
   useEffect(() => {
     if (confirmado) tituloDoSucesso.current?.focus();
   }, [confirmado]);
@@ -450,6 +452,10 @@ export default function Agendar({
     novoServico?: string,
     novoProfissional?: string | null,
   ) {
+    // Só a busca MAIS RECENTE pode escrever a lista. Sem isto, a resposta de um dia anterior que
+    // chegava atrasada sobrescrevia a do dia escolhido, e a cliente marcava um horário de outro dia
+    // achando que era o da tela (APR-003, achado F-01, reproduzido 3 de 3 com rede lenta).
+    const meuPedido = ++pedidoDeHorarios.current;
     setDia(novoDia);
     setSlots(null);
     setSlotEscolhido(null);
@@ -480,12 +486,14 @@ export default function Agendar({
           data?: { slots: Slot[] };
           error?: { message: string };
         };
+        if (meuPedido !== pedidoDeHorarios.current) return;
         if (!r.ok) {
           setErro(json.error?.message ?? "Não consegui buscar horários.");
           return;
         }
         setSlots(json.data?.slots ?? []);
       } catch {
+        if (meuPedido !== pedidoDeHorarios.current) return;
         /*
           NÃO `setSlots([])` aqui — foi o que a primeira versão deste catch fez, e a verificação no
           navegador pegou: com a lista vazia, a região viva passava a anunciar "Sem horários livres
@@ -700,12 +708,7 @@ export default function Agendar({
               {servicoEscolhido.name}
             </p>
             <p className="mt-1 text-secundario text-txt-2">
-              {paraData(dia).toLocaleDateString("pt-BR", {
-                weekday: "long",
-                day: "2-digit",
-                month: "long",
-                timeZone: "UTC",
-              })}
+              {diaPorExtensoNoFuso(slotEscolhido.startsAt, timezone)}
               {" às "}
               {horaLocal(slotEscolhido.startsAt, timezone)}
             </p>
@@ -1199,12 +1202,7 @@ export default function Agendar({
               {servicoEscolhido.name}
             </p>
             <p className="mt-0.5 text-secundario text-txt-2">
-              {paraData(dia).toLocaleDateString("pt-BR", {
-                weekday: "long",
-                day: "2-digit",
-                month: "long",
-                timeZone: "UTC",
-              })}{" "}
+              {diaPorExtensoNoFuso(slotEscolhido.startsAt, timezone)}{" "}
               às {horaLocal(slotEscolhido.startsAt, timezone)} ·{" "}
               {duracao(servicoEscolhido.durationMin)}
             </p>
