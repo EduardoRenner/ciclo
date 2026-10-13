@@ -42,6 +42,12 @@ const SAL_TELEFONE = process.env.PHONE_HASH_SALT ?? env.PHONE_HASH_SALT
 if (!SAL_TELEFONE) throw new Error('PHONE_HASH_SALT ausente — sem ele o hash sairia diferente do que o app calcula.')
 const hashTelefone = (e164) => createHash('sha256').update(e164 + SAL_TELEFONE, 'utf8').digest('hex')
 
+// Este script APAGA e recria tenants: só no Supabase local, a mesma regra do `db-reset.mjs`.
+if (!/^https?:\/\/(127\.0\.0\.1|localhost|\[::1\])(:\d+)?(\/|$)/i.test(env.NEXT_PUBLIC_SUPABASE_URL ?? '')) {
+  console.error(`RECUSADO — ${env.NEXT_PUBLIC_SUPABASE_URL} não é o Supabase local.`)
+  process.exit(1)
+}
+
 const svc = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
 })
@@ -49,6 +55,21 @@ const svc = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE
 const SENHA = process.env.SEED_SENHA ?? 'DemoCiclo#2026'
 const TZ = 'America/Sao_Paulo'
 const OFFSET = 3
+
+/** PRNG determinístico (md5 → [0,1)), o mesmo do `seed-demo-dinheiro`: rodar de novo dá o mesmo seed. */
+function rnd(...partes) {
+  const h = createHash('md5').update(partes.join('|')).digest('hex').slice(0, 12)
+  return parseInt(h, 16) / 0xffffffffffff
+}
+
+/**
+ * APR-037: taxas de maquininha de um negócio comum, para a comanda do seed ter "taxa" e a sobra
+ * não ser igual ao faturamento. Pix e dinheiro sem taxa.
+ */
+const TAXAS_DA_MAQUININHA = { cash: 0, pix: 0, debit: 199, credit: 349, other: 0 }
+
+/** Faltas no histórico: sem elas o comparecimento era 100% e a tela de falta nunca aparecia. */
+const CHANCE_DE_FALTA = 0.11
 
 const NEGOCIOS = [
   {
@@ -72,6 +93,7 @@ const NEGOCIOS = [
   },
   {
     slug: 'demo-dom-estilo',
+    agendaSoDoProfissional: true,
     nome: 'Barbearia Dom Estilo',
     vertical: 'barber',
     plano: 'equipe',
@@ -107,6 +129,7 @@ const NEGOCIOS = [
   },
   {
     slug: 'demo-salao-encanto',
+    agendaSoDoProfissional: true,
     nome: 'Salão Encanto',
     vertical: 'aesthetics',
     plano: 'avancado',
@@ -170,14 +193,19 @@ function diasAtras(n) {
 
 async function semear(cfg, indiceNegocio) {
   const email = `dono-${cfg.slug}@ciclo.app`
+  // APR-037: um login por papel nos negócios com equipe — profissional (ligado ao 1º da equipe) e
+  // recepção. Sem eles, nada do que muda por papel (Hoje, Caixa, comissão) podia ser visto.
+  const emailProfissional = `profissional-${cfg.slug}@ciclo.app`
+  const emailRecepcao = `recepcao-${cfg.slug}@ciclo.app`
   const donoNome = cfg.dono ?? cfg.dona
 
   // ── limpeza (roda de novo sem duplicar)
   const { data: antigo } = await svc.from('tenants').select('id').eq('slug', cfg.slug).maybeSingle()
   if (antigo) await svc.from('tenants').delete().eq('id', antigo.id)
   const { data: lista } = await svc.auth.admin.listUsers({ perPage: 1000 })
-  const usuarioAntigo = lista?.users.find((u) => u.email === email)
-  if (usuarioAntigo) await svc.auth.admin.deleteUser(usuarioAntigo.id)
+  for (const u of lista?.users ?? []) {
+    if ([email, emailProfissional, emailRecepcao].includes(u.email)) await svc.auth.admin.deleteUser(u.id)
+  }
 
   // ── dono + negócio
   const { data: userData, error: erroUser } = await svc.auth.admin.createUser({
@@ -197,6 +225,15 @@ async function semear(cfg, indiceNegocio) {
       vertical: cfg.vertical,
       plan: cfg.plano,
       timezone: TZ,
+      // APR-037: sem o custo fixo, a sobra das barbearias de um profissional só saía 99% do
+      // faturamento. Aluguel e contas como o dono responderia nas três perguntas (`custo-fixo.ts`).
+      settings: {
+        payment_fees_bps: TAXAS_DA_MAQUININHA,
+        custo_fixo: { mensal_cents: cfg.equipe.length ? 650_000 : 280_000, horas_por_mes: 220, cadeiras: 1 + cfg.equipe.length },
+        // Os dois jeitos de equipe existem: profissional que vê só a própria agenda (aqui) e que vê
+        // a do salão inteiro (o padrão, nos outros). O login de profissional mostra a diferença.
+        ...(cfg.agendaSoDoProfissional ? { restrict_professional_view: true } : {}),
+      },
       phone: `+55119${String(70000000 + indiceNegocio).slice(0, 8)}`,
     })
     .select('id')
@@ -230,6 +267,26 @@ async function semear(cfg, indiceNegocio) {
       .single()
     precisa(error, `profissional ${membro.nome}`)
     profissionais.push(p.id)
+  }
+
+  const logins = { dono: email }
+  if (cfg.equipe.length) {
+    const criarLogin = async (emailDoPapel, nome, papel) => {
+      const { data, error } = await svc.auth.admin.createUser({
+        email: emailDoPapel,
+        password: SENHA,
+        email_confirm: true,
+        user_metadata: { full_name: nome },
+      })
+      precisa(error, `login de ${papel} em ${cfg.slug}`)
+      precisa((await svc.from('memberships').insert({ tenant_id: tenantId, user_id: data.user.id, role: papel })).error, `membership ${papel}`)
+      return data.user.id
+    }
+    const idProfissional = await criarLogin(emailProfissional, cfg.equipe[0].nome, 'professional')
+    precisa((await svc.from('professionals').update({ user_id: idProfissional }).eq('id', profissionais[1])).error, 'ligar login ao profissional')
+    await criarLogin(emailRecepcao, `Recepção ${cfg.nome}`, 'reception')
+    logins.profissional = emailProfissional
+    logins.recepcao = emailRecepcao
   }
 
   /*
@@ -266,7 +323,10 @@ async function semear(cfg, indiceNegocio) {
   const nomes = NOMES_CLIENTES.slice(0, cfg.clientes)
   const linhas = nomes.map((nome, i) => {
     const cadencia = 21 + (i % 3) * 7
-    const ultimaHa = i % 4 === 0 ? cadencia * 3 : i * 2 + 1 // 1 em cada 4 fica atrasado, pro Motor de Ciclo ter o que acusar
+    // 2 em cada 5 ficam atrasados, pro Motor de Ciclo ter o que acusar: com 1 em 4, nenhum negócio
+    // chegava a 10 pessoas no Recuperar e a lista nunca era vista cheia (APR-037).
+    const atrasado = i % 5 === 0 || i % 5 === 3
+    const ultimaHa = atrasado ? cadencia * 3 : i * 2 + 1
     return {
       tenant_id: tenantId,
       name: nome,
@@ -274,7 +334,7 @@ async function semear(cfg, indiceNegocio) {
       phone_e164: `+5511${String(93000000 + indiceNegocio * 1000 + i)}`,
       phone_hash: hashTelefone(`+5511${String(93000000 + indiceNegocio * 1000 + i)}`),
       birth_date: `19${85 + (i % 12)}-${String((i % 12) + 1).padStart(2, '0')}-15`,
-      tags: i % 4 === 0 ? ['sumido'] : i % 3 === 0 ? ['fiel'] : [],
+      tags: atrasado ? ['sumido'] : i % 3 === 0 ? ['fiel'] : [],
       source: ['instagram', 'google', 'indicacao'][i % 3],
       marketing_opt_in: true,
       __cadencia: cadencia,
@@ -291,30 +351,51 @@ async function semear(cfg, indiceNegocio) {
   precisa(erroClientes, `clientes de ${cfg.slug}`)
   const idPorNome = Object.fromEntries(criados.map((c) => [c.name, c.id]))
 
-  // ── histórico, encadeado para não violar a trava de sobreposição
+  /*
+   * ── histórico, sem violar a trava de sobreposição
+   *
+   * APR-037: a 1ª versão encadeava cada dia a partir das 09:00 e empurrava domingo e segunda para a
+   * terça. Medido: até 91% dos horários às 9h e 51–62% numa terça — Hoje, Mês e qualquer gráfico
+   * por hora mostravam um negócio que não existe. Agora cada visita pede uma hora sorteada (com
+   * semente) e procura a primeira vaga dali em diante, e cai num dia útil em RODÍZIO (no máximo 3
+   * dias antes ou depois da cadência). Sorteio puro não bastou: cadência múltipla de 7 prende cada
+   * cliente num dia da semana, e com 14 a 28 clientes a soma saía 31–35% num dia só (medido).
+   */
+  const ABRE = 9 * 60
+  const FECHA = 19 * 60
   const ocupacao = new Map()
-  function proximoSlot(profIdx, data, duracaoMin) {
+  function vagaNoDia(profIdx, data, duracaoMin, semente) {
     const chave = `${profIdx}:${data.toISOString().slice(0, 10)}`
-    const inicioMin = ocupacao.get(chave) ?? 9 * 60
-    const fimMin = inicioMin + duracaoMin
-    if (fimMin > 19 * 60) return null
-    ocupacao.set(chave, fimMin + 10)
-    const inicio = emSaoPaulo(
-      data.getUTCFullYear(),
-      data.getUTCMonth() + 1,
-      data.getUTCDate(),
-      Math.floor(inicioMin / 60),
-      inicioMin % 60,
-    )
-    return { inicio, fim: new Date(inicio.getTime() + duracaoMin * 60_000) }
+    const ocupados = ocupacao.get(chave) ?? []
+    const passos = Math.floor((FECHA - duracaoMin - ABRE) / 30) + 1
+    if (passos <= 0) return null
+    const pedido = Math.floor(rnd(semente, 'hora') * passos)
+    for (let k = 0; k < passos; k++) {
+      const inicioMin = ABRE + ((pedido + k) % passos) * 30
+      const fimMin = inicioMin + duracaoMin
+      if (ocupados.some(([a, b]) => inicioMin < b + 10 && a < fimMin + 10)) continue
+      ocupados.push([inicioMin, fimMin])
+      ocupacao.set(chave, ocupados)
+      const inicio = emSaoPaulo(data.getUTCFullYear(), data.getUTCMonth() + 1, data.getUTCDate(), Math.floor(inicioMin / 60), inicioMin % 60)
+      return { inicio, fim: new Date(inicio.getTime() + duracaoMin * 60_000) }
+    }
+    return null
   }
-  function reservar(profPreferido, data, duracaoMin) {
+  function reservar(profPreferido, data, duracaoMin, semente) {
     for (let salto = 0; salto < profissionais.length; salto++) {
       const idx = (profPreferido + salto) % profissionais.length
-      const slot = proximoSlot(idx, data, duracaoMin)
+      const slot = vagaNoDia(idx, data, duracaoMin, semente)
       if (slot) return { ...slot, profIdx: idx }
     }
     return null
+  }
+  /** Desloca até 3 dias para cair no dia útil `alvo` (2 = terça … 6 = sábado), sempre no passado. */
+  function diasAtrasNoDia(diasDaVisita, alvo) {
+    let delta = alvo - diasAtras(diasDaVisita).getUTCDay()
+    if (delta > 3) delta -= 7
+    if (delta < -3) delta += 7
+    if (diasDaVisita - delta < 1) delta -= 7
+    return diasDaVisita - delta
   }
 
   const agendamentos = []
@@ -322,13 +403,11 @@ async function semear(cfg, indiceNegocio) {
     const servico = cliente.__servico
     const profIdx = idx % profissionais.length
     for (let volta = 4; volta >= 0; volta--) {
-      const diasDaVisita = cliente.__ultimaHa + volta * cliente.__cadencia
+      const semente = `${cfg.slug}|${cliente.name}|${volta}`
+      const diasDaVisita = diasAtrasNoDia(cliente.__ultimaHa + volta * cliente.__cadencia, 2 + ((idx + volta) % 5))
       if (diasDaVisita > 190) continue
       const data = diasAtras(diasDaVisita)
-      // Cadência múltipla de 7 cai sempre no mesmo dia da semana: sem isto, descartar domingo e
-      // segunda apagaria o histórico INTEIRO de quem calhou nesses dias.
-      while (data.getUTCDay() === 0 || data.getUTCDay() === 1) data.setUTCDate(data.getUTCDate() + 1)
-      const slot = reservar(profIdx, data, servico.duration_min)
+      const slot = reservar(profIdx, data, servico.duration_min, semente)
       if (!slot) continue
       agendamentos.push({
         tenant_id: tenantId,
@@ -341,47 +420,80 @@ async function semear(cfg, indiceNegocio) {
         origin: idx % 2 === 0 ? 'public_page' : 'app',
         price_cents: servico.price_cents,
         completed_at: slot.fim.toISOString(),
+        __podeFaltar: volta > 0,
+        __semente: semente,
       })
     }
   })
 
+  // Faltas numa proporção EXATA do histórico, escolhidas por semente. Sorteio visita a visita deu
+  // 98% de comparecimento num negócio de 14 clientes e 87% noutro (medido). A última visita de
+  // cada cliente nunca é falta: o Motor leria como sumido quem está em dia.
+  const podemFaltar = agendamentos.filter((a) => a.__podeFaltar).sort((x, y) => rnd(x.__semente, 'falta') - rnd(y.__semente, 'falta'))
+  for (const a of podemFaltar.slice(0, Math.round(podemFaltar.length * CHANCE_DE_FALTA))) {
+    a.status = 'no_show'
+    delete a.completed_at
+  }
+  for (const a of agendamentos) {
+    delete a.__podeFaltar
+    delete a.__semente
+  }
+
   /*
-   * Agenda de hoje e de amanhã, pra tela "Hoje" não nascer vazia.
+   * ── dia de hoje CHEIO (APR-037), e um horário amanhã
    *
-   * O horário de HOJE é contado a partir de AGORA, não encadeado a partir das 09:00 como o
-   * histórico: um agendamento às 09:00 semeado às 15h já nasceu no passado, e a tela "Hoje" só
-   * mostra o que ainda vem — a demonstração abria dizendo "Nada mais marcado para hoje", que é o
-   * oposto do que ela existe para mostrar. Medido em produção antes de corrigir.
-   *
-   * Se já for tarde demais para caber antes das 19:00, hoje é pulado e sobra o de amanhã: melhor
-   * uma tela honesta de fim de expediente do que um horário impossível.
+   * Cada profissional tem 4 a 6 horários hoje, espalhados no expediente. O que já terminou está
+   * concluído (e ganha comanda no `seed-demo-dinheiro`); o que vem está confirmado ou pendente.
+   * Antes era UM horário hoje — a Hoje nunca foi vista como num dia de trabalho. Domingo e segunda
+   * o negócio está fechado: aí fica só o de amanhã, que é o honesto.
    */
   const agora = new Date()
-  const horaLocalAgora = agora.getUTCHours() - OFFSET
-  const proximos = []
-  if (horaLocalAgora >= 8 && horaLocalAgora < 17) {
-    const hora = Math.min(horaLocalAgora + 2, 18)
-    proximos.push({ emDias: 0, hora, status: 'pending' })
-  }
-  proximos.push({ emDias: 1, hora: 10, status: 'confirmed' })
-
-  proximos.forEach((p, i) => {
-    const data = new Date()
-    data.setUTCDate(data.getUTCDate() + p.emDias)
-    const servico = servicos[i % servicos.length]
-    const inicio = emSaoPaulo(data.getUTCFullYear(), data.getUTCMonth() + 1, data.getUTCDate(), p.hora, 0)
-    agendamentos.push({
-      tenant_id: tenantId,
-      client_id: idPorNome[nomes[i]],
-      professional_id: profissionais[i % profissionais.length],
-      service_id: servico.id,
-      starts_at: inicio.toISOString(),
-      ends_at: new Date(inicio.getTime() + servico.duration_min * 60_000).toISOString(),
-      status: p.status,
-      origin: 'app',
-      price_cents: servico.price_cents,
-      ...(p.status === 'confirmed' ? { confirmed_at: new Date().toISOString() } : {}),
+  // A data LOCAL de hoje (componentes UTC deslocados): depois das 21h o dia UTC já é amanhã.
+  const hoje = new Date(agora.getTime() - OFFSET * 3_600_000)
+  const diaDeHoje = hoje.getUTCDay()
+  if (diaDeHoje !== 0 && diaDeHoje !== 1) {
+    let vez = 0
+    profissionais.forEach((_, profIdx) => {
+      const quantos = 4 + Math.floor(rnd(cfg.slug, profIdx, 'hoje') * 3)
+      for (let k = 0; k < quantos; k++) {
+        const nome = nomes[(vez * 3 + profIdx) % nomes.length]
+        const servico = servicos[vez % servicos.length]
+        vez++
+        const slot = vagaNoDia(profIdx, hoje, servico.duration_min, `${cfg.slug}|hoje|${profIdx}|${k}`)
+        if (!slot) continue
+        const terminou = slot.fim <= agora
+        const status = terminou ? 'done' : rnd(cfg.slug, profIdx, k, 'conf') < 0.6 ? 'confirmed' : 'pending'
+        agendamentos.push({
+          tenant_id: tenantId,
+          client_id: idPorNome[nome],
+          professional_id: profissionais[profIdx],
+          service_id: servico.id,
+          starts_at: slot.inicio.toISOString(),
+          ends_at: slot.fim.toISOString(),
+          status,
+          origin: k % 2 === 0 ? 'public_page' : 'app',
+          price_cents: servico.price_cents,
+          ...(terminou ? { completed_at: slot.fim.toISOString() } : {}),
+          ...(status === 'confirmed' ? { confirmed_at: agora.toISOString() } : {}),
+        })
+      }
     })
+  }
+  const amanha = new Date(hoje)
+  amanha.setUTCDate(amanha.getUTCDate() + 1)
+  const servicoDeAmanha = servicos[0]
+  const inicioDeAmanha = emSaoPaulo(amanha.getUTCFullYear(), amanha.getUTCMonth() + 1, amanha.getUTCDate(), 10, 0)
+  agendamentos.push({
+    tenant_id: tenantId,
+    client_id: idPorNome[nomes[0]],
+    professional_id: profissionais[0],
+    service_id: servicoDeAmanha.id,
+    starts_at: inicioDeAmanha.toISOString(),
+    ends_at: new Date(inicioDeAmanha.getTime() + servicoDeAmanha.duration_min * 60_000).toISOString(),
+    status: 'confirmed',
+    origin: 'app',
+    price_cents: servicoDeAmanha.price_cents,
+    confirmed_at: agora.toISOString(),
   })
 
   for (let i = 0; i < agendamentos.length; i += 500) {
@@ -412,7 +524,7 @@ async function semear(cfg, indiceNegocio) {
     negocio: cfg.nome,
     plano: cfg.plano,
     site: `/${cfg.slug}`,
-    login: email,
+    login: logins,
     profissionais: profissionais.length,
     clientes: criados.length,
     agendamentos: agendamentos.length,
@@ -427,4 +539,5 @@ for (const [i, cfg] of NEGOCIOS.entries()) {
   resultado.push(r)
 }
 
-console.log('\n' + JSON.stringify({ senhaDeTodos: SENHA, negocios: resultado }, null, 2))
+// A senha não é impressa: é a de `SEED_SENHA` (ou a padrão de demonstração, só local).
+console.log('\n' + JSON.stringify({ negocios: resultado }, null, 2))
