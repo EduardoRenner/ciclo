@@ -132,19 +132,26 @@ export default function EditorExpediente({
     const motivo = String(formData.get('motivo') ?? '').trim() || undefined
 
     iniciarTransicao(async () => {
-      const r = await fetch('/api/v1/time-off', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
-        body: JSON.stringify({ professionalId, startsAt: paraIso(inicio), endsAt: paraIso(fim), reason: motivo }),
-      })
-      const json = (await r.json()) as { data?: Folga; error?: { message: string } }
-      if (!r.ok || !json.data) {
-        mostrarToast({ tom: 'erro', titulo: 'Não consegui salvar a folga', descricao: json.error?.message ?? '' })
-        return
+      // Sem este try, uma piscada de rede re-lançava a Action para o error boundary (React 19):
+      // a tela de Horários sumia e levava as datas e o motivo digitados (APR-002, achado C-05).
+      try {
+        const r = await fetch('/api/v1/time-off', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+          body: JSON.stringify({ professionalId, startsAt: paraIso(inicio), endsAt: paraIso(fim), reason: motivo }),
+        })
+        const json = (await r.json().catch(() => ({}))) as { data?: Folga; error?: { message: string } }
+        if (!r.ok || !json.data) {
+          mostrarToast({ tom: 'erro', titulo: 'Não consegui salvar a folga', descricao: json.error?.message ?? 'Tente de novo em instantes.' })
+          return
+        }
+        setFolgas((atual) => [...atual, json.data!])
+        // Só aqui: a folga entrou na lista, o formulário fica pronto para a próxima.
+        formulario.reset()
+      } catch {
+        // O formulário NÃO é limpo: as datas e o motivo continuam lá para tentar de novo.
+        mostrarToast({ tom: 'erro', titulo: 'Não consegui salvar a folga', descricao: 'Parece que a internet caiu. O que você preencheu continua aqui; tente de novo.' })
       }
-      setFolgas((atual) => [...atual, json.data!])
-      // Só aqui: a folga entrou na lista, o formulário fica pronto para a próxima.
-      formulario.reset()
     })
   }
 
