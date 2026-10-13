@@ -226,7 +226,7 @@ export async function removerItemComanda(db: Cliente, tenantId: string, ticketId
     await recalcularSubtotal(db, tenantId, ticketId)
   } catch (erro) {
     // Fechou no meio do caminho: o item volta, e a comanda fechada fica como foi fechada.
-    if (removido?.length) await db.from('ticket_items').insert(removido)
+    if (removido?.length) await db.from('ticket_items').insert(removido.map((linha) => ({ ...linha, tenant_id: tenantId })))
     throw erro
   }
 }
