@@ -23,7 +23,16 @@
 | CNV-009b | a25feb94 | `GET /api/v1/account/export` (.zip com fflate 0.8.3), dono + duas etapas + auditoria, 1 por dia gasto depois do arquivo; cartão na tela de exportar |
 | CNV-011 | 9c9cf170 | exportação por cliente completa (notas, pontos, clube, créditos, comandas, pagamentos) e sempre auditada (D18); D15 na exportação antiga |
 
-**Onda A (núcleo) e Onda B (saída completa) concluídas.** Pendente de prova no navegador: o cartão "Tudo do seu negócio" (verificar no próximo build, a 390 px).
+| CNV-012 | 9174efbd | a esteira de um arquivo num Web Worker (`rodarEsteira`), mesma função no worker e na janela; leitor de JSON/NDJSON |
+| CNV-014 | a02df268 | contatos do celular (.vcf 2.1/3.0/4.0) |
+| CNV-015 | 9723e5db | conversa exportada do WhatsApp vira lista de pessoas; lista esparsa não some |
+| CNV-016 | dd4e3a71 | tabela colada (HTML), Word (.docx), LibreOffice (.odt/.ods) e zip (um nível, teto antes de inflar) |
+| CNV-013 | 25c4a16e | .xlsx com leitor próprio (OOXML, só valores; sem SheetJS, ver DECISOES) |
+| CNV-017 | a67ee185 | PDF com texto (pdf.js 6, tabela por posição das palavras) |
+| CNV-014b | 95e09218 | lista livre (uma pessoa por linha) vira tabela; E3 mais firme |
+| CNV-018 | acdef820 | print e foto por OCR NO APARELHO (tesseract.js 7 + português, servidos de `/ocr`); modo escuro invertido; tudo de imagem para conferir, nível ≤ N1; imagem truncada não derruba mais o processo |
+
+**Ondas A, B e C concluídas.** Pendente de prova no navegador (junto com a tela nova, CNV-023, a 390 px): o Worker, o OCR baixando de `/ocr` e o cartão "Tudo do seu negócio".
 
 ## Próximos
-Onda C (formatos): CNV-012 Worker, CNV-013 planilhas (SheetJS 0.20.3 vendorizado), CNV-014 contatos, CNV-015 WhatsApp, CNV-016 documentos, CNV-017 PDF, CNV-018 print e foto. Depois Onda D (prévia com R$, carga em lotes, tela nova).
+CNV-018b PDF escaneado (renderizar página e passar no OCR). Onda D: CNV-019 lotes de importação (migration), 020 carga em lotes, 021 prévia com R$, 022 desfazer, 023 tela nova sobre `rodarEsteira`, 024 funil.
