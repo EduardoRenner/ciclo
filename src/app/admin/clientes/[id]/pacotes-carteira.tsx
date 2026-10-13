@@ -205,7 +205,7 @@ function VenderPacote({
           return
         }
         aoFechar()
-        mostrarToast({ tom: 'ok', titulo: 'Pacote registrado', descricao: `${quantidade} sessões. Em cada atendimento, toque em “Usar 1 sessão” aqui na ficha.` })
+        mostrarToast({ tom: 'ok', titulo: 'Pacote registrado', descricao: `${quantidade} sessões. Em cada atendimento, toque em “Usar 1 sessão” na aba Fidelidade da ficha.` })
         router.refresh()
       } catch {
         // Rede caiu antes de chegar resposta — sem isto, o React 19 relança para o error
@@ -216,7 +216,7 @@ function VenderPacote({
   }
 
   return (
-    <Sheet aberto aoFechar={(aberto) => !aberto && aoFechar()} titulo="Vender pacote" descricao="Sessões pagas na frente. Cada atendimento desconta uma aqui na ficha.">
+    <Sheet aberto aoFechar={(aberto) => !aberto && aoFechar()} titulo="Vender pacote" descricao="Sessões pagas na frente. Cada atendimento desconta uma na aba Fidelidade da ficha.">
       <div className="flex flex-col gap-3">
         <Select rotulo={comMaiuscula(vocabulario.servico)} value={serviceId} onChange={(e) => trocarServico(e.target.value)}>
           {servicos.map((s) => (
@@ -275,7 +275,7 @@ function LancarCredito({ clientId, aoFechar }: { clientId: string; aoFechar: () 
           return
         }
         aoFechar()
-        mostrarToast({ tom: 'ok', titulo: 'Crédito lançado', descricao: 'O saldo fica aqui na ficha. Na hora de cobrar, desconte do valor.' })
+        mostrarToast({ tom: 'ok', titulo: 'Crédito lançado', descricao: 'O saldo fica na aba Fidelidade da ficha. Na hora de cobrar, desconte do valor.' })
         router.refresh()
       } catch {
         setErro('Não consegui falar com o servidor. Confira a conexão e tente de novo.')
