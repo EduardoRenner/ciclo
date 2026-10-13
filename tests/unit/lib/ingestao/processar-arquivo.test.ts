@@ -50,10 +50,17 @@ describe('processarArquivo: bytes → caixas (CNV-012)', () => {
   })
 
   it('formato reconhecido ainda sem leitor responde o que fazer, nunca lixo', async () => {
+    const cabecalhoOle = [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]
+    const xls = Uint8Array.from([...cabecalhoOle, ...new Array(24).fill(0), ...Array.from('Workbook').flatMap((c) => [c.charCodeAt(0), 0])])
+    const r = await processarArquivo({ bytes: xls, nome: 'clientes.xls', contexto: { hoje: HOJE } })
+    expect(r).toEqual({ ok: false, mensagem: expect.stringMatching(/\.xlsx|CSV/) })
+  })
+
+  it('imagem truncada vira mensagem, não exceção solta do leitor de imagem', async () => {
     const png = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
     const r = await processarArquivo({ bytes: png, nome: 'print.png', contexto: { hoje: HOJE } })
     expect(r).toEqual({ ok: false, mensagem: expect.stringMatching(/cole a lista/) })
-  })
+  }, 30_000)
 
   it('planilha corrompida (cabeçalho de zip sem o resto) vira mensagem, não exceção', async () => {
     const quebrada = Uint8Array.from([0x50, 0x4b, 0x03, 0x04, ...new Array(26).fill(0), ...Array.from('xl/workbook.xml', (c) => c.charCodeAt(0))])

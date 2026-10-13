@@ -33,6 +33,8 @@ export type Aviso =
   | 'data_ambigua'
   | 'data_do_excel'
   | 'valor_invalido'
+  | 'conferir_imagem'
+  | 'telefone_conferir_digitos'
 
 export type MotivoDeQuarentena = 'sem_nome' | 'visita_sem_data'
 
@@ -51,6 +53,8 @@ export const TEXTO_DO_AVISO: Record<Aviso | MotivoDeQuarentena, string> = {
   data_ambigua: 'Não dá para saber se a data é dia/mês ou mês/dia: responda a pergunta.',
   data_do_excel: 'A data veio como número do Excel: converti.',
   valor_invalido: 'Valor não reconhecido: deixei de fora.',
+  conferir_imagem: 'Lido de um print ou foto: confira esta linha com a imagem ao lado.',
+  telefone_conferir_digitos: 'Telefone lido de imagem: confira dígito a dígito antes de usar (um número trocado manda mensagem para outra pessoa).',
   sem_nome: 'Linha sem nome: corrija e envie de novo.',
   visita_sem_data: 'Atendimento sem data válida: corrija e envie de novo.',
 }
@@ -108,6 +112,12 @@ export type ContextoDaEsteira = {
   totalInformado?: number
   /** Qual tabela da grade usar (padrão: a com mais linhas). */
   tabela?: number
+  /**
+   * CNV-018: a grade veio de OCR (print, foto, PDF escaneado). Nunca vira "ouro" automático
+   * (`docs/97` §6): toda linha leva "conferir", telefone leva "conferir dígito a dígito", valor em
+   * reais não é usado e o nível fica no máximo N1.
+   */
+  lidoDeImagem?: boolean
 }
 
 const valorDe = (celulas: string[], indice: number | undefined) => (indice === undefined ? '' : (celulas[indice] ?? '').trim())
@@ -246,10 +256,19 @@ export function processarGrade(gradeRecebida: string[][], contexto: ContextoDaEs
     perguntas.unshift({ tipo: 'ordem_de_data', exemplo })
   }
 
+  if (contexto.lidoDeImagem) {
+    for (const r of registros) {
+      if (!r.avisos.includes('conferir_imagem')) r.avisos.push('conferir_imagem')
+      if (r.telefone && !r.avisos.includes('telefone_conferir_digitos')) r.avisos.push('telefone_conferir_digitos')
+      for (const v of r.visitas) v.valorCents = null
+    }
+  }
+
   const temVisita = registros.some((r) => r.ultimaVisita || r.visitas.length > 0)
   const historico = registros.some((r) => r.visitas.length >= 2)
   const comValor = registros.some((r) => r.visitas.some((v) => v.servico && v.valorCents !== null))
-  const nivel: Nivel = historico && comValor ? 'N3' : historico ? 'N2' : temVisita ? 'N1' : 'N0'
+  const nivelLido: Nivel = historico && comValor ? 'N3' : historico ? 'N2' : temVisita ? 'N1' : 'N0'
+  const nivel: Nivel = contexto.lidoDeImagem && (nivelLido === 'N2' || nivelLido === 'N3') ? 'N1' : nivelLido
 
   return fechar(
     { gradeLida: grade, tabela, classificacao, registros, quarentena, ignoradas, perguntas, nivel, outrasTabelas: achadas.tabelas.length - 1, controleDeTotais: null },

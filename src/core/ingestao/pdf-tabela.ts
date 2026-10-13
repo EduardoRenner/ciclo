@@ -11,7 +11,8 @@
  * Puro: quem extrai as palavras (pdf.js, OCR) mora fora do core.
  */
 
-export type Palavra = { texto: string; x: number; y: number; largura: number; altura: number; pagina: number }
+/** `confianca` (0 a 1) só existe quando a palavra veio de OCR. */
+export type Palavra = { texto: string; x: number; y: number; largura: number; altura: number; pagina: number; confianca?: number }
 
 type Segmento = { x0: number; x1: number; texto: string }
 

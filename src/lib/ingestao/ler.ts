@@ -21,7 +21,7 @@ import { gradeDeConversa, pareceConversaDoWhatsApp } from '@/core/ingestao/whats
 export type Aba = { nome: string; grade: string[][] }
 
 export type Lido =
-  | { ok: true; formato: Formato; abas: Aba[]; avisos: string[] }
+  | { ok: true; formato: Formato; abas: Aba[]; avisos: string[]; lidoDeImagem?: boolean }
   | { ok: false; mensagem: string }
 
 /** O que dizer para o formato reconhecido que ainda não tem leitor (some à medida que os tickets entram). */
@@ -30,7 +30,6 @@ const AINDA_NAO: Partial<Record<Formato, string>> = {
   numbers: 'Planilha do Numbers: exporte como CSV (Arquivo, Exportar para, CSV) e envie de novo.',
   doc: 'Documento do Word antigo: salve como PDF ou copie a tabela e cole aqui.',
   rtf: 'Documento RTF: salve como .docx ou PDF e envie de novo.',
-  imagem: 'Print ou foto: digite ou cole a lista aqui enquanto a leitura de imagem não chega.',
 }
 
 const SEM_TABELA = 'Não achei uma tabela neste documento. Se a lista está em texto corrido, copie e cole aqui.'
@@ -77,6 +76,19 @@ export async function lerParaGrades(bytes: Uint8Array, nome: string, profundidad
       if (palavras.length === 0) return { ok: false, mensagem: 'Este PDF é uma imagem escaneada, sem texto para copiar. Envie a planilha original, ou um print de cada página quando a leitura de imagem chegar.' }
       const avisos = paginas > lidas ? [`O PDF tem ${paginas} páginas; li as primeiras ${LIMITE_DE_PAGINAS}. Separe em partes para o resto.`] : []
       return { ok: true, formato: 'pdf', abas: [{ nome, grade: gradeDePalavras(palavras) }], avisos }
+    }
+    case 'imagem': {
+      if (f.detalhe === 'heic' || f.detalhe === 'avif') {
+        // O leitor de texto não abre HEIC (foto do iPhone): o próprio aparelho converte ao compartilhar.
+        return { ok: false, mensagem: 'Foto no formato do iPhone (HEIC). Tire um print da foto ou compartilhe como JPEG e envie de novo.' }
+      }
+      const { palavrasDaImagem } = await import('@/lib/ingestao/ocr')
+      const { palavras, invertida, confiancaMedia } = await palavrasDaImagem(bytes)
+      if (palavras.length === 0) return { ok: false, mensagem: 'Não consegui ler texto nesta imagem. Tente um print mais nítido, sem cortar, ou cole a lista.' }
+      const avisos = ['Lido de imagem: confira cada linha antes de importar, principalmente os telefones.']
+      if (invertida) avisos.push('O print estava no modo escuro: inverti as cores para ler.')
+      if (confiancaMedia < 0.75) avisos.push('A imagem está difícil de ler (borrada, torta ou pequena). Confira com mais atenção ou envie um print mais nítido.')
+      return { ok: true, formato: 'imagem', abas: [{ nome, grade: gradeDePalavras(palavras) }], avisos, lidoDeImagem: true }
     }
     case 'html': {
       const grades = gradesDeHtml(decodificar(bytes).texto)
