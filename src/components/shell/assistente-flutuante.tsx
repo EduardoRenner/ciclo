@@ -117,6 +117,13 @@ function dinheiroBR(cents: unknown): string | null {
 // 390px onde ela já ocupa quase tudo, e brigaria com o gesto de rolar a página.
 const CORTE_DESKTOP_PX = 1024
 
+/**
+ * APR-101: no celular o assistente sai do canto da tela (cobria "Mensagem" da ficha e o valor do
+ * Caixa) e vira "Perguntar" no topo (`topbar.tsx`). Os dois são irmãos no layout; o topo avisa por
+ * este evento de janela e o painel é o mesmo.
+ */
+export const EVENTO_ABRIR_ASSISTENTE = 'ciclo:abrir-assistente'
+
 /** Tamanho da janela flutuante no desktop — grande o bastante para ler, pequeno o bastante para não tapar a tela toda. */
 const LARGURA_JANELA = 400
 const ALTURA_MAX_JANELA = 600
@@ -424,6 +431,16 @@ export default function AssistenteFlutuante({ disponivel }: { disponivel: boolea
     if (turnos.length === 0) return
     fimDaListaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
   }, [turnos, aberto])
+
+  useEffect(() => {
+    if (!disponivel) return
+    function abrirPeloTopo() {
+      if (ehDesktop && !posicao) setPosicao(posicaoPadrao())
+      setAberto(true)
+    }
+    window.addEventListener(EVENTO_ABRIR_ASSISTENTE, abrirPeloTopo)
+    return () => window.removeEventListener(EVENTO_ABRIR_ASSISTENTE, abrirPeloTopo)
+  }, [disponivel, ehDesktop, posicao])
 
   if (!disponivel) return null
 
@@ -782,6 +799,8 @@ export default function AssistenteFlutuante({ disponivel }: { disponivel: boolea
         `touch-none` é obrigatório: sem ele o navegador interpreta o arrasto como rolagem da página
         e o botão escapa do dedo.
       */}
+      {/* APR-101: o botão flutuante é só do computador; no celular quem abre é o "Perguntar" do topo. */}
+      {ehDesktop ? (
       <button
         type="button"
         onClick={abrir}
@@ -804,6 +823,7 @@ export default function AssistenteFlutuante({ disponivel }: { disponivel: boolea
       >
         <Sparkles aria-hidden className="size-6" />
       </button>
+      ) : null}
 
       {ehDesktop ? (
         aberto && posicao ? (

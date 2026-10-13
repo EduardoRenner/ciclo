@@ -1,6 +1,6 @@
 'use client'
 
-import { CalendarClock, ChevronLeft, Megaphone, Menu, Package, Scissors, Settings, Users, Wallet } from 'lucide-react'
+import { CalendarClock, ChevronLeft, Megaphone, Menu, Package, Scissors, Settings, Sparkles, Users, Wallet } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -8,6 +8,7 @@ import { useState } from 'react'
 
 import Sheet from '@/components/ui/sheet'
 
+import { EVENTO_ABRIR_ASSISTENTE } from './assistente-flutuante'
 import { paiDaRota } from './navegacao'
 import wordmark from '../../../public/marca/ciclo-wordmark-aqua.png'
 import wordmarkClaro from '../../../public/marca/ciclo-wordmark-aqua-claro.png'
@@ -44,6 +45,23 @@ const ATALHOS = [
  * Continua sem buscar dado nenhum de propósito — não pode virar fetch novo em
  * toda tela do app.
  */
+/**
+ * APR-101: no celular o assistente abre daqui, não de um botão flutuante por cima da ação da tela.
+ * A partir de 1024 px some (`lg:hidden`) e vale o botão flutuante, que lá tem folga até a coluna.
+ */
+function BotaoPerguntar({ className = '' }: { className?: string }) {
+  return (
+    <button
+      type="button"
+      onClick={() => window.dispatchEvent(new Event(EVENTO_ABRIR_ASSISTENTE))}
+      className={'flex h-12 shrink-0 items-center gap-1.5 rounded-[var(--radius-pill)] px-3 text-secundario font-semibold text-acc-2 transition hover:bg-surface-2 active:scale-[.97] lg:hidden ' + className}
+    >
+      <Sparkles aria-hidden className="size-4" />
+      Perguntar
+    </button>
+  )
+}
+
 export default function Topbar() {
   const pathname = usePathname()
   const pai = paiDaRota(pathname)
@@ -64,7 +82,8 @@ export default function Topbar() {
           <ChevronLeft aria-hidden className="size-5" />
           {pai.rotulo}
         </Link>
-      ) : (
+      ) : null}
+      {pai ? <BotaoPerguntar className="ml-auto" /> : (
         <>
           <div className="flex h-12 items-center">
             {/* Lockup completo (redesenho aqua, 2026-08-26) — nunca mais o nome
@@ -94,14 +113,17 @@ export default function Topbar() {
             aparelho — pedido do Eduardo em 2026-09-13, depois de a primeira versão ter ido pra
             esquerda (a marca centralizada valia menos que o alcance de verdade).
           */}
+          <div className="ml-auto flex items-center">
+          <BotaoPerguntar />
           <button
             type="button"
             onClick={() => setMenuAberto(true)}
             aria-label="Menu"
-            className="ml-auto grid size-12 shrink-0 place-items-center rounded-[var(--radius-pill)] text-txt-2 transition hover:bg-surface-2 active:scale-[.94]"
+            className="grid size-12 shrink-0 place-items-center rounded-[var(--radius-pill)] text-txt-2 transition hover:bg-surface-2 active:scale-[.94]"
           >
             <Menu aria-hidden className="size-5" />
           </button>
+          </div>
         </>
       )}
 
