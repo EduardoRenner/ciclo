@@ -15,6 +15,7 @@ import Textarea from '@/components/ui/textarea'
 import { neutralizarFormula } from '@/core/exportacao/csv'
 import { planilhaAnotada, processarGrade, TEXTO_DO_AVISO, type ContextoDaEsteira, type RegistroCanonico } from '@/core/ingestao/esteira'
 import { previaDoDinheiro } from '@/core/ingestao/previa-do-dinheiro'
+import { acharTabelas } from '@/core/ingestao/tabela'
 import { rodarEsteira } from '@/lib/ingestao/rodar-esteira'
 import { dinheiro, formatarTelefone } from '@/lib/formato'
 import { fetchComTentativa } from '@/lib/tentativa'
@@ -116,6 +117,9 @@ export default function EsteiraDeImportacao({ servicos, timezone }: { servicos: 
 
   // Responder uma pergunta reprocessa a grade JÁ LIDA (puro, instantâneo): um print não passa pelo OCR de novo.
   const resultado = useMemo(() => (lido ? processarGrade(lido.grade, { ...contexto, lidoDeImagem: lido.lidoDeImagem }) : null), [lido, contexto])
+  // Mais de uma tabela na mesma aba (duas listas, ativos e inativos): a pessoa escolhe; o padrão é a maior.
+  const tabelas = useMemo(() => (lido ? acharTabelas(lido.grade).tabelas : []), [lido])
+  const tabelaPadrao = tabelas.reduce((melhor, t, i, todas) => (t.linhas.length > (todas[melhor]?.linhas.length ?? -1) ? i : melhor), 0)
   const servico = servicos.find((s) => s.id === servicoId) ?? null
   const previa = useMemo(() => (resultado && servico ? previaDoDinheiro(resultado.registros, servico, hoje) : null), [resultado, servico, hoje])
 
@@ -291,6 +295,16 @@ export default function EsteiraDeImportacao({ servicos, timezone }: { servicos: 
               {lido.abas.map((nome, i) => (
                 <option key={nome} value={i}>
                   {nome}
+                </option>
+              ))}
+            </Select>
+          ) : null}
+
+          {tabelas.length > 1 ? (
+            <Select rotulo="Achei mais de uma tabela. Qual tem a lista?" value={String(contexto.tabela ?? tabelaPadrao)} onChange={(e) => setContexto((c) => ({ ...c, tabela: Number(e.target.value) }))}>
+              {tabelas.map((t, i) => (
+                <option key={i} value={i}>
+                  Tabela {i + 1}: {t.linhas.length} {plural(t.linhas.length, 'linha', 'linhas')} ({t.cabecalho.filter(Boolean).slice(0, 3).join(', ')})
                 </option>
               ))}
             </Select>
