@@ -1,0 +1,81 @@
+import { randomUUID } from "node:crypto";
+import { chromium } from "playwright";
+// U2: aceite da APR-033 ("Receber" pior de 5 <= 1.790 ms no perfil celular) e tela da APR-016b.
+const B = "http://localhost:3201";
+const SENHA = process.env.SEED_SENHA ?? "DemoCiclo#2026";
+const SERVICO = "38e29c65-27e6-44ca-9249-528ec1fed1df";
+const PROFS = ["52461618-e3a3-4d63-9a41-ca81357549d2", "ce1866d2-f59a-46d2-b6c7-3fdfb15304c2", "5ebc52dc-4894-443e-b598-59fb80954ced"];
+const CLIENTE = "745b927a-cd85-42fc-9c06-e24388ef78e1";
+const res = { receber: [], pacote: {} };
+
+const b = await chromium.launch({ channel: "chrome" });
+const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, deviceScaleFactor: 3 });
+const p = await ctx.newPage();
+await p.goto(B + "/entrar");
+await p.fill('input[type="email"]', "dono-demo-dom-estilo@ciclo.app");
+await p.fill('input[type="password"]', SENHA);
+await Promise.all([p.waitForURL(/admin/, { timeout: 60000 }), p.press('input[type="password"]', "Enter")]);
+
+const api = async (method, path, data) => {
+  const r = await p.request.fetch(B + path, { method, headers: { "content-type": "application/json", origin: B, "idempotency-key": randomUUID() }, data: data ? JSON.stringify(data) : undefined });
+  let json = null;
+  try { json = await r.json(); } catch {}
+  return { status: r.status(), json };
+};
+let slot = 0;
+async function abrirComanda() {
+  for (let t = 0; t < 60; t++) {
+    const i = slot++;
+    const hora = 6 + (Math.floor(i / 3) % 16);
+    const min = (Math.floor(i / 48) % 4) * 15;
+    const r = await api("POST", "/api/v1/appointments", { clientId: CLIENTE, serviceId: SERVICO, professionalId: PROFS[i % 3], startsAt: `2026-10-20T${String(hora).padStart(2, "0")}:${String(min).padStart(2, "0")}:00-03:00` });
+    if (r.status !== 200) continue;
+    const id = r.json.data.appointment.id;
+    await api("POST", `/api/v1/appointments/${id}/confirm`);
+    await api("POST", `/api/v1/appointments/${id}/arrive`);
+    const c = await api("POST", `/api/v1/appointments/${id}/complete`);
+    return c.json.data.ticket.id;
+  }
+  throw new Error("sem horário livre");
+}
+
+const cdp = await ctx.newCDPSession(p);
+for (let n = 0; n < 5; n++) {
+  const ticket = await abrirComanda();
+  await p.goto(B + `/admin/comanda/${ticket}`, { waitUntil: "networkidle" });
+  await cdp.send("Emulation.setCPUThrottlingRate", { rate: 4 });
+  await cdp.send("Network.emulateNetworkConditions", { offline: false, latency: 150, downloadThroughput: (1.6e6 / 8) | 0, uploadThroughput: (0.75e6 / 8) | 0 });
+  await p.locator("main button", { hasText: /^Pix$/ }).click();
+  const t0 = Date.now();
+  await p.locator("main button", { hasText: /^Fechar comanda$/ }).click();
+  await p.getByText(/Comanda fechada/).first().waitFor({ timeout: 30000 });
+  res.receber.push(Date.now() - t0);
+  await cdp.send("Emulation.setCPUThrottlingRate", { rate: 1 });
+  await cdp.send("Network.emulateNetworkConditions", { offline: false, latency: 0, downloadThroughput: -1, uploadThroughput: -1 });
+}
+res.receberPior = Math.max(...res.receber);
+
+// APR-016b: vender pacote pela tela.
+const hoje = new Date(Date.now() - 3 * 3600e3).toISOString().slice(0, 10);
+const antes = (await api("GET", `/api/v1/cash/summary?month=${hoje.slice(0, 7)}`)).json?.data?.revenueCents;
+await p.goto(B + `/admin/clientes/${CLIENTE}`, { waitUntil: "networkidle" });
+let botao = p.locator("button", { hasText: /^Vender pacote$/ }).first();
+if (!(await botao.isVisible().catch(() => false))) {
+  const aba = p.getByRole("tab", { name: /Fidelidade/ }).or(p.locator("button", { hasText: /^Fidelidade$/ })).first();
+  await aba.click();
+  botao = p.locator("button", { hasText: /^Vender pacote$/ }).first();
+}
+await botao.click();
+const dialogo = p.getByRole("dialog");
+res.pacote.temCampoForma = await dialogo.getByLabel("Como ela pagou").isVisible();
+await dialogo.locator("button", { hasText: /^Vender pacote$/ }).click();
+res.pacote.semFormaRecusa = (await dialogo.getByRole("alert").innerText().catch(() => "")).trim();
+await dialogo.getByLabel("Como ela pagou").selectOption("pix");
+await dialogo.locator("button", { hasText: /^Vender pacote$/ }).click();
+await p.getByText(/Pacote registrado/).first().waitFor({ timeout: 15000 });
+res.pacote.vendeu = true;
+await p.screenshot({ path: "C:/temp/ciclo-medicao/u2-pacote-vendido.png" });
+const depois = (await api("GET", `/api/v1/cash/summary?month=${hoje.slice(0, 7)}`)).json?.data?.revenueCents;
+res.pacote.entrouDoMes = { antes, depois, diferenca: depois - antes };
+console.log(JSON.stringify(res, null, 1));
+await b.close();
