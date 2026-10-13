@@ -19,7 +19,11 @@
 | CNV-007 | 40f72e7b | `processarGrade`: caixas, perguntas, nível N0–N3, controle de totais, planilha anotada; invariante lança erro |
 | CNV-008 | db4a659f | corpus de 48 variações com gabarito: falso-aceite 0, perda 0, CPF/alergia nunca em ficha; achou e consertou 3 defeitos |
 
-**Onda A (núcleo) concluída.**
+| CNV-009a/010 | 9ab1dd70 | núcleo da exportação: 13 recursos, dialeto aberto + datapackage.json (Data Package v2) e dialeto Excel (BOM, `;`, telefone nacional — D16), fórmula neutralizada com TAB e desfeita na volta (D17); ida e volta pela esteira |
+| CNV-009b | a25feb94 | `GET /api/v1/account/export` (.zip com fflate 0.8.3), dono + duas etapas + auditoria, 1 por dia gasto depois do arquivo; cartão na tela de exportar |
+| CNV-011 | 9c9cf170 | exportação por cliente completa (notas, pontos, clube, créditos, comandas, pagamentos) e sempre auditada (D18); D15 na exportação antiga |
+
+**Onda A (núcleo) e Onda B (saída completa) concluídas.** Pendente de prova no navegador: o cartão "Tudo do seu negócio" (verificar no próximo build, a 390 px).
 
 ## Próximos
-Onda B: CNV-009 (exportação da conta inteira), CNV-010 (escape e telefone no Excel), CNV-011 (cota e LGPD). Depois Onda C (formatos).
+Onda C (formatos): CNV-012 Worker, CNV-013 planilhas (SheetJS 0.20.3 vendorizado), CNV-014 contatos, CNV-015 WhatsApp, CNV-016 documentos, CNV-017 PDF, CNV-018 print e foto. Depois Onda D (prévia com R$, carga em lotes, tela nova).
