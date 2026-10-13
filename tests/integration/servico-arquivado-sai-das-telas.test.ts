@@ -113,6 +113,8 @@ async function ciclo(clientId: string, serviceId: string, state: Database['publi
     personal_cycle_days: 21,
     state,
     late_days: state === 'on_track' ? 0 : 15,
+    // O Motor só marca atrasado quem tem previsão; ciclo sem `predicted_on` sai da lista (APR-035).
+    predicted_on: '2026-09-01',
     value_at_risk_cents: state === 'on_track' ? 0 : 3_000,
     profit_at_risk_cents: state === 'on_track' ? 0 : 2_500,
   })

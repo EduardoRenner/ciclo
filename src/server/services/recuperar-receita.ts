@@ -43,6 +43,12 @@ export type ListaRecuperar = {
   /** A soma do lucro em risco — o que de fato sobra se todo mundo dessa lista voltar. */
   totalProfitCents: number
   count: number
+  /**
+   * APR-035: quantas da lista estão só "na hora de voltar" (`due`). Elas entram na lista e não no
+   * alarme "estão sumindo" (0058, `ja_atrasado`) — a Hoje mostra a diferença em vez de deixar dois
+   * números brigando na mesma tela.
+   */
+  naHoraDeVoltar: number
   items: ItemRecuperar[]
 }
 
@@ -60,31 +66,17 @@ export async function listarParaRecuperar(
   tenantId: string,
   opcoes: { state?: EstadoCiclo; limit?: number } = {},
 ): Promise<ListaRecuperar> {
-  let consulta = db.from('v_recover_revenue').select('*').eq('tenant_id', tenantId)
+  // APR-035: a mesma regra do alarme da Hoje (`v_quem_sumiu`, 0118) — apagada, opt-out, quem tem
+  // ciclo em dia e ciclo sem previsão saem NO BANCO, num lugar só.
+  let consulta = db.from('v_quem_sumiu').select('*').eq('tenant_id', tenantId)
   if (opcoes.state) consulta = consulta.eq('state', opcoes.state)
 
-  /*
-   * A segunda consulta existe porque `v_recover_revenue` filtra `on_track` FORA — de dentro dela
-   * é impossível saber se a cliente tem algum ciclo saudável. Sem essa informação, quem vem todo
-   * mês cortar o cabelo entrava na lista de "atrasadas para voltar" por causa de uma progressiva
-   * que fez uma vez em março. Ver `core/ciclo/quem-recuperar.ts` para os números medidos.
-   */
-  const [{ data, error }, { data: saudaveis, error: erroSaudaveis }, { data: semMensagem, error: erroOptOut }] = await Promise.all([
-    consulta,
-    db.from('client_cycles').select('client_id').eq('tenant_id', tenantId).eq('state', 'on_track'),
-    // `v_recover_revenue` não traz o opt-out, e mudar a view pede migration. Quem pediu "PARAR" é
-    // pouca gente por salão: uma leitura curta no mesmo lote, sem ida de rede a mais em série.
-    db.from('clients').select('id').eq('tenant_id', tenantId).eq('whatsapp_opt_out', true),
-  ])
+  const { data, error } = await consulta
   if (error) throw new AppError('INTERNAL', { cause: error })
-  if (erroSaudaveis) throw new AppError('INTERNAL', { cause: erroSaudaveis })
-  if (erroOptOut) throw new AppError('INTERNAL', { cause: erroOptOut })
-  const optOuts = new Set((semMensagem ?? []).map((c) => c.id))
 
   // A view não declara FK nem `not null` para o PostgREST/gerador de tipos,
   // mas toda coluna aqui vem de `join`s obrigatórios sobre colunas `not null`
   // (0001) — o `!` é seguro, não uma aposta.
-  const comCicloEmDia = new Set((saudaveis ?? []).map((l) => l.client_id))
   /*
     `docs/48` C3: quem ordena a fila é o LUCRO em risco, não a receita. As duas continuam existindo
     lado a lado (`0067`) porque respondem perguntas diferentes — "quanto está parado" é o número
@@ -92,7 +84,8 @@ export async function listarParaRecuperar(
   */
   const linhas = quemRecuperar(
     (data ?? []).map((l) => ({ ...l, clientId: l.client_id!, ordemCents: l.profit_at_risk_cents ?? 0 })),
-    comCicloEmDia,
+    // Quem tem ciclo em dia já saiu na view; `quemRecuperar` segue reduzindo a uma linha por cliente.
+    new Set<string>(),
   )
 
   /*
@@ -108,12 +101,14 @@ export async function listarParaRecuperar(
     totalValueCents,
     totalProfitCents,
     count: linhas.length,
+    naHoraDeVoltar: linhas.filter((l) => l.state === 'due').length,
     items: linhas.slice(0, limite).map((l) => ({
       clientId: l.client_id!,
       serviceId: l.service_id!,
       name: l.client_name!,
       phone: l.phone_e164,
-      optOut: optOuts.has(l.client_id!),
+      // Quem pediu "PARAR" já não chega aqui (a view exclui); o campo fica para a tela não mudar.
+      optOut: false,
       serviceName: l.service_name!,
       state: l.state!,
       lateDays: l.late_days!,

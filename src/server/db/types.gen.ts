@@ -5197,6 +5197,55 @@ export type Database = {
           },
         ]
       }
+      v_quem_sumiu: {
+        Row: {
+          client_id: string | null
+          client_name: string | null
+          last_campaign_at: string | null
+          last_visit_on: string | null
+          late_days: number | null
+          personal_cycle_days: number | null
+          phone_e164: string | null
+          predicted_on: string | null
+          profit_at_risk_cents: number | null
+          sample_size: number | null
+          service_id: string | null
+          service_name: string | null
+          state: Database["public"]["Enums"]["cycle_state"] | null
+          tenant_id: string | null
+          value_at_risk_cents: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_cycles_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_cycles_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "v_client_segments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_cycles_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_cycles_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_recover_revenue: {
         Row: {
           client_id: string | null

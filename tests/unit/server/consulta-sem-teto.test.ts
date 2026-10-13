@@ -56,7 +56,6 @@ const LINHA_DE_BASE: Record<string, number> = {
   'server/services/public-booking.ts': 1,
   'server/services/quem-ja-atendo.ts': 1,
   'server/services/recorrencia.ts': 2,
-  'server/services/recuperar-receita.ts': 2,
   'server/services/resumo-hoje.ts': 2,
   'server/services/whatsapp-inbound.ts': 1,
   'app/admin/caixa/page.tsx': 1,

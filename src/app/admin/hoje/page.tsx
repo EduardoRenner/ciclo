@@ -115,7 +115,7 @@ export default async function PaginaHoje({ searchParams }: { searchParams: Promi
     */
     listarParaRecuperar(db, ctx.tenantId, { limit: 1 }).catch((erro: unknown) => {
       console.warn(JSON.stringify({ level: 'warn', event: 'receita_em_risco_indisponivel' }), erro)
-      return { totalValueCents: 0, totalProfitCents: 0, count: 0, items: [] }
+      return { totalValueCents: 0, totalProfitCents: 0, count: 0, naHoraDeVoltar: 0, items: [] }
     }),
     // docs/45 §1.4: a manchete, não a explicação (essa mora em /admin/recuperar). Mesmo `catch`
     // das outras chamadas — sem amostra suficiente `acertoBps` já vem `null` e o teaser não
@@ -179,7 +179,7 @@ export default async function PaginaHoje({ searchParams }: { searchParams: Promi
       <Hoje
         resumo={resumo}
         atribuicao={atribuicao}
-        emRisco={{ totalCents: emRisco.totalValueCents, count: emRisco.count }}
+        emRisco={{ totalCents: emRisco.totalValueCents, count: emRisco.count, naHoraDeVoltar: emRisco.naHoraDeVoltar }}
         site={ctx.tenant.slug ? { slug: ctx.tenant.slug, nome: ctx.tenant.name } : null}
         prestacaoDeContas={prestacaoDeContas}
       >

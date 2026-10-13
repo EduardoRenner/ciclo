@@ -181,7 +181,7 @@ export default function Hoje({
   resumo: ResumoHoje
   atribuicao: ReceitaAtribuida
   /** Total e contagem de `listarParaRecuperar` — a MESMA fonte de `/admin/recuperar`. */
-  emRisco: { totalCents: number; count: number }
+  emRisco: { totalCents: number; count: number; naHoraDeVoltar: number }
   /** docs/62 Fase A2: `null` só quando o tenant ainda não tem slug (não deveria acontecer em /admin, mas o tipo permite). */
   site: { slug: string; nome: string } | null
   /** docs/45 §1.4: a manchete do único recurso que nenhum concorrente pesquisado tem. */
@@ -312,6 +312,7 @@ export default function Hoje({
             apoio={
               <span className="flex items-center justify-between gap-2">
                 {`${emRisco.count} ${emRisco.count === 1 ? 'cliente para chamar de volta' : 'clientes para chamar de volta'}`}
+                {emRisco.naHoraDeVoltar > 0 ? ` · ${emRisco.naHoraDeVoltar} na hora de voltar` : ''}
                 <span className="flex shrink-0 items-center gap-0.5 font-semibold text-acc-2">
                   Ver quem sumiu
                   <ChevronRight aria-hidden className="size-4" />

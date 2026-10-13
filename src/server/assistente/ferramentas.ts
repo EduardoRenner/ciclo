@@ -756,11 +756,19 @@ export const FERRAMENTAS: Ferramenta[] = [
       if (!alvo) {
         // Fora da lista não é "não achei": a pessoa pode existir e estar no ritmo. Dizer "não achei"
         // para uma cliente que está na tela ao lado seria mentir sobre o cadastro.
-        const existe = cliente ? (await listarClientes(ctx.db, ctx.tenantId, { busca: cliente, limite: 5 })).length > 0 : Boolean(clientId)
+        const candidatos = clientId
+          ? [await buscarCliente(ctx.db, ctx.tenantId, clientId).catch(() => null)].filter((c): c is NonNullable<typeof c> => c !== null)
+          : cliente
+            ? await listarClientes(ctx.db, ctx.tenantId, { busca: cliente, limite: 5 })
+            : []
+        // APR-035: quem pediu "PARAR" já sai da lista (`v_quem_sumiu`). A resposta continua dizendo o
+        // motivo verdadeiro — é a mesma trava da tela e do servidor (`registrarChamadaManual`).
+        if (candidatos.length === 1 && candidatos[0]!.whatsapp_opt_out) {
+          return { status: 'nao_da', motivo: 'pediu_para_nao_receber', cliente: candidatos[0]!.name }
+        }
+        const existe = candidatos.length > 0 || Boolean(clientId)
         return existe ? { status: 'nao_da', motivo: 'fora_da_lista', cliente: cliente ?? '' } : { status: 'nao_achei', oQue: 'cliente', termo: cliente ?? '' }
       }
-      // A mesma trava da tela e do servidor (`registrarChamadaManual`): pediu para parar, não recebe.
-      if (alvo.optOut) return { status: 'nao_da', motivo: 'pediu_para_nao_receber', cliente: alvo.name }
 
       return {
         status: 'proposta',
