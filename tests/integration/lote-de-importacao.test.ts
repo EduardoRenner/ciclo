@@ -4,6 +4,9 @@ import { createClient } from '@supabase/supabase-js'
 import dotenv from 'dotenv'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
+import { Temporal } from '@js-temporal/polyfill'
+
+import { previaDoDinheiro } from '@/core/ingestao/previa-do-dinheiro'
 import { criarCliente } from '@/server/services/clientes'
 import { abrirLote, desfazerLote, gravarPedaco } from '@/server/services/lote-de-importacao'
 import { executarOnboarding } from '@/server/services/onboarding'
@@ -56,6 +59,7 @@ async function entrarComo(quem: 'dona' | 'profissional') {
   return c
 }
 
+const REGISTRO_VAZIO = { linhas: [1], nome: '', telefone: null, telefonesExtras: [], email: null, emailSugerido: null, nascimento: null, ultimaVisita: null as string | null, visitas: [], observacao: null, etiquetas: [], genero: null, origem: null, avisos: [] }
 const contagens = { lidas: 3, ouro: 2, comAviso: 1, quarentena: 0, ignoradas: 0 }
 const abrir = (rowsExpected = 3) =>
   abrirLote(svc, tenantId, userId, { fileSha256: createHash('sha256').update(randomUUID()).digest('hex'), formato: 'csv', origem: 'arquivo', nivel: 'N2', counts: contagens, rowsExpected })
@@ -192,5 +196,26 @@ describe('desfazer a importação (CNV-022) — como a dona, contra o banco loca
     await expect(desfazerLote(await entrarComo('profissional'), doProfissional.lote.id)).rejects.toMatchObject({ code: 'FORBIDDEN' })
     const { data } = await svc.from('import_batches').select('status').eq('id', doProfissional.lote.id).single()
     expect(data?.status).toBe('aberto')
+  })
+})
+
+describe('o R$ da prévia é o que a Hoje soma depois de gravar (CNV-021)', () => {
+  it('soma de value_at_risk_cents das fichas do lote = previaDoDinheiro, pessoa a pessoa', async () => {
+    const { data: servico } = await svc.from('services').select('id, price_cents, cycle_days').eq('tenant_id', tenantId).gt('cycle_days', 0).gt('price_cents', 0).limit(1).single()
+    const hoje = Temporal.Now.plainDateISO()
+    const dias = [2, 15, 25, 40, 80, 200]
+    const registros = dias.map((d, i) => ({ ...REGISTRO_VAZIO, linhas: [i + 1], nome: `Volta ${i}`, ultimaVisita: hoje.subtract({ days: servico!.cycle_days! + d - 5 }).toString() }))
+    const previa = previaDoDinheiro(registros, { priceCents: servico!.price_cents, cycleDays: servico!.cycle_days! }, hoje.toString())
+    expect(previa.sumidos, 'o cenário precisa ter gente sumida, senão a igualdade passa no zero').toBeGreaterThan(3)
+
+    const { lote } = await abrir(registros.length)
+    await gravarPedaco(svc, tenantId, lote.id, {
+      linhas: registros.map((r, i) => ({ linha: i + 1, nome: r.nome, ultimaVisita: r.ultimaVisita, etiquetas: [] })),
+      ultimo: true,
+      servicoId: servico!.id,
+    })
+    const { data: fichas } = await svc.from('clients').select('id').eq('import_batch_id', lote.id)
+    const { data: ciclos } = await svc.from('client_cycles').select('value_at_risk_cents').in('client_id', fichas!.map((f) => f.id))
+    expect(ciclos!.reduce((s, c) => s + c.value_at_risk_cents, 0)).toBe(previa.valorCents)
   })
 })
