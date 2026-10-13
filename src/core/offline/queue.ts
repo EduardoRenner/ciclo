@@ -5,12 +5,16 @@
  * adaptador de verdade (`src/lib/offline/api-client.ts`) é quem liga isso
  * no IndexedDB e no `fetch`.
  */
+import type { DonoDaMutacao } from './dono'
+
 export type Mutacao = {
   id: string
   method: 'POST' | 'PATCH' | 'DELETE'
   url: string
   body: unknown
   createdAt: string
+  /** APR-020: quem criou. Ausente nos itens gravados antes do conserto (ver `separarFilaPorDono`). */
+  dono?: DonoDaMutacao | null
 }
 
 export type ResultadoEnvio = { kind: 'ok' } | { kind: 'conflict' } | { kind: 'discard' } | { kind: 'retry' }

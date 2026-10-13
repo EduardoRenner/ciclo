@@ -1,6 +1,7 @@
 'use client'
 
 import { ehEscritaJuridica } from '@/core/advocacia/falha-de-escrita'
+import { separarFilaPorDono, type ContextoDaSessao } from '@/core/offline/dono'
 import { classificarResposta, drenarFila, type Mutacao, type ResultadoEnvio } from '@/core/offline/queue'
 
 import { listarMutacoes, removerMutacao, salvarMutacao } from './db'
@@ -29,6 +30,11 @@ export type EventoFila =
    * salvamento.
    */
   | { tipo: 'enfileirada' }
+  /**
+   * APR-020: itens que ficaram guardados nesta passada porque não são da sessão atual — de outra
+   * pessoa (ou outro negócio) neste aparelho, ou do formato antigo, sem dono.
+   */
+  | { tipo: 'guardadas'; deOutros: number; semDono: number }
 
 const assinantes = new Set<(evento: EventoFila) => void>()
 
@@ -57,6 +63,17 @@ async function enviarMutacao(mutacao: Mutacao): Promise<ResultadoEnvio> {
 let drenagemEmAndamento = false
 
 /**
+ * APR-020: quem está usando o painel agora. A casca do painel define ao montar (`ResolucaoDeFila`),
+ * a partir da sessão validada no servidor. Sem ela a fila não drena: não dá para saber em nome de
+ * quem cada item sairia.
+ */
+let sessaoAtual: ContextoDaSessao | null = null
+
+export function definirSessaoDaFila(sessao: ContextoDaSessao): void {
+  sessaoAtual = sessao
+}
+
+/**
  * Roda a fila inteira uma vez. Conflito FICA na fila (§4.2.5: "nunca descarta em silêncio") — só
  * sincronizada/descartada saem do IndexedDB.
  *
@@ -73,7 +90,10 @@ export async function drenarFilaPendente(): Promise<void> {
   if (drenagemEmAndamento) return
   drenagemEmAndamento = true
   try {
-    const fila = await listarMutacoes()
+    if (!sessaoAtual) return
+    // APR-020: o filtro por dono vem ANTES de qualquer envio — inclusive o reenvio de 401/403 (R-31).
+    const { minhas: fila, deOutros, semDono } = separarFilaPorDono(await listarMutacoes(), sessaoAtual)
+    emitir({ tipo: 'guardadas', deOutros: deOutros.length, semDono: semDono.length })
     if (fila.length === 0) return
 
     const resultado = await drenarFila(fila, enviarMutacao)
@@ -114,6 +134,32 @@ async function tentarNovamenteComBackoff(): Promise<void> {
   }
 }
 
+/** APR-020: os itens sem dono (formato antigo) passam a ser da sessão atual, e a fila drena. */
+export async function assumirFilaSemDono(): Promise<void> {
+  if (!sessaoAtual) return
+  const { semDono } = separarFilaPorDono(await listarMutacoes(), sessaoAtual)
+  for (const mutacao of semDono) await salvarMutacao({ ...mutacao, dono: sessaoAtual })
+  await drenarFilaPendente()
+}
+
+/**
+ * APR-020: descarta o que não é desta sessão. Devolve QUANTOS — quem chama conta para a pessoa
+ * (o `catch` que descarta tem que avisar, regra da casa).
+ */
+export async function descartarFilaGuardada(qual: 'deOutros' | 'semDono'): Promise<number> {
+  if (!sessaoAtual) return 0
+  const alvo = separarFilaPorDono(await listarMutacoes(), sessaoAtual)[qual]
+  for (const mutacao of alvo) await removerMutacao(mutacao.id)
+  emitir({ tipo: 'guardadas', ...contagemGuardada(await listarMutacoes()) })
+  return alvo.length
+}
+
+function contagemGuardada(fila: Mutacao[]): { deOutros: number; semDono: number } {
+  if (!sessaoAtual) return { deOutros: 0, semDono: 0 }
+  const { deOutros, semDono } = separarFilaPorDono(fila, sessaoAtual)
+  return { deOutros: deOutros.length, semDono: semDono.length }
+}
+
 if (typeof window !== 'undefined') {
   window.addEventListener('online', () => {
     void drenarFilaPendente()
@@ -143,6 +189,7 @@ export async function apiFetch(url: string, opcoes: { method: 'POST' | 'PATCH' |
     url,
     body: opcoes.body ?? null,
     createdAt: new Date().toISOString(),
+    dono: sessaoAtual,
   }
 
   if (!navigator.onLine) {
