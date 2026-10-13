@@ -10,6 +10,7 @@
  * E a conta fecha: `lidas = ouro + comAviso + quarentena + ignoradas` — se não fechar, a esteira lança
  * erro em vez de devolver um resultado com linha sumida.
  */
+import { desfazerNeutralizacao } from '@/core/exportacao/csv'
 import { CAMPOS_QUE_NAO_ENTRAM, classificarColunas, type Campo, type Classificacao } from '@/core/ingestao/classificar'
 import { juntarRegistros, type Ligacao } from '@/core/ingestao/juntar'
 import { normalizarData, normalizarDinheiro, normalizarEmail, normalizarNome, separarTelefones } from '@/core/ingestao/normalizar'
@@ -118,6 +119,9 @@ export function processarGrade(grade: string[][], contexto: ContextoDaEsteira): 
     return fechar({ tabela: null, classificacao: null, registros: [], quarentena: [], ignoradas, perguntas: [], nivel: 'N0', outrasTabelas: 0, controleDeTotais: null }, grade.length, contexto)
   }
 
+  // A célula que a exportação neutralizou contra fórmula ("\t-Ana", ou o "'-Ana" antigo) volta ao
+  // valor original: a ida e volta não pode mudar o nome de ninguém (defeito D17).
+  for (const l of tabela.linhas) l.celulas = l.celulas.map(desfazerNeutralizacao)
   const linhas = tabela.linhas.map((l) => l.celulas)
   const perfis = perfilarColunas(linhas, tabela.cabecalho.length)
   const classificacao = classificarColunas(perfis, tabela.cabecalho, (i) => linhas.map((l) => l[i] ?? ''))
@@ -200,7 +204,7 @@ export function processarGrade(grade: string[][], contexto: ContextoDaEsteira): 
     }
 
     const etiquetas = valorDe(c, col('etiquetas'))
-      .split(/[,;]/)
+      .split(/[,;|]/)
       .map((e) => e.trim())
       .filter(Boolean)
     boas.push({

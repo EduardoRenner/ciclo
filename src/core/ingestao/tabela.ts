@@ -38,7 +38,8 @@ export function tipoDaCelula(bruto: string): TipoDeCelula {
   const v = bruto.trim()
   if (v === '') return 'vazio'
   if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return 'email'
-  if (/^(\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4}|\d{4}-\d{2}-\d{2})([ T]\d{1,2}:\d{2}(:\d{2})?)?$/.test(v)) return 'data'
+  // Com hora, segundos, fração e fuso (o ISO completo que a exportação aberta escreve: "…T12:00:00.000Z").
+  if (/^(\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4}|\d{4}-\d{2}-\d{2})([ T]\d{1,2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:?\d{2})?)?$/.test(v)) return 'data'
   if (/^(r\$|\$)\s*-?[\d.,]+$/i.test(v) || /^-?\d{1,3}(\.\d{3})*,\d{2}$/.test(v)) return 'dinheiro'
   const digitos = v.replace(/\D/g, '')
   if (/^[+()\d\s.-]+$/.test(v) && digitos.length >= 8 && digitos.length <= 13 && /[\s()-]/.test(v.replace(/^\+/, '')) ) return 'telefone'
