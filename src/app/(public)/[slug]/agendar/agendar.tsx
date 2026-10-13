@@ -364,6 +364,7 @@ export default function Agendar({
   */
   const tituloDoSucesso = useRef<HTMLHeadingElement>(null);
   const pedidoDeHorarios = useRef(0);
+  const tentativaDeAgendar = useRef<{ corpo: string; chave: string } | null>(null);
   useEffect(() => {
     if (confirmado) tituloDoSucesso.current?.focus();
   }, [confirmado]);
@@ -613,10 +614,7 @@ export default function Agendar({
         horário apareceu, porque a requisição pode ter chegado antes de a resposta se perder.
       */
       try {
-        const r = await fetch(`/api/v1/public/${slug}/book`, {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
+        const corpo = JSON.stringify({
             serviceId,
             professionalId: slotEscolhido.professionalId,
             startsAt: slotEscolhido.startsAt,
@@ -628,7 +626,21 @@ export default function Agendar({
             ind: ind || undefined,
             volta: volta || undefined,
             wantsSuggestedProduct: querLevarProduto,
-          }),
+          });
+        // Chave por INTENÇÃO: a mesma enquanto o pedido não mudar. Se a resposta se perde e a
+        // pessoa toca de novo, o servidor devolve o mesmo agendamento em vez de "horário já
+        // reservado" para o horário dela (APR-004, achado C-04). Mudou serviço, horário ou dados,
+        // é outro pedido e ganha outra chave.
+        if (tentativaDeAgendar.current?.corpo !== corpo) {
+          tentativaDeAgendar.current = { corpo, chave: crypto.randomUUID() };
+        }
+        const r = await fetch(`/api/v1/public/${slug}/book`, {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            "idempotency-key": tentativaDeAgendar.current.chave,
+          },
+          body: corpo,
         });
         const json = (await r.json()) as {
           data?: { reconhecimentoToken?: string | null };
@@ -657,7 +669,7 @@ export default function Agendar({
         setConfirmado(true);
       } catch {
         setErro(
-          "Não consegui falar com o servidor. Confira a conexão e tente de novo. Se o horário já tiver sido marcado, ele aparece ao escolher o dia outra vez.",
+          "Não consegui falar com o servidor. Se o pedido chegou, este horário sai da lista. Toque em Confirmar de novo: não vai duplicar.",
         );
       }
     });

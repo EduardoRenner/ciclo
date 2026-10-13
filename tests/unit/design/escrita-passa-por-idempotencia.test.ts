@@ -124,7 +124,6 @@ const ISENTAS: { rota: string; porque: string }[] = [
 
   // ── Públicas, e a trava é do BANCO, não do header: quem chama é anônimo e pode mandar a chave
   //    que quiser. `appointments_no_overlap` recusa o segundo agendamento no mesmo horário.
-  { rota: 'public/[slug]/book', porque: 'anônimo escolhe a própria chave; a trava real é a constraint de sobreposição' },
   { rota: 'public/[slug]/quote-request', porque: 'anônimo escolhe a própria chave; o balde por IP é a trava' },
   { rota: 'public/waitlist/claim/[token]', porque: 'anônimo; o encaixe é fechado por estado e pela constraint de sobreposição' },
   /*

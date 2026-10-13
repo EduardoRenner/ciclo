@@ -573,6 +573,14 @@ export const EsquemaBookingPublico = z.object({
 // deixa OPCIONAL na entrada e OBRIGATÓRIO na saída inferida. `lerCorpo` (rota) aplica o default
 // via `.parse()`; os testes de integração chamam esta função direto, sem passar pelo Zod, e
 // `z.input` é o tipo que reflete o que dá para digitar sem o default.
+/**
+ * O id do negócio pelo endereço público, para a idempotência do `POST book` (APR-004). A chave
+ * guardada é prefixada pelo tenant: sem o id, a mesma chave de dois salões colidiria.
+ */
+export async function idDoTenantPublico(slug: string): Promise<string> {
+  return withNovoTenant(async (svc) => (await tenantPeloSlug(svc, slug)).id)
+}
+
 export async function criarAgendamentoPublico(slug: string, entrada: z.input<typeof EsquemaBookingPublico>) {
   const telefone = normalizarTelefoneBR(entrada.phone)
   if (!telefone) throw AppError.validacao({ phone: 'Telefone inválido. Confira o DDD e o número.' })
