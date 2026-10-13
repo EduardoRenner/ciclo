@@ -343,6 +343,12 @@ export default function Agendar({
   const [querLevarProduto, setQuerLevarProduto] = useState(false);
   const [confirmado, setConfirmado] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  /*
+    Horários perto do que a pessoa queria, vindos do 409 (APR-005, achado F-02). O aviso era apagado
+    no mesmo instante pelo `setErro(null)` da recarga, e o formulário sumia sem explicação.
+  */
+  const [alternativas, setAlternativas] = useState<string[]>([]);
+  const avisoRef = useRef<HTMLDivElement>(null);
   const [pendente, iniciarTransicao] = useTransition();
 
   /*
@@ -457,6 +463,7 @@ export default function Agendar({
     // chegava atrasada sobrescrevia a do dia escolhido, e a cliente marcava um horário de outro dia
     // achando que era o da tela (APR-003, achado F-01, reproduzido 3 de 3 com rede lenta).
     const meuPedido = ++pedidoDeHorarios.current;
+    setAlternativas([]);
     setDia(novoDia);
     setSlots(null);
     setSlotEscolhido(null);
@@ -652,8 +659,16 @@ export default function Agendar({
         };
         if (!r.ok) {
           if (json.error?.code === "SLOT_TAKEN") {
-            setErro("Esse horário acabou de ser reservado. Escolha outro.");
+            // A recarga vem ANTES do aviso: ela limpa o erro, e o aviso tem que ficar na tela.
             buscarDisponibilidade(dia);
+            setErro(
+              "Esse horário acabou de ser marcado por outra pessoa. Seu nome e telefone continuam aqui.",
+            );
+            setAlternativas(json.error.details?.alternatives ?? []);
+            requestAnimationFrame(() => {
+              avisoRef.current?.scrollIntoView({ block: "center" });
+              avisoRef.current?.focus();
+            });
             return;
           }
           setErro(
@@ -1087,9 +1102,32 @@ export default function Agendar({
       </section>
 
       {erro ? (
-        <p role="alert" className="text-secundario text-bad">
-          {erro}
-        </p>
+        <div ref={avisoRef} tabIndex={-1} className="flex flex-col gap-2">
+          <p role="alert" className="text-secundario text-bad">
+            {erro}
+          </p>
+          {alternativas.length ? (
+            (() => {
+              const livres = alternativas
+                .map((iso) => slots?.find((s) => s.startsAt === iso))
+                .filter((s): s is Slot => Boolean(s));
+              return livres.length ? (
+                <div className="flex flex-col gap-2">
+                  <p className="text-secundario text-txt-2">Estes estão livres, perto do que você queria:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {livres.map((s) => (
+                      <Chip key={`${s.startsAt}-${s.professionalId}`} onClick={() => escolherHorario(s)}>
+                        {horaLocal(s.startsAt, timezone)}
+                      </Chip>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-secundario text-txt-2">Escolha outro horário na lista abaixo ou outro dia.</p>
+              );
+            })()
+          ) : null}
+        </div>
       ) : null}
 
       {/*
