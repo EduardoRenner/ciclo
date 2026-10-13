@@ -87,9 +87,9 @@ export default async function PaginaQuemJaAtendo() {
             com o mesmo peso faria a maioria parar para escolher um caminho que não é dela.
           */}
           <p className="mt-6 text-secundario text-txt-3">
-            Já tem tudo numa planilha?{' '}
+            Já tem a lista num arquivo?{' '}
             <Link href="/admin/clientes/importar" className="toque-48 whitespace-nowrap font-semibold text-txt-2 underline underline-offset-2">
-              Importe de um arquivo CSV
+              Importe o arquivo, PDF ou print
             </Link>
             .
           </p>

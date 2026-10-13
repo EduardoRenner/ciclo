@@ -258,7 +258,7 @@ export default function ListaClientes({ iniciais }: { iniciais: ClienteLinha[] }
               <p>
                 Já tem uma lista pronta?{' '}
                 <Link href="/admin/clientes/importar" className="font-semibold text-acc-2 underline underline-offset-2">
-                  Importe uma planilha
+                  Importe planilha, print ou contatos
                 </Link>
               </p>
             </div>
