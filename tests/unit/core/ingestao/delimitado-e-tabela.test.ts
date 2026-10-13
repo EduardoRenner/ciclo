@@ -98,9 +98,10 @@ describe('achar a tabela (CNV-003, defeito D3 da auditoria)', () => {
   })
 
   it('grupo sem rótulo (só o nome numa linha) também vira coluna', () => {
-    const { grade } = gradeDeTexto(['Cliente;Telefone', 'Ana', 'Maria;11999990001', 'Bia', 'Carla;11999990003'].join('\n'))
+    // Relatório de verdade: dois grupos, cada um com mais de uma linha (uma lista com um nome solto não é grupo).
+    const { grade } = gradeDeTexto(['Cliente;Telefone', 'Ana', 'Maria;11999990001', 'Rita;11999990002', 'Bia', 'Carla;11999990003', 'Duda;11999990004'].join('\n'))
     const r = acharTabelas(grade)
-    expect(r.tabelas[0]!.linhas.map((l) => l.celulas[2])).toEqual(['Ana', 'Bia'])
+    expect(r.tabelas[0]!.linhas.map((l) => l.celulas[2])).toEqual(['Ana', 'Ana', 'Bia', 'Bia'])
     contaFecha(r)
   })
 

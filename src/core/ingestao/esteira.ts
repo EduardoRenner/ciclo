@@ -13,6 +13,7 @@
 import { desfazerNeutralizacao } from '@/core/exportacao/csv'
 import { CAMPOS_QUE_NAO_ENTRAM, classificarColunas, type Campo, type Classificacao } from '@/core/ingestao/classificar'
 import { juntarRegistros, type Ligacao } from '@/core/ingestao/juntar'
+import { gradeDeListaLivre } from '@/core/ingestao/lista-livre'
 import { normalizarData, normalizarDinheiro, normalizarEmail, normalizarNome, separarTelefones } from '@/core/ingestao/normalizar'
 import { perfilarColunas, type OrdemDeData } from '@/core/ingestao/perfil'
 import { acharTabelas, type Tabela, type TabelasAchadas } from '@/core/ingestao/tabela'
@@ -82,6 +83,8 @@ export type Pergunta =
   | { tipo: 'mesma_pessoa'; ligacao: Ligacao; nomes: [string, string] }
 
 export type ResultadoDaEsteira = {
+  /** A grade que a esteira leu de fato (a lista livre ganha uma linha de cabeçalho): é nela que a planilha anotada se apoia. */
+  gradeLida: string[][]
   tabela: Tabela | null
   classificacao: Classificacao | null
   registros: RegistroCanonico[]
@@ -109,14 +112,16 @@ export type ContextoDaEsteira = {
 
 const valorDe = (celulas: string[], indice: number | undefined) => (indice === undefined ? '' : (celulas[indice] ?? '').trim())
 
-export function processarGrade(grade: string[][], contexto: ContextoDaEsteira): ResultadoDaEsteira {
+export function processarGrade(gradeRecebida: string[][], contexto: ContextoDaEsteira): ResultadoDaEsteira {
+  // Lista livre (uma pessoa por linha, sem colunas) vira tabela de Nome, Telefone e E-mail antes da E3.
+  const grade = gradeDeListaLivre(gradeRecebida) ?? gradeRecebida
   const achadas = acharTabelas(grade)
   const indiceDaTabela = contexto.tabela ?? achadas.tabelas.reduce((melhor, t, i, todas) => (t.linhas.length > (todas[melhor]?.linhas.length ?? -1) ? i : melhor), 0)
   const tabela = achadas.tabelas[indiceDaTabela] ?? null
   // Linhas de OUTRAS tabelas da grade contam como ignoradas nesta passada (a prévia oferece trocar).
   const ignoradas = [...achadas.ignoradas, ...achadas.tabelas.flatMap((t, i) => (i === indiceDaTabela ? [] : t.linhas.map((l) => ({ origem: l.origem, motivo: 'outra_tabela' as const }))))]
   if (!tabela) {
-    return fechar({ tabela: null, classificacao: null, registros: [], quarentena: [], ignoradas, perguntas: [], nivel: 'N0', outrasTabelas: 0, controleDeTotais: null }, grade.length, contexto)
+    return fechar({ gradeLida: grade, tabela: null, classificacao: null, registros: [], quarentena: [], ignoradas, perguntas: [], nivel: 'N0', outrasTabelas: 0, controleDeTotais: null }, grade.length, contexto)
   }
 
   // A célula que a exportação neutralizou contra fórmula ("\t-Ana", ou o "'-Ana" antigo) volta ao
@@ -247,7 +252,7 @@ export function processarGrade(grade: string[][], contexto: ContextoDaEsteira): 
   const nivel: Nivel = historico && comValor ? 'N3' : historico ? 'N2' : temVisita ? 'N1' : 'N0'
 
   return fechar(
-    { tabela, classificacao, registros, quarentena, ignoradas, perguntas, nivel, outrasTabelas: achadas.tabelas.length - 1, controleDeTotais: null },
+    { gradeLida: grade, tabela, classificacao, registros, quarentena, ignoradas, perguntas, nivel, outrasTabelas: achadas.tabelas.length - 1, controleDeTotais: null },
     grade.length,
     contexto,
   )

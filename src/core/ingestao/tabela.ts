@@ -72,6 +72,12 @@ function pareceCabecalho(linha: string[]): number {
   return texto * 0.4 + conhecidas * 0.4 + distintos * 0.1 + curtas * 0.1
 }
 
+/** Fração das células que são palavras de cabeçalho conhecidas ("Nome", "Telefone", "Data"…). */
+const fracaoConhecida = (linha: string[]) => {
+  const cheias = preenchidas(linha)
+  return cheias.length ? cheias.filter((c) => PALAVRAS_DE_CABECALHO.test(c.trim())).length / cheias.length : 0
+}
+
 const mesmaLinha = (a: string[], b: string[]) => {
   const x = preenchidas(a).map((c) => c.trim().toLowerCase())
   const y = preenchidas(b).map((c) => c.trim().toLowerCase())
@@ -127,6 +133,13 @@ export function acharTabelas(grade: string[][]): TabelasAchadas {
       const coluna = linha.findIndex((c) => c.trim() !== '')
       if (coluna > 0 || (i < bloco.fim && preenchidas(grade[i + 1]!).length === 1)) esparsa = true
     }
+    // Grupo sem rótulo ("Ana" sozinha) só no padrão de relatório de verdade: pelo menos dois rótulos no
+    // bloco, cada um seguido de pelo menos duas linhas cheias. Numa lista com uma pessoa sem contato
+    // ("Ana Paula" sozinha), o nome dela não pode virar grupo.
+    const cheiaEm = (k: number) => k <= bloco.fim && preenchidas(grade[k]!).length >= 2
+    const rotulos: number[] = []
+    for (let i = bloco.inicio; i <= bloco.fim; i++) if (preenchidas(grade[i]!).length === 1 && cheiaEm(i + 1) && cheiaEm(i + 2)) rotulos.push(i)
+    const relatorioAgrupado = !esparsa && rotulos.length >= 2
     for (let i = bloco.inicio; i <= bloco.fim; i++) {
       const linha = grade[i]!
       const cheias = preenchidas(linha)
@@ -149,7 +162,7 @@ export function acharTabelas(grade: string[][]): TabelasAchadas {
         continue
       }
       // Linha solta (uma célula) no meio de uma tabela aberta: nome de grupo sem rótulo ("Ana").
-      if (!esparsa && cheias.length === 1 && tabelaAberta && tipoDaCelula(primeira) === 'texto' && larguraTipica >= 2 && i < bloco.fim) {
+      if (relatorioAgrupado && rotulos.includes(i) && cheias.length === 1 && tabelaAberta && tipoDaCelula(primeira) === 'texto' && larguraTipica >= 2 && i < bloco.fim) {
         const proxima = grade[i + 1]!
         if (preenchidas(proxima).length >= 2) {
           grupo = primeira
@@ -162,7 +175,10 @@ export function acharTabelas(grade: string[][]): TabelasAchadas {
       const largaOBastante = cheias.length >= Math.max(2, Math.ceil(larguraTipica * 0.6))
       const proximaEDado = i < bloco.fim && preenchidas(grade[i + 1]!).length >= 2 && pareceCabecalho(grade[i + 1]!) < pontosCabecalho
 
-      if (largaOBastante && pontosCabecalho >= 0.5 && (proximaEDado || !tabelaAberta)) {
+      // Com a tabela já aberta, um SEGUNDO cabeçalho precisa de palavras de cabeçalho conhecidas: linha de
+      // dados com texto ("João Lima", "11 98888 0002 / 11 3333-0002") não abre tabela nova.
+      const novoCabecalhoValido = !tabelaAberta || fracaoConhecida(linha) >= 0.5
+      if (largaOBastante && pontosCabecalho >= 0.5 && novoCabecalhoValido && (proximaEDado || !tabelaAberta)) {
         cabecalhoAtual = linha
         grupo = null
         tabelaAberta = { cabecalho: linha.map((c) => c.trim()), temCabecalho: true, linhas: [], colunaDeGrupo: null, confianca: Math.min(1, 0.5 + pontosCabecalho / 2) }

@@ -27,7 +27,8 @@ export async function processarArquivo(pedido: PedidoDaEsteira): Promise<Respost
   const aba = pedido.aba ?? lido.abas.reduce((melhor, a, i, todas) => (a.grade.length > todas[melhor]!.grade.length ? i : melhor), 0)
   const grade = lido.abas[aba]?.grade ?? []
   try {
-    return { ok: true, formato: lido.formato, abas: lido.abas.map((a) => a.nome), aba, grade, resultado: processarGrade(grade, pedido.contexto), avisos: lido.avisos }
+    const resultado = processarGrade(grade, pedido.contexto)
+    return { ok: true, formato: lido.formato, abas: lido.abas.map((a) => a.nome), aba, grade: resultado.gradeLida, resultado, avisos: lido.avisos }
   } catch {
     // A invariante não fechou (erro da esteira, não do arquivo): melhor parar do que mostrar
     // uma prévia com linha sumida.
