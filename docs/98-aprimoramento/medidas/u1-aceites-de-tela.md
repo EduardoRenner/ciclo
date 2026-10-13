@@ -22,3 +22,12 @@ porta **3200** = build da `main` antiga, como controle. Banco local, seed da APR
 | APR-005 horário tomado | `apr005-409`: duas pessoas, mesmo horário | — | 2ª recebe 409, aviso fica, 6 alternativas; ao tocar numa, nome e telefone voltam preenchidos | ✓ (texto ajustado: os campos não estavam visíveis e o aviso dizia "continuam aqui") |
 
 **Todos os aceites de tela da U1 medidos.**
+
+## U2 (branch `aprimoramento/onda-u2`, build na 3201 com `TZ=UTC`)
+
+| Ticket | Roteiro | Resultado | Aceite |
+| --- | --- | --- | --- |
+| APR-041 ações por papel | `u2-telas` | Time: dono vê 5 botões de gerenciar; profissional, recepção, gerente e financeiro, 0. Agenda/novo: financeiro vê "Seu acesso não marca horários"; os outros, o formulário | ✓ |
+| APR-031 fora do buscador | `u2-telas` (5 rotas com token) | `X-Robots-Tag: noindex, nofollow` e o meta nas 5; `robots.txt` sem nenhuma delas (R-09) | ✓ |
+| APR-035 quem sumiu | `u2-telas` (Hoje do dono, `demo-dom-estilo`) | "11 clientes para chamar de volta · 1 na hora de voltar" e "10 estão sumindo": a diferença é o `due`, e a tela diz | ✓ |
+| APR-036a/b "Entrou" | integração `entrou-um-numero-so` | Hoje, Caixa, Mês e Ficha: R$ 95,00; estorno → 0 nos quatro. Na tela, o número do dia só aparece quando o herói é "atendido" (aqui o herói é "Dá para recuperar") | ✓ (integração) |

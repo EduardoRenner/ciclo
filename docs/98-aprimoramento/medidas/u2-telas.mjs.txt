@@ -1,0 +1,39 @@
+import { chromium } from "playwright";
+// U2: APR-041 (ações por papel), APR-031 (noindex), APR-035/036 (Hoje).
+const B = "http://localhost:3201";
+const SENHA = process.env.SEED_SENHA ?? "DemoCiclo#2026";
+const b = await chromium.launch({ channel: "chrome" });
+const res = { apr041: {}, apr031: {}, hoje: null };
+for (const papel of ["dono", "profissional", "recepcao", "gerente", "financeiro"]) {
+  const ctx = await b.newContext({ viewport: { width: 390, height: 844 } });
+  const p = await ctx.newPage();
+  await p.goto(B + "/entrar");
+  await p.fill('input[type="email"]', `${papel}-demo-dom-estilo@ciclo.app`);
+  await p.fill('input[type="password"]', SENHA);
+  await Promise.all([p.waitForURL(/admin/, { timeout: 60000 }), p.press('input[type="password"]', "Enter")]);
+  await p.goto(B + "/admin/config/profissionais", { waitUntil: "networkidle" });
+  const acoes = await p.locator("main button").filter({ hasText: /^(Cadastrar|Convidar|Desativar)$/ }).count();
+  await p.goto(B + "/admin/agenda/novo", { waitUntil: "networkidle" });
+  const novo = await p.locator("main").innerText();
+  res.apr041[papel] = { botoesDeGerenciarNoTime: acoes, agendaNovo: /Seu acesso não marca horários/.test(novo) ? "aviso" : /Confirmar agendamento/.test(novo) ? "formulario" : "?" };
+  if (papel === "dono") {
+    await p.goto(B + "/admin/hoje", { waitUntil: "networkidle" });
+    const t = await p.locator("main").innerText();
+    res.hoje = {
+      numero: t.match(/(Entrou hoje|Atendido hoje)[^\n]*\n[^\n]*/)?.[0]?.replace(/\n/g, " ") ?? null,
+      paraChamar: t.match(/\d+ clientes? para chamar de volta[^\n]*/)?.[0] ?? null,
+      sumindo: t.match(/\d+ clientes? (estão|está) sumindo/)?.[0] ?? null,
+      costume: t.match(/[^\n]*costume[^\n]*/)?.[0] ?? null,
+    };
+  }
+  await ctx.close();
+}
+for (const rota of ["/confirmar/abc123", "/avaliar/abc123", "/orcamento/abc123", "/lista-espera/abc123", "/convite/abc123abc123abc123"]) {
+  const r = await fetch(B + rota, { redirect: "manual" });
+  const html = await r.text();
+  res.apr031[rota] = { status: r.status, xRobots: r.headers.get("x-robots-tag"), meta: /<meta name="robots" content="noindex, nofollow"/.test(html) };
+}
+const robots = await (await fetch(B + "/robots.txt")).text();
+res.apr031.robotsTemToken = /confirmar|avaliar|orcamento|lista-espera|convite/.test(robots);
+console.log(JSON.stringify(res, null, 1));
+await b.close();
