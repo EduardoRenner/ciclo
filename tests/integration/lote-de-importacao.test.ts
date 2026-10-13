@@ -5,7 +5,7 @@ import dotenv from 'dotenv'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { criarCliente } from '@/server/services/clientes'
-import { abrirLote, gravarPedaco } from '@/server/services/lote-de-importacao'
+import { abrirLote, desfazerLote, gravarPedaco } from '@/server/services/lote-de-importacao'
 import { executarOnboarding } from '@/server/services/onboarding'
 
 import type { Database } from '@/server/db/types.gen'
@@ -14,28 +14,47 @@ dotenv.config({ path: '.env.local' })
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
-if (!SUPABASE_URL || !SERVICE_KEY) {
-  throw new Error('O teste do lote de importação precisa de NEXT_PUBLIC_SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY no .env.local.')
+const ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+if (!SUPABASE_URL || !SERVICE_KEY || !ANON_KEY) {
+  throw new Error('O teste do lote de importação precisa de NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY e SUPABASE_SERVICE_ROLE_KEY no .env.local.')
 }
 
 const svc = createClient<Database>(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false, autoRefreshToken: false } })
 
 let tenantId: string
 let userId: string
+let profissionalId: string
+const senha = randomUUID()
+const emails: Record<'dona' | 'profissional', string> = { dona: '', profissional: '' }
 
 beforeAll(async () => {
   const marca = randomUUID().slice(0, 8)
-  const { data, error } = await svc.auth.admin.createUser({ email: `lote-${marca}@ciclo.test`, password: randomUUID(), email_confirm: true })
+  emails.dona = `lote-${marca}@ciclo.test`
+  emails.profissional = `lote-prof-${marca}@ciclo.test`
+  const { data, error } = await svc.auth.admin.createUser({ email: emails.dona, password: senha, email_confirm: true })
   if (error || !data.user) throw new Error(`seed falhou: ${error?.message}`)
   userId = data.user.id
   const { tenant } = await executarOnboarding(svc, { userId, businessName: 'Salão do Lote', vertical: 'nails', slug: `lote-${marca}`, timezone: 'America/Sao_Paulo' })
   tenantId = tenant.id
+  const p = await svc.auth.admin.createUser({ email: emails.profissional, password: senha, email_confirm: true })
+  if (p.error || !p.data.user) throw new Error(`seed profissional: ${p.error?.message}`)
+  profissionalId = p.data.user.id
+  const m = await svc.from('memberships').insert({ tenant_id: tenantId, user_id: profissionalId, role: 'professional' })
+  if (m.error) throw new Error(`seed membership: ${m.error.message}`)
 }, 60_000)
 
 afterAll(async () => {
   await svc.from('tenants').delete().eq('id', tenantId)
   await svc.auth.admin.deleteUser(userId)
+  await svc.auth.admin.deleteUser(profissionalId)
 }, 60_000)
+
+async function entrarComo(quem: 'dona' | 'profissional') {
+  const c = createClient<Database>(SUPABASE_URL!, ANON_KEY!, { auth: { persistSession: false, autoRefreshToken: false } })
+  const { error } = await c.auth.signInWithPassword({ email: emails[quem], password: senha })
+  if (error) throw new Error(`autenticar ${quem}: ${error.message}`)
+  return c
+}
 
 const contagens = { lidas: 3, ouro: 2, comAviso: 1, quarentena: 0, ignoradas: 0 }
 const abrir = (rowsExpected = 3) =>
@@ -122,4 +141,52 @@ describe('lote de importação (CNV-020) — contra o banco local', () => {
     expect(r.gravadas).toBe(500)
     expect(r.lote.rowsWritten).toBe(500)
   }, 30_000)
+})
+
+describe('desfazer a importação (CNV-022) — como a dona, contra o banco local', () => {
+  it('tira as fichas que ninguém usou, mantém a que já tem nota, e o telefone pode entrar de novo', async () => {
+    const dona = await entrarComo('dona')
+    const { lote } = await abrirLote(dona, tenantId, userId, { fileSha256: createHash('sha256').update(randomUUID()).digest('hex'), formato: 'csv', origem: 'arquivo', nivel: 'N1', counts: contagens, rowsExpected: 3 })
+    const m = String(Date.now()).slice(-7)
+    await gravarPedaco(dona, tenantId, lote.id, {
+      linhas: [
+        { linha: 1, nome: 'Jade', telefone: `+551195${m}`, etiquetas: [] },
+        { linha: 2, nome: 'Kika', etiquetas: [] },
+        { linha: 3, nome: 'Lia Usada', etiquetas: [] },
+      ],
+      ultimo: true,
+    })
+    const { data: usada } = await svc.from('clients').select('id').eq('import_batch_id', lote.id).eq('import_row', 3).single()
+    await svc.from('client_notes').insert({ tenant_id: tenantId, client_id: usada!.id, body: 'Prefere o fim da tarde.' })
+
+    expect(await desfazerLote(dona, lote.id)).toEqual({ removidas: 2, mantidas: 1 })
+
+    const { data: fichas } = await svc.from('clients').select('import_row, deleted_at').eq('import_batch_id', lote.id).order('import_row')
+    expect(fichas?.map((f) => [f.import_row, f.deleted_at === null])).toEqual([[1, false], [2, false], [3, true]])
+    const { data: estado } = await svc.from('import_batches').select('status, undone_at, undone_by').eq('id', lote.id).single()
+    expect(estado).toMatchObject({ status: 'desfeito', undone_by: userId })
+
+    // O telefone da ficha tirada pode entrar de novo, por outro lote do mesmo arquivo inclusive.
+    const outro = await abrirLote(dona, tenantId, userId, { fileSha256: createHash('sha256').update(randomUUID()).digest('hex'), formato: 'csv', origem: 'arquivo', nivel: 'N1', counts: contagens, rowsExpected: 1 })
+    const deNovo = await gravarPedaco(dona, tenantId, outro.lote.id, { linhas: [{ linha: 1, nome: 'Jade', telefone: `+551195${m}`, etiquetas: [] }], ultimo: true })
+    expect(deNovo.gravadas).toBe(1)
+  })
+
+  it('não desfaz duas vezes, nem depois de 7 dias, nem pelo profissional', async () => {
+    const dona = await entrarComo('dona')
+    const abrirComo = (db: typeof dona) => abrirLote(db, tenantId, userId, { fileSha256: createHash('sha256').update(randomUUID()).digest('hex'), formato: 'csv', origem: 'arquivo', nivel: 'N1', counts: contagens, rowsExpected: 1 })
+
+    const a = await abrirComo(dona)
+    await desfazerLote(dona, a.lote.id)
+    await expect(desfazerLote(dona, a.lote.id)).rejects.toMatchObject({ code: 'CONFLICT' })
+
+    const velho = await abrirComo(dona)
+    await svc.from('import_batches').update({ created_at: new Date(Date.now() - 8 * 86_400_000).toISOString() }).eq('id', velho.lote.id)
+    await expect(desfazerLote(dona, velho.lote.id)).rejects.toMatchObject({ code: 'CONFLICT', message: expect.stringMatching(/7 dias/) })
+
+    const doProfissional = await abrirComo(dona)
+    await expect(desfazerLote(await entrarComo('profissional'), doProfissional.lote.id)).rejects.toMatchObject({ code: 'FORBIDDEN' })
+    const { data } = await svc.from('import_batches').select('status').eq('id', doProfissional.lote.id).single()
+    expect(data?.status).toBe('aberto')
+  })
 })

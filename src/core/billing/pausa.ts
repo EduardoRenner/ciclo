@@ -63,6 +63,8 @@ export const ROTAS_DE_ESCRITA: Readonly<Record<string, RegraNaPausa>> = {
   'POST v1/clients/import': 'bloqueia',
   'POST v1/imports': 'bloqueia',
   'POST v1/imports/[id]/rows': 'bloqueia',
+  // Desfazer só tira o que entrou: como excluir ficha, segue liberado na pausa.
+  'POST v1/imports/[id]/undo': 'permite',
   'POST v1/clients/ja-atendo': 'bloqueia',
   'POST v1/clients': 'bloqueia',
   'POST v1/cycle/recover/manual': 'bloqueia',

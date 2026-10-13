@@ -63,6 +63,14 @@ const SEM_COLUNA_TENANT = new Set([
  */
 const JUSTIFICADAS: { arquivo: string; tabela: string; quantas: number; porque: string }[] = [
   {
+    arquivo: 'src/server/services/lote-de-importacao.ts',
+    tabela: 'clients',
+    quantas: 2,
+    porque:
+      '`upsert` da carga (em lote e linha a linha): `tenant_id` vai no VALOR de cada ficha, e o conflito é no par ' +
+      '(lote, linha) de um lote que acabou de ser lido filtrando o tenant. Escrita não aceita `.eq`; cliente do usuário (RLS)',
+  },
+  {
     arquivo: 'src/server/advocacia/casos.ts',
     tabela: 'legal_checklist_templates',
     quantas: 1,

@@ -5482,6 +5482,13 @@ export type Database = {
         }
         Returns: number
       }
+      desfazer_lote_de_importacao: {
+        Args: { p_batch: string }
+        Returns: {
+          mantidas: number
+          removidas: number
+        }[]
+      }
       finish_job: {
         Args: {
           p_error?: string

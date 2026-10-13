@@ -112,6 +112,23 @@ export async function abrirLote(db: Db, tenantId: string, userId: string, e: z.i
   return { lote: paraLote(vivo.data), jaExistia: true }
 }
 
+/** Erros da função `desfazer_lote_de_importacao` (0129), com a mensagem que ela mesma escreveu. */
+const ERRO_DO_DESFAZER = { IMP01: 'NOT_FOUND', IMP02: 'FORBIDDEN', IMP03: 'CONFLICT', IMP04: 'CONFLICT' } as const
+
+/**
+ * docs/103 CNV-022 · Desfaz o lote em até 7 dias: tira as fichas que ele criou e ninguém usou, mantém
+ * as usadas (e diz quantas). Uma transação só, no banco.
+ */
+export async function desfazerLote(db: Db, loteId: string): Promise<{ removidas: number; mantidas: number }> {
+  const { data, error } = await db.rpc('desfazer_lote_de_importacao', { p_batch: loteId }).single()
+  if (error) {
+    const codigo = ERRO_DO_DESFAZER[error.code as keyof typeof ERRO_DO_DESFAZER]
+    if (codigo) throw new AppError(codigo, { message: error.message, cause: error })
+    throw new AppError('INTERNAL', { cause: error })
+  }
+  return { removidas: data.removidas, mantidas: data.mantidas }
+}
+
 export async function gravarPedaco(db: Db, tenantId: string, loteId: string, pedaco: z.infer<typeof EsquemaPedaco>): Promise<ResultadoDoPedaco> {
   const { data: lote, error } = await db
     .from('import_batches')
@@ -134,7 +151,7 @@ export async function gravarPedaco(db: Db, tenantId: string, loteId: string, ped
   const numeros = [...new Set(pedaco.linhas.map((l) => l.linha))]
   const jaNoLote = new Set<number>()
   for (let i = 0; i < numeros.length; i += POR_CONSULTA * 2) {
-    const r = await db.from('clients').select('import_row').eq('import_batch_id', loteId).in('import_row', numeros.slice(i, i + POR_CONSULTA * 2)).limit(POR_CONSULTA * 2)
+    const r = await db.from('clients').select('import_row').eq('tenant_id', tenantId).eq('import_batch_id', loteId).in('import_row', numeros.slice(i, i + POR_CONSULTA * 2)).limit(POR_CONSULTA * 2)
     if (r.error) throw new AppError('INTERNAL', { cause: r.error })
     for (const x of r.data ?? []) if (x.import_row) jaNoLote.add(x.import_row)
   }
@@ -213,12 +230,13 @@ export async function gravarPedaco(db: Db, tenantId: string, loteId: string, ped
   const previsao = await preverEPersistirCiclos(db, tenantId, comData, null)
 
   // 5. Estado honesto: recontado do banco, e "concluído" só no último pedaço.
-  const { count, error: erroConta } = await db.from('clients').select('id', { count: 'exact', head: true }).eq('import_batch_id', loteId)
+  const { count, error: erroConta } = await db.from('clients').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId).eq('import_batch_id', loteId)
   if (erroConta) throw new AppError('INTERNAL', { cause: erroConta })
   const atualizado = await db
     .from('import_batches')
     .update({ rows_written: count ?? 0, ...(pedaco.ultimo ? { status: 'concluido', completed_at: new Date().toISOString() } : {}) })
     .eq('id', loteId)
+    .eq('tenant_id', tenantId)
     .eq('status', 'aberto')
     .select('id, status, rows_expected, rows_written')
     .maybeSingle()
