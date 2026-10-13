@@ -12,7 +12,8 @@ import Select from '@/components/ui/select'
 import { useToast } from '@/components/ui/toast'
 import { comMaiuscula, type Vocabulario } from '@/core/text/vocabulario'
 import { formatarPreco, type ModeloDePreco } from '@/core/pricing/formatar'
-import { formatarTelefone } from '@/lib/formato'
+import { useFuso } from '@/components/shell/fuso'
+import { formatarTelefone, horaLocal } from '@/lib/formato'
 import { apiFetch } from '@/lib/offline/api-client'
 import { fetchComTentativa } from '@/lib/tentativa'
 
@@ -66,6 +67,9 @@ export default function FormularioAgendamento({
   const [dataHora, setDataHora] = useState('')
   const [alternativas, setAlternativas] = useState<string[] | null>(null)
   const [erro, setErro] = useState<string | null>(null)
+  // APR-022: o que ficou guardado neste aparelho, dito por extenso. A tela não sai daqui offline.
+  const [guardadoOffline, setGuardadoOffline] = useState<string | null>(null)
+  const fuso = useFuso()
 
   // docs/09-PLATAFORMA.md §12: série de recorrência é um agendamento a mais que se repete,
   // não uma tela separada — por isso vive dentro do mesmo formulário, atrás de um toggle.
@@ -156,10 +160,20 @@ export default function FormularioAgendamento({
       // servidor é quem decide se o horário oferecido offline ainda existe.
       if (typeof navigator !== 'undefined' && !navigator.onLine) {
         await apiFetch('/api/v1/appointments', { method: 'POST', body: corpo })
-        mostrarToast({ tom: 'ok', titulo: 'Sem conexão', descricao: 'Agendamento entrou na fila e será enviado quando a conexão voltar.' })
-        router.push('/admin/agenda')
+        /*
+         * APR-022: fica NESTA tela. Ir para `/admin/agenda` sem rede caía na tela do dinossauro do
+         * navegador (o service worker não guarda o painel, `public/sw.js`) — medido. O formulário
+         * limpa para o próximo, e o aviso diz QUAL horário ficou guardado.
+         */
+        const dia = new Intl.DateTimeFormat('pt-BR', { timeZone: fuso, weekday: 'long', day: '2-digit', month: 'long' }).format(new Date(startsAtIso))
+        setGuardadoOffline(`Guardado neste aparelho: ${clienteNome.trim() || 'cliente sem nome'}, ${dia}, às ${horaLocal(startsAtIso, fuso)}. Sai quando a internet voltar.`)
+        setClienteNome('')
+        setClienteTelefone('')
+        setEscolhido(null)
+        setDataHora('')
         return
       }
+      setGuardadoOffline(null)
 
       try {
         const r = await fetchComTentativa('/api/v1/appointments', {
@@ -278,6 +292,13 @@ export default function FormularioAgendamento({
 
   return (
     <form method="post" onSubmit={aoEnviarFormulario} className="flex flex-col gap-4">
+      <div aria-live="polite">
+        {guardadoOffline && (
+          <Card className="border-warn/50">
+            <p className="text-secundario text-txt">{guardadoOffline}</p>
+          </Card>
+        )}
+      </div>
       <Select rotulo={comMaiuscula(vocabulario.servico)} value={serviceId} onChange={(e) => setServiceId(e.target.value)} required>
         {servicos.map((s) => (
           <option key={s.id} value={s.id}>
