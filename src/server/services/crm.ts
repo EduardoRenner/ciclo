@@ -471,13 +471,12 @@ export async function publicoDaCampanha(
   }
 
   if (segmento === 'sumidos') {
-    const { data: ciclos, error } = await db
-      .from('client_cycles')
-      .select('client_id')
-      .eq('tenant_id', tenantId)
-      .in('state', ['late', 'at_risk', 'lost'])
-    if (error) throw new AppError('INTERNAL', { cause: error })
-    return elegiveisEntre([...new Set((ciclos ?? []).map((c) => c.client_id))])
+    // APR-013 + APR-035: a MESMA regra do Recuperar e do alarme da Hoje (`v_quem_sumiu`), e paginada —
+    // acima de mil ciclos atrasados, o público da campanha saía cortado sem aviso.
+    const ciclos = await buscarTudoPaginado(() =>
+      db.from('v_quem_sumiu').select('client_id').eq('tenant_id', tenantId).in('state', ['late', 'at_risk', 'lost']).order('client_id').order('service_id'),
+    )
+    return elegiveisEntre([...new Set(ciclos.map((c) => c.client_id).filter((id): id is string => id !== null))])
   }
 
   if (segmento === 'aniversariantes' || segmento === 'ticket_alto' || segmento === 'primeira_visita') {
@@ -682,7 +681,8 @@ export async function centralDeAcoes(db: Cliente, tenantId: string, papel?: Pape
     // alarme dizia "147 clientes estão sumindo" num salão com 55 — e levava para uma lista que
     // mostrava outro número. `ja_atrasado` exclui quem só está vencendo hoje: ainda não sumiu.
     db.rpc('resumo_central_de_acoes', { p_tenant: tenantId }).single(),
-    db.from('loyalty_entries').select('client_id, points').eq('tenant_id', tenantId),
+    // APR-013: paginado — livro-razão que só cresce; acima de mil lançamentos o saldo saía errado.
+    buscarTudoPaginado(() => db.from('loyalty_entries').select('client_id, points').eq('tenant_id', tenantId).order('id')),
     listarOrcamentos(db, tenantId),
     contextoDePlano(db, tenantId),
     // `settings` não vem em `contextoDePlano` (que seleciona só as colunas de plano) e o card de
@@ -757,7 +757,7 @@ export async function centralDeAcoes(db: Cliente, tenantId: string, papel?: Pape
   // Saldo por cliente somado em memória — `loyalty_entries` de um salão típico não passa de
   // poucos milhares de linhas, não justifica uma view agregada só para este contador.
   const saldoPorCliente = new Map<string, number>()
-  for (const l of resgataveis.data ?? []) {
+  for (const l of resgataveis) {
     if (!l.client_id) continue
     saldoPorCliente.set(l.client_id, (saldoPorCliente.get(l.client_id) ?? 0) + l.points)
   }

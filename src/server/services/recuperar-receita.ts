@@ -8,6 +8,7 @@ import type { MotivoPulado } from '@/core/ciclo/resumo-do-envio'
 import type { Classe, Perfil } from '@/core/crm/nota-do-cliente'
 import { enviarComFallback } from '@/server/services/mensageria'
 import { registrarEvento } from '@/server/services/product-events'
+import { buscarTudoPaginado } from '@/server/db/paginar'
 import { AppError } from '@/server/http/errors'
 
 import type { Database } from '@/server/db/types.gen'
@@ -68,11 +69,14 @@ export async function listarParaRecuperar(
 ): Promise<ListaRecuperar> {
   // APR-035: a mesma regra do alarme da Hoje (`v_quem_sumiu`, 0118) — apagada, opt-out, quem tem
   // ciclo em dia e ciclo sem previsão saem NO BANCO, num lugar só.
-  let consulta = db.from('v_quem_sumiu').select('*').eq('tenant_id', tenantId)
-  if (opcoes.state) consulta = consulta.eq('state', opcoes.state)
+  // APR-013: paginado — a lista de quem sumiu passava de mil linhas (cliente × serviço) e o total
+  // do Recuperar saía menor, sem erro.
+  const consulta = () => {
+    const q = db.from('v_quem_sumiu').select('*').eq('tenant_id', tenantId)
+    return (opcoes.state ? q.eq('state', opcoes.state) : q).order('client_id').order('service_id')
+  }
 
-  const { data, error } = await consulta
-  if (error) throw new AppError('INTERNAL', { cause: error })
+  const data = await buscarTudoPaginado(consulta)
 
   // A view não declara FK nem `not null` para o PostgREST/gerador de tipos,
   // mas toda coluna aqui vem de `join`s obrigatórios sobre colunas `not null`

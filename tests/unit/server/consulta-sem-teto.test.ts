@@ -42,7 +42,7 @@ const LINHA_DE_BASE: Record<string, number> = {
   'server/services/clientes.ts': 1,
   'server/services/clube.ts': 3,
   'server/services/comanda.ts': 1,
-  'server/services/crm.ts': 4,
+  'server/services/crm.ts': 2,
   'server/services/estoque.ts': 2,
   'server/services/fidelidade.ts': 1,
   'server/services/health.ts': 1,
@@ -56,7 +56,7 @@ const LINHA_DE_BASE: Record<string, number> = {
   'server/services/public-booking.ts': 1,
   'server/services/quem-ja-atendo.ts': 1,
   'server/services/recorrencia.ts': 2,
-  'server/services/resumo-hoje.ts': 2,
+  'server/services/resumo-hoje.ts': 1,
   'server/services/whatsapp-inbound.ts': 1,
   'app/admin/caixa/page.tsx': 1,
 }

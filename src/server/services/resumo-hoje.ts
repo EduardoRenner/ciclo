@@ -118,7 +118,7 @@ export async function resumoDeHoje(db: Cliente, tenantId: string, timezone: stri
   // de ser o que a média descreve.
   const inicioDaJanelaDeComparacao = hoje.subtract({ days: 56 }).toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant()
 
-  const [{ data, error }, stockAlerts, { count: indicacoesEsteMes, error: erroIndicacoes }, { data: diasPassados, error: erroDiasPassados }, comandas] =
+  const [{ data, error }, stockAlerts, { count: indicacoesEsteMes, error: erroIndicacoes }, diasPassados, comandas] =
     await Promise.all([
       db.from('appointments').select(COLUNAS_HOJE).eq('tenant_id', tenantId).gte('starts_at', inicioDoDia.toString()).lt('starts_at', fimDoDia.toString()).order('starts_at'),
       listarAlertasDeEstoque(db, tenantId, hoje.toString()),
@@ -130,13 +130,18 @@ export async function resumoDeHoje(db: Cliente, tenantId: string, timezone: stri
         .not('referred_by', 'is', null)
         .gte('created_at', inicioDoMes.toString())
         .lt('created_at', inicioDoMesSeguinte.toString()),
-      db
-        .from('appointments')
-        .select('starts_at, price_cents')
-        .eq('tenant_id', tenantId)
-        .eq('status', 'done')
-        .gte('starts_at', inicioDaJanelaDeComparacao.toString())
-        .lt('starts_at', inicioDoDia.toString()),
+      // APR-013: paginado — 8 semanas de atendimentos passam de mil num salão cheio, e a média do
+      // costume saía calculada sobre uma parte, sem erro.
+      buscarTudoPaginado(() =>
+        db
+          .from('appointments')
+          .select('starts_at, price_cents')
+          .eq('tenant_id', tenantId)
+          .eq('status', 'done')
+          .gte('starts_at', inicioDaJanelaDeComparacao.toString())
+          .lt('starts_at', inicioDoDia.toString())
+          .order('id'),
+      ),
       // APR-036a: as comandas da mesma janela — para o "Entrou hoje" e para o costume na mesma base.
       buscarTudoPaginado(() =>
         db
@@ -151,7 +156,6 @@ export async function resumoDeHoje(db: Cliente, tenantId: string, timezone: stri
     ])
   if (error) throw new AppError('INTERNAL', { cause: error })
   if (erroIndicacoes) throw new AppError('INTERNAL', { cause: erroIndicacoes })
-  if (erroDiasPassados) throw new AppError('INTERNAL', { cause: erroDiasPassados })
 
   const linhas = (data ?? []) as unknown as LinhaHoje[]
 
@@ -165,7 +169,7 @@ export async function resumoDeHoje(db: Cliente, tenantId: string, timezone: stri
   // APR-034: cada dia guarda os atendimentos com o minuto local de início, para a comparação contar
   // só o que já tinha acontecido até o mesmo minuto de agora (`compararComCostumeAteAgora`).
   const porDia = new Map<string, DiaPassado['atendimentos'][number][]>()
-  for (const a of diasPassados ?? []) {
+  for (const a of diasPassados) {
     const local = Temporal.Instant.from(a.starts_at).toZonedDateTimeISO(timezone)
     if (local.dayOfWeek !== hoje.dayOfWeek) continue
     const chave = local.toPlainDate().toString()
