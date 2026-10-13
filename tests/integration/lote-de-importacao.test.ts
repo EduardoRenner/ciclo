@@ -63,7 +63,8 @@ describe('lote de importação (CNV-020) — contra o banco local', () => {
     const primeira = await gravarPedaco(svc, tenantId, lote.id, { linhas, ultimo: false })
     expect(primeira).toMatchObject({ gravadas: 3, jaGravadas: 0, puladas: [], erros: [] })
     const segunda = await gravarPedaco(svc, tenantId, lote.id, { linhas, ultimo: false })
-    expect(segunda).toMatchObject({ gravadas: 0, jaGravadas: 3 })
+    // Nenhum "já existe ficha com esse telefone" para a própria linha reenviada: ela é do lote, não de outra ficha.
+    expect(segunda).toMatchObject({ gravadas: 0, jaGravadas: 3, puladas: [], erros: [] })
     expect(await fichasDoLote(lote.id)).toBe(3)
     expect(segunda.lote.rowsWritten).toBe(3)
     expect(segunda.lote.status).toBe('aberto')
