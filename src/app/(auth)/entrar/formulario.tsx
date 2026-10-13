@@ -67,7 +67,10 @@ export default function FormularioEntrar() {
       }
 
       const semNegocio = (json.data?.tenants.length ?? 0) === 0
-      router.push(semNegocio ? '/onboarding' : proximo)
+      // APR-023: quem vem de um convite de equipe ainda não tem negócio — e não deve criar um. Sem
+      // esta exceção, o login mandava o convidado para o cadastro de negócio e o convite se perdia.
+      const vemDeConvite = proximo.startsWith('/convite/')
+      router.push(semNegocio && !vemDeConvite ? '/onboarding' : proximo)
       router.refresh()
     } catch {
       setErro('Não consegui falar com o servidor. Tente de novo.')

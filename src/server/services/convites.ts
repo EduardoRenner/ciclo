@@ -83,6 +83,27 @@ export async function listarConvites(db: Cliente, tenantId: string) {
 
 const MENSAGEM_CONVITE_INVALIDO = 'Esse convite não existe mais, já foi usado ou venceu.'
 
+export type PreviaDoConvite = { negocio: string; papel: Database['public']['Enums']['user_role']; email: string }
+
+/**
+ * APR-023: o que a página `/convite/[token]` mostra antes de a pessoa aceitar. Mesma regra de
+ * validade do aceite, e o mesmo silêncio: `null` para "não existe", "já usado" e "venceu" — quem
+ * tenta adivinhar token não aprende nada com a diferença. Cliente de serviço pelo mesmo motivo do
+ * aceite: quem abre o link ainda não tem vínculo com o negócio.
+ */
+export async function previaDoConvite(svc: Cliente, token: string): Promise<PreviaDoConvite | null> {
+  if (token.length < 16) return null
+  const { data, error } = await svc
+    .from('invites')
+    .select('email, role, expires_at, accepted_at, tenants(name)')
+    .eq('token_hash', hashToken(token))
+    .maybeSingle()
+  if (error) throw new AppError('INTERNAL', { cause: error })
+  if (!data || data.accepted_at !== null || new Date(data.expires_at) < new Date()) return null
+  const tenant = data.tenants as { name: string } | null
+  return { negocio: tenant?.name ?? 'O negócio', papel: data.role, email: data.email }
+}
+
 /**
  * Aceita pelo usuário já autenticado (precisa ter feito cadastro/login
  * primeiro — não existe ainda o fluxo de assinar direto pelo link sem conta).
