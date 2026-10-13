@@ -521,7 +521,7 @@ const JA_CONSERTADOS = [
   'src/app/(public)/[slug]/agendar/alternador-de-exemplo.tsx',
   'src/app/admin/clientes/[id]/direitos.tsx',
   'src/app/admin/clientes/[id]/ficha.tsx',
-  'src/app/admin/clientes/importar/importador.tsx',
+  'src/app/admin/clientes/importar/esteira.tsx',
   'src/app/admin/config/mensagens/editor.tsx',
   'src/app/admin/config/page.tsx',
   'src/app/admin/config/servicos/page.tsx',
