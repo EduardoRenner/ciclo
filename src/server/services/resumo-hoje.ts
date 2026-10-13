@@ -1,6 +1,8 @@
 import { Temporal } from '@js-temporal/polyfill'
 
+import { entrouCents, numeroDoDia } from '@/core/caixa/entrou'
 import { compararComCostumeAteAgora, type ComparacaoComCostume, type DiaPassado } from '@/core/ciclo/comparacao-com-costume'
+import { buscarTudoPaginado } from '@/server/db/paginar'
 import { listarAlertasDeEstoque, type AlertaEstoque } from '@/server/services/alertas-estoque'
 import { AppError } from '@/server/http/errors'
 
@@ -54,6 +56,11 @@ export type ResumoHoje = {
    * faturamento.
    */
   revenueTodayCents: number
+  /**
+   * APR-036a: o número do dia que a tela mostra. "Entrou hoje" (a MESMA conta do Caixa, `entrouCents`)
+   * quando o negócio usa comanda; "Atendido hoje" (`revenueTodayCents`) quando não usa.
+   */
+  numeroDoDia: { rotulo: 'Entrou hoje' | 'Atendido hoje'; cents: number }
   nextClient: LinhaHoje | null
   /** Confirmações pendentes que começam nas próximas 3 horas — o que precisa de atenção agora, não o dia inteiro. */
   alerts: LinhaHoje[]
@@ -111,7 +118,7 @@ export async function resumoDeHoje(db: Cliente, tenantId: string, timezone: stri
   // de ser o que a média descreve.
   const inicioDaJanelaDeComparacao = hoje.subtract({ days: 56 }).toZonedDateTime({ timeZone: timezone, plainTime: '00:00' }).toInstant()
 
-  const [{ data, error }, stockAlerts, { count: indicacoesEsteMes, error: erroIndicacoes }, { data: diasPassados, error: erroDiasPassados }] =
+  const [{ data, error }, stockAlerts, { count: indicacoesEsteMes, error: erroIndicacoes }, { data: diasPassados, error: erroDiasPassados }, comandas] =
     await Promise.all([
       db.from('appointments').select(COLUNAS_HOJE).eq('tenant_id', tenantId).gte('starts_at', inicioDoDia.toString()).lt('starts_at', fimDoDia.toString()).order('starts_at'),
       listarAlertasDeEstoque(db, tenantId, hoje.toString()),
@@ -130,6 +137,17 @@ export async function resumoDeHoje(db: Cliente, tenantId: string, timezone: stri
         .eq('status', 'done')
         .gte('starts_at', inicioDaJanelaDeComparacao.toString())
         .lt('starts_at', inicioDoDia.toString()),
+      // APR-036a: as comandas da mesma janela — para o "Entrou hoje" e para o costume na mesma base.
+      buscarTudoPaginado(() =>
+        db
+          .from('tickets')
+          .select('status, total_cents, closed_at')
+          .eq('tenant_id', tenantId)
+          .not('closed_at', 'is', null)
+          .gte('closed_at', inicioDaJanelaDeComparacao.toString())
+          .lt('closed_at', fimDoDia.toString())
+          .order('id'),
+      ),
     ])
   if (error) throw new AppError('INTERNAL', { cause: error })
   if (erroIndicacoes) throw new AppError('INTERNAL', { cause: erroIndicacoes })
@@ -153,7 +171,22 @@ export async function resumoDeHoje(db: Cliente, tenantId: string, timezone: stri
     const chave = local.toPlainDate().toString()
     porDia.set(chave, [...(porDia.get(chave) ?? []), { minutoDoDia: local.hour * 60 + local.minute, cents: a.price_cents }])
   }
-  const diasDeMesmoDiaDaSemana: DiaPassado[] = [...porDia.values()].map((atendimentos) => ({ atendimentos }))
+  const diasDeAtendimento: DiaPassado[] = [...porDia.values()].map((atendimentos) => ({ atendimentos }))
+
+  // APR-036a: quem usa comanda vê "Entrou", e o costume é medido em comandas também (mesma base do
+  // número mostrado). Comanda estornada sai de `entrouCents`, então o estorno muda a Hoje junto.
+  const usaComanda = comandas.length > 0
+  const comandasDeHoje = comandas.filter((c) => Temporal.Instant.compare(Temporal.Instant.from(c.closed_at!), inicioDoDia) >= 0)
+  const entrouHojeCents = entrouCents(comandasDeHoje.map((c) => ({ status: c.status, totalCents: c.total_cents })))
+  const porDiaDeComanda = new Map<string, DiaPassado['atendimentos'][number][]>()
+  for (const c of comandas) {
+    if (!['closed', 'paid'].includes(c.status)) continue
+    const local = Temporal.Instant.from(c.closed_at!).toZonedDateTimeISO(timezone)
+    if (local.dayOfWeek !== hoje.dayOfWeek || Temporal.PlainDate.compare(local.toPlainDate(), hoje) >= 0) continue
+    const chave = local.toPlainDate().toString()
+    porDiaDeComanda.set(chave, [...(porDiaDeComanda.get(chave) ?? []), { minutoDoDia: local.hour * 60 + local.minute, cents: c.total_cents }])
+  }
+  const diasDeComanda: DiaPassado[] = [...porDiaDeComanda.values()].map((atendimentos) => ({ atendimentos }))
   const agoraLocal = agora.toZonedDateTimeISO(timezone)
 
   const aindaPorVir = linhas.filter(
@@ -175,6 +208,9 @@ export async function resumoDeHoje(db: Cliente, tenantId: string, timezone: stri
     stockAlerts,
     indicacoesEsteMes: indicacoesEsteMes ?? 0,
     totalAgendamentosHoje: linhas.length,
-    comparacaoComCostume: compararComCostumeAteAgora(diasDeMesmoDiaDaSemana, revenueTodayCents, agoraLocal.hour * 60 + agoraLocal.minute),
+    numeroDoDia: numeroDoDia({ usaComanda, entrouHojeCents, atendidoHojeCents: revenueTodayCents }),
+    comparacaoComCostume: usaComanda
+      ? compararComCostumeAteAgora(diasDeComanda, entrouHojeCents, agoraLocal.hour * 60 + agoraLocal.minute)
+      : compararComCostumeAteAgora(diasDeAtendimento, revenueTodayCents, agoraLocal.hour * 60 + agoraLocal.minute),
   }
 }

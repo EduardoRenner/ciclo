@@ -5,6 +5,7 @@ import { margemPorServico, type ItemFechado, type MargemDoServico } from '@/core
 import { mesesJaEncerrados, serieMensal, type SerieMensal } from '@/core/caixa/serie-mensal'
 import { calcularTaxaDoMes, type TaxaDoMes } from '@/core/caixa/taxa-por-forma'
 import { lerTaxasDePagamento, taxaEstaConfigurada } from '@/core/comanda/taxa-de-pagamento'
+import { entrouCents } from '@/core/caixa/entrou'
 import { buscarTudoPaginado } from '@/server/db/paginar'
 import { AppError } from '@/server/http/errors'
 
@@ -74,7 +75,7 @@ async function somarTickets(db: Cliente, tenantId: string, inicio: string, fim: 
   const tickets = await buscarTudoPaginado(() =>
     db
       .from('tickets')
-      .select('total_cents, material_cost_cents, fee_cents, commission_cents, fixed_cost_cents, profit_cents')
+      .select('status, total_cents, material_cost_cents, fee_cents, commission_cents, fixed_cost_cents, profit_cents')
       .eq('tenant_id', tenantId)
       .in('status', ['closed', 'paid'])
       .gte('closed_at', inicio)
@@ -84,7 +85,6 @@ async function somarTickets(db: Cliente, tenantId: string, inicio: string, fim: 
 
   for (const t of tickets) {
     resumo.ticketsCount++
-    resumo.revenueCents += t.total_cents
     resumo.materialCents += t.material_cost_cents
     resumo.feeCents += t.fee_cents
     resumo.commissionCents += t.commission_cents
@@ -92,6 +92,8 @@ async function somarTickets(db: Cliente, tenantId: string, inicio: string, fim: 
     resumo.profitCents += t.profit_cents
   }
 
+  // APR-036a: "Entrou" sai da função única do core — a mesma da Hoje.
+  resumo.revenueCents = entrouCents(tickets.map((t) => ({ status: t.status, totalCents: t.total_cents })))
   return resumo
 }
 

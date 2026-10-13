@@ -194,7 +194,7 @@ export default function Hoje({
 
   const faltam = resumo.restOfDay.length
   const heroi = escolherHeroi({
-    atendidoHojeCents: resumo.revenueTodayCents,
+    atendidoHojeCents: resumo.numeroDoDia.cents,
     atribuicaoCount: atribuicao.count,
     valorEmRiscoCents: emRisco.totalCents,
   })
@@ -324,8 +324,8 @@ export default function Hoje({
           <StatTile
             pressionavel
             heroi
-            rotulo={ROTULO_DO_ATENDIDO}
-            valor={dinheiro.format(resumo.revenueTodayCents / 100)}
+            rotulo={resumo.numeroDoDia.rotulo === 'Entrou hoje' ? 'Entrou hoje' : ROTULO_DO_ATENDIDO}
+            valor={dinheiro.format(resumo.numeroDoDia.cents / 100)}
             apoio={
               <span className="flex flex-col gap-0.5">
                 {/*
