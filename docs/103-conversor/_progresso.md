@@ -39,6 +39,20 @@
 
 **Ondas A, B e C concluídas; Onda D com o servidor pronto.** 0128 e 0129 aplicadas só no banco LOCAL. Pendente de prova no navegador (junto com a tela nova, CNV-023, a 390 px): o Worker, o OCR baixando de `/ocr` e o cartão "Tudo do seu negócio".
 
+| CNV-021 | 90c0f43b | `previaDoDinheiro`: o R$ parado antes de gravar, pela mesma conta que a Hoje soma (paridade em integração) |
+| CNV-023 | 8ffc17dc + 8439190a | tela nova `importar/esteira.tsx` (substitui a de CSV); escolha de tabela quando há mais de uma |
+| CNV-024 | 8c3a91a7 | funil em `product_events` (aberta, retomada, concluída, desfeita) |
+| Onda E | 10a143f6 | linha em branco no meio da lista partia a tabela e sumia com quem vinha depois (achado ao provar D2/D4/D12/D14) |
+| CNV-025 | a934b2f5 | importação antiga por CSV aposentada (D2, D4, D12, D14 provados ausentes na esteira; D20, D21 morreram com a tela) |
+| D8–D10 | c53c1fef | "já atendo": repetido na lista, telefone inválido avisado, `.in()` em fatias (D9 confirmado real pela mutação) |
+| D19 | 7217a479 | assinante e pacote lidos só da leva, em fatias |
+| D7 | 22e343e6 | runbook de importação assistida reescrito para a tela nova |
+
+D13 (data futura) ficou sem efeito: o leitor antigo não tem mais chamador e a esteira já barra data no futuro.
+
+**Ondas A–E concluídas.** Pendente: prova LOGADA no navegador da tela nova (o classificador barrou
+criar sessão de teste no navegador; precisa do Eduardo).
+
 ## Funil da importação (CNV-024)
 
 Eventos em `product_events`, sem dado de pessoa: `importacao_aberta` (origem, formato, nível, pessoas),
@@ -60,4 +74,6 @@ Ainda não medido: "abriu a tela" e "viu a prévia" (precisam de evento do naveg
 genérica de evento, e a prévia mora toda no aparelho).
 
 ## Próximos
-Onda D: CNV-021 prévia com R$ e CNV-023 tela nova sobre `rodarEsteira` (juntos: a prévia mora na tela), 024 funil. Depois Onda E.
+Onda G primeiro (CNV-041 receitas por origem, CNV-042 páginas `/migrar/*`): é o que transforma a
+esteira em argumento de venda. Onda F (histórico como atendimentos, serviços, estoque, agenda,
+pacotes) mexe em dinheiro e agenda e pede revisão antes de começar.
