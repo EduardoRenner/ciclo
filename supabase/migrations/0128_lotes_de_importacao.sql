@@ -76,8 +76,9 @@ comment on table import_batches is
 -- a linha sem o lote, barrando a cascata. A linha órfã não pesa: o índice único só vale com lote.
 alter table clients add column import_batch_id uuid references import_batches(id) on delete set null;
 alter table clients add column import_row integer check (import_row is null or import_row >= 1);
-create unique index clients_uma_ficha_por_linha_do_lote on clients (import_batch_id, import_row)
-  where import_batch_id is not null;
+-- Índice INTEIRO, não parcial: o `upsert` do PostgREST (`on conflict (import_batch_id, import_row)`)
+-- não casa com índice parcial. NULL nunca colide em índice único, então quem não veio de lote não sente.
+create unique index clients_uma_ficha_por_linha_do_lote on clients (import_batch_id, import_row);
 
 comment on column clients.import_batch_id is
   'docs/103 CNV-019: lote de importação que criou a ficha (nulo para quem foi cadastrado à mão). Base do desfazer (CNV-022).';

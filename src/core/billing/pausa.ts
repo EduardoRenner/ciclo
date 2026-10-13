@@ -61,6 +61,8 @@ export const ROTAS_DE_ESCRITA: Readonly<Record<string, RegraNaPausa>> = {
   'PUT v1/clients/[id]/vault': 'bloqueia',
   'POST v1/clients/import/preview': 'bloqueia',
   'POST v1/clients/import': 'bloqueia',
+  'POST v1/imports': 'bloqueia',
+  'POST v1/imports/[id]/rows': 'bloqueia',
   'POST v1/clients/ja-atendo': 'bloqueia',
   'POST v1/clients': 'bloqueia',
   'POST v1/cycle/recover/manual': 'bloqueia',

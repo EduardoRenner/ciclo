@@ -30,6 +30,7 @@ const COM_TETO: Record<string, { quantas: number; teto: string }> = {
   'services/ficha-de-consumo.ts': { quantas: 2, teto: 'produtos de UMA ficha; serviços distintos do catálogo' },
   'services/health.ts': { quantas: 1, teto: 'escritórios com segundo fator pendente (poucos)' },
   'services/importacao-clientes.ts': { quantas: 1, teto: 'grupo de hashes em lote' },
+  'services/lote-de-importacao.ts': { quantas: 2, teto: 'POR_CONSULTA = 100 hashes; 200 números de linha por consulta' },
   'services/lista-espera.ts': { quantas: 1, teto: 'a verificar: candidatos da lista de espera para UM horário' },
   'services/lembretes.ts': { quantas: 1, teto: 'lotes de 100 (APR-011)' },
   'services/notas-do-cliente.ts': { quantas: 1, teto: 'LOTE_DE_IDS = 100 (APR-011)' },
