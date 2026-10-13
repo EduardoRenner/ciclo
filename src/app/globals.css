@@ -357,7 +357,8 @@
   --text-label: 0.75rem; /* 12px */
   --text-label--line-height: 1.35;
 
-  --text-overline: 0.6875rem; /* 11px */
+  /* APR-104: era 11px, abaixo do piso de 12px da leitura no sol (docs/98 I-07). */
+  --text-overline: 0.75rem; /* 12px */
   --text-overline--line-height: 1.2;
   --text-overline--letter-spacing: 0.13em;
 
@@ -559,6 +560,23 @@ body[data-scroll-locked] .recua-com-sheet {
   font-variant-numeric: tabular-nums;
 }
 
+@property --esmaece-esq {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+@property --esmaece-dir {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 20px;
+}
+@keyframes esmaece-pela-rolagem {
+  0% { --esmaece-esq: 0px; --esmaece-dir: 20px; }
+  8% { --esmaece-esq: 12px; }
+  92% { --esmaece-dir: 20px; }
+  100% { --esmaece-esq: 12px; --esmaece-dir: 0px; }
+}
+
 @utility scroll-x {
   /*
    * Fileira que rola no horizontal (filtros, dias, horários). Três coisas que
@@ -571,7 +589,17 @@ body[data-scroll-locked] .recua-com-sheet {
   scroll-snap-type: x proximity;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
-  mask-image: linear-gradient(to right, transparent 0, #000 12px, #000 calc(100% - 20px), transparent 100%);
+  /*
+   * APR-104: o esmaecimento só do lado em que ainda há conteúdo. Fixo nas duas bordas, ele apagava
+   * o item SELECIONADO quando ele estava na ponta esquerda (o dia de hoje na faixa da Agenda). Com
+   * animação guiada pela rolagem, a borda esquerda só esmaece depois de rolar e a direita some no
+   * fim; sem suporte, só a direita esmaece.
+   */
+  mask-image: linear-gradient(to right, transparent 0, #000 var(--esmaece-esq), #000 calc(100% - var(--esmaece-dir)), transparent 100%);
+  @supports (animation-timeline: scroll()) {
+    animation: esmaece-pela-rolagem linear both;
+    animation-timeline: scroll(self inline);
+  }
 
   &::-webkit-scrollbar {
     display: none;
