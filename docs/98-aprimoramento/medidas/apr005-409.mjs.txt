@@ -1,0 +1,52 @@
+import { chromium } from "playwright";
+// APR-005: a 1ª pessoa marca; a 2ª, com o MESMO horário na tela, confirma → aviso que fica, alternativas, nome/telefone preservados.
+const B = process.argv[2] ?? "http://localhost:3201";
+const CEL = { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, timezoneId: "America/Sao_Paulo", locale: "pt-BR" };
+const b = await chromium.launch({ channel: "chrome" });
+async function ateOResumo(ctx) {
+  const p = await ctx.newPage();
+  await p.goto(`${B}/demo-espaco-vitoria/agendar`, { waitUntil: "load" });
+  await p.getByRole("button", { name: /^Manicure simples/ }).click();
+  const dia = p.locator("button", { hasText: /^(DOM|SEG|TER|QUA|QUI|SEX|SÁB)\.?\s*\d{1,2}$/i }).nth(4);
+  await dia.click();
+  const chip = p.locator("button", { hasText: /^\d\d:\d\d$/ }).nth(3);
+  await chip.waitFor({ timeout: 30000 });
+  const hora = (await chip.innerText()).trim();
+  await chip.click();
+  await p.getByLabel("Seu nome").waitFor();
+  return { p, hora };
+}
+const c1 = await b.newContext(CEL);
+const c2 = await b.newContext(CEL);
+const a = await ateOResumo(c1);
+const s = await ateOResumo(c2);
+await a.p.getByLabel("Seu nome").fill("Primeira Pessoa");
+await a.p.getByLabel(/Seu telefone/).fill("11987650001");
+await a.p.getByRole("button", { name: /Confirmar agendamento/ }).click();
+await a.p.waitForTimeout(3000);
+await s.p.getByLabel("Seu nome").fill("Segunda Pessoa");
+await s.p.getByLabel(/Seu telefone/).fill("11987650002");
+const respostas = [];
+s.p.on("response", (r) => { if (r.url().includes("/book")) respostas.push(r.status()); });
+await s.p.getByRole("button", { name: /Confirmar agendamento/ }).click();
+await s.p.waitForTimeout(3000);
+const texto = await s.p.locator("main").innerText();
+const aviso = texto.match(/Esse horário acabou de ser marcado[^\n]*/)?.[0] ?? null;
+const chips = await s.p.locator("button", { hasText: /^\d\d:\d\d$/ }).allInnerTexts();
+await s.p.screenshot({ path: "C:/Users/Usuario/.claude/code/ciclo-aprimoramento/docs/98-aprimoramento/capturas/apr005-409-390.png" });
+const visivelNome = await s.p.getByLabel("Seu nome").isVisible().catch(() => false);
+await s.p.locator("button", { hasText: /^\d\d:\d\d$/ }).first().click();
+await s.p.waitForTimeout(800);
+const depoisDaAlternativa = { nome: await s.p.getByLabel("Seu nome").inputValue().catch(() => null), telefone: await s.p.getByLabel(/Seu telefone/).inputValue().catch(() => null) };
+const res = {
+  nomeVisivelLogoApos409: visivelNome,
+  depoisDaAlternativa,
+  mesmaHora: a.hora === s.hora,
+  status2: respostas,
+  aviso,
+  nomePreservado: await s.p.getByLabel("Seu nome").inputValue().catch(() => null),
+  telefonePreservado: await s.p.getByLabel(/Seu telefone/).inputValue().catch(() => null),
+  alternativas: chips.slice(0, 6),
+};
+console.log(JSON.stringify(res, null, 1));
+await b.close();

@@ -18,4 +18,7 @@ porta **3200** = build da `main` antiga, como controle. Banco local, seed da APR
 | APR-024 expediente | `u1-lote2` | — (só por URL) | 3 links "Expediente e folgas", 48 px, abre a tela do profissional | ✓ |
 | APR-026 recuperação | `u1-lote2`: link gerado pela API de admin, aberto em navegador novo, 3 rodadas | reprodução original: "link não é mais válido" | `/nova-senha` → troca → entra com a senha nova, 3 de 3; 2º uso → `/entrar?erro=link_invalido` | ✓ |
 
-Pendentes de tela: APR-002 (folga com rede caindo, parte `c05`) e APR-005 (409 com alternativas).
+| APR-002 folga sem rede | `apr002-folga` (POST de `/time-off` abortado) | **cai no boundary** e perde o digitado | fica em `/admin/config/horarios`, aviso "Parece que a internet caiu…", motivo ainda preenchido | ✓ |
+| APR-005 horário tomado | `apr005-409`: duas pessoas, mesmo horário | — | 2ª recebe 409, aviso fica, 6 alternativas; ao tocar numa, nome e telefone voltam preenchidos | ✓ (texto ajustado: os campos não estavam visíveis e o aviso dizia "continuam aqui") |
+
+**Todos os aceites de tela da U1 medidos.**

@@ -1,0 +1,25 @@
+import { chromium } from "playwright";
+// APR-002: criar folga com a rede caindo no POST → a tela fica, o que foi digitado fica, aviso diz o que houve.
+const B = process.argv[2] ?? "http://localhost:3201";
+const b = await chromium.launch({ channel: "chrome" });
+const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, timezoneId: "America/Sao_Paulo", locale: "pt-BR" });
+const p = await ctx.newPage();
+await p.goto(B + "/entrar");
+await p.fill('input[type="email"]', "dono-demo-dom-estilo@ciclo.app");
+await p.fill('input[type="password"]', process.env.SEED_SENHA ?? "DemoCiclo#2026");
+await Promise.all([p.waitForURL(/admin/), p.press('input[type="password"]', "Enter")]);
+await p.goto(B + "/admin/config/horarios", { waitUntil: "networkidle" });
+await p.route("**/api/v1/time-off", (r) => (r.request().method() === "POST" ? r.abort("internetdisconnected") : r.continue()));
+await p.locator('input[name="inicio"]').fill("2026-11-20T09:00");
+await p.locator('input[name="fim"]').fill("2026-11-20T18:00");
+await p.locator('input[name="motivo"]').fill("Folga APR-002");
+await p.locator('input[name="motivo"]').press("Enter");
+await p.waitForTimeout(2500);
+const corpo = await p.locator("body").innerText();
+console.log(JSON.stringify({
+  url: new URL(p.url()).pathname,
+  caiuNoBoundary: /Algo deu errado|Não consegui carregar esta tela/.test(corpo),
+  aviso: corpo.match(/[^\n]*internet caiu[^\n]*/)?.[0] ?? null,
+  motivoAindaDigitado: await p.locator('input[name="motivo"]').inputValue().catch(() => null),
+}, null, 1));
+await b.close();
