@@ -22,8 +22,36 @@ const DDD_VALIDOS = new Set([
  * sujas do que o cadastro de dono, que usa a regex mais simples de
  * `auth/schemas.ts`.
  */
-export function normalizarTelefoneBR(bruto: string): string | null {
-  const numero = parsePhoneNumberFromString(bruto, 'BR')
+/**
+ * Os dígitos do número NACIONAL (DDD + assinante), sem o 55, o 0 de tronco e o código de operadora.
+ * `"+55 (11) 99999-0000"`, `"011 99999-0000"` e `"0 15 11 99999-0000"` dão `"11999990000"`.
+ */
+function digitosNacionais(bruto: string): string {
+  let d = bruto.replace(/\D/g, '')
+  if (d.startsWith('55') && (bruto.trim().startsWith('+') || d.length >= 12)) d = d.slice(2)
+  if (d.startsWith('0')) {
+    d = d.replace(/^0+/, '')
+    // Sobrou 12 ou 13 dígitos: os dois primeiros eram o código da operadora ("0 15 11 …").
+    if (d.length === 12 || d.length === 13) d = d.slice(2)
+  }
+  return d
+}
+
+/**
+ * CNV-002 (achado D1 da auditoria do conversor): sem DDD, a função NÃO inventa um. Antes,
+ * `"99999-0000"` virava `+55999990000` — os dois primeiros dígitos do celular viravam DDD 99, e a
+ * mensagem ia para outra pessoa, em outro estado. Agora, número sem DDD só passa se quem chama disser
+ * o DDD do salão (`dddPadrao`); senão é `null`, e a tela pede o DDD.
+ */
+export function normalizarTelefoneBR(bruto: string, dddPadrao?: number): string | null {
+  let nacional = digitosNacionais(bruto)
+  if (nacional.length === 8 || nacional.length === 9) {
+    if (dddPadrao === undefined || !DDD_VALIDOS.has(dddPadrao)) return null
+    nacional = `${dddPadrao}${nacional}`
+  }
+  if (nacional.length !== 10 && nacional.length !== 11) return null
+
+  const numero = parsePhoneNumberFromString(nacional, 'BR')
   if (!numero?.isValid()) return null
 
   const ddd = Number(numero.nationalNumber.slice(0, 2))
