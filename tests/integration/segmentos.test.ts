@@ -231,3 +231,99 @@ describe('recalcularSegmentosDoTenant + listarClientesPorSegmento', () => {
     30_000,
   )
 })
+
+/*
+ * APR-018 (achados E-03, C-24). O cron gravava `last_visit_at: calculado ?? null` para TODO cliente:
+ * a última visita trazida da planilha de quem ainda não tem atendimento sumia em 1 a 3 h. E o
+ * upsert regravava `name` lido antes: uma eliminação LGPD entre a leitura e a escrita trazia o nome
+ * real de volta.
+ */
+describe('cron de segmentos não destrói dado importado nem desfaz eliminação (APR-018)', () => {
+  it(
+    'importado sem atendimento: a última visita da planilha fica',
+    async () => {
+      const cliente = await criarCliente('Importada Sem Atendimento')
+      await svc.from('clients').update({ last_visit_at: '2026-08-01T15:00:00+00:00', source: 'import' }).eq('id', cliente)
+
+      await recalcularSegmentosDoTenant(svc, tenantId)
+
+      const linha = await svc.from('clients').select('last_visit_at').eq('id', cliente).single()
+      expect(new Date(linha.data!.last_visit_at!).toISOString()).toBe('2026-08-01T15:00:00.000Z')
+    },
+    30_000,
+  )
+
+  it(
+    'visita importada mais recente que o último atendimento: não regride',
+    async () => {
+      const cliente = await criarCliente('Importada Recente')
+      await criarAgendamentoConcluido(cliente, 40, 10_000)
+      const recente = new Date(Date.now() - 5 * 86_400_000).toISOString()
+      await svc.from('clients').update({ last_visit_at: recente }).eq('id', cliente)
+
+      await recalcularSegmentosDoTenant(svc, tenantId)
+
+      const linha = await svc.from('clients').select('last_visit_at, visits_count').eq('id', cliente).single()
+      expect(new Date(linha.data!.last_visit_at!).getTime()).toBe(new Date(recente).getTime())
+      expect(linha.data!.visits_count).toBe(1)
+    },
+    30_000,
+  )
+
+  it(
+    'eliminação LGPD entre a leitura e a escrita do cron: o nome continua anonimizado',
+    async () => {
+      const cliente = await criarCliente('Nome Real Que Pediu Eliminação')
+      await criarAgendamentoConcluido(cliente, 12, 10_000)
+
+      // Depois que o cron LÊ os clientes, a eliminação acontece — antes de ele escrever.
+      let leiturasDeClientes = 0
+      const intercalado = new Proxy(svc, {
+        get(alvo, prop, receptor) {
+          if (prop !== 'from') return Reflect.get(alvo, prop, receptor)
+          return (tabela: string) => {
+            const consulta = alvo.from(tabela as 'clients')
+            if (tabela !== 'clients') return consulta
+            return new Proxy(consulta, {
+              get(c, p, r) {
+                const original = Reflect.get(c, p, r)
+                if (p === 'select' && typeof original === 'function') {
+                  return (...args: unknown[]) => {
+                    const q = (original as (...a: unknown[]) => unknown).apply(c, args) as PromiseLike<unknown>
+                    leiturasDeClientes++
+                    return q
+                  }
+                }
+                if ((p === 'upsert' || p === 'update') && typeof original === 'function' && leiturasDeClientes > 0) {
+                  // A eliminação entra quando a ESCRITA sai (no `then` do construtor), não antes de
+                  // montá-la: os filtros encadeados (`.eq`, `.is`) devolvem o mesmo construtor.
+                  return (...args: unknown[]) => {
+                    const construtor = (original as (...a: unknown[]) => PromiseLike<unknown>).apply(c, args)
+                    return new Proxy(construtor, {
+                      get(b, chave, rec) {
+                        if (chave !== 'then') return Reflect.get(b, chave, rec)
+                        return (ok: (v: unknown) => unknown, falha: (e: unknown) => unknown) =>
+                          svc
+                            .from('clients')
+                            .update({ name: 'Cliente eliminada', anonymized_at: new Date().toISOString() })
+                            .eq('id', cliente)
+                            .then(() => b.then(ok, falha))
+                      },
+                    })
+                  }
+                }
+                return original
+              },
+            })
+          }
+        },
+      }) as typeof svc
+
+      await recalcularSegmentosDoTenant(intercalado, tenantId)
+
+      const linha = await svc.from('clients').select('name').eq('id', cliente).single()
+      expect(linha.data!.name).toBe('Cliente eliminada')
+    },
+    30_000,
+  )
+})
