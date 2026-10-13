@@ -15,6 +15,7 @@ import { gradeDeVcard } from '@/core/ingestao/vcard'
 import { gradesDeDocx, gradesDeHtml, gradesDeOdf } from '@/core/ingestao/documento'
 import { abrirZip, DENTRO_DO_ZIP, nomesDasAbasOdf, xmlDoDocumento } from '@/lib/ingestao/compactado'
 import { abasDeXlsx } from '@/lib/ingestao/planilha'
+import { gradeDePalavras } from '@/core/ingestao/pdf-tabela'
 import { gradeDeConversa, pareceConversaDoWhatsApp } from '@/core/ingestao/whatsapp'
 
 export type Aba = { nome: string; grade: string[][] }
@@ -29,7 +30,6 @@ const AINDA_NAO: Partial<Record<Formato, string>> = {
   numbers: 'Planilha do Numbers: exporte como CSV (Arquivo, Exportar para, CSV) e envie de novo.',
   doc: 'Documento do Word antigo: salve como PDF ou copie a tabela e cole aqui.',
   rtf: 'Documento RTF: salve como .docx ou PDF e envie de novo.',
-  pdf: 'PDF: copie a tabela e cole aqui, ou envie a planilha original.',
   imagem: 'Print ou foto: digite ou cole a lista aqui enquanto a leitura de imagem não chega.',
 }
 
@@ -69,6 +69,14 @@ export async function lerParaGrades(bytes: Uint8Array, nome: string, profundidad
       const abas = abasDeXlsx(bytes)
       if (typeof abas === 'string') return falhaDoZip(abas)
       return abas.length ? { ok: true, formato: 'xlsx', abas, avisos: [] } : { ok: false, mensagem: 'A planilha está vazia.' }
+    }
+    case 'pdf': {
+      const { palavrasDoPdf, LIMITE_DE_PAGINAS } = await import('@/lib/ingestao/pdf')
+      const { palavras, paginas, lidas } = await palavrasDoPdf(bytes)
+      // PDF sem texto é escaneado (imagem): a leitura de imagem é outro caminho (CNV-018).
+      if (palavras.length === 0) return { ok: false, mensagem: 'Este PDF é uma imagem escaneada, sem texto para copiar. Envie a planilha original, ou um print de cada página quando a leitura de imagem chegar.' }
+      const avisos = paginas > lidas ? [`O PDF tem ${paginas} páginas; li as primeiras ${LIMITE_DE_PAGINAS}. Separe em partes para o resto.`] : []
+      return { ok: true, formato: 'pdf', abas: [{ nome, grade: gradeDePalavras(palavras) }], avisos }
     }
     case 'html': {
       const grades = gradesDeHtml(decodificar(bytes).texto)

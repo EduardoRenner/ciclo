@@ -50,8 +50,9 @@ describe('processarArquivo: bytes → caixas (CNV-012)', () => {
   })
 
   it('formato reconhecido ainda sem leitor responde o que fazer, nunca lixo', async () => {
-    const r = await processarArquivo({ bytes: new TextEncoder().encode('%PDF-1.7 ...'), nome: 'clientes.pdf', contexto: { hoje: HOJE } })
-    expect(r).toEqual({ ok: false, mensagem: expect.stringMatching(/cole aqui|planilha original/) })
+    const png = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+    const r = await processarArquivo({ bytes: png, nome: 'print.png', contexto: { hoje: HOJE } })
+    expect(r).toEqual({ ok: false, mensagem: expect.stringMatching(/cole a lista/) })
   })
 
   it('planilha corrompida (cabeçalho de zip sem o resto) vira mensagem, não exceção', async () => {
