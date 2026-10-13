@@ -39,6 +39,17 @@ const falhaDoZip = (f: 'grande' | 'corrompido'): Lido => ({ ok: false, mensagem:
 
 const abasDe = (nome: string, grades: string[][][], nomes: string[] = []): Aba[] => grades.map((grade, i) => ({ nome: nomes[i] || (grades.length > 1 ? `${nome} (tabela ${i + 1})` : nome), grade }))
 
+/** Print, foto e página escaneada: o mesmo OCR, e tudo que sai dele vai para conferir. */
+async function lerImagens(nome: string, imagens: Uint8Array[], semTexto: string): Promise<Lido> {
+  const { palavrasDasImagens } = await import('@/lib/ingestao/ocr')
+  const { palavras, invertida, confiancaMedia } = await palavrasDasImagens(imagens)
+  if (palavras.length === 0) return { ok: false, mensagem: semTexto }
+  const avisos = ['Lido de imagem: confira cada linha antes de importar, principalmente os telefones.']
+  if (invertida) avisos.push('O print estava no modo escuro: inverti as cores para ler.')
+  if (confiancaMedia < 0.75) avisos.push('A imagem está difícil de ler (borrada, torta ou pequena). Confira com mais atenção ou envie um print mais nítido.')
+  return { ok: true, formato: 'imagem', abas: [{ nome, grade: gradeDePalavras(palavras) }], avisos, lidoDeImagem: true }
+}
+
 export async function lerParaGrades(bytes: Uint8Array, nome: string, profundidade = 0): Promise<Lido> {
   const f = farejarFormato(bytes, nome)
   if (!f.aceito) return { ok: false, mensagem: f.mensagem }
@@ -70,25 +81,24 @@ export async function lerParaGrades(bytes: Uint8Array, nome: string, profundidad
       return abas.length ? { ok: true, formato: 'xlsx', abas, avisos: [] } : { ok: false, mensagem: 'A planilha está vazia.' }
     }
     case 'pdf': {
-      const { palavrasDoPdf, LIMITE_DE_PAGINAS } = await import('@/lib/ingestao/pdf')
+      const { palavrasDoPdf, paginasComoImagem, LIMITE_DE_PAGINAS, LIMITE_DE_PAGINAS_ESCANEADAS } = await import('@/lib/ingestao/pdf')
       const { palavras, paginas, lidas } = await palavrasDoPdf(bytes)
-      // PDF sem texto é escaneado (imagem): a leitura de imagem é outro caminho (CNV-018).
-      if (palavras.length === 0) return { ok: false, mensagem: 'Este PDF é uma imagem escaneada, sem texto para copiar. Envie a planilha original, ou um print de cada página quando a leitura de imagem chegar.' }
-      const avisos = paginas > lidas ? [`O PDF tem ${paginas} páginas; li as primeiras ${LIMITE_DE_PAGINAS}. Separe em partes para o resto.`] : []
-      return { ok: true, formato: 'pdf', abas: [{ nome, grade: gradeDePalavras(palavras) }], avisos }
+      if (palavras.length > 0) {
+        const avisos = paginas > lidas ? [`O PDF tem ${paginas} páginas; li as primeiras ${LIMITE_DE_PAGINAS}. Separe em partes para o resto.`] : []
+        return { ok: true, formato: 'pdf', abas: [{ nome, grade: gradeDePalavras(palavras) }], avisos }
+      }
+      // Sem texto: é escaneado. Cada página vira imagem e passa pelo mesmo OCR do print (CNV-018b).
+      const { imagens } = await paginasComoImagem(bytes)
+      const lido = await lerImagens(nome, imagens, 'Este PDF é uma imagem escaneada e não consegui ler o texto. Envie a planilha original, ou cole a lista.')
+      if (lido.ok && paginas > LIMITE_DE_PAGINAS_ESCANEADAS) lido.avisos.push(`O PDF escaneado tem ${paginas} páginas; li as primeiras ${LIMITE_DE_PAGINAS_ESCANEADAS}. Separe em partes para o resto.`)
+      return lido.ok ? { ...lido, formato: 'pdf' } : lido
     }
     case 'imagem': {
       if (f.detalhe === 'heic' || f.detalhe === 'avif') {
         // O leitor de texto não abre HEIC (foto do iPhone): o próprio aparelho converte ao compartilhar.
         return { ok: false, mensagem: 'Foto no formato do iPhone (HEIC). Tire um print da foto ou compartilhe como JPEG e envie de novo.' }
       }
-      const { palavrasDaImagem } = await import('@/lib/ingestao/ocr')
-      const { palavras, invertida, confiancaMedia } = await palavrasDaImagem(bytes)
-      if (palavras.length === 0) return { ok: false, mensagem: 'Não consegui ler texto nesta imagem. Tente um print mais nítido, sem cortar, ou cole a lista.' }
-      const avisos = ['Lido de imagem: confira cada linha antes de importar, principalmente os telefones.']
-      if (invertida) avisos.push('O print estava no modo escuro: inverti as cores para ler.')
-      if (confiancaMedia < 0.75) avisos.push('A imagem está difícil de ler (borrada, torta ou pequena). Confira com mais atenção ou envie um print mais nítido.')
-      return { ok: true, formato: 'imagem', abas: [{ nome, grade: gradeDePalavras(palavras) }], avisos, lidoDeImagem: true }
+      return lerImagens(nome, [bytes], 'Não consegui ler texto nesta imagem. Tente um print mais nítido, sem cortar, ou cole a lista.')
     }
     case 'html': {
       const grades = gradesDeHtml(decodificar(bytes).texto)

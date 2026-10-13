@@ -41,32 +41,40 @@ function caminhos() {
   return { langPath: `${process.cwd()}/node_modules/@tesseract.js-data/por/4.0.0_best_int`, cacheMethod: 'none' as const }
 }
 
-export async function palavrasDaImagem(bytes: Uint8Array): Promise<{ palavras: Palavra[]; invertida: boolean; confiancaMedia: number }> {
+type Lido = { palavras: Palavra[]; invertida: boolean; confiancaMedia: number }
+
+export async function palavrasDaImagem(bytes: Uint8Array): Promise<Lido> {
+  return palavrasDasImagens([bytes])
+}
+
+/** Várias imagens (páginas de um PDF escaneado) num worker só: cada uma vira a sua página. */
+export async function palavrasDasImagens(imagens: Uint8Array[]): Promise<Lido> {
   const { createWorker } = await import('tesseract.js')
-  const { imagem, invertida } = await preparar(bytes)
   // Sem `errorHandler`, o tesseract.js REJEITA a promessa e ainda LANÇA no evento do worker: uma imagem
   // truncada vira exceção solta (medido no Node: derruba o processo). Com ele, só a rejeição chega a
   // quem chamou, e o `processarArquivo` responde em português.
   const worker = await createWorker('por', 1, { ...caminhos(), gzip: true, errorHandler: () => {} })
   try {
-    const r = await worker.recognize(imagem as never, {}, { blocks: true })
-    const blocos = (r.data.blocks ?? []) as unknown as Bloco[]
-    const palavras: Palavra[] = blocos.flatMap((b) =>
-      b.paragraphs.flatMap((p) =>
-        p.lines.flatMap((l) =>
-          l.words.map((w) => ({
-            texto: w.text,
-            // A imagem tem y para BAIXO; o modo stream espera y para CIMA (como o PDF).
-            x: w.bbox.x0,
-            y: -w.bbox.y1,
-            largura: w.bbox.x1 - w.bbox.x0,
-            altura: w.bbox.y1 - w.bbox.y0,
-            pagina: 1,
-            confianca: w.confidence / 100,
-          })),
-        ),
-      ),
-    )
+    const palavras: Palavra[] = []
+    let invertida = false
+    for (const [i, bytes] of imagens.entries()) {
+      const preparada = await preparar(bytes)
+      invertida ||= preparada.invertida
+      const r = await worker.recognize(preparada.imagem as never, {}, { blocks: true })
+      const blocos = (r.data.blocks ?? []) as unknown as Bloco[]
+      for (const w of blocos.flatMap((b) => b.paragraphs.flatMap((p) => p.lines.flatMap((l) => l.words)))) {
+        palavras.push({
+          texto: w.text,
+          // A imagem tem y para BAIXO; o modo stream espera y para CIMA (como o PDF).
+          x: w.bbox.x0,
+          y: -w.bbox.y1,
+          largura: w.bbox.x1 - w.bbox.x0,
+          altura: w.bbox.y1 - w.bbox.y0,
+          pagina: i + 1,
+          confianca: w.confidence / 100,
+        })
+      }
+    }
     const confiancaMedia = palavras.length ? palavras.reduce((s, p) => s + (p.confianca ?? 0), 0) / palavras.length : 0
     return { palavras, invertida, confiancaMedia }
   } finally {

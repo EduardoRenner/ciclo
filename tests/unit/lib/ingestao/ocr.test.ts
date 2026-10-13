@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { ehModoEscuro, escalaParaOcr, paraCinza, prepararParaOcr } from '@/core/ingestao/imagem'
 import { palavrasDaImagem } from '@/lib/ingestao/ocr'
 import { processarArquivo } from '@/lib/ingestao/processar-arquivo'
+import { pdfEscaneado } from '../../../fixtures/ingestao/pdf'
 
 /**
  * CNV-018: print e foto pelo tesseract.js com o português LOCAL (sem rede). As imagens são geradas
@@ -53,6 +54,22 @@ describe('ler print de verdade (CNV-018)', () => {
     expect(lido.palavras.map((p) => p.texto).join(' ')).toContain('Conceição')
     expect(lido.confiancaMedia).toBeGreaterThan(0.75)
   }, 60_000)
+
+  it('PDF escaneado (CNV-018b): cada página passa pelo OCR, a lista continua entre as páginas, tudo para conferir', async () => {
+    const pagina = async (linhas: string[]) => {
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="420" height="${40 + linhas.length * 40}"><rect width="100%" height="100%" fill="#fff"/>${linhas.map((l, i) => `<text x="16" y="${36 + i * 40}" font-family="Arial" font-size="18" fill="#111">${l}</text>`).join('')}</svg>`
+      const jpeg = await sharp(Buffer.from(svg)).resize({ width: 1260 }).flatten({ background: '#fff' }).jpeg({ quality: 92 }).toBuffer({ resolveWithObject: true })
+      return { jpeg: new Uint8Array(jpeg.data), largura: jpeg.info.width, altura: jpeg.info.height }
+    }
+    const pdf = pdfEscaneado([await pagina(LINHAS.slice(0, 3)), await pagina(LINHAS.slice(3))])
+    const r = await processarArquivo({ bytes: pdf, nome: 'clientes-escaneado.pdf', contexto: { hoje: '2026-10-13' } })
+    expect(r.ok).toBe(true)
+    if (!r.ok) return
+    expect(r.formato).toBe('pdf')
+    expect(r.resultado.registros.map((x) => x.telefone)).toEqual(['+5511999990001', '+5511988880002', '+5541977770003'])
+    for (const x of r.resultado.registros) expect(x.avisos).toContain('conferir_imagem')
+    expect(r.resultado.contagem.ouro).toBe(0)
+  }, 120_000)
 
   it('foto do iPhone (HEIC) pede outro formato em vez de falhar calada', async () => {
     const heic = Uint8Array.from([0, 0, 0, 0x18, ...Array.from('ftypheic', (c) => c.charCodeAt(0)), 0, 0, 0, 0])
