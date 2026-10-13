@@ -4,6 +4,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import dotenv from 'dotenv'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
+import { hojeNoFuso } from '@/core/advocacia/datas'
 import { mudarCaso } from '@/server/advocacia/casos'
 
 import type { Database } from '@/server/db/types.gen'
@@ -18,7 +19,9 @@ let clienteId: string
 const usuarios: string[] = []
 let dono: SupabaseClient<Database>
 let advocacia: SupabaseClient<Database>
-const HOJE = '2026-10-08'
+// Data de hoje, nunca literal: com '2026-10-08' fixo o teste reprovou todo dia a partir de 09/10, porque `opened_on`
+// nasce com `current_date` e o `check (closed_on >= opened_on)` recusa fechar antes de abrir.
+const HOJE = hojeNoFuso('America/Sao_Paulo', new Date())
 const quem = (papel: 'owner' | 'professional') => ({ papel, escritorio: 'Escritório Teste', hoje: HOJE })
 
 async function pessoa(papel: 'owner' | 'professional'): Promise<SupabaseClient<Database>> {
@@ -36,7 +39,8 @@ async function pessoa(papel: 'owner' | 'professional'): Promise<SupabaseClient<D
 async function caso(extra: Record<string, unknown> = {}): Promise<{ id: string; rv: number }> {
   const r = await admin
     .from('legal_cases')
-    .insert({ tenant_id: T, client_id: clienteId, kind: 'holding', title: 'Holding teste', client_title: 'o planejamento da família', ...extra })
+    // `opened_on` explícito: o `current_date` do banco é UTC e, das 21h à meia-noite em Brasília, já é amanhã lá.
+    .insert({ tenant_id: T, client_id: clienteId, kind: 'holding', title: 'Holding teste', client_title: 'o planejamento da família', opened_on: HOJE, ...extra })
     .select('id, row_version')
     .single()
   return { id: r.data!.id, rv: r.data!.row_version }
