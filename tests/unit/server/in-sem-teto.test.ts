@@ -24,6 +24,7 @@ const COM_TETO: Record<string, { quantas: number; teto: string }> = {
   'services/alertas-estoque.ts': { quantas: 1, teto: 'a verificar: produtos do catálogo sem sinal direto' },
   'services/caixa.ts': { quantas: 1, teto: 'profissionais com fatia na concentração do mês (equipe)' },
   'services/consentimentos.ts': { quantas: 1, teto: 'fotos publicadas de UMA cliente' },
+  'services/ciclo-de-quem-ja-atende.ts': { quantas: 2, teto: 'TAMANHO_DO_LOTE = 100 clientes por fatia (docs/103 D19)' },
   'services/clube.ts': { quantas: 4, teto: 'a verificar: assinantes do clube (63); serviços/profissionais usados por eles (74-80)' },
   'services/crm.ts': { quantas: 1, teto: 'TAMANHO_LOTE_IN' },
   'services/demonstracao.ts': { quantas: 1, teto: 'slugs candidatos de demonstração (lista do código)' },

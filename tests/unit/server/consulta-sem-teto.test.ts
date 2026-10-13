@@ -37,7 +37,6 @@ const TABELAS_QUE_CRESCEM = [
 const LINHA_DE_BASE: Record<string, number> = {
   'server/services/agendamentos.ts': 3,
   'server/services/alertas-estoque.ts': 1,
-  'server/services/ciclo-de-quem-ja-atende.ts': 2,
   'server/services/ciclo.ts': 2,
   'server/services/clientes.ts': 1,
   'server/services/clube.ts': 3,
